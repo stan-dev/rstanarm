@@ -23,14 +23,11 @@ stanlm <-
             prior.df.for.intercept = 1, min.prior.scale = 1e-12, scaled = TRUE,
             prior.scale.for.dispersion = 5, ...) { # further arguments to stan()
     
+    mf <- match.call(expand.dots = TRUE)
+    mf[[1L]] <- as.name("stanglm")
+    mf$qr <- mf$singular.ok <- NULL
+    return(eval(mf, parent.frame()))
     
-    stanglm(formula, family = gaussian, data, weights, subset,
-            na.action, NULL, NULL, NULL, offset, list(),
-            model, "glm.fit", x, y, contrasts,
-            prior.mean, prior.scale, prior.df,
-            prior.mean.for.intercept, prior.scale.for.intercept,
-            prior.df.for.intercept, min.prior.scale, scaled,
-            prior.scale.for.dispersion, ...)   
 }
 
 
