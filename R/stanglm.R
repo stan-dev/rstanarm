@@ -117,7 +117,7 @@ stanglm.fit <-
       prior.scale.for.intercept <- prior.scale.for.intercept * 2 * sd(y)
     }
     prior.scale <- pmax(min.prior.scale, prior.scale / 
-                          apply(x[,-1], 2, FUN = function(x) {
+                          apply(x[,-1,drop=FALSE], 2, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
                             if(num.categories == 2)     x.scale <- diff(range(x))
