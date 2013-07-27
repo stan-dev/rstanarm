@@ -71,6 +71,7 @@ stanglm.fit <-
            prior.scale.for.dispersion = 5, ...) { # further arguments to stan()
   
   if(!is(family, "family")) stop("'family' must be a family")
+  x <- as.matrix(x)
   
   # these are from help(family)
   supported_families <- c("binomial", "gaussian", "Gamma", 
@@ -107,9 +108,10 @@ stanglm.fit <-
   }
   nvars <- ncol(x) - 1
   if(length(prior.df) == 1)    prior.df <- rep(prior.df, nvars)
-  prior.df <- pmin(.Machine$double.xmax, prior.df)
+  prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
   prior.df.for.intercept <- min(.Machine$double.xmax, prior.df.for.intercept)
   if(length(prior.mean)  == 1) prior.mean  <- rep(prior.mean,  nvars)
+  prior.mean <- as.array(prior.mean)
   if(length(prior.scale) == 1) prior.scale <- rep(prior.scale, nvars)
   if(scaled) {
     if(family$family == "gaussian") {
@@ -124,7 +126,7 @@ stanglm.fit <-
                             else if(num.categories > 2) x.scale <- 2 * sd(x)
                           }))
   }
-  prior.scale <- pmin(.Machine$double.xmax, prior.scale)
+  prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
   
   # create entries in the data {} block of the .stan file
