@@ -33,49 +33,19 @@ stanlm(formula, data, subset, weights, na.action, method = "qr",
        prior.scale.for.dispersion = 5, ...)
 }
 \arguments{
-  \item{formula}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{family}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{data}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{weights}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{subset}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{na.action}{
+  \item{formula,family,data,weights,subset,na.action,offset,contrasts}{
   Same as in \code{\link[stats]{glm}}
 }
   \item{start}{
-  Same as in \code{\link[stats]{glm}}. Also, if not \code{NULL} used as starting
+  Same as in \code{\link[stats]{glm}}, but if not \code{NULL} also used as starting
   values for the MCMC. If \code{NULL} (the default), then \code{\link[rstan]{stan}}
   is initialized with \code{init = 'random'}.
 }
-  \item{etastart}{
-  Same as in \code{\link[stats]{glm}} and ignored by \code{\link[rstan]{stan}}.
-}
-  \item{mustart}{
-  Same as in \code{\link[stats]{glm}} and ignored by \code{\link[rstan]{stan}}.
-}
-  \item{offset}{
-  Same as in \code{\link[stats]{glm}}
-}
-  \item{control}{
-  Included for compatibility with \code{\link[stats]{glm}} but ignored by \code{\link[rstan]{stan}}.
+  \item{etastart,mustart,control,model,method}{
+  Same as in \code{\link[stats]{glm}} but ignored by \code{\link[rstan]{stan}}.
 }
   \item{intercept}{
-  Included for compatibility with \code{\link[stats]{glm.fit}} but ignored by \code{\link[rstan]{stan}}.
-}
-  \item{model}{
-  Included for compatibility with \code{\link[stats]{glm}} but ignored by \code{\link[rstan]{stan}}.
-}
-  \item{method}{
-  Included for compatibility with \code{\link[stats]{glm}} but ignored by \code{\link[rstan]{stan}}.
+  Same as in \code{\link[stats]{glm.fit}}.
 }
   \item{x}{
   For \code{stanglm} and \code{stanlm}, this argument it included for compatibility with 
@@ -87,14 +57,8 @@ stanlm(formula, data, subset, weights, na.action, method = "qr",
   \code{\link[stats]{glm}} but ignored by \code{\link[rstan]{stan}}. For \code{stanglm.fit},
   a \code{\link{model.response}} like that for \code{\link{glm.fit}}.
 }
-  \item{qr}{
+  \item{qr,singular.ok}{
   Included for compatibility with \code{\link[stats]{lm}} but ignored by \code{\link[rstan]{stan}}.  
-}
-  \item{singular.ok}{
-  Included for compatibility with \code{\link[stats]{lm}} but ignored by \code{\link[rstan]{stan}}.  
-}  
-  \item{contrasts}{
-  Same as in \code{\link[stats]{glm}}.
 }
   \item{prior.mean}{
   Prior mean (technically location) vector for the coefficient(s) in the model, not counting the intercept,
