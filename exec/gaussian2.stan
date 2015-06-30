@@ -1,4 +1,16 @@
 # GLM for a Gaussian outcome with Gaussian or t priors
+functions {
+  vector coefficient_vector(real alpha, vector theta, int K) {
+    vector[K] beta;
+    if (K != rows(theta) + 1) 
+      reject("Dimension mismatch");
+    beta[1] <- alpha;
+    for (k in 2:K) 
+      beta[k] <- theta[k-1];
+      
+    return beta;
+  }
+}
 data {
   # dimensions
   int<lower=1> N; # number of observations
@@ -33,12 +45,15 @@ data {
   real<lower=0> prior_scale_for_dispersion;
 }
 parameters {
-  vector[K] beta;
+  real alpha;
+  vector[K-1] theta;
   real<lower=0> sigma;
 }
 model {
   vector[N] eta;
+  vector[K] beta;
   
+  beta <- coefficient_vector(alpha, theta, K);
   eta <- X * beta;
   if (has_offset == 1) 
     eta <- eta + offset;
@@ -74,37 +89,20 @@ model {
   sigma ~ cauchy(0, prior_scale_for_dispersion);
   
   if (prior_dist_for_intercept == 1) { # normal
-    beta[1] ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
   }
   else { # student_t
-    beta[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
   }
   
   if (prior_dist == 1) { # normal
-    tail(beta, K-1) ~ normal(prior_mean, prior_scale);  
+    theta ~ normal(prior_mean, prior_scale);  
   } 
   else { # student_t
-    tail(beta, K-1) ~ student_t(prior_df, prior_mean, prior_scale);
+    theta ~ student_t(prior_df, prior_mean, prior_scale);
   }
 }
-/*
 generated quantities {
-  vector[N] log_lik;
-  vector[N] eta;
-  
-  eta <- X * beta;
-  if (has_offset == 1) 
-    eta <- eta + offset;
-    
-  if (link == 1) 
-    for (n in 1:N) log_lik[n] <- normal_log(y[n], eta[n], sigma);
-  else 
-    if (link == 2) 
-      for (n in 1:N) log_lik[n] <- lognormal_log(y[n], eta[n], sigma);
-    else  # link == 3
-      for (n in 1:N) log_lik[n] <- normal_log(y[n], inv(eta[n]), sigma); 
-
-  if (has_weights == 1) 
-    log_lik <- log_lik .* weights;
+  vector[K] beta;
+  beta <- coefficient_vector(alpha, theta, K);
 }
-*/

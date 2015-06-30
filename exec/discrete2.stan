@@ -1,4 +1,16 @@
 # GLM for a discrete outcome with Gaussian or t priors
+functions {
+  vector coefficient_vector(real alpha, vector theta, int K) {
+    vector[K] beta;
+    if (K != rows(theta) + 1) 
+      reject("Dimension mismatch");
+    beta[1] <- alpha;
+    for (k in 2:K) 
+      beta[k] <- theta[k-1];
+      
+    return beta;
+  }
+}
 data {
   # dimensions
   int<lower=1> N; # number of observations
@@ -35,10 +47,14 @@ data {
   real<lower=0> prior_df_for_intercept;
 }
 parameters {
-  vector[K] beta;
+  real alpha;
+  vector[K-1] theta;
 }
 model {
   vector[N] eta;
+  vector[K] beta;
+  
+  beta <- coefficient_vector(alpha, theta, K);
   eta <- X * beta;
   if (has_offset == 1) 
     eta <- eta + offset;
@@ -92,45 +108,20 @@ model {
   
   # log-priors
   if (prior_dist_for_intercept == 1) { # normal
-    beta[1] ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
   }
   else { # student_t
-    beta[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
   }
   
   if (prior_dist == 1) { # normal
-    tail(beta, K-1) ~ normal(prior_mean, prior_scale);  
+    theta ~ normal(prior_mean, prior_scale);  
   } 
   else { # student_t
-    tail(beta, K-1) ~ student_t(prior_df, prior_mean, prior_scale);
+    theta ~ student_t(prior_df, prior_mean, prior_scale);
   }
 }
-/*
 generated quantities {
-  vector[N] log_lik;
-  vector[N] eta;
-  
-  eta <- X * beta;
-  if (has_offset == 1) 
-    eta <- eta + offset;
-  
-  if (family == 1) { # bernoulli
-      vector[N] pi;
-      if (link == 1)      for (n in 1:N) pi[n] <- inv_logit(eta[n]);
-      else if (link == 2) for (n in 1:N) pi[n] <- Phi_approx(eta[n]);
-      else if (link == 3) for (n in 1:N) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
-      else if (link == 4) for (n in 1:N) pi[n] <- exp(eta[n]); # may be > 1
-      else if (link == 5) for (n in 1:N) pi[n] <- inv_cloglog(eta[n]);
-      
-      for (n in 1:N) 
-        log_lik[n] <- bernoulli_log(y[n], pi[n]);
-  }
-  else { # poisson
-    for (n in 1:N) 
-      log_lik[n] <- poisson_log_log(y[n], eta[n]);
-  }
-  
-  if (has_weights == 1)
-    log_lik <- log_lik .* weights;
+  vector[K] beta;
+  beta <- coefficient_vector(alpha, theta, K);
 }
-*/
