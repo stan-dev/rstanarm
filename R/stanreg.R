@@ -14,14 +14,10 @@ stanreg <- function(object) {
   levs <- c(0.5, 0.8, 0.95, 0.99)
   qq <- (1 - levs)/2
   probs <- sort(c(0.5, c(qq, 1 - qq)))
-
-  pars <- c("beta", "lp__")
-  if (family$family == "gaussian") 
-    pars <- c(pars, "sigma")
-  fit_summary <- rstan::summary(stanfit, pars = pars, probs = probs, digits = 10)$summary
+  stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   
   # linear predictors and fitted values
-  mu <- fit_summary[1:nvars, "mean"]
+  mu <- stan_summary[1:nvars, "mean"]
   eta <- if (NCOL(x) == 1L) x * mu else x %*% mu
   eta <- as.vector(eta) + offset
   mu <- family$linkinv(eta)
@@ -44,17 +40,18 @@ stanreg <- function(object) {
   covmat <- cov(beta)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
-  rownames(covmat) <- colnames(covmat) <- rownames(fit_summary)[1:nvars]
+  rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
   out <- list(
-    coefficients = fit_summary[1:nvars, "mean"],
+    coefficients = stan_summary[1:nvars, "mean"],
     fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
     y = y, x = x, model = object$model, data = object$data,
     offset = object$offset, prior.weights = weights, rank = rank,
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
-    prior.info = object$prior.info, stanfit = stanfit
+    prior.info = object$prior.info, stan_summary = stan_summary, 
+    stanfit = stanfit
   )
   class(out) <- c("stanreg", "glm", "lm")
   out

@@ -49,7 +49,7 @@ se.stanreg <- function(object, parm) {
   pnms <- names(coef(object))
   if (missing(parm)) parm <- pnms
   else if (is.numeric(parm)) parm <- pnms[parm]
-  object$summary[parm, "sd"]
+  object$stan_summary[parm, "sd"]
 }
 
 #' @rdname stanreg_methods
