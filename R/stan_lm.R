@@ -20,8 +20,7 @@ stan_lm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, start = NULL, offset = NULL, 
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
                     prior = normal(), prior.for.intercept = normal(),
-                    min.prior.scale = 1e-12, prior.scale.for.dispersion = 5,
-                    scaled = TRUE, ...) {
+                    prior.options = prior_options(), ...) {
   
   mf <- call <- match.call()
   mf[[1L]] <- as.name("stan_glm")

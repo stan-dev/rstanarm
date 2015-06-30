@@ -1,8 +1,8 @@
 #' Prior distributions
 #' 
 #' These functions are used to specify the \code{prior} and 
-#' \code{prior.for.intercept} arguments of the \code{stan_regression}, 
-#' \code{stan_lm}, and \code{stan_glm} functions. 
+#' \code{prior.for.intercept}, and \code{prior.options} arguments of the
+#' \code{stan_lm}, and \code{stan_glm} functions.
 #' 
 #' @export 
 #' @name priors
@@ -41,4 +41,21 @@ cauchy <- function(location = 0, scale = NULL) {
   student_t(df = 1, location = location, scale = scale)
 }
 
+#' @rdname priors
+#' @export 
+#' @param prior.scale.for.dispersion Prior scale for the standard error of the 
+#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
+#'   at zero.
+#' @param min.prior.scale Minimum prior scale for the intercept and 
+#'   coefficients. See the Details section.
+#' @param scaled Logical scalar, defaulting to \code{TRUE}, and if \code{TRUE} 
+#'   further scales the prior.scale by the range of the predictor if the 
+#'   predictor has exactly two unique values and scales prior.scale by twice the
+#'   standard deviation of the predictor if it has more than two unique values.
+#'
+prior_options <- function(prior.scale.for.dispersion = 5, 
+                          min.prior.scale = 1e-12, 
+                          scaled = TRUE) {
+  nlist(scaled, min.prior.scale, prior.scale.for.dispersion)
+}
 

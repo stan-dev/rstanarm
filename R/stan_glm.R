@@ -40,18 +40,8 @@
 #'   
 #' @param prior prior for coefficients. See \code{\link{priors}}.
 #' @param prior.for.intercept prior for intercept. See \code{\link{priors}}.
-#'   
-#' @param min.prior.scale Minimum prior scale for the intercept and
-#'   coefficients. See the Details section.
-#'   
-#' @param scaled Logical scalar, defaulting to \code{TRUE}, and if \code{TRUE}
-#'   further scales the prior.scale by the range of the predictor if the
-#'   predictor has exactly two unique values and scales prior.scale by twice the
-#'   standard deviation of the predictor if it has more than two unique values.
-#'   
-#' @param prior.scale.for.dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
+#' @param prior.options Additional options related to prior distributions. 
+#' See \code{\link{priors}}.
 #'   
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
 #'   \code{iter}, \code{chains}, etc.).
@@ -124,8 +114,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, start = NULL, offset = NULL, 
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
                     prior = normal(), prior.for.intercept = normal(),
-                    min.prior.scale = 1e-12, prior.scale.for.dispersion = 5,
-                    scaled = TRUE, 
+                    prior.options = prior_options(), 
                     ...) { # further arguments to stan()
 
   # Parse like glm()
@@ -177,15 +166,15 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior.mean.for.intercept = prior.for.intercept$location, 
                           prior.scale.for.intercept = prior.for.intercept$scale,
                           prior.df.for.intercept = na_replace(prior.for.intercept$df, 1), 
-                          scaled = scaled, min.prior.scale = min.prior.scale, 
-                          prior.scale.for.dispersion = prior.scale.for.dispersion, 
+                          scaled = prior.options$scaled, 
+                          min.prior.scale = prior.options$min.prior.scale, 
+                          prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion, 
                           ...)
   
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)
   all_args <- mget(names(formals()), sys.frame(sys.nframe()))
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
-  prior.info$scaled <- all_args$scaled
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
                data, prior.info, call = call, terms = mt, 

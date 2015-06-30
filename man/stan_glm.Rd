@@ -9,8 +9,7 @@
 stan_glm(formula, family = gaussian(), data, weights, subset,
   na.action = NULL, start = NULL, offset = NULL, model = TRUE,
   x = FALSE, y = TRUE, contrasts = NULL, prior = normal(),
-  prior.for.intercept = normal(), min.prior.scale = 1e-12,
-  prior.scale.for.dispersion = 5, scaled = TRUE, ...)
+  prior.for.intercept = normal(), prior.options = prior_options(), ...)
 
 stan_glm.fit(x, y, weights = rep(1, NROW(x)), start = NULL,
   offset = rep(0, NROW(x)), family = gaussian(), intercept = TRUE,
@@ -23,8 +22,7 @@ stan_glm.fit(x, y, weights = rep(1, NROW(x)), start = NULL,
 stan_lm(formula, family = gaussian(), data, weights, subset,
   na.action = NULL, start = NULL, offset = NULL, model = TRUE,
   x = FALSE, y = TRUE, contrasts = NULL, prior = normal(),
-  prior.for.intercept = normal(), min.prior.scale = 1e-12,
-  prior.scale.for.dispersion = 5, scaled = TRUE, ...)
+  prior.for.intercept = normal(), prior.options = prior_options(), ...)
 }
 \arguments{
 \item{formula,family,data,subset}{Same as in \code{\link[stats]{glm}}.}
@@ -49,17 +47,8 @@ like that for .}
 
 \item{prior.for.intercept}{prior for intercept. See \code{\link{priors}}.}
 
-\item{min.prior.scale}{Minimum prior scale for the intercept and
-  coefficients. See the Details section.}
-
-\item{prior.scale.for.dispersion}{Prior scale for the standard error of the
-  regression in Gaussian models, which is given a half-Cauchy prior truncated
-  at zero.}
-
-\item{scaled}{Logical scalar, defaulting to \code{TRUE}, and if \code{TRUE}
-  further scales the prior.scale by the range of the predictor if the
-  predictor has exactly two unique values and scales prior.scale by twice the
-  standard deviation of the predictor if it has more than two unique values.}
+\item{prior.options}{Additional options related to prior distributions.
+See \code{\link{priors}}.}
 
 \item{...}{Further arguments passed to \code{\link[rstan]{stan}} (e.g.
   \code{iter}, \code{chains}, etc.).}
