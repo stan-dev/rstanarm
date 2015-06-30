@@ -7,6 +7,7 @@
 \alias{se}
 \alias{se.stanreg}
 \alias{stanreg_methods}
+\alias{summary.stanreg}
 \alias{vcov.stanreg}
 \title{Methods}
 \usage{
@@ -21,9 +22,11 @@ se(object, parm)
 \method{confint}{stanreg}(object, parm, level = 0.95, ...)
 
 \method{print}{stanreg}(x, ...)
+
+\method{summary}{stanreg}(object, ...)
 }
 \arguments{
-\item{object}{a \code{stanreg} object.}
+\item{object,x}{a \code{stanreg} object.}
 
 \item{...}{other arguments. See Details.}
 

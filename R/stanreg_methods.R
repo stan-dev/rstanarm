@@ -65,7 +65,7 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
 print.stanreg <- function(x, ...) {
   # use RStan's print just as placeholder. we should replace this with our own
   # print method
-  print(fit$stanfit)
+  print(x$stanfit)
 }
 
 #' @rdname stanreg_methods
@@ -73,6 +73,6 @@ print.stanreg <- function(x, ...) {
 summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
-  summary(fit$stanfit, ...)$summary
+  summary(object$stanfit, ...)$summary
 }
 
