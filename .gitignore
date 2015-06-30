@@ -9,3 +9,4 @@ rstan/inst/include/stanlib
 rstan/inst/include/stansrc
 rstan*.tar.gz
 .Rproj.user
+.Rhistory
