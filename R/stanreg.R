@@ -53,4 +53,5 @@ stanreg <- function(object) {
     prior.info = object$prior.info, stanfit = stanfit
   )
   class(out) <- c("stanreg", "glm", "lm")
+  out
 }
