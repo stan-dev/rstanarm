@@ -14,7 +14,7 @@ stanreg <- function(object) {
   levs <- c(0.5, 0.8, 0.95, 0.99)
   qq <- (1 - levs)/2
   probs <- sort(c(0.5, c(qq, 1 - qq)))
-  sf@model_pars
+
   pars <- c("beta", "lp__")
   if (family$family == "gaussian") 
     pars <- c(pars, "sigma")

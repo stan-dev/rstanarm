@@ -13,10 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#' @rdname stan_glm
-#' @export
-
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(), intercept = TRUE,
                          # above arguments from glm(), 

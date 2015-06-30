@@ -24,14 +24,15 @@
 #' }
 #' 
 normal <- function(location = 0, scale = NULL) {
-  validate_loc_scale_df(location, scale)
+  validate_parameter_value(scale)
   nlist(dist = "normal", df = NA, location, scale)
 }
 
 #' @rdname priors
 #' @export
 student_t <- function(df = 1, location = 0, scale = NULL) {
-  validate_loc_scale_df(location, scale, df)
+  validate_parameter_value(scale)
+  validate_parameter_value(df)
   nlist(dist = "t", df, location, scale)
 }
 
@@ -56,6 +57,8 @@ cauchy <- function(location = 0, scale = NULL) {
 prior_options <- function(prior.scale.for.dispersion = 5, 
                           min.prior.scale = 1e-12, 
                           scaled = TRUE) {
+  validate_parameter_value(prior.scale.for.dispersion)
+  validate_parameter_value(min.prior.scale)
   nlist(scaled, min.prior.scale, prior.scale.for.dispersion)
 }
 

@@ -21,25 +21,16 @@
 #'
 #' @export
 #'
-#' @param formula,family,data,subset Same as in \code{\link[stats]{glm}}.
-#' @param na.action,weights,offset,contrasts Same as in
+#' @param formula,family,data,subset,x,y,model Same as 
 #'   \code{\link[stats]{glm}}.
-#'   
-#' @param start Same as in \code{\link[stats]{glm}}, but if not \code{NULL} also
+#' @param na.action,weights,offset,contrasts Same as 
+#'   \code{\link[stats]{glm}}.
+#' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
 #'   
-#' @param intercept Same as in \code{\link[stats]{glm.fit}}.
-#' @param x,y For \code{stan_lm} and \code{stan_glm}, a logical value indicating
-#'   whether the model matrix and response vector should be returned. For
-#'   \code{stan_glm.fit}, a \code{\link{model.matrix}} and 
-#'   \code{\link{model.response}}, respectively (like \code{\link{glm.fit}}). 
-#'   like that for .
-#' @param model a logical value indicating whether the model frame should be 
-#'   returned.
-#'   
-#' @param prior prior for coefficients. See \code{\link{priors}}.
-#' @param prior.for.intercept prior for intercept. See \code{\link{priors}}.
+#' @param prior Prior for coefficients. See \code{\link{priors}}.
+#' @param prior.for.intercept Prior for intercept. See \code{\link{priors}}.
 #' @param prior.options Additional options related to prior distributions. 
 #' See \code{\link{priors}}.
 #'   

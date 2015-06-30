@@ -45,10 +45,9 @@ nlist <- function(...) {
   out
 }
 
-validate_loc_scale_df <- function(location, scale, df) {
-  testthat::expect_is(location, "numeric")
-  if (!is.null(scale)) 
-    testthat::expect_more_than(scale, 0)
-  if (!missing(df)) 
-    testthat::expect_more_than(df, 0)
+validate_parameter_value <- function(x) {
+  if (!is.null(x) && x <= 0) {
+    nm <- deparse(substitute(x))
+    stop(paste(nm, "should be positive"))
+  }
 }

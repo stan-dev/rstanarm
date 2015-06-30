@@ -41,7 +41,7 @@ standard deviation of the predictor if it has more than two unique values.}
 }
 \description{
 These functions are used to specify the \code{prior} and
-\code{prior.for.intercept} arguments of the \code{stan_regression},
+\code{prior.for.intercept}, and \code{prior.options} arguments of the
 \code{stan_lm}, and \code{stan_glm} functions.
 }
 \details{
