@@ -7,7 +7,6 @@ functions {
     beta[1] <- alpha;
     for (k in 2:K) 
       beta[k] <- theta[k-1];
-      
     return beta;
   }
 }
@@ -111,7 +110,8 @@ model {
     alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
   }
   else { # student_t
-    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                      prior_scale_for_intercept);
   }
   
   if (prior_dist == 1) { # normal

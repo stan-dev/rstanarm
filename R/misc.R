@@ -1,5 +1,5 @@
 na_replace <- function(x, replacement) {
-  # return x itself if not na, else return replacement
+  # if x is NA return replacement, else return x itself
   if (is.na(x)) 
     replacement 
   else 
@@ -7,7 +7,7 @@ na_replace <- function(x, replacement) {
 }
 
 maybe_broadcast <- function(x, n) {
-  # if x has length 1 it is replicated n times, else x itself is returned
+  # if x has length 1 replicate it n times, else return x itself
   if (length(x) == 1L) 
     rep(x, times = n)
   else 

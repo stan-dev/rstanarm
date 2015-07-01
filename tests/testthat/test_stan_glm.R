@@ -4,14 +4,19 @@
 library(rstanarm)
 set.seed(123)
 
+threshold <- 0.1
+
+f1 <- function(x) cbind(coef(x), se(x))
+f2 <- function(x) summary(x)$coefficients[,1:2]
+
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
   # example using mtcars dataset
   fit <- stan_lm(mpg ~ wt, data = mtcars, iter = 400, seed = 123)
-  val <- cbind(coef(fit), se(fit))
-  ans <- summary(lm(mpg ~ wt, data = mtcars))$coefficients[,1:2]
+  val <- f1(fit)
+  ans <- f2(lm(mpg ~ wt, data = mtcars))
   diff <- abs(val - ans)
-  expect_true(all(diff < 0.1))
+  expect_true(all(diff < threshold))
 })
 test_that("gaussian(link = 'log') returns expected result for trees example", {
   # example using trees dataset
@@ -19,11 +24,10 @@ test_that("gaussian(link = 'log') returns expected result for trees example", {
                  family = gaussian(link = "log"), iter = 400, seed = 123)
   fit2 <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
                   iter = 400, seed = 123)
-  val1 <- cbind(coef(fit1), se(fit1)); val2 <- cbind(coef(fit2), se(fit2))
-  ans <- summary(lm(log(Volume) ~ log(Girth) + log(Height),
-                    data = trees))$coefficients[,1:2]
+  val1 <- f1(fit1); val2 <- f1(fit2)
+  ans <- f2(lm(log(Volume) ~ log(Girth) + log(Height),data = trees))
   diff1 <- abs(val1 - ans); diff2 <- abs(val2 - ans)
-  expect_true(all(diff1 < 0.1 & diff2 < 0.1))
+  expect_true(all(diff1 < threshold & diff2 < threshold))
 })
 
 
@@ -35,11 +39,10 @@ test_that("stan_glm returns expected result for glm poisson example", {
   treatment <- gl(3,3)
   fit <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
                   iter = 400, seed = 123)
-  val <- cbind(coef(fit), se(fit))
-  ans <- summary(glm(counts ~ outcome + treatment, 
-                     family = poisson()))$coefficients[,1:2]
+  val <- f1(fit)
+  ans <- f2(glm(counts ~ outcome + treatment, family = poisson()))
   diff <- abs(val - ans)
-  expect_true(all(diff < 0.1))
+  expect_true(all(diff < threshold))
 })
 
 context("stan_glm")
@@ -48,10 +51,9 @@ test_that("stan_glm returns expected result for cars example", {
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
                   family = gaussian(link = "identity"), 
                   iter = 400, seed = 123)
-  val <- cbind(coef(fit), se(fit))
-  ans <- summary(glm(log(dist) ~ log(speed), data = cars, 
-                     family = gaussian(link = "identity")))$coefficients[,1:2]
+  val <- f1(fit)
+  ans <- f2(glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity")))
   diff <- abs(val - ans)
-  testthat::expect_true(all(diff < 0.1))
+  testthat::expect_true(all(diff < threshold))
 })
 

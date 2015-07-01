@@ -7,7 +7,6 @@ functions {
     beta[1] <- alpha;
     for (k in 2:K) 
       beta[k] <- theta[k-1];
-      
     return beta;
   }
 }
@@ -64,7 +63,8 @@ model {
     else if (link == 2) 
       y ~ lognormal(eta, sigma);
     else { # link == 3
-      for (n in 1:N) eta[n] <- inv(eta[n]);
+      for (n in 1:N) 
+        eta[n] <- inv(eta[n]);
       y ~ normal(eta, sigma);
     }
   }
@@ -80,7 +80,7 @@ model {
     }
     else { # link == 3
       for (n in 1:N) 
-        summands[n] <- normal_log(y[n], 1.0 / eta[n], sigma);
+        summands[n] <- normal_log(y[n], inv(eta[n]), sigma);
     }
     increment_log_prob(dot_product(weights, summands));
   }
@@ -92,7 +92,8 @@ model {
     alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
   }
   else { # student_t
-    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
+    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                      prior_scale_for_intercept);
   }
   
   if (prior_dist == 1) { # normal

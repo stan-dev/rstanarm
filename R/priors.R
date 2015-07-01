@@ -6,18 +6,20 @@
 #' 
 #' @export 
 #' @name priors
-#' @param location prior location. Defaults to 0. For \code{normal} and 
-#' \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
-#' \code{cauchy} the mean is undefined and \code{location} is the prior median.
-#' @param scale prior scale. Default depends (see Details). 
-#' @param df prior degrees of freedom. Defaults to 1, in which case
-#' \code{student_t} is equivalent to \code{cauchy}. 
+#' @param location Prior location. Defaults to 0. For \code{normal} and 
+#'   \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
+#'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
+#'   the mean is undefined and \code{location} is the prior median.
+#' @param scale Prior scale. Default depends (see Details).
+#' @param df Prior degrees of freedom. Defaults to 1, in which case 
+#'   \code{student_t} is equivalent to \code{cauchy}.
+#'   
 #' @details If \code{scale} is not specified it will default to 10 for the 
-#' intercept and 2.5 for the other coefficients, unless the probit link function 
-#' is used, in which case these defaults are scaled by a factor of 
-#' \code{dnorm(0)/dlogis(0)} (roughly 1.6).
+#'   intercept and 2.5 for the other coefficients, unless the probit link
+#'   function is used, in which case these defaults are scaled by a factor of 
+#'   \code{dnorm(0)/dlogis(0)} (roughly 1.6).
 #'
-#' 
+#' @return A named list.
 #' @examples
 #' \dontrun{
 #' stan_lm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10))
@@ -48,9 +50,9 @@ cauchy <- function(location = 0, scale = NULL) {
 #'   regression in Gaussian models, which is given a half-Cauchy prior truncated
 #'   at zero.
 #' @param min.prior.scale Minimum prior scale for the intercept and 
-#'   coefficients. See the Details section.
-#' @param scaled Logical scalar, defaulting to \code{TRUE}, and if \code{TRUE} 
-#'   further scales the prior.scale by the range of the predictor if the 
+#'   coefficients.
+#' @param scaled Logical, defaulting to \code{TRUE}. If \code{TRUE} the 
+#'   \code{prior.scale} is further scaled by the range of the predictor if the 
 #'   predictor has exactly two unique values and scales prior.scale by twice the
 #'   standard deviation of the predictor if it has more than two unique values.
 #'
