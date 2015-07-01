@@ -10,10 +10,10 @@ stan_glm(formula, family = gaussian(), data, weights, subset,
   x = FALSE, y = TRUE, contrasts = NULL, prior = normal(),
   prior.for.intercept = normal(), prior.options = prior_options(), ...)
 
-stan_lm(formula, family = gaussian(), data, weights, subset,
-  na.action = NULL, start = NULL, offset = NULL, model = TRUE,
-  x = FALSE, y = TRUE, contrasts = NULL, prior = normal(),
-  prior.for.intercept = normal(), prior.options = prior_options(), ...)
+stan_lm(formula, data, weights, subset, na.action = NULL, start = NULL,
+  offset = NULL, model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
+  prior = normal(), prior.for.intercept = normal(),
+  prior.options = prior_options(), ...)
 }
 \arguments{
 \item{formula,family,data,subset,x,y,model}{Same as

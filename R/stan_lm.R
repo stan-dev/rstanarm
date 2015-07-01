@@ -16,13 +16,18 @@
 #' @rdname stan_glm
 #' @export
 #' 
-stan_lm <- function(formula, family = gaussian(), data, weights, subset,
+stan_lm <- function(formula, data, weights, subset,
                     na.action = NULL, start = NULL, offset = NULL, 
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
                     prior = normal(), prior.for.intercept = normal(),
                     prior.options = prior_options(), ...) {
   
+  if ("family" %in% names(list(...)))
+    warning("extra argument ", sQuote("family"), 
+            " is disregarded. Use stan_glm.", domain = NA)
+  
   mf <- call <- match.call()
+  mf[["family"]] <- gaussian(link = "identity")
   mf[[1L]] <- as.name("stan_glm")
   fit <- eval(mf, parent.frame())
   fit$call <- call
