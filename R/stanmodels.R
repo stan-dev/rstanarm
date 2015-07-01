@@ -16,11 +16,17 @@
 require(rstan)
 MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")), 
                          "rstanarm", "exec")
-stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian.stan"), 
+stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian2.stan"), 
                          model_name = "Gaussian GLM", chains = 0)
 
-stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete.stan"), 
+stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete2.stan"), 
                          model_name = "Discrete GLM", chains = 0)
+
+# stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian.stan"), 
+#                          model_name = "Gaussian GLM", chains = 0)
+# 
+# stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete.stan"), 
+#                          model_name = "Discrete GLM", chains = 0)
 
 # stanfit_clogit <- stan(file.path(MODELS_HOME, "clogit.stan"),
 #                        model_name = "Conditional logit", chains = 0)

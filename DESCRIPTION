@@ -21,3 +21,4 @@ Description: Convenient interface to Stan (Stan is an open-source package for ob
 License: GPL (>=3)
 Depends: rstan (>= 1.3.0)
 URL: http://mc-stan.org
+Suggests: testthat
