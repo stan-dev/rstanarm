@@ -14,9 +14,15 @@
 #' @param df Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #'   
-#' @details If \code{scale} is not specified it will default to 10 for the 
-#'   intercept and 2.5 for the other coefficients, unless the probit link
-#'   function is used, in which case these defaults are scaled by a factor of 
+#' @details For the prior distribution for the intercept, \code{location}, 
+#'   \code{scale}, and \code{df} should be scalars. For the prior for the other
+#'   coefficients they can either be vectors of length equal to the number of
+#'   coefficients (not including the intercept), or they can be scalars, in 
+#'   which case they will be replicated to the appropriate length.
+#'   
+#'   If \code{scale} is not specified it will default to 10 for the intercept
+#'   and 2.5 for the other coefficients, unless the probit link function is
+#'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)} (roughly 1.6).
 #'
 #' @return A named list.

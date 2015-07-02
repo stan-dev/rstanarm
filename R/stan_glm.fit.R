@@ -90,8 +90,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     denom <- apply(xtemp, 2, FUN = function(x) {
       num.categories <- length(unique(x))
       x.scale <- 1
-      if(num.categories == 2) x.scale <- diff(range(x))
-      else if(num.categories > 2) x.scale <- 2 * sd(x)
+      if (num.categories == 2) x.scale <- diff(range(x))
+      else if (num.categories > 2) x.scale <- 2 * sd(x)
     })
     prior.scale <- pmax(min.prior.scale, prior.scale / denom)
   }
