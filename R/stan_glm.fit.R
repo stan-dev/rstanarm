@@ -70,7 +70,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
       prior.scale.for.intercept <- prior.scale.for.intercept * dnorm(0) / dlogis(0)
     }
   }
-  nvars <- ncol(x) - 1
+  
+  has_intercept <- colnames(x)[1] == "(Intercept)"
+  nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
+  
   prior.df <- maybe_broadcast(prior.df, nvars)
   prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
   prior.df.for.intercept <- min(.Machine$double.xmax, prior.df.for.intercept)
@@ -82,13 +85,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
       prior.scale <- prior.scale * 2 * sd(y)
       prior.scale.for.intercept <- prior.scale.for.intercept * 2 * sd(y)
     }
-    prior.scale <- pmax(min.prior.scale, prior.scale /
-                          apply(x[,-1,drop=FALSE], 2, FUN = function(x) {
-                            num.categories <- length(unique(x))
-                            x.scale <- 1
-                            if(num.categories == 2) x.scale <- diff(range(x))
-                            else if(num.categories > 2) x.scale <- 2 * sd(x)
-                          }))
+    
+    xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
+    denom <- apply(xtemp, 2, FUN = function(x) {
+      num.categories <- length(unique(x))
+      x.scale <- 1
+      if(num.categories == 2) x.scale <- diff(range(x))
+      else if(num.categories > 2) x.scale <- 2 * sd(x)
+    })
+    prior.scale <- pmax(min.prior.scale, prior.scale / denom)
   }
   prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
@@ -98,11 +103,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     N = nrow(x), K = ncol(x), X = x, y = y, family = fam, link = link,
     weights = weights, has_weights = as.integer(!all(weights == 1)), 
     offset = offset, has_offset = as.integer(!all(offset == 0)),
-    prior_dist = prior.dist, prior_dist_for_intercept = prior.dist.for.intercept,
-    prior_mean = prior.mean, prior_scale = prior.scale, prior_df = prior.df,
-    prior_scale_for_intercept = prior.scale.for.intercept,
+    prior_dist = prior.dist, prior_mean = prior.mean, prior_scale = prior.scale, 
+    prior_df = prior.df, prior_dist_for_intercept = prior.dist.for.intercept,
+    prior_scale_for_intercept = prior.scale.for.intercept, 
     prior_mean_for_intercept = prior.mean.for.intercept,
-    prior_df_for_intercept = prior.df.for.intercept)
+    prior_df_for_intercept = prior.df.for.intercept,
+    has_intercept = as.integer(has_intercept))
   
   if (family$family == "gaussian") {
     standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
