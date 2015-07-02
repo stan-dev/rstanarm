@@ -1,13 +1,33 @@
 # GLM for a discrete outcome with Gaussian or t priors
 functions {
-  vector coefficient_vector(real alpha, vector theta, int K) {
+  # Combine intercept and coefficients into a vector or return coefficients
+  # if no intercept. 
+  #
+  # @param alpha array of size 0 or 1 depending on if model has intercept
+  # @param theta vector of coefficients (not including intercept) of size 
+  #   K-1 or K depending on if model has intercept
+  # @param K number of columns of the predictor matrix X 
+  # @return if the model has an intercept then the function combines alpha
+  #   and theta into a vector. if the model doesn't have an intercept then 
+  #   theta itself is returned
+  vector coefficient_vector(real[] alpha, vector theta, int K) {
     vector[K] beta;
-    if (K != rows(theta) + 1) 
-      reject("Dimension mismatch");
-    beta[1] <- alpha;
-    for (k in 2:K) 
-      beta[k] <- theta[k-1];
-    return beta;
+    int S;
+    S <- size(alpha);
+    if (S == 0) {
+      if (K != rows(theta)) {
+        reject("Dimension mismatch");
+      }
+      return theta;
+    }
+    else 
+      if (K != 1 + rows(theta)) {
+        reject("Dimension mismatch");
+      }
+      beta[1] <- alpha[1];
+      for (k in 2:K) 
+        beta[k] <- theta[k-1];
+      return beta;
   }
 }
 data {
@@ -18,6 +38,9 @@ data {
   # data
   matrix[N,K]  X; # predictor matrix
   int<lower=0> y[N]; # discrete outcome
+  
+  # intercept
+  int<lower=0,upper=1> has_intercept; # 1 = yes
   
   # likelihood
   int<lower=1> family; # 1 = binomial, other = poisson
@@ -38,22 +61,23 @@ data {
   int<lower=1,upper=2> prior_dist_for_intercept; # 1 = normal, 2 = student_t
   
   # hyperparameter values
-  vector<lower=0>[K-1] prior_scale;
+  vector<lower=0>[K - has_intercept] prior_scale;
   real<lower=0> prior_scale_for_intercept;
-  vector[K-1] prior_mean;
+  vector[K - has_intercept] prior_mean;
   real prior_mean_for_intercept;
-  vector<lower=0>[K-1] prior_df;
+  vector<lower=0>[K - has_intercept] prior_df;
   real<lower=0> prior_df_for_intercept;
 }
 parameters {
-  real alpha;
-  vector[K-1] theta;
+  real alpha[has_intercept];
+  vector[K - has_intercept] theta;
 }
 model {
   vector[N] eta;
   vector[K] beta;
   
-  beta <- coefficient_vector(alpha, theta, K);
+  beta <- coefficient_vector(alpha, theta, K);  
+  
   eta <- X * beta;
   if (has_offset == 1) 
     eta <- eta + offset;
@@ -106,22 +130,23 @@ model {
   }
   
   # log-priors
-  if (prior_dist_for_intercept == 1) { # normal
-    alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-  }
-  else { # student_t
-    alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                      prior_scale_for_intercept);
-  }
-  
   if (prior_dist == 1) { # normal
     theta ~ normal(prior_mean, prior_scale);  
   } 
   else { # student_t
     theta ~ student_t(prior_df, prior_mean, prior_scale);
   }
+  if (has_intercept) {
+    if (prior_dist_for_intercept == 1) { # normal
+      alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    }
+    else { # student_t
+      alpha ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                        prior_scale_for_intercept);
+    }
+  }
 }
 generated quantities {
   vector[K] beta;
-  beta <- coefficient_vector(alpha, theta, K);
+  beta <- coefficient_vector(alpha, theta, K);  
 }
