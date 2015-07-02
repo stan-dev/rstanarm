@@ -14,14 +14,15 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
-                         offset = rep(0, NROW(x)), family = gaussian(), intercept = TRUE,
-                         # above arguments from glm(), 
+                         offset = rep(0, NROW(x)), family = gaussian(),
                          prior.dist = c("normal", "t"), 
                          prior.dist.for.intercept = c("normal", "t"), 
-                         # below arguments from arm:::bayesglm()
+                         scaled = TRUE, 
                          prior.mean = 0, prior.scale = NULL, prior.df = 1,
-                         prior.mean.for.intercept = 0, prior.scale.for.intercept = NULL,
-                         prior.df.for.intercept = 1, min.prior.scale = 1e-12, scaled = TRUE,
+                         prior.mean.for.intercept = 0, 
+                         prior.scale.for.intercept = NULL, 
+                         prior.df.for.intercept = 1,
+                         min.prior.scale = 1e-12, 
                          prior.scale.for.dispersion = 5, 
                          ...) { # further arguments to stan()
   
@@ -29,9 +30,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     family <- get(family, mode = "function", envir = parent.frame())
   if (is.function(family)) 
     family <- family()
-  if(!is(family, "family")) stop("'family' must be a family")
-  
-  x <- as.matrix(x)
+  if(!is(family, "family")) 
+    stop("'family' must be a family")
   
   # these are from help(family)
   supported_families <- c("binomial", "gaussian", "Gamma",
@@ -53,26 +53,20 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   link <- which(supported_links == family$link)
   if (length(link) == 0) stop("'link' must be one of ", supported_links)
   
+  x <- as.matrix(x)
+  has_intercept <- colnames(x)[1] == "(Intercept)"
+  nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
+  
   # prior distribution
   prior.dist <- match.arg(prior.dist)
   prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
   prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)
   prior.dist.for.intercept <- ifelse(prior.dist.for.intercept == "normal", 1L, 2L)
   
-  # process hyperprior values like arm:::bayesglm() does
-  if (is.null(prior.scale)) {
-    prior.scale <- 2.5
-    if (family$link == "probit") prior.scale <- prior.scale * dnorm(0) / dlogis(0)
-  }
-  if (is.null(prior.scale.for.intercept)) {
-    prior.scale.for.intercept <- 10
-    if (family$link == "probit") {
-      prior.scale.for.intercept <- prior.scale.for.intercept * dnorm(0) / dlogis(0)
-    }
-  }
-  
-  has_intercept <- colnames(x)[1] == "(Intercept)"
-  nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
+  # process hyperprior values
+  prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
+  prior.scale.for.intercept <- set_prior_scale(prior.scale.for.intercept, 
+                                               default = 10, link = family$link)
   
   prior.df <- maybe_broadcast(prior.df, nvars)
   prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
@@ -98,7 +92,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
   
-  # create entries in the data {} block of the .stan file
+  # create entries in the data block of the .stan file
   standata <- list(
     N = nrow(x), K = ncol(x), X = x, y = y, family = fam, link = link,
     weights = weights, has_weights = as.integer(!all(weights == 1)), 
@@ -128,7 +122,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
   
-  stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, init = start, ...)
+  stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, 
+                         init = start, ...)
   betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)
   stanfit@sim$fnames_oi[betas] <- colnames(x)
   stanfit

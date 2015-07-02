@@ -51,3 +51,13 @@ validate_parameter_value <- function(x) {
     stop(paste(nm, "should be positive"))
   }
 }
+
+set_prior_scale <- function(scale, default, link) {
+  stopifnot(is.numeric(default), is.character(link))
+  if (is.null(scale))
+    scale <- default
+  if (link == "probit")
+    scale * dnorm(0) / dlogis(0)
+  else 
+    scale
+}
