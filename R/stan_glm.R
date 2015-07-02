@@ -130,10 +130,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
-  # if Y is a factor with 2 levels then convert to 0/1 variable
-  if (is.binfac(Y)) 
-    Y <- fac2bin(Y)
-  
+
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(, NROW(Y), 0L)
   weights <- as.vector(model.weights(mf))

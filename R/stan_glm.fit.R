@@ -53,6 +53,22 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   link <- which(supported_links == family$link)
   if (length(link) == 0) stop("'link' must be one of ", supported_links)
   
+  
+  if (family$family == "binomial") {
+    if (NCOL(y) != 1) {
+      # we don't support 2-column matrix of success and failure counts yet
+      stop("model not supported yet")
+    } else {
+      # convert factors to 0/1 using R's convention that first factor level is
+      # treated as failure
+      if (is.factor(y)) 
+        y <- y != levels(y)[1L]
+      y <- as.integer(y)
+      if (!all(y %in% c(0L, 1L))) 
+        stop("y values must be 0 or 1 for bernoulli model (logistic regression)")
+    } 
+  }
+
   x <- as.matrix(x)
   has_intercept <- colnames(x)[1] == "(Intercept)"
   nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)

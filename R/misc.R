@@ -14,19 +14,6 @@ maybe_broadcast <- function(x, n) {
     x
 }
 
-is.binfac <- function(x) {
-  # test if x is a factor with 2 levels (binary factor)
-  is.factor(x) && nlevels(x) == 2L
-}
-
-fac2bin <- function(x) {
-  # convert factor with 2 levels to 0/1
-  if (!is.binfac(x)) 
-    stop("x should be a factor with 2 levels")
-  z <- as.numeric(x)
-  ifelse(z == max(z), 1L, 0L)
-}
-
 nlist <- function(...) {
   # named lists
   m <- match.call()
