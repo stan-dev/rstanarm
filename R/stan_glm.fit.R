@@ -37,9 +37,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   supported_families <- c("binomial", "gaussian", "Gamma",
                           "inverse.gaussian","poisson")
   fam <- which(supported_families == family$family)
-  if(length(fam) == 0) {
+  if(length(fam) == 0) 
     stop("'family' must be one of ", supported_families)
-  }
   
   # these are also from help(family)
   supported_links <- switch(supported_families[fam],
@@ -51,7 +50,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                             stop("unsupported family")
   )
   link <- which(supported_links == family$link)
-  if (length(link) == 0) stop("'link' must be one of ", supported_links)
+  if (length(link) == 0) 
+    stop("'link' must be one of ", supported_links)
   
   if (family$family == "binomial") {
     if (NCOL(y) != 1) {
@@ -90,8 +90,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.scale <- maybe_broadcast(prior.scale, nvars)
   if (scaled) {
     if (family$family == "gaussian") {
-      prior.scale <- prior.scale * 2 * sd(y)
-      prior.scale.for.intercept <- prior.scale.for.intercept * 2 * sd(y)
+      ss <- 2 * sd(y)
+      prior.scale <- ss * prior.scale
+      prior.scale.for.intercept <-  ss * prior.scale.for.intercept
     }
     xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
     denom <- apply(xtemp, 2, FUN = function(x) {
@@ -117,9 +118,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_df_for_intercept = prior.df.for.intercept,
     has_intercept = as.integer(has_intercept))
   
-  if (family$family == "gaussian") {
+  if (family$family == "gaussian") 
     standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
-  }
   
   # call stan() to draw from posterior distribution
   if (supported_families[fam] == "gaussian") {
@@ -133,8 +133,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- if (family$family == "gaussian") 
-    c("beta", "sigma") else "beta"
+  pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
   stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, 
                          init = start, ...)
   betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)

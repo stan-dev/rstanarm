@@ -33,6 +33,3 @@ stan_lm <- function(formula, data, weights, subset,
   fit$call <- call
   fit
 }
-
-
-

@@ -18,26 +18,30 @@ prior_options(prior.scale.for.dispersion = 5, min.prior.scale = 1e-12,
   scaled = TRUE)
 }
 \arguments{
-\item{location}{prior location. Defaults to 0. For \code{normal} and
+\item{location}{Prior location. Defaults to 0. For \code{normal} and
 \code{student_t} (provided that \code{df > 1}) this is the prior mean. For
-\code{cauchy} the mean is undefined and \code{location} is the prior median.}
+\code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}),
+the mean is undefined and \code{location} is the prior median.}
 
-\item{scale}{prior scale. Default depends (see Details).}
+\item{scale}{Prior scale. Default depends (see Details).}
 
-\item{df}{prior degrees of freedom. Defaults to 1, in which case
-\code{student_t} is equivalent to \code{cauchy}.}
+\item{df}{Prior degrees of freedom. Defaults to 1, in which case
+  \code{student_t} is equivalent to \code{cauchy}.}
 
 \item{prior.scale.for.dispersion}{Prior scale for the standard error of the
 regression in Gaussian models, which is given a half-Cauchy prior truncated
 at zero.}
 
 \item{min.prior.scale}{Minimum prior scale for the intercept and
-coefficients. See the Details section.}
+coefficients.}
 
-\item{scaled}{Logical scalar, defaulting to \code{TRUE}, and if \code{TRUE}
-further scales the prior.scale by the range of the predictor if the
+\item{scaled}{Logical, defaulting to \code{TRUE}. If \code{TRUE} the
+\code{prior.scale} is further scaled by the range of the predictor if the
 predictor has exactly two unique values and scales prior.scale by twice the
 standard deviation of the predictor if it has more than two unique values.}
+}
+\value{
+A named list.
 }
 \description{
 These functions are used to specify the \code{prior} and
@@ -45,10 +49,16 @@ These functions are used to specify the \code{prior} and
 \code{stan_lm}, and \code{stan_glm} functions.
 }
 \details{
-If \code{scale} is not specified it will default to 10 for the
-intercept and 2.5 for the other coefficients, unless the probit link function
-is used, in which case these defaults are scaled by a factor of
-\code{dnorm(0)/dlogis(0)} (roughly 1.6).
+For the prior distribution for the intercept, \code{location},
+  \code{scale}, and \code{df} should be scalars. For the prior for the other
+  coefficients they can either be vectors of length equal to the number of
+  coefficients (not including the intercept), or they can be scalars, in
+  which case they will be replicated to the appropriate length.
+
+  If \code{scale} is not specified it will default to 10 for the intercept
+  and 2.5 for the other coefficients, unless the probit link function is
+  used, in which case these defaults are scaled by a factor of
+  \code{dnorm(0)/dlogis(0)} (roughly 1.6).
 }
 \examples{
 \dontrun{
