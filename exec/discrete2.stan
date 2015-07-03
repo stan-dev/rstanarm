@@ -17,15 +17,13 @@ functions {
     int S;
     S <- size(alpha);
     if (S == 0) {
-      if (K != rows(theta)) {
+      if (K != rows(theta))
         reject("Dimension mismatch");
-      }
       return theta;
     }
     else 
-      if (K != 1 + rows(theta)) {
+      if (K != 1 + rows(theta))
         reject("Dimension mismatch");
-      }
       beta[1] <- alpha[1];
       for (k in 2:K) 
         beta[k] <- theta[k-1];
@@ -55,11 +53,9 @@ functions {
   vector linkinv_pois(vector eta, int link) {
     vector[rows(eta)] phi;
     if (link < 2 || link > 3) reject("Invalid link");
-    if (link == 2) phi <- eta; # link = identity
-    else { # link = sqrt
-      for(n in 1:rows(eta)) 
-        phi[n] <- square(eta[n]); 
-    }
+    if (link == 2) return(eta); # link = identity
+    else  # link = sqrt
+      for(n in 1:rows(eta)) phi[n] <- square(eta[n]); 
     return phi;
   }
   
@@ -73,7 +69,8 @@ functions {
   vector pw_binom(int[] y, vector eta, int link) {
     vector[rows(eta)] ll;
     vector[rows(eta)] pi;
-    if (link < 1 || link > 5) reject("Invalid link");
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
     if (link == 1) { # link = logit
       for (n in 1:rows(eta)) ll[n] <- bernoulli_logit_log(y[n], eta[n]);
     }
@@ -87,9 +84,8 @@ functions {
     vector[rows(eta)] ll;
     vector[rows(eta)] phi;
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1) { # link = log
+    if (link == 1) # link = log
       for (n in 1:rows(eta)) ll[n] <- poisson_log_log(y[n], eta[n]);
-    }
     else { # link = identity or sqrt
       phi <- linkinv_pois(eta, link);
       for (n in 1:rows(eta)) ll[n] <- poisson_log(y[n], phi[n]) ;
@@ -136,12 +132,12 @@ data {
   real<lower=0> prior_df_for_intercept;
 }
 parameters {
-  real alpha[has_intercept];
-  vector[K - has_intercept] theta;
+  real alpha[has_intercept]; # intercept (if has_intercept == 1)
+  vector[K - has_intercept] theta; # coefficients
 }
 model {
-  vector[N] eta;
-  vector[K] beta;
+  vector[N] eta; # linear predictor
+  vector[K] beta; # coefficients including intercept
   beta <- coefficient_vector(alpha, theta, K);  
   eta <- X * beta;
   if (has_offset == 1) eta <- eta + offset;
