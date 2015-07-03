@@ -53,7 +53,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   link <- which(supported_links == family$link)
   if (length(link) == 0) stop("'link' must be one of ", supported_links)
   
-  
   if (family$family == "binomial") {
     if (NCOL(y) != 1) {
       # we don't support 2-column matrix of success and failure counts yet
@@ -68,7 +67,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
         stop("y values must be 0 or 1 for bernoulli model (logistic regression)")
     } 
   }
-
+  
   x <- as.matrix(x)
   has_intercept <- colnames(x)[1] == "(Intercept)"
   nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
@@ -83,7 +82,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
   prior.scale.for.intercept <- set_prior_scale(prior.scale.for.intercept, 
                                                default = 10, link = family$link)
-  
   prior.df <- maybe_broadcast(prior.df, nvars)
   prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
   prior.df.for.intercept <- min(.Machine$double.xmax, prior.df.for.intercept)
@@ -95,7 +93,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
       prior.scale <- prior.scale * 2 * sd(y)
       prior.scale.for.intercept <- prior.scale.for.intercept * 2 * sd(y)
     }
-    
     xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
     denom <- apply(xtemp, 2, FUN = function(x) {
       num.categories <- length(unique(x))
@@ -136,8 +133,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
-  
+  pars <- if (family$family == "gaussian") 
+    c("beta", "sigma") else "beta"
   stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, 
                          init = start, ...)
   betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)

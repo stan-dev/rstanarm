@@ -29,6 +29,10 @@ stanreg <- function(object) {
     residuals <- y - mu
     attr(residuals, "type") <- "response"
   } else {
+    if (family$family == "binomial") {
+      if (is.factor(y))
+        y <- y != levels(y)[1L]
+    }
     d.res <- sqrt(pmax((object$family$dev.resids)(y, mu, weights), 0))
     residuals <- ifelse(y > mu, d.res, -d.res)
     attr(residuals, "type") <- "deviance"
