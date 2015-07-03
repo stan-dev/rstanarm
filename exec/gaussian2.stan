@@ -119,7 +119,7 @@ model {
     theta ~ student_t(prior_df, prior_mean, prior_scale);
   }
   
-  if (has_intercept) {
+  if (has_intercept == 1) {
     if (prior_dist_for_intercept == 1) { # normal
       alpha ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
     }
