@@ -18,6 +18,7 @@ test_that("stan_lm returns expected result for mtcars example", {
   diff <- abs(val - ans)
   expect_true(all(diff < threshold))
 })
+context("stan_lm and stan_glm")
 test_that("gaussian(link = 'log') returns expected result for trees example", {
   # example using trees dataset
   fit1 <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
@@ -31,7 +32,7 @@ test_that("gaussian(link = 'log') returns expected result for trees example", {
 })
 
 
-context("stan_glm")
+context("stan_glm (poisson)")
 test_that("stan_glm returns expected result for glm poisson example", {
   # example from help("glm")
   counts <- c(18,17,15,20,10,20,25,13,12)
@@ -45,7 +46,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   expect_true(all(diff < threshold))
 })
 
-context("stan_glm")
+context("stan_glm (gaussian)")
 test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
@@ -57,3 +58,25 @@ test_that("stan_glm returns expected result for cars example", {
   testthat::expect_true(all(diff < threshold))
 })
 
+context("stan_glm (bernoulli)")
+test_that("stan_glm returns expected result for bernoulli (logit and probit)", {
+  # bernoulli example
+  sd1 <- 1; sd2 <- 3; corr_12 <- -0.4
+  Sigma <- matrix(c(sd1^2, rep(prod(corr_12, sd1, sd2), 2), sd2^2), 2, 2)
+  x <- t(t(chol(Sigma)) %*% matrix(rnorm(500), 2, 250))
+  b <- c(-0.5, 1)
+  theta <- 1/(1 + exp(-x %*% b))
+  y <- rbinom(length(theta), size = 1, prob = theta)
+  
+  fit <- stan_glm(y ~ x, family = "binomial", iter = 400, seed = 123)
+  fit2 <- stan_glm(y ~ x, family = binomial(link = "probit"), iter = 400, 
+                   seed = 123)
+  val <- f1(fit) 
+  val2 <- f1(fit2)
+  ans <- f2(glm(y ~ x, family = "binomial"))
+  ans2 <- f2(glm(y ~ x, family = binomial(link = "probit"))) 
+  diff <- abs(val - ans)
+  diff2 <- abs(val2 - ans2)
+  testthat::expect_true(all(diff < threshold))
+  testthat::expect_true(all(diff2 < threshold))
+})
