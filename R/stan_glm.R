@@ -46,7 +46,6 @@
 #'   generalized linear model. The \code{stan_lm} function calls \code{stan_glm}
 #'   with \code{family = gaussian}.
 #' 
-#'
 #' @return An object of class \code{"stanreg"}, which is a list containing the 
 #'   components
 #' 

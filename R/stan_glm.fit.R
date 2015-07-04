@@ -47,8 +47,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                             Gamma = c("inverse", "identity", "log"),
                             inverse.gaussian = c("1/mu^2", "inverse", "identity", "log"),
                             poisson = c("log", "identity", "sqrt"),
-                            stop("unsupported family")
-  )
+                            stop("unsupported family"))
   link <- which(supported_links == family$link)
   if (length(link) == 0) 
     stop("'link' must be one of ", supported_links)
@@ -72,7 +71,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   has_intercept <- colnames(x)[1] == "(Intercept)"
   nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
   
-  # prior distribution
+  # prior distributions
   prior.dist <- match.arg(prior.dist)
   prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
   prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)

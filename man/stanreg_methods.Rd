@@ -26,7 +26,8 @@ se(object, parm)
 \method{summary}{stanreg}(object, ...)
 }
 \arguments{
-\item{object,x}{a \code{stanreg} object.}
+\item{object,x}{a model fit with \code{\link{stan_lm}} or
+\code{\link{stan_glm}}.}
 
 \item{...}{other arguments. See Details.}
 

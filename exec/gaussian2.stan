@@ -37,9 +37,9 @@ functions {
    * @return A vector, i.e. inverse-link(eta)
    */
   vector linkinv_gaus(vector eta, int link) {
-    if (link == 2 || link > 3) reject("Invalid link");
-    if (link == 1) # link = identity
-      return(eta); 
+    if (link > 3) reject("Invalid link");
+    if (link == 1 || link == 2) # link = identity or log 
+      return(eta); # return eta for log link too bc will use lognormal
     else {# link = inverse
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
@@ -118,13 +118,12 @@ model {
   
   // Log-likelihood 
   if (has_weights == 0) { # unweighted log-likelihoods
-    if (link == 2) # link = log
-      y ~ lognormal(eta, sigma);
-    else { # link = identity or inverse
-      vector[N] mu;
-      mu <- linkinv_gaus(eta, link);
+    vector[N] mu;
+    mu <- linkinv_gaus(eta, link);
+    if (link == 2)
+      y ~ lognormal(mu, sigma);
+    else 
       y ~ normal(mu, sigma);
-    }
   }
   else { # weighted log-likelihoods
     vector[N] summands;

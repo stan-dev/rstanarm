@@ -1,6 +1,6 @@
 #' Prior distributions
 #' 
-#' These functions are used to specify the \code{prior} and 
+#' These functions are used to specify the \code{prior}, 
 #' \code{prior.for.intercept}, and \code{prior.options} arguments of the
 #' \code{stan_lm}, and \code{stan_glm} functions.
 #' 
