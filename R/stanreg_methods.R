@@ -3,7 +3,8 @@
 #' 
 #' @export
 #' 
-#' @param object,x a \code{stanreg} object. 
+#' @param object,x a model fit with \code{\link{stan_lm}} or
+#'   \code{\link{stan_glm}}.
 #' @param ... other arguments. See Details.
 #' @param parm a character vector of parameter names.
 #' @param level confidence level.

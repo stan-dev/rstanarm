@@ -31,11 +31,11 @@
 #'   
 #' @param prior Prior for coefficients. See \code{\link{priors}}.
 #' @param prior.for.intercept Prior for intercept. See \code{\link{priors}}.
-#' @param prior.options Additional options related to prior distributions. 
-#' See \code{\link{priors}}.
+#' @param prior.options Additional options related to prior distributions. See
+#'   \code{\link{priors}}.
 #'   
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-#'   \code{iter}, \code{chains}, etc.).
+#'   \code{iter}, \code{chains}, \code{refresh}, etc.)
 #' 
 #'
 #' @details The \code{stan_glm} function is similar in syntax to 
@@ -46,9 +46,8 @@
 #'   generalized linear model. The \code{stan_lm} function calls \code{stan_glm}
 #'   with \code{family = gaussian}.
 #' 
-#'
-#' @return An object of class \code{"stanreg"}, which is a list containing the
-#' components
+#' @return An object of class \code{"stanreg"}, which is a list containing the 
+#'   components
 #' 
 #' \describe{
 #'   \item{coefficients}{named vector of coefficients (posterior means)}
@@ -72,7 +71,7 @@
 #'   \item{data}{the \code{data} argument.}
 #'   \item{prior.info}{a list with information about the prior distributions
 #'   used.}
-#'   \item{stanfit}{the stanfit object}
+#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}}
 #' } 
 #' 
 #' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
@@ -130,10 +129,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
-  # if Y is a factor with 2 levels then convert to 0/1 variable
-  if (is.binfac(Y)) 
-    Y <- fac2bin(Y)
-  
+
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(, NROW(Y), 0L)
   weights <- as.vector(model.weights(mf))
@@ -149,7 +145,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   else offset <- rep(0, nrow(X))
   
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
-                          intercept = TRUE, offset = offset, family = family, 
+                          offset = offset, family = family, 
                           prior.dist = prior$dist,
                           prior.dist.for.intercept = prior.for.intercept$dist,
                           prior.mean = prior$location, prior.scale = prior$scale, 

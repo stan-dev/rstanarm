@@ -30,15 +30,15 @@ stan_lm(formula, data, weights, subset, na.action = NULL, start = NULL,
 
 \item{prior.for.intercept}{Prior for intercept. See \code{\link{priors}}.}
 
-\item{prior.options}{Additional options related to prior distributions.
-See \code{\link{priors}}.}
+\item{prior.options}{Additional options related to prior distributions. See
+  \code{\link{priors}}.}
 
 \item{...}{Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-  \code{iter}, \code{chains}, etc.).}
+  \code{iter}, \code{chains}, \code{refresh}, etc.)}
 }
 \value{
 An object of class \code{"stanreg"}, which is a list containing the
-components
+  components
 
 \describe{
   \item{coefficients}{named vector of coefficients (posterior means)}
@@ -62,7 +62,7 @@ components
   \item{data}{the \code{data} argument.}
   \item{prior.info}{a list with information about the prior distributions
   used.}
-  \item{stanfit}{the stanfit object}
+  \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}}
 }
 
 The accessor functions \code{coef}, \code{fitted}, and \code{resid}

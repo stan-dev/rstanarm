@@ -14,19 +14,6 @@ maybe_broadcast <- function(x, n) {
     x
 }
 
-is.binfac <- function(x) {
-  # test if x is a factor with 2 levels (binary factor)
-  is.factor(x) && nlevels(x) == 2L
-}
-
-fac2bin <- function(x) {
-  # convert factor with 2 levels to 0/1
-  if (!is.binfac(x)) 
-    stop("x should be a factor with 2 levels")
-  z <- as.numeric(x)
-  ifelse(z == max(z), 1L, 0L)
-}
-
 nlist <- function(...) {
   # named lists
   m <- match.call()
@@ -46,8 +33,18 @@ nlist <- function(...) {
 }
 
 validate_parameter_value <- function(x) {
-  if (!is.null(x) && x <= 0) {
+  if (!is.null(x) & any(x <= 0)) {
     nm <- deparse(substitute(x))
     stop(paste(nm, "should be positive"))
   }
+}
+
+set_prior_scale <- function(scale, default, link) {
+  stopifnot(is.numeric(default), is.character(link))
+  if (is.null(scale))
+    scale <- default
+  if (link == "probit")
+    scale * dnorm(0) / dlogis(0)
+  else 
+    scale
 }
