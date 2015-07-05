@@ -166,15 +166,15 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
-               data, prior.info, call = call, terms = mt, 
-               model = if (model) mf else NULL, 
+               data, prior.info, call = call, terms = mt, model = mf, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   
-  fit <- stanreg(fit)
-  if (!x) fit$x <- NULL
-  if (!y) fit$y <- NULL
-  fit
+  out <- stanreg(fit)
+  if (!x) out$x <- NULL
+  if (!y) out$y <- NULL
+  if (!model) out$model <- NULL
+  out
 }
 
 

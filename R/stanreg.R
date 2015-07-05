@@ -43,6 +43,13 @@ stanreg <- function(object) {
   beta <- rstan::extract(stanfit, pars = "beta")$beta
   covmat <- cov(beta)
   
+  # pointwise log-likelihood
+  llargs <- nlist(family, x, y, weights, offset, beta, sigma = NULL)
+  if (family$family == "gaussian") {
+    llargs$sigma <- rstan::extract(stanfit, pars = "sigma")$sigma  
+  } 
+  log_lik <- pw_log_lik(llargs)
+  
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
@@ -54,8 +61,8 @@ stanreg <- function(object) {
     offset = object$offset, weights = weights, prior.weights = weights, 
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
-    prior.info = object$prior.info, stan_summary = stan_summary, 
-    stanfit = stanfit
+    prior.info = object$prior.info, log_lik = log_lik,
+    stan_summary = stan_summary, stanfit = stanfit
   )
   class(out) <- c("stanreg", "glm", "lm")
   out

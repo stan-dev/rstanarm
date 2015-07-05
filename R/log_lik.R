@@ -1,31 +1,28 @@
-#' Pointwise log-likelihood
-#' 
-#' Compute the \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S}
-#' is the size of the posterior sample (the number of simulations) and \eqn{N}
-#' is the number of data points.
-#' 
-#' @export 
-#' @param object a model fit with \code{\link{stan_lm}} or
-#'   \code{\link{stan_glm}}.
-#' @return a matrix.
-#' 
-log_lik <- function(object) {
-  fam <- object$family
+# Pointwise log-likelihood
+# 
+# Internal functions to compute the S by N pointwise log-likelihood matrix,
+# where S is the size of the posterior sample (the number of simulations) and N
+# is the number of data points.
+# 
+# @param llargs list with components family, x, y, weights, offset, beta, and
+# sigma (note: sigma should be NULL if not gaussian model)
+#
+# @return a matrix.
+#
+pw_log_lik <- function(llargs) {
+  fam <- llargs$family
   famname <- fam$family
   llfun <- paste0(".ll_", famname)
-  y <- model.response(object$model)
-  X <- model.matrix(object)
-  beta <- as.matrix(rstan::extract(object$stanfit, pars = "beta")$beta)
-  theta <- fam$linkinv(X %*% t(beta))
-  llargs <- nlist(y, theta)
-  if (famname == "gaussian") {
-    llargs$sigma <- rstan::extract(object$stanfit, pars = "sigma")$sigma  
-  }
-  ll <- do.call(llfun, llargs)
-  if (all(object$weights == 1)) 
-    ll 
-  else 
-    sweep(ll, MARGIN = 2, object$weights,`*`)
+  eta <- llargs$x %*% t(llargs$beta)
+  if (any(llargs$offset != 0))
+    eta <- sweep(eta, MARGIN = 1L, llargs$offset, `+`)
+  theta <- fam$linkinv(eta)
+  args <- list(y = llargs$y, theta = theta)
+  if (!is.null(llargs$sigma))
+    args$sigma <- llargs$sigma
+  ll <- do.call(llfun, args)
+  if (all(llargs$weights == 1)) ll 
+  else sweep(ll, MARGIN = 2L, llargs$weights,`*`)
 }
 
 .ll_gaussian <- function(y, theta, sigma) {

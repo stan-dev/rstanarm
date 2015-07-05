@@ -42,10 +42,6 @@ vcov.stanreg <- function(object, ...) {
 
 #' @rdname stanreg_methods
 #' @export
-se <- function(object, parm) UseMethod("se")
-
-#' @rdname stanreg_methods
-#' @export
 se.stanreg <- function(object, parm) {
   pnms <- names(coef(object))
   if (missing(parm)) parm <- pnms
@@ -75,5 +71,11 @@ summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
   summary(object$stanfit, ...)$summary
+}
+
+#' @rdname stanreg_methods
+#' @export
+log_lik.stanreg <- function(object) {
+  object$log_lik
 }
 
