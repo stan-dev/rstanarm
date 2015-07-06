@@ -1,4 +1,8 @@
-# tests can be run using devtools::test() or manually by loading testthat 
+# The tests in this file check that for very simple models with default priors 
+# the point estimates and standard error estimates are similar to the results 
+# from the corresponding R function (lm or glm).
+
+# Tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below.
 
 library(rstanarm)
