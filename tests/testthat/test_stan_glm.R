@@ -10,14 +10,20 @@ f1 <- function(x) cbind(coef(x), se(x))
 f2 <- function(x) summary(x)$coefficients[,1:2]
 
 context("stan_lm")
-test_that("stan_lm returns expected result for mtcars example", {
-  # example using mtcars dataset
-  fit <- stan_lm(mpg ~ wt, data = mtcars, iter = 400, seed = 123)
+test_that("stan_lm returns expected result for simulated example", {
+  # example using fake data
+  N <- 100
+  X <- cbind(rnorm(N), rnorm(N))
+  b <- c( -1, .1)
+  a <- .5
+  y <- a + X %*% b + rnorm(N)
+  fit <- stan_lm(y ~ X, iter = 400, seed = 123)
   val <- f1(fit)
-  ans <- f2(lm(mpg ~ wt, data = mtcars))
+  ans <- f2(lm(y ~ X))
   diff <- abs(val - ans)
   expect_true(all(diff < threshold))
 })
+
 context("stan_lm and stan_glm")
 test_that("gaussian(link = 'log') returns expected result for trees example", {
   # example using trees dataset
