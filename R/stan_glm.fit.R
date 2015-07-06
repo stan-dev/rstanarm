@@ -87,13 +87,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.mean <- maybe_broadcast(prior.mean, nvars)
   prior.mean <- as.array(prior.mean)
   prior.scale <- maybe_broadcast(prior.scale, nvars)
+  
+  xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
   if (scaled) {
     if (family$family == "gaussian") {
       ss <- 2 * sd(y)
       prior.scale <- ss * prior.scale
       prior.scale.for.intercept <-  ss * prior.scale.for.intercept
     }
-    xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
     denom <- apply(xtemp, 2, FUN = function(x) {
       num.categories <- length(unique(x))
       x.scale <- 1
@@ -107,7 +108,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   # create entries in the data block of the .stan file
   standata <- list(
-    N = nrow(x), K = ncol(x), X = x, y = y, family = fam, link = link,
+    N = nrow(x), K = ncol(xtemp), X = xtemp, y = y, family = fam, link = link,
     weights = weights, has_weights = as.integer(!all(weights == 1)), 
     offset = offset, has_offset = as.integer(!all(offset == 0)),
     prior_dist = prior.dist, prior_mean = prior.mean, prior_scale = prior.scale, 
