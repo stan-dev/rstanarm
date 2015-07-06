@@ -90,3 +90,21 @@ test_that("stan_glm returns expected result for bernoulli (logit and probit)", {
   testthat::expect_true(all(diff < threshold))
   testthat::expect_true(all(diff2 < threshold))
 })
+
+context("stan_glm (binomial)")
+test_that("stan_glm returns expected result for binomial example", {
+  # example using simulated data
+  N <- 50
+  trials <- rpois(N, lambda = 30)
+  X <- cbind(1, matrix(rnorm(N * 3), N, 3))
+  b <- c(-0.5, 0.5, 0.1, -0.75)
+  yes <- rbinom(N, size = trials, prob = 1 / (1 + exp(- X %*% b)))
+  y <- cbind(yes, trials - yes)
+  X <- X[,-1]
+  fit <- stan_glm(y ~ X, family = binomial, iter = 400, seed = 123)
+  val <- f1(fit)
+  ans <- f2(glm(y ~ X, family = binomial))
+  diff <- abs(val - ans)
+  testthat::expect_true(all(diff < threshold))
+})
+
