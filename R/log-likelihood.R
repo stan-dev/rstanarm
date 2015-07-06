@@ -25,6 +25,7 @@ pw_log_lik <- function(llargs) {
   else sweep(ll, MARGIN = 2L, llargs$weights,`*`)
 }
 
+# pw_log_lik calls one of the functions below depending on the model
 .ll_gaussian <- function(y, theta, sigma) {
   t(sapply(1:ncol(theta), function(s) {
     dnorm(y, mean = theta[,s], sd = sigma[s], log = TRUE)

@@ -3,8 +3,9 @@
 #' @name se
 #' @keywords internal
 #' @export
-#' @param object The object to use. 
+#' @param object object to use. 
 #' @param parm A character vector of parameter names.
+#' @return estimated standard errors for the parameters named in \code{parm}.
 #' 
 se <- function(object, parm) UseMethod("se")
 
@@ -14,6 +15,7 @@ se <- function(object, parm) UseMethod("se")
 #' @name log_lik
 #' @keywords internal
 #' @export
-#' @param object The object to use. 
+#' @param object object to use. 
+#' @return pointwise log-likelihood matrix
 #'
 log_lik <- function(object) UseMethod("log_lik")
