@@ -7,9 +7,12 @@
 se(object, parm)
 }
 \arguments{
-\item{object}{The object to use.}
+\item{object}{object to use.}
 
 \item{parm}{A character vector of parameter names.}
+}
+\value{
+estimated standard errors for the parameters named in \code{parm}.
 }
 \description{
 Standard errors

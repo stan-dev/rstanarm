@@ -7,7 +7,10 @@
 log_lik(object)
 }
 \arguments{
-\item{object}{The object to use.}
+\item{object}{object to use.}
+}
+\value{
+pointwise log-likelihood matrix
 }
 \description{
 Pointwise log-likelihood

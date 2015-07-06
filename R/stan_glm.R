@@ -46,34 +46,30 @@
 #'   generalized linear model. The \code{stan_lm} function calls \code{stan_glm}
 #'   with \code{family = gaussian}.
 #' 
-#' @return A list containing the components
+#' @return A named list containing the components
+#' 
 #' \describe{
-#'   \item{coefficients}{Named vector of coefficients (posterior means)}
-#'   \item{residuals}{The residuals. For linear models \code{residuals}
-#'    contains the response minus fitted values. Otherwise \code{residuals}
-#'    contains the deviance residuals. See also \code{\link{residuals.stanreg}}}.
-#'   \item{fitted.values}{The fitted mean values (for GLMs 
+#'   \item{coefficients}{named vector of coefficients (posterior means)}
+#'   \item{residuals}{residuals (of type \code{'response'}). See also 
+#'   \code{\link{residuals.stanreg}}}.
+#'   \item{fitted.values}{the fitted mean values (for GLMs 
 #'   the linear predictors are transformed by the invserse link function).}
-#'   \item{linear.predictors}{The linear fit on the link scale (for linear models
+#'   \item{linear.predictors}{the linear fit on the link scale (for linear models
 #'   this is the same as \code{fitted.values}).}
-#'   \item{covmat}{Variance-covariance matrix for the coefficients (estimated
+#'   \item{covmat}{variance-covariance matrix for the coefficients (estimated
 #'   from the posterior draws.)}
-#'   \item{y}{If requested, the \code{y} vector used.}
-#'   \item{x}{If requested, the model matrix.}
-#'   \item{model}{If requested, the model frame.}
-#'   \item{family}{The \code{\link[stats]{family}} object used.}
-#'   \item{prior.weights}{The weights provided by the user or a vector of
-#'   \code{1}s if none were supplied.}
-#'   \item{weights}{Same as \code{prior.weights} (note: this differs from
-#'   \code{\link[stats]{glm}}, for which \code{prior.weights} and \code{weights} 
-#'   are \emph{not} the same)}
-#'   \item{df.residual}{The residual degrees of freedom}
-#'   \item{call}{The matched call}
-#'   \item{formula}{The formula supplied}
-#'   \item{data}{The \code{data} argument}
-#'   \item{prior.info}{A list with information about the prior distributions
-#'   used}
-#'   \item{stanfit}{The stanfit object returned by \code{\link[rstan]{stan}}}
+#'   \item{y}{if requested, the \code{y} vector used.}
+#'   \item{x}{if requested, the model matrix.}
+#'   \item{model}{if requested, the model frame.}
+#'   \item{family}{the \code{\link[stats]{family}} object used.}
+#'   \item{prior.weights}{any weights supplied by the user.}
+#'   \item{df.residual}{the residual degrees of freedom.}
+#'   \item{call}{the matched call.}
+#'   \item{formula}{the formula supplied.}
+#'   \item{data}{the \code{data} argument.}
+#'   \item{prior.info}{a list with information about the prior distributions
+#'   used.}
+#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}.}
 #' } 
 #' 
 #' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
