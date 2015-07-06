@@ -33,10 +33,12 @@ nlist <- function(...) {
 }
 
 validate_parameter_value <- function(x) {
+  # check for positive scale or df parameter
   if (!is.null(x) & any(x <= 0)) {
     nm <- deparse(substitute(x))
     stop(paste(nm, "should be positive"))
   }
+  invisible(TRUE)
 }
 
 set_prior_scale <- function(scale, default, link) {

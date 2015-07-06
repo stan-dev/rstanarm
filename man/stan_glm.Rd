@@ -60,7 +60,7 @@ A named list containing the components
   \item{data}{the \code{data} argument.}
   \item{prior.info}{a list with information about the prior distributions
   used.}
-  \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}}
+  \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}.}
 }
 
 The accessor functions \code{coef}, \code{fitted}, and \code{resid}
