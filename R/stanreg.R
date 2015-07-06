@@ -22,21 +22,10 @@ stanreg <- function(object) {
   eta <- as.vector(eta) + offset
   mu <- family$linkinv(eta)
   
-  # residuals (default to response type for linear models and deviance residuals
-  # otherwise. this mimics lm and glm behavior but maybe we don't want to do
-  # that)
-  if (family$family == "gaussian" && family$link == "identity") {
-    residuals <- y - mu
-    attr(residuals, "type") <- "response"
-  } else {
-    if (family$family == "binomial") {
-      if (is.factor(y))
-        y <- y != levels(y)[1L]
-    }
-    d.res <- sqrt(pmax((object$family$dev.resids)(y, mu, weights), 0))
-    residuals <- ifelse(y > mu, d.res, -d.res)
-    attr(residuals, "type") <- "deviance"
-  }
+  # residuals (of type 'response', unlike glm which does type 'deviance' by
+  # default)
+  residuals <- if (NCOL(y) == 2)
+    y[,1] / (y[,1] + y[,2]) - mu else y - mu
   df.residual <- nobs - sum(weights == 0) - rank
   
   # covariance matrix

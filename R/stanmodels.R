@@ -20,8 +20,5 @@ stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian_Xcentered.stan"),
                          model_name = "Gaussian GLM", chains = 0)
 stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete_Xcentered.stan"), 
                          model_name = "Discrete GLM", chains = 0)
-# stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian2.stan"), 
-#                          model_name = "Gaussian GLM", chains = 0)
-# 
-# stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete2.stan"), 
-#                          model_name = "Discrete GLM", chains = 0)
+stanfit_binomial <- stan(file.path(MODELS_HOME, "binomial_Xcentered.stan"), 
+                         model_name = "Discrete GLM", chains = 0)

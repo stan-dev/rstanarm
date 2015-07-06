@@ -36,17 +36,18 @@ functions {
    * @param link An integer indicating the link function
    * @return A vector
    */
-  vector pw_bern(int[] y, vector eta, int link) {
+  vector pw_binom(int[] y, int[] trials, vector eta, int link) {
     vector[rows(eta)] ll;
     vector[rows(eta)] pi;
     if (link < 1 || link > 5) 
       reject("Invalid link");
     if (link == 1) { # link = logit
-      for (n in 1:rows(eta)) ll[n] <- bernoulli_logit_log(y[n], eta[n]);
+      for (n in 1:rows(eta)) 
+        ll[n] <- binomial_logit_log(y[n], trials[n], eta[n]);
     }
     else { # link = probit, cauchit, log, or cloglog
       pi <- linkinv_binom(eta, link);
-      for (n in 1:rows(eta)) ll[n] <- bernoulli_log(y[n], pi[n]) ;
+      for (n in 1:rows(eta)) ll[n] <- binomial_log(y[n], trials[n], pi[n]) ;
     }
     return ll;
   }
@@ -99,6 +100,7 @@ data {
   # data
   matrix[N,K]  X; # predictor matrix
   int<lower=0> y[N]; # discrete outcome
+  int<lower=0> trials[N]; # number of trials
   
   # intercept
   int<lower=0,upper=1> has_intercept; # 1 = yes
@@ -147,29 +149,16 @@ model {
   
   // Log-likelihood 
   if (has_weights == 0) { # unweighted log-likelihoods
-    if (family == 1) {    # bernoulli case
-      if (link == 1) y ~ bernoulli_logit(eta);
-      else {
-        vector[N] pi;
-        pi <- linkinv_binom(eta, link);
-        y ~ bernoulli(pi);
-      }
-    }
-    else { # poisson case
-      if (link == 1) y ~ poisson_log(eta);
-      else {
-        vector[N] phi; 
-        phi <- linkinv_pois(eta, link);
-        y ~ poisson(phi);
-      }
+    if (link == 1) y ~ binomial_logit(trials, eta);
+    else {
+      vector[N] pi;
+      pi <- linkinv_binom(eta, link);
+      y ~ binomial(trials, pi);
     }
   }
   else { # weighted log-likelihoods
     vector[N] summands;
-    if (family == 1) # bernoulli case
-      summands <- pw_bern(y, eta, link);
-    else # poisson case
-      summands <- pw_pois(y, eta, link);
+    summands <- pw_binom(y, trials, eta, link);
     increment_log_prob(dot_product(weights, summands));
   }
   

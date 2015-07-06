@@ -51,9 +51,8 @@
 #' 
 #' \describe{
 #'   \item{coefficients}{named vector of coefficients (posterior means)}
-#'   \item{residuals}{the residuals. For linear models \code{residuals}
-#'    contains the response minus fitted values. Otherwise \code{residuals}
-#'    contains the deviance residuals. See also \code{\link{residuals.stanreg}}}.
+#'   \item{residuals}{residuals (of type \code{'response'}). See also 
+#'   \code{\link{residuals.stanreg}}}.
 #'   \item{fitted.values}{the fitted mean values (for glms 
 #'   the linear predictors are transformed by the invserse link function).}
 #'   \item{linear.predictors}{the linear fit on the link scale (for linear models

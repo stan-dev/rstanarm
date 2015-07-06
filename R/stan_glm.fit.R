@@ -52,10 +52,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (length(link) == 0) 
     stop("'link' must be one of ", supported_links)
   
+  is_binom <- FALSE
   if (family$family == "binomial") {
     if (NCOL(y) != 1) {
-      # we don't support 2-column matrix of success and failure counts yet
-      stop("model not supported yet")
+      stopifnot(NCOL(y) == 2)
+      is_binom <- TRUE
+      trials <- y[,1] + y[,2]
+      y <- y[, 1]
     } else {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
@@ -122,13 +125,16 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   if (family$family == "gaussian") 
     standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+  if (is_binom)
+    standata$trials <- trials
   
   # call stan() to draw from posterior distribution
   if (supported_families[fam] == "gaussian") {
     stanfit <- get("stanfit_gaussian")
   }
   else if (supported_families[fam] %in% c("binomial", "poisson")) {
-    stanfit <- get("stanfit_discrete")
+    stanfit <- if (is_binom) 
+      get("stanfit_binomial") else get("stanfit_discrete")
   }
   else stop("model not supported yet") # FIXME
   
