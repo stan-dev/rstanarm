@@ -37,14 +37,13 @@ stan_lm(formula, data, weights, subset, na.action = NULL, start = NULL,
   \code{iter}, \code{chains}, \code{refresh}, etc.)}
 }
 \value{
-An object of class \code{"stanreg"}, which is a list containing the
-  components
+A named list containing the components
 
 \describe{
   \item{coefficients}{named vector of coefficients (posterior means)}
   \item{residuals}{residuals (of type \code{'response'}). See also
   \code{\link{residuals.stanreg}}}.
-  \item{fitted.values}{the fitted mean values (for glms
+  \item{fitted.values}{the fitted mean values (for GLMs
   the linear predictors are transformed by the invserse link function).}
   \item{linear.predictors}{the linear fit on the link scale (for linear models
   this is the same as \code{fitted.values}).}
@@ -55,7 +54,7 @@ An object of class \code{"stanreg"}, which is a list containing the
   \item{model}{if requested, the model frame.}
   \item{family}{the \code{\link[stats]{family}} object used.}
   \item{prior.weights}{any weights supplied by the user.}
-  \item{df.residual}{the residual degrees of freedom}
+  \item{df.residual}{the residual degrees of freedom.}
   \item{call}{the matched call.}
   \item{formula}{the formula supplied.}
   \item{data}{the \code{data} argument.}
