@@ -16,8 +16,12 @@
 require(rstan)
 MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")), 
                          "rstanarm", "exec")
-stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian2.stan"), 
+stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian_Xcentered.stan"), 
                          model_name = "Gaussian GLM", chains = 0)
-
-stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete2.stan"), 
+stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete_Xcentered.stan"), 
                          model_name = "Discrete GLM", chains = 0)
+# stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian2.stan"), 
+#                          model_name = "Gaussian GLM", chains = 0)
+# 
+# stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete2.stan"), 
+#                          model_name = "Discrete GLM", chains = 0)
