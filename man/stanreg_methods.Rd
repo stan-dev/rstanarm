@@ -29,7 +29,7 @@ se(object, parm)
 \item{object,x}{a model fit with \code{\link{stan_lm}} or
 \code{\link{stan_glm}}.}
 
-\item{...}{other arguments. See Details.}
+\item{...}{other arguments to \code{print} or \code{summary}. See Details.}
 
 \item{parm}{a character vector of parameter names.}
 
@@ -38,12 +38,8 @@ se(object, parm)
 \description{
 Methods
 }
-\details{
-For \code{residuals}, currently the only argument that can be
-  specified in \code{...} is \code{type}, which is used to indicate the type
-  of residuals to be  returned. \code{type} can be one of \code{'response'},
-  \code{'deviance'}, or \code{'pearson'}. If omitted, the default is
-  \code{'response'} for linear models and otherwise the default is
-  \code{'deviance'}.
+\note{
+Unlike \code{\link[stats]{glm}}, residuals are of type \code{'response'}
+not \code{'deviance'} (see \code{\link[stats]{residuals.glm}}).
 }
 
