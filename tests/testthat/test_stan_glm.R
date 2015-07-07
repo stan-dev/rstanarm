@@ -9,26 +9,26 @@ threshold <- 0.1
 f1 <- function(x) cbind(coef(x), se(x))
 f2 <- function(x) summary(x)$coefficients[,1:2]
 
-context("stan_lm")
-test_that("stan_lm returns expected result for mtcars example", {
-  # example using mtcars dataset
-  fit <- stan_lm(mpg ~ wt, data = mtcars, iter = 400, seed = 123)
-  val <- f1(fit)
-  ans <- f2(lm(mpg ~ wt, data = mtcars))
-  diff <- abs(val - ans)
-  expect_true(all(diff < threshold))
-})
+# context("stan_lm")
+# test_that("stan_lm returns expected result for mtcars example", {
+#   # example using mtcars dataset
+#   fit <- stan_lm(mpg ~ wt, data = mtcars, iter = 400, seed = 123)
+#   val <- f1(fit)
+#   ans <- f2(lm(mpg ~ wt, data = mtcars))
+#   diff <- abs(val - ans)
+#   expect_true(all(diff < threshold))
+# })
 context("stan_lm and stan_glm")
 test_that("gaussian(link = 'log') returns expected result for trees example", {
   # example using trees dataset
   fit1 <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
                  family = gaussian(link = "log"), iter = 400, seed = 123)
-  fit2 <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
-                  iter = 400, seed = 123)
-  val1 <- f1(fit1); val2 <- f1(fit2)
+#   fit2 <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
+#                   iter = 400, seed = 123)
+  val1 <- f1(fit1); #val2 <- f1(fit2)
   ans <- f2(lm(log(Volume) ~ log(Girth) + log(Height),data = trees))
-  diff1 <- abs(val1 - ans); diff2 <- abs(val2 - ans)
-  expect_true(all(diff1 < threshold & diff2 < threshold))
+  diff1 <- abs(val1 - ans); #diff2 <- abs(val2 - ans)
+  expect_true(all(diff1 < threshold)) #  & all(diff2 < threshold)
 })
 
 

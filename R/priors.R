@@ -28,7 +28,7 @@
 #' @return A named list.
 #' @examples
 #' \dontrun{
-#' stan_lm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10))
+#' stan_glm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10))
 #' }
 #' 
 normal <- function(location = 0, scale = NULL) {

@@ -13,11 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-require(rstan)
 MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")), 
                          "rstanarm", "exec")
-stanfit_gaussian <- stan(file.path(MODELS_HOME, "gaussian2.stan"), 
-                         model_name = "Gaussian GLM", chains = 0)
+stanfit_lm <- rstan::stan(file.path(MODELS_HOME, "lm.stan"),
+                          model_name = "Linear Regression", chains = 0)
 
-stanfit_discrete <- stan(file.path(MODELS_HOME, "discrete2.stan"), 
-                         model_name = "Discrete GLM", chains = 0)
+stanfit_gaussian <- rstan::stan(file.path(MODELS_HOME, "gaussian2.stan"), 
+                                model_name = "Gaussian GLM", chains = 0)
+
+stanfit_discrete <- rstan::stan(file.path(MODELS_HOME, "discrete2.stan"), 
+                                model_name = "Discrete GLM", chains = 0)
