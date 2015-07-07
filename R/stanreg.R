@@ -17,8 +17,8 @@ stanreg <- function(object) {
   stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   
   # linear predictors and fitted values
-  mu <- stan_summary[1:nvars, "mean"]
-  eta <- if (NCOL(x) == 1L) x * mu else x %*% mu
+  coefs <- stan_summary[1:nvars, "mean"]
+  eta <- if (NCOL(x) == 1L) x * coefs else x %*% coefs
   eta <- as.vector(eta) + offset
   mu <- family$linkinv(eta)
   
@@ -40,15 +40,13 @@ stanreg <- function(object) {
   df.residual <- nobs - sum(weights == 0) - rank
   
   # covariance matrix
-  beta <- rstan::extract(stanfit, pars = "beta")$beta
-  covmat <- cov(beta)
-  
+  covmat <- cov(as.matrix(stanfit)[,1:nvars])
+
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
   out <- list(
-    coefficients = stan_summary[1:nvars, "mean"],
-    fitted.values = mu, linear.predictors = eta,
+    coefficients = coefs, fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
     y = y, x = x, model = object$model, data = object$data,
     offset = object$offset, prior.weights = weights, rank = rank,
