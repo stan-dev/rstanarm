@@ -24,8 +24,8 @@ stanreg <- function(object) {
   
   # residuals (of type 'response', unlike glm which does type 'deviance' by
   # default)
-  residuals <- if (NCOL(y) == 2)
-    y[,1] / (y[,1] + y[,2]) - mu else y - mu
+  residuals <- if (NCOL(y) == 2L)
+    y[, 1] / rowSums(y) - mu else y - mu
   df.residual <- nobs - sum(weights == 0) - rank
   
   # covariance matrix
@@ -37,7 +37,7 @@ stanreg <- function(object) {
   if (family$family == "gaussian") {
     llargs$sigma <- rstan::extract(stanfit, pars = "sigma")$sigma  
   } 
-  log_lik <- pw_log_lik(llargs)
+  log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]

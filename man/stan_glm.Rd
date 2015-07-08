@@ -28,7 +28,9 @@ stan_lm(formula, data, weights, subset, na.action = NULL, start = NULL,
 
 \item{prior}{Prior for coefficients. See \code{\link{priors}}.}
 
-\item{prior.for.intercept}{Prior for intercept. See \code{\link{priors}}.}
+\item{prior.for.intercept}{Prior for intercept. See \code{\link{priors}}.
+Note: The prior distribution for the intercept is set so it applies to
+the value when all predictors are centered.}
 
 \item{prior.options}{Additional options related to prior distributions. See
   \code{\link{priors}}.}
