@@ -55,14 +55,20 @@
 #'   more concentrated near zero is the prior density for the regression 
 #'   coefficients. Hence, the prior on the coefficients is regularizing and
 #'   should yield a posterior distribution with good out-of-sample predictions
-#'   \emph{if} the value of \code{eta} implied by \code{R2} is reasonable. In 
-#'   addition to estimating \code{sigma} --- the standard deviation of the 
+#'   \emph{if} the value of \code{eta} implied by \code{R2} is reasonable. 
+#'   
+#'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter
-#'   called \code{fit_ratio}. If it is greater than \eqn{1}, the posterior 
+#'   called \code{log-fit_ratio}. If it is positive, the posterior 
 #'   predictive variance of the outcome will exceed the sample variance of the
 #'   outcome by a multiplicative factor equal to the square of 
-#'   \code{fit_ratio}. Conversely if \code{fit_ratio} is less than \eqn{1}, 
-#'   then the model underfits.
+#'   \code{fit_ratio}. Conversely if \code{log-fit_ratio} is negative, then 
+#'   the model underfits.
+#'   
+#'   Finally, the posterior predictive distribution is generated with the
+#'   predictors fixed at their sample means. This quantity is useful for
+#'   checking convergence because it is reasonably normally distributed
+#'   and a function of all the parameters in the model.
 #'   
 #' @return An object of class \code{"stanreg"}, which is a list containing the 
 #'   components
@@ -146,7 +152,7 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   b <- array(b[-1], c(J,K))
   SSR <- array(crossprod(sqrt_weights * residuals(ols))[1], J)
   
-  s_X <- array(apply(X, 2, sd), c(J,K))
+  s_X <- array(apply(X, 2, sd), c(J,K))  
   xbar <- array(colMeans(X), c(J,K))
   X <- sweep(X, 2, xbar, FUN = "-")
   XtX <- crossprod(X)
@@ -189,11 +195,11 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   
   stanfit <- get("stanfit_lm")
   standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
-  pars <- c(if (has_intercept) "alpha", "beta", "sigma", "omega")
+  pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
   stanfit <- rstan::stan(fit = stanfit, data = standata, pars = pars, ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(X), 
-                 "sigma", "fit_ratio", "log-posterior")
+                 "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
 
   fit <- nlist(stanfit, family = gaussian(), formula, offset = model.offset(mf), 

@@ -47,7 +47,7 @@ parameters { // must not call with init="0"
   real z_alpha[J * has_intercept]; # primitives for intercepts
   cholesky_factor_corr[K] L;       # L * L' is the hyperprior correlation matrix
   real<lower=0,upper=1> R2[J];     # proportions of variance explained
-  vector<lower=0>[J] omega;        # overfitting factors
+  vector[J] log_omega;             # under/overfitting factors
 }
 transformed parameters {
   real alpha[J * has_intercept];   # uncentered intercepts
@@ -55,7 +55,7 @@ transformed parameters {
   real<lower=0> sigma[J];          # error standard deviations
   for (j in 1:J) {
     real Delta_y;                  # standard deviation of outcome for group j
-    Delta_y <- s_Y[j] * omega[j];
+    Delta_y <- s_Y[j] * exp(log_omega[j]);
     beta[j] <- transpose(mdivide_right_tri_low(z_beta[j], L)) *
                sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
     sigma[j] <- Delta_y * sqrt(1 - R2[j]);
@@ -77,5 +77,11 @@ model {
   if (has_intercept == 1) z_alpha ~ normal(0,1);
   L ~ lkj_corr_cholesky(etaphalf);
   R2 ~ beta(half_K, eta);
-  increment_log_prob(-log(omega)); # Jeffreys prior
+  // implicit: log_omega is uniform over the real line for all j
+}
+generated quantities {
+  real mean_PPD[J];
+  for (j in 1:J) 
+    mean_PPD[j] <- normal_rng(alpha[j] + dot_product(xbar[j], beta[j]), 
+                              sigma[j]);
 }
