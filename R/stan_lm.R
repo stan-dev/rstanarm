@@ -21,18 +21,27 @@
 #' @export
 #'
 #' @param formula,data,subset Same as in \code{\link[stats]{lm}}
-#' @param weights,na.action,method,model,x,y,qr,singular.ok,contrasts,offset 
+#' @param weights,na.action,method,model,qr,singular.ok,contrasts,offset 
 #'   Also the same as in \code{\link[stats]{lm}} but rarely specified
+#' @param x,y In \code{stan_lm}, logical scalars indicating whether to
+#'   return the design matrix and response vector. In \code{stan_lm.fit},
+#'   a design matrix and response vector.
+#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified   
 #' @param eta Either a positive scalar or \code{NULL} (the default)
 #' @param prior.R2 A numeric scalar; see the Details section
 #' @param prior.what A character vector of length one; see the Details section
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}}
 #'
 #'
-#' @details The \code{stan_glm} function is similar in syntax to the 
+#' @details The \code{stan_lm} function is similar in syntax to the 
 #'   \code{\link[stats]{lm}} function but rather than choosing the parameters
 #'   to minimize the sum of squared residuals, samples from the posterior
-#'   distribution are drawn using Markov Chain Monte Carlo. 
+#'   distribution are drawn using Markov Chain Monte Carlo. The 
+#'   \code{stan_lm} function has a formula-based interface and would usually
+#'   be called by users but the \code{stan_lm.fit} and \code{stan_lm.wfit}
+#'   functions might be called by other functions that parse the data 
+#'   themselves and are analagous to \code{\link[stats]{lm.fit}} and
+#'   \code{\link[stats]{lm.wfit}} respectively.
 #'   
 #'   The prior on all the parameters hinges on the prior beliefs about 
 #'   \eqn{R^2}, the proportion of variance in the outcome attributable to the
@@ -59,19 +68,23 @@
 #'   
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter
-#'   called \code{log-fit_ratio}. If it is positive, the posterior 
-#'   predictive variance of the outcome will exceed the sample variance of the
-#'   outcome by a multiplicative factor equal to the square of 
-#'   \code{fit_ratio}. Conversely if \code{log-fit_ratio} is negative, then 
-#'   the model underfits.
+#'   called \code{log-fit_ratio}. If it is positive, the marginal posterior 
+#'   variance of the outcome will exceed the sample variance of the outcome
+#'   by a multiplicative factor equal to the square of \code{fit_ratio}.
+#'   Conversely if \code{log-fit_ratio} is negative, then the model underfits.
+#'   Given the regularizing nature of the priors, a slight underfit is good.
+#'   However, even if the \emph{marginal} posterior variance is off, the 
+#'   \emph{conditional} variance may still be reasonable.
 #'   
 #'   Finally, the posterior predictive distribution is generated with the
 #'   predictors fixed at their sample means. This quantity is useful for
 #'   checking convergence because it is reasonably normally distributed
 #'   and a function of all the parameters in the model.
 #'   
-#' @return An object of class \code{"stanreg"}, which is a list containing the 
-#'   components
+#' @return The \code{stan_lm.fit} and \code{stan_lm.wfit} functions return an 
+#'   object of class \code{\link[rstan]{stanfit-class}}. The more typically
+#'   used \code{stan_lm} function returns an object of class \code{"stanreg"}, 
+#'   which is a list containing the components
 #' 
 #' \describe{
 #'   \item{coefficients}{named vector of coefficients (posterior means)}
@@ -95,7 +108,7 @@
 #'   \item{data}{the \code{data} argument.}
 #'   \item{prior.info}{a list with information about the prior distributions
 #'   used.}
-#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}}
+#'   \item{stanfit}{an object of \code{\link[rstan]{stanfit-class}}}
 #' } 
 #' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
 #' can be used with objects of class \code{"stanreg"}. There are also  
@@ -111,7 +124,6 @@
 #' stan_lm(mpg ~ ., data = mtcars, prior.R2 = 0.75)
 #' }
 
-
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 
@@ -125,89 +137,26 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   mf$qr <- FALSE
   mf$eta <- mf$prior.R2 <- mf$prior.what <- NULL
   
-  ols <- suppressWarnings(eval(mf, parent.frame()))
-  mt <- attr(ols, "terms")
+  modelframe <- suppressWarnings(eval(mf, parent.frame()))
+  mt <- attr(modelframe, "terms")
   
-  X <- ols$x
-  if (colnames(X)[1] == "(Intercept)") {
-    has_intercept <- 1L
-    X <- X[,-1]
-  }
-  else has_intercept <- 0L
+  Y <- modelframe$y
+  X <- modelframe$x
+  w <- modelframe$weights
+  offset <- model.offset(mf)
+  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
+                          eta = eta, prior.R2 = prior.R2, 
+                          prior.what = prior.what, ...)
   
-  J <- 1L
-  N <- array(nrow(X), c(J))
-  K <- ncol(X)
-  if (K == 0) stop("'stan_lm' is not suitable for estimating a mean ",
-                   "use 'stan_glm' with 'family = gaussian()' instead")
-  sqrt_weights <- model.weights(mf)
-  if (is.null(sqrt_weights)) sqrt_weights <- rep(1,N) 
-  else {
-    sqrt_weights <- sqrt(weights)
-    X <- sqrt_weights * X
-  }
+  K <- ncol(X) - (colnames(X)[1] == "(Intercept)")
+  if (is.null(eta)) eta <- make_eta(prior.R2, prior.what, K)
   
-  b <- coef(ols)
-  b[is.na(b)] <- 0.0
-  b <- array(b[-1], c(J,K))
-  SSR <- array(crossprod(sqrt_weights * residuals(ols))[1], J)
-  
-  s_X <- array(apply(X, 2, sd), c(J,K))  
-  xbar <- array(colMeans(X), c(J,K))
-  X <- sweep(X, 2, xbar, FUN = "-")
-  XtX <- crossprod(X)
-  dim(XtX) <- c(J, K, K)
-  s_Y <- array(sd(ols$y), J)
-  ybar <- array(mean(ols$y), J)
-  
-  if (is.null(eta)) {
-    if (is.null(prior.R2)) 
-      stop("the 'prior.R2' argument must be specified if 'eta' is unspecified")
-    stopifnot(is.numeric(prior.R2))
-    stopifnot(is.numeric(K), K > 0, K == as.integer(K))
-    prior.what <- match.arg(prior.what)
-    half_K <- K / 2
-    if (prior.what == "mode") {
-      stopifnot(prior.R2 > 0, prior.R2 <= 1)
-      if (K <= 2) stop("mode of beta distribution does not exist when K <= 2 ",
-                       "specify 'prior.what' as 'mean' or 'log' instead")
-      eta <- (half_K - 1  - prior.R2 * half_K + prior.R2 * 2) / prior.R2
-    }
-    else if (prior.what == "mean") {
-      stopifnot(prior.R2 > 0, prior.R2 <= 1)
-      eta <- (half_K - prior.R2 * half_K) / prior.R2
-    }
-    else if (prior.what == "median") {
-      stopifnot(prior.R2 > 0, prior.R2 <= 1)
-      FUN <- function(eta) qbeta(0.5, half_K, qexp(eta)) - prior.R2
-      eta <- qexp(uniroot(FUN, interval = 0:1)$root)
-    }
-    else { # prior.what == "log"
-      stopifnot(prior.R2 < 0)
-      FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - prior.R2
-      eta <- qexp(uniroot(FUN, interval = 0:1, 
-                          f.lower = -prior.R2, f.upper = -.Machine$double.xmax)$root)
-    }
-  }
-  else if (!is.numeric(eta) || length(eta) != 1L || eta <= 0) {
-    stop("'eta' must be a positive scalar")
-  }
-  
-  stanfit <- get("stanfit_lm")
-  standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
-  pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
-  stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, ...)
-  parameters <- dimnames(stanfit)$parameters
-  new_names <- c(if (has_intercept) "(Intercept)", colnames(X), 
-                 "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")
-  stanfit@sim$fnames_oi <- new_names
-
-  fit <- nlist(stanfit, family = gaussian(), formula, offset = model.offset(mf), 
-               weights = ols$weights, x = ols$x, y = ols$y, data, 
+  fit <- nlist(stanfit, family = gaussian(), formula, offset, 
+               weights = w, x = X, y = Y, data,
                prior.info = nlist(dist = "beta", shape1 = K / 2, shape2 = eta), 
                call = call, terms = mt,
                model = if (model) mf else NULL,
-               na.action = attr(ols, "na.action"), 
+               na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   fit <- stanreg(fit)
   if (!x) fit$x <- NULL
