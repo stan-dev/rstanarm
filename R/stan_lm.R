@@ -203,8 +203,9 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   stanfit@sim$fnames_oi <- new_names
 
   fit <- nlist(stanfit, family = gaussian(), formula, offset = model.offset(mf), 
-               weights = ols$weights, x = ols$x, y = ols$y, 
-               data, prior.info = eta, call = call, terms = mt, 
+               weights = ols$weights, x = ols$x, y = ols$y, data, 
+               prior.info = nlist(dist = "beta", shape1 = K / 2, shape2 = eta), 
+               call = call, terms = mt,
                model = if (model) mf else NULL,
                na.action = attr(ols, "na.action"), 
                contrasts = attr(X, "contrasts"))
