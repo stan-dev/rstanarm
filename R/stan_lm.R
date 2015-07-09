@@ -196,7 +196,7 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   stanfit <- get("stanfit_lm")
   standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
-  stanfit <- rstan::stan(fit = stanfit, data = standata, pars = pars, ...)
+  stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(X), 
                  "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")

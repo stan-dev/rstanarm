@@ -133,8 +133,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   else start <- as.list(start)
   
   pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
-  stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, 
-                         init = start, ...)
+  stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
+                             init = start, ...)
   betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)
   stanfit@sim$fnames_oi[betas] <- colnames(x)
   stanfit

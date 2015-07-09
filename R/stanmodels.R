@@ -15,11 +15,14 @@
 
 MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")), 
                          "rstanarm", "exec")
-stanfit_lm <- rstan::stan(file.path(MODELS_HOME, "lm.stan"),
-                          model_name = "Linear Regression", chains = 0)
+stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
+                                model_name = "Linear Regression",
+                                auto_write = TRUE)
 
-stanfit_gaussian <- rstan::stan(file.path(MODELS_HOME, "gaussian2.stan"), 
-                                model_name = "Gaussian GLM", chains = 0)
+stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian2.stan"), 
+                                      model_name = "Gaussian GLM",
+                                      auto_write = TRUE)
 
-stanfit_discrete <- rstan::stan(file.path(MODELS_HOME, "discrete2.stan"), 
-                                model_name = "Discrete GLM", chains = 0)
+stanfit_discrete <- rstan::stan_model(file.path(MODELS_HOME, "discrete2.stan"), 
+                                      model_name = "Discrete GLM",
+                                      auto_write = TRUE)

@@ -1,12 +1,3 @@
-*.csv
-*.swp
-*.o
-*.so
-*.rds
-*.out
-rstan/R/git_*head.R
-rstan/inst/include/stanlib
-rstan/inst/include/stansrc
-rstan*.tar.gz
+exec/*.rda
 .Rproj.user
 .Rhistory
