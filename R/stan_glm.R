@@ -21,9 +21,12 @@
 #'
 #' @export
 #'
-#' @param formula,family,data,subset,x,y,model Same as 
+#' @param formula,family,data,subset,model Same as 
 #'   \code{\link[stats]{glm}}.
-#' @param na.action,weights,offset,contrasts Same as 
+#' @param x,y In \code{stan_glm}, logical scalars indicating whether to
+#'   return the design matrix and response vector. In \code{stan_glm.fit},
+#'   a design matrix and response vector.   
+#' @param model,na.action,weights,offset,contrasts Same as 
 #'   \code{\link[stats]{glm}}.
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
@@ -43,8 +46,9 @@
 #'   estimation of generalized linear models, full Bayesian estimation is 
 #'   performed via Markov Chain Monte Carlo. The Bayesian model adds independent
 #'   Gaussian, Student t, or Cauchy priors on the coefficients of the 
-#'   generalized linear model. The \code{stan_lm} function calls \code{stan_glm}
-#'   with \code{family = gaussian}.
+#'   generalized linear model. The \code{stan_glm} function calls the workhorse
+#'   \code{stan_glm.fit} function, but it is possible to call the latter
+#'   directly.
 #' 
 #' @return An object of class \code{"stanreg"}, which is a list containing the 
 #'   components
