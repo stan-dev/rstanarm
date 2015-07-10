@@ -135,11 +135,11 @@ transformed data {
 }
 parameters {
   real alpha0[has_intercept]; # intercept (if has_intercept == 1)
-  vector[K] theta; # coefficients
+  vector[K] beta; # coefficients
 }
 model {
   vector[N] eta; # linear predictor
-  eta <- Xcent * theta;
+  eta <- Xcent * beta;
   if (has_intercept == 1)
     eta <- eta + alpha0[1];
   if (has_offset == 1) 
@@ -175,9 +175,9 @@ model {
   
   // Log-priors for coefficients 
   if (prior_dist == 1) # normal
-    theta ~ normal(prior_mean, prior_scale);  
+    beta ~ normal(prior_mean, prior_scale);  
   else # student_t
-    theta ~ student_t(prior_df, prior_mean, prior_scale);
+    beta ~ student_t(prior_df, prior_mean, prior_scale);
    
   // Log-prior for intercept  
   if (has_intercept == 1) {
@@ -189,12 +189,7 @@ model {
   }
 }
 generated quantities {
-  vector[K + has_intercept] beta;
-  if (has_intercept == 0)
-    beta <- theta;
-  else {
-    beta[1] <- alpha0[1] - column_means(X) * theta;
-    for (k in 1:K)
-      beta[k + 1] <- theta[k];
-  }
+  real alpha[has_intercept];
+  if (has_intercept == 1)
+    alpha[1] <- alpha0[1] - column_means(X) * beta;
 }

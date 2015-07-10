@@ -4,6 +4,7 @@
 *.so
 *.rds
 *.out
+exec/*.rda
 rstan/R/git_*head.R
 rstan/inst/include/stanlib
 rstan/inst/include/stansrc
