@@ -9,11 +9,11 @@
 #
 # @return a matrix.
 #
-pw_log_lik <- function(family, x, y, weights, offset, theta, sigma = NULL) {
+pw_log_lik <- function(family, x, y, weights, offset = NULL, theta, sigma = NULL) {
   f <- family
   llfun <- paste0(".ll_", f$family)
   eta <- x %*% t(theta)
-  if (any(offset != 0))
+  if (!is.null(offset))
     eta <- sweep(eta, MARGIN = 1L, offset, `+`)
   mu <- f$linkinv(eta)
   args <- nlist(y, mu)

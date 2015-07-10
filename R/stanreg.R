@@ -1,7 +1,7 @@
 stanreg <- function(object) {
   stanfit <- object$stanfit
   weights <- object$weights
-  offset <- if (is.null(object$offset)) 0 else object$offset
+  offset <- object$offset
   family <- object$family
   y <- object$y
   x <- object$x
@@ -42,11 +42,12 @@ stanreg <- function(object) {
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
+  offset <- if (any(offset != 0)) offset else NULL
   out <- list(
-    coefficients = coef, fitted.values = mu, linear.predictors = eta,
+    coefficients = coefs, fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
     y = y, x = x, model = object$model, data = object$data, rank = rank,
-    offset = object$offset, weights = weights, prior.weights = weights, 
+    offset = offset, weights = weights, prior.weights = weights, 
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
     prior.info = object$prior.info, log_lik = log_lik,
