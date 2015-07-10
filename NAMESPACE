@@ -2,6 +2,7 @@
 
 S3method(confint,stanreg)
 S3method(log_lik,stanreg)
+S3method(predict,stanreg)
 S3method(print,stanreg)
 S3method(residuals,stanreg)
 S3method(se,stanreg)
