@@ -1,3 +1,6 @@
 exec/*.rda
 .Rproj.user
 .Rhistory
+man/*.Rd
+!man/rstanarm-internal.Rd
+NAMESPACE
