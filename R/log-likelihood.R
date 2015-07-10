@@ -9,14 +9,14 @@
 #
 # @return a matrix.
 #
-pw_log_lik <- function(family, x, y, weights, offset, beta, sigma = NULL) {
+pw_log_lik <- function(family, x, y, weights, offset, theta, sigma = NULL) {
   f <- family
   llfun <- paste0(".ll_", f$family)
-  eta <- x %*% t(beta)
+  eta <- x %*% t(theta)
   if (any(offset != 0))
     eta <- sweep(eta, MARGIN = 1L, offset, `+`)
-  theta <- f$linkinv(eta)
-  args <- nlist(y, theta)
+  mu <- f$linkinv(eta)
+  args <- nlist(y, mu)
   if (!is.null(sigma))
     args$sigma <- sigma
   ll <- do.call(llfun, args)
@@ -25,17 +25,17 @@ pw_log_lik <- function(family, x, y, weights, offset, beta, sigma = NULL) {
 }
 
 # pw_log_lik calls one of the functions below depending on the model
-.ll_gaussian <- function(y, theta, sigma) {
-  t(sapply(1:ncol(theta), function(s) {
-    dnorm(y, mean = theta[,s], sd = sigma[s], log = TRUE)
+.ll_gaussian <- function(y, mu, sigma) {
+  t(sapply(1:ncol(mu), function(s) {
+    dnorm(y, mean = mu[,s], sd = sigma[s], log = TRUE)
   }))
 }
-.ll_poisson <- function(y, theta) {
-  t(sapply(1:ncol(theta), function(s) {
-    dpois(y, lambda = theta[,s], log = TRUE)
+.ll_poisson <- function(y, mu) {
+  t(sapply(1:ncol(mu), function(s) {
+    dpois(y, lambda = mu[,s], log = TRUE)
   }))
 }
-.ll_binomial <- function(y, theta) {
+.ll_binomial <- function(y, mu) {
   if (NCOL(y) == 2L) {
     trials <- rowSums(y)
     y <- y[, 1L]
@@ -46,7 +46,7 @@ pw_log_lik <- function(family, x, y, weights, offset, beta, sigma = NULL) {
     if (!all(y %in% c(0L, 1L)))
       stop("Not yet supported")
   }
-  t(sapply(1:ncol(theta), function(s) {
-    dbinom(y, size = trials, prob = theta[,s], log = TRUE)
+  t(sapply(1:ncol(mu), function(s) {
+    dbinom(y, size = trials, prob = mu[,s], log = TRUE)
   }))
 }

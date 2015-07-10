@@ -16,9 +16,9 @@ stanreg <- function(object) {
   probs <- sort(c(0.5, c(qq, 1 - qq)))
   stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   
-  # linear predictors and fitted values
-  mu <- stan_summary[1:nvars, "mean"]
-  eta <- if (NCOL(x) == 1L) x * mu else x %*% mu
+  # point estimates (posterior means), linear predictors and fitted values
+  coefs <- stan_summary[1:nvars, "mean"]
+  eta <- if (NCOL(x) == 1L) x * coefs else x %*% coefs
   eta <- as.vector(eta) + offset
   mu <- family$linkinv(eta)
   
@@ -28,23 +28,22 @@ stanreg <- function(object) {
     y[, 1] / rowSums(y) - mu else y - mu
   df.residual <- nobs - sum(weights == 0) - rank
   
+  # extract
+  stanmat <- as.matrix(stanfit)
   # covariance matrix
-  beta <- rstan::extract(stanfit, pars = "beta")$beta
-  covmat <- cov(beta)
+  covmat <- cov(stanmat[,1:nvars])
   
   # pointwise log-likelihood
-  llargs <- nlist(family, x, y, weights, offset, beta, sigma = NULL)
-  if (family$family == "gaussian") {
-    llargs$sigma <- rstan::extract(stanfit, pars = "sigma")$sigma  
-  } 
+  llargs <- nlist(family, x, y, weights, offset, theta = stanmat[,1:nvars])
+  llargs$sigma <- if (family$family == "gaussian") 
+    stanmat[, "sigma"] else NULL
   log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
   out <- list(
-    coefficients = stan_summary[1:nvars, "mean"],
-    fitted.values = mu, linear.predictors = eta,
+    coefficients = coef, fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
     y = y, x = x, model = object$model, data = object$data, rank = rank,
     offset = object$offset, weights = weights, prior.weights = weights, 

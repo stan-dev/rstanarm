@@ -94,8 +94,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   # if model has intercept remove the column of 1s before passing to stan
   xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
   
+  is_gaussian <- family$family == "gaussian"
   if (scaled) {
-    if (family$family == "gaussian") {
+    if (is_gaussian == "gaussian") {
       ss <- 2 * sd(y)
       prior.scale <- ss * prior.scale
       prior.scale.for.intercept <-  ss * prior.scale.for.intercept
@@ -123,7 +124,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_df_for_intercept = prior.df.for.intercept,
     has_intercept = as.integer(has_intercept))
   
-  if (family$family == "gaussian") 
+  if (is_gaussian) 
     standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
   if (is_binom)
     standata$trials <- trials
@@ -141,10 +142,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
-  stanfit <- rstan::stan(fit = stanfit, pars = pars, data = standata, 
-                         init = start, ...)
-  betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)
-  stanfit@sim$fnames_oi[betas] <- colnames(x)
+  pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma")
+  stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
+                             init = start, ...)
+  parameters <- dimnames(stanfit)$parameters
+  new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
+                 if (is_gaussian) "sigma")
+  stanfit@sim$fnames_oi <- new_names
   stanfit
 }
