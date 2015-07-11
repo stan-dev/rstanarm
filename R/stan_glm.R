@@ -21,8 +21,7 @@
 #'
 #' @export
 #'
-#' @param formula,family,data,subset,model Same as 
-#'   \code{\link[stats]{glm}}.
+#' @param formula,family,data,subset Same as \code{\link[stats]{glm}}.
 #' @param x,y In \code{stan_glm}, logical scalars indicating whether to
 #'   return the design matrix and response vector. In \code{stan_glm.fit},
 #'   a design matrix and response vector.   
@@ -34,6 +33,8 @@
 #'   
 #' @param prior Prior for coefficients. See \code{\link{priors}}.
 #' @param prior.for.intercept Prior for intercept. See \code{\link{priors}}.
+#'   Note: The prior distribution for the intercept is set so it applies to
+#'   the value when all predictors are centered.
 #' @param prior.options Additional options related to prior distributions. See
 #'   \code{\link{priors}}.
 #'   
@@ -50,15 +51,13 @@
 #'   \code{stan_glm.fit} function, but it is possible to call the latter
 #'   directly.
 #' 
-#' @return An object of class \code{"stanreg"}, which is a list containing the 
-#'   components
+#' @return A named list containing the components
 #' 
 #' \describe{
 #'   \item{coefficients}{named vector of coefficients (posterior means)}
-#'   \item{residuals}{the residuals. For linear models \code{residuals}
-#'    contains the response minus fitted values. Otherwise \code{residuals}
-#'    contains the deviance residuals. See also \code{\link{residuals.stanreg}}}.
-#'   \item{fitted.values}{the fitted mean values (for glms 
+#'   \item{residuals}{residuals (of type \code{'response'}). See also 
+#'   \code{\link{residuals.stanreg}}}.
+#'   \item{fitted.values}{the fitted mean values (for GLMs 
 #'   the linear predictors are transformed by the invserse link function).}
 #'   \item{linear.predictors}{the linear fit on the link scale (for linear models
 #'   this is the same as \code{fitted.values}).}
@@ -69,13 +68,13 @@
 #'   \item{model}{if requested, the model frame.}
 #'   \item{family}{the \code{\link[stats]{family}} object used.}
 #'   \item{prior.weights}{any weights supplied by the user.}
-#'   \item{df.residual}{the residual degrees of freedom}
+#'   \item{df.residual}{the residual degrees of freedom.}
 #'   \item{call}{the matched call.}
 #'   \item{formula}{the formula supplied.}
 #'   \item{data}{the \code{data} argument.}
 #'   \item{prior.info}{a list with information about the prior distributions
 #'   used.}
-#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}}
+#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}.}
 #' } 
 #' 
 #' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
@@ -167,15 +166,15 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
-               data, prior.info, call = call, terms = mt, 
-               model = if (model) mf else NULL, 
+               data, prior.info, call = call, terms = mt, model = mf, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   
-  fit <- stanreg(fit)
-  if (!x) fit$x <- NULL
-  if (!y) fit$y <- NULL
-  fit
+  out <- stanreg(fit)
+  if (!x) out$x <- NULL
+  if (!y) out$y <- NULL
+  if (!model) out$model <- NULL
+  out
 }
 
 

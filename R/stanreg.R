@@ -1,7 +1,7 @@
 stanreg <- function(object) {
   stanfit <- object$stanfit
   weights <- object$weights
-  offset <- if (is.null(object$offset)) 0 else object$offset
+  offset <- object$offset
   family <- object$family
   y <- object$y
   x <- object$x
@@ -12,48 +12,44 @@ stanreg <- function(object) {
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
-  qq <- (1 - levs)/2
-  probs <- sort(c(0.5, c(qq, 1 - qq)))
+  qq <- (1 - levs) / 2
+  probs <- sort(c(0.5, qq, 1 - qq))
   stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   
-  # linear predictors and fitted values
+  # point estimates (posterior means), linear predictors and fitted values
   coefs <- stan_summary[1:nvars, "mean"]
-  eta <- if (NCOL(x) == 1L) x * coefs else x %*% coefs
-  eta <- as.vector(eta) + offset
+  eta <- linear_predictor(coefs, x, offset)
   mu <- family$linkinv(eta)
   
-  # residuals (default to response type for linear models and deviance residuals
-  # otherwise. this mimics lm and glm behavior but maybe we don't want to do
-  # that)
-  if (family$family == "gaussian" && family$link == "identity") {
-    residuals <- y - mu
-    attr(residuals, "type") <- "response"
-  } else {
-    if (family$family == "binomial") {
-      if (is.factor(y))
-        y <- y != levels(y)[1L]
-    }
-    d.res <- sqrt(pmax((object$family$dev.resids)(y, mu, weights), 0))
-    residuals <- ifelse(y > mu, d.res, -d.res)
-    attr(residuals, "type") <- "deviance"
-  }
+  # residuals (of type 'response', unlike glm which does type 'deviance' by
+  # default)
+  residuals <- if (NCOL(y) == 2L)
+    y[, 1] / rowSums(y) - mu else y - mu
   df.residual <- nobs - sum(weights == 0) - rank
   
+  # extract
+  stanmat <- as.matrix(stanfit)
   # covariance matrix
-  covmat <- cov(as.matrix(stanfit)[,1:nvars])
-
+  covmat <- cov(stanmat[,1:nvars])
+  
+  # pointwise log-likelihood
+  llargs <- nlist(family, x, y, weights, offset, beta = stanmat[,1:nvars])
+  if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"] 
+  log_lik <- do.call("pw_log_lik", llargs)
+  
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   
+  offset <- if (any(offset != 0)) offset else NULL
   out <- list(
     coefficients = coefs, fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
-    y = y, x = x, model = object$model, data = object$data,
-    offset = object$offset, prior.weights = weights, rank = rank,
+    y = y, x = x, model = object$model, data = object$data, rank = rank,
+    offset = offset, weights = weights, prior.weights = weights, 
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
-    prior.info = object$prior.info, stan_summary = stan_summary, 
-    stanfit = stanfit
+    prior.info = object$prior.info, log_lik = log_lik,
+    stan_summary = stan_summary, stanfit = stanfit
   )
   class(out) <- c("stanreg", "glm", "lm")
   out

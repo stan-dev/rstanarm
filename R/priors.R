@@ -69,4 +69,3 @@ prior_options <- function(prior.scale.for.dispersion = 5,
   validate_parameter_value(min.prior.scale)
   nlist(scaled, min.prior.scale, prior.scale.for.dispersion)
 }
-

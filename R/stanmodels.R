@@ -18,11 +18,12 @@ MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")),
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",
                                 auto_write = TRUE)
-
-stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian2.stan"), 
+stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian_Xcentered.stan"), 
                                       model_name = "Gaussian GLM",
                                       auto_write = TRUE)
-
-stanfit_discrete <- rstan::stan_model(file.path(MODELS_HOME, "discrete2.stan"), 
+stanfit_discrete <- rstan::stan_model(file.path(MODELS_HOME, "discrete_Xcentered.stan"), 
+                                      model_name = "Discrete GLM",
+                                      auto_write = TRUE)
+stanfit_binomial <- rstan::stan_model(file.path(MODELS_HOME, "binomial_Xcentered.stan"), 
                                       model_name = "Discrete GLM",
                                       auto_write = TRUE)

@@ -54,10 +54,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (length(link) == 0) 
     stop("'link' must be one of ", supported_links)
   
+  is_binom <- FALSE
   if (family$family == "binomial") {
-    if (NCOL(y) != 1) {
-      # we don't support 2-column matrix of success and failure counts yet
-      stop("model not supported yet")
+    if (NCOL(y) != 1L) {
+      stopifnot(NCOL(y) == 2L)
+      is_binom <- TRUE
+      trials <- y[, 1L] + y[ ,2L]
+      y <- y[, 1L]
     } else {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
@@ -70,8 +73,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   
   x <- as.matrix(x)
-  has_intercept <- colnames(x)[1] == "(Intercept)"
-  nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
+  has_intercept <- colnames(x)[1L] == "(Intercept)"
+  xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
+  nvars <- ncol(xtemp)
   
   # prior distributions
   prior.dist <- match.arg(prior.dist)
@@ -89,27 +93,28 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.mean <- maybe_broadcast(prior.mean, nvars)
   prior.mean <- as.array(prior.mean)
   prior.scale <- maybe_broadcast(prior.scale, nvars)
+
+  is_gaussian <- family$family == "gaussian"
   if (scaled) {
-    if (family$family == "gaussian") {
+    if (is_gaussian) {
       ss <- 2 * sd(y)
       prior.scale <- ss * prior.scale
       prior.scale.for.intercept <-  ss * prior.scale.for.intercept
     }
-    xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
-    denom <- apply(xtemp, 2, FUN = function(x) {
-      num.categories <- length(unique(x))
-      x.scale <- 1
-      if (num.categories == 2) x.scale <- diff(range(x))
-      else if (num.categories > 2) x.scale <- 2 * sd(x)
-    })
-    prior.scale <- pmax(min.prior.scale, prior.scale / denom)
+    prior.scale <- pmax(min.prior.scale, prior.scale /
+                          apply(xtemp, 2, FUN = function(x) {
+                            num.categories <- length(unique(x))
+                            x.scale <- 1
+                            if (num.categories == 2) x.scale <- diff(range(x))
+                            else if (num.categories > 2) x.scale <- 2 * sd(x)
+                          }))
   }
   prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
   
   # create entries in the data block of the .stan file
   standata <- list(
-    N = nrow(x), K = ncol(x), X = x, y = y, family = fam, link = link,
+    N = nrow(xtemp), K = ncol(xtemp), X = xtemp, y = y, family = fam, link = link,
     weights = weights, has_weights = as.integer(!all(weights == 1)), 
     offset = offset, has_offset = as.integer(!all(offset == 0)),
     prior_dist = prior.dist, prior_mean = prior.mean, prior_scale = prior.scale, 
@@ -119,25 +124,30 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_df_for_intercept = prior.df.for.intercept,
     has_intercept = as.integer(has_intercept))
   
-  if (family$family == "gaussian") 
+  if (is_gaussian) 
     standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+  if (is_binom)
+    standata$trials <- trials
   
   # call stan() to draw from posterior distribution
   if (supported_families[fam] == "gaussian") {
     stanfit <- get("stanfit_gaussian")
   }
   else if (supported_families[fam] %in% c("binomial", "poisson")) {
-    stanfit <- get("stanfit_discrete")
+    stanfit <- if (is_binom) 
+      get("stanfit_binomial") else get("stanfit_discrete")
   }
   else stop("model not supported yet") # FIXME
   
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- if (family$family == "gaussian") c("beta", "sigma") else "beta"
+  pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma")
   stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                              init = start, ...)
-  betas <- grepl("beta[", dimnames(stanfit)$parameters, fixed = TRUE)
-  stanfit@sim$fnames_oi[betas] <- colnames(x)
+  parameters <- dimnames(stanfit)$parameters
+  new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
+                 if (is_gaussian) "sigma")
+  stanfit@sim$fnames_oi <- new_names
   stanfit
 }

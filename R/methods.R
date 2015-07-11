@@ -5,33 +5,14 @@
 #' 
 #' @param object,x a model fit with \code{\link{stan_lm}} or
 #'   \code{\link{stan_glm}}.
-#' @param ... other arguments. See Details.
+#' @param ... other arguments to \code{print} or \code{summary}. See Details.
 #' @param parm a character vector of parameter names.
 #' @param level confidence level.
-#' @details For \code{residuals}, currently the only argument that can be 
-#'   specified in \code{...} is \code{type}, which is used to indicate the type 
-#'   of residuals to be  returned. \code{type} can be one of \code{'response'},
-#'   \code{'deviance'}, or \code{'pearson'}. If omitted, the default is
-#'   \code{'response'} for linear models and otherwise the default is
-#'   \code{'deviance'}.
+#' @note Unlike \code{\link[stats]{glm}}, residuals are of type \code{'response'} 
+#' not \code{'deviance'} (see \code{\link[stats]{residuals.glm}}). 
 #' 
 residuals.stanreg <- function(object, ...) {
-  type <- c(...)
-  nt <- is.null(type)
-  if (!nt) {
-    if (!(type %in% c("response", "deviance", "pearson")))
-      stop("'type' should be 'response', 'deviance', or 'pearson'")
-  }
-  fam <- object$family
-  if (fam$family == "gaussian" && fam$link == "identity") {
-    if (nt) type <- "response"
-    rr <- residuals.lm(object, type = type)
-  } else {
-    if (nt) type <- "deviance"
-    rr <- residuals.glm(object, type = type)  
-  } 
-  attr(rr, "type") <- unname(type)
-  rr
+  object$residuals
 }
 
 #' @rdname stanreg_methods
@@ -39,10 +20,6 @@ residuals.stanreg <- function(object, ...) {
 vcov.stanreg <- function(object, ...) {
   object$covmat
 }
-
-#' @rdname stanreg_methods
-#' @export
-se <- function(object, parm) UseMethod("se")
 
 #' @rdname stanreg_methods
 #' @export
@@ -75,5 +52,11 @@ summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
   summary(object$stanfit, ...)$summary
+}
+
+#' @rdname stanreg_methods
+#' @export
+log_lik.stanreg <- function(object) {
+  object$log_lik
 }
 
