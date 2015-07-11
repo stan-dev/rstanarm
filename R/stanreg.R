@@ -12,8 +12,8 @@ stanreg <- function(object) {
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
-  qq <- (1 - levs)/2
-  probs <- sort(c(0.5, c(qq, 1 - qq)))
+  qq <- (1 - levs) / 2
+  probs <- sort(c(0.5, qq, 1 - qq))
   stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   
   # point estimates (posterior means), linear predictors and fitted values
@@ -34,8 +34,7 @@ stanreg <- function(object) {
   
   # pointwise log-likelihood
   llargs <- nlist(family, x, y, weights, offset, beta = stanmat[,1:nvars])
-  llargs$sigma <- if (family$family == "gaussian") 
-    stanmat[, "sigma"] else NULL
+  if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"] 
   log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames

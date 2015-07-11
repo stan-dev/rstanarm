@@ -25,40 +25,20 @@
 predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "response"),
                             se.fit = FALSE, output = c("point", "sims")) {
   
-  no_newdata <- missing(newdata) || is.null(newdata)
-  tt <- terms(object)
   type <- match.arg(type)
   output <- match.arg(output)
-  fam <- object$family
-  famname <- fam$family
+  family <- object$family
+  famname <- family$family
   ppfun <- paste0(".pp_", famname)
-  
-  if ((!se.fit && output == "point") && no_newdata) {
+
+  if ((!se.fit && output == "point") && is.null(newdata)) {
     if (type == "link") return(object$linear.predictors)
     else return(object$fitted.values)
   }
-
-  if (no_newdata) {
-    x <- model.matrix(object) 
-    offset <- if (is.null(object$offset)) rep(0, nrow(x)) else object$offset
-  } else { # handle newdata like predict.glm
-    Terms <- delete.response(tt)
-    m <- model.frame(Terms, newdata, xlev = object$xlevels)
-    if (!is.null(cl <- attr(Terms, "dataClasses"))) 
-      .checkMFClasses(cl, m)
-    x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
-    offset <- rep(0, nrow(x))
-    if (!is.null(off.num <- attr(tt, "offset"))) 
-      for (i in off.num) {
-        offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
-      }
-    if (!is.null(object$call$offset)) 
-      offset <- offset + eval(object$call$offset, newdata)
-  }
-  
+  dat <- .pp_data(object, newdata)
   stanmat <- as.matrix(object$stanfit)
-  beta <- stanmat[, 1:ncol(x)]
-  eta <- linear_predictor(beta, x, offset)
+  beta <- stanmat[, 1:ncol(dat$x)]
+  eta <- linear_predictor(beta, dat$x, dat$offset)
   
   if (type == "link") {
     if (output == "sims") return(eta)
@@ -68,7 +48,7 @@ predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "respo
     }
   }
   
-  ppargs <- list(mu = fam$linkinv(eta))
+  ppargs <- list(mu = family$linkinv(eta))
   if (famname == "gaussian")
     ppargs$sigma <- stanmat[, "sigma"]
   if (famname == "binomial") {
@@ -76,8 +56,7 @@ predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "respo
       object$y else model.response(model.frame(object))
     ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
   }
-  yrep <- do.call(ppfun, ppargs) # niter x ndata matrix
-
+  yrep <- do.call(ppfun, ppargs) # yrep is niter x ndata matrix
   
   if (output == "sims") return(yrep)
   else {
@@ -102,4 +81,25 @@ predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "respo
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s,])
   }))
+}
+.pp_data <- function(object, newdata = NULL) {
+  if (is.null(newdata)) {
+    x <- model.matrix(object) 
+    offset <- if (is.null(object$offset)) rep(0, nrow(x)) else object$offset
+    return(nlist(x, offset))
+  }
+  tt <- terms(object)
+  Terms <- delete.response(tt)
+  m <- model.frame(Terms, newdata, xlev = object$xlevels)
+  if (!is.null(cl <- attr(Terms, "dataClasses"))) 
+    .checkMFClasses(cl, m)
+  x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+  offset <- rep(0, nrow(x))
+  if (!is.null(off.num <- attr(tt, "offset"))) 
+    for (i in off.num) {
+      offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
+    }
+  if (!is.null(object$call$offset)) 
+    offset <- offset + eval(object$call$offset, newdata)
+  nlist(x, offset)
 }

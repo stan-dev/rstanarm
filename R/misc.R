@@ -51,7 +51,9 @@ set_prior_scale <- function(scale, default, link) {
     scale
 }
 
-linear_predictor <- function(beta, x, offset) {
+# create linear predictor vector from x and point estimates for beta, or linear
+# predictor matrix from x and full posterior sample of beta
+linear_predictor <- function(beta, x, offset = NULL) {
   UseMethod("linear_predictor")
 }
 linear_predictor.default <- function(beta, x, offset = NULL) {
