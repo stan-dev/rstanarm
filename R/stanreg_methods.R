@@ -66,7 +66,7 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
 print.stanreg <- function(x, ...) {
   # use RStan's print just as placeholder. we should replace this with our own
   # print method
-  print(x$stanfit)
+  print(x$stanfit, pars = "lp__", include = FALSE)
 }
 
 #' @rdname stanreg_methods
