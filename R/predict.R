@@ -58,11 +58,7 @@ predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "respo
   
   stanmat <- as.matrix(object$stanfit)
   beta <- stanmat[, 1:ncol(x)]
-  
-  if (NCOL(beta) == 1) beta <- as.matrix(beta)
-  eta <- t(x %*% t(beta))
-  if (any(offset != 0)) 
-    eta <- sweep(eta, MARGIN = 2L, offset, `+`)
+  eta <- linear_predictor(beta, x, offset)
   
   if (type == "link") {
     if (output == "sims") return(eta)

@@ -50,3 +50,19 @@ set_prior_scale <- function(scale, default, link) {
   else 
     scale
 }
+
+linear_predictor <- function(beta, x, offset) {
+  UseMethod("linear_predictor")
+}
+linear_predictor.default <- function(beta, x, offset = NULL) {
+  eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
+  if (is.null(offset)) eta
+  else eta + offset
+}
+linear_predictor.matrix <- function(beta, x, offset = NULL) {
+  if (NCOL(beta) == 1L) 
+    beta <- as.matrix(beta)
+  eta <- beta %*% t(x)
+  if (is.null(offset)) eta
+  else sweep(eta, MARGIN = 2L, offset, `+`)
+}

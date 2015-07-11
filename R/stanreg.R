@@ -18,8 +18,7 @@ stanreg <- function(object) {
   
   # point estimates (posterior means), linear predictors and fitted values
   coefs <- stan_summary[1:nvars, "mean"]
-  eta <- if (NCOL(x) == 1L) x * coefs else x %*% coefs
-  eta <- as.vector(eta) + offset
+  eta <- linear_predictor(coefs, x, offset)
   mu <- family$linkinv(eta)
   
   # residuals (of type 'response', unlike glm which does type 'deviance' by
@@ -34,7 +33,7 @@ stanreg <- function(object) {
   covmat <- cov(stanmat[,1:nvars])
   
   # pointwise log-likelihood
-  llargs <- nlist(family, x, y, weights, offset, theta = stanmat[,1:nvars])
+  llargs <- nlist(family, x, y, weights, offset, beta = stanmat[,1:nvars])
   llargs$sigma <- if (family$family == "gaussian") 
     stanmat[, "sigma"] else NULL
   log_lik <- do.call("pw_log_lik", llargs)
