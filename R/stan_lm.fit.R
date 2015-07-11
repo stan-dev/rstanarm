@@ -86,10 +86,19 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
     stop("'eta' must be a positive scalar")
   }
   
+  # initial values
+  L <- t(chol(XtX[1,,])) / sqrt(nrow(x) - 1)
+  R2 <- array(1 - SSR[1] / var(y), J)
+  log_omega <- array(0, J)
+  init_fun <- function(chain_id) {
+    return(list(L = L, R2 = R2, log_omega = log_omega))
+  }
+  
   stanfit <- get("stanfit_lm")
   standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
-  stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, ...)
+  stanfit <- rstan::sampling(stanfit, data = standata, 
+                             pars = pars, init = init_fun, ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(x), 
                  "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")
