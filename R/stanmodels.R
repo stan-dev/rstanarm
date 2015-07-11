@@ -16,6 +16,10 @@
 require(rstan)
 MODELS_HOME <- file.path(dirname(system.file(package = "rstanarm")), 
                          "rstanarm", "exec")
+stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
+                                model_name = "Linear Regression",
+                                auto_write = TRUE)
+
 stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian_Xcentered.stan"), 
                                       model_name = "Gaussian GLM",
                                       auto_write = TRUE)

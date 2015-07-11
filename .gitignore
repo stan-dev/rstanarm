@@ -1,13 +1,6 @@
-*.csv
-*.swp
-*.o
-*.so
-*.rds
-*.out
 exec/*.rda
-rstan/R/git_*head.R
-rstan/inst/include/stanlib
-rstan/inst/include/stansrc
-rstan*.tar.gz
 .Rproj.user
 .Rhistory
+man/*.Rd
+!man/rstanarm-internal.Rd
+NAMESPACE

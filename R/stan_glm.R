@@ -21,9 +21,11 @@
 #'
 #' @export
 #'
-#' @param formula,family,data,subset,x,y,model Same as 
-#'   \code{\link[stats]{glm}}.
-#' @param na.action,weights,offset,contrasts Same as 
+#' @param formula,family,data,subset Same as \code{\link[stats]{glm}}.
+#' @param x,y In \code{stan_glm}, logical scalars indicating whether to
+#'   return the design matrix and response vector. In \code{stan_glm.fit},
+#'   a design matrix and response vector.   
+#' @param model,na.action,weights,offset,contrasts Same as 
 #'   \code{\link[stats]{glm}}.
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
@@ -45,8 +47,9 @@
 #'   estimation of generalized linear models, full Bayesian estimation is 
 #'   performed via Markov Chain Monte Carlo. The Bayesian model adds independent
 #'   Gaussian, Student t, or Cauchy priors on the coefficients of the 
-#'   generalized linear model. The \code{stan_lm} function calls \code{stan_glm}
-#'   with \code{family = gaussian}.
+#'   generalized linear model. The \code{stan_glm} function calls the workhorse
+#'   \code{stan_glm.fit} function, but it is possible to call the latter
+#'   directly.
 #' 
 #' @return A named list containing the components
 #' 
@@ -83,14 +86,13 @@
 #' 
 #' @examples 
 #' \dontrun{
-#' stan_lm(mpg ~ wt, data = mtcars)
 #' stan_glm(mpg ~ wt, data = mtcars)
 #' 
 #' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
 #' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
 #' group <- gl(2, 10, 20, labels = c("Ctl","Trt"))
 #' weight <- c(ctl, trt)
-#' fit <- stan_lm(weight ~ group)
+#' fit <- stan_glm(weight ~ group)
 #' coef(fit)
 #' 
 #' counts <- c(18,17,15,20,10,20,25,13,12)

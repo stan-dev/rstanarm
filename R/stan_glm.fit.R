@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
+#' @rdname stan_glm
+#' @export
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          prior.dist = c("normal", "t"), 
@@ -54,11 +56,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   is_binom <- FALSE
   if (family$family == "binomial") {
-    if (NCOL(y) != 1) {
-      stopifnot(NCOL(y) == 2)
+    if (NCOL(y) != 1L) {
+      stopifnot(NCOL(y) == 2L)
       is_binom <- TRUE
-      trials <- y[,1] + y[,2]
-      y <- y[, 1]
+      trials <- y[, 1L] + y[ ,2L]
+      y <- y[, 1L]
     } else {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
@@ -71,8 +73,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   
   x <- as.matrix(x)
-  has_intercept <- colnames(x)[1] == "(Intercept)"
-  nvars <- if (has_intercept)  ncol(x) - 1 else ncol(x)
+  has_intercept <- colnames(x)[1L] == "(Intercept)"
+  xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
+  nvars <- ncol(xtemp)
   
   # prior distributions
   prior.dist <- match.arg(prior.dist)
@@ -90,24 +93,21 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.mean <- maybe_broadcast(prior.mean, nvars)
   prior.mean <- as.array(prior.mean)
   prior.scale <- maybe_broadcast(prior.scale, nvars)
-  
-  # if model has intercept remove the column of 1s before passing to stan
-  xtemp <- if (has_intercept) x[,-1,drop=FALSE] else x
-  
+
   is_gaussian <- family$family == "gaussian"
   if (scaled) {
-    if (is_gaussian == "gaussian") {
+    if (is_gaussian) {
       ss <- 2 * sd(y)
       prior.scale <- ss * prior.scale
       prior.scale.for.intercept <-  ss * prior.scale.for.intercept
     }
-    denom <- apply(xtemp, 2, FUN = function(x) {
-      num.categories <- length(unique(x))
-      x.scale <- 1
-      if (num.categories == 2) x.scale <- diff(range(x))
-      else if (num.categories > 2) x.scale <- 2 * sd(x)
-    })
-    prior.scale <- pmax(min.prior.scale, prior.scale / denom)
+    prior.scale <- pmax(min.prior.scale, prior.scale /
+                          apply(xtemp, 2, FUN = function(x) {
+                            num.categories <- length(unique(x))
+                            x.scale <- 1
+                            if (num.categories == 2) x.scale <- diff(range(x))
+                            else if (num.categories > 2) x.scale <- 2 * sd(x)
+                          }))
   }
   prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)

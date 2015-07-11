@@ -2,7 +2,7 @@
 #' 
 #' These functions are used to specify the \code{prior}, 
 #' \code{prior.for.intercept}, and \code{prior.options} arguments of the
-#' \code{stan_lm}, and \code{stan_glm} functions.
+#' \code{\link{stan_glm}} function.
 #' 
 #' @export 
 #' @name priors
@@ -28,7 +28,7 @@
 #' @return A named list.
 #' @examples
 #' \dontrun{
-#' stan_lm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10))
+#' stan_glm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10))
 #' }
 #' 
 normal <- function(location = 0, scale = NULL) {
@@ -69,4 +69,3 @@ prior_options <- function(prior.scale.for.dispersion = 5,
   validate_parameter_value(min.prior.scale)
   nlist(scaled, min.prior.scale, prior.scale.for.dispersion)
 }
-
