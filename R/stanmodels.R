@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
+# if you change a .stan file, source() stanmodels.R when the working 
+# directory is the root of rstanarm/ in order to update the .rda file 
+# and reduce Build & Reload time
+
 MODELS_HOME <- "exec"
 if (!dir.exists(MODELS_HOME)) MODELS_HOME <- file.path("..", "exec")
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
