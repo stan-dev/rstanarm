@@ -39,8 +39,14 @@ data {
 transformed data {
   real etaphalf;
   real half_K;
+  vector[K] rhs[J];
+  real inv_N[J];
   etaphalf <- eta + 0.5;
   half_K <- 0.5 * K;
+  for (j in 1:J) {
+    rhs[j] <- xbar[j] ./ (s_X[j] * sqrt(N[j] - 1.0));
+    inv_N[j] <- 1.0 / N[j];
+  }
 }
 parameters { // must not call with init="0"
   row_vector[K] z_beta[J];         # primitives for coefficients
@@ -60,10 +66,8 @@ transformed parameters {
                sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
     sigma[j] <- Delta_y * sqrt(1 - R2[j]);
     if (has_intercept == 1) {
-      real se;
-      se <- sigma[j] * sqrt(dot_self(mdivide_left_tri_low(L, xbar[j]) ./ s_X[j])
-                            + 1.0 / N[j]);
-      alpha[j] <- z_alpha[j] * se;
+      alpha[j] <- z_alpha[j] * sigma[j] * 
+                  sqrt(dot_self(mdivide_left_tri_low(L, rhs[j])) + inv_N[j]);
     }
   }
 }
