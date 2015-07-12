@@ -97,8 +97,11 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   stanfit <- get("stanfit_lm")
   standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
-  stanfit <- rstan::sampling(stanfit, data = standata, 
-                             pars = pars, init = init_fun, ...)
+  if ("control" %in% names(list(...))) {
+    stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun, ...)
+  }
+  else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun,
+                                  control = list(adapt_delta = 0.925, max_treedepth = 11), ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(x), 
                  "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")
