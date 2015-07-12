@@ -87,8 +87,8 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   }
   
   # initial values
-  L <- t(chol(XtX[1,,])) / sqrt(nrow(x) - 1)
-  R2 <- array(1 - SSR[1] / var(y), J)
+  L <- t(chol(cor(x)))
+  R2 <- array(1 - SSR[1] / ((N - 1) * var(y)), J)
   log_omega <- array(0, J)
   init_fun <- function(chain_id) {
     return(list(L = L, R2 = R2, log_omega = log_omega))
