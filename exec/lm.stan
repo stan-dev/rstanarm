@@ -12,13 +12,14 @@ functions {
  * @param sigma positive value for the standard deviation of the errors
  * @param N integer equal to the number of observations
  */
-  void mvn_ols_lp(vector beta, vector b, matrix middle,
-                  real intercept, real ybar,
-                  real SSR, real sigma, int N) {
-   increment_log_prob( -0.5 * (quad_form_sym(middle, beta - b) + 
-                      N * square(intercept - ybar) + SSR) / 
-                      square(sigma) - # 0.91... is log(sqrt(2 * pi()))
-                      N * (log(sigma) + 0.91893853320467267) );
+  real ll_mvn_ols_lp(vector beta, vector b, matrix middle,
+                     real intercept, real ybar,
+                     real SSR, real sigma, int N) {
+    increment_log_prob( -0.5 * (quad_form_sym(middle, beta - b) + 
+                       N * square(intercept - ybar) + SSR) / 
+                       square(sigma) - # 0.91... is log(sqrt(2 * pi()))
+                       N * (log(sigma) + 0.91893853320467267) );
+    return get_lp();
   }
 }
 data {
@@ -73,7 +74,8 @@ transformed parameters {
 }
 model {
   for (j in 1:J) {
-    mvn_ols_lp(beta[j], b[j], XtX[j], 
+    real dummy; // irrelevant but useful for testing
+    dummy <- ll_mvn_ols_lp(beta[j], b[j], XtX[j], 
                if_else(has_intercept, alpha[j], 0) + dot_product(xbar[j], beta[j]),
                ybar[j], SSR[j], sigma[j], N[j]); // likelihood contribution
     z_beta[j] ~ normal(0,1); // prior
