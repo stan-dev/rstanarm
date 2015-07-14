@@ -13,14 +13,14 @@
 #'   returned. Ignored if \code{output} argument is set to \code{'sims'}.
 #' @param output the type of output returned. If \code{'point'} then the output 
 #'   is similar to \code{\link[stats]{predict.glm}}. If \code{'sims'} then the 
-#'   output is a matrix containing either posterior predictive simulations ( if 
-#'   \code{type} is \code{'response'}) or the posterior distribution of the 
-#'   linear predictor (if \code{type} is \code{'link'}).
+#'   output is a matrix containing either simulations from the posterior
+#'   predictive distribution ( if \code{type='response'}) or the
+#'   posterior distribution of the linear predictor (if \code{type='link'}).
 #'   
-#' @return If \code{output = 'sims'}, a matrix. If \code{output = 'point'}, a 
+#' @return If \code{output='sims'}, a matrix. If \code{output='point'}, a 
 #'   vector is returned if \code{se.fit} is \code{FALSE} and a list is returned 
 #'   if \code{se.fit} is \code{TRUE}.
-#' 
+#'
 
 predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "response"),
                             se.fit = FALSE, output = c("point", "sims")) {
