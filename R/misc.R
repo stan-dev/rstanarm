@@ -58,13 +58,13 @@ linear_predictor <- function(beta, x, offset = NULL) {
 }
 linear_predictor.default <- function(beta, x, offset = NULL) {
   eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
-  if (is.null(offset)) eta
+  if (length(offset) == 0) eta
   else eta + offset
 }
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (NCOL(beta) == 1L) 
     beta <- as.matrix(beta)
   eta <- beta %*% t(x)
-  if (is.null(offset)) eta
+  if (length(offset) == 0) eta
   else sweep(eta, MARGIN = 2L, offset, `+`)
 }

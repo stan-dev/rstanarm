@@ -37,22 +37,21 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   # these are from help(family)
   supported_families <- c("binomial", "gaussian", "Gamma",
-                          "inverse.gaussian","poisson")
-  fam <- which(supported_families == family$family)
-  if(length(fam) == 0) 
-    stop("'family' must be one of ", supported_families)
+                          "poisson", "Negative Binomial") # FIXME: add "inverse.gaussian"
+  fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
+  if(length(fam) == 0) stop(paste("'family' must be one of ", supported_families))
   
   # these are also from help(family)
   supported_links <- switch(supported_families[fam],
                             binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
                             gaussian = c("identity", "log", "inverse"),
                             Gamma = c("inverse", "identity", "log"),
-                            inverse.gaussian = c("1/mu^2", "inverse", "identity", "log"),
+                            # inverse.gaussian = c("1/mu^2", "inverse", "identity", "log"),
+                            "Negative Binomial" = , # intentional
                             poisson = c("log", "identity", "sqrt"),
                             stop("unsupported family"))
   link <- which(supported_links == family$link)
-  if (length(link) == 0) 
-    stop("'link' must be one of ", supported_links)
+  if (length(link) == 0) stop(paste("'link' must be one of ", supported_links))
   
   is_binom <- FALSE
   if (family$family == "binomial") {
@@ -75,6 +74,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   x <- as.matrix(x)
   has_intercept <- colnames(x)[1L] == "(Intercept)"
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
+  xbar <- colMeans(xtemp)
+  xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   nvars <- ncol(xtemp)
   
   # prior distributions
@@ -112,11 +113,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   prior.scale <- as.array(pmin(.Machine$double.xmax, prior.scale))
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
   
+  is_bernoulli <- supported_families[fam] == "binomial" && all(y %in% 0:1)
+  is_nb <- supported_families[fam] == "Negative Binomial"
+  
   # create entries in the data block of the .stan file
   standata <- list(
-    N = nrow(xtemp), K = ncol(xtemp), X = xtemp, y = y, family = fam, link = link,
-    weights = weights, has_weights = as.integer(!all(weights == 1)), 
-    offset = offset, has_offset = as.integer(!all(offset == 0)),
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
+    has_weights = as.integer(length(weights) > 0),
+    has_offset = as.integer(length(offset) > 0),
     prior_dist = prior.dist, prior_mean = prior.mean, prior_scale = prior.scale, 
     prior_df = prior.df, prior_dist_for_intercept = prior.dist.for.intercept,
     prior_scale_for_intercept = prior.scale.for.intercept, 
@@ -124,30 +128,69 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_df_for_intercept = prior.df.for.intercept,
     has_intercept = as.integer(has_intercept))
   
-  if (is_gaussian) 
-    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
-  if (is_binom)
-    standata$trials <- trials
-  
+  if (!is_bernoulli) {
+    standata$X <- xtemp
+    standata$y <- y
+    standata$weights <- weights
+    standata$offset <- offset
+  }
   # call stan() to draw from posterior distribution
   if (supported_families[fam] == "gaussian") {
+    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
     stanfit <- get("stanfit_gaussian")
   }
-  else if (supported_families[fam] %in% c("binomial", "poisson")) {
-    stanfit <- if (is_binom) 
-      get("stanfit_binomial") else get("stanfit_discrete")
+  else if (supported_families[fam] == "binomial") {
+    if (is_bernoulli) {
+      y0 <- y == 0
+      y1 <- y == 1
+      standata$N <- c(sum(y0), sum(y1))
+      standata$X0 <- xtemp[y0,]
+      standata$X1 <- xtemp[y1,]
+      if (length(weights) > 0) {
+        standata$weights0 <- weights[y0]
+        standata$weights1 <- weights[y1]
+      }
+      else {
+        standata$weights0 <- double(0)
+        standata$weights1 <- double(0)
+      }
+      if (length(offset) > 0) {
+        standata$offset0 <- offset[y0]
+        standata$offset1 <- offset[y1]
+      }
+      else {
+        standata$offset0 <- double(0)
+        standata$offset1 <- double(0)
+      }
+      stanfit <- get("stanfit_bernoulli")  
+    }
+    else {
+      standata$trials <- trials
+      stanfit <- get("stanfit_binomial")
+    }
+  }   
+  else if (supported_families[fam] == "poisson") {
+    standata$family <- 1L
+    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+    stanfit <- get("stanfit_count") 
   }
-  else stop("model not supported yet") # FIXME
+  else if (is_nb) {
+    standata$family <- 2L
+    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+    stanfit <- get("stanfit_count") 
+  }
+  else stop(paste(family$family, "is not supported"))
   
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma")
+  pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma", 
+            if (is_nb) "theta", "mean_PPD")
   stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                              init = start, ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                 if (is_gaussian) "sigma")
+                 if (is_gaussian) "sigma", if (is_nb) "overdispersion", "mean_PPD")
   stanfit@sim$fnames_oi <- new_names
   stanfit
 }

@@ -33,6 +33,15 @@ pw_log_lik <- function(family, x, y, weights, beta, sigma = NULL, offset = NULL)
     dpois(y, lambda = mu[s,], log = TRUE)
   }))
 }
+.ll_nb <- function(y, rho, theta) {
+  stop(".ll_nb not working")
+  t(sapply(1:nrow(rho), function(s) {
+    alpha <- rho[s,]
+    beta <- theta[s]
+    lgamma(y + alpha - 1) - lgamma(alpha - 1) - lgamma(y) +
+      alpha * log(beta / (beta + 1)) - y * log(beta + 1)
+  }))
+}
 .ll_binomial <- function(y, mu) {
   if (NCOL(y) == 2L) {
     trials <- rowSums(y)

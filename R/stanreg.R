@@ -34,8 +34,12 @@ stanreg <- function(object) {
   
   # pointwise log-likelihood
   llargs <- nlist(family, x, y, weights, offset, beta = stanmat[,1:nvars])
-  if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"] 
-  log_lik <- do.call("pw_log_lik", llargs)
+  if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"]
+  if (pmatch("Negative Binomial", family$family, nomatch = 0L) == 1) {
+    llargs$theta <- stanmat[,"overdispersion"]
+    family$family <- "nb"
+  }
+  else log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]

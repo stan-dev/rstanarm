@@ -85,5 +85,5 @@ test_that("stan_glm returns expected result for binomial example", {
   val <- f1(fit)
   ans <- f2(glm(y ~ X, family = binomial))
   diff <- abs(val - ans)
-  testthat::expect_true(all(diff < threshold))
+  expect_true(all(diff < threshold))
 })

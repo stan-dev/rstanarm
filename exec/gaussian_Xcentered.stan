@@ -7,8 +7,8 @@ functions {
    * @param link An integer indicating the link function
    * @return A vector, i.e. inverse-link(eta)
    */
-  vector linkinv_gaus(vector eta, int link) {
-    if (link > 3) reject("Invalid link");
+  vector linkinv_gauss(vector eta, int link) {
+    if (link < 1 || link > 3) reject("Invalid link");
     if (link == 1 || link == 2) # link = identity or log 
       return(eta); # return eta for log link too bc will use lognormal
     else {# link = inverse
@@ -25,46 +25,17 @@ functions {
    * @param link An integer indicating the link function
    * @return A vector
    */
-  vector pw_gaus(vector y, vector eta, real sigma, int link) {
+  vector pw_gauss(vector y, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
-    if (link > 3) 
-      reject("Invalid link");
+    if (link < 1 || link > 3) reject("Invalid link");
     if (link == 2) # link = log
       for (n in 1:rows(eta)) ll[n] <- lognormal_log(y[n], eta[n], sigma);
     else { # link = idenity or inverse
       vector[rows(eta)] mu;
-      mu <- linkinv_gaus(eta, link);
+      mu <- linkinv_gauss(eta, link);
       for (n in 1:rows(eta)) ll[n] <- normal_log(y[n], mu[n], sigma);
     }
     return ll;
-  }
-  
-  /** 
-   * Column means of a matrix
-   *
-   * @param X matrix
-   * @return row_vector (of length cols(X)) of column means
-   */
-  row_vector column_means(matrix X) {
-    row_vector[cols(X)] out;
-    for (k in 1:cols(X))
-      out[k] <- mean(col(X, k));
-    return out;
-  }
-  
-  /** 
-   * Center predictors
-   *
-   * @param X matrix containing the predictors to be centered
-   * @return matrix with same dimensions as X
-   */
-  matrix center_predictors(matrix X) {
-    matrix[rows(X), cols(X)] Xcent;
-    row_vector[cols(X)] colmeans;
-    colmeans <- column_means(X);
-    for (n in 1:rows(X))
-      Xcent[n] <- X[n] - colmeans;
-    return Xcent;
   }
 }
 data {
@@ -73,7 +44,8 @@ data {
   int<lower=1> K; # number of predictors
   
   # data
-  matrix[N,K]  X; # predictor matrix
+  vector[K] xbar; # predictor means
+  matrix[N,K]  X; # centered predictor matrix
   vector[N]    y; # continuous outcome
   
   # intercept
@@ -83,16 +55,16 @@ data {
   int<lower=1,upper=3> link; # 1 = identity, 2 = log, 3 = inverse
   
   # weights
-  int<lower=0,upper=1> has_weights; # 0 = No (weights is a ones vector), 1 = Yes
-  vector[N] weights;
+  int<lower=0,upper=1> has_weights; # 0 = No, 1 = Yes
+  vector[N * has_weights] weights;
   
   # offset
-  int<lower=0,upper=1> has_offset;  # 0 = No (offset is a zero vector), 1 = Yes
-  vector[N] offset;
+  int<lower=0,upper=1> has_offset;  # 0 = No, 1 = Yes
+  vector[N * has_offset] offset;
   
-  # prior distributions
-  int<lower=1,upper=2> prior_dist; # 1 = normal, 2 = student_t
-  int<lower=1,upper=2> prior_dist_for_intercept; # 1 = normal, 2 = student_t
+  # prior family (zero indicates no prior!!!)
+  int<lower=0,upper=2> prior_dist;               # 1 = normal, 2 = student_t
+  int<lower=0,upper=2> prior_dist_for_intercept; # 1 = normal, 2 = student_t
   
   # hyperparameter values
   vector<lower=0>[K] prior_scale;
@@ -103,18 +75,18 @@ data {
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_scale_for_dispersion;
 }
-transformed data {
-  matrix[N, K] Xcent;
-  Xcent <- center_predictors(X);
-}
 parameters {
   real alpha0[has_intercept];
   vector[K] beta;
-  real<lower=0> sigma;
+  real<lower=0> sigma_unscaled;
+}
+transformed parameters {
+  real sigma;
+  sigma <- prior_scale_for_dispersion * sigma_unscaled;
 }
 model {
   vector[N] eta; # linear predictor
-  eta <- Xcent * beta;
+  eta <- X * beta;
   if (has_intercept == 1)
     eta <- eta + alpha0[1];
   if (has_offset == 1) 
@@ -123,7 +95,7 @@ model {
   // Log-likelihood 
   if (has_weights == 0) { # unweighted log-likelihoods
     vector[N] mu;
-    mu <- linkinv_gaus(eta, link);
+    mu <- linkinv_gauss(eta, link);
     if (link == 2)
       y ~ lognormal(mu, sigma);
     else 
@@ -131,40 +103,42 @@ model {
   }
   else { # weighted log-likelihoods
     vector[N] summands;
-    summands <- pw_gaus(y, eta, sigma, link);
+    summands <- pw_gauss(y, eta, sigma, link);
     increment_log_prob(dot_product(weights, summands));
   }
   
   // Log-prior for scale
-  sigma ~ cauchy(0, prior_scale_for_dispersion);
+  sigma_unscaled ~ cauchy(0, 1);
   
   // Log-priors for coefficients
   if (prior_dist == 1) # normal
     beta ~ normal(prior_mean, prior_scale);  
-  else # student_t
+  else if (prior_dist == 2) # student_t
     beta ~ student_t(prior_df, prior_mean, prior_scale);
+  /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  
   if (has_intercept == 1) {
     if (prior_dist_for_intercept == 1) # normal
       alpha0 ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-    else # student_t
+    else if (prior_dist_for_intercept == 2) # student_t
       alpha0 ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
                         prior_scale_for_intercept);
+    /* else prior_dist is 0 and nothing is added */
   }
 }
 generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
   if (has_intercept == 1)
-    alpha[1] <- alpha0[1] - column_means(X) * beta;
+    alpha[1] <- alpha0[1] - dot_product(xbar, beta);
     
   {
     real theta;
-    theta <- alpha[1] + column_means(X) * beta;
+    theta <- alpha[1] + dot_product(xbar, beta);
     if (has_offset) theta <- theta + mean(offset);
     if (link == 1) mean_PPD <- normal_rng(theta, sigma);
     else if (link == 2) mean_PPD <- lognormal_rng(theta, sigma);
     else mean_PPD <- normal_rng(inv(theta), sigma);
-  }  
+  }
 } 

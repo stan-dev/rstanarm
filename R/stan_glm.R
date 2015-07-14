@@ -137,14 +137,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   weights <- as.vector(model.weights(mf))
   if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
   if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
-  if (is.null(weights)) weights <- rep(1.0, NROW(Y))
+  if (is.null(weights)) weights <- double(0) #rep(1.0, NROW(Y))
   offset <- as.vector(model.offset(mf))
   if (!is.null(offset)) {
     if (length(offset) != NROW(Y))
       stop(gettextf("number of offsets is %d should equal %d (number of observations)",
                     length(offset), NROW(Y)), domain = NA)
   }
-  else offset <- rep(0, nrow(X))
+  else offset <- double(0) #rep(0, nrow(X))
   
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
                           offset = offset, family = family, 
