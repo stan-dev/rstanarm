@@ -1,9 +1,26 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
-library(rstan)
+MODELS_HOME <- "exec"
+fsep <- .Platform$file.sep
+if (!dir.exists(MODELS_HOME)) {
+  MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), 
+                     paste0("rstanarm", fsep, "exec"), getwd())
+}
+if (!dir.exists(MODELS_HOME)) {
+  MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), "exec", getwd())
+}
 
-functions <- sapply(dir("exec", pattern = "stan$", full.names = TRUE), function(f) {
+context("setup")
+test_that("Stan programs are available", {
+  message(MODELS_HOME)
+  expect_true(dir.exists(MODELS_HOME))  
+})
+  
+stopifnot(require(rstan))
+Sys.unsetenv("R_TESTS")
+
+functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- scan(text = stanc(f)$model_code, what = "character", sep = "\n",
              quiet = TRUE)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
