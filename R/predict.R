@@ -28,18 +28,17 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   }
   mcmc <- !inherits(object, "stanreg-mle") # change to whatever name we end up using
   if (mcmc && type == "response")
-    stop("type = 'response' should not be used for models estimated by MCMC.",
-         "Use posterior_predict() to draw from the posterior predictive distribution.")
+    stop("type='response' should not be used for models estimated by MCMC.",
+         "Use posterior_predict() to draw from the posterior predictive distribution.",
+         call. = FALSE)
   dat <- .pp_data(object, newdata)
-  stanmat <- if (mcmc) as.matrix(object$stanfit) else t(object$stanfit$par)
+  stanmat <- if (mcmc) as.matrix(object$stanfit) else stop("MLE not implemented yet")
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   fit <- colMeans(eta)
   se.fit <- apply(eta, 2L, sd)
-  if (type == "response") { # for mle fits only
-    # do what predict.glm does for now
-    se.fit <- se.fit * abs(family(object)$mu.eta(fit))
-    fit <- family(object)$linkinv(fit)
+  if (type == "response") { 
+    stop("MLE not implemented yet")
   }
   nlist(fit, se.fit)
 }

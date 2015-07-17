@@ -33,8 +33,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     draws <- S
   else {
     if (draws > S)
-      stop(paste("draws =", draws, "but only", S, 
-                 "posterior draws found."), call. = FALSE)
+      stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
   } 
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
