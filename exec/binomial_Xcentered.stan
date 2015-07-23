@@ -132,8 +132,8 @@ data {
 }
 parameters {
   vector[K] beta; # coefficients
-  real<lower=negative_infinity(),upper=make_upper_binomial(link,
-       X, beta, has_offset, offset)> gamma[has_intercept];
+  real<upper=make_upper_binomial(link, X, beta, 
+       has_offset, offset)> gamma[has_intercept];
 }
 model {
   vector[N] eta; # linear predictor

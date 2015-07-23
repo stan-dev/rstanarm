@@ -139,16 +139,16 @@ test_that("pw_pois return expected results", {
   }
 })
 context("Poisson")
-test_that("make_upper_count returns expected results", {
+test_that("make_lower_count returns expected results", {
   for (i in 1:length(links)) {
     X <- matrix(rnorm(2 * N), N, 2)
     beta <- rnorm(2)
     has_offset <- 0L
     offset <- matrix(0, nrow = N, ncol = 0)
-    if (i == 2) expect_true(is.finite(make_upper_count(i, 
+    if (i == 2) expect_true(is.finite(make_lower_count(i, 
                                       X, beta, has_offset, offset)))
-    else expect_true(Inf == make_upper_binomial(i, 
-                            X, beta, has_offset, offset), info = links[i])
+    else expect_true(-Inf == make_lower_count(i, 
+                             X, beta, has_offset, offset), info = links[i])
   }
 })
 

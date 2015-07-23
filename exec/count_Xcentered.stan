@@ -47,22 +47,23 @@ functions {
   }
   
   /** 
-   * Upper bound on the intercept, which is infinity except for identity link
+   * Lower bound on the intercept, which is negative infinity 
+   * except for identity link
    *
    * @param link An integer indicating the link function
    * @param X A matrix of predictors | y = 0
    * @param beta A vector of coefficients
    * @param has_offset An integer indicating an offset
    * @param offset A vector of offsets
-   * @return A scalar upper bound on the intercept
+   * @return A scalar lower bound on the intercept
    */
-  real make_upper_count(int link, matrix X, vector beta, 
+  real make_lower_count(int link, matrix X, vector beta, 
                         int has_offset, vector offset) {
-    real maximum;
-    if (link != 2) return positive_infinity();
-    if (has_offset == 0) maximum <- max(X * beta);
-    else maximum <- max(X * beta + offset);
-    return -maximum;
+    real minimum;
+    if (link != 2) return negative_infinity();
+    if (has_offset == 0) minimum <- min(X * beta);
+    else minimum <- min(X * beta + offset);
+    return -minimum;
   }
 
   /** 
@@ -121,8 +122,8 @@ data {
 }
 parameters {
   vector[K] beta; # coefficients
-  real<lower=negative_infinity(),upper=make_upper_count(link,
-       X, beta, has_offset, offset)> gamma[has_intercept];
+  real<lower=make_lower_count(link, X, beta, 
+                              has_offset, offset)> gamma[has_intercept];
   real<lower=0> theta_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
@@ -173,14 +174,14 @@ model {
       /* else prior_dist = 0 and nothing is added */
     }
     else {
-      real maximum;
-      maximum <- -max(eta);
+      real minimum;
+      minimum <- -min(eta);
       if (prior_dist_for_intercept == 1) # normal
         gamma[1] ~ normal(prior_mean_for_intercept, 
-                          prior_scale_for_intercept) T[,maximum];
+                          prior_scale_for_intercept) T[minimum,];
       else if (prior_dist_for_intercept == 2) # student_t
         gamma[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                             prior_scale_for_intercept) T[,maximum];
+                             prior_scale_for_intercept) T[minimum,];
       /* else prior_dist = 0 and nothing is added */
     }
   }

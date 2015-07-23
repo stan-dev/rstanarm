@@ -152,8 +152,8 @@ transformed data {
 }
 parameters {
   vector[K] beta; # coefficients
-  real<lower=negative_infinity(),upper=make_upper_bernoulli(link,
-       X0, X1, beta, has_offset, offset0, offset1)> gamma[has_intercept];
+  real<upper=make_upper_bernoulli(link, X0, X1, beta, 
+       has_offset, offset0, offset1)> gamma[has_intercept];
 }
 model {
   vector[N[1]] eta0;
