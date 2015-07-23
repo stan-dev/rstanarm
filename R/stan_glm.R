@@ -31,8 +31,10 @@
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
 #'   
-#' @param prior Prior for coefficients. See \code{\link{priors}}.
-#' @param prior.for.intercept Prior for intercept. See \code{\link{priors}}.
+#' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
+#'   and see \code{\link{priors}} otherwise.
+#' @param prior.for.intercept Prior for intercept. Can be \code{NU}} to omit
+#'   a prior and see \code{\link{priors}} otherwise.
 #'   Note: The prior distribution for the intercept is set so it applies to
 #'   the value when all predictors are centered.
 #' @param prior.options Additional options related to prior distributions. See
@@ -146,12 +148,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   }
   else offset <- double(0) #rep(0, nrow(X))
   
+  if (is.null(prior)) prior <- list()
+  if (is.null(prior.for.intercept)) prior.for.intercept <- list()
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
                           offset = offset, family = family, 
                           prior.dist = prior$dist,
                           prior.dist.for.intercept = prior.for.intercept$dist,
                           prior.mean = prior$location, prior.scale = prior$scale, 
-                          prior.df = na_replace(prior$df, 1), 
+                          prior.df = na_replace(prior$df, 1),
                           prior.mean.for.intercept = prior.for.intercept$location, 
                           prior.scale.for.intercept = prior.for.intercept$scale,
                           prior.df.for.intercept = na_replace(prior.for.intercept$df, 1), 

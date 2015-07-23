@@ -79,24 +79,35 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   nvars <- ncol(xtemp)
   
   # prior distributions
-  prior.dist <- match.arg(prior.dist)
-  prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
-  prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)
-  prior.dist.for.intercept <- ifelse(prior.dist.for.intercept == "normal", 1L, 2L)
+  if (!is.null(prior.dist)) {
+    prior.dist <- match.arg(prior.dist)
+    prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)
+    prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
+    prior.df <- maybe_broadcast(prior.df, nvars)
+    prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
+    prior.mean <- maybe_broadcast(prior.mean, nvars)
+    prior.mean <- as.array(prior.mean)
+    prior.scale <- maybe_broadcast(prior.scale, nvars)
+  }
+  else {
+    prior.dist <- 0L
+    prior.mean <- prior.scale <- prior.df <- rep(0, nvars)
+  }
+  if (!is.null(prior.dist.for.intercept)) {
+    prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
+    prior.dist.for.intercept <- ifelse(prior.dist.for.intercept == "normal", 1L, 2L)
+    prior.scale.for.intercept <- set_prior_scale(prior.scale.for.intercept, 
+                                                 default = 10, link = family$link)
+    prior.df.for.intercept <- min(.Machine$double.xmax, prior.df.for.intercept)
+  }
+  else {
+    prior.dist.for.intercept <- 0L
+    prior.mean.for.intercept <- prior.scale.for.intercept <- 
+      prior.df.for.intercept <- 0
+  }
   
-  # process hyperprior values
-  prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
-  prior.scale.for.intercept <- set_prior_scale(prior.scale.for.intercept, 
-                                               default = 10, link = family$link)
-  prior.df <- maybe_broadcast(prior.df, nvars)
-  prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
-  prior.df.for.intercept <- min(.Machine$double.xmax, prior.df.for.intercept)
-  prior.mean <- maybe_broadcast(prior.mean, nvars)
-  prior.mean <- as.array(prior.mean)
-  prior.scale <- maybe_broadcast(prior.scale, nvars)
-
   is_gaussian <- family$family == "gaussian"
-  if (scaled) {
+  if (scaled && prior.dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
       prior.scale <- ss * prior.scale
