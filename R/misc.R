@@ -7,8 +7,10 @@ na_replace <- function(x, replacement) {
 }
 
 maybe_broadcast <- function(x, n) {
-  # if x has length 1 replicate it n times, else return x itself
-  if (length(x) == 1L) 
+  # if x has length <= 1 replicate it n times, else return x itself
+  if (length(x) == 0)
+    rep(0, times = n)
+  else if (length(x) == 1L) 
     rep(x, times = n)
   else 
     x

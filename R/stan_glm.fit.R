@@ -91,7 +91,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   else {
     prior.dist <- 0L
-    prior.mean <- prior.scale <- prior.df <- rep(0, nvars)
+    prior.mean <- prior.scale <- prior.df <- as.array(rep(0, nvars))
   }
   if (!is.null(prior.dist.for.intercept)) {
     prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
@@ -147,7 +147,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   # call stan() to draw from posterior distribution
   if (supported_families[fam] == "gaussian") {
-    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+    standata$prior_scale_for_dispersion <- if (prior.scale.for.dispersion == Inf) 
+      0 else prior.scale.for.dispersion
     stanfit <- get("stanfit_gaussian")
   }
   else if (supported_families[fam] == "binomial") {
@@ -182,12 +183,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }   
   else if (supported_families[fam] == "poisson") {
     standata$family <- 1L
-    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+    standata$prior_scale_for_dispersion <- if (prior.scale.for.dispersion == Inf) 
+      0 else prior.scale.for.dispersion
     stanfit <- get("stanfit_count") 
   }
   else if (is_nb) {
     standata$family <- 2L
-    standata$prior_scale_for_dispersion <- prior.scale.for.dispersion
+    standata$prior_scale_for_dispersion <- if (prior.scale.for.dispersion == Inf) 
+      0 else prior.scale.for.dispersion
     stanfit <- get("stanfit_count") 
   }
   else stop(paste(family$family, "is not supported"))

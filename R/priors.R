@@ -10,7 +10,8 @@
 #'   \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
 #'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
 #'   the mean does not exist and \code{location} is the prior median.
-#' @param scale Prior scale. Default depends (see Details).
+#' @param scale Prior scale. Default depends (see Details) but \code{Inf}
+#'   implies an improper uniform prior over the positive real numbers
 #' @param df Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #'   

@@ -33,12 +33,13 @@
 #'   
 #' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
-#' @param prior.for.intercept Prior for intercept. Can be \code{NU}} to omit
+#' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit
 #'   a prior and see \code{\link{priors}} otherwise.
 #'   Note: The prior distribution for the intercept is set so it applies to
 #'   the value when all predictors are centered.
-#' @param prior.options Additional options related to prior distributions. See
-#'   \code{\link{priors}}.
+#' @param prior.options Additional options related to prior distributions. 
+#'   Can be \code{NULL} to omit a prior on the dispersion and see
+#'   \code{\link{priors}} otherwise.
 #'   
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
 #'   \code{iter}, \code{chains}, \code{refresh}, etc.)
@@ -135,7 +136,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   }
 
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
-  else X <- matrix(, NROW(Y), 0L)
+  else X <- matrix(NA_real_, NROW(Y), 0L)
   weights <- as.vector(model.weights(mf))
   if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
   if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
@@ -150,6 +151,9 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   
   if (is.null(prior)) prior <- list()
   if (is.null(prior.for.intercept)) prior.for.intercept <- list()
+  if (length(prior.options) == 0) {
+    prior.options <- list(scaled = FALSE, prior.scale.for.dispersion = Inf)
+  }
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
                           offset = offset, family = family, 
                           prior.dist = prior$dist,

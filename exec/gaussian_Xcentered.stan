@@ -82,7 +82,9 @@ parameters {
 }
 transformed parameters {
   real sigma;
-  sigma <- prior_scale_for_dispersion * sigma_unscaled;
+  if (prior_scale_for_dispersion > 0)
+    sigma <-  prior_scale_for_dispersion * sigma_unscaled;
+  else sigma <- sigma_unscaled;
 }
 model {
   vector[N] eta; # linear predictor
@@ -108,7 +110,7 @@ model {
   }
   
   // Log-prior for scale
-  sigma_unscaled ~ cauchy(0, 1);
+  if (prior_scale_for_dispersion > 0) sigma_unscaled ~ cauchy(0, 1);
   
   // Log-priors for coefficients
   if (prior_dist == 1) # normal

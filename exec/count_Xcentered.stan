@@ -129,8 +129,9 @@ parameters {
 }
 transformed parameters {
   real theta[family > 1];
-  if (family > 1) theta[1] <- prior_scale_for_dispersion * 
-                              theta_unscaled[1];
+  if (family > 1 && prior_scale_for_dispersion > 0) 
+    theta[1] <- prior_scale_for_dispersion * theta_unscaled[1];
+  else if (family > 1) theta[1] <- theta_unscaled[1];
 }
 model {
   vector[N] eta; # linear predictor
@@ -187,7 +188,7 @@ model {
   }
   
   // Log-prior for dispersion
-  if (family > 1) theta_unscaled ~ cauchy(0, 1);
+  if (family > 1 && prior_scale_for_dispersion > 0) theta_unscaled ~ cauchy(0, 1);
 
   // Log-prior for noise
   if (family == 3) noise[1] ~ gamma(theta[1], 1);
