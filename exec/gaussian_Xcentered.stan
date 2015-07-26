@@ -76,7 +76,7 @@ data {
   real<lower=0> prior_scale_for_dispersion;
 }
 parameters {
-  real alpha0[has_intercept];
+  real gamma[has_intercept];
   vector[K] beta;
   real<lower=0> sigma_unscaled;
 }
@@ -89,10 +89,8 @@ transformed parameters {
 model {
   vector[N] eta; # linear predictor
   eta <- X * beta;
-  if (has_intercept == 1)
-    eta <- eta + alpha0[1];
-  if (has_offset == 1) 
-    eta <- eta + offset;
+  if (has_intercept == 1) eta <- eta + gamma[1];
+  if (has_offset == 1)    eta <- eta + offset;
   
   // Log-likelihood 
   if (has_weights == 0) { # unweighted log-likelihoods
@@ -122,9 +120,9 @@ model {
   // Log-prior for intercept  
   if (has_intercept == 1) {
     if (prior_dist_for_intercept == 1) # normal
-      alpha0 ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+      gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
     else if (prior_dist_for_intercept == 2) # student_t
-      alpha0 ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+      gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
                         prior_scale_for_intercept);
     /* else prior_dist is 0 and nothing is added */
   }
@@ -133,14 +131,14 @@ generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
   if (has_intercept == 1)
-    alpha[1] <- alpha0[1] - dot_product(xbar, beta);
+    alpha[1] <- gamma[1] - dot_product(xbar, beta);
     
   {
     real theta;
     theta <- alpha[1] + dot_product(xbar, beta);
     if (has_offset) theta <- theta + mean(offset);
-    if (link == 1) mean_PPD <- normal_rng(theta, sigma);
+    if (link == 1)      mean_PPD <- normal_rng(theta, sigma);
     else if (link == 2) mean_PPD <- lognormal_rng(theta, sigma);
     else mean_PPD <- normal_rng(inv(theta), sigma);
   }
-} 
+}

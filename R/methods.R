@@ -43,7 +43,13 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
 print.stanreg <- function(x, ...) {
   # use RStan's print just as placeholder. we should replace this with our own
   # print method
-  print(x$stanfit, pars = "lp__", include = FALSE)
+  if(x$stanfit@mode == 0) print(x$stanfit, pars = "lp__", include = FALSE)
+  else {
+    mark <- names(x$coefficients)
+    if (x$family$family == "gaussian") mark <- c(mark, "sigma")
+    else if (x$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
+    print(x$stan_summary[mark,,drop=FALSE])
+  }
 }
 
 #' @rdname stanreg_methods

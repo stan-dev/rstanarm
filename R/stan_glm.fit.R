@@ -25,8 +25,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                          prior.scale.for.intercept = NULL, 
                          prior.df.for.intercept = 1,
                          min.prior.scale = 1e-12, 
-                         prior.scale.for.dispersion = 5, 
-                         ...) { # further arguments to stan()
+                         prior.scale.for.dispersion = 5,
+                         method = c("sampling", "optimizing"),
+                         ...) { # further arguments to sampling() or optimizing()
   
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())
@@ -200,11 +201,26 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma", 
             if (is_nb) "theta", "mean_PPD")
-  stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
-                             init = start, ...)
-  parameters <- dimnames(stanfit)$parameters
-  new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                 if (is_gaussian) "sigma", if (is_nb) "overdispersion", "mean_PPD")
-  stanfit@sim$fnames_oi <- new_names
-  stanfit
+  method <- match.arg(method)
+  if (method == "sampling") {
+    stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
+                               init = start, ...)
+    new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
+                   if (is_gaussian) "sigma", if (is_nb) "overdispersion", "mean_PPD")
+    stanfit@sim$fnames_oi <- new_names
+    return(stanfit)
+  }
+  else if (method == "optimizing") {
+    out <- rstan::optimizing(stanfit, data = standata, init = start, hessian = TRUE)
+    new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
+                   if (is_gaussian) c("sigma_unsaled", "sigma"), 
+                   if (is_nb) "overdispersion", if (has_intercept) "(Intercept)", "mean_PPD")
+    k <- ncol(out$hessian)
+    names(out$par) <- new_names
+    colnames(out$hessian) <- rownames(out$hessian) <- new_names[1:k]
+    out$cov.scaled <- qr.solve(-out$hessian, diag(1, k , k))
+    colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
+    out$stanfit <- suppressMessages(rstan::sampling(stanfit, data = standata, chains = 0))
+    return(out)
+  }
 }

@@ -40,7 +40,9 @@
 #' @param prior.options Additional options related to prior distributions. 
 #'   Can be \code{NULL} to omit a prior on the dispersion and see
 #'   \code{\link{priors}} otherwise.
-#'   
+#' @param method Character string (possibly abbreviated) among 
+#'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
+#'   approach to use.
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
 #'   \code{iter}, \code{chains}, \code{refresh}, etc.)
 #' 
@@ -110,7 +112,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
                     prior = normal(), prior.for.intercept = normal(),
                     prior.options = prior_options(), 
-                    ...) { # further arguments to stan()
+                    method = c("sampling", "optimizing"),
+                    ...) { # further arguments to sampling() or optimizing()
 
   # Parse like glm()
   if (is.character(family)) 
@@ -165,8 +168,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior.df.for.intercept = na_replace(prior.for.intercept$df, 1), 
                           scaled = prior.options$scaled, 
                           min.prior.scale = prior.options$min.prior.scale, 
-                          prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion, 
-                          ...)
+                          prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion,
+                          method = method, ...)
   
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)
