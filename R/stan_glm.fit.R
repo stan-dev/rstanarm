@@ -54,12 +54,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   link <- which(supported_links == family$link)
   if (length(link) == 0) stop(paste("'link' must be one of ", supported_links))
   
-  is_binom <- FALSE
   if (family$family == "binomial") {
     if (NCOL(y) != 1L) {
       stopifnot(NCOL(y) == 2L)
-      is_binom <- TRUE
-      trials <- y[, 1L] + y[ ,2L]
+      trials <- y[, 1L] + y[, 2L]
       y <- y[, 1L]
     } else {
       # convert factors to 0/1 using R's convention that first factor level is

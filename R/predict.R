@@ -9,79 +9,40 @@
 #' @param type the type of prediction. The default \code{'link'} is on the scale
 #'   of the linear predictors; the alternative \code{'response'} is on the scale
 #'   of the response variable.
-#' @param se.fit logical switch indicating if standard errors should be
-#'   returned. Ignored if \code{output} argument is set to \code{'sims'}.
-#' @param output the type of output returned. If \code{'point'} then the output 
-#'   is similar to \code{\link[stats]{predict.glm}}. If \code{'sims'} then the 
-#'   output is a matrix containing either simulations from the posterior
-#'   predictive distribution ( if \code{type='response'}) or the
-#'   posterior distribution of the linear predictor (if \code{type='link'}).
+#' @param se.fit logical switch indicating if standard errors should be 
+#'   returned.
 #'   
-#' @return If \code{output='sims'}, a matrix. If \code{output='point'}, a 
-#'   vector is returned if \code{se.fit} is \code{FALSE} and a list is returned 
-#'   if \code{se.fit} is \code{TRUE}.
+#' @return A vector if \code{se.fit} is \code{FALSE} and a list if \code{se.fit}
+#'   is \code{TRUE}.
 #'
+#' @seealso \code{\link{posterior_predict}}, \code{\link[stats]{predict.glm}}
+#' 
 
-predict.stanreg <- function(object, ..., newdata = NULL, type = c("link", "response"),
-                            se.fit = FALSE, output = c("point", "sims")) {
+predict.stanreg <- function(object, ..., newdata = NULL, 
+                            type = c("link", "response"), se.fit = FALSE) {
   
   type <- match.arg(type)
-  output <- match.arg(output)
-  family <- object$family
-  famname <- family$family
-  ppfun <- paste0(".pp_", famname)
-
-  if ((!se.fit && output == "point") && is.null(newdata)) {
+  if (!se.fit && is.null(newdata)) {
     if (type == "link") return(object$linear.predictors)
     else return(object$fitted.values)
   }
+  mcmc <- !inherits(object, "stanreg-mle") # change to whatever name we end up using
+  if (mcmc && type == "response")
+    stop("type='response' should not be used for models estimated by MCMC.",
+         "Use posterior_predict() to draw from the posterior predictive distribution.",
+         call. = FALSE)
   dat <- .pp_data(object, newdata)
-  stanmat <- as.matrix(object$stanfit)
+  stanmat <- if (mcmc) as.matrix(object$stanfit) else stop("MLE not implemented yet")
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  
-  if (type == "link") {
-    if (output == "sims") return(eta)
-    else { # output == "point"
-      if (!se.fit) return(colMeans(eta))
-      else return(list(fit = colMeans(eta), se.fit = apply(eta, 2, sd)))
-    }
+  fit <- colMeans(eta)
+  se.fit <- apply(eta, 2L, sd)
+  if (type == "response") { 
+    stop("MLE not implemented yet")
   }
-  
-  ppargs <- list(mu = family$linkinv(eta))
-  if (famname == "gaussian")
-    ppargs$sigma <- stanmat[, "sigma"]
-  if (famname == "binomial") {
-    y <- if (!is.null(object$y)) 
-      object$y else model.response(model.frame(object))
-    ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
-  }
-  yrep <- do.call(ppfun, ppargs) # yrep is niter x ndata matrix
-  
-  if (output == "sims") return(yrep)
-  else {
-    if (famname == "binomial" && !all(ppargs$trials == 1))
-      yrep <- yrep / ppargs$trials
-    if (!se.fit) return(colMeans(yrep))
-    else return(list(fit = colMeans(yrep), se.fit = apply(yrep, 2, sd))) 
-  }
+  nlist(fit, se.fit)
 }
 
-.pp_gaussian <- function(mu, sigma) {
-  t(sapply(1:nrow(mu), function(s) {
-    rnorm(ncol(mu), mu[s,], sigma[s])
-  }))
-}
-.pp_poisson <- function(mu) {
-  t(sapply(1:nrow(mu), function(s) {
-    rpois(ncol(mu), mu[s,])
-  }))
-}
-.pp_binomial <- function(mu, trials) {
-  t(sapply(1:nrow(mu), function(s) {
-    rbinom(ncol(mu), size = trials, prob = mu[s,])
-  }))
-}
 .pp_data <- function(object, newdata = NULL) {
   if (is.null(newdata)) {
     x <- model.matrix(object) 
