@@ -23,15 +23,15 @@ if (!dir.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",
                                 auto_write = interactive())
-stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian_Xcentered.stan"), 
+stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian.stan"), 
                                       model_name = "Gaussian GLM",
                                       auto_write = interactive())
-stanfit_bernoulli <- rstan::stan_model(file.path(MODELS_HOME, "bernoulli_Xcentered.stan"), 
+stanfit_bernoulli <- rstan::stan_model(file.path(MODELS_HOME, "bernoulli.stan"), 
                                       model_name = "Bernoulli GLM",
                                       auto_write = interactive())
-stanfit_binomial <- rstan::stan_model(file.path(MODELS_HOME, "binomial_Xcentered.stan"), 
+stanfit_binomial <- rstan::stan_model(file.path(MODELS_HOME, "binomial.stan"), 
                                       model_name = "Binomial GLM",
                                       auto_write = interactive())
-stanfit_count <- rstan::stan_model(file.path(MODELS_HOME, "count_Xcentered.stan"), 
+stanfit_count <- rstan::stan_model(file.path(MODELS_HOME, "count.stan"), 
                                    model_name = "Count GLM",
                                    auto_write = interactive())
