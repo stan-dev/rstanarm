@@ -77,11 +77,14 @@ data {
 }
 parameters {
   real gamma[has_intercept];
-  vector[K] beta;
+  vector[K] z_beta;
   real<lower=0> sigma_unscaled;
 }
 transformed parameters {
+  vector[K] beta;
   real sigma;
+  if (prior_dist > 0) beta <- prior_mean + prior_scale .* z_beta;
+  else beta <- z_beta;
   if (prior_scale_for_dispersion > 0)
     sigma <-  prior_scale_for_dispersion * sigma_unscaled;
   else sigma <- sigma_unscaled;
@@ -112,9 +115,9 @@ model {
   
   // Log-priors for coefficients
   if (prior_dist == 1) # normal
-    beta ~ normal(prior_mean, prior_scale);  
+    z_beta ~ normal(0, 1);
   else if (prior_dist == 2) # student_t
-    beta ~ student_t(prior_df, prior_mean, prior_scale);
+    z_beta ~ student_t(prior_df, 0, 1);
   /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  

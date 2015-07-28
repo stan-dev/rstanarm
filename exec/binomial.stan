@@ -131,9 +131,14 @@ data {
   real<lower=0> prior_df_for_intercept;
 }
 parameters {
-  vector[K] beta; # coefficients
-  real<upper=make_upper_binomial(link, X, beta, 
+  vector[K] z_beta;
+  real<upper=make_upper_binomial(link, X, prior_mean + prior_scale .* z_beta, 
        has_offset, offset)> gamma[has_intercept];
+}
+transformed parameters {
+  vector[K] beta; # coefficients
+  if (prior_dist > 0) beta <- prior_mean + prior_scale .* z_beta;
+  else beta <- z_beta;
 }
 model {
   vector[N] eta; # linear predictor
@@ -151,9 +156,9 @@ model {
   
   // Log-priors for coefficients 
   if (prior_dist == 1) # normal
-    beta ~ normal(prior_mean, prior_scale);  
+    z_beta ~ normal(0, 1);
   else if (prior_dist == 2) # student_t
-    beta ~ student_t(prior_df, prior_mean, prior_scale);
+    z_beta ~ student_t(prior_df, 0, 1);
   /* else prior_dist = 0 and nothing is added */
   
   // Log-prior for intercept  

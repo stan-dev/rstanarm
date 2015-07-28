@@ -121,14 +121,17 @@ data {
   real<lower=0> prior_scale_for_dispersion;
 }
 parameters {
-  vector[K] beta; # coefficients
-  real<lower=make_lower_count(link, X, beta, 
+  vector[K] z_beta;
+  real<lower=make_lower_count(link, X,   prior_mean + prior_scale .* z_beta, 
                               has_offset, offset)> gamma[has_intercept];
   real<lower=0> theta_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
 transformed parameters {
+  vector[K] beta;
   real theta[family > 1];
+  if (prior_dist > 0) beta <- prior_mean + prior_scale .* z_beta;
+  else beta <- z_beta;
   if (family > 1 && prior_scale_for_dispersion > 0) 
     theta[1] <- prior_scale_for_dispersion * theta_unscaled[1];
   else if (family > 1) theta[1] <- theta_unscaled[1];
@@ -159,9 +162,9 @@ model {
   
   // Log-priors for coefficients 
   if (prior_dist == 1) # normal
-    beta ~ normal(prior_mean, prior_scale);  
+    z_beta ~ normal(0, 1);
   else if (prior_dist == 2) # student_t
-    beta ~ student_t(prior_df, prior_mean, prior_scale);
+    z_beta ~ student_t(prior_df, 0, 1);
   /* else prior_dist = 0 and nothing is added */
    
   // Log-prior for intercept  

@@ -90,7 +90,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   else {
     prior.dist <- 0L
-    prior.mean <- prior.scale <- prior.df <- as.array(rep(0, nvars))
+    prior.mean <- as.array(rep(0, nvars))
+    prior.scale <- prior.df <- as.array(rep(1, nvars))
   }
   if (!is.null(prior.dist.for.intercept)) {
     prior.dist.for.intercept <- match.arg(prior.dist.for.intercept)
@@ -101,8 +102,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   else {
     prior.dist.for.intercept <- 0L
-    prior.mean.for.intercept <- prior.scale.for.intercept <- 
-      prior.df.for.intercept <- 0
+    prior.mean.for.intercept <- 0 
+    prior.scale.for.intercept <- prior.df.for.intercept <- 1
   }
   
   is_gaussian <- family$family == "gaussian"
