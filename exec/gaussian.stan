@@ -44,9 +44,10 @@ data {
   int<lower=1> K; # number of predictors
   
   # data
-  vector[K] xbar; # predictor means
-  matrix[N,K]  X; # centered predictor matrix
-  vector[N]    y; # continuous outcome
+  vector[K] xbar;                # predictor means
+  matrix[N,K]  X;                # centered predictor matrix
+  vector[N]    y;                # continuous outcome
+  int<lower=0,upper=1> prior_PD; # flag indicating whether to draw from the prior predictive
   
   # intercept
   int<lower=0,upper=1> has_intercept; # 1 = yes
@@ -96,7 +97,7 @@ model {
   if (has_offset == 1)    eta <- eta + offset;
   
   // Log-likelihood 
-  if (has_weights == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     vector[N] mu;
     mu <- linkinv_gauss(eta, link);
     if (link == 2)
@@ -104,7 +105,7 @@ model {
     else 
       y ~ normal(mu, sigma);
   }
-  else { # weighted log-likelihoods
+  else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
     summands <- pw_gauss(y, eta, sigma, link);
     increment_log_prob(dot_product(weights, summands));

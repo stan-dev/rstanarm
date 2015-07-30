@@ -99,10 +99,11 @@ data {
   int<lower=1> K; # number of predictors
   
   # data
-  vector[K] xbar;         # predictor means
-  matrix[N,K]  X;         # centered predictor matrix
-  int<lower=0> y[N];      # outcome: number of successes
-  int<lower=0> trials[N]; # number of trials
+  vector[K] xbar;                # predictor means
+  matrix[N,K]  X;                # centered predictor matrix
+  int<lower=0> y[N];             # outcome: number of successes
+  int<lower=0> trials[N];        # number of trials
+  int<lower=0,upper=1> prior_PD; # flag indicating whether to draw from the prior predictive
   
   # intercept
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes
@@ -147,12 +148,12 @@ model {
   if (has_offset == 1)    eta <- eta + offset;
   
   // Log-likelihood 
-  if (has_weights == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     real dummy; # irrelevant but useful for testing
     dummy <- ll_binom_lp(y, trials, eta, link);
   }
-  else increment_log_prob(dot_product(weights, 
-                          pw_binom(y, trials, eta, link)));
+  else if (prior_PD == 0) 
+    increment_log_prob(dot_product(weights, pw_binom(y, trials, eta, link)));
   
   // Log-priors for coefficients 
   if (prior_dist == 1) # normal

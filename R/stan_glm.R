@@ -40,6 +40,9 @@
 #' @param prior.options Additional options related to prior distributions. 
 #'   Can be \code{NULL} to omit a prior on the dispersion and see
 #'   \code{\link{priors}} otherwise.
+#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
+#'   whether to draw from the prior predictive distribution instead of
+#'   conditioning on the outcome
 #' @param method Character string (possibly abbreviated) among 
 #'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
 #'   approach to use.
@@ -112,7 +115,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
                     prior = normal(), prior.for.intercept = normal(),
                     prior.options = prior_options(), 
-                    method = c("sampling", "optimizing"),
+                    prior_PD = FALSE, method = c("sampling", "optimizing"),
                     ...) { # further arguments to sampling() or optimizing()
 
   # Parse like glm()
@@ -169,7 +172,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           scaled = prior.options$scaled, 
                           min.prior.scale = prior.options$min.prior.scale, 
                           prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion,
-                          method = method, ...)
+                          prior_PD = prior_PD, method = method, ...)
   
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)

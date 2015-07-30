@@ -26,6 +26,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                          prior.df.for.intercept = 1,
                          min.prior.scale = 1e-12, 
                          prior.scale.for.dispersion = 5,
+                         prior_PD = FALSE,
                          method = c("sampling", "optimizing"),
                          ...) { # further arguments to sampling() or optimizing()
   
@@ -137,7 +138,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_scale_for_intercept = prior.scale.for.intercept, 
     prior_mean_for_intercept = prior.mean.for.intercept,
     prior_df_for_intercept = prior.df.for.intercept,
-    has_intercept = as.integer(has_intercept))
+    has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
   if (!is_bernoulli) {
     standata$X <- xtemp

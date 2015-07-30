@@ -85,9 +85,10 @@ data {
   int<lower=1> K; # number of predictors
   
   # data
-  vector[K] xbar;    # predictor means
-  matrix[N,K]  X;    # centered predictor matrix
-  int<lower=0> y[N]; # count outcome
+  vector[K] xbar;                # predictor means
+  matrix[N,K]  X;                # centered predictor matrix
+  int<lower=0> y[N];             # count outcome
+  int<lower=0,upper=1> prior_PD; # flag indicating whether to draw from the prior predictive
   
   # intercept
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes
@@ -148,16 +149,16 @@ model {
   }
   
   // Log-likelihood 
-  if (has_weights == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if(family != 2) {
       if (link == 1) y ~ poisson_log(eta);
       else y ~ poisson(linkinv_count(eta, link));
     }
     else y ~ neg_binomial(linkinv_count(eta, link), theta[1]);
   }
-  else if (family != 1)
+  else if (family != 1 && prior_PD == 0)
     increment_log_prob(dot_product(weights, pw_pois(y, eta, link)));
-  else
+  else if (prior_PD == 0)
     increment_log_prob(dot_product(weights, pw_nb(y, eta, theta[1], link)));
   
   // Log-priors for coefficients 

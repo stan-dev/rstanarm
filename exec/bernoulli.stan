@@ -112,11 +112,12 @@ functions {
 }
 data {
   # dimensions
-  int<lower=1> K;    # number of predictors
-  int<lower=1> N[2]; # number of observations where y = 0 and y = 1 respectively
-  vector[K] xbar;    # vector of column-means of rbind(X0, X1)
-  matrix[N[1],K] X0; # centered (by xbar) predictor matrix | y = 0
-  matrix[N[2],K] X1; # centered (by xbar) predictor matrix | y = 1
+  int<lower=1> K;                # number of predictors
+  int<lower=1> N[2];             # number of observations where y = 0 and y = 1 respectively
+  vector[K] xbar;                # vector of column-means of rbind(X0, X1)
+  matrix[N[1],K] X0;             # centered (by xbar) predictor matrix | y = 0
+  matrix[N[2],K] X1;             # centered (by xbar) predictor matrix | y = 1
+  int<lower=0,upper=1> prior_PD; # flag indicating whether to draw from the prior predictive
   
   # intercept
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes
@@ -175,11 +176,11 @@ model {
   }
   
   // Log-likelihood 
-  if (has_weights == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     real dummy; # irrelevant but useful for testing
     dummy <- ll_bern_lp(eta0, eta1, link, N);
   }
-  else { # weighted log-likelihoods
+  else if (prior_PD == 0) { # weighted log-likelihoods
     increment_log_prob(dot_product(weights0, pw_bern(0, eta0, link)));
     increment_log_prob(dot_product(weights1, pw_bern(1, eta1, link)));
   }
