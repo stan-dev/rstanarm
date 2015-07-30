@@ -25,6 +25,7 @@ functions {
 data {
   int<lower=1> K;                     # number of predictors
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes
+  int<lower=0,upper=1> prior_PD;      # 0 = no, 1 = yes to drawing from the prior
   int<lower=1> J;                     # number of groups
   // the rest of these are indexed by group but should work even if J = 1
   int<lower=1> N[J];                  # number of observations
@@ -50,11 +51,11 @@ transformed data {
   }
 }
 parameters { // must not call with init="0"
-  row_vector[K] z_beta[J];         # primitives for coefficients
-  real z_alpha[J * has_intercept]; # primitives for intercepts
-  cholesky_factor_corr[K] L;       # L * L' is the hyperprior correlation matrix
-  real<lower=0,upper=1> R2[J];     # proportions of variance explained
-  vector[J] log_omega;             # under/overfitting factors
+  row_vector[K] z_beta[J];              # primitives for coefficients
+  real z_alpha[J * has_intercept];      # primitives for intercepts
+  cholesky_factor_corr[K] L;            # L * L' is the hyperprior correlation matrix
+  real<lower=0,upper=1> R2[J];          # proportions of variance explained
+  vector[J * (1 - prior_PD)] log_omega; # under/overfitting factors
 }
 transformed parameters {
   real alpha[J * has_intercept];   # uncentered intercepts
@@ -62,7 +63,8 @@ transformed parameters {
   real<lower=0> sigma[J];          # error standard deviations
   for (j in 1:J) {
     real Delta_y;                  # standard deviation of outcome for group j
-    Delta_y <- s_Y[j] * exp(log_omega[j]);
+    if (prior_PD == 0) Delta_y <- s_Y[j] * exp(log_omega[j]);
+    else Delta_y <- 1;
     beta[j] <- transpose(mdivide_right_tri_low(z_beta[j], L)) *
                sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
     sigma[j] <- Delta_y * sqrt(1 - R2[j]);
@@ -75,7 +77,8 @@ transformed parameters {
 model {
   for (j in 1:J) {
     real dummy; // irrelevant but useful for testing
-    dummy <- ll_mvn_ols_lp(beta[j], b[j], XtX[j], 
+    if (prior_PD == 0) 
+      dummy <- ll_mvn_ols_lp(beta[j], b[j], XtX[j], 
                if_else(has_intercept, alpha[j], 0) + dot_product(xbar[j], beta[j]),
                ybar[j], SSR[j], sigma[j], N[j]); // likelihood contribution
     z_beta[j] ~ normal(0,1); // prior

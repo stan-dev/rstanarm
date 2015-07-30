@@ -47,7 +47,8 @@ make_eta <- function(prior.R2, prior.what = c("mode", "mean", "median", "log"), 
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
                     singular.ok = TRUE,
                     eta = NULL, prior.R2 = NULL, 
-                    prior.what = c("mode", "mean", "median", "log"), ...) {
+                    prior.what = c("mode", "mean", "median", "log"), 
+                    prior_PD = FALSE, ...) {
   
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
@@ -89,22 +90,23 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   # initial values
   L <- t(chol(cor(x)))
   R2 <- array(1 - SSR[1] / ((N - 1) * var(y)), J)
-  log_omega <- array(0, J)
+  log_omega <- array(0, ifelse(prior_PD == 0, J, 0))
   init_fun <- function(chain_id) {
     return(list(L = L, R2 = R2, log_omega = log_omega))
   }
   
   stanfit <- get("stanfit_lm")
-  standata <- nlist(K, has_intercept, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
-  pars <- c(if (has_intercept) "alpha", "beta", "sigma", "log_omega", "mean_PPD")
+  standata <- nlist(K, has_intercept, prior_PD, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
+  pars <- c(if (has_intercept) "alpha", "beta", "sigma", 
+            if (prior_PD == 0) "log_omega", "mean_PPD")
   if ("control" %in% names(list(...))) {
     stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun, ...)
   }
   else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun,
                                   control = list(adapt_delta = 0.925, max_treedepth = 11), ...)
   parameters <- dimnames(stanfit)$parameters
-  new_names <- c(if (has_intercept) "(Intercept)", colnames(x), 
-                 "sigma", "log-fit_ratio", "mean_PPD", "log-posterior")
+  new_names <- c(if (has_intercept) "(Intercept)", colnames(x), "sigma", 
+                 if (prior_PD == 0) "log-fit_ratio", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
 }
@@ -112,9 +114,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 #' @rdname stan_lm
 #' @export
 stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
-                         singular.ok = TRUE,
-                         eta = NULL, prior.R2 = NULL, 
-                         prior.what = c("mode", "mean", "median", "log"), ...) {
+                        singular.ok = TRUE,
+                        eta = NULL, prior.R2 = NULL, 
+                        prior.what = c("mode", "mean", "median", "log"), 
+                        prior_PD = FALSE,  ...) {
 
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)

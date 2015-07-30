@@ -30,6 +30,11 @@
 #' @param eta Either a positive scalar or \code{NULL} (the default)
 #' @param prior.R2 A numeric scalar; see the Details section
 #' @param prior.what A character vector of length one; see the Details section
+#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
+#'   whether to draw from the prior predictive distribution instead of
+#'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
+#'   merely proportional to the actual distribution because of an improper
+#'   prior on a scale parameter
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}}
 #'
 #'
