@@ -57,7 +57,13 @@ print.stanreg <- function(x, ...) {
 summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
-  summary(object$stanfit, ...)$summary
+  if(x$stanfit@mode == 0) summary(object$stanfit, ...)$summary
+  else {
+    mark <- names(x$coefficients)
+    if (x$family$family == "gaussian") mark <- c(mark, "sigma")
+    else if (x$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
+    x$stan_summary[mark,,drop=FALSE]
+  }
 }
 
 #' @rdname stanreg_methods
