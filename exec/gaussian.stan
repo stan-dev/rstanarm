@@ -138,11 +138,12 @@ generated quantities {
     alpha[1] <- gamma[1] - dot_product(xbar, beta);
     
   {
-    real theta;
-    theta <- alpha[1] + dot_product(xbar, beta);
-    if (has_offset) theta <- theta + mean(offset);
-    if (link == 1)      mean_PPD <- normal_rng(theta, sigma);
-    else if (link == 2) mean_PPD <- lognormal_rng(theta, sigma);
-    else mean_PPD <- normal_rng(inv(theta), sigma);
+    vector[N] eta;
+    eta <- X * beta;
+    if (has_intercept == 1) eta <- eta + gamma[1];
+    if (has_offset) eta <- eta + offset;
+    eta <- linkinv_gauss(eta, link);
+    for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], sigma);
+    mean_PPD <- mean_PPD / N;
   }
 }
