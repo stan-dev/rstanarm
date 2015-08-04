@@ -17,7 +17,7 @@
 
 .onAttach <- function(...) {
   rstanarmLib <- dirname(system.file(package = "rstanarm"))
-  pkgdesc <- packageDescription("rstanarm", lib.loc = rstanarmLib)
+  pkgdesc <- utils::packageDescription("rstanarm", lib.loc = rstanarmLib)
   builddate <- gsub(';.*$', '', pkgdesc$Packaged)
 #  gitrev <- substring(git_head(), 0, 12) 
   packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
