@@ -3,4 +3,3 @@ exec/*.rda
 .Rhistory
 man/*.Rd
 !man/rstanarm-internal.Rd
-NAMESPACE
