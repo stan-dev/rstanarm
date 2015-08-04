@@ -67,6 +67,7 @@ functions {
    *
    * @param y The integer outcome variable. Note that function is
    *  called separately with y = 0 and y = 1
+   * @param eta Vector of linear predictions
    * @param link An integer indicating the link function
    * @return A vector
    */
