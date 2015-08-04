@@ -17,7 +17,8 @@
 #'
 #' Full Bayesian inference for linear modeling with regularizing priors on the
 #' model parameters that are driven by prior beliefs about \eqn{R^2}, the
-#' proportion of variance in the outcome attributable to the predictors.
+#' proportion of variance in the outcome attributable to the predictors. See
+#' \code{\link{priors}} for an explanation of this critical point.
 #' @export
 #'
 #' @param formula,data,subset Same as in \code{\link[stats]{lm}}
@@ -27,9 +28,8 @@
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
 #'   a design matrix and response vector.
 #' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified   
-#' @param eta Either a positive scalar or \code{NULL} (the default)
-#' @param prior.R2 A numeric scalar; see the Details section
-#' @param prior.what A character vector of length one; see the Details section
+#' @param prior Must be a call to \code{\link{LKJ}} with its 
+#'   \code{location} argument specified
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
@@ -47,30 +47,7 @@
 #'   functions might be called by other functions that parse the data 
 #'   themselves and are analagous to \code{\link[stats]{lm.fit}} and
 #'   \code{\link[stats]{lm.wfit}} respectively.
-#'   
-#'   The prior on all the parameters hinges on the prior beliefs about 
-#'   \eqn{R^2}, the proportion of variance in the outcome attributable to the
-#'   predictors, which is given a \code{\link[stats]{Beta}} prior with first shape 
-#'   hyperparameter equal to \eqn{K / 2} --- where \eqn{K} is the number of 
-#'   predictors excluding any constant term --- and second shape hyperparameter
-#'   \code{eta}. Any supplied characteristic of this \code{\link[stats]{Beta}}
-#'   distribution implies the value of \code{eta}. Typically, the user would
-#'   specify a value of \code{R2}, in which case the \code{prior.what}
-#'   indicates whether \code{R2} is indended to be the prior mode, mean,
-#'   median, or natural logarithm of \eqn{R^2}. For example, if 
-#'   \code{R2 = 0.5}, then the mode, mean, and median of the \code{\link[stats]{Beta}} 
-#'   distribution are all the same and by implication, \code{eta = K / 2}. If
-#'   \code{prior.what = "log"}, then \code{R2} must be a negative number,
-#'   and \code{eta} is derived such that the expected natural logarithm of
-#'   \eqn{R^2} is \code{R2}. Otherwise, \code{R2} should be positive and
-#'   at most one.
-#'   
-#'   The smaller is \eqn{R^2}, the larger is the value of \code{eta}, and the 
-#'   more concentrated near zero is the prior density for the regression 
-#'   coefficients. Hence, the prior on the coefficients is regularizing and
-#'   should yield a posterior distribution with good out-of-sample predictions
-#'   \emph{if} the value of \code{eta} implied by \code{R2} is reasonable. 
-#'   
+#'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter
 #'   called \code{log-fit_ratio}. If it is positive, the marginal posterior 
@@ -126,21 +103,20 @@
 #'   different priors
 #' @examples 
 #' \dontrun{
-#' stan_lm(mpg ~ ., data = mtcars, prior.R2 = 0.75)
+#' stan_lm(mpg ~ ., data = mtcars, prior = LKJ(location = 0.75))
 #' }
 
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 
-                    eta = NULL, prior.R2 = NULL, 
-                    prior.what = c("mode", "mean", "median", "log"), ...) {
+                    prior = LKJ(), prior_PD = FALSE, ...) {
   
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
-  mf$eta <- mf$prior.R2 <- mf$prior.what <- NULL
+  mf$prior <- NULL
   
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
   mt <- attr(modelframe, "terms")
@@ -149,16 +125,13 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   X <- modelframe$x
   w <- modelframe$weights
   offset <- model.offset(mf)
+
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
-                          eta = eta, prior.R2 = prior.R2, 
-                          prior.what = prior.what, ...)
-  
-  K <- ncol(X) - (colnames(X)[1] == "(Intercept)")
-  if (is.null(eta)) eta <- make_eta(prior.R2, prior.what, K)
+                          prior = prior,  prior_PD = prior_PD, ...)
   
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,
-               prior.info = nlist(dist = "beta", shape1 = K / 2, shape2 = eta), 
+               prior.info = prior, 
                call = call, terms = mt,
                model = if (model) mf else NULL,
                na.action = attr(modelframe, "na.action"),

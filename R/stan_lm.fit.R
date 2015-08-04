@@ -13,42 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-make_eta <- function(prior.R2, prior.what = c("mode", "mean", "median", "log"), K) {
-  stopifnot(length(prior.R2) == 1, is.numeric(prior.R2))
-  stopifnot(is.numeric(K), K > 0, K == as.integer(K))
-  prior.what <- match.arg(prior.what)
-  half_K <- K / 2
-  if (prior.what == "mode") {
-    stopifnot(prior.R2 > 0, prior.R2 <= 1)
-    if (K <= 2) stop("mode of beta distribution does not exist when K <= 2 ",
-                     "specify 'prior.what' as 'mean' or 'log' instead")
-    eta <- (half_K - 1  - prior.R2 * half_K + prior.R2 * 2) / prior.R2
-  }
-  else if (prior.what == "mean") {
-    stopifnot(prior.R2 > 0, prior.R2 <= 1)
-    eta <- (half_K - prior.R2 * half_K) / prior.R2
-  }
-  else if (prior.what == "median") {
-    stopifnot(prior.R2 > 0, prior.R2 <= 1)
-    FUN <- function(eta) qbeta(0.5, half_K, qexp(eta)) - prior.R2
-    eta <- qexp(uniroot(FUN, interval = 0:1)$root)
-  }
-  else { # prior.what == "log"
-    stopifnot(prior.R2 < 0)
-    FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - prior.R2
-    eta <- qexp(uniroot(FUN, interval = 0:1, 
-                        f.lower = -prior.R2, f.upper = -.Machine$double.xmax)$root)
-  }
-  return(eta)  
-}
-
 #' @rdname stan_lm
 #' @export
+#' @param tol Numeric scalar tolerance for the QR decomposition
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
-                    singular.ok = TRUE,
-                    eta = NULL, prior.R2 = NULL, 
-                    prior.what = c("mode", "mean", "median", "log"), 
-                    prior_PD = FALSE, ...) {
+                         singular.ok = TRUE, prior = LKJ(), 
+                         prior_PD = FALSE, ...) {
   
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
@@ -78,14 +48,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   s_Y <- array(sd(y), J)
   ybar <- array(mean(y), J)
   
-  if (is.null(eta)) {
-    if (is.null(prior.R2)) 
-      stop("the 'prior.R2' argument must be specified if 'eta' is unspecified")
-    eta <- make_eta(prior.R2, prior.what, K)
-  }
-  else if (!is.numeric(eta) || length(eta) != 1L || eta <= 0) {
-    stop("'eta' must be a positive scalar")
-  }
+  eta <- prior$eta <- make_eta(prior$location, prior$what, K = K)
   
   # initial values
   L <- t(chol(cor(x)))
@@ -114,9 +77,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 #' @rdname stan_lm
 #' @export
 stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
-                        singular.ok = TRUE,
-                        eta = NULL, prior.R2 = NULL, 
-                        prior.what = c("mode", "mean", "median", "log"), 
+                        singular.ok = TRUE, prior = LKJ(), 
                         prior_PD = FALSE,  ...) {
 
   call <- match.call()
