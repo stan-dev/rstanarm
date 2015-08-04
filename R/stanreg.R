@@ -10,11 +10,13 @@ stanreg <- function(object) {
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
   
+  opt <- is.list(stanfit) # used optimization
+  
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
-  if (is.list(stanfit)) { # used optimization
+  if (opt) { 
     L <- t(chol(stanfit$cov.scaled))
     k <- nrow(L)
     unconstrained <- stanfit$par[1:k] + L %*% matrix(rnorm(4000 * k), k)
@@ -43,7 +45,7 @@ stanreg <- function(object) {
     y[, 1] / rowSums(y) - mu else y - mu
   df.residual <- nobs - sum(weights == 0) - rank
   
-  if (!is.list(stanfit)) {
+  if (!opt) {
     stanmat <- as.matrix(stanfit)
     covmat <- cov(stanmat[,1:nvars])
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
@@ -51,7 +53,7 @@ stanreg <- function(object) {
   
   # pointwise log-likelihood
   mark <- 1:nvars
-  if (is.list(stanfit)) {
+  if (opt) {
     mark <- c(grep("^alpha", colnames(stanmat)), 
               grep("^beta",  colnames(stanmat)))
   }
@@ -62,7 +64,7 @@ stanreg <- function(object) {
     llargs$theta <- stanmat[,"overdispersion"]
     family$family <- "nb"
   }
-  else log_lik <- do.call("pw_log_lik", llargs)
+  log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
@@ -75,7 +77,7 @@ stanreg <- function(object) {
     call = object$call, formula = object$formula, terms = object$terms,
     prior.info = object$prior.info, log_lik = log_lik,
     stan_summary = stan_summary,  
-    stanfit = if (is.list(stanfit)) stanfit$stanfit else stanfit
+    stanfit = if (opt) stanfit$stanfit else stanfit
   )
   class(out) <- c("stanreg", "glm", "lm")
   out
