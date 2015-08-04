@@ -134,6 +134,7 @@ model {
 generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
+  mean_PPD <- 0;
   if (has_intercept == 1)
     alpha[1] <- gamma[1] - dot_product(xbar, beta);
     
