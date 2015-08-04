@@ -79,6 +79,14 @@ test_that("make_upper_bernoulli returns expected results", {
   }
 })
 
+context("Bernoulli")
+test_that("dp_deta returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rnorm(1)
+    expect_true(all.equal(make.link(links[i])$mu.eta(eta), dp_deta(eta, i)))
+  }
+})
+
 # Binomial
 trials <- 10L
 context("Binomial")
@@ -195,4 +203,59 @@ test_that("ll_mvn_ols_lp returns expected results", {
   expect_true(all.equal(sum(dnorm(y, intercept + X %*% beta, sigma, log = TRUE)),
                         ll_mvn_ols_lp(beta, b[-1], XtX, intercept, mean(y),
                                    crossprod(residuals(ols))[1], sigma, N)))
+})
+
+# polr
+links <- c("logistic", "probit", "loglog", "cloglog", "cauchit")
+context("polr")
+test_that("CDF_polr returns expected results", {
+  for (i in 1:length(links)) {
+    x <- rnorm(1)
+    if (i == 1) linkinv <- make.link("logit")$linkinv
+    else if (i == 3) linkinv <- rstanarm:::pgumbel
+    else linkinv <- make.link(links[i])$linkinv
+    expect_true(all.equal(linkinv(x), CDF_polr(x, i)))
+  }
+})
+context("polr")
+test_that("pw_polr returns expected results", {
+  J <- 3
+  for (i in 1:length(links)) {
+    x <- matrix(rnorm(N * 2), nrow = N, ncol = 2)
+    beta <- rnorm(2)
+    zeta <- sort(rnorm(J-1))
+    eta <- c(x %*% beta)
+    y <- apply(rmultinom(N, 1, prob = rep(1/J, J)) == 1, 2, which)
+    model <- MASS::polr(as.factor(y) ~ x, method = links[i], 
+                        start = c(beta, zeta), control = list(maxit = 0))
+    Pr <- fitted(model)
+    Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
+    expect_true(all.equal(log(Pr), pw_polr(y, eta, zeta, i)))
+  }
+})
+context("polr")
+test_that("inv_Phi returns expected results", {
+  x <- rnorm(1)
+  expect_true(all.equal(x, inv_Phi(pnorm(x))))
+})
+context("polr")
+test_that("make_cutpoints returns expected results", {
+  for (i in 1:length(links)) {
+    p <- MCMCpack::rdirichlet(1, rep(1,J))[1,]
+    cutpoints <- make_cutpoints(p, 1, i)
+    for (j in 1:length(cutpoints)) {
+      expect_true(all.equal(sum(p[1:j]), CDF(cutpoints[j], i)))
+    }
+  }
+})
+context("polr")
+test_that("draw_ystar_rng returns expected results", {
+  l <- -0.1
+  u <-  0.1
+  eta <- 0
+  for (i in 1:length(links)) {
+    draw <- draw_ystar_rng(l, u, eta, i)
+    expect_true(draw > l)
+    expect_true(draw < u)
+  }
 })

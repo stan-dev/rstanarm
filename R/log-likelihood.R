@@ -4,19 +4,28 @@
 # where S is the size of the posterior sample (the number of simulations) and N
 # is the number of data points.
 # 
-# @param family,x,y,weights,offset,beta,sigma (note: sigma should be NULL if not
-#   gaussian model)
+# @param family,x,y,weights,offset,beta,sigma
 #
 # @return a matrix.
 #
-pw_log_lik <- function(family, x, y, weights, beta, sigma = NULL, offset = NULL) {
-  f <- family
-  llfun <- paste0(".ll_", f$family)
+pw_log_lik <- function(family, x, y, weights, beta,
+                       # remaining arguments might be applicable
+                       sigma = NULL, zeta = NULL, offset = NULL) {
   eta <- linear_predictor(beta, x, offset)
-  mu <- f$linkinv(eta)
-  args <- nlist(y, mu)
-  if (!is.null(sigma))
-    args$sigma <- sigma
+  f <- family
+  if (is(f, "family")) {
+    llfun <- paste0(".ll_", f$family)
+    linkinv <- f$linkinv
+    mu <- linkinv(eta)
+    args <- nlist(y, mu)
+  }
+  else if (is.character(f)) {
+    llfun <- ".ll_polr"
+    args <- nlist(y, eta, f)
+  }
+  else stop("'family' must be a family or a character string")
+  if (!is.null(sigma)) args$sigma <- sigma
+  if (!is.null(zeta))  args$zeta  <- zeta
   ll <- do.call(llfun, args)
   if (all(weights == 1)) ll 
   else sweep(ll, MARGIN = 2L, weights, `*`)
@@ -56,4 +65,21 @@ pw_log_lik <- function(family, x, y, weights, beta, sigma = NULL, offset = NULL)
   t(sapply(1:nrow(mu), function(s) {
     dbinom(y, size = trials, prob = mu[s,], log = TRUE)
   }))
+}
+.ll_polr <- function(y, eta, f, zeta) {
+  if (f == "logistic")    linkinv <- make.link("logit")$linkinv
+  else if (f == "loglog") linkinv <- pgumbel
+  else                    linkinv <- make.link(f)$linkinv
+  y <- as.integer(y)
+  N <- NROW(y)
+  J <- max(y)
+  ll <- matrix(NA_real_, nrow = nrow(zeta), ncol = N)
+  for (i in 1:N) {
+    y_i <- y[i]
+    if      (y_i == 1) ll[,i] <- log(linkinv(zeta[,1] - eta[,i]))
+    else if (y_i == J) ll[,i] <- log1p(-linkinv(zeta[,J-1] - eta[,i]))
+    else ll[,i] <- log(linkinv(zeta[,y_i] - eta[,i]) - 
+                       linkinv(zeta[,y_i - 1L] - eta[,i]))
+  }
+  return(ll)
 }

@@ -35,3 +35,6 @@ stanfit_binomial <- rstan::stan_model(file.path(MODELS_HOME, "binomial.stan"),
 stanfit_count <- rstan::stan_model(file.path(MODELS_HOME, "count.stan"), 
                                    model_name = "Count GLM",
                                    auto_write = interactive())
+stanfit_polr <- rstan::stan_model(file.path(MODELS_HOME, "polr.stan"), 
+                                   model_name = "Proportional Odds GLM",
+                                   auto_write = interactive())

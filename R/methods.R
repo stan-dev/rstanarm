@@ -43,12 +43,17 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
 print.stanreg <- function(x, ...) {
   # use RStan's print just as placeholder. we should replace this with our own
   # print method
-  if(x$stanfit@mode == 0) print(x$stanfit, pars = "lp__", include = FALSE)
+  if(x$stanfit@mode == 0) print(x$stanfit, pars = "lp__", include = FALSE, ...)
+  else if (is.null(x$family)) {
+    mark <- c(names(x$coefficients), 
+              grep("|", rownames(x$stan_summary), fixed = TRUE, value = TRUE))
+    print(x$stan_summary[mark,,drop = FALSE], ...)
+  }
   else {
     mark <- names(x$coefficients)
     if (x$family$family == "gaussian") mark <- c(mark, "sigma")
     else if (x$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
-    print(x$stan_summary[mark,,drop=FALSE])
+    print(x$stan_summary[mark,,drop=FALSE], ...)
   }
 }
 
@@ -57,12 +62,12 @@ print.stanreg <- function(x, ...) {
 summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
-  if(x$stanfit@mode == 0) summary(object$stanfit, ...)$summary
+  if(object$stanfit@mode == 0) summary(object$stanfit, ...)$summary
   else {
-    mark <- names(x$coefficients)
-    if (x$family$family == "gaussian") mark <- c(mark, "sigma")
-    else if (x$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
-    x$stan_summary[mark,,drop=FALSE]
+    mark <- names(object$coefficients)
+    if (object$family$family == "gaussian") mark <- c(mark, "sigma")
+    else if (object$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
+    object$stan_summary[mark,,drop=FALSE]
   }
 }
 
