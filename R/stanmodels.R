@@ -19,7 +19,8 @@
 
 MODELS_HOME <- "exec"
 if (!dir.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
-  
+
+if (!isNamespaceLoaded("roxygen2")) {  
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",
                                 auto_write = interactive())
@@ -38,3 +39,4 @@ stanfit_count <- rstan::stan_model(file.path(MODELS_HOME, "count.stan"),
 stanfit_polr <- rstan::stan_model(file.path(MODELS_HOME, "polr.stan"), 
                                    model_name = "Proportional Odds GLM",
                                    auto_write = interactive())
+}
