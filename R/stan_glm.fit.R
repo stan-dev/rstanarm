@@ -27,7 +27,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                          min.prior.scale = 1e-12, 
                          prior.scale.for.dispersion = 5,
                          prior_PD = FALSE,
-                         method = c("sampling", "optimizing"),
+                         algorithm = c("sampling", "optimizing"),
                          ...) { # further arguments to sampling() or optimizing()
   
   if (is.character(family)) 
@@ -201,8 +201,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   
   pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma", 
             if (is_nb) "theta", "mean_PPD")
-  method <- match.arg(method)
-  if (method == "sampling") {
+  algorithm <- match.arg(algorithm)
+  if (algorithm == "sampling") {
     stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                init = start, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
@@ -210,7 +210,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }
-  else if (method == "optimizing") {
+  else if (algorithm == "optimizing") {
     out <- rstan::optimizing(stanfit, data = standata, init = start, hessian = TRUE)
     new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
                    if (is_gaussian) c("sigma_unsaled", "sigma"), 
