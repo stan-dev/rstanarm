@@ -65,12 +65,16 @@ transformed parameters {
     real Delta_y;                  # standard deviation of outcome for group j
     if (prior_PD == 0) Delta_y <- s_Y[j] * exp(log_omega[j]);
     else Delta_y <- 1;
-    beta[j] <- transpose(mdivide_right_tri_low(z_beta[j], L)) *
-               sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
+    if (K > 1)
+      beta[j] <- transpose(mdivide_right_tri_low(z_beta[j], L)) *
+                 sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
+    else beta[j][1] <- sqrt(R2[j]) / s_X[j][1] * Delta_y;
     sigma[j] <- Delta_y * sqrt(1 - R2[j]);
     if (has_intercept == 1) {
-      alpha[j] <- z_alpha[j] * sigma[j] * 
-                  sqrt(dot_self(mdivide_left_tri_low(L, rhs[j])) + inv_N[j]);
+      if (K > 1)
+        alpha[j] <- z_alpha[j] * sigma[j] * 
+                    sqrt(dot_self(mdivide_left_tri_low(L, rhs[j]))    + inv_N[j]);
+      else alpha[j] <- z_alpha[j] * sigma[j] * sqrt(square(rhs[j][1]) + inv_N[j]);
     }
   }
 }
@@ -84,7 +88,7 @@ model {
     z_beta[j] ~ normal(0,1); // prior
   }                          // rest of the priors
   if (has_intercept == 1) z_alpha ~ normal(0,1);
-  L ~ lkj_corr_cholesky(etaphalf);
+  if (K > 1) L ~ lkj_corr_cholesky(etaphalf);
   R2 ~ beta(half_K, eta);
   // implicit: log_omega is uniform over the real line for all j
 }

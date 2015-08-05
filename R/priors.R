@@ -103,7 +103,8 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
                               "in the call to prior = LKJ(), unless 'what' is ",
                               "'log', in which case 'location' must be negative")
   stopifnot(length(location) == 1, is.numeric(location))
-  stopifnot(is.numeric(K), K > 0, K == as.integer(K))
+  stopifnot(is.numeric(K), K == as.integer(K))
+  if (K == 0) stop("LKJ prior is not applicable when there are no covariates")
   what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {

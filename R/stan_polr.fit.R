@@ -32,9 +32,9 @@ stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL,
   J <- length(y_lev)
   y <- as.integer(y)
   if (colnames(x)[1] == "(Intercept)") x <- x[,-1,drop=FALSE]
-  xbar <- colMeans(x)
+  xbar <- as.array(colMeans(x))
   X <- sweep(x, 2, xbar, FUN = "-")
-  s_X <- apply(X, 2, sd)
+  s_X <- as.array(apply(X, 2, sd))
   has_weights <- length(wt) > 0 && !all(wt == 1)
   if (!has_weights) weights <- double(0)
   has_offset <- length(offset) > 0 && !all(offset == 0)

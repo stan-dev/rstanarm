@@ -230,8 +230,10 @@ transformed parameters {
   vector[J-1] cutpoints;
   if (prior_dist == 1) {
     Delta_y <- inv(sqrt(1 - R2[1]));
-    beta <- transpose(mdivide_right_tri_low(z_beta, L[1])) *
-            sqrt(R2[1] / dot_self(z_beta)) ./ s_X * Delta_y;
+    if (K > 1)
+      beta <- transpose(mdivide_right_tri_low(z_beta, L[1])) *
+              sqrt(R2[1] / dot_self(z_beta)) ./ s_X * Delta_y;
+    else beta[1] <- sqrt(R2[1]) / s_X[1] * Delta_y;
   }
   else { // prior_dist == 0
     beta <- transpose(z_beta);
@@ -252,7 +254,7 @@ model {
   
   if (prior_dist == 1) {
     z_beta ~ normal(0, 1);
-    L[1] ~ lkj_corr_cholesky(shapephalf);
+    if (K > 1) L[1] ~ lkj_corr_cholesky(shapephalf);
     R2[1] ~ beta(half_K, shape);
     if (is_constant == 0) pi ~ dirichlet(prior_counts);
   }
