@@ -17,7 +17,8 @@
 #' @export
 #' @param tol Numeric scalar tolerance for the QR decomposition
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
-                         singular.ok = TRUE, prior = LKJ(), 
+                         singular.ok = TRUE, 
+                         prior = LKJ(stop("'location' must be specified")), 
                          prior_PD = FALSE, ...) {
   
   if (colnames(x)[1] == "(Intercept)") {
@@ -77,7 +78,8 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 #' @rdname stan_lm
 #' @export
 stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
-                        singular.ok = TRUE, prior = LKJ(), 
+                        singular.ok = TRUE, 
+                        prior = LKJ(stop("'location' must be specified")), 
                         prior_PD = FALSE,  ...) {
 
   call <- match.call()

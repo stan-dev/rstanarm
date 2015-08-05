@@ -84,7 +84,8 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
                        na.action = getOption("na.action", "na.omit"), 
                        contrasts = NULL, Hess = FALSE, model = TRUE, 
                        method = c("logistic", "probit", "loglog", "cloglog", "cauchit"),
-                       prior = LKJ(), prior_counts = NULL, prior_PD = FALSE, 
+                       prior = LKJ(stop("'location' must be specified")), 
+                       prior_counts = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing")) {
   
   # parse it like MASS::polr does

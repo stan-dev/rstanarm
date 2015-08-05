@@ -21,7 +21,8 @@
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets
 stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL, 
                            method = c("logistic", "probit", "loglog", "cloglog", "cauchit"), 
-                           prior = LKJ(), prior_counts = NULL, prior_PD = FALSE, 
+                           prior = LKJ(stop("'location' must be specified")), 
+                           prior_counts = NULL, prior_PD = FALSE, 
                            algorithm = c("sampling", "optimizing"), ...) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)

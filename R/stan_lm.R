@@ -109,7 +109,8 @@
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 
-                    prior = LKJ(), prior_PD = FALSE, ...) {
+                    prior = LKJ(stop("'location' must be specified")), 
+                    prior_PD = FALSE, ...) {
   
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
