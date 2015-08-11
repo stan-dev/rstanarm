@@ -13,7 +13,7 @@ context("stan_polr")
 test_that("stan_polr returns expected result for mtcars example", {
   # example using mtcars dataset
   f <- as.ordered(cyl) ~ vs + am + carb
-  fit <- stan_polr(f, data = mtcars, prior = LKJ(location = 0.5))
+  fit <- stan_polr(f, data = mtcars, prior = R2(location = 0.5))
   fit <- stan_polr(f, data = mtcars, prior = NULL, algorithm = "opt")
   check <- MASS::polr(f, data = mtcars)
   expect_true(all(abs(coef(fit) - coef(check)) < threshold))

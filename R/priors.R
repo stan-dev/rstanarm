@@ -1,7 +1,6 @@
 #' Prior distributions
 #' 
-#' These functions are used to specify the \code{prior}, 
-#' \code{prior.for.intercept}, and \code{prior.options} arguments of various
+#' These functions are used to specify the prior-related arguments of various
 #' model-fitting functions in this package.
 #' 
 #' @export 
@@ -10,12 +9,11 @@
 #'   \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
 #'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
 #'   the mean does not exist and \code{location} is the prior median.
-#'   Defaults to 0, except for \code{LKJ} where there is no default, in which
+#'   Defaults to 0, except for \code{R2} where there is no default, in which
 #'   case how \code{location} is interpreted depends on the \code{what} 
-#'   argument but always pertains to the prior \eqn{R^2} of the regression
-#'   under a Beta distribution.
-#' @param scale Prior scale. Default depends (see Details) but \code{Inf}
-#'   implies an improper uniform prior over the positive real numbers
+#'   argument but always pertains to the prior location of the \eqn{R^2} 
+#'   under a Beta distribution. See the Details section.
+#' @param scale Prior scale. Default depends on the family (see Details)
 #' @param df Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #' @param what A character string among \code{'mode'} (the default),
@@ -29,40 +27,97 @@
 #'   and an error will prompt the user to specify another choice for
 #'   \code{"what"}.
 #'   
-#' @details The details depend on which prior is used
+#' @details The details depend on the family of the prior being used
 #' \subsection{Student t family}{
 #'   For the prior distribution for the intercept, \code{location}, 
 #'   \code{scale}, and \code{df} should be scalars. For the prior for the other
 #'   coefficients they can either be vectors of length equal to the number of
 #'   coefficients (not including the intercept), or they can be scalars, in 
-#'   which case they will be replicated to the appropriate length.
+#'   which case they will be recycled to the appropriate length.
 #'   
 #'   If \code{scale} is not specified it will default to 10 for the intercept
 #'   and 2.5 for the other coefficients, unless the probit link function is
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
 #' }
-#' \subsection{LKJ family}{
+#' \subsection{Covariance matrices}{
+#'   Covariance matrices are decomposed into correlation matrices and 
+#'   variances, and the variances are in turn decomposed into a scale parameter
+#'   and a simplex vector. This prior is represented by the \code{decov} 
+#'   function.
+#'   
+#'   The prior for a correlation matrix is called LKJ whose density is 
+#'   proportional to the determinant of the correlation matrix raised to the 
+#'   power of \eqn{shape - 1}, which depends solely on the positive shape 
+#'   parameter. If \code{shape = 1} (the default), then this prior is jointly 
+#'   uniform over all correlation matrices of that size. If \code{shape > 1},
+#'   then the identity matrix is the mode (it is always the mean) and in the 
+#'   unlikely case that \code{shape < 1}, the identity matrix is the trough.
+#'   
+#'   The trace of a covariance matrix is equal to the sum of the variances and
+#'   we set the trace equal to the product of the size of the covariance matrix
+#'   and the \emph{square} of a positive \code{scale} parameter. The particular
+#'   variances are set equal to the product of a simplex vector --- which is
+#'   non-negative and sums to \eqn{1} --- and the scalar trace. In other words,
+#'   each element of the simplex vector represents the proportion of the trace
+#'   attributable to the corresponding variable (the stick-breaking metaphor).
+#'   
+#'   A symmetric Dirichlet prior is used for a simplex vector, which has a 
+#'   single (positive) \code{concentration} parameter, which defaults to
+#'   \eqn{1} and implies that the prior is jointly uniform over the space of
+#'   simplex vectors of that size. If \code{concentration > 1}, then the prior
+#'   mode corresponds to all variables having the same (proportion of total)
+#'   variance, which can be used to ensure the the posterior variances are not
+#'   zero. As the \code{concentration} parameter approaches infinity, this
+#'   mode becomes more pronounced. In the unlikely case that 
+#'   \code{concentration < 1}, the variances are more polarized.
+#'   
+#'   If all the variables were multiplied by a number, the trace of their
+#'   covariance matrix would increase by that number squared. Thus, it is
+#'   reasonable to use a scale-invariant prior distribution, and in this case 
+#'   we utilize a gamma distribution, whose \code{shape_gamma} and \code{scale} 
+#'   parameters are both \eqn{1} by default, implying a unit-exponential 
+#'   distribution. We scale up by the square root of the number of variables to 
+#'   make the default value of the \code{scale} parameter more widely 
+#'   applicable. Set the \code{shape_gamma} hyperparameter to some value
+#'   greater than one to ensure that the posterior trace is not zero.
+#'   
+#'   If \code{shape}, \code{concentration}, \code{shape_gamma} and / or 
+#'   \code{scale} are positive scalars, then they are recycled to the 
+#'   appropriate length. Otherwise, each can be a positive vector of the 
+#'   appropriate length, but the appropriate length depends on the number of 
+#'   covariance matrices in the model and their sizes. A one-by-one covariance 
+#'   matrix is just a variance and thus does not have \code{shape} or 
+#'   \code{concentration} parameters, but does have \code{shape_gamma} and 
+#'   \code{scale} parameter for the the prior standard deviation of that
+#'   variable.
+#' }
+#' \subsection{R2 family}{
 #'   The \code{\link{stan_lm}} and \code{\link{stan_polr}} functions allow
-#'   the user to utilize a prior for the parameters called \code{LKJ}, in
-#'   which case \code{location} must be a scalar on the (0,1) interval,
-#'   unless \code{what = 'log'}, in which case it should be a negative
-#'   scalar. The prior on all the parameters hinges on the prior beliefs about
-#'   \eqn{R^2}, the proportion of variance in the outcome attributable to the
-#'   predictors, which is given a \code{\link[stats]{Beta}} prior with first
-#'   shape hyperparameter equal to half the number of predictors and second
-#'   shape hyperparameter free. By specifying the prior mode (the default) 
-#'   mean, median, or expected log of \eqn{R^2}, the second shape parameter for
-#'   this Beta distribution is determined internally.
+#'   the user to utilize a function called \code{R2} to convey prior 
+#'   information about all the parameters. This prior hinges on prior beliefs
+#'   about the location of \eqn{R^2}, the proportion of variance in the outcome
+#'   attributable to the predictors, which has a \code{\link[stats]{Beta}} 
+#'   prior with first shape hyperparameter equal to half the number of 
+#'   predictors and second shape hyperparameter free. By specifying the prior 
+#'   mode (the default) mean, median, or expected log of \eqn{R^2}, the second
+#'   shape parameter for this Beta distribution is determined internally. If
+#'   \code{what = 'log'}, location should be a negative scalar; otherwise it
+#'   should be a scalar on the \eqn{(0,1)} interval.
 #'   
 #'   For example, if \eqn{R^2 = 0.5}, then the mode, mean, and median of
 #'   the \code{\link[stats]{Beta}} distribution are all the same and thus the
 #'   second shape parameter is also equal to half the number of predictors.
-#'   The smaller is \eqn{R^2}, the  more concentrated near zero is the prior 
-#'   density for the regression coefficients. Hence, the prior on the 
-#'   coefficients is regularizing and should yield a posterior distribution 
-#'   with good out-of-sample predictions \emph{if} the prior is specified in a 
-#'   reasonable fashion.
+#'   The second shape parameter of the \code{\link[stats]{Beta}} distribution
+#'   is actually the same as the shape parameter in the LKJ prior for a
+#'   correlation matrix described in the previous subsection. Thus, the smaller 
+#'   is \eqn{R^2}, the larger is the shape parameter, the smaller are the
+#'   prior correlations among the outcome and predictor variables, and the more
+#'   concentrated near zero is the prior density for the regression 
+#'   coefficients. Hence, the prior on the coefficients is regularizing and 
+#'   should yield a posterior distribution with good out-of-sample predictions 
+#'   \emph{if} the prior location of \eqn{R^2} is specified in a reasonable 
+#'   fashion.
 #' }
 #' @return A named list.
 #' @examples
@@ -91,20 +146,37 @@ cauchy <- function(location = 0, scale = NULL) {
 }
 
 #' @rdname priors
+#' @param shape Shape parameter for an LKJ prior on the correlation matrix 
+#'  in the \code{decov} prior
+#' @param concentration Concentration parameter for the symmetric Dirichlet 
+#'  distribution in the \code{decov} prior
+#' @param gamma_shape Shape parameter for a gamma prior on the scale 
+#'   parameter in the \code{dcov} prior
+
 #' @export
-LKJ <- function(location = NULL, 
+decov <- function(shape = 1, concentration = 1, gamma_shape = 1, scale = 1) {
+  if (any(shape <= 0)) stop("'shape' parameter must be positive")
+  if (any(concentration <= 0)) stop("'concentration' parameter must be positive")
+  if (any(gamma_shape <= 0)) stop("'gamma_shape' parameter must be positive")
+  if (any(scale <= 0)) stop("'scale' parameter must be positive")
+  nlist(shape, concentration, gamma_shape, scale)
+}
+
+#' @rdname priors
+#' @export
+R2 <- function(location = NULL, 
                 what = c("mode", "mean", "median", "log")) {
-  list(dist = "LKJ", location = location, what = what,
+  list(dist = "R2", location = location, what = what,
        df = 0, scale = 0)
 }
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) stop("must specify 'location' on the (0,1) interval ",
-                              "in the call to prior = LKJ(), unless 'what' is ",
+                              "in the call to prior = R2(), unless 'what' is ",
                               "'log', in which case 'location' must be negative")
   stopifnot(length(location) == 1, is.numeric(location))
   stopifnot(is.numeric(K), K == as.integer(K))
-  if (K == 0) stop("LKJ prior is not applicable when there are no covariates")
+  if (K == 0) stop("R2 prior is not applicable when there are no covariates")
   what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {

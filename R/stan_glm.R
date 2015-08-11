@@ -30,7 +30,6 @@
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
-#'   
 #' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
 #' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit

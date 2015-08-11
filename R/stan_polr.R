@@ -84,7 +84,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
                        na.action = getOption("na.action", "na.omit"), 
                        contrasts = NULL, Hess = FALSE, model = TRUE, 
                        method = c("logistic", "probit", "loglog", "cloglog", "cauchit"),
-                       prior = LKJ(stop("'location' must be specified")), 
+                       prior = R2(stop("'location' must be specified")), 
                        prior_counts = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing")) {
   

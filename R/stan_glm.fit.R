@@ -14,6 +14,35 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 #' @rdname stan_glm
+#' @param prior.dist,prior.dist.for.intercept Character string, either 
+#'   \code{"normal"} (the default), or \code{"t"} indicating the family of the
+#'   prior distribution for the coefficients, or \code{NULL} to omit this prior
+#' @param scaled Logical scalar indicating whether to rescale the predictors
+#' @param prior.mean,prior.mean.for.intercept Numeric vector (possibly of
+#'   length one) indicating the locations of the \code{prior.dist} and the
+#'   \code{prior.dist.for.intercept} respectively
+#' @param prior.scale,prior.scale.for.intercept Numeric vector (possibly of
+#'   length one) indicating the scale of the \code{prior.dist} and the
+#'   \code{prior.dist.for.intercept} respectively or \code{NULL}
+#' @param prior.df,prior.df.for.intercept Numeric vector (possibly of length
+#'   one) indicating the degrees of freedom of the \code{prior.dist} and
+#'   the \code{prior.dist.for.intercept} in the Student t case
+#' @param min.prior.scale Positive scalar indicating the smallest possible
+#'   value to use for rescaling the predictors
+#' @param prior.scale.for.dispersion Positive scalar indicating the scale
+#'   parameter for the Cauchy prior on the dispersion parameter (if the
+#'   model has one) or \code{NULL} to omit this prior
+#' @param group A list, possibly of length zero, but otherwise having the
+#'   structure of that produced by \code{\link[lme4]{mkReTrms}} to indicate
+#'   the group-specific part of the model. In addition, this list must have
+#'   elements for the \code{gamma_shape}, \code{scale}, \code{concentration}
+#'   and \code{shape} components of a \code{\link{decov}} prior for the
+#'   covariance matrices among the group-specific coefficients
+#' @param prior_PD Logical scalar (defaulting the \code{FALSE}) indicating
+#'   whether to draw from the prior distribution without conditioning on
+#'   the outcome
+#' @param algorithm Character string among \code{"sampling"} (the default) or
+#'   \code{"optimization"} indicating what estimation scheme to use
 #' @export
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(),
@@ -25,16 +54,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                          prior.scale.for.intercept = NULL, 
                          prior.df.for.intercept = 1,
                          min.prior.scale = 1e-12, 
-                         prior.scale.for.dispersion = 5,
-                         prior_PD = FALSE,
-                         algorithm = c("sampling", "optimizing"),
+                         prior.scale.for.dispersion = 5, group = list(),
+                         prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
                          ...) { # further arguments to sampling() or optimizing()
   
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())
   if (is.function(family)) 
     family <- family()
-  if(!is(family, "family")) 
+  if(!is(family, "family"))
     stop("'family' must be a family")
   
   # these are from help(family)
@@ -140,6 +168,45 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     prior_df_for_intercept = prior.df.for.intercept,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
+  if (length(group) > 0) {
+    if (!is_gaussian) stop("only Gaussian models are currently supported with group-specific terms")
+    
+#     Zind <- as.data.frame(summary(t(group$Zt)))
+#     Zind$x <- as.integer(Zind$x)
+#     Zind <- as.matrix(Zind)
+    Z <- t(as.matrix(group$Zt))
+    
+    p <- sapply(group$cnms, FUN = length)
+    l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
+    t <- length(p)
+    b_names <- unlist(lapply(1:t, FUN = function(i) rep(group$cnms[[i]], times = l[i])))
+    b_names <- paste(b_names, colnames(Z))
+    
+    standata$t <- t
+    standata$p <- as.array(p)
+    standata$l <- as.array(l)
+    standata$q <- ncol(Z)
+    standata$Z <- Z
+    standata$gamma_shape <- as.array(maybe_broadcast(group$decov$gamma_shape, t))
+    standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
+    standata$len_concentration <- sum(p[p > 1])
+    standata$concentration <- as.array(maybe_broadcast(group$decov$concentration, 
+                                                       sum(p[p > 1])))
+    standata$len_shape <- sum(p > 1)
+    standata$shape <- as.array(maybe_broadcast(group$decov$shape, sum(p > 1)))
+  }
+  else {
+    standata$t <- 0L
+    standata$p <- integer(0)
+    standata$l <- integer(0)
+    standata$q <- 0L
+    standata$Z <- matrix(0, nrow = nrow(xtemp), ncol = 0L)
+    standata$gamma_shape <- standata$scale <- standata$concentration <-
+      standata$shape <- rep(0, 0)
+    standata$len_concentration <- 0L
+    standata$len_shape <- 0L
+  }
+  
   if (!is_bernoulli) {
     standata$X <- xtemp
     standata$y <- y
@@ -199,22 +266,34 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- c(if (has_intercept) "alpha", "beta", if (is_gaussian) "sigma", 
-            if (is_nb) "theta", "mean_PPD")
+  pars <- c(if (has_intercept) "alpha", "beta", if (length(group) > 1) "b",
+            if (is_gaussian) "sigma", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "sampling") {
     stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                init = start, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                   if (is_gaussian) "sigma", if (is_nb) "overdispersion", "mean_PPD")
+                   if (is_gaussian) "sigma",
+                   if (length(group) > 0) paste0("b[", b_names, "]"),
+                   if (is_nb) "overdispersion", 
+                   "mean_PPD", "log-likelihood")
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }
   else if (algorithm == "optimizing") {
     out <- rstan::optimizing(stanfit, data = standata, init = start, hessian = TRUE)
     new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
-                   if (is_gaussian) c("sigma_unsaled", "sigma"), 
-                   if (is_nb) "overdispersion", if (has_intercept) "(Intercept)", "mean_PPD")
+                   if (is_gaussian) "sigma_unsaled", 
+                   if (is_nb) "overdispersion",
+                   if (length(group) > 0) c(paste0("u[", b_names, "]"),
+                                            paste0("z_T[", 1:(sum(p[p > 2] - 1)), "]"),
+                                            paste0("rho[", 1:standata$len_rho, "]"),
+                                            paste0("zeta[", 1:standata$len_zeta, "]"),
+                                            paste0("tau[", 1:length(group), "]")),
+                   if (is_gaussian) "sigma",
+                   if (length(group) > 0) paste0("b[", b_names, "]"),
+                   if (has_intercept) "(Intercept)", 
+                   "mean_PPD", "log-likelihood")
     k <- ncol(out$hessian)
     names(out$par) <- new_names
     colnames(out$hessian) <- rownames(out$hessian) <- new_names[1:k]

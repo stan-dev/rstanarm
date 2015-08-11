@@ -28,7 +28,7 @@
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
 #'   a design matrix and response vector.
 #' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified   
-#' @param prior Must be a call to \code{\link{LKJ}} with its 
+#' @param prior Must be a call to \code{\link{R2}} with its 
 #'   \code{location} argument specified
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
@@ -103,7 +103,7 @@
 #'   different priors
 #' @examples 
 #' \dontrun{
-#' stan_lm(mpg ~ ., data = mtcars, prior = LKJ(location = 0.75))
+#' stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75))
 #' }
 
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
