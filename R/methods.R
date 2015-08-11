@@ -1,10 +1,12 @@
 #' Methods
-#' @name stanreg_methods
+#' 
+#' @name stanreg-methods
 #' 
 #' @export
 #' 
-#' @param object,x a model fit with \code{\link{stan_lm}} or
-#'   \code{\link{stan_glm}}.
+#' @param object,x A fitted model object returned by one of the modeling 
+#'   functions in this package. This will typically be a list with class 
+#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
 #' @param ... other arguments to \code{print} or \code{summary}. See Details.
 #' @param parm a character vector of parameter names.
 #' @param level confidence level.
@@ -15,13 +17,13 @@ residuals.stanreg <- function(object, ...) {
   object$residuals
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, ...) {
   object$covmat
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export
 se.stanreg <- function(object, parm) {
   pnms <- names(coef(object))
@@ -30,7 +32,7 @@ se.stanreg <- function(object, parm) {
   object$stan_summary[parm, "sd"]
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export
 confint.stanreg <- function (object, parm, level = 0.95, ...) {
   # just a placeholder. we should replace this with a confint method that
@@ -38,7 +40,7 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
   confint.default(object, parm, level, ...)
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export
 print.stanreg <- function(x, ...) {
   # use RStan's print just as placeholder. we should replace this with our own
@@ -57,7 +59,7 @@ print.stanreg <- function(x, ...) {
   }
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export
 summary.stanreg <- function(object, ...) {
   # use RStan's summary just as placeholder. we should replace this with our own
@@ -71,9 +73,14 @@ summary.stanreg <- function(object, ...) {
   }
 }
 
-#' @rdname stanreg_methods
+#' @rdname stanreg-methods
 #' @export
 log_lik.stanreg <- function(object) {
   object$log_lik
 }
 
+#' @rdname stanreg-methods
+#' @export
+coef.stanreg <- function(object, ...)  {
+  object$coefficients
+}
