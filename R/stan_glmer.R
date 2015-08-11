@@ -1,9 +1,9 @@
 #' Fitting Bayesian generalized linear models with group-specific terms via
 #' Stan
 #'
-#' Full Bayesian inference for generalized linear modeling with group-specific
-#' terms with Gaussian, Student t, or Cauchy prior distributions for the 
-#' coefficients and flexible priors for the unknown covariance matrices.
+#' Full Bayesian inference or optimization for generalized linear modeling with
+#' group-specific terms with Gaussian, Student t, or Cauchy prior distributions
+#' for the coefficients and flexible priors for the unknown covariance matrices.
 #'
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}
 #' @param control,verbose,nAGQ,mustart,etastart,devFunOnly Same as for 
@@ -102,8 +102,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
 
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, group$Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
-               terms = NULL, model = NULL, na.action = na.action, 
-               contrasts = contrasts)
+               terms = NULL, model = NULL, na.action, contrasts, algorithm)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   return(out)

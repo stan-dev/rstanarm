@@ -10,7 +10,7 @@ stanreg <- function(object) {
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
   
-  opt <- is.list(stanfit) # used optimization
+  opt <- object$algorithm == "optimizing" # used optimization
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
@@ -76,6 +76,7 @@ stanreg <- function(object) {
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
     prior.info = object$prior.info, log_lik = log_lik,
+    algorithm = object$algorithm,
     stan_summary = stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
