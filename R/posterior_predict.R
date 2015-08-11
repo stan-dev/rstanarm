@@ -39,17 +39,27 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   eta <- linear_predictor(beta, dat$x, dat$offset)
   if (draws < S)
     eta <- eta[sample(S, draws), , drop = FALSE]
-  ppargs <- list(mu = family$linkinv(eta))
-  if (famname == "gaussian")
-    ppargs$sigma <- stanmat[, "sigma"]
-  if (famname == "binomial") {
-    y <- if (!is.null(object$y)) 
-      object$y else model.response(model.frame(object))
-    ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
+  if (is(object, "polr")) {
+    f <- object$method
+    if (f == "logistic")    linkinv <- make.link("logit")$linkinv
+    else if (f == "loglog") linkinv <- pgumbel
+    else                    linkinv <- make.link(f)$linkinv
+    zeta <- stanmat[,grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
+    .pp_polr(eta, zeta, linkinv)
   }
-  ytilde <- do.call(ppfun, ppargs)
-  if (missing(fun)) ytilde
-  else do.call(fun, list(ytilde))
+  else {
+    ppargs <- list(mu = family$linkinv(eta))
+    if (famname == "gaussian")
+      ppargs$sigma <- stanmat[, "sigma"]
+    if (famname == "binomial") {
+      y <- if (!is.null(object$y)) 
+        object$y else model.response(model.frame(object))
+      ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
+    }
+    ytilde <- do.call(ppfun, ppargs)
+    if (missing(fun)) ytilde
+    else do.call(fun, list(ytilde))
+  }
 }
 
 .pp_gaussian <- function(mu, sigma) {
@@ -65,5 +75,14 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s,])
+  }))
+}
+.pp_polr <- function(eta, zeta, linkinv) {
+  n <- ncol(eta)
+  q <- ncol(zeta)
+  t(sapply(1:nrow(eta), FUN = function(s) {
+    cumpr <- matrix(linkinv(matrix(zeta[s,], n, q, byrow = TRUE) - eta[s,]), , q)
+    fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
+    apply(fitted, 1, function(p) which(rmultinom(1, 1, p) == 1))
   }))
 }
