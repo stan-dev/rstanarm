@@ -1,15 +1,16 @@
 #' Draw from posterior predictive distribution
 #' 
 #' @export
-#' @param object a model fit with \code{\link{stan_lm}} or 
-#'   \code{\link{stan_glm}}.
-#' @param newdata optionally, a data frame in which to look for variables with 
+#' @param object A fitted model object returned by one of the modeling 
+#'   functions in this package. This will typically be a list with class 
+#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
+#' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
-#' @param draws the number of draws to return. The default and maximum number of
+#' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
-#' @param fun optional function to apply to the results. See examples below. 
+#' @param fun Optional function to apply to the results. See Examples. 
 #' 
-#' @return a matrix of draws from the posterior predictive distribution.
+#' @return A matrix of draws from the posterior predictive distribution.
 #' 
 #' @examples 
 #' fit <- stan_glm(mpg ~ wt, data = mtcars)
@@ -21,7 +22,7 @@
 #' ppd <- posterior_predict(fit, fun = exp)
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
-  if (inherits(object, "stanreg-mle")) # replace with whatever name we end up using
+  if (object$algorithm == "optimizing")
     stop("posterior_predict only available for MCMC")
   family <- object$family
   famname <- family$family

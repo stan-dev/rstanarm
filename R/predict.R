@@ -1,15 +1,16 @@
-#' Predict method for stan_lm and stan_glm models
+#' Predict method for stanreg objects
 #' 
 #' @export
-#' @param object a model fit with \code{\link{stan_lm}} or 
-#'   \code{\link{stan_glm}}.
-#' @param ... ignored.
-#' @param newdata optionally, a data frame in which to look for variables with 
+#' @param object A fitted model object returned by one of the modeling 
+#'   functions in this package. This will typically be a list with class 
+#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
+#' @param ... Ignored.
+#' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
-#' @param type the type of prediction. The default \code{'link'} is on the scale
+#' @param type The type of prediction. The default \code{'link'} is on the scale
 #'   of the linear predictors; the alternative \code{'response'} is on the scale
 #'   of the response variable.
-#' @param se.fit logical switch indicating if standard errors should be 
+#' @param se.fit Logical switch indicating if standard errors should be 
 #'   returned.
 #'   
 #' @return A vector if \code{se.fit} is \code{FALSE} and a list if \code{se.fit}
@@ -26,7 +27,7 @@ predict.stanreg <- function(object, ..., newdata = NULL,
     if (type == "link") return(object$linear.predictors)
     else return(object$fitted.values)
   }
-  mcmc <- !inherits(object, "stanreg-mle") # change to whatever name we end up using
+  mcmc <- object$algorithm == "sampling"
   if (mcmc && type == "response")
     stop("type='response' should not be used for models estimated by MCMC.",
          "Use posterior_predict() to draw from the posterior predictive distribution.",
