@@ -242,18 +242,21 @@ transformed data {
   pos[2] <- 1;
   for (i in 1:t) {
     real nu;
-    if (p[i] > 1) for (j in 1:p[i]) {
-      delta[pos[2]] <- concentration[j];
-      pos[2] <- pos[2] + 1;
-      nu <- shape[i] + 0.5  + 0.5 * (p[i] - 2);
+    if (p[i] > 1) {
+      for (j in 1:p[i]) {
+        delta[pos[2]] <- concentration[j];
+        pos[2] <- pos[2] + 1;
+      }
+      nu <- shape[pos[1]] + 0.5 * (p[i] - 2);
       shape1[pos[1]] <- nu;
       shape2[pos[1]] <- nu;
+      pos[1] <- pos[1] + 1;
     }
     if (p[i] > 2) for (j in 2:p[i]) {
-      pos[1] <- pos[1] + 1;
       nu <- nu - 0.5;
       shape1[pos[1]] <- 0.5 * j;
       shape2[pos[1]] <- nu;
+      pos[1] <- pos[1] + 1;
     }
     if (p[i] > 2) for (j in 3:p[i]) {
       len_z_T <- len_z_T + p[i] - 1;
