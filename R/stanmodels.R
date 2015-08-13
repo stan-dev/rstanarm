@@ -18,7 +18,7 @@
 # and reduce Build & Reload time
 
 MODELS_HOME <- "exec"
-if (!dir.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
+if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
   
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",

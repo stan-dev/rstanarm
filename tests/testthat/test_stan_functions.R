@@ -3,18 +3,18 @@
 
 MODELS_HOME <- "exec"
 fsep <- .Platform$file.sep
-if (!dir.exists(MODELS_HOME)) {
+if (!file.exists(MODELS_HOME)) {
   MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), 
                      paste0("rstanarm", fsep, "exec"), getwd())
 }
-if (!dir.exists(MODELS_HOME)) {
+if (!file.exists(MODELS_HOME)) {
   MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), "exec", getwd())
 }
 
 context("setup")
 test_that("Stan programs are available", {
   message(MODELS_HOME)
-  expect_true(dir.exists(MODELS_HOME))  
+  expect_true(file.exists(MODELS_HOME))  
 })
   
 stopifnot(require(rstan))
