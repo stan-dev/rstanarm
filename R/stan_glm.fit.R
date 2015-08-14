@@ -273,10 +273,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                init = start, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                   if (is_gaussian) "sigma",
                    if (length(group) > 0) paste0("b[", b_names, "]"),
-                   if (is_nb) "overdispersion", 
-                   "mean_PPD", "log-likelihood")
+                   if (is_gaussian) "sigma", if (is_nb) "overdispersion", 
+                   "mean_PPD", "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }
