@@ -16,7 +16,7 @@
 
 #' Fitting Bayesian generalized linear models via Stan
 #'
-#' Full Bayesian inference for generalized linear modeling with
+#' Full Bayesian inference or optimization for generalized linear modeling with 
 #' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
 #'
 #' @export
@@ -180,7 +180,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
                data, prior.info, call = call, terms = mt, model = mf, 
-               na.action = attr(mf, "na.action"), 
+               algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   
   out <- stanreg(fit)

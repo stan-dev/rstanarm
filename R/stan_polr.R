@@ -37,9 +37,9 @@ loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel,
                valideta = function(eta) TRUE, name = "loglog")
 class(loglog) <- "link-glm"
 
-#' Fitting Bayesian generalized linear models via Stan
+#' Fitting ordinal regression models via Stan
 #'
-#' Full Bayesian inference for generalized linear modeling with
+#' Full Bayesian inference or optimization for ordinal regression models with
 #' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
 #'
 #' @export
@@ -207,6 +207,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
               method = method, contrasts = contrasts, na.action = na.action,
               call = call, formula = formula,
               terms = Terms, prior.info = prior.info, log_lik = log_lik,
+              algorithm = algorithm,
               stan_summary = stan_summary, 
               stanfit = if (algorithm == "optimizing") stanfit$stanfit else stanfit)
   class(out) <- c("stanreg", "polr")
