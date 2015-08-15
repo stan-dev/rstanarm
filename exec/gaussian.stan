@@ -106,7 +106,7 @@ functions {
    * method, which inputs standard normally distributed variables and 
    * beta-distributed variables.
    *
-   * @param u Vector whose elements are iid normal(0,sigma) a priori
+   * @param u Vector whose elements are iid normal(0,1) a priori
    * @param z_T Vector used in the onion method for creating Cholesky factors
    * @param rho Vector of radii in the onion method for creating Cholesky factors
    * @param pi Vector of simplexes concatenated together
@@ -116,39 +116,40 @@ functions {
    *   the RHS of each |
    * @return A vector of group-specific coefficients
    */
-  vector make_b(vector u, vector z_T, vector rho, vector pi, vector tau,
+  vector make_b(vector u, vector z_T, vector rho, vector var_group, 
                 int[] p, int[] l) {
     vector[rows(u)] b;
     int b_mark;
     int z_T_mark;
     int rho_mark;
-    int pi_mark;
+    int vg_mark;
     // Due to lack of ragged arrays, everything is input as long vectors
     b_mark   <- 1;
     z_T_mark <- 1;
     rho_mark <- 1;
-    pi_mark  <- 1;
+    vg_mark <- 1;
     for (i in 1:size(p)) {
       int nc;
       nc <- p[i];
       if (nc == 1) { // just a standard deviation times a part of a vector
+        real vg_i;
+        vg_i <- var_group[vg_mark];
         for (s in b_mark:(b_mark + l[i] - 1)) 
-          b[s] <- tau[i] * u[s];
+          b[s] <- vg_i * u[s];
+        vg_mark <- vg_mark + 1;  
         b_mark <- b_mark + l[i];
       }
-      else {         // deal with a (Cholesky factor of a ) covariance matrix
-        matrix[nc,nc] T_i; 
+      else {         // deal with a (Cholesky factor of a) covariance matrix
+        matrix[nc,nc] T_i;
         real std_dev;
-        real sqrt_nc_tau;
-        sqrt_nc_tau <- sqrt(nc) * tau[i];
-        std_dev <- sqrt(pi[pi_mark]) * sqrt_nc_tau;
         T_i <- rep_matrix(0, nc, nc);
+        std_dev <- sqrt(var_group[vg_mark]);
+        vg_mark <- vg_mark + 1;
         T_i[1,1] <- std_dev;
-        pi_mark <- pi_mark + 1;
-        std_dev <- sqrt(pi[pi_mark]) * sqrt_nc_tau;
+        std_dev <- sqrt(var_group[vg_mark]);
+        vg_mark <- vg_mark + 1;
         T_i[2,1] <- std_dev * (2.0 * rho[rho_mark] - 1.0);
         rho_mark <- rho_mark + 1;
-        pi_mark <- pi_mark + 1;
         T_i[2,2] <- std_dev * sqrt(1.0 - square(T_i[2,1]));
         for (r in 2:(nc - 1)) { // modified onion method
           int rp1;
@@ -157,12 +158,12 @@ functions {
           T_row <- segment(z_T, z_T_mark, r);
           z_T_mark <- z_T_mark + r;
           scale <- sqrt(rho[rho_mark] / dot_self(T_row));
-          std_dev <- sqrt(pi[pi_mark]) * sqrt_nc_tau;
+          std_dev <- sqrt(var_group[vg_mark]);
           rp1 <- r + 1;
           for(c in 1:r) T_i[rp1,c] <- T_row[c] * scale * std_dev;
           T_i[rp1,rp1] <- sqrt(1.0 - rho[rho_mark]);
           rho_mark <- rho_mark + 1;
-          pi_mark <- pi_mark + 1;
+          vg_mark <- vg_mark + 1;
         }
         for (j in 1:l[i]) { // multiply Cholesky factor by relevant parts of u
           vector[nc] temp;
@@ -231,12 +232,14 @@ data {
 }
 transformed data {
   int<lower=0> len_z_T;
+  int<lower=0> len_var_group;
   int<lower=0> len_rho;
   real<lower=0> shape1[len_shape];
   real<lower=0> shape2[len_shape];
   real<lower=0> delta[len_concentration];
   int<lower=1> pos[2];
   len_z_T <- 0;
+  len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
   pos[1] <- 1;
   pos[2] <- 1;
@@ -275,29 +278,40 @@ parameters {
 }
 transformed parameters {
   vector[K] beta;
-  real sigma;
   vector[q] b;
+  vector[len_var_group] var_group;
+  real sigma;
   if (prior_dist > 0) beta <- prior_mean + prior_scale .* z_beta;
   else beta <- z_beta;
   if (prior_scale_for_dispersion > 0)
     sigma <-  prior_scale_for_dispersion * sigma_unscaled;
   else sigma <- sigma_unscaled;
   if (t > 0) {
-    vector[len_concentration] pi;
+    vector[t] scaled_tau;
     int mark;
     mark <- 1;
-    for (i in 1:t) if (p[i] > 1) {
-      int nc;
-      vector[p[i]] temp;
-      nc <- p[i];
-      temp <- segment(zeta, mark, nc);
-      temp <- temp / sum(temp);
-      for (j in 1:nc) {
-        pi[mark] <- temp[j];
+    scaled_tau <- tau .* scale * square(sigma);
+    for (i in 1:t) {
+      real trace_mat;
+      trace_mat <- square(scaled_tau[i]);
+      if (p[i] == 1) {
+        var_group[mark] <- trace_mat;
         mark <- mark + 1;
       }
+      else {
+        int nc;
+        vector[p[i]] temp;
+        nc <- p[i];
+        trace_mat <- trace_mat * sqrt(nc);
+        temp <- segment(zeta, mark, nc);
+        temp <- temp / sum(temp);
+        for (j in 1:nc) {
+          var_group[mark] <- temp[j] * trace_mat;
+          mark <- mark + 1;
+        }
+      }
     }
-    b <- make_b(u * sigma, z_T, rho, pi, tau .* scale, p, l);
+    b <- make_b(u, z_T, rho, var_group, p, l);
   }
 }
 model {
