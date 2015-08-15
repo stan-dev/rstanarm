@@ -38,11 +38,6 @@
 #'   elements for the \code{gamma_shape}, \code{scale}, \code{concentration}
 #'   and \code{shape} components of a \code{\link{decov}} prior for the
 #'   covariance matrices among the group-specific coefficients
-#' @param prior_PD Logical scalar (defaulting the \code{FALSE}) indicating
-#'   whether to draw from the prior distribution without conditioning on
-#'   the outcome
-#' @param algorithm Character string among \code{"sampling"} (the default) or
-#'   \code{"optimization"} indicating what estimation scheme to use
 #' @export
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(),
@@ -181,7 +176,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
     t <- length(p)
     b_names <- unlist(lapply(1:t, FUN = function(i) rep(group$cnms[[i]], times = l[i])))
     b_names <- paste(b_names, colnames(Z))
-    
+    g_names <- unlist(lapply(1:t, FUN = function(i) {
+      paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
+    }))
     standata$t <- t
     standata$p <- as.array(p)
     standata$l <- as.array(l)
@@ -266,14 +263,16 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (is.null(start)) start <- "random"
   else start <- as.list(start)
   
-  pars <- c(if (has_intercept) "alpha", "beta", if (length(group) > 1) "b",
+  pars <- c(if (has_intercept) "alpha", "beta", 
+            if (length(group) > 0) c("b", "var_group"),
             if (is_gaussian) "sigma", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "sampling") {
     stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                init = start, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                   if (length(group) > 0) paste0("b[", b_names, "]"),
+                   if (length(group) > 0) c(paste0("b[", b_names, "]"),
+                                            paste0("var[", g_names, "]")),
                    if (is_gaussian) "sigma", if (is_nb) "overdispersion", 
                    "mean_PPD", "log-posterior")
     stanfit@sim$fnames_oi <- new_names
@@ -289,8 +288,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
                                             paste0("rho[", 1:standata$len_rho, "]"),
                                             paste0("zeta[", 1:standata$len_zeta, "]"),
                                             paste0("tau[", 1:length(group), "]")),
+                   if (length(group) > 0) c(paste0("b[", b_names, "]"),
+                                            paste0("var[", g_names, "]")),
                    if (is_gaussian) "sigma",
-                   if (length(group) > 0) paste0("b[", b_names, "]"),
                    if (has_intercept) "(Intercept)", 
                    "mean_PPD", "log-likelihood")
     k <- ncol(out$hessian)
