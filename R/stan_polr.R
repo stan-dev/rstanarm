@@ -88,7 +88,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
                        prior_counts = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing")) {
   
-  # parse it like MASS::polr does
+  # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data))) 
