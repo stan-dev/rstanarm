@@ -63,10 +63,15 @@
 #'   checking convergence because it is reasonably normally distributed
 #'   and a function of all the parameters in the model.
 #'   
+#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}} and
+#'   has a somewhat customized \code{\link{print}} method but basically just 
+#'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
+#'   variance.
+#'   
 #' @return The \code{stan_lm.fit} and \code{stan_lm.wfit} functions return an 
 #'   object of class \code{\link[rstan]{stanfit-class}}. The more typically
-#'   used \code{stan_lm} function returns an object of class \code{"stanreg"}, 
-#'   which is a list containing the components
+#'   used \code{stan_lm} and \code{stan_aov} functions returns an object of 
+#'   class \code{"stanreg"}, which is a list containing the components
 #' 
 #' \describe{
 #'   \item{coefficients}{named vector of coefficients (posterior means)}
@@ -96,8 +101,8 @@
 #' can be used with objects of class \code{"stanreg"}. There are also  
 #' \code{vcov}, \code{confint} and \code{\link{se}} methods.
 #'
-#' @seealso \code{\link[stats]{lm}}, \code{\link[rstan]{stan}}, and
-#'   \code{\link{stan_glm}}, which --- if 
+#' @seealso \code{\link[stats]{lm}}, \code{\link[stats]{aov}}, 
+#'   \code{\link[rstan]{stan}}, and \code{\link{stan_glm}}, which --- if 
 #'   \code{family = gaussian(link = "identity")} --- also estimates
 #'   a linear model with normally-distributed errors but specifies
 #'   different priors
@@ -109,7 +114,7 @@
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 
-                    prior = LKJ(stop("'location' must be specified")), 
+                    prior = R2(stop("'location' must be specified")), 
                     prior_PD = FALSE, ...) {
   
   call <- match.call()
@@ -124,15 +129,15 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   
   Y <- modelframe$y
   X <- modelframe$x
+  if (!singular.ok) X <- X[,!is.na(modelframe$coefficients),drop = FALSE]
   w <- modelframe$weights
   offset <- model.offset(mf)
-
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
                           prior = prior,  prior_PD = prior_PD, ...)
   
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,
-               prior.info = prior, 
+               prior.info = prior, algorithm = "sampling",
                call = call, terms = mt,
                model = if (model) mf else NULL,
                na.action = attr(modelframe, "na.action"),

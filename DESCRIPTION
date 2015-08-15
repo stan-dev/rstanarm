@@ -10,6 +10,6 @@ Description: Convenient interface to Stan (Stan is an open-source package for ob
         Hamiltonian Monte Carlo.)
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-2)
-Imports: utils
+Imports: utils, lme4
 URL: http://mc-stan.org
 Suggests: testthat

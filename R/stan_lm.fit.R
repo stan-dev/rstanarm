@@ -18,9 +18,9 @@
 #' @param tol Numeric scalar tolerance for the QR decomposition
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
                          singular.ok = TRUE, 
-                         prior = LKJ(stop("'location' must be specified")), 
+                         prior = R2(stop("'location' must be specified")), 
                          prior_PD = FALSE, ...) {
-  
+  if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[,-1,drop=FALSE]
@@ -47,8 +47,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   XtX <- crossprod(x)
   dim(XtX) <- c(J, K, K)
   s_Y <- array(sd(y), J)
+  if (isTRUE(all.equal(matrix(0, J, K), xbar))) center_y <- mean(y)
+  else center_y <- 0
   ybar <- array(mean(y), J)
-  
+
   eta <- prior$eta <- make_eta(prior$location, prior$what, K = K)
   
   # initial values
@@ -60,7 +62,8 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   }
   
   stanfit <- get("stanfit_lm")
-  standata <- nlist(K, has_intercept, prior_PD, J, N, xbar, s_X, XtX, ybar, s_Y, b, SSR, eta)
+  standata <- nlist(K, has_intercept, prior_PD, J, N, xbar, s_X, XtX, 
+                    ybar, center_y, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", 
             if (prior_PD == 0) "log_omega", "mean_PPD")
   if ("control" %in% names(list(...))) {
@@ -79,7 +82,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 #' @export
 stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
                         singular.ok = TRUE, 
-                        prior = LKJ(stop("'location' must be specified")), 
+                        prior = R2(stop("'location' must be specified")), 
                         prior_PD = FALSE,  ...) {
 
   call <- match.call()

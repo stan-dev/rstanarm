@@ -33,6 +33,7 @@ data {
   vector<lower=0>[K] s_X[J];          # vector of standard deviations of the predictors
   matrix[K,K] XtX[J];                 # X'X where X is centered but not standardized
   real ybar[J];                       # sample mean of outcome
+  real center_y;                      # zero or sample mean of outcome
   real<lower=0> s_Y[J];               # standard deviation of the outcome
   vector[K] b[J];                     # OLS coefficients
   real<lower=0> SSR[J];               # OLS sum-of-squared residuals
@@ -71,20 +72,27 @@ transformed parameters {
     else beta[j][1] <- sqrt(R2[j]) / s_X[j][1] * Delta_y;
     sigma[j] <- Delta_y * sqrt(1 - R2[j]);
     if (has_intercept == 1) {
-      if (K > 1)
-        alpha[j] <- z_alpha[j] * sigma[j] * 
-                    sqrt(dot_self(mdivide_left_tri_low(L, rhs[j]))    + inv_N[j]);
+      if (K > 1) {
+        if (center_y == 0) 
+          alpha[j] <- z_alpha[j] * sigma[j] * 
+                      sqrt(dot_self(mdivide_left_tri_low(L, rhs[j])) + inv_N[j]);
+        else alpha[j] <- z_alpha[j] * sigma[j] * sqrt(inv_N[j]) + center_y;
+      }
       else alpha[j] <- z_alpha[j] * sigma[j] * sqrt(square(rhs[j][1]) + inv_N[j]);
     }
   }
 }
 model {
   for (j in 1:J) {
-    real dummy; // irrelevant but useful for testing
-    if (prior_PD == 0) 
+    if (prior_PD == 0) {
+      real dummy; // irrelevant but useful for testing
+      real shift;
+      if (center_y == 0) shift <- dot_product(xbar[j], beta[j]);
+      else shift <- 0;
       dummy <- ll_mvn_ols_lp(beta[j], b[j], XtX[j], 
-               if_else(has_intercept, alpha[j], 0) + dot_product(xbar[j], beta[j]),
+               if_else(has_intercept, alpha[j], 0) + shift,
                ybar[j], SSR[j], sigma[j], N[j]); // likelihood contribution
+    }
     z_beta[j] ~ normal(0,1); // prior
   }                          // rest of the priors
   if (has_intercept == 1) z_alpha ~ normal(0,1);
@@ -94,7 +102,10 @@ model {
 }
 generated quantities {
   real mean_PPD[J];
-  for (j in 1:J) 
-    mean_PPD[j] <- normal_rng(alpha[j] + dot_product(xbar[j], beta[j]), 
-                              sigma[j]);
+  for (j in 1:J) {
+    real shift;
+    if (center_y == 0) shift <- dot_product(xbar[j], beta[j]);
+    else shift <- 0;
+    mean_PPD[j] <- normal_rng(alpha[j] + shift, sigma[j]);
+  }
 }
