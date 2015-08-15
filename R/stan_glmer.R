@@ -41,7 +41,8 @@
 #'   of the generalized linear model and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
-
+#'
+#' @importFrom lme4 glFormula
 #' @export
 stan_glmer <- function (formula, data = NULL, family = gaussian, 
                         control = NULL, start = NULL, verbose = 0L, 
@@ -61,7 +62,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
     family <- family()
   if(!is(family, "family"))
     stop("'family' must be a family")
-  mc[[1]] <- quote(lme4::glFormula)
+  mc[[1]] <- quote(glFormula)
   mc$prior <- mc$prior.for.intercept <- mc$prior.options <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- mc$... <- NULL
   glmod <- eval(mc, parent.frame(1L))
@@ -81,7 +82,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   }
   group <- glmod$reTrms
   group$decov <- prior.for.covariance
-
+  algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights, start = start, 
                           offset = offset, family = family, 
                           prior.dist = prior$dist,
@@ -106,13 +107,6 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   return(out)
-    
-  mcout$formula <- glmod$formula
-  glmod$formula <- NULL
-  devfun <- do.call(mkGlmerDevfun, c(glmod, list(verbose = verbose, 
-                                                 control = control, nAGQ = nAGQ)))
-  mkMerMod(environment(devfun), opt = lme4::glmerControl(optimizer = "Stan"), 
-           glmod$reTrms, fr = glmod$fr, mc = mcout, lme4conv = NULL)
 }
 
 #' @rdname stan_glmer
