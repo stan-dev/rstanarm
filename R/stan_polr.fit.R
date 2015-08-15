@@ -21,7 +21,7 @@
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets
 stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL, 
                            method = c("logistic", "probit", "loglog", "cloglog", "cauchit"), 
-                           prior = LKJ(stop("'location' must be specified")), 
+                           prior = R2(stop("'location' must be specified")), 
                            prior_counts = NULL, prior_PD = FALSE, 
                            algorithm = c("sampling", "optimizing"), ...) {
   algorithm <- match.arg(algorithm)
@@ -40,7 +40,7 @@ stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL,
   has_offset <- length(offset) > 0 && !all(offset == 0)
   if (!has_offset) offset <- double(0)
 
-  if (length(prior) > 0 && prior$dist == "LKJ") {
+  if (length(prior) > 0) {
     shape <- make_eta(prior$location, prior$what, K = ncol(x))
     prior_dist <- 1L
   }
