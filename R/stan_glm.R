@@ -41,12 +41,12 @@
 #'   \code{\link{priors}} otherwise.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome
+#'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
+#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation 
 #'   approach to use.
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.)
+#'   \code{iter}, \code{chains}, \code{refresh}, etc.).
 #' 
 #'
 #' @details The \code{stan_glm} function is similar in syntax to 
@@ -88,8 +88,8 @@
 #' can be used with objects of class \code{"stanreg"}. There are also  
 #' \code{vcov}, \code{confint} and \code{\link{se}} methods.
 #'
-#' @seealso \code{\link[stats]{glm}}, \code{\link[stats]{lm}}, 
-#' \code{\link[rstan]{stan}}
+#' @seealso \code{\link{stanreg-methods}}, \code{\link[stats]{glm}},
+#'   \code{\link[stats]{lm}}, \code{\link[rstan]{stan}}
 #' 
 #' @examples 
 #' \dontrun{

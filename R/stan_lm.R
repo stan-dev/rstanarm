@@ -15,27 +15,28 @@
 
 #' Fitting regularized linear models via Stan
 #'
-#' Full Bayesian inference for linear modeling with regularizing priors on the
-#' model parameters that are driven by prior beliefs about \eqn{R^2}, the
-#' proportion of variance in the outcome attributable to the predictors. See
+#' Full Bayesian inference for linear modeling with regularizing priors on the 
+#' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
+#' proportion of variance in the outcome attributable to the predictors. See 
 #' \code{\link{priors}} for an explanation of this critical point.
+#' 
 #' @export
 #'
-#' @param formula,data,subset Same as in \code{\link[stats]{lm}}
+#' @param formula,data,subset Same as in \code{\link[stats]{lm}}.
 #' @param weights,na.action,method,model,qr,singular.ok,contrasts,offset 
-#'   Also the same as in \code{\link[stats]{lm}} but rarely specified
+#'   Also the same as in \code{\link[stats]{lm}} but rarely specified.
 #' @param x,y In \code{stan_lm}, logical scalars indicating whether to
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
 #'   a design matrix and response vector.
-#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified   
+#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.   
 #' @param prior Must be a call to \code{\link{R2}} with its 
-#'   \code{location} argument specified
+#'   \code{location} argument specified.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
 #'   merely proportional to the actual distribution because of an improper
-#'   prior on a scale parameter
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}}
+#'   prior on a scale parameter.
+#' @param ... Further arguments passed to \code{\link[rstan]{stan}}.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -101,16 +102,17 @@
 #' can be used with objects of class \code{"stanreg"}. There are also  
 #' \code{vcov}, \code{confint} and \code{\link{se}} methods.
 #'
-#' @seealso \code{\link[stats]{lm}}, \code{\link[stats]{aov}}, 
-#'   \code{\link[rstan]{stan}}, and \code{\link{stan_glm}}, which --- if 
-#'   \code{family = gaussian(link = "identity")} --- also estimates
-#'   a linear model with normally-distributed errors but specifies
-#'   different priors
+#' @seealso \code{\link{stanreg-methods}}, \code{\link[stats]{lm}}, 
+#'   \code{\link[stats]{aov}}, \code{\link[rstan]{stan}}, and 
+#'   \code{\link{stan_glm}}, which --- if \code{family = gaussian(link = 
+#'   "identity")} --- also estimates a linear model with normally-distributed 
+#'   errors but specifies different priors.
+#'   
 #' @examples 
 #' \dontrun{
 #' stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75))
 #' }
-
+#'
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 

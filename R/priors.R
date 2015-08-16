@@ -1,7 +1,7 @@
 #' Prior distributions
 #' 
 #' These functions are used to specify the prior-related arguments of various
-#' model-fitting functions in this package.
+#' model-fitting functions in the \pkg{rstanarm} package.
 #' 
 #' @export 
 #' @name priors
@@ -13,7 +13,7 @@
 #'   case how \code{location} is interpreted depends on the \code{what} 
 #'   argument but always pertains to the prior location of the \eqn{R^2} 
 #'   under a Beta distribution. See the Details section.
-#' @param scale Prior scale. Default depends on the family (see Details)
+#' @param scale Prior scale. Default depends on the family (see Details).
 #' @param df Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #' @param what A character string among \code{'mode'} (the default),
@@ -27,7 +27,7 @@
 #'   and an error will prompt the user to specify another choice for
 #'   \code{"what"}.
 #'   
-#' @details The details depend on the family of the prior being used
+#' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
 #'   For the prior distribution for the intercept, \code{location}, 
 #'   \code{scale}, and \code{df} should be scalars. For the prior for the other
@@ -147,11 +147,11 @@ cauchy <- function(location = 0, scale = NULL) {
 
 #' @rdname priors
 #' @param shape Shape parameter for an LKJ prior on the correlation matrix 
-#'  in the \code{decov} prior
+#'  in the \code{decov} prior.
 #' @param concentration Concentration parameter for the symmetric Dirichlet 
-#'  distribution in the \code{decov} prior
+#'  distribution in the \code{decov} prior.
 #' @param gamma_shape Shape parameter for a gamma prior on the scale 
-#'   parameter in the \code{dcov} prior
+#'   parameter in the \code{dcov} prior.
 
 #' @export
 decov <- function(shape = 1, concentration = 1, gamma_shape = 1, scale = 1) {
@@ -210,7 +210,7 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
 #'   at zero.
 #' @param min.prior.scale Minimum prior scale for the intercept and 
 #'   coefficients.
-#' @param scaled Logical, defaulting to \code{TRUE}. If \code{TRUE} the 
+#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
 #'   \code{prior.scale} is further scaled by the range of the predictor if the 
 #'   predictor has exactly two unique values and scales prior.scale by twice the
 #'   standard deviation of the predictor if it has more than two unique values.

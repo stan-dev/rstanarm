@@ -4,7 +4,7 @@
 # where S is the size of the posterior sample (the number of simulations) and N
 # is the number of data points.
 # 
-# @param family,x,y,weights,offset,beta,sigma
+# @param family,x,y,weights,offset,beta,sigma,zeta
 #
 # @return a matrix.
 #

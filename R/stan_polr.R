@@ -47,10 +47,10 @@ class(loglog) <- "link-glm"
 #' @param formula,data,weights,subset,na.action,contrasts,model,method 
 #'   Same as in \code{\link[MASS]{polr}}.
 #' @param Hess Same as in \code{\link[MASS]{polr}} but always taken to be
-#'   \code{TRUE} and moreover ignored in the case of MCMC
+#'   \code{TRUE} and moreover ignored in the case of MCMC.
 #' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g.
 #'   \code{iter}, \code{chains}, \code{refresh}, etc.) or 
-#'   \code{\link[rstan]{optimizing}}
+#'   \code{\link[rstan]{optimizing}}.
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
@@ -62,9 +62,9 @@ class(loglog) <- "link-glm"
 #'   Can be \code{NULL} to use a uniform Dirichlet prior.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome
+#'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
+#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation
 #'   approach to use.
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 

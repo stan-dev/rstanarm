@@ -4,12 +4,12 @@
 #' 
 #' @export
 #' 
-#' @param object,x A fitted model object returned by one of the modeling 
-#'   functions in this package. This will typically be a list with class 
-#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
-#' @param ... other arguments to \code{print} or \code{summary}. See Details.
-#' @param parm a character vector of parameter names.
-#' @param level confidence level.
+#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
+#'   modeling functions. This will be a list with class 'stanreg' as well as at
+#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @param ... Other arguments to \code{print} or \code{summary}. See Details.
+#' @param parm A character vector of parameter names.
+#' @param level The confidence level to use.
 #' @note Unlike \code{\link[stats]{glm}}, residuals are of type \code{'response'} 
 #' not \code{'deviance'} (see \code{\link[stats]{residuals.glm}}). 
 #' 
@@ -98,5 +98,11 @@ log_lik.stanreg <- function(object) {
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...)  {
-  object$coefficients
+  NextMethod()
+}
+
+#' @rdname stanreg-methods
+#' @export
+fitted.stanreg <- function(object, ...)  {
+  NextMethod()
 }
