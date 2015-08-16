@@ -2,7 +2,9 @@
 #'
 #' @docType package
 #' @name rstanarm
+#' 
 #' @import rstan
+#' @import stats
 #' 
 #' @description An extension to the \code{\link[rstan]{rstan}} package enabling
 #'   the most commonly applied regression models to be specified using customary
@@ -31,6 +33,5 @@
 #'   
 #'   Ordinal regression modeling with Gaussian, Student t, or Cauchy prior
 #'   distributions for the coefficients.
-#'   
 #'   
 NULL

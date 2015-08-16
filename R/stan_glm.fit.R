@@ -81,8 +81,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (family$family == "binomial") {
     if (NCOL(y) != 1L) {
       stopifnot(NCOL(y) == 2L)
-      trials <- y[, 1L] + y[, 2L]
-      y <- y[, 1L]
+      trials <- as.integer(y[, 1L] + y[, 2L])
+      y <- as.integer(y[, 1L])
     } else {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
