@@ -150,7 +150,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
     fit <- nlist(stanfit, family, formula, offset, weights = wt,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]), 
                  data, prior.info, call, terms = Terms, model = m,
-                 na.action = attr(m, "na.action"), 
+                 algorithm, na.action = attr(m, "na.action"), 
                  contrasts = attr(x, "contrasts"))
     out <- stanreg(fit)
     if (!model) out$model <- NULL
