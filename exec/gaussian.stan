@@ -209,9 +209,9 @@ data {
   int<lower=0,upper=1> has_offset;  # 0 = No, 1 = Yes
   vector[N * has_offset] offset;
   
-  # prior family (zero indicates no prior!!!)
-  int<lower=0,upper=2> prior_dist;               # 1 = normal, 2 = student_t
-  int<lower=0,upper=2> prior_dist_for_intercept; # 1 = normal, 2 = student_t
+  # prior family: 0 = none, 1 = normal, 2 = student_t, 3 = horseshoe, 4 = horseshoe_plus
+  int<lower=0,upper=4> prior_dist;
+  int<lower=0,upper=2> prior_dist_for_intercept;
   
   # hyperparameter values are set to 0 if there is no prior
   vector<lower=0>[K] prior_scale;
@@ -231,6 +231,7 @@ data {
   real<lower=0> shape[len_shape];
 }
 transformed data {
+  int<lower=0> horseshoe;
   int<lower=0> len_z_T;
   int<lower=0> len_var_group;
   int<lower=0> len_rho;
@@ -238,6 +239,9 @@ transformed data {
   real<lower=0> shape2[len_shape];
   real<lower=0> delta[len_concentration];
   int<lower=1> pos[2];
+  if      (prior_dist <  2) horseshoe <- 0;
+  else if (prior_dist == 3) horseshoe <- 2;
+  else if (prior_dist == 4) horseshoe <- 4;
   len_z_T <- 0;
   len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
@@ -269,6 +273,8 @@ transformed data {
 parameters {
   real gamma[has_intercept];
   vector[K] z_beta;
+  real<lower=0> global[horseshoe];
+  vector<lower=0>[K] local[horseshoe];
   real<lower=0> sigma_unscaled;
   vector[q] u;
   vector[len_z_T] z_T;
@@ -281,8 +287,22 @@ transformed parameters {
   vector[q] b;
   vector[len_var_group] var_group;
   real sigma;
-  if (prior_dist > 0) beta <- prior_mean + prior_scale .* z_beta;
-  else beta <- z_beta;
+  if (prior_dist == 0)      beta <- z_beta;
+  else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
+  else if (prior_dist == 3) {
+    vector[K] lambda;
+    for (k in 1:K) lambda[k] <- local[1][k] * sqrt(local[2][k]);
+    beta <- z_beta .* lambda * global[1]    * sqrt(global[2]);
+  }
+  else if (prior_dist == 4) {
+    vector[K] lambda;
+    vector[K] lambda_plus;
+    for (k in 1:K) {
+      lambda[k] <- local[1][k] * sqrt(local[2][k]);
+      lambda_plus[k] <- local[3][k] * sqrt(local[4][k]);
+    }
+    beta <- z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
+  }
   if (prior_scale_for_dispersion > 0)
     sigma <-  prior_scale_for_dispersion * sigma_unscaled;
   else sigma <- sigma_unscaled;
@@ -341,10 +361,25 @@ model {
   if (prior_scale_for_dispersion > 0) sigma_unscaled ~ cauchy(0, 1);
   
   // Log-priors for coefficients
-  if (prior_dist == 1) # normal
-    z_beta ~ normal(0, 1);
-  else if (prior_dist == 2) # student_t
-    z_beta ~ student_t(prior_df, 0, 1);
+  if      (prior_dist == 1) z_beta ~ normal(0, 1);
+  else if (prior_dist == 2) z_beta ~ student_t(prior_df, 0, 1);
+  else if (prior_dist == 3) { # horseshoe
+    z_beta ~ normal(0,1);
+    local[1] ~ normal(0,1);
+    local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);
+    global[1] ~ normal(0,1);
+    global[2] ~ inv_gamma(0.5, 0.5);
+  }
+  else if (prior_dist == 4) { # horseshoe+
+    z_beta ~ normal(0,1);
+    local[1] ~ normal(0,1);
+    local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);
+    local[3] ~ normal(0,1);
+    // unorthodox useage of prior_scale as another df hyperparameter
+    local[4] ~ inv_gamma(0.5 * prior_scale, 0.5 * prior_scale);
+    global[1] ~ normal(0,1);
+    global[2] ~ inv_gamma(0.5, 0.5);
+  }
   /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  

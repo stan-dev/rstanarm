@@ -14,7 +14,7 @@
 #'   argument but always pertains to the prior location of the \eqn{R^2} 
 #'   under a Beta distribution. See the Details section.
 #' @param scale Prior scale. Default depends on the family (see Details)
-#' @param df Prior degrees of freedom. Defaults to 1, in which case 
+#' @param df,df1,df2 Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
@@ -33,12 +33,38 @@
 #'   \code{scale}, and \code{df} should be scalars. For the prior for the other
 #'   coefficients they can either be vectors of length equal to the number of
 #'   coefficients (not including the intercept), or they can be scalars, in 
-#'   which case they will be recycled to the appropriate length.
+#'   which case they will be recycled to the appropriate length. As the 
+#'   degrees of freedom approaches infinity, the Student t distribution 
+#'   approaches the normal distribution and if the degrees of freedom are one,
+#'   then the Student t distribution is the Cauchy distribution.
 #'   
 #'   If \code{scale} is not specified it will default to 10 for the intercept
 #'   and 2.5 for the other coefficients, unless the probit link function is
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
+#' }
+#' \subsection{Hierarchical shrinkage family}{
+#'   The horseshoe prior is a normal with a mean of zero and a standard 
+#'   deviation that is distributed half Student t with some 
+#'   (traditionally 1 but by default 3) degrees of freedom, scaled by a
+#'   half Cauchy parameter.
+#'   
+#'   The horseshoe plus prior is a normal with a mean of zero and a standard
+#'   deviation that is distributed as the product of two independent half 
+#'   Student t parameters with some (traditionally 1 but by default 3) 
+#'   degrees of freedom that are each scaled by the same square root of a
+#'   half Cauchy parameter.
+#'   
+#'   These hierarchical shrinkage priors have very tall modes and very fat
+#'   tails. Consequently, the tend to produce posterior distributions that
+#'   are very concentrated near zero, unless the predictor has a strong
+#'   influence on the outcome, in which case the prior has little influence.
+#'   Traditionally, horseshoe priors set the degrees of freedom equal to 1,
+#'   but that can make it difficult for Stan to sample without encountering
+#'   some divergent transitions. Thus, the default degrees of freedom for
+#'   \code{horseshoe} and \code{horseshoe_plus} is 3, which makes the 
+#'   variance of the Student t distribution finite and produces some shrinkage
+#'   on the coefficients, even for strong predictors.
 #' }
 #' \subsection{Covariance matrices}{
 #'   Covariance matrices are decomposed into correlation matrices and 
@@ -93,17 +119,18 @@
 #'   variable.
 #' }
 #' \subsection{R2 family}{
-#'   The \code{\link{stan_lm}} and \code{\link{stan_polr}} functions allow
-#'   the user to utilize a function called \code{R2} to convey prior 
-#'   information about all the parameters. This prior hinges on prior beliefs
-#'   about the location of \eqn{R^2}, the proportion of variance in the outcome
-#'   attributable to the predictors, which has a \code{\link[stats]{Beta}} 
-#'   prior with first shape hyperparameter equal to half the number of 
-#'   predictors and second shape hyperparameter free. By specifying the prior 
-#'   mode (the default) mean, median, or expected log of \eqn{R^2}, the second
-#'   shape parameter for this Beta distribution is determined internally. If
-#'   \code{what = 'log'}, location should be a negative scalar; otherwise it
-#'   should be a scalar on the \eqn{(0,1)} interval.
+#'   The \code{\link{stan_lm}}, \code{\link{stan_aov}} and 
+#'   \code{\link{stan_polr}} functions allow the user to utilize a function 
+#'   called \code{R2} to convey prior information about all the parameters. 
+#'   This prior hinges on prior beliefs about the location of \eqn{R^2}, the 
+#'   proportion of variance in the outcome attributable to the predictors, 
+#'   which has a \code{\link[stats]{Beta}} prior with first shape 
+#'   hyperparameter equal to half the number of predictors and second shape 
+#'   hyperparameter free. By specifying the prior mode (the default) mean, 
+#'   median, or expected log of \eqn{R^2}, the second shape parameter for this 
+#'   Beta distribution is determined internally. If \code{what = 'log'}, 
+#'   location should be a negative scalar; otherwise it should be a scalar on 
+#'   the \eqn{(0,1)} interval.
 #'   
 #'   For example, if \eqn{R^2 = 0.5}, then the mode, mean, and median of
 #'   the \code{\link[stats]{Beta}} distribution are all the same and thus the
@@ -137,6 +164,22 @@ student_t <- function(df = 1, location = 0, scale = NULL) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
   nlist(dist = "t", df, location, scale)
+}
+
+#' @rdname priors
+#' @export
+horseshoe <- function(df = 3) {
+  validate_parameter_value(df)
+  nlist(dist = "horseshoe", df, location = 0, scale = 1)
+}
+
+#' @rdname priors
+#' @export
+horseshoe_plus <- function(df1 = 3, df2 = 3) {
+  validate_parameter_value(df1)
+  validate_parameter_value(df2)
+  # scale gets used as a second df hyperparameter
+  nlist(dist = "horseshoe_plus", df = df1, location = 0, scale = df2)
 }
 
 #' @rdname priors

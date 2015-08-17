@@ -14,9 +14,9 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 #' @rdname stan_glm
-#' @param prior.dist,prior.dist.for.intercept Character string, either 
-#'   \code{"normal"} (the default), or \code{"t"} indicating the family of the
-#'   prior distribution for the coefficients, or \code{NULL} to omit this prior
+#' @param prior.dist,prior.dist.for.intercept Character string indicating the 
+#'   family of the prior distribution for the coefficients (see
+#'   \code{\link{priors}}) or \code{NULL} to omit this prior
 #' @param scaled Logical scalar indicating whether to rescale the predictors
 #' @param prior.mean,prior.mean.for.intercept Numeric vector (possibly of
 #'   length one) indicating the locations of the \code{prior.dist} and the
@@ -41,7 +41,8 @@
 #' @export
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(),
-                         prior.dist = c("normal", "t"), 
+                         prior.dist = c("normal", "t", "horseshoe", 
+                                        "horseshoe_plus"),
                          prior.dist.for.intercept = c("normal", "t"), 
                          scaled = TRUE, 
                          prior.mean = 0, prior.scale = NULL, prior.df = 1,
@@ -104,8 +105,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   # prior distributions
   if (!is.null(prior.dist)) {
     prior.dist <- match.arg(prior.dist)
-    prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)
-    prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
+    if (prior.dist == "normal" || prior.dist == "t") {
+      prior.dist <- ifelse(prior.dist == "normal", 1L, 2L)
+      prior.scale <- set_prior_scale(prior.scale, default = 2.5, link = family$link)
+    }
+    else prior.dist <- ifelse(prior.dist == "horseshoe", 3L, 4L)
     prior.df <- maybe_broadcast(prior.df, nvars)
     prior.df <- as.array(pmin(.Machine$double.xmax, prior.df))
     prior.mean <- maybe_broadcast(prior.mean, nvars)
