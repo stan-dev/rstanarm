@@ -11,6 +11,6 @@ Description: Convenient interface for applied regression models using RStan,
   or optimization.
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-2)
-Imports: lme4, stats, utils
+Imports: lme4 (>= 1.1-8), loo (>= 0.1.2.9000), MASS, stats, utils
 URL: http://mc-stan.org
 Suggests: testthat
