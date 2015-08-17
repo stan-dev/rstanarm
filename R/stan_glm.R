@@ -20,6 +20,15 @@
 #' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
 #'
 #' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_glm
+#' @template return-stanfit-object
+#' @templateVar fitfun stan_glm.fit
+#' @template see-also
+#' @templateVar pkg stats
+#' @templateVar pkgfun glm
+#' 
 #'
 #' @param formula,family,data,subset Same as \code{\link[stats]{glm}}.
 #' @param x,y In \code{stan_glm}, logical scalars indicating whether to
@@ -41,14 +50,13 @@
 #'   \code{\link{priors}} otherwise.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome
+#'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
+#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation 
 #'   approach to use.
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.)
+#'   \code{iter}, \code{chains}, \code{refresh}, etc.).
 #' 
-#'
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
@@ -57,39 +65,6 @@
 #'   generalized linear model. The \code{stan_glm} function calls the workhorse
 #'   \code{stan_glm.fit} function, but it is possible to call the latter
 #'   directly.
-#' 
-#' @return A named list containing the components
-#' 
-#' \describe{
-#'   \item{coefficients}{named vector of coefficients (posterior means)}
-#'   \item{residuals}{residuals (of type \code{'response'}). See also 
-#'   \code{\link{residuals.stanreg}}}.
-#'   \item{fitted.values}{the fitted mean values (for GLMs 
-#'   the linear predictors are transformed by the invserse link function).}
-#'   \item{linear.predictors}{the linear fit on the link scale (for linear models
-#'   this is the same as \code{fitted.values}).}
-#'   \item{covmat}{variance-covariance matrix for the coefficients (estimated
-#'   from the posterior draws.)}
-#'   \item{y}{if requested, the \code{y} vector used.}
-#'   \item{x}{if requested, the model matrix.}
-#'   \item{model}{if requested, the model frame.}
-#'   \item{family}{the \code{\link[stats]{family}} object used.}
-#'   \item{prior.weights}{any weights supplied by the user.}
-#'   \item{df.residual}{the residual degrees of freedom.}
-#'   \item{call}{the matched call.}
-#'   \item{formula}{the formula supplied.}
-#'   \item{data}{the \code{data} argument.}
-#'   \item{prior.info}{a list with information about the prior distributions
-#'   used.}
-#'   \item{stanfit}{the stanfit object returned by \code{\link[rstan]{stan}}.}
-#' } 
-#' 
-#' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
-#' can be used with objects of class \code{"stanreg"}. There are also  
-#' \code{vcov}, \code{confint} and \code{\link{se}} methods.
-#'
-#' @seealso \code{\link[stats]{glm}}, \code{\link[stats]{lm}}, 
-#' \code{\link[rstan]{stan}}
 #' 
 #' @examples 
 #' \dontrun{
@@ -154,13 +129,22 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   }
   else offset <- double(0) #rep(0, nrow(X))
   
+  # if Y is proportion of successes and weights is total number of trials
+  if (family$family == "binomial" && NCOL(Y) == 1L && all(Y > 0 & Y <= 1)) {
+      if (!identical(weights, double(0)) && all(weights > 0)) {
+        y1 <- as.integer(as.vector(Y) * weights)
+        Y <- cbind(y1, weights - y1)
+        weights <- double(0)
+    }
+  }
+  
   if (is.null(prior)) prior <- list()
   if (is.null(prior.for.intercept)) prior.for.intercept <- list()
   if (length(prior.options) == 0) {
     prior.options <- list(scaled = FALSE, prior.scale.for.dispersion = Inf)
   }
   algorithm <- match.arg(algorithm)
-  
+
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
                           offset = offset, family = family, 
                           prior.dist = prior$dist,

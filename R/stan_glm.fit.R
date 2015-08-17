@@ -38,7 +38,32 @@
 #'   elements for the \code{gamma_shape}, \code{scale}, \code{concentration}
 #'   and \code{shape} components of a \code{\link{decov}} prior for the
 #'   covariance matrices among the group-specific coefficients
+#' @param prior.dist,prior.dist.for.intercept A character string, either 
+#'   \code{"normal"} (the default), or \code{"t"} indicating the family of the 
+#'   prior distribution for the coefficients, or \code{NULL} to omit this prior.
+#' @param scaled A logical scalar indicating whether to rescale the predictors.
+#' @param prior.mean,prior.mean.for.intercept A numeric vector (possibly of 
+#'   length one) indicating the locations of the \code{prior.dist} and the 
+#'   \code{prior.dist.for.intercept} respectively.
+#' @param prior.scale,prior.scale.for.intercept A numeric vector (possibly of 
+#'   length one) indicating the scale of the \code{prior.dist} and the 
+#'   \code{prior.dist.for.intercept} respectively or \code{NULL}.
+#' @param prior.df,prior.df.for.intercept A numeric vector (possibly of length 
+#'   one) indicating the degrees of freedom of the \code{prior.dist} and the
+#'   \code{prior.dist.for.intercept} in the Student t case.
+#' @param min.prior.scale A positive scalar indicating the smallest possible 
+#'   value to use for rescaling the predictors.
+#' @param prior.scale.for.dispersion A positive scalar indicating the scale 
+#'   parameter for the Cauchy prior on the dispersion parameter (if the model
+#'   has one) or \code{NULL} to omit this prior.
+#' @param group A list, possibly of length zero, but otherwise having the 
+#'   structure of that produced by \code{\link[lme4]{mkReTrms}} to indicate the
+#'   group-specific part of the model. In addition, this list must have elements
+#'   for the \code{gamma_shape}, \code{scale}, \code{concentration} and
+#'   \code{shape} components of a \code{\link{decov}} prior for the covariance
+#'   matrices among the group-specific coefficients.
 #' @export
+#' 
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          prior.dist = c("normal", "t", "horseshoe", 
@@ -82,8 +107,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   if (family$family == "binomial") {
     if (NCOL(y) != 1L) {
       stopifnot(NCOL(y) == 2L)
-      trials <- y[, 1L] + y[, 2L]
-      y <- y[, 1L]
+      trials <- as.integer(y[, 1L] + y[, 2L])
+      y <- as.integer(y[, 1L])
     } else {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
@@ -91,7 +116,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
         y <- y != levels(y)[1L]
       y <- as.integer(y)
       if (!all(y %in% c(0L, 1L))) 
-        stop("y values must be 0 or 1 for bernoulli model (logistic regression)")
+        stop("y values must be 0 or 1 for logistic regression")
     } 
   }
   

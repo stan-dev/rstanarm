@@ -2,17 +2,22 @@
 #' 
 #' @name stanreg-methods
 #' 
-#' @export
-#' 
-#' @param object,x A fitted model object returned by one of the modeling 
-#'   functions in this package. This will typically be a list with class 
-#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
-#' @param ... other arguments to \code{print} or \code{summary}. See Details.
-#' @param parm a character vector of parameter names.
-#' @param level confidence level.
-#' @note Unlike \code{\link[stats]{glm}}, residuals are of type \code{'response'} 
-#' not \code{'deviance'} (see \code{\link[stats]{residuals.glm}}). 
-#' 
+#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
+#'   modeling functions. This will be a list with class 'stanreg' as well as at 
+#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @param ... Other arguments to \code{print} or \code{summary}. See Details.
+#' @param parm A character vector of parameter names.
+#' @param level The confidence level to use.
+#' @note Unlike \code{\link[stats]{glm}}, residuals are of type
+#'   \code{'response'} not \code{'deviance'} (see
+#'   \code{\link[stats]{residuals.glm}}).
+#'
+#' @seealso \code{\link{stanreg-objects}}
+NULL
+
+
+#' @rdname stanreg-methods
+#' @export 
 residuals.stanreg <- function(object, ...) {
   object$residuals
 }
@@ -38,6 +43,24 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
   # just a placeholder. we should replace this with a confint method that
   # returns posterior quantiles probably
   confint.default(object, parm, level, ...)
+}
+
+#' @rdname stanreg-methods
+#' @export
+coef.stanreg <- function(object, ...)  {
+  object$coefficients
+}
+
+#' @rdname stanreg-methods
+#' @export
+fitted.stanreg <- function(object, ...)  {
+  object$fitted.values
+}
+
+#' @rdname stanreg-methods
+#' @export
+log_lik.stanreg <- function(object) {
+  object$log_lik
 }
 
 #' @rdname stanreg-methods
@@ -87,16 +110,4 @@ summary.stanreg <- function(object, ...) {
     else if (object$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
     object$stan_summary[mark,,drop=FALSE]
   }
-}
-
-#' @rdname stanreg-methods
-#' @export
-log_lik.stanreg <- function(object) {
-  object$log_lik
-}
-
-#' @rdname stanreg-methods
-#' @export
-coef.stanreg <- function(object, ...)  {
-  object$coefficients
 }

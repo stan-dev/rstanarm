@@ -1,15 +1,16 @@
 Package: rstanarm
 Type: Package
-Title: rstanarm: Applied Regression Modeling via RStan
+Title: Applied Regression Modeling via RStan
 Version: 2.7.0
 Date: 2015-08-04
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", role = c("cre", "aut")))
-Description: Convenient interface to Stan (Stan is an open-source package for obtaining
-        Bayesian inference using the No-U-Turn sampler, a variant of
-        Hamiltonian Monte Carlo.)
+Description: Convenient interface for applied regression models using RStan, 
+  the R interface to the Stan C++ package. Models are specified with customary 
+  R modeling syntax and can be estimated by performing full Bayesian inference 
+  or optimization.
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-2)
-Imports: utils, lme4
+Imports: lme4, stats, utils
 URL: http://mc-stan.org
 Suggests: testthat

@@ -15,27 +15,38 @@
 
 #' Fitting regularized linear models via Stan
 #'
-#' Full Bayesian inference for linear modeling with regularizing priors on the
-#' model parameters that are driven by prior beliefs about \eqn{R^2}, the
-#' proportion of variance in the outcome attributable to the predictors. See
+#' Full Bayesian inference for linear modeling with regularizing priors on the 
+#' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
+#' proportion of variance in the outcome attributable to the predictors. See 
 #' \code{\link{priors}} for an explanation of this critical point.
+#' 
+#' 
 #' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_lm, stan_aov
+#' @template return-stanfit-object
+#' @templateVar fitfun stan_lm.fit or stan_lm.wfit
+#' @template see-also
+#' @templateVar pkg stats
+#' @templateVar pkgfun aov
+#' 
 #'
-#' @param formula,data,subset Same as in \code{\link[stats]{lm}}
+#' @param formula,data,subset Same as in \code{\link[stats]{lm}}.
 #' @param weights,na.action,method,model,qr,singular.ok,contrasts,offset 
-#'   Also the same as in \code{\link[stats]{lm}} but rarely specified
+#'   Also the same as in \code{\link[stats]{lm}} but rarely specified.
 #' @param x,y In \code{stan_lm}, logical scalars indicating whether to
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
 #'   a design matrix and response vector.
-#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified   
+#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.   
 #' @param prior Must be a call to \code{\link{R2}} with its 
-#'   \code{location} argument specified
+#'   \code{location} argument specified.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
 #'   merely proportional to the actual distribution because of an improper
-#'   prior on a scale parameter
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}}
+#'   prior on a scale parameter.
+#' @param ... Further arguments passed to \code{\link[rstan]{stan}}.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -68,49 +79,16 @@
 #'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
 #'   variance.
 #'   
-#' @return The \code{stan_lm.fit} and \code{stan_lm.wfit} functions return an 
-#'   object of class \code{\link[rstan]{stanfit-class}}. The more typically
-#'   used \code{stan_lm} and \code{stan_aov} functions returns an object of 
-#'   class \code{"stanreg"}, which is a list containing the components
 #' 
-#' \describe{
-#'   \item{coefficients}{named vector of coefficients (posterior means)}
-#'   \item{residuals}{the residuals. For linear models \code{residuals}
-#'    contains the response minus fitted values. Otherwise \code{residuals}
-#'    contains the deviance residuals. See also \code{\link{residuals.stanreg}}}.
-#'   \item{fitted.values}{the fitted mean values (for glms 
-#'   the linear predictors are transformed by the invserse link function).}
-#'   \item{linear.predictors}{the linear fit on the link scale (for linear models
-#'   this is the same as \code{fitted.values}).}
-#'   \item{covmat}{variance-covariance matrix for the coefficients (estimated
-#'   from the posterior draws.)}
-#'   \item{y}{if requested, the \code{y} vector used.}
-#'   \item{x}{if requested, the model matrix.}
-#'   \item{model}{if requested, the model frame.}
-#'   \item{family}{the \code{\link[stats]{family}} object used.}
-#'   \item{prior.weights}{any weights supplied by the user.}
-#'   \item{df.residual}{the residual degrees of freedom}
-#'   \item{call}{the matched call.}
-#'   \item{formula}{the formula supplied.}
-#'   \item{data}{the \code{data} argument.}
-#'   \item{prior.info}{a list with information about the prior distributions
-#'   used.}
-#'   \item{stanfit}{an object of \code{\link[rstan]{stanfit-class}}}
-#' } 
-#' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
-#' can be used with objects of class \code{"stanreg"}. There are also  
-#' \code{vcov}, \code{confint} and \code{\link{se}} methods.
-#'
-#' @seealso \code{\link[stats]{lm}}, \code{\link[stats]{aov}}, 
-#'   \code{\link[rstan]{stan}}, and \code{\link{stan_glm}}, which --- if 
-#'   \code{family = gaussian(link = "identity")} --- also estimates
-#'   a linear model with normally-distributed errors but specifies
-#'   different priors
+#' @seealso Also see \code{\link{stan_glm}}, which --- if \code{family =
+#'   gaussian(link = "identity")} --- also estimates a linear model with
+#'   normally-distributed errors but specifies different priors.
+#'   
 #' @examples 
 #' \dontrun{
 #' stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75))
 #' }
-
+#'
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
                     singular.ok = TRUE, contrasts = NULL, offset, 

@@ -15,10 +15,11 @@
 
 #' @rdname stan_polr
 #' @export
-#' @param x A design matrix
-#' @param y A response variable, which must be a (preferably ordered) factor
-#' @param wt A numeric vector (possibly \code{NULL}) of observation weights
-#' @param offset A numeric vector (possibly \code{NULL}) of offsets
+#' @param x A design matrix.
+#' @param y A response variable, which must be a (preferably ordered) factor.
+#' @param wt A numeric vector (possibly \code{NULL}) of observation weights.
+#' @param offset A numeric vector (possibly \code{NULL}) of offsets.
+#' 
 stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL, 
                            method = c("logistic", "probit", "loglog", "cloglog", "cauchit"), 
                            prior = R2(stop("'location' must be specified")), 

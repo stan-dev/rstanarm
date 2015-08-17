@@ -2,6 +2,7 @@
 
 S3method(coef,stanreg)
 S3method(confint,stanreg)
+S3method(fitted,stanreg)
 S3method(log_lik,stanreg)
 S3method(predict,stanreg)
 S3method(residuals,stanreg)
@@ -31,4 +32,5 @@ export(stan_polr.fit)
 export(student_t)
 export(summary.stanreg)
 import(rstan)
+import(stats)
 importFrom(lme4,glFormula)

@@ -4,10 +4,18 @@
 #' Full Bayesian inference or optimization for generalized linear modeling with
 #' group-specific terms with Gaussian, Student t, or Cauchy prior distributions
 #' for the coefficients and flexible priors for the unknown covariance matrices.
-#'
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}
+#' 
+#' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_glmer, stan_lmer
+#' @template see-also
+#' @templateVar pkg MASS
+#' @templateVar pkgfun polr
+#' 
+#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
 #' @param control,verbose,nAGQ,mustart,etastart,devFunOnly Same as for 
-#'   \code{\link[lme4]{glmer}} but ignored
+#'   \code{\link[lme4]{glmer}} but ignored.
 #' @param subset,weights,na.action,offset,contrasts Same as 
 #'   \code{\link[stats]{glm}}.
 #' @param start If \code{NULL} (the default), then
@@ -26,12 +34,12 @@
 #'   \code{\link{decov}} for more information about the default arguments.   
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome
+#'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating what estimation
-#'   approach to use
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.)
+#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation 
+#'   approach to use.
+#' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g. 
+#'   \code{iter}, \code{chains}, \code{refresh}, etc.).
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
@@ -41,9 +49,10 @@
 #'   of the generalized linear model and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
+#' 
 #'
 #' @importFrom lme4 glFormula
-#' @export
+#' 
 stan_glmer <- function (formula, data = NULL, family = gaussian, 
                         control = NULL, start = NULL, verbose = 0L, 
                         nAGQ = 1L, subset, weights, 
@@ -106,12 +115,15 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                terms = NULL, model = NULL, na.action, contrasts, algorithm)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
+  
+  out$cnms <- glmod$reTrms$cnms # useful for post-processing
+  
   return(out)
 }
 
 #' @rdname stan_glmer
-#' @param REML Ignored
 #' @export
+#' @param REML Ignored.
 stan_lmer <- function (formula, data = NULL, REML = FALSE, control = NULL, 
                        start = NULL, verbose = 0L, subset, weights, na.action, offset, 
                        contrasts = NULL, devFunOnly = FALSE, 

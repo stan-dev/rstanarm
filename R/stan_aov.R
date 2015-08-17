@@ -18,8 +18,8 @@
 
 #' @rdname stan_lm
 #' @export
-#' @param projections Logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether \code{\link[stats]{proj}} should be called on the fit
+#' @param projections A logical scalar (defaulting to \code{FALSE}) indicating 
+#'   whether \code{\link[stats]{proj}} should be called on the fit.
 stan_aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
                      contrasts = NULL, 
                      prior = R2(stop("'location' must be specified")), 

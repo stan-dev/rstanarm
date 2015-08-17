@@ -1,17 +1,16 @@
 #' Predict method for stanreg objects
 #' 
 #' @export
-#' @param object A fitted model object returned by one of the modeling 
-#'   functions in this package. This will typically be a list with class 
-#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
+#' 
+#' @inheritParams stanreg-methods
 #' @param ... Ignored.
 #' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
 #' @param type The type of prediction. The default \code{'link'} is on the scale
 #'   of the linear predictors; the alternative \code{'response'} is on the scale
 #'   of the response variable.
-#' @param se.fit Logical switch indicating if standard errors should be 
-#'   returned.
+#' @param se.fit A logical scalar indicating if standard errors should be 
+#'   returned. The default is \code{FALSE}.
 #'   
 #' @return A vector if \code{se.fit} is \code{FALSE} and a list if \code{se.fit}
 #'   is \code{TRUE}.

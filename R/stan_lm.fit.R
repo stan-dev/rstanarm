@@ -15,7 +15,7 @@
 
 #' @rdname stan_lm
 #' @export
-#' @param tol Numeric scalar tolerance for the QR decomposition
+#' @param tol Numeric scalar tolerance for the QR decomposition.
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
                          singular.ok = TRUE, 
                          prior = R2(stop("'location' must be specified")), 

@@ -1,17 +1,16 @@
 #' Draw from posterior predictive distribution
 #' 
 #' @export
-#' @param object A fitted model object returned by one of the modeling 
-#'   functions in this package. This will typically be a list with class 
-#'   'stanreg' as well as at least one of 'lm', 'glm', 'polr', or 'lmerMod'.
+#' 
+#' @inheritParams stanreg-methods
 #' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
-#' @param fun Optional function to apply to the results. See Examples. 
-#' 
+#' @param fun An optional function to apply to the results. See Examples.
+#'   
 #' @return A matrix of draws from the posterior predictive distribution.
-#' 
+#'   
 #' @examples 
 #' fit <- stan_glm(mpg ~ wt, data = mtcars)
 #' ppd <- posterior_predict(fit) 
