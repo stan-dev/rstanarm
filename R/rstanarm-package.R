@@ -11,7 +11,7 @@
 #'   R modeling syntax. The user can choose to estimate a model by optimization
 #'   or perform full Bayesian inference via Markov chain Monte Carlo sampling.
 #' 
-#' @section \code{\link{stan_lm}}: 
+#' @section \code{\link[=stan_lm]{stan_lm and stan_aov}}: 
 #' 
 #'   Linear modeling with regularizing priors on the model parameters that are
 #'   driven by prior beliefs about \eqn{R^2}, the proportion of variance in the
@@ -23,7 +23,7 @@
 #'   Generalized linear modeling with Gaussian, Student t, or Cauchy prior
 #'   distributions for the coefficients.
 #'   
-#' @section \code{\link{stan_glmer}} (and \code{stan_lmer}):
+#' @section \code{\link[=stan_glmer]{stan_glmer and stan_lmer}}:
 #'   
 #'   Generalized linear modeling with group-specific terms with Gaussian,
 #'   Student t, or Cauchy prior distributions for the coefficients and flexible
@@ -34,4 +34,6 @@
 #'   Ordinal regression modeling with Gaussian, Student t, or Cauchy prior
 #'   distributions for the coefficients.
 #'   
+#' 
+#' @seealso \code{\link{stanreg-objects}}, \code{\link{stanreg-methods}}       
 NULL

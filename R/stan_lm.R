@@ -71,37 +71,9 @@
 #'   
 #' @return The \code{stan_lm.fit} and \code{stan_lm.wfit} functions return an 
 #'   object of class \code{\link[rstan]{stanfit-class}}. The more typically
-#'   used \code{stan_lm} and \code{stan_aov} functions returns an object of 
-#'   class \code{"stanreg"}, which is a list containing the components
+#'   used \code{stan_lm} and \code{stan_aov} functions return an object of 
+#'   class \code{\link[=stanreg-objects]{stanreg}}.
 #' 
-#' \describe{
-#'   \item{coefficients}{named vector of coefficients (posterior means)}
-#'   \item{residuals}{the residuals. For linear models \code{residuals}
-#'    contains the response minus fitted values. Otherwise \code{residuals}
-#'    contains the deviance residuals. See also \code{\link{residuals.stanreg}}}.
-#'   \item{fitted.values}{the fitted mean values (for glms 
-#'   the linear predictors are transformed by the invserse link function).}
-#'   \item{linear.predictors}{the linear fit on the link scale (for linear models
-#'   this is the same as \code{fitted.values}).}
-#'   \item{covmat}{variance-covariance matrix for the coefficients (estimated
-#'   from the posterior draws.)}
-#'   \item{y}{if requested, the \code{y} vector used.}
-#'   \item{x}{if requested, the model matrix.}
-#'   \item{model}{if requested, the model frame.}
-#'   \item{family}{the \code{\link[stats]{family}} object used.}
-#'   \item{prior.weights}{any weights supplied by the user.}
-#'   \item{df.residual}{the residual degrees of freedom}
-#'   \item{call}{the matched call.}
-#'   \item{formula}{the formula supplied.}
-#'   \item{data}{the \code{data} argument.}
-#'   \item{prior.info}{a list with information about the prior distributions
-#'   used.}
-#'   \item{stanfit}{an object of \code{\link[rstan]{stanfit-class}}}
-#' } 
-#' The accessor functions \code{coef}, \code{fitted}, and \code{resid}
-#' can be used with objects of class \code{"stanreg"}. There are also  
-#' \code{vcov}, \code{confint} and \code{\link{se}} methods.
-#'
 #' @seealso \code{\link{stanreg-methods}}, \code{\link[stats]{lm}}, 
 #'   \code{\link[stats]{aov}}, \code{\link[rstan]{stan}}, and 
 #'   \code{\link{stan_glm}}, which --- if \code{family = gaussian(link = 

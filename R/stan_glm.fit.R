@@ -92,7 +92,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
         y <- y != levels(y)[1L]
       y <- as.integer(y)
       if (!all(y %in% c(0L, 1L))) 
-        stop("y values must be 0 or 1 for bernoulli model (logistic regression)")
+        stop("y values must be 0 or 1 for logistic regression")
     } 
   }
   

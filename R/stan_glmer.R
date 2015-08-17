@@ -43,6 +43,11 @@
 #'   of the generalized linear model and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
+#' 
+#' @return A \code{\link[=stanreg-objects]{stanreg object}}.
+#'
+#' @seealso \code{\link{stanreg-methods}}, \code{\link[lme4]{glmer}}, 
+#'   \code{\link[rstan]{stan}}
 #'
 #' @importFrom lme4 glFormula
 #' 

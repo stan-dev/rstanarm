@@ -74,7 +74,11 @@ class(loglog) <- "link-glm"
 #'   function calls the workhorse \code{stan_polr.fit} function, but it is 
 #'   possible to call the latter directly.
 #' 
-#' @return A named list containing some components
+#' @return A \code{\link[=stanreg-objects]{stanreg object}}.
+#' 
+#' @seealso \code{\link{stanreg-methods}}, \code{\link[MASS]{polr}}, 
+#'   \code{\link[rstan]{stan}}
+#' 
 #' @examples 
 #' \dontrun{
 #' # coming soon
