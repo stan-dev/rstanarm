@@ -43,6 +43,15 @@ class(loglog) <- "link-glm"
 #' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
 #'
 #' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_polr
+#' @template return-stanfit-object
+#' @templateVar fitfun stan_polr.fit
+#' @template see-also
+#' @templateVar pkg MASS
+#' @templateVar pkgfun polr
+#'
 #'
 #' @param formula,data,weights,subset,na.action,contrasts,model,method 
 #'   Same as in \code{\link[MASS]{polr}}.
@@ -73,11 +82,6 @@ class(loglog) <- "link-glm"
 #'   default) performed via Markov Chain Monte Carlo. The \code{stan_polr} 
 #'   function calls the workhorse \code{stan_polr.fit} function, but it is 
 #'   possible to call the latter directly.
-#' 
-#' @return A \code{\link[=stanreg-objects]{stanreg object}}.
-#' 
-#' @seealso \code{\link{stanreg-methods}}, \code{\link[MASS]{polr}}, 
-#'   \code{\link[rstan]{stan}}
 #' 
 #' @examples 
 #' \dontrun{

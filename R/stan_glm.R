@@ -20,6 +20,15 @@
 #' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
 #'
 #' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_glm
+#' @template return-stanfit-object
+#' @templateVar fitfun stan_glm.fit
+#' @template see-also
+#' @templateVar pkg stats
+#' @templateVar pkgfun glm
+#' 
 #'
 #' @param formula,family,data,subset Same as \code{\link[stats]{glm}}.
 #' @param x,y In \code{stan_glm}, logical scalars indicating whether to
@@ -48,7 +57,6 @@
 #' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
 #'   \code{iter}, \code{chains}, \code{refresh}, etc.).
 #' 
-#'
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
@@ -57,11 +65,6 @@
 #'   generalized linear model. The \code{stan_glm} function calls the workhorse
 #'   \code{stan_glm.fit} function, but it is possible to call the latter
 #'   directly.
-#' 
-#' @return A \code{\link[=stanreg-objects]{stanreg object}}.
-#' 
-#' @seealso \code{\link{stanreg-methods}}, \code{\link[stats]{glm}}, 
-#'   \code{\link[rstan]{stan}}
 #' 
 #' @examples 
 #' \dontrun{

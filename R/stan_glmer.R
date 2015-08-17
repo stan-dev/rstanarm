@@ -7,6 +7,12 @@
 #' 
 #' @export
 #' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_glmer, stan_lmer
+#' @template see-also
+#' @templateVar pkg MASS
+#' @templateVar pkgfun polr
+#' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
 #' @param control,verbose,nAGQ,mustart,etastart,devFunOnly Same as for 
 #'   \code{\link[lme4]{glmer}} but ignored.
@@ -44,10 +50,6 @@
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
 #' 
-#' @return A \code{\link[=stanreg-objects]{stanreg object}}.
-#'
-#' @seealso \code{\link{stanreg-methods}}, \code{\link[lme4]{glmer}}, 
-#'   \code{\link[rstan]{stan}}
 #'
 #' @importFrom lme4 glFormula
 #' 
@@ -113,6 +115,9 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                terms = NULL, model = NULL, na.action, contrasts, algorithm)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
+  
+  out$cnms <- glmod$reTrms$cnms # useful for post-processing
+  
   return(out)
 }
 

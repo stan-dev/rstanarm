@@ -20,7 +20,17 @@
 #' proportion of variance in the outcome attributable to the predictors. See 
 #' \code{\link{priors}} for an explanation of this critical point.
 #' 
+#' 
 #' @export
+#' 
+#' @template return-stanreg-object
+#' @templateVar fun stan_lm, stan_aov
+#' @template return-stanfit-object
+#' @templateVar fitfun stan_lm.fit or stan_lm.wfit
+#' @template see-also
+#' @templateVar pkg stats
+#' @templateVar pkgfun aov
+#' 
 #'
 #' @param formula,data,subset Same as in \code{\link[stats]{lm}}.
 #' @param weights,na.action,method,model,qr,singular.ok,contrasts,offset 
@@ -69,16 +79,10 @@
 #'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
 #'   variance.
 #'   
-#' @return The \code{stan_lm.fit} and \code{stan_lm.wfit} functions return an 
-#'   object of class \code{\link[rstan]{stanfit-class}}. The more typically
-#'   used \code{stan_lm} and \code{stan_aov} functions return an object of 
-#'   class \code{\link[=stanreg-objects]{stanreg}}.
 #' 
-#' @seealso \code{\link{stanreg-methods}}, \code{\link[stats]{lm}}, 
-#'   \code{\link[stats]{aov}}, \code{\link[rstan]{stan}}, and 
-#'   \code{\link{stan_glm}}, which --- if \code{family = gaussian(link = 
-#'   "identity")} --- also estimates a linear model with normally-distributed 
-#'   errors but specifies different priors.
+#' @seealso Also see \code{\link{stan_glm}}, which --- if \code{family =
+#'   gaussian(link = "identity")} --- also estimates a linear model with
+#'   normally-distributed errors but specifies different priors.
 #'   
 #' @examples 
 #' \dontrun{
