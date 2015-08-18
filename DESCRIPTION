@@ -10,7 +10,7 @@ Description: Convenient interface for applied regression models using RStan,
   R modeling syntax and can be estimated by performing full Bayesian inference 
   or optimization.
 License: GPL (>=3)
-Depends: rstan (>= 2.7.0-2)
+Depends: rstan (>= 2.7.0-3)
 Imports: lme4, stats, utils
 URL: http://mc-stan.org
 Suggests: testthat

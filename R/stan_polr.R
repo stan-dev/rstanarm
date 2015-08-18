@@ -57,13 +57,12 @@ class(loglog) <- "link-glm"
 #'   Same as in \code{\link[MASS]{polr}}.
 #' @param Hess Same as in \code{\link[MASS]{polr}} but always taken to be
 #'   \code{TRUE} and moreover ignored in the case of MCMC.
-#' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g.
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.) or 
-#'   \code{\link[rstan]{optimizing}}.
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
-#'   
+#' @param ... Further arguments passed to the function in the \pkg{rstan} 
+#'   package named by \code{algorithm} (e.g., for the case of
+#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
 #' @param prior Prior for parameters. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
 #' @param prior_counts A numeric vector that must be positive but need not
@@ -73,8 +72,8 @@ class(loglog) <- "link-glm"
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation
-#'   approach to use.
+#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
+#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood 
@@ -84,17 +83,19 @@ class(loglog) <- "link-glm"
 #'   possible to call the latter directly.
 #' 
 #' @examples 
-#' \dontrun{
-#' # coming soon
-#' }
+#' # algorithm = "meanfield" is only for time constraints on examples
+#' stan_polr(tobgp ~ agegp, data = esoph, algorithm = "meanfield", 
+#'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
 
 stan_polr <- function (formula, data, weights, start, ..., subset, 
                        na.action = getOption("na.action", "na.omit"), 
                        contrasts = NULL, Hess = FALSE, model = TRUE, 
-                       method = c("logistic", "probit", "loglog", "cloglog", "cauchit"),
+                       method = c("logistic", "probit", "loglog", "cloglog", 
+                                  "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
                        prior_counts = NULL, prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing")) {
+                       algorithm = c("sampling", "optimizing", 
+                                     "meanfield", "fullrank")) {
   
   # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)
@@ -194,7 +195,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
     mu <- linkinv(eta)
     
     means <- rstan::get_posterior_mean(stanfit)
-    residuals <- means[grep("^residuals\\[[[:digit:]]+\\]$", rownames(means)),ncol(means)]
+    residuals <- means[grep("^residuals", rownames(means)),ncol(means)]
     names(residuals) <- names(eta) <- names(mu) <- rownames(x)
     
     llargs <- nlist(family = method, x, y, weights = wt, offset, 

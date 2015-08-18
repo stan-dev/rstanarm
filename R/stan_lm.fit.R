@@ -17,9 +17,11 @@
 #' @export
 #' @param tol Numeric scalar tolerance for the QR decomposition.
 stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
-                         singular.ok = TRUE, 
+                         singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
-                         prior_PD = FALSE, ...) {
+                         prior_PD = FALSE, 
+                         algorithm = c("sampling", "optimizing", "meanfield",
+                                       "fullrank")) {
   if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
@@ -60,13 +62,19 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   init_fun <- function(chain_id) {
     return(list(L = L, R2 = R2, log_omega = log_omega))
   }
-  
+  algorithm <- match.arg(algorithm)
   stanfit <- get("stanfit_lm")
   standata <- nlist(K, has_intercept, prior_PD, J, N, xbar, s_X, XtX, 
                     ybar, center_y, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", 
             if (prior_PD == 0) "log_omega", "mean_PPD")
-  if ("control" %in% names(list(...))) {
+  if (algorithm == "optimizing") {
+    stop("'optimizing' not supported for this model")
+  }
+  else if (algorithm %in% c("meanfield", "fullrank")) {
+    stanfit <- rstan::vb(stanfit, data = standata, pars = pars, ...)
+  }
+  else if ("control" %in% names(list(...))) {
     stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun, ...)
   }
   else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun,
@@ -81,9 +89,11 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 #' @rdname stan_lm
 #' @export
 stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
-                        singular.ok = TRUE, 
+                        singular.ok = TRUE, ..., 
                         prior = R2(stop("'location' must be specified")), 
-                        prior_PD = FALSE,  ...) {
+                        prior_PD = FALSE, 
+                        algorithm = c("sampling", "optimizing", "meanfield",
+                                      "fullrank")) {
 
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)

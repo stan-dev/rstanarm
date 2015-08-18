@@ -148,10 +148,9 @@
 #' }
 #' @return A named list.
 #' @examples
-#' \dontrun{
-#' stan_glm(y ~ x1 + x2, prior = student_t(4, 0, 2.5), 
-#'          prior.for.intercept = cauchy(0,10))
-#' }
+#' stan_glm(mpg ~ ., data = mtcars, prior_PD = TRUE, chains = 1,
+#'          prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10), 
+#'          prior.options = prior_options(prior.scale.for.dispersion = 2))
 #' 
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)

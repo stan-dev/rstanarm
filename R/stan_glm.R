@@ -39,6 +39,9 @@
 #' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
 #'   used as starting values for the MCMC. If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
+#' @param ... Further arguments passed to the function in the \pkg{rstan} 
+#'   package named by \code{algorithm} (e.g., for the case of
+#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
 #' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
 #' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit
@@ -52,10 +55,8 @@
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation 
-#'   approach to use.
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g.
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.).
+#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
+#'   \code{"fullrank"} indicating the estimation approach to use.
 #' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
@@ -67,30 +68,24 @@
 #'   directly.
 #' 
 #' @examples 
-#' \dontrun{
-#' stan_glm(mpg ~ wt, data = mtcars)
-#' 
-#' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
-#' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
-#' group <- gl(2, 10, 20, labels = c("Ctl","Trt"))
-#' weight <- c(ctl, trt)
-#' fit <- stan_glm(weight ~ group)
-#' coef(fit)
-#' 
+#' # algorithm = "meanfield" is only for time constraints on examples
+#' stan_glm(mpg ~ ., data = mtcars, algorithm = "meanfield", seed = 12345)
+#'  
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' stan_glm(counts ~ outcome + treatment, family = poisson())
-#' }
+#' stan_glm(counts ~ outcome + treatment, family = poisson(), 
+#'          algorithm = "meanfield")
 #'
 
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, start = NULL, offset = NULL, 
                     model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
+                    ..., # further arguments to 'algorithm'
                     prior = normal(), prior.for.intercept = normal(),
                     prior.options = prior_options(), 
-                    prior_PD = FALSE, algorithm = c("sampling", "optimizing"),
-                    ...) { # further arguments to sampling() or optimizing()
+                    prior_PD = FALSE,  algorithm = c("sampling", "optimizing", 
+                                                     "meanfield", "fullrank")){
 
   # Parse like glm()
   if (is.character(family)) 

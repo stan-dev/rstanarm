@@ -21,6 +21,9 @@
 #' @param start If \code{NULL} (the default), then
 #'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
 #'   If not \code{NULL} also used as starting values for the MCMC.
+#' @param ... Further arguments passed to the function in the \pkg{rstan} 
+#'   package named by \code{algorithm} (e.g., for the case of
+#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
 #' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
 #' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit
@@ -36,10 +39,8 @@
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome.
 #' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"} and \code{"optimizing"} indicating the estimation 
-#'   approach to use.
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}} (e.g. 
-#'   \code{iter}, \code{chains}, \code{refresh}, etc.).
+#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
+#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
@@ -49,7 +50,10 @@
 #'   of the generalized linear model and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
-#' 
+#' @examples
+#' # algorithm = "meanfield" is only for time constraints on examples
+#' stan_glmer(mpg ~ . + (1|gear), data = mtcars, family = gaussian(),
+#'            algorithm = "meanfield", tol_rel_obj = 0.05, seed = 12345)
 #'
 #' @importFrom lme4 glFormula
 #' 
@@ -58,11 +62,12 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                         nAGQ = 1L, subset, weights, 
                         na.action = getOption("na.action", "na.omit"), 
                         offset, contrasts = NULL, mustart, etastart, 
-                        devFunOnly = FALSE, 
+                        devFunOnly = FALSE, ...,
                         prior = normal(), prior.for.intercept = normal(),
                         prior.options = prior_options(),
                         prior.for.covariance = decov(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing"), ...) {
+                        algorithm = c("sampling", "optimizing", 
+                                      "meanfield", "fullrank")) {
   
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
@@ -71,7 +76,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
     family <- family()
   if(!is(family, "family"))
     stop("'family' must be a family")
-  mc[[1]] <- quote(glFormula)
+  mc[[1]] <- quote(lme4::glFormula)
   mc$prior <- mc$prior.for.intercept <- mc$prior.options <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- mc$... <- NULL
   glmod <- eval(mc, parent.frame(1L))

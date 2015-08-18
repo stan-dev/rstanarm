@@ -21,10 +21,12 @@
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets.
 #' 
 stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL, 
-                           method = c("logistic", "probit", "loglog", "cloglog", "cauchit"), 
+                           method = c("logistic", "probit", "loglog", 
+                                      "cloglog", "cauchit"), ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_counts = NULL, prior_PD = FALSE, 
-                           algorithm = c("sampling", "optimizing"), ...) {
+                           algorithm = c("sampling", "optimizing", 
+                                         "meanfield", "fullrank")) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
   link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)
@@ -85,20 +87,7 @@ stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL,
   }
   
   stanfit <- get("stanfit_polr") 
-  if (algorithm == "sampling") {
-    if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-    else       pars <- c("zeta", "beta", "mean_PPD")
-    standata$do_residuals <- J > 2
-    stanfit <- suppressMessages(rstan::sampling(stanfit, pars = pars, 
-                                                data = standata, init = start, ...))
-    if (J > 2)
-      new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
-                     paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
-    else new_names <- c("(Intercept)", colnames(x), "mean_PPD", "log-posterior")
-    stanfit@sim$fnames_oi <- new_names
-    return(stanfit)
-  }
-  else if (algorithm == "optimizing") {
+  if (algorithm == "optimizing") {
     standata$do_residuals <- 0L
     out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE, init = start)
     new_names <- c(paste0("pi[", y_lev, "]"), paste0("z_beta[", colnames(x), "]"),
@@ -111,5 +100,21 @@ stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL,
     colnames(out$cov.scaled) <- rownames(out$cov.scaled)
     out$stanfit <- suppressMessages(rstan::sampling(stanfit, data = standata, chains = 0))
     return(out)
+  }
+  else {
+    if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
+    else       pars <- c("zeta", "beta", "mean_PPD")
+    standata$do_residuals <- J > 2
+    if (algorithm == "sampling") 
+      stanfit <- suppressMessages(rstan::sampling(stanfit, pars = pars, 
+                                                  data = standata, init = start, ...))
+    else 
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
+    if (J > 2)
+      new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
+                     paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
+    else new_names <- c("(Intercept)", colnames(x), "mean_PPD", "log-posterior")
+    stanfit@sim$fnames_oi <- new_names
+    return(stanfit)
   }
 }

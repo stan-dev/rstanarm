@@ -38,7 +38,10 @@
 #' @param x,y In \code{stan_lm}, logical scalars indicating whether to
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
 #'   a design matrix and response vector.
-#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.   
+#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
+#' @param ... Further arguments passed to the function in the \pkg{rstan} 
+#'   package named by \code{algorithm} (e.g., for the case of
+#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
 #' @param prior Must be a call to \code{\link{R2}} with its 
 #'   \code{location} argument specified.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
@@ -46,7 +49,9 @@
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
 #'   merely proportional to the actual distribution because of an improper
 #'   prior on a scale parameter.
-#' @param ... Further arguments passed to \code{\link[rstan]{stan}}.
+#' @param algorithm Character string (possibly abbreviated) among 
+#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
+#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -85,15 +90,16 @@
 #'   normally-distributed errors but specifies different priors.
 #'   
 #' @examples 
-#' \dontrun{
-#' stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75))
-#' }
+#' # algorithm = "meanfield" is only for time constraints on examples
+#' stan_lm(mpg ~ ., data = mtcars, algorithm = "meanfield", 
+#'         prior = R2(0.75), seed = 12345)
 #'
 stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
                     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
-                    singular.ok = TRUE, contrasts = NULL, offset, 
+                    singular.ok = TRUE, contrasts = NULL, offset, ...,
                     prior = R2(stop("'location' must be specified")), 
-                    prior_PD = FALSE, ...) {
+                    prior_PD = FALSE, algorithm = c("sampling", "optimizing", 
+                                                    "meanfield", "fullrank")) {
   
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
@@ -111,7 +117,7 @@ stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
   w <- modelframe$weights
   offset <- model.offset(mf)
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
-                          prior = prior,  prior_PD = prior_PD, ...)
+                          prior = prior,  prior_PD = prior_PD, algorithm = algorithm, ...)
   
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,
