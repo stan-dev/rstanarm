@@ -6,6 +6,8 @@
 #' @import rstan
 #' @import stats
 #' 
+#' @export loo
+#' 
 #' @description An extension to the \code{\link[rstan]{rstan}} package enabling
 #'   the most commonly applied regression models to be specified using customary
 #'   R modeling syntax. The user can choose to estimate a model by optimization
