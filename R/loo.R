@@ -5,23 +5,23 @@
 #' 
 #' @export
 #' @inheritParams loo::loo
-#' @param object A fitted model object returned by one of the \pkg{rstanarm}
-#'   modeling functions. This will be a list with class 'stanreg' as well as at
-#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @param x A fitted model object returned by one of the \pkg{rstanarm} modeling
+#'   functions. This will be a list with class 'stanreg' as well as at least one
+#'   of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #' @return An object of class 'loo'. See \code{\link[loo]{loo}}.
 #' 
 #' @seealso \code{\link[loo]{loo-package}}
-#' @importFrom loo loo
+#' @importFrom loo loo loo.function
 #' 
-loo.stanreg <- function(object, ...) {
+loo.stanreg <- function(x, ...) {
   args <- list()
-  args$family <- object$family
-  stanmat <- as.matrix(object$stanfit)
-  nms <- names(object)
-  args$x <- if ("x" %in% nms) object$x else model.matrix(object)
-  args$y <- object$y
-  args$offset <- object$offset
-  args$weights <- object$weights
+  args$family <- x$family
+  stanmat <- as.matrix(x$stanfit)
+  nms <- names(x)
+  args$x <- if ("x" %in% nms) x$x else model.matrix(x)
+  args$y <- x$y
+  args$offset <- x$offset
+  args$weights <- x$weights
   if (is(args$family, "family") && args$family$family == "gaussian") 
     args$sigma <- stanmat[, "sigma"]
   if (is.character(args$family)) {
@@ -31,8 +31,7 @@ loo.stanreg <- function(object, ...) {
     args$beta <- stanmat[, 1:ncol(args$x)]
   }
   llargs <- do.call(".llargs", args)
-  
-  loo(llfun = .llfun(object), llargs = llargs, ...)
+  loo.function(.llfun(x), args = llargs, ...)
 }
 
 # returns llargs arguments for loo()
