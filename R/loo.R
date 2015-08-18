@@ -17,6 +17,8 @@
 #' 
 #' 
 loo.stanreg <- function(x, ...) {
+  if (x$algorithm != "sampling")
+    stop("Only available for MCMC.", call. = FALSE)
   loo.function(.llfun(x), args = .llargs(x), ...)
 }
 
@@ -26,6 +28,8 @@ loo.stanreg <- function(x, ...) {
 #' @note The \code{...} is ignored for \code{waic}.
 #' 
 waic.stanreg <- function(x, ...) {
+  if (x$algorithm != "sampling")
+    stop("Only available for MCMC.", call. = FALSE)
   waic.function(.llfun(x), args = .llargs(x))
 }
 
@@ -102,8 +106,8 @@ waic.stanreg <- function(x, ...) {
   
   val <- 
     if (y_i == 1) log(linkinv(draws$zeta[,1] - draws$eta[,i]))
-  else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - draws$eta[,i]))
-  else log(linkinv(draws$zeta[,y_i] - draws$eta[,i]) - 
+    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - draws$eta[,i]))
+    else log(linkinv(draws$zeta[,y_i] - draws$eta[,i]) - 
              linkinv(draws$zeta[,y_i - 1L] - draws$eta[,i]))
   
   if ("weights" %in% names(data)) val * data$weights[i]
