@@ -1,19 +1,36 @@
 #' Leave-one-out cross-validation (LOO)
 #' 
-#' Efficient approximate leave-one-out cross-validation using the \pkg{loo}
-#' package.
+#' Compute approximate leave-one-out cross-validation (LOO) or the Widely 
+#' Applicable Information Criterion (WAIC) using the
+#' \pkg{\link[=loo-package]{loo}} package.
 #' 
 #' @export
 #' @inheritParams loo::loo
 #' @param x A fitted model object returned by one of the \pkg{rstanarm} modeling
 #'   functions. This will be a list with class 'stanreg' as well as at least one
 #'   of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
-#' @return An object of class 'loo'. See \code{\link[loo]{loo}}.
+#' @return An object of class 'loo'. See \code{\link[loo]{loo}} and
+#'   \code{\link[loo]{waic}}.
 #' 
 #' @seealso \code{\link[loo]{loo-package}}
 #' @importFrom loo loo loo.function
 #' 
+#' 
 loo.stanreg <- function(x, ...) {
+  loo.function(.llfun(x), args = .llargs(x), ...)
+}
+
+#' @rdname loo.stanreg
+#' @export
+#' @importFrom loo waic waic.function
+#' @note The \code{...} is ignored for \code{waic}.
+#' 
+waic.stanreg <- function(x, ...) {
+  waic.function(.llfun(x), args = .llargs(x))
+}
+
+# returns args argument for loo() and waic()
+.llargs <- function(x) {
   args <- list()
   args$family <- x$family
   stanmat <- as.matrix(x$stanfit)
@@ -30,14 +47,11 @@ loo.stanreg <- function(x, ...) {
   } else {
     args$beta <- stanmat[, 1:ncol(args$x)]
   }
-  llargs <- do.call(".llargs", args)
-  loo.function(.llfun(x), args = llargs, ...)
+  do.call(".llargs_prep", args)
 }
-
-# returns llargs arguments for loo()
-.llargs <- function(family, x, y, weights, beta,
-                    # remaining arguments might be applicable
-                    sigma = NULL, zeta = NULL, offset = NULL) {
+.llargs_prep <- function(family, x, y, weights, beta,
+                         # remaining arguments might be applicable
+                         sigma = NULL, zeta = NULL, offset = NULL) {
   eta <- linear_predictor(beta, x, offset)
   f <- family
   if (is(f, "family")) {
@@ -69,7 +83,7 @@ loo.stanreg <- function(x, ...) {
   nlist(data, draws, S = NROW(beta), N = NROW(y))
 }
 
-# returns llfun argument for loo()
+# returns log-likelihoo function for loo() and waic()
 .llfun <- function(object) {
   f <- object$family
   if (is(f, "family")) get(paste0(".ll_", f$family, "_i"))
@@ -85,11 +99,11 @@ loo.stanreg <- function(x, ...) {
   if (f == "logistic")    linkinv <- make.link("logit")$linkinv
   else if (f == "loglog") linkinv <- pgumbel
   else                    linkinv <- make.link(f)$linkinv
-
+  
   val <- 
     if (y_i == 1) log(linkinv(draws$zeta[,1] - draws$eta[,i]))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - draws$eta[,i]))
-    else log(linkinv(draws$zeta[,y_i] - draws$eta[,i]) - 
+  else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - draws$eta[,i]))
+  else log(linkinv(draws$zeta[,y_i] - draws$eta[,i]) - 
              linkinv(draws$zeta[,y_i - 1L] - draws$eta[,i]))
   
   if ("weights" %in% names(data)) val * data$weights[i]
@@ -111,5 +125,3 @@ loo.stanreg <- function(x, ...) {
   if ("weights" %in% names(data)) val * data$weights[i]
   else val
 }
-
-
