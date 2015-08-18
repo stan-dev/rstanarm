@@ -18,7 +18,7 @@
 #' 
 loo.stanreg <- function(x, ...) {
   if (x$algorithm != "sampling")
-    stop("Only available for MCMC.", call. = FALSE)
+    stop("Only available for MCMC (algorithm = 'sampling').", call. = FALSE)
   loo.function(.llfun(x), args = .llargs(x), ...)
 }
 
@@ -29,7 +29,7 @@ loo.stanreg <- function(x, ...) {
 #' 
 waic.stanreg <- function(x, ...) {
   if (x$algorithm != "sampling")
-    stop("Only available for MCMC.", call. = FALSE)
+    stop("Only available for MCMC (algorithm = 'sampling').", call. = FALSE)
   waic.function(.llfun(x), args = .llargs(x))
 }
 

@@ -10,9 +10,10 @@
 #' @param ... Ignored.
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
-#' @note Unlike \code{\link[stats]{glm}}, residuals are of type
-#'   \code{'response'} not \code{'deviance'} (see
-#'   \code{\link[stats]{residuals.glm}}).
+#' @details The \code{se} method returns standard errors and the \code{log_lik} 
+#'   method returns the pointwise log-likelihood matrix. Unlike 
+#'   \code{\link[stats]{residuals.glm}}, residuals are of type \code{'response'}
+#'   not \code{'deviance'}.
 #'
 #' @seealso \code{\link{stanreg-objects}}
 #' 
