@@ -80,7 +80,6 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   mc$prior <- mc$prior.for.intercept <- mc$prior.options <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- mc$... <- NULL
   glmod <- eval(mc, parent.frame(1L))
-  
   y <- glmod$fr[,as.character(glmod$formula[2])]
   X <- glmod$X
 
@@ -121,7 +120,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   
-  out$cnms <- glmod$reTrms$cnms # useful for post-processing
+  out$glmod <- glmod # useful for post-processing
   
   return(out)
 }
