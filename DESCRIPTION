@@ -7,8 +7,9 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", role = c("cre", "aut")))
 Description: Convenient interface for applied regression models using RStan, 
   the R interface to the Stan C++ package. Models are specified with customary 
-  R modeling syntax and can be estimated by performing full Bayesian inference 
-  or optimization.
+  R modeling syntax and can be estimated by performing full Bayesian inference, 
+  apprixmate Bayesian inference (via variational approximation) or optimization
+  of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-3)
 Imports: lme4 (>= 1.1-8), loo (>= 0.1.2.9000), MASS, stats, utils
