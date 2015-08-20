@@ -12,6 +12,6 @@ Description: Convenient interface for applied regression models using RStan,
   of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-3)
-Imports: lme4 (>= 1.1-8), loo (>= 0.1.2.9000), MASS, stats, utils
+Imports: lme4 (>= 1.1-8), loo (>= 0.1.3), MASS, stats, utils
 URL: http://mc-stan.org
 Suggests: testthat

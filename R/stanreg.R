@@ -52,19 +52,19 @@ stanreg <- function(object) {
   }
   
   # pointwise log-likelihood
-  mark <- 1:nvars
-  if (opt) {
-    mark <- c(grep("^alpha", colnames(stanmat)), 
-              grep("^beta",  colnames(stanmat)))
-  }
-  llargs <- nlist(family, x, y, weights, offset, 
-                  beta = stanmat[,mark])
-  if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"]
-  if (pmatch("Negative Binomial", family$family, nomatch = 0L) == 1) {
-    llargs$theta <- stanmat[,"overdispersion"]
-    family$family <- "nb"
-  }
-  log_lik <- do.call("pw_log_lik", llargs)
+#   mark <- 1:nvars
+#   if (opt) {
+#     mark <- c(grep("^alpha", colnames(stanmat)), 
+#               grep("^beta",  colnames(stanmat)))
+#   }
+#   llargs <- nlist(family, x, y, weights, offset, 
+#                   beta = stanmat[,mark])
+#   if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"]
+#   if (pmatch("Negative Binomial", family$family, nomatch = 0L) == 1) {
+#     llargs$theta <- stanmat[,"overdispersion"]
+#     family$family <- "nb"
+#   }
+#   log_lik <- do.call("pw_log_lik", llargs)
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
@@ -75,7 +75,7 @@ stanreg <- function(object) {
     offset = offset, weights = weights, prior.weights = weights, 
     family = family, contrasts = object$contrasts, na.action = object$na.action,
     call = object$call, formula = object$formula, terms = object$terms,
-    prior.info = object$prior.info, log_lik = log_lik,
+    prior.info = object$prior.info,
     algorithm = object$algorithm,
     stan_summary = stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit

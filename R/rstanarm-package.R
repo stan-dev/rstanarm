@@ -7,6 +7,7 @@
 #' @import stats
 #' 
 #' @export loo
+#' @export waic
 #' 
 #' @description An extension to the \code{\link[rstan]{rstan}} package enabling
 #'   the most commonly applied regression models to be specified using customary
