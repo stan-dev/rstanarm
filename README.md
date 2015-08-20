@@ -5,9 +5,9 @@ Bayesian software were easy but would use frequentist software otherwise. That s
 often uses posterior means as point estimates.
 
 Rules:
-  1. The stan\_* (e.g. `stan_glm`) wrapper function should take (almost) all of the same arguments as the function it emulates (e.g. `glm`) but ignoring unnecessary arguments is fine
-  2. After that, you can add additional arguments that often pertain to the priors used by Stan
-  3. The ... is always passed to `stan` so that the user can specify the number of chains, etc. Put the ... in the argument list after the arguments from the emulated function but before any rstanarm-specific arguments like `priors` (unless the ... comes earlier in the emulated function's argument list)
+  1. The stan\_* (e.g. `stan_glm`) wrapper function should take (almost) all of the same arguments as the function it emulates (e.g. `glm`) but unnecessary arguments can be dropped
+  2. The ... is always passed to `stan` so that the user can specify the number of chains, etc. Put the ... in the argument list after the arguments from the emulated function but before any rstanarm-specific arguments like `priors` (unless the ... comes earlier in the emulated function's argument list as in `polr`)
+  3. After that, you can add additional arguments that often pertain to the priors used by Stan
   4. The .stan files go in the exec/ subdirectory; try to make them as abstract, numerically stable, fast, etc. as possible at the expense of readability if necessary.
   5. The R/stanmodels.R file just creates a bunch of `stanmodel` objects that are passed to `sampling`, `optimizing`, etc.
   6. The order of the returned parameters should be intercept(s) (if any), regression coefficients, nuisance parameters, generated quantities, anything else. Use the `pars` argument to `stan` if necessary to achieve this ordering.

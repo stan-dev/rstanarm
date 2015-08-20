@@ -24,7 +24,7 @@
 #' # algorithm = "meanfield" is only for time constraints on examples
 #' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
 #'          algorithm = "meanfield", prior = R2(0.5), seed = 12345)   
-stan_aov <- function(formula, data = NULL, projections = FALSE, qr = TRUE,
+stan_aov <- function(formula, data = NULL, projections = FALSE,
                      contrasts = NULL, ...,
                      prior = R2(stop("'location' must be specified")), 
                      prior_PD = FALSE, 

@@ -4,7 +4,7 @@
 #' 
 #' @name stanreg-methods
 #' 
-#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
+#' @param object A fitted model object returned by one of the \pkg{rstanarm} 
 #'   modeling functions. This will be a list with class 'stanreg' as well as at 
 #'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #' @param ... Ignored.
@@ -137,7 +137,7 @@ coef.stanreg <- function(object, ...) {
 #' 
 sigma.stanreg <- function(object, ...) {
   .cnms(object)
-  if ("sigma" %in% rownames(fit$stan_summary)) 
+  if ("sigma" %in% rownames(object$stan_summary)) 
     object$stan_summary["sigma", "mean"]
   else {
     warning("sigma not found", call. = FALSE)

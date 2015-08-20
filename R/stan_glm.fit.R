@@ -40,7 +40,7 @@
 #'   covariance matrices among the group-specific coefficients
 #' @export
 #' 
-stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL, 
+stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,
                          prior.dist = c("normal", "t", "horseshoe", 
@@ -267,15 +267,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   else stop(paste(family$family, "is not supported"))
   
-  if (is.null(start)) start <- "random"
-  else start <- as.list(start)
-  
   pars <- c(if (has_intercept) "alpha", "beta", 
             if (length(group) > 0) c("b", "var_group"),
             if (is_gaussian) "sigma", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
-    out <- rstan::optimizing(stanfit, data = standata, init = start, hessian = TRUE)
+    out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE)
     new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
                    if (is_gaussian) "sigma_unsaled", 
                    if (is_nb) "overdispersion",
@@ -299,7 +296,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), start = NULL,
   }
   else {
     if (algorithm == "sampling") 
-      stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, init = start, ...)
+      stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, ...)
     else
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
                            algorithm = algorithm, ...)

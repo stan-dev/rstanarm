@@ -20,7 +20,7 @@
 #' @param wt A numeric vector (possibly \code{NULL}) of observation weights.
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets.
 #' 
-stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL, 
+stan_polr.fit <- function (x, y, wt = NULL, offset = NULL, 
                            method = c("logistic", "probit", "loglog", 
                                       "cloglog", "cauchit"), ...,
                            prior = R2(stop("'location' must be specified")), 
@@ -60,32 +60,23 @@ stan_polr.fit <- function (x, y, wt = NULL, start = NULL, offset = NULL,
   standata <- nlist(J, N, K, X, xbar, s_X, y, prior_PD, link, 
                     has_weights, weights, has_offset, offset,
                     prior_dist, shape, prior_counts)
-  if (is.null(start)) {
-    if (prior_dist == 1) {
-      L <- t(chol(cor(x)))
-      dim(L) <- c(1L, dim(L))
-      halfK <- K / 2
-      R2 <- as.array(halfK / (halfK + standata$shape))
-      z_beta <- NULL
-    }
-    else {
-      L <- array(0, dim = c(0L, K, K))
-      R2 <- array(0, dim = 0L)
-      z_beta <- rep(0, K)
-    }
-    pi <- table(y) / N               
-    start <- function(chain_id) {
-      list(pi = pi, L = L, R2 = R2, z_beta = z_beta)
-    }
+  if (prior_dist == 1) {
+    L <- t(chol(cor(x)))
+    dim(L) <- c(1L, dim(L))
+    halfK <- K / 2
+    R2 <- as.array(halfK / (halfK + standata$shape))
+    z_beta <- NULL
   }
   else {
-    z_beta <- head(start, K)
-    pi <- table(y) / N               
-    start <- function(chain_id) {
-      list(pi = pi, z_beta = z_beta)
-    }
+    L <- array(0, dim = c(0L, K, K))
+    R2 <- array(0, dim = 0L)
+    z_beta <- rep(0, K)
   }
-  
+  pi <- table(y) / N               
+  start <- function(chain_id) {
+    list(pi = pi, L = L, R2 = R2, z_beta = z_beta)
+  }
+
   stanfit <- get("stanfit_polr") 
   if (algorithm == "optimizing") {
     standata$do_residuals <- 0L

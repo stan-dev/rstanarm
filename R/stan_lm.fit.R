@@ -15,9 +15,7 @@
 
 #' @rdname stan_lm
 #' @export
-#' @param tol Numeric scalar tolerance for the QR decomposition.
-stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
-                         singular.ok = TRUE, ...,
+stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", "meanfield",
@@ -28,7 +26,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
     x <- x[,-1,drop=FALSE]
   }
   else has_intercept <- 0L
-  ols <- lsfit(x, y, w, has_intercept == 1L, tol)
+  ols <- lsfit(x, y, w, has_intercept == 1L)
   if (!is.null(w)) x <- sqrt(w) * x
 
   J <- 1L
@@ -88,8 +86,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, method = "qr", tol = 1e-07,
 
 #' @rdname stan_lm
 #' @export
-stan_lm.fit <- function(x, y, offset = NULL, method = "qr", tol = 1e-07,
-                        singular.ok = TRUE, ..., 
+stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", "meanfield",

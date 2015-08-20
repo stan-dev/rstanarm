@@ -55,11 +55,6 @@ class(loglog) <- "link-glm"
 #'
 #' @param formula,data,weights,subset,na.action,contrasts,model,method 
 #'   Same as in \code{\link[MASS]{polr}}.
-#' @param Hess Same as in \code{\link[MASS]{polr}} but always taken to be
-#'   \code{TRUE} and moreover ignored in the case of MCMC.
-#' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
-#'   used as starting values for the MCMC. If \code{NULL} (the default), then
-#'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
 #' @param ... Further arguments passed to the function in the \pkg{rstan} 
 #'   package named by \code{algorithm} (e.g., for the case of
 #'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
@@ -87,9 +82,9 @@ class(loglog) <- "link-glm"
 #' stan_polr(tobgp ~ agegp, data = esoph, algorithm = "meanfield", 
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
 
-stan_polr <- function (formula, data, weights, start, ..., subset, 
+stan_polr <- function (formula, data, weights, ..., subset, 
                        na.action = getOption("na.action", "na.omit"), 
-                       contrasts = NULL, Hess = FALSE, model = TRUE, 
+                       contrasts = NULL, model = TRUE, 
                        method = c("logistic", "probit", "loglog", "cloglog", 
                                   "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
@@ -102,7 +97,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data))) 
     m$data <- as.data.frame(data)
-  m$start <- m$Hess <- m$method <- m$model <- m$... <- m$prior <- m$prior_counts <- 
+  m$method <- m$model <- m$... <- m$prior <- m$prior_counts <- 
     m$prior_PD <- m$algorithm <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
@@ -129,12 +124,9 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
   if (llev < 2L) stop("response must have 2 or more levels")
   # y <- unclass(y)
   q <- llev - 1L
-  if (missing(start)) start <- NULL
-  else if (length(start) != pc + q) 
-    stop("'start' is not of the correct length")
-  
+
   algorithm <- match.arg(algorithm)  
-  stanfit <- stan_polr.fit(x, y, wt, start, offset, method, 
+  stanfit <- stan_polr.fit(x, y, wt, offset, method, 
                            prior = prior, prior_counts = prior_counts,
                            prior_PD = prior_PD, algorithm = algorithm, ...)
 

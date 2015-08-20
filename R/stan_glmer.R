@@ -14,13 +14,8 @@
 #' @templateVar pkgfun polr
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
-#' @param control,verbose,nAGQ,mustart,etastart,devFunOnly Same as for 
-#'   \code{\link[lme4]{glmer}} but ignored.
 #' @param subset,weights,na.action,offset,contrasts Same as 
 #'   \code{\link[stats]{glm}}.
-#' @param start If \code{NULL} (the default), then
-#'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
-#'   If not \code{NULL} also used as starting values for the MCMC.
 #' @param ... Further arguments passed to the function in the \pkg{rstan} 
 #'   package named by \code{algorithm} (e.g., for the case of
 #'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
@@ -58,11 +53,9 @@
 #' @importFrom lme4 glFormula
 #' 
 stan_glmer <- function (formula, data = NULL, family = gaussian, 
-                        control = NULL, start = NULL, verbose = 0L, 
-                        nAGQ = 1L, subset, weights, 
+                        subset, weights, 
                         na.action = getOption("na.action", "na.omit"), 
-                        offset, contrasts = NULL, mustart, etastart, 
-                        devFunOnly = FALSE, ...,
+                        offset, contrasts = NULL, ...,
                         prior = normal(), prior.for.intercept = normal(),
                         prior.options = prior_options(),
                         prior.for.covariance = decov(), prior_PD = FALSE, 
@@ -127,14 +120,13 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-#' @param REML Ignored.
-stan_lmer <- function (formula, data = NULL, REML = FALSE, control = NULL, 
-                       start = NULL, verbose = 0L, subset, weights, na.action, offset, 
-                       contrasts = NULL, devFunOnly = FALSE, 
+stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset, 
+                       contrasts = NULL, ...,
                        prior = normal(), prior.for.intercept = normal(),
                        prior.options = prior_options(), 
                        prior.for.covariance = decov(), prior_PD = FALSE,
-                      algorithm = c("sampling", "optimizing"),  ...) {
+                      algorithm = c("sampling", "optimizing", "meanfield", 
+                                    "fullrank")) {
   
   mc <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)

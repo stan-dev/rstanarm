@@ -33,7 +33,7 @@
 #' 
 #'
 #' @param formula,data,subset Same as in \code{\link[stats]{lm}}.
-#' @param weights,na.action,method,model,qr,singular.ok,contrasts,offset 
+#' @param weights,na.action,model,singular.ok,contrasts,offset 
 #'   Also the same as in \code{\link[stats]{lm}} but rarely specified.
 #' @param x,y In \code{stan_lm}, logical scalars indicating whether to
 #'   return the design matrix and response vector. In \code{stan_lm.fit},
@@ -94,8 +94,8 @@
 #' stan_lm(mpg ~ ., data = mtcars, algorithm = "meanfield", 
 #'         prior = R2(0.75), seed = 12345)
 #'
-stan_lm <- function(formula, data, subset, weights, na.action, method = "qr",
-                    model = TRUE, x = FALSE, y = FALSE, qr = TRUE, 
+stan_lm <- function(formula, data, subset, weights, na.action,
+                    model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
                     prior = R2(stop("'location' must be specified")), 
                     prior_PD = FALSE, algorithm = c("sampling", "optimizing", 

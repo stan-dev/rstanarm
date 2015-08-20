@@ -36,9 +36,6 @@
 #'   a design matrix and response vector.   
 #' @param model,na.action,weights,offset,contrasts Same as 
 #'   \code{\link[stats]{glm}}.
-#' @param start Same as \code{\link[stats]{glm}}, but if not \code{NULL} also
-#'   used as starting values for the MCMC. If \code{NULL} (the default), then
-#'   \code{\link[rstan]{stan}} is initialized with \code{init = 'random'}.
 #' @param ... Further arguments passed to the function in the \pkg{rstan} 
 #'   package named by \code{algorithm} (e.g., for the case of
 #'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
@@ -79,9 +76,8 @@
 #'
 
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
-                    na.action = NULL, start = NULL, offset = NULL, 
-                    model = TRUE, x = FALSE, y = TRUE, contrasts = NULL,
-                    ..., # further arguments to 'algorithm'
+                    na.action = NULL, offset = NULL, model = TRUE, 
+                    x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior.for.intercept = normal(),
                     prior.options = prior_options(), 
                     prior_PD = FALSE,  algorithm = c("sampling", "optimizing", 
@@ -140,7 +136,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   }
   algorithm <- match.arg(algorithm)
 
-  stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, start = start, 
+  stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
                           offset = offset, family = family, 
                           prior.dist = prior$dist,
                           prior.dist.for.intercept = prior.for.intercept$dist,
