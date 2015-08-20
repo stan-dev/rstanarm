@@ -8,6 +8,7 @@
 #' 
 #' @export loo
 #' @export waic
+#' @export launch_shinystan
 #' 
 #' @description An extension to the \code{\link[rstan]{rstan}} package enabling
 #'   the most commonly applied regression models to be specified using customary
