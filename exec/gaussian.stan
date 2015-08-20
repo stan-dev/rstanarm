@@ -179,7 +179,7 @@ functions {
 data {
   # dimensions
   int<lower=1> N; # number of observations
-  int<lower=1> K; # number of predictors
+  int<lower=0> K; # number of predictors
   
   # data
   vector[K] xbar;                # predictor means
@@ -336,7 +336,8 @@ transformed parameters {
 }
 model {
   vector[N] eta; # linear predictor
-  eta <- X * beta;
+  if (K > 0) eta <- X * beta;
+  else eta <- rep_vector(0.0, N);
   if (has_intercept == 1) eta <- eta + gamma[1];
   if (has_offset == 1)    eta <- eta + offset;
   if (t > 0)              eta <- eta + Z * b;
@@ -409,7 +410,8 @@ generated quantities {
     
   {
     vector[N] eta;
-    eta <- X * beta;
+    if (K > 0) eta <- X * beta;
+    else eta <- rep_vector(0.0, N);
     if (has_intercept == 1) eta <- eta + gamma[1];
     if (has_offset)         eta <- eta + offset;
     if (t > 0)              eta <- eta + Z * b;

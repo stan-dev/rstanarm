@@ -180,7 +180,7 @@ functions {
 data {
   int<lower=2> J;                # number of outcome categories, which typically is > 2
   int<lower=1> N;                # number of observations
-  int<lower=1> K;                # number of predictors (excluding a constant)
+  int<lower=0> K;                # number of predictors (excluding a constant)
   matrix[N,K]  X;                # centered predictor matrix
   vector[K] xbar;                # means of the predictors
   vector<lower=0>[K] s_X;        # standard deviations of the predictors
@@ -243,7 +243,8 @@ transformed parameters {
 }
 model {
   vector[N] eta;
-  eta <- X * beta;
+  if (K > 0) eta <- X * beta;
+  else eta <- rep_vector(0.0, N);
   if (has_offset == 1) eta <- eta + offset;
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     increment_log_prob(pw_polr(y, eta, cutpoints, link));
@@ -269,7 +270,8 @@ generated quantities {
   mean_PPD <- rep_vector(0,rows(mean_PPD));
   {
     vector[N] eta;
-    eta <- X * beta;
+    if (K > 0) eta <- X * beta;
+    else eta <- rep_vector(0.0, N);
     if (has_offset == 1) eta <- eta + offset;
     for (n in 1:N) {
       vector[J] theta;

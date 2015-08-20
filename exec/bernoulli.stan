@@ -113,7 +113,7 @@ functions {
 }
 data {
   # dimensions
-  int<lower=1> K;                # number of predictors
+  int<lower=0> K;                # number of predictors
   int<lower=1> N[2];             # number of observations where y = 0 and y = 1 respectively
   vector[K] xbar;                # vector of column-means of rbind(X0, X1)
   matrix[N[1],K] X0;             # centered (by xbar) predictor matrix | y = 0
@@ -165,8 +165,14 @@ transformed parameters {
 model {
   vector[N[1]] eta0;
   vector[N[2]] eta1;
-  eta0 <- X0 * beta;
-  eta1 <- X1 * beta;
+  if (K > 0) {
+    eta0 <- X0 * beta;
+    eta1 <- X1 * beta;
+  }
+  else {
+    eta0 <- rep_vector(0.0, N[1]);
+    eta1 <- rep_vector(0.0, N[2]);
+  }
   if (has_intercept == 1) {
     eta0 <- gamma[1] + eta0;
     eta1 <- gamma[1] + eta1;
@@ -228,8 +234,14 @@ generated quantities {
     vector[N[2]] eta1;
     vector[N[1]] pi0;
     vector[N[2]] pi1;
-    eta0 <- X0 * beta;
-    eta1 <- X1 * beta;
+    if (K > 0) {
+      eta0 <- X0 * beta;
+      eta1 <- X1 * beta;
+    }
+    else {
+      eta0 <- rep_vector(0.0, N[1]);
+      eta1 <- rep_vector(0.0, N[2]);
+    }
     if (has_intercept == 1) {
       eta0 <- gamma[1] + eta0;
       eta1 <- gamma[1] + eta1;

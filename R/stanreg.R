@@ -47,7 +47,7 @@ stanreg <- function(object) {
   
   if (!opt) {
     stanmat <- as.matrix(stanfit)
-    covmat <- cov(stanmat[,1:nvars])
+    covmat <- cov(stanmat[,1:nvars,drop=FALSE])
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   }
   
