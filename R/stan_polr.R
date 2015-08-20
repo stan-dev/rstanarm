@@ -217,7 +217,7 @@ stan_polr <- function (formula, data, weights, start, ..., subset,
               call = call, formula = formula,
               terms = Terms, prior.info = prior.info,
               algorithm = algorithm,
-              stan_summary = stan_summary, 
+              stan_summary = stan_summary, family = method,
               stanfit = if (algorithm == "optimizing") stanfit$stanfit else stanfit)
   class(out) <- c("stanreg", "polr")
   return(out)
