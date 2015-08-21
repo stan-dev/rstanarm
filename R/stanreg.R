@@ -35,7 +35,7 @@ stanreg <- function(object) {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
     coefs <- stan_summary[1:nvars, 1]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
-      names(coefs) <- rownames(fit_stan$stan_summary)[1L]
+      names(coefs) <- rownames(stan_summary)[1L]
   }    
 
   eta <- linear_predictor(coefs, x, offset)
