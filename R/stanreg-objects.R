@@ -19,16 +19,16 @@
 #'   \item{\code{call}}{The matched call.}
 #'   \item{\code{formula}}{The formula supplied.}
 #'   \item{\code{data}}{The \code{data} argument.}
-#'   \item{\code{algorithm}}{The estimation method used. Either "optimizing" or "sampling".}
+#'   \item{\code{algorithm}}{The estimation method used (e.g. "sampling").}
 #'   \item{\code{prior.info}}{A list with information about the prior distributions
 #'   used.}
 #'   \item{\code{stanfit}}{The object of \code{\link[rstan]{stanfit-class}} returned by RStan.}
 #'   }
 #' 
 #' \subsection{Additional classes}{
-#'  Each 'stanreg' object will also have at least one additional class. This
-#'  will be one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov', depending on the
-#'  model.
+#'  Each 'stanreg' object will also have additional components and at least one 
+#'  additional class depending on the model. The additional class(es) can be
+#'  'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #'  }
 #'   
 #' @seealso \code{\link{stanreg-methods}} 

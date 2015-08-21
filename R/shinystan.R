@@ -10,6 +10,7 @@
 #' more information.
 #' 
 #' @name shinystan
+#' @aliases launch_shinystan
 #' @seealso \code{\link[shinystan]{launch_shinystan}}
 #' @importFrom shinystan launch_shinystan
 #'   
@@ -19,11 +20,12 @@
 #' # Fit a model
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, seed = 12345)   
 #' 
-#' # Launch the ShinyStan app
+#' # Launch the ShinyStan app (saving resulting shinystan object as fit_sso)
+#' fit_sso <- launch_shinystan(fit) 
+#' 
+#' # Launch the ShinyStan app (without saving shinystan object)
 #' launch_shinystan(fit) 
 #' 
-#' # Launch and also save shinystan object as fit_sso
-#' fit_sso <- launch_shinystan(fit) 
 #' }
 #' 
 #' 
