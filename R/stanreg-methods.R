@@ -86,22 +86,21 @@ coef.stanreg <- function(object, ...) {
 
 
 
-.cnms <- function(object) {
+.glmer_check <- function(object) {
   if (!is(object, "lmerMod")) {
     message("This method is for stan_glmer and stan_lmer models only.")
     invisible(FALSE)
   }
+}
+.cnms <- function(object) {
+  .glmer_check(object)
   object$glmod$reTrms$cnms
 }
 
 .flist <- function(object) {
-  if (!is(object, "lmerMod")) {
-    message("This method is for stan_glmer and stan_lmer models only.")
-    invisible(FALSE)
-  }
+  .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
 }
-
 
 .mermod_coef <- function(object, ...) {
   if (length(list(...))) 
@@ -136,7 +135,7 @@ coef.stanreg <- function(object, ...) {
 #' @importFrom lme4 sigma
 #' 
 sigma.stanreg <- function(object, ...) {
-  .cnms(object)
+  .glmer_check(object)
   if ("sigma" %in% rownames(object$stan_summary)) 
     object$stan_summary["sigma", "mean"]
   else {
@@ -163,8 +162,8 @@ VarCorr.stanreg <- function(object, ...) {
   names(out) <- nms
   # return object printable using lmer's method for VarCorr objects
   gaus <- family(object)$family == "gaussian"
-  out <- structure(out, useSc = gaus, class = "VarCorr.merMod")
-  if (gaus) attr(out, "sc") <- sigma(object)
+  out <- structure(out, sc = if (gaus) sigma(object) else NULL, useSc = gaus, class = "VarCorr.merMod")
+  # if (gaus) attr(out, "sc") <- sigma(object)
   out
 }
 
@@ -206,5 +205,13 @@ ranef.stanreg <- function(object, ...) {
 #   ans <- ans[whchL]
   class(ans) <- "ranef.mer"
   ans
+}
+
+#' @rdname stanreg-methods
+#' @export
+#' @importFrom lme4 ngrps
+#' 
+ngrps.stanreg <- function(object, ...) {
+  vapply(.flist(object), nlevels, 1)  
 }
 
