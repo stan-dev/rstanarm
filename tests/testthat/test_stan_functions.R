@@ -160,6 +160,19 @@ test_that("make_lower_count returns expected results", {
   }
 })
 
+# Negative Binomial
+context("Negative Binomial")
+test_that("pw_nb return expected results", {
+  for (i in 1:length(links)) {
+    y <- sample.int(10, size = N, replace = TRUE)
+    eta <- abs(rnorm(N))
+    linkinv <- poisson(link = links[i])$linkinv
+    theta <- rexp(1)
+    ll <- dnbinom(y, mu = linkinv(eta), size = theta, log = TRUE)
+    expect_true(all.equal(ll,  pw_nb(y, eta, theta, i)), info = links[i])
+  }
+})
+
 # Gaussian GLM
 links <- c("identity", "log", "inverse")
 

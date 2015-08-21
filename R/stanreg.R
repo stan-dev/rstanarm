@@ -51,21 +51,6 @@ stanreg <- function(object) {
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
   }
   
-  # pointwise log-likelihood
-#   mark <- 1:nvars
-#   if (opt) {
-#     mark <- c(grep("^alpha", colnames(stanmat)), 
-#               grep("^beta",  colnames(stanmat)))
-#   }
-#   llargs <- nlist(family, x, y, weights, offset, 
-#                   beta = stanmat[,mark])
-#   if (family$family == "gaussian") llargs$sigma <- stanmat[, "sigma"]
-#   if (pmatch("Negative Binomial", family$family, nomatch = 0L) == 1) {
-#     llargs$theta <- stanmat[,"overdispersion"]
-#     family$family <- "nb"
-#   }
-#   log_lik <- do.call("pw_log_lik", llargs)
-  
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
   out <- list(

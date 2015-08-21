@@ -60,6 +60,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
       ppargs$scale <- stanmat[,"scale"]
     else if (famname == "inverse.gaussian")
       ppargs$lambda <- stanmat[,"lambda"]
+    else if (famname == "nb")
+      ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
     if (missing(fun)) ytilde
     else do.call(fun, list(ytilde))
@@ -76,6 +78,12 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     rpois(ncol(mu), mu[s,])
   }))
 }
+.pp_nb <- function(mu, size) {
+  t(sapply(1:nrow(mu), function(s) {
+    rnbinom(ncol(mu), size = size, mu = mu[s,])
+  }))
+}
+
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s,])

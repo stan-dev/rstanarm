@@ -12,7 +12,7 @@ print.stanreg <- function(x, ...) {
   else {
     mark <- names(x$coefficients)
     if (x$family$family == "gaussian") mark <- c(mark, "sigma")
-    else if (x$family$family == "Negative Binomial") mark <- c(mark, "overdispersion")
+    else if (x$family$family == "neg_binomial_2") mark <- c(mark, "overdispersion")
     print(x$stan_summary[mark,,drop=FALSE], ...)
   }
   if (is(x, "aov")) {

@@ -138,6 +138,9 @@ waic.stanreg <- function(x, ...) {
   if ("weights" %in% names(data)) val * data$weights[i]
   else val
 }
+.ll_neg_binomial_2_i <- function(i, data, draws) {
+  stop("write the .ll_neg_binomial_2_i function")
+}
 .ll_Gamma_i <- function(i, data, draws) {
   val <- dgamma(data$y[i], shape = draws$shape, 
                 rate = draws$shape / draws$mu[,i], log = TRUE)

@@ -42,7 +42,7 @@ functions {
     vector[rows(eta)] rho;
     if (link < 1 || link > 3) reject("Invalid link");
     rho <- linkinv_count(eta, link);
-    for (n in 1:rows(eta)) ll[n] <- neg_binomial_log(y[n], rho[n], theta);
+    for (n in 1:rows(eta)) ll[n] <- neg_binomial_2_log(y[n], rho[n], theta);
     return ll;
   }
   
@@ -155,7 +155,10 @@ model {
       if (link == 1) y ~ poisson_log(eta);
       else y ~ poisson(linkinv_count(eta, link));
     }
-    else y ~ neg_binomial(linkinv_count(eta, link), theta[1]);
+    else {
+      if (link == 1) y ~ neg_binomial_2_log(eta, theta[1]);
+      else y ~ neg_binomial_2(linkinv_count(eta, link), theta[1]);
+    }
   }
   else if (family != 1 && prior_PD == 0)
     increment_log_prob(dot_product(weights, pw_pois(y, eta, link)));
@@ -219,7 +222,7 @@ generated quantities {
     if (family != 2) 
       for (n in 1:N) mean_PPD <- mean_PPD + poisson_rng(rho[n]);
     else
-      for (n in 1:N) mean_PPD <- mean_PPD + neg_binomial_rng(rho[n], theta[1]);
+      for (n in 1:N) mean_PPD <- mean_PPD + neg_binomial_2_rng(rho[n], theta[1]);
     mean_PPD <- mean_PPD / N;
   }
 }

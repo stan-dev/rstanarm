@@ -66,7 +66,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # these are from help(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "Negative Binomial")
+                          "poisson", "neg_binomial_2")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if(length(fam) == 0) stop(paste("'family' must be one of ", supported_families))
   
@@ -76,7 +76,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                             gaussian = c("identity", "log", "inverse"),
                             Gamma = c("identity", "log", "inverse"),
                             inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
-                            "Negative Binomial" = , # intentional
+                            "neg_binomial_2" = , # intentional
                             poisson = c("log", "identity", "sqrt"),
                             stop("unsupported family"))
   link <- which(supported_links == family$link)
@@ -159,7 +159,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   priors.scale.for.intercept <- min(.Machine$double.xmax, prior.scale.for.intercept)
   
   is_bernoulli <- supported_families[fam] == "binomial" && all(y %in% 0:1)
-  is_nb <- supported_families[fam] == "Negative Binomial"
+  is_nb <- supported_families[fam] == "neg_binomial_2"
   
   # create entries in the data block of the .stan file
   standata <- list(
