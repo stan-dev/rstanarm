@@ -162,8 +162,8 @@ VarCorr.stanreg <- function(object, ...) {
   names(out) <- nms
   # return object printable using lmer's method for VarCorr objects
   gaus <- family(object)$family == "gaussian"
-  out <- structure(out, useSc = gaus, class = "VarCorr.merMod")
-  if (gaus) attr(out, "sc") <- sigma(object)
+  out <- structure(out, sc = if (gaus) sigma(object) else NULL, useSc = gaus, class = "VarCorr.merMod")
+  # if (gaus) attr(out, "sc") <- sigma(object)
   out
 }
 
