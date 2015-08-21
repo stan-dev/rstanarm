@@ -186,6 +186,43 @@ test_that("pw_gauss returns expected results", {
   }
 })
 
+# Gamma GLM
+test_that("linkinv_gamma returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rexp(N)
+    linkinv <- Gamma(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), linkinv_gamma(eta, i)), info = links[i])
+  }
+})
+test_that("pw_gamma returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rexp(N)
+    shape <- rexp(1)
+    linkinv <- Gamma(link = links[i])$linkinv
+    expect_true(all.equal(dgamma(1, shape = shape, rate = shape / linkinv(eta), log = TRUE),
+                          pw_gamma(rep(1,N), eta, shape, i)), info = links[i])
+  }
+})
+
+# Inverse Gaussian GLM
+links <- c(links, "1/mu^2")
+test_that("linkinv_inv_gaussian returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rgamma(N, 2, 1)
+    linkinv <- inverse.gaussian(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), linkinv_inv_gaussian(eta, i)), info = links[i])
+  }
+})
+require(SuppDists)
+test_that("pw_inv_gaussian returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rgamma(N, 2, 1)
+    lambda <- rexp(1)
+    linkinv <- inverse.gaussian(link = links[i])$linkinv
+    expect_true(all.equal(dinvGauss(1, linkinv(eta), lambda, log = TRUE),
+                          pw_inv_gaussian(rep(1,N), eta, lambda, i, 0, rep(1,N))), info = links[i])
+  }
+})
 
 # lm
 N <- 99L

@@ -35,6 +35,25 @@ functions {
       return mu;
     }
   }
+
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_inv_gaussian(vector eta, int link) {
+    if (link < 1 || link > 4) reject("Invalid link");
+    if (link == 1)  return eta;
+    else if (link == 2) return exp(eta);
+    else {
+      vector[rows(eta)] mu;
+      if (link == 3) for( n in 1:rows(eta)) mu[n] <- inv(eta[n]);
+      else for (n in 1:rows(eta)) mu[n] <- inv_sqrt(eta[n]);      
+      return mu;
+    }
+  }
   
   /** 
    * Pointwise (pw) log-likelihood vector
@@ -67,13 +86,19 @@ functions {
     vector[rows(eta)] ll;
     real rate;
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 2) { # link = log
+    if (link == 3) { # link = inverse
+      for (n in 1:rows(eta)) {
+        rate <- shape * eta[n];
+        ll[n] <- gamma_log(y[n], shape, rate);
+      }
+    }
+    else if (link == 2) { # link = log
       for (n in 1:rows(eta)) {
         rate <- shape / exp(eta[n]);
         ll[n] <- gamma_log(y[n], shape, rate);
       }
     }
-    else { # link = idenity or inverse
+    else { # link = identity
       for (n in 1:rows(eta)) {
         rate <- shape / eta[n];
         ll[n] <- gamma_log(y[n], shape, rate);
@@ -89,11 +114,68 @@ functions {
    * @param y The vector in the denominator
    * @return An elementwise vector
    */
-  
   vector divide_real_by_vector(real x, vector y) {
     vector[rows(y)] ret;
     for (n in 1:rows(y)) ret[n] <- x / y[n];
     return ret;
+  }
+
+  /** 
+   * inverse Gaussian log-PDF (for data only, excludes constants)
+   *
+   * @param y The vector of outcomes
+   * @param eta The vector of linear predictors
+   * @param lambda A positive scalar nuisance parameter
+   * @param link An integer indicating the link function
+   * @return A scalar
+   */
+  real inv_gaussian_log(vector y, vector mu, real lambda, 
+                        real sum_log_y, vector sqrt_y) {
+    return 0.5 * rows(y) * log(lambda / (2 * pi())) - 
+           1.5 * sum_log_y - 
+           0.5 * lambda * dot_self( (y - mu) ./ (mu .* sqrt_y) );
+  }
+
+  /** 
+   * Pointwise (pw) log-likelihood vector
+   *
+   * @param y The integer array corresponding to the outcome variable.
+   * @param link An integer indicating the link function
+   * @return A vector of log-likelihoods
+   */
+  vector pw_inv_gaussian(vector y, vector eta, real lambda, 
+                         int link, real sum_log_y, vector sqrt_y) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    if (link < 1 || link > 4) reject("Invalid link");
+    mu <- linkinv_inv_gaussian(eta, link);
+    for (n in 1:rows(y))
+      ll[n] <- -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
+    ll <- ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * sum_log_y;
+    return ll;
+  }
+
+  /** 
+   * PRNG for the inverse Gaussian distribution
+   *
+   * Algorithm from wikipedia 
+   *
+   * @param mu The expectation
+   * @param lambda The dispersion
+   * @return A draw from the inverse Gaussian distribution
+   */
+  real inv_gaussian_rng(real mu, real lambda) {
+    real z;
+    real y;
+    real x;
+    real mu2;
+    mu2 <- square(mu);
+    y <- square(normal_rng(0,1));
+    z <- uniform_rng(0,1);
+    x <- mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
+         / (2 * lambda);
+    if (z <= (mu / (mu + x))) return x;
+    else return mu2 / x;
   }
 
   /** 
@@ -257,10 +339,10 @@ data {
   matrix[N,q]  Z;    # uncentered design matrix for group-specific variables
 
   # family 
-  int<lower=1,upper=2> family; # 1 = gaussian, 2 = Gamma
+  int<lower=1,upper=3> family; # 1 = gaussian, 2 = Gamma, 3 = inverse Gaussian
   
   # link function from location to linear predictor
-  int<lower=1,upper=3> link; # 1 = identity, 2 = log, 3 = inverse
+  int<lower=1,upper=4> link; # 1 = identity, 2 = log, 3 = inverse, 4 = 1 / mu^2
   
   # weights
   int<lower=0,upper=1> has_weights; # 0 = No, 1 = Yes
@@ -300,6 +382,8 @@ transformed data {
   real<lower=0> shape2[len_shape];
   real<lower=0> delta[len_concentration];
   int<lower=1> pos[2];
+  vector[N * (family == 3)] sqrt_y;
+  real sum_log_y;
   if      (prior_dist <  2) horseshoe <- 0;
   else if (prior_dist == 3) horseshoe <- 2;
   else if (prior_dist == 4) horseshoe <- 4;
@@ -329,6 +413,10 @@ transformed data {
     if (p[i] > 2) for (j in 3:p[i]) {
       len_z_T <- len_z_T + p[i] - 1;
     }
+  }
+  if (family == 3) {
+    for (n in 1:N) sqrt_y[n] <- sqrt(y[n]);
+    sum_log_y <- sum(log(y));
   }
 }
 parameters {
@@ -416,15 +504,20 @@ model {
       if (link == 2) y ~ lognormal(mu, dispersion);
       else y ~ normal(mu, dispersion);
     }
-    else {
+    else if (family == 2) {
       mu <- linkinv_gamma(eta, link);
       y ~ gamma(dispersion, divide_real_by_vector(dispersion, mu));
+    }
+    else {
+      mu <- linkinv_inv_gaussian(eta, link);
+      y ~ inv_gaussian(mu, dispersion, sum_log_y, sqrt_y);
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands <- pw_gauss(y, eta, dispersion, link);
-    else summands <- pw_gamma(y, eta, dispersion, link);
+    else if (family == 2) summands <- pw_gamma(y, eta, dispersion, link);
+    else summands <- pw_inv_gaussian(y, eta, dispersion, link, sum_log_y, sqrt_y);
     increment_log_prob(dot_product(weights, summands));
   }
   
@@ -456,7 +549,7 @@ model {
   // Log-prior for intercept  
   if (has_intercept == 1) {
     if (family == 2 && link != 2) {
-      # nothing
+      # nothing because of the weird constraint
     }
     else if (prior_dist_for_intercept == 1) # normal
       gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
@@ -496,12 +589,16 @@ generated quantities {
     if (has_offset)         eta <- eta + offset;
     if (t > 0)              eta <- eta + Z * b;
     if (family == 1) {
-      eta <- linkinv_gauss(eta, link);
+      if (link > 1) eta <- linkinv_gauss(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], dispersion);
     }
-    else {
-      eta <- linkinv_gamma(eta, link);
+    else if (family == 2) {
+      if (link > 1) eta <- linkinv_gamma(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
+    }
+    else if (family == 3) {
+      if (link > 1) eta <- linkinv_inv_gaussian(eta, link);
+      for (n in 1:N) mean_PPD <- mean_PPD + inv_gaussian_rng(eta[n], dispersion);
     }
     mean_PPD <- mean_PPD / N;
   }

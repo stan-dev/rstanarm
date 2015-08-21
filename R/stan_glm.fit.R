@@ -65,8 +65,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop("'family' must be a family")
   
   # these are from help(family)
-  supported_families <- c("binomial", "gaussian", "Gamma",
-                          "poisson", "Negative Binomial") # FIXME: add "inverse.gaussian"
+  supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
+                          "poisson", "Negative Binomial")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if(length(fam) == 0) stop(paste("'family' must be one of ", supported_families))
   
@@ -74,8 +74,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   supported_links <- switch(supported_families[fam],
                             binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
                             gaussian = c("identity", "log", "inverse"),
-                            Gamma = c("identity", "log", "inverse"), # different order!
-                            # inverse.gaussian = c("1/mu^2", "inverse", "identity", "log"),
+                            Gamma = c("identity", "log", "inverse"),
+                            inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
                             "Negative Binomial" = , # intentional
                             poisson = c("log", "identity", "sqrt"),
                             stop("unsupported family"))
@@ -139,6 +139,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   is_gaussian <- family$family == "gaussian"
   is_gamma <- family$family == "Gamma"
+  is_ig <- family$family == "inverse.gaussian"
+  is_continuous <- is_gaussian || is_gamma || is_ig
   if (scaled && prior.dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
@@ -220,11 +222,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
 
   # call stan() to draw from posterior distribution
-  if (is_gaussian || is_gamma) {
+  if (is_continuous) {
     standata$prior_scale_for_dispersion <- if (prior.scale.for.dispersion == Inf) 
       0 else prior.scale.for.dispersion
-    standata$family <- ifelse(is_gaussian, 1L, 2L)
-    stanfit <- get("stanfit_gaussian") # even if family$family == "gamma"
+    standata$family <- switch(family$family, 
+                              gaussian = 1L, 
+                              Gamma = 2L,
+                              3L)
+    stanfit <- get("stanfit_continuous")
   }
   else if (supported_families[fam] == "binomial") {
     if (is_bernoulli) {
@@ -275,12 +280,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   pars <- c(if (has_intercept) "alpha", "beta", 
             if (length(group) > 0) c("b", "var_group"),
-            if (is_gaussian || is_gamma) "dispersion", if (is_nb) "theta",  "mean_PPD")
+            if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
     out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE)
     new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
-                   if (is_gaussian) "sigma_unsaled", 
+                   if (is_gaussian) "sigma_unscaled", 
                    if (is_nb) "overdispersion",
                    if (length(group) > 0) c(paste0("u[", b_names, "]"),
                                             paste0("z_T[", 1:(sum(p[p > 2] - 1)), "]"),
@@ -310,6 +315,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (length(group) > 0) c(paste0("b[", b_names, "]"),
                                             paste0("var[", g_names, "]")),
                    if (is_gaussian) "sigma", if (is_gamma) "shape", 
+                   if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
                    "mean_PPD", "log-posterior")
     stanfit@sim$fnames_oi <- new_names

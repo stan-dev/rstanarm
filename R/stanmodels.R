@@ -23,9 +23,9 @@ if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",
                                 auto_write = interactive())
-stanfit_gaussian <- rstan::stan_model(file.path(MODELS_HOME, "gaussian.stan"), 
-                                      model_name = "Gaussian GLM",
-                                      auto_write = interactive())
+stanfit_continuous <- rstan::stan_model(file.path(MODELS_HOME, "continuous.stan"), 
+                                        model_name = "Continuous GLM",
+                                        auto_write = interactive())
 stanfit_bernoulli <- rstan::stan_model(file.path(MODELS_HOME, "bernoulli.stan"), 
                                       model_name = "Bernoulli GLM",
                                       auto_write = interactive())
