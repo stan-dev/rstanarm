@@ -1,4 +1,4 @@
-# GLM for a Gaussian outcome with Gaussian or t priors
+# GLM for a Gaussian (or Gamma) outcome
 functions {
   /** 
    * Apply inverse link function to linear predictor
@@ -9,9 +9,27 @@ functions {
    */
   vector linkinv_gauss(vector eta, int link) {
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1 || link == 2) # link = identity or log 
+    if (link < 3)  # link = identity or log 
       return(eta); # return eta for log link too bc will use lognormal
     else {# link = inverse
+      vector[rows(eta)] mu;
+      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      return mu;
+    }
+  }
+
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_gamma(vector eta, int link) {
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1)  return eta;
+    else if (link == 2) return exp(eta);
+    else {
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
       return mu;
@@ -36,6 +54,46 @@ functions {
       for (n in 1:rows(eta)) ll[n] <- normal_log(y[n], mu[n], sigma);
     }
     return ll;
+  }
+
+  /** 
+   * Pointwise (pw) log-likelihood vector
+   *
+   * @param y The integer array corresponding to the outcome variable.
+   * @param link An integer indicating the link function
+   * @return A vector
+   */
+  vector pw_gamma(vector y, vector eta, real shape, int link) {
+    vector[rows(eta)] ll;
+    real rate;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 2) { # link = log
+      for (n in 1:rows(eta)) {
+        rate <- shape / exp(eta[n]);
+        ll[n] <- gamma_log(y[n], shape, rate);
+      }
+    }
+    else { # link = idenity or inverse
+      for (n in 1:rows(eta)) {
+        rate <- shape / eta[n];
+        ll[n] <- gamma_log(y[n], shape, rate);
+      }
+    }
+    return ll;
+  }
+
+  /** 
+   * Divide a scalar by a vector
+   *
+   * @param x The scalar in the numerator
+   * @param y The vector in the denominator
+   * @return An elementwise vector
+   */
+  
+  vector divide_real_by_vector(real x, vector y) {
+    vector[rows(y)] ret;
+    for (n in 1:rows(y)) ret[n] <- x / y[n];
+    return ret;
   }
 
   /** 
@@ -198,6 +256,9 @@ data {
   int<lower=0> q;    # conceptually equals \sum_{i=1}^t p_i \times l_i
   matrix[N,q]  Z;    # uncentered design matrix for group-specific variables
 
+  # family 
+  int<lower=1,upper=2> family; # 1 = gaussian, 2 = Gamma
+  
   # link function from location to linear predictor
   int<lower=1,upper=3> link; # 1 = identity, 2 = log, 3 = inverse
   
@@ -271,11 +332,12 @@ transformed data {
   }
 }
 parameters {
-  real gamma[has_intercept];
+  real<lower=if_else(family == 1 || link == 2, 
+                     negative_infinity(), 0)> gamma[has_intercept];
   vector[K] z_beta;
   real<lower=0> global[horseshoe];
   vector<lower=0>[K] local[horseshoe];
-  real<lower=0> sigma_unscaled;
+  real<lower=0> dispersion_unscaled; # interpretation depends on family!
   vector[q] u;
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;
@@ -286,7 +348,7 @@ transformed parameters {
   vector[K] beta;
   vector[q] b;
   vector[len_var_group] var_group;
-  real sigma;
+  real dispersion;
   if (prior_dist == 0)      beta <- z_beta;
   else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
   else if (prior_dist == 3) {
@@ -304,13 +366,13 @@ transformed parameters {
     beta <- z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
   }
   if (prior_scale_for_dispersion > 0)
-    sigma <-  prior_scale_for_dispersion * sigma_unscaled;
-  else sigma <- sigma_unscaled;
+    dispersion <-  prior_scale_for_dispersion * dispersion_unscaled;
+  else dispersion <- dispersion_unscaled;
   if (t > 0) {
     vector[t] scaled_tau;
     int mark;
     mark <- 1;
-    scaled_tau <- tau .* scale * square(sigma);
+    scaled_tau <- tau .* scale * square(dispersion);
     for (i in 1:t) {
       real trace_mat;
       trace_mat <- square(scaled_tau[i]);
@@ -338,7 +400,10 @@ model {
   vector[N] eta; # linear predictor
   if (K > 0) eta <- X * beta;
   else eta <- rep_vector(0.0, N);
-  if (has_intercept == 1) eta <- eta + gamma[1];
+  if (has_intercept == 1) {
+    if (family == 1 || link == 2) eta <- eta + gamma[1];
+    else eta <- eta - min(eta) + gamma[1];
+  }
   if (has_offset == 1)    eta <- eta + offset;
   if (t > 0)              eta <- eta + Z * b;
   
@@ -346,20 +411,25 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     vector[N] mu;
-    mu <- linkinv_gauss(eta, link);
-    if (link == 2)
-      y ~ lognormal(mu, sigma);
-    else 
-      y ~ normal(mu, sigma);
+    if (family == 1) {
+      mu <- linkinv_gauss(eta, link);
+      if (link == 2) y ~ lognormal(mu, dispersion);
+      else y ~ normal(mu, dispersion);
+    }
+    else {
+      mu <- linkinv_gamma(eta, link);
+      y ~ gamma(dispersion, divide_real_by_vector(dispersion, mu));
+    }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
-    summands <- pw_gauss(y, eta, sigma, link);
+    if (family == 1) summands <- pw_gauss(y, eta, dispersion, link);
+    else summands <- pw_gamma(y, eta, dispersion, link);
     increment_log_prob(dot_product(weights, summands));
   }
   
   // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) sigma_unscaled ~ cauchy(0, 1);
+  if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
   
   // Log-priors for coefficients
   if      (prior_dist == 1) z_beta ~ normal(0, 1);
@@ -385,7 +455,10 @@ model {
   
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (prior_dist_for_intercept == 1) # normal
+    if (family == 2 && link != 2) {
+      # nothing
+    }
+    else if (prior_dist_for_intercept == 1) # normal
       gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
     else if (prior_dist_for_intercept == 2) # student_t
       gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
@@ -407,16 +480,29 @@ generated quantities {
   mean_PPD <- 0;
   if (has_intercept == 1)
     alpha[1] <- gamma[1] - dot_product(xbar, beta);
-    
   {
     vector[N] eta;
     if (K > 0) eta <- X * beta;
     else eta <- rep_vector(0.0, N);
-    if (has_intercept == 1) eta <- eta + gamma[1];
+    if (has_intercept == 1) {
+      if (family == 1 || link == 2) eta <- eta + gamma[1];
+      else {
+        real min_eta;
+        min_eta <- min(eta);
+        alpha[1] <- alpha[1] - min_eta;
+        eta <- eta - min_eta + gamma[1];
+      }
+    }
     if (has_offset)         eta <- eta + offset;
     if (t > 0)              eta <- eta + Z * b;
-    eta <- linkinv_gauss(eta, link);
-    for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], sigma);
+    if (family == 1) {
+      eta <- linkinv_gauss(eta, link);
+      for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], dispersion);
+    }
+    else {
+      eta <- linkinv_gamma(eta, link);
+      for (n in 1:N) mean_PPD <- mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
+    }
     mean_PPD <- mean_PPD / N;
   }
 }
