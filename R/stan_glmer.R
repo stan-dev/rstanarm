@@ -89,7 +89,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   group <- glmod$reTrms
   group$decov <- prior.for.covariance
   algorithm <- match.arg(algorithm)
-  stanfit <- stan_glm.fit(x = X, y = y, weights = weights, start = start, 
+  stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family, 
                           prior.dist = prior$dist,
                           prior.dist.for.intercept = prior.for.intercept$dist,
