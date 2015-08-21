@@ -43,9 +43,15 @@ waic.stanreg <- function(x, ...) {
   args$y <- x$y
   args$offset <- x$offset
   args$weights <- x$weights
-  if (is(args$family, "family") && args$family$family == "gaussian") 
-    args$sigma <- stanmat[, "sigma"]
-  if (is.character(args$family)) {
+  if (is(args$family, "family")) {
+    if (args$family$family == "gaussian") 
+      args$sigma <- stanmat[, "sigma"]
+    if (args$family$family == "Gamma")
+      args$shape <- stanmat[, "shape"]
+    if (args$family$family == "inverse.gaussian")
+      args$lambda <- stanmat[, "lambda"]
+  }
+  if (is(x, "polr")) {
     args$beta <- stanmat[,colnames(args$x),drop = FALSE]
     args$zeta <- stanmat[,grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),drop=FALSE]
   } else {
@@ -55,7 +61,8 @@ waic.stanreg <- function(x, ...) {
 }
 .llargs_prep <- function(family, x, y, weights, beta,
                          # remaining arguments might be applicable
-                         sigma = NULL, zeta = NULL, offset = NULL) {
+                         sigma = NULL, zeta = NULL, shape = NULL,
+                         lambda = NULL, offset = NULL) {
   eta <- linear_predictor(beta, x, offset)
   f <- family
   if (is(f, "family")) {
@@ -81,8 +88,10 @@ waic.stanreg <- function(x, ...) {
   }
   else stop("'family' must be a family or a character string")
   
-  if (!is.null(sigma)) draws$sigma <- sigma
-  if (!is.null(zeta))  draws$zeta  <- zeta
+  if (!is.null(sigma))  draws$sigma <- sigma
+  if (!is.null(zeta))   draws$zeta  <- zeta
+  if (!is.null(shape))  draws$shape <- shape
+  if (!is.null(lambda)) draws$lambda <- lambda
   if (!all(weights == 1)) data$weights <- weights
   nlist(data, draws, S = NROW(beta), N = NROW(y))
 }
@@ -126,6 +135,20 @@ waic.stanreg <- function(x, ...) {
 }
 .ll_poisson_i <- function(i, data, draws) {
   val <- dpois(data$y[i], lambda = draws$mu[,i], log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights[i]
+  else val
+}
+.ll_Gamma_i <- function(i, data, draws) {
+  val <- dgamma(data$y[i], shape = draws$shape, 
+                rate = draws$shape / draws$mu[,i], log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights[i]
+  else val
+}
+.ll_inverse.gaussian_i <- function(i, data, draws) {
+  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
+         1.5 * log(data$y) -
+         0.5 * lambda * (data$y - draws$mu[,i])^2 / 
+                        (data$y * draws$mu[,i]^2)
   if ("weights" %in% names(data)) val * data$weights[i]
   else val
 }

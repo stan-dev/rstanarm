@@ -51,11 +51,15 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     ppargs <- list(mu = family$linkinv(eta))
     if (famname == "gaussian")
       ppargs$sigma <- stanmat[, "sigma"]
-    if (famname == "binomial") {
+    else if (famname == "binomial") {
       y <- if (!is.null(object$y)) 
         object$y else model.response(model.frame(object))
       ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
     }
+    else if (famname == "Gamma")
+      ppargs$scale <- stanmat[,"scale"]
+    else if (famname == "inverse.gaussian")
+      ppargs$lambda <- stanmat[,"lambda"]
     ytilde <- do.call(ppfun, ppargs)
     if (missing(fun)) ytilde
     else do.call(fun, list(ytilde))
@@ -77,6 +81,17 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     rbinom(ncol(mu), size = trials, prob = mu[s,])
   }))
 }
+.pp_Gamma <- function(mu, shape) {
+  t(sapply(1:nrow(mu), function(s) {
+    rgamma(ncol(mu), shape = shape, rate = shape / mu[s,])
+  }))
+}
+.pp_inverse.gaussian <- function(mu, lambda) {
+  t(sapply(1:nrow(mu), function(s) {
+    .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda)
+  }))
+}
+
 .pp_polr <- function(eta, zeta, linkinv) {
   n <- ncol(eta)
   q <- ncol(zeta)
@@ -85,4 +100,12 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
     apply(fitted, 1, function(p) which(rmultinom(1, 1, p) == 1))
   }))
+}
+
+.rinvGauss <- function(n, mu, lambda) {
+  mu2 <- mu^2
+  y <- rnorm(n)^2
+  z <- runif(n)
+  x <- mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * y^2) ) / (2 * lambda)
+  ifelse (z <= (mu / (mu + x)), x, mu2 / x)
 }
