@@ -116,7 +116,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   if (!singular.ok) X <- X[,!is.na(modelframe$coefficients),drop = FALSE]
   w <- modelframe$weights
   offset <- model.offset(mf)
-  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
+  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
                           prior = prior,  prior_PD = prior_PD, algorithm = algorithm, ...)
   
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
