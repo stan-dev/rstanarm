@@ -42,7 +42,7 @@ waic.stanreg <- function(x, ...) {
   args$x <- if ("x" %in% nms) x$x else model.matrix(x)
   args$y <- if ("y" %in% nms) x$y else model.response(model.frame(x))
   args$offset <- x$offset
-  args$weights <- x$weights
+  args$weights <- if (!is.null(x$weights)) x$weights else 1
   if (is(args$family, "family")) {
     if (args$family$family == "gaussian") 
       args$sigma <- stanmat[, "sigma"]
@@ -106,9 +106,10 @@ waic.stanreg <- function(x, ...) {
 }
 
 .ll_polr_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, 
-                          data[, -which(colnames(data) == "y")], 
-                          draws$offset[i])
+  rmv <- c("y", "weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  
+  eta <- as.vector(linear_predictor(draws$beta, xdat, data$offset))
   f <- draws$f
   J <- draws$max_y
   y_i <- data$y
@@ -118,10 +119,10 @@ waic.stanreg <- function(x, ...) {
   else                    linkinv <- make.link(f)$linkinv
   
   val <- 
-    if (y_i == 1) log(linkinv(draws$zeta[,1] - eta[,i]))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta[,i]))
-    else log(linkinv(draws$zeta[,y_i] - eta[,i]) - 
-             linkinv(draws$zeta[,y_i - 1L] - eta[,i]))
+    if (y_i == 1) log(linkinv(draws$zeta[,1] - eta))
+    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta))
+    else log(linkinv(draws$zeta[,y_i] - eta) - 
+             linkinv(draws$zeta[,y_i - 1L] - eta))
   
   if ("weights" %in% names(data)) val * data$weights
   else val
