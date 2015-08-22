@@ -174,11 +174,6 @@ stan_polr <- function (formula, data, weights, ..., subset,
     mu <- linkinv(eta)
     residuals <- NA_real_
     names(eta) <- names(mu) <- rownames(x)
-    
-#     llargs <- nlist(family = method, x, y, weights = wt, offset, 
-#                     beta = stanmat[,grep("^beta[[:digit:]]+$", colnames(stanmat)),drop = FALSE], 
-#                     zeta = stanmat[,grep("^zeta[[:digit:]]+$", colnames(stanmat)),drop=FALSE])
-#     log_lik <- do.call("pw_log_lik", llargs)
   }
   else {
     stanmat <- as.matrix(stanfit)
@@ -189,12 +184,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
     means <- rstan::get_posterior_mean(stanfit)
     residuals <- means[grep("^residuals", rownames(means)),ncol(means)]
     names(residuals) <- names(eta) <- names(mu) <- rownames(x)
-    
-#     llargs <- nlist(family = method, x, y, weights = wt, offset, 
-#                     beta = stanmat[,colnames(x),drop = FALSE], 
-#                     zeta = stanmat[,grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),drop=FALSE])
-#     log_lik <- do.call("pw_log_lik", llargs)
-    
+
     levs <- c(0.5, 0.8, 0.95, 0.99)
     qq <- (1 - levs) / 2
     probs <- sort(c(0.5, qq, 1 - qq))
