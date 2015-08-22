@@ -1,11 +1,15 @@
 library(rstanarm)
 library(loo)
+
 seed <- 1234
 set.seed(seed)
 
-# These tests assume that loo works properly when given a log-likelihood matrix.
-# So here we just check whether the results are identical to the matrix results
-# when we use a log-likelihood function instead.
+# These tests just check that the loo.stanreg method (which calls loo.function
+# method) results are identical to the loo.matrix results. Since for these tests 
+# the log-likelihood matrix is computed using the log-likelihood function, the 
+# only thing these tests really do is make sure that loo.stanreg and all the 
+# log-likelihood functions don't return any errors and whatnot (it does not check
+# that the results returned by loo are actually correct). 
 
 loo_with_fn <- function(fit) {
   loo(fit, cores = 1)
@@ -62,6 +66,3 @@ test_that("loo for stan_lm works", {
   fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), iter = 50, seed = seed)
   expect_identical_loo(fit_lm)
 })
-
-
-
