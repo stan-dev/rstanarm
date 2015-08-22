@@ -40,7 +40,7 @@ waic.stanreg <- function(x, ...) {
   stanmat <- as.matrix(x$stanfit)
   nms <- names(x)
   args$x <- if ("x" %in% nms) x$x else model.matrix(x)
-  args$y <- x$y
+  args$y <- if ("y" %in% nms) x$y else model.response(model.frame(x))
   args$offset <- x$offset
   args$weights <- x$weights
   if (is(args$family, "family")) {
@@ -63,11 +63,11 @@ waic.stanreg <- function(x, ...) {
                          # remaining arguments might be applicable
                          sigma = NULL, zeta = NULL, shape = NULL,
                          lambda = NULL, offset = NULL) {
-  eta <- linear_predictor(beta, x, offset)
+  draws <- nlist(beta)
   f <- family
+  draws$f <- f
   if (is(f, "family")) {
-    draws <- list(mu = f$linkinv(eta))
-    if (f$family != "binomial") data <- nlist(y)
+    if (f$family != "binomial") data <- data.frame(y, x)
     else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
@@ -78,13 +78,13 @@ waic.stanreg <- function(x, ...) {
           y <- y != levels(y)[1L]
         stopifnot(all(y %in% c(0, 1)))
       }
-      data <- nlist(y, trials)
+      data <- data.frame(y, trials, x)
     } 
   }
   else if (is.character(f)) {
     y <- as.integer(y)
-    data <- nlist(y, f, max_y = max(y))
-    draws <- nlist(eta)
+    data <- data.frame(y,x)
+    draws$max_y <- max(y)
   }
   else stop("'family' must be a family or a character string")
   
@@ -93,10 +93,11 @@ waic.stanreg <- function(x, ...) {
   if (!is.null(shape))  draws$shape <- shape
   if (!is.null(lambda)) draws$lambda <- lambda
   if (!all(weights == 1)) data$weights <- weights
-  nlist(data, draws, S = NROW(beta), N = NROW(y))
+  if (!is.null(offset)) data$offset <- offset
+  nlist(data, draws, S = NROW(beta), N = nrow(data))
 }
 
-# returns log-likelihoo function for loo() and waic()
+# returns log-likelihood function for loo() and waic()
 .llfun <- function(object) {
   f <- object$family
   if (is(f, "family")) get(paste0(".ll_", f$family, "_i"))
@@ -105,53 +106,71 @@ waic.stanreg <- function(x, ...) {
 }
 
 .ll_polr_i <- function(i, data, draws) {
-  f <- data$f
-  J <- data$max_y
-  y_i <- data$y[i]
+  eta <- linear_predictor(draws$beta, 
+                          data[, -which(colnames(data) == "y")], 
+                          draws$offset[i])
+  f <- draws$f
+  J <- draws$max_y
+  y_i <- data$y
   
   if (f == "logistic")    linkinv <- make.link("logit")$linkinv
   else if (f == "loglog") linkinv <- pgumbel
   else                    linkinv <- make.link(f)$linkinv
   
   val <- 
-    if (y_i == 1) log(linkinv(draws$zeta[,1] - draws$eta[,i]))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - draws$eta[,i]))
-    else log(linkinv(draws$zeta[,y_i] - draws$eta[,i]) - 
-             linkinv(draws$zeta[,y_i - 1L] - draws$eta[,i]))
+    if (y_i == 1) log(linkinv(draws$zeta[,1] - eta[,i]))
+    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta[,i]))
+    else log(linkinv(draws$zeta[,y_i] - eta[,i]) - 
+             linkinv(draws$zeta[,y_i - 1L] - eta[,i]))
   
-  if ("weights" %in% names(data)) val * data$weights[i]
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
 
 .ll_gaussian_i <- function(i, data, draws) {
-  val <- dnorm(data$y[i], mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
-  if ("weights" %in% names(data)) val * data$weights[i]
+  rmv <- c("y","weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  mu <- as.vector(draws$f$linkinv(linear_predictor(draws$beta, xdat, data$offset)))
+  val <- dnorm(data$y, mean = mu, sd = draws$sigma, log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
 .ll_binomial_i <- function(i, data, draws) {
-  val <- dbinom(data$y[i], size = data$trials[i], prob = draws$mu[,i], log = TRUE)
-  if ("weights" %in% names(data)) val * data$weights[i]
+  rmv <- c("y", "trials", "weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  p <- as.vector(draws$f$linkinv(linear_predictor(draws$beta, xdat, data$offset)))
+  val <- dbinom(data$y, size = data$trials, prob = p, log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
 .ll_poisson_i <- function(i, data, draws) {
-  val <- dpois(data$y[i], lambda = draws$mu[,i], log = TRUE)
-  if ("weights" %in% names(data)) val * data$weights[i]
+  rmv <- c("y", "weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  lambda <- as.vector(draws$f$linkinv(linear_predictor(draws$beta, xdat, data$offset)))
+  val <- dpois(data$y, lambda, log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
 .ll_neg_binomial_2_i <- function(i, data, draws) {
   stop("write the .ll_neg_binomial_2_i function")
 }
 .ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y[i], shape = draws$shape, 
-                rate = draws$shape / draws$mu[,i], log = TRUE)
-  if ("weights" %in% names(data)) val * data$weights[i]
+  rmv <- c("y", "weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  mu <- as.vector(draws$f$linkinv(linear_predictor(draws$beta, xdat, data$offset)))
+  val <- dgamma(data$y, shape = draws$shape, rate = draws$shape / mu, log = TRUE)
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
 .ll_inverse.gaussian_i <- function(i, data, draws) {
+  rmv <- c("y", "weights","offset")
+  xdat <- data[, -which(colnames(data) %in% rmv)]
+  mu <- as.vector(draws$f$linkinv(linear_predictor(draws$beta, xdat, data$offset)))
+  
   val <- 0.5 * log(draws$lambda / (2 * pi)) - 
          1.5 * log(data$y) -
-         0.5 * lambda * (data$y - draws$mu[,i])^2 / 
-                        (data$y * draws$mu[,i]^2)
-  if ("weights" %in% names(data)) val * data$weights[i]
+         0.5 * lambda * (data$y - mu)^2 / 
+                        (data$y * mu^2)
+  if ("weights" %in% names(data)) val * data$weights
   else val
 }
