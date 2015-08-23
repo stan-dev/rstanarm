@@ -16,7 +16,7 @@ loo_with_fn <- function(fit) {
 }
 loo_with_mat <- function(fit) {
   llargs <- .llargs(fit)
-  llfun <- .llfun(fit)
+  llfun <- .llfun(fit$family)
   llmat <- matrix(NA, nrow = llargs$S, ncol = llargs$N)
   for (i in 1:ncol(llmat)) {
     llmat[, i] <- llfun(i, llargs$data[i,,drop=FALSE], llargs$draws)
