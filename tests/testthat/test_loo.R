@@ -1,6 +1,6 @@
 library(rstanarm)
 library(loo)
-
+options(loo.cores = 1)
 seed <- 1234
 set.seed(seed)
 
@@ -12,7 +12,7 @@ set.seed(seed)
 # that the results returned by loo are actually correct). 
 
 loo_with_fn <- function(fit) {
-  loo(fit, cores = 1)
+  loo(fit)
 }
 loo_with_mat <- function(fit) {
   llargs <- .llargs(fit)
@@ -21,7 +21,7 @@ loo_with_mat <- function(fit) {
   for (i in 1:ncol(llmat)) {
     llmat[, i] <- llfun(i, llargs$data[i,,drop=FALSE], llargs$draws)
   }
-  loo(llmat, cores = 1)
+  loo(llmat)
 }
 expect_identical_loo <- function(fit) {
   expect_identical(loo_with_fn(fit), loo_with_mat(fit))

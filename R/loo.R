@@ -13,10 +13,10 @@
 #'   \code{\link[loo]{waic}}.
 #' 
 #' @examples 
-#' set.seed(42024)
-#' options(loo.cores = 1)
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200)
-#' fit2 <- stan_glm(mpg ~ ., data = mtcars, iter = 200)
+#' seed <- 42024
+#' set.seed(seed)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200, seed = seed)
+#' fit2 <- stan_glm(mpg ~ ., data = mtcars, iter = 200, seed = seed)
 #' loo1 <- loo(fit1)
 #' loo2 <- loo(fit2)
 #' loo::compare(loo1, loo2)
