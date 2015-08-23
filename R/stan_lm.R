@@ -109,21 +109,20 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mf$prior <- NULL
   
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
-  mt <- attr(modelframe, "terms")
-  
+  mt <- attr(model.frame(modelframe), "terms")
   Y <- modelframe$y
   X <- modelframe$x
   if (!singular.ok) X <- X[,!is.na(modelframe$coefficients),drop = FALSE]
   w <- modelframe$weights
   offset <- model.offset(mf)
-  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, method = "qr", singular.ok = TRUE,
+  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
                           prior = prior,  prior_PD = prior_PD, algorithm = algorithm, ...)
-  
+
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,
                prior.info = prior, algorithm = "sampling",
                call = call, terms = mt,
-               model = if (model) mf else NULL,
+               model = if (model) model.frame(modelframe) else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   fit <- stanreg(fit)
