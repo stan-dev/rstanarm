@@ -212,11 +212,33 @@ test_that("pw_gamma returns expected results", {
     eta <- rexp(N)
     shape <- rexp(1)
     linkinv <- Gamma(link = links[i])$linkinv
-    expect_true(all.equal(dgamma(1, shape = shape, rate = shape / linkinv(eta), log = TRUE),
-                          pw_gamma(rep(1,N), eta, shape, i)), info = links[i])
+    y <- rgamma(N, shape, rate = 1 / linkinv(eta))
+    expect_true(all.equal(dgamma(y, shape = shape, rate = shape / linkinv(eta), log = TRUE),
+                          pw_gamma(y, eta, shape, i)), info = links[i])
   }
 })
-
+test_that("pw_gamma implies an actual density", {
+  for (i in 1:length(links)) {
+    eta <- rexp(1)
+    shape <- rexp(1)
+    foo <- function(y) {
+      exp(pw_gamma(y, rep(eta, length(y)), shape, i))
+    }
+    expect_true(all.equal(1, integrate(foo, lower = 0, upper = Inf)$value, tol = 1e-5))    
+  }
+})
+test_that("GammaReg_log returns the expected results", {
+  for (i in 1:length(links)) {
+    eta <- rexp(N)
+    shape <- rexp(1)
+    linkinv <- Gamma(link = links[i])$linkinv
+    y <- rgamma(N, shape, rate = 1 / linkinv(eta))
+    expect_true(all.equal(sum(dgamma(y, shape = shape, 
+                                     rate = shape / linkinv(eta), log = TRUE)),
+                          GammaReg_log(y, eta, shape, i, sum(log(y)))), info = links[i])
+  }
+})
+  
 # Inverse Gaussian GLM
 links <- c(links, "1/mu^2")
 test_that("linkinv_inv_gaussian returns expected results", {
@@ -232,8 +254,31 @@ test_that("pw_inv_gaussian returns expected results", {
     eta <- rgamma(N, 2, 1)
     lambda <- rexp(1)
     linkinv <- inverse.gaussian(link = links[i])$linkinv
-    expect_true(all.equal(dinvGauss(1, linkinv(eta), lambda, log = TRUE),
-                          pw_inv_gaussian(rep(1,N), eta, lambda, i, 0, rep(1,N))), info = links[i])
+    y <- rinvGauss(N, linkinv(eta), lambda)
+    expect_true(all.equal(dinvGauss(y, linkinv(eta), lambda, log = TRUE),
+                          pw_inv_gaussian(y, eta, lambda, i, log(y), sqrt(y))), info = links[i])
+  }
+})
+test_that("pw_inv_gaussian implies an actual density", {
+  for (i in 1:length(links)) {
+    eta <- rgamma(1, 2, 1)
+    lambda <- rexp(1)
+    foo <- function(y) {
+      exp(pw_inv_gaussian(y, rep(eta, length(y)), lambda, i, log(y), sqrt(y)))
+    }
+    expect_true(all.equal(1, integrate(foo, lower = 0, upper = Inf)$value, tol = 1e-5))    
+  }
+})
+test_that("inv_gaussian returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- rgamma(N, 2, 1)
+    lambda <- rexp(1)
+    linkinv <- inverse.gaussian(link = links[i])$linkinv
+    y <- rinvGauss(N, linkinv(eta), lambda)
+    expect_true(all.equal(sum(dinvGauss(y, linkinv(eta), lambda, log = TRUE)),
+                          inv_gaussian_log(y, linkinv_inv_gaussian(eta,i), 
+                                           lambda, sum(log(y)), sqrt(y))), 
+                info = links[i])
   }
 })
 

@@ -76,38 +76,6 @@ functions {
   }
 
   /** 
-   * Pointwise (pw) log-likelihood vector
-   *
-   * @param y The integer array corresponding to the outcome variable.
-   * @param link An integer indicating the link function
-   * @return A vector
-   */
-  vector pw_gamma(vector y, vector eta, real shape, int link) {
-    vector[rows(eta)] ll;
-    real rate;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 3) { # link = inverse
-      for (n in 1:rows(eta)) {
-        rate <- shape * eta[n];
-        ll[n] <- gamma_log(y[n], shape, rate);
-      }
-    }
-    else if (link == 2) { # link = log
-      for (n in 1:rows(eta)) {
-        rate <- shape / exp(eta[n]);
-        ll[n] <- gamma_log(y[n], shape, rate);
-      }
-    }
-    else { # link = identity
-      for (n in 1:rows(eta)) {
-        rate <- shape / eta[n];
-        ll[n] <- gamma_log(y[n], shape, rate);
-      }
-    }
-    return ll;
-  }
-
-  /** 
    * Divide a scalar by a vector
    *
    * @param x The scalar in the numerator
@@ -118,6 +86,49 @@ functions {
     vector[rows(y)] ret;
     for (n in 1:rows(y)) ret[n] <- x / y[n];
     return ret;
+  }
+
+  real GammaReg_log(vector y, vector eta, real shape, 
+                    int link, real sum_log_y) {
+    real ret;
+    if (link < 1 || link > 3) reject("Invalid link");
+    ret <- rows(y) * (shape * log(shape) - lgamma(shape)) +
+           (shape - 1) * sum_log_y;
+    if (link == 2)      # link is log
+      ret <- ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
+    else if (link == 1) # link is identity
+      ret <- ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
+    else                # link is inverse
+      ret <- ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+    return ret;
+  }
+
+  /** 
+   * Pointwise (pw) log-likelihood vector
+   *
+   * @param y The integer array corresponding to the outcome variable.
+   * @param link An integer indicating the link function
+   * @return A vector
+   */
+  vector pw_gamma(vector y, vector eta, real shape, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 3) { # link = inverse
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape * eta[n]);
+      }
+    }
+    else if (link == 2) { # link = log
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape / exp(eta[n]));
+      }
+    }
+    else { # link = identity
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape / eta[n]);
+      }
+    }
+    return ll;
   }
 
   /** 
@@ -140,18 +151,22 @@ functions {
    * Pointwise (pw) log-likelihood vector
    *
    * @param y The integer array corresponding to the outcome variable.
+   * @param eta The linear predictors
+   * @param lamba A positive scalar nuisance parameter
    * @param link An integer indicating the link function
+   * @param log_y A precalculated vector of the log of y
+   * @param sqrt_y A precalculated vector of the square root of y
    * @return A vector of log-likelihoods
    */
   vector pw_inv_gaussian(vector y, vector eta, real lambda, 
-                         int link, real sum_log_y, vector sqrt_y) {
+                         int link, vector log_y, vector sqrt_y) {
     vector[rows(y)] ll;
     vector[rows(y)] mu;
     if (link < 1 || link > 4) reject("Invalid link");
     mu <- linkinv_inv_gaussian(eta, link);
     for (n in 1:rows(y))
       ll[n] <- -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
-    ll <- ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * sum_log_y;
+    ll <- ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * log_y;
     return ll;
   }
 
@@ -383,6 +398,7 @@ transformed data {
   real<lower=0> delta[len_concentration];
   int<lower=1> pos[2];
   vector[N * (family == 3)] sqrt_y;
+  vector[N * (family == 3)] log_y;
   real sum_log_y;
   if      (prior_dist <  2) horseshoe <- 0;
   else if (prior_dist == 3) horseshoe <- 2;
@@ -414,9 +430,13 @@ transformed data {
       len_z_T <- len_z_T + p[i] - 1;
     }
   }
-  if (family == 3) {
+  
+  if (family == 1) sum_log_y <- not_a_number();
+  else if (family == 2) sum_log_y <- sum(log(y));
+  else {
     for (n in 1:N) sqrt_y[n] <- sqrt(y[n]);
-    sum_log_y <- sum(log(y));
+    log_y <- log(y);
+    sum_log_y <- sum(log_y);
   }
 }
 parameters {
@@ -498,26 +518,24 @@ model {
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
-    vector[N] mu;
     if (family == 1) {
-      mu <- linkinv_gauss(eta, link);
-      if (link == 2) y ~ lognormal(mu, dispersion);
-      else y ~ normal(mu, dispersion);
+      if (link == 1)      y ~ normal(eta, dispersion);
+      else if (link == 2) y ~ lognormal(eta, dispersion);
+      else y ~ normal(divide_real_by_vector(1, eta), dispersion);
     }
     else if (family == 2) {
-      mu <- linkinv_gamma(eta, link);
-      y ~ gamma(dispersion, divide_real_by_vector(dispersion, mu));
+      y ~ GammaReg(eta, shape[1], link, sum_log_y);
     }
     else {
-      mu <- linkinv_inv_gaussian(eta, link);
-      y ~ inv_gaussian(mu, dispersion, sum_log_y, sqrt_y);
+      y ~ inv_gaussian(linkinv_inv_gaussian(eta, link), 
+                       dispersion, sum_log_y, sqrt_y);
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands <- pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands <- pw_gamma(y, eta, dispersion, link);
-    else summands <- pw_inv_gaussian(y, eta, dispersion, link, sum_log_y, sqrt_y);
+    else summands <- pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
     increment_log_prob(dot_product(weights, summands));
   }
   
