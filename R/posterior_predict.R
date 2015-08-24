@@ -12,12 +12,15 @@
 #' @return A matrix of draws from the posterior predictive distribution.
 #'   
 #' @examples 
-#' fit <- stan_glm(mpg ~ wt, data = mtcars)
-#' ppd <- posterior_predict(fit) 
-#' mean_wt <- mean(mtcars$wt)
-#' hist(posterior_predict(fit, newdata = data.frame(wt = mean_wt)))
-#'  
-#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
+#' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 200)
+#' yrep <- posterior_predict(fit)
+#' hist(yrep, col = "skyblue", yaxt = "n", ylab = "")
+#' abline(v = mean(mtcars$mpg), col = "maroon", lwd = 5) 
+#' 
+#' wt_vals <- with(mtcars, c(min(wt), median(wt), max(wt)))
+#' ppd <- posterior_predict(fit, newdata = data.frame(wt = wt_vals))
+#' 
+#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars, iter = 200)
 #' ppd <- posterior_predict(fit, fun = exp)
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
