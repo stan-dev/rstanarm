@@ -39,8 +39,8 @@ waic.stanreg <- function(x, ...) {
   args$family <- x$family
   stanmat <- as.matrix(x$stanfit)
   nms <- names(x)
-  args$x <- if ("x" %in% nms) x$x else model.matrix(x)
-  args$y <- if ("y" %in% nms) x$y else model.response(model.frame(x))
+  args$x <- if ("x" %in% nms) x$x else model.matrix(x$formula, data = x$data)
+  args$y <- if ("y" %in% nms) x$y else model.response(model.frame(x$formula, x$data))
   args$offset <- x$offset
   args$weights <- if (!is.null(x$weights)) x$weights else 1
   if (is(args$family, "family")) {
