@@ -109,7 +109,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mf$prior <- NULL
   
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
-  mt <- attr(model.frame(modelframe), "terms")
+  mt <- modelframe$terms
   Y <- modelframe$y
   X <- modelframe$x
   if (!singular.ok) X <- X[,!is.na(modelframe$coefficients),drop = FALSE]
