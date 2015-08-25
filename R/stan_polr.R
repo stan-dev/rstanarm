@@ -44,31 +44,27 @@ class(loglog) <- "link-glm"
 #'
 #' @export
 #' 
-#' @template return-stanreg-object
 #' @templateVar fun stan_polr
-#' @template return-stanfit-object
 #' @templateVar fitfun stan_polr.fit
-#' @template see-also
 #' @templateVar pkg MASS
 #' @templateVar pkgfun polr
+#' @templateVar rareargs weights,na.action,contrasts,model
+#' @template return-stanfit-object
+#' @template return-stanreg-object
+#' @template see-also
+#' @template args-formula-data-subset
+#' @template args-same-as-rarely
+#' @template args-prior_PD
+#' @template args-algorithm
+#' @template args-dots
 #'
-#'
-#' @param formula,data,weights,subset,na.action,contrasts,model,method 
-#'   Same as in \code{\link[MASS]{polr}}.
-#' @param ... Further arguments passed to the function in the \pkg{rstan} 
-#'   package named by \code{algorithm} (e.g., for the case of
-#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
+#' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit'.
+#'   See \code{\link[MASS]{polr}} for more details.
 #' @param prior Prior for parameters. Can be \code{NULL} to omit a prior
 #'   and see \code{\link{priors}} otherwise.
 #' @param prior_counts A numeric vector that must be positive but need not
 #'   contain integers representing the prior count in each outcome. 
 #'   Can be \code{NULL} to use a uniform Dirichlet prior.
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome.
-#' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
-#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood 

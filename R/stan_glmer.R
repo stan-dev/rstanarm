@@ -7,35 +7,22 @@
 #' 
 #' @export
 #' 
-#' @template return-stanreg-object
 #' @templateVar fun stan_glmer, stan_lmer
+#' @templateVar pkg lme4
+#' @templateVar pkgfun glmer
+#' @template return-stanreg-object
 #' @template see-also
-#' @templateVar pkg MASS
-#' @templateVar pkgfun polr
+#' @template args-priors
+#' @template args-prior_PD
+#' @template args-algorithm
+#' @template args-dots
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
-#' @param subset,weights,na.action,offset,contrasts Same as 
-#'   \code{\link[stats]{glm}}.
-#' @param ... Further arguments passed to the function in the \pkg{rstan} 
-#'   package named by \code{algorithm} (e.g., for the case of
-#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
-#' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
-#'   and see \code{\link{priors}} otherwise.
-#' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit
-#'   a prior and see \code{\link{priors}} otherwise.
-#'   Note: The prior distribution for the intercept is set so it applies to
-#'   the value when all common predictors are centered.
-#' @param prior.options Additional options related to prior distributions. 
-#'   Can be \code{NULL} to omit a prior on the dispersion and see
-#'   \code{\link{priors}} otherwise.
+#' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
+#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely
+#'   specified.
 #' @param prior.for.covariance Cannot be \code{NULL}; see 
 #'   \code{\link{decov}} for more information about the default arguments.   
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome.
-#' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
-#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
@@ -45,6 +32,7 @@
 #'   of the generalized linear model and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
+#'   
 #' @examples
 #' # algorithm = "meanfield" is only for time constraints on examples
 #' stan_glmer(mpg ~ . + (1|gear), data = mtcars, family = gaussian(),

@@ -23,25 +23,22 @@
 #' 
 #' @export
 #' 
-#' @template return-stanreg-object
 #' @templateVar fun stan_lm, stan_aov
-#' @template return-stanfit-object
 #' @templateVar fitfun stan_lm.fit or stan_lm.wfit
-#' @template see-also
 #' @templateVar pkg stats
-#' @templateVar pkgfun aov
-#' 
+#' @templateVar pkgfun lm
+#' @templateVar rareargs model,offset,weights
+#' @templateVar rareargs2 na.action,singular.ok,contrasts
+#' @template return-stanreg-object
+#' @template return-stanfit-object
+#' @template args-formula-data-subset
+#' @template args-same-as-rarely
+#' @template args-same-as-rarely-2
+#' @template args-x-y
+#' @template args-dots
+#' @template args-algorithm
 #'
-#' @param formula,data,subset Same as in \code{\link[stats]{lm}}.
-#' @param weights,na.action,model,singular.ok,contrasts,offset 
-#'   Also the same as in \code{\link[stats]{lm}} but rarely specified.
-#' @param x,y In \code{stan_lm}, logical scalars indicating whether to
-#'   return the design matrix and response vector. In \code{stan_lm.fit},
-#'   a design matrix and response vector.
 #' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
-#' @param ... Further arguments passed to the function in the \pkg{rstan} 
-#'   package named by \code{algorithm} (e.g., for the case of
-#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
 #' @param prior Must be a call to \code{\link{R2}} with its 
 #'   \code{location} argument specified.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
@@ -49,9 +46,6 @@
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
 #'   merely proportional to the actual distribution because of an improper
 #'   prior on a scale parameter.
-#' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
-#'   \code{"fullrank"} indicating the estimation approach to use.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 

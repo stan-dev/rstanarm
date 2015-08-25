@@ -21,39 +21,27 @@
 #'
 #' @export
 #' 
-#' @template return-stanreg-object
 #' @templateVar fun stan_glm
-#' @template return-stanfit-object
 #' @templateVar fitfun stan_glm.fit
-#' @template see-also
 #' @templateVar pkg stats
 #' @templateVar pkgfun glm
+#' @templateVar sameargs model,offset,weights 
+#' @templateVar rareargs na.action,contrasts
+#' @template return-stanfit-object
+#' @template return-stanreg-object
+#' @template see-also
+#' @template args-formula-data-subset
+#' @template args-same-as
+#' @template args-same-as-rarely
+#' @template args-x-y
+#' @template args-dots
+#' @template args-priors
+#' @template args-prior_PD
+#' @template args-algorithm
 #' 
 #'
-#' @param formula,family,data,subset Same as \code{\link[stats]{glm}}.
-#' @param x,y In \code{stan_glm}, logical scalars indicating whether to
-#'   return the design matrix and response vector. In \code{stan_glm.fit},
-#'   a design matrix and response vector.   
-#' @param model,na.action,weights,offset,contrasts Same as 
-#'   \code{\link[stats]{glm}}.
-#' @param ... Further arguments passed to the function in the \pkg{rstan} 
-#'   package named by \code{algorithm} (e.g., for the case of
-#'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
-#' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
-#'   and see \code{\link{priors}} otherwise.
-#' @param prior.for.intercept Prior for intercept. Can be \code{NULL} to omit
-#'   a prior and see \code{\link{priors}} otherwise.
-#'   Note: The prior distribution for the intercept is set so it applies to
-#'   the value when all predictors are centered.
-#' @param prior.options Additional options related to prior distributions. 
-#'   Can be \code{NULL} to omit a prior on the dispersion and see
-#'   \code{\link{priors}} otherwise.
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome.
-#' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
-#'   \code{"fullrank"} indicating the estimation approach to use.
+#' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
+#'   are also possible using the \code{\link{neg_binomial_2}} family object.
 #' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
