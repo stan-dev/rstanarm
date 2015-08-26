@@ -103,6 +103,7 @@ waic.stanreg <- function(x, ...) {
     if (f$family == "gaussian") draws$sigma <- stanmat[, "sigma"]
     if (f$family == "Gamma") draws$shape <- stanmat[, "shape"]
     if (f$family == "inverse.gaussian") draws$lambda <- stanmat[, "lambda"]
+    if (f$family == "neg_binomial_2") draws$size <- stanmat[,"overdispersion"]
   }
   else if (is.character(f)) {
     stopifnot(is(object, "polr"))
@@ -147,7 +148,8 @@ waic.stanreg <- function(x, ...) {
   .weighted(val, data$weights)
 }
 .ll_neg_binomial_2_i <- function(i, data, draws) {
-  stop("write the .ll_neg_binomial_2_i function")
+  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
+  .weighted(val, data$weights)
 }
 .ll_Gamma_i <- function(i, data, draws) {
   val <- dgamma(data$y, shape = draws$shape, 
