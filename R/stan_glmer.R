@@ -107,7 +107,11 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
   mcout <- match.call(expand.dots = TRUE)
 
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, group$Z), 
+  Z <- t(as.matrix(group$Zt))
+  if (algorithm == "optimizing") 
+    colnames(Z) <- grep("^b\\[", names(stanfit$par), value = TRUE)
+  else colnames(Z) <- grep("^b\\[", names(stanfit), value = TRUE)
+  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
                terms = NULL, model = NULL, na.action, contrasts, algorithm)
   out <- stanreg(fit)

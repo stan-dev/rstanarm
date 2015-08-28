@@ -174,11 +174,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
   if (length(group) > 0) {
-    if (!is_gaussian) stop("only Gaussian models are currently supported with group-specific terms")
+    if (!is_continuous) stop("only continuous models are currently supported with group-specific terms")
     
-#     Zind <- as.data.frame(summary(t(group$Zt)))
-#     Zind$x <- as.integer(Zind$x)
-#     Zind <- as.matrix(Zind)
     Z <- t(as.matrix(group$Zt))
     
     p <- sapply(group$cnms, FUN = length)
@@ -284,30 +281,29 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
     out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE)
-    new_names <- c(if (has_intercept) "gamma", colnames(xtemp), 
-                   if (is_gaussian) "sigma_unscaled", 
-                   if (is_nb) "overdispersion",
-                   if (length(group) > 0) c(paste0("u[", b_names, "]"),
-                                            paste0("z_T[", 1:(sum(p[p > 2] - 1)), "]"),
-                                            paste0("rho[", 1:standata$len_rho, "]"),
-                                            paste0("zeta[", 1:standata$len_zeta, "]"),
-                                            paste0("tau[", 1:length(group), "]")),
-                   if (length(group) > 0) c(paste0("b[", b_names, "]"),
-                                            paste0("var[", g_names, "]")),
-                   if (is_gaussian) "sigma", if (is_gamma) "shape",
-                   if (has_intercept) "(Intercept)", 
-                   "mean_PPD", "log-likelihood")
     k <- ncol(out$hessian)
+    rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
+    new_names <- names(out$par)
+    new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
+    new_names[new_names == "alpha[1]"] <- "(Intercept)"
+    new_names[new_names == "dispersion"] <- if (is_gaussian) "sigma" else
+                                            if (is_gamma) "scale" else
+                                            if (is_ig) "lambda" else
+                                            if (is_nb) "overdispersion" else NA
+    if (length(group) > 0) {
+      new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
+      new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
+    }
     names(out$par) <- new_names
-    colnames(out$hessian) <- rownames(out$hessian) <- new_names[1:k]
-    out$cov.scaled <- qr.solve(-out$hessian, diag(1, k , k))
+    out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
     colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
     out$stanfit <- suppressMessages(rstan::sampling(stanfit, data = standata, chains = 0))
     return(out)
   }
   else {
     if (algorithm == "sampling") 
-      stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, ...)
+      stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
+                                 show_messages = FALSE, ...)
     else
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
                            algorithm = algorithm, ...)
