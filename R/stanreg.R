@@ -28,14 +28,11 @@ stanreg <- function(object) {
                           t(apply(stanmat, 2, quantile, 
                                   probs = c(0.025, .975))))
     covmat <- cov(stanmat)
-    coefs <- stanfit$par[colnames(x)]
-#     coefs <- stanfit$par[grep("^gamma|^sigma|^overdispersion|^mean_PPD",
-#                                names(stanfit$par), invert = TRUE)]
-#     if ("(Intercept)" %in% names(coefs)) coefs <- c(tail(coefs, 1), head(coefs, -1))
+    coefs <- apply(stanmat[,colnames(x),drop=FALSE], 2, median)
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
-    coefs <- stan_summary[1:nvars, 1]
+    coefs <- stan_summary[1:nvars, "50%"]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
   }    
