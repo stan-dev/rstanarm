@@ -18,7 +18,7 @@
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
-#'   \code{location} parameter is interpred in the \code{LKJ} case. If
+#'   \code{location} parameter is interpreted in the \code{LKJ} case. If
 #'   \code{'log'}, then \code{location} is interpreted as the expected
 #'   logarithm of the \eqn{R^2} under a Beta distribution. Otherwise,
 #'   \code{location} is interpreted as the \code{"what"} of the \eqn{R^2}
@@ -65,6 +65,26 @@
 #'   \code{horseshoe} and \code{horseshoe_plus} is 3, which makes the 
 #'   variance of the Student t distribution finite and produces some shrinkage
 #'   on the coefficients, even for strong predictors.
+#' }
+#' \subsection{Dirichlet family}{
+#'   The Dirichlet distribution is a multivariate generalization of the beta
+#'   distribution. It is perhaps the easiest prior distribution to specify
+#'   because the concentration parameters can be interpreted as prior counts
+#'   (although they need not be integers) of a multinomial random variable.
+#'   
+#'   The Dirichlet distribution is used for an implicit prior on the cutpoints
+#'   in \code{\link{stan_polr}}. More specifically, the Dirichlet prior 
+#'   pertains to the prior probability of observing each category of the 
+#'   ordinal outcome when the predictors are at their sample means. Given 
+#'   these prior probabilities, it is straightforward to add them to form
+#'   cumulative probabilities and then use an inverse CDF transformation
+#'   of the cumulative probabilities to define the cutpoints.
+#'   
+#'   If a scalar is passed to the \code{concentration} argument of the
+#'   \code{dirichlet} function, then it is replicated to the appropriate
+#'   length and the Dirichlet distribution is symmetric. If all the 
+#'   concentration parameters are \eqn{1}, then the Dirichlet distribution
+#'   is jointly uniform.
 #' }
 #' \subsection{Covariance matrices}{
 #'   Covariance matrices are decomposed into correlation matrices and 
@@ -190,18 +210,25 @@ cauchy <- function(location = 0, scale = NULL) {
 #' @rdname priors
 #' @param shape Shape parameter for an LKJ prior on the correlation matrix 
 #'  in the \code{decov} prior.
-#' @param concentration Concentration parameter for the symmetric Dirichlet 
-#'  distribution in the \code{decov} prior.
+#' @param concentration Concentration parameter for a Dirichlet 
+#'  distribution, such as that used by the \code{decov} prior.
 #' @param gamma_shape Shape parameter for a gamma prior on the scale 
 #'   parameter in the \code{dcov} prior.
 
 #' @export
 decov <- function(shape = 1, concentration = 1, gamma_shape = 1, scale = 1) {
-  if (any(shape <= 0)) stop("'shape' parameter must be positive")
-  if (any(concentration <= 0)) stop("'concentration' parameter must be positive")
-  if (any(gamma_shape <= 0)) stop("'gamma_shape' parameter must be positive")
-  if (any(scale <= 0)) stop("'scale' parameter must be positive")
-  nlist(shape, concentration, gamma_shape, scale)
+  validate_parameter_value(shape)
+  validate_parameter_value(concentration)
+  validate_parameter_value(gamma_shape)
+  validate_parameter_value(scale)
+  nlist(dist = "decov", shape, concentration, gamma_shape, scale)
+}
+
+#' @rdname priors
+#' @export
+dirichlet <- function(concentration = 1) {
+  validate_parameter_value(concentration)
+  nlist(dist = "dirichlet", concentration)
 }
 
 #' @rdname priors
