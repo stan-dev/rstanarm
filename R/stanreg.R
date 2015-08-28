@@ -16,8 +16,9 @@ stanreg <- function(object) {
   levs <- c(0.5, 0.8, 0.95, 0.99)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
-  if (opt) { 
-    L <- t(chol(stanfit$cov.scaled))
+  if (opt) {
+    ev <- eigen(stanfit$cov.scaled, symmetric = TRUE, only.values = FALSE)
+    L <- sweep(ev$vectors, 2, sqrt(pmax(0, ev$values)), FUN = "*")
     k <- nrow(L)
     unconstrained <- stanfit$par[1:k] + L %*% matrix(rnorm(4000 * k), k)
     stanmat <- t(apply(unconstrained, 2, FUN = function(u)
@@ -27,9 +28,10 @@ stanreg <- function(object) {
                           t(apply(stanmat, 2, quantile, 
                                   probs = c(0.025, .975))))
     covmat <- cov(stanmat)
-    coefs <- stanfit$par[grep("^gamma|^sigma|^overdispersion|^mean_PPD",
-                              names(stanfit$par), invert = TRUE)]
-    if ("(Intercept)" %in% names(coefs)) coefs <- c(tail(coefs, 1), head(coefs, -1))
+    coefs <- stanfit$par[colnames(x)]
+#     coefs <- stanfit$par[grep("^gamma|^sigma|^overdispersion|^mean_PPD",
+#                                names(stanfit$par), invert = TRUE)]
+#     if ("(Intercept)" %in% names(coefs)) coefs <- c(tail(coefs, 1), head(coefs, -1))
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary

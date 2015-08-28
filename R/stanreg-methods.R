@@ -181,8 +181,10 @@ fixef.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  sel <- grep("^b\\[", object$stanfit@sim$fnames_oi)
-  ans <- object$stan_summary[sel, "mean"]
+  if (object$algorithm == "optimizing")
+    sel <- grep("^b\\[", rownames(object$stan_summary))
+  else sel <- grep("^b\\[", object$stanfit@sim$fnames_oi)
+  ans <- object$stan_summary[sel, 1]
   fl <- .flist(object)
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
