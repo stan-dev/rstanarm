@@ -29,6 +29,7 @@ stanreg <- function(object) {
                                   probs = c(0.025, .975))))
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[,colnames(x),drop=FALSE], 2, median)
+    ses <- apply(stanmat[,colnames(x),drop=FALSE], 2, mad)
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
@@ -50,12 +51,13 @@ stanreg <- function(object) {
     stanmat <- as.matrix(stanfit)
     covmat <- cov(stanmat[,1:nvars,drop=FALSE])
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
+    ses <- apply(stanmat[,1:nvars,drop=FALSE], 2, mad)
   }
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
   out <- list(
-    coefficients = coefs, fitted.values = mu, linear.predictors = eta,
+    coefficients = coefs, ses = ses, fitted.values = mu, linear.predictors = eta,
     residuals = residuals, df.residual = df.residual, covmat = covmat,
     y = y, x = x, model = object$model, data = object$data, rank = rank,
     offset = offset, weights = weights, prior.weights = weights, 

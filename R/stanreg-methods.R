@@ -50,15 +50,12 @@ fitted.stanreg <- function(object, ...)  {
 }
 
 # standard errors
-se <- function(object, parm) UseMethod("se")
+se <- function(object) UseMethod("se")
 
 #' @rdname stanreg-methods
 #' @export
-se.stanreg <- function(object, parm) {
-  pnms <- names(coef(object))
-  if (missing(parm)) parm <- pnms
-  else if (is.numeric(parm)) parm <- pnms[parm]
-  object$stan_summary[parm, "sd"]
+se.stanreg <- function(object) {
+  object$ses
 }
 
 # Compute pointwise log-likelihood matrix
