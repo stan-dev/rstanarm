@@ -36,10 +36,11 @@ vcov.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
-confint.stanreg <- function (object, parm, level = 0.95, ...) {
-  # just a placeholder. we should replace this with a confint method that
-  # returns posterior quantiles probably
-  confint.default(object, parm, level, ...)
+confint.stanreg <- function (object, parm = NULL, level = 0.95, ...) {
+  mat <- as.matrix(object$stanfit)
+  if (!is.null(parm)) mat <- mat[,parm,drop=FALSE]
+  alpha <- (1 - level) / 2
+  t(apply(mat, 2, FUN = quantile, probs = c(alpha, 1 - alpha)))
 }
 
 
