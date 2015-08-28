@@ -39,8 +39,8 @@ class(loglog) <- "link-glm"
 
 #' Fitting ordinal regression models via Stan
 #'
-#' Full Bayesian inference or optimization for ordinal regression models with
-#' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
+#' Full Bayesian inference or optimization for ordinal (or binary) 
+#' regression models
 #'
 #' @export
 #' 
@@ -54,7 +54,8 @@ class(loglog) <- "link-glm"
 #'
 #'
 #' @param formula,data,weights,subset,na.action,contrasts,model,method 
-#'   Same as in \code{\link[MASS]{polr}}.
+#'   Same as in \code{\link[MASS]{polr}} except that the outcome can
+#'   also be binary.
 #' @param ... Further arguments passed to the function in the \pkg{rstan} 
 #'   package named by \code{algorithm} (e.g., for the case of
 #'   \code{\link[rstan]{sampling}}, \code{iter}, \code{chains}, etc.).
@@ -76,6 +77,14 @@ class(loglog) <- "link-glm"
 #'   default) performed via Markov Chain Monte Carlo. The \code{stan_polr} 
 #'   function calls the workhorse \code{stan_polr.fit} function, but it is 
 #'   possible to call the latter directly.
+#'   
+#'   As in \code{\link{stan_lm}}, it is necessary to specify the prior 
+#'   location of \eqn{R^2}. In this case, the \eqn{R^2} pertains to the
+#'   proportion of variance in the latent variable (which is discretized
+#'   by the cutpoints) attributable to the predictors in the model. Prior
+#'   beliefs about the cutpoints are governed by prior beliefs about the
+#'   outcome when the predictors are at their sample means. Both of these
+#'   are explained in the help page on \code{\link{priors}}.
 #' 
 #' @examples 
 #' # algorithm = "meanfield" is only for time constraints on examples
@@ -88,7 +97,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
                        method = c("logistic", "probit", "loglog", "cloglog", 
                                   "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
-                       prior_counts = NULL, prior_PD = FALSE, 
+                       prior_counts = dirichlet(1), prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing", 
                                      "meanfield", "fullrank")) {
   

@@ -24,7 +24,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
                            method = c("logistic", "probit", "loglog", 
                                       "cloglog", "cauchit"), ...,
                            prior = R2(stop("'location' must be specified")), 
-                           prior_counts = NULL, prior_PD = FALSE, 
+                           prior_counts = dirichlet(1), prior_PD = FALSE, 
                            algorithm = c("sampling", "optimizing", 
                                          "meanfield", "fullrank")) {
   algorithm <- match.arg(algorithm)
@@ -53,6 +53,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   }
   
   if (length(prior_counts) == 0) prior_counts <- rep(1,J)
+  else prior_counts <- maybe_broadcast(prior_counts$concentration, J)
   
   N <- nrow(X)
   K <- ncol(X)
@@ -97,8 +98,8 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     else       pars <- c("zeta", "beta", "mean_PPD")
     standata$do_residuals <- J > 2
     if (algorithm == "sampling") 
-      stanfit <- suppressMessages(rstan::sampling(stanfit, pars = pars, 
-                                                  data = standata, init = start, ...))
+      stanfit <- suppressMessages(rstan::sampling(stanfit, pars = pars, data = standata, 
+                                                  init = start, show_messages = FALSE, ...))
     else 
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
     if (J > 2)
