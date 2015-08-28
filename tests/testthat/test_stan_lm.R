@@ -4,9 +4,9 @@
 library(rstanarm)
 set.seed(123)
 
-threshold <- 0.3
+threshold <- 0.31
 
-f1 <- function(x) cbind(coef(x), se(x))
+f1 <- function(x) cbind(coef(x), sqrt(diag(vcov(x))))
 f2 <- function(x) summary(x)$coefficients[,1:2]
 
 context("stan_lm")

@@ -2,23 +2,20 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
-set.seed(123)
 
-threshold <- 0.1
-
-f1 <- function(x) cbind(coef(x), se(x))
-f2 <- function(x) summary(x)$coefficients[,1:2]
-
-
-context("stan_glm (gaussian, log link)")
-test_that("gaussian(link = 'log') returns expected result for trees example", {
+context("stan_glm (gaussian)")
+test_that("gaussian returns expected result for trees example", {
   # example using trees dataset
-  fit1 <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
-                   family = gaussian(link = "log"), iter = 400, seed = 123)
-  val1 <- f1(fit1)
-  ans <- f2(lm(log(Volume) ~ log(Girth) + log(Height),data = trees))
-  diff1 <- abs(val1 - ans)
-  expect_true(all(diff1 < threshold))
+  links <- c("identity", "log", "inverse")
+  for (i in 1:length(links)) {
+    fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
+                    family = gaussian(link = links[i]), algorithm = "optimizing",
+                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    tol_rel_grad = 1e-16)
+    ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
+               family = gaussian(link = links[i]))
+    expect_equal(coef(fit), coef(ans), tol = 2e-5)
+  }
 })
 
 
@@ -28,12 +25,29 @@ test_that("stan_glm returns expected result for glm poisson example", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
-  fit <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
-                  iter = 400, seed = 123)
-  val <- f1(fit)
-  ans <- f2(glm(counts ~ outcome + treatment, family = poisson()))
-  diff <- abs(val - ans)
-  expect_true(all(diff < threshold))
+  links <- c("log", "identity", "sqrt")
+  for (i in 1:length(links)) {
+    fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
+                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    algorithm = "optimizing", tol_rel_grad = 1e-16)
+    ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]))
+    expect_equal(coef(fit), coef(ans), tol = 2e-4)
+  }
+})
+
+context("stan_glm (negative binomial)")
+test_that("stan_glm returns expected result for glm negative binomial example", {
+  # example from MASS::glm.nb
+  links <- c("log", "identity", "sqrt")
+  require(MASS)
+  for (i in 1:length(links)) {
+    fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
+                    family = neg_binomial_2(links[i]),
+                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    algorithm = "optimizing", tol_rel_grad = 1e-16)
+    ans <- glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, link = links[i])
+    expect_equal(coef(fit), coef(ans), tol = 0.0011)
+  }
 })
 
 context("stan_glm (gaussian)")
@@ -41,11 +55,10 @@ test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
                   family = gaussian(link = "identity"), 
-                  iter = 400, seed = 123)
-  val <- f1(fit)
-  ans <- f2(glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity")))
-  diff <- abs(val - ans)
-  expect_true(all(diff < threshold))
+                  prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                  tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+  ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
+  expect_equal(coef(fit), coef(ans), tol = 1e-6)
 })
 
 context("stan_glm (bernoulli)")
