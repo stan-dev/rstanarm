@@ -154,8 +154,7 @@ transformed data {
 }
 parameters {
   vector[K] z_beta;
-  real<upper=make_upper_bernoulli(link, X0, X1, prior_mean + prior_scale .* z_beta, 
-       has_offset, offset0, offset1)> gamma[has_intercept];
+  real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
 }
 transformed parameters {
   vector[K] beta;
@@ -173,13 +172,21 @@ model {
     eta0 <- rep_vector(0.0, N[1]);
     eta1 <- rep_vector(0.0, N[2]);
   }
-  if (has_intercept == 1) {
-    eta0 <- gamma[1] + eta0;
-    eta1 <- gamma[1] + eta1;
-  }
   if (has_offset == 1) {
     eta0 <- eta0 + offset0;
     eta1 <- eta1 + offset1;
+  }
+  if (has_intercept == 1) {
+    if (link != 4) {
+      eta0 <- gamma[1] + eta0;
+      eta1 <- gamma[1] + eta1;
+    }
+    else {
+      real shift;
+      shift <- fmax(max(eta0), max(eta1));
+      eta0 <- gamma[1] + eta0 - shift + 1;
+      eta1 <- gamma[1] + eta1 - shift + 1;
+    }
   }
   
   // Log-likelihood 
@@ -201,25 +208,12 @@ model {
    
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (link != 4) {
-      if (prior_dist_for_intercept == 1) # normal
-        gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                          prior_scale_for_intercept);
-      /* else prior_dist = 0 and nothing is added */
-    }
-    else {
-      real maximum;
-      maximum <- fmax(max(eta0), max(eta1));
-      if (prior_dist_for_intercept == 1) # normal
-        gamma[1] ~ normal(prior_mean_for_intercept, 
-                          prior_scale_for_intercept) T[,maximum];
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                             prior_scale_for_intercept) T[,maximum];
-      /* else prior_dist = 0 and nothing is added */
-    }
+    if (prior_dist_for_intercept == 1) # normal
+      gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    else if (prior_dist_for_intercept == 2) # student_t
+      gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                        prior_scale_for_intercept);
+    /* else prior_dist = 0 and nothing is added */
   }
 }
 generated quantities {
@@ -242,13 +236,22 @@ generated quantities {
       eta0 <- rep_vector(0.0, N[1]);
       eta1 <- rep_vector(0.0, N[2]);
     }
-    if (has_intercept == 1) {
-      eta0 <- gamma[1] + eta0;
-      eta1 <- gamma[1] + eta1;
-    }
     if (has_offset == 1) {
       eta0 <- eta0 + offset0;
       eta1 <- eta1 + offset1;
+    }
+    if (has_intercept == 1) {
+      if (link != 4) {
+        eta0 <- gamma[1] + eta0;
+        eta1 <- gamma[1] + eta1;
+      }      
+      else {
+        real shift;
+        shift <- fmax(max(eta0), max(eta1));
+        eta0 <- gamma[1] + eta0 - shift + 1;
+        eta1 <- gamma[1] + eta1 - shift + 1;
+        alpha[1] <- alpha[1] - shift;
+      }
     }
     pi0 <- linkinv_bern(eta0, link);
     pi1 <- linkinv_bern(eta1, link);

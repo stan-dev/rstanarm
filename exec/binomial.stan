@@ -133,8 +133,7 @@ data {
 }
 parameters {
   vector[K] z_beta;
-  real<upper=make_upper_binomial(link, X, prior_mean + prior_scale .* z_beta, 
-       has_offset, offset)> gamma[has_intercept];
+  real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
 }
 transformed parameters {
   vector[K] beta; # coefficients
@@ -145,8 +144,11 @@ model {
   vector[N] eta; # linear predictor
   if (K > 0) eta <- X * beta;
   else eta <- rep_vector(0.0, N);
-  if (has_intercept == 1) eta <- eta + gamma[1];
-  if (has_offset == 1)    eta <- eta + offset;
+  if (has_offset == 1) eta <- eta + offset;
+  if (has_intercept == 1) {
+    if (link != 4) eta <- eta + gamma[1];
+    else eta <- gamma[1] + eta - max(eta) + 1;
+  }
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
@@ -165,25 +167,12 @@ model {
   
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (link != 4) {
-      if (prior_dist_for_intercept == 1) # normal
-        gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                          prior_scale_for_intercept);
+    if (prior_dist_for_intercept == 1) # normal
+      gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    else if (prior_dist_for_intercept == 2) # student_t
+      gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                        prior_scale_for_intercept);
       /* else prior_dist = 0 and nothing is added */
-    }
-    else {
-      real maximum;
-      maximum <- -max(eta);
-      if (prior_dist_for_intercept == 1) # normal
-        gamma[1] ~ normal(prior_mean_for_intercept, 
-                          prior_scale_for_intercept) T[,maximum];
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                             prior_scale_for_intercept) T[,maximum];
-      /* else prior_dist = 0 and nothing is added */
-    }
   }
 }
 generated quantities {
@@ -196,8 +185,16 @@ generated quantities {
     vector[N] pi;
     if (K > 0) eta <- X * beta;
     else eta <- rep_vector(0.0, N);
-    if (has_intercept == 1) eta <- eta + gamma[1];
-    if (has_offset == 1)    eta <- eta + offset;
+    if (has_offset == 1) eta <- eta + offset;
+    if (has_intercept == 1) {
+      if (link != 4) eta <- eta + gamma[1];
+      else {
+        real shift;
+        shift <- max(eta);
+        eta <- gamma[1] + eta - shift + 1;
+        alpha[1] <- alpha[1] - shift;
+      }
+    }
     pi <- linkinv_binom(eta, link);
     for (n in 1:N) mean_PPD <- mean_PPD + binomial_rng(trials[n], pi[n]);
     mean_PPD <- mean_PPD / N;

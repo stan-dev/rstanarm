@@ -508,13 +508,12 @@ model {
   vector[N] eta; # linear predictor
   if (K > 0) eta <- X * beta;
   else eta <- rep_vector(0.0, N);
+  if (has_offset == 1)    eta <- eta + offset;
+  if (t > 0)              eta <- eta + Z * b;
   if (has_intercept == 1) {
     if (family == 1 || link == 2) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
-  if (has_offset == 1)    eta <- eta + offset;
-  if (t > 0)              eta <- eta + Z * b;
-  
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
@@ -566,10 +565,7 @@ model {
   
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (family == 2 && link != 2) {
-      # nothing because of the weird constraint
-    }
-    else if (prior_dist_for_intercept == 1) # normal
+    if (prior_dist_for_intercept == 1) # normal
       gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
     else if (prior_dist_for_intercept == 2) # student_t
       gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
@@ -595,6 +591,8 @@ generated quantities {
     vector[N] eta;
     if (K > 0) eta <- X * beta;
     else eta <- rep_vector(0.0, N);
+    if (has_offset)         eta <- eta + offset;
+    if (t > 0)              eta <- eta + Z * b;
     if (has_intercept == 1) {
       if (family == 1 || link == 2) eta <- eta + gamma[1];
       else {
@@ -604,8 +602,6 @@ generated quantities {
         eta <- eta - min_eta + gamma[1];
       }
     }
-    if (has_offset)         eta <- eta + offset;
-    if (t > 0)              eta <- eta + Z * b;
     if (family == 1) {
       if (link > 1) eta <- linkinv_gauss(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], dispersion);

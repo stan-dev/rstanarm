@@ -123,8 +123,7 @@ data {
 }
 parameters {
   vector[K] z_beta;
-  real<lower=make_lower_count(link, X,   prior_mean + prior_scale .* z_beta, 
-                              has_offset, offset)> gamma[has_intercept];
+  real<lower=if_else(link == 2, 0, negative_infinity())> gamma[has_intercept];
   real<lower=0> theta_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
@@ -141,8 +140,11 @@ model {
   vector[N] eta; # linear predictor
   if (K > 0) eta <- X * beta;
   else eta <- rep_vector(0.0, N);
-  if (has_intercept == 1) eta <- eta + gamma[1];
-  if (has_offset == 1)    eta <- eta + offset;
+  if (has_offset == 1) eta <- eta + offset;
+  if (has_intercept == 1) {
+    if (link != 2) eta <- eta + gamma[1];
+    else eta <- eta - min(eta) + gamma[1];
+  }
   if (family == 3) {
     if      (link == 1) eta <- eta + log(theta[1]) + log(noise[1]);
     else if (link == 2) eta <- eta * theta[1] .* noise[1];
@@ -174,25 +176,12 @@ model {
    
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (link != 2) {
-      if (prior_dist_for_intercept == 1) # normal
-        gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                          prior_scale_for_intercept);
-      /* else prior_dist = 0 and nothing is added */
-    }
-    else {
-      real minimum;
-      minimum <- -min(eta);
-      if (prior_dist_for_intercept == 1) # normal
-        gamma[1] ~ normal(prior_mean_for_intercept, 
-                          prior_scale_for_intercept) T[minimum,];
-      else if (prior_dist_for_intercept == 2) # student_t
-        gamma[1] ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
-                             prior_scale_for_intercept) T[minimum,];
-      /* else prior_dist = 0 and nothing is added */
-    }
+    if (prior_dist_for_intercept == 1) # normal
+      gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
+    else if (prior_dist_for_intercept == 2) # student_t
+      gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
+                        prior_scale_for_intercept);
+    /* else prior_dist = 0 and nothing is added */
   }
   
   // Log-prior for dispersion
@@ -211,8 +200,16 @@ generated quantities {
     vector[N] rho;
     if (K > 0) eta <- X * beta;
     else eta <- rep_vector(0.0, N);
-    if (has_intercept == 1) eta <- eta + gamma[1];
-    if (has_offset == 1)    eta <- eta + offset;
+    if (has_offset == 1) eta <- eta + offset;
+    if (has_intercept == 1) {
+      if (link != 2) eta <- eta + gamma[1];
+      else {
+        real shift;
+        shift <- min(eta);
+        eta <- eta + shift + gamma[1];
+        alpha[1] <- alpha[1] + shift;
+      }
+    }
     if (family == 3) {
       if      (link == 1) eta <- eta + log(theta[1]) + log(noise[1]);
       else if (link == 2) eta <- eta * theta[1] .* noise[1];
