@@ -2,7 +2,7 @@ rstanarm
 ========
 This is an R package that emulates other R model-fitting functions but uses (R)Stan for the back-end estimation. The primary target audience is people who would be open to Bayesian inference if using
 Bayesian software were easy but would use frequentist software otherwise. That said, this R package
-often uses posterior means as point estimates.
+often uses posterior medians as point estimates.
 
 Rules:
   1. The stan\_* (e.g. `stan_glm`) wrapper function should take (almost) all of the same arguments as the function it emulates (e.g. `glm`) but unnecessary arguments can be dropped

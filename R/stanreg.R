@@ -23,8 +23,8 @@ stanreg <- function(object) {
     unconstrained <- stanfit$par[1:k] + L %*% matrix(rnorm(4000 * k), k)
     stanmat <- t(apply(unconstrained, 2, FUN = function(u)
       unlist(constrain_pars(stanfit$stanfit, u))))
-    stan_summary <- cbind(Estimate = stanfit$par, 
-                          "Std. Error" = apply(stanmat, 2, sd),
+    stan_summary <- cbind(Median = apply(stanmat, 2, median), 
+                          MAD_SD = apply(stanmat, 2, mad),
                           t(apply(stanmat, 2, quantile, 
                                   probs = c(0.025, .975))))
     covmat <- cov(stanmat)

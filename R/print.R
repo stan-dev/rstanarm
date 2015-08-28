@@ -1,20 +1,29 @@
 #' @method print stanreg
 #' @export
-print.stanreg <- function(x, ...) {
-  # use RStan's print just as placeholder. we should replace this with our own
-  # print method
-  if (x$stanfit@mode == 0) print(x$stanfit, pars = "lp__", include = FALSE, ...)
-  else if (is.null(x$family)) {
-    mark <- c(names(x$coefficients), 
-              grep("|", rownames(x$stan_summary), fixed = TRUE, value = TRUE))
-    print(x$stan_summary[mark,,drop = FALSE], ...)
+print.stanreg <- function(x, digits = 3, ...) {
+  if (x$algorithm != "optimizing") {
+    nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+    mat <- as.matrix(x$stanfit)[,nms,drop=FALSE]
+    print(cbind(Median = apply(mat, 2, median), MAD_SD = apply(mat, 2, mad)), 
+          digits = digits, ...)
   }
   else {
-    mark <- names(x$coefficients)
-    if (x$family$family == "gaussian") mark <- c(mark, "sigma")
-    else if (x$family$family == "neg_binomial_2") mark <- c(mark, "overdispersion")
-    print(x$stan_summary[mark,,drop=FALSE], ...)
+    nms <- names(x$coefficients)
+    if (is(x, "polr")) 
+      nms <- c(nms, grep("|", rownames(x$stan_summary), 
+                         fixed = TRUE, value = TRUE))
+    else if (x$family$family == "gaussian")
+      nms <- c(nms, "sigma")
+    else if (x$family$family == "Gamma")
+      nms <- c(nms, "shape")
+    else if (x$family$family == "inverse.gaussian")
+      nms <- c(nms, "lambda")
+    else if (x$family$family == "neg_binomial_2")
+      nms <- c(nms, "overdispersion")
+    nms <- c(nms, grep("^mean_PPD:", rownames(x$stan_summary), value = TRUE))
+    print(x$stan_summary[nms,1:2], digits = digits, ...)
   }
+
   if (is(x, "aov")) {
     labels <- attributes(x$terms)$term.labels
     patterns <- gsub(":", ".*:", labels)
@@ -26,9 +35,11 @@ print.stanreg <- function(x, ...) {
     effects <- x$effects^2
     effects <- sapply(groups, FUN = function(i) apply(effects[,,i,drop = FALSE], 1:2, mean))
     dim(effects) <- c(effects_dim[-3], ncol(effects))
-    dimnames(effects) <- list(iterations = NULL, chains = paste0("chain", 1:ncol(x$stanfit), sep = ":"),
-                              parameters = paste("Mean Sq", names(groups)))
+    dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
+    colnames(effects) <- paste("Mean Sq", names(groups))
     cat("ANOVA-like table\n")
-    rstan::monitor(effects, warmup = 0, print = TRUE, digits_summary = 2)
+    print(cbind(Median = apply(effects, 2, median),
+                MAD_SD = apply(effects, 2, mad)), digits = digits, ...)
   }
+  return(invisible(NULL))
 }
