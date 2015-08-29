@@ -115,8 +115,8 @@ stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset,
                        prior = normal(), prior.for.intercept = normal(),
                        prior.options = prior_options(), 
                        prior.for.covariance = decov(), prior_PD = FALSE,
-                      algorithm = c("sampling", "optimizing", "meanfield", 
-                                    "fullrank")) {
+                       algorithm = c("sampling", "optimizing", "meanfield", 
+                                     "fullrank")) {
   
   mc <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)

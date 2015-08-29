@@ -35,12 +35,12 @@
 #'     distribution of the parameters. See \code{\link[rstan]{sampling}}
 #'     for more details. \strong{This is the default and the recommended
 #'     algorithm for statistical inference.}
-#'  \item \code{algorithm = "fullrank"} Uses a multivariate normal 
+#'  \item \code{algorithm = "fullrank"} Uses a multivariate normal variational
 #'    approximation to the posterior distribution with a dense covariance
 #'    matrix. See \code{\link[rstan]{vb}}. This algorithm is helpful when
 #'    MCMC is infeasible or when building up a more complicated model
 #'    iteratively. 
-#'  \item \code{algorithm = "meanfield"} Uses a multivariate normal 
+#'  \item \code{algorithm = "meanfield"} Uses a multivariate normal variational
 #'    approximation to the posterior distribution with a diagonal covariance
 #'    matrix. See \code{\link[rstan]{vb}}. This algorithm is helpful when
 #'    MCMC or the fullrank variational approximation is infeasible or when 
@@ -51,15 +51,15 @@
 #'    which case there is no great reason to use the functions in the
 #'    \pkg{rstanarm} package over the emulated functions in other packages.
 #'    However, if priors are specified, then the estimates are penalized
-#'    maximum likelihood estimates, which may have some redeeming value. 
+#'    maximum likelihood estimates, which may have some redeeming value.
 #' }
 #' See \code{\link{priors}} for an overview of this various choices the
 #' user can make for prior distributions. The model estimation functions
 #' are, briefly:
 #' 
-#' @section \code{\link[=stan_lm]{stan_lm and stan_aov}}: 
+#' @section \code{\link[=stan_lm]{stan_lm and stan_aov}}:
 #' 
-#'   Similar to \code{\link[stats]{lm}} and \code{\link[stats]{aov}} but 
+#'   Similar to \code{\link[stats]{lm}} or \code{\link[stats]{aov}} but 
 #'   with regularizing priors on the model parameters that are
 #'   driven by prior beliefs about \eqn{R^2}, the proportion of variance in the
 #'   outcome attributable to the predictors in a linear model.
@@ -88,7 +88,8 @@
 #'   
 #'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it
 #'   models an ordinal response in a similar way to \code{\link{stan_glm}} but
-#'   also specifies a prior on the unknown cutpoints.
+#'   also specifies a prior on the unknown cutpoints. Can also be used to model
+#'   binary outcomes.
 #'   
 #' @seealso \code{\link{stanreg-objects}}, \code{\link{stanreg-methods}}       
 NULL

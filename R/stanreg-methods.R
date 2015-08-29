@@ -50,7 +50,8 @@ fitted.stanreg <- function(object, ...)  {
   object$fitted.values
 }
 
-# standard errors
+#' @rdname stanreg-methods
+#' @export
 se <- function(object) UseMethod("se")
 
 #' @rdname stanreg-methods
