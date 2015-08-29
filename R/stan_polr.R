@@ -37,10 +37,10 @@ loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel,
                valideta = function(eta) TRUE, name = "loglog")
 class(loglog) <- "link-glm"
 
-#' Fitting ordinal regression models via Stan
+#' Ordinal regression models via Stan
 #'
-#' Full Bayesian inference or optimization for ordinal (or binary) 
-#' regression models
+#' Bayesian inference for ordinal (or binary) regression models under
+#' a proportional odds assumption.
 #'
 #' @export
 #' 
@@ -58,18 +58,19 @@ class(loglog) <- "link-glm"
 #' @template args-algorithm
 #' @template args-dots
 #'
-#' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit'.
-#'   See \code{\link[MASS]{polr}} for more details.
+#' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit'
+#'   but can be abbreviated. See \code{\link[MASS]{polr}} for more details.
 #' @param prior Prior for parameters. Can be \code{NULL} to omit a prior
-#'   and see \code{\link{priors}} otherwise.
-#' @param prior_counts A numeric vector that must be positive but need not
-#'   contain integers representing the prior count in each outcome. 
-#'   Can be \code{NULL} to use a uniform Dirichlet prior.
+#'   but otherwise must be a call to \code{\link{R2}} to specify the 
+#'   prior location of the \eqn{R^2}. See \code{\link{priors}}.
+#' @param prior_counts A call to \code{\link{dirichlet}} to specify the 
+#'   prior counts of the outcome when the predictors are at their sample
+#'   means
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood 
-#'   estimation of a proportional odds model, full Bayesian estimation is (by
-#'   default) performed via Markov Chain Monte Carlo. The \code{stan_polr} 
+#'   estimation of a proportional odds model, Bayesian estimation is performed
+#'   (if \code{algorithm = "sampling"}) via MCMC. The \code{stan_polr} 
 #'   function calls the workhorse \code{stan_polr.fit} function, but it is 
 #'   possible to call the latter directly.
 #'   
@@ -80,6 +81,11 @@ class(loglog) <- "link-glm"
 #'   beliefs about the cutpoints are governed by prior beliefs about the
 #'   outcome when the predictors are at their sample means. Both of these
 #'   are explained in the help page on \code{\link{priors}}.
+#'   
+#'   Unlike \code{\link[MASS]{polr}}, the "ordinal" outcome may contain
+#'   only two levels, in which case the likelihood is the same as for
+#'   \code{\link{stan_glm}} with \code{family = binomial} but the prior
+#'   on the coefficients is different.
 #' 
 #' @examples 
 #' # algorithm = "meanfield" is only for time constraints on examples

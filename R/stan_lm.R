@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-#' Fitting regularized linear models via Stan
+#' Regularized linear models via Stan
 #'
-#' Full Bayesian inference for linear modeling with regularizing priors on the 
+#' Bayesian inference for linear modeling with regularizing priors on the 
 #' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
 #' proportion of variance in the outcome attributable to the predictors. See 
 #' \code{\link{priors}} for an explanation of this critical point.
@@ -51,7 +51,7 @@
 #' @details The \code{stan_lm} function is similar in syntax to the 
 #'   \code{\link[stats]{lm}} function but rather than choosing the parameters
 #'   to minimize the sum of squared residuals, samples from the posterior
-#'   distribution are drawn using Markov Chain Monte Carlo. The 
+#'   distribution (if \code{algorithm = "sampling"}) are drawn using MCMC. The
 #'   \code{stan_lm} function has a formula-based interface and would usually
 #'   be called by users but the \code{stan_lm.fit} and \code{stan_lm.wfit}
 #'   functions might be called by other functions that parse the data 
@@ -66,7 +66,7 @@
 #'   Conversely if \code{log-fit_ratio} is negative, then the model underfits.
 #'   Given the regularizing nature of the priors, a slight underfit is good.
 #'   However, even if the \emph{marginal} posterior variance is off, the 
-#'   \emph{conditional} variance may still be reasonable.
+#'   \emph{conditional} variance (\code{sigma}) may still be reasonable.
 #'   
 #'   Finally, the posterior predictive distribution is generated with the
 #'   predictors fixed at their sample means. This quantity is useful for
@@ -84,7 +84,6 @@
 #'   normally-distributed errors but specifies different priors.
 #'   
 #' @examples 
-#' # algorithm = "meanfield" is only for time constraints on examples
 #' stan_lm(mpg ~ ., data = mtcars, algorithm = "meanfield", 
 #'         prior = R2(0.75), seed = 12345)
 #'

@@ -1,9 +1,7 @@
-#' Fitting Bayesian generalized linear models with group-specific terms via
-#' Stan
+#' Bayesian generalized linear models with group-specific terms via Stan
 #'
-#' Full Bayesian inference or optimization for generalized linear modeling with
-#' group-specific terms with Gaussian, Student t, or Cauchy prior distributions
-#' for the coefficients and flexible priors for the unknown covariance matrices.
+#' Bayesian inference for GLMs with group-specific coefficients that have
+#' unknown covariance matrices with flexible priors.
 #' 
 #' @export
 #' 
@@ -25,11 +23,11 @@
 #'   \code{\link{decov}} for more information about the default arguments.   
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
-#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
-#'   likelihood estimation of generalized linear models, full Bayesian 
-#'   estimation is performed via Markov Chain Monte Carlo. The Bayesian model 
-#'   adds independent Gaussian, Student t, or Cauchy priors on the coefficients 
-#'   of the generalized linear model and priors on the terms of a decomposion
+#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum
+#'   likelihood estimation of generalized linear models, Bayesian estimation
+#'   is performed (if \code{algorithm = "sampling"}) via MCMC. The Bayesian 
+#'   model adds independent priors on the coefficients (in the same way as
+#'   \code{\link{stan_glm}}) and priors on the terms of a decomposion
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
 #'   

@@ -14,10 +14,10 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#' Fitting Bayesian generalized linear models via Stan
+#' Bayesian generalized linear models via Stan
 #'
-#' Full Bayesian inference or optimization for generalized linear modeling with 
-#' Gaussian, Student t, or Cauchy prior distributions for the coefficients.
+#' Generalized linear modeling with optional prior distributions for 
+#' the coefficients, intercept, and nuisance parameter
 #'
 #' @export
 #' 
@@ -46,11 +46,10 @@
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
-#'   performed via Markov Chain Monte Carlo. The Bayesian model adds independent
-#'   Gaussian, Student t, or Cauchy priors on the coefficients of the 
-#'   generalized linear model. The \code{stan_glm} function calls the workhorse
-#'   \code{stan_glm.fit} function, but it is possible to call the latter
-#'   directly.
+#'   performed (if \code{algorithm = "sampling"}) via MCMC. The Bayesian model 
+#'   adds independent priors on the coefficients of the GLM. The 
+#'   \code{stan_glm} function calls the workhorse \code{stan_glm.fit} function,
+#'   but it is possible to call the latter directly.
 #' 
 #' @examples 
 #' # algorithm = "meanfield" is only for time constraints on examples
