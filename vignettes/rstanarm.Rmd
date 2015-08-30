@@ -68,7 +68,7 @@ uncertainty in our beliefs about the unknowns.
 # Step 1: Specify a posterior distribution
 
 For the sake of discussion, we need some posterior distribution to draw from. 
-We will use an example from the __HSAUR__ package by Brian S. Everitt and 
+We will utilize an example from the __HSAUR__ package by Brian S. Everitt and
 Torsten Hothorn, which is used in their 2006 book 
 _A Handbook of Statistical Analyses Using R (1st Edition)_ (Chapman & Hall /
 CRC). This book is frequentist in nature and we will show how to obtain the 
