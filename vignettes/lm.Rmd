@@ -202,13 +202,14 @@ described above and the posterior distributions of the intermediate parameters
 are all implied by the posterior distributions of $\boldsymbol{\Lambda}$ and 
 $\omega$:
 
-* $\boldsymbol{\lambda} = \left(\boldsymbol{\Lambda}_{XX}\right)
-^{-1} \boldsymbol{\Lambda}_{XY}$
+* $\boldsymbol{\lambda} = \left(\boldsymbol{\Lambda}_{XX}\right)^{-1} 
+  \boldsymbol{\Lambda}_{XY}$
 * $R^2 = \boldsymbol{\lambda}^\top \boldsymbol{\Lambda}_{XX} 
   \boldsymbol{\lambda}$
 * $\sigma_y = \omega \widehat{\sigma}_y$
 * $\sigma_{\epsilon} = \sigma_y \sqrt{1 - R^2}$
 * $\beta_k = \frac{\sigma_y}{\widehat{\sigma}_{x_k}} \lambda_k \forall k$
+* $\mu_i = \alpha + \overline{\mathbf{x}}^\top \boldsymbol{\beta}
 
 The implementation actually utilizes $\ln \omega$. Consequently, if
 $\ln \omega = 0$, then the marginal standard deviation of the outcome
