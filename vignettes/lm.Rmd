@@ -304,7 +304,7 @@ regression coefficients. This simpler approach can be executed by calling the
 ```{r SIMPLE}
 simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
-                   prior = cauchy(), prior.for.intercept = cauchy(),
+                   prior = cauchy(), prior_intercept = cauchy(),
                    cores = 2, seed = 12345)
 ```
 We can compare the two approaches using an approximation to Leave-One-Out
