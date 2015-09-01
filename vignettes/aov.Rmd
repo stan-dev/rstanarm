@@ -126,8 +126,8 @@ Alternatively, we could prepend `stan_` to `lmer` and specify the corresponding
 priors
 ```{r eval=FALSE}
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
-                   data = weightgain, prior.for.intercept = cauchy(),
-                   prior.for.covariance = decov(gamma_shape = 2, scale = 2),
+                   data = weightgain, prior_intercept = cauchy(),
+                   prior_covariance = decov(gamma_shape = 2, scale = 2),
                    seed = 12345, cores = 2, 
                    control = list(adapt_delta  = 0.999, max_treedepth = 12))
 ```

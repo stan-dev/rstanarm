@@ -1,4 +1,4 @@
-#' Prior distributions
+#' Prior distributions and options
 #' 
 #' These functions are used to specify the prior-related arguments of various
 #' model-fitting functions in the \pkg{rstanarm} package.
@@ -169,8 +169,8 @@
 #' @return A named list.
 #' @examples
 #' stan_glm(mpg ~ ., data = mtcars, prior_PD = TRUE, chains = 1,
-#'          prior = student_t(4, 0, 2.5), prior.for.intercept = cauchy(0,10), 
-#'          prior.options = prior_options(prior.scale.for.dispersion = 2))
+#'          prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
+#'          prior_ops = prior_options(prior_scale_for_dispersion = 2))
 #' 
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)
@@ -274,21 +274,22 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
 
 #' @rdname priors
 #' @export 
-#' @param prior.scale.for.dispersion Prior scale for the standard error of the 
+#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
 #'   regression in Gaussian models, which is given a half-Cauchy prior truncated
 #'   at zero.
-#' @param min.prior.scale Minimum prior scale for the intercept and 
+#' @param min_prior_scale Minimum prior scale for the intercept and 
 #'   coefficients.
 #' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior.scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scales prior.scale by twice the
-#'   standard deviation of the predictor if it has more than two unique values.
+#'   \code{prior_scale} is further scaled by the range of the predictor if the 
+#'   predictor has exactly two unique values and scales \code{prior_scale} by
+#'   twice the standard deviation of the predictor if it has more than two
+#'   unique values.
 #'
-prior_options <- function(prior.scale.for.dispersion = 5, 
-                          min.prior.scale = 1e-12, 
+prior_options <- function(prior_scale_for_dispersion = 5, 
+                          min_prior_scale = 1e-12, 
                           scaled = TRUE) {
-  validate_parameter_value(prior.scale.for.dispersion)
-  validate_parameter_value(min.prior.scale)
-  nlist(scaled, min.prior.scale, prior.scale.for.dispersion)
+  validate_parameter_value(prior_scale_for_dispersion)
+  validate_parameter_value(min_prior_scale)
+  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
 }
   
