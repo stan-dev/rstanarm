@@ -150,7 +150,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    prior_scale <- pmax(min.prior_scale, prior_scale /
+    prior_scale <- pmax(min_prior_scale, prior_scale /
                           apply(xtemp, 2, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
