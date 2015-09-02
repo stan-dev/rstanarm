@@ -36,6 +36,9 @@ stanreg <- function(object) {
     coefs <- stan_summary[1:nvars, "50%"]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
+    if (any(stan_summary[,"Rhat"] > 1.1, na.rm = TRUE)) 
+      warning("Markov chains did not converge! Do not analyze results!", 
+              call. = FALSE, noBreaks. = TRUE)
   }    
 
   eta <- linear_predictor(coefs, x, offset)
