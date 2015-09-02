@@ -65,8 +65,8 @@
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
-                    prior = normal(), prior.for.intercept = normal(),
-                    prior.options = prior_options(), 
+                    prior = normal(), prior_intercept = normal(),
+                    prior_ops = prior_options(), 
                     prior_PD = FALSE,  algorithm = c("sampling", "optimizing", 
                                                      "meanfield", "fullrank")){
 
@@ -108,33 +108,28 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   else offset <- double(0) #rep(0, nrow(X))
   
   # if Y is proportion of successes and weights is total number of trials
-  if (family$family == "binomial" && NCOL(Y) == 1L && all(Y > 0 & Y <= 1)) {
+  if (family$family == "binomial" && NCOL(Y) == 1L && is.numeric(Y)) { 
+    if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 
       if (!identical(weights, double(0)) && all(weights > 0)) {
         y1 <- as.integer(as.vector(Y) * weights)
         Y <- cbind(y1, weights - y1)
         weights <- double(0)
+      }
     }
   }
   
   if (is.null(prior)) prior <- list()
-  if (is.null(prior.for.intercept)) prior.for.intercept <- list()
-  if (length(prior.options) == 0) {
-    prior.options <- list(scaled = FALSE, prior.scale.for.dispersion = Inf)
+  if (is.null(prior_intercept)) prior_intercept <- list()
+  if (length(prior_ops) == 0) {
+    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   }
   algorithm <- match.arg(algorithm)
 
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
-                          offset = offset, family = family, 
-                          prior.dist = prior$dist,
-                          prior.dist.for.intercept = prior.for.intercept$dist,
-                          prior.mean = prior$location, prior.scale = prior$scale, 
-                          prior.df = na_replace(prior$df, 1),
-                          prior.mean.for.intercept = prior.for.intercept$location, 
-                          prior.scale.for.intercept = prior.for.intercept$scale,
-                          prior.df.for.intercept = na_replace(prior.for.intercept$df, 1), 
-                          scaled = prior.options$scaled, 
-                          min.prior.scale = prior.options$min.prior.scale, 
-                          prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion,
+                          offset = offset, family = family,
+                          prior = prior,
+                          prior_intercept = prior_intercept,
+                          prior_ops = prior_ops,
                           prior_PD = prior_PD, algorithm = algorithm, ...)
   
   # list of all the arguments and their values including any defaults (match.call

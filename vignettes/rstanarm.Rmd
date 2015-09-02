@@ -137,7 +137,7 @@ womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + sex,
                               data = womensrole, seed = 12345,
                               family = binomial(link = "logit"), 
                               cores = 2, prior = student_t(df = 7), 
-                              prior.for.intercept = student_t(df = 7))
+                              prior_intercept = student_t(df = 7))
 womensrole_bglm_1
 ```
 As can be seen, the "Bayesian point estimates" --- which are represented by
@@ -231,7 +231,7 @@ womensrole_bglm_2 <- stan_glm(cbind(agree, disagree) ~ education
                               + I(education^2) + sex, data = womensrole,
                               seed = 12345, family = binomial(link = "logit"),
                               cores = 2, prior = student_t(df = 7), 
-                              prior.for.intercept = student_t(df = 7))
+                              prior_intercept = student_t(df = 7))
 womensrole_bglm_2
 ```
 Frequentists would test the null hypothesis that the coefficient on the 

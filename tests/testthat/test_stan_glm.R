@@ -10,7 +10,7 @@ test_that("gaussian returns expected result for trees example", {
   for (i in 1:length(links)) {
     fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
                     family = gaussian(link = links[i]), algorithm = "optimizing",
-                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     tol_rel_grad = 1e-16)
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
@@ -28,7 +28,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   links <- c("log", "identity", "sqrt")
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
-                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     algorithm = "optimizing", tol_rel_grad = 1e-16)
     ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]))
     expect_equal(coef(fit), coef(ans), tol = 2e-4)
@@ -43,7 +43,7 @@ test_that("stan_glm returns expected result for glm negative binomial example", 
   for (i in 1:length(links)) {
     fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                     family = neg_binomial_2(links[i]),
-                    prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     algorithm = "optimizing", tol_rel_grad = 1e-16)
     ans <- glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, link = links[i])
     expect_equal(coef(fit), coef(ans), tol = 0.0011)
@@ -55,7 +55,7 @@ test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
                   family = gaussian(link = "identity"), 
-                  prior = NULL, prior.for.intercept = NULL, prior.options = NULL,
+                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 1e-6)

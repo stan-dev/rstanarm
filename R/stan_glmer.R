@@ -19,7 +19,7 @@
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely
 #'   specified.
-#' @param prior.for.covariance Cannot be \code{NULL}; see 
+#' @param prior_covariance Cannot be \code{NULL}; see 
 #'   \code{\link{decov}} for more information about the default arguments.   
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
@@ -42,9 +42,9 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                         subset, weights, 
                         na.action = getOption("na.action", "na.omit"), 
                         offset, contrasts = NULL, ...,
-                        prior = normal(), prior.for.intercept = normal(),
-                        prior.options = prior_options(),
-                        prior.for.covariance = decov(), prior_PD = FALSE, 
+                        prior = normal(), prior_intercept = normal(),
+                        prior_ops = prior_options(),
+                        prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank")) {
   
@@ -56,7 +56,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   if(!is(family, "family"))
     stop("'family' must be a family")
   mc[[1]] <- quote(lme4::glFormula)
-  mc$prior <- mc$prior.for.intercept <- mc$prior.options <- mc$prior_PD <-
+  mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- mc$... <- NULL
   glmod <- eval(mc, parent.frame(1L))
   y <- glmod$fr[,as.character(glmod$formula[2])]
@@ -68,26 +68,18 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   offset <- double(0)
 
   if (is.null(prior)) prior <- list()
-  if (is.null(prior.for.intercept)) prior.for.intercept <- list()
-  if (length(prior.options) == 0) {
-    prior.options <- list(scaled = FALSE, prior.scale.for.dispersion = Inf)
+  if (is.null(prior_intercept)) prior_intercept <- list()
+  if (length(prior_ops) == 0) {
+    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   }
   group <- glmod$reTrms
   group$decov <- prior.for.covariance
   algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
-                          offset = offset, family = family, 
-                          prior.dist = prior$dist,
-                          prior.dist.for.intercept = prior.for.intercept$dist,
-                          prior.mean = prior$location, prior.scale = prior$scale, 
-                          prior.df = na_replace(prior$df, 1),
-                          prior.mean.for.intercept = prior.for.intercept$location, 
-                          prior.scale.for.intercept = prior.for.intercept$scale,
-                          prior.df.for.intercept = na_replace(prior.for.intercept$df, 1), 
-                          scaled = prior.options$scaled, 
-                          min.prior.scale = prior.options$min.prior.scale, 
-                          prior.scale.for.dispersion = prior.options$prior.scale.for.dispersion,
-                          prior_PD = prior_PD, algorithm = algorithm, group = group, ...)
+                          offset = offset, family = family,
+                          prior = prior, prior_intercept = prior_intercept,
+                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          algorithm = algorithm, group = group, ...)
   
   all_args <- mget(names(formals()), sys.frame(sys.nframe()))
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
@@ -112,9 +104,9 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
 #' @export
 stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset, 
                        contrasts = NULL, ...,
-                       prior = normal(), prior.for.intercept = normal(),
-                       prior.options = prior_options(), 
-                       prior.for.covariance = decov(), prior_PD = FALSE,
+                       prior = normal(), prior_intercept = normal(),
+                       prior_ops = prior_options(), 
+                       prior_covariance = decov(), prior_PD = FALSE,
                        algorithm = c("sampling", "optimizing", "meanfield", 
                                      "fullrank")) {
   

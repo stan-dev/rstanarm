@@ -36,11 +36,14 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   fit <- colMeans(eta)
-  se.fit <- apply(eta, 2L, sd)
   if (type == "response") { 
     stop("MLE not implemented yet")
   }
-  nlist(fit, se.fit)
+  if (!se.fit) return(fit)
+  else {
+    se.fit <- apply(eta, 2L, sd)
+    nlist(fit, se.fit) 
+  }
 }
 
 .pp_data <- function(object, newdata = NULL) {

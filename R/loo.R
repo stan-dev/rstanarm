@@ -16,8 +16,8 @@
 #' seed <- 42024
 #' set.seed(seed)
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200, seed = seed)
-#' fit2 <- stan_glm(mpg ~ ., data = mtcars, iter = 200, seed = seed)
-#' loo1 <- loo(fit1)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = 200, seed = seed)
+#' (loo1 <- loo(fit1))
 #' loo2 <- loo(fit2)
 #' loo::compare(loo1, loo2)
 #' plot(loo2, label_points = TRUE)
@@ -40,33 +40,6 @@ waic.stanreg <- function(x, ...) {
   if (x$algorithm != "sampling")
     stop("Only available for MCMC (algorithm = 'sampling').", call. = FALSE)
   waic.function(.llfun(x$family), args = .llargs(x))
-}
-
-# returns args argument for loo() and waic()
-.llargs <- function(x) {
-  args <- list()
-  args$family <- x$family
-  stanmat <- as.matrix(x$stanfit)
-  nms <- names(x)
-  args$x <- if ("x" %in% nms) x$x else model.matrix(x$formula, data = x$data)
-  args$y <- if ("y" %in% nms) x$y else model.response(model.frame(x$formula, x$data))
-  args$offset <- x$offset
-  args$weights <- if (!is.null(x$weights)) x$weights else 1
-  if (is(args$family, "family")) {
-    if (args$family$family == "gaussian") 
-      args$sigma <- stanmat[, "sigma"]
-    if (args$family$family == "Gamma")
-      args$shape <- stanmat[, "shape"]
-    if (args$family$family == "inverse.gaussian")
-      args$lambda <- stanmat[, "lambda"]
-  }
-  if (is(x, "polr")) {
-    args$beta <- stanmat[,colnames(args$x),drop = FALSE]
-    args$zeta <- stanmat[,grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),drop=FALSE]
-  } else {
-    args$beta <- stanmat[, 1:ncol(args$x)]
-  }
-  do.call(".llargs_prep", args)
 }
 
 # returns log-likelihood function for loo() and waic()
