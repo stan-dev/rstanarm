@@ -108,11 +108,13 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   else offset <- double(0) #rep(0, nrow(X))
   
   # if Y is proportion of successes and weights is total number of trials
-  if (family$family == "binomial" && NCOL(Y) == 1L && all(Y > 0 & Y <= 1)) {
+  if (family$family == "binomial" && NCOL(Y) == 1L && is.numeric(Y)) { 
+    if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 
       if (!identical(weights, double(0)) && all(weights > 0)) {
         y1 <- as.integer(as.vector(Y) * weights)
         Y <- cbind(y1, weights - y1)
         weights <- double(0)
+      }
     }
   }
   

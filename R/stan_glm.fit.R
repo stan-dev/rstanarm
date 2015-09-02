@@ -237,8 +237,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       y0 <- y == 0
       y1 <- y == 1
       standata$N <- c(sum(y0), sum(y1))
-      standata$X0 <- xtemp[y0,]
-      standata$X1 <- xtemp[y1,]
+      standata$X0 <- xtemp[y0,, drop = FALSE]
+      standata$X1 <- xtemp[y1,, drop = FALSE]
       if (length(weights) > 0) {
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
