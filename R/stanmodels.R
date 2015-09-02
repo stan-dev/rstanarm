@@ -22,19 +22,25 @@ if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
   
 stanfit_lm <- rstan::stan_model(file.path(MODELS_HOME, "lm.stan"),
                                 model_name = "Linear Regression",
-                                auto_write = interactive())
+                                auto_write = interactive(), 
+                                obfuscate_model_name = FALSE)
 stanfit_continuous <- rstan::stan_model(file.path(MODELS_HOME, "continuous.stan"), 
                                         model_name = "Continuous GLM",
-                                        auto_write = interactive())
+                                        auto_write = interactive(),
+                                        obfuscate_model_name = FALSE)
 stanfit_bernoulli <- rstan::stan_model(file.path(MODELS_HOME, "bernoulli.stan"), 
                                       model_name = "Bernoulli GLM",
-                                      auto_write = interactive())
+                                      auto_write = interactive(),
+                                      obfuscate_model_name = FALSE)
 stanfit_binomial <- rstan::stan_model(file.path(MODELS_HOME, "binomial.stan"), 
                                       model_name = "Binomial GLM",
-                                      auto_write = interactive())
+                                      auto_write = interactive(),
+                                      obfuscate_model_name = FALSE)
 stanfit_count <- rstan::stan_model(file.path(MODELS_HOME, "count.stan"), 
                                    model_name = "Count GLM",
-                                   auto_write = interactive())
+                                   auto_write = interactive(),
+                                   obfuscate_model_name = FALSE)
 stanfit_polr <- rstan::stan_model(file.path(MODELS_HOME, "polr.stan"), 
                                    model_name = "Proportional Odds GLM",
-                                   auto_write = interactive())
+                                   auto_write = interactive(),
+                                  obfuscate_model_name = FALSE)
