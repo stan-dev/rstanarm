@@ -1,0 +1,238 @@
+---
+title: "Estimating Ordinal Models with the rstanarm Package"
+author: "Jonah Gabry and Ben Goodrich"
+date: "08/31/2015"
+output: 
+  html_document: 
+    fig_caption: yes
+    toc: yes
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{Estimating Ordinal Models with the rstanarm Package}
+-->
+
+# Introduction
+
+This vignette explains how to estimate models for ordinal outcomes using the
+__rstanarm__ package.
+
+The four steps of a Bayesian analysis are
+
+1. Specify a joint distribution for the outcome(s) and all the unknowns, which
+  typically takes the form of a marginal prior distribution for the unknowns
+  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
+  This joint distribution is proportional to a posterior distribution of the
+  unknowns conditional on the observed data
+2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
+3. Evaluate how well the model fits the data and possibly revise the model.
+4. Draw from the posterior predictive distribution of the outcome(s) given
+  interesting values of the predictors in order to visualize how a manipulation
+  of a predictor affects (a function of) the outcome(s).
+  
+Step 3 and 4 are covered in more depth by the vignette entitled "How to Use the
+__rstanarm__ Package". This vignette focuses on Step 1.
+
+One of the strengths of doing MCMC with Stan --- as opposed to a Gibbs sampler 
+--- is that reparameterizations are essentially costless, which allows the user
+to specify priors on parameters that are either more intuitive, numerically
+stable, or computationally efficient without changing the posterior 
+distribution of the parameters that enter the likelihood. Advantageous 
+parameterizations are already built into the Stan programs used in the 
+__rstanarm__ package, so it is just a matter of using these vignettes to 
+explain how the priors work in the context of these reparameterizations.
+
+# Likelihood
+
+Ordinal outcomes fall in one of $J$ categories. One way to motivate an ordinal
+model is to introduce a latent variable, $y^\ast$, that is related to the 
+observed outcomes via an observation mechanism:
+$$y=\begin{cases}
+1 & \mbox{if }y^{\ast}<\zeta_{1}\\
+2 & \mbox{if }\zeta_{1}\leq y^{\ast}<\zeta_{2}\\
+\vdots\\
+J & \mbox{if }\zeta_{J-1}\leq y^{\ast}
+\end{cases},$$
+where $\boldsymbol{\zeta}$ is a vector of cutpoints of length $J-1$.
+
+Then $y^\ast$ is modeled as a linear function of $K$ predictors, so 
+$$y^\ast = \mu + \epsilon = \mathbf{x}^\top \boldsymbol{\beta} + \epsilon,$$
+where $\epsilon$ has mean zero and unit scale but can be specified as being
+drawn from one of several distributions. Note that there is no "intercept"
+in this model since the data cannot distinguish an intercept from the 
+cutpoints. However, if $J = 2$, then $\zeta_1$ can be referred to as either
+the cutpoint or the intercept.
+
+A Bayesian can treat $y^\ast$ as another unknown parameter, although for
+computational efficiency the Stan code essentially integrates each $y^\ast$
+out of the posterior distribution leaving the posterior distribution of 
+$\boldsymbol{\beta}$ and $\boldsymbol{\zeta}$. Nevertheless, it is useful to 
+motivate the model theoretically as if $y^\ast$ were just another unknown 
+parameter whose distribution is truncated by the relevant element(s) of
+$\boldsymbol{\zeta}$.
+
+# Priors
+
+If $y^\ast$ were observed, then we would simply have a linear regression model
+for it, and the description of the priors in the vignette entitled "Estimating
+Linear Models with the __rstanarm__ Package" would apply directly. Another way
+to say the same thing is _conditional_ on a realization of $y^\ast$, we have a
+linear regression model and the description of the priors in the other vignette
+does apply, which should be read before continuing with this subsection.
+
+The `stan_lm` function essentially implies a prior on _standardized_ regression
+coefficients $\boldsymbol{\lambda}$ and then scales each $\lambda_k$ by the
+ratio of the standard deviation of the outcome to the standard deviation of the
+predictor to construct each $\beta_k = \frac{\sigma_y}{\sigma_{x_k}}\lambda_k$.
+Furthermore, the standard deviation of the errors is given by the expression
+$\sigma_{\epsilon} = \sigma_y \sqrt{1 - R^2}$ where $R^2$ is the proportion of
+variance in the outcome that is attributable to the coefficients in a linear 
+model, and the user must provide a value for the prior location (by default,
+the mode) of the $R^2$.
+
+The main difference in the context of a model for an ordinal outcome is that
+the scale of $y^\ast$ is not identified by the data. Thus, the ordinal model
+specifies that $\sigma_{\epsilon} = 1$, which implies that 
+$\sigma_{y^\ast} = \frac{1}{\sqrt{1 - R^2}}$ is an intermediate parameter.
+Hence, the prior on the coefficients in an ordinal model is essentially the same
+as in a linear model with an observed outcome that is discussed in the vignette
+for `stan_lm`, except here there is no 
+$\omega=\frac{\sigma_y}{\widehat{\sigma_y}}$ parameter to estimate.
+
+Nevertheless, it is a bit more difficult to specify a prior value for the
+$R^2$ in an ordinal model because the $R^2$ refers to the proportion of 
+variance in the unobservable $y^\ast$ that is attributable to the predictors
+under a linear model. In general, the $R^2$ tends to be lower in an ordinal
+model than in a linear model where the continuous outcome is observed.
+
+The other difference is that an ordinal model does not have a global intercept
+but estimates a vector of $J-1$ cutpoints. The implied prior on these cutpoints
+used by the __rstanarm__ package is somewhat novel. The user instead specifies
+a Dirichlet prior on $\Pr\left(Y=j\right)|\overline{\mathbf{x}}$, which is to
+say the prior probability of the outcome falling in each of the $J$ categories 
+given that the predictors are at their sample means. The Dirichlet prior is for
+a simplex random variable, whose elements are non-negative and sum to $1$. The
+Dirichlet PDF can be written as
+$$f\left(\boldsymbol{\pi}|\boldsymbol{\alpha}\right) \propto
+\prod_{j=1}^J{\pi_j^{\alpha_j - 1}},
+$$
+where $\boldsymbol{\pi}$ is a simplex vector such that 
+$\pi_j = \Pr\left(Y=j\right)|\overline{\mathbf{x}}$.
+
+The Dirichlet prior is one of the easiest to specify because the concentration
+hyperparameters can be interpreted as "prior counts", although they need not be
+integers. If $\alpha_j = 1 \forall j$ --- which is the default --- then the 
+Dirichlet prior is jointly uniform over the space of these simplexes. This
+corresponds to a "prior count" of one observation falling in each of the $J$
+ordinal categories when the predictors are at their sample means and only
+conveys the reasonable prior information that no category has probability zero.
+If $\alpha_j = \alpha > 1 \forall j$, then the prior mode is that the 
+probability of falling in each of the $J$ categories is $\frac{1}{J}$ and the
+mode is more sharply peaked the larger is $\alpha$.
+
+The $j$-th cutpoint is then given by 
+$\zeta_j = F_{y^\ast}^{-1}\left(\sum_{i=1}^j{\pi_i}\right),$ where 
+$F_{y^\ast}^{-1}\left(\cdot\right)$ is the inverse CDF function the corresponds
+to the PDF assumed for $y^\ast$. This scale parameter of this distribution is
+again $\sigma_{y^\ast} = \frac{1}{\sqrt{1 - R^2}}$. In short, by making each
+$\zeta_j$ a function of $\boldsymbol{\pi}$, it allows us to specify a Dirichlet
+prior on $\boldsymbol{\pi}$, which is simpler than specifying a prior on 
+$\boldsymbol{\zeta}$ directly.
+
+# Example
+
+In this section, we start with an ordinal model of tobacco consumption as
+a function of age and alcohol consumption. Frequentist estimates can be
+obtained using the `polr` function in the __MASS__ package:
+```{r MASS_tobgp}
+suppressPackageStartupMessages(require(MASS))
+polr(tobgp ~ agegp + alcgp, data = esoph)
+```
+To obtain Bayesian estimates, we prepend `stan_` and specify the priors:
+```{r MCMC_tobgp}
+suppressPackageStartupMessages(require(rstanarm))
+stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(0.25), 
+          prior_counts = dirichlet(1), seed = 12345, cores = 2)
+```
+The point estimates, represented by the posterior medians, are qualitatively
+similar to the maximum-likelihood estimates but are somewhat shrunk toward
+zero due to the regularizing prior on the coefficients. The estimated cutpoints 
+are $\zeta_1 = -1.0632$, $\zeta_2 = 0.1345$, and $\zeta_3 = 1.1966$, which cut 
+at $10$, $20$, and $30$ grams of tobacco consumption per day. Since these 
+cutpoints are actually _known_, it would be more appropriate for the model to 
+take that into account, but `stan_polr` does not currently support that.
+
+Next, we utilize an example from the __MASS__ package where low birthweight is 
+the outcome of interest. First, we recode some of the variables:
+```{r recodes}
+data("birthwt", package = "MASS")
+birthwt$race <- factor(birthwt$race, levels = 1:3, 
+                       labels = c("white", "black", "other"))
+birthwt$bwt <- birthwt$bwt / 1000 # convert from grams to kilograms
+birthwt$low <- factor(birthwt$low, levels = 0:1, labels = c("no", "yes"))
+```
+It is usually a good idea to rescale variables by constants so that all the
+numbers are in single or double digits. We start by estimating a linear model
+for birthweight in kilograms, flipping the sign so that positive coefficients
+are associated with _lower_ birthweights.
+```{r lm}
+post1 <- stan_lm(-bwt ~ smoke + age + race + ptl + ht + ftv,
+                 data = birthwt, prior = R2(0.5), cores = 2, seed = 12345)
+post1
+```
+Next, we estimate an "ordinal" model for the incidence of low birthweight, which
+is defined as a birth weight of less than $2.5$ kilograms. Even though this 
+outcome is binary, a binary variable is a special case of an ordinal variable
+with $J=2$ categories and is acceptable to `stan_polr`. We can think of `bwt`
+as something proportional to $y^\ast$ and pretend that it is not observed, 
+forcing us to estimate an ordinal model.
+```{r polr}
+post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
+                   prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
+                   method = "probit", cores = 2, seed = 12345)
+plot(loo(post2))
+```
+
+This prior seems to have worked well in this case because none of the points
+in the plot are above $0.5$, which would indicate the the posterior is very
+sensitive to those observations. If we compare the estimated coefficients,
+```{r comparison}
+round(cbind(Linear = coef(post1), Ordinal = coef(post2), 
+            Rescaled = coef(post1) / 0.694266), 3)
+```
+they have the same signs and similar magnitudes, with the exception of the 
+"Intercept". In an ordinal model where the outcome only has $J=2$ categories,
+this "Intercept" is actually $\zeta_1$, but it is more conventional to call
+it the "Intercept" so that it agrees with `stan_glm` when 
+`family = binomial(link = 'probit')`. Recall that $\sigma_{\epsilon} = 1$ in
+an ordinal model, so if we divide the coefficients from a linear model by the
+posterior median of $\sigma$, the resulting coefficients are even closer to 
+those of the ordinal model.
+
+This illustrates the fundamental similarity between a linear model for a 
+continuous observed outcome and a linear model for a latent $y^\ast$ that 
+generates an ordinal observed outcome. The main difference is when the outcome
+is continuous and observed, we can estimate the scale of the errors 
+meaningfully. When the outcome is ordinal, we can only fix the scale of the
+latent errors to $1$ arbitrarily.
+
+# Conclusion
+
+The posterior distribution for an ordinal model requires priors on the 
+coefficients and the cutpoints. The priors used by the `stan_polr` function
+are unconventional but should work well for a variety of problems. The prior
+on the coefficients is essentially the same as that used by the `stan_lm`
+function but omits a scale parameter because the standard deviation of the
+latent $y^\ast$ is not identified by the data. The cutpoints are conditionally
+deterministic given a simplex vector for probability of falling in each of the
+$J$ ordinal categories given that the predictors are at their sample means.
+Thus, a Dirichlet prior --- which is relatively easy to specify and has a good
+default of jointly uniform --- on this simplex completes the posterior
+distribution.
+
+This approach provides an alternative to `stan_glm` with `family = binomial()`
+even if the outcome variable has only two categories. The `stan_glm` function
+has more options for the prior on the coefficients and the prior on the 
+intercept (which can be interpreted as the first cutpoint when $J = 2$).
+However, it may be more difficult to obtain efficient sampling with those
+priors.
