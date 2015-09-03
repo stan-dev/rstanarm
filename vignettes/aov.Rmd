@@ -97,7 +97,7 @@ The model in section 4.3.1 analyzes an experiment where rats were subjected to
 different diets in order to see how much weight they gained. The experimental
 factors were whether their diet had low or high protein and whether the protein
 was derived from beef or cereal. Before seeing the data, one might expect that
-a moderate proportion of the variance in weightgain might be attributed to
+a moderate proportion of the variance in weight gain might be attributed to
 protein (source) in the diet. The frequentist ANOVA estimates can be obtained:
 ```{r aov}
 data("weightgain", package = "HSAUR")
