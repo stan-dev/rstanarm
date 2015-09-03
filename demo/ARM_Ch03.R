@@ -51,10 +51,13 @@ post5 <- stan_lm(ppvt ~ hs + afqt, data = DATA_ENV,
                  control = list(adapt_delta = 0.99, max_treedepth = 11))
 y_ev <- posterior_predict(post5, newdata = data.frame(hs = DATA_ENV$hs_ev,
                                                       afqt = DATA_ENV$afqt_ev))
-par()
+par(mfrow = c(1,1))
 hist(-sweep(y_ev, 2, STATS = DATA_ENV$ppvt_ev, FUN = "-"), prob = TRUE,
      xlab = "Predictive Errors in ppvt", main = "", las = 2)
 
-rm(IQ_SEQ, y_nohs, y_hs, y_ev)
-# removes stanreg and loo objects, plus what was created by STARTUP
-demo("CLEANUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
+ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
+if (ANSWER != "n") {
+  rm(IQ_SEQ, y_nohs, y_hs, y_ev, ANSWER)
+  # removes stanreg and loo objects, plus what was created by STARTUP
+  demo("CLEANUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
+}
