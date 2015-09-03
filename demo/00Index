@@ -1,0 +1,4 @@
+ARM_Ch03	Some stan_lm demos with data on kids IQ
+CLEANUP		Removes objects created by our demos
+SETUP		Loads packages, creates objects, etc.
+
