@@ -118,8 +118,6 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     }
   }
   
-  if (is.null(prior)) prior <- list()
-  if (is.null(prior_intercept)) prior_intercept <- list()
   if (length(prior_ops) == 0) {
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   }
