@@ -329,9 +329,9 @@ test_that("pw_polr returns expected results", {
   }
 })
 context("polr")
-test_that("inv_Phi returns expected results", {
+test_that("inv_Phi2 returns expected results", {
   x <- rnorm(1)
-  expect_true(all.equal(x, inv_Phi(pnorm(x))))
+  expect_true(all.equal(x, inv_Phi2(pnorm(x))))
 })
 context("polr")
 test_that("make_cutpoints returns expected results", {

@@ -53,7 +53,7 @@ functions {
    * @param p Scalar typically on the (0,1) interval
    * @return Scalar, x, on the entire extended real line, such that Phi(x) "=" p
   */
-  real inv_Phi(real p) {
+  real inv_Phi2(real p) {
     real x; real q; real r; real p_low;  real p_high; real e; real u;
     real a[6]; real b[5]; real c[6]; real d[4];
     if( p <= 0 )     return(negative_infinity());
@@ -131,7 +131,7 @@ functions {
     }
     else if (link == 2) for(c in 1:(rows(cutpoints))) {
       running_sum  <- running_sum + probabilities[c];
-      cutpoints[c] <- inv_Phi(running_sum);
+      cutpoints[c] <- inv_Phi2(running_sum);
     }
     else if (link == 3) for(c in 1:(rows(cutpoints))) {
       running_sum  <- running_sum + probabilities[c];
