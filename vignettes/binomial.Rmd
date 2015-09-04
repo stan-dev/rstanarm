@@ -293,7 +293,8 @@ for (i in 1:5) {
   vary_dist <- vary_dist + pred_fn(fit2, i, qy, "y")
   vary_arsenic <- vary_arsenic + pred_fn(fit2, i, qx, "x")
 }
-gridExtra::grid.arrange(vary_dist, vary_arsenic, ncol = 2)
+suppressPackageStartupMessages(gridExtra)
+grid.arrange(vary_dist, vary_arsenic, ncol = 2)
 ```
 
 We can compare our two models (with and without `arsenic`) using an 
