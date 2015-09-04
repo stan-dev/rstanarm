@@ -121,6 +121,10 @@ data {
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_scale_for_dispersion;
 }
+transformed data{
+  real poisson_max;
+  poisson_max <- pow(2.0, 30.0);
+}
 parameters {
   vector[K] z_beta;
   real<lower=if_else(link == 2, 0, negative_infinity())> gamma[has_intercept];
@@ -219,7 +223,14 @@ generated quantities {
     if (family != 2) 
       for (n in 1:N) mean_PPD <- mean_PPD + poisson_rng(rho[n]);
     else
-      for (n in 1:N) mean_PPD <- mean_PPD + neg_binomial_2_rng(rho[n], theta[1]);
+      for (n in 1:N) {
+        real gamma_temp;
+        gamma_temp <- positive_infinity();
+        while(gamma_temp > poisson_max) {
+          gamma_temp <- gamma_rng(theta[1], theta[1] / rho[n]);
+        }
+        mean_PPD <- mean_PPD + poisson_rng(gamma_temp);
+      }
     mean_PPD <- mean_PPD / N;
   }
 }
