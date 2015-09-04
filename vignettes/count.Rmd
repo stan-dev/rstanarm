@@ -35,8 +35,8 @@ theme_set(theme_classic() %+replace% thm_els)
 
 # Introduction
 
-This vignette explains how to estimate generalized linear models (GLMs) for count data using the __rstanarm__
-package.
+This vignette explains how to estimate generalized linear models (GLMs) for 
+count data using the __rstanarm__ package.
 
 The four steps of a Bayesian analysis are
 
@@ -75,7 +75,7 @@ support of $\lambda$) and the set of all real numbers $\mathbb{R}$. When applied
 to a linear predictor $\eta$ with values in $\mathbb{R}$, the inverse link
 function $g^{-1}(\eta)$ therefore returns a positve real number.
 
-Although other link functions are possible, the standard link function for a 
+Although other link functions are possible, the canonical link function for a 
 Poisson GLM is the log link $g(x) = \ln{(x)}$. With the log link, the inverse
 link function is simply the exponential function and the likelihood for a single
 observation becomes
@@ -228,9 +228,7 @@ distribution. We just need to change the `family` we specify in the call
 to `stan_glm`, which we now set to `neg_binomial_2` instead of `poisson`:
 
 ```{r, ROACHES-negbin, eval=FALSE}
-stan_glm2 <- update(stan_glm1, family = neg_binomial_2, 
-                    prior_ops = prior_options(prior_scale_for_dispersion =
-1))
+stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 
 We can also use `posterior_predict` in the same way to check the proportion
