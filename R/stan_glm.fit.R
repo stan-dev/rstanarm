@@ -20,6 +20,7 @@
 #'   have elements for the \code{gamma_shape}, \code{scale},
 #'   \code{concentration} and \code{shape} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
+#' @importFrom methods is   
 #' @export
 #' 
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 

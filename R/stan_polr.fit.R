@@ -20,6 +20,7 @@
 #' @param wt A numeric vector (possibly \code{NULL}) of observation weights.
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets.
 #' 
+#' @importFrom utils head tail
 stan_polr.fit <- function (x, y, wt = NULL, offset = NULL, 
                            method = c("logistic", "probit", "loglog", 
                                       "cloglog", "cauchit"), ...,
