@@ -2,7 +2,7 @@
 #' 
 #' All models fit using \code{algorithm='sampling'} are compatible with a 
 #' variety of plotting functions. Each function returns at least one
-#' \code{\link[ggplot]{ggplot}} object that can be customized further using the
+#' \code{\link[ggplot2]{ggplot}} object that can be customized further using the
 #' \pkg{ggplot2} package.
 #' 
 #' @name plots
