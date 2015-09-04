@@ -17,8 +17,8 @@
 #' set.seed(seed)
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200, seed = seed)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = 200, seed = seed)
-#' (loo1 <- loo(fit1))
-#' loo2 <- loo(fit2)
+#' (loo1 <- loo(fit1, cores = 2))
+#' loo2 <- loo(fit2, cores = 2)
 #' loo::compare(loo1, loo2)
 #' plot(loo2, label_points = TRUE)
 #' 
