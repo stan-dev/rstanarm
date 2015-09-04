@@ -134,13 +134,12 @@ coef.stanreg <- function(object, ...) {
 #' @importFrom lme4 sigma
 #' 
 sigma.stanreg <- function(object, ...) {
-  .glmer_check(object)
-  if ("sigma" %in% rownames(object$stan_summary)) 
-    object$stan_summary["sigma", "mean"]
-  else {
-    warning("sigma not found", call. = FALSE)
+  if (!("sigma" %in% rownames(object$stan_summary))) {
+    warning("sigma not found. This method is only for Gaussian models.", 
+            call. = FALSE)
     invisible(NULL)
   }
+  else object$stan_summary["sigma", "mean"]
 }
 
 #' @rdname stanreg-methods
