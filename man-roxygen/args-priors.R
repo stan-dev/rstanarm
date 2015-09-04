@@ -6,4 +6,4 @@
 #'   predictors are centered.)
 #' @param prior_ops Additional options related to prior distributions. Can 
 #'   be \code{NULL} to omit a prior on the dispersion and see 
-#'   \code{\link{priors_options}} otherwise.
+#'   \code{\link{prior_options}} otherwise.
