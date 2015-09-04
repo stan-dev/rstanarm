@@ -35,8 +35,7 @@ theme_set(theme_classic() %+replace% thm_els)
 
 # Introduction
 
-This vignette explains how to estimate generalized linear models (GLMs) for 
-binary (Bernoulli) and Binomial response variables using the __rstanarm__
+This vignette explains how to estimate generalized linear models (GLMs) for count data using the __rstanarm__
 package.
 
 The four steps of a Bayesian analysis are
