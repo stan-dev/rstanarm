@@ -73,7 +73,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   }
   group <- glmod$reTrms
-  group$decov <- prior.for.covariance
+  group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
