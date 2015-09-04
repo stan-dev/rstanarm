@@ -11,11 +11,22 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-
+```{r, HOOK, include=FALSE}
+library(knitr)
+local({
+  hook_plot = knit_hooks$get('plot')
+  knit_hooks$set(plot = function(x, options) {
+    x = paste(x, collapse = '.')
+    if (!grepl('\\.svg', x)) return(hook_plot(x, options))
+    # read the content of the svg image and write it out without <?xml ... ?>
+    paste(readLines(x)[-1], collapse = '\n')
+  })
+})
+```
 
 ```{r, SETTINGS, include=FALSE}
-knitr::opts_chunk$set(dev = 'svg', fig.align='center', fig.height = 3, message = FALSE,
-                      warning = FALSE) 
+opts_chunk$set(dev = 'svg', fig.align='center', fig.height = 3, 
+               message = FALSE, warning = FALSE) 
 suppressPackageStartupMessages(require(rstanarm))
 thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
                  legend.background = element_rect(fill = "gray"))
@@ -41,7 +52,7 @@ The four steps of a Bayesian analysis are
   interesting values of the predictors in order to visualize how a manipulation
   of a predictor affects (a function of) the outcome(s).
   
-Step 3 and 4 are covered in more depth by the vignette entitled "How to Use the
+Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
 the product of conditionally independent binomial distributions (possibly with
 only one trial per observation).
@@ -293,7 +304,7 @@ for (i in 1:5) {
   vary_dist <- vary_dist + pred_fn(fit2, i, qy, "y")
   vary_arsenic <- vary_arsenic + pred_fn(fit2, i, qx, "x")
 }
-suppressPackageStartupMessages(gridExtra)
+suppressPackageStartupMessages(require(gridExtra))
 grid.arrange(vary_dist, vary_arsenic, ncol = 2)
 ```
 
@@ -301,10 +312,12 @@ We can compare our two models (with and without `arsenic`) using an
 approximation to Leave-One-Out (LOO) cross-validation, which is a method
 for estimating out of sample predictive performance and is implemented 
 by the `loo` function in the __loo__ package:
+
 ```{r, LOO}
+suppressPackageStartupMessages(require(loo))
 (loo1 <- loo(fit1, cores = 2))
 (loo2 <- loo(fit2, cores = 2))
-loo::compare(loo1, loo2)
+compare(loo1, loo2)
 ```
 
 These results favor `fit2` over `fit1` by a wide margin. The estimated
@@ -319,7 +332,7 @@ The vignette for `stan_lm` also has an example of using the __loo__ function
 where the results are quite a bit different from what we see here and some 
 important additional considerations are discussed.
 
-# Binomial models
+# Binomial Models
 
 Although the example in this vignette focused on a binary response variable, we
 can use nearly identical code if we have the sum of multiple binary variables.

@@ -30,7 +30,7 @@ The four steps of a Bayesian analysis are
   interesting values of the predictors in order to visualize how a manipulation
   of a predictor affects (a function of) the outcome(s).
   
-Step 3 and 4 are covered in more depth by the vignette entitled "How to Use the
+Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1.
 
 One of the strengths of doing MCMC with Stan --- as opposed to a Gibbs sampler 
