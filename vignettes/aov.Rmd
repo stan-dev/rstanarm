@@ -87,9 +87,9 @@ Pakcage" for more information on this approach.
 
 # Example
 
-We will utilize an example from the __HSAUR__ package by Brian S. Everitt and
-Torsten Hothorn, which is used in their 2006 book 
-_A Handbook of Statistical Analyses Using R (1st Edition)_ (Chapman & Hall /
+We will utilize an example from the __HSAUR3__ package by Brian S. Everitt and
+Torsten Hothorn, which is used in their 2014 book 
+_A Handbook of Statistical Analyses Using R (3rd Edition)_ (Chapman & Hall /
 CRC). This book is frequentist in nature and we will show how to obtain the 
 corresponding Bayesian results.
 
@@ -100,7 +100,7 @@ was derived from beef or cereal. Before seeing the data, one might expect that
 a moderate proportion of the variance in weight gain might be attributed to
 protein (source) in the diet. The frequentist ANOVA estimates can be obtained:
 ```{r aov}
-data("weightgain", package = "HSAUR")
+data("weightgain", package = "HSAUR3")
 coef(aov(weightgain ~ source * type, data = weightgain))
 ```
 To obtain Bayesian estimates we can prepend `stan_` to `aov` and specify the

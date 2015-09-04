@@ -190,7 +190,7 @@ forcing us to estimate an ordinal model.
 post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
                    prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
                    method = "probit", cores = 2, seed = 12345)
-plot(loo(post2))
+plot(loo(post2, cores = 2))
 ```
 
 This prior seems to have worked well in this case because none of the points

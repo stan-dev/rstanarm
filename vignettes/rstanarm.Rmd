@@ -68,15 +68,15 @@ uncertainty in our beliefs about the unknowns.
 # Step 1: Specify a posterior distribution
 
 For the sake of discussion, we need some posterior distribution to draw from. 
-We will utilize an example from the __HSAUR__ package by Brian S. Everitt and
-Torsten Hothorn, which is used in their 2006 book 
-_A Handbook of Statistical Analyses Using R (1st Edition)_ (Chapman & Hall /
+We will utilize an example from the __HSAUR3__ package by Brian S. Everitt and
+Torsten Hothorn, which is used in their 2014 book 
+_A Handbook of Statistical Analyses Using R (3rd Edition)_ (Chapman & Hall /
 CRC). This book is frequentist in nature and we will show how to obtain the 
 corresponding Bayesian results.
 
 The model in section 6.3.2 pertains to whether a survey respondent agrees or
 disagrees with a conservative statement about the role of women in society, 
-which is modeled as a function of the sex and education of the respondents. 
+which is modeled as a function of the gender and education of the respondents.
 The posterior distribution --- with independent priors --- can be written as
 $$f\left(\alpha,\beta_1,\beta_2|\mathbf{y},\mathbf{X}\right) \propto
   f\left(\alpha\right) f\left(\beta_1\right) f\left(\beta_2\right) \times
@@ -88,11 +88,11 @@ is the linear predictor and a function of an intercept $\left(\alpha\right)$,
 a coefficient on the years of education $\left(\beta_1\right)$, and an 
 intercept-shift $\left(\beta_2\right)$ for the case where the respondent is 
 female. These data are organized such that $y_i$ is the number of people who 
-agree with the statement that have the same level of education and the same sex
-and $n_i - y_i$ is the number of such people who disagree with the statement. 
-The inverse link function, $p = g^{-1}\left(\eta_i \right)$, for a binomial
-likelihood can be one of several Cumulative Distribution Functions (CDFs) but 
-in this case is the standard logistic CDF, 
+agree with the statement that have the same level of education and the same
+gender and $n_i - y_i$ is the number of such people who disagree with the 
+statement. The inverse link function, $p = g^{-1}\left(\eta_i \right)$, for a
+binomial likelihood can be one of several Cumulative Distribution Functions
+(CDFs) but in this case is the standard logistic CDF, 
 $g^{-1}\left(\eta_i \right)=\frac{1}{1 + e^{-\eta_i}}$.
 
 Suppose we believe --- prior to seeing the data --- that $\alpha$, 
@@ -113,9 +113,9 @@ $$g^{-1}\left(\eta_i \right)^{y_i}
 which can be maximized over $\alpha$, $\beta_1$, and $\beta_2$ to obtain 
 frequentist estimates by calling
 ```{r MLE}
-data("womensrole", package = "HSAUR")
+data("womensrole", package = "HSAUR3")
 womensrole$total <- womensrole$agree + womensrole$disagree
-womensrole_glm_1 <- glm(cbind(agree, disagree) ~ education + sex,
+womensrole_glm_1 <- glm(cbind(agree, disagree) ~ education + gender,
                         data = womensrole, family = binomial(link = "logit"))
 round(coef(summary(womensrole_glm_1)), 3)
 ```
@@ -133,7 +133,7 @@ prepending `stan_` to the `glm` call and specifying priors (and optionally
 the number of cores on your computer to utilize):
 ```{r MCMC}
 suppressPackageStartupMessages(require(rstanarm))
-womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + sex,
+womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole, seed = 12345,
                               family = binomial(link = "logit"), 
                               cores = 2, prior = student_t(df = 7), 
@@ -190,37 +190,37 @@ dim(y_rep)
 ```
 The resulting matrix has rows equal to the number of posterior simulations,
 which in this case is $4000$ and columns equal to the number of observations
-in the original dataset, which is $42$ combinations of education and sex.
+in the original dataset, which is $42$ combinations of education and gender.
 Each element of this matrix is a predicted number of respondents with that
-value of education and sex who agreed with the survey question and thus 
+value of education and gender who agreed with the survey question and thus 
 should be reasonably close to the observed proportion of agreements in the 
 data. We can create a plot to check this:
 ```{r criticism, fig.width=10, fig.cap="Posterior predictive boxplots vs. observed datapoints"}
 par(mfrow = 1:2, mar = c(5,3.7,1,0) + 0.1, las = 3)
-boxplot(sweep(y_rep[,womensrole$sex == "Male"], 2, STATS = 
-               womensrole$total[womensrole$sex == "Male"], FUN = "/"), 
+boxplot(sweep(y_rep[,womensrole$gender == "Male"], 2, STATS = 
+               womensrole$total[womensrole$gender == "Male"], FUN = "/"), 
         axes = FALSE, main = "Male", pch = NA,
         xlab = "Years of Education", ylab = "Proportion of Agrees")
-with(womensrole, axis(1, at = education[sex == "Male"] + 1, 
+with(womensrole, axis(1, at = education[gender == "Male"] + 1, 
                       labels = 0:20))
 axis(2, las = 1)
-with(womensrole[womensrole$sex == "Male",], 
+with(womensrole[womensrole$gender == "Male",], 
      points(education + 1,  agree / (agree + disagree), 
             pch = 16, col = "red"))
-boxplot(sweep(y_rep[,womensrole$sex == "Female"], 2, STATS = 
-          womensrole$total[womensrole$sex == "Female"], FUN = "/"), 
+boxplot(sweep(y_rep[,womensrole$gender == "Female"], 2, STATS = 
+          womensrole$total[womensrole$gender == "Female"], FUN = "/"), 
           axes = FALSE, main = "Female", pch = NA,
         xlab = "Years of Education", ylab = "")
-with(womensrole, axis(1, at = education[sex == "Female"] + 1,
+with(womensrole, axis(1, at = education[gender == "Female"] + 1,
      labels = 0:20))
-with(womensrole[womensrole$sex == "Female",], 
+with(womensrole[womensrole$gender == "Female",], 
      points(education + 1,  agree / (agree + disagree), 
             pch = 16, col = "red"))
 ```
 Here the boxplots provide the median, interquartile range, and hinges of the
-posterior predictive distribution for a given sex and level of education, while
-the red points represent the corresponding observed data. As can be seen, the
-model predicts the observed data fairly well for six to sixteen years of 
+posterior predictive distribution for a given gender and level of education,
+while the red points represent the corresponding observed data. As can be seen,
+the model predicts the observed data fairly well for six to sixteen years of 
 education but predicts less well for very low or very high levels of education
 where there are less data. 
 
@@ -228,7 +228,7 @@ Consequently, we might consider a model where education has a quadratic effect
 on agreement, which is easy to specify using R's formula-based syntax.
 ```{r}
 womensrole_bglm_2 <- stan_glm(cbind(agree, disagree) ~ education
-                              + I(education^2) + sex, data = womensrole,
+                              + I(education^2) + gender, data = womensrole,
                               seed = 12345, family = binomial(link = "logit"),
                               cores = 2, prior = student_t(df = 7), 
                               prior_intercept = student_t(df = 7))
@@ -275,10 +275,10 @@ levels of the predictors. For example,
 ```{r}
 y_rep <- posterior_predict(womensrole_bglm_2, newdata = 
                              data.frame(education = c(12,16),
-                                        sex = factor("Female", levels = 
-                                                     c("Male", "Female"))))
+                                        gender = factor("Female", levels = 
+                                                       c("Male", "Female"))))
 y_rep <- with(womensrole, sweep(y_rep, 2, FUN = "/", STATS = 
-                total[sex == "Female" & education %in% c(12,16)]))
+                total[gender == "Female" & education %in% c(12,16)]))
 summary(apply(y_rep, 1, diff))
 ```
 As can be seen, two women --- one with a high school degree and another

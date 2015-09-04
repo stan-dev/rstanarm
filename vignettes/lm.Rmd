@@ -236,9 +236,9 @@ distribution of the hyperparameters $\ln \omega$ and $\boldsymbol{\Lambda}$.
 
 # Example
 
-We will utilize an example from the __HSAUR__ package by Brian S. Everitt and
-Torsten Hothorn, which is used in their 2006 book 
-_A Handbook of Statistical Analyses Using R (1st Edition)_ (Chapman & Hall /
+We will utilize an example from the __HSAUR3__ package by Brian S. Everitt and
+Torsten Hothorn, which is used in their 2014 book 
+_A Handbook of Statistical Analyses Using R (3rd Edition)_ (Chapman & Hall /
 CRC). This book is frequentist in nature and we will show how to obtain the 
 corresponding Bayesian results.
 
@@ -251,7 +251,7 @@ thus the prior mode of the $R^2$ would probably be fairly small.
 
 The frequentist estimator of this model can be replicated by executing
 ```{r OLS}
-data("clouds", package = "HSAUR")
+data("clouds", package = "HSAUR3")
 ols <- lm(rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) +
             time, data = clouds)
 round(coef(ols), 3)

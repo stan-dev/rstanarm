@@ -13,7 +13,7 @@ Description: Convenient interface for applied regression models using RStan,
   of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
 Depends: rstan (>= 2.7.0-3)
-Imports: lme4 (>= 1.1-8), loo (>= 0.1.3), shinystan (>= 2.0.0.9000), stats, utils
-Suggests: HSAUR, knitr, testthat
+Imports: lme4 (>= 1.1-8), loo (>= 0.1.3), methods, shinystan (>= 2.0.0.9000), stats, utils
+Suggests: HSAUR3, knitr, MASS, testthat
 VignetteBuilder: knitr
 URL: https://groups.google.com/forum/#!forum/stan-users
