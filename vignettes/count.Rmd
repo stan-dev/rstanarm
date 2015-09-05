@@ -120,7 +120,7 @@ $$f\left(\alpha,\boldsymbol{\beta} | \mathbf{y},\mathbf{X}\right) \propto
   
 This is posterior distribution that `stan_glm` will draw from when using MCMC.
 
-# Poisson Regression Example
+# Poisson and Negative Binomial Regression Example
 
 This example comes from Chapter 8.3 of 
 [Gelman and Hill (2007)](http://www.stat.columbia.edu/~gelman/arm/). 
@@ -190,7 +190,7 @@ Gelman and Hill next show how to compare the observed data to replicated
 datasets from the model to check the quality of the fit. Here we don't show the
 original code used by Gelman and Hill because it's many lines, requiring several
 loops and some care to get the matrix multiplications right (see pg. 161-162).
-On the other hand, the __rstanarm__ package makes this trivial. We can generate
+On the other hand, the __rstanarm__ package makes this easy. We can generate
 replicated datasets with a single line of code using the `posterior_predict`
 function:
 
@@ -211,7 +211,7 @@ Test <- function(y) mean(y == 0)
 T_y <- Test(roaches$y) # value for observed data
 T_yrep <- apply(yrep, 1, Test) # value in each of the replicated data sets
 print(range(T_yrep), digits = 1)
-print(T_y)
+print(T_y, digits = 1)
 ```
 
 About 36% of the original observations are zeros, whereas even the replicated 
@@ -227,14 +227,14 @@ allows the (conditional) mean and variance of $y$ to differ unlike the Poisson
 distribution. We just need to change the `family` we specify in the call
 to `stan_glm`, which we now set to `neg_binomial_2` instead of `poisson`:
 
-```{r, ROACHES-negbin, eval=FALSE}
+```{r, ROACHES-negbin}
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 
 We can also use `posterior_predict` in the same way to check the proportion
 of zeros in the replicated datasets:
 
-```{r, ROACHES-negbin-post_pred, eval=FALSE}
+```{r, ROACHES-negbin-posterior_predict}
 yrep2 <- posterior_predict(stan_glm2) 
 T_yrep2 <- apply(yrep2, 1, Test)
 print(range(T_yrep2), digits = 1)
@@ -243,13 +243,16 @@ print(range(T_yrep2), digits = 1)
 We can see that the replicated datasets under the negative binomial model have
 many more zeros that the the replicatations generated under the original Poisson
 model. We can more clearly compare the new replications to the original data
-with a simple histogram that, in the case, shows that the observed data
-is quite plausible under the model:
+with a simple histogram:
 
-```{r, ROACHES-negbin2, eval=FALSE}
+```{r, ROACHES-negbin-posterior_predict2, fig.width = 4}
 qplot(T_yrep2, ylab = "", xlab = "Proportion of zeros") + 
-  geom_vline(xintercept = T_y, color = "skyblue2", size = 2) + 
-  ggtitle("Distribution of the proportion of zeros in replicated data under
-          the negative binomial model. Observed proportion is the blue line.")
+  geom_vline(xintercept = T_y, color = "skyblue2", size = 2)
 ```
+
+This histogram shows the distribution of the proportion of zeros across the 
+datasets simulated under the negative binomial model. The value of the statistic
+`T_y` (computed from the sample) is the vertical line, which falls nicely in the
+center of the distribution and indicates that the the observed proportion of
+zeros is quite plausible under this model.
 
