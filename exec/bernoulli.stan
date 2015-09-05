@@ -184,8 +184,8 @@ model {
     else {
       real shift;
       shift <- fmax(max(eta0), max(eta1));
-      eta0 <- gamma[1] + eta0 - shift + 1;
-      eta1 <- gamma[1] + eta1 - shift + 1;
+      eta0 <- gamma[1] + eta0 - shift;
+      eta1 <- gamma[1] + eta1 - shift;
     }
   }
   
@@ -248,8 +248,8 @@ generated quantities {
       else {
         real shift;
         shift <- fmax(max(eta0), max(eta1));
-        eta0 <- gamma[1] + eta0 - shift + 1;
-        eta1 <- gamma[1] + eta1 - shift + 1;
+        eta0 <- gamma[1] + eta0 - shift;
+        eta1 <- gamma[1] + eta1 - shift;
         alpha[1] <- alpha[1] - shift;
       }
     }

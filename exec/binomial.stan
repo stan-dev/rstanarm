@@ -147,7 +147,7 @@ model {
   if (has_offset == 1) eta <- eta + offset;
   if (has_intercept == 1) {
     if (link != 4) eta <- eta + gamma[1];
-    else eta <- gamma[1] + eta - max(eta) + 1;
+    else eta <- gamma[1] + eta - max(eta);
   }
   
   // Log-likelihood 
@@ -191,7 +191,7 @@ generated quantities {
       else {
         real shift;
         shift <- max(eta);
-        eta <- gamma[1] + eta - shift + 1;
+        eta <- gamma[1] + eta - shift;
         alpha[1] <- alpha[1] - shift;
       }
     }
