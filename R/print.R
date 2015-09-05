@@ -20,7 +20,7 @@ print.stanreg <- function(x, digits = 3, ...) {
       nms <- c(nms, "lambda")
     else if (x$family$family == "neg_binomial_2")
       nms <- c(nms, "overdispersion")
-    nms <- c(nms, grep("^mean_PPD:", rownames(x$stan_summary), value = TRUE))
+    nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     print(x$stan_summary[nms,1:2], digits = digits, ...)
   }
 
