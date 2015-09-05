@@ -148,7 +148,7 @@ argument to `stan_glm`:
 
 ```{r, ROACHES-fit}
 # Load data and create dist100 variable 
-roaches <- read.csv("roaches.csv")
+roaches <- read.csv("roaches.csv.xz")
 # Estimate original model
 glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
             family = poisson, offset = log(exposure2))
