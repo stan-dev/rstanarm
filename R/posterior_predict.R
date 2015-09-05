@@ -38,7 +38,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     if (draws > S)
       stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
   } 
-  beta <- stanmat[, 1:ncol(dat$x)]
+  beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   if (draws < S)
     eta <- eta[sample(S, draws), , drop = FALSE]
@@ -83,23 +83,23 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
 }
 .pp_neg_binomial_2 <- function(mu, size) {
   t(sapply(1:nrow(mu), function(s) {
-    rnbinom(ncol(mu), size = size, mu = mu[s,])
+    rnbinom(ncol(mu), size = size[s], mu = mu[s,])
   }))
 }
 
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
-    rbinom(ncol(mu), size = trials, prob = mu[s,])
+    rbinom(ncol(mu), size = trials[s], prob = mu[s,])
   }))
 }
 .pp_Gamma <- function(mu, shape) {
   t(sapply(1:nrow(mu), function(s) {
-    rgamma(ncol(mu), shape = shape, rate = shape / mu[s,])
+    rgamma(ncol(mu), shape = shape[s], rate = shape[s] / mu[s,])
   }))
 }
 .pp_inverse.gaussian <- function(mu, lambda) {
   t(sapply(1:nrow(mu), function(s) {
-    .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda)
+    .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda[s])
   }))
 }
 
