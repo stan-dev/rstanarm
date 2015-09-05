@@ -329,11 +329,6 @@ test_that("pw_polr returns expected results", {
   }
 })
 context("polr")
-test_that("inv_Phi2 returns expected results", {
-  x <- rnorm(1)
-  expect_true(all.equal(x, inv_Phi2(pnorm(x))))
-})
-context("polr")
 test_that("make_cutpoints returns expected results", {
   for (i in 1:length(links)) {
     p <- MCMCpack::rdirichlet(1, rep(1,J))[1,]
