@@ -8,12 +8,13 @@ source(paste0(ROOT, "ARM/Ch.4/earnings.data.R"), local = DATA_ENV, verbose = FAL
 # Just look at the posterior predictive distribution 
 # over a range of values to interpret the effect of a predictor
 
-# These models are essentially equivalent in the likelihood
+# These two models are essentially equivalent in the likelihood
 # But the "same" priors affect the posterior differently
 post1 <- stan_glm(log(earn) ~ height, data = DATA_ENV, 
                   family = gaussian(link = "identity"), seed = SEED)
-post2 <- stan_glm(earn ~ height, data = DATA_ENV, 
-                  family = gaussian(link = "log"), seed = SEED)
+# post2 <- stan_glm(earn ~ height, data = DATA_ENV, 
+#                   family = gaussian(link = "log"), seed = SEED)
+# and this does not even converge
 
 # These models add terms to the right-hand side
 post3 <- stan_lm(log(earn) ~ height + male, data = DATA_ENV,
@@ -25,7 +26,7 @@ post4 <- stan_lm(log(earn) ~ height * male, data = DATA_ENV,
 
 # Compare them with loo
 loo1 <- loo(post1)
-# post2 is not comparable to the others
+# post2 is not comparable to the others anyway
 loo3 <- loo(post3)
 loo4 <- loo(post4)
 compare(loo1, loo3, loo4) # loo1 is dominated
