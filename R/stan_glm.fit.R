@@ -66,15 +66,20 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stopifnot(NCOL(y) == 2L)
       trials <- as.integer(y[, 1L] + y[, 2L])
       y <- as.integer(y[, 1L])
-    } else {
+    } else if (all(weights == 1)){
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
       if (is.factor(y)) 
         y <- y != levels(y)[1L]
       y <- as.integer(y)
       if (!all(y %in% c(0L, 1L))) 
-        stop("y values must be 0 or 1 for logistic regression")
-    } 
+        stop("y values must be 0 or 1 for bernoulli regression")
+    }
+    else {
+      if (!all(y >= 0 & y <= 1))
+        stop("y values must be between 0 and 1 for binomial regression")
+      trials <- weights
+    }
   }
   
   x <- as.matrix(x)
@@ -260,6 +265,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
     else {
       standata$trials <- trials
+      if (length(weights) > 0 & !all(weights == 1)) {
+        standata$y <- round(y * trials)
+        standata$weights <- double(0)
+        standata$has_weights <- 0L
+      }
       stanfit <- get("stanfit_binomial")
     }
   }   
@@ -285,7 +295,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
             if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
-    out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE)
+    out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE, ...)
     k <- ncol(out$hessian)
     rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
     new_names <- names(out$par)
@@ -293,8 +303,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[new_names == "dispersion"] <- if (is_gaussian) "sigma" else
                                             if (is_gamma) "scale" else
-                                            if (is_ig) "lambda" else
-                                            if (is_nb) "overdispersion" else NA
+                                            if (is_ig) "lambda" else NA
+    if (is_nb) new_names[new_names == "theta[1]"] <- "overdispersion"
     if (length(group) > 0) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
       new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
