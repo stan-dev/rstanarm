@@ -80,12 +80,6 @@ test_that("make_upper_bernoulli returns expected results", {
 })
 
 context("Bernoulli")
-test_that("dp_deta returns expected results", {
-  for (i in 1:length(links)) {
-    eta <- rnorm(1)
-    expect_true(all.equal(make.link(links[i])$mu.eta(eta), dp_deta(eta, i)))
-  }
-})
 
 # Binomial
 trials <- 10L
@@ -330,11 +324,12 @@ test_that("pw_polr returns expected results", {
 })
 context("polr")
 test_that("make_cutpoints returns expected results", {
+  J <- 5L
   for (i in 1:length(links)) {
     p <- MCMCpack::rdirichlet(1, rep(1,J))[1,]
     cutpoints <- make_cutpoints(p, 1, i)
     for (j in 1:length(cutpoints)) {
-      expect_true(all.equal(sum(p[1:j]), CDF(cutpoints[j], i)))
+      expect_true(all.equal(sum(p[1:j]), CDF_polr(cutpoints[j], i)))
     }
   }
 })
