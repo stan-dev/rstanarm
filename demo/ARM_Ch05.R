@@ -91,7 +91,7 @@ par(mfrow = op)
 ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
 if (ANSWER != "n") {
   rm(nes1992, invlogit, t_prior, b, pr_bush, income_vals, 
-     wells, jitter.binary, b2, b3, op)
+     wells, jitter.binary, b2, b3, op, ANSWER)
   # removes stanreg and loo objects, plus what was created by STARTUP
   demo("CLEANUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
 }

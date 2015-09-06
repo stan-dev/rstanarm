@@ -3,6 +3,7 @@ ARM_Ch04	Some stan_lm demos with transformed data
 ARM_Ch05	Some stan_glm demos with logit models
 ARM_Ch07  More examples of posterior predictive distributions
 ARM_Ch08  More examples of posterior predictive distributions
+ARM_Ch09  Regression for causal inference
 CLEANUP		Removes objects created by our demos
 SETUP		  Loads packages, creates objects, etc.
 
