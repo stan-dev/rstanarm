@@ -134,7 +134,7 @@ ppcheck_stat <- function(y, yrep, test, ...) {
   dots <- list(...)
   vline_color <- if ("color" %in% names(dots)) dots$color else "skyblue"
   fill_color <- if ("fill" %in% names(dots)) dots$fill else "black"
-  graph <- ggplot(data.frame(x = T_yrep), aes(x = x)) +
+  graph <- ggplot(data.frame(x = T_yrep), aes_string(x = 'x')) +
     stat_bin(aes_string(y = "..count../sum(..count..)"), 
              fill = fill_color, color = fill_color, ...) 
   graph + 
