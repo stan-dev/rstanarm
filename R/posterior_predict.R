@@ -89,7 +89,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
 
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
-    rbinom(ncol(mu), size = trials[s], prob = mu[s,])
+    rbinom(ncol(mu), size = trials, prob = mu[s,])
   }))
 }
 .pp_Gamma <- function(mu, shape) {
