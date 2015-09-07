@@ -11,6 +11,7 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
+
 ```{r, HOOK, include=FALSE}
 library(knitr)
 local({
@@ -27,7 +28,6 @@ local({
 ```{r, SETTINGS, include=FALSE}
 opts_chunk$set(dev = 'svg', fig.align='center', fig.height = 3, 
                message = FALSE, warning = FALSE) 
-suppressPackageStartupMessages(require(rstanarm))
 thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
                  legend.background = element_rect(fill = "gray"))
 theme_set(theme_classic() %+replace% thm_els)
@@ -147,6 +147,8 @@ to the linear predictor $\eta_i$ and it can be specified using the `offset`
 argument to `stan_glm`:
 
 ```{r, ROACHES-fit}
+suppressPackageStartupMessages(require(rstanarm))
+
 # Load data and create dist100 variable 
 roaches <- read.csv("roaches.csv.xz")
 # Estimate original model
@@ -198,7 +200,12 @@ function:
 yrep <- posterior_predict(stan_glm1)
 ```
 
-For more about the importance of the `posterior_predict` function, see the 
+By default `posterior_predict` will generate a dataset for each set of 
+parameter draws from the posterior distribution. That is, `yrep` will be an 
+$S \times N$ matrix, where $S$ is the size of the posterior sample and $N$
+is the number of data points. Each row of `yrep` represents a full dataset
+generated from the posterior predictive distribution. For more about the 
+importance of the `posterior_predict` function, see the 
 "How to Use the __rstanarm__ Package" vignette.
 
 Gelman and Hill take the simulated datasets and for each of them  
@@ -249,4 +256,17 @@ We could have also made these plots manually without using the `ppcheck` functio
 because we have the `yrep` datasets created by `posterior_predict`. The `ppcheck`
 function takes care of this for us, but `yrep` can be used directly to carry out 
 other posterior predictive checks that aren't automated by `ppcheck`. 
+
+When we comparing the models using the __loo__ package we also see a clear
+preference for the negative binomial model:
+
+```{r, ROACHES-loo}
+suppressPackageStartupMessages(require(loo))
+loo1 <- loo(stan_glm1)
+loo2 <- loo(stan_glm2)
+compare(loo1, loo2)
+```
+
+The weight of 1 assigned to the negative binomial is not surprising given 
+the better fit we've already observed from the posterior predictive checks.
 

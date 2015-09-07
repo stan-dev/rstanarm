@@ -9,6 +9,7 @@
 #' 
 #' @section Plotting functions:
 #' \describe{
+#' \item{Posterior predictive checks}{\code{\link{ppcheck}}}
 #' \item{Posterior intervals and point estimates}{\code{\link[rstan]{stan_plot}}}
 #' \item{Traceplots}{\code{\link[rstan]{stan_trace}}}
 #' \item{Histograms}{\code{\link[rstan]{stan_hist}}}

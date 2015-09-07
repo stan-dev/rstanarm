@@ -1,5 +1,11 @@
 #' Draw from posterior predictive distribution
 #' 
+#' The posterior predictive distribution is the distribution of the outcome 
+#' implied by the model after using the observed data to update our beliefs 
+#' about the unknown parameters. Simulating data from the posterior predictive 
+#' distribution at interesting values of the predictors allows us to visualize
+#' how a manipulation of a predictor affects (a function of) the outcome(s).
+#' 
 #' @export
 #' 
 #' @inheritParams stanreg-methods
@@ -7,7 +13,10 @@
 #'   which to predict. If omitted, the model matrix is used.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
-#' @param fun An optional function to apply to the results. See Examples.
+#' @param fun An optional function to apply to the results. This can be the name
+#'   of a function as a character string (e.g. \code{fun = "exp"}) or a function
+#'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
+#'   See Examples.
 #' 
 #' @return A matrix of draws from the posterior predictive distribution.
 #' 
@@ -20,8 +29,9 @@
 #' wt_vals <- with(mtcars, c(min(wt), median(wt), max(wt)))
 #' ppd <- posterior_predict(fit, newdata = data.frame(wt = wt_vals))
 #' 
+#' # Use fun = exp to transform predictions generated on the the log-scale
 #' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars, iter = 200)
-#' ppd <- posterior_predict(fit, fun = exp)
+#' ppd <- posterior_predict(fit, fun = exp) 
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (object$algorithm == "optimizing")
@@ -67,7 +77,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
       ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
     if (missing(fun)) ytilde
-    else do.call(fun, list(ytilde))
+    else do.call(match.fun(fun), list(ytilde))
   }
 }
 
