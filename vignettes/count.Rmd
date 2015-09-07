@@ -198,61 +198,55 @@ function:
 yrep <- posterior_predict(stan_glm1)
 ```
 
-(For more on `posterior_predict` see the "How to Use the __rstanarm__ Package"
-vignette.)
+For more about the importance of the `posterior_predict` function, see the 
+"How to Use the __rstanarm__ Package" vignette.
 
 Gelman and Hill take the simulated datasets and for each of them  
 compute the proportion of zeros and compare to the observed proportion of 
-in the original data. We can do the same thing with our replicated 
-datasets in `yrep` like this:
+in the original data. We can do this easily using the `ppcheck` function, which
+generates graphical comparisons of the data `y` and replicated datasets `yrep`.
 
-```{r, ROACHES-posterior_predict2}
-Test <- function(y) mean(y == 0)
-T_y <- Test(roaches$y) # value for observed data
-T_yrep <- apply(yrep, 1, Test) # value in each of the replicated data sets
-print(range(T_yrep), digits = 1)
-print(T_y, digits = 1)
+```{r, ROACHES-ppcheck}
+prop_zero <- function(y) mean(y == 0)
+(prop_zero_test1 <- ppcheck(stan_glm1, check = "test", test = prop_zero))
 ```
 
-About 36% of the original observations are zeros, whereas even the replicated 
-dataset with the most zeros has only 0.8%. This is a sign that we should 
-consider a model that more accurately accounts for the large proportion of zeros
-in the data. Gelman and Hill show how we can do this using an overdispered
-Poisson regression. To illustrate the use of a different `stan_glm` model, here
-we will instead try 
+The value of the test statistic (in this case the proportion of zeros) computed 
+from the sample `y` is the vertical blue line. More than 30% of these
+observations are zeros, whereas the replicated datasets all contain less than 1%
+zeros. This is a sign that we should consider a model that more accurately
+accounts for the large proportion of zeros in the data. Gelman and Hill show how
+we can do this using an overdispered Poisson regression. To illustrate the use
+of a different `stan_glm` model, here we will instead try
 [negative binomial](https://en.wikipedia.org/wiki/Negative_binomial_distribution) 
-regression, which is also used for
-overdispersed or zero-inflated count data. The negative binomial distribution
-allows the (conditional) mean and variance of $y$ to differ unlike the Poisson
-distribution. We just need to change the `family` we specify in the call
-to `stan_glm`, which we now set to `neg_binomial_2` instead of `poisson`:
+regression, which is also used for overdispersed or zero-inflated count data.
+The negative binomial distribution allows the (conditional) mean and variance of
+$y$ to differ unlike the Poisson distribution. We just need to change the
+`family` we specify in the call to `stan_glm`, which we now set to
+`neg_binomial_2` instead of `poisson`:
 
 ```{r, ROACHES-negbin}
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 
-We can also use `posterior_predict` in the same way to check the proportion
-of zeros in the replicated datasets:
+We now use `ppcheck` again, this time to check the proportion of zeros in the
+replicated datasets under the negative binomial model:
 
-```{r, ROACHES-negbin-posterior_predict}
-yrep2 <- posterior_predict(stan_glm2) 
-T_yrep2 <- apply(yrep2, 1, Test)
-print(range(T_yrep2), digits = 1)
+```{r, ROACHES-negbin-ppcheck}
+(prop_zero_test2 <- ppcheck(stan_glm2, check = "test", test = prop_zero))
+suppressPackageStartupMessages(require(gridExtra))
+grid.arrange(prop_zero_test1 + ggtitle("Poisson"), 
+             prop_zero_test2 + ggtitle("Negative Binomial"), 
+             ncol = 2)
 ```
 
-We can see that the replicated datasets under the negative binomial model have
-many more zeros that the the replicatations generated under the original Poisson
-model. We can more clearly compare the new replications to the original data
-with a simple histogram:
+This is a much better fit, as the proportion of zeros in the data falls nicely 
+near the center of the distribution of the proportion of zeros among the
+replicated datasets. The observed proportion of zeros is quite plausible under
+this model.
 
-```{r, ROACHES-negbin-posterior_predict2, fig.width = 4}
-qplot(T_yrep2, ylab = "", xlab = "Proportion of zeros") + 
-  geom_vline(xintercept = T_y, color = "skyblue2", size = 2)
-```
-
-This histogram shows the distribution of the proportion of zeros across the 
-datasets simulated under the negative binomial model. The value of the statistic
-`T_y` (computed from the sample) is the vertical line, which falls nicely in the
-center of the distribution and indicates that the the observed proportion of
-zeros is quite plausible under this model.
+We could have also made these plots manually without using the `ppcheck` function 
+because we have the `yrep` datasets created by `posterior_predict`. The `ppcheck`
+function takes care of this for us, but `yrep` can be used directly to carry out 
+other posterior predictive checks that aren't automated by `ppcheck`. 
 

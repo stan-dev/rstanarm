@@ -76,12 +76,19 @@ ppcheck <- function(object,
           strip.text = element_text(color = "black", face = "bold"),
           legend.position = "none",
           legend.title = element_text(size = 11),
+          legend.text = element_text(size = 13),
           plot.title = element_text(size = 18))
   
-  args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, 
-               test = test, ...)
+  args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, test = test, 
+               ...)
   graph <- do.call(fn, args)
-  graph + thm
+  if (fn == "ppcheck_stat") {
+    test_lab <- as.character(match.call()[["test"]])
+    graph + 
+      xlab(paste("Test = ", test_lab)) + 
+      thm %+replace% theme(legend.position = "right")
+  }
+  else graph + thm
 }
 
 
@@ -129,17 +136,19 @@ ppcheck_stat <- function(y, yrep, test, ...) {
     test <- match.fun(test)
   T_y <- test(y)
   T_yrep <- apply(yrep, 1L, test)
-  test_call <- as.character(match.call())[4L]
-  
   dots <- list(...)
   vline_color <- if ("color" %in% names(dots)) dots$color else "skyblue"
   fill_color <- if ("fill" %in% names(dots)) dots$fill else "black"
-  graph <- ggplot(data.frame(x = T_yrep), aes_string(x = 'x')) +
+  graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) +
     stat_bin(aes_string(y = "..count../sum(..count..)"), 
-             fill = fill_color, color = fill_color, ...) 
+             fill = fill_color, show_guide = FALSE, ...) 
   graph + 
-    geom_vline(xintercept = T_y, color = vline_color, size = 1.5, alpha = 1) +
-    labs(y = "", x = paste("Test =", test_call))
+    geom_vline(data = data.frame(t = T_y), 
+               aes_string(xintercept = "t", color = "factor(t)"), 
+               size = 2, show_guide = TRUE) +
+    scale_color_manual(name = "", 
+                       values = c(vline_color, fill_color),
+                       labels = c("T(y)", "T(yrep)"))
 }
 
 ppcheck_resid <- function(y, yrep, n = 1, ...) {
