@@ -12,9 +12,9 @@
 #'   \code{check='test statistics'} then \code{nreps} is ignored and the number
 #'   of simulated datasets is the number of post-warmup draws from the posterior
 #'   distribution.
-#' @param overlay For \code{check="distributions"} only, should distributions be 
-#'   plotted separately (\code{FALSE}) or together (\code{TRUE})? For other
-#'   values of \code{check} this is ignored.
+#' @param overlay For \code{check="distributions"} only, should distributions be
+#'   plotted separately (\code{FALSE}) or overlaid in a single plot
+#'   (\code{TRUE})? For other values of \code{check} this is ignored.
 #' @param test For \code{check="test statistics"} only, \code{test} should be a 
 #'   function that computes the desired test statistic. It can be the name of a 
 #'   function as a character string (e.g., \code{test = 'mean'}) or a function 
@@ -28,7 +28,8 @@
 #'   \pkg{ggplot2} package.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
-#'   predictive distribution.
+#'   predictive distribution. Examples of posterior predictive checking can also
+#'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
@@ -97,7 +98,7 @@ ppcheck <- function(object,
           plot.title = element_text(size = 18)) 
 }
 
-.PP_FILL <- "#6B8E8E"
+.PP_FILL <- "skyblue"
 .PP_VLINE_CLR <- "#222222"
 .PP_YREP_CLR <- "#487575"
 .PP_YREP_FILL <- "#222222"
@@ -121,7 +122,7 @@ ppcheck_hist <- function(dat, ...) {
   ggplot(dat, aes_string(x = 'value', fill = 'is_y')) + 
     stat_bin(aes_string(y="..density.."), size = .2, ...) + 
     facet_wrap(~id, scales = "free") + 
-    scale_fill_manual(values = c("black", "skyblue")) +
+    scale_fill_manual(values = c("black", .PP_FILL)) +
     xlab(NULL)
 }
 
@@ -130,7 +131,7 @@ ppcheck_dens <- function(dat, ...) {
   ggplot(dat, aes_string(x = 'value', group = 'id', 
                          fill = "is_y", size = 'is_y')) + 
     geom_density(alpha = 0.4, ...) + 
-    scale_fill_manual(values = c(NA, "gray")) +
+    scale_fill_manual(values = c(NA, .PP_FILL)) +
     scale_size_manual(values = c(.5, 1.5)) +
     xlab("y")
 }
@@ -141,7 +142,7 @@ ppcheck_stat <- function(y, yrep, test, ...) {
   T_y <- test(y)
   T_yrep <- apply(yrep, 1L, test)
   dots <- list(...)
-  vline_color <- if ("color" %in% names(dots)) dots$color else "skyblue"
+  vline_color <- if ("color" %in% names(dots)) dots$color else .PP_FILL
   fill_color <- if ("fill" %in% names(dots)) dots$fill else "black"
   graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) +
     stat_bin(aes_string(y = "..count../sum(..count..)"), 

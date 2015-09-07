@@ -3,8 +3,10 @@
 #' The posterior predictive distribution is the distribution of the outcome 
 #' implied by the model after using the observed data to update our beliefs 
 #' about the unknown parameters. Simulating data from the posterior predictive 
-#' distribution at interesting values of the predictors allows us to visualize
-#' how a manipulation of a predictor affects (a function of) the outcome(s).
+#' distribution using the observed predictors is useful for checking the fit of
+#' the model. Drawing from the posterior predictive distribution at interesting
+#' values of the predictors also lets us visualize how a manipulation of a
+#' predictor affects (a function of) the outcome(s).
 #' 
 #' @export
 #' 
@@ -21,6 +23,8 @@
 #' @return A matrix of draws from the posterior predictive distribution.
 #' 
 #' @seealso \code{\link{ppcheck}} for graphical posterior predictive checks.
+#'   Examples of posterior predictive checking can also be found in the
+#'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples 
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 200)
