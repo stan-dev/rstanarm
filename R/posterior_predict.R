@@ -8,14 +8,14 @@
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
 #' @param fun An optional function to apply to the results. See Examples.
-#'   
+#' 
 #' @return A matrix of draws from the posterior predictive distribution.
+#' 
+#' @seealso \code{\link{ppcheck}} for graphical posterior predictive checks.
 #'   
 #' @examples 
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 200)
 #' yrep <- posterior_predict(fit)
-#' hist(yrep, col = "skyblue", yaxt = "n", ylab = "")
-#' abline(v = mean(mtcars$mpg), col = "maroon", lwd = 5) 
 #' 
 #' wt_vals <- with(mtcars, c(min(wt), median(wt), max(wt)))
 #' ppd <- posterior_predict(fit, newdata = data.frame(wt = wt_vals))

@@ -53,13 +53,15 @@
 #' 
 #' @examples 
 #' # algorithm = "meanfield" is only for time constraints on examples
-#' stan_glm(mpg ~ ., data = mtcars, algorithm = "meanfield", seed = 12345)
+#' (fit <- stan_glm(mpg ~ ., data = mtcars, algorithm = "meanfield", seed = 12345))
+#' stan_plot(fit, ci_level = 0.8)
 #'  
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' stan_glm(counts ~ outcome + treatment, family = poisson(), 
-#'          algorithm = "meanfield")
+#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
+#'                  algorithm = "meanfield")
+#' stan_plot(fit2, ci_level = 0.95, outer_level = 0.99, show_density = TRUE)
 #'
 
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,

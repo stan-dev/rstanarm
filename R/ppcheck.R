@@ -27,7 +27,8 @@
 #' @return A ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package.
 #' 
-#' @seealso \code{\link{posterior_predict}}
+#' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
+#'   predictive distribution.
 #' 
 #' @examples
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
@@ -64,21 +65,7 @@ ppcheck <- function(object,
   if (is.null(nreps) && fn != "ppcheck_stat") {
     nreps <- ifelse(fn == "ppcheck_resid", 1, 8)
   }
-  thm <- theme_classic() +
-    theme(axis.line = element_line(color = "#222222"),
-          axis.line.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y = element_blank(),
-          axis.line.x = element_line(size = 3),
-          axis.title = element_text(face = "bold", size = 13),
-          strip.background = element_blank(),
-          strip.text = element_text(color = "black", face = "bold"),
-          legend.position = "none",
-          legend.title = element_text(size = 11),
-          legend.text = element_text(size = 13),
-          plot.title = element_text(size = 18))
-  
+  thm <- .ppcheck_theme()
   args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, test = test, 
                ...)
   graph <- do.call(fn, args)
@@ -93,6 +80,23 @@ ppcheck <- function(object,
 
 
 # ppcheck stuff -----------------------------------------------------------
+.ppcheck_theme <- function() {
+  theme_classic() +
+    theme(axis.line = element_line(color = "#222222"),
+          axis.line.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.title.y = element_blank(),
+          axis.line.x = element_line(size = 3),
+          axis.title = element_text(face = "bold", size = 13),
+          strip.background = element_blank(),
+          strip.text = element_text(color = "black", face = "bold"),
+          legend.position = "none",
+          legend.title = element_text(size = 11),
+          legend.text = element_text(size = 13),
+          plot.title = element_text(size = 18)) 
+}
+
 .PP_FILL <- "#6B8E8E"
 .PP_VLINE_CLR <- "#222222"
 .PP_YREP_CLR <- "#487575"
