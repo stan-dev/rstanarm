@@ -149,13 +149,15 @@ sigma.stanreg <- function(object, ...) {
 VarCorr.stanreg <- function(object, ...) {
   cnms <- .cnms(object)
   nms <- names(cnms)
-  stan_nms <- grep("^var\\[", object$stanfit@sim$fnames_oi, value = TRUE)
+  stan_nms <- grep("^var\\[", rownames(object$stan_summary), value = TRUE)
   out <- lapply(seq_along(nms), function(j) {
     patt <- paste0("\\|", nms[j], "\\]")
     sel <- grep(patt, stan_nms, value = TRUE)
-    vc <- cov(as.matrix(object$stanfit, pars = sel))
+    corrs <- cor(as.matrix(object$stanfit, pars = sel))
+    sds <- sqrt(object$stan_summary[sel, "50%"]) # use posterior medians
+    vc <- (sds %*% t(sds)) * corrs
     colnames(vc) <- rownames(vc) <- cnms[[j]]
-    structure(vc, stddev = sqrt(diag(vc)), correlation = cov2cor(vc))
+    structure(vc, stddev = sds, correlation = corrs)
   })
   names(out) <- nms
   # return object printable using lmer's method for VarCorr objects
