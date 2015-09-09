@@ -171,7 +171,7 @@ VarCorr.stanreg <- function(object, ...) {
 #' @importFrom lme4 fixef
 #' 
 fixef.stanreg <- function(object, ...) {
-  object$coefficients
+  object$coefficients[!grepl("^b\\[", names(object$coefficients))]
 }
 
 #' @rdname stanreg-methods

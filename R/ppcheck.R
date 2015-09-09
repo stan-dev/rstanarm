@@ -32,7 +32,7 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, chains = 1)
+#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, chains = 1, iter = 1500)
 #' 
 #' # Compare distribution of y (mpg) to simulated datasets from the model
 #' ppcheck(fit, check = "dist")
