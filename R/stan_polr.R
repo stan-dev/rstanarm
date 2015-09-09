@@ -88,10 +88,12 @@ class(loglog) <- "link-glm"
 #'   on the coefficients is different.
 #' 
 #' @examples 
-#' # algorithm = "meanfield" is only for time constraints on examples
-#' stan_polr(tobgp ~ agegp, data = esoph, algorithm = "meanfield", 
+#' \dontrun{
+#' options(mc.cores = parallel::detectCores())
+#' stan_polr(tobgp ~ agegp, data = esoph, 
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
-
+#' }
+#' 
 stan_polr <- function (formula, data, weights, ..., subset, 
                        na.action = getOption("na.action", "na.omit"), 
                        contrasts = NULL, model = TRUE, 
@@ -99,8 +101,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
                                   "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
                        prior_counts = dirichlet(1), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing", 
-                                     "meanfield", "fullrank")) {
+                       algorithm = c("sampling", "optimizing")) {
   
   # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)

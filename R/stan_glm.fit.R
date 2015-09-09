@@ -31,8 +31,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_ops = prior_options(),
                          group = list(),
                          prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", 
-                                       "meanfield", "fullrank")) {
+                         algorithm = c("sampling", "optimizing")) {
   
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())

@@ -1,3 +1,3 @@
-#' @param algorithm Character string (possibly abbreviated) among 
-#'   \code{"sampling"}, \code{"optimizing"}, \code{"meanfield"}, and 
-#'   \code{"fullrank"} indicating the estimation approach to use.
+#' @param algorithm Character string (possibly abbreviated) indicating the
+#'   estimation approach to use. Can be \code{"sampling"} or
+#'   \code{"optimizing"}.

@@ -84,15 +84,16 @@
 #'   normally-distributed errors but specifies different priors.
 #'   
 #' @examples 
-#' stan_lm(mpg ~ ., data = mtcars, algorithm = "meanfield", 
-#'         prior = R2(0.75), seed = 12345)
-#'
+#' \dontrun{ 
+#' options(mc.cores = parallel::detectCores())
+#' stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), seed = 12345)
+#' }
+#' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
                     prior = R2(stop("'location' must be specified")), 
-                    prior_PD = FALSE, algorithm = c("sampling", "optimizing", 
-                                                    "meanfield", "fullrank")) {
+                    prior_PD = FALSE, algorithm = c("sampling", "optimizing")) {
   
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)

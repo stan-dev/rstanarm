@@ -26,8 +26,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
                                       "cloglog", "cauchit"), ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_counts = dirichlet(1), prior_PD = FALSE, 
-                           algorithm = c("sampling", "optimizing", 
-                                         "meanfield", "fullrank")) {
+                           algorithm = c("sampling", "optimizing")) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
   link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)

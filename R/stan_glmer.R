@@ -32,10 +32,10 @@
 #'   \code{\link{priors}} for more information about the priors.
 #'   
 #' @examples
-#' # algorithm = "meanfield" is only for time constraints on examples
-#' stan_glmer(mpg ~ . + (1|gear), data = mtcars, family = gaussian(),
-#'            algorithm = "meanfield", tol_rel_obj = 0.05, seed = 12345)
-#'
+#' \dontrun{ 
+#' options(mc.cores = parallel::detectCores())
+#' stan_glmer(mpg ~ . + (1|gear), data = mtcars, family = gaussian(), seed = 12345)
+#' }
 #' @importFrom lme4 glFormula
 #' 
 stan_glmer <- function (formula, data = NULL, family = gaussian, 
@@ -45,8 +45,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                         prior = normal(), prior_intercept = normal(),
                         prior_ops = prior_options(),
                         prior_covariance = decov(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing", 
-                                      "meanfield", "fullrank")) {
+                        algorithm = c("sampling", "optimizing")) {
   
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
@@ -107,8 +106,7 @@ stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset,
                        prior = normal(), prior_intercept = normal(),
                        prior_ops = prior_options(), 
                        prior_covariance = decov(), prior_PD = FALSE,
-                       algorithm = c("sampling", "optimizing", "meanfield", 
-                                     "fullrank")) {
+                       algorithm = c("sampling", "optimizing")) {
   
   mc <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
