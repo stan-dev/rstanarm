@@ -32,7 +32,7 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, chains = 1)
 #' 
 #' # Compare distribution of y (mpg) to simulated datasets from the model
 #' ppcheck(fit, check = "dist")
@@ -47,7 +47,7 @@
 #' 
 #' q25 <- function(x) quantile(x, 0.25)
 #' ppcheck(fit, check = "test", test = q25)
-#' 
+#' @importFrom ggplot2 xlab %+replace% theme
 ppcheck <- function(object,
                     check = c("distributions", "residuals", "test statistics"),
                     nreps = NULL, overlay = FALSE, test = 'mean',
@@ -81,6 +81,7 @@ ppcheck <- function(object,
 
 
 # ppcheck stuff -----------------------------------------------------------
+#' @importFrom ggplot2 element_blank element_line element_text theme_classic
 .ppcheck_theme <- function() {
   theme_classic() +
     theme(axis.line = element_line(color = "#222222"),
@@ -118,6 +119,7 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
   do.call(fn, list(dat=dat, n=n, ...))
 }
 
+#' @importFrom ggplot2 aes_string facet_wrap ggplot scale_fill_manual stat_bin
 ppcheck_hist <- function(dat, ...) {
   ggplot(dat, aes_string(x = 'value', fill = 'is_y')) + 
     stat_bin(aes_string(y="..density.."), size = .2, ...) + 
@@ -126,6 +128,7 @@ ppcheck_hist <- function(dat, ...) {
     xlab(NULL)
 }
 
+#' @importFrom ggplot2 geom_density scale_size_manual
 ppcheck_dens <- function(dat, ...) {
   dat$id <- factor(dat$id, levels = unique(dat$id))
   ggplot(dat, aes_string(x = 'value', group = 'id', 
@@ -136,6 +139,7 @@ ppcheck_dens <- function(dat, ...) {
     xlab("y")
 }
 
+#' @importFrom ggplot2 geom_vline scale_color_manual
 ppcheck_stat <- function(y, yrep, test, ...) {
   if (is.character(test))
     test <- match.fun(test)
@@ -156,6 +160,7 @@ ppcheck_stat <- function(y, yrep, test, ...) {
                        labels = c("T(y)", "T(yrep)"))
 }
 
+#' @importFrom ggplot2 labs
 ppcheck_resid <- function(y, yrep, n = 1, ...) {
   stopifnot(n <= nrow(yrep))
   s <- sample.int(nrow(yrep), n)
