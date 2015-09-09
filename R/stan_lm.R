@@ -87,6 +87,11 @@
 #' \dontrun{ 
 #' options(mc.cores = parallel::detectCores())
 #' stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), seed = 12345)
+#' 
+#' data("clouds", package = "HSAUR3")
+#' f <- rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) + time
+#' fit <- stan_lm(f, data = clouds, prior = R2(location = 0.25), seed = 12345)
+#' stan_plot(fit, ci_level = 0.8)
 #' }
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,

@@ -27,14 +27,15 @@
 #'   likelihood estimation of generalized linear models, Bayesian estimation
 #'   is performed (if \code{algorithm = "sampling"}) via MCMC. The Bayesian 
 #'   model adds independent priors on the coefficients (in the same way as
-#'   \code{\link{stan_glm}}) and priors on the terms of a decomposion
+#'   \code{\link{stan_glm}}) and priors on the terms of a decomposition
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
 #'   
 #' @examples
 #' \dontrun{ 
 #' options(mc.cores = parallel::detectCores())
-#' stan_glmer(mpg ~ . + (1|gear), data = mtcars, family = gaussian(), seed = 12345)
+#' data(cake, package = "lme4")
+#' stan_glmer(angle ~ recipe + temp + (1|recipe:replicate), data = cake, seed = 12345)
 #' }
 #' @importFrom lme4 glFormula
 #' 

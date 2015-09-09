@@ -60,7 +60,8 @@
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson())
+#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
+#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
 #' stan_plot(fit2, ci_level = 0.95, outer_level = 0.99, show_density = TRUE)
 #' }
 #'

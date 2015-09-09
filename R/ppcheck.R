@@ -72,6 +72,7 @@ ppcheck <- function(object,
   graph <- do.call(fn, args)
   if (fn == "ppcheck_stat") {
     test_lab <- as.character(match.call()[["test"]])
+    if (length(test_lab) == 0) test_lab <- "mean"
     graph + 
       xlab(paste("Test = ", test_lab)) + 
       thm %+replace% theme(legend.position = "right")
@@ -140,7 +141,7 @@ ppcheck_dens <- function(dat, ...) {
 }
 
 #' @importFrom ggplot2 geom_vline scale_color_manual
-ppcheck_stat <- function(y, yrep, test, ...) {
+ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   if (is.character(test))
     test <- match.fun(test)
   T_y <- test(y)
