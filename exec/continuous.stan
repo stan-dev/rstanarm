@@ -523,7 +523,7 @@ model {
       else y ~ normal(divide_real_by_vector(1, eta), dispersion);
     }
     else if (family == 2) {
-      y ~ GammaReg(eta, shape[1], link, sum_log_y);
+      y ~ GammaReg(eta, dispersion, link, sum_log_y);
     }
     else {
       y ~ inv_gaussian(linkinv_inv_gaussian(eta, link), 
