@@ -160,8 +160,8 @@ VarCorr.stanreg <- function(object, ...) {
   names(out) <- nms
   # return object printable using lmer's method for VarCorr objects
   gaus <- family(object)$family == "gaussian"
-  out <- structure(out, sc = if (gaus) sigma(object) else NULL, useSc = gaus, class = "VarCorr.merMod")
-  # if (gaus) attr(out, "sc") <- sigma(object)
+  out <- structure(out, sc = if (gaus) sigma(object) else NULL, 
+                   useSc = gaus, class = "VarCorr.merMod")
   out
 }
 
@@ -171,7 +171,8 @@ VarCorr.stanreg <- function(object, ...) {
 #' @importFrom lme4 fixef
 #' 
 fixef.stanreg <- function(object, ...) {
-  object$coefficients
+  coefs <- object$coefficients
+  coefs[grep("^b\\[", names(coefs), invert = TRUE)]
 }
 
 #' @rdname stanreg-methods
