@@ -45,7 +45,7 @@ post2 <- update(post1, formula = switch ~ dist100 + arsenic)
 
 # Add interaction of dist100 and arsenic
 post3 <- update(post2, formula = .~. + dist100:arsenic)
-stan_plot(post3, pars = names(coef(post3)), 
+stan_plot(post3, pars = names(coef(post3)), show_density = TRUE, 
           ci_level = 0.95, outer_level = 0.99)
 
 # Compare them with loo

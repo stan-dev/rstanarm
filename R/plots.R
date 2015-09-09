@@ -22,4 +22,33 @@
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
+#' 
+#' @examples 
+#' \donrun{
+#' data("clouds", package = "HSAUR3")
+#' f <- rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) + time
+#' fit <- stan_lm(f, data = clouds, prior = R2(location = 0.25), 
+#'                cores = 4, seed = 12345)
+#'                
+#' # stan_plot: posterior intervals and point estimates
+#' stan_plot(fit, ci_level = 0.8)
+#' stan_plot(fit, pars = c("prewetness", "echomotionstationary"), show_density = TRUE)               
+#' 
+#' # posterior predictive checks (see ?ppcheck for more details and examples)
+#' ppcheck(fit, check = "distributions")
+#' ppcheck(fit, check = "distributions", overlay = TRUE)
+#' ppcheck(fit, check = "residuals")
+#' ppcheck(fit, check = "test", test = sd)
+#' 
+#' # traceplot
+#' (trace <- stan_trace(fit, pars = "(Intercept)"))
+#' trace + scale_color_discrete()
+#' 
+#' # distributions 
+#' stan_hist(fit, fill = "skyblue") + ggtitle("Example Plot")
+#' stan_dens(fit, pars = c("sne", "cloudcover"), separate_chains = TRUE, alpha = 0.1)
+#' 
+#' # scatterplot
+#' stan_scat(fit, pars = c("sne", "cloudcover"))
+#' }
 NULL

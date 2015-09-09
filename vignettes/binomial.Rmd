@@ -11,25 +11,18 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-```{r, HOOK, include=FALSE}
+```{r, SETTINGS-knitr, include=FALSE}
 library(knitr)
-local({
-  hook_plot = knit_hooks$get('plot')
-  knit_hooks$set(plot = function(x, options) {
-    x = paste(x, collapse = '.')
-    if (!grepl('\\.svg', x)) return(hook_plot(x, options))
-    # read the content of the svg image and write it out without <?xml ... ?>
-    paste(readLines(x)[-1], collapse = '\n')
-  })
-})
+opts_chunk$set(dev = 'png', dpi = 150,
+               fig.align='center', fig.height = 3,
+               message = FALSE, warning = FALSE) 
 ```
 
-```{r, SETTINGS, include=FALSE}
-opts_chunk$set(dev = 'svg', fig.align='center', fig.height = 3, 
-               message = FALSE, warning = FALSE) 
-suppressPackageStartupMessages(require(rstanarm))
+```{r, SETTINGS-gg, include=FALSE}
+library(ggplot2)
 thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
-                 legend.background = element_rect(fill = "gray"))
+                 legend.background = element_rect(fill = "gray"),
+                 legend.text = element_text(size = 9))
 theme_set(theme_classic() %+replace% thm_els)
 ```
 
@@ -180,13 +173,13 @@ wells$dist100 <- wells$dist / 100
 Before estimating any models we can visualize the distribution of 
 `dist100` in the data:
 
-```{r, ARSENIC-plot-dist100, fig.height=2}
-ggplot(wells, aes(x = dist100, y = ..density.., color = switch)) + 
-  geom_histogram(data = subset(wells, switch == 1), alpha = 0.3) + 
-  geom_histogram(data = subset(wells, switch == 0), alpha = 0.3)
+```{r, ARSENIC-plot-dist100, fig.width=3}
+ggplot(wells, aes(x = dist100, y = ..density..)) + 
+  geom_histogram(data = subset(wells, switch == 0)) +
+  geom_histogram(data = subset(wells, switch == 1), fill = "skyblue", alpha = 0.3) 
 ```
 
-In the plot above the bars outlined in light blue correspond to the 
+In the plot above the blue bars correspond to the 
 `r sum(wells$switch == 1)` residents who said they switched wells and the bars with
 the darker outline show the distribution of `dist100` for the 
 `r sum(wells$switch == 0)` residents who didn't switch. As we would expect, for the
@@ -200,6 +193,7 @@ is a reasonable default prior when coefficients should be close to zero but
 have some chance of being large. 
 
 ```{r, ARSENIC-stan_glm}
+library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, family = binomial(link = "logit"), 
                  prior = t_prior, prior_intercept = t_prior,  
@@ -222,7 +216,7 @@ see __Step 2__ in the "How to Use the __rstanarm__ Package".)
 Using the coefficient estimates we can plot the predicted probability of 
 `switch = 1` (as a function of `dist100`) together with the observed outcomes:
 
-```{r, ARSENIC-plot-model}
+```{r, ARSENIC-plot-model, fig.height = 2, fig.width=3}
 # Predicted probability as a function of x
 pr_switch <- function(x) plogis(coef_fit1[1] + coef_fit1[2] * x)
 # A function to slightly jitter the binary data
@@ -230,7 +224,6 @@ jitt <- function(...) {
   geom_point(aes_string(...), 
              position = position_jitter(height = 0.05, width = 0.1))
 }
-
 ggplot(wells, aes(x = dist100, y = switch, color = switch)) + 
   scale_y_continuous(breaks = c(0, 0.5, 1)) +
   jitt(x="dist100") + 
@@ -270,12 +263,13 @@ theme_update(legend.position = "right")
 ```
 ```{r, ARSENIC-plot-model2}
 pr_switch2 <- function(x, y, coef) plogis(coef[1] + coef[2] * x + coef[3] * y)
-grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), arsenic = seq(0, 10, length.out = 100))
+grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), 
+                    arsenic = seq(0, 10, length.out = 100))
 grid$prob <- with(grid, pr_switch2(dist100, arsenic, coef(fit2)))
-ggplot(data = grid, aes(x = dist100, y = arsenic)) + 
+ggplot(grid, aes(x = dist100, y = arsenic)) + 
   geom_tile(aes(fill = prob)) + 
   geom_point(data = wells, aes(color = factor(switch)), size = 2, alpha = 0.85) + 
-  scale_fill_gradient(guide = "none") +
+  scale_fill_gradient() +
   scale_color_manual("switch", values = c("white", "black"), labels = c("No", "Yes"))
 ```
 We can see that the black points (`switch=1`) are predominantly clustered in the
@@ -291,24 +285,22 @@ maximum and quartile values of both variables.
 theme_update(legend.position = "none")
 ```
 ```{r, ARSENIC-plot-model2-alt}
+library(gridExtra)
 # Quantiles
-qx <- quantile(wells$dist100, seq(0, 1, 0.25))
-qy <- quantile(wells$arsenic, seq(0, 1, 0.25))  
-# Function to generate the calls to stat_function
-pred_fn <- function(model, i, q, x_or_y) {
-  args <- list(coef = coef(model))
-  args[[x_or_y]] <- q[i]
-  stat_function(fun = pr_switch2, color = "gray35", args = args)
-}
+q_ars <- quantile(wells$dist100, seq(0, 1, 0.25))
+q_dist <- quantile(wells$arsenic, seq(0, 1, 0.25))  
 base <- ggplot(wells) + xlim(c(0, NA)) +
   scale_y_continuous(breaks = c(0, 0.5, 1))
 vary_arsenic <- base + jitt(x="arsenic", y="switch", color="switch")
 vary_dist <- base + jitt(x="dist100", y="switch", color="switch")
 for (i in 1:5) {
-  vary_dist <- vary_dist + pred_fn(fit2, i, qy, "y")
-  vary_arsenic <- vary_arsenic + pred_fn(fit2, i, qx, "x")
+  vary_dist <- 
+    vary_dist + stat_function(fun = pr_switch2, color = "gray35", 
+                              args = list(coef = coef(fit2), y = q_dist[i]))
+  vary_arsenic <-
+    vary_arsenic + stat_function(fun = pr_switch2, color = "gray35", 
+                                 args = list(coef = coef(fit2), x = q_ars[i]))
 }
-suppressPackageStartupMessages(require(gridExtra))
 grid.arrange(vary_dist, vary_arsenic, ncol = 2)
 ```
 
@@ -318,7 +310,7 @@ for estimating out of sample predictive performance and is implemented
 by the `loo` function in the __loo__ package:
 
 ```{r, LOO}
-suppressPackageStartupMessages(require(loo))
+library(loo)
 (loo1 <- loo(fit1, cores = 2))
 (loo2 <- loo(fit2, cores = 2))
 compare(loo1, loo2)

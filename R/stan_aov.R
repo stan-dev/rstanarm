@@ -21,17 +21,18 @@
 #' @param projections For \code{stan_aov}, a logical scalar (defaulting to
 #'   \code{FALSE}) indicating whether \code{\link[stats]{proj}} should be called
 #'   on the fit.
-#' @examples 
-#' # algorithm = "meanfield" is only for time constraints on examples
+#' @examples
+#' \dontrun{ 
+#' options(mc.cores = parallel::detectCores())
 #' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
 #'          algorithm = "meanfield", prior = R2(0.5), seed = 12345) 
-#'            
+#' }
+#'             
 stan_aov <- function(formula, data = NULL, projections = FALSE,
                      contrasts = NULL, ...,
                      prior = R2(stop("'location' must be specified")), 
                      prior_PD = FALSE, 
-                     algorithm = c("sampling", "optimizing", 
-                                   "meanfield", "fullrank")) {
+                     algorithm = c("sampling", "optimizing")) {
     # parse like aov() does
     Terms <- if(missing(data)) terms(formula, "Error")
     else terms(formula, "Error", data = data)

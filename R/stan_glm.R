@@ -52,25 +52,25 @@
 #'   but it is possible to call the latter directly.
 #' 
 #' @examples 
-#' # algorithm = "meanfield" is only for time constraints on examples
-#' (fit <- stan_glm(mpg ~ ., data = mtcars, algorithm = "meanfield", seed = 12345))
+#' \dontrun{ 
+#' options(mc.cores = parallel::detectCores())
+#' (fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345))
 #' stan_plot(fit, ci_level = 0.8)
 #'  
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
-#'                  algorithm = "meanfield")
+#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
+#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
 #' stan_plot(fit2, ci_level = 0.95, outer_level = 0.99, show_density = TRUE)
+#' }
 #'
-
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), 
-                    prior_PD = FALSE,  algorithm = c("sampling", "optimizing", 
-                                                     "meanfield", "fullrank")){
+                    prior_PD = FALSE,  algorithm = c("sampling", "optimizing")) {
 
   # Parse like glm()
   if (is.character(family)) 
