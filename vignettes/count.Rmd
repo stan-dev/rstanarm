@@ -12,22 +12,15 @@ output:
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
 
-```{r, HOOK, include=FALSE}
+```{r, SETTINGS-knitr, include=FALSE}
 library(knitr)
-local({
-  hook_plot = knit_hooks$get('plot')
-  knit_hooks$set(plot = function(x, options) {
-    x = paste(x, collapse = '.')
-    if (!grepl('\\.svg', x)) return(hook_plot(x, options))
-    # read the content of the svg image and write it out without <?xml ... ?>
-    paste(readLines(x)[-1], collapse = '\n')
-  })
-})
+opts_chunk$set(dev = 'png', dpi = 150,
+               fig.align='center', fig.height = 2, fig.width = 4,
+               message = FALSE, warning = FALSE) 
 ```
 
-```{r, SETTINGS, include=FALSE}
-opts_chunk$set(dev = 'svg', fig.align='center', fig.height = 3, 
-               message = FALSE, warning = FALSE) 
+```{r, SETTINGS-gg, include=FALSE}
+library(ggplot2)
 thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
                  legend.background = element_rect(fill = "gray"))
 theme_set(theme_classic() %+replace% thm_els)
@@ -147,7 +140,7 @@ to the linear predictor $\eta_i$ and it can be specified using the `offset`
 argument to `stan_glm`:
 
 ```{r, ROACHES-fit}
-suppressPackageStartupMessages(require(rstanarm))
+library(rstanarm)
 
 # Load data and create dist100 variable 
 roaches <- read.csv("roaches.csv.xz")
@@ -239,9 +232,10 @@ stan_glm2 <- update(stan_glm1, family = neg_binomial_2)
 We now use `ppcheck` again, this time to check the proportion of zeros in the
 replicated datasets under the negative binomial model:
 
-```{r, ROACHES-negbin-ppcheck}
-(prop_zero_test2 <- ppcheck(stan_glm2, check = "test", test = prop_zero))
-suppressPackageStartupMessages(require(gridExtra))
+```{r, ROACHES-negbin-ppcheck, fig.width=9}
+library(gridExtra)
+prop_zero_test2 <- ppcheck(stan_glm2, check = "test", test = prop_zero)
+# Show graphs for Poisson and negative binomial side by side
 grid.arrange(prop_zero_test1 + ggtitle("Poisson"), 
              prop_zero_test2 + ggtitle("Negative Binomial"), 
              ncol = 2)
@@ -261,7 +255,7 @@ When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model:
 
 ```{r, ROACHES-loo}
-suppressPackageStartupMessages(require(loo))
+library(loo)
 loo1 <- loo(stan_glm1, cores = 2)
 loo2 <- loo(stan_glm2, cores = 2)
 compare(loo1, loo2)
