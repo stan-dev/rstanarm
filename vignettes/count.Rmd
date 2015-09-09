@@ -262,8 +262,8 @@ preference for the negative binomial model:
 
 ```{r, ROACHES-loo}
 suppressPackageStartupMessages(require(loo))
-loo1 <- loo(stan_glm1)
-loo2 <- loo(stan_glm2)
+loo1 <- loo(stan_glm1, cores = 2)
+loo2 <- loo(stan_glm2, cores = 2)
 compare(loo1, loo2)
 ```
 
