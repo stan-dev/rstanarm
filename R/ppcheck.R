@@ -22,7 +22,14 @@
 #'   etc.). The resulting plot will show the distribution of \code{test(yrep)} 
 #'   over the \code{yrep} datasets. The value of \code{test(y)} be shown in the
 #'   plot as a vertical line.
-#' @param ... Optional arguments to geoms to control features of the plots.
+#' @param ... Optional arguments to geoms to control features of the plots. For 
+#'   the \code{'distributions'} plots, don't use \code{...} to specify the 
+#'   aesthetics \code{color}, \code{fill} and \code{size}, as they are mapped to
+#'   a binary variable so that \code{y} and \code{yrep} can be styled
+#'   separately. To change these aesthetics add a
+#'   \code{\link[ggplot2]{discrete_scale}} (e.g.
+#'   \code{\link[ggplot2]{scale_fill_manual}}) with two values to the ggplot
+#'   object returned by \code{ppcheck}. See Examples.
 #' 
 #' @return A ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package.
@@ -32,12 +39,17 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, chains = 1, iter = 1500)
+#' \dontrun{
+#' options(mc.cores = parallel::detectCores())
+#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
 #' # Compare distribution of y (mpg) to simulated datasets from the model
-#' ppcheck(fit, check = "dist")
-#' ppcheck(fit, check = "dist", nreps = 15)
-#' ppcheck(fit, check = "dist", overlay = TRUE)
+#' (ppfit_dist <- ppcheck(fit, check = "dist"))
+#' ppfit_dist + scale_fill_manual(values = c("blue", "red"))
+#' (ppfit_dist_overlay <- ppcheck(fit, check = "dist", nreps = 100, overlay = TRUE))
+#' ppfit_dist_overlay + 
+#'  scale_color_manual(values = c("orange", NA)) + 
+#'  scale_size_manual(values = c(0.05, 1.5))
 #' 
 #' # Check histograms of test statistics
 #' library(gridExtra)
@@ -47,6 +59,14 @@
 #' 
 #' q25 <- function(x) quantile(x, 0.25)
 #' ppcheck(fit, check = "test", test = q25)
+#' 
+#' # Residuals
+#' ppcheck(fit, check = "resid", n = 3) + ggtitle("Residuals y - yrep")
+#' 
+#' # For logistic regressions binned residual plots are generated instead.
+#' # See the Examples for the stan_glm function 
+#' # help("stan_glm", package = "rstanarm")
+#' }
 #' @importFrom ggplot2 xlab %+replace% theme
 #' 
 ppcheck <- function(object,
@@ -71,8 +91,7 @@ ppcheck <- function(object,
   } 
   thm <- .ppcheck_theme()
   yrep <- posterior_predict(object)
-  y <- if (!is.null(object$y)) 
-    object$y else model.response(model.frame(object))
+  y <- get_y(object)
   if (NCOL(y) == 2L) {
     trials <- rowSums(y)
     y <- y[, 1L] / trials
@@ -116,6 +135,7 @@ ppcheck <- function(object,
 }
 
 .PP_FILL <- "skyblue"
+.PP_DARK <- "skyblue4"
 .PP_VLINE_CLR <- "#222222"
 .PP_YREP_CLR <- "#487575"
 .PP_YREP_FILL <- "#222222"
@@ -135,27 +155,31 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
   do.call(fn, list(dat=dat, n=n, ...))
 }
 
-#' @importFrom ggplot2 aes_string facet_wrap ggplot scale_fill_manual stat_bin
+#' @importFrom ggplot2 aes_string facet_wrap ggplot stat_bin
 ppcheck_hist <- function(dat, ...) {
-  ggplot(dat, aes_string(x = 'value', fill = 'is_y')) + 
+  ggplot(dat, aes_string(x = 'value', fill = 'is_y', color = "is_y", size = "is_y")) + 
     stat_bin(aes_string(y="..density.."), size = .2, ...) + 
     facet_wrap(~id, scales = "free") + 
     scale_fill_manual(values = c("black", .PP_FILL)) +
+    scale_color_manual(values = c(NA, NA)) + 
+    scale_size_manual(values = c(NA, NA)) + 
     xlab(NULL)
 }
 
-#' @importFrom ggplot2 geom_density scale_size_manual
+#' @importFrom ggplot2 geom_density xlab scale_size_manual scale_fill_manual scale_color_manual
 ppcheck_dens <- function(dat, ...) {
   dat$id <- factor(dat$id, levels = unique(dat$id))
-  ggplot(dat, aes_string(x = 'value', group = 'id', 
-                         fill = "is_y", size = 'is_y')) + 
-    geom_density(alpha = 0.4, ...) + 
+  dots <- list(...)
+  ggplot(dat, aes_string(x = 'value', group = 'id',
+                         color = "is_y", fill = "is_y", size = 'is_y')) + 
+    geom_density(alpha = dots$alpha %ORifNULL% 0.75, ...) + 
+    scale_color_manual(values = c("black", .PP_DARK)) +
     scale_fill_manual(values = c(NA, .PP_FILL)) +
-    scale_size_manual(values = c(.5, 1.5)) +
+    scale_size_manual(values = c(0.25, 1)) +
     xlab("y")
 }
 
-#' @importFrom ggplot2 geom_vline scale_color_manual
+#' @importFrom ggplot2 geom_vline
 ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   if (is.character(test))
     test <- match.fun(test)
@@ -209,8 +233,7 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   beta <- stanmat[sel, 1:ncol(dat$x), drop=FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   Ey <- family(object)$linkinv(eta)
-  y <- if (!is.null(object$y)) 
-    object$y else model.response(model.frame(object))
+  y <- get_y(object)
   if (NCOL(y) == 2L) y <- y[, 1L] / rowSums(y)
   resids <- sweep(-Ey, MARGIN = 2L, STATS = y, "+")
   

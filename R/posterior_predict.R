@@ -27,15 +27,17 @@
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples 
-#' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 200)
+#' \dontrun{
+#' fit <- stan_glm(mpg ~ wt, data = mtcars)
 #' yrep <- posterior_predict(fit)
 #' 
 #' wt_vals <- with(mtcars, c(min(wt), median(wt), max(wt)))
 #' ppd <- posterior_predict(fit, newdata = data.frame(wt = wt_vals))
 #' 
 #' # Use fun = exp to transform predictions generated on the the log-scale
-#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars, iter = 200)
+#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
 #' ppd <- posterior_predict(fit, fun = exp) 
+#' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (object$algorithm == "optimizing")
@@ -69,8 +71,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     if (famname == "gaussian")
       ppargs$sigma <- stanmat[, "sigma"]
     else if (famname == "binomial") {
-      y <- if (!is.null(object$y)) 
-        object$y else model.response(model.frame(object))
+      y <- get_y(object)
       ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
     }
     else if (famname == "Gamma")

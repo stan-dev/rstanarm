@@ -54,15 +54,29 @@
 #' @examples 
 #' \dontrun{ 
 #' options(mc.cores = parallel::detectCores())
-#' (fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345))
+#' 
+#' ### Linear regression
+#' fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345), family = gaussian)
 #' stan_plot(fit, ci_level = 0.8)
-#'  
+#' 
+#' ### Poisson regression  
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
 #'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
 #' stan_plot(fit2, ci_level = 0.95, outer_level = 0.99, show_density = TRUE)
+#' 
+#' ### Logistic regression
+#' data(lalonde, package = "arm")
+#' ?lalonde
+#' t7 <- student_t(df = 7) 
+#' f <- treat ~ re74 + re75 + educ + black + hisp + married + nodegr + u74 + u75
+#' fit3 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
+#'                  prior = t7, prior_intercept = t7)
+#' stan_plot(fit3, ci_level = 0.8)
+#' ppcheck(fit3, check = "resid")
+#' ppcheck(fit3, check = "test", test = mean)
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
