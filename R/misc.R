@@ -1,3 +1,14 @@
+`%ORifNULL%` <- function(a, b) {
+  if (is.null(a)) b else a
+}
+
+get_y <- function(object) {
+  object$y %ORifNULL% model.response(model.frame(object))
+}
+get_x <- function(object) {
+  object$x %ORifNULL% model.matrix(object)
+}
+
 na_replace <- function(x, replacement) {
   # if x is NA return replacement, else return x itself
   if (is.na(x)) 
