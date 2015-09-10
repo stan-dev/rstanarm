@@ -48,25 +48,36 @@
 #' q25 <- function(x) quantile(x, 0.25)
 #' ppcheck(fit, check = "test", test = q25)
 #' @importFrom ggplot2 xlab %+replace% theme
+#' 
 ppcheck <- function(object,
                     check = c("distributions", "residuals", "test statistics"),
                     nreps = NULL, overlay = FALSE, test = 'mean',
                     ...) {
   if (!is(object, "stanreg"))
     stop(deparse(substitute(object)), " is not a stanreg object")
+  
   fn <- switch(match.arg(check), 
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
                'test statistics' = "ppcheck_stat")
-  yrep <- posterior_predict(object)
-  y <- if (!is.null(object$y)) 
-    object$y else model.response(model.frame(object))
-  
-  stopifnot(NCOL(y) == 1L, is.matrix(yrep), length(y) == ncol(yrep))
   if (is.null(nreps) && fn != "ppcheck_stat") {
     nreps <- ifelse(fn == "ppcheck_resid", 1, 8)
   }
+  if (fn == "ppcheck_resid" && family(object) == "binomial") {
+    graph <- pp_check_binned_resid(object, n = nreps, ...) + 
+      .ppcheck_theme(no_y = FALSE) + 
+      ggtitle("Binned Residual Plot")
+    return(graph)
+  } 
   thm <- .ppcheck_theme()
+  yrep <- posterior_predict(object)
+  y <- if (!is.null(object$y)) 
+    object$y else model.response(model.frame(object))
+  if (NCOL(y) == 2L) {
+    trials <- rowSums(y)
+    y <- y[, 1L] / trials
+    yrep <- sweep(yrep, 2, trials, "/")
+  }
   args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, test = test, 
                ...)
   graph <- do.call(fn, args)
@@ -83,13 +94,11 @@ ppcheck <- function(object,
 
 # ppcheck stuff -----------------------------------------------------------
 #' @importFrom ggplot2 element_blank element_line element_text theme_classic
-.ppcheck_theme <- function() {
-  theme_classic() +
+.ppcheck_theme <- function(no_y = TRUE) {
+  blank <- element_blank()
+  thm <- theme_classic() +
     theme(axis.line = element_line(color = "#222222"),
-          axis.line.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank(),
-          axis.title.y = element_blank(),
+          axis.line.y = if (no_y) blank  else element_line(size = 0.5),
           axis.line.x = element_line(size = 3),
           axis.title = element_text(face = "bold", size = 13),
           strip.background = element_blank(),
@@ -97,7 +106,13 @@ ppcheck <- function(object,
           legend.position = "none",
           legend.title = element_text(size = 11),
           legend.text = element_text(size = 13),
-          plot.title = element_text(size = 18)) 
+          plot.title = element_text(size = 18))
+  if (no_y) {
+    thm <- thm %+replace% theme(axis.text.y = element_blank(),
+                         axis.ticks.y = element_blank(),
+                         axis.title.y = element_blank())
+  }
+  thm
 }
 
 .PP_FILL <- "skyblue"
@@ -112,10 +127,10 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
   yrep <- as.data.frame(yrep[s, ])
   colnames(yrep) <- paste0("value.", 1:ncol(yrep))
   yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
-                       varying = list(1:ncol(yrep)), ids = paste0('yrep.', s))
-  dat <- rbind(yrep_melt, cbind(time = seq_along(y), value = y, id = 'y'))
+                       varying = list(1:ncol(yrep)), ids = paste0('rep_', s))
+  dat <- rbind(yrep_melt, cbind(time = seq_along(y), value = y, id = 'Observed'))
   rownames(dat) <- NULL
-  dat$is_y <- dat$id == "y"
+  dat$is_y <- dat$id == "Observed"
   dat$value <- as.numeric(dat$value)
   do.call(fn, list(dat=dat, n=n, ...))
 }
@@ -172,7 +187,7 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
     resids <- as.data.frame(-1 * sweep(yrep, 2, y))
     colnames(resids) <- paste0("r.", 1:ncol(resids))
     resids <- reshape((resids), direction = "long", v.names = "r", 
-                      varying = list(1:ncol(resids)), ids = paste0('yrep_', s))
+                      varying = list(1:ncol(resids)), ids = paste0('rep_', s))
     base <- ggplot(resids, aes_string(x = "r"))
   }
   graph <- base + stat_bin(aes_string(y="..count../sum(..count..)"), ...)
@@ -181,4 +196,56 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
     graph + labs(y = NULL, x = paste0("resids(yrep_",s,")"))
   else 
     graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
+}
+
+#' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
+pp_check_binned_resid <- function(object, n = 1, ...) {
+  if (!requireNamespace("arm", quietly = TRUE)) 
+    stop("This plot requires the 'arm' package (install.packages('arm'))")
+  dat <- .pp_data(object, newdata = NULL)
+  stanmat <- if (object$algorithm == "sampling") 
+    as.matrix(object$stanfit) else stop("MLE not implemented yet")
+  sel <- sample(nrow(stanmat), size = n)
+  beta <- stanmat[sel, 1:ncol(dat$x), drop=FALSE]
+  eta <- linear_predictor(beta, dat$x, dat$offset)
+  Ey <- family(object)$linkinv(eta)
+  y <- if (!is.null(object$y)) 
+    object$y else model.response(model.frame(object))
+  if (NCOL(y) == 2L) y <- y[, 1L] / rowSums(y)
+  resids <- sweep(-Ey, MARGIN = 2L, STATS = y, "+")
+  
+  ny <- length(y)
+  stopifnot(ny == ncol(Ey))
+  
+  if (ny >= 100) nbins <- floor(sqrt(ny))
+  else if (ny > 10 && ny < 100) nbins <- 10
+  else nbins <- floor(ny / 2) # if (ny <= 10)
+
+  binner <- function(rep_id, ey, r, nbins) {
+    br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
+    colnames(br) <- c("xbar", "ybar", "se2")
+    data.frame(rep = paste0("rep_", sel[rep_id]), br)
+  }
+  binned <- binner(rep_id = 1, ey = Ey[1, ], r = resids[1, ], nbins)
+  if (n > 1) {
+    for (i in 2:nrow(resids)) {
+      binned <- rbind(binned, 
+                      binner(rep_id = i, ey = Ey[i, ], r = resids[i, ], nbins))
+    }
+  }
+
+  dots <- list(...)
+  line_color <- if ("color" %in% names(dots)) dots$color else .PP_FILL
+  pt_color <- if ("fill" %in% names(dots)) dots$fill else .PP_VLINE_CLR
+  
+  base <- ggplot(binned, aes_string(x = "xbar"))
+  graph <- base + 
+    geom_hline(yintercept = 0, linetype = 2) + 
+    geom_path(aes_string(y = "se2"), color = line_color, ...) + 
+    geom_path(aes_string(y = "-se2"), color = line_color, ...) + 
+    geom_point(aes_string(y = "ybar"), shape = 19, color = pt_color, ...) + 
+    labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)")
+  
+  if (n == 1) graph
+  else graph + facet_wrap(~rep, scales = "free")
 }
