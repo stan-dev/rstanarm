@@ -112,7 +112,7 @@ ppcheck <- function(object,
 
 
 # ppcheck stuff -----------------------------------------------------------
-#' @importFrom ggplot2 element_blank element_line element_text theme_classic
+#' @importFrom ggplot2 ggtitle element_blank element_line element_text theme_classic
 .ppcheck_theme <- function(no_y = TRUE) {
   blank <- element_blank()
   thm <- theme_classic() +
