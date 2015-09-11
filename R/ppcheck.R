@@ -102,7 +102,7 @@ ppcheck <- function(object,
   graph <- do.call(fn, args)
   if (fn == "ppcheck_stat") {
     test_lab <- as.character(match.call()[["test"]])
-    if (length(test_lab) == 0) test_lab <- "mean"
+    if (!length(test_lab)) test_lab <- formals(ppcheck)$test
     graph + 
       xlab(paste("Test = ", test_lab)) + 
       thm %+replace% theme(legend.position = "right")
@@ -112,6 +112,12 @@ ppcheck <- function(object,
 
 
 # ppcheck stuff -----------------------------------------------------------
+.PP_FILL <- "skyblue"
+.PP_DARK <- "skyblue4"
+.PP_VLINE_CLR <- "#222222"
+.PP_YREP_CLR <- "#487575"
+.PP_YREP_FILL <- "#222222"
+
 #' @importFrom ggplot2 ggtitle element_blank element_line element_text theme_classic
 .ppcheck_theme <- function(no_y = TRUE) {
   blank <- element_blank()
@@ -133,12 +139,6 @@ ppcheck <- function(object,
   }
   thm
 }
-
-.PP_FILL <- "skyblue"
-.PP_DARK <- "skyblue4"
-.PP_VLINE_CLR <- "#222222"
-.PP_YREP_CLR <- "#487575"
-.PP_YREP_FILL <- "#222222"
 
 ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
   fn <- if (overlay) "ppcheck_dens" else "ppcheck_hist"
@@ -186,8 +186,8 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   T_y <- test(y)
   T_yrep <- apply(yrep, 1L, test)
   dots <- list(...)
-  vline_color <- if ("color" %in% names(dots)) dots$color else .PP_FILL
-  fill_color <- if ("fill" %in% names(dots)) dots$fill else "black"
+  vline_color <- dots$color %ORifNULL% .PP_FILL
+  fill_color <- dots$fill %ORifNULL% "black"
   graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) +
     stat_bin(aes_string(y = "..count../sum(..count..)"), 
              fill = fill_color, show_guide = FALSE, ...) 
@@ -236,10 +236,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   y <- get_y(object)
   if (NCOL(y) == 2L) y <- y[, 1L] / rowSums(y)
   resids <- sweep(-Ey, MARGIN = 2L, STATS = y, "+")
-  
   ny <- length(y)
   stopifnot(ny == ncol(Ey))
-  
   if (ny >= 100) nbins <- floor(sqrt(ny))
   else if (ny > 10 && ny < 100) nbins <- 10
   else nbins <- floor(ny / 2) # if (ny <= 10)
@@ -256,16 +254,15 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
                       binner(rep_id = i, ey = Ey[i, ], r = resids[i, ], nbins))
     }
   }
-
   dots <- list(...)
-  line_color <- if ("color" %in% names(dots)) dots$color else .PP_FILL
-  pt_color <- if ("fill" %in% names(dots)) dots$fill else .PP_VLINE_CLR
-  
+  line_color <- dots$color %ORifNULL% .PP_FILL
+  line_size <- dots$size %ORifNULL% 1
+  pt_color <- dots$fill %ORifNULL% .PP_VLINE_CLR
   base <- ggplot(binned, aes_string(x = "xbar"))
   graph <- base + 
     geom_hline(yintercept = 0, linetype = 2) + 
-    geom_path(aes_string(y = "se2"), color = line_color, ...) + 
-    geom_path(aes_string(y = "-se2"), color = line_color, ...) + 
+    geom_path(aes_string(y = "se2"), color = line_color, size = line_size, ...) + 
+    geom_path(aes_string(y = "-se2"), color = line_color, size = line_size, ...) + 
     geom_point(aes_string(y = "ybar"), shape = 19, color = pt_color, ...) + 
     labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)")
   
