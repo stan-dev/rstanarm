@@ -248,11 +248,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$N <- c(sum(y0), sum(y1))
       standata$X0 <- xtemp[y0,, drop = FALSE]
       standata$X1 <- xtemp[y1,, drop = FALSE]
-      if (length(group)) {
-        standata$Z0 <- standata$Z[y0,, drop = FALSE]
-        standata$Z1 <- standata$Z[y1,, drop = FALSE]
-        standata$Z <- NULL 
-      }
+      standata$Z0 <- standata$Z[y0,, drop = FALSE]
+      standata$Z1 <- standata$Z[y1,, drop = FALSE]
+      standata$Z <- NULL 
       if (length(weights)) {
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
