@@ -19,7 +19,7 @@ test_that("stan_lmer returns expected result for slepstudy example", {
                    init_r = 0.05, seed = SEED, control = CONTROL)
   ans <- lmer(fmla, data = sleepstudy)
   expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-  expect_equal(ranef(fit)[[1L]], ranef(ans)[[1L]], tol = RANEF_tol)
+  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
 })
 
 context("stan_lmer")
@@ -28,7 +28,7 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   fit <- stan_lmer(fmla, data = Penicillin, control = CONTROL, seed = SEED)
   ans <- lmer(fmla, data = Penicillin)
   expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-  expect_equal(ranef(fit)[[1L]], ranef(ans)[[1L]], tol = RANEF_tol)
+  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
 })
 
 context("stan_glmer (binomial)")
@@ -41,10 +41,6 @@ test_that("stan_glmer returns expected result for cbpp example", {
                       seed = SEED, control = CONTROL)
     ans <- glmer(fmla, data = cbpp, family = binomial(links[i]))
     expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-    expect_equal(ranef(fit)[[1L]], ranef(ans)[[1L]], tol = RANEF_tol)
+    expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   # }
 })
-
-
-
-
