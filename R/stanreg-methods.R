@@ -131,6 +131,7 @@ coef.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export sigma
 #' @importFrom lme4 sigma
 #' 
 sigma.stanreg <- function(object, ...) {
@@ -144,6 +145,7 @@ sigma.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export VarCorr
 #' @importFrom lme4 VarCorr
 #' 
 VarCorr.stanreg <- function(object, ...) {
@@ -170,6 +172,7 @@ VarCorr.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export fixef
 #' @importFrom lme4 fixef
 #' 
 fixef.stanreg <- function(object, ...) {
@@ -179,6 +182,7 @@ fixef.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export ranef
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
@@ -203,15 +207,16 @@ ranef.stanreg <- function(object, ...) {
                check.names = FALSE)
   })
   names(ans) <- names(fl)
-#   stopifnot(is(whichel, "character"))
-#   whchL <- names(ans) %in% whichel
-#   ans <- ans[whchL]
+  #   stopifnot(is(whichel, "character"))
+  #   whchL <- names(ans) %in% whichel
+  #   ans <- ans[whchL]
   class(ans) <- "ranef.mer"
   ans
 }
 
 #' @rdname stanreg-methods
 #' @export
+#' @export ngrps
 #' @importFrom lme4 ngrps
 #' 
 ngrps.stanreg <- function(object, ...) {
