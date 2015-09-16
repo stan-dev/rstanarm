@@ -1,3 +1,4 @@
+#' @rdname stanreg-methods
 #' @method print stanreg
 #' @export
 print.stanreg <- function(x, digits = 3, ...) {

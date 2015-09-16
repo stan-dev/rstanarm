@@ -1,3 +1,4 @@
+#' @rdname stanreg-methods
 #' @method summary stanreg
 #' @export
 summary.stanreg <- function(object, ..., digits = 2) {

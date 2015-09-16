@@ -14,9 +14,6 @@
 #'   method returns the pointwise log-likelihood matrix. Unlike 
 #'   \code{\link[stats]{residuals.glm}}, residuals are of type \code{'response'}
 #'   not \code{'deviance'}.
-#' @note For the \code{sigma}, \code{fixef}, \code{ranef}, and \code{VarCorr}
-#'   methods, \code{object} must be a model fit using \code{stan_lmer} or
-#'   \code{stan_glmer}.
 #'
 #' @seealso \code{\link{stanreg-objects}}
 #' 
