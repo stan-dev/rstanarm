@@ -182,11 +182,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
   if (length(group)) {
-    if (!(is_continuous || supported_families[fam] == "binomial")) 
-      stop("Only continuous and binomial models are currently supported with group-specific terms")
-    
     Z <- t(as.matrix(group$Zt))
-    
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
     t <- length(p)
