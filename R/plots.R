@@ -22,6 +22,7 @@
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
+#' @seealso The \code{\link[=shinystan]{ShinyStan}} graphical user interface.
 #' 
 #' @examples 
 #' \dontrun{
