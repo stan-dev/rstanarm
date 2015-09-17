@@ -13,8 +13,9 @@
 #'   of simulated datasets is the number of post-warmup draws from the posterior
 #'   distribution.
 #' @param overlay For \code{check="distributions"} only, should distributions be
-#'   plotted separately (\code{FALSE}) or overlaid in a single plot
-#'   (\code{TRUE})? For other values of \code{check} this is ignored.
+#'   plotted separately (\code{FALSE}) or overlaid in a single plot 
+#'   (\code{TRUE}, the default)? For other values of \code{check} this is
+#'   ignored.
 #' @param test For \code{check="test statistics"} only, \code{test} should be a 
 #'   function that computes the desired test statistic. It can be the name of a 
 #'   function as a character string (e.g., \code{test = 'mean'}) or a function 
@@ -24,9 +25,9 @@
 #'   plot as a vertical line.
 #' @param ... Optional arguments to geoms to control features of the plots. For 
 #'   the \code{'distributions'} plots, don't use \code{...} to specify the 
-#'   aesthetics \code{color}, \code{fill} and \code{size}, as they are mapped to
-#'   a binary variable so that \code{y} and \code{yrep} can be styled
-#'   separately. To change these aesthetics add a
+#'   aesthetics (\code{color}, \code{fill}, \code{size}, and \code{alpha}) as
+#'   they are mapped to a binary variable so that \code{y} and \code{yrep} can
+#'   be styled separately. To change these aesthetics add a
 #'   \code{\link[ggplot2]{discrete_scale}} (e.g.
 #'   \code{\link[ggplot2]{scale_fill_manual}}) with two values to the ggplot
 #'   object returned by \code{ppcheck}. See Examples.
@@ -43,13 +44,18 @@
 #' options(mc.cores = parallel::detectCores())
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
-#' # Compare distribution of y (mpg) to simulated datasets from the model
-#' (ppfit_dist <- ppcheck(fit, check = "dist"))
-#' ppfit_dist + scale_fill_manual(values = c("blue", "red"))
-#' (ppfit_dist_overlay <- ppcheck(fit, check = "dist", nreps = 100, overlay = TRUE))
-#' ppfit_dist_overlay + 
-#'  scale_color_manual(values = c("orange", NA)) + 
-#'  scale_size_manual(values = c(0.05, 1.5))
+#' # Compare distribution of y (mpg) to simulated datasets 
+#' # from the model (posterior predictive distribution)
+#' (pp_dist <- ppcheck(fit, check = "dist", nreps = 20))
+#' 
+#' pp_dist + 
+#'  scale_color_manual(values = c("red", "black")) + # change line colors
+#'  scale_size_manual(values = c(0.1, 2)) + # change line sizes 
+#'  scale_fill_manual(values = c(NA, NA)) # remove fill
+#'  
+#' # Show the distributions as separate histograms instead of overlaid  
+#' (pp_dist_sep <- ppcheck(fit, check = "dist", overlay = FALSE)) 
+#' pp_dist_sep + scale_fill_manual(values = c("blue", "red")) # change fill colors
 #' 
 #' # Check histograms of test statistics
 #' library(gridExtra)
@@ -61,7 +67,7 @@
 #' ppcheck(fit, check = "test", test = q25)
 #' 
 #' # Residuals
-#' ppcheck(fit, check = "resid", n = 3) + ggtitle("Residuals y - yrep")
+#' ppcheck(fit, check = "resid", nreps = 3) + ggtitle("Residuals y - yrep")
 #' 
 #' # For logistic regressions binned residual plots are generated instead.
 #' # See the Examples for the stan_glm function 
@@ -71,7 +77,7 @@
 #' 
 ppcheck <- function(object,
                     check = c("distributions", "residuals", "test statistics"),
-                    nreps = NULL, overlay = FALSE, test = 'mean',
+                    nreps = NULL, overlay = TRUE, test = 'mean',
                     ...) {
   if (!is(object, "stanreg"))
     stop(deparse(substitute(object)), " is not a stanreg object")
@@ -134,8 +140,8 @@ ppcheck <- function(object,
           plot.title = element_text(size = 18))
   if (no_y) {
     thm <- thm %+replace% theme(axis.text.y = element_blank(),
-                         axis.ticks.y = element_blank(),
-                         axis.title.y = element_blank())
+                                axis.ticks.y = element_blank(),
+                                axis.title.y = element_blank())
   }
   thm
 }
@@ -168,13 +174,15 @@ ppcheck_hist <- function(dat, ...) {
 
 #' @importFrom ggplot2 geom_density xlab scale_size_manual scale_fill_manual scale_color_manual
 ppcheck_dens <- function(dat, ...) {
-  dat$id <- factor(dat$id, levels = unique(dat$id))
+  # dat$id <- factor(dat$id, levels = unique(dat$id))
   dots <- list(...)
   ggplot(dat, aes_string(x = 'value', group = 'id',
-                         color = "is_y", fill = "is_y", size = 'is_y')) + 
-    geom_density(alpha = dots$alpha %ORifNULL% 0.75, ...) + 
+                         color = "is_y", fill = "is_y", size = 'is_y',
+                         alpha = "is_y")) + 
+    geom_density(...) + 
+    scale_alpha_manual(values = c(0, dots$alpha %ORifNULL% 1)) +
     scale_color_manual(values = c("black", .PP_DARK)) +
-    scale_fill_manual(values = c(NA, .PP_FILL)) +
+    scale_fill_manual(values = c("black", .PP_FILL)) +
     scale_size_manual(values = c(0.25, 1)) +
     xlab("y")
 }
@@ -241,7 +249,7 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   if (ny >= 100) nbins <- floor(sqrt(ny))
   else if (ny > 10 && ny < 100) nbins <- 10
   else nbins <- floor(ny / 2) # if (ny <= 10)
-
+  
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
     colnames(br) <- c("xbar", "ybar", "se2")
