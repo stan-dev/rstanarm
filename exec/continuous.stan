@@ -347,11 +347,14 @@ data {
   
   # glmer stuff, see table 3 of
   # https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
-  int<lower=0> t;    # num. terms (maybe 0) with a | in the glmer formula
-  int<lower=1> p[t]; # num. variables on the LHS of each |
-  int<lower=1> l[t]; # num. levels for the factor(s) on the RHS of each |
-  int<lower=0> q;    # conceptually equals \sum_{i=1}^t p_i \times l_i
-  matrix[N,q]  Z;    # uncentered design matrix for group-specific variables
+  int<lower=0> t;               # num. terms (maybe 0) with a | in the glmer formula
+  int<lower=1> p[t];            # num. variables on the LHS of each |
+  int<lower=1> l[t];            # num. levels for the factor(s) on the RHS of each |
+  int<lower=0> q;               # conceptually equals \sum_{i=1}^t p_i \times l_i
+  int<lower=0> num_non_zero;    # number of non-zero elements in the Z matrix
+  vector[num_non_zero] w;       # non-zero elements in the implicit Z matrix
+  int<lower=0> v[num_non_zero]; # column indices for w
+  int<lower=0> u[(N+1)*(t>0)];  # where the non-zeros start in each row
 
   # family 
   int<lower=1,upper=3> family; # 1 = gaussian, 2 = Gamma, 3 = inverse Gaussian
@@ -446,7 +449,7 @@ parameters {
   real<lower=0> global[horseshoe];
   vector<lower=0>[K] local[horseshoe];
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
-  vector[q] u;
+  vector[q] z_b;
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;
   vector<lower=0>[len_concentration] zeta;
@@ -501,7 +504,7 @@ transformed parameters {
         }
       }
     }
-    b <- make_b(u, z_T, rho, var_group, p, l);
+    b <- make_b(z_b, z_T, rho, var_group, p, l);
   }
 }
 model {
@@ -509,7 +512,7 @@ model {
   if (K > 0) eta <- X * beta;
   else eta <- rep_vector(0.0, N);
   if (has_offset == 1)    eta <- eta + offset;
-  if (t > 0)              eta <- eta + Z * b;
+  if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
     if (family == 1 || link == 2) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
@@ -574,7 +577,7 @@ model {
   }
   
   if (t > 0) {
-    u ~ normal(0,1);
+    z_b ~ normal(0,1);
     z_T ~ normal(0,1);
     rho ~ beta(shape1,shape2);
     zeta ~ gamma(delta, 1);
@@ -591,8 +594,8 @@ generated quantities {
     vector[N] eta;
     if (K > 0) eta <- X * beta;
     else eta <- rep_vector(0.0, N);
-    if (has_offset)         eta <- eta + offset;
-    if (t > 0)              eta <- eta + Z * b;
+    if (has_offset) eta <- eta + offset;
+    if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (family == 1 || link == 2) eta <- eta + gamma[1];
       else {

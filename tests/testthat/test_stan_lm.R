@@ -4,7 +4,7 @@
 library(rstanarm)
 set.seed(123)
 
-threshold <- 0.36
+threshold <- 0.51
 
 f1 <- function(x) cbind(coef(x), se(x))
 f2 <- function(x) summary(x)$coefficients[,1:2]

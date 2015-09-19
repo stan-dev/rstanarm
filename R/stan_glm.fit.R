@@ -195,7 +195,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- as.array(p)
     standata$l <- as.array(l)
     standata$q <- ncol(Z)
-    standata$Z <- Z
+    parts <- extract_sparse_parts(Z)
+    standata$num_non_zero <- length(parts$w)
+    standata$w <- parts$w
+    standata$v <- parts$v
+    standata$u <- parts$u
     standata$gamma_shape <- as.array(maybe_broadcast(group$decov$gamma_shape, t))
     standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
     standata$len_concentration <- sum(p[p > 1])
@@ -209,7 +213,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- integer(0)
     standata$l <- integer(0)
     standata$q <- 0L
-    standata$Z <- matrix(0, nrow = nrow(xtemp), ncol = 0L)
+    standata$num_non_zero <- 0L
+    standata$w <- double(0)
+    standata$v <- integer(0)
+    standata$u <- integer(0)
     standata$gamma_shape <- standata$scale <- standata$concentration <-
       standata$shape <- rep(0, 0)
     standata$len_concentration <- 0L
@@ -321,9 +328,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     if (algorithm == "sampling") 
       stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                  show_messages = FALSE, ...)
-    else
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
-                           algorithm = algorithm, ...)
+    # else
+    #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
+    #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_names, "]"),
                                             paste0("var[", g_names, "]")),

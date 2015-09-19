@@ -97,11 +97,11 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
     else       pars <- c("zeta", "beta", "mean_PPD")
     standata$do_residuals <- J > 2
-    if (algorithm == "sampling") 
+    # if (algorithm == "sampling") 
       stanfit <- suppressMessages(rstan::sampling(stanfit, pars = pars, data = standata, 
                                                   init = start, show_messages = FALSE, ...))
-    else 
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
+    # else 
+    #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
     if (J > 2)
       new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                      paste("mean_PPD", y_lev, sep = ":"), "log-posterior")

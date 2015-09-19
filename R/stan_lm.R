@@ -84,7 +84,7 @@
 #'   normally-distributed errors but specifies different priors.
 #'   
 #' @examples 
-#' stan_plot(stan_lm(mpg ~ ., data = mtcars, algorithm = "meanfield", 
+#' stan_plot(stan_lm(mpg ~ wt + qsec + am, data = mtcars, 
 #'                   prior = R2(0.75), seed = 12345, chains = 1))
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
