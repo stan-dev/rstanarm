@@ -2,18 +2,18 @@ Package: rstanarm
 Type: Package
 Title: Applied Regression Modeling via RStan
 Version: 2.8.0
-Date: 2015-09-09
+Date: 2015-09-17
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
 Description: Convenient interface for applied regression models using RStan, 
   the R interface to the Stan C++ package. Models are specified with customary 
-  R modeling syntax and can be estimated by performing full Bayesian inference, 
-  apprixmate Bayesian inference (via variational approximation) or optimization
-  of a (perhaps penalized) likelihood function.
+  R modeling syntax and can be estimated by performing full Bayesian inference
+  or optimization of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
-Depends: rstan (>= 2.7.0-3)
-Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, shinystan (>= 2.0.0.9000), stats, utils
-Suggests: gridExtra, HSAUR3, knitr, MASS, MCMCpack, SuppDists, testthat
+Depends: rstan (>= 2.8.0)
+Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, shinystan (>= 2.0.1), stats, utils
+Suggests: arm, gridExtra, HSAUR3, knitr, MASS, MCMCpack, SuppDists, testthat
 VignetteBuilder: knitr
-URL: https://groups.google.com/forum/#!forum/stan-users
+URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
+BugReports: https://github.com/stan-dev/rstanarm/issues

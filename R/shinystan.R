@@ -11,12 +11,10 @@
 #' 
 #' @name shinystan
 #' @aliases launch_shinystan
-#' @seealso \code{\link[shinystan]{launch_shinystan}}
 #' @importFrom shinystan launch_shinystan
 #'   
 #' @examples
 #' \dontrun{
-#' 
 #' # Fit a model
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, seed = 12345)   
 #' 
@@ -25,7 +23,6 @@
 #' 
 #' # Launch the ShinyStan app (without saving shinystan object)
 #' launch_shinystan(fit) 
-#' 
 #' }
 #' 
 #' 

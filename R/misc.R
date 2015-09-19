@@ -1,3 +1,14 @@
+`%ORifNULL%` <- function(a, b) {
+  if (is.null(a)) b else a
+}
+
+get_y <- function(object) {
+  object$y %ORifNULL% model.response(model.frame(object))
+}
+get_x <- function(object) {
+  object$x %ORifNULL% model.matrix(object)
+}
+
 na_replace <- function(x, replacement) {
   # if x is NA return replacement, else return x itself
   if (is.na(x)) 
@@ -7,13 +18,12 @@ na_replace <- function(x, replacement) {
 }
 
 maybe_broadcast <- function(x, n) {
-  # if x has length <= 1 replicate it n times, else return x itself
-  if (length(x) == 0)
-    rep(0, times = n)
-  else if (length(x) == 1L) 
-    rep(x, times = n)
-  else 
-    x
+  # if x has no length replicate 0 n times, 
+  # if x has length 1 replicate x n times
+  # else return x itself
+  if (!length(x)) rep(0, times = n)
+  else if (length(x) == 1L) rep(x, times = n)
+  else x
 }
 
 nlist <- function(...) {
@@ -60,13 +70,13 @@ linear_predictor <- function(beta, x, offset = NULL) {
 }
 linear_predictor.default <- function(beta, x, offset = NULL) {
   eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
-  if (length(offset) == 0) eta
+  if (!length(offset)) eta
   else eta + offset
 }
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (NCOL(beta) == 1L) 
     beta <- as.matrix(beta)
   eta <- beta %*% t(x)
-  if (length(offset) == 0) eta
+  if (!length(offset)) eta
   else sweep(eta, MARGIN = 2L, offset, `+`)
 }

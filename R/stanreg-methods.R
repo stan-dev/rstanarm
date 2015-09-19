@@ -10,13 +10,22 @@
 #' @param ... Ignored.
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
-#' @details The \code{se} method returns standard errors and the \code{log_lik} 
-#'   method returns the pointwise log-likelihood matrix. Unlike 
-#'   \code{\link[stats]{residuals.glm}}, residuals are of type \code{'response'}
-#'   not \code{'deviance'}.
-#' @note For the \code{sigma}, \code{fixef}, \code{ranef}, and \code{VarCorr}
-#'   methods, \code{object} must be a model fit using \code{stan_lmer} or
-#'   \code{stan_glmer}.
+#' 
+#' @details Most of these methods are similar to the methods defined for objects
+#'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
+#'   
+#' \itemize{
+#' \item \code{confint} Credible intervals based on posterior quantiles, unless 
+#'  \code{algorithm='optimizing'}, in which case \code{\link[stats]{confint.default}} 
+#'  is called.
+#' \item \code{log_lik} The \eqn{S} by \eqn{N} pointwise log-likelihood matrix, 
+#'  where \eqn{S} is the size of the posterior sample and \eqn{N} is the number 
+#'  of data points.
+#' \item \code{residuals} Residuals of type \code{'response'} (not 
+#'  \code{'deviance'} residuals).
+#' \item \code{se} Standard errors based on median absolute 
+#'  deviation (\code{\link[stats]{mad}}).
+#' }
 #'
 #' @seealso \code{\link{stanreg-objects}}
 #' 
@@ -36,9 +45,11 @@ vcov.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
-confint.stanreg <- function (object, parm = NULL, level = 0.95, ...) {
+confint.stanreg <- function (object, parm, level = 0.95, ...) {
+  if (object$algorithm == "optimizing")
+    return(confint.default(object, parm, level, ...))
   mat <- as.matrix(object$stanfit)
-  if (!is.null(parm)) mat <- mat[,parm,drop=FALSE]
+  if (!missing(parm)) mat <- mat[,parm,drop=FALSE]
   alpha <- (1 - level) / 2
   t(apply(mat, 2, FUN = quantile, probs = c(alpha, 1 - alpha)))
 }
@@ -50,17 +61,23 @@ fitted.stanreg <- function(object, ...)  {
   object$fitted.values
 }
 
-#' @rdname stanreg-methods
+
+#' Standard errors
 #' @export
-se <- function(object) UseMethod("se")
+#' @keywords internal
+#' @param object object
+se <- function(object, ...) UseMethod("se")
 
 #' @rdname stanreg-methods
 #' @export
-se.stanreg <- function(object) {
+se.stanreg <- function(object, ...) {
   object$ses
 }
 
-# Compute pointwise log-likelihood matrix
+#' Pointwise log-likelihood matrix
+#' @export
+#' @param object object
+#' @keywords internal
 log_lik <- function(object, ...) UseMethod("log_lik")
 
 #' @rdname stanreg-methods
@@ -68,7 +85,7 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 log_lik.stanreg <- function(object, ...) {
   if (object$algorithm != "sampling")
     stop("Only available for MCMC.", call. = FALSE)
-  fun <- .llfun(object)
+  fun <- .llfun(object$family)
   args <- .llargs(object)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data, draws = args$draws)) 
@@ -128,22 +145,9 @@ coef.stanreg <- function(object, ...) {
   val
 }
 
-
 #' @rdname stanreg-methods
 #' @export
-#' @importFrom lme4 sigma
-#' 
-sigma.stanreg <- function(object, ...) {
-  if (!("sigma" %in% rownames(object$stan_summary))) {
-    warning("sigma not found. This method is only for Gaussian models.", 
-            call. = FALSE)
-    invisible(NULL)
-  }
-  else object$stan_summary["sigma", "mean"]
-}
-
-#' @rdname stanreg-methods
-#' @export
+#' @export VarCorr
 #' @importFrom lme4 VarCorr
 #' 
 VarCorr.stanreg <- function(object, ...) {
@@ -170,6 +174,7 @@ VarCorr.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export fixef
 #' @importFrom lme4 fixef
 #' 
 fixef.stanreg <- function(object, ...) {
@@ -179,6 +184,7 @@ fixef.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @export ranef
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
@@ -203,18 +209,36 @@ ranef.stanreg <- function(object, ...) {
                check.names = FALSE)
   })
   names(ans) <- names(fl)
-#   stopifnot(is(whichel, "character"))
-#   whchL <- names(ans) %in% whichel
-#   ans <- ans[whchL]
+  #   stopifnot(is(whichel, "character"))
+  #   whchL <- names(ans) %in% whichel
+  #   ans <- ans[whchL]
   class(ans) <- "ranef.mer"
   ans
 }
 
 #' @rdname stanreg-methods
 #' @export
+#' @export ngrps
 #' @importFrom lme4 ngrps
 #' 
 ngrps.stanreg <- function(object, ...) {
   vapply(.flist(object), nlevels, 1)  
 }
 
+#' Residual standard deviation
+#' @export
+#' @param object object
+#' @keywords internal
+sigma <- function(object, ...) UseMethod("sigma")
+
+#' @rdname stanreg-methods
+#' @export
+#' 
+sigma.stanreg <- function(object, ...) {
+  if (!("sigma" %in% rownames(object$stan_summary))) {
+    warning("sigma not found. This method is only for Gaussian models.", 
+            call. = FALSE)
+    invisible(NULL)
+  }
+  else object$stan_summary["sigma", "mean"]
+}

@@ -1,7 +1,7 @@
 #' Leave-one-out cross-validation (LOO)
 #' 
 #' Compute approximate leave-one-out cross-validation (LOO) or the Widely 
-#' Applicable Information Criterion (WAIC) using the
+#' Applicable Information Criterion (WAIC) using the 
 #' \pkg{\link[=loo-package]{loo}} package.
 #' 
 #' @export
@@ -13,16 +13,40 @@
 #'   \code{\link[loo]{waic}}.
 #' 
 #' @examples 
+#' \dontrun{
 #' seed <- 42024
 #' set.seed(seed)
+#' library(loo)
+#' 
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200, seed = seed)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = 200, seed = seed)
 #' (loo1 <- loo(fit1, cores = 2))
 #' loo2 <- loo(fit2, cores = 2)
-#' loo::compare(loo1, loo2)
+#' compare(loo1, loo2)
 #' plot(loo2, label_points = TRUE)
 #' 
-#' @seealso \code{\link[loo]{loo-package}}
+#' 
+#' data(lalonde, package = "arm")
+#' ?lalonde
+#' t7 <- student_t(df = 7) 
+#' 
+#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
+#'    nodegr + u74 + u75
+#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
+#'                      prior = t7, prior_intercept = t7)
+#'                  
+#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
+#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
+#' lalonde2 <- update(lalonde1, formula = f2)
+#' 
+#' (loo_lalonde1 <- loo(lalonde1))
+#' (loo_lalonde2 <- loo(lalonde2))
+#' plot(loo_lalonde2, label_points = TRUE)
+#' compare(loo1, loo2)
+#' }
+#' 
+#' @seealso \code{\link[loo]{loo-package}}, \code{\link[loo]{compare}}, 
+#' \code{\link[loo]{plot.loo}}
 #' @importFrom loo loo loo.function
 #' 
 loo.stanreg <- function(x, ...) {
@@ -55,9 +79,9 @@ waic.stanreg <- function(x, ...) {
   f <- object$family
   draws <- nlist(f)
   stanmat <- as.matrix(object$stanfit)
-  nms <- names(object)
-  x <- if ("x" %in% nms) object$x else model.matrix(object)
-  y <- if ("y" %in% nms) object$y else model.response(model.frame(object))
+  x <- get_x(object)
+  y <- get_y(object)
+  
   if (is(f, "family")) {
     if (f$family != "binomial") data <- data.frame(y, x)
     else {
