@@ -24,7 +24,7 @@
 #' 
 #' 
 #' @examples 
-#' \donrun{
+#' \dontrun{
 #' data("clouds", package = "HSAUR3")
 #' f <- rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) + time
 #' fit <- stan_lm(f, data = clouds, prior = R2(location = 0.25), 
