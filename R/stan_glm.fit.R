@@ -318,9 +318,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     if (algorithm == "sampling") 
       stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
                                  show_messages = FALSE, ...)
-    else
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
-                           algorithm = algorithm, ...)
+    # else
+    #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
+    #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
                    if (length(group) > 0) c(paste0("b[", b_names, "]"),
                                             paste0("var[", g_names, "]")),

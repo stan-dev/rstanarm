@@ -23,9 +23,8 @@
 #'   on the fit.
 #' @examples
 #' \dontrun{ 
-#' options(mc.cores = parallel::detectCores())
 #' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
-#'          algorithm = "meanfield", prior = R2(0.5), seed = 12345) 
+#'          prior = R2(0.5), seed = 12345) 
 #' }
 #'             
 stan_aov <- function(formula, data = NULL, projections = FALSE,

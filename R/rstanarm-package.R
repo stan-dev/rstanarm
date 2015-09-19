@@ -35,16 +35,6 @@
 #'     distribution of the parameters. See \code{\link[rstan]{sampling}}
 #'     for more details. \strong{This is the default and the recommended
 #'     algorithm for statistical inference.}
-#'  \item \code{algorithm = "fullrank"} Uses a multivariate normal variational
-#'    approximation to the posterior distribution with a dense covariance
-#'    matrix. See \code{\link[rstan]{vb}}. This algorithm is helpful when
-#'    MCMC is infeasible or when building up a more complicated model
-#'    iteratively. 
-#'  \item \code{algorithm = "meanfield"} Uses a multivariate normal variational
-#'    approximation to the posterior distribution with a diagonal covariance
-#'    matrix. See \code{\link[rstan]{vb}}. This algorithm is helpful when
-#'    MCMC or the fullrank variational approximation is infeasible or when 
-#'    building up a more complicated model iteratively.
 #'  \item \code{algorithm = "optimizing"} Finds the posterior mode using
 #'    the LBGFS algorithm. See \code{\link[rstan]{optimizing}}. If the priors
 #'    are unspecified, then this is equivalent to maximum likelihood, in 

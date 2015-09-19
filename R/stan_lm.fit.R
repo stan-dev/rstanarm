@@ -68,9 +68,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   if (algorithm == "optimizing") {
     stop("'optimizing' not supported for this model")
   }
-  else if (algorithm %in% c("meanfield", "fullrank")) {
-    stanfit <- rstan::vb(stanfit, data = standata, pars = pars, ...)
-  }
+  # else if (algorithm %in% c("meanfield", "fullrank")) {
+  #   stanfit <- rstan::vb(stanfit, data = standata, pars = pars, 
+  #                        algorithm = algorithm, ...)
+  # }
   else if ("control" %in% names(list(...))) {
     stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, 
                                init = init_fun, show_messages = FALSE, ...)
