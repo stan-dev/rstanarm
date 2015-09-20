@@ -209,14 +209,18 @@ data {
   
   # glmer stuff, see table 3 of
   # https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
-  int<lower=0> t;    # num. terms (maybe 0) with a | in the glmer formula
-  int<lower=1> p[t]; # num. variables on the LHS of each |
-  int<lower=1> l[t]; # num. levels for the factor(s) on the RHS of each |
-  int<lower=0> q;    # conceptually equals \sum_{i=1}^t p_i \times l_i
-  matrix[N[1],q]  Z0; # uncentered design matrix for group-specific variables
-  matrix[N[2],q]  Z1; # uncentered design matrix for group-specific variables
+  int<lower=0> t;                   # num. terms (maybe 0) with a | in the glmer formula
+  int<lower=1> p[t];                # num. variables on the LHS of each |
+  int<lower=1> l[t];                # num. levels for the factor(s) on the RHS of each |
+  int<lower=0> q;                   # conceptually equals \sum_{i=1}^t p_i \times l_i
+  int<lower=0> num_non_zero[2];     # number of non-zero elements in the Z matrices
+  vector[num_non_zero[1]] w0;       # non-zero elements in the implicit Z0 matrix
+  vector[num_non_zero[2]] w1;       # non-zero elements in the implicit Z1 matrix
+  int<lower=0> v0[num_non_zero[1]]; # column indices for w0
+  int<lower=0> v1[num_non_zero[2]]; # column indices for w1
+  int<lower=0> u0[(N[1]+1)*(t>0)];  # where the non-zeros start in each row of Z0
+  int<lower=0> u1[(N[2]+1)*(t>0)];  # where the non-zeros start in each row of Z1
 
-  
   # link function from location to linear predictor
   int<lower=1,upper=5> link;
   
@@ -241,8 +245,7 @@ data {
   real prior_mean_for_intercept;
   vector<lower=0>[K] prior_df;
   real<lower=0> prior_df_for_intercept;
-  real<lower=0> prior_scale_for_dispersion;
-  
+
   # hyperparameters for glmer stuff; if t > 0 priors are mandatory
   vector<lower=0>[t] gamma_shape; 
   vector<lower=0>[t] scale;
@@ -257,10 +260,8 @@ transformed data {
   int<lower=0> len_z_T;
   int<lower=0> len_var_group;
   int<lower=0> len_rho;
-  real<lower=0> shape1[len_shape];
-  real<lower=0> shape2[len_shape];
   real<lower=0> delta[len_concentration];
-  int<lower=1> pos[2];
+  int<lower=1> pos;
   
   NN <- N[1] + N[2];
   if (prior_dist <  2) horseshoe <- 0;
@@ -269,29 +270,15 @@ transformed data {
   len_z_T <- 0;
   len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
-  pos[1] <- 1;
-  pos[2] <- 1;
+  pos <- 1;
   for (i in 1:t) {
-    real nu;
     if (p[i] > 1) {
       for (j in 1:p[i]) {
-        delta[pos[2]] <- concentration[j];
-        pos[2] <- pos[2] + 1;
+        delta[pos] <- concentration[j];
+        pos <- pos + 1;
       }
-      nu <- shape[pos[1]] + 0.5 * (p[i] - 2);
-      shape1[pos[1]] <- nu;
-      shape2[pos[1]] <- nu;
-      pos[1] <- pos[1] + 1;
     }
-    if (p[i] > 2) for (j in 2:p[i]) {
-      nu <- nu - 0.5;
-      shape1[pos[1]] <- 0.5 * j;
-      shape2[pos[1]] <- nu;
-      pos[1] <- pos[1] + 1;
-    }
-    if (p[i] > 2) for (j in 3:p[i]) {
-      len_z_T <- len_z_T + p[i] - 1;
-    }
+    for (j in 3:p[i]) len_z_T <- len_z_T + p[i] - 1;
   }
 }
 parameters {
@@ -299,8 +286,7 @@ parameters {
   real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
   real<lower=0> global[horseshoe];
   vector<lower=0>[K] local[horseshoe];
-  real<lower=0> dispersion_unscaled[t > 0]; # interpretation depends on family!
-  vector[q] u;
+  vector[q] z_b;
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;
   vector<lower=0>[len_concentration] zeta;
@@ -310,7 +296,6 @@ transformed parameters {
   vector[K] beta;
   vector[q] b;
   vector[len_var_group] var_group;
-  real dispersion[t > 0];
   if (prior_dist == 0) beta <- z_beta;
   else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
   else if (prior_dist == 3) {
@@ -330,11 +315,8 @@ transformed parameters {
   if (t > 0) {
     vector[t] scaled_tau;
     int mark;
-    if (prior_scale_for_dispersion > 0)
-      dispersion[1] <-  prior_scale_for_dispersion * dispersion_unscaled[1];
-    else dispersion[1] <- dispersion_unscaled[1];
     mark <- 1;
-    scaled_tau <- tau .* scale * square(dispersion[1]);
+    scaled_tau <- tau .* scale;
     for (i in 1:t) {
       real trace_mat;
       trace_mat <- square(scaled_tau[i]);
@@ -355,7 +337,7 @@ transformed parameters {
         }
       }
     }
-    b <- make_b(u, z_T, rho, var_group, p, l);
+    b <- make_b(z_b, z_T, rho, var_group, p, l);
   }
 }
 model {
@@ -374,8 +356,8 @@ model {
     eta1 <- eta1 + offset1;
   }
   if (t > 0) {
-    eta0 <- eta0 + Z0 * b;
-    eta1 <- eta1 + Z1 * b;
+    eta0 <- eta0 + csr_matrix_times_vector(N[1], q, w0, v0, u0, b);
+    eta1 <- eta1 + csr_matrix_times_vector(N[2], q, w1, v1, u1, b);
   }
   if (has_intercept == 1) {
     if (link != 4) {
@@ -433,10 +415,28 @@ model {
   }
   
   if (t > 0) {
-    if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);    
-    u ~ normal(0,1);
+    int pos_shape;
+    int pos_rho;
+    z_b ~ normal(0,1);
     z_T ~ normal(0,1);
-    rho ~ beta(shape1,shape2);
+    pos_shape <- 1;
+    pos_rho <- 1;
+    for (i in 1:t) if (p[i] > 1) {
+      vector[p[i] - 1] shape1;
+      vector[p[i] - 1] shape2;
+      real nu;
+      nu <- shape[pos_shape] + 0.5 * (p[i] - 2);
+      pos_shape <- pos_shape + 1;
+      shape1[1] <- nu;
+      shape2[1] <- nu;
+      for (j in 2:(p[i]-1)) {
+        nu <- nu - 0.5;
+        shape1[j] <- 0.5 * j;
+        shape2[j] <- nu;
+      }
+      segment(rho, pos_rho, p[i] - 1) ~ beta(shape1,shape2);
+      pos_rho <- pos_rho + p[i] - 1;
+    }
     zeta ~ gamma(delta, 1);
     tau ~ gamma(gamma_shape, 1);
   }
@@ -466,8 +466,8 @@ generated quantities {
       eta1 <- eta1 + offset1;
     }
     if (t > 0) {
-      eta0 <- eta0 + Z0 * b;
-      eta1 <- eta1 + Z1 * b;
+      eta0 <- eta0 + csr_matrix_times_vector(N[1], q, w0, v0, u0, b);
+      eta1 <- eta1 + csr_matrix_times_vector(N[2], q, w1, v1, u1, b);
     }
     if (has_intercept == 1) {
       if (link != 4) {
