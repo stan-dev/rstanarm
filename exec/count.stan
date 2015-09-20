@@ -102,7 +102,7 @@ functions {
    *   the RHS of each |
    * @return A vector of group-specific coefficients
    */
-  vector make_b(vector u, vector z_T, vector rho, vector var_group, 
+  vector make_b_count(vector u, vector z_T, vector rho, vector var_group, 
                 int[] p, int[] l) {
     vector[rows(u)] b;
     int b_mark;
@@ -320,7 +320,7 @@ transformed parameters {
         }
       }
     }
-    b <- make_b(z_b, z_T, rho, var_group, p, l);
+    b <- make_b_count(z_b, z_T, rho, var_group, p, l);
   }
 }
 model {
