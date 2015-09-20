@@ -195,11 +195,24 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- as.array(p)
     standata$l <- as.array(l)
     standata$q <- ncol(Z)
-    parts <- extract_sparse_parts(Z)
-    standata$num_non_zero <- length(parts$w)
-    standata$w <- parts$w
-    standata$v <- parts$v
-    standata$u <- parts$u
+    if (is_bernoulli) {
+      parts0 <- extract_sparse_parts(Z[y == 0,, drop = FALSE])
+      parts1 <- extract_sparse_parts(Z[y == 1,, drop = FALSE])
+      standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
+      standata$w0 <- parts0$w
+      standata$w1 <- parts1$w
+      standata$v0 <- parts0$v
+      standata$v1 <- parts1$v
+      standata$u0 <- parts0$u
+      standata$u1 <- parts1$u
+    }
+    else {
+      parts <- extract_sparse_parts(Z)
+      standata$num_non_zero <- length(parts$w)
+      standata$w <- parts$w
+      standata$v <- parts$v
+      standata$u <- parts$u
+    }
     standata$gamma_shape <- as.array(maybe_broadcast(group$decov$gamma_shape, t))
     standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
     standata$len_concentration <- sum(p[p > 1])
@@ -213,10 +226,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- integer(0)
     standata$l <- integer(0)
     standata$q <- 0L
-    standata$num_non_zero <- 0L
-    standata$w <- double(0)
-    standata$v <- integer(0)
-    standata$u <- integer(0)
+    if (is_bernoulli) {
+      standata$num_non_zero <- rep(0L, 2)
+      standata$w0 <- standata$w1 <- double(0)
+      standata$v0 <- standata$v1 <- integer(0)
+      standata$u0 <- standata$u1 <- integer(0)
+    }
+    else {
+      standata$num_non_zero <- 0L
+      standata$w <- double(0)
+      standata$v <- integer(0)
+      standata$u <- integer(0)
+    }
     standata$gamma_shape <- standata$scale <- standata$concentration <-
       standata$shape <- rep(0, 0)
     standata$len_concentration <- 0L
