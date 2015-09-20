@@ -396,10 +396,8 @@ transformed data {
   int<lower=0> len_z_T;
   int<lower=0> len_var_group;
   int<lower=0> len_rho;
-  real<lower=0> shape1[len_shape];
-  real<lower=0> shape2[len_shape];
   real<lower=0> delta[len_concentration];
-  int<lower=1> pos[2];
+  int<lower=1> pos;
   vector[N * (family == 3)] sqrt_y;
   vector[N * (family == 3)] log_y;
   real sum_log_y;
@@ -409,29 +407,15 @@ transformed data {
   len_z_T <- 0;
   len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
-  pos[1] <- 1;
-  pos[2] <- 1;
+  pos <- 1;
   for (i in 1:t) {
-    real nu;
     if (p[i] > 1) {
       for (j in 1:p[i]) {
-        delta[pos[2]] <- concentration[j];
-        pos[2] <- pos[2] + 1;
+        delta[pos] <- concentration[j];
+        pos <- pos + 1;
       }
-      nu <- shape[pos[1]] + 0.5 * (p[i] - 2);
-      shape1[pos[1]] <- nu;
-      shape2[pos[1]] <- nu;
-      pos[1] <- pos[1] + 1;
     }
-    if (p[i] > 2) for (j in 2:p[i]) {
-      nu <- nu - 0.5;
-      shape1[pos[1]] <- 0.5 * j;
-      shape2[pos[1]] <- nu;
-      pos[1] <- pos[1] + 1;
-    }
-    if (p[i] > 2) for (j in 3:p[i]) {
-      len_z_T <- len_z_T + p[i] - 1;
-    }
+    for (j in 3:p[i]) len_z_T <- len_z_T + p[i] - 1;
   }
   
   if (family == 1) sum_log_y <- not_a_number();
@@ -577,9 +561,28 @@ model {
   }
   
   if (t > 0) {
+    int pos_shape;
+    int pos_rho;
     z_b ~ normal(0,1);
     z_T ~ normal(0,1);
-    rho ~ beta(shape1,shape2);
+    pos_shape <- 1;
+    pos_rho <- 1;
+    for (i in 1:t) if (p[i] > 1) {
+      vector[p[i] - 1] shape1;
+      vector[p[i] - 1] shape2;
+      real nu;
+      nu <- shape[pos_shape] + 0.5 * (p[i] - 2);
+      pos_shape <- pos_shape + 1;
+      shape1[1] <- nu;
+      shape2[1] <- nu;
+      for (j in 2:(p[i]-1)) {
+        nu <- nu - 0.5;
+        shape1[j] <- 0.5 * j;
+        shape2[j] <- nu;
+      }
+      segment(rho, pos_rho, p[i] - 1) ~ beta(shape1,shape2);
+      pos_rho <- pos_rho + p[i] - 1;
+    }
     zeta ~ gamma(delta, 1);
     tau ~ gamma(gamma_shape, 1);
   }
