@@ -160,7 +160,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
   sc <- sigma.stanreg(x)
   out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
                          nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta, nms = names(cnms))
+                         theta = theta / sc, nms = names(cnms))
   structure(out, useSc = sc != 1, class = "VarCorr.merMod")
 }
 
