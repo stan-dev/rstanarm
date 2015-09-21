@@ -321,7 +321,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   else stop(paste(family$family, "is not supported"))
   
   pars <- c(if (has_intercept) "alpha", "beta", 
-            if (length(group)) c("b", "var_group"),
+            if (length(group)) "b",
             if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
@@ -337,7 +337,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     if (is_nb) new_names[new_names == "theta[1]"] <- "overdispersion"
     if (length(group)) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
-      new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
+      # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
+      # rename theta_L ?
     }
     names(out$par) <- new_names
     out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
@@ -353,8 +354,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
     #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                   if (length(group)) c(paste0("b[", b_names, "]"),
-                                            paste0("var[", g_names, "]")),
+                   if (length(group)) c(paste0("b[", b_names, "]")),
+                                        # paste0("var[", g_names, "]")),
                    if (is_gaussian) "sigma", if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
