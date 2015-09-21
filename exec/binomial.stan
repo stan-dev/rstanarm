@@ -92,89 +92,135 @@ functions {
     else maximum <- max(X * beta + offset);
     return -maximum;
   }
+  
+  /** 
+   * Create group-specific block-diagonal Cholesky factor, see section 2.3 of
+   * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+   * @param p An integer array with the number variables on the LHS of each |
+   * @param tau Vector of scale parameters for the decomposed covariance matrices
+   * @param scale Vector of scale hyperparameters
+   * @param zeta Vector of positive parameters that are normalized into simplexes
+   * @param rho Vector of radii in the onion method for creating Cholesky factors
+   * @param z_T Vector used in the onion method for creating Cholesky factors
+   * @return A vector that corresponds to theta in lme4
+   */
+  vector make_theta_L_binom(int len_theta_L, int[] p,
+                            vector tau, vector scale, vector zeta,
+                            vector rho, vector z_T) {
+    vector[len_theta_L] theta_L;
+    int zeta_mark;
+    int z_T_mark;
+    int rho_mark;
+    int theta_L_mark;
+    zeta_mark <- 1;
+    z_T_mark <- 1;
+    rho_mark <- 1;
+    theta_L_mark <- 1;
+    
+    // each of these is a diagonal block of the implicit Cholesky factor
+    for (i in 1:size(p)) { 
+      int nc;
+      nc <- p[i];
+      if (nc == 1) { // "block" is just a standard deviation
+        theta_L[theta_L_mark] <- tau[i] * scale[i];
+        theta_L_mark <- theta_L_mark + 1;
+      }
+      else { // block is lower-triangular               
+        matrix[nc,nc] T_i; 
+        real trace_T_i;
+        vector[nc] pi; // variance = proportion of trace_T_i
+        real std_dev;
+        real T21;
+        
+        trace_T_i <- square(tau[i] * scale[i]) * nc;
+        pi <- segment(zeta, zeta_mark, nc); // zeta ~ gamma(shape, 1)
+        pi <- pi / sum(pi);                 // thus pi ~ dirichlet(shape)
+        zeta_mark <- zeta_mark + nc;
+        std_dev <- sqrt(pi[1] * trace_T_i);
+        T_i[1,1] <- std_dev;
+
+        // Put a correlation into T_i[2,1] and scale by std_dev
+        std_dev <- sqrt(pi[2] * trace_T_i);
+        T21 <- 2.0 * rho[rho_mark] - 1.0;
+        rho_mark <- rho_mark + 1;
+        T_i[2,2] <- std_dev * sqrt(1.0 - square(T21));
+        T_i[2,1] <- std_dev * T21;
+        
+        for (r in 2:(nc - 1)) { // scaled onion method
+          int rp1;
+          vector[r] T_row;
+          real scale_factor;
+          T_row <- segment(z_T, z_T_mark, r);
+          z_T_mark <- z_T_mark + r;
+          rp1 <- r + 1;
+          std_dev <- sqrt(pi[rp1] * trace_T_i);
+          scale_factor <- sqrt(rho[rho_mark] / dot_self(T_row)) * std_dev;
+          for(c in 1:r) T_i[rp1,c] <- T_row[c] * scale_factor;
+          T_i[rp1,rp1] <- sqrt(1.0 - rho[rho_mark]) * std_dev;
+          rho_mark <- rho_mark + 1;
+        }
+        
+        // vec T_i
+        for (c in 1:nc) for (r in c:nc) {
+          theta_L[theta_L_mark] <- T_i[r,c];
+          theta_L_mark <- theta_L_mark + 1;
+        }
+      }
+    }
+    return theta_L;
+  }
+  
   /** 
    * Create group-specific coefficients, see section 2.3 of
    * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
    *
-   * The group-specific coefficients have a centered multivariate normal prior.
-   * To apply the Matt trick, we need Cholesky factors of covariance matrices.
-   * Due to the lack of ragged arrays in Stan, this is a bit tedious.
-   * We decompose a covariance matrix into a correlation matrix and variances.
-   * We represent the variances as a scaled simplex, where the scale component
-   * consists of the square root of the number of variables and an unknown.
-   * The Cholesky factor of a correlation matrix can be built up via the onion
-   * method, which inputs standard normally distributed variables and 
-   * beta-distributed variables.
-   *
-   * @param u Vector whose elements are iid normal(0,1) a priori
-   * @param z_T Vector used in the onion method for creating Cholesky factors
-   * @param rho Vector of radii in the onion method for creating Cholesky factors
-   * @param pi Vector of simplexes concatenated together
-   * @param tau Vector of scale parameters
+   * @param z_b Vector whose elements are iid normal(0,sigma) a priori
+   * @param theta Vector with covariance parameters
    * @param p An integer array with the number variables on the LHS of each |
    * @param l An integer array with the number of levels for the factor(s) on 
    *   the RHS of each |
    * @return A vector of group-specific coefficients
    */
-  vector make_b_binom(vector u, vector z_T, vector rho, vector var_group, 
-                int[] p, int[] l) {
-    vector[rows(u)] b;
+  vector make_b_binom(vector z_b, vector theta_L, int[] p, int[] l) { 
+    vector[rows(z_b)] b;
     int b_mark;
-    int z_T_mark;
-    int rho_mark;
-    int vg_mark;
-    // Due to lack of ragged arrays, everything is input as long vectors
-    b_mark   <- 1;
-    z_T_mark <- 1;
-    rho_mark <- 1;
-    vg_mark <- 1;
+    int theta_L_mark;
+    b_mark <- 1;
+    theta_L_mark <- 1;
     for (i in 1:size(p)) {
       int nc;
       nc <- p[i];
-      if (nc == 1) { // just a standard deviation times a part of a vector
-        real vg_i;
-        vg_i <- var_group[vg_mark];
+      if (nc == 1) {
+        real theta_L_start;
+        theta_L_start <- theta_L[theta_L_mark]; // needs to be positive
         for (s in b_mark:(b_mark + l[i] - 1)) 
-          b[s] <- vg_i * u[s];
-        vg_mark <- vg_mark + 1;  
+          b[s] <- theta_L_start * z_b[s];
         b_mark <- b_mark + l[i];
+        theta_L_mark <- theta_L_mark + 1;
       }
-      else {         // deal with a (Cholesky factor of a) covariance matrix
+      else {
         matrix[nc,nc] T_i;
-        real std_dev;
         T_i <- rep_matrix(0, nc, nc);
-        std_dev <- sqrt(var_group[vg_mark]);
-        vg_mark <- vg_mark + 1;
-        T_i[1,1] <- std_dev;
-        std_dev <- sqrt(var_group[vg_mark]);
-        vg_mark <- vg_mark + 1;
-        T_i[2,1] <- std_dev * (2.0 * rho[rho_mark] - 1.0);
-        rho_mark <- rho_mark + 1;
-        T_i[2,2] <- std_dev * sqrt(1.0 - square(T_i[2,1]));
-        for (r in 2:(nc - 1)) { // modified onion method
-          int rp1;
-          vector[r] T_row;
-          real scale;
-          T_row <- segment(z_T, z_T_mark, r);
-          z_T_mark <- z_T_mark + r;
-          scale <- sqrt(rho[rho_mark] / dot_self(T_row));
-          std_dev <- sqrt(var_group[vg_mark]);
-          rp1 <- r + 1;
-          for(c in 1:r) T_i[rp1,c] <- T_row[c] * scale * std_dev;
-          T_i[rp1,rp1] <- sqrt(1.0 - rho[rho_mark]);
-          rho_mark <- rho_mark + 1;
-          vg_mark <- vg_mark + 1;
+        for (c in 1:nc) {
+          T_i[c,c] <- theta_L[theta_L_mark];    // needs to be positive
+          theta_L_mark <- theta_L_mark + 1;
+          for(r in (c+1):nc) {
+            T_i[r,c] <- theta_L[theta_L_mark];
+            theta_L_mark <- theta_L_mark + 1;
+          }
         }
-        for (j in 1:l[i]) { // multiply Cholesky factor by relevant parts of u
+        for (j in 1:l[i]) {
           vector[nc] temp;
-          temp <- T_i * segment(u, b_mark, nc);
-          for (s in 1:nc) b[b_mark + s - 1] <- temp[s];
-          b_mark <- b_mark + nc;
+          temp <- T_i * segment(z_b, b_mark, nc);
+          b_mark <- b_mark - 1;
+          for (s in 1:nc) b[b_mark + s] <- temp[s];
+          b_mark <- b_mark + nc + 1;
         }
       }
     }
     return b;
   }
+  
 }
 data {
   # dimensions
@@ -201,6 +247,7 @@ data {
   vector[num_non_zero] w;       # non-zero elements in the implicit Z matrix
   int<lower=0> v[num_non_zero]; # column indices for w
   int<lower=0> u[(N+1)*(t>0)];  # where the non-zeros start in each row
+  int<lower=0> len_theta_L;     # length of the theta_L vector
 
   # link function from location to linear predictor
   int<lower=1,upper=5> link;
@@ -272,7 +319,7 @@ parameters {
 transformed parameters {
   vector[K] beta;
   vector[q] b;
-  vector[len_var_group] var_group;
+  vector[len_theta_L] theta_L;
   if (prior_dist == 0) beta <- z_beta;
   else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
   else if (prior_dist == 3) {
@@ -290,31 +337,9 @@ transformed parameters {
     beta <- z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
   }
   if (t > 0) {
-    vector[t] scaled_tau;
-    int mark;
-    mark <- 1;
-    scaled_tau <- tau .* scale;
-    for (i in 1:t) {
-      real trace_mat;
-      trace_mat <- square(scaled_tau[i]);
-      if (p[i] == 1) {
-        var_group[mark] <- trace_mat;
-        mark <- mark + 1;
-      }
-      else {
-        int nc;
-        vector[p[i]] temp;
-        nc <- p[i];
-        trace_mat <- trace_mat * sqrt(nc);
-        temp <- segment(zeta, mark, nc);
-        temp <- temp / sum(temp);
-        for (j in 1:nc) {
-          var_group[mark] <- temp[j] * trace_mat;
-          mark <- mark + 1;
-        }
-      }
-    }
-    b <- make_b_binom(z_b, z_T, rho, var_group, p, l);
+    theta_L <- make_theta_L_binom(len_theta_L, p, 
+                                  tau, scale, zeta, rho, z_T);
+    b <- make_b_binom(z_b, theta_L, p, l);
   }
 }
 model {

@@ -276,7 +276,7 @@ functions {
    * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
    *
    * @param z_b Vector whose elements are iid normal(0,sigma) a priori
-   * @param theta A real array with covariance parameters
+   * @param theta Vector with covariance parameters
    * @param p An integer array with the number variables on the LHS of each |
    * @param l An integer array with the number of levels for the factor(s) on 
    *   the RHS of each |
