@@ -148,29 +148,18 @@ coef.stanreg <- function(object, ...) {
 #' @rdname stanreg-methods
 #' @export
 #' @export VarCorr
-#' @importFrom lme4 VarCorr
-#' 
-VarCorr.stanreg <- function(object, ...) {
-  cnms <- .cnms(object)
-  nms <- names(cnms)
-  stan_nms <- grep("^var\\[", rownames(object$stan_summary), value = TRUE)
-  out <- lapply(seq_along(nms), function(j) {
-    patt <- paste0("\\|", nms[j], "\\]")
-    sel <- grep(patt, stan_nms, value = TRUE)
-    corrs <- cor(as.matrix(object$stanfit, pars = sel))
-    sds <- sqrt(object$stan_summary[sel, "50%"]) # use posterior medians
-    vc <- (sds %*% t(sds)) * corrs
-    colnames(vc) <- rownames(vc) <- cnms[[j]]
-    structure(vc, stddev = sds, correlation = corrs)
-  })
-  names(out) <- nms
-  # return object printable using lmer's method for VarCorr objects
-  gaus <- family(object)$family == "gaussian"
-  out <- structure(out, sc = if (gaus) sigma(object) else NULL, 
-                   useSc = gaus, class = "VarCorr.merMod")
-  out
+#' @importFrom lme4 VarCorr mkVarCorr
+VarCorr.stanreg <- function(x, sigma, rdig) {
+  cnms <- x$glmod$reTrms$cnms
+  means <- get_posterior_mean(x$stanfit)
+  means <- means[,ncol(means)]
+  theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
+  sc <- sigma.stanreg(x)
+  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
+                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
+                         theta = theta, nms = names(cnms))
+  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
 }
-
 
 #' @rdname stanreg-methods
 #' @export
@@ -235,10 +224,6 @@ sigma <- function(object, ...) UseMethod("sigma")
 #' @export
 #' 
 sigma.stanreg <- function(object, ...) {
-  if (!("sigma" %in% rownames(object$stan_summary))) {
-    warning("sigma not found. This method is only for Gaussian models.", 
-            call. = FALSE)
-    invisible(NULL)
-  }
+  if (!("sigma" %in% rownames(object$stan_summary))) return(1)
   else object$stan_summary["sigma", "mean"]
 }
