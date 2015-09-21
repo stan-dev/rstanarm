@@ -131,8 +131,7 @@ coef.stanreg <- function(object, ...) {
                          missnames)
     fef <- cbind(fillvars, fef)
   }
-  val <- lapply(ref, function(x) fef[rep.int(1L, nrow(x)), 
-                                     , drop = FALSE])
+  val <- lapply(ref, function(x) fef[rep.int(1L, nrow(x)), , drop = FALSE])
   for (i in seq(a = val)) {
     refi <- ref[[i]]
     row.names(val[[i]]) <- row.names(refi)
@@ -183,7 +182,7 @@ ranef.stanreg <- function(object, ...) {
   if (object$algorithm == "optimizing")
     sel <- grep("^b\\[", rownames(object$stan_summary))
   else sel <- grep("^b\\[", object$stanfit@sim$fnames_oi)
-  ans <- object$stan_summary[sel, 1]
+  ans <- object$stan_summary[sel, "50%"]
   fl <- .flist(object)
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
