@@ -349,9 +349,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     return(out)
   }
   else {
-    if (algorithm == "sampling") 
-      stanfit <- rstan::sampling(stanfit, pars = pars, data = standata, 
+    if ("control" %in% names(list(...))) {
+      stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, 
                                  show_messages = FALSE, ...)
+    }
+    else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars,
+                                    control = stan_control, show_messages = FALSE, ...)
+    
     # else
     #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
     #                        algorithm = algorithm, ...)

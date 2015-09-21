@@ -77,8 +77,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                                init = init_fun, show_messages = FALSE, ...)
   }
   else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun,
-                                  control = list(adapt_delta = 0.95, max_treedepth = 15), 
-                                  show_messages = FALSE, ...)
+                                  control = stan_control, show_messages = FALSE, ...)
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(x), "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", "mean_PPD", "log-posterior")

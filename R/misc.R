@@ -80,3 +80,5 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (!length(offset)) eta
   else sweep(eta, MARGIN = 2L, offset, `+`)
 }
+
+stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
