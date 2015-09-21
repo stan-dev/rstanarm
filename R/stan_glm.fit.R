@@ -195,6 +195,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- as.array(p)
     standata$l <- as.array(l)
     standata$q <- ncol(Z)
+    standata$len_theta_L <- sum(choose(p,2), p)
     if (is_bernoulli) {
       parts0 <- extract_sparse_parts(Z[y == 0,, drop = FALSE])
       parts1 <- extract_sparse_parts(Z[y == 1,, drop = FALSE])
@@ -226,6 +227,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- integer(0)
     standata$l <- integer(0)
     standata$q <- 0L
+    standata$len_theta_L <- 0L
     if (is_bernoulli) {
       standata$num_non_zero <- rep(0L, 2)
       standata$w0 <- standata$w1 <- double(0)

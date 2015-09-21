@@ -351,6 +351,7 @@ data {
   vector[num_non_zero] w;       # non-zero elements in the implicit Z matrix
   int<lower=0> v[num_non_zero]; # column indices for w
   int<lower=0> u[(N+1)*(t>0)];  # where the non-zeros start in each row
+  int<lower=0> len_theta_L;     # length of the theta_L vector
 
   # family 
   int<lower=1,upper=3> family; # 1 = gaussian, 2 = Gamma, 3 = inverse Gaussian
@@ -389,7 +390,6 @@ data {
 }
 transformed data {
   int<lower=0> horseshoe;
-  int<lower=0> len_theta_L;
   int<lower=0> len_z_T;
   int<lower=0> len_var_group;
   int<lower=0> len_rho;
@@ -401,7 +401,6 @@ transformed data {
   if      (prior_dist <  2) horseshoe <- 0;
   else if (prior_dist == 3) horseshoe <- 2;
   else if (prior_dist == 4) horseshoe <- 4;
-  len_theta_L <- 0;
   len_z_T <- 0;
   len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
@@ -413,7 +412,6 @@ transformed data {
         pos <- pos + 1;
       }
     }
-    len_theta_L <- len_theta_L + (p[i] * (p[i] - 1)) / 2 + p[i];
     for (j in 3:p[i]) len_z_T <- len_z_T + p[i] - 1;
   }
   
