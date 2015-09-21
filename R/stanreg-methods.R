@@ -146,11 +146,14 @@ coef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @export
-#' @export VarCorr
+#' @param x Object of class stanreg
+#' @param sigma Ignored
+#' @param rdig Ignored
 #' @importFrom lme4 VarCorr mkVarCorr
-VarCorr.stanreg <- function(x, sigma, rdig) {
-  cnms <- x$glmod$reTrms$cnms
+#' @export VarCorr
+#' @export
+VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
+  cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
   means <- means[,ncol(means)]
   theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
@@ -162,6 +165,7 @@ VarCorr.stanreg <- function(x, sigma, rdig) {
 }
 
 #' @rdname stanreg-methods
+#' @param object Object of class stanreg
 #' @export
 #' @export fixef
 #' @importFrom lme4 fixef
@@ -172,6 +176,7 @@ fixef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
+#' @param object Object of class stanreg
 #' @export
 #' @export ranef
 #' @importFrom lme4 ranef
@@ -206,6 +211,7 @@ ranef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
+#' @param object Object of class stanreg
 #' @export
 #' @export ngrps
 #' @importFrom lme4 ngrps
