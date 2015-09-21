@@ -146,11 +146,14 @@ coef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
+#' @param x Object of class stanreg
+#' @param sigma Ignored scalar
+#' @param rdig Ignored integer
 #' @export
 #' @export VarCorr
 #' @importFrom lme4 VarCorr mkVarCorr
-VarCorr.stanreg <- function(x, sigma, rdig) {
-  cnms <- x$glmod$reTrms$cnms
+VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
+  cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
   means <- means[,ncol(means)]
   theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
