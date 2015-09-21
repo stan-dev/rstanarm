@@ -19,7 +19,7 @@ test_that("maybe_broadcast works", {
   n <- 5
   x <- list(numeric(0), NULL, 1, c(1,1))
   ans <- list(rep(0,n), rep(0,n), rep(1,n), c(1,1))
-  for (j in seq_along(a)) {
+  for (j in seq_along(ans)) {
     expect_equal(rstanarm:::maybe_broadcast(x[[j]], n), ans[[j]])  
   }
 })

@@ -348,6 +348,7 @@ test_that("draw_ystar_rng returns expected results", {
 context("glmer")
 test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(lme4))
+  stopifnot(require(Matrix))
   test_lme4 <- function(group) {
     Z <- t(as.matrix(group$Zt))
     p <- sapply(group$cnms, FUN = length)

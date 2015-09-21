@@ -50,7 +50,7 @@ test_that("stan_glm returns expected result for glm negative binomial example", 
   for (i in 1:length(links)) 
     fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                     family = neg_binomial_2(links[i]), seed = 12345,
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior_intercept = NULL, prior_ops = NULL, # prior = NULL,
                     algorithm = "optimizing", tol_rel_grad = 1e-16)
     # testing results is unreliable
 })
