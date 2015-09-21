@@ -44,15 +44,14 @@ test_that("stan_glm returns expected result for glm poisson example", {
 })
 
 context("stan_glm (negative binomial)")
-test_that("stan_glm returns expected result for glm negative binomial example", {
+test_that("stan_glm returns something for glm negative binomial example", {
   # example from MASS::glm.nb
   require(MASS)
   for (i in 1:length(links)) 
     fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                     family = neg_binomial_2(links[i]), seed = 12345,
-                    prior_intercept = NULL, prior_ops = NULL, # prior = NULL,
-                    algorithm = "optimizing", tol_rel_grad = 1e-16)
-    # testing results is unreliable
+                    prior_PD = TRUE)
+    # testing results against MASS::glm.nb is unreliable
 })
 
 context("stan_glm (gaussian)")
