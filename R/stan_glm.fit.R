@@ -181,12 +181,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_df_for_intercept = prior_df_for_intercept,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
-  if (length(group) > 0) {
-    if (!is_continuous) 
-      stop("Only continuous models are currently supported with group-specific terms")
-    
+  if (length(group)) {
     Z <- t(as.matrix(group$Zt))
-    
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
     t <- length(p)
@@ -199,11 +195,25 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- as.array(p)
     standata$l <- as.array(l)
     standata$q <- ncol(Z)
-    parts <- extract_sparse_parts(Z)
-    standata$num_non_zero <- length(parts$w)
-    standata$w <- parts$w
-    standata$v <- parts$v
-    standata$u <- parts$u
+    standata$len_theta_L <- sum(choose(p,2), p)
+    if (is_bernoulli) {
+      parts0 <- extract_sparse_parts(Z[y == 0,, drop = FALSE])
+      parts1 <- extract_sparse_parts(Z[y == 1,, drop = FALSE])
+      standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
+      standata$w0 <- parts0$w
+      standata$w1 <- parts1$w
+      standata$v0 <- parts0$v
+      standata$v1 <- parts1$v
+      standata$u0 <- parts0$u
+      standata$u1 <- parts1$u
+    }
+    else {
+      parts <- extract_sparse_parts(Z)
+      standata$num_non_zero <- length(parts$w)
+      standata$w <- parts$w
+      standata$v <- parts$v
+      standata$u <- parts$u
+    }
     standata$gamma_shape <- as.array(maybe_broadcast(group$decov$gamma_shape, t))
     standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
     standata$len_concentration <- sum(p[p > 1])
@@ -217,10 +227,19 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$p <- integer(0)
     standata$l <- integer(0)
     standata$q <- 0L
-    standata$num_non_zero <- 0L
-    standata$w <- double(0)
-    standata$v <- integer(0)
-    standata$u <- integer(0)
+    standata$len_theta_L <- 0L
+    if (is_bernoulli) {
+      standata$num_non_zero <- rep(0L, 2)
+      standata$w0 <- standata$w1 <- double(0)
+      standata$v0 <- standata$v1 <- integer(0)
+      standata$u0 <- standata$u1 <- integer(0)
+    }
+    else {
+      standata$num_non_zero <- 0L
+      standata$w <- double(0)
+      standata$v <- integer(0)
+      standata$u <- integer(0)
+    }
     standata$gamma_shape <- standata$scale <- standata$concentration <-
       standata$shape <- rep(0, 0)
     standata$len_concentration <- 0L
@@ -245,13 +264,20 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stanfit <- get("stanfit_continuous")
   }
   else if (supported_families[fam] == "binomial") {
+    standata$prior_scale_for_dispersion <- 
+      if (!length(group) || prior_scale_for_dispersion == Inf) 
+        0 else prior_scale_for_dispersion
+  
     if (is_bernoulli) {
       y0 <- y == 0
       y1 <- y == 1
       standata$N <- c(sum(y0), sum(y1))
       standata$X0 <- xtemp[y0,, drop = FALSE]
       standata$X1 <- xtemp[y1,, drop = FALSE]
-      if (length(weights) > 0) {
+      standata$Z0 <- standata$Z[y0,, drop = FALSE]
+      standata$Z1 <- standata$Z[y1,, drop = FALSE]
+      standata$Z <- NULL 
+      if (length(weights)) {
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
       }
@@ -259,7 +285,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         standata$weights0 <- double(0)
         standata$weights1 <- double(0)
       }
-      if (length(offset) > 0) {
+      if (length(offset)) {
         standata$offset0 <- offset[y0]
         standata$offset1 <- offset[y1]
       }
@@ -271,7 +297,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
     else {
       standata$trials <- trials
-      if (length(weights) > 0 & !all(weights == 1)) {
+      if (length(weights) & !all(weights == 1)) {
         standata$y <- round(y * trials)
         standata$weights <- double(0)
         standata$has_weights <- 0L
@@ -297,7 +323,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   else stop(paste(family$family, "is not supported"))
   
   pars <- c(if (has_intercept) "alpha", "beta", 
-            if (length(group) > 0) c("b", "var_group"),
+            if (length(group)) "b",
             if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
@@ -311,9 +337,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                                             if (is_gamma) "scale" else
                                             if (is_ig) "lambda" else NA
     if (is_nb) new_names[new_names == "theta[1]"] <- "overdispersion"
-    if (length(group) > 0) {
+    if (length(group)) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
-      new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
+      # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
+      # rename theta_L ?
     }
     names(out$par) <- new_names
     out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
@@ -329,8 +356,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
     #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                   if (length(group) > 0) c(paste0("b[", b_names, "]"),
-                                            paste0("var[", g_names, "]")),
+                   if (length(group)) c(paste0("b[", b_names, "]")),
+                                        # paste0("var[", g_names, "]")),
                    if (is_gaussian) "sigma", if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 

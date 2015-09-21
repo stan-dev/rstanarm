@@ -172,7 +172,7 @@ ppcheck_hist <- function(dat, ...) {
     xlab(NULL)
 }
 
-#' @importFrom ggplot2 geom_density xlab scale_size_manual scale_fill_manual scale_color_manual
+#' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
   # dat$id <- factor(dat$id, levels = unique(dat$id))
   dots <- list(...)
