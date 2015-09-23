@@ -45,25 +45,3 @@ predict.stanreg <- function(object, ..., newdata = NULL,
     nlist(fit, se.fit) 
   }
 }
-
-.pp_data <- function(object, newdata = NULL) {
-  if (is.null(newdata)) {
-    x <- model.matrix(object, data = object$data) 
-    offset <- if (is.null(object$offset)) rep(0, nrow(x)) else object$offset
-    return(nlist(x, offset))
-  }
-  tt <- terms(object)
-  Terms <- delete.response(tt)
-  m <- model.frame(Terms, newdata, xlev = object$xlevels)
-  if (!is.null(cl <- attr(Terms, "dataClasses"))) 
-    .checkMFClasses(cl, m)
-  x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
-  offset <- rep(0, nrow(x))
-  if (!is.null(off.num <- attr(tt, "offset"))) 
-    for (i in off.num) {
-      offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
-    }
-  if (!is.null(object$call$offset)) 
-    offset <- offset + eval(object$call$offset, newdata)
-  nlist(x, offset)
-}
