@@ -39,13 +39,13 @@
 #' ppd <- posterior_predict(fit, fun = exp) 
 #' }
 #' 
+#' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (object$algorithm == "optimizing")
     stop("posterior_predict only available for MCMC")
   family <- object$family
   famname <- family$family
   ppfun <- paste0(".pp_", famname)
-  dat <- .pp_data(object, newdata)
   stanmat <- as.matrix(object$stanfit)
   S <- nrow(stanmat)
   if (is.null(draws)) 
@@ -54,10 +54,17 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     if (draws > S)
       stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
   } 
+  mer <- is(object, "lmerMod")
+  dat <- if (mer) .pp_data_mer(object, newdata) else .pp_data(object, newdata)
   beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
+  if (mer) {
+    sel <- 1:ncol(dat$z) + ncol(dat$x)
+    b <- stanmat[, sel, drop = FALSE]
+    eta <- eta + linear_predictor(b, dat$z)
+  }
   if (draws < S)
-    eta <- eta[sample(S, draws), , drop = FALSE]
+    eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
     f <- object$method
     if (f == "logistic")    linkinv <- make.link("logit")$linkinv
@@ -85,6 +92,33 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     else do.call(match.fun(fun), list(ytilde))
   }
 }
+
+.pp_data_mer <- function(object, newdata = NULL) {
+  offset <- object$call$offset
+  if (is.null(newdata)) {
+    x <- get_x(object)
+    z <- get_z(object)
+  } else {
+    fr <- object$glmod$fr # original model frame
+    notfound <- setdiff(colnames(newdata), colnames(fr))
+    if (length(notfound)) {
+      notfound <- paste(notfound, collapse = ", ")
+      stop("Variables ", notfound, " in newdata but not original formula.", 
+           call. = FALSE)
+    }
+    newdata <- cbind(0, newdata) # add 0 as placeholder for outcome variable
+    colnames(newdata)[1L] <- colnames(fr)[1L]
+    newdata <- newdata[, colnames(fr)] # make sure columns in same order
+    fr2 <- rbind(newdata, fr)
+    keep <- 1:nrow(newdata)
+    # get X and Z matrices
+    glF <- glFormula(object$formula, data = fr2)
+    x <- glF$X[keep,, drop=FALSE]
+    z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
+  }
+  nlist(x, z, offset = object$offset)
+}
+
 
 .pp_gaussian <- function(mu, sigma) {
   t(sapply(1:nrow(mu), function(s) {
