@@ -65,7 +65,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   if (missing(weights)) weights <- double(0)
   if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
   if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
-  offset <- double(0)
+  offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
 
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()
