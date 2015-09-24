@@ -191,7 +191,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       nms_i <- paste(group$cnms[[i]], group_nms[i])
       rep(nms_i, times = l[i])
     }))
-    b_names <- paste0(b_names, colnames(Z))
+    b_names <- paste(b_names, colnames(Z), sep = ":")
     g_names <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
