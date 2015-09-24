@@ -94,7 +94,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
 }
 
 .pp_data_mer <- function(object, newdata = NULL) {
-  offset <- object$call$offset
   if (is.null(newdata)) {
     x <- get_x(object)
     z <- get_z(object)
