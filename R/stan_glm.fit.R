@@ -186,8 +186,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
     t <- length(p)
-    b_names <- unlist(lapply(1:t, FUN = function(i) rep(group$cnms[[i]], times = l[i])))
-    b_names <- paste(b_names, colnames(Z))
+    group_nms <- names(group$cnms)
+    b_names <- unlist(lapply(1:t, FUN = function(i) {
+      nms_i <- paste(group$cnms[[i]], group_nms[i])
+      rep(nms_i, times = l[i])
+    }))
+    b_names <- paste0(b_names, colnames(Z))
     g_names <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
