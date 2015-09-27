@@ -31,7 +31,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     algorithm = "optimizing", tol_rel_grad = 1e-16, seed = 12345)
-    ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]))
+    ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]), start = coef(fit))
     if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
     if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
@@ -93,10 +93,15 @@ test_that("stan_glm returns expected result for binomial example", {
   # example using simulated data
   N <- 500
   trials <- rpois(N, lambda = 30)
-  X <- cbind(1, matrix(rnorm(N * 3), N, 3))
-  b <- c(-3.25, 0.5, 0.1, -1.0)
+  X <- cbind(1, matrix(rnorm(N * 3, sd = 0.5), N, 3))
   for (i in 1:length(links)) {
     fam <- binomial(links[i])
+    if (i == 4) {
+      b <- c(0, 0.5, 0.1, -1.0)
+      eta <- X %*% b
+      b[1] <- -max(eta) - 0.05
+    }  
+    else b <- c(-3.25, 0.5, 0.1, -1.0)
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
     fit <- stan_glm(y ~ X[,-1], family = fam, seed = 12345,
@@ -104,15 +109,15 @@ test_that("stan_glm returns expected result for binomial example", {
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
     ans <- coef(glm(y ~ X[,-1], family = fam))
-    if (links[i] != "log") expect_equal(val, ans, 0.003)
-    else expect_equal(val[-1], ans[-1], 0.003)
+    if (links[i] != "log") expect_equal(val, ans, 0.004)
+    else expect_equal(val[-1], ans[-1], 0.004)
 
     prop <- yes / trials
     fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed = 12345,
                      prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.003)
-    else expect_equal(val2[-1], ans[-1], 0.003)
+    if (links[i] != "log") expect_equal(val2, ans, 0.004)
+    else expect_equal(val2[-1], ans[-1], 0.004)
   }
 })
