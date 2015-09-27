@@ -2,11 +2,22 @@
   if (is.null(a)) b else a
 }
 
-get_y <- function(object) {
+get_y <- function(object) UseMethod("get_y")
+get_x <- function(object) UseMethod("get_x")
+get_z <- function(object) UseMethod("get_z")
+
+get_y.default <- function(object) {
   object$y %ORifNULL% model.response(model.frame(object))
 }
-get_x <- function(object) {
+get_x.default <- function(object) {
   object$x %ORifNULL% model.matrix(object)
+}
+get_x.lmerMod <- function(object) {
+  object$glmod$X %ORifNULL% stop("X not found")
+}
+get_z.lmerMod <- function(object) {
+  Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
+  t(as.matrix(Zt))
 }
 
 na_replace <- function(x, replacement) {

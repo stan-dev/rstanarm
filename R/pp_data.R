@@ -17,8 +17,8 @@
 
 .pp_data <- function(object, newdata = NULL) {
   if (is.null(newdata)) {
-    x <- model.matrix(object, data = object$data) 
-    offset <- if (is.null(object$offset)) rep(0, nrow(x)) else object$offset
+    x <- get_x(object)
+    offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
   }
   tt <- terms(object)
