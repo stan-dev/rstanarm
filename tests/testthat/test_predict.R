@@ -46,7 +46,7 @@ test_that("predict ok for gaussian", {
   
   newd <- data.frame(wt = c(1,5))
   diffs_link <- get_diffs(plink(glmfit, newd), plink(stanfit, newd))
-  expect_true(all(diffs_link < threshold))
+  expect_equal(0 * diffs_link, diffs_link, tol = threshold)
 })
 
 test_that("predict ok for Poisson", {
