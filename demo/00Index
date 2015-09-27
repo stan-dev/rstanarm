@@ -4,6 +4,8 @@ ARM_Ch05	Some stan_glm demos with logit models
 ARM_Ch07  More examples of posterior predictive distributions
 ARM_Ch08  More examples of posterior predictive distributions
 ARM_Ch09  Regression for causal inference
+ARM_Ch12_13  Models with group-specific parameters
+ARM_Ch14  More models with group-specific parameters
 CLEANUP		Removes objects created by our demos
 SETUP		  Loads packages, creates objects, etc.
 
