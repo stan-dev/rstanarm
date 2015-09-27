@@ -370,7 +370,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     
     z_b <- rnorm(ncol(Z))
     b <- make_b(z_b, theta_L, p, l)
-    expect_equal(b, as.vector(t(Lambdati) %*% z_b), tol = 1e-14)
+    expect_equal(b, as.vector(Matrix::t(Lambdati) %*% z_b), tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
