@@ -9,7 +9,7 @@ options(mc.cores = 2L)
 if (interactive()) options(mc.cores = parallel::detectCores())
 CONTROL <- list(adapt_delta = 0.95)
 FIXEF_tol <- 0.05
-RANEF_tol <- 0.1 
+RANEF_tol <- 0.12 
 
 
 context("stan_lmer")
