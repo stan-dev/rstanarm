@@ -301,7 +301,7 @@ parameters {
   real<lower=0> theta_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
   vector[K] z_beta;
-  real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
+  real<lower=if_else(link == 1, negative_infinity(), 0)> gamma[has_intercept];
   real<lower=0> global[horseshoe];
   vector<lower=0>[K] local[horseshoe];
   real<lower=0> dispersion_unscaled[family > 1];
