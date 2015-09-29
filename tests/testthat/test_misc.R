@@ -34,3 +34,23 @@ test_that("set_prior_scale works", {
   expect_equal(set_prior_scale(2, 1, "a"), 2)
   expect_equal(set_prior_scale(2, 1, "probit"), 2 * dnorm(0) / dlogis(0))
 })
+
+
+context("get_x, get_y, get_z")
+test_that("get_x, get_y, get_z work properly", {
+  fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
+  x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
+  y_ans <- mtcars$mpg
+  
+  expect_equal(x_ans, rstanarm:::get_x(fit), check.attributes = FALSE)
+  expect_equal(y_ans, rstanarm:::get_y(fit), check.attributes = FALSE)
+  expect_error(rstanarm:::get_z(fit), "no applicable method")
+  
+  fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, iter = 5, chains = 1))
+  z_ans <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
+  
+  expect_equal(x_ans, rstanarm:::get_x(fit2), check.attributes = FALSE)
+  expect_equal(y_ans, rstanarm:::get_y(fit2), check.attributes = FALSE)
+  expect_equal(z_ans, rstanarm:::get_z(fit2), check.attributes = FALSE)
+})
+
