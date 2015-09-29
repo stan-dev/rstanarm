@@ -35,6 +35,15 @@ test_that("set_prior_scale works", {
   expect_equal(set_prior_scale(2, 1, "probit"), 2 * dnorm(0) / dlogis(0))
 })
 
+context("validate_parameter_value")
+test_that("validate_parameter_value works", {
+  validate_parameter_value <- rstanarm:::validate_parameter_value
+  expect_error(validate_parameter_value(-1), "should be positive")
+  expect_error(validate_parameter_value(0), "should be positive")
+  expect_true(validate_parameter_value(NULL))
+  expect_true(validate_parameter_value(.01))
+  expect_true(validate_parameter_value(.Machine$double.xmax))
+})
 
 context("get_x, get_y, get_z")
 test_that("get_x, get_y, get_z work properly", {
