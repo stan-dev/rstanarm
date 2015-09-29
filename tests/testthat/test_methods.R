@@ -15,9 +15,9 @@ check_att_names <- function(x,y) {
 }
 
 fit_lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
-fit_stan1 <- stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, iter = 100, chains = 1)
+fit_stan1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, iter = 5, chains = 1))
 fit_lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
-fit_stan2 <- stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy, iter = 100, chains = 1)
+fit_stan2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy, iter = 5, chains = 1))
 
 test_that("ngrps is right", {
   expect_equal(ngrps(fit_lmer1), ngrps(fit_stan1))
