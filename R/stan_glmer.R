@@ -53,7 +53,7 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
     family <- get(family, mode = "function", envir = parent.frame(2))
   if (is.function(family)) 
     family <- family()
-  if(!is(family, "family"))
+  if (!is(family, "family"))
     stop("'family' must be a family")
   mc[[1]] <- quote(lme4::glFormula)
   mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
@@ -62,16 +62,13 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   y <- glmod$fr[,as.character(glmod$formula[2])]
   X <- glmod$X
 
+  offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
   if (missing(weights)) weights <- double(0)
   if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
   if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
-  offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
-
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()
-  if (length(prior_ops) == 0) {
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  }
+  if (!length(prior_ops)) prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   group <- glmod$reTrms
   group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
@@ -80,23 +77,20 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, group = group, ...)
-  
   all_args <- mget(names(formals()), sys.frame(sys.nframe()))
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
-  mcout <- match.call(expand.dots = TRUE)
 
   Z <- t(as.matrix(group$Zt))
   if (algorithm == "optimizing") 
     colnames(Z) <- grep("^b\\[", names(stanfit$par), value = TRUE)
   else colnames(Z) <- grep("^b\\[", names(stanfit), value = TRUE)
+  
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
                terms = NULL, model = NULL, na.action, contrasts, algorithm)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
-  
-  out$glmod <- glmod # useful for post-processing
-  
+  out$glmod <- glmod
   return(out)
 }
 

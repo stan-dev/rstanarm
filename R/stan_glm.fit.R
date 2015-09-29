@@ -102,7 +102,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist <- prior$dist
     prior_scale <- prior$scale
     prior_mean <- prior$location
-    prior_df <- na_replace(prior$df, 1)
+    prior_df <- prior$df
+    prior_df[is.na(prior_df)] <- 1
     if (!prior_dist %in% unlist(ok_dists)) {
       stop("The prior distribution for the coefficients should be one of ",
            paste(names(ok_dists), collapse = ", "), call. = FALSE)
@@ -127,7 +128,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist_for_intercept <- prior_intercept$dist
     prior_scale_for_intercept <- prior_intercept$scale
     prior_mean_for_intercept <- prior_intercept$location
-    prior_df_for_intercept <- na_replace(prior_intercept$df, 1)
+    prior_df_for_intercept <- prior_intercept$df 
+    prior_df_for_intercept[is.na(prior_df_for_intercept)] <- 1
     
     if (!prior_dist_for_intercept %in% unlist(ok_intercept_dists)) {
       stop("The prior distribution for the intercept should be one of ",

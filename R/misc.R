@@ -2,14 +2,6 @@
   if (is.null(a)) b else a
 }
 
-na_replace <- function(x, replacement) {
-  # if x is NA return replacement, else return x itself
-  if (is.na(x)) 
-    replacement 
-  else 
-    x
-}
-
 maybe_broadcast <- function(x, n) {
   # if x has no length replicate 0 n times, 
   # if x has length 1 replicate x n times
@@ -39,9 +31,10 @@ nlist <- function(...) {
 
 validate_parameter_value <- function(x) {
   # check for positive scale or df parameter
-  if (!is.null(x) & any(x <= 0)) {
-    nm <- deparse(substitute(x))
-    stop(paste(nm, "should be positive"))
+  nm <- deparse(substitute(x))
+  if (!is.null(x)) {
+    if (!is.numeric(x)) stop(nm, " should be NULL or numeric")
+    if (any(x <= 0)) stop(nm, " should be positive")
   }
   invisible(TRUE)
 }
