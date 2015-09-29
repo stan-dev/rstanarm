@@ -41,16 +41,23 @@ test_that("get_x, get_y, get_z work properly", {
   fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
   x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
   y_ans <- mtcars$mpg
-  
-  expect_equal(x_ans, rstanarm:::get_x(fit), check.attributes = FALSE)
-  expect_equal(y_ans, rstanarm:::get_y(fit), check.attributes = FALSE)
-  expect_error(rstanarm:::get_z(fit), "no applicable method")
+  expect_equal(x_ans, get_x(fit), check.attributes = FALSE)
+  expect_equal(y_ans, get_y(fit), check.attributes = FALSE)
+  expect_error(get_z(fit), "no applicable method")
   
   fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, iter = 5, chains = 1))
-  z_ans <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
+  z_ans2 <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
+  expect_equal(x_ans, get_x(fit2), check.attributes = FALSE)
+  expect_equal(y_ans, get_y(fit2), check.attributes = FALSE)
+  expect_equal(z_ans2, get_z(fit2), check.attributes = FALSE)
   
-  expect_equal(x_ans, rstanarm:::get_x(fit2), check.attributes = FALSE)
-  expect_equal(y_ans, rstanarm:::get_y(fit2), check.attributes = FALSE)
-  expect_equal(z_ans, rstanarm:::get_z(fit2), check.attributes = FALSE)
+
+  fit3 <- suppressWarnings(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, iter = 5, chains = 1))
+  z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
+  z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
+  z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
+  expect_equal(x_ans, get_x(fit3), check.attributes = FALSE)
+  expect_equal(y_ans, get_y(fit3), check.attributes = FALSE)
+  expect_equal(z_ans3, get_z(fit3), check.attributes = FALSE)
 })
 
