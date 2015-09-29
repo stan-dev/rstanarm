@@ -3,6 +3,21 @@
 
 library(rstanarm)
 
+context("nlist")
+test_that("nlist works", {
+  nlist <- rstanarm:::nlist
+  a <- 1
+  b <- 2
+  c <- 3
+  val <- list(nlist(a, b, c), 
+              nlist(a, b, c = "tornado"), 
+              nlist(a = -1, b = -2, c))
+  ans <- list(list(a = a, b = b, c = c), 
+              list(a = a, b = b, c = "tornado"), 
+              list(a = -1, b = -2, c = c))
+  expect_identical(val, ans)
+})
+
 context("ORifNULL")
 test_that("%ORifNULL% works", {
   `%ORifNULL%` <- rstanarm:::`%ORifNULL%`
@@ -46,7 +61,7 @@ test_that("validate_parameter_value works", {
 })
 
 context("get_x, get_y, get_z")
-test_that("get_x, get_y, get_z work properly", {
+test_that("get_x, get_y, get_z work", {
   fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
   x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
   y_ans <- mtcars$mpg
@@ -60,7 +75,6 @@ test_that("get_x, get_y, get_z work properly", {
   expect_equal(y_ans, get_y(fit2), check.attributes = FALSE)
   expect_equal(z_ans2, get_z(fit2), check.attributes = FALSE)
   
-
   fit3 <- suppressWarnings(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, iter = 5, chains = 1))
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
