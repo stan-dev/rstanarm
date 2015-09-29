@@ -2,24 +2,6 @@
   if (is.null(a)) b else a
 }
 
-get_y <- function(object) UseMethod("get_y")
-get_x <- function(object) UseMethod("get_x")
-get_z <- function(object) UseMethod("get_z")
-
-get_y.default <- function(object) {
-  object$y %ORifNULL% model.response(model.frame(object))
-}
-get_x.default <- function(object) {
-  object$x %ORifNULL% model.matrix(object)
-}
-get_x.lmerMod <- function(object) {
-  object$glmod$X %ORifNULL% stop("X not found")
-}
-get_z.lmerMod <- function(object) {
-  Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
-  t(as.matrix(Zt))
-}
-
 na_replace <- function(x, replacement) {
   # if x is NA return replacement, else return x itself
   if (is.na(x)) 
@@ -93,3 +75,35 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 }
 
 stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
+
+
+#' Extracy X, Y or Z
+#' 
+#' @keywords internal
+#' @export
+#' @param object object
+get_y <- function(object) UseMethod("get_y")
+#' @rdname get_y
+#' @export
+get_x <- function(object) UseMethod("get_x")
+#' @rdname get_y
+#' @export
+get_z <- function(object) UseMethod("get_z")
+
+#' @export
+get_y.default <- function(object) {
+  object$y %ORifNULL% model.response(model.frame(object))
+}
+#' @export
+get_x.default <- function(object) {
+  object$x %ORifNULL% model.matrix(object)
+}
+#' @export
+get_x.lmerMod <- function(object) {
+  object$glmod$X %ORifNULL% stop("X not found")
+}
+#' @export
+get_z.lmerMod <- function(object) {
+  Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
+  t(as.matrix(Zt))
+}
