@@ -9,16 +9,17 @@ print.stanreg <- function(x, digits = 3, ...) {
   }
   else {
     nms <- names(x$coefficients)
+    famname <- x$family$family
     if (is(x, "polr")) 
       nms <- c(nms, grep("|", rownames(x$stan_summary), 
                          fixed = TRUE, value = TRUE))
-    else if (is.gaussian(x$family$family))
+    else if (is.gaussian(famname))
       nms <- c(nms, "sigma")
-    else if (is.gamma(x$family$family))
+    else if (is.gamma(famname))
       nms <- c(nms, "shape")
-    else if (is.ig(x$family$family))
+    else if (is.ig(famname))
       nms <- c(nms, "lambda")
-    else if (is.nb(x$family$family))
+    else if (is.nb(famname))
       nms <- c(nms, "overdispersion")
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     print(x$stan_summary[nms,1:2], digits = digits, ...)

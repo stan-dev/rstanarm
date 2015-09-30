@@ -113,7 +113,12 @@ test_that("linear_predictor methods work", {
   bvec <- bmat[1, ]
   vec_ans <- seq(0, 1.5, 0.5)
   mat_ans <- rbind(vec_ans, 1:4)
+  offset <- rep(2, nrow(x))
   expect_equivalent(vec_ans, linpred_vec(bvec, x))
+  expect_equivalent(vec_ans, linpred_vec(bvec, x, offset = NULL))
+  expect_equivalent(vec_ans + offset, linpred_vec(bvec, x, offset))
   expect_equivalent(mat_ans, linpred_mat(bmat, x))
+  expect_equivalent(mat_ans, linpred_mat(bmat, x, offset = NULL))
+  expect_equivalent(mat_ans + offset, linpred_mat(bmat, x, offset))
 })
 
