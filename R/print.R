@@ -4,8 +4,7 @@ print.stanreg <- function(x, digits = 3, ...) {
   if (x$algorithm != "optimizing") {
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
     mat <- as.matrix(x$stanfit)[,nms,drop=FALSE]
-    print(cbind(Median = apply(mat, 2, median), MAD_SD = apply(mat, 2, mad)), 
-          digits = digits, ...)
+    estimates <- cbind(Median = apply(mat, 2, median), MAD_SD = apply(mat, 2, mad))
   }
   else {
     nms <- names(x$coefficients)
@@ -22,8 +21,11 @@ print.stanreg <- function(x, digits = 3, ...) {
     else if (is.nb(famname))
       nms <- c(nms, "overdispersion")
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
-    print(x$stan_summary[nms,1:2], digits = digits, ...)
+    estimates <- x$stan_summary[nms,1:2]
   }
+  print(x$call)
+  cat("\n")
+  print(format(round(estimates, digits), nsmall = digits), quote = FALSE, ...)
 
   if (is(x, "aov")) {
     labels <- attributes(x$terms)$term.labels
@@ -38,9 +40,12 @@ print.stanreg <- function(x, digits = 3, ...) {
     dim(effects) <- c(effects_dim[-3], ncol(effects))
     dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
     colnames(effects) <- paste("Mean Sq", names(groups))
-    cat("ANOVA-like table\n")
-    print(cbind(Median = apply(effects, 2, median),
-                MAD_SD = apply(effects, 2, mad)), digits = digits, ...)
+    cat("\nANOVA-like table\n")
+    anova_table <- cbind(Median = apply(effects, 2, median),
+                         MAD_SD = apply(effects, 2, mad))
+    print(format(round(anova_table, digits), nsmall = digits), quote = FALSE, ...)
   }
+  cat("---\n")
+  cat("Algorithm:", x$algorithm)
   return(invisible(NULL))
 }
