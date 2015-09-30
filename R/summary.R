@@ -13,8 +13,8 @@ summary.stanreg <- function(object, ..., digits = 2) {
   }
   else {
     mark <- names(object$coefficients)
-    if (object$family$family == "gaussian") mark <- c(mark, "sigma")
-    else if (object$family$family == "neg_binomial_2") mark <- c(mark, "overdispersion")
+    if (is.gaussian(object$family$family)) mark <- c(mark, "sigma")
+    else if (is.nb(object$family$family)) mark <- c(mark, "overdispersion")
     object$stan_summary[mark,,drop=FALSE]
   }
 }

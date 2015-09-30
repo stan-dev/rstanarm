@@ -89,7 +89,7 @@ ppcheck <- function(object,
   if (is.null(nreps) && fn != "ppcheck_stat") {
     nreps <- ifelse(fn == "ppcheck_resid", 1, 8)
   }
-  if (fn == "ppcheck_resid" && family(object) == "binomial") {
+  if (fn == "ppcheck_resid" && is.binomial(object$family$family)) {
     graph <- pp_check_binned_resid(object, n = nreps, ...) + 
       .ppcheck_theme(no_y = FALSE) + 
       ggtitle("Binned Residual Plot")

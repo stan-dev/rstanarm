@@ -19,6 +19,17 @@ test_that("nlist works", {
   expect_identical(val, ans)
 })
 
+test_that("family checking works", {
+  fams <- rstanarm:::nlist("binomial", "gaussian", "poisson", gamma = "Gamma", 
+                           ig = "inverse.gaussian", nb = "neg_binomial_2")
+  for (j in seq_along(fams)) {
+    is.f <- getFromNamespace(paste0("is.", names(fams)[j]), "rstanarm")
+    f <- get(fams[[j]])()$family
+    expect_true(is.f(f))
+    expect_false(is.f("not a family"))
+  }
+})
+
 test_that("%ORifNULL% works", {
   `%ORifNULL%` <- rstanarm:::`%ORifNULL%`
   a <- list(NULL, NA, NaN, 1, "a", FALSE, mat.or.vec(5,5))

@@ -60,7 +60,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
-  if (family$family == "binomial") {
+  if (is.binomial(family$family)) {
     if (NCOL(y) != 1L) {
       stopifnot(NCOL(y) == 2L)
       trials <- as.integer(y[, 1L] + y[, 2L])
@@ -144,9 +144,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale_for_intercept <- prior_df_for_intercept <- 1
   }
   
-  is_gaussian <- family$family == "gaussian"
-  is_gamma <- family$family == "Gamma"
-  is_ig <- family$family == "inverse.gaussian"
+  is_gaussian <- is.gaussian(family$family)
+  is_gamma <- is.gamma(family$family)
+  is_ig <- is.ig(family$family)
   is_continuous <- is_gaussian || is_gamma || is_ig
   if (scaled && prior_dist > 0L) {
     if (is_gaussian) {
@@ -165,8 +165,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- min(.Machine$double.xmax, prior_scale_for_intercept)
   
-  is_bernoulli <- supported_families[fam] == "binomial" && all(y %in% 0:1)
-  is_nb <- supported_families[fam] == "neg_binomial_2"
+  is_bernoulli <- is.binomial(supported_families[fam]) && all(y %in% 0:1)
+  is_nb <- is.nb(supported_families[fam])
   
   # create entries in the data block of the .stan file
   standata <- list(
@@ -265,7 +265,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                               3L)
     stanfit <- get("stanfit_continuous")
   }
-  else if (supported_families[fam] == "binomial") {
+  else if (is.binomial(supported_families[fam])) {
     standata$prior_scale_for_dispersion <- 
       if (!length(group) || prior_scale_for_dispersion == Inf) 
         0 else prior_scale_for_dispersion
@@ -307,7 +307,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stanfit <- get("stanfit_binomial")
     }
   }   
-  else if (supported_families[fam] == "poisson") {
+  else if (is.poisson(supported_families[fam])) {
     standata$family <- 1L
     standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     stanfit <- get("stanfit_count") 

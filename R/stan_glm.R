@@ -90,7 +90,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())
   if (is.function(family)) family <- family()
-  if(!is(family, "family")) stop("'family' must be a family")
+  if (!is(family, "family")) stop("'family' must be a family")
   
   if (missing(data)) data <- environment(formula)
   call <- match.call()
@@ -124,7 +124,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   else offset <- double(0) #rep(0, nrow(X))
   
   # if Y is proportion of successes and weights is total number of trials
-  if (family$family == "binomial" && NCOL(Y) == 1L && is.numeric(Y)) { 
+  if (is.binomial(family$family) && NCOL(Y) == 1L && is.numeric(Y)) { 
     if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 
       if (!identical(weights, double(0)) && all(weights > 0)) {
         y1 <- as.integer(as.vector(Y) * weights)

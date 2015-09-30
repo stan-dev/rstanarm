@@ -83,7 +83,7 @@ waic.stanreg <- function(x, ...) {
   y <- get_y(object)
   
   if (is(f, "family")) {
-    if (f$family != "binomial") data <- data.frame(y, x)
+    if (!is.binomial(f$family)) data <- data.frame(y, x)
     else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
@@ -97,10 +97,10 @@ waic.stanreg <- function(x, ...) {
       data <- data.frame(y, trials, x)
     }
     draws$beta <- stanmat[, 1:ncol(x)]
-    if (f$family == "gaussian") draws$sigma <- stanmat[, "sigma"]
-    if (f$family == "Gamma") draws$shape <- stanmat[, "shape"]
-    if (f$family == "inverse.gaussian") draws$lambda <- stanmat[, "lambda"]
-    if (f$family == "neg_binomial_2") draws$size <- stanmat[,"overdispersion"]
+    if (is.gaussian(f$family)) draws$sigma <- stanmat[, "sigma"]
+    if (is.gamma(f$family)) draws$shape <- stanmat[, "shape"]
+    if (is.ig(f$family)) draws$lambda <- stanmat[, "lambda"]
+    if (is.nb(f$family)) draws$size <- stanmat[,"overdispersion"]
   }
   else if (is.character(f)) {
     stopifnot(is(object, "polr"))

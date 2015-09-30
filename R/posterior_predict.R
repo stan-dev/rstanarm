@@ -75,17 +75,17 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   }
   else {
     ppargs <- list(mu = family$linkinv(eta))
-    if (famname == "gaussian")
+    if (is.gaussian(famname))
       ppargs$sigma <- stanmat[, "sigma"]
-    else if (famname == "binomial") {
+    else if (is.binomial(famname)) {
       y <- get_y(object)
       ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
     }
-    else if (famname == "Gamma")
+    else if (is.gamma(famname))
       ppargs$scale <- stanmat[,"scale"]
-    else if (famname == "inverse.gaussian")
+    else if (is.ig(famname))
       ppargs$lambda <- stanmat[,"lambda"]
-    else if (famname == "neg_binomial_2")
+    else if (is.nb(famname))
       ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
     if (missing(fun)) ytilde
@@ -149,7 +149,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     rnbinom(ncol(mu), size = size[s], mu = mu[s,])
   }))
 }
-
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s,])
@@ -165,7 +164,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda[s])
   }))
 }
-
 .pp_polr <- function(eta, zeta, linkinv) {
   n <- ncol(eta)
   q <- ncol(zeta)

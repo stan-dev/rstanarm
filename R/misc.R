@@ -1,5 +1,12 @@
 stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
 
+is.binomial <- function(x) x == "binomial"
+is.gaussian <- function(x) x == "gaussian"
+is.gamma <- function(x) x == "Gamma"
+is.ig <- function(x) x == "inverse.gaussian"
+is.nb <- function(x) x == "neg_binomial_2"
+is.poisson <- function(x) x == "poisson"
+
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
 }
