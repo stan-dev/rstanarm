@@ -134,9 +134,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     }
   }
   
-  if (length(prior_ops) == 0) {
+  if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  }
   algorithm <- match.arg(algorithm)
 
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 

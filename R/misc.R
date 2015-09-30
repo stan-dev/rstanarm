@@ -1,5 +1,11 @@
+stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
+
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
+}
+
+`%ORifINF%` <- function(a, b) {
+  if (a == Inf) b else a
 }
 
 maybe_broadcast <- function(x, n) {
@@ -66,8 +72,6 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (!length(offset)) eta
   else sweep(eta, MARGIN = 2L, offset, `+`)
 }
-
-stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
 
 
 #' Extracy X, Y or Z

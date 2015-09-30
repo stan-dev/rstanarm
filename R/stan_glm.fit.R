@@ -37,14 +37,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     family <- get(family, mode = "function", envir = parent.frame())
   if (is.function(family)) 
     family <- family()
-  if(!is(family, "family"))
+  if (!is(family, "family"))
     stop("'family' must be a family")
   
   # these are from help(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
-  if(length(fam) == 0) 
+  if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
   
   # these are also from help(family)
@@ -57,7 +57,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                             poisson = c("log", "identity", "sqrt"),
                             stop("unsupported family"))
   link <- which(supported_links == family$link)
-  if (length(link) == 0) 
+  if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
   if (family$family == "binomial") {
@@ -88,13 +88,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   nvars <- ncol(xtemp)
   
-  
   scaled <- prior_ops$scaled
   min_prior_scale <- prior_ops$min_prior_scale
   prior_scale_for_dispersion <- prior_ops$prior_scale_for_dispersion
-  
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", 
-                    "horseshoe", "horseshoe_plus")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "horseshoe", "horseshoe_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
   # prior distributions
@@ -261,8 +258,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
-    standata$prior_scale_for_dispersion <- if (prior_scale_for_dispersion == Inf) 
-      0 else prior_scale_for_dispersion
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
@@ -313,14 +309,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }   
   else if (supported_families[fam] == "poisson") {
     standata$family <- 1L
-    standata$prior_scale_for_dispersion <- if (prior_scale_for_dispersion == Inf) 
-      0 else prior_scale_for_dispersion
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     stanfit <- get("stanfit_count") 
   }
   else if (is_nb) {
     standata$family <- 2L
-    standata$prior_scale_for_dispersion <- if (prior_scale_for_dispersion == Inf) 
-      0 else prior_scale_for_dispersion
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     stanfit <- get("stanfit_count") 
   }
   else if (is_gamma) {

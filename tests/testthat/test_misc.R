@@ -23,9 +23,19 @@ test_that("%ORifNULL% works", {
   `%ORifNULL%` <- rstanarm:::`%ORifNULL%`
   a <- list(NULL, NA, NaN, 1, "a", FALSE, mat.or.vec(5,5))
   b <- 1
-  ans <- c(1, a[-1])
+  ans <- c(b, a[-1])
   for (j in seq_along(a)) {
     expect_identical(a[[j]] %ORifNULL% b, ans[[j]])
+  }
+})
+
+test_that("%ORifINF% works", {
+  `%ORifINF%` <- rstanarm:::`%ORifINF%`
+  a <- list(Inf, -Inf, 1, "a", FALSE, mat.or.vec(5,5))
+  b <- 0
+  ans <- c(b, a[-1])
+  for (j in seq_along(a)) {
+    expect_identical(a[[j]] %ORifINF% b, ans[[j]])
   }
 })
 
