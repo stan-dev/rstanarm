@@ -92,10 +92,10 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
-               terms = NULL, model = NULL, na.action, contrasts, algorithm)
+               terms = NULL, model = NULL, na.action, contrasts, algorithm, 
+               glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
-  out$glmod <- glmod
   return(out)
 }
 

@@ -11,6 +11,7 @@ stanreg <- function(object) {
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
   
   opt <- object$algorithm == "optimizing" # used optimization
+  mer <- as.character(object$call)[1L] %in% c("stan_glmer", "stan_lmer")
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
@@ -31,6 +32,7 @@ stanreg <- function(object) {
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[,colnames(x),drop=FALSE], 2, median)
     ses <- apply(stanmat[,colnames(x),drop=FALSE], 2, mad)
+    if (mer) b <- stan_summary[grep("^b\\[", rownames(stan_summary)), "Median"]
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
@@ -40,9 +42,11 @@ stanreg <- function(object) {
     if (any(stan_summary[,"Rhat"] > 1.1, na.rm = TRUE)) 
       warning("Markov chains did not converge! Do not analyze results!", 
               call. = FALSE, noBreaks. = TRUE)
+    if (mer) b <- stan_summary[grep("^b\\[", rownames(stan_summary)), "50%"]
   }    
 
   eta <- linear_predictor(coefs, x, offset)
+  if (mer) eta <- eta + linear_predictor(b, get_z.lmerMod(object))
   mu <- family$linkinv(eta)
   
   # residuals (of type 'response', unlike glm which does type 'deviance' by
@@ -60,32 +64,33 @@ stanreg <- function(object) {
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
-  structure(
-    nlist(
-      coefficients = coefs, 
-      ses,
-      fitted.values = mu, 
-      linear.predictors = eta,
-      residuals, 
-      df.residual, 
-      covmat,
-      y, 
-      x, 
-      model = object$model, 
-      data = object$data, 
-      family, 
-      rank,
-      offset, 
-      weights, 
-      prior.weights = weights, 
-      contrasts = object$contrasts, 
-      na.action = object$na.action,
-      call = object$call, 
-      formula = object$formula, 
-      terms = object$terms,
-      prior.info = object$prior.info,
-      algorithm = object$algorithm,
-      stan_summary,  
-      stanfit = if (opt) stanfit$stanfit else stanfit
-    ), class = c("stanreg", "glm", "lm"))
+  out <- nlist(
+    coefficients = coefs, 
+    ses,
+    fitted.values = mu, 
+    linear.predictors = eta,
+    residuals, 
+    df.residual, 
+    covmat,
+    y, 
+    x, 
+    model = object$model, 
+    data = object$data, 
+    family, 
+    rank,
+    offset, 
+    weights, 
+    prior.weights = weights, 
+    contrasts = object$contrasts, 
+    na.action = object$na.action,
+    call = object$call, 
+    formula = object$formula, 
+    terms = object$terms,
+    prior.info = object$prior.info,
+    algorithm = object$algorithm,
+    stan_summary,  
+    stanfit = if (opt) stanfit$stanfit else stanfit
+  )
+  if (!is.null(object$glmod)) out$glmod <- object$glmod
+  structure(out, class = c("stanreg", "glm", "lm"))
 }
