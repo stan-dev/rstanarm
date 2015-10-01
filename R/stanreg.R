@@ -60,18 +60,32 @@ stanreg <- function(object) {
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
   offset <- if (any(offset != 0)) offset else NULL
-  out <- list(
-    coefficients = coefs, ses = ses, fitted.values = mu, linear.predictors = eta,
-    residuals = residuals, df.residual = df.residual, covmat = covmat,
-    y = y, x = x, model = object$model, data = object$data, rank = rank,
-    offset = offset, weights = weights, prior.weights = weights, 
-    family = family, contrasts = object$contrasts, na.action = object$na.action,
-    call = object$call, formula = object$formula, terms = object$terms,
-    prior.info = object$prior.info,
-    algorithm = object$algorithm,
-    stan_summary = stan_summary,  
-    stanfit = if (opt) stanfit$stanfit else stanfit
-  )
-  class(out) <- c("stanreg", "glm", "lm")
-  out
+  structure(
+    nlist(
+      coefficients = coefs, 
+      ses,
+      fitted.values = mu, 
+      linear.predictors = eta,
+      residuals, 
+      df.residual, 
+      covmat,
+      y, 
+      x, 
+      model = object$model, 
+      data = object$data, 
+      family, 
+      rank,
+      offset, 
+      weights, 
+      prior.weights = weights, 
+      contrasts = object$contrasts, 
+      na.action = object$na.action,
+      call = object$call, 
+      formula = object$formula, 
+      terms = object$terms,
+      prior.info = object$prior.info,
+      algorithm = object$algorithm,
+      stan_summary,  
+      stanfit = if (opt) stanfit$stanfit else stanfit
+    ), class = c("stanreg", "glm", "lm"))
 }
