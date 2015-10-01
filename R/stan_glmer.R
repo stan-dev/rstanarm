@@ -48,6 +48,11 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing")) {
   
+  if (match.arg(algorithm) == "optimizing") {
+    message("Only MCMC (algorithm='sampling') allowed for stan_glmer.")
+    return(invisible(NULL))
+  }
+  
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame(2))
@@ -102,6 +107,11 @@ stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset,
                        prior_ops = prior_options(), 
                        prior_covariance = decov(), prior_PD = FALSE,
                        algorithm = c("sampling", "optimizing")) {
+  
+  if (match.arg(algorithm) == "optimizing") {
+    message("Only MCMC (algorithm='sampling') allowed for stan_lmer.")
+    return(invisible(NULL))
+  }
   
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
