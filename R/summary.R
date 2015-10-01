@@ -1,6 +1,6 @@
 #' @method summary stanreg
 #' @export
-summary.stanreg <- function(object, ..., digits = 2) {
+summary.stanreg <- function(object, ..., digits = 1) {
   # use RStan's summary just as placeholder. we should replace this with our own
   # summary 
   if (object$stanfit@mode == 0) {

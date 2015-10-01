@@ -1,6 +1,6 @@
 #' @method print stanreg
 #' @export
-print.stanreg <- function(x, digits = 3, ...) {
+print.stanreg <- function(x, digits = 1, ...) {
   mer <- is(x, "lmerMod")
   if (x$algorithm != "optimizing") {
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
