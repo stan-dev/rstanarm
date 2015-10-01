@@ -20,7 +20,10 @@
 #'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
 #'   See Examples.
 #' 
-#' @return A matrix of draws from the posterior predictive distribution.
+#' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
+#'   from the posterior predictive distribution. Each row of the matrix is a
+#'   vector of predictions generated using a single draw of the model parameters
+#'   from the posterior distribution.
 #' 
 #' @seealso \code{\link{ppcheck}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
