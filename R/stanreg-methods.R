@@ -227,5 +227,5 @@ sigma <- function(object, ...) UseMethod("sigma")
 #' 
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) return(1)
-  else object$stan_summary["sigma", "mean"]
+  else object$stan_summary["sigma", "50%"]
 }
