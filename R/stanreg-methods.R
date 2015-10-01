@@ -229,3 +229,15 @@ sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) return(1)
   else object$stan_summary["sigma", "50%"]
 }
+
+
+
+#' Formula method for stanreg objects
+#' 
+#' @keywords internal
+#' @export
+#' 
+#' @param x A stanreg object.
+#' @param ... Ignored. 
+#' 
+formula.stanreg <- function(x, ...) x$formula
