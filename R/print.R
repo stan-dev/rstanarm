@@ -1,31 +1,46 @@
 #' @method print stanreg
 #' @export
 print.stanreg <- function(x, digits = 3, ...) {
+  mer <- is(x, "lmerMod")
   if (x$algorithm != "optimizing") {
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+    if (mer) nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     mat <- as.matrix(x$stanfit)[,nms,drop=FALSE]
-    estimates <- cbind(Median = apply(mat, 2, median), MAD_SD = apply(mat, 2, mad))
+    estimates <- cbind(Median = apply(mat, 2, median), 
+                       MAD_SD = apply(mat, 2, mad))
   }
   else {
     nms <- names(x$coefficients)
-    famname <- x$family$family
     if (is(x, "polr")) 
       nms <- c(nms, grep("|", rownames(x$stan_summary), 
                          fixed = TRUE, value = TRUE))
-    else if (is.gaussian(famname))
-      nms <- c(nms, "sigma")
-    else if (is.gamma(famname))
-      nms <- c(nms, "shape")
-    else if (is.ig(famname))
-      nms <- c(nms, "lambda")
-    else if (is.nb(famname))
-      nms <- c(nms, "overdispersion")
+    else {
+      famname <- x$family$family
+      if (is.gaussian(famname))
+        nms <- c(nms, "sigma")
+      else if (is.gamma(famname))
+        nms <- c(nms, "shape")
+      else if (is.ig(famname))
+        nms <- c(nms, "lambda")
+      else if (is.nb(famname))
+        nms <- c(nms, "overdispersion")
+    }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
+    # if (mer) nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
   }
+  
   print(x$call)
-  cat("\n")
+  cat("\nAlgorithm:", x$algorithm)
+  cat("\n\n")
   print(format(round(estimates, digits), nsmall = digits), quote = FALSE, ...)
+  
+  if (mer) {
+    cat("\nGroups:\n")
+    print(ngrps(x))
+    cat("\nError terms:\n")
+    print(VarCorr(x), digits = digits + 1, ...)
+  }
 
   if (is(x, "aov")) {
     labels <- attributes(x$terms)$term.labels
@@ -45,7 +60,5 @@ print.stanreg <- function(x, digits = 3, ...) {
                          MAD_SD = apply(effects, 2, mad))
     print(format(round(anova_table, digits), nsmall = digits), quote = FALSE, ...)
   }
-  cat("---\n")
-  cat("Algorithm:", x$algorithm)
   return(invisible(NULL))
 }
