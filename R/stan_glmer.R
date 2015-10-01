@@ -103,9 +103,11 @@ stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset,
                        prior_covariance = decov(), prior_PD = FALSE,
                        algorithm = c("sampling", "optimizing")) {
   
-  mc <- match.call(expand.dots = TRUE)
+  mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
-  return(eval(mc, parent.frame(1L)))
+  out <- eval(mc, parent.frame(1L))
+  out$call <- call
+  return(out)
 }
