@@ -1,9 +1,58 @@
+#' Plot method for stanreg objects
+#' 
+#' For models fit using \code{algorithm="sampling"} there are a variety of
+#' \code{\link{plots}} that can be generated. For models fit with
+#' \code{algorithm="optimizing"} the regression coefficients and standard errors
+#' are passed to \code{\link[arm]{coefplot}} (\pkg{arm}).
+#' 
+#' @method plot stanreg
+#' @export
+#' 
+#' @param x A stanreg object returned by one of the \pkg{rstanarm} modeling
+#'   functions.
+#' @param fun A character string naming the plotting function to apply to the 
+#'   stanreg object. See \code{\link{plots}} for the names and descriptions. The
+#'   default plot shows intervals and point estimates for the coefficients. 
+#'   (\strong{Note:} for models fit using \code{algorithm="optimizing"} the
+#'   \code{fun} argument is ignored as there is only one plotting function for 
+#'   these models.)
+#' @param ... Additional arguments to pass to \code{fun} (see
+#'   \code{\link{plots}}) or, for models fit using
+#'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
+#'
+#' @return A ggplot object (or several) that can be further customized using the
+#'   \pkg{ggplot2} package. (If \code{x$algorithm="optimizing"} a plot is
+#'   produced but nothing is returned.)
+#'
+#' @seealso \code{\link{plots}} for details on the individual plotting
+#'   functions.
+#'   
+#' @examples 
+#' # See help("plots", "rstanarm")
+#' 
+plot.stanreg <- function(x, fun = "stan_plot", ...) {
+  fun <- if (x$algorithm != "optimizing") match.fun(fun) else "stan_plot_opt"
+  do.call(fun, list(x, ...))
+}
+
+# function calling arm::coefplot (only used for models fit using optimization)
+stan_plot_opt <- function(x, varnames = NULL, ...) {
+  stopifnot(x$algorithm == "optimizing")
+  nms <- varnames %ORifNULL% names(coef(x))
+  if (!requireNamespace("arm", quietly = TRUE)) 
+    stop("Please install the 'arm' package to use this feature")
+  arm::coefplot.default(coefs = coef(x), sds = se(x), varnames = nms, ...)
+}
+
 #' Plots
 #' 
 #' All models fit using \code{algorithm='sampling'} are compatible with a 
-#' variety of plotting functions. Each function returns at least one
+#' variety of plotting functions. Each function returns at least one 
 #' \code{\link[ggplot2]{ggplot}} object that can be customized further using the
-#' \pkg{ggplot2} package.
+#' \pkg{ggplot2} package. The plotting functions described here can also be
+#' called using the \code{\link[=plot.stanreg]{plot}} method for stanreg
+#' objects.
+#' 
 #' 
 #' @name plots
 #' 
@@ -22,7 +71,7 @@
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
-#' @seealso The \code{\link[=shinystan]{ShinyStan}} graphical user interface.
+#' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
 #' 
 #' @examples 
 #' \dontrun{
