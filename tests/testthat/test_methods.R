@@ -32,9 +32,10 @@ check_sizes <- function(x,y) {
 
 context("methods for stanreg objects")
 test_that("stanreg methods are exported properly", {
-  meths <- paste0(c("coef", "confint", "fitted", "fixef", "log_lik", "loo", 
-                    "ngrps", "predict", "print", "ranef", "residuals", "se", 
-                    "sigma", "summary", "VarCorr", "vcov", "waic"), ".stanreg")
+  meths <- paste0(c("coef", "confint", "fitted", "fixef", "formula", "log_lik", 
+                    "loo", "ngrps", "predict", "print", "ranef", "residuals", 
+                    "se", "sigma", "summary", "VarCorr", "vcov", "waic"), 
+                  ".stanreg")
   found <- as.vector(utils::.S3methods(class = "stanreg"))
   expect_identical(found, meths)
 })
