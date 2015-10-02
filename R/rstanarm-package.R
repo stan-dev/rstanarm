@@ -31,7 +31,7 @@
 #'
 #'
 #' @section Algorithms:
-#'   Each model estimating function in the \pkg{rstanarm} package takes an 
+#'   The model estimating functions in the \pkg{rstanarm} package take an 
 #'   \code{algorithm} argument that can be one of the following:
 #' \enumerate{
 #'   \item \code{algorithm = "sampling"} Uses Markov Chain Monte Carlo
@@ -46,7 +46,12 @@
 #'    likelihood, in which case there is no great reason to use the functions in
 #'    the \pkg{rstanarm} package over the emulated functions in other packages. 
 #'    However, if priors are specified, then the estimates are penalized maximum
-#'    likelihood estimates, which may have some redeeming value.
+#'    likelihood estimates, which may have some redeeming value. 
+#'    
+#'    Optimization is known to perform poorly for mixed models and thus is
+#'    not currently enabled for models fit with the \code{\link{stan_lmer}} 
+#'    and \code{\link{stan_glmer}} functions (for these models 
+#'    \code{algorithm="sampling"} should be used).
 #' }
 #' 
 #' (Additional algorithms --- e.g., mean-field and full-rank variational
