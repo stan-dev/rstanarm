@@ -49,8 +49,8 @@ class(loglog) <- "link-glm"
 #' @templateVar pkg MASS
 #' @templateVar pkgfun polr
 #' @templateVar rareargs weights,na.action,contrasts,model
-#' @template return-stanfit-object
 #' @template return-stanreg-object
+#' @template return-stanfit-object
 #' @template see-also
 #' @template args-formula-data-subset
 #' @template args-same-as-rarely

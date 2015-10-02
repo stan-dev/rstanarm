@@ -83,11 +83,11 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 }
 
 
-#' Extracy X, Y or Z
+#' Extract X, Y or Z
 #' 
 #' @keywords internal
 #' @export
-#' @param object object
+#' @param object A stanreg object.
 get_y <- function(object) UseMethod("get_y")
 #' @rdname get_y
 #' @export

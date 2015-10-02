@@ -27,8 +27,8 @@
 #' @templateVar pkgfun glm
 #' @templateVar sameargs model,offset,weights 
 #' @templateVar rareargs na.action,contrasts
-#' @template return-stanfit-object
 #' @template return-stanreg-object
+#' @template return-stanfit-object
 #' @template see-also
 #' @template args-formula-data-subset
 #' @template args-same-as
