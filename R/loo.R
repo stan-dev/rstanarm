@@ -42,7 +42,7 @@
 #' (loo_lalonde1 <- loo(lalonde1))
 #' (loo_lalonde2 <- loo(lalonde2))
 #' plot(loo_lalonde2, label_points = TRUE)
-#' compare(loo1, loo2)
+#' compare(loo_lalonde1, loo_lalonde2)
 #' }
 #' 
 #' @seealso \code{\link[loo]{loo-package}}, \code{\link[loo]{compare}}, 

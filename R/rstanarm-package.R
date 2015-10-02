@@ -102,7 +102,7 @@
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
-#'   \code{\link{priors}} for an overview of this various choices the user can
+#'   \code{\link{priors}} for an overview of the various choices the user can
 #'   make for prior distributions.
 #'   
 #'   \code{\link{plots}} for the various plotting functions that can be used
