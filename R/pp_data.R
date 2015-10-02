@@ -15,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-.pp_data <- function(object, newdata = NULL) {
+pp_data <- function(object, newdata = NULL, ...) {
+  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, ...)
+  else .pp_data(object, newdata, ...)
+}
+
+.pp_data <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
     x <- get_x(object)
     offset <- object$offset %ORifNULL% rep(0, nrow(x))
@@ -36,3 +41,44 @@
     offset <- offset + eval(object$call$offset, newdata)
   nlist(x, offset)
 }
+
+.pp_data_mer <- function(object, newdata = NULL, ...) {
+  if (is.null(newdata)) {
+    x <- get_x(object)
+    z <- get_z(object)
+  } else {
+    if (!is.data.frame(newdata))
+      stop("newdata should be a data.frame")
+    if (any(is.na(newdata))) 
+      stop("NAs not allowed in newdata")
+    fr <- object$glmod$fr # original model frame
+    notfound <- setdiff(colnames(newdata), colnames(fr))
+    if (length(notfound)) {
+      notfound <- paste(notfound, collapse = ", ")
+      stop("Variables ", notfound, " in newdata but not original formula.")
+    }
+    # check levels of grouping variables in newdata
+    levs <- lapply(.flist(object), levels)
+    grps <- names(levs)
+    has_new_levels <- sapply(seq_along(levs), function(j) {
+      new_levs <- unique(newdata[, grps[j]])
+      !all(new_levs %in% levs[[j]])
+    })
+    if (any(has_new_levels)) {
+      stop("New levels found in grouping variable(s) ", 
+           paste(grps[has_new_levels], collapse = ", "))
+    }
+    
+    # get X and Z matrices
+    newdata <- cbind(0, newdata) # 0s as placeholder for outcome variable
+    colnames(newdata)[1L] <- colnames(fr)[1L]
+    newdata <- newdata[, colnames(fr)] # make sure columns in same order
+    fr2 <- rbind(newdata, fr)
+    keep <- 1:nrow(newdata)
+    glF <- glFormula(object$formula, data = fr2)
+    x <- glF$X[keep,, drop=FALSE]
+    z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
+  }
+  nlist(x, z, offset = object$offset)
+}
+

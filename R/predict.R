@@ -32,14 +32,12 @@ predict.stanreg <- function(object, ..., newdata = NULL,
          "Use posterior_predict() to draw from the posterior predictive distribution.",
          call. = FALSE)
   
-  mer <- is(object, "lmerMod")
-  dat <- if (mer) .pp_data_mer(object, newdata) else .pp_data(object, newdata)
+  dat <- pp_data(object, newdata)
   stanmat <- if (mcmc) as.matrix(object$stanfit) else stop("MLE not implemented yet")
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  if (mer) {
-    sel <- 1:ncol(dat$z) + ncol(dat$x)
-    b <- stanmat[, sel, drop = FALSE]
+  if (is(object, "lmerMod")) {
+    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
     eta <- eta + linear_predictor(b, dat$z)
   }
   fit <- colMeans(eta)

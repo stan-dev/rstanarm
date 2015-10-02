@@ -57,13 +57,11 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     if (draws > S)
       stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
   } 
-  mer <- is(object, "lmerMod")
-  dat <- if (mer) .pp_data_mer(object, newdata) else .pp_data(object, newdata)
+  dat <- pp_data(object, newdata)
   beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  if (mer) {
-    sel <- 1:ncol(dat$z) + ncol(dat$x)
-    b <- stanmat[, sel, drop = FALSE]
+  if (is(object, "lmerMod")) {
+    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
     eta <- eta + linear_predictor(b, dat$z)
   }
   if (draws < S)
@@ -95,47 +93,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     else do.call(match.fun(fun), list(ytilde))
   }
 }
-
-.pp_data_mer <- function(object, newdata = NULL) {
-  if (is.null(newdata)) {
-    x <- get_x(object)
-    z <- get_z(object)
-  } else {
-    if (!is.data.frame(newdata))
-      stop("newdata should be a data.frame")
-    if (any(is.na(newdata))) 
-      stop("NAs not allowed in newdata")
-    fr <- object$glmod$fr # original model frame
-    notfound <- setdiff(colnames(newdata), colnames(fr))
-    if (length(notfound)) {
-      notfound <- paste(notfound, collapse = ", ")
-      stop("Variables ", notfound, " in newdata but not original formula.")
-    }
-    # check levels of grouping variables in newdata
-    levs <- lapply(.flist(object), levels)
-    grps <- names(levs)
-    has_new_levels <- sapply(seq_along(levs), function(j) {
-      new_levs <- unique(newdata[, grps[j]])
-      !all(new_levs %in% levs[[j]])
-    })
-    if (any(has_new_levels)) {
-      stop("New levels found in grouping variable(s) ", 
-           paste(grps[has_new_levels], collapse = ", "))
-    }
-    
-    # get X and Z matrices
-    newdata <- cbind(0, newdata) # 0s as placeholder for outcome variable
-    colnames(newdata)[1L] <- colnames(fr)[1L]
-    newdata <- newdata[, colnames(fr)] # make sure columns in same order
-    fr2 <- rbind(newdata, fr)
-    keep <- 1:nrow(newdata)
-    glF <- glFormula(object$formula, data = fr2)
-    x <- glF$X[keep,, drop=FALSE]
-    z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
-  }
-  nlist(x, z, offset = object$offset)
-}
-
 
 .pp_gaussian <- function(mu, sigma) {
   t(sapply(1:nrow(mu), function(s) {
