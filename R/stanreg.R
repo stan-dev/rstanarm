@@ -11,7 +11,7 @@ stanreg <- function(object) {
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
   
   opt <- object$algorithm == "optimizing" # used optimization
-  mer <- as.character(object$call)[1L] %in% c("stan_glmer", "stan_lmer")
+  mer <- !is.null(object$glmod)
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)
@@ -32,7 +32,7 @@ stanreg <- function(object) {
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[,colnames(x),drop=FALSE], 2, median)
     ses <- apply(stanmat[,colnames(x),drop=FALSE], 2, mad)
-    if (mer) b <- stan_summary[grep("^b\\[", rownames(stan_summary)), "Median"]
+    if (mer) b <- stan_summary[.bnames(rownames(stan_summary)), "Median"]
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
@@ -42,7 +42,7 @@ stanreg <- function(object) {
     if (any(stan_summary[,"Rhat"] > 1.1, na.rm = TRUE)) 
       warning("Markov chains did not converge! Do not analyze results!", 
               call. = FALSE, noBreaks. = TRUE)
-    if (mer) b <- stan_summary[grep("^b\\[", rownames(stan_summary)), "50%"]
+    if (mer) b <- stan_summary[.bnames(rownames(stan_summary)), "50%"]
   }    
 
   eta <- linear_predictor(coefs, x, offset)
@@ -91,6 +91,6 @@ stanreg <- function(object) {
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
-  if (!is.null(object$glmod)) out$glmod <- object$glmod
+  if (mer) out$glmod <- object$glmod
   structure(out, class = c("stanreg", "glm", "lm"))
 }

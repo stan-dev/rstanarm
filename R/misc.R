@@ -7,6 +7,8 @@ is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 
+.bnames <- function(x, ...) grep("^b\\[", x, ...)
+
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
 }

@@ -170,7 +170,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 #' 
 fixef.stanreg <- function(object, ...) {
   coefs <- object$coefficients
-  coefs[grep("^b\\[", names(coefs), invert = TRUE)]
+  coefs[.bnames(names(coefs), invert = TRUE)]
 }
 
 #' @rdname stanreg-methods
@@ -180,8 +180,8 @@ fixef.stanreg <- function(object, ...) {
 #' 
 ranef.stanreg <- function(object, ...) {
   if (object$algorithm == "optimizing")
-    sel <- grep("^b\\[", rownames(object$stan_summary))
-  else sel <- grep("^b\\[", object$stanfit@sim$fnames_oi)
+    sel <- .bnames(rownames(object$stan_summary))
+  else sel <- .bnames(object$stanfit@sim$fnames_oi)
   ans <- object$stan_summary[sel, "50%"]
   fl <- .flist(object)
   levs <- lapply(fl, levels)
