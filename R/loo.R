@@ -81,7 +81,7 @@ waic.stanreg <- function(x, ...) {
   stanmat <- as.matrix(object$stanfit)
   x <- get_x(object)
   y <- get_y(object)
-  
+
   if (is(f, "family")) {
     if (!is.binomial(f$family)) data <- data.frame(y, x)
     else {
@@ -96,7 +96,7 @@ waic.stanreg <- function(x, ...) {
       }
       data <- data.frame(y, trials, x)
     }
-    draws$beta <- stanmat[, 1:ncol(x)]
+    draws$beta <- stanmat[, 1:ncol(x), drop = FALSE]
     if (is.gaussian(f$family)) draws$sigma <- stanmat[, "sigma"]
     if (is.gamma(f$family)) draws$shape <- stanmat[, "shape"]
     if (is.ig(f$family)) draws$lambda <- stanmat[, "lambda"]
@@ -114,6 +114,13 @@ waic.stanreg <- function(x, ...) {
   
   data$offset <- object$offset
   if (!all(object$weights == 1)) data$weights <- object$weights
+  
+  if (is(object, "lmerMod")) {
+    z <- get_z(object)
+    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
+    data <- cbind(data, z)
+    draws$beta <- cbind(draws$beta, b)
+  }
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
