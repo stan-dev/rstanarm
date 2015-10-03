@@ -22,7 +22,8 @@
 #'   \code{FALSE}) indicating whether \code{\link[stats]{proj}} should be called
 #'   on the fit.
 #' @examples
-#' \dontrun{ 
+#' \dontrun{
+#' options(mc.cores = 4) 
 #' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
 #'          prior = R2(0.5), seed = 12345) 
 #' }

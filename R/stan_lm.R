@@ -79,13 +79,22 @@
 #'   variance.
 #'   
 #' 
-#' @seealso Also see \code{\link{stan_glm}}, which --- if \code{family =
-#'   gaussian(link = "identity")} --- also estimates a linear model with
-#'   normally-distributed errors but specifies different priors.
+#' @seealso 
+#' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
+#' thorough descriptions and examples.
+#' 
+#' Also see \code{\link{stan_glm}}, which --- if \code{family =
+#' gaussian(link = "identity")} --- also estimates a linear model with
+#' normally-distributed errors but specifies different priors.
 #'   
-#' @examples 
-#' stan_plot(stan_lm(mpg ~ wt + qsec + am, data = mtcars, 
-#'                   prior = R2(0.75), seed = 12345, chains = 1))
+#'   
+#' @examples
+#' \dontrun{
+#' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), seed = 12345))
+#' plot(fit)
+#' ppcheck(fit, check = "dist", nreps = 25)
+#' }
+#' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
