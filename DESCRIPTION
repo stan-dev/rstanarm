@@ -2,7 +2,7 @@ Package: rstanarm
 Type: Package
 Title: Applied Regression Modeling via RStan
 Version: 2.8.0
-Date: 2015-09-30
+Date: 2015-10-03
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))

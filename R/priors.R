@@ -168,9 +168,16 @@
 #' }
 #' @return A named list.
 #' @examples
-#' stan_glm(mpg ~ ., data = mtcars, prior_PD = TRUE, chains = 1,
-#'          prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
-#'          prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#' \dontrun{
+#' fmla <- mpg ~ wt + cyl
+#' t_prior <- student_t(df = 7)
+#' stan_glm(fmla, data = mtcars, prior = t_prior, prior_intercept = t_prior) 
+#' 
+#' # Draw from prior predictive distribution (set prior_PD = TRUE)
+#' priorPD <- stan_glm(fmla, data = mtcars, prior_PD = TRUE, chains = 1,
+#'                     prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
+#'                     prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#' }
 #' 
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)

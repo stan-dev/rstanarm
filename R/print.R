@@ -36,10 +36,9 @@ print.stanreg <- function(x, digits = 1, ...) {
   print(format(round(estimates, digits), nsmall = digits), quote = FALSE, ...)
   
   if (mer) {
-    cat("\nGroups:\n")
-    print(ngrps(x))
     cat("\nError terms:\n")
     print(VarCorr(x), digits = digits + 1, ...)
+    cat("Num. levels:", paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
   }
 
   if (is(x, "aov")) {

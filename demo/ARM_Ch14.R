@@ -7,18 +7,15 @@ election88 <- with(DATA_ENV, data.frame(y, black, v.prev.full = v_prev_full,
                                         age, edu, female, state))
 
 t_prior <- student_t(df = 7)
-M1 <- stan_glmer(y ~ black + female + (1|state), data = election88, 
-                 family=binomial(link="logit"),
-                 prior = t_prior, prior_intercept = t_prior)
-fixef(M1)
-ranef(M1)
-VarCorr(M1)
+fmla1 <- y ~ black + female + (1 | state)
+M1 <- stan_glmer(fmla1, data = election88, family = binomial(link="logit"),
+                 prior = t_prior, prior_intercept = t_prior, iter = 250)
+print(M1, digits = 2) # can also do fixef(M1), ranef(M1), VarCorr(M1), etc. 
 
-fmla <- y ~ black + female + black:female + v.prev.full + 
+fmla2 <- y ~ black + female + black:female + v.prev.full + 
   (1 | age) + (1 | edu) + (1 | age.edu) + (1 | state) + (1 | region.full)
-M2 <- stan_glmer(fmla, data = election88, family = binomial(link = "logit"),
-                 prior = t_prior, prior_intercept = t_prior)
-
+M2 <- update(M1, formula = fmla2)
+print(M2, digits = 2)
 
 ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
 if (ANSWER != "n") {
