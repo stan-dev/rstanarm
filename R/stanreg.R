@@ -32,21 +32,22 @@ stanreg <- function(object) {
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[,colnames(x),drop=FALSE], 2, median)
     ses <- apply(stanmat[,colnames(x),drop=FALSE], 2, mad)
-    if (mer) b <- stan_summary[.bnames(rownames(stan_summary)), "Median"]
   }
   else {
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
-    coefs <- stan_summary[1:nvars, "50%"]
+    coefs <- stan_summary[1:nvars, .select_median(object$algorithm)]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
     if (any(stan_summary[,"Rhat"] > 1.1, na.rm = TRUE)) 
       warning("Markov chains did not converge! Do not analyze results!", 
               call. = FALSE, noBreaks. = TRUE)
-    if (mer) b <- stan_summary[.bnames(rownames(stan_summary)), "50%"]
   }    
-
   eta <- linear_predictor(coefs, x, offset)
-  if (mer) eta <- eta + linear_predictor(b, get_z.lmerMod(object))
+  if (mer) {
+    b <- stan_summary[.bnames(rownames(stan_summary)), 
+                      .select_median(object$algorithm)]
+    eta <- eta + linear_predictor(b, get_z.lmerMod(object))
+  }
   mu <- family$linkinv(eta)
   
   # residuals (of type 'response', unlike glm which does type 'deviance' by

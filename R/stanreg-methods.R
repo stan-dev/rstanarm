@@ -4,7 +4,7 @@
 #' 
 #' @name stanreg-methods
 #' 
-#' @param object A fitted model object returned by one of the \pkg{rstanarm} 
+#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
 #'   modeling functions. This will be a list with class 'stanreg' as well as at 
 #'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #' @param ... Ignored.
@@ -104,8 +104,7 @@ coef.stanreg <- function(object, ...) {
 
 .glmer_check <- function(object) {
   if (!is(object, "lmerMod")) {
-    message("This method is for stan_glmer and stan_lmer models only.")
-    invisible(FALSE)
+    stop("This method is for stan_glmer and stan_lmer models only.")
   }
 }
 .cnms <- function(object) {
@@ -145,7 +144,6 @@ coef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param x Object of class stanreg
 #' @param sigma Ignored scalar
 #' @param rdig Ignored integer
 #' @export
@@ -179,10 +177,10 @@ fixef.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  if (object$algorithm == "optimizing")
+  if (object$algorithm == "optimizing") 
     sel <- .bnames(rownames(object$stan_summary))
   else sel <- .bnames(object$stanfit@sim$fnames_oi)
-  ans <- object$stan_summary[sel, "50%"]
+  ans <- object$stan_summary[sel, .select_median(object$algorithm)]
   fl <- .flist(object)
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
@@ -218,8 +216,8 @@ ngrps.stanreg <- function(object, ...) {
 
 #' Residual standard deviation
 #' @export
-#' @param object object
 #' @keywords internal
+#' @param object object
 sigma <- function(object, ...) UseMethod("sigma")
 
 #' @rdname stanreg-methods
@@ -227,7 +225,7 @@ sigma <- function(object, ...) UseMethod("sigma")
 #' 
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) return(1)
-  else object$stan_summary["sigma", "50%"]
+  else object$stan_summary["sigma", .select_median(object$algorithm)]
 }
 
 

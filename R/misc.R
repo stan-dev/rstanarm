@@ -9,6 +9,13 @@ is.poisson <- function(x) x == "poisson"
 
 .bnames <- function(x, ...) grep("^b\\[", x, ...)
 
+.select_median <- function(algorithm) {
+  switch(algorithm, 
+         sampling = "50%",
+         optimizing = "Median",
+         stop("Incorrect algorithm name"))
+}
+
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
 }
