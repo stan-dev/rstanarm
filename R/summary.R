@@ -11,13 +11,12 @@
 #'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #' @param ... Ignored.
 #' @param pars Optional character vector specifying a subset of parameters to 
-#'   display. If \code{pars} is missing all parameters are used. Parameters can 
-#'   be specified by name or several shortcuts can be used. Using 
-#'   \code{pars="beta"} will restrict the displayed parameters to just the 
-#'   regression coefficients (excluding the intercept) only. \code{"alpha"} can
-#'   also be used as a shortcut for \code{"(Intercept)"}. If the model has 
-#'   varying intercepts and/or slopes, these can be selected using \code{pars = 
-#'   "varying"}. See Examples.
+#'   display. Parameters can be specified by name or several shortcuts can be 
+#'   used. Using \code{pars="beta"} will restrict the displayed parameters to 
+#'   just the regression coefficients only. \code{"alpha"} can also be used as a
+#'   shortcut for \code{"(Intercept)"}. If the model has varying intercepts 
+#'   and/or slopes they can be selected using \code{pars = "varying"}. See 
+#'   Examples.
 #' @param probs For models fit using MCMC, an optional numeric vector of
 #'   probabilities specifying which \code{\link[stats]{quantile}}s to display.
 #' @param digits Number of digits to use for formatting numbers.

@@ -7,7 +7,7 @@
 #' 
 #' @method plot stanreg
 #' @export
-#' 
+#' @inheritParams summary.stanreg
 #' @param x A stanreg object returned by one of the \pkg{rstanarm} modeling
 #'   functions.
 #' @param fun A character string naming the plotting function to apply to the 
@@ -30,9 +30,14 @@
 #' @examples 
 #' # See help("plots", "rstanarm")
 #' 
-plot.stanreg <- function(x, fun = "stan_plot", ...) {
+plot.stanreg <- function(x, fun = "stan_plot", pars, ...) {
+  args <- list(x, ...)
+  if (!missing(pars)) {
+    pars[pars == "varying"] <- "b"
+    args$pars <- pars
+  }
   fun <- if (x$algorithm != "optimizing") match.fun(fun) else "stan_plot_opt"
-  do.call(fun, list(x, ...))
+  do.call(fun, args)
 }
 
 # function calling arm::coefplot (only used for models fit using optimization)
