@@ -11,7 +11,7 @@ stanreg <- function(object) {
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
   
   opt <- object$algorithm == "optimizing" # used optimization
-  mer <- !is.null(object$glmod)
+  mer <- !is.null(object$glmod) # used stan_(g)lmer
   
   # rstan::summary
   levs <- c(0.5, 0.8, 0.95, 0.99)

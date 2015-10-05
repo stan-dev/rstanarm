@@ -1,5 +1,8 @@
+# Default 'control' argument for stan() if none specified by user
 stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
 
+# Test for a given family
+# @param x Character vector (probably x = family(fit)$family)
 is.binomial <- function(x) x == "binomial"
 is.gaussian <- function(x) x == "gaussian"
 is.gamma <- function(x) x == "Gamma"
@@ -7,8 +10,12 @@ is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 
+# Grep for "b" parameters (ranef)
+# @param x Character vector (often rownames(fit$stan_summary))
 .bnames <- function(x, ...) grep("^b\\[", x, ...)
 
+# Use 50% or Median depending on algorithm
+# @param algorithm String naming the algorithm (probably fit$algorithm)
 .select_median <- function(algorithm) {
   switch(algorithm, 
          sampling = "50%",
@@ -16,25 +23,26 @@ is.poisson <- function(x) x == "poisson"
          stop("Incorrect algorithm name"))
 }
 
+# If a is NULL (and Inf, respectively) return b, otherwise just return a
+# @param a,b Objects
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
 }
-
 `%ORifINF%` <- function(a, b) {
   if (a == Inf) b else a
 }
 
+# If x has no length replicate 0 n times, x has length 1 replicate x n times, 
+# otherwise return x itself
 maybe_broadcast <- function(x, n) {
-  # if x has no length replicate 0 n times, 
-  # if x has length 1 replicate x n times
-  # else return x itself
   if (!length(x)) rep(0, times = n)
   else if (length(x) == 1L) rep(x, times = n)
   else x
 }
 
+# Create a named list using specified names or, if names are omitted, using the
+# names of the objects in ...
 nlist <- function(...) {
-  # named lists
   m <- match.call()
   out <- list(...)
   no_names <- is.null(names(out))
@@ -51,8 +59,8 @@ nlist <- function(...) {
   out
 }
 
+# Check for positive scale or df parameter (NULL ok)
 validate_parameter_value <- function(x) {
-  # check for positive scale or df parameter
   nm <- deparse(substitute(x))
   if (!is.null(x)) {
     if (!is.numeric(x)) stop(nm, " should be NULL or numeric")
@@ -61,6 +69,7 @@ validate_parameter_value <- function(x) {
   invisible(TRUE)
 }
 
+# Check and set scale parameters for priors
 set_prior_scale <- function(scale, default, link) {
   stopifnot(is.numeric(default), is.character(link))
   if (is.null(scale))
@@ -71,8 +80,11 @@ set_prior_scale <- function(scale, default, link) {
     scale
 }
 
-# create linear predictor vector from x and point estimates for beta, or linear
+# Create linear predictor vector from x and point estimates for beta, or linear 
 # predictor matrix from x and full posterior sample of beta
+# @param beta A vector or matrix or parameter estimates
+# @param x Predictor matrix
+# @param offset Optional offset vector
 linear_predictor <- function(beta, x, offset = NULL) {
   UseMethod("linear_predictor")
 }

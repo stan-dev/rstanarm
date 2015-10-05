@@ -13,7 +13,7 @@
 #'   case how \code{location} is interpreted depends on the \code{what} 
 #'   argument but always pertains to the prior location of the \eqn{R^2} 
 #'   under a Beta distribution. See the Details section.
-#' @param scale Prior scale. Default depends on the family (see Details)
+#' @param scale Prior scale. Default depends on the family (see Details).
 #' @param df,df1,df2 Prior degrees of freedom. Defaults to 1, in which case 
 #'   \code{student_t} is equivalent to \code{cauchy}.
 #' @param what A character string among \code{'mode'} (the default),
@@ -166,15 +166,19 @@
 #'   \emph{if} the prior location of \eqn{R^2} is specified in a reasonable 
 #'   fashion.
 #' }
-#' @return A named list.
+#' @return A named list for use by model fitting functions. 
+#' @seealso The various vignettes for the \pkg{rstanarm} package also discuss 
+#'   and demonstrate the use of some of the supported prior distributions.
 #' @examples
 #' \dontrun{
-#' fmla <- mpg ~ wt + cyl
-#' t_prior <- student_t(df = 7)
-#' stan_glm(fmla, data = mtcars, prior = t_prior, prior_intercept = t_prior) 
+#' options(mc.cores = 4)
+#' fmla <- mpg ~ wt + qsec + drat + am
+#' t7_prior <- student_t(df = 7)
+#' stan_glm(fmla, data = mtcars, prior = t7_prior, prior_intercept = t7_prior)
+#' stan_lm(fmla, data = mtcars, prior = R2(0.75, what = "red"))
 #' 
 #' # Draw from prior predictive distribution (set prior_PD = TRUE)
-#' priorPD <- stan_glm(fmla, data = mtcars, prior_PD = TRUE, chains = 1,
+#' priorPD <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
 #'                     prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
 #'                     prior_ops = prior_options(prior_scale_for_dispersion = 2))
 #' }
@@ -215,14 +219,13 @@ cauchy <- function(location = 0, scale = NULL) {
 }
 
 #' @rdname priors
+#' @export
 #' @param shape Shape parameter for an LKJ prior on the correlation matrix 
 #'  in the \code{decov} prior.
 #' @param concentration Concentration parameter for a Dirichlet 
 #'  distribution, such as that used by the \code{decov} prior.
 #' @param gamma_shape Shape parameter for a gamma prior on the scale 
-#'   parameter in the \code{dcov} prior.
-
-#' @export
+#'   parameter in the \code{decov} prior.
 decov <- function(shape = 1, concentration = 1, gamma_shape = 1, scale = 1) {
   validate_parameter_value(shape)
   validate_parameter_value(concentration)
@@ -288,9 +291,8 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
 #'   coefficients.
 #' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
 #'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scales \code{prior_scale} by
-#'   twice the standard deviation of the predictor if it has more than two
-#'   unique values.
+#'   predictor has exactly two unique values and scaled by twice the standard
+#'   deviation of the predictor if it has more than two unique values.
 #'
 prior_options <- function(prior_scale_for_dispersion = 5, 
                           min_prior_scale = 1e-12, 

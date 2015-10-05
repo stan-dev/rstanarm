@@ -87,8 +87,8 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
 
   Z <- t(as.matrix(group$Zt))
   if (algorithm == "optimizing") 
-    colnames(Z) <- grep("^b\\[", names(stanfit$par), value = TRUE)
-  else colnames(Z) <- grep("^b\\[", names(stanfit), value = TRUE)
+    colnames(Z) <- .bnames(names(stanfit$par), value = TRUE)
+  else colnames(Z) <- .bnames(names(stanfit), value = TRUE)
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
