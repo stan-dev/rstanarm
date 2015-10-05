@@ -44,6 +44,26 @@ stan_plot_opt <- function(x, varnames = NULL, ...) {
   arm::coefplot.default(coefs = coef(x), sds = se(x), varnames = nms, ...)
 }
 
+#' Pairs method for stanreg objects
+#' 
+#' @method pairs stanreg
+#' @export
+#' @param x A stanreg object returned by one of the rstanarm modeling functions.
+#' @param ... Arguments to pass to \code{\link[rstan]{pairs.stanfit}}. 
+#' 
+#' @description See \code{\link[rstan]{pairs.stanfit}} for details.
+#' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
+#' 
+#' @examples 
+#' \dontrun{
+#' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), seed = 12345))
+#' pairs(fit, pars = c("(Intercept)", "log-posterior"))
+#' } 
+#' 
+pairs.stanreg <- function(x, ...) {
+  pairs(x$stanfit, ...)
+}
+
 #' Plots
 #' 
 #' All models fit using \code{algorithm='sampling'} are compatible with a 
