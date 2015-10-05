@@ -3,6 +3,7 @@
 #' Methods for \link[=stanreg-objects]{'stanreg' objects}.
 #' 
 #' @name stanreg-methods
+#' @aliases VarCorr fixef ranef ngrps
 #' 
 #' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
 #'   modeling functions. This will be a list with class 'stanreg' as well as at 
