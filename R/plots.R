@@ -41,12 +41,26 @@ plot.stanreg <- function(x, fun = "stan_plot", pars, ...) {
 }
 
 # function calling arm::coefplot (only used for models fit using optimization)
-stan_plot_opt <- function(x, varnames = NULL, ...) {
-  stopifnot(x$algorithm == "optimizing")
-  nms <- varnames %ORifNULL% names(coef(x))
+stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
     stop("Please install the 'arm' package to use this feature")
-  arm::coefplot.default(coefs = coef(x), sds = se(x), varnames = nms, ...)
+  stopifnot(x$algorithm == "optimizing")
+  nms <- varnames %ORifNULL% names(x$coefficients)
+  coefs <- coef(x)
+  sds <- se(x)
+  nms <- varnames %ORifNULL% names(x$coefficients)
+  if (!missing(pars)) {
+    mark <- NA
+    if ("alpha" %in% pars) mark <- c(mark, "(Intercept)")
+    if ("beta" %in% pars) 
+      mark <- c(mark, setdiff(names(x$coefficients), "(Intercept)"))
+    mark <- c(mark, setdiff(pars, c("alpha", "beta")))
+    mark <- mark[!is.na(mark)] 
+    coefs <- coefs[mark]
+    sds <- sds[mark]
+    if (is.null(varnames)) nms <- nms[nms %in% mark]
+  }
+  arm::coefplot.default(coefs = coefs, sds = sds, varnames = nms, ...)
 }
 
 #' Pairs method for stanreg objects

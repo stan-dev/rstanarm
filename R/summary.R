@@ -59,7 +59,7 @@ summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
       if ("alpha" %in% pars) mark <- c(mark, "(Intercept)")
       if ("beta" %in% pars) mark <- c(mark, setdiff(names(object$coefficients), "(Intercept)"))
       mark <- c(mark, setdiff(pars, c("alpha", "beta")))
-      mark <- na.omit(mark)
+      mark <- mark[!is.na(mark)]
     }
     out <- object$stan_summary[mark,, drop=FALSE]
   }
