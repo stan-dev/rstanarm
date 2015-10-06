@@ -223,7 +223,7 @@ predictive distribution (one for each draw of the regression coefficients). For
 this model, we find (as we should expect) that `mean_PPD` is similar to 
 the proportion of `switch = 1` in the data (`r round(mean(wells$switch),2)`).
 For more on `confint` and interpreting the parameter estimates from a Bayesian
-model see __Step 2__ in the "How to Use the __rstanarm__ Package".
+model see __Step 2__ in the "How to Use the __rstanarm__ Package" vignette.
 
 
 Using the coefficient estimates we can plot the predicted probability of 
