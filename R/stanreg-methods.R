@@ -231,7 +231,7 @@ sigma.stanreg <- function(object, ...) {
 
 
 
-#' Formula method for stanreg objects
+#' formula method for stanreg objects
 #' 
 #' @keywords internal
 #' @export
@@ -240,3 +240,17 @@ sigma.stanreg <- function(object, ...) {
 #' @param ... Ignored. 
 #' 
 formula.stanreg <- function(x, ...) x$formula
+
+#' model.frame method for stanreg objects
+#' 
+#' @keywords internal
+#' @export
+#' 
+#' @param formula,... See \code{\link{model.frame}}.
+model.frame.stanreg <- function(formula, ...) {
+  if (is(formula, "lmerMod")) {
+    fit <- formula
+    model.frame(lme4::subbars(fit$formula), fit$data)
+  }
+  else NextMethod("model.frame")
+}
