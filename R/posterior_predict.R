@@ -80,7 +80,11 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
       ppargs$sigma <- stanmat[, "sigma"]
     else if (is.binomial(famname)) {
       y <- get_y(object)
-      ppargs$trials <- if (NCOL(y) == 2L) rowSums(y) else rep(1, NROW(y))
+      if (NCOL(y) == 2L) ppargs$trials <- rowSums(y)
+      else {
+        if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
+        else ppargs$trials <- rep(1, NROW(y))
+      }
     }
     else if (is.gamma(famname))
       ppargs$scale <- stanmat[,"scale"]
