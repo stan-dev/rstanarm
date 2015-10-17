@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm src/Modules.cpp
+exit $?
+

@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-.onLoad <- function(libname, pkgname) { }
+.onLoad <- function(libname, pkgname) {}
 
 .onAttach <- function(...) {
   rstanarmLib <- dirname(system.file(package = "rstanarm"))
@@ -21,6 +21,6 @@
   builddate <- gsub(';.*$', '', pkgdesc$Packaged)
   packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
   packageStartupMessage("Do not expect the default priors to remain the same in future rstanarm versions.")
-  packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults")
+  packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults.")
 }
 

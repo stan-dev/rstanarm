@@ -3,9 +3,11 @@
 #' @docType package
 #' @name rstanarm-package
 #' @aliases rstanarm
+#' @useDynLib rstanarm, .registration = TRUE 
 #' 
 #' @import rstan
 #' @import stats
+#' @import Rcpp
 #' 
 #' @export loo
 #' @export waic

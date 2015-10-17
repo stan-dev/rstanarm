@@ -1,5 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-exec/.*\.rda$
 man-roxygen/*
 vignettes/_output.yaml
+^.*\.o$
