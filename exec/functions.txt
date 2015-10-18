@@ -1,0 +1,695 @@
+functions {
+  
+  /* for multiple .stan functions */
+  /** 
+   * Create group-specific block-diagonal Cholesky factor, see section 2.3 of
+   * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+   * @param p An integer array with the number variables on the LHS of each |
+   * @param dispersion Scalar standard deviation of the errors
+   * @param tau Vector of scale parameters for the decomposed covariance matrices
+   * @param scale Vector of scale hyperparameters
+   * @param zeta Vector of positive parameters that are normalized into simplexes
+   * @param rho Vector of radii in the onion method for creating Cholesky factors
+   * @param z_T Vector used in the onion method for creating Cholesky factors
+   * @return A vector that corresponds to theta in lme4
+   */
+  vector make_theta_L(int len_theta_L, int[] p, real dispersion,
+                      vector tau, vector scale, vector zeta,
+                      vector rho, vector z_T) {
+    vector[len_theta_L] theta_L;
+    int zeta_mark;
+    int z_T_mark;
+    int rho_mark;
+    int theta_L_mark;
+    zeta_mark <- 1;
+    z_T_mark <- 1;
+    rho_mark <- 1;
+    theta_L_mark <- 1;
+    
+    // each of these is a diagonal block of the implicit Cholesky factor
+    for (i in 1:size(p)) { 
+      int nc;
+      nc <- p[i];
+      if (nc == 1) { // "block" is just a standard deviation
+        theta_L[theta_L_mark] <- tau[i] * scale[i] * dispersion;
+        theta_L_mark <- theta_L_mark + 1;
+      }
+      else { // block is lower-triangular               
+        matrix[nc,nc] T_i; 
+        real trace_T_i;
+        vector[nc] pi; // variance = proportion of trace_T_i
+        real std_dev;
+        real T21;
+        
+        trace_T_i <- square(tau[i] * scale[i] * dispersion) * nc;
+        pi <- segment(zeta, zeta_mark, nc); // zeta ~ gamma(shape, 1)
+        pi <- pi / sum(pi);                 // thus pi ~ dirichlet(shape)
+        zeta_mark <- zeta_mark + nc;
+        std_dev <- sqrt(pi[1] * trace_T_i);
+        T_i[1,1] <- std_dev;
+        
+        // Put a correlation into T_i[2,1] and scale by std_dev
+        std_dev <- sqrt(pi[2] * trace_T_i);
+        T21 <- 2.0 * rho[rho_mark] - 1.0;
+        rho_mark <- rho_mark + 1;
+        T_i[2,2] <- std_dev * sqrt(1.0 - square(T21));
+        T_i[2,1] <- std_dev * T21;
+        
+        for (r in 2:(nc - 1)) { // scaled onion method
+          int rp1;
+          vector[r] T_row;
+          real scale_factor;
+          T_row <- segment(z_T, z_T_mark, r);
+          z_T_mark <- z_T_mark + r;
+          rp1 <- r + 1;
+          std_dev <- sqrt(pi[rp1] * trace_T_i);
+          scale_factor <- sqrt(rho[rho_mark] / dot_self(T_row)) * std_dev;
+          for(c in 1:r) T_i[rp1,c] <- T_row[c] * scale_factor;
+          T_i[rp1,rp1] <- sqrt(1.0 - rho[rho_mark]) * std_dev;
+          rho_mark <- rho_mark + 1;
+        }
+        
+        // vec T_i
+        for (c in 1:nc) for (r in c:nc) {
+          theta_L[theta_L_mark] <- T_i[r,c];
+          theta_L_mark <- theta_L_mark + 1;
+        }
+      }
+    }
+    return theta_L;
+  }
+  
+  /** 
+  * Create group-specific coefficients, see section 2.3 of
+  * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+  *
+  * @param z_b Vector whose elements are iid normal(0,sigma) a priori
+  * @param theta Vector with covariance parameters
+  * @param p An integer array with the number variables on the LHS of each |
+  * @param l An integer array with the number of levels for the factor(s) on 
+  *   the RHS of each |
+  * @return A vector of group-specific coefficients
+  */
+  vector make_b(vector z_b, vector theta_L, int[] p, int[] l) {
+    vector[rows(z_b)] b;
+    int b_mark;
+    int theta_L_mark;
+    b_mark <- 1;
+    theta_L_mark <- 1;
+    for (i in 1:size(p)) {
+      int nc;
+      nc <- p[i];
+      if (nc == 1) {
+        real theta_L_start;
+        theta_L_start <- theta_L[theta_L_mark]; // needs to be positive
+        for (s in b_mark:(b_mark + l[i] - 1)) 
+          b[s] <- theta_L_start * z_b[s];
+        b_mark <- b_mark + l[i];
+        theta_L_mark <- theta_L_mark + 1;
+      }
+      else {
+        matrix[nc,nc] T_i;
+        T_i <- rep_matrix(0, nc, nc);
+        for (c in 1:nc) {
+          T_i[c,c] <- theta_L[theta_L_mark];    // needs to be positive
+          theta_L_mark <- theta_L_mark + 1;
+          for(r in (c+1):nc) {
+            T_i[r,c] <- theta_L[theta_L_mark];
+            theta_L_mark <- theta_L_mark + 1;
+          }
+        }
+        for (j in 1:l[i]) {
+          vector[nc] temp;
+          temp <- T_i * segment(z_b, b_mark, nc);
+          b_mark <- b_mark - 1;
+          for (s in 1:nc) b[b_mark + s] <- temp[s];
+          b_mark <- b_mark + nc + 1;
+        }
+      }
+    }
+    return b;
+  }
+  
+  vector test_csr_matrix_times_vector(int m, int n, vector w, 
+                                      int[] v, int[] u, vector b) {
+    return csr_matrix_times_vector(m, n, w, v, u, b);            
+  }
+  
+  /** 
+   * Elementwise square root
+   *
+   * @param y A vector of non-negative numbers
+   * @return A vector of square roots
+   */
+  vector sqrt_vec(vector y) {
+    vector[rows(y)] out;
+    for (i in 1:rows(y)) out[i] <- sqrt(out[i]);
+    return(out);
+  }
+  
+  /* for bernoulli.stan */
+  
+  /** 
+   * Apply inverse link function to linear predictor
+   * see help(binom) in R
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_bern(vector eta, int link) {
+    vector[rows(eta)] pi;
+    if (link < 1 || link > 5) reject("Invalid link");
+    if      (link == 1)
+      for(n in 1:rows(eta)) pi[n] <- inv_logit(eta[n]);
+    else if (link == 2)
+      for(n in 1:rows(eta)) pi[n] <- Phi(eta[n]);
+    else if (link == 3) 
+      for(n in 1:rows(eta)) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
+    else if (link == 4) 
+      for(n in 1:rows(eta)) pi[n] <- exp(eta[n]);
+    else if (link == 5) 
+      for(n in 1:rows(eta)) pi[n] <- inv_cloglog(eta[n]);
+    return pi;
+  }
+
+  /**
+   * Increment with the unweighted log-likelihood
+   * @param link An integer indicating the link function
+   * @param eta0 A vector of linear predictors | y = 0
+   * @param eta1 A vector of linear predictors | y = 1
+   * @param N An integer array of length 2 giving the number of 
+   *   observations where y = 0 and y = 1 respectively
+   * @return lp__
+   */
+  real ll_bern_lp(vector eta0, vector eta1, int link, int[] N) {
+    if (link < 1 || link > 5) reject("Invalid link");
+    if (link == 1) { // logit link
+      0 ~ bernoulli_logit(eta0);
+      1 ~ bernoulli_logit(eta1);
+    }
+    else if (link == 2) { // probit link
+      increment_log_prob(normal_ccdf_log(eta0, 0, 1));
+      increment_log_prob(normal_cdf_log(eta1, 0, 1));
+    }
+    else if (link == 3) { // cauchit link
+      increment_log_prob(cauchy_ccdf_log(eta0, 0, 1));
+      increment_log_prob(cauchy_cdf_log(eta1, 0, 1));
+    }
+    else if(link == 4) { // log link
+      vector[N[1]]       log_pi0;
+      for (n in 1:N[1])  log_pi0[n] <- log1m_exp(eta0[n]);
+      increment_log_prob(log_pi0);
+      increment_log_prob(eta1); # already in log form
+    }
+    else if(link == 5) { // cloglog link
+      vector[N[2]]       log_pi1;
+      for (n in 1:N[2])  log_pi1[n] <- log1m_exp(-exp(eta1[n]));
+      increment_log_prob(log_pi1);
+      increment_log_prob(-exp(eta0));
+    }
+    return get_lp();
+  }
+
+  /** 
+   * Pointwise (pw) log-likelihood vector
+   *
+   * @param y The integer outcome variable. Note that function is
+   *  called separately with y = 0 and y = 1
+   * @param eta Vector of linear predictions
+   * @param link An integer indicating the link function
+   * @return A vector
+   */
+  vector pw_bern(int y, vector eta, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
+    if (link == 1) { # link = logit
+      for (n in 1:rows(eta)) ll[n] <- bernoulli_logit_log(y, eta[n]);
+    }
+    else { # link = probit, cauchit, log, or cloglog 
+           # Note: this may not be numerically stable
+      vector[rows(eta)] pi;
+      pi <- linkinv_bern(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- bernoulli_log(y, pi[n]) ;
+    }
+    return ll;
+  }
+
+  /* for binomial.stan */
+  
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_binom(vector eta, int link) {
+    vector[rows(eta)] pi;
+    if (link < 1 || link > 5) reject("Invalid link");
+    if      (link == 1)
+      for(n in 1:rows(eta)) pi[n] <- inv_logit(eta[n]);
+    else if (link == 2) 
+      for(n in 1:rows(eta)) pi[n] <- Phi(eta[n]);
+    else if (link == 3) 
+      for(n in 1:rows(eta)) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
+    else if (link == 4) 
+      for(n in 1:rows(eta)) pi[n] <- exp(eta[n]);
+    else if (link == 5) 
+      for(n in 1:rows(eta)) pi[n] <- inv_cloglog(eta[n]);
+    return pi;
+  }
+  
+  /**
+  * Increment with the unweighted log-likelihood
+  * @param y An integer array indicating the number of successes
+  * @param trials An integer array indicating the number of trials
+  * @param eta A vector of linear predictors
+  * @param link An integer indicating the link function
+  * @return lp__
+  */
+  real ll_binom_lp(int[] y, int[] trials, vector eta, int link) {
+    if (link < 1 || link > 5) reject("Invalid link");
+    if      (link == 1) y ~ binomial_logit(trials, eta);
+    else if (link <  4) y ~ binomial(trials, linkinv_binom(eta, link));
+    else if (link == 4) { // log link
+      for (n in 1:num_elements(y)) {
+        increment_log_prob(y[n] * eta[n]);
+        increment_log_prob( (trials[n] - y[n]) * log1m_exp(eta[n]) );
+      }
+    }
+    else if(link == 5) { // cloglog link
+      real neg_exp_eta;
+      for (n in 1:num_elements(y)) {
+        neg_exp_eta <- -exp(eta[n]);
+        increment_log_prob(y[n] * log1m_exp(neg_exp_eta));
+        increment_log_prob( (trials[n] - y[n]) * neg_exp_eta );
+      }
+    }
+    return get_lp();
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_binom(int[] y, int[] trials, vector eta, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 5) reject("Invalid link");
+    if (link == 1) { # link = logit
+      for (n in 1:rows(eta)) 
+        ll[n] <- binomial_logit_log(y[n], trials[n], eta[n]);
+    }
+    else { # link = probit, cauchit, log, or cloglog (unstable)
+      vector[rows(eta)] pi;
+      pi <- linkinv_binom(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- binomial_log(y[n], trials[n], pi[n]) ;
+    }
+    return ll;
+  }
+  
+
+  /* for continuous.stan */
+  
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_gauss(vector eta, int link) {
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link < 3)  # link = identity or log 
+      return(eta); # return eta for log link too bc will use lognormal
+        else {# link = inverse
+          vector[rows(eta)] mu;
+          for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+          return mu;
+        }
+  }
+  
+  /** 
+  * Apply inverse link function to linear predictor
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_gamma(vector eta, int link) {
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1)  return eta;
+    else if (link == 2) return exp(eta);
+    else {
+      vector[rows(eta)] mu;
+      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      return mu;
+    }
+  }
+  
+  /** 
+  * Apply inverse link function to linear predictor
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_inv_gaussian(vector eta, int link) {
+    if (link < 1 || link > 4) reject("Invalid link");
+    if (link == 1)  return eta;
+    else if (link == 2) return exp(eta);
+    else {
+      vector[rows(eta)] mu;
+      if (link == 3) for( n in 1:rows(eta)) mu[n] <- inv(eta[n]);
+      else for (n in 1:rows(eta)) mu[n] <- inv_sqrt(eta[n]);      
+      return mu;
+    }
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_gauss(vector y, vector eta, real sigma, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 2) # link = log
+      for (n in 1:rows(eta)) ll[n] <- lognormal_log(y[n], eta[n], sigma);
+    else { # link = idenity or inverse
+      vector[rows(eta)] mu;
+      mu <- linkinv_gauss(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- normal_log(y[n], mu[n], sigma);
+    }
+    return ll;
+  }
+  
+  /** 
+  * Divide a scalar by a vector
+  *
+  * @param x The scalar in the numerator
+  * @param y The vector in the denominator
+  * @return An elementwise vector
+  */
+  vector divide_real_by_vector(real x, vector y) {
+    vector[rows(y)] ret;
+    for (n in 1:rows(y)) ret[n] <- x / y[n];
+    return ret;
+  }
+  
+  real GammaReg_log(vector y, vector eta, real shape, 
+                    int link, real sum_log_y) {
+    real ret;
+    if (link < 1 || link > 3) reject("Invalid link");
+    ret <- rows(y) * (shape * log(shape) - lgamma(shape)) +
+      (shape - 1) * sum_log_y;
+    if (link == 2)      # link is log
+      ret <- ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
+    else if (link == 1) # link is identity
+      ret <- ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
+    else                # link is inverse
+      ret <- ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+    return ret;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_gamma(vector y, vector eta, real shape, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 3) { # link = inverse
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape * eta[n]);
+      }
+    }
+    else if (link == 2) { # link = log
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape / exp(eta[n]));
+      }
+    }
+    else { # link = identity
+      for (n in 1:rows(eta)) {
+        ll[n] <- gamma_log(y[n], shape, shape / eta[n]);
+      }
+    }
+    return ll;
+  }
+  
+  /** 
+  * inverse Gaussian log-PDF (for data only, excludes constants)
+  *
+  * @param y The vector of outcomes
+  * @param eta The vector of linear predictors
+  * @param lambda A positive scalar nuisance parameter
+  * @param link An integer indicating the link function
+  * @return A scalar
+  */
+  real inv_gaussian_log(vector y, vector mu, real lambda, 
+                        real sum_log_y, vector sqrt_y) {
+    return 0.5 * rows(y) * log(lambda / (2 * pi())) - 
+      1.5 * sum_log_y - 
+      0.5 * lambda * dot_self( (y - mu) ./ (mu .* sqrt_y) );
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param eta The linear predictors
+  * @param lamba A positive scalar nuisance parameter
+  * @param link An integer indicating the link function
+  * @param log_y A precalculated vector of the log of y
+  * @param sqrt_y A precalculated vector of the square root of y
+  * @return A vector of log-likelihoods
+  */
+  vector pw_inv_gaussian(vector y, vector eta, real lambda, 
+                         int link, vector log_y, vector sqrt_y) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    if (link < 1 || link > 4) reject("Invalid link");
+    mu <- linkinv_inv_gaussian(eta, link);
+    for (n in 1:rows(y))
+      ll[n] <- -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
+    ll <- ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * log_y;
+    return ll;
+  }
+  
+  /** 
+  * PRNG for the inverse Gaussian distribution
+  *
+  * Algorithm from wikipedia 
+  *
+  * @param mu The expectation
+  * @param lambda The dispersion
+  * @return A draw from the inverse Gaussian distribution
+  */
+  real inv_gaussian_rng(real mu, real lambda) {
+    real z;
+    real y;
+    real x;
+    real mu2;
+    mu2 <- square(mu);
+    y <- square(normal_rng(0,1));
+    z <- uniform_rng(0,1);
+    x <- mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
+      / (2 * lambda);
+    if (z <= (mu / (mu + x))) return x;
+    else return mu2 / x;
+  }
+  
+  /* for count.stan */
+  
+  vector linkinv_count(vector eta, int link) {
+    vector[rows(eta)] phi;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if      (link == 1) return(exp(eta));
+    else if (link == 2) return(eta); # link = identity
+      else  # link = sqrt
+        for(n in 1:rows(eta)) phi[n] <- square(eta[n]); 
+      return phi;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector for the Poisson distribution
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_pois(int[] y, vector eta, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1) # link = log
+      for (n in 1:rows(eta)) ll[n] <- poisson_log_log(y[n], eta[n]);
+    else { # link = identity or sqrt
+      vector[rows(eta)] phi;
+      phi <- linkinv_count(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- poisson_log(y[n], phi[n]) ;
+    }
+    return ll;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector for the negative binomial  distribution
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_nb(int[] y, vector eta, real theta, int link) {
+    vector[rows(eta)] ll;
+    vector[rows(eta)] rho;
+    if (link < 1 || link > 3) reject("Invalid link");
+    rho <- linkinv_count(eta, link);
+    for (n in 1:rows(eta)) ll[n] <- neg_binomial_2_log(y[n], rho[n], theta);
+    return ll;
+  }
+  
+  /* for lm.stan */
+  
+  /**
+   * Increments the log-posterior with the logarithm of a multivariate normal 
+   * likelihood with a scalar standard deviation for all errors
+   * Equivalent to y ~ normal(intercept + X * beta, sigma) but faster
+   * @param beta vector of coefficients (excluding intercept)
+   * @param b precomputed vector of OLS coefficients (excluding intercept) 
+   * @param middle matrix (excluding ones) typically precomputed as crossprod(X)
+   * @param intercept scalar (assuming X is centered)
+   * @param ybar precomputed sample mean of the outcome
+   * @param SSR positive precomputed value of the sum of squared OLS residuals
+   * @param sigma positive value for the standard deviation of the errors
+   * @param N integer equal to the number of observations
+   */
+  real ll_mvn_ols_lp(vector beta, vector b, matrix middle,
+                     real intercept, real ybar,
+                     real SSR, real sigma, int N) {
+    increment_log_prob( -0.5 * (quad_form_sym(middle, beta - b) + 
+      N * square(intercept - ybar) + SSR) / 
+      square(sigma) - # 0.91... is log(sqrt(2 * pi()))
+                          N * (log(sigma) + 0.91893853320467267) );
+    return get_lp();
+  }
+  
+  /* for polr.stan */
+  /** 
+  * Evaluate a given CDF
+  *
+  * @param x The point to evaluate the CDF_polr at
+  * @param link An integer indicating the link function
+  * @return A scalar on (0,1)
+  */
+  real CDF_polr(real x, int link) {
+    // links in MASS::polr() are in a different order than binomial() 
+    // "logistic", "probit", "loglog", "cloglog", "cauchit"
+    real p;
+    if      (link == 1) p <- inv_logit(x);
+    else if (link == 2) p <- Phi(x);
+    else if (link == 3) p <- gumbel_cdf(x, 0, 1);
+    else if (link == 4) p <- inv_cloglog(x);
+    else                p <- cauchy_cdf(x, 0, 1);
+    return p;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer outcome variable.
+  * @param eta A vector of linear predictors
+  * @param cutpoints An ordered vector of cutpoints
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_polr(int[] y, vector eta, vector cutpoints, int link) {
+    vector[rows(eta)] ll;
+    int N;
+    int J;
+    N <- rows(eta);
+    J <- rows(cutpoints) + 1;
+    if (link < 1 || link > 5) reject("Invalid link");
+    for (n in 1:N) {
+      if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
+      else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
+      else ll[n] <- CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
+        CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
+    }
+    return log(ll);
+  }
+  
+  /**
+  * Map from conditional probabilities to cutpoints
+  *
+  * @param probabilities A J-simplex
+  * @param scale A positive number
+  * @param link An integer indicating the link function
+  * @return A vector of length J - 1 whose elements are in increasing order
+  */
+  vector make_cutpoints(vector probabilities, real scale, int link) {
+    vector[rows(probabilities) - 1] cutpoints;
+    real running_sum;
+    // links in MASS::polr() are in a different order than binomial() 
+    // "logistic", "probit", "loglog", "cloglog", "cauchit"
+    if (link < 1 || link > 5) reject("invalid link");
+    running_sum <- 0;
+    if (link == 1) for(c in 1:(rows(cutpoints))) {
+      running_sum  <- running_sum + probabilities[c];
+      cutpoints[c] <- logit(running_sum);
+    }
+    else if (link == 2) for(c in 1:(rows(cutpoints))) {
+      running_sum  <- running_sum + probabilities[c];
+      cutpoints[c] <- inv_Phi(running_sum);
+    }
+    else if (link == 3) for(c in 1:(rows(cutpoints))) {
+      running_sum  <- running_sum + probabilities[c];
+      cutpoints[c] <- -log(-log(running_sum));
+    }
+    else if (link == 4) for(c in 1:(rows(cutpoints))) {
+      running_sum  <- running_sum + probabilities[c];
+      cutpoints[c] <- log(-log1m(running_sum));
+    }
+    else for(c in 1:(rows(cutpoints))) {
+      running_sum  <- running_sum + probabilities[c];
+      cutpoints[c] <- tan(pi() * (running_sum - 0.5));
+    }
+    return scale * cutpoints;
+  }
+  
+  /**
+   * Randomly draw a value for utility
+   *
+   * @param lower A scalar lower bound
+   * @param upper A scalar upper bound
+   * @param eta A scalar linear predictor
+   * @param link An integer indicating the link function
+   * @return A scalar from the appropriate conditional distribution
+   */
+  
+  real draw_ystar_rng(real lower, real upper, real eta, int link) {
+    int iter;
+    real ystar;
+    iter <- 0;
+    ystar <- not_a_number();
+    if (lower >= upper) reject("lower must be less than upper");
+    if      (link == 1) while(!(ystar > lower && ystar < upper))
+      ystar <- logistic_rng(eta, 1);
+    else if (link == 2) while(!(ystar > lower && ystar < upper))
+      ystar <- normal_rng(eta, 1);
+    else if (link == 3) while(!(ystar > lower && ystar < upper))
+      ystar <- gumbel_rng(eta, 1);
+    else if (link == 4) while(!(ystar > lower && ystar < upper))
+      ystar <- log(-log1m(uniform_rng(0,1)));
+    else if (link == 5) while(!(ystar > lower && ystar < upper))
+      ystar <- cauchy_rng(eta, 1);
+    return ystar;
+  }
+}
