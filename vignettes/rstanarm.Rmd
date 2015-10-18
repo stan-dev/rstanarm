@@ -361,7 +361,7 @@ are at equilibrium, these will be the same and Rhat will be one. If the chains
 have not converged to a common distribution, the Rhat statistic will be greater
 than one. 
 
-Gelman and Rubin’s recommendation is that the independent Markov chains be 
+Gelman and Rubin's recommendation is that the independent Markov chains be 
 initialized with diffuse starting values for the parameters and sampled until 
 all values for Rhat are below 1.1. When any Rhat values are above 1.1
 __rstanarm__ will print a warning message like this:
@@ -411,7 +411,7 @@ Language User's Guide and Reference Manual](http://mc-stan.org/documentation/).
 __References__
 
 Gelman, A., & Rubin, D. B. (1992). Inference from iterative simulation using
-multiple sequences. _Statistical Science_, 7(4), 457–472.
+multiple sequences. _Statistical Science_, 7(4), 457 -- 472.
 
 Gelman, A., & Shirley, K. (2011). Inference from simulations and monitoring
 convergence. In S. Brooks, A. Gelman, G. Jones, & X. Meng (Eds.), _Handbook of
