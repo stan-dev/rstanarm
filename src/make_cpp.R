@@ -3,7 +3,10 @@ cat("#ifndef MODELS_HPP", "#define MODELS_HPP",
   "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
   sapply(stan_files, FUN = function(f) {
     model_cppname <- sub("\\.stan$", "", basename(f))
-    cppcode <- rstan::stanc(f, model_name = model_cppname, obfuscate_model_name = FALSE)$cppcode
+    program <- c(readLines(file.path("exec", "functions.txt")), readLines(f))
+    program <- paste(program, collapse = "\n")
+    cppcode <- rstan::stanc(model_code = program, model_name = model_cppname, 
+                            obfuscate_model_name = FALSE)$cppcode
     cppcode <- gsub("typedef.*stan_model.*;", "", cppcode, perl = TRUE)
     return(cppcode)
     model_cppname <- paste0('model_', model_cppname)
