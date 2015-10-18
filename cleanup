@@ -1,5 +1,11 @@
 #!/bin/sh
 
-rm src/Modules.cpp
+# Note to Windows users: This is not actually platform specific.
+"${R_HOME}/bin/R" --vanilla --slave --file=tools/make_cpp.R
+cat src/*.cc > src/Modules.cpp
+rm src/*.cc
+"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
 exit $?
+
+
 

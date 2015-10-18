@@ -1,9 +1,0 @@
-#!/bin/sh
-
-"${R_HOME}/bin/R" --vanilla --slave --file=src/make_cpp.R
-cat src/*.cc > src/Modules.cpp
-rm src/*.cc
-exit $?
-
-
-
