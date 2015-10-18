@@ -13,13 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-loadModule("stan_fit4bernoulli_mod", TRUE)
-loadModule("stan_fit4binomial_mod", TRUE)
-loadModule("stan_fit4continuous_mod", TRUE)
-loadModule("stan_fit4count_mod", TRUE)
-loadModule("stan_fit4lm_mod", TRUE)
-loadModule("stan_fit4polr_mod", TRUE)
-
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
@@ -37,9 +30,6 @@ make_stanfit <- function(f) {
                  mk_cppmodule = function(x) get(paste0("model_", model_cppname)))))
 }
 
-stanfit_bernoulli <- make_stanfit(file.path(MODELS_HOME, "bernoulli.stan"))
-stanfit_binomial <- make_stanfit(file.path(MODELS_HOME, "binomial.stan"))
-stanfit_continuous  <- make_stanfit(file.path(MODELS_HOME, "continuous.stan"))
-stanfit_count <- make_stanfit(file.path(MODELS_HOME, "count.stan"))
-stanfit_lm <- make_stanfit(file.path(MODELS_HOME, "lm.stan"))
-stanfit_polr <- make_stanfit(file.path(MODELS_HOME, "polr.stan"))
+stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
+stanfits <- sapply(stan_files, make_stanfit)
+names(stanfits) <- sub("\\.stan$", "", basename(names(stanfits)))

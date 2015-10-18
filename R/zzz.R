@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-.onLoad <- function(libname, pkgname) {}
+.onLoad <- function(libname, pkgname) {
+  loadRcppModules()
+}
 
 .onAttach <- function(...) {
   rstanarmLib <- dirname(system.file(package = "rstanarm"))

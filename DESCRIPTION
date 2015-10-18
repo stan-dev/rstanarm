@@ -19,3 +19,4 @@ VignetteBuilder: knitr
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
+RcppModules: stan_fit4bernoulli_mod, stan_fit4binomial_mod, stan_fit4continuous_mod, stan_fit4count_mod, stan_fit4lm_mod, stan_fit4polr_mod
