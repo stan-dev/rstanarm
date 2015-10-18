@@ -23,14 +23,8 @@
 #'   etc.). The resulting plot will show the distribution of \code{test(yrep)} 
 #'   over the \code{yrep} datasets. The value of \code{test(y)} be shown in the
 #'   plot as a vertical line.
-#' @param ... Optional arguments to geoms to control features of the plots. For 
-#'   the \code{'distributions'} plots, don't use \code{...} to specify the 
-#'   aesthetics (\code{color}, \code{fill}, \code{size}, and \code{alpha}) as
-#'   they are mapped to a binary variable so that \code{y} and \code{yrep} can
-#'   be styled separately. To change these aesthetics add a
-#'   \code{\link[ggplot2]{discrete_scale}} (e.g.
-#'   \code{\link[ggplot2]{scale_fill_manual}}) with two values to the ggplot
-#'   object returned by \code{ppcheck}. See Examples.
+#' @param ... Optional arguments to geoms to control features of the plots 
+#'   (e.g. \code{binwidth} if the plot is a histogram).
 #' 
 #' @return A ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package.
@@ -67,7 +61,7 @@
 #' ppcheck(fit, check = "test", test = q25)
 #' 
 #' # Residuals
-#' ppcheck(fit, check = "resid", nreps = 3) + ggtitle("Residuals y - yrep")
+#' ppcheck(fit, check = "resid", nreps = 3, fill = "blue") + ggtitle("Residuals y - yrep")
 #' 
 #' # For logistic regressions binned residual plots are generated instead.
 #' # See the Examples for the stan_glm function 
@@ -77,11 +71,9 @@
 #' 
 ppcheck <- function(object,
                     check = c("distributions", "residuals", "test statistics"),
-                    nreps = NULL, overlay = TRUE, test = 'mean',
-                    ...) {
+                    nreps = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is(object, "stanreg"))
     stop(deparse(substitute(object)), " is not a stanreg object")
-  
   fn <- switch(match.arg(check), 
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
@@ -103,8 +95,13 @@ ppcheck <- function(object,
     y <- y[, 1L] / trials
     yrep <- sweep(yrep, 2, trials, "/")
   }
-  args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, test = test, 
-               ...)
+  if (fn == "ppcheck_dist") 
+    args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, ...)
+  else if (fn == "ppcheck_resid")
+    args <- list(y = y, yrep = yrep, n = nreps, ...)
+  else if (fn == "ppcheck_stat")
+    args <- list(y = y, yrep = yrep, test = test, ...)
+
   graph <- do.call(fn, args)
   if (fn == "ppcheck_stat") {
     test_lab <- as.character(match.call()[["test"]])
@@ -146,7 +143,7 @@ ppcheck <- function(object,
   thm
 }
 
-ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
+ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   fn <- if (overlay) "ppcheck_dens" else "ppcheck_hist"
   stopifnot(n <= nrow(yrep))
   s <- sample.int(nrow(yrep), n)
@@ -158,7 +155,7 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = FALSE, ...) {
   rownames(dat) <- NULL
   dat$is_y <- dat$id == "Observed"
   dat$value <- as.numeric(dat$value)
-  do.call(fn, list(dat=dat, n=n, ...))
+  do.call(fn, list(dat = dat, ...))
 }
 
 #' @importFrom ggplot2 aes_string facet_wrap ggplot stat_bin
@@ -175,12 +172,11 @@ ppcheck_hist <- function(dat, ...) {
 #' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
   # dat$id <- factor(dat$id, levels = unique(dat$id))
-  dots <- list(...)
   ggplot(dat, aes_string(x = 'value', group = 'id',
                          color = "is_y", fill = "is_y", size = 'is_y',
                          alpha = "is_y")) + 
     geom_density(...) + 
-    scale_alpha_manual(values = c(0, dots$alpha %ORifNULL% 1)) +
+    scale_alpha_manual(values = c(0, 1)) +
     scale_color_manual(values = c("black", .PP_DARK)) +
     scale_fill_manual(values = c("black", .PP_FILL)) +
     scale_size_manual(values = c(0.25, 1)) +
@@ -193,19 +189,31 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     test <- match.fun(test)
   T_y <- test(y)
   T_yrep <- apply(yrep, 1L, test)
-  dots <- list(...)
-  vline_color <- dots$color %ORifNULL% .PP_FILL
-  fill_color <- dots$fill %ORifNULL% "black"
-  graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) +
-    stat_bin(aes_string(y = "..count../sum(..count..)"), 
-             fill = fill_color, show_guide = FALSE, ...) 
-  graph + 
-    geom_vline(data = data.frame(t = T_y), 
-               aes_string(xintercept = "t", color = "factor(t)"), 
-               size = 2, show_guide = TRUE) +
-    scale_color_manual(name = "", 
-                       values = c(vline_color, fill_color),
-                       labels = c("T(y)", "T(yrep)"))
+  vline_color <- .PP_FILL
+  fill_color <- "black"
+  
+  graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'"))
+  if (packageVersion("ggplot2") < "1.1.0") {
+    graph + 
+      stat_bin(aes_string(y = "..count../sum(..count..)"), 
+               fill = fill_color, show_guide = FALSE, na.rm = TRUE, ...)  +
+      geom_vline(data = data.frame(t = T_y), 
+                 aes_string(xintercept = "t", color = "factor(t)"), 
+                 size = 2, show_guide = TRUE) +
+      scale_color_manual(name = "", 
+                         values = c(vline_color, fill_color),
+                         labels = c("T(y)", "T(yrep)"))
+  } else {
+    graph + 
+      stat_bin(aes_string(y = "..count../sum(..count..)"), 
+               fill = fill_color, show.legend = FALSE, na.rm = TRUE, ...)  +
+      geom_vline(data = data.frame(t = T_y), 
+                 aes_string(xintercept = "t", color = "factor(t)"), 
+                 size = 2, show.legend = TRUE) +
+      scale_color_manual(name = "", 
+                         values = c(vline_color, fill_color),
+                         labels = c("T(y)", "T(yrep)"))
+  }
 }
 
 #' @importFrom ggplot2 labs
@@ -269,9 +277,9 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   base <- ggplot(binned, aes_string(x = "xbar"))
   graph <- base + 
     geom_hline(yintercept = 0, linetype = 2) + 
-    geom_path(aes_string(y = "se2"), color = line_color, size = line_size, ...) + 
-    geom_path(aes_string(y = "-se2"), color = line_color, size = line_size, ...) + 
-    geom_point(aes_string(y = "ybar"), shape = 19, color = pt_color, ...) + 
+    geom_path(aes_string(y = "se2"), color = line_color, size = line_size) + 
+    geom_path(aes_string(y = "-se2"), color = line_color, size = line_size) + 
+    geom_point(aes_string(y = "ybar"), shape = 19, color = pt_color) + 
     labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)")
   
   if (n == 1) graph
