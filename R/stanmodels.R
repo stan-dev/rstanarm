@@ -23,6 +23,7 @@ loadModule("stan_fit4polr_mod", TRUE)
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
+#' @importFrom methods new
 make_stanfit <- function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
   program <- c(readLines(file.path(MODELS_HOME, "functions.txt")), 
