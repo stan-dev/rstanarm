@@ -72,7 +72,7 @@ stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
 #' 
 #' @description See \code{\link[rstan]{pairs.stanfit}} for details.
 #' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
-#' 
+#' @importFrom graphics pairs
 #' @examples 
 #' \dontrun{
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), seed = 12345))
