@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Note to Windows users: This is not actually platform specific.
+mkdir -p src/include
 "${R_HOME}/bin/R" --vanilla --slave --file=tools/make_cpp.R
 cat src/*.cc > src/Modules.cpp
 rm src/*.cc
