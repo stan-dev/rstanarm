@@ -60,7 +60,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     return(list(L = L, R2 = R2, log_omega = log_omega))
   }
   algorithm <- match.arg(algorithm)
-  stanfit <- stanfits$lm
+  stanfit <- stanmodels$lm
   standata <- nlist(K, has_intercept, prior_PD, J, N, xbar, s_X, XtX, 
                     ybar, center_y, s_Y, b, SSR, eta)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", 

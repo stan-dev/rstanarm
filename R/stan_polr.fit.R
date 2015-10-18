@@ -78,7 +78,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     list(pi = pi, L = L, R2 = R2, z_beta = z_beta)
   }
 
-  stanfit <- stanfits$polr
+  stanfit <- stanmodels$polr
   if (algorithm == "optimizing") {
     standata$do_residuals <- 0L
     out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE, init = start)

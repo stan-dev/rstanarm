@@ -17,7 +17,7 @@ MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
 #' @importFrom methods new
-make_stanfit <- function(f) {
+make_stanmodel <- function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
   program <- c(readLines(file.path(MODELS_HOME, "functions.txt")), 
                readLines(f))
@@ -31,5 +31,5 @@ make_stanfit <- function(f) {
 }
 
 stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
-stanfits <- sapply(stan_files, make_stanfit)
-names(stanfits) <- sub("\\.stan$", "", basename(names(stanfits)))
+stanmodels <- sapply(stan_files, make_stanmodel)
+names(stanmodels) <- sub("\\.stan$", "", basename(names(stanmodels)))

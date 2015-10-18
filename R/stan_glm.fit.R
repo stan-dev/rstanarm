@@ -263,7 +263,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                               gaussian = 1L, 
                               Gamma = 2L,
                               3L)
-    stanfit <- stanfits$continuous
+    stanfit <- stanmodels$continuous
   }
   else if (is.binomial(supported_families[fam])) {
     standata$prior_scale_for_dispersion <- 
@@ -295,7 +295,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
       }
-      stanfit <- stanfits$bernoulli
+      stanfit <- stanmodels$bernoulli
     }
     else {
       standata$trials <- trials
@@ -304,18 +304,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         standata$weights <- double(0)
         standata$has_weights <- 0L
       }
-      stanfit <- stanfits$binomial
+      stanfit <- stanmodels$binomial
     }
   }   
   else if (is.poisson(supported_families[fam])) {
     standata$family <- 1L
     standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
-    stanfit <- stanfits$count 
+    stanfit <- stanmodels$count 
   }
   else if (is_nb) {
     standata$family <- 2L
     standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
-    stanfit <- stanfits$count
+    stanfit <- stanmodels$count
   }
   else if (is_gamma) {
     # nothing
