@@ -20,19 +20,8 @@ test_that("Stan programs are available", {
 stopifnot(require(rstan))
 Sys.unsetenv("R_TESTS")
 
-functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
-  mc <- scan(text = stanc(f)$model_code, what = "character", sep = "\n",
-             quiet = TRUE)
-  start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
-  if (length(start) == 1) {
-    end <- grep("^}[[:blank:]]*$", mc)[1]
-    return(mc[(start + 1L):(end - 1L)])
-  }
-  else return(as.character(NULL))
-})
-
-model_code <- paste(c("functions {", unlist(functions), "}", "model {}"),
-                    collapse = "\n")
+model_code <- paste(c(readLines(file.path(MODELS_HOME, "functions.txt")), 
+                      "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
 
@@ -63,23 +52,6 @@ test_that("pw_bern and ll_bern_lp return expected results", {
                 info = links[i])
   }
 })
-context("Bernoulli")
-test_that("make_upper_bernoulli returns expected results", {
-  for (i in 1:length(links)) {
-    X0 <- matrix(rnorm(2 * N), N, 2)
-    X1 <- matrix(rnorm(2 * N), N, 2)
-    beta <- rnorm(2)
-    has_offset <- 0L
-    offset0 <- matrix(0, nrow = N, ncol = 0)
-    offset1 <- matrix(0, nrow = N, ncol = 0)
-    if (i == 4) expect_true(is.finite(make_upper_bernoulli(i, 
-                            X0, X1, beta, has_offset, offset0, offset1)))
-    else expect_true(Inf == make_upper_bernoulli(i, 
-                     X0, X1, beta, has_offset, offset0, offset1), info = links[i])
-  }
-})
-
-context("Bernoulli")
 
 # Binomial
 trials <- 10L
@@ -104,19 +76,6 @@ test_that("pw_binom and ll_binom_lp return expected results", {
                 ifelse(i > 3, sum(lchoose(trials, y)), 0)), info = links[i])
   }
 })
-context("Bernoulli")
-test_that("make_upper_bernoulli returns expected results", {
-  for (i in 1:length(links)) {
-    X <- matrix(rnorm(2 * N), N, 2)
-    beta <- rnorm(2)
-    has_offset <- 0L
-    offset <- matrix(0, nrow = N, ncol = 0)
-    if (i == 4) expect_true(is.finite(make_upper_binomial(i, 
-                            X, beta, has_offset, offset)))
-    else expect_true(Inf == make_upper_binomial(i, 
-                            X, beta, has_offset, offset), info = links[i])
-  }
-})
 
 # Count GLM
 links <- c("log", "identity", "sqrt")
@@ -138,19 +97,6 @@ test_that("pw_pois return expected results", {
     linkinv <- poisson(link = links[i])$linkinv
     ll <- dpois(y, linkinv(eta), log = TRUE)
     expect_true(all.equal(ll,  pw_pois(y, eta, i)), info = links[i])
-  }
-})
-context("Poisson")
-test_that("make_lower_count returns expected results", {
-  for (i in 1:length(links)) {
-    X <- matrix(rnorm(2 * N), N, 2)
-    beta <- rnorm(2)
-    has_offset <- 0L
-    offset <- matrix(0, nrow = N, ncol = 0)
-    if (i == 2) expect_true(is.finite(make_lower_count(i, 
-                                      X, beta, has_offset, offset)))
-    else expect_true(-Inf == make_lower_count(i, 
-                             X, beta, has_offset, offset), info = links[i])
   }
 })
 
@@ -260,7 +206,7 @@ test_that("pw_inv_gaussian implies an actual density", {
     foo <- function(y) {
       exp(pw_inv_gaussian(y, rep(eta, length(y)), lambda, i, log(y), sqrt(y)))
     }
-    expect_true(all.equal(1, integrate(foo, lower = 0, upper = Inf)$value, tol = 1e-5))    
+    expect_true(all.equal(1, integrate(foo, lower = 0, upper = Inf)$value, tol = 1e-4))    
   }
 })
 test_that("inv_gaussian returns expected results", {
