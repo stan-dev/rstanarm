@@ -15,7 +15,7 @@ test_that("gaussian returns expected result for trees example", {
                     tol_rel_grad = 1e-16, seed = 12345)
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
-    expect_equal(coef(fit), coef(ans), tol = 0.02)
+    expect_equal(coef(fit), coef(ans), tol = 0.021)
   }
 })
 
