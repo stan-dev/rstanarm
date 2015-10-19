@@ -76,7 +76,7 @@
 #' ppcheck(example_model, check = "refit", nreps = 3)
 #' }
 #' 
-#' @importFrom ggplot2 xlab %+replace% theme
+#' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
 ppcheck <- function(object,
                     check = c("distributions", "residuals", "test", "refit"),
@@ -136,7 +136,8 @@ ppcheck <- function(object,
 .PP_YREP_CLR <- "#487575"
 .PP_YREP_FILL <- "#222222"
 
-#' @importFrom ggplot2 ggtitle element_blank element_line element_text theme_classic
+#' @importFrom ggplot2 ggtitle element_blank element_line element_text
+#'   theme_classic
 .ppcheck_theme <- function(no_y = TRUE) {
   blank <- element_blank()
   thm <- theme_classic() +
@@ -173,7 +174,7 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   do.call(fn, list(dat = dat, ...))
 }
 
-#' @importFrom ggplot2 aes_string facet_wrap ggplot stat_bin
+#' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
 ppcheck_hist <- function(dat, ...) {
   ggplot(dat, aes_string(x = 'value', fill = 'is_y', color = "is_y", size = "is_y")) + 
     geom_histogram(aes_string(y="..density.."), size = .2, ...) + 
@@ -184,7 +185,8 @@ ppcheck_hist <- function(dat, ...) {
     xlab(NULL)
 }
 
-#' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual scale_fill_manual scale_color_manual xlab
+#' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual
+#'   scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
   # dat$id <- factor(dat$id, levels = unique(dat$id))
   ggplot(dat, aes_string(x = 'value', group = 'id',
@@ -245,7 +247,7 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
                       varying = list(1:ncol(resids)), ids = paste0('rep_', s))
     base <- ggplot(resids, aes_string(x = "r"))
   }
-  graph <- base + stat_bin(aes_string(y="..count../sum(..count..)"), ...)
+  graph <- base + geom_histogram(aes_string(y="..count../sum(..count..)"), ...)
   
   if (n == 1) 
     graph + labs(y = NULL, x = paste0("resids(yrep_",s,")"))
