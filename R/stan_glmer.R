@@ -32,12 +32,7 @@
 #'   \code{\link{priors}} for more information about the priors.
 #'   
 #' @examples
-#' \dontrun{
-#' options(mc.cores = 4)
-#' example_model <- stan_glmer(cbind(incidence, size - incidence) ~ 
-#'                       size + period + (1 | herd), data = lme4::cbpp,
-#'                       family = binomial)
-#' }
+#' # see help(example_model) for details on the model below
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula
