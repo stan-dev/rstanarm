@@ -24,8 +24,9 @@
 #'  of data points.
 #' \item \code{residuals} Residuals of type \code{'response'} (not 
 #'  \code{'deviance'} residuals).
-#' \item \code{se} Standard errors based on median absolute 
-#'  deviation (\code{\link[stats]{mad}}).
+#'  \item \code{coef} Coefficients are posterior medians
+#' \item \code{se} Standard errors are proportional to the median absolute 
+#'  deviation from the posterior median (\code{\link[stats]{mad}}).
 #' }
 #'
 #' @seealso \code{\link{stanreg-objects}}

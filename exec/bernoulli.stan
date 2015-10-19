@@ -52,12 +52,12 @@ data {
   real<lower=0> prior_df_for_intercept;
 
   # hyperparameters for glmer stuff; if t > 0 priors are mandatory
-  vector<lower=0>[t] gamma_shape; 
+  vector<lower=0>[t] shape; 
   vector<lower=0>[t] scale;
   int<lower=0> len_concentration;
   real<lower=0> concentration[len_concentration];
-  int<lower=0> len_shape;
-  real<lower=0> shape[len_shape];
+  int<lower=0> len_regularization;
+  real<lower=0> regularization[len_regularization];
 }
 transformed data {
   int NN;
@@ -197,18 +197,18 @@ model {
   }
   
   if (t > 0) {
-    int pos_shape;
+    int pos_reg;
     int pos_rho;
     z_b ~ normal(0,1);
     z_T ~ normal(0,1);
-    pos_shape <- 1;
+    pos_reg <- 1;
     pos_rho <- 1;
     for (i in 1:t) if (p[i] > 1) {
       vector[p[i] - 1] shape1;
       vector[p[i] - 1] shape2;
       real nu;
-      nu <- shape[pos_shape] + 0.5 * (p[i] - 2);
-      pos_shape <- pos_shape + 1;
+      nu <- regularization[pos_reg] + 0.5 * (p[i] - 2);
+      pos_reg <- pos_reg + 1;
       shape1[1] <- nu;
       shape2[1] <- nu;
       for (j in 2:(p[i]-1)) {
@@ -220,7 +220,7 @@ model {
       pos_rho <- pos_rho + p[i] - 1;
     }
     zeta ~ gamma(delta, 1);
-    tau ~ gamma(gamma_shape, 1);
+    tau ~ gamma(shape, 1);
   }
 }
 generated quantities {

@@ -88,25 +88,28 @@
 #' }
 #' \subsection{Covariance matrices}{
 #'   Covariance matrices are decomposed into correlation matrices and 
-#'   variances, and the variances are in turn decomposed into a scale parameter
-#'   and a simplex vector. This prior is represented by the \code{decov} 
+#'   variances. The variances are in turn decomposed into the product of a
+#'   simplex vector and the trace of the matrix. Finally, the trace is the
+#'   product of the order of the matrix and the square of a scale parameter.
+#'   This prior on a covariance matrix is represented by the \code{decov} 
 #'   function.
 #'   
 #'   The prior for a correlation matrix is called LKJ whose density is 
 #'   proportional to the determinant of the correlation matrix raised to the 
-#'   power of \eqn{shape - 1}, which depends solely on the positive shape 
-#'   parameter. If \code{shape = 1} (the default), then this prior is jointly 
-#'   uniform over all correlation matrices of that size. If \code{shape > 1},
-#'   then the identity matrix is the mode (it is always the mean) and in the 
-#'   unlikely case that \code{shape < 1}, the identity matrix is the trough.
+#'   power of a positive regularization parameter minus one. If
+#'   \code{regularization = 1} (the default), then this prior is jointly 
+#'   uniform over all correlation matrices of that size. If 
+#'   \code{regularization > 1}, then the identity matrix is the mode and in the
+#'   unlikely case that \code{regularization < 1}, the identity matrix is the
+#'   trough.
 #'   
-#'   The trace of a covariance matrix is equal to the sum of the variances and
-#'   we set the trace equal to the product of the size of the covariance matrix
+#'   The trace of a covariance matrix is equal to the sum of the variances. We
+#'   set the trace equal to the product of the order of the covariance matrix
 #'   and the \emph{square} of a positive \code{scale} parameter. The particular
 #'   variances are set equal to the product of a simplex vector --- which is
 #'   non-negative and sums to \eqn{1} --- and the scalar trace. In other words,
 #'   each element of the simplex vector represents the proportion of the trace
-#'   attributable to the corresponding variable (the stick-breaking metaphor).
+#'   attributable to the corresponding variable.
 #'   
 #'   A symmetric Dirichlet prior is used for a simplex vector, which has a 
 #'   single (positive) \code{concentration} parameter, which defaults to
@@ -121,20 +124,20 @@
 #'   If all the variables were multiplied by a number, the trace of their
 #'   covariance matrix would increase by that number squared. Thus, it is
 #'   reasonable to use a scale-invariant prior distribution, and in this case 
-#'   we utilize a gamma distribution, whose \code{shape_gamma} and \code{scale} 
+#'   we utilize a Gamma distribution, whose \code{shape} and \code{scale} 
 #'   parameters are both \eqn{1} by default, implying a unit-exponential 
 #'   distribution. We scale up by the square root of the number of variables to 
 #'   make the default value of the \code{scale} parameter more widely 
-#'   applicable. Set the \code{shape_gamma} hyperparameter to some value
+#'   applicable. Set the \code{shape} hyperparameter to some value
 #'   greater than one to ensure that the posterior trace is not zero.
 #'   
-#'   If \code{shape}, \code{concentration}, \code{shape_gamma} and / or 
+#'   If \code{shape}, \code{concentration}, \code{shape} and / or 
 #'   \code{scale} are positive scalars, then they are recycled to the 
 #'   appropriate length. Otherwise, each can be a positive vector of the 
 #'   appropriate length, but the appropriate length depends on the number of 
 #'   covariance matrices in the model and their sizes. A one-by-one covariance 
 #'   matrix is just a variance and thus does not have \code{shape} or 
-#'   \code{concentration} parameters, but does have \code{shape_gamma} and 
+#'   \code{concentration} parameters, but does have \code{shape} and 
 #'   \code{scale} parameter for the the prior standard deviation of that
 #'   variable.
 #' }
@@ -220,18 +223,20 @@ cauchy <- function(location = 0, scale = NULL) {
 
 #' @rdname priors
 #' @export
-#' @param shape Shape parameter for an LKJ prior on the correlation matrix 
+#' @param regularization Exponent for an LKJ prior on the correlation matrix 
 #'  in the \code{decov} prior.
 #' @param concentration Concentration parameter for a Dirichlet 
 #'  distribution, such as that used by the \code{decov} prior.
-#' @param gamma_shape Shape parameter for a gamma prior on the scale 
+#' @param shape Shape parameter for a gamma prior on the scale 
 #'   parameter in the \code{decov} prior.
-decov <- function(shape = 1, concentration = 1, gamma_shape = 1, scale = 1) {
-  validate_parameter_value(shape)
+decov <- function(regularization = 1, concentration = 1, 
+                  shape = 1, scale = 1) {
+  validate_parameter_value(regularization)
   validate_parameter_value(concentration)
-  validate_parameter_value(gamma_shape)
+  validate_parameter_value(shape)
   validate_parameter_value(scale)
-  nlist(dist = "decov", shape, concentration, gamma_shape, scale)
+  nlist(dist = "decov", regularization, concentration, 
+        shape, scale)
 }
 
 #' @rdname priors

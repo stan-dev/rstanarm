@@ -17,8 +17,8 @@
 #' @param group A list, possibly of length zero (the default), but otherwise
 #'   having the structure of that produced by \code{\link[lme4]{mkReTrms}} to
 #'   indicate the group-specific part of the model. In addition, this list must
-#'   have elements for the \code{gamma_shape}, \code{scale},
-#'   \code{concentration} and \code{shape} components of a \code{\link{decov}}
+#'   have elements for the \code{regularization}, \code{concentration} 
+#'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom methods is   
 #' @export
@@ -217,13 +217,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v <- parts$v
       standata$u <- parts$u
     }
-    standata$gamma_shape <- as.array(maybe_broadcast(group$decov$gamma_shape, t))
+    standata$shape <- as.array(maybe_broadcast(group$decov$shape, t))
     standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
     standata$len_concentration <- sum(p[p > 1])
     standata$concentration <- as.array(maybe_broadcast(group$decov$concentration, 
                                                        sum(p[p > 1])))
-    standata$len_shape <- sum(p > 1)
-    standata$shape <- as.array(maybe_broadcast(group$decov$shape, sum(p > 1)))
+    standata$len_regularization <- sum(p > 1)
+    standata$regularization <- as.array(maybe_broadcast(
+                                        group$decov$regularization, sum(p > 1)))
   }
   else {
     standata$t <- 0L
@@ -243,10 +244,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v <- integer(0)
       standata$u <- integer(0)
     }
-    standata$gamma_shape <- standata$scale <- standata$concentration <-
-      standata$shape <- rep(0, 0)
+    standata$shape <- standata$scale <- standata$concentration <-
+      standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L
-    standata$len_shape <- 0L
+    standata$len_regularization <- 0L
   }
   
   if (!is_bernoulli) {

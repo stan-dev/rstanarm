@@ -127,7 +127,7 @@ priors
 ```{r eval=FALSE}
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
-                   prior_covariance = decov(gamma_shape = 2, scale = 2),
+                   prior_covariance = decov(shape = 2, scale = 2),
                    seed = 12345, cores = 2, 
                    control = list(adapt_delta  = 0.999, max_treedepth = 12))
 ```
