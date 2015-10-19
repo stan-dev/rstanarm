@@ -55,7 +55,7 @@ pp_data <- function(object, newdata = NULL, ...) {
     notfound <- setdiff(colnames(newdata), colnames(fr))
     if (length(notfound)) {
       notfound <- paste(notfound, collapse = ", ")
-      stop("Variables ", notfound, " in newdata but not original formula.")
+      stop("Variable(s) ", notfound, " in newdata but not original formula.")
     }
     # check levels of grouping variables in newdata
     levs <- lapply(.flist(object), levels)

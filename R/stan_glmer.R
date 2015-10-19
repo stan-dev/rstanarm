@@ -32,12 +32,14 @@
 #'   \code{\link{priors}} for more information about the priors.
 #'   
 #' @examples
-#' \dontrun{ 
-#' cached_model <- stan_glmer(cbind(incidence, size - incidence) ~ 
-#'                            size + period + (1 | herd), data = lme4::cbpp,
-#'                            family = binomial)
+#' \dontrun{
+#' options(mc.cores = 4)
+#' example_model <- stan_glmer(cbind(incidence, size - incidence) ~ 
+#'                       size + period + (1 | herd), data = lme4::cbpp,
+#'                       family = binomial)
 #' }
-#' rstanarm:::cached_model
+#' print(example_model, digits = 1)
+#' 
 #' @importFrom lme4 glFormula
 #' 
 stan_glmer <- function (formula, data = NULL, family = gaussian, 
