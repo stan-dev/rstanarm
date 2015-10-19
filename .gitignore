@@ -1,9 +1,7 @@
 exec/*.rda
 .Rproj.user
 .Rhistory
-src/*.cpp
-src/*.hpp
-src/*.o
-src/*.so
+src/
+!src/Makevars
 man/*.Rd
 !man/rstanarm-internal.Rd
