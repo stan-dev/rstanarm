@@ -1,33 +1,49 @@
 #' Graphical posterior predictive checks
 #' 
-#' Various plots comparing the observed outcome variable \code{y} to simulated
-#' datasets \code{yrep} from the posterior predictive distribution.
+#' Various plots comparing the observed outcome variable \code{y} to simulated 
+#' datasets \code{yrep} from the \link[=posterior_predict]{posterior predictive
+#' distribution}.
 #' 
 #' @export
 #' @inheritParams stanreg-methods
-#' @param check The type of plot (possibly abbreviated) to show.
+#' @param check The type of plot (possibly abbreviated) to show. See Details.
 #' @param nreps The number of datasets to generate from the posterior predictive
-#'   distribution and show in the plots. The default is \code{1} for 
-#'   \code{check='residuals'} and \code{8} for \code{check='distributions'}. If 
-#'   \code{check='test statistics'} then \code{nreps} is ignored and the number
-#'   of simulated datasets is the number of post-warmup draws from the posterior
-#'   distribution.
+#'   distribution and show in the plots. The default is \code{nreps=3} for 
+#'   \code{check='residuals'} and \code{check='refit'}, and \code{nreps=8} for
+#'   \code{check='distributions'}. If \code{check='test'} then
+#'   \code{nreps} is ignored and the number of simulated datasets is the number
+#'   of post-warmup draws from the posterior distribution.
 #' @param overlay For \code{check="distributions"} only, should distributions be
 #'   plotted separately (\code{FALSE}) or overlaid in a single plot 
 #'   (\code{TRUE}, the default)? For other values of \code{check} this is
 #'   ignored.
-#' @param test For \code{check="test statistics"} only, \code{test} should be a 
-#'   function that computes the desired test statistic. It can be the name of a 
-#'   function as a character string (e.g., \code{test = 'mean'}) or a function 
-#'   object (e.g., \code{test = sd}, \code{test = function(x) mean(x == 0)}, 
-#'   etc.). The resulting plot will show the distribution of \code{test(yrep)} 
-#'   over the \code{yrep} datasets. The value of \code{test(y)} be shown in the
-#'   plot as a vertical line.
+#' @param test For \code{check="test"} only, \code{test} should be a function
+#'   that computes the desired test statistic. It can be the name of a function
+#'   as a character string (e.g., \code{test = 'mean'}) or a function object
+#'   (e.g., \code{test = sd}, \code{test = function(x) mean(x == 0)}, etc.).
 #' @param ... Optional arguments to geoms to control features of the plots 
 #'   (e.g. \code{binwidth} if the plot is a histogram).
 #' 
 #' @return A ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package.
+#'   
+#' @details Descriptions of the plots corresponding to the different values of 
+#' \code{check}:
+#' \describe{
+#'  \item{\code{distributions}}{The distributions of \code{y} and \code{nreps}
+#'  simulated datasets.}
+#'  \item{\code{residuals}}{The distributions of residuals computed from
+#'  \code{y} and \code{nreps} simulated datasets. For binomial data, binned
+#'  residual plots are generated.}
+#'  \item{\code{test}}{The distribution of \code{test(yrep)} over the
+#'  \code{nreps} simulated datasets. The value of \code{test(y)} is shown in the
+#'  plot as a vertical line.}
+#'  \item{\code{refit}}{First a \emph{checking model} is fit using the same 
+#'  predictors but replacing the outcome \code{y} with a single realization of
+#'  \code{yrep} from the posterior predictive distribution. Then \code{nreps}
+#'  datasets are simulated from both the original model and the checking model
+#'  and plotted.}
+#' }
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checking can also
@@ -64,29 +80,38 @@
 #' ppcheck(fit, check = "resid", nreps = 3, fill = "blue") + ggtitle("Residuals y - yrep")
 #' 
 #' # For logistic regressions binned residual plots are generated instead.
-#' # See the Examples for the stan_glm function 
-#' # help("stan_glm", package = "rstanarm")
+#' # See the Examples for the stan_glm function (?stan_glm)
+#' 
+#' # Refit using yrep and compare posterior predictive distributions of 
+#' # original model and checking model
+#' ppcheck(fit, check = "refit")
 #' }
 #' @importFrom ggplot2 xlab %+replace% theme
 #' 
 ppcheck <- function(object,
-                    check = c("distributions", "residuals", "test statistics"),
+                    check = c("distributions", "residuals", "test", "refit"),
                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
-  if (!is(object, "stanreg"))
+  if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   fn <- switch(match.arg(check), 
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
-               'test statistics' = "ppcheck_stat")
-  if (is.null(nreps) && fn != "ppcheck_stat") {
-    nreps <- ifelse(fn == "ppcheck_resid", 1, 8)
+               'test' = "ppcheck_stat", 
+               'refit' = "ppcheck_refit")
+  if (is.null(nreps) && fn != "ppcheck_stat")
+    nreps <- ifelse(fn == "ppcheck_dist", 8, 3) 
+  if (fn == "ppcheck_refit") {
+    graph <- ppcheck_refit(object, n = nreps, ...) + 
+      .ppcheck_theme() +
+      theme(strip.text = element_blank(), legend.position = "right")
+    return(graph)
   }
   if (fn == "ppcheck_resid" && is.binomial(object$family$family)) {
-    graph <- pp_check_binned_resid(object, n = nreps, ...) + 
-      .ppcheck_theme(no_y = FALSE) + 
-      ggtitle("Binned Residual Plot")
+    graph <- ppcheck_binned_resid(object, n = nreps, ...) + 
+      ggtitle("Binned Residual Plot") + 
+      .ppcheck_theme(no_y = FALSE)
     return(graph)
-  } 
+  }
   thm <- .ppcheck_theme()
   yrep <- posterior_predict(object)
   y <- get_y(object)
@@ -127,7 +152,7 @@ ppcheck <- function(object,
   thm <- theme_classic() +
     theme(axis.line = element_line(color = "#222222"),
           axis.line.y = if (no_y) blank  else element_line(size = 0.5),
-          axis.line.x = element_line(size = 3),
+          axis.line.x = element_line(size = 2),
           axis.title = element_text(face = "bold", size = 13),
           strip.background = element_blank(),
           strip.text = element_text(color = "black", face = "bold"),
@@ -239,7 +264,7 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
 }
 
 #' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
-pp_check_binned_resid <- function(object, n = 1, ...) {
+ppcheck_binned_resid <- function(object, n = 1, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
     stop("This plot requires the 'arm' package (install.packages('arm'))")
   dat <- .pp_data(object, newdata = NULL)
@@ -285,3 +310,38 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   if (n == 1) graph
   else graph + facet_wrap(~rep, scales = "free")
 }
+
+ppcheck_refit <- function(object, n = 1, ...) {
+  yrep <- as.vector(posterior_predict(object, draws = 1))
+  mf <- model.frame(object)
+  if (is.binomial(object$family$family)) {
+    y <- get_y(object)
+    if (NCOL(y) == 1L && !all(y %in% c(0, 1)))
+      yrep <- yrep / object$weights
+    if (NCOL(y) == 2L) 
+      yrep <- cbind(yrep, rowSums(y) - yrep)
+  }
+  mf[[1L]] <- yrep
+  refit <- update(object, data = mf)
+  
+  pp1 <- posterior_predict(object, draws = n)
+  pp2 <- posterior_predict(refit, draws = n)
+  varying <- list(1:ncol(pp1))
+  pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
+                 varying = varying)[, c("value", "id")]
+  pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
+                 varying = varying)[, c("value", "id")]
+  dat <- cbind(rbind(pp1, pp2), model = rep(c("Model", "Check"), each = nrow(pp1)))
+  
+  model_color <- .PP_FILL
+  check_color <- "black"
+  ggplot(dat, aes_string(x = 'value', fill = "model", color = "model")) + 
+    stat_bin(aes_string(y="..density.."), size = .2, ...) +
+    scale_fill_manual("", labels = c("Checking model", "Original model"), 
+                      values = c(check_color, model_color)) +
+    scale_color_manual("", labels = c("Checking model", "Original model"),
+                       values = c(check_color, model_color)) + 
+    facet_grid(model ~ id, scales = "fixed") + 
+    xlab(NULL)
+}
+
