@@ -438,7 +438,7 @@ no warning after increasing `adapt_delta`.
 
 The downside to increasing the target acceptance rate -- and, as a consequence, 
 decreasing the step size -- is that sampling will tend to be slower.
-Intuitively, this is because smaller step sizes means that more steps are
+Intuitively, this is because a smaller step size means that more steps are
 required to explore the posterior distribution. Since the validity of the
 estimates is not guaranteed if there are any post-warmup divergent transitions,
 the slower sampling is a minor cost.
