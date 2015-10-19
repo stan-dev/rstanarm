@@ -11,25 +11,21 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Linear Models with the rstanarm Package}
 -->
+```{r, child="SETTINGS-knitr.txt"}
+```
+```{r, child="SETTINGS-gg.txt"}
+```
+```{r, child="SETTINGS-rstan.txt"}
+```
 
 # Introduction
 
 This vignette explains how to estimate linear models using the
 __rstanarm__ package.
 
-The four steps of a Bayesian analysis are
+```{r, child = "four_steps.txt"}
+```
 
-1. Specify a joint distribution for the outcome(s) and all the unknowns, which
-  typically takes the form of a marginal prior distribution for the unknowns
-  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
-  This joint distribution is proportional to a posterior distribution of the
-  unknowns conditional on the observed data
-2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
-3. Evaluate how well the model fits the data and possibly revise the model.
-4. Draw from the posterior predictive distribution of the outcome(s) given
-  interesting values of the predictors in order to visualize how a manipulation
-  of a predictor affects (a function of) the outcome(s).
-  
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
 the product of independent normal distributions.
@@ -261,10 +257,11 @@ ordinary least squares model. We can estimate a Bayesian version of this model
 by prepending `stan_` to the `lm` call, specifying a prior mode for $R^2$, and
 optionally specifying how many cores the computer may utilize:
 ```{r MCMC}
-suppressPackageStartupMessages(require(rstanarm))
+library(rstanarm)
 post <- stan_lm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
-                prior = R2(location = 0.25), cores = 2, seed = 12345)
+                prior = R2(location = 0.25), 
+                chains = CHAINS, cores = CORES, seed = SEED)
 post
 ```
 In this case, the "Bayesian point estimates", which are represented by the 
@@ -305,7 +302,7 @@ regression coefficients. This simpler approach can be executed by calling the
 simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
                    prior = cauchy(), prior_intercept = cauchy(),
-                   cores = 2, seed = 12345)
+                   chains = CHAINS, cores = CORES, seed = SEED)
 ```
 We can compare the two approaches using an approximation to Leave-One-Out
 (LOO) cross-validation, which is implemented by the `loo` function in the

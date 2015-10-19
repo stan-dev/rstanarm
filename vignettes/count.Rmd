@@ -11,19 +11,11 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-
-```{r, SETTINGS-knitr, include=FALSE}
-library(knitr)
-opts_chunk$set(dev = 'png', dpi = 150,
-               fig.align='center', fig.height = 2, fig.width = 4,
-               message = FALSE, warning = FALSE) 
+```{r, child="SETTINGS-knitr.txt"}
 ```
-
-```{r, SETTINGS-gg, include=FALSE}
-library(ggplot2)
-thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
-                 legend.background = element_rect(fill = "gray"))
-theme_set(theme_classic() %+replace% thm_els)
+```{r, child="SETTINGS-gg.txt"}
+```
+```{r, child="SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -31,19 +23,9 @@ theme_set(theme_classic() %+replace% thm_els)
 This vignette explains how to estimate generalized linear models (GLMs) for 
 count data using the __rstanarm__ package.
 
-The four steps of a Bayesian analysis are
+```{r, child="four_steps.txt"}
+```
 
-1. Specify a joint distribution for the outcome(s) and all the unknowns, which
-  typically takes the form of a marginal prior distribution for the unknowns
-  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
-  This joint distribution is proportional to a posterior distribution of the
-  unknowns conditional on the observed data
-2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
-3. Evaluate how well the model fits the data and possibly revise the model.
-4. Draw from the posterior predictive distribution of the outcome(s) given
-  interesting values of the predictors in order to visualize how a manipulation
-  of a predictor affects (a function of) the outcome(s).
-  
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 for Poisson and negative
 binomial regression models.
@@ -142,8 +124,9 @@ argument to `stan_glm`:
 ```{r, ROACHES-fit}
 library(rstanarm)
 
-# Load data and create dist100 variable 
+# Load data and rescale
 roaches <- read.csv("roaches.csv.xz")
+roaches$roach1 <- roaches$roach1 / 100
 # Estimate original model
 glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
             family = poisson, offset = log(exposure2))
@@ -151,7 +134,7 @@ glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
 stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
                  family = poisson, offset = log(exposure2), 
                  prior = normal(0,2.5), prior_intercept = normal(0,5),
-                 cores = 2, seed = 12345)
+                 chains = CHAINS, cores = CORES, seed = SEED)
 ```
 
 The `formula`, `data`, `family`, and `offset` arguments to `stan_glm` can be 
@@ -160,13 +143,15 @@ defaults to using the log link, but to write code readable to someone not
 familiar with the defaults we should be explicit and use 
 `family = poisson(link = "log")`.  
 
-We've also specified some optional arguments. The `cores` parameter controls the
+We've also specified some optional arguments. The `chains` argument governs
+how mang Markov chains are execture, the `cores` argument controls the
 number of cores utilized by the computer when fitting the model. We also 
 provided a `seed` so that we have the option to deterministically reproduce
 these results at any time. The `stan_glm` function has many other optional 
 arguments that allow for more user control over the way estimation is performed.
 The help page for `stan_glm` has more information about these controls as well
-as other topics related to GLM estimation (`?stan_glm`, `help(stan_glm, package = 'rstanarm')`).
+as other topics related to GLM estimation 
+(`?stan_glm`, `help(stan_glm, package = 'rstanarm')`).
 
 Here are the point estimates and uncertainties from the `glm` fit and `stan_glm`
 fit, which we see are nearly identical:
@@ -178,8 +163,9 @@ rbind(glm = summary(glm1)$coefficients[, "Std. Error"], stan_glm = se(stan_glm1)
 
 (Note: the dataset we have is slightly different from the one used in Gelman and
 Hill (2007), which leads to slightly different parameter estimates than those
-shown in the book even when copying the `glm` call verbatim. For the purposes of
-this example, the actual estimates are less important than the process.)
+shown in the book even when copying the `glm` call verbatim. Also, we have
+rescaled the `roach1` predictor. For the purposes of this example, the actual 
+estimates are less important than the process.)
 
 Gelman and Hill next show how to compare the observed data to replicated 
 datasets from the model to check the quality of the fit. Here we don't show the

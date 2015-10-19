@@ -11,25 +11,21 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating ANOVA Models with the rstanarm Package}
 -->
+```{r, child="SETTINGS-knitr.txt"}
+```
+```{r, child="SETTINGS-gg.txt"}
+```
+```{r, child="SETTINGS-rstan.txt"}
+```
 
 # Introduction
 
 This vignette explains how to estimate ANalysis Of VAriance (ANOVA) models 
 using the __rstanarm__ package.
 
-The four steps of a Bayesian analysis are
+```{r, child="four_steps.txt"}
+```
 
-1. Specify a joint distribution for the outcome(s) and all the unknowns, which
-  typically takes the form of a marginal prior distribution for the unknowns
-  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
-  This joint distribution is proportional to a posterior distribution of the
-  unknowns conditional on the observed data
-2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
-3. Evaluate how well the model fits the data and possibly revise the model.
-4. Draw from the posterior predictive distribution of the outcome(s) given
-  interesting values of the predictors in order to visualize how a manipulation
-  of a predictor affects (a function of) the outcome(s).
-  
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
 the product of independent normal distributions. We also demonstrate that Step 
@@ -107,10 +103,11 @@ To obtain Bayesian estimates we can prepend `stan_` to `aov` and specify the
 prior location of the $R^2$ as well as optionally the number of cores that the
 computer is allowed to utilize:
 ```{r stan_aov}
-suppressPackageStartupMessages(require(rstanarm))
+library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
-                  prior = R2(location = 0.5), seed = 12345, cores = 2,
-                  control = list(adapt_delta = 0.999, max_treedepth = 13))
+                  prior = R2(location = 0.5),
+                  control = list(adapt_delta = 0.999, max_treedepth = 13),
+                  chains = CHAINS, cores = CORES, seed = SEED)
 post1
 ```
 Here we have specified the optional `control` argument as a list with elements
@@ -128,8 +125,8 @@ priors
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),
-                   seed = 12345, cores = 2, 
-                   control = list(adapt_delta  = 0.999, max_treedepth = 12))
+                   control = list(adapt_delta  = 0.999, max_treedepth = 12),
+                   chains = CHAINS, cores = CORES, seed = SEED)
 ```
 Comparing these two models using the `loo` function in the __loo__ package 
 reveals a negligible preference for the first approach that is almost entirely

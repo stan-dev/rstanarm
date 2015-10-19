@@ -11,19 +11,11 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-```{r, SETTINGS-knitr, include=FALSE}
-library(knitr)
-opts_chunk$set(dev = 'png', dpi = 150,
-               fig.align='center', fig.height = 3,
-               message = FALSE, warning = FALSE) 
+```{r, child="SETTINGS-knitr.txt"}
 ```
-
-```{r, SETTINGS-gg, include=FALSE}
-library(ggplot2)
-thm_els <- theme(axis.text.y = element_blank(), legend.position = "none",
-                 legend.background = element_rect(fill = "gray"),
-                 legend.text = element_text(size = 9))
-theme_set(theme_classic() %+replace% thm_els)
+```{r, child="SETTINGS-gg.txt"}
+```
+```{r, child="SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -32,19 +24,9 @@ This vignette explains how to estimate generalized linear models (GLMs) for
 binary (Bernoulli) and Binomial response variables using the __rstanarm__
 package.
 
-The four steps of a Bayesian analysis are
+```{r, child="four_steps.txt"}
+```
 
-1. Specify a joint distribution for the outcome(s) and all the unknowns, which
-  typically takes the form of a marginal prior distribution for the unknowns
-  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
-  This joint distribution is proportional to a posterior distribution of the
-  unknowns conditional on the observed data
-2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
-3. Evaluate how well the model fits the data and possibly revise the model.
-4. Draw from the posterior predictive distribution of the outcome(s) given
-  interesting values of the predictors in order to visualize how a manipulation
-  of a predictor affects (a function of) the outcome(s).
-  
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
 the product of conditionally independent binomial distributions (possibly with
@@ -90,12 +72,13 @@ by default, the probit is scaled so its slope at the origin matches the logit's
 binomial models with a logit link function can typically be fit slightly faster 
 than the identical model with a probit link because of how the two models are 
 implemented in Stan. Unless the user has a specific reason to prefer the probit
-link, we recommend the logit simply because it will be slightly faster.
+link, we recommend the logit simply because it will be slightly faster and more
+numerically stable.
 
-In theory there are infinitely many possible link functions, although in
-practice only a few are typically used. Other common choices are the cauchit and
-cloglog functions, which can also be used with `stan_glm` (every link function
-compatible with`glm` will work with `stan_glm`).
+In theory, there are infinitely many possible link functions, although in
+practice only a few are typically used. Other common choices are the `cauchit`
+and `cloglog` functions, which can also be used with `stan_glm` (every link 
+function compatible with`glm` will work with `stan_glm`).
 
 # Priors
 
@@ -197,13 +180,14 @@ library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, family = binomial(link = "logit"), 
                  prior = t_prior, prior_intercept = t_prior,  
-                 cores = 2, seed = 12345)
+                 chains = CHAINS, cores = CORES, seed = SEED)
 (coef_fit1 <- round(coef(fit1), 3))
 ```
 
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
 exactly the same way as for `glm`. We've also added the optional additional 
-arguments `cores` (how many cores we want the computer to utilize) and `seed` 
+arguments `chains` (how many chains we want to execute), `cores` (how many 
+cores we want the computer to utilize) and `seed` 
 (for reproducibility). You can read about other possible arguments in the
 `stan_glm` documentation (`help(stan_glm, package = 'rstanarm')`).
 

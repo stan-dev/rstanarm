@@ -11,25 +11,21 @@ output:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Ordinal Models with the rstanarm Package}
 -->
+```{r, child="SETTINGS-knitr.txt"}
+```
+```{r, child="SETTINGS-gg.txt"}
+```
+```{r, child="SETTINGS-rstan.txt"}
+```
 
 # Introduction
 
 This vignette explains how to estimate models for ordinal outcomes using the
 __rstanarm__ package.
 
-The four steps of a Bayesian analysis are
+```{r, child="four_steps.txt"}
+```
 
-1. Specify a joint distribution for the outcome(s) and all the unknowns, which
-  typically takes the form of a marginal prior distribution for the unknowns
-  multiplied by a likelihood for the outcome(s) conditional on the unknowns.
-  This joint distribution is proportional to a posterior distribution of the
-  unknowns conditional on the observed data
-2. Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).
-3. Evaluate how well the model fits the data and possibly revise the model.
-4. Draw from the posterior predictive distribution of the outcome(s) given
-  interesting values of the predictors in order to visualize how a manipulation
-  of a predictor affects (a function of) the outcome(s).
-  
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1.
 
@@ -145,14 +141,15 @@ In this section, we start with an ordinal model of tobacco consumption as
 a function of age and alcohol consumption. Frequentist estimates can be
 obtained using the `polr` function in the __MASS__ package:
 ```{r MASS_tobgp}
-suppressPackageStartupMessages(require(MASS))
+library(MASS)
 polr(tobgp ~ agegp + alcgp, data = esoph)
 ```
 To obtain Bayesian estimates, we prepend `stan_` and specify the priors:
 ```{r MCMC_tobgp}
-suppressPackageStartupMessages(require(rstanarm))
+library(rstanarm)
 stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(0.25), 
-          prior_counts = dirichlet(1), seed = 12345, cores = 2)
+          prior_counts = dirichlet(1),
+          chains = CHAINS, cores = CORES, seed = SEED)
 ```
 The point estimates, represented by the posterior medians, are qualitatively
 similar to the maximum-likelihood estimates but are somewhat shrunk toward
@@ -177,7 +174,8 @@ for birthweight in kilograms, flipping the sign so that positive coefficients
 are associated with _lower_ birthweights.
 ```{r lm}
 post1 <- stan_lm(-bwt ~ smoke + age + race + ptl + ht + ftv,
-                 data = birthwt, prior = R2(0.5), cores = 2, seed = 12345)
+                 data = birthwt, prior = R2(0.5), 
+                 chains = CHAINS, cores = CORES, seed = SEED)
 post1
 ```
 Next, we estimate an "ordinal" model for the incidence of low birthweight, which
@@ -189,8 +187,9 @@ forcing us to estimate an ordinal model.
 ```{r polr}
 post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
                    prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
-                   method = "probit", cores = 2, seed = 12345)
-plot(loo(post2, cores = 2))
+                   method = "probit", 
+                   chains = CHAINS, cores = CORES, seed = SEED)
+plot(loo(post2, cores = CORES))
 ```
 
 This prior seems to have worked well in this case because none of the points
