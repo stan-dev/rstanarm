@@ -44,8 +44,10 @@
 #' 
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
-  if (object$algorithm == "optimizing")
-    stop("posterior_predict only available for MCMC")
+  if (!is.stanreg(object))
+    stop(deparse(substitute(object)), " is not a stanreg object")
+  if (object$algorithm != "sampling")
+    stop("Only available for models fit using MCMC (algorithm = 'sampling').")
   family <- object$family
   famname <- family$family
   ppfun <- paste0(".pp_", famname)

@@ -1,6 +1,9 @@
 # Default 'control' argument for stan() if none specified by user
 stan_control <- list(adapt_delta = 0.95, max_treedepth = 15L)
 
+# Test if an object is a stanreg object
+is.stanreg <- function(x) inherits(x, "stanreg")
+
 # Test for a given family
 # @param x Character vector (probably x = family(fit)$family)
 is.binomial <- function(x) x == "binomial"

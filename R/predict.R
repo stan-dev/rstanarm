@@ -17,7 +17,6 @@
 #'
 #' @seealso \code{\link{posterior_predict}}, \code{\link[stats]{predict.glm}}
 #' 
-
 predict.stanreg <- function(object, ..., newdata = NULL, 
                             type = c("link", "response"), se.fit = FALSE) {
   
