@@ -113,21 +113,21 @@ pairs.stanreg <- function(x, ...) {
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
 #' 
 #' @examples 
-#' cached_model <- rstanarm:::cached_model
-#' stan_plot(cached_model, ci_level = 0.8)
+#' # Intervals and point estimates
+#' stan_plot(example_model, ci_level = 0.8)
 #' common_pars <- c("size", paste0("period", 2:4))
-#' stan_plot(cached_model, pars = common_pars, show_density = TRUE)
+#' stan_plot(example_model, pars = common_pars, show_density = TRUE)
 #' 
-#' # traceplot
-#' (trace <- stan_trace(cached_model, pars = "(Intercept)"))
+#' # Traceplot
+#' (trace <- stan_trace(example_model, pars = "(Intercept)"))
 #' trace + scale_color_discrete()
 #' 
-#' # distributions 
-#' stan_hist(cached_model, fill = "skyblue") + ggtitle("Example Histogram")
-#' stan_dens(cached_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
+#' # Distributions 
+#' stan_hist(example_model, fill = "skyblue") + ggtitle("Example Histogram")
+#' stan_dens(example_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
 #' 
-#' # scatterplot
-#' stan_scat(cached_model, pars = paste0("period", 2:3))
+#' # Scatterplot
+#' stan_scat(example_model, pars = paste0("period", 2:3))
 #' 
-#' # posterior predictive checks (see ?ppcheck for more details and examples)
+#' # Posterior predictive checks (see ?ppcheck for examples)
 NULL

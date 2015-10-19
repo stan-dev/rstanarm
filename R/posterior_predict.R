@@ -29,19 +29,18 @@
 #'   Examples of posterior predictive checking can also be found in the
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
-#' @examples 
-#' cached_model <- rstanarm:::cached_model
-#' yrep <- posterior_predict(cached_model)
+#' @examples
+#' yrep <- posterior_predict(example_model)
 #' table(yrep)
 #' 
 #' \dontrun{
 #' nd <- lme4::cbpp
 #' nd$size <- max(nd$size) + 1L
-#' ppd <- posterior_predict(cached_model, newdata = nd) # FIXME
+#' ppd <- posterior_predict(example_model, newdata = nd) # FIXME
 #' 
-#' # Use fun to transform predictions
+#' # Use fun argument to transform predictions
 #' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
-#' ppd <- posterior_predict(fit, fun = exp) 
+#' ppd <- posterior_predict(fit, fun = exp)
 #' }
 #' 
 #' 

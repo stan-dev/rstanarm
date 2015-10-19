@@ -16,6 +16,7 @@ Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, Rcpp (>= 0.11.0), sh
 Suggests: arm, gridExtra, HSAUR3, knitr, MASS, MCMCpack, SuppDists, testthat
 LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>= 0.11.0), RcppEigen
 VignetteBuilder: knitr
+LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
