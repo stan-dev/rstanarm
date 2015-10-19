@@ -3,4 +3,4 @@
 man-roxygen/*
 vignettes/_output.yaml
 ^.*\.o$
-cleanup*
+^\cleanup*
