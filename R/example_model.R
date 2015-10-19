@@ -1,6 +1,6 @@
 #' Example model
 #' 
-#' A pre-fit model for use in examples. 
+#' A pre-fit model for use in \pkg{rstanarm} examples. 
 #' 
 #' @name example_model
 #' @format A \code{\link[=stanreg-objects]{stanreg}} object containing the
@@ -15,8 +15,9 @@
 #' @seealso \code{\link[lme4]{cbpp}} for a description of the data.
 #' @examples
 #' \dontrun{ 
-#' example_model <- stan_glmer(cbind(incidence, size - incidence) ~ size + period +
-#'                             (1 | herd), data = lme4::cbpp, family = binomial, 
-#'                             chains = 2, cores = 1, seed = 12345, iter = 500)
+#' example_model <- 
+#'   stan_glmer(cbind(incidence, size - incidence) ~ size + period + (1|herd),
+#'              data = lme4::cbpp, family = binomial,
+#'              chains = 2, cores = 1, seed = 12345, iter = 500)
 #' }
 NULL
