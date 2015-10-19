@@ -55,28 +55,26 @@
 #' 
 #' @examples
 #' # Compare distribution of y to distributions of yrep
-#' (pp_dist <- ppcheck(example_model, check = "distributions"))
+#' (pp_dist <- ppcheck(example_model, check = "distributions", overlay = TRUE))
 #' pp_dist + 
 #'  scale_color_manual(values = c("red", "black")) + # change line colors
 #'  scale_size_manual(values = c(0.5, 3)) + # change line sizes 
 #'  scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
-#' ppcheck(example_model, check = "distributions", overlay = FALSE)
-#' 
 #' # Check residuals
 #' ppcheck(example_model, check = "residuals", nreps = 3, fill = "blue") + 
 #'   ggtitle("Residuals (y - yrep)")
 #'
 #' # Check histograms of test statistics
-#' library(gridExtra)
-#' (test_mean <- ppcheck(example_model, check = "test", test = 'mean'))
+#' test_mean <- ppcheck(example_model, check = "test", test = 'mean')
 #' test_sd <- ppcheck(example_model, check = "test", test = sd)
-#' library(gridExtra)
-#' grid.arrange(test_mean, test_sd, ncol = 2)
+#' gridExtra::grid.arrange(test_mean, test_sd, ncol = 2)
 #'
 #' # Refit using yrep and compare posterior predictive distributions of 
 #' # original model and checking model
-#' ppcheck(example_model, check = "refit", nreps = 4)
+#' \dontrun{
+#' ppcheck(example_model, check = "refit", nreps = 3)
+#' }
 #' 
 #' @importFrom ggplot2 xlab %+replace% theme
 #' 
