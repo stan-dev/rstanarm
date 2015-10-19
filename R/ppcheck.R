@@ -45,12 +45,18 @@
 #'  and plotted.}
 #' }
 #' 
+#' @note For binomial data with a number of trials greater than 1
+#'   (i.e. not Bernoulli), plots of \code{y} and \code{yrep} show the
+#'   proportion of 'successes' rather than the raw count.
+#' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checking can also
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
 #' cached_model <- rstanarm:::cached_model
+#' 
+#' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- ppcheck(cached_model, check = "distributions"))
 #' pp_dist + 
 #'  scale_color_manual(values = c("red", "black")) + # change line colors
@@ -58,20 +64,21 @@
 #'  scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
 #' ppcheck(cached_model, check = "distributions", overlay = FALSE)
+#' 
+#' # Check residuals
 #' ppcheck(cached_model, check = "residuals", nreps = 3, fill = "blue") + 
 #'   ggtitle("Residuals y - yrep")
-#' (test_sd <- ppcheck(cached_model, check = "test", test = sd))
 #'
 #' # Check histograms of test statistics
 #' library(gridExtra)
 #' test_mean <- ppcheck(cached_model, check = "test", test = 'mean')
+#' (test_sd <- ppcheck(cached_model, check = "test", test = sd))
 #' grid.arrange(test_mean, test_sd, ncol = 2)
 #'
 #' # Refit using yrep and compare posterior predictive distributions of 
-#' # original model and checking model (FIXME)
-#' \dontrun{
-#' ppcheck(cached_model, check = "refit")
-#' }
+#' # original model and checking model
+#' ppcheck(cached_model, check = "refit", nreps = 4)
+#' 
 #' @importFrom ggplot2 xlab %+replace% theme
 #' 
 ppcheck <- function(object,
@@ -94,7 +101,7 @@ ppcheck <- function(object,
   }
   if (fn == "ppcheck_resid" && is.binomial(object$family$family)) {
     graph <- ppcheck_binned_resid(object, n = nreps, ...) + 
-      ggtitle("Binned Residual Plot") + 
+      ggtitle("Binned Residuals") + 
       .ppcheck_theme(no_y = FALSE)
     return(graph)
   }
@@ -172,7 +179,7 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
 #' @importFrom ggplot2 aes_string facet_wrap ggplot stat_bin
 ppcheck_hist <- function(dat, ...) {
   ggplot(dat, aes_string(x = 'value', fill = 'is_y', color = "is_y", size = "is_y")) + 
-    stat_bin(aes_string(y="..density.."), size = .2, ...) + 
+    geom_histogram(aes_string(y="..density.."), size = .2, ...) + 
     facet_wrap(~id, scales = "free") + 
     scale_fill_manual(values = c("black", .PP_FILL)) +
     scale_color_manual(values = c(NA, NA)) + 
@@ -206,7 +213,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'"))
   if (packageVersion("ggplot2") < "1.1.0") {
     graph + 
-      stat_bin(aes_string(y = "..count../sum(..count..)"), 
+      geom_histogram(aes_string(y = "..count../sum(..count..)"), 
                fill = fill_color, show_guide = FALSE, na.rm = TRUE, ...)  +
       geom_vline(data = data.frame(t = T_y), 
                  aes_string(xintercept = "t", color = "factor(t)"), 
@@ -216,7 +223,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                          labels = c("T(y)", "T(yrep)"))
   } else {
     graph + 
-      stat_bin(aes_string(y = "..count../sum(..count..)"), 
+      geom_histogram(aes_string(y = "..count../sum(..count..)"), 
                fill = fill_color, show.legend = FALSE, na.rm = TRUE, ...)  +
       geom_vline(data = data.frame(t = T_y), 
                  aes_string(xintercept = "t", color = "factor(t)"), 
@@ -300,34 +307,48 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
 ppcheck_refit <- function(object, n = 1, ...) {
   yrep <- as.vector(posterior_predict(object, draws = 1))
   mf <- model.frame(object)
-  if (is.binomial(object$family$family)) {
+  fam <- object$family$family
+  if (!is.binomial(fam)) {
+    mf[[1L]] <- yrep
+    refit <- update(object, data = mf)
+  } 
+  else {
     y <- get_y(object)
-    if (NCOL(y) == 1L && !all(y %in% c(0, 1)))
-      yrep <- yrep / object$weights
-    if (NCOL(y) == 2L) 
-      yrep <- cbind(yrep, rowSums(y) - yrep)
+    if (NCOL(y) == 2L) {
+      new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
+      mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1L])
+      refit <- update(object, formula = new_f, data = get_all_vars(new_f, data = mf2))
+    } 
+    else {
+      if (NCOL(y) == 1L && !all(y %in% c(0, 1)))
+        yrep <- yrep / object$weights
+      mf[[1L]] <- yrep
+      refit <- update(object, data = mf)
+    }
   }
-  mf[[1L]] <- yrep
-  refit <- update(object, data = mf)
   
   pp1 <- posterior_predict(object, draws = n)
   pp2 <- posterior_predict(refit, draws = n)
+  if (is.binomial(fam)) {
+    if (NCOL(y) == 2L) {
+      trials <- rowSums(y)
+      pp1 <- sweep(pp1, 2L, trials, "/")
+      pp2 <- sweep(pp2, 2L, trials, "/")
+    }
+  }
+
   varying <- list(1:ncol(pp1))
   pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
                  varying = varying)[, c("value", "id")]
   pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
                  varying = varying)[, c("value", "id")]
-  dat <- cbind(rbind(pp1, pp2), model = rep(c("Model", "Check"), each = nrow(pp1)))
-  
-  model_color <- .PP_FILL
-  check_color <- "black"
+  dat <- cbind(rbind(pp1, pp2), model = rep(c("Model", "Checking model"), each = nrow(pp1)))
+  clr_vals <- c("black", .PP_FILL)
   ggplot(dat, aes_string(x = 'value', fill = "model", color = "model")) + 
-    stat_bin(aes_string(y="..density.."), size = .2, ...) +
-    scale_fill_manual("", labels = c("Checking model", "Original model"), 
-                      values = c(check_color, model_color)) +
-    scale_color_manual("", labels = c("Checking model", "Original model"),
-                       values = c(check_color, model_color)) + 
+    geom_histogram(aes_string(y = "..density.."), size = .2, ...) +
+    scale_fill_manual("", values = clr_vals) +
+    scale_color_manual("", values = clr_vals) + 
     facet_grid(model ~ id, scales = "fixed") + 
-    xlab(NULL)
+    xlab("yrep")
 }
 
