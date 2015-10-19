@@ -33,10 +33,11 @@
 #'   
 #' @examples
 #' \dontrun{ 
-#' options(mc.cores = parallel::detectCores())
-#' data(cake, package = "lme4")
-#' stan_glmer(angle ~ recipe + temp + (1|recipe:replicate), data = cake, seed = 12345)
+#' cached_model <- stan_glmer(cbind(incidence, size - incidence) ~ 
+#'                            size + period + (1 | herd), data = lme4::cbpp,
+#'                            family = binomial)
 #' }
+#' rstanarm:::cached_model
 #' @importFrom lme4 glFormula
 #' 
 stan_glmer <- function (formula, data = NULL, family = gaussian, 

@@ -30,14 +30,16 @@
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples 
+#' cached_model <- rstanarm:::cached_model
+#' yrep <- posterior_predict(cached_model)
+#' table(yrep)
+#' 
 #' \dontrun{
-#' fit <- stan_glm(mpg ~ wt, data = mtcars)
-#' yrep <- posterior_predict(fit)
+#' nd <- lme4::cbpp
+#' nd$size <- max(nd$size) + 1L
+#' ppd <- posterior_predict(cached_model, newdata = nd) # FIXME
 #' 
-#' wt_vals <- with(mtcars, c(min(wt), median(wt), max(wt)))
-#' ppd <- posterior_predict(fit, newdata = data.frame(wt = wt_vals))
-#' 
-#' # Use fun = exp to transform predictions generated on the the log-scale
+#' # Use fun to transform predictions
 #' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
 #' ppd <- posterior_predict(fit, fun = exp) 
 #' }

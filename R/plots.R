@@ -113,31 +113,21 @@ pairs.stanreg <- function(x, ...) {
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
 #' 
 #' @examples 
-#' \dontrun{
-#' data("clouds", package = "HSAUR3")
-#' f <- rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) + time
-#' fit <- stan_lm(f, data = clouds, prior = R2(location = 0.25), 
-#'                cores = 4, seed = 12345)
-#'                
-#' # stan_plot: posterior intervals and point estimates
-#' stan_plot(fit, ci_level = 0.8)
-#' stan_plot(fit, pars = c("prewetness", "echomotionstationary"), show_density = TRUE)               
-#' 
-#' # posterior predictive checks (see ?ppcheck for more details and examples)
-#' ppcheck(fit, check = "distributions")
-#' ppcheck(fit, check = "distributions", overlay = TRUE)
-#' ppcheck(fit, check = "residuals")
-#' ppcheck(fit, check = "test", test = sd)
+#' cached_model <- rstanarm:::cached_model
+#' stan_plot(cached_model, ci_level = 0.8)
+#' common_pars <- c("size", paste0("period", 2:4))
+#' stan_plot(cached_model, pars = common_pars, show_density = TRUE)
 #' 
 #' # traceplot
-#' (trace <- stan_trace(fit, pars = "(Intercept)"))
+#' (trace <- stan_trace(cached_model, pars = "(Intercept)"))
 #' trace + scale_color_discrete()
 #' 
 #' # distributions 
-#' stan_hist(fit, fill = "skyblue") + ggtitle("Example Plot")
-#' stan_dens(fit, pars = c("sne", "cloudcover"), separate_chains = TRUE, alpha = 0.1)
+#' stan_hist(cached_model, fill = "skyblue") + ggtitle("Example Histogram")
+#' stan_dens(cached_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
 #' 
 #' # scatterplot
-#' stan_scat(fit, pars = c("sne", "cloudcover"))
-#' }
+#' stan_scat(cached_model, pars = paste0("period", 2:3))
+#' 
+#' # posterior predictive checks (see ?ppcheck for more details and examples)
 NULL

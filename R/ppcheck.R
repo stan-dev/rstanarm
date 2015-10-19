@@ -50,41 +50,27 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
-#' \dontrun{
-#' options(mc.cores = parallel::detectCores())
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
-#' 
-#' # Compare distribution of y (mpg) to simulated datasets 
-#' # from the model (posterior predictive distribution)
-#' (pp_dist <- ppcheck(fit, check = "dist", nreps = 20))
-#' 
+#' cached_model <- rstanarm:::cached_model
+#' (pp_dist <- ppcheck(cached_model, check = "distributions"))
 #' pp_dist + 
 #'  scale_color_manual(values = c("red", "black")) + # change line colors
 #'  scale_size_manual(values = c(0.1, 2)) + # change line sizes 
 #'  scale_fill_manual(values = c(NA, NA)) # remove fill
-#'  
-#' # Show the distributions as separate histograms instead of overlaid  
-#' (pp_dist_sep <- ppcheck(fit, check = "dist", overlay = FALSE)) 
-#' pp_dist_sep + scale_fill_manual(values = c("blue", "red")) # change fill colors
-#' 
+#'
+#' ppcheck(cached_model, check = "distributions", overlay = FALSE)
+#' ppcheck(cached_model, check = "residuals", nreps = 3, fill = "blue") + 
+#'   ggtitle("Residuals y - yrep")
+#' (test_sd <- ppcheck(cached_model, check = "test", test = sd))
+#'
 #' # Check histograms of test statistics
 #' library(gridExtra)
-#' test_mean <- ppcheck(fit, check = "test", test = 'mean')
-#' test_sd <- ppcheck(fit, check = "test", test = 'sd')
+#' test_mean <- ppcheck(cached_model, check = "test", test = 'mean')
 #' grid.arrange(test_mean, test_sd, ncol = 2)
-#' 
-#' q25 <- function(x) quantile(x, 0.25)
-#' ppcheck(fit, check = "test", test = q25)
-#' 
-#' # Residuals
-#' ppcheck(fit, check = "resid", nreps = 3, fill = "blue") + ggtitle("Residuals y - yrep")
-#' 
-#' # For logistic regressions binned residual plots are generated instead.
-#' # See the Examples for the stan_glm function (?stan_glm)
-#' 
+#'
 #' # Refit using yrep and compare posterior predictive distributions of 
-#' # original model and checking model
-#' ppcheck(fit, check = "refit")
+#' # original model and checking model (FIXME)
+#' \dontrun{
+#' ppcheck(cached_model, check = "refit")
 #' }
 #' @importFrom ggplot2 xlab %+replace% theme
 #' 
