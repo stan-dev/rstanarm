@@ -2,7 +2,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
-set.seed(123)
+SEED <- 123
 
 threshold <- 0.1
 
@@ -26,27 +26,37 @@ test_that("predict ok for binomial", {
   SF <- cbind(numdead, numalive = 20-numdead)
   
   glmfit <- glm(SF ~ sex*ldose, family = binomial)
-  stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, iter = 400, seed = 123)
-  diffs_link <- get_diffs(plink(glmfit), plink(stanfit))
-  expect_true(all(diffs_link < threshold))
+  stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, 
+                      chains = 2, iter = 50, seed = SEED)
+  pg <- plink(glmfit)
+  ps <- plink(stanfit)
+  expect_equal(pg$fit, ps$fit, tol = 0.2)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
   expect_error(presp(stanfit))
   
   ld <- seq(0, 5, 0.1)
   newd <- data.frame(ldose = ld, sex = factor(rep("M", length(ld)), levels = levels(sex)))
-  diffs_link <- get_diffs(plink(glmfit, newd), plink(stanfit, newd))
-  expect_true(all(diffs_link < threshold))
+  pg <- plink(glmfit, newd)
+  ps <- plink(stanfit, newd)
+  expect_equal(pg$fit, ps$fit, tol = 0.2)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.15)
 })
 
 test_that("predict ok for gaussian", {
   glmfit <- glm(mpg ~ wt, data = mtcars)
-  stanfit <- stan_glm(mpg ~ wt, data = mtcars, iter = 400, seed = 123)
-  diffs_link <- get_diffs(plink(glmfit), plink(stanfit))
-  expect_true(all(diffs_link < threshold))
+  stanfit <- stan_glm(mpg ~ wt, data = mtcars, 
+                      chains = 2, iter = 400, seed = SEED)
+  pg <- plink(glmfit)
+  ps <- plink(stanfit)
+  expect_equal(pg$fit, ps$fit, tol = 0.05)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.1)
   expect_error(presp(stanfit))
-  
+
   newd <- data.frame(wt = c(1,5))
-  diffs_link <- get_diffs(plink(glmfit, newd), plink(stanfit, newd))
-  expect_equal(0 * diffs_link, diffs_link, tol = threshold)
+  pg <- plink(glmfit, newd)
+  ps <- plink(stanfit, newd)
+  expect_equal(pg$fit, ps$fit, tol = 0.1)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.1)
 })
 
 test_that("predict ok for Poisson", {
@@ -56,9 +66,11 @@ test_that("predict ok for Poisson", {
 
   glmfit <- glm(counts ~ outcome + treatment, family = poisson())
   stanfit <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
-                      iter = 400, seed = 123)
-  diffs_link <- get_diffs(plink(glmfit), plink(stanfit))
-  expect_true(all(diffs_link < threshold))
+                      chains = 2, iter = 50, seed = SEED)
+  pg <- plink(glmfit)
+  ps <- plink(stanfit)
+  expect_equal(pg$fit, ps$fit, tol = 0.05)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
   expect_error(presp(stanfit))
 })
 

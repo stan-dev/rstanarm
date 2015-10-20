@@ -1,8 +1,7 @@
 library(rstanarm)
 library(loo)
 options(loo.cores = 1)
-seed <- 1234
-set.seed(seed)
+SEED <- 1234
 
 # These tests just check that the loo.stanreg method (which calls loo.function
 # method) results are identical to the loo.matrix results. Since for these tests 
@@ -31,7 +30,7 @@ expect_identical_loo <- function(fit) {
 context("loo")
 
 test_that("loo for gaussian works", {
-  fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, iter = 50, seed = seed)
+  fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, chains = 2, iter = 50, seed = SEED)
   expect_identical_loo(fit_gaus)
 })
 test_that("loo for binomial works", {
@@ -39,14 +38,14 @@ test_that("loo for binomial works", {
   numdead <- c(1, 4, 9, 13, 18, 20, 0, 2, 6, 10, 12, 16)
   SF <- cbind(numdead, numalive = 20-numdead)
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial, 
-                        iter = 50, seed = seed)
+                        chains = 2, iter = 50, seed = SEED)
   expect_identical_loo(fit_binom)
 })
 test_that("loo for poisson works", {
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
                      counts = c(18,17,15,20,10,20,25,13,12))
   fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, 
-                  family = poisson, iter = 50, seed = seed)
+                  family = poisson, chains = 2, iter = 50, seed = SEED)
   expect_identical_loo(fit_pois)
 })
 test_that("loo for gamma works", {
@@ -54,15 +53,16 @@ test_that("loo for gamma works", {
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit_gamma <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma, 
-                        iter = 50, seed = seed)
+                        chains = 2, iter = 50, seed = SEED)
   expect_identical_loo(fit_gamma)
 })
 test_that("loo for stan_polr (logistic) works", {
   fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),  
-                   iter = 50, init_r = 0.1, seed = seed)
+                   chains = 2, iter = 50, init_r = 0.1, seed = SEED)
   expect_identical_loo(fit_polr)
 })
 test_that("loo for stan_lm works", {
-  fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), iter = 50, seed = seed)
+  fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), 
+                    chains = 2, iter = 50, seed = SEED)
   expect_identical_loo(fit_lm)
 })

@@ -32,7 +32,7 @@ test_that("family checking works", {
 
 test_that("%ORifNULL% works", {
   `%ORifNULL%` <- rstanarm:::`%ORifNULL%`
-  a <- list(NULL, NA, NaN, 1, "a", FALSE, mat.or.vec(5,5))
+  a <- list(NULL, NA, NaN, 1, "a", FALSE)
   b <- 1
   ans <- c(b, a[-1])
   for (j in seq_along(a)) {
@@ -42,7 +42,7 @@ test_that("%ORifNULL% works", {
 
 test_that("%ORifINF% works", {
   `%ORifINF%` <- rstanarm:::`%ORifINF%`
-  a <- list(Inf, -Inf, 1, "a", FALSE, mat.or.vec(5,5))
+  a <- list(Inf, -Inf, 1, "a", FALSE)
   b <- 0
   ans <- c(b, a[-1])
   for (j in seq_along(a)) {
