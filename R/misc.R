@@ -29,10 +29,10 @@ is.poisson <- function(x) x == "poisson"
 # If a is NULL (and Inf, respectively) return b, otherwise just return a
 # @param a,b Objects
 `%ORifNULL%` <- function(a, b) {
-  if (is.null(a)) b else a
+  ifelse(is.null(a), b, a)
 }
 `%ORifINF%` <- function(a, b) {
-  if (a == Inf) b else a
+  ifelse(is.infinite(a), b, a)
 }
 
 # If x has no length replicate 0 n times, x has length 1 replicate x n times, 
