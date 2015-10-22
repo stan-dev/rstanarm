@@ -13,14 +13,15 @@
 #'   \code{check='distributions'}. If \code{check='test'} then
 #'   \code{nreps} is ignored and the number of simulated datasets is the number
 #'   of post-warmup draws from the posterior distribution.
-#' @param overlay For \code{check="distributions"} only, should distributions be
-#'   plotted separately (\code{FALSE}) or overlaid in a single plot 
-#'   (\code{TRUE}, the default)? For other values of \code{check} this is
-#'   ignored.
-#' @param test For \code{check="test"} only, \code{test} should be a function
-#'   that computes the desired test statistic. It can be the name of a function
-#'   as a character string (e.g., \code{test = 'mean'}) or a function object
-#'   (e.g., \code{test = sd}, \code{test = function(x) mean(x == 0)}, etc.).
+#' @param overlay For \code{check='distributions'} only, should distributions be
+#'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the
+#'   default) or as separate histograms (\code{FALSE})? For other values of 
+#'   \code{check} this is ignored.
+#' @param test For \code{check='test'} only, the \code{test} argument should be
+#'   a function that takes a vector input and computes the desired test
+#'   statistic. It can be the name of a function as a character string (e.g.,
+#'   \code{test = 'mean'}) or a function object (e.g., \code{test = sd},
+#'   \code{test = function(x) mean(x == 0)}, etc.).
 #' @param ... Optional arguments to geoms to control features of the plots 
 #'   (e.g. \code{binwidth} if the plot is a histogram).
 #' 
@@ -50,7 +51,7 @@
 #'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
-#'   predictive distribution. Examples of posterior predictive checking can also
+#'   predictive distribution. Examples of posterior predictive checks can also
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
@@ -120,7 +121,7 @@ ppcheck <- function(object,
   graph <- do.call(fn, args)
   if (fn == "ppcheck_stat") {
     test_lab <- as.character(match.call()[["test"]])
-    if (!length(test_lab)) test_lab <- formals(ppcheck)$test
+    if (!length(test_lab)) test_lab <- formals(ppcheck)[["test"]]
     graph + 
       xlab(paste("Test = ", test_lab)) + 
       thm %+replace% theme(legend.position = "right")

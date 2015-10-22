@@ -31,6 +31,9 @@
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
 #'   
+#'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with
+#'   \code{family = gaussian(link = "identity")}.
+#'   
 #' @examples
 #' # see help(example_model) for details on the model below
 #' print(example_model, digits = 1)
