@@ -39,7 +39,7 @@ data {
   vector[N[1] * has_offset] offset0;
   vector[N[2] * has_offset] offset1;
 
-  # prior family: 0 = none, 1 = normal, 2 = student_t, 3 = horseshoe, 4 = horseshoe_plus
+  # prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus
   int<lower=0,upper=4> prior_dist;
   int<lower=0,upper=2> prior_dist_for_intercept;
   
@@ -61,7 +61,7 @@ data {
 }
 transformed data {
   int NN;
-  int<lower=0> horseshoe;
+  int<lower=0> hs;
   int<lower=0> len_z_T;
   int<lower=0> len_var_group;
   int<lower=0> len_rho;
@@ -69,9 +69,9 @@ transformed data {
   int<lower=1> pos;
   
   NN <- N[1] + N[2];
-  if (prior_dist <  2) horseshoe <- 0;
-  else if (prior_dist == 3) horseshoe <- 2;
-  else if (prior_dist == 4) horseshoe <- 4;
+  if (prior_dist <=  2)     hs <- 0;
+  else if (prior_dist == 3) hs <- 2;
+  else if (prior_dist == 4) hs <- 4;
   len_z_T <- 0;
   len_var_group <- sum(p) * (t > 0);
   len_rho <- sum(p) - t;
@@ -89,8 +89,8 @@ transformed data {
 parameters {
   vector[K] z_beta;
   real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
-  real<lower=0> global[horseshoe];
-  vector<lower=0>[K] local[horseshoe];
+  real<lower=0> global[hs];
+  vector<lower=0>[K] local[hs];
   vector[q] z_b;
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;
@@ -167,14 +167,14 @@ model {
   // Log-priors for coefficients
   if      (prior_dist == 1) z_beta ~ normal(0, 1);
   else if (prior_dist == 2) z_beta ~ student_t(prior_df, 0, 1);
-  else if (prior_dist == 3) { # horseshoe
+  else if (prior_dist == 3) { # hs
     z_beta ~ normal(0,1);
     local[1] ~ normal(0,1);
     local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);
     global[1] ~ normal(0,1);
     global[2] ~ inv_gamma(0.5, 0.5);
   }
-  else if (prior_dist == 4) { # horseshoe+
+  else if (prior_dist == 4) { # hs+
     z_beta ~ normal(0,1);
     local[1] ~ normal(0,1);
     local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);

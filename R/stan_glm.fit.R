@@ -91,7 +91,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   scaled <- prior_ops$scaled
   min_prior_scale <- prior_ops$min_prior_scale
   prior_scale_for_dispersion <- prior_ops$prior_scale_for_dispersion
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "horseshoe", "horseshoe_plus")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
   # prior distributions
@@ -109,7 +109,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
       prior_scale <- set_prior_scale(prior_scale, default = 2.5, link = family$link)
     }
-    else prior_dist <- ifelse(prior_dist == "horseshoe", 3L, 4L)
+    else prior_dist <- ifelse(prior_dist == "hs", 3L, 4L)
     prior_df <- maybe_broadcast(prior_df, nvars)
     prior_df <- as.array(pmin(.Machine$double.xmax, prior_df))
     prior_mean <- maybe_broadcast(prior_mean, nvars)

@@ -44,27 +44,30 @@
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
-#'   The horseshoe prior is a normal with a mean of zero and a standard 
-#'   deviation that is distributed half Student t with some 
-#'   (traditionally 1 but by default 3) degrees of freedom, scaled by a
-#'   half Cauchy parameter.
+#'   The hierarchical shrinkage priors are normal with a mean of zero and a 
+#'   standard deviation that is also a random variable. The traditional 
+#'   hierarchical shrinkage prior utilizes a standard deviation that is 
+#'   distributed half Cauchy with a median of zero and a scale parameter
+#'   that is also half Cauchy. This is called the "horseshoe prior". However,
+#'   the hierarchical shrinkage (\code{hs}) prior in the \pkg{rstanarm}
+#'   package utilizes a Student t distribution for the standard deviation 
+#'   (with 3 degrees of freedom by default), scaled by a half Cauchy parameter.
+#'   It is possible to change the prior degrees of freedom to obtain less or
+#'   more shrinkage.
 #'   
-#'   The horseshoe plus prior is a normal with a mean of zero and a standard
-#'   deviation that is distributed as the product of two independent half 
-#'   Student t parameters with some (traditionally 1 but by default 3) 
-#'   degrees of freedom that are each scaled by the same square root of a
-#'   half Cauchy parameter.
+#'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
+#'   mean of zero and a standard deviation that is distributed as the product 
+#'   of two independent half Student t parameters (again with 3 degrees of
+#'   freedom by default) that are each scaled by the same square root of a half
+#'   Cauchy parameter.
 #'   
 #'   These hierarchical shrinkage priors have very tall modes and very fat
 #'   tails. Consequently, the tend to produce posterior distributions that
 #'   are very concentrated near zero, unless the predictor has a strong
 #'   influence on the outcome, in which case the prior has little influence.
-#'   Traditionally, horseshoe priors set the degrees of freedom equal to 1,
-#'   but that can make it difficult for Stan to sample without encountering
-#'   some divergent transitions. Thus, the default degrees of freedom for
-#'   \code{horseshoe} and \code{horseshoe_plus} is 3, which makes the 
-#'   variance of the Student t distribution finite and produces some shrinkage
-#'   on the coefficients, even for strong predictors.
+#'   Hierarchical shrinkage priors often require you to increase the
+#'   \code{adapt_delta} tuning parameter to \code{\link[rstan]{stan}} in order
+#'   to diminish the number of divergent transitions.
 #' }
 #' \subsection{Dirichlet family}{
 #'   The Dirichlet distribution is a multivariate generalization of the beta
@@ -201,18 +204,18 @@ student_t <- function(df = 1, location = 0, scale = NULL) {
 
 #' @rdname priors
 #' @export
-horseshoe <- function(df = 3) {
+hs <- function(df = 3) {
   validate_parameter_value(df)
-  nlist(dist = "horseshoe", df, location = 0, scale = 1)
+  nlist(dist = "hs", df, location = 0, scale = 1)
 }
 
 #' @rdname priors
 #' @export
-horseshoe_plus <- function(df1 = 3, df2 = 3) {
+hs_plus <- function(df1 = 3, df2 = 3) {
   validate_parameter_value(df1)
   validate_parameter_value(df2)
   # scale gets used as a second df hyperparameter
-  nlist(dist = "horseshoe_plus", df = df1, location = 0, scale = df2)
+  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
 }
 
 #' @rdname priors
