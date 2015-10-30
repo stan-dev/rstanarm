@@ -29,7 +29,7 @@ qgumbel <- function(p, loc = 0, scale = 1) {
 dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
   z <- (x - loc) / scale
   log_f <- -(z + exp(-z))
-  if(!log) return(exp(log_f))
+  if (!log) return(exp(log_f))
   else return(log_f)
 }
 
@@ -58,14 +58,14 @@ class(loglog) <- "link-glm"
 #' @template args-algorithm
 #' @template args-dots
 #'
-#' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit'
+#' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit',
 #'   but can be abbreviated. See \code{\link[MASS]{polr}} for more details.
-#' @param prior Prior for parameters. Can be \code{NULL} to omit a prior
+#' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
 #'   but otherwise must be a call to \code{\link{R2}} to specify the 
 #'   prior location of the \eqn{R^2}. See \code{\link{priors}}.
 #' @param prior_counts A call to \code{\link{dirichlet}} to specify the 
 #'   prior counts of the outcome when the predictors are at their sample
-#'   means
+#'   means.
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood 
@@ -80,12 +80,13 @@ class(loglog) <- "link-glm"
 #'   by the cutpoints) attributable to the predictors in the model. Prior
 #'   beliefs about the cutpoints are governed by prior beliefs about the
 #'   outcome when the predictors are at their sample means. Both of these
-#'   are explained in the help page on \code{\link{priors}}.
+#'   are explained in the help page on \code{\link{priors}} and in the 
+#'   \pkg{rstanarm} vignettes.
 #'   
-#'   Unlike \code{\link[MASS]{polr}}, the "ordinal" outcome may contain
-#'   only two levels, in which case the likelihood is the same as for
-#'   \code{\link{stan_glm}} with \code{family = binomial} but the prior
-#'   on the coefficients is different.
+#'   Unlike \code{\link[MASS]{polr}}, \code{stan_polr} also allows the "ordinal"
+#'   outcome to contain only two levels, in which case the likelihood is the
+#'   same as for \code{\link{stan_glm}} with \code{family = binomial} but the
+#'   prior on the coefficients is different.
 #' 
 #' @examples 
 #' \dontrun{
@@ -155,9 +156,9 @@ stan_polr <- function (formula, data, weights, ..., subset,
   df.residual <- n - sum(wt == 0) - rank
   
   if (llev == 2) { # actually a Bernoulli model
-    if      (method == "logistic") family <- binomial(link = "logit")
-    else if (method == "loglog")   family <- binomial(loglog)
-    else                           family <- binomial(link = method)
+    if (method == "logistic") family <- binomial(link = "logit")
+    else if (method == "loglog") family <- binomial(loglog)
+    else family <- binomial(link = method)
     
     fit <- nlist(stanfit, family, formula, offset, weights = wt,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]), 
