@@ -12,7 +12,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   cat("\nEstimates:\n")
   
   mer <- is(x, "lmerMod")
-  ord <- is(x, "polr")
+  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
   if (x$algorithm != "optimizing") {
     mat <- as.matrix(x$stanfit)
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
