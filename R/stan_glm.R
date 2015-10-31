@@ -56,7 +56,7 @@
 #' options(mc.cores = parallel::detectCores())
 #' 
 #' ### Linear regression
-#' fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345), family = gaussian)
+#' fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345)
 #' plot(fit, ci_level = 0.5)
 #' 
 #' ### Poisson regression  

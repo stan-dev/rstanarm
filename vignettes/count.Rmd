@@ -28,12 +28,13 @@ count data using the __rstanarm__ package.
 
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
 __rstanarm__ Package". This vignette focuses on Step 1 for Poisson and negative
-binomial regression models.
+binomial regression models using the `stan_glm` function.
 
 # Likelihood
 
-If the outcome for a single observation $y$ is assumed to follow a Poisson distribution,
-the likelihood for one observation can be written as a conditionally Poisson PMF
+If the outcome for a single observation $y$ is assumed to follow a Poisson
+distribution, the likelihood for one observation can be written as a
+conditionally Poisson PMF
 
 $$\tfrac{1}{y!} \lambda^y e^{-\lambda},$$
 
@@ -132,9 +133,9 @@ glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
             family = poisson, offset = log(exposure2))
 # Estimate Bayesian version with stan_glm
 stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
-                 family = poisson, offset = log(exposure2), 
-                 prior = normal(0,2.5), prior_intercept = normal(0,5),
-                 chains = CHAINS, cores = CORES, seed = SEED)
+                      family = poisson, offset = log(exposure2), 
+                      prior = normal(0,2.5), prior_intercept = normal(0,5),
+                      chains = CHAINS, cores = CORES, seed = SEED)
 ```
 
 The `formula`, `data`, `family`, and `offset` arguments to `stan_glm` can be 
@@ -143,15 +144,14 @@ defaults to using the log link, but to write code readable to someone not
 familiar with the defaults we should be explicit and use 
 `family = poisson(link = "log")`.  
 
-We've also specified some optional arguments. The `chains` argument governs
-how mang Markov chains are execture, the `cores` argument controls the
-number of cores utilized by the computer when fitting the model. We also 
-provided a `seed` so that we have the option to deterministically reproduce
-these results at any time. The `stan_glm` function has many other optional 
-arguments that allow for more user control over the way estimation is performed.
-The help page for `stan_glm` has more information about these controls as well
-as other topics related to GLM estimation 
-(`?stan_glm`, `help(stan_glm, package = 'rstanarm')`).
+We've also specified some optional arguments. The `chains` argument controls how
+many Markov chains are executed, the `cores` argument controls the number of
+cores utilized by the computer when fitting the model. We also provided a seed
+so that we have the option to deterministically reproduce these results at any
+time. The `stan_glm` function has many other optional arguments that allow for
+more user control over the way estimation is performed. The documentation for
+`stan_glm` has more information about these controls as well as other topics
+related to GLM estimation.
 
 Here are the point estimates and uncertainties from the `glm` fit and `stan_glm`
 fit, which we see are nearly identical:
@@ -242,8 +242,8 @@ preference for the negative binomial model:
 
 ```{r, ROACHES-loo}
 library(loo)
-loo1 <- loo(stan_glm1, cores = 2)
-loo2 <- loo(stan_glm2, cores = 2)
+loo1 <- loo(stan_glm1, cores = CORES)
+loo2 <- loo(stan_glm2, cores = CORES)
 compare(loo1, loo2)
 ```
 

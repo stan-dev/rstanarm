@@ -363,11 +363,10 @@ good_rhat <- update(bad_rhat, iter = 2000, # the default for iter
 
 Here the first model leads to the warning message about convergence but the 
 second model does not. To see a histogram of the Rhat values we can use the 
-`stan_rhat` function, which can be called directly or using the `plot` method
-for `stanreg` objects:
+`plot` method for `stanreg` objects:
 
 ```{r, Rhat-plot}
-stan_rhat(bad_rhat) # or plot(bad_rhat, fun = "stan_rhat")
+plot(bad_rhat, "rhat")
 ```
 
 Indeed, we can see that not all Rhat values are less than 1.1. The Rhat values

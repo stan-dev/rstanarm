@@ -10,13 +10,13 @@
 #' @inheritParams summary.stanreg
 #' @param x A stanreg object returned by one of the \pkg{rstanarm} modeling
 #'   functions.
-#' @param fun A character string naming the plotting function to apply to the 
-#'   stanreg object. See \code{\link{plots}} for the names and descriptions. The
-#'   default plot shows intervals and point estimates for the coefficients. 
-#'   (\strong{Note:} for models fit using \code{algorithm="optimizing"} the
-#'   \code{fun} argument is ignored as there is only one plotting function for 
-#'   these models.)
-#' @param ... Additional arguments to pass to \code{fun} (see
+#' @param plotfun A character string (possibly abbreviated) naming the plotting
+#'   function to apply to the stanreg object. See \code{\link{plots}} for the
+#'   names and descriptions. The default plot shows intervals and point
+#'   estimates for the coefficients. (\strong{Note:} for models fit using
+#'   \code{algorithm="optimizing"} the \code{plotfun} argument is ignored as
+#'   there is currently only one plotting function for these models.)
+#' @param ... Additional arguments to pass to \code{plotfun} (see
 #'   \code{\link{plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
 #'
@@ -30,13 +30,23 @@
 #' @examples 
 #' # See help("plots", "rstanarm")
 #' 
-plot.stanreg <- function(x, fun = "stan_plot", pars, ...) {
+#' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
+#'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
+#' 
+plot.stanreg <- function(x, plotfun, pars, ...) {
   args <- list(x, ...)
+  if (missing(plotfun)) 
+    plotfun <- "plot"
   if (!missing(pars)) {
     pars[pars == "varying"] <- "b"
     args$pars <- pars
   }
-  fun <- if (x$algorithm != "optimizing") match.fun(fun) else "stan_plot_opt"
+  if (x$algorithm == "optimizing") fun <- "stan_plot_opt"
+  else {
+    plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
+                                  "diag", "rhat", "ess", "mcse", "par"))
+    fun <- match.fun(grep(plotfun, plotters, value = TRUE))
+  }
   do.call(fun, args)
 }
 
@@ -96,7 +106,6 @@ pairs.stanreg <- function(x, ...) {
 #' 
 #' @section Plotting functions:
 #' \describe{
-#' \item{Posterior predictive checks}{\code{\link{ppcheck}}}
 #' \item{Posterior intervals and point estimates}{\code{\link[rstan]{stan_plot}}}
 #' \item{Traceplots}{\code{\link[rstan]{stan_trace}}}
 #' \item{Histograms}{\code{\link[rstan]{stan_hist}}}
@@ -109,23 +118,29 @@ pairs.stanreg <- function(x, ...) {
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
+#' For graphical posterior predicive checking see \code{\link{ppcheck}}.
+#' 
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
 #' @examples 
 #' # Intervals and point estimates
-#' rstan::stan_plot(example_model, ci_level = 0.8)
+#' plot(example_model, ci_level = 0.8)
 #' common_pars <- c("size", paste0("period", 2:4))
-#' rstan::stan_plot(example_model, pars = common_pars, show_density = TRUE)
+#' plot(example_model, pars = common_pars, show_density = TRUE)
 #' 
 #' # Traceplot
-#' (trace <- rstan::stan_trace(example_model, pars = "(Intercept)"))
+#' (trace <- plot(example_model, plotfun = "trace", pars = "(Intercept)"))
 #' trace + ggplot2::scale_color_discrete()
 #' 
 #' # Distributions 
-#' rstan::stan_hist(example_model, fill = "skyblue") + ggplot2::ggtitle("Example Histogram")
-#' rstan::stan_dens(example_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
+#' plot(example_model, "hist", fill = "skyblue") + ggplot2::ggtitle("Posterior Distributions")
+#' plot(example_model, "dens", pars = common_pars, separate_chains = TRUE, alpha = 0.1)
 #' 
 #' # Scatterplot
-#' rstan::stan_scat(example_model, pars = paste0("period", 2:3))
+#' plot(example_model, plotfun = "scat", pars = paste0("period", 2:3))
+#' 
+#' # Some diagnostics
+#' plot(example_model, "rhat")
+#' plot(example_model, "ess")
 #' 
 #' # Posterior predictive checks (see ?ppcheck for examples)
 NULL
