@@ -20,8 +20,19 @@ test_that("Stan programs are available", {
 stopifnot(require(rstan))
 Sys.unsetenv("R_TESTS")
 
-model_code <- paste(c(readLines(file.path(MODELS_HOME, "functions.txt")), 
-                      "model {}"), collapse = "\n")
+functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
+  # mc <- scan(file = f, what = "character", sep = "\n", quiet = TRUE)
+  mc <- readLines(f)
+  start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
+  if (length(start) == 1) {
+    end <- grep("^}[[:blank:]]*$", mc)[1]
+    return(mc[(start + 1L):(end - 1L)])
+  }
+  else return(as.character(NULL))
+})
+functions <- c(readLines(file.path(MODELS_HOME, "functions.txt")), 
+               unlist(functions))
+model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
 

@@ -1,4 +1,53 @@
 # GLM for a count outcome
+functions {
+  #include "functions.txt"
+
+  vector linkinv_count(vector eta, int link) {
+    vector[rows(eta)] phi;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if      (link == 1) return(exp(eta));
+    else if (link == 2) return(eta); # link = identity
+      else  # link = sqrt
+        for(n in 1:rows(eta)) phi[n] <- square(eta[n]); 
+      return phi;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector for the Poisson distribution
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_pois(int[] y, vector eta, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1) # link = log
+      for (n in 1:rows(eta)) ll[n] <- poisson_log_log(y[n], eta[n]);
+    else { # link = identity or sqrt
+      vector[rows(eta)] phi;
+      phi <- linkinv_count(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- poisson_log(y[n], phi[n]) ;
+    }
+    return ll;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector for the negative binomial  distribution
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_nb(int[] y, vector eta, real theta, int link) {
+    vector[rows(eta)] ll;
+    vector[rows(eta)] rho;
+    if (link < 1 || link > 3) reject("Invalid link");
+    rho <- linkinv_count(eta, link);
+    for (n in 1:rows(eta)) ll[n] <- neg_binomial_2_log(y[n], rho[n], theta);
+    return ll;
+  }
+}
 data {
   # dimensions
   int<lower=1> N; # number of observations

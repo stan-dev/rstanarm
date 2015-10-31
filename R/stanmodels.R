@@ -18,11 +18,7 @@ if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
 make_stanmodel <- function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
-  program <- c(readLines(file.path(MODELS_HOME, "functions.txt")), 
-               readLines(f))
-  program <- paste(program, collapse = "\n")
-  stanfit <- rstan::stanc(model_code = program, model_name = model_cppname, 
-                          obfuscate_model_name = FALSE)
+  stanfit <- rstan::stanc_builder(f)
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
   return(do.call(methods::new, args = c(stanfit[-(1:3)], Class = "stanmodel", 

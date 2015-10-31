@@ -1,4 +1,30 @@
 # GLM for a Gaussian outcome with no link function
+functions {
+  #include "functions.txt"
+
+  /**
+   * Increments the log-posterior with the logarithm of a multivariate normal 
+   * likelihood with a scalar standard deviation for all errors
+   * Equivalent to y ~ normal(intercept + X * beta, sigma) but faster
+   * @param beta vector of coefficients (excluding intercept)
+   * @param b precomputed vector of OLS coefficients (excluding intercept) 
+   * @param middle matrix (excluding ones) typically precomputed as crossprod(X)
+   * @param intercept scalar (assuming X is centered)
+   * @param ybar precomputed sample mean of the outcome
+   * @param SSR positive precomputed value of the sum of squared OLS residuals
+   * @param sigma positive value for the standard deviation of the errors
+   * @param N integer equal to the number of observations
+   */
+  real ll_mvn_ols_lp(vector beta, vector b, matrix middle,
+                     real intercept, real ybar,
+                     real SSR, real sigma, int N) {
+    increment_log_prob( -0.5 * (quad_form_sym(middle, beta - b) + 
+      N * square(intercept - ybar) + SSR) / 
+      square(sigma) - # 0.91... is log(sqrt(2 * pi()))
+                          N * (log(sigma) + 0.91893853320467267) );
+    return get_lp();
+  }
+}
 data {
   int<lower=1> K;                     # number of predictors
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes

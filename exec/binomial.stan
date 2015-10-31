@@ -1,4 +1,81 @@
 # GLM for a binomial outcome
+functions {
+  #include "functions.txt"
+  
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_binom(vector eta, int link) {
+    vector[rows(eta)] pi;
+    if (link < 1 || link > 5) reject("Invalid link");
+    if      (link == 1)
+      for(n in 1:rows(eta)) pi[n] <- inv_logit(eta[n]);
+    else if (link == 2) 
+      for(n in 1:rows(eta)) pi[n] <- Phi(eta[n]);
+    else if (link == 3) 
+      for(n in 1:rows(eta)) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
+    else if (link == 4) 
+      for(n in 1:rows(eta)) pi[n] <- exp(eta[n]);
+    else if (link == 5) 
+      for(n in 1:rows(eta)) pi[n] <- inv_cloglog(eta[n]);
+    return pi;
+  }
+  
+  /**
+  * Increment with the unweighted log-likelihood
+  * @param y An integer array indicating the number of successes
+  * @param trials An integer array indicating the number of trials
+  * @param eta A vector of linear predictors
+  * @param link An integer indicating the link function
+  * @return lp__
+  */
+  real ll_binom_lp(int[] y, int[] trials, vector eta, int link) {
+    if (link < 1 || link > 5) reject("Invalid link");
+    if      (link == 1) y ~ binomial_logit(trials, eta);
+    else if (link <  4) y ~ binomial(trials, linkinv_binom(eta, link));
+    else if (link == 4) { // log link
+      for (n in 1:num_elements(y)) {
+        increment_log_prob(y[n] * eta[n]);
+        increment_log_prob( (trials[n] - y[n]) * log1m_exp(eta[n]) );
+      }
+    }
+    else if(link == 5) { // cloglog link
+      real neg_exp_eta;
+      for (n in 1:num_elements(y)) {
+        neg_exp_eta <- -exp(eta[n]);
+        increment_log_prob(y[n] * log1m_exp(neg_exp_eta));
+        increment_log_prob( (trials[n] - y[n]) * neg_exp_eta );
+      }
+    }
+    return get_lp();
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The integer array corresponding to the outcome variable.
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_binom(int[] y, int[] trials, vector eta, int link) {
+    vector[rows(eta)] ll;
+    if (link < 1 || link > 5) reject("Invalid link");
+    if (link == 1) { # link = logit
+      for (n in 1:rows(eta)) 
+        ll[n] <- binomial_logit_log(y[n], trials[n], eta[n]);
+    }
+    else { # link = probit, cauchit, log, or cloglog (unstable)
+      vector[rows(eta)] pi;
+      pi <- linkinv_binom(eta, link);
+      for (n in 1:rows(eta)) ll[n] <- binomial_log(y[n], trials[n], pi[n]) ;
+    }
+    return ll;
+  }
+}
 data {
   # dimensions
   int<lower=1> N; # number of observations
