@@ -1,6 +1,6 @@
 # GLM for an ordinal outcome with coherent priors
 functions {
-  #include "functions.txt"
+  #include "common_functions.txt"
   
   /** 
   * Evaluate a given CDF

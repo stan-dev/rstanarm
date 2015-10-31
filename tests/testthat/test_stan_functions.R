@@ -30,7 +30,7 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(readLines(file.path(MODELS_HOME, "functions.txt")), 
+functions <- c(readLines(file.path(MODELS_HOME, "common_functions.txt")), 
                unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))

@@ -1,6 +1,6 @@
 # GLM for a Gaussian outcome with no link function
 functions {
-  #include "functions.txt"
+  #include "common_functions.txt"
 
   /**
    * Increments the log-posterior with the logarithm of a multivariate normal 

@@ -1,6 +1,6 @@
 # GLM for a Bernoulli outcome
 functions {
-  #include "functions.txt"
+  #include "common_functions.txt"
   
   /** 
    * Apply inverse link function to linear predictor

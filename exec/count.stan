@@ -1,6 +1,6 @@
 # GLM for a count outcome
 functions {
-  #include "functions.txt"
+  #include "common_functions.txt"
 
   vector linkinv_count(vector eta, int link) {
     vector[rows(eta)] phi;

@@ -1,6 +1,6 @@
 # GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
-  #include "functions.txt"
+  #include "common_functions.txt"
 
   /** 
    * Apply inverse link function to linear predictor
@@ -236,7 +236,7 @@ model {
       if (link == 1)      y ~ normal(eta, dispersion);
       else if (link == 2) y ~ lognormal(eta, dispersion);
       else y ~ normal(divide_real_by_vector(1, eta), dispersion);
-      // divide_real_by_vector() is defined in functions.txt
+      // divide_real_by_vector() is defined in common_functions.txt
     }
     else if (family == 2) {
       y ~ GammaReg(eta, dispersion, link, sum_log_y);
