@@ -71,7 +71,7 @@ transformed data{
   int<lower=1> pos;
   
   poisson_max <- pow(2.0, 30.0);
-  if (prior_dist <=  2)     hs <- 0;
+  if      (prior_dist <= 2) hs <- 0;
   else if (prior_dist == 3) hs <- 2;
   else if (prior_dist == 4) hs <- 4;
   len_z_T <- 0;
@@ -113,22 +113,10 @@ transformed parameters {
     theta[1] <- prior_scale_for_dispersion * theta_unscaled[1];
   else if (family > 1) theta[1] <- theta_unscaled[1];
   
-  if (prior_dist == 0) beta <- z_beta;
+  if      (prior_dist == 0) beta <- z_beta;
   else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
-  else if (prior_dist == 3) {
-    vector[K] lambda;
-    for (k in 1:K) lambda[k] <- local[1][k] * sqrt(local[2][k]);
-    beta <- z_beta .* lambda * global[1]    * sqrt(global[2]);
-  }
-  else if (prior_dist == 4) {
-    vector[K] lambda;
-    vector[K] lambda_plus;
-    for (k in 1:K) {
-      lambda[k] <- local[1][k] * sqrt(local[2][k]);
-      lambda_plus[k] <- local[3][k] * sqrt(local[4][k]);
-    }
-    beta <- z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
-  }
+  else if (prior_dist == 3) beta <- hs_prior(z_beta, global, local);
+  else if (prior_dist == 4) beta <- hsplus_prior(z_beta, global, local);
   if (t > 0) {
     theta_L <- make_theta_L(len_theta_L, p, if_else(family > 1, theta[1], 1),
                             tau, scale, zeta, rho, z_T);

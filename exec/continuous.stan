@@ -87,7 +87,7 @@ transformed data {
     for (j in 3:p[i]) len_z_T <- len_z_T + p[i] - 1;
   }
   
-  if (family == 1) sum_log_y <- not_a_number();
+  if      (family == 1) sum_log_y <- not_a_number();
   else if (family == 2) sum_log_y <- sum(log(y));
   else {
     for (n in 1:N) sqrt_y[n] <- sqrt(y[n]);
@@ -113,22 +113,10 @@ transformed parameters {
   vector[q] b;
   real dispersion;
   vector[len_theta_L] theta_L;
-  if (prior_dist == 0)      beta <- z_beta;
+  if      (prior_dist == 0) beta <- z_beta;
   else if (prior_dist <= 2) beta <- z_beta .* prior_scale + prior_mean;
-  else if (prior_dist == 3) {
-    vector[K] lambda;
-    for (k in 1:K) lambda[k] <- local[1][k] * sqrt(local[2][k]);
-    beta <- z_beta .* lambda * global[1]    * sqrt(global[2]);
-  }
-  else if (prior_dist == 4) {
-    vector[K] lambda;
-    vector[K] lambda_plus;
-    for (k in 1:K) {
-      lambda[k] <- local[1][k] * sqrt(local[2][k]);
-      lambda_plus[k] <- local[3][k] * sqrt(local[4][k]);
-    }
-    beta <- z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
-  }
+  else if (prior_dist == 3) beta <- hs_prior(z_beta, global, local);
+  else if (prior_dist == 4) beta <- hsplus_prior(z_beta, global, local);
   if (prior_scale_for_dispersion > 0)
     dispersion <-  prior_scale_for_dispersion * dispersion_unscaled;
   else dispersion <- dispersion_unscaled;
