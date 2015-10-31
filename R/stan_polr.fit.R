@@ -43,7 +43,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   has_offset <- length(offset) > 0 && !all(offset == 0)
   if (!has_offset) offset <- double(0)
 
-  if (length(prior) > 0) {
+  if (length(prior)) {
     shape <- make_eta(prior$location, prior$what, K = ncol(x))
     prior_dist <- 1L
   }
@@ -51,13 +51,11 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     shape <- 0
     prior_dist <- 0L
   }
-  
-  if (length(prior_counts) == 0) prior_counts <- rep(1,J)
+  if (!length(prior_counts)) prior_counts <- rep(1, J)
   else prior_counts <- maybe_broadcast(prior_counts$concentration, J)
   
   N <- nrow(X)
   K <- ncol(X)
-  
   standata <- nlist(J, N, K, X, xbar, s_X, y, prior_PD, link, 
                     has_weights, weights, has_offset, offset,
                     prior_dist, shape, prior_counts)
@@ -95,7 +93,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   }
   else {
     if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-    else       pars <- c("zeta", "beta", "mean_PPD")
+    else pars <- c("zeta", "beta", "mean_PPD")
     standata$do_residuals <- J > 2
     if ("control" %in% names(list(...))) {
       stanfit <- sampling(stanfit, data = standata, pars = pars, 

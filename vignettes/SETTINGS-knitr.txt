@@ -1,6 +1,6 @@
 ```{r, SETTINGS-knitr, include=FALSE}
 library(knitr)
-opts_chunk$set(dev = 'png', dpi = 150,
+opts_chunk$set(dev = 'png', dpi = 150, comment=NA,
                fig.align='center', fig.height = 3,
                message = FALSE, warning = FALSE) 
 ```
