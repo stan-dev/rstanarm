@@ -58,7 +58,10 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   K <- ncol(X)
   standata <- nlist(J, N, K, X, xbar, s_X, y, prior_PD, link, 
                     has_weights, weights, has_offset, offset,
-                    prior_dist, shape, prior_counts)
+                    prior_dist, shape, prior_counts,
+                    # the rest of these are not actually used
+                    has_intercept = 0L, prior_dist_for_intercept = 0L, 
+                    family = 1L)
   if (prior_dist == 1) {
     L <- t(chol(cor(x)))
     dim(L) <- c(1L, dim(L))

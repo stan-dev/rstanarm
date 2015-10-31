@@ -114,29 +114,13 @@ functions {
   }
 }
 data {
+  #include "NKX.txt"
   int<lower=2> J;                # number of outcome categories, which typically is > 2
-  int<lower=1> N;                # number of observations
-  int<lower=0> K;                # number of predictors (excluding a constant)
-  matrix[N,K]  X;                # centered predictor matrix
-  vector[K] xbar;                # means of the predictors
   vector<lower=0>[K] s_X;        # standard deviations of the predictors
   int<lower=1,upper=J> y[N];     # outcome
-  int<lower=0,upper=1> prior_PD; # flag indicating whether to draw from the prior predictive
-  
-  # link function from location to linear predictor
-  int<lower=1,upper=5> link;
+  #include "data_glm.txt"
+  #include "weights_offset.txt"
 
-  # weights
-  int<lower=0,upper=1> has_weights; # 0 = No, 1 = Yes
-  vector[N * has_weights] weights;
-  
-  # offset
-  int<lower=0,upper=1> has_offset;  # 0 = No, 1 = Yes
-  vector[N * has_offset] offset;
-  
-  # prior family (zero indicates no prior!!!)
-  int<lower=0,upper=1> prior_dist;  # 1 = Ben
-  
   # hyperparameter values
   real<lower=0> shape;
   vector<lower=0>[J] prior_counts;
@@ -178,10 +162,7 @@ transformed parameters {
   cutpoints <- make_cutpoints(pi, Delta_y, link);
 }
 model {
-  vector[N] eta;
-  if (K > 0) eta <- X * beta;
-  else eta <- rep_vector(0.0, N);
-  if (has_offset == 1) eta <- eta + offset;
+  #include "make_eta.txt"
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     increment_log_prob(pw_polr(y, eta, cutpoints, link));
   }
@@ -205,10 +186,7 @@ generated quantities {
   if (J == 2) zeta <- -zeta;
   mean_PPD <- rep_vector(0,rows(mean_PPD));
   {
-    vector[N] eta;
-    if (K > 0) eta <- X * beta;
-    else eta <- rep_vector(0.0, N);
-    if (has_offset == 1) eta <- eta + offset;
+    #include "make_eta.txt"
     for (n in 1:N) {
       vector[J] theta;
       int y_tilde;

@@ -271,7 +271,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$prior_scale_for_dispersion <- 
       if (!length(group) || prior_scale_for_dispersion == Inf) 
         0 else prior_scale_for_dispersion
-  
+    standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
       y1 <- y == 1
