@@ -74,12 +74,11 @@ stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
 #' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
 #' @importFrom graphics pairs
 #' @examples 
-#' \dontrun{
-#' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), seed = 12345))
-#' pairs(fit, pars = c("(Intercept)", "log-posterior"))
-#' } 
+#' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
 pairs.stanreg <- function(x, ...) {
+  requireNamespace("rstan")
+  requireNamespace("KernSmooth")
   pairs(x$stanfit, ...)
 }
 
@@ -111,23 +110,22 @@ pairs.stanreg <- function(x, ...) {
 #' }
 #' 
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
-#' 
 #' @examples 
 #' # Intervals and point estimates
-#' stan_plot(example_model, ci_level = 0.8)
+#' rstan::stan_plot(example_model, ci_level = 0.8)
 #' common_pars <- c("size", paste0("period", 2:4))
-#' stan_plot(example_model, pars = common_pars, show_density = TRUE)
+#' rstan::stan_plot(example_model, pars = common_pars, show_density = TRUE)
 #' 
 #' # Traceplot
-#' (trace <- stan_trace(example_model, pars = "(Intercept)"))
-#' trace + scale_color_discrete()
+#' (trace <- rstan::stan_trace(example_model, pars = "(Intercept)"))
+#' trace + ggplot2::scale_color_discrete()
 #' 
 #' # Distributions 
-#' stan_hist(example_model, fill = "skyblue") + ggtitle("Example Histogram")
-#' stan_dens(example_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
+#' rstan::stan_hist(example_model, fill = "skyblue") + ggplot2::ggtitle("Example Histogram")
+#' rstan::stan_dens(example_model, pars = common_pars, separate_chains = TRUE, alpha = 0.1)
 #' 
 #' # Scatterplot
-#' stan_scat(example_model, pars = paste0("period", 2:3))
+#' rstan::stan_scat(example_model, pars = paste0("period", 2:3))
 #' 
 #' # Posterior predictive checks (see ?ppcheck for examples)
 NULL

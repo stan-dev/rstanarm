@@ -20,7 +20,8 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
-#' @importFrom methods is   
+#' @importFrom methods is
+#' @importFrom rstan optimizing sampling
 #' @export
 #' 
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
@@ -328,7 +329,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
             if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
-    out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE, ...)
+    out <- optimizing(stanfit, data = standata, hessian = TRUE, ...)
     k <- ncol(out$hessian)
     rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
     new_names <- names(out$par)
@@ -346,19 +347,19 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     names(out$par) <- new_names
     out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
     colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
-    out$stanfit <- suppressMessages(rstan::sampling(stanfit, data = standata, chains = 0))
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
   }
   else {
     if ("control" %in% names(list(...))) {
-      stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, 
+      stanfit <- sampling(stanfit, data = standata, pars = pars, 
                                  show_messages = FALSE, ...)
     }
-    else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars,
+    else stanfit <- sampling(stanfit, data = standata, pars = pars,
                                     control = stan_control, show_messages = FALSE, ...)
     
     # else
-    #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
+    #   stanfit <- vb(stanfit, pars = pars, data = standata, 
     #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_names, "]")),

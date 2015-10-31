@@ -81,7 +81,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   stanfit <- stanmodels$polr
   if (algorithm == "optimizing") {
     standata$do_residuals <- 0L
-    out <- rstan::optimizing(stanfit, data = standata, hessian = TRUE, init = start)
+    out <- optimizing(stanfit, data = standata, hessian = TRUE, init = start)
     new_names <- c(paste0("pi[", y_lev, "]"), paste0("z_beta[", colnames(x), "]"),
                    "Delta_y", colnames(x), paste0("cutpoints[", y_lev[-1], "]"),
                    paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
@@ -90,7 +90,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     K <- ncol(out$hessian)
     out$cov.scaled <- qr.solve(-out$hessian, diag(1, K , K))
     colnames(out$cov.scaled) <- rownames(out$cov.scaled)
-    out$stanfit <- suppressMessages(rstan::sampling(stanfit, data = standata, chains = 0))
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
   }
   else {
@@ -98,14 +98,14 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     else       pars <- c("zeta", "beta", "mean_PPD")
     standata$do_residuals <- J > 2
     if ("control" %in% names(list(...))) {
-      stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, 
+      stanfit <- sampling(stanfit, data = standata, pars = pars, 
                                  init = start, show_messages = FALSE, ...)
     }
-    else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = start,
+    else stanfit <- sampling(stanfit, data = standata, pars = pars, init = start,
                                     control = stan_control, show_messages = FALSE, ...)
     
     # else 
-    #   stanfit <- rstan::vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
+    #   stanfit <- vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)
     if (J > 2)
       new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                      paste("mean_PPD", y_lev, sep = ":"), "log-posterior")

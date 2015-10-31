@@ -11,9 +11,9 @@ Description: Convenient interface for applied regression models using RStan,
   R modeling syntax and can be estimated by performing full Bayesian inference
   or optimization of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
-Depends: R (>= 3.0.2), rstan (>= 2.8.1)
-Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, Rcpp (>= 0.11.0), shinystan (>= 2.0.1), stats, utils
-Suggests: arm, gridExtra, HSAUR3, knitr, MASS, MCMCpack, SuppDists, testthat
+Depends: R (>= 3.0.2), Rcpp (>= 0.11.0)
+Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, rstan (>= 2.8.1), shinystan (>= 2.0.1), stats, utils
+Suggests: arm, gridExtra, HSAUR3, KernSmooth, knitr, MASS, MCMCpack, SuppDists, testthat
 LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>= 0.11.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true

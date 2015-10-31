@@ -58,13 +58,13 @@
 #' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- ppcheck(example_model, check = "distributions", overlay = TRUE))
 #' pp_dist + 
-#'  scale_color_manual(values = c("red", "black")) + # change line colors
-#'  scale_size_manual(values = c(0.5, 3)) + # change line sizes 
-#'  scale_fill_manual(values = c(NA, NA)) # remove fill
+#'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
+#'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
+#'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
 #' # Check residuals
 #' ppcheck(example_model, check = "residuals", nreps = 3, fill = "blue") + 
-#'   ggtitle("Residuals (y - yrep)")
+#'   ggplot2::ggtitle("Residuals (y - yrep)")
 #'
 #' # Check histograms of test statistics
 #' test_mean <- ppcheck(example_model, check = "test", test = 'mean')

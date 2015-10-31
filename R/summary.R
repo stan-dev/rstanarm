@@ -20,22 +20,18 @@
 #' @param probs For models fit using MCMC, an optional numeric vector of
 #'   probabilities specifying which \code{\link[stats]{quantile}}s to display.
 #' @param digits Number of digits to use for formatting numbers.
-#' 
+#' @importMethodsFrom rstan summary
 #' @examples
-#' \dontrun{
-#' summary(stan_glm(mpg ~ wt, data = mtcars), probs = c(0.1, 0.9))
-#' 
-#' fit <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars)
-#' summary(fit)
+#' summary(example_model, probs = c(0.1, 0.9))
 #' 
 #' # Only show varying intercept and slope terms
-#' summary(fit, pars = "varying") 
+#' summary(example_model, pars = "varying") 
 #' 
 #' # These produce the same output for this example, 
 #' # but the second method can be used for any model
-#' summary(fit, pars = c("(Intercept)", "wt")) 
-#' summary(fit, pars = c("alpha", "beta"))
-#' }   
+#' summary(example_model, pars = c("(Intercept)", "size", 
+#'                                 paste0("period", 2:4)))
+#' summary(example_model, pars = c("alpha", "beta"))
 #' 
 summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
   # use RStan's summary just as placeholder. we should replace this with our own
