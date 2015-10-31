@@ -195,32 +195,8 @@ model {
     /* else prior_dist is 0 and nothing is added */
   }
   
-  if (t > 0) {
-    int pos_reg;
-    int pos_rho;
-    z_b ~ normal(0,1);
-    z_T ~ normal(0,1);
-    pos_reg <- 1;
-    pos_rho <- 1;
-    for (i in 1:t) if (p[i] > 1) {
-      vector[p[i] - 1] shape1;
-      vector[p[i] - 1] shape2;
-      real nu;
-      nu <- regularization[pos_reg] + 0.5 * (p[i] - 2);
-      pos_reg <- pos_reg + 1;
-      shape1[1] <- nu;
-      shape2[1] <- nu;
-      for (j in 2:(p[i]-1)) {
-        nu <- nu - 0.5;
-        shape1[j] <- 0.5 * j;
-        shape2[j] <- nu;
-      }
-      segment(rho, pos_rho, p[i] - 1) ~ beta(shape1,shape2);
-      pos_rho <- pos_rho + p[i] - 1;
-    }
-    zeta ~ gamma(delta, 1);
-    tau ~ gamma(shape, 1);
-  }
+  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
+                      regularization, delta, shape, t, p);
 }
 generated quantities {
   real alpha[has_intercept];

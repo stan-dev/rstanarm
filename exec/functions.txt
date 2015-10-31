@@ -129,6 +129,50 @@ functions {
     }
     return b;
   }
+
+  /** 
+   * Prior on group-specific parameters
+   *
+   * @param z_b A vector of primitive coefficients
+   * @param z_T A vector of primitives for the unit vectors in the onion method
+   * @param rho A vector radii for the onion method
+   * @param zeta A vector of primitives for the simplexes
+   * @param tau A vector of scale parameters
+   * @param regularization A real array of LKJ hyperparameters
+   * @param delta[] A real array of concentration paramters
+   * @param shape A vector of shape parameters
+   * @param t An integer indicating the number of group-specific terms
+   * @param p An integer array with the number variables on the LHS of each |
+   * @return nothing
+   */
+  void decov_lp(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
+                real[] regularization, real[] delta, vector shape,
+                int t, int[] p) {
+    int pos_reg;
+    int pos_rho;
+    z_b ~ normal(0,1);
+    z_T ~ normal(0,1);
+    pos_reg <- 1;
+    pos_rho <- 1;
+    for (i in 1:t) if (p[i] > 1) {
+      vector[p[i] - 1] shape1;
+      vector[p[i] - 1] shape2;
+      real nu;
+      nu <- regularization[pos_reg] + 0.5 * (p[i] - 2);
+      pos_reg <- pos_reg + 1;
+      shape1[1] <- nu;
+      shape2[1] <- nu;
+      for (j in 2:(p[i]-1)) {
+        nu <- nu - 0.5;
+        shape1[j] <- 0.5 * j;
+        shape2[j] <- nu;
+      }
+      segment(rho, pos_rho, p[i] - 1) ~ beta(shape1,shape2);
+      pos_rho <- pos_rho + p[i] - 1;
+    }
+    zeta ~ gamma(delta, 1);
+    tau ~ gamma(shape, 1);
+  }
   
   vector test_csr_matrix_times_vector(int m, int n, vector w, 
                                       int[] v, int[] u, vector b) {
