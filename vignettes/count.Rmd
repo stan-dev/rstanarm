@@ -10,7 +10,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
+%\VignetteIndexEntry{Estimating Generalized Linear Models for Count Data with the rstanarm Package}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
