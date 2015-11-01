@@ -1,0 +1,13 @@
+```{r, SETTINGS-knitr, include=FALSE}
+my_dev <- function(file, width, height) {
+  if (require(RSvgDevice))
+    devSVG(file = file, width = width, height = height)
+  else
+    grDevices::svg(filename = file, width = width, height = height)
+}
+library(knitr)
+opts_chunk$set(dev = 'my_dev', dpi = 150, comment=NA,
+               fig.align='center', fig.height = 3, fig.path='SVGs/', 
+               fig.ext='svg',
+               message = FALSE, warning = FALSE)
+```

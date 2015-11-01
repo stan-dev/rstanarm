@@ -5,17 +5,18 @@ date: "08/30/2015"
 output: 
   html_document: 
     fig_caption: yes
+    self_contained: no
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Linear Models with the rstanarm Package}
 -->
-```{r, child="SETTINGS-knitr.txt"}
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
-```{r, child="SETTINGS-gg.txt"}
+```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="SETTINGS-rstan.txt"}
+```{r, child="children/SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -23,7 +24,7 @@ output:
 This vignette explains how to estimate linear models using the
 __rstanarm__ package.
 
-```{r, child = "four_steps.txt"}
+```{r, child = "children/four_steps.txt"}
 ```
 
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the

@@ -5,17 +5,18 @@ date: "09/03/2015"
 output: 
   html_document: 
     fig_caption: yes
+    self_contained: no
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-```{r, child="SETTINGS-knitr.txt"}
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
-```{r, child="SETTINGS-gg.txt"}
+```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="SETTINGS-rstan.txt"}
+```{r, child="children/SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -23,7 +24,7 @@ output:
 This vignette explains how to estimate generalized linear models (GLMs) for 
 count data using the __rstanarm__ package.
 
-```{r, child="four_steps.txt"}
+```{r, child="children/four_steps.txt"}
 ```
 
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
@@ -126,7 +127,7 @@ argument to `stan_glm`:
 library(rstanarm)
 
 # Load data and rescale
-roaches <- read.csv("roaches.csv.xz")
+roaches <- read.csv(file.path("data", "roaches.csv.xz"))
 roaches$roach1 <- roaches$roach1 / 100
 # Estimate original model
 glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,

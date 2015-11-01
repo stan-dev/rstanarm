@@ -1,4 +1,4 @@
-children
-data
-figures
+^children
+^data
+^SVGs
 

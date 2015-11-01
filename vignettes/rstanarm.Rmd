@@ -5,17 +5,18 @@ date: "08/30/2015"
 output: 
   html_document: 
     fig_caption: yes
+    self_contained: no
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{How to Use the rstanarm Package}
 -->
-```{r, child="SETTINGS-knitr.txt"}
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
-```{r, child="SETTINGS-gg.txt"}
+```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="SETTINGS-rstan.txt"}
+```{r, child="children/SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -31,7 +32,7 @@ This will enable researchers to avoid the counter-intuitiveness of the
 frequentist approach to probability and statistics with only minimal changes to
 their existing R scripts.
 
-```{r, child="four_steps.txt"}
+```{r, child="children/four_steps.txt"}
 ```
 
 Step 1 is necessarily model-specific and is covered in more detail in the other

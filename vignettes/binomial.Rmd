@@ -5,17 +5,18 @@ date: "09/03/2015"
 output: 
   html_document: 
     fig_caption: yes
+    self_contained: no
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
 -->
-```{r, child="SETTINGS-knitr.txt"}
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
-```{r, child="SETTINGS-gg.txt"}
+```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="SETTINGS-rstan.txt"}
+```{r, child="children/SETTINGS-rstan.txt"}
 ```
 
 # Introduction
@@ -24,7 +25,7 @@ This vignette explains how to estimate generalized linear models (GLMs) for
 binary (Bernoulli) and Binomial response variables using the __rstanarm__
 package.
 
-```{r, child="four_steps.txt"}
+```{r, child="children/four_steps.txt"}
 ```
 
 Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
@@ -149,7 +150,7 @@ too small to have a useful interpretation.
 
 ```{r ARSENIC-load-data}
 # Load data and create dist100 variable 
-wells <- read.csv("wells.csv.xz")
+wells <- read.csv(file.path("data", "wells.csv.xz"))
 wells$dist100 <- wells$dist / 100
 ```
 
