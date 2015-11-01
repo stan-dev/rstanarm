@@ -35,8 +35,7 @@
 #' 
 plot.stanreg <- function(x, plotfun, pars, ...) {
   args <- list(x, ...)
-  if (missing(plotfun)) 
-    plotfun <- "plot"
+  if (missing(plotfun)) plotfun <- "plot"
   if (!missing(pars)) {
     pars[pars == "varying"] <- "b"
     args$pars <- pars
@@ -45,7 +44,10 @@ plot.stanreg <- function(x, plotfun, pars, ...) {
   else {
     plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
                                   "diag", "rhat", "ess", "mcse", "par"))
-    fun <- match.fun(grep(plotfun, plotters, value = TRUE))
+    funname <- grep(plotfun, plotters, value = TRUE)
+    fun <- try(getExportedValue("rstan", funname), silent = TRUE)
+    if (inherits(fun, "try-error")) 
+      stop("Plotting function not found. See ?rstanarm::plots for valid names.")
   }
   do.call(fun, args)
 }
