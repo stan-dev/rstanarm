@@ -199,7 +199,22 @@ test_that("linkinv_inv_gaussian returns expected results", {
     expect_true(all.equal(linkinv(eta), linkinv_inv_gaussian(eta, i)), info = links[i])
   }
 })
-require(SuppDists)
+rinvGauss <- function(n, mu, lambda) {
+  # from https://en.wikipedia.org/wiki/Inverse_Gaussian_distribution
+  y <- rchisq(n, 1)
+  mu2 <- mu^2
+  x <- mu + 0.5 * mu2 * y / lambda - 0.5 * mu / lambda *
+       sqrt(4 * mu * lambda * y + mu2 * y^2)
+  z <- runif(n)
+  out <- ifelse(z <= mu / (mu + x), x, mu2 / x)
+  return(out)
+}
+dinvGauss <- function(x, mu, lambda, log = FALSE) {
+  out <- 0.5 * log(0.5 * lambda / pi) - 1.5 * log(x) - 
+         0.5 * lambda / mu^2 * (x - mu)^2 / x
+  if (!log) out <- exp(out)
+  return(out)
+}
 test_that("pw_inv_gaussian returns expected results", {
   for (i in 1:length(links)) {
     eta <- rgamma(N, 2, 1)
@@ -279,11 +294,18 @@ test_that("pw_polr returns expected results", {
     expect_true(all.equal(log(Pr), pw_polr(y, eta, zeta, i)))
   }
 })
+rdirichlet <- function(n, alpha) {
+  # from MCMCpack::rdirichlet and licensed under the GPL
+  l <- length(alpha)
+  x <- matrix(rgamma(l * n, alpha), ncol = l, byrow = TRUE)
+  sm <- x %*% rep(1, l)
+  return(x/as.vector(sm))
+}
 context("polr")
 test_that("make_cutpoints returns expected results", {
   J <- 5L
   for (i in 1:length(links)) {
-    p <- MCMCpack::rdirichlet(1, rep(1,J))[1,]
+    p <- rdirichlet(1, rep(1,J))[1,]
     cutpoints <- make_cutpoints(p, 1, i)
     for (j in 1:length(cutpoints)) {
       expect_true(all.equal(sum(p[1:j]), CDF_polr(cutpoints[j], i)))
