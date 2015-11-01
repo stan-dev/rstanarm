@@ -202,6 +202,7 @@ ppcheck_dens <- function(dat, ...) {
 }
 
 #' @importFrom ggplot2 geom_vline
+#' @importFrom utils packageVersion
 ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   if (is.character(test))
     test <- match.fun(test)
