@@ -70,12 +70,12 @@ pp_data <- function(object, newdata = NULL, ...) {
     }
     
     # get X and Z matrices
-    newdata <- cbind(0, newdata) # 0s as placeholder for outcome variable
-    colnames(newdata)[1L] <- colnames(fr)[1L]
-    newdata <- newdata[, colnames(fr)] # make sure columns in same order
-    fr2 <- rbind(newdata, fr)
+    frX <- fr[, -1, drop = FALSE]
+    newdata <- newdata[, colnames(frX)] # make sure columns in same order
     keep <- 1:nrow(newdata)
-    glF <- glFormula(object$formula, data = fr2)
+    fr2 <- rbind(data.frame(newdata, y = 0), data.frame(frX, y = 0))
+    newf <- update.formula(formula(object), y ~ .)
+    glF <- glFormula(newf, data = fr2)
     x <- glF$X[keep,, drop=FALSE]
     z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
   }
