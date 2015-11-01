@@ -5,3 +5,7 @@ src/
 !src/Makevars
 man/*.Rd
 !man/rstanarm-internal.Rd
+vignettes/*.R
+!vignettes/*.Rmd
+vignettes/*.html
+vignettes/*_files
