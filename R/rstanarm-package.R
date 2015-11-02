@@ -106,7 +106,7 @@
 #'   \code{\link{priors}} for an overview of the various choices the user can
 #'   make for prior distributions.
 #'   
-#'   \code{\link{plots}} for the various plotting functions that can be used
+#'   \code{\link{plots}} for the various plots that can be used
 #'   to explore fitted models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
