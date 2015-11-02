@@ -105,7 +105,7 @@ coef.stanreg <- function(object, ...) {
 
 
 .glmer_check <- function(object) {
-  if (!is(object, "lmerMod")) {
+  if (is.null(object$glmod)) {
     stop("This method is for stan_glmer and stan_lmer models only.")
   }
 }

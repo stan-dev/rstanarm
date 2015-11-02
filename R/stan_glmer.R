@@ -1,6 +1,6 @@
 #' Bayesian generalized linear models with group-specific terms via Stan
-#'
-#' Bayesian inference for GLMs with group-specific coefficients that have
+#' 
+#' Bayesian inference for GLMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #' 
 #' @export
@@ -13,32 +13,35 @@
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
-#' @template args-dots
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
-#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely
+#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
-#' @param prior_covariance Cannot be \code{NULL}; see 
-#'   \code{\link{decov}} for more information about the default arguments.   
+#' @param ... For \code{stan_glmer}, further arguments passed to
+#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains},
+#'   \code{cores}, etc.). For \code{stan_lmer} and \code{stan_glmer.nb},
+#'   \code{...} should also contain all relevant arguments to pass to
+#'   \code{stan_glmer} (except \code{family}).
+#' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
+#'   more information about the default arguments.
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
-#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum
-#'   likelihood estimation of generalized linear models, Bayesian estimation
-#'   is performed (if \code{algorithm = "sampling"}) via MCMC. The Bayesian 
-#'   model adds independent priors on the coefficients (in the same way as
-#'   \code{\link{stan_glm}}) and priors on the terms of a decomposition
-#'   of the covariance matrices of the group-specific parameters. See
-#'   \code{\link{priors}} for more information about the priors.
+#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
+#'   likelihood estimation of generalized linear models, Bayesian estimation is 
+#'   performed via MCMC. The Bayesian model adds independent priors on the 
+#'   regression coefficients (in the same way as \code{\link{stan_glm}}) and
+#'   priors on the terms of a decomposition of the covariance matrices of the
+#'   group-specific parameters. See \code{\link{priors}} for more information
+#'   about the priors.
 #'   
 #'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
 #'   \code{family = gaussian(link = "identity")}. 
 #'   
-#'   The \code{stan_glmer.nb} function, which takes the extra argument 
-#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family = 
-#'   \link{neg_binomial_2}(link)}. For \code{stan_glmer.nb} the \code{...} 
-#'   argument should contain all relevant arguments to pass to
-#'   \code{stan_glmer}.
+#'   The \code{stan_glmer.nb} function, which takes the extra argument
+#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family =
+#'   \link{neg_binomial_2}(link)}.
+#'   
 #'   
 #' @examples
 #' # see help(example_model) for details on the model below
@@ -59,7 +62,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
     return(invisible(NULL))
   }
-  
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame(2))
@@ -108,12 +110,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function(formula, data = NULL, subset, weights, na.action, offset, 
-                      contrasts = NULL, ...,
-                      prior = normal(), prior_intercept = normal(),
-                      prior_ops = prior_options(), 
-                      prior_covariance = decov(), prior_PD = FALSE,
-                      algorithm = c("sampling", "optimizing")) {
+#' 
+stan_lmer <- function(...) {
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL
