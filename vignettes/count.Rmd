@@ -2,8 +2,8 @@
 title: "Estimating Generalized Linear Models for Count Data with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
 date: "09/03/2015"
-output: 
-  html_document: 
+output:
+  html_document:
     fig_caption: yes
     self_contained: no
     toc: yes

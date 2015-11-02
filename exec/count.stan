@@ -63,21 +63,20 @@ transformed data{
   poisson_max <- pow(2.0, 30.0);
 }
 parameters {
-  real<lower=0> theta_unscaled[family > 1];
-  vector<lower=0>[N] noise[family == 3]; // do not store this
   real<lower=if_else(link == 1, negative_infinity(), 0)> gamma[has_intercept];
-  real<lower=0> dispersion_unscaled[family > 1];
   #include "parameters_glm.txt"
+  real<lower=0> dispersion_unscaled[family > 1];
+  vector<lower=0>[N] noise[family == 3]; // do not store this
+  
 }
 transformed parameters {
-  real theta[family > 1];
   real dispersion[family > 1];
   #include "tparameters_glm.txt"
   if (family > 1 && prior_scale_for_dispersion > 0) 
-    theta[1] <- prior_scale_for_dispersion * theta_unscaled[1];
-  else if (family > 1) theta[1] <- theta_unscaled[1];
+    dispersion[1] <- prior_scale_for_dispersion * dispersion_unscaled[1];
+  else if (family > 1) dispersion[1] <- dispersion_unscaled[1];
   if (t > 0) {
-    theta_L <- make_theta_L(len_theta_L, p, if_else(family > 1, theta[1], 1.0),
+    theta_L <- make_theta_L(len_theta_L, p, if_else(family > 1, dispersion[1], 1.0),
                             tau, scale, zeta, rho, z_T);
     b <- make_b(z_b, theta_L, p, l);
   }
@@ -90,9 +89,9 @@ model {
     else eta <- eta - min(eta) + gamma[1];
   }
   if (family == 3) {
-    if      (link == 1) eta <- eta + log(theta[1]) + log(noise[1]);
-    else if (link == 2) eta <- eta * theta[1] .* noise[1];
-    else                eta <- eta + sqrt(theta[1]) + sqrt_vec(noise[1]);
+    if      (link == 1) eta <- eta + log(dispersion[1]) + log(noise[1]);
+    else if (link == 2) eta <- eta * dispersion[1] .* noise[1];
+    else                eta <- eta + sqrt(dispersion[1]) + sqrt_vec(noise[1]);
   }
   
   // Log-likelihood 
@@ -102,20 +101,21 @@ model {
       else y ~ poisson(linkinv_count(eta, link));
     }
     else {
-      if (link == 1) y ~ neg_binomial_2_log(eta, theta[1]);
-      else y ~ neg_binomial_2(linkinv_count(eta, link), theta[1]);
+      if (link == 1) y ~ neg_binomial_2_log(eta, dispersion[1]);
+      else y ~ neg_binomial_2(linkinv_count(eta, link), dispersion[1]);
     }
   }
   else if (family != 1 && prior_PD == 0)
     increment_log_prob(dot_product(weights, pw_pois(y, eta, link)));
   else if (prior_PD == 0)
-    increment_log_prob(dot_product(weights, pw_nb(y, eta, theta[1], link)));
+    increment_log_prob(dot_product(weights, pw_nb(y, eta, dispersion[1], link)));
   
   // Log-prior for dispersion
-  if (family > 1 && prior_scale_for_dispersion > 0) theta_unscaled ~ cauchy(0, 1);
+  if (family > 1 && prior_scale_for_dispersion > 0) 
+    dispersion_unscaled ~ cauchy(0, 1);
   #include "priors_glm.txt"
   // Log-prior for noise
-  if (family == 3) noise[1] ~ gamma(theta[1], 1);
+  if (family == 3) noise[1] ~ gamma(dispersion[1], 1);
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -139,9 +139,9 @@ generated quantities {
       }
     }
     if (family == 3) {
-      if      (link == 1) eta <- eta + log(theta[1]) + log(noise[1]);
-      else if (link == 2) eta <- eta * theta[1] .* noise[1];
-      else                eta <- eta + sqrt(theta[1]) + sqrt_vec(noise[1]);
+      if      (link == 1) eta <- eta + log(dispersion[1]) + log(noise[1]);
+      else if (link == 2) eta <- eta * dispersion[1] .* noise[1];
+      else                eta <- eta + sqrt(dispersion[1]) + sqrt_vec(noise[1]);
     }
     nu <- linkinv_count(eta, link);
     if (family != 2) for (n in 1:N) {
@@ -150,8 +150,8 @@ generated quantities {
     }
     else for (n in 1:N) {
         real gamma_temp;
-        if (is_inf(theta[1])) gamma_temp <- nu[n];
-        else gamma_temp <- gamma_rng(theta[1], theta[1] / nu[n]);
+        if (is_inf(dispersion[1])) gamma_temp <- nu[n];
+        else gamma_temp <- gamma_rng(dispersion[1], dispersion[1] / nu[n]);
         if (gamma_temp < poisson_max)
           mean_PPD <- mean_PPD + poisson_rng(gamma_temp);
         else mean_PPD <- mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));

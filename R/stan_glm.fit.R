@@ -326,27 +326,29 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   pars <- c(if (has_intercept) "alpha", "beta", 
             if (length(group)) "b",
-            if (is_continuous) "dispersion", if (is_nb) "theta",  "mean_PPD")
+            if (is_continuous | is_nb) "dispersion", "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, hessian = TRUE, ...)
-    k <- ncol(out$hessian)
-    rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
+    out <- optimizing(stanfit, data = standata, 
+                      draws = 1000, constrained = TRUE, ...)
+    # k <- ncol(out$hessian)
+    # rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
     new_names <- names(out$par)
     new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[new_names == "dispersion"] <- if (is_gaussian) "sigma" else
                                             if (is_gamma) "scale" else
-                                            if (is_ig) "lambda" else NA
-    if (is_nb) new_names[new_names == "theta[1]"] <- "overdispersion"
+                                            if (is_ig) "lambda" else 
+                                            if (is_nb) "overdispersion" else NA
     if (length(group)) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
       # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
       # rename theta_L ?
     }
     names(out$par) <- new_names
-    out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
-    colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
+    colnames(out$theta_tilde) <- new_names
+    # out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
+    # colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
   }
