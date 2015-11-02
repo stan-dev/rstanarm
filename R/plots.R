@@ -97,11 +97,11 @@ pairs.stanreg <- function(x, ...) {
 #' Plots
 #' 
 #' All models fit using \code{algorithm='sampling'} are compatible with a 
-#' variety of plotting functions. Each function returns at least one 
-#' \code{\link[ggplot2]{ggplot}} object that can be customized further using the
-#' \pkg{ggplot2} package. The plotting functions described here can also be
-#' called using the \code{\link[=plot.stanreg]{plot}} method for stanreg
-#' objects.
+#' variety of plotting functions from the \pkg{rstan} package. Each function
+#' returns at least one \code{\link[ggplot2]{ggplot}} object that can be
+#' customized further using the \pkg{ggplot2} package. The plotting functions
+#' described here can also be called using the \code{\link[=plot.stanreg]{plot}}
+#' method for stanreg objects without loading the \pkg{rstan} package.
 #' 
 #' 
 #' @name plots

@@ -36,13 +36,12 @@
 #' \dontrun{
 #' nd <- lme4::cbpp
 #' nd$size <- max(nd$size) + 1L
-#' ppd <- posterior_predict(example_model, newdata = nd) # FIXME
+#' ppd <- posterior_predict(example_model, newdata = nd)
 #' 
 #' # Use fun argument to transform predictions
 #' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
-#' 
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (!is.stanreg(object))

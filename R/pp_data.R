@@ -52,11 +52,11 @@ pp_data <- function(object, newdata = NULL, ...) {
     if (any(is.na(newdata))) 
       stop("NAs not allowed in newdata")
     fr <- object$glmod$fr # original model frame
-    notfound <- setdiff(colnames(newdata), colnames(fr))
-    if (length(notfound)) {
-      notfound <- paste(notfound, collapse = ", ")
-      stop("Variable(s) ", notfound, " in newdata but not original formula.")
-    }
+#     notfound <- setdiff(colnames(newdata), colnames(fr))
+#     if (length(notfound)) {
+#       notfound <- paste(notfound, collapse = ", ")
+#       stop("Variable(s) ", notfound, " in newdata but not original formula.")
+#     }
     # check levels of grouping variables in newdata
     levs <- lapply(.flist(object), levels)
     grps <- names(levs)

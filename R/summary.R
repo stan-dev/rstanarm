@@ -80,7 +80,6 @@ print.summary.stanreg <- function(x, ...) {
   dots <- list(...)
   atts <- attributes(x)
   digits <- dots$digits %ORifNULL% atts$print.digits
-  cat("\n")
   print(atts$call)
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size))

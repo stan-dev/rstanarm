@@ -62,12 +62,14 @@
 #'   Cauchy parameter.
 #'   
 #'   These hierarchical shrinkage priors have very tall modes and very fat
-#'   tails. Consequently, the tend to produce posterior distributions that
+#'   tails. Consequently, they tend to produce posterior distributions that
 #'   are very concentrated near zero, unless the predictor has a strong
 #'   influence on the outcome, in which case the prior has little influence.
 #'   Hierarchical shrinkage priors often require you to increase the
 #'   \code{adapt_delta} tuning parameter to \code{\link[rstan]{stan}} in order
-#'   to diminish the number of divergent transitions.
+#'   to diminish the number of divergent transitions. For more details on 
+#'   tuning parameters and divergent transitions see the Troubleshooting section
+#'   of the "How to Use the rstanarm Package" vignette. 
 #' }
 #' \subsection{Dirichlet family}{
 #'   The Dirichlet distribution is a multivariate generalization of the beta
@@ -83,11 +85,14 @@
 #'   cumulative probabilities and then use an inverse CDF transformation
 #'   of the cumulative probabilities to define the cutpoints.
 #'   
-#'   If a scalar is passed to the \code{concentration} argument of the
-#'   \code{dirichlet} function, then it is replicated to the appropriate
-#'   length and the Dirichlet distribution is symmetric. If all the 
-#'   concentration parameters are \eqn{1}, then the Dirichlet distribution
-#'   is jointly uniform.
+#'   If a scalar is passed to the \code{concentration} argument of the 
+#'   \code{dirichlet} function, then it is replicated to the appropriate length
+#'   and the Dirichlet distribution is symmetric. If all the concentration
+#'   parameters are \eqn{1}, then the Dirichlet distribution is jointly uniform.
+#'   If all concentration parameters are equal but greater than \eqn{1} then the
+#'   prior mode is that the categories are equiprobable, and the larger the
+#'   value of the identical concentration parameters, the more sharply peaked
+#'   the distribution is at the mode.
 #' }
 #' \subsection{Covariance matrices}{
 #'   Covariance matrices are decomposed into correlation matrices and 
@@ -134,14 +139,14 @@
 #'   applicable. Set the \code{shape} hyperparameter to some value
 #'   greater than one to ensure that the posterior trace is not zero.
 #'   
-#'   If \code{shape}, \code{concentration}, \code{shape} and / or 
+#'   If \code{regularization}, \code{concentration}, \code{shape} and / or 
 #'   \code{scale} are positive scalars, then they are recycled to the 
 #'   appropriate length. Otherwise, each can be a positive vector of the 
 #'   appropriate length, but the appropriate length depends on the number of 
 #'   covariance matrices in the model and their sizes. A one-by-one covariance 
-#'   matrix is just a variance and thus does not have \code{shape} or 
+#'   matrix is just a variance and thus does not have \code{regularization} or 
 #'   \code{concentration} parameters, but does have \code{shape} and 
-#'   \code{scale} parameter for the the prior standard deviation of that
+#'   \code{scale} parameter for the the prior standard deviation of that 
 #'   variable.
 #' }
 #' \subsection{R2 family}{
