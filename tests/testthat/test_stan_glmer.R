@@ -7,7 +7,7 @@ SEED <- 123
 options(mc.cores = 2L)
 if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
-RANEF_tol <- 0.13 
+RANEF_tol <- 0.19 
 
 
 context("stan_lmer")
