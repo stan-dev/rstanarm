@@ -4,11 +4,14 @@
 MODELS_HOME <- "exec"
 fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), 
+  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
                      paste0("rstanarm", fsep, "exec"), getwd())
 }
 if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- sub(paste0("tests", fsep, "testthat$"), "exec", getwd())
+  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), "exec", getwd())
+}
+if (!file.exists(MODELS_HOME)) {
+  MODELS_HOME <- system.file("exec", package = "rstanarm") 
 }
 
 context("setup")
