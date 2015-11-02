@@ -139,14 +139,14 @@
 #'   applicable. Set the \code{shape} hyperparameter to some value
 #'   greater than one to ensure that the posterior trace is not zero.
 #'   
-#'   If \code{shape}, \code{concentration}, \code{shape} and / or 
+#'   If \code{regularization}, \code{concentration}, \code{shape} and / or 
 #'   \code{scale} are positive scalars, then they are recycled to the 
 #'   appropriate length. Otherwise, each can be a positive vector of the 
 #'   appropriate length, but the appropriate length depends on the number of 
 #'   covariance matrices in the model and their sizes. A one-by-one covariance 
-#'   matrix is just a variance and thus does not have \code{shape} or 
+#'   matrix is just a variance and thus does not have \code{regularization} or 
 #'   \code{concentration} parameters, but does have \code{shape} and 
-#'   \code{scale} parameter for the the prior standard deviation of that
+#'   \code{scale} parameter for the the prior standard deviation of that 
 #'   variable.
 #' }
 #' \subsection{R2 family}{
