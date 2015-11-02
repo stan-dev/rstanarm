@@ -5,7 +5,7 @@
 #' 
 #' @export
 #' 
-#' @templateVar fun stan_glmer, stan_lmer
+#' @templateVar fun stan_glmer, stan_lmer, stan_glmer.nb
 #' @templateVar pkg lme4
 #' @templateVar pkgfun glmer
 #' @template return-stanreg-object
@@ -31,8 +31,14 @@
 #'   of the covariance matrices of the group-specific parameters. See
 #'   \code{\link{priors}} for more information about the priors.
 #'   
-#'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with
-#'   \code{family = gaussian(link = "identity")}.
+#'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
+#'   \code{family = gaussian(link = "identity")}. 
+#'   
+#'   The \code{stan_glmer.nb} function, which takes the extra argument 
+#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family = 
+#'   \link{neg_binomial_2}(link)}. For \code{stan_glmer.nb} the \code{...} 
+#'   argument should contain all relevant arguments to pass to
+#'   \code{stan_glmer}.
 #'   
 #' @examples
 #' # see help(example_model) for details on the model below
@@ -40,17 +46,17 @@
 #' 
 #' @importFrom lme4 glFormula
 #' 
-stan_glmer <- function (formula, data = NULL, family = gaussian, 
-                        subset, weights, 
-                        na.action = getOption("na.action", "na.omit"), 
-                        offset, contrasts = NULL, ...,
-                        prior = normal(), prior_intercept = normal(),
-                        prior_ops = prior_options(),
-                        prior_covariance = decov(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing")) {
+stan_glmer <- function(formula, data = NULL, family = gaussian, 
+                       subset, weights, 
+                       na.action = getOption("na.action", "na.omit"), 
+                       offset, contrasts = NULL, ...,
+                       prior = normal(), prior_intercept = normal(),
+                       prior_ops = prior_options(),
+                       prior_covariance = decov(), prior_PD = FALSE, 
+                       algorithm = c("sampling", "optimizing")) {
   
   if (match.arg(algorithm) == "optimizing") {
-    message("Only MCMC (algorithm='sampling') allowed for stan_glmer.")
+    message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
     return(invisible(NULL))
   }
   
@@ -102,22 +108,33 @@ stan_glmer <- function (formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function (formula, data = NULL, subset, weights, na.action, offset, 
-                       contrasts = NULL, ...,
-                       prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(), 
-                       prior_covariance = decov(), prior_PD = FALSE,
-                       algorithm = c("sampling", "optimizing")) {
-  
-  if (match.arg(algorithm) == "optimizing") {
-    message("Only MCMC (algorithm='sampling') allowed for stan_lmer.")
-    return(invisible(NULL))
-  }
-  
+stan_lmer <- function(formula, data = NULL, subset, weights, na.action, offset, 
+                      contrasts = NULL, ...,
+                      prior = normal(), prior_intercept = normal(),
+                      prior_ops = prior_options(), 
+                      prior_covariance = decov(), prior_PD = FALSE,
+                      algorithm = c("sampling", "optimizing")) {
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
+  out <- eval(mc, parent.frame(1L))
+  out$call <- call
+  return(out)
+}
+
+
+#' @rdname stan_glmer
+#' @export
+#' @param link For \code{stan_glmer.nb} only, the link function to use. See 
+#' \code{\link{neg_binomial_2}}.
+#' 
+stan_glmer.nb <- function(..., link = "log") {
+  mc <- call <- match.call(expand.dots = TRUE)
+  mc[[1]] <- quote(stan_glmer)
+  mc$REML <- NULL
+  mc$link <- NULL
+  mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame(1L))
   out$call <- call
   return(out)
