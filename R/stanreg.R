@@ -18,13 +18,7 @@ stanreg <- function(object) {
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   if (opt) {
-    ev <- eigen(stanfit$cov.scaled, symmetric = TRUE, only.values = FALSE)
-    L <- sweep(ev$vectors, 2, sqrt(pmax(0, ev$values)), FUN = "*")
-    k <- nrow(L)
-    unconstrained <- stanfit$par[1:k] + L %*% matrix(rnorm(4000 * k), k)
-    stanmat <- t(apply(unconstrained, 2, FUN = function(u)
-      unlist(constrain_pars(stanfit$stanfit, u))))
-    colnames(stanmat) <- names(stanfit$par)
+    stanmat <- stanfit$theta_tilde
     stan_summary <- cbind(Median = apply(stanmat, 2, median), 
                           MAD_SD = apply(stanmat, 2, mad),
                           t(apply(stanmat, 2, quantile, 

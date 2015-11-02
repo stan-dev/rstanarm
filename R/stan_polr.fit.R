@@ -82,15 +82,14 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   stanfit <- stanmodels$polr
   if (algorithm == "optimizing") {
     standata$do_residuals <- 0L
-    out <- optimizing(stanfit, data = standata, hessian = TRUE, init = start)
+    out <- optimizing(stanfit, data = standata, init = start,
+                      constrained = TRUE, draws = 1000, ...)
     new_names <- c(paste0("pi[", y_lev, "]"), paste0("z_beta[", colnames(x), "]"),
                    "Delta_y", colnames(x), paste0("cutpoints[", y_lev[-1], "]"),
                    paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                    paste("mean_PPD", y_lev, sep = ":"))
     names(out$par) <- new_names
-    K <- ncol(out$hessian)
-    out$cov.scaled <- qr.solve(-out$hessian, diag(1, K , K))
-    colnames(out$cov.scaled) <- rownames(out$cov.scaled)
+    colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
   }

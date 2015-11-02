@@ -331,8 +331,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
-    # k <- ncol(out$hessian)
-    # rownames(out$hessian) <- colnames(out$hessian) <- head(names(out$par), k)
     new_names <- names(out$par)
     new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
@@ -347,8 +345,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    # out$cov.scaled <- qr.solve(-out$hessian, diag(1, k, k))
-    # colnames(out$cov.scaled) <- rownames(out$cov.scaled) <- colnames(out$hessian)
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
   }

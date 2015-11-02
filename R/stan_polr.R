@@ -171,11 +171,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
     return(out)
   }
   else if (algorithm == "optimizing") {
-    L <- t(chol(stanfit$cov.scaled))
-    k <- nrow(L)
-    unconstrained <- stanfit$par[1:k] + L %*% matrix(rnorm(4000 * k), k)
-    stanmat <- t(apply(unconstrained, 2, FUN = function(u)
-      unlist(constrain_pars(stanfit$stanfit, u))))
+    stanmat <- stanfit$theta_tilde
     stan_summary <- cbind(Estimate = stanfit$par, 
                           "Std. Error" = apply(stanmat, 2, sd),
                           t(apply(stanmat, 2, quantile,
