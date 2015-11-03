@@ -12,6 +12,7 @@
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
+#' @template args-adapt_delta
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
@@ -55,7 +56,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior = normal(), prior_intercept = normal(),
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing")) {
+                       algorithm = c("sampling", "optimizing"), 
+                       adapt_delta = 0.95) {
   
   if (match.arg(algorithm) == "optimizing") {
     message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
@@ -70,7 +72,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     stop("'family' must be a family")
   mc[[1]] <- quote(lme4::glFormula)
   mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
-    mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- mc$... <- NULL
+    mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- 
+    mc$adapt_delta <- mc$... <- NULL
   glmod <- eval(mc, parent.frame(1L))
   y <- glmod$fr[,as.character(glmod$formula[2])]
   X <- glmod$X
@@ -89,7 +92,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
-                          algorithm = algorithm, group = group, ...)
+                          algorithm = algorithm, adapt_delta = adapt_delta,
+                          group = group, ...)
   all_args <- mget(names(formals()), sys.frame(sys.nframe()))
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
 

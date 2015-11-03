@@ -37,6 +37,7 @@
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
+#' @template args-adapt_delta
 #' 
 #'
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
@@ -83,7 +84,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), 
-                    prior_PD = FALSE,  algorithm = c("sampling", "optimizing")) {
+                    prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
+                    adapt_delta = 0.95) {
 
   # Parse like glm()
   if (is.character(family)) 
@@ -142,7 +144,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior = prior,
                           prior_intercept = prior_intercept,
                           prior_ops = prior_ops,
-                          prior_PD = prior_PD, algorithm = algorithm, ...)
+                          prior_PD = prior_PD, algorithm = algorithm, 
+                          adapt_delta = adapt_delta, ...)
   
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)
