@@ -201,7 +201,10 @@ generated quantities {
         previous <- current;
       }
       theta[J] <- 1 - previous;
-      if (J == 2) {
+      if (previous <= 0 || previous >= 1) {
+        # do nothing
+      }
+      else if (J == 2) {
         mean_PPD[1] <- mean_PPD[1] + bernoulli_rng(theta[J]);
       }
       else {
