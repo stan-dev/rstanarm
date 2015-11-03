@@ -64,7 +64,7 @@ test_that("stan_glm returns expected result for cars example", {
                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
-  expect_equal(coef(fit), coef(ans), tol = 0.005)
+  expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
 
 context("stan_glm (bernoulli)")
@@ -84,9 +84,9 @@ test_that("stan_glm returns expected result for bernoulli", {
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
-    ans <- coef(glm(y ~ x, family = fam, start = coef(fit)))
-    if (links[i] != "log") expect_equal(val, ans, 0.02)
-    else expect_equal(val[-1], ans[-1], 0.05)
+    ans <- coef(glm(y ~ x, family = fam, start = val))
+    if (links[i] != "log") expect_equal(val, ans, 0.03)
+    else expect_equal(val[-1], ans[-1], 0.06)
   }
 })
 
@@ -95,7 +95,9 @@ test_that("stan_glm returns expected result for binomial example", {
   # example using simulated data
   N <- 200
   trials <- rpois(N, lambda = 30)
+  trials <<- trials
   X <- cbind(1, matrix(rnorm(N * 3, sd = 0.5), N, 3))
+  X <<- X
   for (i in 1:length(links)) {
     fam <- binomial(links[i])
     if (i == 4) {
@@ -103,7 +105,7 @@ test_that("stan_glm returns expected result for binomial example", {
       eta <- X %*% b
       b[1] <- -max(eta) - 0.05
     }  
-    else b <- c(-3.25, 0.5, 0.1, -1.0)
+    else b <- c(0, 0.5, 0.1, -1.0)
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
     fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED,
@@ -111,15 +113,15 @@ test_that("stan_glm returns expected result for binomial example", {
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
     ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
-    if (links[i] != "log") expect_equal(val, ans, 0.017)
-    else expect_equal(val[-1], ans[-1], 0.008)
+    if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
+    else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
 
     prop <- yes / trials
     fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
                      prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.018)
-    else expect_equal(val2[-1], ans[-1], 0.005)
+    if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.005, info = links[i])
   }
 })
