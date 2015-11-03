@@ -1,5 +1,4 @@
 ```{r, SETTINGS-rstan, include=FALSE}
-suppressPackageStartupMessages(require(rstan))
 CHAINS <- 2L
 CORES <- 2L
 SEED <- 12345
