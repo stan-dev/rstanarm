@@ -43,7 +43,6 @@ class(loglog) <- "link-glm"
 #' a proportional odds assumption.
 #'
 #' @export
-#' 
 #' @templateVar fun stan_polr
 #' @templateVar fitfun stan_polr.fit
 #' @templateVar pkg MASS

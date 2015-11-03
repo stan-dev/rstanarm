@@ -20,7 +20,6 @@
 #' the coefficients, intercept, and nuisance parameter
 #'
 #' @export
-#' 
 #' @templateVar fun stan_glm
 #' @templateVar fitfun stan_glm.fit
 #' @templateVar pkg stats

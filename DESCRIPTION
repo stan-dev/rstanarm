@@ -6,18 +6,40 @@ Date: 2015-11-01
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Convenient interface for applied regression models using RStan, 
-  the R interface to the Stan C++ package. Models are specified with customary 
-  R modeling syntax and can be estimated by performing full Bayesian inference
-  or optimization of a (perhaps penalized) likelihood function.
+Description: Convenient interface for applied regression models using RStan,
+    the R interface to the Stan C++ package. Models are specified with customary
+    R modeling syntax and can be estimated by performing full Bayesian inference
+    or optimization of a (perhaps penalized) likelihood function.
 License: GPL (>=3)
-Depends: R (>= 3.0.2), Rcpp (>= 0.11.0)
-Imports: ggplot2, lme4 (>= 1.1-8), loo (>= 0.1.3), methods, rstan (>= 2.8.1), shinystan (>= 2.0.1), stats, utils
-Suggests: arm, grDevices, gridExtra, HSAUR3, KernSmooth, knitr, MASS, RSvgDevice, testthat
-LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>= 0.11.0), RcppEigen
+Depends:
+    R (>= 3.0.2),
+    Rcpp (>= 0.11.0)
+Imports:
+    ggplot2,
+    lme4 (>= 1.1-8),
+    loo (>= 0.1.3),
+    methods,
+    rstan (>= 2.8.1),
+    shinystan (>= 2.0.1),
+    stats,
+    utils
+Suggests:
+    arm,
+    grDevices,
+    gridExtra,
+    HSAUR3,
+    KernSmooth,
+    knitr,
+    MASS,
+    RSvgDevice,
+    testthat
+LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>=
+    0.11.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RcppModules: stan_fit4bernoulli_mod, stan_fit4binomial_mod, stan_fit4continuous_mod, stan_fit4count_mod, stan_fit4lm_mod, stan_fit4polr_mod
+RcppModules: stan_fit4bernoulli_mod, stan_fit4binomial_mod,
+    stan_fit4continuous_mod, stan_fit4count_mod, stan_fit4lm_mod, stan_fit4polr_mod
+RoxygenNote: 5.0.0

@@ -96,7 +96,6 @@ log_lik.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
-#' 
 coef.stanreg <- function(object, ...) {
   if (is(object, "lmerMod")) .mermod_coef(object, ...)
   else object$coefficients
@@ -224,7 +223,6 @@ sigma <- function(object, ...) UseMethod("sigma")
 
 #' @rdname stanreg-methods
 #' @export
-#' 
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) return(1)
   else object$stan_summary["sigma", .select_median(object$algorithm)]
@@ -236,7 +234,6 @@ sigma.stanreg <- function(object, ...) {
 #' 
 #' @keywords internal
 #' @export
-#' 
 #' @param x A stanreg object.
 #' @param ... Ignored. 
 #' 
@@ -246,7 +243,6 @@ formula.stanreg <- function(x, ...) x$formula
 #' 
 #' @keywords internal
 #' @export
-#' 
 #' @param formula,... See \code{\link{model.frame}}.
 model.frame.stanreg <- function(formula, ...) {
   if (is(formula, "lmerMod")) {

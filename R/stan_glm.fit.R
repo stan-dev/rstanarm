@@ -23,7 +23,6 @@
 #' @importFrom methods is
 #' @importFrom rstan optimizing sampling
 #' @export
-#' 
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,

@@ -11,7 +11,6 @@
 #' @export loo
 #' @export waic
 #' @export launch_shinystan
-#' 
 #' @description An appendage to the \pkg{rstan} package that enables the most
 #'   common applied regression models to be estimated using Markov Chain Monte
 #'   Carlo (or optimization) but still specified using customary R modeling

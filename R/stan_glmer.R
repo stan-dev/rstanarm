@@ -4,7 +4,6 @@
 #' unknown covariance matrices with flexible priors.
 #' 
 #' @export
-#' 
 #' @templateVar fun stan_glmer, stan_lmer, stan_glmer.nb
 #' @templateVar pkg lme4
 #' @templateVar pkgfun glmer
@@ -110,7 +109,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-#' 
 stan_lmer <- function(...) {
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)

@@ -1,7 +1,6 @@
 #' Predict method for stanreg objects
 #' 
 #' @export
-#' 
 #' @inheritParams stanreg-methods
 #' @param ... Ignored.
 #' @param newdata Optionally, a data frame in which to look for variables with 

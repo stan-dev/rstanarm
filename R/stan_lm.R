@@ -22,7 +22,6 @@
 #' 
 #' 
 #' @export
-#' 
 #' @templateVar fun stan_lm, stan_aov
 #' @templateVar fitfun stan_lm.fit or stan_lm.wfit
 #' @templateVar pkg stats

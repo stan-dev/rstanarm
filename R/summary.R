@@ -5,7 +5,6 @@
 #' 
 #' @method summary stanreg
 #' @export
-#' 
 #' @param object A fitted model object returned by one of the \pkg{rstanarm} 
 #'   modeling functions. This will be a list with class 'stanreg' as well as at 
 #'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.

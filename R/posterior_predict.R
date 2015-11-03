@@ -9,7 +9,6 @@
 #' predictor affects (a function of) the outcome(s).
 #' 
 #' @export
-#' 
 #' @inheritParams stanreg-methods
 #' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
