@@ -7,7 +7,7 @@ source(paste0(ROOT, "ARM/Ch.7/congress.data.R"), local = DATA_ENV, verbose = FAL
 
 post1 <- stan_lm(vote_88 ~ vote_86 + incumbency_88, data = DATA_ENV, 
                  prior = R2(0.9, what = "mean"), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 11))
+                 adapt_delta = 0.99)
 post1 # badly underfitting
 y_tilde <- posterior_predict(post1) # incumbency_90 is not available
 summary(rowSums(y_tilde > 0.5))
@@ -17,8 +17,9 @@ post2 <- stan_glm(switc ~ I(dist / 100), data = DATA_ENV, seed = SEED,
                   family = binomial(link = "logit"))
 table(c(posterior_predict(post2))) / (4000 * 3020)
 
-# the compound model is not good because it assumes the two errors are independent
-# but rstanarm does not currently support Heckman models
+# the compound model is not good because it assumes the two errors are
+# independent. rstanarm will eventually support Heckman models, which would be a
+# better choice here
 
 ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
 if (ANSWER != "n") {

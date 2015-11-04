@@ -106,15 +106,11 @@ computer is allowed to utilize:
 ```{r stan_aov}
 library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
-                  prior = R2(location = 0.5),
-                  control = list(adapt_delta = 0.999, max_treedepth = 13),
+                  prior = R2(location = 0.5), adapt_delta = 0.999,
                   chains = CHAINS, cores = CORES, seed = SEED)
 post1
 ```
-Here we have specified the optional `control` argument as a list with elements
-`adapt_delta = 0.999` to decrease the stepsize and largely prevent divergent
-transitions and `max_treedepth = 13` in order to allow the numerical integrator
-to take more steps than the default value. The results suggest that only the
+Here we have specified `adapt_delta = 0.999` to decrease the stepsize and largely prevent divergent transitions. The results suggest that only the
 treatment worth writing home about is whether the rats were fed a low protein
 or high protein diet. Also, our prior guess that $R^2 = 0.5$ was overly 
 optimistic, and the model overfits the data a little bit. However, the 
@@ -126,8 +122,8 @@ priors
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),
-                   control = list(adapt_delta  = 0.999, max_treedepth = 12),
-                   chains = CHAINS, cores = CORES, seed = SEED)
+                   adapt_delta = 0.999, chains = CHAINS, cores = CORES, 
+                   seed = SEED)
 ```
 Comparing these two models using the `loo` function in the __loo__ package 
 reveals a negligible preference for the first approach that is almost entirely

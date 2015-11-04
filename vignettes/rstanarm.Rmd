@@ -412,25 +412,23 @@ Hamiltonian Monte Carlo (HMC), the MCMC algorithm used by
 [Stan](http://mc-stan.org), works by simulating the evolution of a Hamiltonian 
 system. Stan uses a [symplectic 
 integrator](https://en.wikipedia.org/wiki/Symplectic_integrator) to approximate 
-the exact solution of the Hamiltonian dynamics. When the step size parameter is
-too large relative to the curvature of the log posterior this approximation can
-diverge and threaten the validity of the sampler. __rstanarm__ will print a
-warning if there are any divergent transitions after the warmup period, in which 
-case the posterior sample may be biased. Lowering the step size can help reduce
+the exact solution of the Hamiltonian dynamics. When the step size parameter is 
+too large relative to the curvature of the log posterior this approximation can 
+diverge and threaten the validity of the sampler. __rstanarm__ will print a 
+warning if there are any divergent transitions after the warmup period, in which
+case the posterior sample may be biased. Lowering the step size can help reduce 
 the number of divergent transitions. The recommended method is to increase the 
-`adapt_delta` parameter -- target rate at which proposals are accepted -- which 
-will in turn reduce the step size. To change the default value of `adapt_delta`
-(__rstanarm__ uses a default of 0.95) you can use the `control` argument, which 
-should be a named list. For example, to increase `adapt_delta` to 0.99 (a good 
-value to try first) you would pass the argument `control = list(adapt_delta = 0.99)`
-to `stan_lm` (or any the other __rstanarm__ modeling functions):
-
+`adapt_delta` parameter -- target average proposal acceptance probability in the
+adaptation -- which will in turn reduce the step size. Each of the modeling 
+functions accepts an `adapt_delta` argument, so to increase `adapt_delta` you
+can simply change the value from the default of $0.95$ to a value closer to $1$. 
+For example:
 
 ```{r, Divergent-fit, results='hide', warning=TRUE}
 divergences <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), 
                        iter = 500, chains = CHAINS, 
                        cores = CORES, seed = SEED)
-no_divergences <- update(divergences, control = list(adapt_delta = 0.99))
+no_divergences <- update(divergences, adapt_delta = 0.99)
 ```
 
 Here we see a warning about divergent transitions for the first model but 
@@ -456,16 +454,16 @@ manual, Version 2.8.0_. http://mc-stan.org/documentation. See the
 
 __Recommendation:__ increase the maximum allowed treedepth `max_treedepth`. <br>
 
-Configuring the No-U-Turn-Sampler (the variant of HMC used by Stan) 
-involves putting a cap on the depth of the trees that it evaluates during each 
-iteration. This is controlled through a maximum depth parameter `max_treedepth`. 
-When the maximum allowed tree depth is reached it indicates that NUTS is 
-terminating prematurely to avoid excessively long execution time. If __rstanarm__
-arm prints a warning about transitions exceeding the maximum treedepth you 
-should try increasing the `max_treedepth` parameter using the `control` argument.
-For example, to increase `max_treedepth` to 20 (the default used __rstanarm__ 
-is 15) you can provide the argument `control = list(max_treedepth = 20)`
-to any of the __rstanarm__ modeling functions. 
+Configuring the No-U-Turn-Sampler (the variant of HMC used by Stan) involves
+putting a cap on the depth of the trees that it evaluates during each iteration.
+This is controlled through a maximum depth parameter `max_treedepth`. When the
+maximum allowed tree depth is reached it indicates that NUTS is terminating
+prematurely to avoid excessively long execution time. If __rstanarm__ arm prints
+a warning about transitions exceeding the maximum treedepth you should try
+increasing the `max_treedepth` parameter using the optional `control` argument. 
+For example, to increase `max_treedepth` to 20 (the default used __rstanarm__ is
+15) you can provide the argument `control = list(max_treedepth = 20)` to any of
+the __rstanarm__ modeling functions.
 
 __References__
 

@@ -36,6 +36,7 @@
 #' @template args-x-y
 #' @template args-dots
 #' @template args-algorithm
+#' @template args-adapt_delta
 #'
 #' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
 #' @param prior Must be a call to \code{\link{R2}} with its 
@@ -98,7 +99,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
                     prior = R2(stop("'location' must be specified")), 
-                    prior_PD = FALSE, algorithm = c("sampling", "optimizing")) {
+                    prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
+                    adapt_delta = 0.95) {
   
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
@@ -115,7 +117,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   w <- modelframe$weights
   offset <- model.offset(mf)
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
-                          prior = prior,  prior_PD = prior_PD, algorithm = algorithm, ...)
+                          prior = prior,  prior_PD = prior_PD, 
+                          algorithm = algorithm, adapt_delta = adapt_delta, ...)
 
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,

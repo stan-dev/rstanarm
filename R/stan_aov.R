@@ -32,7 +32,8 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
                      contrasts = NULL, ...,
                      prior = R2(stop("'location' must be specified")), 
                      prior_PD = FALSE, 
-                     algorithm = c("sampling", "optimizing")) {
+                     algorithm = c("sampling", "optimizing"), 
+                     adapt_delta = 0.95) {
     # parse like aov() does
     Terms <- if(missing(data)) terms(formula, "Error")
     else terms(formula, "Error", data = data)

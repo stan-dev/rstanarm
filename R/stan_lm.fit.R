@@ -18,7 +18,8 @@
 stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
                          prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing")) {
+                         algorithm = c("sampling", "optimizing"),
+                         adapt_delta = 0.95) {
   if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
@@ -72,12 +73,12 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   #   stanfit <- rstan::vb(stanfit, data = standata, pars = pars, 
   #                        algorithm = algorithm, ...)
   # }
-  else if ("control" %in% names(list(...))) {
-    stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, 
-                               init = init_fun, show_messages = FALSE, ...)
-  }
-  else stanfit <- rstan::sampling(stanfit, data = standata, pars = pars, init = init_fun,
-                                  control = stan_control, show_messages = FALSE, ...)
+  sampling_args <- set_sampling_args(
+    object = stanfit, user_dots = list(...), user_adapt_delta = adapt_delta, 
+    init = init_fun, data = standata, pars = pars, show_messages = FALSE
+  )
+  stanfit <- do.call(sampling, sampling_args)
+  
   parameters <- dimnames(stanfit)$parameters
   new_names <- c(if (has_intercept) "(Intercept)", colnames(x), "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", "mean_PPD", "log-posterior")
@@ -90,7 +91,8 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
 stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing")) {
+                        algorithm = c("sampling", "optimizing"), 
+                        adapt_delta = 0.95) {
 
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)

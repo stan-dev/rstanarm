@@ -20,7 +20,7 @@
 #' the coefficients, intercept, and nuisance parameter
 #'
 #' @export
-#' @templateVar fun stan_glm
+#' @templateVar fun stan_glm, stan_glm.nb
 #' @templateVar fitfun stan_glm.fit
 #' @templateVar pkg stats
 #' @templateVar pkgfun glm
@@ -37,6 +37,7 @@
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
+#' @template args-adapt_delta
 #' 
 #'
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
@@ -49,6 +50,10 @@
 #'   adds independent priors on the coefficients of the GLM. The 
 #'   \code{stan_glm} function calls the workhorse \code{stan_glm.fit} function,
 #'   but it is possible to call the latter directly.
+#'   
+#'   The \code{stan_glm.nb} function, which takes the extra argument
+#'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =
+#'   \link{neg_binomial_2}(link)}.
 #' 
 #' @examples 
 #' \dontrun{ 
@@ -73,7 +78,7 @@
 #' f <- treat ~ re74 + re75 + educ + black + hisp + married + nodegr + u74 + u75
 #' fit3 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
 #'                  prior = t7, prior_intercept = t7)
-#' plot(fit3, ci_level = 0.8)
+#' plot(fit3)
 #' ppcheck(fit3, check = "resid")
 #' ppcheck(fit3, check = "test", test = mean)
 #' }
@@ -83,7 +88,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), 
-                    prior_PD = FALSE,  algorithm = c("sampling", "optimizing")) {
+                    prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
+                    adapt_delta = 0.95) {
 
   # Parse like glm()
   if (is.character(family)) 
@@ -142,7 +148,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior = prior,
                           prior_intercept = prior_intercept,
                           prior_ops = prior_ops,
-                          prior_PD = prior_PD, algorithm = algorithm, ...)
+                          prior_PD = prior_PD, algorithm = algorithm, 
+                          adapt_delta = adapt_delta, ...)
   
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)
@@ -158,6 +165,21 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   if (!x) out$x <- NULL
   if (!y) out$y <- NULL
   if (!model) out$model <- NULL
+  out
+}
+
+#' @rdname stan_glm
+#' @export
+#' @param link For \code{stan_glm.nb} only, the link function to use. See 
+#'   \code{\link{neg_binomial_2}}.
+stan_glm.nb <- function(..., link = "log") {
+  mc <- call <- match.call()
+  ## need rstanarm:: for non-standard evaluation
+  mc[[1L]] <- quote(rstanarm::stan_glm)
+  mc$link <- NULL
+  mc$family <- neg_binomial_2(link = link)
+  out <- eval(mc, parent.frame(1L))
+  out$call <- call
   out
 }
 

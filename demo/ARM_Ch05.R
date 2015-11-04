@@ -20,7 +20,7 @@ vote_fit <- stan_glm(vote ~ income, data = nes1992, family=binomial(link="logit"
                   prior = t_prior, prior_intercept = t_prior, seed = SEED)
 print(vote_fit, digits = 2)
 b <- coef(vote_fit)
-stan_plot(vote_fit, pars = names(b), ci_level = 0.8)
+plot(vote_fit, pars = names(b))
 
 # Probability of Bush vote at various values of income
 pr_bush <- function(x) invlogit(b[[1]] + b[[2]] * x)
@@ -45,8 +45,8 @@ post2 <- update(post1, formula = switch ~ dist100 + arsenic)
 
 # Add interaction of dist100 and arsenic
 post3 <- update(post2, formula = .~. + dist100:arsenic)
-stan_plot(post3, pars = names(coef(post3)), show_density = TRUE, 
-          ci_level = 0.95, outer_level = 0.99)
+plot(post3, pars = names(coef(post3)), show_density = TRUE, 
+            ci_level = 0.95, outer_level = 0.99)
 
 # Compare them with loo
 loo1 <- loo(post1)

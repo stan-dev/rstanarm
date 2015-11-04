@@ -22,7 +22,9 @@
   pkgdesc <- utils::packageDescription("rstanarm", lib.loc = rstanarmLib)
   builddate <- gsub(';.*$', '', pkgdesc$Packaged)
   packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
-  packageStartupMessage("Do not expect the default priors to remain the same in future rstanarm versions.")
+  packageStartupMessage("- Do not expect the default priors to remain the same in future rstanarm versions.")
   packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults.")
+  packageStartupMessage("- For execution on a local, multicore CPU with excess RAM we recommend calling")
+  packageStartupMessage("options(mc.cores = parallel::detectCores())")
 }
 

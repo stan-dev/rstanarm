@@ -56,6 +56,7 @@ class(loglog) <- "link-glm"
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-dots
+#' @template args-adapt_delta
 #'
 #' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit',
 #'   but can be abbreviated. See \code{\link[MASS]{polr}} for more details.
@@ -101,7 +102,8 @@ stan_polr <- function (formula, data, weights, ..., subset,
                                   "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
                        prior_counts = dirichlet(1), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing")) {
+                       algorithm = c("sampling", "optimizing"),
+                       adapt_delta = 0.95) {
   
   # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)
@@ -109,7 +111,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
   if (is.matrix(eval.parent(m$data))) 
     m$data <- as.data.frame(data)
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <- 
-    m$prior_PD <- m$algorithm <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
   Terms <- attr(m, "terms")
@@ -139,7 +141,8 @@ stan_polr <- function (formula, data, weights, ..., subset,
   algorithm <- match.arg(algorithm)  
   stanfit <- stan_polr.fit(x, y, wt, offset, method, 
                            prior = prior, prior_counts = prior_counts,
-                           prior_PD = prior_PD, algorithm = algorithm, ...)
+                           prior_PD = prior_PD, algorithm = algorithm, 
+                           adapt_delta = adapt_delta, ...)
 
   # list of all the arguments and their values including any defaults (match.call
   # doesn't include defaults)
