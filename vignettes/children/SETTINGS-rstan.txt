@@ -1,5 +1,5 @@
 ```{r, SETTINGS-rstan, include=FALSE}
 CHAINS <- 2L
-CORES <- 2L
+CORES <- 1L + interactive()
 SEED <- 12345
 ```
