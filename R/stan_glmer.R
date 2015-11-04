@@ -127,7 +127,7 @@ stan_lmer <- function(...) {
 #' @rdname stan_glmer
 #' @export
 #' @param link For \code{stan_glmer.nb} only, the link function to use. See 
-#' \code{\link{neg_binomial_2}}.
+#'   \code{\link{neg_binomial_2}}.
 #' 
 stan_glmer.nb <- function(..., link = "log") {
   mc <- call <- match.call(expand.dots = TRUE)
