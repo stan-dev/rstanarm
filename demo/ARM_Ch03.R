@@ -8,12 +8,12 @@ post1 <- stan_glm(kid_score ~ mom_hs, data = DATA_ENV,
                   family = gaussian(link = "identity"), seed = SEED)
 post2 <- stan_glm(kid_score ~ mom_iq, data = DATA_ENV,
                   family = gaussian(link = "identity"), seed = SEED)
-post3 <- stan_lm (kid_score ~ mom_hs + mom_iq, data = DATA_ENV,
-                  prior = R2(location = 0.25, what = "mean"), seed = SEED,
-                  control = list(adapt_delta = 0.99, max_treedepth = 11))
-post4 <- stan_lm (kid_score ~ mom_hs * mom_iq, data = DATA_ENV,
-                  prior = R2(location = 0.30, what = "mean"), seed = SEED,
-                  control = list(adapt_delta = 0.99, max_treedepth = 11))
+post3 <- stan_lm(kid_score ~ mom_hs + mom_iq, data = DATA_ENV,
+                 prior = R2(location = 0.25, what = "mean"), seed = SEED,
+                 adapt_delta = 0.99)
+post4 <- stan_lm(kid_score ~ mom_hs * mom_iq, data = DATA_ENV,
+                 prior = R2(location = 0.30, what = "mean"), seed = SEED,
+                 adapt_delta = 0.99)
 
 # Compare them with loo
 loo1 <- loo(post1)
@@ -48,7 +48,7 @@ source(paste0(ROOT, "ARM/Ch.3/kids_after1987.data.R"),
        local = DATA_ENV, verbose = FALSE)
 post5 <- stan_lm(ppvt ~ hs + afqt, data = DATA_ENV,
                  prior = R2(location = 0.25, what = "mean"), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 11))
+                 adapt_delta = 0.99)
 y_ev <- posterior_predict(post5, newdata = data.frame(hs = DATA_ENV$hs_ev,
                                                       afqt = DATA_ENV$afqt_ev))
 par(mfrow = c(1,1))

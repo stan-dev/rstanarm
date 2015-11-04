@@ -18,11 +18,10 @@ post1 <- stan_glm(log(earn) ~ height, data = DATA_ENV,
 
 # These models add terms to the right-hand side
 post3 <- stan_lm(log(earn) ~ height + male, data = DATA_ENV,
-                 prior = R2(location = 0.3, what = "mean"), seed = SEED,
-                 control = list(adapt_delta = 0.95, max_treedepth = 11))
+                 prior = R2(location = 0.3, what = "mean"), seed = SEED)
 post4 <- stan_lm(log(earn) ~ height * male, data = DATA_ENV,
                  prior = R2(location = 0.3, what = "mean"), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 15))
+                 adapt_delta = 0.99)
 
 # Compare them with loo
 loo1 <- loo(post1)
@@ -52,23 +51,20 @@ axis(1, at = 1:ncol(y_men), labels = MEN_SEQ, las = 3)
 source(paste0(ROOT, "ARM/Ch.4/mesquite.data.R"), local = DATA_ENV, verbose = FALSE)
 post5 <- stan_lm(weight ~ diam1 + diam2 + canopy_height + total_height +
                    density + group, data = DATA_ENV,
-                 prior = R2(0.9), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 11))
+                 prior = R2(0.9), seed = SEED, adapt_delta = 0.99)
 post6 <- stan_lm(log(weight) ~ log(diam1) + log(diam2) + log(canopy_height) +
                    log(total_height) + log(density) + group, data = DATA_ENV,
-                 prior = R2(0.9), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 13))
+                 prior = R2(0.9), seed = SEED, adapt_delta = 0.99)
 post7 <- stan_lm(log(weight) ~ log(diam1 * diam2 * canopy_height), 
-                 data = DATA_ENV, prior = R2(0.75, what = "mean"), seed = SEED, 
-                 control = list(adapt_delta = 0.99, max_treedepth = 11))
+                 data = DATA_ENV, prior = R2(0.75, what = "mean"), 
+                 seed = SEED, adapt_delta = 0.99)
 post8 <- stan_lm(log(weight) ~ log(diam1 * diam2 * canopy_height) + 
                    log(diam1 * diam2) + group, data = DATA_ENV,
-                 prior = R2(0.8), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 13))
+                 prior = R2(0.8), seed = SEED, adapt_delta = 0.99)
 post9 <- stan_lm(log(weight) ~ log(diam1 * diam2 * canopy_height) + 
                    log(diam1 * diam2) + log(diam1 / diam2) + group, 
-                 data = DATA_ENV, prior = R2(0.85), seed = SEED,
-                 control = list(adapt_delta = 0.99, max_treedepth = 13))
+                 data = DATA_ENV, prior = R2(0.85), 
+                 seed = SEED, adapt_delta = 0.99)
 
 compare(loo(post5), loo(post6), loo(post7), loo(post8), loo(post9))
 

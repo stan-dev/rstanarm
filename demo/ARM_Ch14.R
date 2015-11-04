@@ -19,7 +19,7 @@ print(M2, digits = 2)
 
 ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
 if (ANSWER != "n") {
-  rm(election88)
+  rm(election88, t_prior, fmla1, fmla2)
   # removes stanreg and loo objects, plus what was created by STARTUP
   demo("CLEANUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
 }

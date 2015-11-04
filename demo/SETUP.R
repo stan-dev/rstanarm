@@ -1,5 +1,6 @@
 stopifnot(require(rstanarm))
 stopifnot(require(loo))
+stopifnot(require(ggplot2))
 stopifnot(require(parallel))
 options(mc.cores = parallel::detectCores())
 
