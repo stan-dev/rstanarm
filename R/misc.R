@@ -1,5 +1,14 @@
 # Default 'control' argument for stan() if none specified by user
-default_stan_control <- function(adapt_delta = 0.95, max_treedepth = 15L) {
+# value of adapt_delta depends on prior
+default_stan_control <- function(prior, adapt_delta = NULL, max_treedepth = 15L) {
+  if (is.null(adapt_delta)) {
+    adapt_delta <- switch(prior$dist, 
+                          "R2" = 0.99,
+                          "hs" = 0.99,
+                          "hs_plus" = 0.99,
+                          "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          0.95) # default
+  }
   nlist(adapt_delta, max_treedepth)
 }
 
@@ -7,14 +16,19 @@ default_stan_control <- function(adapt_delta = 0.95, max_treedepth = 15L) {
 # @param object The stanfit object to use for sampling
 # @param user_dots The contents of ... from the user's call to stan_*
 # @param user_adapt_delta The value for adapt_delta specified by the user
+# @param prior Prior distribution list
 # @param ... Other arguments to sampling not coming from user_dots (e.g. data,
 #   pars, init, etc.)
-set_sampling_args <- function(object, user_dots, user_adapt_delta, ...) {
+set_sampling_args <- function(object, prior, user_dots = list(), 
+                              user_adapt_delta = NULL, ...) {
   args <- list(object = object, ...)
   unms <- names(user_dots)
   for (j in seq_along(user_dots)) args[[unms[j]]] <- user_dots[[j]]
-  if ("control" %in% unms) args$control$adapt_delta <- user_adapt_delta
-  else args$control <- default_stan_control(adapt_delta = user_adapt_delta)
+  if ("control" %in% unms && !is.null(user_adapt_delta)) {
+    args$control$adapt_delta <- user_adapt_delta
+  }
+  else args$control <- 
+    default_stan_control(prior = prior, adapt_delta = user_adapt_delta)
   return(args)
 }
 

@@ -89,7 +89,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), 
                     prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
-                    adapt_delta = 0.95) {
+                    adapt_delta = NULL) {
 
   # Parse like glm()
   if (is.character(family)) 
@@ -174,8 +174,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 #'   \code{\link{neg_binomial_2}}.
 stan_glm.nb <- function(..., link = "log") {
   mc <- call <- match.call()
-  ## need rstanarm:: for non-standard evaluation
-  mc[[1L]] <- quote(rstanarm::stan_glm)
+  mc[[1L]] <- quote(stan_glm)
   mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame(1L))
@@ -212,4 +211,3 @@ neg_binomial_2 <- function(link = "log") {
     stop("'simulate' function should not have been called")
   return(out)
 }
-

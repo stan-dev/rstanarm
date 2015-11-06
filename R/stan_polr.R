@@ -103,7 +103,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
                        prior = R2(stop("'location' must be specified")), 
                        prior_counts = dirichlet(1), prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing"),
-                       adapt_delta = 0.95) {
+                       adapt_delta = NULL) {
   
   # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)

@@ -57,7 +57,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing"), 
-                       adapt_delta = 0.95) {
+                       adapt_delta = NULL) {
   
   if (match.arg(algorithm) == "optimizing") {
     message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
