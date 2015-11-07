@@ -25,6 +25,7 @@ Imports:
     utils
 Suggests:
     arm,
+    gamm4,
     grDevices,
     gridExtra,
     HSAUR3,

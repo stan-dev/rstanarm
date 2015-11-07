@@ -83,7 +83,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   x <- as.matrix(x)
-  has_intercept <- colnames(x)[1L] == "(Intercept)"
+  has_intercept <- grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
   xbar <- colMeans(xtemp)
   xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
@@ -184,7 +184,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (length(group)) {
     Z <- t(as.matrix(group$Zt))
     p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
+    l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[[i]]))
     t <- length(p)
     group_nms <- names(group$cnms)
     b_names <- unlist(lapply(1:t, FUN = function(i) {
