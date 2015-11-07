@@ -27,7 +27,7 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
                            prior = R2(stop("'location' must be specified")), 
                            prior_counts = dirichlet(1), prior_PD = FALSE, 
                            algorithm = c("sampling", "optimizing"),
-                           adapt_delta = 0.95) {
+                           adapt_delta = NULL) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
   link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)
@@ -99,9 +99,11 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
     else pars <- c("zeta", "beta", "mean_PPD")
     standata$do_residuals <- J > 2
     sampling_args <- set_sampling_args(
-      object = stanfit, user_dots = list(...), user_adapt_delta = adapt_delta, 
-      init = start, data = standata, pars = pars, show_messages = FALSE
-    )
+      object = stanfit, 
+      prior = prior,
+      user_dots = list(...), 
+      user_adapt_delta = adapt_delta, 
+      init = start, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
     
     # else 

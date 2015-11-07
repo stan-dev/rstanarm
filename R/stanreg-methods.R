@@ -90,7 +90,7 @@ log_lik.stanreg <- function(object, ...) {
   fun <- .llfun(object$family)
   args <- .llargs(object)
   sapply(seq_len(args$N), function(i) {
-    as.vector(fun(i = i, data = args$data, draws = args$draws)) 
+    as.vector(fun(i = i, data = args$data[i,, drop=FALSE], draws = args$draws)) 
   })
 }
 

@@ -5,6 +5,8 @@
 #' distribution}.
 #' 
 #' @export
+#' @template reference-bda
+#' @templateVar bdaRef (Ch. 6)
 #' @inheritParams stanreg-methods
 #' @param check The type of plot (possibly abbreviated) to show. See Details.
 #' @param nreps The number of datasets to generate from the posterior predictive

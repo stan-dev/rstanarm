@@ -19,7 +19,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing"),
-                         adapt_delta = 0.95) {
+                         adapt_delta = NULL) {
   if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
@@ -74,9 +74,11 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   #                        algorithm = algorithm, ...)
   # }
   sampling_args <- set_sampling_args(
-    object = stanfit, user_dots = list(...), user_adapt_delta = adapt_delta, 
-    init = init_fun, data = standata, pars = pars, show_messages = FALSE
-  )
+    object = stanfit, 
+    prior = prior,
+    user_dots = list(...), 
+    user_adapt_delta = adapt_delta, 
+    init = init_fun, data = standata, pars = pars, show_messages = FALSE)
   stanfit <- do.call(sampling, sampling_args)
   
   parameters <- dimnames(stanfit)$parameters
@@ -92,7 +94,7 @@ stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing"), 
-                        adapt_delta = 0.95) {
+                        adapt_delta = NULL) {
 
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)

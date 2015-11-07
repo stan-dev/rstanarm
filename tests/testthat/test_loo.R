@@ -10,18 +10,8 @@ SEED <- 1234
 # log-likelihood functions don't return any errors and whatnot (it does not check
 # that the results returned by loo are actually correct). 
 
-loo_with_fn <- function(fit) {
-  loo(fit)
-}
-loo_with_mat <- function(fit) {
-  llargs <- rstanarm:::.llargs(fit)
-  llfun <- rstanarm:::.llfun(fit$family)
-  llmat <- matrix(NA, nrow = llargs$S, ncol = llargs$N)
-  for (i in 1:ncol(llmat)) {
-    llmat[, i] <- llfun(i, llargs$data[i,,drop=FALSE], llargs$draws)
-  }
-  loo(llmat)
-}
+loo_with_fn <- function(fit) loo(fit)
+loo_with_mat <- function(fit) loo(log_lik(fit))
 expect_identical_loo <- function(fit) {
   expect_identical(loo_with_fn(fit), loo_with_mat(fit))
 }

@@ -32,7 +32,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          group = list(),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing"), 
-                         adapt_delta = 0.95) {
+                         adapt_delta = NULL) {
   
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())
@@ -350,9 +350,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   else {
     sampling_args <- set_sampling_args(
-      object = stanfit, user_dots = list(...), user_adapt_delta = adapt_delta, 
-      data = standata, pars = pars, show_messages = FALSE
-      )
+      object = stanfit, 
+      prior = prior, 
+      user_dots = list(...), 
+      user_adapt_delta = adapt_delta, 
+      data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
 
     # else
