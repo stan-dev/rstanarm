@@ -100,15 +100,19 @@ ppcheck <- function(object,
       theme(strip.text = element_blank(), legend.position = "right")
     return(graph)
   }
-  if (fn == "ppcheck_resid" && is.binomial(object$family$family)) {
+  if (fn == "ppcheck_resid") {
+    if (!is(object, "polr") && is.binomial(object$family$family)) {
     graph <- ppcheck_binned_resid(object, n = nreps, ...) + 
       ggtitle("Binned Residuals") + 
       .ppcheck_theme(no_y = FALSE)
     return(graph)
+    }
   }
   thm <- .ppcheck_theme()
-  yrep <- posterior_predict(object)
+  yrep <- posterior_predict(object, draws = nreps)
   y <- get_y(object)
+  if (is(object, "polr")) 
+    y <- as.integer(y)
   if (NCOL(y) == 2L) {
     trials <- rowSums(y)
     y <- y[, 1L] / trials
@@ -166,8 +170,8 @@ ppcheck <- function(object,
 ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   fn <- if (overlay) "ppcheck_dens" else "ppcheck_hist"
   stopifnot(n <= nrow(yrep))
-  s <- sample.int(nrow(yrep), n)
-  yrep <- as.data.frame(yrep[s, ])
+  s <- 1:n
+  yrep <- as.data.frame(yrep)
   colnames(yrep) <- paste0("value.", 1:ncol(yrep))
   yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
                        varying = list(1:ncol(yrep)), ids = paste0('rep_', s))
@@ -241,8 +245,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
 #' @importFrom ggplot2 labs
 ppcheck_resid <- function(y, yrep, n = 1, ...) {
   stopifnot(n <= nrow(yrep))
-  s <- sample.int(nrow(yrep), n)
-  yrep <- yrep[s, ]
+  s <- 1:n
   if (n == 1) {
     base <- ggplot(data.frame(x = y - yrep), aes_string(x = "x"))
   } else {
@@ -309,13 +312,18 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
 }
 
 ppcheck_refit <- function(object, n = 1, ...) {
+  message("Refitting model using y = yrep...\n")
   yrep <- as.vector(posterior_predict(object, draws = 1))
   mf <- model.frame(object)
-  fam <- object$family$family
+  if (is(object, "polr")) fam <- "polr"
+  else fam <- object$family$family
+  
   if (!is.binomial(fam)) {
+    if (is(object, "polr"))
+      yrep <- factor(yrep, labels = levels(get_y(object)), ordered = TRUE)
     mf[[1L]] <- yrep
     refit <- update(object, data = mf)
-  } 
+  }
   else {
     y <- get_y(object)
     if (NCOL(y) == 2L) {
