@@ -111,4 +111,11 @@
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
 #'   by \pkg{rstanarm} to estimate the models.
 #'   
+#' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
+#' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
+#' @template reference-bda
+#' @template reference-gelman-hill
+#' @template reference-loo
+#' @template reference-stan-manual
+#'   
 NULL

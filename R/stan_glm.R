@@ -20,12 +20,13 @@
 #' the coefficients, intercept, and nuisance parameter
 #'
 #' @export
-#' @templateVar fun stan_glm, stan_glm.nb
-#' @templateVar fitfun stan_glm.fit
+#' @templateVar armRef (Ch. 3-6)
 #' @templateVar pkg stats
 #' @templateVar pkgfun glm
 #' @templateVar sameargs model,offset,weights 
 #' @templateVar rareargs na.action,contrasts
+#' @templateVar fun stan_glm, stan_glm.nb
+#' @templateVar fitfun stan_glm.fit
 #' @template return-stanreg-object
 #' @template return-stanfit-object
 #' @template see-also
@@ -38,8 +39,8 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template reference-gelman-hill
 #' 
-#'
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
 #'   are also possible using the \code{\link{neg_binomial_2}} family object.
 #' 

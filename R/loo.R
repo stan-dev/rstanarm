@@ -6,34 +6,38 @@
 #' 
 #' @export
 #' @aliases loo waic
+#' @template reference-loo
 #' @inheritParams loo::loo
 #' @param x A fitted model object returned by one of the \pkg{rstanarm} modeling
 #'   functions.
 #' @return An object of class 'loo'. See \code{\link[loo]{loo}} and
 #'   \code{\link[loo]{waic}}.
+#'   
+#' @seealso \code{\link[loo]{loo-package}}, \code{\link[loo]{compare}}, 
+#'   \code{\link[loo]{plot.loo}}
 #' 
 #' @examples 
 #' \dontrun{
-#' seed <- 42024
-#' set.seed(seed)
+#' SEED <- 42024
+#' set.seed(SEED)
 #' library(loo)
 #' 
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 200, seed = seed)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = 200, seed = seed)
-#' (loo1 <- loo(fit1, cores = 2))
-#' loo2 <- loo(fit2, cores = 2)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
+#' fit2 <- update(fit1, formula = . ~ . + cyl)
+#' (loo1 <- loo(fit1))
+#' loo2 <- loo(fit2)
 #' compare(loo1, loo2)
-#' plot(loo2, label_points = TRUE)
+#' plot(loo2)
 #' 
 #' 
-#' data(lalonde, package = "arm")
-#' ?lalonde
-#' t7 <- student_t(df = 7) 
+#' # dataset description at help("lalonde", package = "arm")
+#' data(lalonde, package = "arm") 
+#' t7 <- student_t(df = 7) # prior for coefficients
 #' 
 #' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
 #'    nodegr + u74 + u75
 #' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
-#'                      prior = t7, prior_intercept = t7)
+#'                      prior = t7, cores = 4, seed = SEED)
 #'                  
 #' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
 #'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
@@ -45,8 +49,6 @@
 #' compare(loo_lalonde1, loo_lalonde2)
 #' }
 #' 
-#' @seealso \code{\link[loo]{loo-package}}, \code{\link[loo]{compare}}, 
-#' \code{\link[loo]{plot.loo}}
 #' @importFrom loo loo loo.function
 #' 
 loo.stanreg <- function(x, ...) {

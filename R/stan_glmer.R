@@ -4,6 +4,7 @@
 #' unknown covariance matrices with flexible priors.
 #' 
 #' @export
+#' @templateVar armRef (Ch. 11-15)
 #' @templateVar fun stan_glmer, stan_lmer, stan_glmer.nb
 #' @templateVar pkg lme4
 #' @templateVar pkgfun glmer
@@ -13,6 +14,7 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template reference-gelman-hill
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.

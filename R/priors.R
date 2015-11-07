@@ -243,8 +243,7 @@ decov <- function(regularization = 1, concentration = 1,
   validate_parameter_value(concentration)
   validate_parameter_value(shape)
   validate_parameter_value(scale)
-  nlist(dist = "decov", regularization, concentration, 
-        shape, scale)
+  nlist(dist = "decov", regularization, concentration, shape, scale)
 }
 
 #' @rdname priors
@@ -263,18 +262,19 @@ R2 <- function(location = NULL,
 }
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
-  if (is.null(location)) stop("must specify 'location' on the (0,1) interval ",
-                              "in the call to prior = R2(), unless 'what' is ",
-                              "'log', in which case 'location' must be negative")
+  if (is.null(location)) 
+    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
+         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.")
   stopifnot(length(location) == 1, is.numeric(location))
   stopifnot(is.numeric(K), K == as.integer(K))
-  if (K == 0) stop("R2 prior is not applicable when there are no covariates")
+  if (K == 0) stop("R2 prior is not applicable when there are no covariates.")
   what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {
     stopifnot(location > 0, location <= 1)
-    if (K <= 2) stop("mode of beta distribution does not exist when K <= 2 ",
-                     "specify 'what' as 'mean', 'median', or 'log' instead")
+    if (K <= 2)
+      stop(paste0("The mode of the beta distribution does not exist when K <= 2.", 
+                  "\nSpecify 'what' as 'mean', 'median', or 'log' instead."))
     eta <- (half_K - 1  - location * half_K + location * 2) / location
   }
   else if (what == "mean") {
