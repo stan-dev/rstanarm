@@ -5,9 +5,10 @@
 #' distribution}.
 #' 
 #' @export
-#' @template reference-bda
 #' @templateVar bdaRef (Ch. 6)
-#' @inheritParams stanreg-methods
+#' @templateVar stanregArg object
+#' @template reference-bda
+#' @template args-stanreg-object
 #' @param check The type of plot (possibly abbreviated) to show. See Details.
 #' @param nreps The number of datasets to generate from the posterior predictive
 #'   distribution and show in the plots. The default is \code{nreps=3} for 

@@ -4,12 +4,13 @@
 #' Applicable Information Criterion (WAIC) using the 
 #' \pkg{\link[=loo-package]{loo}} package.
 #' 
-#' @export
 #' @aliases loo waic
+#'
+#' @export
+#' @templateVar stanregArg x
+#' @template args-stanreg-object
 #' @template reference-loo
 #' @inheritParams loo::loo
-#' @param x A fitted model object returned by one of the \pkg{rstanarm} modeling
-#'   functions.
 #' @return An object of class 'loo'. See \code{\link[loo]{loo}} and
 #'   \code{\link[loo]{waic}}.
 #'   

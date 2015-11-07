@@ -9,7 +9,8 @@
 #' predictor affects (a function of) the outcome(s).
 #' 
 #' @export
-#' @inheritParams stanreg-methods
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
 #' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.
 #' @param draws The number of draws to return. The default and maximum number of

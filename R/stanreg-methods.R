@@ -1,13 +1,12 @@
 #' Methods
 #' 
-#' Methods for \link[=stanreg-objects]{'stanreg' objects}.
+#' Methods for \link[=stanreg-objects]{stanreg} objects.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps
 #' 
-#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
-#'   modeling functions. This will be a list with class 'stanreg' as well as at 
-#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
 #' @param ... Ignored.
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
