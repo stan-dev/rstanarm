@@ -184,13 +184,17 @@ stan_glm.nb <- function(..., link = "log") {
 }
 
 #' Family function for Negative Binomial GLMs
-#'
-#' Specifies the information required to fit a Negative Binomial GLM in 
-#' a similar way to \code{\link[MASS]{negative.binomial}} but does not
-#' require the overdispersion parameter, \code{theta}, to be specified.
-#' A call to this function can be passed to the \code{family} argument
-#' of \code{\link{stan_glm}} or \code{\link{stan_glm.fit}} to estimate
-#' a Negative Binomial model.
+#' 
+#' Specifies the information required to fit a Negative Binomial GLM in a 
+#' similar way to \code{\link[MASS]{negative.binomial}}. However, here the 
+#' overdispersion parameter \code{theta} is \emph{not} assumed to be known and 
+#' therefore is estimated rather than specified by the user. A call to this 
+#' function can be passed to the \code{family} argument of 
+#' \code{\link{stan_glm}} or \code{\link{stan_glmer}} to estimate a Negative 
+#' Binomial model. Alternatively, the \code{\link{stan_glm.nb}} and 
+#' \code{\link{stan_glmer.nb}} wrapper functions may be used, which call 
+#' \code{neg_binomial_2} internally.
+#' 
 #' @export
 #' @param link The same as for \code{\link{poisson}}, typically a character
 #'   vector of length one among \code{"log"}, \code{"identity"}, and
