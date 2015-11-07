@@ -49,8 +49,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (object$algorithm != "sampling")
     stop("Only available for models fit using MCMC (algorithm = 'sampling').")
   family <- object$family
-  famname <- family$family
-  ppfun <- paste0(".pp_", famname)
+  if (!is(object, "polr")) {
+    famname <- family$family
+    ppfun <- paste0(".pp_", famname) 
+  }
   stanmat <- as.matrix(object$stanfit)
   S <- nrow(stanmat)
   if (is.null(draws)) 
