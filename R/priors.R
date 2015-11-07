@@ -194,6 +194,34 @@
 #'                     prior_ops = prior_options(prior_scale_for_dispersion = 2))
 #' }
 #' 
+#' # Visually compare normal, student_t, and cauchy
+#' library(ggplot2)
+#' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
+#'   dt_loc_scale <- function(x, df, location, scale) {
+#'     1 / scale * dt((x - location) / scale, df)  
+#'   }
+#'   ggplot(data.frame(x = xlim), aes(x)) + 
+#'     stat_function(fun = dnorm, 
+#'                   args = list(mean = 0, sd = scale), 
+#'                   color = "purple", size = .75) +
+#'     stat_function(fun = dt_loc_scale, 
+#'                   args = list(df = df_t, location = 0, scale = scale), 
+#'                   color = "orange", size = .75) +
+#'     stat_function(fun = dcauchy, 
+#'                   args = list(location = 0, scale = scale), 
+#'                   color = "skyblue", size = .75) + 
+#'     ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
+#' }
+#' # Cauchy has fattest tails, then student_t, then normal:
+#' compare_priors()
+#' # The student_t with df = 1 is the same as the cauchy:
+#' compare_priors(df_t = 1) 
+#' # Even a scale of 5 is somewhat large. It gives plausibility to rather extreme values:
+#' compare_priors(scale = 5, xlim = c(-20,20)) 
+#' # If you use a prior like normal(0, 1000) to be "non-informative" you are 
+#' # actually saying that coefficient a value of e.g. -500 is quite plausible:
+#' compare_priors(scale = 1000, xlim = c(-1000,1000)) 
+#' 
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)
   nlist(dist = "normal", df = NA, location, scale)
