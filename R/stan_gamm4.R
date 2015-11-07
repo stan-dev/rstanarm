@@ -39,14 +39,14 @@
 #' @examples
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
 
-stan_gamm4 <- function (formula, random = NULL, family = gaussian(), data = list(), 
-                        weights = NULL, subset = NULL, na.action, knots = NULL, 
-                        drop.unused.levels = TRUE, ..., 
-                        prior = normal(), prior_intercept = normal(),
-                        prior_ops = prior_options(),
-                        prior_covariance = decov(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing"), 
-                        adapt_delta = 0.95) {
+stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
+                       weights = NULL, subset = NULL, na.action, knots = NULL, 
+                       drop.unused.levels = TRUE, ..., 
+                       prior = normal(), prior_intercept = normal(),
+                       prior_ops = prior_options(),
+                       prior_covariance = decov(), prior_PD = FALSE, 
+                       algorithm = c("sampling", "optimizing"), 
+                       adapt_delta = NULL) {
 
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
