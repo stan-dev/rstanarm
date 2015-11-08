@@ -81,8 +81,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- 
     mc$adapt_delta <- mc$... <- NULL
-  mc$control <- lme4::glmerControl(check.nobs.vs.nlev  = "ignore",  
-                                   check.nobs.vs.nRE = "ignore")
   glmod <- eval(mc, parent.frame(1L))
   y <- glmod$fr[,as.character(glmod$formula[2])]
   X <- glmod$X
