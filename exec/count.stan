@@ -76,8 +76,12 @@ transformed parameters {
     dispersion[1] <- prior_scale_for_dispersion * dispersion_unscaled[1];
   else if (family > 1) dispersion[1] <- dispersion_unscaled[1];
   if (t > 0) {
-    theta_L <- make_theta_L(len_theta_L, p, if_else(family > 1, dispersion[1], 1.0),
-                            tau, scale, zeta, rho, z_T);
+    if (family == 1)
+      theta_L <- make_theta_L(len_theta_L, p, 1.0,
+                              tau, scale, zeta, rho, z_T);
+    else
+      theta_L <- make_theta_L(len_theta_L, p, dispersion[1],
+                              tau, scale, zeta, rho, z_T);
     b <- make_b(z_b, theta_L, p, l);
   }
 }
