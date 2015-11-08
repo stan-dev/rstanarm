@@ -93,8 +93,10 @@ stan_gamm4 <- function (formula, random = NULL, family = gaussian(), data = list
   
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
-               algorithm, glmod)
+               algorithm, glmod) 
   out <- stanreg(fit)
+  # FIXME: replace guts of gam with point estimates from stanfit
+  out$gam <- result$gam
   class(out) <- c(class(out), "lmerMod")
   return(out)
 }
