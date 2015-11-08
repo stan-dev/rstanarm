@@ -37,11 +37,6 @@ stanreg <- function(object) {
               call. = FALSE, noBreaks. = TRUE)
   }    
   eta <- linear_predictor(coefs, x, offset)
-  if (mer) {
-    b <- stan_summary[.bnames(rownames(stan_summary)), 
-                      .select_median(object$algorithm)]
-    eta <- eta + linear_predictor(b, get_z.lmerMod(object))
-  }
   mu <- family$linkinv(eta)
   
   # residuals (of type 'response', unlike glm which does type 'deviance' by

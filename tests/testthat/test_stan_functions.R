@@ -294,7 +294,7 @@ test_that("pw_polr returns expected results", {
                         start = c(beta, zeta), control = list(maxit = 0))
     Pr <- fitted(model)
     Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
-    expect_true(all.equal(log(Pr), pw_polr(y, eta, zeta, i)))
+    expect_equal(log(Pr), pw_polr(y, eta, zeta, i), info = links[i])
   }
 })
 rdirichlet <- function(n, alpha) {
@@ -332,12 +332,18 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(lme4))
   stopifnot(require(Matrix))
   test_lme4 <- function(group) {
-    Z <- t(as.matrix(group$Zt))
+    Lambdati <- group$Lambdat
+    Lind <- group$Lind
+    theta <- group$theta
+    
+    group <- rstanarm:::pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+                                   flist = group$flist)
+    Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[,i]))
+    l <- sapply(attr(group$flist, "assign"), function(i) nlevels(group$flist[,i]))
     
     len_theta_L <- sum(choose(p,2), p)
-    expect_true(len_theta_L == length(group$theta))
+    expect_true(len_theta_L == length(theta))
     dispersion <- runif(1)
     tau <- as.array(rgamma(length(p), shape = 1, scale = 1))
     scale <- as.array(abs(rcauchy(length(p))))
@@ -346,19 +352,20 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     z_T <- as.array(rnorm(sum(pmax(0, choose(p,2) - 1))))
     
     theta_L <- make_theta_L(len_theta_L, p, dispersion, tau, scale, zeta, rho, z_T)
-    expect_true(all(theta_L[group$theta == 1] > 0))
-    Lambdati <- group$Lambdat
-    Lambdati@x <- theta_L[group$Lind]
+    expect_true(all(theta_L[theta == 1] > 0))
+    Lambdati@x <- theta_L[Lind]
     
     z_b <- rnorm(ncol(Z))
     b <- make_b(z_b, theta_L, p, l)
-    expect_equal(b, as.vector(Matrix::t(Lambdati) %*% z_b), tol = 1e-14)
+    mark <- grepl("_NEW_", colnames(Z), fixed = TRUE)
+    expect_equal(b[!mark], as.vector(Matrix::t(Lambdati) %*% z_b[!mark]), 
+                 tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
-  }    
+  }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (Days || Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (1 | Subject), data = sleepstudy)$reTrms)

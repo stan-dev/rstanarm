@@ -64,10 +64,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   dat <- pp_data(object, newdata)
   beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  if (is(object, "lmerMod")) {
-    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
-    eta <- eta + linear_predictor(b, dat$z)
-  }
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {

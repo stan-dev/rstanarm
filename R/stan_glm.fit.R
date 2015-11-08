@@ -182,9 +182,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
   if (length(group)) {
+    decov <- group$decov
     Z <- t(as.matrix(group$Zt))
+    group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
+    Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attributes(group$flist)$assign, function(i) nlevels(group$flist[[i]]))
+    l <- sapply(attr(group$flist, "assign"), function(i) 
+      nlevels(group$flist[[i]]))
     t <- length(p)
     group_nms <- names(group$cnms)
     b_names <- unlist(lapply(1:t, FUN = function(i) {
@@ -218,14 +222,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v <- parts$v
       standata$u <- parts$u
     }
-    standata$shape <- as.array(maybe_broadcast(group$decov$shape, t))
-    standata$scale <- as.array(maybe_broadcast(group$decov$scale, t))
+    standata$shape <- as.array(maybe_broadcast(decov$shape, t))
+    standata$scale <- as.array(maybe_broadcast(decov$scale, t))
     standata$len_concentration <- sum(p[p > 1])
-    standata$concentration <- as.array(maybe_broadcast(group$decov$concentration, 
+    standata$concentration <- as.array(maybe_broadcast(decov$concentration, 
                                                        sum(p[p > 1])))
     standata$len_regularization <- sum(p > 1)
     standata$regularization <- as.array(maybe_broadcast(
-                                        group$decov$regularization, sum(p > 1)))
+                                        decov$regularization, sum(p > 1)))
   }
   else {
     standata$t <- 0L
@@ -370,4 +374,24 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }
+}
+
+pad_reTrms <- function(Z, cnms, flist) {
+  l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
+  p <- sapply(cnms, FUN = length)
+  last <- cumsum(l * p)
+  for (i in attr(flist, "assign")) {
+    levels(flist[[i]]) <- c(levels(flist[[i]]), paste0("_NEW_", names(flist)[i]))
+  }
+  n <- nrow(Z)
+  Z <- cbind(Z, matrix(0, nrow = n, ncol = p[length(p)], 
+             dimnames = list(NULL, rep("_NEW_", p[length(p)]))))
+  mark <- length(p) - 1L
+  for (i in rev(head(last, -1))) {
+    Z <- cbind(Z[,1:i, drop = FALSE],
+               matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
+               Z[,(i+1):ncol(Z), drop = FALSE])
+    mark <- mark - 1L
+  }
+  return(nlist(Z, cnms, flist))
 }

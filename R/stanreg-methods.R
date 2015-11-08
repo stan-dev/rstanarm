@@ -179,6 +179,8 @@ ranef.stanreg <- function(object, ...) {
     sel <- .bnames(rownames(object$stan_summary))
   else sel <- .bnames(object$stanfit@sim$fnames_oi)
   ans <- object$stan_summary[sel, .select_median(object$algorithm)]
+  # avoid returning the extra levels that were included
+  ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]
   fl <- .flist(object)
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
@@ -196,9 +198,6 @@ ranef.stanreg <- function(object, ...) {
                check.names = FALSE)
   })
   names(ans) <- names(fl)
-  #   stopifnot(is(whichel, "character"))
-  #   whchL <- names(ans) %in% whichel
-  #   ans <- ans[whchL]
   class(ans) <- "ranef.mer"
   ans
 }

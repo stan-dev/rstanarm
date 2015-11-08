@@ -104,8 +104,9 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   all_args <- mget(names(formals()), sys.frame(sys.nframe()))
   prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
 
-  Z <- t(as.matrix(group$Zt))
-  if (algorithm == "optimizing") 
+  Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+                  flist = group$flist)$Z
+  if (algorithm == "optimizing")
     colnames(Z) <- .bnames(names(stanfit$par), value = TRUE)
   else colnames(Z) <- .bnames(names(stanfit), value = TRUE)
   

@@ -7,7 +7,7 @@ SEED <- 123
 options(mc.cores = 2L)
 if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
-RANEF_tol <- 0.19 
+RANEF_tol <- 0.20 
 
 
 context("stan_lmer")
@@ -28,7 +28,7 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   ans <- lmer(fmla, data = Penicillin)
   expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
   expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
-  expect_equal(ngrps(fit), ngrps(ans))
+  expect_identical(ngrps(fit), ngrps(ans))
 })
 
 context("stan_glmer (binomial)")
