@@ -2,7 +2,8 @@
 #' 
 #' Compute approximate leave-one-out cross-validation (LOO) or the Widely 
 #' Applicable Information Criterion (WAIC) using the 
-#' \pkg{\link[=loo-package]{loo}} package.
+#' \pkg{\link[=loo-package]{loo}} package. Compare two or more models using the
+#' \code{\link[loo]{compare}} function.
 #' 
 #' @aliases loo waic
 #'

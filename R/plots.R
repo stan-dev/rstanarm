@@ -7,9 +7,8 @@
 #' 
 #' @method plot stanreg
 #' @export
-#' @inheritParams summary.stanreg
-#' @param x A stanreg object returned by one of the \pkg{rstanarm} modeling
-#'   functions.
+#' @templateVar stanregArg x
+#' @template args-stanreg-object
 #' @param plotfun A character string (possibly abbreviated) naming the plotting
 #'   function to apply to the stanreg object. See \code{\link{plots}} for the
 #'   names and descriptions. The default plot shows intervals and point
