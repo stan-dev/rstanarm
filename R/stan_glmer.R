@@ -49,7 +49,7 @@
 #' # see help(example_model) for details on the model below
 #' print(example_model, digits = 1)
 #' 
-#' @importFrom lme4 glFormula
+#' @importFrom lme4 glFormula glmerControl
 #' 
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
                        subset, weights, 
@@ -73,6 +73,11 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   if (!is(family, "family"))
     stop("'family' must be a family")
   mc[[1]] <- quote(lme4::glFormula)
+  mc$control <- glmerControl(check.nlev.gtreq.5 = "ignore",
+                             check.nlev.gtr.1 = "stop",
+                             check.nobs.vs.rankZ = "ignore",
+                             check.nobs.vs.nlev = "ignore",
+                             check.nobs.vs.nRE = "ignore")
   mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- 
     mc$adapt_delta <- mc$... <- NULL
