@@ -1,7 +1,8 @@
 #' Predict method for stanreg objects
 #' 
 #' @export
-#' @inheritParams stanreg-methods
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
 #' @param ... Ignored.
 #' @param newdata Optionally, a data frame in which to look for variables with 
 #'   which to predict. If omitted, the model matrix is used.

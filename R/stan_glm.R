@@ -182,33 +182,3 @@ stan_glm.nb <- function(..., link = "log") {
   out$call <- call
   out
 }
-
-#' Family function for Negative Binomial GLMs
-#'
-#' Specifies the information required to fit a Negative Binomial GLM in 
-#' a similar way to \code{\link[MASS]{negative.binomial}} but does not
-#' require the overdispersion parameter, \code{theta}, to be specified.
-#' A call to this function can be passed to the \code{family} argument
-#' of \code{\link{stan_glm}} or \code{\link{stan_glm.fit}} to estimate
-#' a Negative Binomial model.
-#' @export
-#' @param link The same as for \code{\link{poisson}}, typically a character
-#'   vector of length one among \code{"log"}, \code{"identity"}, and
-#'   \code{"sqrt"}
-#' @return An object of class \code{\link[stats]{family}} very similar to
-#'   that of \code{\link[stats]{poisson}} but with a different family name.
-#' @examples
-#' neg_binomial_2()
-#'
-neg_binomial_2 <- function(link = "log") {
-  out <- poisson(link)
-  out$family <- "neg_binomial_2"
-  out$variance <- function(mu, theta) mu + mu^2 / theta
-  out$dev.resids <- function(y, mu, wt)
-    stop("'dev.resids' function should not be called")
-  out$aic <- function(y, n, mu, wt, dev)
-    stop("'aic' function should not have been called")
-  out$simulate <- function(object, nsim)
-    stop("'simulate' function should not have been called")
-  return(out)
-}

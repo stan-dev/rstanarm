@@ -1,13 +1,12 @@
 #' Methods
 #' 
-#' Methods for \link[=stanreg-objects]{'stanreg' objects}.
+#' Methods for \link[=stanreg-objects]{stanreg} objects.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps
 #' 
-#' @param object,x A fitted model object returned by one of the \pkg{rstanarm} 
-#'   modeling functions. This will be a list with class 'stanreg' as well as at 
-#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
 #' @param ... Ignored.
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
@@ -17,19 +16,17 @@
 #'   
 #' \itemize{
 #' \item \code{confint} Credible intervals based on posterior quantiles, unless 
-#'  \code{algorithm='optimizing'}, in which case \code{\link[stats]{confint.default}} 
-#'  is called.
+#'  \code{algorithm='optimizing'}, in which case
+#'  \code{\link[stats]{confint.default}} is called.
 #' \item \code{log_lik} The \eqn{S} by \eqn{N} pointwise log-likelihood matrix, 
 #'  where \eqn{S} is the size of the posterior sample and \eqn{N} is the number 
 #'  of data points.
 #' \item \code{residuals} Residuals of type \code{'response'} (not 
 #'  \code{'deviance'} residuals).
-#'  \item \code{coef} Coefficients are posterior medians
+#' \item \code{coef} Coefficients are posterior medians.
 #' \item \code{se} Standard errors are proportional to the median absolute 
 #'  deviation from the posterior median (\code{\link[stats]{mad}}).
 #' }
-#'
-#' @seealso \code{\link{stanreg-objects}}
 #' 
 NULL
 
