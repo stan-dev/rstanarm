@@ -396,3 +396,15 @@ pad_reTrms <- function(Z, cnms, flist) {
   }
   return(nlist(Z, cnms, flist))
 }
+
+# Drop the extra reTrms from a matrix x
+# @param x A matrix (e.g. the posterior sample or matrix of summary stats)
+# @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
+#   variables?
+unpad_reTrms <- function(x, columns = TRUE) {
+  stopifnot(is.matrix(x))
+  nms <- if (columns) colnames(x) else rownames(x)
+  keep <- !grepl("_NEW_", nms, fixed = TRUE)
+  if (columns) x[, keep, drop = FALSE] 
+  else x[keep,, drop = FALSE]
+}
