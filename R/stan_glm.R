@@ -151,14 +151,9 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior_ops = prior_ops,
                           prior_PD = prior_PD, algorithm = algorithm, 
                           adapt_delta = adapt_delta, ...)
-  
-  # list of all the arguments and their values including any defaults (match.call
-  # doesn't include defaults)
-  all_args <- mget(names(formals()), sys.frame(sys.nframe()))
-  prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
-  
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
-               data, prior.info, call = call, terms = mt, model = mf, 
+               data, prior.info = get_prior_info(call, formals()), 
+               call = call, terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   

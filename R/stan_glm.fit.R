@@ -338,10 +338,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names <- names(out$par)
     new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    new_names[new_names == "dispersion"] <- if (is_gaussian) "sigma" else
-                                            if (is_gamma) "scale" else
-                                            if (is_ig) "lambda" else 
-                                            if (is_nb) "overdispersion" else NA
+    new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
+      if (is_gaussian) "sigma" else
+        if (is_gamma) "scale" else
+          if (is_ig) "lambda" else 
+            if (is_nb) "overdispersion" else NA
     if (length(group)) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
       # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
@@ -394,4 +395,16 @@ pad_reTrms <- function(Z, cnms, flist) {
     mark <- mark - 1L
   }
   return(nlist(Z, cnms, flist))
+}
+
+# Drop the extra reTrms from a matrix x
+# @param x A matrix (e.g. the posterior sample or matrix of summary stats)
+# @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
+#   variables?
+unpad_reTrms <- function(x, columns = TRUE) {
+  stopifnot(is.matrix(x))
+  nms <- if (columns) colnames(x) else rownames(x)
+  keep <- !grepl("_NEW_", nms, fixed = TRUE)
+  if (columns) x[, keep, drop = FALSE] 
+  else x[keep,, drop = FALSE]
 }

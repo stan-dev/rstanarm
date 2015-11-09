@@ -114,6 +114,23 @@ set_prior_scale <- function(scale, default, link) {
     scale
 }
 
+# Make prior.info list
+# @param user_call match.call(expand.dots = TRUE)
+# @param function_formals formals()
+get_prior_info <- function(user_call, function_formals) {
+  user <- grep("prior", names(user_call), value = TRUE)
+  default <- setdiff(grep("prior", names(function_formals), value = TRUE), user)
+  U <- length(user)
+  D <- length(default)
+  priors <- list()
+  for (j in 1:(U+D)) {
+    if (j <= U) priors[[user[j]]] <- eval(user_call[[user[j]]])
+    else priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+  }
+  priors
+}
+
+
 # Create linear predictor vector from x and point estimates for beta, or linear 
 # predictor matrix from x and full posterior sample of beta
 # @param beta A vector or matrix or parameter estimates
@@ -140,7 +157,10 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 #' 
 #' @keywords internal
 #' @export
-#' @param object A stanreg object.
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' @return For \code{get_x} and \code{get_z}, a matrix. For \code{get_y}, either
+#'   a vector or a matrix, depending on how the response variable was specified.
 get_y <- function(object) UseMethod("get_y")
 #' @rdname get_y
 #' @export

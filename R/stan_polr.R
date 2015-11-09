@@ -143,12 +143,9 @@ stan_polr <- function (formula, data, weights, ..., subset,
                            prior = prior, prior_counts = prior_counts,
                            prior_PD = prior_PD, algorithm = algorithm, 
                            adapt_delta = adapt_delta, ...)
-
-  # list of all the arguments and their values including any defaults (match.call
-  # doesn't include defaults)
-  all_args <- mget(names(formals()), sys.frame(sys.nframe()))
-  prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
+  
   call <- match.call(expand.dots = TRUE)
+  prior.info <- get_prior_info(call, formals())
 
   if (method == "logistic") linkinv <- plogis
   else if (method == "loglog") linkinv <- pgumbel

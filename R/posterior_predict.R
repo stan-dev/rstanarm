@@ -53,7 +53,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     famname <- family$family
     ppfun <- paste0(".pp_", famname) 
   }
-  stanmat <- as.matrix(object$stanfit)
+  stanmat <- as.matrix.stanreg(object)
   S <- nrow(stanmat)
   if (is.null(draws)) 
     draws <- S
