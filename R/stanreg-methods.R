@@ -17,9 +17,13 @@
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
 #'   
 #' \itemize{
-#' \item \code{as.matrix} An \eqn{S} by \eqn{P} matrix, where \eqn{S} is the
-#'  size of the posterior sample (the number of post-warmup draws) and \eqn{P} is
-#'  the number of parameters/quantities. 
+#' \item \code{as.matrix} For models fit using MCMC 
+#' (\code{algorithm='sampling'}) this is an \eqn{S} by \eqn{P} matrix, where 
+#' \eqn{S} is the size of the posterior sample (the number of post-warmup draws)
+#' and \eqn{P} is the number of parameters/quantities. For models fit with 
+#' \code{algorithm='optimizing'} this is a \eqn{1000} by \eqn{P} matrix of draws
+#' from the asymptotic multivariate Gaussian sampling distribution of the 
+#' parameters.
 #' \item \code{confint} Credible intervals based on posterior quantiles, unless 
 #'  \code{algorithm='optimizing'}, in which case
 #'  \code{\link[stats]{confint.default}} is called.
@@ -42,6 +46,8 @@ NULL
 as.matrix.stanreg <- function(x, ...) {
   msg <- "No draws found."
   if (x$algorithm == "optimizing") {
+    if ("pars" %in% names(list(...))) 
+      message("'pars' argument ignored for models with algorithm='optimizing'.")
     out <- x$asymptotic_sampling_dist 
     if (is.null(out)) stop(msg)
     else {
