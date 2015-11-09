@@ -44,19 +44,14 @@ pp_data <- function(object, newdata = NULL, ...) {
 
 .pp_data_mer <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
-    x <- get_x(object)
-    z <- get_z(object)
+    X <- get_x(object)
+    Z <- get_z(object)
   } else {
     if (!is.data.frame(newdata))
       stop("newdata should be a data.frame")
     if (any(is.na(newdata))) 
       stop("NAs not allowed in newdata")
-    fr <- object$glmod$fr # original model frame
-#     notfound <- setdiff(colnames(newdata), colnames(fr))
-#     if (length(notfound)) {
-#       notfound <- paste(notfound, collapse = ", ")
-#       stop("Variable(s) ", notfound, " in newdata but not original formula.")
-#     }
+    
     # check levels of grouping variables in newdata
     levs <- lapply(.flist(object), levels)
     grps <- names(levs)
@@ -64,21 +59,22 @@ pp_data <- function(object, newdata = NULL, ...) {
       new_levs <- unique(newdata[, grps[j]])
       !all(new_levs %in% levs[[j]])
     })
-    if (any(has_new_levels)) {
+    if (any(has_new_levels)) { # FIXME (allow new levels)
       stop("New levels found in grouping variable(s) ", 
            paste(grps[has_new_levels], collapse = ", "))
     }
-    
     # get X and Z matrices
-    frX <- fr[, -1, drop = FALSE]
+    fr <- object$glmod$fr # original model frame
+    frX <- fr[, -1, drop = FALSE] # drop response
     newdata <- newdata[, colnames(frX)] # make sure columns in same order
     keep <- 1:nrow(newdata)
     fr2 <- rbind(data.frame(newdata, y = 0), data.frame(frX, y = 0))
     newf <- update.formula(formula(object), y ~ .)
     glF <- glFormula(newf, data = fr2)
-    x <- glF$X[keep,, drop=FALSE]
-    z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
+    X <- glF$X[keep,, drop=FALSE]
+    Z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
   }
-  nlist(x, z, offset = object$offset)
+  # combine X and Z matrices for posterior_predict
+  x <- cbind(X, Z)
+  nlist(x, offset = object$offset)
 }
-
