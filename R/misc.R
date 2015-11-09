@@ -157,7 +157,10 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 #' 
 #' @keywords internal
 #' @export
-#' @param object A stanreg object.
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' @return For \code{get_x} and \code{get_z}, a matrix. For \code{get_y}, either
+#'   a vector or a matrix, depending on how the response variable was specified.
 get_y <- function(object) UseMethod("get_y")
 #' @rdname get_y
 #' @export
