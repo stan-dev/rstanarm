@@ -101,19 +101,17 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, ...)
-  all_args <- mget(names(formals()), sys.frame(sys.nframe()))
-  prior.info <- all_args[grep("prior", names(all_args), fixed = TRUE)]
+  call <- match.call(expand.dots = TRUE)
+  prior.info <- get_prior_info(call, formals())
 
   Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
                   flist = group$flist)$Z
   if (algorithm == "optimizing")
     colnames(Z) <- .bnames(names(stanfit$par), value = TRUE)
   else colnames(Z) <- .bnames(names(stanfit), value = TRUE)
-  
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
-               y = y, data, prior.info, call = match.call(expand.dots = TRUE), 
-               terms = NULL, model = NULL, na.action, contrasts, algorithm, 
-               glmod)
+               y = y, data, prior.info, call, terms = NULL, model = NULL, 
+               na.action, contrasts, algorithm, glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   return(out)
