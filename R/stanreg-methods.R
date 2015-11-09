@@ -7,7 +7,9 @@
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
-#' @param ... Ignored.
+#' @param ... Ignored in most cases. For the \code{as.matrix} method, \code{...}
+#'   can be used to specify the \code{pars} argument to
+#'   \code{\link[rstan]{extract}} (\pkg{rstan}).
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
 #' 
@@ -15,6 +17,9 @@
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
 #'   
 #' \itemize{
+#' \item \code{as.matrix} An \eqn{S} by \eqn{P} matrix, where \eqn{S} is the
+#'  size of the posterior sample (the number of post-warmup draws) and \eqn{P} is
+#'  the number of parameters.
 #' \item \code{confint} Credible intervals based on posterior quantiles, unless 
 #'  \code{algorithm='optimizing'}, in which case
 #'  \code{\link[stats]{confint.default}} is called.
@@ -30,16 +35,26 @@
 #' 
 NULL
 
+
 #' @rdname stanreg-methods
-#' @export 
-residuals.stanreg <- function(object, ...) {
-  object$residuals
+#' @method as.matrix stanreg
+#' @export
+as.matrix.stanreg <- function(x, ...) {
+  sf <- x$stanfit
+  if (sf@mode != 0) {
+    warning("stanfit object does not contain samples.")
+    return(numeric(0)) 
+  }
+  posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
+  out <- apply(posterior, 3L, FUN = function(y) y)
+  structure(out, dimnames = dimnames(posterior)[-2L])
 }
 
 #' @rdname stanreg-methods
-#' @export 
-vcov.stanreg <- function(object, ...) {
-  object$covmat
+#' @export
+coef.stanreg <- function(object, ...) {
+  if (is(object, "lmerMod")) .mermod_coef(object, ...)
+  else object$coefficients
 }
 
 #' @rdname stanreg-methods
@@ -53,24 +68,10 @@ confint.stanreg <- function (object, parm, level = 0.95, ...) {
   t(apply(mat, 2, FUN = quantile, probs = c(alpha, 1 - alpha)))
 }
 
-
 #' @rdname stanreg-methods
 #' @export
 fitted.stanreg <- function(object, ...)  {
   object$fitted.values
-}
-
-
-#' Standard errors
-#' @export
-#' @keywords internal
-#' @param object object
-se <- function(object, ...) UseMethod("se")
-
-#' @rdname stanreg-methods
-#' @export
-se.stanreg <- function(object, ...) {
-  object$ses
 }
 
 #' Pointwise log-likelihood matrix
@@ -92,12 +93,28 @@ log_lik.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @export
-coef.stanreg <- function(object, ...) {
-  if (is(object, "lmerMod")) .mermod_coef(object, ...)
-  else object$coefficients
+#' @export 
+residuals.stanreg <- function(object, ...) {
+  object$residuals
 }
 
+#' Standard errors
+#' @export
+#' @keywords internal
+#' @param object object
+se <- function(object, ...) UseMethod("se")
+
+#' @rdname stanreg-methods
+#' @export
+se.stanreg <- function(object, ...) {
+  object$ses
+}
+
+#' @rdname stanreg-methods
+#' @export 
+vcov.stanreg <- function(object, ...) {
+  object$covmat
+}
 
 
 .glmer_check <- function(object) {
@@ -142,24 +159,6 @@ coef.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param sigma Ignored scalar
-#' @param rdig Ignored integer
-#' @export
-#' @export VarCorr
-#' @importFrom lme4 VarCorr mkVarCorr
-VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
-  cnms <- .cnms(x)
-  means <- get_posterior_mean(x$stanfit)
-  means <- means[,ncol(means)]
-  theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
-  sc <- sigma.stanreg(x)
-  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
-                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta / sc, nms = names(cnms))
-  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
-}
-
-#' @rdname stanreg-methods
 #' @export
 #' @export fixef
 #' @importFrom lme4 fixef
@@ -167,6 +166,15 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 fixef.stanreg <- function(object, ...) {
   coefs <- object$coefficients
   coefs[.bnames(names(coefs), invert = TRUE)]
+}
+
+#' @rdname stanreg-methods
+#' @export
+#' @export ngrps
+#' @importFrom lme4 ngrps
+#' 
+ngrps.stanreg <- function(object, ...) {
+  vapply(.flist(object), nlevels, 1)  
 }
 
 #' @rdname stanreg-methods
@@ -202,15 +210,6 @@ ranef.stanreg <- function(object, ...) {
   ans
 }
 
-#' @rdname stanreg-methods
-#' @export
-#' @export ngrps
-#' @importFrom lme4 ngrps
-#' 
-ngrps.stanreg <- function(object, ...) {
-  vapply(.flist(object), nlevels, 1)  
-}
-
 #' Residual standard deviation
 #' @export
 #' @keywords internal
@@ -224,7 +223,27 @@ sigma.stanreg <- function(object, ...) {
   else object$stan_summary["sigma", .select_median(object$algorithm)]
 }
 
+#' @rdname stanreg-methods
+#' @param sigma Ignored scalar
+#' @param rdig Ignored integer
+#' @export
+#' @export VarCorr
+#' @importFrom lme4 VarCorr mkVarCorr
+VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
+  cnms <- .cnms(x)
+  means <- get_posterior_mean(x$stanfit)
+  means <- means[,ncol(means)]
+  theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
+  sc <- sigma.stanreg(x)
+  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
+                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
+                         theta = theta / sc, nms = names(cnms))
+  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
+}
 
+
+
+# Exported but kept internal ----------------------------------------------
 
 #' formula method for stanreg objects
 #' 
@@ -247,3 +266,5 @@ model.frame.stanreg <- function(formula, ...) {
   }
   else NextMethod("model.frame")
 }
+
+
