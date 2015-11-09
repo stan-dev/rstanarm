@@ -338,10 +338,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names <- names(out$par)
     new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    new_names[new_names == "dispersion"] <- if (is_gaussian) "sigma" else
-                                            if (is_gamma) "scale" else
-                                            if (is_ig) "lambda" else 
-                                            if (is_nb) "overdispersion" else NA
+    new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
+      if (is_gaussian) "sigma" else
+        if (is_gamma) "scale" else
+          if (is_ig) "lambda" else 
+            if (is_nb) "overdispersion" else NA
     if (length(group)) {
       new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
       # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
