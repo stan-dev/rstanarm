@@ -81,6 +81,7 @@ stanreg <- function(object) {
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
+  if (opt) out$asymptotic_sampling_dist <- stanmat
   if (mer) out$glmod <- object$glmod
   structure(out, class = c("stanreg", "glm", "lm"))
 }
