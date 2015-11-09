@@ -5,7 +5,7 @@
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps
 #' 
-#' @templateVar stanregArg object
+#' @templateVar stanregArg object,x
 #' @template args-stanreg-object
 #' @param ... Ignored.
 #' @param parm A character vector of parameter names.
