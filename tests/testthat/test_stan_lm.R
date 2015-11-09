@@ -15,8 +15,7 @@ test_that("stan_lm returns expected result for mtcars example", {
                  chains = 2, iter = 400, seed = SEED)
   fit_sigma <- get_posterior_mean(fit$stanfit)["sigma[1]",3]
   lm_sigma <- summary(lm(mpg ~ ., data = mtcars))$sigma
-  diff <- abs(lm_sigma - fit_sigma)
-  expect_true(all(diff < threshold))
+  expect_equal(fit_sigma, lm_sigma, tol = threshold)
 })
 context("stan_lm")
 test_that("stan_lm returns expected result for trees example", {
@@ -24,8 +23,6 @@ test_that("stan_lm returns expected result for trees example", {
   fit1 <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
                   prior = R2(location = 0.9, what = "mean"), 
                   chains = 2, iter = 400, seed = SEED)
-  val1 <- f1(fit1)
-  ans <- f2(lm(log(Volume) ~ log(Girth) + log(Height),data = trees))
-  diff1 <- abs(val1 - ans)
-  expect_true(all(diff1 < threshold))
+  ans <- lm(log(Volume) ~ log(Girth) + log(Height),data = trees)
+  expect_equal(coef(fit1), coef(ans), tol = threshold)
 })
