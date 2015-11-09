@@ -1,3 +1,25 @@
+# @param x stanreg object
+# @param pars user specified character vector
+.check_plotting_pars <- function(x, pars) {
+  sim <- x$stanfit@sim
+  allpars <- c(sim$pars_oi, sim$fnames_oi)
+  m <- which(match(pars, allpars, nomatch = 0) == 0)
+  if (length(m) > 0) 
+    stop("no parameter ", paste(pars[m], collapse = ', ')) 
+  unique(pars) 
+}
+
+# @param x stanreg object
+# @param regex_pars character vector of patterns
+.grep_for_pars <- function(x, regex_pars) {
+  stopifnot(is.character(regex_pars))
+  out <- unlist(lapply(seq_along(regex_pars), function(j) {
+    grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
+  }))
+  if (length(out)) out else stop("No matches for regex_pars.")
+}
+
+
 #' Plot method for stanreg objects
 #' 
 #' For models fit using \code{algorithm="sampling"} there are a variety of
@@ -15,6 +37,11 @@
 #'   estimates for the coefficients. (\strong{Note:} for models fit using
 #'   \code{algorithm="optimizing"} the \code{plotfun} argument is ignored as
 #'   there is currently only one plotting function for these models.)
+#' @param pars An optional character vector of parameter names.
+#' @param regex_pars An optional character vector of \link[=grep]{regular
+#'   expressions} to use for parameter selection. Can be used in place of
+#'   \code{pars} or in addition to \code{pars}. \code{regex_pars}
+#'   is ignored for models fit using \code{algorithm="optimizing"}.
 #' @param ... Additional arguments to pass to \code{plotfun} (see
 #'   \code{\link{plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
@@ -27,18 +54,24 @@
 #'   functions.
 #'   
 #' @examples 
-#' # See help("plots", "rstanarm")
+#' # See examples at help("plots", "rstanarm")
 #' 
 #' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
 #' 
-plot.stanreg <- function(x, plotfun, pars, ...) {
+plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
   args <- list(x, ...)
   if (missing(plotfun)) plotfun <- "plot"
   if (!missing(pars)) {
     pars[pars == "varying"] <- "b"
+    if (!missing(regex_pars)) pars <- c(pars, .grep_for_pars(x, regex_pars))
+    pars <- .check_plotting_pars(x, pars)
     args$pars <- pars
+  } 
+  else if (!missing(regex_pars)) {
+    args$pars <- .check_plotting_pars(x, .grep_for_pars(x, regex_pars))
   }
+  
   if (x$algorithm == "optimizing") fun <- "stan_plot_opt"
   else {
     plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
@@ -125,8 +158,7 @@ pairs.stanreg <- function(x, ...) {
 #' @examples 
 #' # Intervals and point estimates
 #' plot(example_model, ci_level = 0.8)
-#' common_pars <- c("size", paste0("period", 2:4))
-#' plot(example_model, pars = common_pars, show_density = TRUE)
+#' plot(example_model, pars = "size", regex_pars = "period", show_density = TRUE)
 #' 
 #' # Traceplot
 #' (trace <- plot(example_model, plotfun = "trace", pars = "(Intercept)"))
@@ -134,7 +166,8 @@ pairs.stanreg <- function(x, ...) {
 #' 
 #' # Distributions 
 #' plot(example_model, "hist", fill = "skyblue") + ggplot2::ggtitle("Posterior Distributions")
-#' plot(example_model, "dens", pars = common_pars, separate_chains = TRUE, alpha = 0.1)
+#' plot(example_model, "dens", regex_pars = "period", 
+#'      separate_chains = TRUE, alpha = 0.25)
 #' 
 #' # Scatterplot
 #' plot(example_model, plotfun = "scat", pars = paste0("period", 2:3))
@@ -142,6 +175,13 @@ pairs.stanreg <- function(x, ...) {
 #' # Some diagnostics
 #' plot(example_model, "rhat")
 #' plot(example_model, "ess")
+#' 
+#' # Using regex_pars
+#' plot(example_model, regex_pars = "herd:1")
+#' plot(example_model, regex_pars = "herd:1\\]")
+#' plot(example_model, regex_pars = "herd:[279]")
+#' plot(example_model, regex_pars = "herd:[279]|period2")
+#' plot(example_model, regex_pars = c("herd:[279]", "period2"))
 #' 
 #' # Posterior predictive checks (see ?ppcheck for examples)
 NULL
