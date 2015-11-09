@@ -13,7 +13,7 @@ Description: Convenient interface for applied regression models using RStan,
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
-    Rcpp (>= 0.11.0)
+    Rcpp (>= 0.11.0),
 Imports:
     ggplot2,
     lme4 (>= 1.1-8),
