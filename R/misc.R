@@ -1,7 +1,8 @@
 # Default 'control' argument for stan() if none specified by user
 # value of adapt_delta depends on prior
 default_stan_control <- function(prior, adapt_delta = NULL, max_treedepth = 15L) {
-  if (is.null(adapt_delta)) {
+  if (is.null(prior)) adapt_delta <- 0.95
+  else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
                           "R2" = 0.99,
                           "hs" = 0.99,
