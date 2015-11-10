@@ -2,17 +2,23 @@ library(rstanarm)
 library(lme4)
 SEED <- 12345
 set.seed(SEED)
+ITER <- 5
+CHAINS <- 2
+CORES <- 1
 
-fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1, 
-                                 seed = SEED))
+fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                                 chains = CHAINS, cores = CORES, seed = SEED))
+fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 
 fit_lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 fit_stan1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), 
-                                        data = Penicillin, iter = 5, chains = 1, 
+                                        data = Penicillin, iter = ITER, 
+                                        chains = CHAINS, cores = CORES,
                                         seed = SEED))
 fit_lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
 fit_stan2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), 
-                                        data = sleepstudy, iter = 5, chains = 1, 
+                                        data = sleepstudy, iter = ITER, 
+                                        chains = CHAINS, cores = CORES,
                                         seed = SEED))
 
 att_names <- function(object) {
@@ -40,12 +46,29 @@ check_sizes <- function(x,y) {
 #   expect_identical(found, meths)
 #   expect_identical(found[1], meths[1])
 # })
-test_that("stanreg methods work properly", {
+test_that("stanreg extractor methods work properly", {
   expect_equal(resid(fit), fit$residuals)
   expect_equal(coef(fit), fit$coefficients)
   expect_equal(vcov(fit), fit$covmat)
   expect_equal(fitted(fit), fit$fitted.values)
   expect_equal(se(fit), fit$ses)
+})
+
+test_that("log_lik method works", {
+  expect_error(log_lik(fito))
+  expect_silent(log_lik(fit))
+  
+  # Compute log-lik matrix using different method than log_lik.stanreg
+  # and compare
+  samp <- as.matrix(fit)
+  y <- get_y(fit)
+  eta <- tcrossprod(get_x(fit), samp[, 1:2])
+  sigma <- samp[, 3]
+  llmat <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta))
+  for (i in 1:nrow(llmat)) {
+    llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
+  }
+  expect_equal(llmat, log_lik(fit))
 })
 
 context("methods for stan_lmer models")

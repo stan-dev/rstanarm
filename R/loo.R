@@ -76,7 +76,7 @@ waic.stanreg <- function(x, ...) {
   else stop("'family' must be a family or a character string")
 }
 
-# returns args argument for loo() and waic()
+# returns args argument for loo.function() and waic.function()
 .llargs <- function(object) {
   f <- object$family
   draws <- nlist(f)
@@ -109,7 +109,8 @@ waic.stanreg <- function(x, ...) {
     y <- as.integer(y)
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    draws$zeta <- stanmat[,grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),drop=FALSE]
+    draws$zeta <- stanmat[, grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),
+                          drop = FALSE]
     draws$max_y <- max(y)
   }
   else stop("'family' must be a family or a character string")

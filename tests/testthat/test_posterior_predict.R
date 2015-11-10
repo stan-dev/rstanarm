@@ -50,7 +50,6 @@ test_that("posterior_predict compatible with stan_lmer", {
                    prior = normal(0,1), 
                    iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
-  check_for_error(example_model)
 })
 test_that("posterior_predict compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
