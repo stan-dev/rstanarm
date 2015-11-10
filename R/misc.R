@@ -24,18 +24,30 @@ set_sampling_args <- function(object, prior, user_dots = list(),
                               user_adapt_delta = NULL, ...) {
   args <- list(object = object, ...)
   unms <- names(user_dots)
-  for (j in seq_along(user_dots)) args[[unms[j]]] <- user_dots[[j]]
-  if ("control" %in% unms) {
-    if (!is.null(user_adapt_delta))
+  for (j in seq_along(user_dots)) {
+    args[[unms[j]]] <- user_dots[[j]]
+  }
+  defaults <- default_stan_control(prior = prior, 
+                                   adapt_delta = user_adapt_delta)
+  
+  if (!"control" %in% unms) { # no user-specified 'control' argument
+    args$control <- defaults
+  }
+  else { # user specifies a 'control' argument
+    if (!is.null(user_adapt_delta)) { 
+      # if user specified adapt_delta argument to stan_* then 
+      # set control$adapt_delta to user-specified value
       args$control$adapt_delta <- user_adapt_delta
-    else {
-      tmp <- default_stan_control(prior = prior)
-      args$control$adapt_delta <- tmp$adapt_delta
+    } else {
+      # use default adapt_delta for the user's chosen prior
+      args$control$adapt_delta <- defaults$adapt_delta
+    }
+    if (is.null(args$control$max_treedepth)) {
+      # if user's 'control' has no max_treedepth set it to rstanarm default
+      args$control$max_treedepth <- defaults$max_treedepth
     }
   }
-  else args$control <- 
-    default_stan_control(prior = prior, adapt_delta = user_adapt_delta)
-  return(args)
+  args
 }
 
 # Test if an object is a stanreg object

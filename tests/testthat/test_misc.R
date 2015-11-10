@@ -81,29 +81,6 @@ test_that("validate_parameter_value works", {
   expect_true(validate_parameter_value(.Machine$double.xmax))
 })
 
-test_that("get_x, get_y, get_z work", {
-  fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
-  x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
-  y_ans <- mtcars$mpg
-  expect_equivalent(x_ans, get_x(fit))
-  expect_equivalent(y_ans, get_y(fit))
-  expect_error(get_z(fit), "no applicable method")
-  
-  fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, iter = 5, chains = 1))
-  z_ans2 <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
-  expect_equivalent(x_ans, get_x(fit2))
-  expect_equivalent(y_ans, get_y(fit2))
-  expect_equivalent(z_ans2, get_z(fit2))
-  
-  fit3 <- suppressWarnings(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, iter = 5, chains = 1))
-  z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
-  z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
-  z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
-  expect_equivalent(x_ans, get_x(fit3))
-  expect_equivalent(y_ans, get_y(fit3))
-  expect_equivalent(z_ans3, get_z(fit3))
-})
-
 test_that("linear_predictor methods work", {
   linpred_vec <- rstanarm:::linear_predictor.default
   linpred_mat <- rstanarm:::linear_predictor.matrix
@@ -120,5 +97,76 @@ test_that("linear_predictor methods work", {
   expect_equivalent(mat_ans, linpred_mat(bmat, x))
   expect_equivalent(mat_ans, linpred_mat(bmat, x, offset = NULL))
   expect_equivalent(mat_ans + offset, linpred_mat(bmat, x, offset))
+})
+
+# fits to use in multiple calls to test_that below
+fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
+fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                                    iter = 5, chains = 1))
+
+test_that("get_x, get_y, get_z work", {
+  x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
+  y_ans <- mtcars$mpg
+  expect_equivalent(x_ans, get_x(fit))
+  expect_equivalent(y_ans, get_y(fit))
+  expect_error(get_z(fit), "no applicable method")
+  
+  z_ans2 <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
+  expect_equivalent(x_ans, get_x(fit2))
+  expect_equivalent(y_ans, get_y(fit2))
+  expect_equivalent(z_ans2, get_z(fit2))
+  
+  fit3 <- suppressWarnings(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
+                                      iter = 5, chains = 1))
+  z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
+  z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
+  z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
+  expect_equivalent(x_ans, get_x(fit3))
+  expect_equivalent(y_ans, get_y(fit3))
+  expect_equivalent(z_ans3, get_z(fit3))
+})
+
+test_that("set_sampling_args works", {
+  set_sampling_args <- rstanarm:::set_sampling_args
+  
+  # user specifies stepsize and also overrides default max_treedepth
+  control1 <- list(max_treedepth = 10, stepsize = 0.01)
+  # user specifies control but doesn't override max_treedepth
+  control2 <- list(stepsize = 0.01)
+  # no user 'control' argument 
+  no_control <- list()
+  
+  # normal prior --> adapt_delta = 0.95
+  ans1 <- set_sampling_args(fit, prior = normal(),
+                            user_dots = list(control = control1, iter = 100),  
+                            user_adapt_delta = NULL)
+  # use fit2 instead of fit to check that it doesn't matter which fit object is used
+  ans1b <- set_sampling_args(fit2,
+                             prior = normal(),
+                             user_dots = list(control = control1, iter = 100),  
+                             user_adapt_delta = NULL)
+  # normal prior --> adapt_delta = 0.95, but user override to 0.9
+  ans2 <- set_sampling_args(fit, prior = normal(), 
+                            user_dots = list(control = control1),  
+                            user_adapt_delta = 0.9)
+  # cauchy/t_1 prior --> adapt_delta = 0.99
+  ans3 <- set_sampling_args(fit, prior = student_t(1), 
+                            user_dots = list(control = control1),  
+                            user_adapt_delta = NULL)
+  # cauchy/t_1 prior --> adapt_delta = 0.99, but user override to 0.8
+  ans4 <- set_sampling_args(fit, prior = cauchy(),
+                            user_dots = list(control = control2),  
+                            user_adapt_delta = 0.8)
+  # hs prior --> adapt_delta = 0.99
+  ans5 <- set_sampling_args(fit, prior = hs(), 
+                            user_dots = no_control,
+                            user_adapt_delta = NULL)
+  expect_equal(ans1$control, c(control1, adapt_delta = 0.95))
+  expect_equal(ans1$iter, 100)
+  expect_equal(ans1$control, ans1b$control)
+  expect_equal(ans2$control, c(control1, adapt_delta = 0.9))
+  expect_equal(ans3$control, c(control1, adapt_delta = 0.99))
+  expect_equal(ans4$control, c(control2, adapt_delta = 0.8, max_treedepth = 15))
+  expect_equal(ans5$control, list(adapt_delta = 0.99, max_treedepth = 15))
 })
 
