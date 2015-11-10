@@ -12,10 +12,9 @@ ITER <- 5 # small iter for speed
 # log-likelihood functions don't return any errors and whatnot (it does not check
 # that the results returned by loo are actually correct). 
 
-loo_with_fn <- function(fit) loo(fit)
-loo_with_mat <- function(fit) loo(log_lik(fit))
 expect_identical_loo <- function(fit) {
-  expect_identical(loo_with_fn(fit), loo_with_mat(fit))
+  expect_identical(loo(fit), loo(log_lik(fit)))
+  expect_equal(waic(fit), waic(log_lik(fit)))
 }
 
 
