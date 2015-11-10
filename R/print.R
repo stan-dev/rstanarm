@@ -13,7 +13,8 @@ print.stanreg <- function(x, digits = 1, ...) {
   
   mer <- is(x, "lmerMod")
   ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
-  if (x$algorithm != "optimizing") {
+  if (!used.optimizing(x)) {
+    # don't used as.matrix.stanreg method b/c want access to mean_PPD
     mat <- as.matrix(x$stanfit)
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
     if (mer) nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
@@ -44,7 +45,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
     .printfr(ppd_estimates, digits, ...)
   }
-  else {
+  else { # used optimizing
     nms <- names(x$coefficients)
     if (ord) 
       nms <- c(nms, grep("|", rownames(x$stan_summary), 

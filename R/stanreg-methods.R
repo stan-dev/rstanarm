@@ -45,7 +45,7 @@ NULL
 #' @export
 as.matrix.stanreg <- function(x, ...) {
   msg <- "No draws found."
-  if (x$algorithm == "optimizing") {
+  if (used.optimizing(x)) {
     if ("pars" %in% names(list(...))) 
       message("'pars' argument ignored for models with algorithm='optimizing'.")
     out <- x$asymptotic_sampling_dist 
@@ -57,7 +57,7 @@ as.matrix.stanreg <- function(x, ...) {
       return(out[, keep, drop = FALSE])
     }
   }
-  stopifnot(x$algorithm == "sampling")
+  stopifnot(used.sampling(x))
   sf <- x$stanfit
   if (sf@mode != 0) stop(msg)
   posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
@@ -77,11 +77,14 @@ coef.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
-confint.stanreg <- function (object, parm, level = 0.95, ...) {
-  if (object$algorithm == "optimizing")
+confint.stanreg <- function(object, parm, level = 0.95, ...) {
+  if (used.optimizing(object))
     return(confint.default(object, parm, level, ...))
-  mat <- as.matrix(object$stanfit)
-  if (!missing(parm)) mat <- mat[,parm,drop=FALSE]
+  if (missing(parm)) mat <- as.matrix.stanreg(object)
+  else {
+    parm[parm == "varying"] <- "b"
+    mat <- as.matrix.stanreg(object, pars = parm)
+  }
   alpha <- (1 - level) / 2
   t(apply(mat, 2, FUN = quantile, probs = c(alpha, 1 - alpha)))
 }
@@ -101,8 +104,8 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 #' @rdname stanreg-methods
 #' @export
 log_lik.stanreg <- function(object, ...) {
-  if (object$algorithm != "sampling")
-    stop("Only available for MCMC.", call. = FALSE)
+  if (!used.sampling(object)) 
+    STOP_sampling_only("Pointwise log-likelihood matrix")
   fun <- .llfun(object$family)
   args <- .llargs(object)
   sapply(seq_len(args$N), function(i) {
@@ -201,7 +204,7 @@ ngrps.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  if (object$algorithm == "optimizing") 
+  if (used.optimizing(object)) 
     sel <- .bnames(rownames(object$stan_summary))
   else sel <- .bnames(object$stanfit@sim$fnames_oi)
   ans <- object$stan_summary[sel, .select_median(object$algorithm)]

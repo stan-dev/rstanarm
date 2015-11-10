@@ -62,6 +62,30 @@ is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 
+# Test for a given estimation method
+# @param x a stanreg object
+used.optimizing <- function(x) {
+  stopifnot(is.stanreg(x))
+  x$algorithm == "optimizing"
+}
+used.sampling <- function(x) {
+  stopifnot(is.stanreg(x))
+  x$algorithm == "sampling"
+}
+# used.variational <- function(x) {
+#   stopifnot(is.stanreg(x))
+#   x$algorithm %in% c("meanfield", "fullrank")
+# }
+
+# Consistent error message to use when something is only available if
+# algorithm="sampling"
+# @param what An optional message to prepend to the default message.
+STOP_sampling_only <- function(what) {
+  msg <- "only available for models fit using MCMC (algorithm='sampling')."
+  if (!missing(what)) msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
 # Grep for "b" parameters (ranef)
 # @param x Character vector (often rownames(fit$stan_summary))
 .bnames <- function(x, ...) grep("^b\\[", x, ...)

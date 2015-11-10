@@ -25,14 +25,14 @@ predict.stanreg <- function(object, ..., newdata = NULL,
     if (type == "link") return(object$linear.predictors)
     else return(object$fitted.values)
   }
-  mcmc <- object$algorithm == "sampling"
-  if (mcmc && type == "response")
+  if (used.sampling(object) && type == "response")
     stop("type='response' should not be used for models estimated by MCMC.",
          "Use posterior_predict() to draw from the posterior predictive distribution.",
          call. = FALSE)
   
   dat <- pp_data(object, newdata)
-  stanmat <- if (mcmc) as.matrix(object$stanfit) else stop("MLE not implemented yet")
+  stanmat <- if (used.sampling(object))
+    as.matrix.stanreg(object) else stop("MLE not implemented yet")
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   if (is(object, "lmerMod")) {

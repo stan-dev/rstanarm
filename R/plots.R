@@ -67,19 +67,20 @@ plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
     if (!missing(regex_pars)) pars <- c(pars, .grep_for_pars(x, regex_pars))
     pars <- .check_plotting_pars(x, pars)
     args$pars <- pars
-  } 
+  }
   else if (!missing(regex_pars)) {
     args$pars <- .check_plotting_pars(x, .grep_for_pars(x, regex_pars))
   }
   
-  if (x$algorithm == "optimizing") fun <- "stan_plot_opt"
+  if (used.optimizing(x)) fun <- "stan_plot_opt"
   else {
     plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
                                   "diag", "rhat", "ess", "mcse", "par"))
     funname <- grep(plotfun, plotters, value = TRUE)
     fun <- try(getExportedValue("rstan", funname), silent = TRUE)
     if (inherits(fun, "try-error")) 
-      stop("Plotting function not found. See ?rstanarm::plots for valid names.")
+      stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+           call. = FALSE)
   }
   do.call(fun, args)
 }
@@ -87,8 +88,8 @@ plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
 # function calling arm::coefplot (only used for models fit using optimization)
 stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
-    stop("Please install the 'arm' package to use this feature")
-  stopifnot(x$algorithm == "optimizing")
+    stop("Please install the 'arm' package to use this feature.", call. = FALSE)
+  stopifnot(used.optimizing(x))
   nms <- varnames %ORifNULL% names(x$coefficients)
   coefs <- coef(x)
   sds <- se(x)
@@ -121,6 +122,7 @@ stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
 pairs.stanreg <- function(x, ...) {
+  if (!used.sampling(x)) STOP_sampling_only("pairs")
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
   pairs(x$stanfit, ...)

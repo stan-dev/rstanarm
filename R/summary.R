@@ -33,9 +33,6 @@
 #' summary(example_model, pars = c("alpha", "beta"))
 #' 
 summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
-  # use RStan's summary just as placeholder. we should replace this with our own
-  # summary 
-  
   if (object$stanfit@mode == 0) {
     if (!missing(pars)) pars[pars == "varying"] <- "b"
     out <- summary(object$stanfit, pars, probs)$summary
@@ -58,7 +55,7 @@ summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
     }
     out <- object$stan_summary[mark,, drop=FALSE]
   }
-  SS <- if (object$algorithm != "sampling") 
+  SS <- if (!used.sampling(object))
     NULL else sum(object$stanfit@sim$n_save - object$stanfit@sim$warmup2)
   groups <- if (!is.null(object$glmod)) ngrps(object) else NULL
   

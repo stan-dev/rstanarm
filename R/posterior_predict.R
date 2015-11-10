@@ -46,8 +46,8 @@
 posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
-  if (object$algorithm != "sampling")
-    stop("Only available for models fit using MCMC (algorithm = 'sampling').")
+  if (!used.sampling(object)) 
+    STOP_sampling_only("posterior_predict")
   family <- object$family
   if (!is(object, "polr")) {
     famname <- family$family

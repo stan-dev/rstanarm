@@ -54,8 +54,7 @@
 #' @importFrom loo loo loo.function
 #' 
 loo.stanreg <- function(x, ...) {
-  if (x$algorithm != "sampling")
-    stop("Only available for MCMC (algorithm = 'sampling').", call. = FALSE)
+  if (!used.sampling(x)) STOP_sampling_only("loo")
   loo.function(.llfun(x$family), args = .llargs(x), ...)
 }
 
@@ -65,8 +64,7 @@ loo.stanreg <- function(x, ...) {
 #' @note The \code{...} is ignored for \code{waic}.
 #' 
 waic.stanreg <- function(x, ...) {
-  if (x$algorithm != "sampling")
-    stop("Only available for MCMC (algorithm = 'sampling').", call. = FALSE)
+  if (!used.sampling(x)) STOP_sampling_only("waic")
   waic.function(.llfun(x$family), args = .llargs(x))
 }
 
