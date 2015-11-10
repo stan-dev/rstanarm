@@ -25,8 +25,13 @@ set_sampling_args <- function(object, prior, user_dots = list(),
   args <- list(object = object, ...)
   unms <- names(user_dots)
   for (j in seq_along(user_dots)) args[[unms[j]]] <- user_dots[[j]]
-  if ("control" %in% unms && !is.null(user_adapt_delta)) {
-    args$control$adapt_delta <- user_adapt_delta
+  if ("control" %in% unms) {
+    if (!is.null(user_adapt_delta))
+      args$control$adapt_delta <- user_adapt_delta
+    else {
+      tmp <- default_stan_control(prior = prior)
+      args$control$adapt_delta <- tmp$adapt_delta
+    }
   }
   else args$control <- 
     default_stan_control(prior = prior, adapt_delta = user_adapt_delta)
