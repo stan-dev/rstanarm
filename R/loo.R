@@ -80,7 +80,7 @@ waic.stanreg <- function(x, ...) {
 .llargs <- function(object) {
   f <- object$family
   draws <- nlist(f)
-  stanmat <- as.matrix(object$stanfit)
+  stanmat <- as.matrix.stanreg(object)
   x <- get_x(object)
   y <- get_y(object)
 
