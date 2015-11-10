@@ -18,16 +18,15 @@
 #' @examples
 #' \dontrun{
 #' # Example usage with stan_glm
-#' options(mc.cores = 4)
 #' SEED <- 12345
 #' 
 #' # can specify family = neg_binomial_2
 #' fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'                 family = neg_binomial_2, seed = SEED) 
+#'                 family = neg_binomial_2, seed = SEED, cores = 1) 
 #'                 
 #' # or, equivalently, use stan_glm.nb 
 #' stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'             seed = SEED) 
+#'             seed = SEED, cores = 1) 
 #' }
 #'
 neg_binomial_2 <- function(link = "log") {

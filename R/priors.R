@@ -182,14 +182,14 @@
 #'   and demonstrate the use of some of the supported prior distributions.
 #' @examples
 #' \dontrun{
-#' options(mc.cores = 4)
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' t7_prior <- student_t(df = 7)
-#' stan_glm(fmla, data = mtcars, prior = t7_prior, prior_intercept = t7_prior)
-#' stan_lm(fmla, data = mtcars, prior = R2(0.75, what = "red"))
+#' stan_glm(fmla, data = mtcars, prior = t7_prior, 
+#'          prior_intercept = t7_prior, cores = 1)
+#' stan_lm(fmla, data = mtcars, prior = R2(0.75, what = "median"), cores = 1)
 #' 
 #' # Draw from prior predictive distribution (set prior_PD = TRUE)
-#' priorPD <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
+#' priorPD <- stan_glm(fmla, data = mtcars, prior_PD = TRUE, cores = 1,
 #'                     prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
 #'                     prior_ops = prior_options(prior_scale_for_dispersion = 2))
 #' }

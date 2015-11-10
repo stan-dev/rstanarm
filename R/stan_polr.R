@@ -90,8 +90,7 @@ class(loglog) <- "link-glm"
 #' 
 #' @examples 
 #' \dontrun{
-#' options(mc.cores = parallel::detectCores())
-#' stan_polr(tobgp ~ agegp, data = esoph, 
+#' stan_polr(tobgp ~ agegp, data = esoph, cores = 1,
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
 #' }
 #' 
