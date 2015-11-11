@@ -176,11 +176,7 @@ waic.stanreg <- function(x, ...) {
   f <- draws$f
   J <- draws$max_y
   y_i <- data$y
-  
-  if (f == "logistic") linkinv <- make.link("logit")$linkinv
-  else if (f == "loglog") linkinv <- pgumbel
-  else linkinv <- make.link(f)$linkinv
-  
+  linkinv <- polr_linkinv(f)
   val <- 
     if (y_i == 1) log(linkinv(draws$zeta[,1] - eta))
     else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta))

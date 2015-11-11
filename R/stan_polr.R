@@ -146,10 +146,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
   call <- match.call(expand.dots = TRUE)
   prior.info <- get_prior_info(call, formals())
 
-  if (method == "logistic") linkinv <- plogis
-  else if (method == "loglog") linkinv <- pgumbel
-  else linkinv <- make.link(method)$linkinv
-
+  linkinv <- polr_linkinv(method)
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
   df.residual <- n - sum(wt == 0) - rank
   

@@ -228,3 +228,15 @@ get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(as.matrix(Zt))
 }
+
+# Make inverse link function for stan_polr models
+# @param x A stanreg object or character scalar giving the "method"
+polr_linkinv <- function(x) {
+  if (is.stanreg(x) && is(x, "polr")) method <- x$method
+  else if (is.character(x) && length(x) == 1) method <- x
+  else stop("'x' should be a stanreg object created by stan_polr or a single string.")
+  
+  if (method == "logistic") make.link("logit")$linkinv
+  else if (method == "loglog") pgumbel
+  else make.link(method)$linkinv
+}

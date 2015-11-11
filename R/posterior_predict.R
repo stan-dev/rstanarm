@@ -67,12 +67,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
-    f <- object$method
-    if (f == "logistic")    linkinv <- make.link("logit")$linkinv
-    else if (f == "loglog") linkinv <- pgumbel
-    else                    linkinv <- make.link(f)$linkinv
     zeta <- stanmat[,grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    .pp_polr(eta, zeta, linkinv)
+    .pp_polr(eta, zeta, polr_linkinv(object))
   }
   else {
     ppargs <- list(mu = family$linkinv(eta))
