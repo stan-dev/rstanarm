@@ -113,6 +113,11 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
+  
+  # check if any x variables are constants 
+  is_constant <- apply(mf, 2, var) == 0
+  if (any(is_constant)) stop("Constant variable(s) found: ",
+                             paste(colnames(mf)[is_constant], collapse = ", "))
 
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)

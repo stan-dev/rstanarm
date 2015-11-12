@@ -89,7 +89,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   xbar <- colMeans(xtemp)
   xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   
-  # drop any column of x with < 2 unique values
+  # drop any column of x with < 2 unique values (empty interaction levels)
   sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
   if (any(sel)) {
     warning("Dropped empty interaction levels: ",
