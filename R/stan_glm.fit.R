@@ -14,6 +14,7 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 #' @rdname stan_glm
+#' @export
 #' @param group A list, possibly of length zero (the default), but otherwise
 #'   having the structure of that produced by \code{\link[lme4]{mkReTrms}} to
 #'   indicate the group-specific part of the model. In addition, this list must
@@ -22,7 +23,6 @@
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom methods is
 #' @importFrom rstan optimizing sampling
-#' @export
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,
@@ -108,7 +108,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
     if (prior_dist == "normal" || prior_dist == "t") {
       prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
-      prior_scale <- set_prior_scale(prior_scale, default = 2.5, link = family$link)
+      prior_scale <- set_prior_scale(prior_scale, default = 2.5, 
+                                     link = family$link)
     }
     else prior_dist <- ifelse(prior_dist == "hs", 3L, 4L)
     prior_df <- maybe_broadcast(prior_df, nvars)
@@ -136,7 +137,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist_for_intercept <- 
       ifelse(prior_dist_for_intercept == "normal", 1L, 2L)
     prior_scale_for_intercept <- 
-      set_prior_scale(prior_scale_for_intercept, default = 10, link = family$link)
+      set_prior_scale(prior_scale_for_intercept, default = 10, 
+                      link = family$link)
     prior_df_for_intercept <- min(.Machine$double.xmax, prior_df_for_intercept)
   }
   else {
@@ -163,7 +165,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       else if (num.categories > 2) x.scale <- 2 * sd(x)
     })
     if (any(x_scale == 0)) #FIXME
-      stop("Both levels not present in some interactions.")
+      stop("Some interactions are empty: ", 
+           paste(colnames(xtemp)[x_scale == 0], collapse = ", "))
     prior_scale <- pmax(min_prior_scale, prior_scale / x_scale)
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
