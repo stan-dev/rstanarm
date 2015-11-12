@@ -155,13 +155,16 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    prior_scale <- pmax(min_prior_scale, prior_scale /
-                          apply(xtemp, 2, FUN = function(x) {
-                            num.categories <- length(unique(x))
-                            x.scale <- 1
-                            if (num.categories == 2) x.scale <- diff(range(x))
-                            else if (num.categories > 2) x.scale <- 2 * sd(x)
-                          }))
+    x_scale <- apply(xtemp, 2, FUN = function(x) {
+      num.categories <- length(unique(x))
+      x.scale <- 1
+      if (num.categories < 2) x.scale <- 0
+      else if (num.categories == 2) x.scale <- diff(range(x))
+      else if (num.categories > 2) x.scale <- 2 * sd(x)
+    })
+    if (any(x_scale == 0)) #FIXME
+      stop("Both levels not present in some interactions.")
+    prior_scale <- pmax(min_prior_scale, prior_scale / x_scale)
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- min(.Machine$double.xmax, prior_scale_for_intercept)
