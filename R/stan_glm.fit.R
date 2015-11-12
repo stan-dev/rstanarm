@@ -66,18 +66,19 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stopifnot(NCOL(y) == 2L)
       trials <- as.integer(y[, 1L] + y[, 2L])
       y <- as.integer(y[, 1L])
-    } else if (all(weights == 1)){
+    } else if (all(weights == 1)) {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
       if (is.factor(y)) 
         y <- y != levels(y)[1L]
       y <- as.integer(y)
       if (!all(y %in% c(0L, 1L))) 
-        stop("y values must be 0 or 1 for bernoulli regression")
+        stop("y values must be 0 or 1 for bernoulli regression.")
     }
     else {
       if (!all(y >= 0 & y <= 1))
-        stop("y values must be between 0 and 1 for binomial regression")
+        stop("If weights are provided, then y values must be proportions ", 
+             "between 0 and 1.")
       trials <- weights
     }
   }
@@ -87,6 +88,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
   xbar <- colMeans(xtemp)
   xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+  
+  # drop any column of x with < 2 unique values
+  sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
+  if (any(sel)) {
+    warning("Dropped empty interaction levels: ",
+            paste(colnames(xtemp)[sel], collapse = ", "))
+    xtemp <- xtemp[, !sel, drop = FALSE]
+    xbar <- xbar[!sel]
+  }
   nvars <- ncol(xtemp)
   
   scaled <- prior_ops$scaled
@@ -157,17 +167,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    x_scale <- apply(xtemp, 2, FUN = function(x) {
-      num.categories <- length(unique(x))
-      x.scale <- 1
-      if (num.categories < 2) x.scale <- 0
-      else if (num.categories == 2) x.scale <- diff(range(x))
-      else if (num.categories > 2) x.scale <- 2 * sd(x)
-    })
-    if (any(x_scale == 0)) #FIXME
-      stop("Some interactions are empty: ", 
-           paste(colnames(xtemp)[x_scale == 0], collapse = ", "))
-    prior_scale <- pmax(min_prior_scale, prior_scale / x_scale)
+    prior_scale <- 
+      pmax(min_prior_scale, prior_scale / 
+             apply(xtemp, 2L, FUN = function(x) {
+               num.categories <- length(unique(x))
+               x.scale <- 1
+               stopifnot(num.categories > 1)
+               if (num.categories == 2) x.scale <- diff(range(x))
+               else if (num.categories > 2) x.scale <- 2 * sd(x)
+             }))
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- min(.Machine$double.xmax, prior_scale_for_intercept)
