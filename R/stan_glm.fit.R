@@ -172,9 +172,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
                x.scale <- 1
-               stopifnot(num.categories > 1)
                if (num.categories == 2) x.scale <- diff(range(x))
                else if (num.categories > 2) x.scale <- 2 * sd(x)
+               return(x.scale)
              }))
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))

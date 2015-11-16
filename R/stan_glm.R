@@ -115,7 +115,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   }
   
   # check if any x variables are constants 
-  is_constant <- apply(mf, 2, var) == 0
+  is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 0
   if (any(is_constant)) stop("Constant variable(s) found: ",
                              paste(colnames(mf)[is_constant], collapse = ", "))
 
