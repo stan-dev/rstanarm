@@ -5,6 +5,7 @@
 #' @aliases rstanarm
 #' @useDynLib rstanarm, .registration = TRUE 
 #' 
+#' @import methods
 #' @importFrom rstan constrain_pars extract extract_sparse_parts get_posterior_mean optimizing sampling stanc
 #' @import stats
 #' @import Rcpp

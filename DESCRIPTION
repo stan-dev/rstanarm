@@ -14,11 +14,11 @@ License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
     Rcpp (>= 0.11.0),
+    methods
 Imports:
     ggplot2,
     lme4 (>= 1.1-8),
     loo (>= 0.1.3),
-    methods,
     rstan (>= 2.8.1),
     shinystan (>= 2.0.1),
     stats,

@@ -14,6 +14,7 @@
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
 .onLoad <- function(libname, pkgname) {
+  if (!("methods" %in% .packages())) attachNamespace("methods")
   loadRcppModules()
 }
 

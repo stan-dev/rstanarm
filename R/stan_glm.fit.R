@@ -21,7 +21,6 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
-#' @importFrom methods is
 #' @importFrom rstan optimizing sampling
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
