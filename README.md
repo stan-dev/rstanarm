@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)
+
 rstanarm
 ========
 This is an R package that emulates other R model-fitting functions but uses (R)Stan for the back-end estimation. The primary target audience is people who would be open to Bayesian inference if using
