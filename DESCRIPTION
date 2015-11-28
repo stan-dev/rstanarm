@@ -33,6 +33,7 @@ Suggests:
     knitr,
     MASS,
     RSvgDevice,
+    rmarkdown,
     testthat
 LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>=
     0.11.0), RcppEigen
