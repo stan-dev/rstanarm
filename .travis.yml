@@ -3,6 +3,9 @@ sudo: required
 
 warnings_are_errors: TRUE
 
+os:
+  - osx
+  
 r_binary_packages:
   - rstan
   - ggplot2
