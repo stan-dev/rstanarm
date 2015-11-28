@@ -1,5 +1,5 @@
 language: r
-sudo: false
+sudo: required
 
 warnings_are_errors: TRUE
 
