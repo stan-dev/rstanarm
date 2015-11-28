@@ -5,10 +5,38 @@ warnings_are_errors: TRUE
 
 r_binary_packages:
   - rstan
+  - ggplot2
+  - lme4
+  - loo
+  - shinystan
+  - arm
+  - gamm4
+  - grDevices
+  - gridExtra
+  - HSAUR3
+  - KernSmooth
+  - knitr
+  - RSvgDevice
+  - testthat
 
 env:
   matrix: 
     - CXX_OLEVEL=2 CXX=clang++
+
+before script:
+  - echo "CXX = `which ccache` `R CMD config CXX`" >> ./rstan/R_Makevars 
+  - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ./rstan/R_Makevars 
+  - export CLANG_EXTRA_ARG=""
+  - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
+  - if [[ $RCPP_VER = 'github' ]]; then R -q -e "options(repos = getCRANmirrors()[1,'URL']); library(devtools); install_github('Rcpp', 'Rcppcore')"; fi
+  - echo ${CXX}
+  - echo ${CLANG_EXTRA_ARG}
+  - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ./rstan/R_Makevars
+  - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ./rstan/R_Makevars
+  - rm ./rstan/R_Makevars.bak
+  - more ./rstan/R_Makevars
+  - mkdir -p ~/.R/; cat ./rstan/R_Makevars > ~/.R/Makevars
+  - more ~/.R/Makevars
 
 r_github_packages:
   - jimhester/covr
