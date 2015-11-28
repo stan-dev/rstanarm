@@ -21,6 +21,7 @@ env:
   matrix: 
     - CXX_OLEVEL=2 CXX=clang++
 
+
 before script:
   - echo "CXX = `R CMD config CXX`" >> ./rstan/R_Makevars 
   - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ./rstan/R_Makevars 
@@ -33,3 +34,8 @@ before script:
   - mkdir -p ~/.R/; cat ./rstan/R_Makevars > ~/.R/Makevars
   - more ~/.R/Makevars
 
+r_github_packages:
+  - jimhester/covr
+
+after_success:
+  - Rscript -e 'covr::codecov()'
