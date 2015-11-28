@@ -3,7 +3,8 @@ sudo: required
 
 warnings_are_errors: TRUE
 
-r_binary_packages: rstan
+r_binary_packages:
+  - rstan
 
 r_github_packages:
   - jimhester/covr
