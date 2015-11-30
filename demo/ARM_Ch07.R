@@ -6,8 +6,7 @@ source(paste0(ROOT, "ARM/Ch.7/congress.data.R"), local = DATA_ENV, verbose = FAL
 # The stuff in sections 7.0 -- 7.2 is not very relevant 
 
 post1 <- stan_lm(vote_88 ~ vote_86 + incumbency_88, data = DATA_ENV, 
-                 prior = R2(0.9, what = "mean"), seed = SEED,
-                 adapt_delta = 0.99)
+                 prior = R2(0.9, what = "mean"), seed = SEED)
 post1 # badly underfitting
 y_tilde <- posterior_predict(post1) # incumbency_90 is not available
 summary(rowSums(y_tilde > 0.5))
