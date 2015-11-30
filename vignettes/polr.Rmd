@@ -77,24 +77,19 @@ to say the same thing is _conditional_ on a realization of $y^\ast$, we have a
 linear regression model and the description of the priors in the other vignette
 does apply (and should be read before continuing with this subsection).
 
-The `stan_lm` function essentially implies a prior on _standardized_ regression
-coefficients $\boldsymbol{\lambda}$ and then scales each $\lambda_k$ by the
-ratio of the standard deviation of the outcome to the standard deviation of the
-predictor to construct each $\beta_k = \lambda_k \sigma_y / \sigma_{x_k}$.
-Furthermore, the standard deviation of the errors is given by the expression
+The `stan_lm` function essentially specifies a prior on 
+$\boldsymbol{\theta} = \mathbf{R}^-1 \boldsymbol{\beta}$, where $\mathbf{R}$
+is the upper triangular matrix in the QR decomposition of the design matrix,
+$\mathbf{X} = \mathbf{Q} \mathbf{R}$. Furthermore, in `stan_lm`, 
 $\sigma_{\epsilon} = \sigma_y \sqrt{1 - R^2}$ where $R^2$ is the proportion of
 variance in the outcome that is attributable to the coefficients in a linear 
-model, and the user must provide a value for the prior location (by default,
-the mode) of the $R^2$.
+model.
 
 The main difference in the context of a model for an ordinal outcome is that
 the scale of $y^\ast$ is not identified by the data. Thus, the ordinal model
 specifies that $\sigma_{\epsilon} = 1$, which implies that 
-$\sigma_{y^\ast} = 1 / \sqrt{1 - R^2}$ is an intermediate parameter.
-Hence, the prior on the coefficients in an ordinal model is essentially the same
-as in a linear model with an observed outcome that is discussed in the vignette
-for `stan_lm`, except here there is no 
-$\omega = \sigma_y / \widehat{\sigma_y}$ parameter to estimate.
+$\sigma_{y^\ast} = 1 / \sqrt{1 - R^2}$ is an intermediate parameter rather than
+a primitive parameter.
 
 It is somewhat more difficult to specify a prior value for the $R^2$ in an
 ordinal model because $R^2$ refers to the proportion of variance in the
@@ -122,7 +117,7 @@ they need not be integers). If $\alpha_j = 1$ for every $j$ (the default used by
 __rstanarm__) then the Dirichlet prior is jointly uniform over the space of
 these simplexes. This corresponds to a prior count of one observation falling in
 each of the $J$ ordinal categories when the predictors are at their sample means
-and only conveys the reasonable prior information that no category has
+and conveys the reasonable but weak prior information that no category has
 probability zero. If, for each $j$, $\alpha_j = \alpha > 1$ then the prior mode
 is that the $J$ categories are equiprobable, with prior probability $1/J$ of the
 outcome falling in each of the $J$ categories. The larger the value of $\alpha$
@@ -170,7 +165,7 @@ cutpoints are actually _known_, it would be more appropriate for the model to
 take that into account, but `stan_polr` does not currently support that.
 
 Next, we utilize an example from the __MASS__ package where low birthweight is 
-the outcome of interest. First, we recode some of the variables:
+the binary outcome of interest. First, we recode some of the variables:
 ```{r recodes}
 data("birthwt", package = "MASS")
 birthwt$race <- factor(birthwt$race, levels = 1:3, 

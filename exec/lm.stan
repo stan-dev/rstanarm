@@ -1,114 +1,120 @@
 # GLM for a Gaussian outcome with no link function
 functions {
-  #include "common_functions.txt"
-
   /**
    * Increments the log-posterior with the logarithm of a multivariate normal 
    * likelihood with a scalar standard deviation for all errors
-   * Equivalent to y ~ normal(intercept + X * beta, sigma) but faster
-   * @param beta vector of coefficients (excluding intercept)
-   * @param b precomputed vector of OLS coefficients (excluding intercept) 
-   * @param middle matrix (excluding ones) typically precomputed as crossprod(X)
-   * @param intercept scalar (assuming X is centered)
+   * Equivalent to y ~ normal(intercept + Q * R * beta, sigma) but faster
+   * @param theta vector of coefficients (excluding intercept), equal to R * beta
+   * @param b precomputed vector of OLS coefficients (excluding intercept) in Q-space
+   * @param intercept scalar (assuming columns of Q have mean zero)
    * @param ybar precomputed sample mean of the outcome
    * @param SSR positive precomputed value of the sum of squared OLS residuals
-   * @param sigma positive value for the standard deviation of the errors
+   * @param sigma positive scalar for the standard deviation of the errors
    * @param N integer equal to the number of observations
    */
-  real ll_mvn_ols_lp(vector beta, vector b, matrix middle,
-                     real intercept, real ybar,
-                     real SSR, real sigma, int N) {
-    increment_log_prob( -0.5 * (quad_form_sym(middle, beta - b) + 
+  real ll_mvn_ols_qr_lp(vector theta, vector b,
+                        real intercept, real ybar,
+                        real SSR, real sigma, int N) {
+    increment_log_prob( -0.5 * (dot_self(theta - b) + 
       N * square(intercept - ybar) + SSR) / 
       square(sigma) - # 0.91... is log(sqrt(2 * pi()))
-                          N * (log(sigma) + 0.91893853320467267) );
+      N * (log(sigma) + 0.91893853320467267) );
     return get_lp();
   }
 }
 data {
   int<lower=1> K;                     # number of predictors
   int<lower=0,upper=1> has_intercept; # 0 = no, 1 = yes
+  
+  int<lower=0,upper=1> prior_dist_for_intercept; # 0 = none, 1 = normal
+  real<lower=0> prior_scale_for_intercept;       # 0 = by CLT
+  real prior_mean_for_intercept;      # expected value for alpha
+  int<lower=0,upper=1> prior_dist;    # 0 = uniform for R^2, 1 = Beta(K/2,eta)
   int<lower=0,upper=1> prior_PD;      # 0 = no, 1 = yes to drawing from the prior
+  real<lower=0> eta;                  # shape hyperparameter
+  
   int<lower=1> J;                     # number of groups
   // the rest of these are indexed by group but should work even if J = 1
   int<lower=1> N[J];                  # number of observations
-  vector[K] xbar[J];                  # vector of means of the predictors
-  vector<lower=0>[K] s_X[J];          # vector of standard deviations of the predictors
-  matrix[K,K] XtX[J];                 # X'X where X is centered but not standardized
+  vector[K] xbarR_inv[J];             # vector of means of the predictors
   real ybar[J];                       # sample mean of outcome
   real center_y;                      # zero or sample mean of outcome
   real<lower=0> s_Y[J];               # standard deviation of the outcome
-  vector[K] b[J];                     # OLS coefficients
+  vector[K] Rb[J];                    # OLS coefficients
   real<lower=0> SSR[J];               # OLS sum-of-squared residuals
-  real<lower=0> eta;                  # shape hyperparameter
+  matrix[K,K] R_inv[J];               # inverse R matrices
 }
 transformed data {
-  real etaphalf;
   real half_K;
-  vector[K] rhs[J];
-  real inv_N[J];
-  etaphalf <- eta + 0.5;
+  real sqrt_inv_N[J];
+  real sqrt_Nm1[J];
   half_K <- 0.5 * K;
   for (j in 1:J) {
-    rhs[j] <- xbar[j] ./ (s_X[j] * sqrt(N[j] - 1.0));
-    inv_N[j] <- 1.0 / N[j];
+    sqrt_inv_N[j] <- sqrt(1.0 / N[j]);
+    sqrt_Nm1[j] <- sqrt(N[j] - 1.0);
   }
 }
 parameters { // must not call with init="0"
-  row_vector[K] z_beta[J];              # primitives for coefficients
+  vector[K] z_beta[J];                  # primitives for coefficients
   real z_alpha[J * has_intercept];      # primitives for intercepts
-  cholesky_factor_corr[K] L;            # L * L' is the hyperprior correlation matrix
   real<lower=0,upper=1> R2[J];          # proportions of variance explained
   vector[J * (1 - prior_PD)] log_omega; # under/overfitting factors
 }
 transformed parameters {
   real alpha[J * has_intercept];   # uncentered intercepts
-  vector[K] beta[J];               # unstandardized coefficients
+  vector[K] theta[J];              # coefficients in Q-space
   real<lower=0> sigma[J];          # error standard deviations
+  real shift[J];                   # shifts to intercepts
   for (j in 1:J) {
-    real Delta_y;                  # standard deviation of outcome for group j
+    real Delta_y; # marginal standard deviation of outcome for group j
     if (prior_PD == 0) Delta_y <- s_Y[j] * exp(log_omega[j]);
     else Delta_y <- 1;
-    if (K > 1)
-      beta[j] <- transpose(mdivide_right_tri_low(z_beta[j], L)) *
-                 sqrt(R2[j] / dot_self(z_beta[j])) ./ s_X[j] * Delta_y;
-    else beta[j][1] <- sqrt(R2[j]) / s_X[j][1] * Delta_y;
-    sigma[j] <- Delta_y * sqrt(1 - R2[j]);
-    if (has_intercept == 1) {
-      if (K > 1) {
-        if (center_y == 0) 
-          alpha[j] <- z_alpha[j] * sigma[j] * 
-                      sqrt(dot_self(mdivide_left_tri_low(L, rhs[j])) + inv_N[j]);
-        else alpha[j] <- z_alpha[j] * sigma[j] * sqrt(inv_N[j]) + center_y;
-      }
-      else alpha[j] <- z_alpha[j] * sigma[j] * sqrt(square(rhs[j][1]) + inv_N[j]);
+    
+    # coefficients in Q-space
+    if (K > 1) {
+      theta[j] <- z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
+                  sqrt_Nm1[j] * Delta_y;
     }
+    else theta[j][1] <-  sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    
+    sigma[j] <- Delta_y * sqrt(1 - R2[j]); # standard deviation of errors
+    
+    if (has_intercept == 1) {
+      if (prior_dist_for_intercept == 0)       # no information
+        alpha[j] <- z_alpha[j];
+      else if (prior_scale_for_intercept == 0) # central limit theorem
+        alpha[j] <- z_alpha[j] * Delta_y * sqrt_inv_N[j] + prior_mean_for_intercept;
+      else                                     # arbitrary informative prior
+         alpha[j] <- z_alpha[j] * prior_scale_for_intercept + 
+                     prior_mean_for_intercept;
+    }
+    
+    # shifts to align alpha with the mean of the outcome
+    if (center_y == 1) shift[j] <- 0;
+    else               shift[j] <- dot_product(xbarR_inv[j], theta[j]);
   }
 }
 model {
-  for (j in 1:J) {
+  for (j in 1:J) { // likelihood contribution for each group
     if (prior_PD == 0) {
-      real dummy; // irrelevant but useful for testing
-      real shift;
-      if (center_y == 0) shift <- dot_product(xbar[j], beta[j]);
-      else shift <- 0;
-      dummy <- ll_mvn_ols_lp(beta[j], b[j], XtX[j], 
-               if_else(has_intercept, alpha[j], 0) + shift,
-               ybar[j], SSR[j], sigma[j], N[j]); // likelihood contribution
+      real dummy; // irrelevant but useful for testing user-defined function
+      if (has_intercept)
+           dummy <- ll_mvn_ols_qr_lp(theta[j], Rb[j], alpha[j] + shift[j],
+                                     ybar[j], SSR[j], sigma[j], N[j]);
+      else dummy <- ll_mvn_ols_qr_lp(theta[j], Rb[j], shift[j],
+                                     ybar[j], SSR[j], sigma[j], N[j]);
     }
-    z_beta[j] ~ normal(0,1); // prior
-  }                          // rest of the priors
-  if (has_intercept == 1) z_alpha ~ normal(0,1);
-  if (K > 1) L ~ lkj_corr_cholesky(etaphalf);
-  R2 ~ beta(half_K, eta);
+    z_beta[j] ~ normal(0,1); // implicit: spherical vector is uniform
+  }
+  if (has_intercept == 1 && prior_dist_for_intercept > 0) z_alpha ~ normal(0,1);
+  if (prior_dist == 1) R2 ~ beta(half_K, eta);
   // implicit: log_omega is uniform over the real line for all j
 }
 generated quantities {
   real mean_PPD[J];
+  vector[K] beta[J];
   for (j in 1:J) {
-    real shift;
-    if (center_y == 0) shift <- dot_product(xbar[j], beta[j]);
-    else shift <- 0;
-    mean_PPD[j] <- normal_rng(alpha[j] + shift, sigma[j]);
+    mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j]);
+    beta[j] <- R_inv[j] * theta[j];
   }
 }

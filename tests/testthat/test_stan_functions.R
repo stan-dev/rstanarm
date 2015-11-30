@@ -254,19 +254,25 @@ test_that("inv_gaussian returns expected results", {
 # lm
 N <- 99L
 context("lm")
-test_that("ll_mvn_ols_lp returns expected results", {
+test_that("ll_mvn_ols_qr_lp returns expected results", {
   X <- matrix(rnorm(2 * N), N, 2)
   y <- 1 + X %*% c(2:3) + rnorm(N)
   ols <- lm.fit(cbind(1,X), y)
   b <- coef(ols)
   X <- sweep(X, MARGIN = 2, STATS = colMeans(X), FUN = "-")
-  XtX <- crossprod(X)
   intercept <- 0.5
   beta <- rnorm(2)
   sigma <- rexp(1)
-  expect_true(all.equal(sum(dnorm(y, intercept + X %*% beta, sigma, log = TRUE)),
-                        ll_mvn_ols_lp(beta, b[-1], XtX, intercept, mean(y),
-                                   crossprod(residuals(ols))[1], sigma, N)))
+  SSR <- crossprod(residuals(ols))[1]
+  ll <- sum(dnorm(y, intercept + X %*% beta, sigma, log = TRUE))
+  decomposition <- qr(X)
+  Q <- qr.Q(decomposition)
+  R <- qr.R(decomposition)
+  R_inv <- qr.solve(decomposition, Q)
+  b <- R %*% b[-1]
+  beta <- R %*% beta
+  expect_true(all.equal(ll, ll_mvn_ols_qr_lp(beta, b, intercept, mean(y), 
+                                             SSR, sigma, N)))
 })
 
 # polr

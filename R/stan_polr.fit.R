@@ -38,7 +38,14 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   if (colnames(x)[1] == "(Intercept)") x <- x[,-1,drop=FALSE]
   xbar <- as.array(colMeans(x))
   X <- sweep(x, 2, xbar, FUN = "-")
-  s_X <- as.array(apply(X, 2, sd))
+  cn <- colnames(X)
+  decomposition <- qr(X)
+  Q <- qr.Q(decomposition)
+  R_inv <- qr.solve(decomposition, Q)
+  X <- Q
+  colnames(X) <- cn
+  xbar <- c(xbar %*% R_inv)
+  
   has_weights <- length(wt) > 0 && !all(wt == 1)
   if (!has_weights) weights <- double(0)
   has_offset <- length(offset) > 0 && !all(offset == 0)
@@ -57,38 +64,29 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   
   N <- nrow(X)
   K <- ncol(X)
-  standata <- nlist(J, N, K, X, xbar, s_X, y, prior_PD, link, 
+  standata <- nlist(J, N, K, X, xbar, y, prior_PD, link, 
                     has_weights, weights, has_offset, offset,
                     prior_dist, shape, prior_counts,
                     # the rest of these are not actually used
                     has_intercept = 0L, prior_dist_for_intercept = 0L, 
                     family = 1L)
-  if (prior_dist == 1) {
-    L <- t(chol(cor(x)))
-    dim(L) <- c(1L, dim(L))
-    halfK <- K / 2
-    R2 <- as.array(halfK / (halfK + standata$shape))
-    z_beta <- NULL
-  }
-  else {
-    L <- array(0, dim = c(0L, K, K))
-    R2 <- array(0, dim = 0L)
-    z_beta <- rep(0, K)
-  }
   pi <- table(y) / N               
   start <- function(chain_id) {
-    list(pi = pi, L = L, R2 = R2, z_beta = z_beta)
+    list(pi = pi)
   }
 
   stanfit <- stanmodels$polr
   if (algorithm == "optimizing") {
     standata$do_residuals <- 0L
-    out <- optimizing(stanfit, data = standata, init = start,
+    out <- optimizing(stanfit, data = standata, #init = start,
                       constrained = TRUE, draws = 1000, ...)
+    mark <- grepl("^beta\\[[[:digit:]]+\\]$", names(out$par))
     new_names <- c(paste0("pi[", y_lev, "]"), paste0("z_beta[", colnames(x), "]"),
                    "Delta_y", colnames(x), paste0("cutpoints[", y_lev[-1], "]"),
                    paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                    paste("mean_PPD", y_lev, sep = ":"))
+    out$par[mark] <- R_inv %*% out$par[mark]
+    out$theta_tilde[,mark] <- out$theta_tilde[,mark] %*% t(R_inv)
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
@@ -103,8 +101,15 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
       prior = prior,
       user_dots = list(...), 
       user_adapt_delta = adapt_delta, 
-      init = start, data = standata, pars = pars, show_messages = FALSE)
+      data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
+
+    thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
+    betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+    for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
+      stanfit@sim$samples[[chain]][[param]] <- 
+        if (ncol(X) > 1) betas[param,,chain] else betas[param,chain]
+    }
     
     # else 
     #   stanfit <- vb(stanfit, pars = pars, data = standata, algorithm = algorithm, ...)

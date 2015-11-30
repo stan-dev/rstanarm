@@ -6,9 +6,6 @@ SEED <- 123
 
 threshold <- 0.03
 
-f1 <- function(x) cbind(coef(x), se(x))
-f2 <- function(x) summary(x)$coefficients[,1:2]
-
 context("stan_polr")
 test_that("stan_polr returns expected result for esoph example", {
   library(MASS)

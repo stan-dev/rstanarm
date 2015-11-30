@@ -40,7 +40,15 @@
 #'
 #' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
 #' @param prior Must be a call to \code{\link{R2}} with its 
-#'   \code{location} argument specified.
+#'   \code{location} argument specified or \code{NULL}, which would
+#'   indicate a standard uniform prior for the \eqn{R^2}.
+#' @param prior_intercept Either \code{NULL} (the default) or a call to
+#'   \code{\link{normal}}. If a \code{\link{normal}} prior is specified
+#'   without a \code{scale}, then the standard deviation is taken to be
+#'   the marginal standard deviation of the outcome divided by the square
+#'   root of the sample size, which is legitimate because the marginal
+#'   standard deviation of the outcome is a primitive parameter being
+#'   estimated.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
@@ -65,8 +73,6 @@
 #'   by a multiplicative factor equal to the square of \code{fit_ratio}.
 #'   Conversely if \code{log-fit_ratio} is negative, then the model underfits.
 #'   Given the regularizing nature of the priors, a slight underfit is good.
-#'   However, even if the \emph{marginal} posterior variance is off, the 
-#'   \emph{conditional} variance (\code{sigma}) may still be reasonable.
 #'   
 #'   Finally, the posterior predictive distribution is generated with the
 #'   predictors fixed at their sample means. This quantity is useful for
@@ -89,16 +95,16 @@
 #'   
 #'   
 #' @examples
-#' \dontrun{
-#' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), seed = 12345))
+#' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
+#'                 # the next line is only to make the example go fast enough
+#'                 chains = 1, seed = 12345))
 #' plot(fit)
-#' ppcheck(fit, check = "dist", nreps = 25)
-#' }
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
                     prior = R2(stop("'location' must be specified")), 
+                    prior_intercept = NULL,
                     prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
                     adapt_delta = NULL) {
   
@@ -107,7 +113,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mf[[1L]] <- as.name("lm")
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
-  mf$prior <- NULL
+  mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
+    mf$adapt_delta <- NULL
   
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
   mt <- modelframe$terms
@@ -117,8 +124,10 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   w <- modelframe$weights
   offset <- model.offset(mf)
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
-                          prior = prior,  prior_PD = prior_PD, 
-                          algorithm = algorithm, adapt_delta = adapt_delta, ...)
+                          prior = prior,  prior_intercept = prior_intercept, 
+                          prior_PD = prior_PD, 
+                          algorithm = algorithm, adapt_delta = adapt_delta, 
+                          ...)
 
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,

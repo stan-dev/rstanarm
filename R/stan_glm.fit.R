@@ -31,7 +31,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          group = list(),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing"), 
-                         adapt_delta = NULL) {
+                         adapt_delta = NULL, QR = FALSE) {
   
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame())
@@ -166,8 +166,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    prior_scale <- 
-      pmax(min_prior_scale, prior_scale / 
+    if (!QR) 
+      prior_scale <- pmax(min_prior_scale, prior_scale / 
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
                x.scale <- 1
@@ -181,7 +181,19 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   is_bernoulli <- is.binomial(supported_families[fam]) && all(y %in% 0:1)
   is_nb <- is.nb(supported_families[fam])
-  
+
+  if (QR) {
+    if (ncol(xtemp) <= 1)
+      stop("'QR' can only be specified when there are multiple predictors")
+    cn <- colnames(xtemp)
+    decomposition <- qr(xtemp)
+    sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
+    Q <- qr.Q(decomposition)
+    R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
+    xtemp <- Q * sqrt_nm1
+    colnames(xtemp) <- cn
+    xbar <- c(xbar %*% R_inv)
+  }
   # create entries in the data block of the .stan file
   standata <- list(
     N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
@@ -349,7 +361,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
     new_names <- names(out$par)
-    new_names[grepl("^beta\\[[[:digit:]]+\\]$", new_names)] <- colnames(xtemp)
+    mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    if (QR) {
+      out$par[mark] <- R_inv %*% out$par[mark]
+      out$theta_tilde[,mark] <- out$theta_tilde[,mark] %*% t(R_inv)
+    }
+    new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
       if (is_gaussian) "sigma" else
@@ -374,7 +391,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       user_adapt_delta = adapt_delta, 
       data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
-
+    if (QR) {
+      thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
+      betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+      end <- tail(dim(betas), 1)
+      for (chain in 1:end) for (param in 1:nrow(betas)) {
+        stanfit@sim$samples[[chain]][[has_intercept + param]] <-
+          if (ncol(xtemp) > 1) betas[param,,chain] else betas[param,chain]
+      }
+    }
     # else
     #   stanfit <- vb(stanfit, pars = pars, data = standata, 
     #                        algorithm = algorithm, ...)

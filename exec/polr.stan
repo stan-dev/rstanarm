@@ -1,6 +1,5 @@
 # GLM for an ordinal outcome with coherent priors
 functions {
-  #include "common_functions.txt"
   
   /** 
   * Evaluate a given CDF
@@ -28,7 +27,7 @@ functions {
   * @param eta A vector of linear predictors
   * @param cutpoints An ordered vector of cutpoints
   * @param link An integer indicating the link function
-  * @return A vector
+  * @return A vector of log-likelihods
   */
   vector pw_polr(int[] y, vector eta, vector cutpoints, int link) {
     vector[rows(eta)] ll;
@@ -41,7 +40,7 @@ functions {
       if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
       else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
       else ll[n] <- CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
-        CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
+                    CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
     }
     return log(ll);
   }
@@ -50,7 +49,7 @@ functions {
   * Map from conditional probabilities to cutpoints
   *
   * @param probabilities A J-simplex
-  * @param scale A positive number
+  * @param scale A positive scalar
   * @param link An integer indicating the link function
   * @return A vector of length J - 1 whose elements are in increasing order
   */
@@ -100,6 +99,9 @@ functions {
     iter <- 0;
     ystar <- not_a_number();
     if (lower >= upper) reject("lower must be less than upper");
+    // links in MASS::polr() are in a different order than binomial() 
+    // "logistic", "probit", "loglog", "cloglog", "cauchit"
+    if (link < 1 || link > 5) reject("invalid link");
     if      (link == 1) while(!(ystar > lower && ystar < upper))
       ystar <- logistic_rng(eta, 1);
     else if (link == 2) while(!(ystar > lower && ystar < upper))
@@ -116,8 +118,7 @@ functions {
 data {
   #include "NKX.txt"
   int<lower=2> J;                # number of outcome categories, which typically is > 2
-  vector<lower=0>[K] s_X;        # standard deviations of the predictors
-  int<lower=1,upper=J> y[N];     # outcome
+  int<lower=1,upper=J> y[N];     # ordinal outcome
   #include "data_glm.txt"
   #include "weights_offset.txt"
 
@@ -128,20 +129,19 @@ data {
   int<lower=0,upper=1> do_residuals;
 }
 transformed data {
-  real<lower=shape> shapephalf;
   real<lower=0> half_K;
   int<lower=0,upper=1> is_constant;
   matrix[K,K] middle;
-  shapephalf <- shape + 0.5;
+  real<lower=0> sqrt_Nm1;
   half_K <- 0.5 * K;
   is_constant <- 1;
   for (j in 1:J) if (prior_counts[j] != 1) is_constant <- 0;
   middle <- xbar * transpose(xbar);
+  sqrt_Nm1 <- sqrt(N - 1.0);
 }
 parameters {
   simplex[J] pi;
-  row_vector[K] z_beta;
-  cholesky_factor_corr[K] L[prior_dist == 1];
+  vector[K] z_beta;
   real<lower=0,upper=1>  R2[prior_dist == 1];
 }
 transformed parameters {
@@ -151,12 +151,11 @@ transformed parameters {
   if (prior_dist == 1) {
     Delta_y <- inv(sqrt(1 - R2[1]));
     if (K > 1)
-      beta <- transpose(mdivide_right_tri_low(z_beta, L[1])) *
-              sqrt(R2[1] / dot_self(z_beta)) ./ s_X * Delta_y;
-    else beta[1] <- sqrt(R2[1]) / s_X[1] * Delta_y;
+      beta <- z_beta * sqrt(R2[1] / dot_self(z_beta)) * Delta_y * sqrt_Nm1;
+    else beta[1] <- sqrt(R2[1]) * Delta_y * sqrt_Nm1;
   }
   else { // prior_dist == 0
-    beta <- transpose(z_beta);
+    beta <- z_beta;
     Delta_y <- sqrt(quad_form(middle, beta) + 1);
   }
   cutpoints <- make_cutpoints(pi, Delta_y, link);
@@ -172,7 +171,6 @@ model {
   
   if (prior_dist == 1) {
     z_beta ~ normal(0, 1);
-    if (K > 1) L[1] ~ lkj_corr_cholesky(shapephalf);
     R2[1] ~ beta(half_K, shape);
     if (is_constant == 0) pi ~ dirichlet(prior_counts);
   }

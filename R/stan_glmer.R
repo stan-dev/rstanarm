@@ -14,6 +14,7 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template args-QR
 #' @template reference-gelman-hill
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
@@ -59,7 +60,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "optimizing"), 
-                       adapt_delta = NULL) {
+                       adapt_delta = NULL, QR = FALSE) {
   
   if (match.arg(algorithm) == "optimizing") {
     message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
@@ -100,7 +101,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = group, ...)
+                          group = group, QR = QR, ...)
   call <- match.call(expand.dots = TRUE)
   prior.info <- get_prior_info(call, formals())
 

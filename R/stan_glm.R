@@ -39,6 +39,7 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template args-QR
 #' @template reference-gelman-hill
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
@@ -89,7 +90,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), 
                     prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
-                    adapt_delta = NULL) {
+                    adapt_delta = NULL, QR = FALSE) {
 
   # Parse like glm()
   if (is.character(family)) 
@@ -154,7 +155,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior_intercept = prior_intercept,
                           prior_ops = prior_ops,
                           prior_PD = prior_PD, algorithm = algorithm, 
-                          adapt_delta = adapt_delta, ...)
+                          adapt_delta = adapt_delta, QR = QR, ...)
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
                data, prior.info = get_prior_info(call, formals()), 
                call = call, terms = mt, model = mf, 

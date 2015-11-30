@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Applied Regression Modeling via RStan
-Version: 2.8.1
-Date: 2015-11-01
+Version: 2.8.2
+Date: 2015-11-30
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
@@ -19,7 +19,7 @@ Imports:
     ggplot2,
     lme4 (>= 1.1-8),
     loo (>= 0.1.3),
-    rstan (>= 2.8.1),
+    rstan (>= 2.8.2),
     shinystan (>= 2.0.1),
     stats,
     utils
@@ -34,7 +34,7 @@ Suggests:
     MASS,
     RSvgDevice,
     testthat
-LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.1), BH (>= 1.58.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.2), BH (>= 1.58.0), Rcpp (>=
     0.11.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
@@ -43,4 +43,4 @@ URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
 RcppModules: stan_fit4bernoulli_mod, stan_fit4binomial_mod,
     stan_fit4continuous_mod, stan_fit4count_mod, stan_fit4lm_mod, stan_fit4polr_mod
-RoxygenNote: 5.0.0
+RoxygenNote: 5.0.1

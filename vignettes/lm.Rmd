@@ -1,9 +1,9 @@
 ---
 title: "Estimating Linear Models with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "08/30/2015"
-output: 
-  html_document: 
+date: "11/26/2015"
+output:
+  html_document:
     fig_caption: yes
     self_contained: no
     toc: yes
@@ -57,8 +57,9 @@ and $\sigma_{\epsilon}$ is the standard deviation of the error in predicting
 the outcome, $y$. The likelihood of the entire sample is the product of $N$
 individual likelihood contributions.
 
-It is well-known that the likelihood of the sample is maximized when
-$$ \widehat{\boldsymbol{\beta}} = \left(\mathbf{X} \mathbf{X}^\top\right)^{-1}
+It is well-known that the likelihood of the sample is maximized when the 
+sum-of-squared residuals is minimized, which occurrs when
+$$ \widehat{\boldsymbol{\beta}} = \left(\mathbf{X}^\top \mathbf{X}\right)^{-1}
                                    \mathbf{X}^\top \mathbf{y}, $$
 $$ \widehat{\alpha} = \overline{y} - \overline{\mathbf{x}}^\top 
                                      \widehat{\boldsymbol{\beta}}, $$
@@ -68,84 +69,58 @@ $$ \widehat{\sigma}_{\epsilon}^2 =
         \left(\mathbf{y} - \widehat{\alpha} - \mathbf{X} \widehat{
                                               \boldsymbol{\beta}}\right)}{N},$$
 where $\overline{\mathbf{x}}$ is a vector that contains the sample means of the
-$K$ predictors, $\mathbf{X}$ is a $N \times K$ matrix of centered predictors, 
+$K$ predictors, $\mathbf{X}$ is a $N \times K$ matrix of _centered_ predictors, 
 $\mathbf{y}$ is a $N$-vector of outcomes and $\overline{y}$ is the sample mean 
 of the outcome.
+
+# QR Decomposition
+
+The `lm` function in R actually performs a QR decomposition of the design
+matrix, $\mathbf{X} = \mathbf{Q}\mathbf{R}$, where 
+$\mathbf{Q}^\top \mathbf{Q} = \mathbf{I}$ and $\mathbf{R}$ is upper triangular.
+Thus, the OLS solution for the coefficients can be written as
+$\left(\mathbf{X}^\top \mathbf{X}\right)^{-1} \mathbf{X}^\top \mathbf{y} = 
+  \mathbf{R}^{-1} \mathbf{Q}^\top \mathbf{y}$.
+The `lm` function utilizes the QR decomposition for numeric stability reasons,
+but the QR decomposition is also useful for thinking about priors in a Bayesian
+version of the linear model. In addition, writing the likelihood in terms of
+$\mathbf{Q}$ allows it to be evaluated in a very efficient manner in Stan.
 
 # Priors
 
 The key innovation in the `stan_lm` function in the __rstanarm__ package is the
-implied prior for $\boldsymbol{\beta}$ and $\sigma_{\epsilon}$. To understand
+prior for the parameters in the QR-reparameterized model. To understand
 this prior, think about the equations that characterize the maximum likelihood
-solutions _stochastically_, which is to say prior to observing the data on 
-$\mathbf{X}$ and $\mathbf{y}$. What would the distribution of 
-$\boldsymbol{\beta}$ and $\sigma_{\epsilon}$ look like under an assumed 
-_distribution_ of the data?
+solutions before observing the data on $\mathbf{X}$ and especially $\mathbf{y}$.
 
-We start by noting that $\beta_k = \frac{\sigma_y}{\sigma_{x_k}} \lambda_k$ 
-where $\lambda_k$ is the $k$-th _standardized_ regression coefficient, whose
-MLE is given by $\widehat{\boldsymbol{\lambda}} = \mathrm{Cor\left(\mathbf{X},
-\mathbf{X}\right)}^{-1} \mathrm{Cor\left(\mathbf{X},\mathbf{y}\right)}$. Thus,
-a prior for $\boldsymbol{\lambda}$ --- along with a prior for $\sigma_y$ and
-an _estimate_ of each $\sigma_{x_k}$ --- implies a prior for each $\beta_k$.
+What would the prior distribution of 
+$\boldsymbol{\theta} = \mathbf{Q}^\top \mathbf{y}$ be? We can write its $k$-th
+element as $\theta_k = \rho_k \sigma_Y \sqrt{N - 1}$ where $\rho_k$ is the
+correlation between the $k$th column of $\mathbf{Q}$ and the outcome, $\sigma_Y$
+is the standard deviation of the outcome, and $\frac{1}{N-1}$ is the standard
+deviation of the $k$ column of $\mathbf{Q}$. Then let 
+$\boldsymbol{\rho} = \sqrt{R^2}\mathbf{u}$ where $\mathbf{u}$ is a unit vector
+that is uniformally distributed on the surface of a hypersphere. Consequently,
+$R^2 = \boldsymbol{\rho}^\top \boldsymbol{\rho}$ is the familiar coefficient of
+determination for the linear model.
 
-We set $\sigma_y = \omega \widehat{\sigma}_y$ where $\widehat{\sigma}_y$ is the
-sample standard deviation of the outcome and $\omega > 0$ is an unknown scale 
-parameter to be estimated. The only prior for $\omega$ that does not contravene
-Bayes' theorem in this situation is Jeffreys prior, $f\left(\omega\right) 
-\propto \frac{1}{\omega}$, which is proportional to a Jeffreys prior on the 
-unkown $\sigma_y$, $f\left(\sigma_y\right) \propto \frac{1}{\sigma_y} = 
-\frac{1}{\omega \widehat{\sigma}_y} \propto \frac{1}{\omega}$.
+An uninformative prior on $R^2$ would be standard uniform, which is a special
+case of a Beta distribution with both shape parameters equal to $1$. A 
+non-uniform prior on $R^2$ is somewhat analagous to the lasso approach, which is 
+popular in machine learning and produces better out-of-sample predictions than
+least squares because it penalizes $\boldsymbol{\beta}^\top \boldsymbol{\beta}$,
+usually after standardizing the predictors. An informative prior on $R^2$ 
+effectively penalizes $\boldsymbol{\rho}\top \boldsymbol{\rho}$, which 
+encourages $\boldsymbol{\beta} = \omega s_y \sqrt{N-1} \mathbf{R}^{-1} 
+\boldsymbol{rho}$ to be closer to the origin.
 
-To complete the prior for $\boldsymbol{\lambda}$ we need a joint prior for 
-$\mathrm{Cor\left(\mathbf{X},\mathbf{X}\right)}$ and 
-$\mathrm{Cor\left(\mathbf{X},\mathbf{y}\right)}$. Let the prior correlation
-matrix among the $K$ predictors and the outcome be
-$$\boldsymbol{\Lambda}=\left[\begin{array}{c|c}
-\overbrace{\boldsymbol{\boldsymbol{\Lambda}}_{XX}}^{K\times K} & \overbrace{\boldsymbol{\Lambda}_{XY}}^{K\times1}\\
-\hline \underbrace{\boldsymbol{\boldsymbol{\Lambda}}_{XY}^{\top}}_{1\times K} & 
-\underbrace{1}_{1\times1}
-\end{array}\right]$$
-Thus, a prior distribution for $\boldsymbol{\Lambda}$ implies a prior 
-distribution for $\boldsymbol{\lambda} = \left(\boldsymbol{\Lambda}_{XX}\right)
-^{-1} \boldsymbol{\Lambda}_{XY}$.
-
-The Stan project has popularized a prior distribution for correlation matrices
-derived by Lewandowski, Kurowicka, and Joe in their seminal $2009$ paper 
-"Generating random correlation matrices based on vines and extended onion 
-method", published in the _Journal of Multivariate Analysis_, volume $100$, 
-pages $1989$ --- $2001$. This "LKJ" PDF is characterized by
-$$f\left(\boldsymbol{\Lambda}|\eta\right) \propto 
-\left(\mathrm{det{\boldsymbol{\Lambda}}}\right)^{\eta - 1},$$
-where $\mathrm{det}\left(\cdot\right)$ is the determinant function and 
-$\eta > 0$ is a shape hyperparameter. The expectation of $\boldsymbol{\Lambda}$
-is the identity matrix of order $K + 1$.
-
-Since $\boldsymbol{\lambda} = \frac{1}{\mathrm{det} \boldsymbol{\Lambda}_{XX}}
-\mathbf{A} \boldsymbol{\Lambda}_{XY}$, where $\mathbf{A}$ is the adjugate 
-matrix (i.e. the transpose of the matrix of cofactors of 
-$\boldsymbol{\Lambda}_{XX}$), the prior distribution of $\boldsymbol{\lambda}$
-has long tails because $\mathrm{det} \boldsymbol{\Lambda}_{XX}$ can be 
-arbitrarily close to zero. Also, since the expectation of 
-$\boldsymbol{\Lambda}_{XX}$ is the identity matrix of order $K$ and the
-expectation of $\boldsymbol{\Lambda}_{XY}$ is a zero vector of order $K$, the
-Law of Iterated Expectations implies that $\mathbb{E} \boldsymbol{\lambda} = 
-\mathbf{0}$. Thus, the many attempts in the literature to derive a long-tailed,
-symmetric, mean-zero prior distribution for (usually standardized) regression 
-coefficients can be seen as an approximation to the prior for 
-$\boldsymbol{\lambda}$ derived here.
-
-Moreover, since $R^2 = \boldsymbol{\lambda}^\top 
-\mathrm{Cor\left(\mathbf{X},\mathbf{X}\right)} \boldsymbol{\lambda}$ is the
-proporion of variance in the outcome attributable to the predictors in a linear
-model, we can substitute the unknown $\boldsymbol{\Lambda}_{XX}$ for the 
-estimated $\mathrm{Cor\left(\mathbf{X},\mathbf{X}\right)}$ and consider the 
-implied prior distribution on $R^2$. It turns out that the LKJ prior on
-$\boldsymbol{\Lambda}$ implies a $\mathrm{Beta}\left(\frac{K}{2},\eta\right)$ 
-prior for $R^2$. Thus, any prior information about the location of $R^2$ under
-this $\mathrm{Beta}\left(\frac{K}{2},\eta\right)$ prior can be used to choose a
-value of the hyperparameter $\eta$. The `R2(location, what)` function in the 
-__rstanarm__ package supports four ways of choosing $\eta$:
+Lewandowski, Kurowicka, and Joe (2009) derives a distribution for a correlation
+matrix that depends on a single shape parameter $\eta > 0$, which implies the 
+variance of one variable given the remaining $K$ variables is
+$\mathrm{Beta}\left(\eta,\frac{K}{2}\right)$. Thus, the $R^2$ is distributed $\mathrm{Beta}\left(\frac{K}{2},\eta\right)$ and any prior information about 
+the location of $R^2$ can be used to choose a value of the hyperparameter 
+$\eta$. The `R2(location, what)` function in the __rstanarm__ package supports 
+four ways of choosing $\eta$:
 
 1. `what = "mode"` and `location` is some prior mode on the $\left(0,1\right)$
   interval. This is the default but since the mode of a 
@@ -160,7 +135,7 @@ __rstanarm__ package supports four ways of choosing $\eta$:
   $\mathrm{Beta}\left(\frac{K}{2},\eta\right)$ distribution is not available
   in closed form but if $K > 2$ is approximately equal to 
   $\frac{\frac{K}{2} - \frac{1}{3}}{\frac{K}{2} + \eta - \frac{2}{3}}$. 
-  Regardless of whether $K > 2$, the `R2` function can numerically solve for 
+  Regardless of whether $K > 2$, the `R2` function can numerically solve for
   the value of $\eta$ that is consistent with a given prior median utilizing
   the quantile function.
 4. `what = "log"` and `location` is some (negative) prior value for 
@@ -173,63 +148,50 @@ There is no default value for the `location` argument of the `R2` function.
 This is an _informative_ prior on $R^2$, which must be chosen by the user
 in light of the research project. However, specifying `location = 0.5` is
 often safe, in which case $\eta = \frac{K}{2}$ regardless of whether `what`
-is `"mode"`, `"mean"`, or `"median"`.
+is `"mode"`, `"mean"`, or `"median"`. In addition, it is possible to specify
+`NULL`, in which case a standard uniform on $R^2$ is utilized.
+
+We set $\sigma_y = \omega s_y$ where $s_y$ is the sample standard deviation 
+of the outcome and $\omega > 0$ is an unknown scale parameter to be estimated. 
+The only prior for $\omega$ that does not contravene Bayes' theorem in this 
+situation is Jeffreys prior, $f\left(\omega\right) \propto \frac{1}{\omega}$, 
+which is proportional to a Jeffreys prior on the unkown $\sigma_y$, 
+$f\left(\sigma_y\right) \propto \frac{1}{\sigma_y} = 
+\frac{1}{\omega \widehat{\sigma}_y} \propto \frac{1}{\omega}$. This
+parameterization and prior makes it easy for Stan to work with any continuous
+outcome variable, no matter what its units of measurement are.
 
 It would seem that we need a prior for $\sigma_{\epsilon}$, but our prior
-beliefs about $\sigma_{\epsilon} = \omega \widehat{\sigma}_y \sqrt{1 - R^2}$ 
+beliefs about $\sigma_{\epsilon} = \omega s_y \sqrt{1 - R^2}$ 
 are already implied by our prior beliefs about $\omega$ and $R^2$. That
 only leaves a prior for $\alpha = \overline{y} - \overline{\mathbf{x}}^\top
-\boldsymbol{\beta}$. The obvious choice is a normal prior with expectation
-$\overline{\mathbf{x}}^\top \boldsymbol{\beta}$ but what standard deviation?
-We utilize the formula for the standard _error_ of the maximum likelihood
-estimate of $\alpha$, but in order to make it a prior standard deviation, 
-substitute the unknown $\boldsymbol{\Lambda}_{XX}$ for the estimated
-$\mathrm{Cor\left(\mathbf{X},\mathbf{X}\right)}$.
+\mathbf{R}^{-1} \boldsymbol{\theta}$. The default choice is an improper
+uniform prior, but a normal prior can also be specified such as one
+with mean zero and standard deviation $\frac{\sigma_y}{\sqrt{N}$.
 
 # Posterior
 
-The previous sections imply that the posterior distribution is
-$$f\left(\omega, \boldsymbol{\Lambda}, \alpha | \mathbf{y}, \mathbf{X}, \eta
-\right) \propto \frac{1}{\omega} \left(\mathrm{det{\boldsymbol{\Lambda}}}\right
-)^{\eta - 1} f\left(\alpha | \boldsymbol{\Lambda}\right) \prod_{i=1}^N{\frac{1}
-{\sigma_{\epsilon}} e^{-\frac{1}{2} \left(\frac{y_i - \mu_i}{\sigma_{\epsilon}}
-\right)^2}},$$
-where $f\left(\alpha | \boldsymbol{\Lambda}\right)$ is the normal prior 
-described above and the posterior distributions of the intermediate parameters 
-are all implied by the posterior distributions of $\boldsymbol{\Lambda}$ and 
-$\omega$:
+The previous sections imply a posterior distribution for $\omega$, $\alpha$,
+$\mathbf{u}$, and $R^2$. The parameters of interest can then be recovered as
+generated quantities:
 
-* $\boldsymbol{\lambda} = \left(\boldsymbol{\Lambda}_{XX}\right)^{-1} 
-  \boldsymbol{\Lambda}_{XY}$
-* $R^2 = \boldsymbol{\lambda}^\top \boldsymbol{\Lambda}_{XX} 
-  \boldsymbol{\lambda}$
-* $\sigma_y = \omega \widehat{\sigma}_y$
+* $\sigma_y = \omega s_y$
 * $\sigma_{\epsilon} = \sigma_y \sqrt{1 - R^2}$
-* $\beta_k = \frac{\sigma_y}{\widehat{\sigma}_{x_k}} \lambda_k \forall k$
-* $\mu_i = \alpha + \overline{\mathbf{x}}^\top \boldsymbol{\beta}
+* $\boldsymbol{\beta} = \mathbf{R}^{-1} \mathbf{u} \sigma_y 
+  \sqrt{R^2 \left(N-1\right)}$
 
-The implementation actually utilizes $\ln \omega$. Consequently, if
-$\ln \omega = 0$, then the marginal standard deviation of the outcome
-_implied by the model_ is the same as the sample standard deviation of the
-outcome. If $\ln \omega > 0$, then the marginal standard deviation of the 
-outcome implied by the model exceeds the sample standard deviation, implying
-that the model overfits the data. If $\ln \omega < 0$, then the marginal 
-standard deviation of the outcome implied by the model is less than the 
-sample standard deviation, implying that the model _underfits_ the data.
-However, given the regularizing nature of the prior on $\boldsymbol{\lambda}$,
-a minor underfit would be considered ideal if the goal is to obtain good
-out-of-sample predictions.
-  
-If the model badly underfits or overfits the data, then you may want to
-reconsider the model. However, for small $N$, it is often the case that the 
-marginal posterior distributions of $\sigma_{\epsilon}$, $\alpha$ and
-$\boldsymbol{\beta}$ are fairly reasonable even if the posterior 
-distributions of $\ln \omega$ and $\boldsymbol{\Lambda}$ are not. This 
-counterintuitive result is due to the fact that the data contain information 
-about the parameters that actually enter the likelihood function --- 
-$\sigma_{\epsilon}$, $\alpha$, and $\boldsymbol{\beta}$ --- but any given 
-distribution of these three parameters may be consistent with a multimodal 
-distribution of the hyperparameters $\ln \omega$ and $\boldsymbol{\Lambda}$.
+The implementation actually utilizes an improper uniform prior on 
+$\ln \omega$. Consequently, if $\ln \omega = 0$, then the marginal standard 
+deviation of the outcome _implied by the model_ is the same as the sample 
+standard deviation of the outcome. If $\ln \omega > 0$, then the marginal 
+standard deviation of the outcome implied by the model exceeds the sample 
+standard deviation, so the model overfits the data. If $\ln \omega < 0$, 
+then the marginal standard deviation of the outcome implied by the model is 
+less than the sample standard deviation, so the model _underfits_ the data or
+that the data-generating process is nonlinear. Given the regularizing nature
+of the prior on $R^2$, a minor underfit would be considered ideal if the goal 
+is to obtain good out-of-sample predictions. If the model badly underfits or 
+overfits the data, then you may want to reconsider the model.
 
 # Example
 
@@ -257,12 +219,14 @@ Note that we have _not_ looked at the estimated $R^2$ or $\sigma$ for the
 ordinary least squares model. We can estimate a Bayesian version of this model
 by prepending `stan_` to the `lm` call, specifying a prior mode for $R^2$, and
 optionally specifying how many cores the computer may utilize:
-```{r MCMC}
+```{r MCMC, results='hide'}
 library(rstanarm)
 post <- stan_lm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
-                prior = R2(location = 0.25), 
+                prior = R2(location = 0.2), 
                 chains = CHAINS, cores = CORES, seed = SEED)
+```
+```{r}
 post
 ```
 In this case, the "Bayesian point estimates", which are represented by the 
@@ -271,7 +235,8 @@ estimates. However, the `log-fit_ratio` (i.e. $\ln \omega$) is quite small,
 indicating that the model only slightly overfits the data when the prior
 derived above is utilized. Thus, it would be safe to conclude that the ordinary
 least squares estimator considerably overfits the data since there are only 
-$24$ observations to estimate $12$ parameters with.
+$24$ observations to estimate $12$ parameters with and no prior information
+on the parameters.
 
 Also, it is not obvious what the estimated average treatment effect is since
 the treatment variable, `seeding`, is interacted with four other correlated
@@ -288,7 +253,7 @@ hist(y1_rep - y0_rep, prob = TRUE, main = "", xlab = "Estimated ATE")
 ```
 
 As can be seen, the treatment effect is not estimated precisely and is as
-likely to be negative as it is to be positive.
+almost as likely to be negative as it is to be positive.
 
 # Alternative Approach
 
@@ -299,7 +264,7 @@ to _conceptualize_. Thus, it is perhaps worthwhile to compare to another
 estimator of a linear model that simply puts independent Cauchy priors on the 
 regression coefficients. This simpler approach can be executed by calling the 
 `stan_glm` function with `family = gaussian()` and specifying the priors:
-```{r SIMPLE}
+```{r SIMPLE, results="hide"}
 simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
                    prior = cauchy(), prior_intercept = cauchy(),
@@ -308,21 +273,21 @@ simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness +
 We can compare the two approaches using an approximation to Leave-One-Out
 (LOO) cross-validation, which is implemented by the `loo` function in the
 __loo__ package.
-```{r LOO}
+```{r LOO, warning=TRUE}
 (loo_post <- loo(post, cores = 2))
-loo(simple, cores = 2)
+(loo(simple, cores = 2))
 ```
-The results are so similar that we have only a small basis to prefer the 
-simpler approach, but the Warning messages are important here. Most of the
-estimated shape parameters for the Generalized Pareto distribution are above
-$0.5$ in the model with simpler priors, which indicates that these estimates
-are only going to converge slowly to the true out-of-sample deviance 
+The results indicate that the first approach is expected to produce better
+out-of-sample predictions but the Warning messages are at least as important. 
+Most of the estimated shape parameters for the Generalized Pareto distribution 
+are above $0.5$ in the model with Cauchy priors, which indicates that these 
+estimates are only going to converge slowly to the true out-of-sample deviance 
 measures. Thus, with only $24$ observations, they should not be considered 
 reliable. The more complicated prior derived above is stronger --- as 
-evidenced by the fact that the effective number of parameters is only $6.4$
-as compared to $11.3$ in the simpler approach and $12$ for a frequentist 
-estimator --- and only has $3$ out of $24$ shape estimates in the "danger 
-zone". We might want to reexamine these three observations (1, 2, and 15)
+evidenced by the fact that the effective number of parameters is about half
+of that in the simpler approach and $12$ for the maximum likelihood estimator 
+--- and only has $2$ out of $24$ shape estimates in the "danger zone". We 
+might want to reexamine these two observations (1, and 15)
 ```{r LOO_POST}
 plot(loo_post, label_points = TRUE)
 ```
@@ -339,39 +304,23 @@ stabilize all the computations.
 # Conclusion
 
 This vignette has discussed the prior distribution utilized in the `stan_lm`
-function, which is otherwise similar to the `lm` function in R. Although
-this prior has desirable characteristics, none of them are obvious, which
-makes it difficult for applied researchers to _conceptualize_ the prior.
-Nevertheless, anyone should be able to _specify_ the prior because it only
-requires the researcher to specify the prior location of the $R^2$, which
-is the familiar proportion of variance in the outcome variable that is
-attributable to the predictors under a linear model. Anyone who does not
-have a plausible guess for $R^2$ has not thought about the data-generating
-process hard enough.
+function, which has the same likelihood and a similar syntax as the `lm` 
+function in R but adds the ability to expression prior beliefs about the 
+location of the $R^2$, which is the familiar proportion of variance in the 
+outcome variable that is attributable to the predictors under a linear model.
+Since the $R^2$ is a well-understood bounded scalar, it is easy to specify
+prior information about it, whereas other Bayesian approaches require the 
+researcher to specify a joint prior distribution for the regression 
+coefficients (and the intercept and error variance). 
 
-While the approach outlined here only requires the user to specify a scalar
-bounded on the $\left(0,1\right)$ interval, other Bayesian approaches to
-prior specification in a linear regression model require the researcher to
-specify a prior distribution for each regression coefficient (and the 
-intercept and error variance). Most researchers have little capability to
-specify all these prior distributions thoughtfully and take a short-cut
-by specifying one prior distribution that is taken to apply to all the
-regression coefficients as if they were independent of each other (and the 
-intercept and error variance). This short-cut is available in the `stan_glm` 
-function and is described in more detail in other __rstanarm__ vignettes for
-Generalized Linear Models (GLMs).
+However, most researchers have little inclination to specify all these prior 
+distributions thoughtfully and take a short-cut by specifying one prior 
+distribution that is taken to apply to all the regression coefficients as if
+they were independent of each other (and the intercept and error variance). 
+This short-cut is available in the `stan_glm` function and is described in more
+detail in other __rstanarm__ vignettes for Generalized Linear Models (GLMs).
 
-However, this short-cut should be resisted because while it is much easier
-to assert a prior distribution applies independently to many regression
-coefficients, no one really believes _a priori_ that regression coefficients
-are independent of each other (which would entail that the predictors are
-uncorrelated with each other). Specifying a joint prior distribution over
-the parameters in a linear regression model is difficult, as the previous
-sections attest, but it is possible and can be automated given some prior
-information about the location of the $R^2$. 
-
-Thus, we are optimistic that this prior will greatly help in accomplishing
-our goal for __rstanarm__ of making Bayesian estimation of regression models
-routine. The same approach is used to specify a prior in ANOVA models (see
-`stan_aov`) and proportional-odds models for ordinal outcomes (see 
-`stan_polr`).
+We are optimistic that this prior on the $R^2$ will greatly help in accomplishing 
+our goal for __rstanarm__ of making Bayesian estimation of regression models 
+routine. The same approach is used to specify a prior in ANOVA models (see 
+`stan_aov`) and proportional-odds models for ordinal outcomes (see `stan_polr`).
