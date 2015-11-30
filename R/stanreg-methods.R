@@ -115,6 +115,12 @@ log_lik.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export 
+nobs.stanreg <- function(object, ...) {
+  nrow(model.frame(object))
+}
+
+#' @rdname stanreg-methods
+#' @export 
 residuals.stanreg <- function(object, ...) {
   object$residuals
 }
@@ -134,7 +140,11 @@ se.stanreg <- function(object, ...) {
 #' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, ...) {
-  object$covmat
+  if (is(object, "lmerMod")) {
+    sel <- seq_along(fixef(object))
+    object$covmat[sel, sel, drop=FALSE]
+  }
+  else object$covmat
 }
 
 
@@ -147,7 +157,6 @@ vcov.stanreg <- function(object, ...) {
   .glmer_check(object)
   object$glmod$reTrms$cnms
 }
-
 .flist <- function(object) {
   .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
@@ -279,7 +288,7 @@ formula.stanreg <- function(x, ...) x$formula
 #' 
 #' @keywords internal
 #' @export
-#' @param formula,... See \code{\link{model.frame}}.
+#' @param formula,... See \code{\link[stats]{model.frame}}.
 model.frame.stanreg <- function(formula, ...) {
   if (is(formula, "lmerMod")) {
     fit <- formula
@@ -288,4 +297,12 @@ model.frame.stanreg <- function(formula, ...) {
   else NextMethod("model.frame")
 }
 
-
+#' model.matrix method for stanreg objects
+#' 
+#' @keywords internal
+#' @export
+#' @param object,... See \code{\link[stats]{model.matrix}}.
+model.matrix.stanreg <- function(object, ...) {
+  if (is(object, "lmerMod")) object$glmod$X
+  else NextMethod("model.matrix")
+}

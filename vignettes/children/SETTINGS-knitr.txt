@@ -1,6 +1,6 @@
 ```{r, SETTINGS-knitr, include=FALSE}
 my_dev <- function(file, width, height) {
-  if (require(RSvgDevice))
+  if (require(RSvgDevice) && packageVersion("RSvgDevice") >= '0.6.4.9000')
     devSVG(file = file, width = width, height = height)
   else
     grDevices::svg(filename = file, width = width, height = height)

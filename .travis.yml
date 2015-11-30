@@ -1,0 +1,41 @@
+language: r
+sudo: required
+
+warnings_are_errors: TRUE
+
+os:
+  - osx
+  
+r_binary_packages:
+  - rstan
+  - ggplot2
+  - lme4
+  - arm
+  - gridExtra
+  - KernSmooth
+  - knitr
+  - RSvgDevice
+  - testthat
+
+env:
+  matrix: 
+    - CXX_OLEVEL=2 CXX=clang++
+
+
+before script:
+  - echo "CXX = `R CMD config CXX`" >> ./rstan/R_Makevars 
+  - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ./rstan/R_Makevars 
+  - export CLANG_EXTRA_ARG=""
+  - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
+  - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ./rstan/R_Makevars
+  - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ./rstan/R_Makevars
+  - rm ./rstan/R_Makevars.bak
+  - more ./rstan/R_Makevars
+  - mkdir -p ~/.R/; cat ./rstan/R_Makevars > ~/.R/Makevars
+  - more ~/.R/Makevars
+
+r_github_packages:
+  - jimhester/covr
+
+after_success:
+  - Rscript -e 'covr::codecov()'

@@ -19,7 +19,6 @@
 #' 
 predict.stanreg <- function(object, ..., newdata = NULL, 
                             type = c("link", "response"), se.fit = FALSE) {
-  
   type <- match.arg(type)
   if (!se.fit && is.null(newdata)) {
     if (type == "link") return(object$linear.predictors)
@@ -27,25 +26,22 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   }
   if (used.sampling(object) && type == "response")
     stop("type='response' should not be used for models estimated by MCMC.",
-         "Use posterior_predict() to draw from the posterior predictive distribution.",
-         call. = FALSE)
+         "\nInstead, use posterior_predict() to draw from the posterior ", 
+         "predictive distribution.", call. = FALSE)
   
   dat <- pp_data(object, newdata)
-  stanmat <- if (used.sampling(object))
-    as.matrix.stanreg(object) else stop("MLE not implemented yet")
+  stanmat <- as.matrix.stanreg(object)
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  if (is(object, "lmerMod")) {
-    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
-    eta <- eta + linear_predictor(b, dat$z)
+  if (type == "response") {
+    linkinv <- if (is(object, "polr")) 
+      polr_linkinv(object) else family(object)$linkinv
+    eta <- linkinv(eta)
   }
   fit <- colMeans(eta)
-  if (type == "response") { 
-    stop("MLE not implemented yet")
-  }
   if (!se.fit) return(fit)
   else {
     se.fit <- apply(eta, 2L, sd)
-    nlist(fit, se.fit) 
+    nlist(fit, se.fit)
   }
 }
