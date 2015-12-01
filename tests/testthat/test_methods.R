@@ -1,25 +1,33 @@
 library(rstanarm)
 library(lme4)
+library(MASS)
 SEED <- 12345
 set.seed(SEED)
-ITER <- 5
+ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
                                  chains = CHAINS, cores = CORES, seed = SEED))
-fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+glm1 <- glm(mpg ~ wt, data = mtcars)
 
-fit_lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
-fit_stan1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), 
+lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
+stan_lmer1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), 
                                         data = Penicillin, iter = ITER, 
                                         chains = CHAINS, cores = CORES,
                                         seed = SEED))
-fit_lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
-fit_stan2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), 
+lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
+stan_lmer2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), 
                                         data = sleepstudy, iter = ITER, 
                                         chains = CHAINS, cores = CORES,
                                         seed = SEED))
+
+stan_polr1 <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph,
+                                       prior = R2(0.2, "mean"), init_r = 0.1, 
+                                       iter = ITER, chains = CHAINS, 
+                                       cores = CORES, seed = SEED))
+polr1 <- polr(tobgp ~ agegp, data = esoph)
 
 att_names <- function(object) {
   nms <- names(object)
@@ -47,46 +55,77 @@ check_sizes <- function(x,y) {
 #   expect_identical(found[1], meths[1])
 # })
 test_that("stanreg extractor methods work properly", {
-  expect_equal(resid(fit), fit$residuals)
-  expect_equal(coef(fit), fit$coefficients)
-  expect_equal(vcov(fit), fit$covmat)
-  expect_equal(fitted(fit), fit$fitted.values)
-  expect_equal(se(fit), fit$ses)
+  expect_equal(resid(stan_glm1), stan_glm1$residuals)
+  expect_equal(coef(stan_glm1), stan_glm1$coefficients)
+  expect_equal(vcov(stan_glm1), stan_glm1$covmat)
+  expect_equal(fitted(stan_glm1), stan_glm1$fitted.values)
+  expect_equal(se(stan_glm1), stan_glm1$ses)
+  
+  expect_equal(resid(stan_glm_opt1), stan_glm_opt1$residuals)
+  expect_equal(coef(stan_glm_opt1), stan_glm_opt1$coefficients)
+  expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
+  expect_equal(fitted(stan_glm_opt1), stan_glm_opt1$fitted.values)
+  expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
+})
+
+test_that("summary and print don't throw errors", {
+  expect_silent(summary(stan_glm1, pars = c("alpha", "beta")))
+  expect_silent(summary(stan_glm_opt1, digits = 8))
+  expect_silent(summary(stan_lmer1, pars = "varying"))
+  expect_silent(summary(stan_lmer2))
+  expect_silent(summary(stan_polr1))
+  
+  expect_output(print(stan_glm1, digits = 1), regexp = "stan_glm")
+  expect_output(print(stan_glm_opt1), regexp = "stan_glm")
+  expect_output(print(stan_lmer1, digits = 4), regexp = "stan_lmer")
+  expect_output(print(stan_lmer2), regexp = "stan_lmer")
+  expect_output(print(stan_polr1), regexp = "stan_polr")
 })
 
 test_that("log_lik method works", {
-  expect_error(log_lik(fito))
-  expect_silent(log_lik(fit))
+  expect_error(log_lik(stan_glm_opt1))
+  expect_silent(log_lik(stan_glm1))
+  
+  expect_silent(log_lik(stan_polr1))
+  expect_equal(dim(log_lik(stan_polr1)), c(ITER, nobs(stan_polr1)))
+  expect_equal(dim(log_lik(stan_lmer1)), c(ITER, nobs(stan_lmer1)))
   
   # Compute log-lik matrix using different method than log_lik.stanreg
   # and compare
-  samp <- as.matrix(fit)
-  y <- get_y(fit)
-  eta <- tcrossprod(get_x(fit), samp[, 1:2])
+  samp <- as.matrix(stan_glm1)
+  y <- get_y(stan_glm1)
+  eta <- tcrossprod(get_x(stan_glm1), samp[, 1:2])
   sigma <- samp[, 3]
   llmat <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta))
   for (i in 1:nrow(llmat)) {
     llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
   }
-  expect_equal(llmat, log_lik(fit))
+  expect_equal(llmat, log_lik(stan_glm1))
 })
 
 context("methods for stan_lmer models")
 test_that("ngrps is right", {
-  expect_equal(ngrps(fit_lmer1), ngrps(fit_stan1))
-  expect_equal(ngrps(fit_lmer2), ngrps(fit_stan2))
+  expect_equal(ngrps(lmer1), ngrps(stan_lmer1))
+  expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
+})
+test_that("nobs is right", {
+  expect_equal(nobs(lmer1), nobs(stan_lmer1))
+  expect_equal(nobs(lmer2), nobs(stan_lmer2))
+  expect_equal(nobs(glm1), nobs(stan_glm_opt1))
+  expect_equal(nobs(glm1), nobs(stan_glm1))
+  expect_equal(nobs(polr1), nobs(stan_polr1))
 })
 test_that("VarCorr returns correct structure", {
-  vc_lmer1 <- VarCorr(fit_lmer1); vc_stan1 <- VarCorr(fit_stan1)
-  vc_lmer2 <- VarCorr(fit_lmer2); vc_stan2 <- VarCorr(fit_stan2)
+  vc_lmer1 <- VarCorr(lmer1); vc_stan1 <- VarCorr(stan_lmer1)
+  vc_lmer2 <- VarCorr(lmer2); vc_stan2 <- VarCorr(stan_lmer2)
   expect_is(vc_stan1, class(vc_lmer1))
   expect_is(vc_stan2, class(vc_lmer2))
   check_att_names(vc_stan1, vc_lmer1)
   check_att_names(vc_stan2, vc_lmer2)
 })
 test_that("ranef returns correct structure", {
-  re_stan1 <- ranef(fit_stan1); re_lmer1 <- ranef(fit_lmer1)
-  re_stan2 <- ranef(fit_stan1); re_lmer2 <- ranef(fit_lmer1)
+  re_stan1 <- ranef(stan_lmer1); re_lmer1 <- ranef(lmer1)
+  re_stan2 <- ranef(stan_lmer1); re_lmer2 <- ranef(lmer1)
   expect_is(re_stan1, class(re_lmer1))
   expect_is(re_stan2, class(re_lmer2))
   check_att_names(re_stan1, re_lmer1)
@@ -95,15 +134,14 @@ test_that("ranef returns correct structure", {
   check_sizes(re_stan2, re_lmer2)
 })
 test_that("fixef returns the right coefs", {
-  expect_identical(names(fixef(fit_stan1)), names(fixef(fit_lmer1)))
-  expect_identical(names(fixef(fit_stan2)), names(fixef(fit_lmer2)))
+  expect_identical(names(fixef(stan_lmer1)), names(fixef(lmer1)))
+  expect_identical(names(fixef(stan_lmer2)), names(fixef(lmer2)))
 })
 test_that("coef returns the right structure", {
-  coef_stan1 <- coef(fit_stan1); coef_lmer1 <- coef(fit_lmer1)
-  coef_stan2 <- coef(fit_stan1); coef_lmer2 <- coef(fit_lmer1)
+  coef_stan1 <- coef(stan_lmer1); coef_lmer1 <- coef(lmer1)
+  coef_stan2 <- coef(stan_lmer1); coef_lmer2 <- coef(lmer1)
   check_att_names(coef_stan1, coef_lmer1)
   check_att_names(coef_stan2, coef_lmer2)
   check_sizes(coef_stan1, coef_lmer1)
   check_sizes(coef_stan2, coef_lmer2)
 })
-
