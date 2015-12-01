@@ -294,13 +294,13 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
 ppcheck_binned_resid <- function(object, n = 1, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
     stop("This plot requires the 'arm' package (install.packages('arm'))")
-  dat <- .pp_data(object, newdata = NULL)
-  stanmat <- if (used.sampling(object))
-    as.matrix(object$stanfit) else stop("MLE not implemented yet")
+  dat <- pp_data(object, newdata = NULL)
+  stanmat <- as.matrix.stanreg(object)
   sel <- sample(nrow(stanmat), size = n)
-  beta <- stanmat[sel, 1:ncol(dat$x), drop=FALSE]
+  beta <- stanmat[sel, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
-  Ey <- family(object)$linkinv(eta)
+  inverse_link <- linkinv(object)
+  Ey <- inverse_link(eta)
   y <- get_y(object)
   if (NCOL(y) == 2) y <- y[, 1] / rowSums(y)
   resids <- sweep(-Ey, MARGIN = 2, STATS = y, "+")

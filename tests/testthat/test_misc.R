@@ -170,3 +170,23 @@ test_that("set_sampling_args works", {
   expect_equal(ans5$control, list(adapt_delta = 0.99, max_treedepth = 15))
 })
 
+test_that("linkinv methods work", {
+  linkinv.stanreg <- rstanarm:::linkinv.stanreg
+  linkinv.character <- rstanarm:::linkinv.character
+  linkinv.family <- rstanarm:::linkinv.family
+  
+  expect_identical(linkinv.family(gaussian()), gaussian()$linkinv)
+  expect_identical(linkinv.family(neg_binomial_2()), neg_binomial_2()$linkinv)
+  expect_identical(linkinv.family(binomial(link = "probit")), 
+                   binomial(link = "probit")$linkinv)
+  
+  fit_polr <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph, 
+                                         method = "loglog",
+                                         cores = 1, chains = 1, iter = 5,
+                                         prior = R2(0.2, "mean"), 
+                                         init_r = 0.1, seed = 12345))
+  expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
+  expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
+  expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
+  expect_identical(linkinv.stanreg(fit), gaussian()$linkinv)
+})

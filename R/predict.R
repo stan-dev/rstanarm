@@ -34,9 +34,8 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   beta <- stanmat[, 1:ncol(dat$x)]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   if (type == "response") {
-    linkinv <- if (is(object, "polr")) 
-      polr_linkinv(object) else family(object)$linkinv
-    eta <- linkinv(eta)
+    inverse_link <- linkinv(object)
+    eta <- inverse_link(eta)
   }
   fit <- colMeans(eta)
   if (!se.fit) return(fit)

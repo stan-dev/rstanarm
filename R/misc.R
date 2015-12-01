@@ -1,6 +1,7 @@
-# Default 'control' argument for stan() if none specified by user
+# Default 'control' argument for stan() if none specified by user,
 # value of adapt_delta depends on prior
-default_stan_control <- function(prior, adapt_delta = NULL, max_treedepth = 15L) {
+default_stan_control <- function(prior, adapt_delta = NULL, 
+                                 max_treedepth = 15L) {
   if (is.null(prior)) adapt_delta <- 0.95
   else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
@@ -10,7 +11,7 @@ default_stan_control <- function(prior, adapt_delta = NULL, max_treedepth = 15L)
                           "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
-  nlist(adapt_delta, max_treedepth)
+  return(nlist(adapt_delta, max_treedepth))
 }
 
 # Prepares a list of arguments to use with rstan::sampling via do.call()
@@ -47,7 +48,7 @@ set_sampling_args <- function(object, prior, user_dots = list(),
       args$control$max_treedepth <- defaults$max_treedepth
     }
   }
-  args
+  return(args)
 }
 
 # Test if an object is a stanreg object
@@ -122,17 +123,12 @@ nlist <- function(...) {
   m <- match.call()
   out <- list(...)
   no_names <- is.null(names(out))
-  has_name <- if (no_names)
-    FALSE else nzchar(names(out))
-  if (all(has_name))
-    return(out)
+  has_name <- if (no_names) FALSE else nzchar(names(out))
+  if (all(has_name)) return(out)
   nms <- as.character(m)[-1]
-  if (no_names) {
-    names(out) <- nms
-  } else {
-    names(out)[!has_name] <- nms[!has_name]
-  }
-  out
+  if (no_names) names(out) <- nms
+  else names(out)[!has_name] <- nms[!has_name]
+  return(out)
 }
 
 # Check for positive scale or df parameter (NULL ok)
@@ -148,17 +144,16 @@ validate_parameter_value <- function(x) {
 # Check and set scale parameters for priors
 set_prior_scale <- function(scale, default, link) {
   stopifnot(is.numeric(default), is.character(link))
-  if (is.null(scale))
-    scale <- default
+  if (is.null(scale)) scale <- default
   if (link == "probit")
-    scale * dnorm(0) / dlogis(0)
+    return(scale * dnorm(0) / dlogis(0))
   else 
-    scale
+    return(scale)
 }
 
 # Make prior.info list
-# @param user_call match.call(expand.dots = TRUE)
-# @param function_formals formals()
+# @param user_call the user's call, i.e. match.call(expand.dots = TRUE)
+# @param function_formals formal arguments of stan_* function, i.e. formals()
 get_prior_info <- function(user_call, function_formals) {
   user <- grep("prior", names(user_call), value = TRUE)
   default <- setdiff(grep("prior", names(function_formals), value = TRUE), user)
@@ -169,7 +164,7 @@ get_prior_info <- function(user_call, function_formals) {
     if (j <= U) priors[[user[j]]] <- eval(user_call[[user[j]]])
     else priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
   }
-  priors
+  return(priors)
 }
 
 
@@ -227,6 +222,21 @@ get_x.lmerMod <- function(object) {
 get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(as.matrix(Zt))
+}
+
+linkinv <- function(x, ...) UseMethod("linkinv")
+linkinv.stanreg <- function(x, ...) {
+  if (is(x, "polr")) 
+    return(polr_linkinv(x))
+  else 
+    return(family(x)$linkinv)
+}
+linkinv.family <- function(x, ...) {
+  return(x$linkinv)
+}
+linkinv.character <- function(x, ...) {
+  stopifnot(length(x) == 1)
+  return(polr_linkinv(x))
 }
 
 # Make inverse link function for stan_polr models

@@ -146,7 +146,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
   call <- match.call(expand.dots = TRUE)
   prior.info <- get_prior_info(call, formals())
 
-  linkinv <- polr_linkinv(method)
+  inverse_link <- linkinv(method)
   rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
   df.residual <- n - sum(wt == 0) - rank
   
@@ -174,7 +174,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
     covmat <- cov(stanmat)
     coefs <- stanfit$par[colnames(x)]
     eta <- linear_predictor(coefs, x, offset)
-    mu <- linkinv(eta)
+    mu <- inverse_link(eta)
     residuals <- NA_real_
     names(eta) <- names(mu) <- rownames(x)
   }
@@ -182,7 +182,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
     stanmat <- as.matrix(stanfit)
     coefs <- colMeans(stanmat[,1:K,drop=FALSE])
     eta <- linear_predictor(coefs, x, offset)
-    mu <- linkinv(eta)
+    mu <- inverse_link(eta)
     
     means <- rstan::get_posterior_mean(stanfit)
     residuals <- means[grep("^residuals", rownames(means)),ncol(means)]
@@ -196,7 +196,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
   
   out <- list(coefficients = coefs, fitted.values = mu, linear.predictors = eta,
               residuals = residuals, df.residual = df.residual, covmat = cov(stanmat),
-              y = y, x = x, model = if(model) m, data = data, rank = rank,
+              y = y, x = x, model = if (model) m, data = data, rank = rank,
               offset = offset, weights = wt, prior.weights = wt,
               method = method, contrasts = contrasts, na.action = na.action,
               call = call, formula = formula,

@@ -65,14 +65,15 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
   dat <- pp_data(object, newdata)
   beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
+  inverse_link <- linkinv(object)
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
     zeta <- stanmat[,grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    .pp_polr(eta, zeta, polr_linkinv(object))
+    return(.pp_polr(eta, zeta, inverse_link))
   }
   else {
-    ppargs <- list(mu = family$linkinv(eta))
+    ppargs <- list(mu = inverse_link(eta))
     if (is.gaussian(famname))
       ppargs$sigma <- stanmat[, "sigma"]
     else if (is.binomial(famname)) {
@@ -91,8 +92,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
       ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
     if (nrow(ytilde) == 1) ytilde <- t(ytilde)
-    if (missing(fun)) ytilde
-    else do.call(match.fun(fun), list(ytilde))
+    if (missing(fun)) 
+      return(ytilde)
+    else 
+      return(do.call(match.fun(fun), list(ytilde)))
   }
 }
 
