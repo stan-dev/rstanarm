@@ -195,7 +195,7 @@ generates graphical comparisons of the data `y` and replicated datasets `yrep`.
 
 ```{r, ROACHES-ppcheck}
 prop_zero <- function(y) mean(y == 0)
-(prop_zero_test1 <- ppcheck(stan_glm1, check = "test", test = prop_zero))
+(prop_zero_test1 <- ppcheck(stan_glm1, check = "test", test = "prop_zero"))
 ```
 
 The value of the test statistic (in this case the proportion of zeros) computed 
@@ -221,7 +221,7 @@ replicated datasets under the negative binomial model:
 
 ```{r, ROACHES-negbin-ppcheck, fig.width=9}
 library(gridExtra)
-prop_zero_test2 <- ppcheck(stan_glm2, check = "test", test = prop_zero)
+prop_zero_test2 <- ppcheck(stan_glm2, check = "test", test = "prop_zero")
 # Show graphs for Poisson and negative binomial side by side
 grid.arrange(prop_zero_test1 + ggtitle("Poisson"), 
              prop_zero_test2 + ggtitle("Negative Binomial"), 

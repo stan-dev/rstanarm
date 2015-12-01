@@ -81,7 +81,7 @@
 #'                  prior = t7, prior_intercept = t7, cores = 1)
 #' plot(fit3)
 #' ppcheck(fit3, check = "resid")
-#' ppcheck(fit3, check = "test", test = mean)
+#' ppcheck(fit3, check = "test", test = "mean")
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
