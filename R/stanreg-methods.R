@@ -7,9 +7,7 @@
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
-#' @param ... Ignored in most cases. For the \code{as.matrix} method, \code{...}
-#'   can be used to specify the \code{pars} argument to
-#'   \code{\link[rstan]{extract}} (\pkg{rstan}).
+#' @param ... Ignored.
 #' @param parm A character vector of parameter names.
 #' @param level The confidence level to use.
 #' 
@@ -17,56 +15,30 @@
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
 #'   
 #' \itemize{
-#' \item \code{as.matrix} For models fit using MCMC 
-#' (\code{algorithm='sampling'}) this is an \eqn{S} by \eqn{P} matrix, where 
-#' \eqn{S} is the size of the posterior sample (the number of post-warmup draws)
-#' and \eqn{P} is the number of parameters/quantities. For models fit with 
-#' \code{algorithm='optimizing'} this is a \eqn{1000} by \eqn{P} matrix of draws
-#' from the asymptotic multivariate Gaussian sampling distribution of the 
-#' parameters.
-#' \item \code{confint} Credible intervals based on posterior quantiles, unless 
-#'  \code{algorithm='optimizing'}, in which case
-#'  \code{\link[stats]{confint.default}} is called.
-#' \item \code{log_lik} The \eqn{S} by \eqn{N} pointwise log-likelihood matrix, 
-#'  where \eqn{S} is the size of the posterior sample and \eqn{N} is the number 
-#'  of data points.
-#' \item \code{residuals} Residuals of type \code{'response'} (not 
-#'  \code{'deviance'} residuals).
-#' \item \code{coef} Coefficients are posterior medians.
-#' \item \code{se} Standard errors are proportional to the median absolute 
-#'  deviation from the posterior median (\code{\link[stats]{mad}}).
+#' \item \code{confint} If \code{algorithm='sampling'}, \code{confint} returns
+#' Bayesian \emph{credible} intervals based on posterior quantiles. If 
+#' \code{algorithm='optimizing'}, confidence intervals are returned via a
+#' call to \code{\link[stats]{confint.default}}.
+#' \item \code{log_lik} If \code{algorithm='sampling'}, \code{log_lik} returns 
+#' the \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the 
+#' size of the posterior sample and \eqn{N} is the number of data points. There 
+#' is no pointwise log-likelihood matrix for models fit using
+#' \code{algorithm='optimizing'}.
+#' \item \code{residuals} Residuals are \emph{always} of type \code{'response'} 
+#' and never \code{'deviance'} residuals or any other type.
+#' \item \code{coef} If \code{algorithm='sampling'}, posterior medians are used 
+#' as point estimates. If \code{algorithm='optimizing'}, the coefficients are
+#' also medians, but they are computed from 1000 draws from the asymptotic
+#' sampling distribution of the parameters.
+#' \item \code{se} The \code{se} function returns standard errors, which are 
+#' proportional to the median absolute deviation (\code{\link[stats]{mad}}) from
+#' the posterior median (if \code{algorithm='sampling'}) or the median of the
+#' asymptotic sampling distribution (if \code{algorithm='optimizing'}).
 #' }
 #' 
+#' @seealso \code{\link{summary.stanreg}}, \code{\link{as.matrix.stanreg}}
+#' 
 NULL
-
-
-#' @rdname stanreg-methods
-#' @method as.matrix stanreg
-#' @export
-as.matrix.stanreg <- function(x, ...) {
-  msg <- "No draws found."
-  if (used.optimizing(x)) {
-    if ("pars" %in% names(list(...))) 
-      message("'pars' argument ignored for models with algorithm='optimizing'.")
-    out <- x$asymptotic_sampling_dist 
-    if (is.null(out)) stop(msg)
-    else {
-      dispersion <- c("sigma", "scale", "lambda", "overdispersion")
-      keep <- c(names(coef(x)), # return with coefficients first
-                dispersion[which(dispersion %in% colnames(out))])
-      return(out[, keep, drop = FALSE])
-    }
-  }
-  stopifnot(used.sampling(x))
-  sf <- x$stanfit
-  if (sf@mode != 0) stop(msg)
-  posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
-  out <- apply(posterior, 3L, FUN = function(y) y)
-  if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
-  # remove mean_PPD and log-posterior unless user specified 'pars'
-  if ("pars" %in% names(list(...))) return(out)
-  else out[, !grepl("mean_PPD|log-posterior", colnames(out)), drop = FALSE]
-}
 
 #' @rdname stanreg-methods
 #' @export
@@ -254,8 +226,8 @@ sigma.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param sigma Ignored scalar
-#' @param rdig Ignored integer
+#' @param sigma Ignored scalar.
+#' @param rdig Ignored integer.
 #' @export
 #' @export VarCorr
 #' @importFrom lme4 VarCorr mkVarCorr
