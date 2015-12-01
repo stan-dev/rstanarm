@@ -3,11 +3,12 @@
 #' Summaries of parameter estimates and MCMC convergence diagnostics 
 #' (Monte Carlo error, effective sample size, Rhat).
 #' 
-#' @method summary stanreg
 #' @export
-#' @param object A fitted model object returned by one of the \pkg{rstanarm} 
-#'   modeling functions. This will be a list with class 'stanreg' as well as at 
-#'   least one of 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @method summary stanreg
+#' 
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' 
 #' @param ... Ignored.
 #' @param pars Optional character vector specifying a subset of parameters to 
 #'   display. Parameters can be specified by name or several shortcuts can be 
@@ -19,7 +20,9 @@
 #' @param probs For models fit using MCMC, an optional numeric vector of
 #'   probabilities specifying which \code{\link[stats]{quantile}}s to display.
 #' @param digits Number of digits to use for formatting numbers.
-#' @importMethodsFrom rstan summary
+#' 
+#' @seealso \code{\link{stanreg-methods}}
+#' 
 #' @examples
 #' summary(example_model, probs = c(0.1, 0.9))
 #' 
@@ -32,6 +35,7 @@
 #'                                 paste0("period", 2:4)))
 #' summary(example_model, pars = c("alpha", "beta"))
 #' 
+#' @importMethodsFrom rstan summary
 summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
   if (object$stanfit@mode == 0) {
     if (!missing(pars)) pars[pars == "varying"] <- "b"
