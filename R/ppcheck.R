@@ -88,36 +88,35 @@
 ppcheck <- function(object,
                     check = c("distributions", "test", "residuals", "refit"),
                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
-  if (!is.stanreg(object))
+  if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (!used.sampling(object)) 
     STOP_sampling_only("ppcheck")
+  
   fn <- switch(match.arg(check), 
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
                'test' = "ppcheck_stat",
                'refit' = "ppcheck_refit")
   if (is.null(nreps) && fn != "ppcheck_stat")
-    nreps <- ifelse(fn == "ppcheck_dist", 8, 3) 
+    nreps <- ifelse(fn == "ppcheck_dist", 8, 3)
+  if (!is.null(nreps) && fn == "ppcheck_stat") {
+    warning("'nreps' is ignored if check='test'")
+    nreps <- NULL
+  }
+  
   if (fn == "ppcheck_refit") {
-    graph <- ppcheck_refit(object, n = nreps, ...) + 
-      .ppcheck_theme() +
-      theme(strip.text = element_blank(), legend.position = "right")
-    return(graph)
+    return(ppcheck_refit(object, n = nreps, ...))
   }
   if (fn == "ppcheck_resid") {
     if (!is(object, "polr") && is.binomial(object$family$family)) {
-    graph <- ppcheck_binned_resid(object, n = nreps, ...) + 
-      ggtitle("Binned Residuals") + 
-      .ppcheck_theme(no_y = FALSE)
-    return(graph)
+      return(ppcheck_binned_resid(object, n = nreps, ...))
     }
   }
-  thm <- .ppcheck_theme()
+  
   yrep <- posterior_predict(object, draws = nreps)
   y <- get_y(object)
-  if (is(object, "polr")) 
-    y <- as.integer(y)
+  if (is(object, "polr")) y <- as.integer(y)
   if (NCOL(y) == 2) {
     trials <- rowSums(y)
     y <- y[, 1] / trials
@@ -130,12 +129,7 @@ ppcheck <- function(object,
   else if (fn == "ppcheck_stat")
     args <- list(y = y, yrep = yrep, test = test, ...)
   
-  graph <- do.call(fn, args)
-  if (fn == "ppcheck_stat") {
-    if (length(test) == 2) thm <- .ppcheck_theme(no_y = FALSE)
-    return(graph + thm %+replace% theme(legend.position = "right"))
-  }
-  else return(graph + thm)
+  return(do.call(fn, args))
 }
 
 
@@ -177,16 +171,19 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   colnames(yrep) <- paste0("value.", 1:ncol(yrep))
   yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
                        varying = list(1:ncol(yrep)), ids = paste0('rep_', s))
-  dat <- rbind(yrep_melt, cbind(time = seq_along(y), value = y, id = 'Observed'))
+  dat <- rbind(yrep_melt, 
+               cbind(time = seq_along(y), value = y, id = 'Observed'))
   rownames(dat) <- NULL
   dat$is_y <- dat$id == "Observed"
   dat$value <- as.numeric(dat$value)
-  do.call(fn, list(dat = dat, ...))
+  graph <- do.call(fn, list(dat = dat, ...))
+  return(graph + .ppcheck_theme())
 }
 
 #' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
 ppcheck_hist <- function(dat, ...) {
-  ggplot(dat, aes_string(x = 'value', fill = 'is_y', color = "is_y", size = "is_y")) + 
+  ggplot(dat, aes_string(x = 'value', fill = 'is_y', 
+                         color = "is_y", size = "is_y")) + 
     geom_histogram(aes_string(y="..density.."), size = .2, ...) + 
     facet_wrap(~id, scales = "free") + 
     scale_fill_manual(values = c("black", .PP_FILL)) +
@@ -217,16 +214,18 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     stop("'test' should have length 1 or 2.")
   if (!is.character(test)) 
     stop("'test' should be a character vector.")
+  
   if (length(test) == 1) {
     test1 <- match.fun(test)
     T_y <- test1(y)
     T_yrep <- apply(yrep, 1, test1)
-    graph <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'"))
-    graph <- graph + xlab(paste("Test =", test))
+    base <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) + 
+      xlab(paste("Test =", test))
     if (packageVersion("ggplot2") < "1.1.0") {
-      graph + 
+      graph <- base + 
         geom_histogram(aes_string(y = "..count../sum(..count..)"), 
-                       fill = fill_color, show_guide = FALSE, na.rm = TRUE, ...)  +
+                       fill = fill_color, show_guide = FALSE, na.rm = TRUE, 
+                       ...)  +
         geom_vline(data = data.frame(t = T_y), 
                    aes_string(xintercept = "t", color = "factor(t)"), 
                    size = 2, show_guide = TRUE) +
@@ -234,9 +233,10 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                            values = c(vline_color, fill_color),
                            labels = c("T(y)", "T(yrep)"))
     } else {
-      graph + 
+      graph <- base + 
         geom_histogram(aes_string(y = "..count../sum(..count..)"), 
-                       fill = fill_color, show.legend = FALSE, na.rm = TRUE, ...)  +
+                       fill = fill_color, show.legend = FALSE, 
+                       na.rm = TRUE, ...)  +
         geom_vline(data = data.frame(t = T_y), 
                    aes_string(xintercept = "t", color = "factor(t)"), 
                    size = 2, show.legend = TRUE) +
@@ -244,6 +244,8 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                            values = c(vline_color, fill_color),
                            labels = c("T(y)", "T(yrep)"))
     }
+    thm <- .ppcheck_theme() %+replace% theme(legend.position = "right")
+    return(graph + thm)
   }
   else { # length(test) == 2
     if (is.character(test[1])) test1 <- match.fun(test[1])
@@ -252,9 +254,9 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     T_y2 <- test2(y)
     T_yrep1 <- apply(yrep, 1, test1)
     T_yrep2 <- apply(yrep, 1, test2)
-    graph <- ggplot(data.frame(x = T_yrep1, y = T_yrep2), 
+    base <- ggplot(data.frame(x = T_yrep1, y = T_yrep2), 
                     aes_string(x = "x", y = "y", color = "'A'"))
-    graph + 
+    graph <- base + 
       geom_point(...) + 
       annotate("segment", x = c(T_y1, -Inf), xend = c(T_y1, T_y1), 
                y = c(-Inf, T_y2), yend = c(T_y2, T_y2), 
@@ -266,6 +268,10 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                          values = c('B' = vline_color, 'A' = fill_color),
                          labels = c('B' = "T(y)", 'A' = "T(yrep)")) + 
       labs(x = paste("Test =", test[1]), y = paste("Test =", test[2]))
+    
+    thm <- .ppcheck_theme(no_y = FALSE) %+replace% 
+      theme(legend.position = "right")
+    return(graph + thm)
   }
 }
 
@@ -282,12 +288,14 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
                       varying = list(1:ncol(resids)), ids = paste0('rep_', s))
     base <- ggplot(resids, aes_string(x = "r"))
   }
-  graph <- base + geom_histogram(aes_string(y="..count../sum(..count..)"), ...)
-  
+  graph <- base + geom_histogram(aes_string(y="..count../sum(..count..)"), 
+                                 fill = "black", ...)
   if (n == 1) 
-    graph + labs(y = NULL, x = paste0("resids(yrep_",s,")"))
+    graph <- graph + labs(y = NULL, x = paste0("resids(yrep_",s,")"))
   else 
-    graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
+    graph <- graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
+  
+  return(graph + .ppcheck_theme())
 }
 
 #' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
@@ -332,10 +340,12 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
     geom_path(aes_string(y = "se2"), color = line_color, size = line_size) + 
     geom_path(aes_string(y = "-se2"), color = line_color, size = line_size) + 
     geom_point(aes_string(y = "ybar"), shape = 19, color = pt_color) + 
-    labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)")
+    labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)") + 
+    ggtitle("Binned Residuals")
   
-  if (n == 1) graph
-  else graph + facet_wrap(~rep, scales = "free")
+  if (n > 1) graph <- graph + facet_wrap(~rep, scales = "free")
+  
+  return(graph + .ppcheck_theme(no_y = FALSE))
 }
 
 ppcheck_refit <- function(object, n = 1, ...) {
@@ -356,7 +366,8 @@ ppcheck_refit <- function(object, n = 1, ...) {
     if (NCOL(y) == 2) {
       new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
       mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1])
-      refit <- update(object, formula = new_f, data = get_all_vars(new_f, data = mf2))
+      refit <- update(object, formula = new_f, 
+                      data = get_all_vars(new_f, data = mf2))
     } 
     else {
       if (NCOL(y) == 1 && !all(y %in% c(0, 1)))
@@ -375,19 +386,24 @@ ppcheck_refit <- function(object, n = 1, ...) {
       pp2 <- sweep(pp2, 2, trials, "/")
     }
   }
-
   varying <- list(1:ncol(pp1))
   pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
                  varying = varying)[, c("value", "id")]
   pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
                  varying = varying)[, c("value", "id")]
-  dat <- cbind(rbind(pp1, pp2), model = rep(c("Model", "Checking model"), each = nrow(pp1)))
+  dat <- cbind(rbind(pp1, pp2), 
+               model = rep(c("Model", "Checking model"), each = nrow(pp1)))
   clr_vals <- c("black", .PP_FILL)
-  ggplot(dat, aes_string(x = 'value', fill = "model", color = "model")) + 
+  base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
+  graph <- base +
     geom_histogram(aes_string(y = "..density.."), size = .2, ...) +
     scale_fill_manual("", values = clr_vals) +
     scale_color_manual("", values = clr_vals) + 
     facet_grid(model ~ id, scales = "fixed") + 
     xlab("yrep")
+  thm <- .ppcheck_theme() %+replace%
+    theme(strip.text = element_blank(), legend.position = "right")
+  
+  return(graph + thm)
 }
 
