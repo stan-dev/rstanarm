@@ -57,7 +57,9 @@ pp_data <- function(object, newdata = NULL, ...) {
     grps <- names(levs)
     has_new_levels <- sapply(seq_along(levs), function(j) {
       new_levs <- unique(newdata[, grps[j]])
-      !all(new_levs %in% levs[[j]])
+      out <- c(!all(new_levs %in% levs[[j]]))
+      names(out) <- grps[j]
+      out
     })
     if (any(has_new_levels)) { # FIXME (allow new levels)
       stop("New levels found in grouping variable(s) ", 
