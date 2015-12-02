@@ -4,9 +4,8 @@
   sim <- x$stanfit@sim
   allpars <- c(sim$pars_oi, sim$fnames_oi)
   m <- which(match(pars, allpars, nomatch = 0) == 0)
-  if (length(m) > 0) 
-    stop("no parameter ", paste(pars[m], collapse = ', ')) 
-  unique(pars) 
+  if (length(m) > 0) stop("no parameter ", paste(pars[m], collapse = ', ')) 
+  return(unique(pars))
 }
 
 # @param x stanreg object
@@ -16,7 +15,8 @@
   out <- unlist(lapply(seq_along(regex_pars), function(j) {
     grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
   }))
-  if (length(out)) out else stop("No matches for regex_pars.")
+  if (length(out)) return(out) 
+  else stop("No matches for regex_pars.")
 }
 
 
@@ -88,9 +88,9 @@ plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
 # function calling arm::coefplot (only used for models fit using optimization)
 stan_plot_opt <- function(x, pars, varnames = NULL, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
-    stop("Please install the 'arm' package to use this feature.", call. = FALSE)
+    stop("Please install the 'arm' package to use this feature.", 
+         call. = FALSE)
   stopifnot(used.optimizing(x))
-  nms <- varnames %ORifNULL% names(x$coefficients)
   coefs <- coef(x)
   sds <- se(x)
   nms <- varnames %ORifNULL% names(x$coefficients)

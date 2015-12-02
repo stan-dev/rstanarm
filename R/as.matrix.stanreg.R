@@ -23,8 +23,21 @@
 #' @seealso \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' # Extract posterior sample after MCMC
 #' draws <- as.matrix(example_model)
 #' 
+#' # For example, we can see that the median of the draws for the intercept 
+#' # is the same as the point estimate used for the intercept
+#' print(median(draws[, "(Intercept)"]))
+#' print(example_model$coefficients["(Intercept)"])
+#' 
+#' \dontrun{
+#' # Extract draws from asymptotic Gaussian sampling distribution 
+#' # after optimization
+#' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+#' draws <- as.matrix(fit)
+#' print(colnames(draws))
+#' }
 #' 
 as.matrix.stanreg <- function(x, ...) {
   msg <- "No draws found."
@@ -47,6 +60,9 @@ as.matrix.stanreg <- function(x, ...) {
   out <- apply(posterior, 3L, FUN = function(y) y)
   if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
   # remove mean_PPD and log-posterior unless user specified 'pars'
-  if ("pars" %in% names(list(...))) return(out)
-  else out[, !grepl("mean_PPD|log-posterior", colnames(out)), drop = FALSE]
+  if (!"pars" %in% names(list(...))) {
+    sel <- !grepl("mean_PPD|log-posterior", colnames(out))
+    out <- out[, sel, drop = FALSE]
+  }
+  return(out)
 }

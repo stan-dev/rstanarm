@@ -195,7 +195,6 @@ ppcheck_hist <- function(dat, ...) {
 #' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual
 #'   scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
-  # dat$id <- factor(dat$id, levels = unique(dat$id))
   graph <- ggplot(dat, aes_string(x = 'value', group = 'id',
                          color = "is_y", fill = "is_y", size = 'is_y')) + 
     geom_density(...) + 
@@ -302,6 +301,13 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
 ppcheck_binned_resid <- function(object, n = 1, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
     stop("This plot requires the 'arm' package (install.packages('arm'))")
+  
+  binner <- function(rep_id, ey, r, nbins) {
+    br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
+    colnames(br) <- c("xbar", "ybar", "se2")
+    data.frame(rep = paste0("rep_", sel[rep_id]), br)
+  }
+  
   dat <- pp_data(object, newdata = NULL)
   stanmat <- as.matrix.stanreg(object)
   sel <- sample(nrow(stanmat), size = n)
@@ -318,16 +324,11 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
   else if (ny > 10 && ny < 100) nbins <- 10
   else nbins <- floor(ny / 2) # if (ny <= 10)
   
-  binner <- function(rep_id, ey, r, nbins) {
-    br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
-    colnames(br) <- c("xbar", "ybar", "se2")
-    data.frame(rep = paste0("rep_", sel[rep_id]), br)
-  }
   binned <- binner(rep_id = 1, ey = Ey[1, ], r = resids[1, ], nbins)
   if (n > 1) {
     for (i in 2:nrow(resids)) {
-      binned <- rbind(binned, 
-                      binner(rep_id = i, ey = Ey[i, ], r = resids[i, ], nbins))
+      binned <- rbind(binned, binner(rep_id = i, ey = Ey[i, ], 
+                                     r = resids[i, ], nbins))
     }
   }
   dots <- list(...)

@@ -70,7 +70,6 @@ waic.stanreg <- function(x, ...) {
 
 # returns log-likelihood function for loo() and waic()
 .llfun <- function(f) {
-  # f <- object$family
   if (is(f, "family")) get(paste0(".ll_", f$family, "_i"))
   else if (is.character(f)) .ll_polr_i
   else stop("'family' must be a family or a character string")
