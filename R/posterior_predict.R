@@ -91,7 +91,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     else if (is.nb(famname))
       ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
-    if (nrow(ytilde) == 1) ytilde <- t(ytilde)
     if (missing(fun)) 
       return(ytilde)
     else 

@@ -9,7 +9,11 @@ CORES <- 1
 
 # These tests just make sure that posterior_predict doesn't throw errors.
 check_for_error <- function(fit) {
-  expect_silent(posterior_predict(fit))
+  expect_silent(yrep1 <- posterior_predict(fit))
+  expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
+  expect_equal(ncol(yrep1), nobs(fit))
+  expect_equal(ncol(yrep2), nobs(fit))
+  expect_equal(nrow(yrep2), 1)
 }
 
 context("posterior_predict (stan_lm)")
