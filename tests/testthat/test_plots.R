@@ -8,6 +8,7 @@ CHAINS <- 2
 CORES <- 1
 
 fit <- example_model
+fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing")
 
 context("plot.stanreg helpers")
 test_that(".grep_for_pars works", {
@@ -54,11 +55,19 @@ test_that("plot method doesn't throw bad errors and creates ggplot objects", {
   }
 })
 
-test_that("plot method doesn't throw error for optimization", {
-  fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing")
+test_that("plot.stanreg ok for optimization", {
   expect_silent(plot(fito))
   expect_silent(plot(fito, pars = "alpha"))
   expect_silent(plot(fito, pars = "beta"))
   expect_silent(plot(fito, pars = c("wt", "gear")))
   expect_warning(plot(fito, regex_pars = "wt"), regexp = "'regex_pars' ignored")
+  expect_warning(plot(fito, "trace"), regexp = "'plotfun' ignored")
+})
+
+context("pairs.stanreg")
+test_that("pairs method ok", {
+  requireNamespace("rstan")
+  requireNamespace("KernSmooth")
+  expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
+  expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })
