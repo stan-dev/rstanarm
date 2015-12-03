@@ -3,7 +3,7 @@
 .check_plotting_pars <- function(x, pars) {
   if (used.sampling(x)) {
     sim <- x$stanfit@sim
-    allpars <- c(sim$pars_oi, sim$fnames_oi)    
+    allpars <- c(sim$pars_oi, sim$fnames_oi)
   }
   else if (used.optimizing(x)) {
     allpars <- c("alpha", "beta", rownames(x$stan_summary))
@@ -18,12 +18,51 @@
 # @param x stanreg object
 # @param regex_pars character vector of patterns
 .grep_for_pars <- function(x, regex_pars) {
+  if (used.optimizing(x)) {
+    warning("'regex_pars' ignored for models fit using algorithm='optimizing'.")
+    return(NULL)
+  }
   stopifnot(is.character(regex_pars))
   out <- unlist(lapply(seq_along(regex_pars), function(j) {
     grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
   }))
   if (length(out)) return(out) 
   else stop("No matches for regex_pars.")
+}
+
+# @param x stanreg object
+# @param pars, regex_pars user specified pars and regex_pars arguments
+.set_plotting_args <- function(x, pars, regex_pars, ...) {
+  args <- list(x, ...)
+  if (missing(pars) && missing(regex_pars)) 
+    return(args)
+  
+  if (missing(pars)) pars <- NULL
+  else pars[pars == "varying"] <- "b"
+  if (!missing(regex_pars)) 
+    pars <- c(pars, .grep_for_pars(x, regex_pars))
+  
+  args$pars <- .check_plotting_pars(x, pars)
+  return(args)
+}
+
+# @param x stanreg object
+# @param plotfun user specified plotfun argument
+.set_plotting_fun <- function(x, plotfun) {
+  if (used.optimizing(x)) {
+    if (!missing(plotfun))
+      warning("'plotfun' ignored for models fit using algorithm='optimizing'.")
+    return("stan_plot_opt")
+  }
+  if (missing(plotfun)) plotfun <- "plot"
+  plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
+                                "diag", "rhat", "ess", "mcse", "par"))
+  funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
+  fun <- try(getExportedValue("rstan", funname), silent = TRUE)
+  if (inherits(fun, "try-error")) 
+    stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+         call. = FALSE)
+  return(fun)
 }
 
 
@@ -67,35 +106,8 @@
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
 #' 
 plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
-  args <- list(x, ...)
-  if (missing(plotfun)) plotfun <- "plot"
-  if (missing(regex_pars)) check_regex <- FALSE
-  else {
-    check_regex <- !used.optimizing(x)
-    if (!check_regex) {
-      warning("'regex_pars' ignored for models with algorithm='optimizing'.")
-    }
-  }
-  if (!missing(pars)) {
-    pars[pars == "varying"] <- "b"
-    if (check_regex) pars <- c(pars, .grep_for_pars(x, regex_pars))
-    pars <- .check_plotting_pars(x, pars)
-    args$pars <- pars
-  }
-  else if (check_regex) {
-    args$pars <- .check_plotting_pars(x, .grep_for_pars(x, regex_pars))
-  }
-  
-  if (used.optimizing(x)) fun <- "stan_plot_opt"
-  else {
-    plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
-                                  "diag", "rhat", "ess", "mcse", "par"))
-    funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
-    fun <- try(getExportedValue("rstan", funname), silent = TRUE)
-    if (inherits(fun, "try-error")) 
-      stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
-           call. = FALSE)
-  }
+  args <- .set_plotting_args(x, pars, regex_pars, ...)
+  fun <- .set_plotting_fun(x, plotfun)
   do.call(fun, args)
 }
 
