@@ -13,6 +13,7 @@ context("ppcheck")
 test_that("ppcheck doesn't throw bad errors", {
   expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE))
   expect_silent(p <- ppcheck(fit, check = "resid"))
+  expect_is(p, "ggplot")
   for (j in 1:2) {
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = FALSE, nreps = j))
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE, nreps = j))
@@ -21,6 +22,7 @@ test_that("ppcheck doesn't throw bad errors", {
   expect_silent(p <- ppcheck(fit, check = "test"))
   expect_silent(p <- ppcheck(fit, check = "test", test = "sd"))
   expect_silent(p <- ppcheck(fit, check = "test", test = c("mean","sd")))
+  expect_is(p, "ggplot")
 })
 
 test_that("ppcheck throws appropriate errors", {

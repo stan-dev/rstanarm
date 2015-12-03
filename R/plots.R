@@ -76,7 +76,7 @@ plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
   else {
     plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
                                   "diag", "rhat", "ess", "mcse", "par"))
-    funname <- grep(plotfun, plotters, value = TRUE)
+    funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
     fun <- try(getExportedValue("rstan", funname), silent = TRUE)
     if (inherits(fun, "try-error")) 
       stop("Plotting function not found. See ?rstanarm::plots for valid names.", 

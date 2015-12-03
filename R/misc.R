@@ -224,6 +224,8 @@ get_z.lmerMod <- function(object) {
   t(as.matrix(Zt))
 }
 
+
+# Get inverse link functions
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {
   if (is(x, "polr")) 
@@ -244,7 +246,8 @@ linkinv.character <- function(x, ...) {
 polr_linkinv <- function(x) {
   if (is.stanreg(x) && is(x, "polr")) method <- x$method
   else if (is.character(x) && length(x) == 1) method <- x
-  else stop("'x' should be a stanreg object created by stan_polr or a single string.")
+  else stop("'x' should be a stanreg object created by stan_polr ", 
+            "or a single string.")
   
   if (method == "logistic") make.link("logit")$linkinv
   else if (method == "loglog") pgumbel
