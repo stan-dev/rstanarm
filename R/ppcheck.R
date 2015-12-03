@@ -220,7 +220,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     T_yrep <- apply(yrep, 1, test1)
     base <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) + 
       xlab(paste("Test =", test))
-    if (packageVersion("ggplot2") < "1.1.0") {
+    if (packageVersion("ggplot2") < "1.0.1.9003") { #FIXME can change to 1.1.0 when released
       graph <- base + 
         geom_histogram(aes_string(y = "..count../sum(..count..)"), 
                        fill = fill_color, show_guide = FALSE, na.rm = TRUE, 

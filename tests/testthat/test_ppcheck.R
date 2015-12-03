@@ -7,10 +7,10 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
+fit <- example_model
+
 context("ppcheck")
 test_that("ppcheck doesn't throw bad errors", {
-  fit <- example_model
-  
   expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE))
   expect_silent(p <- ppcheck(fit, check = "resid"))
   for (j in 1:2) {
@@ -21,22 +21,22 @@ test_that("ppcheck doesn't throw bad errors", {
   expect_silent(p <- ppcheck(fit, check = "test"))
   expect_silent(p <- ppcheck(fit, check = "test", test = "sd"))
   expect_silent(p <- ppcheck(fit, check = "test", test = c("mean","sd")))
-})
-
-test_that("ppcheck throws appropriate warnings", {
   Ty <- function(x) quantile(x, probs = 0.9)
-  if (utils::packageVersion("ggplot2") < "1.0.1.9003") {
-    expect_silent(p <- ppcheck(fit, check = "test", test = "Ty"))
-  } else {
-    expect_warning(p <- ppcheck(fit, check = "test", test = "Ty"), 
-                   regexp = "`show_guide` has been deprecated")
-  }
-  expect_warning(p <- ppcheck(fit, check = "test", nreps = 1), 
-                 regexp = "'nreps' is ignored")
+  expect_silent(p <- ppcheck(fit, check = "test", test = "Ty"))
 })
 
 test_that("ppcheck throws appropriate errors", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-  expect_error(ppcheck(fit), regexp = "algorithm")
+  expect_error(p <- ppcheck(fit, check = "test", test = "10982pqmeaw"), 
+               regexp = "not found")
+  expect_error(p <- ppcheck(fit, check = "test", test = c("mean", "sd", "var")), 
+               regexp = "length 1 or 2")
+  
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+  expect_error(ppcheck(fito), regexp = "algorithm")
   expect_error(ppcheck(rnorm(10)), regexp = "not a stanreg object")
+})
+
+test_that("ppcheck throws appropriate warnings", {
+  expect_warning(p <- ppcheck(fit, check = "test", nreps = 1), 
+                 regexp = "'nreps' is ignored")
 })
