@@ -1,3 +1,4 @@
+# Check for valid parameters
 # @param x stanreg object
 # @param pars user specified character vector
 .check_plotting_pars <- function(x, pars) {
@@ -15,6 +16,7 @@
   return(unique(pars))
 }
 
+# Regex parameter selection
 # @param x stanreg object
 # @param regex_pars character vector of patterns
 .grep_for_pars <- function(x, regex_pars) {
@@ -30,8 +32,10 @@
   else stop("No matches for regex_pars.")
 }
 
+# Prepare argument list to pass to plotting function
 # @param x stanreg object
-# @param pars, regex_pars user specified pars and regex_pars arguments
+# @param pars, regex_pars user specified pars and regex_pars arguments (can be
+#   missing)
 .set_plotting_args <- function(x, pars, regex_pars, ...) {
   args <- list(x, ...)
   if (missing(pars) && missing(regex_pars)) 
@@ -46,8 +50,9 @@
   return(args)
 }
 
+# Select the correct plotting function
 # @param x stanreg object
-# @param plotfun user specified plotfun argument
+# @param plotfun user specified plotfun argument (can be missing)
 .set_plotting_fun <- function(x, plotfun) {
   if (used.optimizing(x)) {
     if (!missing(plotfun))
@@ -68,39 +73,73 @@
 
 #' Plot method for stanreg objects
 #' 
-#' For models fit using \code{algorithm="sampling"} there are a variety of
-#' \code{\link{plots}} that can be generated. For models fit with
-#' \code{algorithm="optimizing"} the regression coefficients and standard errors
-#' are passed to \code{\link[arm]{coefplot}} (\pkg{arm}).
+#' For models fit using \code{algorithm="sampling"} there are a variety of plots
+#' that can be generated. For models fit with \code{algorithm="optimizing"} the
+#' regression coefficients and standard errors are passed to
+#' \code{\link[arm]{coefplot}} (\pkg{arm}).
 #' 
 #' @method plot stanreg
 #' @export
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
-#' @param plotfun A character string (possibly abbreviated) naming the plotting
-#'   function to apply to the stanreg object. See \code{\link{plots}} for the
-#'   names and descriptions. The default plot shows intervals and point
-#'   estimates for the coefficients. (\strong{Note:} for models fit using
-#'   \code{algorithm="optimizing"} the \code{plotfun} argument is ignored as
-#'   there is currently only one plotting function for these models.)
+#' @param plotfun A character string (possibly abbreviated) naming the plotting 
+#'   function to apply to the stanreg object. See \code{\link{plots}} for the 
+#'   names and descriptions. Also see the Examples section below. The default
+#'   plot shows intervals and point estimates for the coefficients. The
+#'   \code{plotfun} argument is ignored for models fit using
+#'   \code{algorithm="optimizing"} as there is currently only one plotting
+#'   function for these models.)
 #' @param pars An optional character vector of parameter names.
-#' @param regex_pars An optional character vector of \link[=grep]{regular
-#'   expressions} to use for parameter selection. Can be used in place of
-#'   \code{pars} or in addition to \code{pars}. \code{regex_pars}
-#'   is ignored for models fit using \code{algorithm="optimizing"}.
+#' @param regex_pars An optional character vector of \link[=grep]{regular 
+#'   expressions} to use for parameter selection. Can be used in place of 
+#'   \code{pars} or in addition to \code{pars}. Currently, the \code{regex_pars}
+#'   argument is ignored for models fit using \code{algorithm="optimizing"}.
 #' @param ... Additional arguments to pass to \code{plotfun} (see
 #'   \code{\link{plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
 #'
-#' @return A ggplot object (or several) that can be further customized using the
-#'   \pkg{ggplot2} package. (If \code{x$algorithm="optimizing"} a plot is
-#'   produced but nothing is returned.)
+#' @return For models fit using \code{algorithm='sampling'}, a ggplot object (or
+#'   several) that can be further customized using the \pkg{ggplot2} package. If
+#'   \code{algorithm="optimizing"} a plot is produced but nothing is returned.
 #'
 #' @seealso \code{\link{plots}} for details on the individual plotting
 #'   functions.
 #'   
-#' @examples 
-#' # See examples at help("plots", "rstanarm")
+#' @examples
+#' # Use rstanarm example model
+#' fit <- example_model
+#' 
+#' # Intervals and point estimates
+#' plot(fit, ci_level = 0.8)
+#' plot(fit, pars = "size", regex_pars = "period", show_density = TRUE)
+#' 
+#' # Traceplot
+#' (trace <- plot(fit, plotfun = "trace", pars = "(Intercept)"))
+#' trace + ggplot2::scale_color_discrete()
+#' 
+#' # Distributions 
+#' plot_title <- ggplot2::ggtitle("Posterior Distributions")
+#' plot(fit, "hist", fill = "skyblue") + plot_title
+#' plot(fit, "dens", regex_pars = "period", 
+#'      separate_chains = TRUE, alpha = 0.25)
+#' 
+#' # Scatterplot
+#' plot(fit, plotfun = "scat", pars = paste0("period", 2:3))
+#' 
+#' # Some diagnostics
+#' plot(fit, "rhat")
+#' plot(fit, "ess")
+#' 
+#' # Using regex_pars
+#' plot(fit, regex_pars = "period")
+#' plot(fit, regex_pars = "herd:1")
+#' plot(fit, regex_pars = "herd:1\\]")
+#' plot(fit, regex_pars = "herd:[279]")
+#' plot(fit, regex_pars = "herd:[279]|period2")
+#' plot(fit, regex_pars = c("herd:[279]", "period2"))
+#' 
+#' # For graphical posterior predictive checks see 
+#' # help("ppcheck", package = "rstanarm")
 #' 
 #' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
@@ -156,60 +195,37 @@ pairs.stanreg <- function(x, ...) {
 
 #' Plots
 #' 
-#' All models fit using \code{algorithm='sampling'} are compatible with a 
-#' variety of plotting functions from the \pkg{rstan} package. Each function
-#' returns at least one \code{\link[ggplot2]{ggplot}} object that can be
-#' customized further using the \pkg{ggplot2} package. The plotting functions
-#' described here can also be called using the \code{\link[=plot.stanreg]{plot}}
-#' method for stanreg objects without loading the \pkg{rstan} package.
-#' 
+#' All \pkg{rstanarm} models fit using \code{algorithm='sampling'} are 
+#' compatible with a variety of plotting functions from the \pkg{rstan} package.
+#' Each function returns at least one \code{\link[ggplot2]{ggplot}} object that 
+#' can be customized further using the \pkg{ggplot2} package. The plotting 
+#' functions described here can be called using the 
+#' \code{\link[=plot.stanreg]{plot method for stanreg objects}} without loading 
+#' the \pkg{rstan} package. For example usage see \code{\link{plot.stanreg}}.
 #' 
 #' @name plots
 #' 
 #' @section Plotting functions:
 #' \describe{
-#' \item{Posterior intervals and point estimates}{\code{\link[rstan]{stan_plot}}}
+#' \item{Posterior intervals and point
+#' estimates}{\code{\link[rstan]{stan_plot}}}
 #' \item{Traceplots}{\code{\link[rstan]{stan_trace}}}
 #' \item{Histograms}{\code{\link[rstan]{stan_hist}}}
 #' \item{Kernel density estimates}{\code{\link[rstan]{stan_dens}}}
 #' \item{Scatterplots}{\code{\link[rstan]{stan_scat}}}
-#' \item{Diagnostics for Hamiltonian Monte Carlo and the No-U-Turn Sampler}{\code{\link[rstan]{stan_diag}}}
+#' \item{Diagnostics for Hamiltonian Monte Carlo and the No-U-Turn
+#' Sampler}{\code{\link[rstan]{stan_diag}}}
 #' \item{Rhat}{\code{\link[rstan]{stan_rhat}}}
-#' \item{Ratio of effective sample size to total posterior sample size}{\code{\link[rstan]{stan_ess}}}
-#' \item{Ratio of Monte Carlo standard error to posterior standard deviation}{\code{\link[rstan]{stan_mcse}}}
+#' \item{Ratio of effective sample size to total posterior sample
+#' size}{\code{\link[rstan]{stan_ess}}}
+#' \item{Ratio of Monte Carlo standard error to posterior standard
+#' deviation}{\code{\link[rstan]{stan_mcse}}}
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
 #' For graphical posterior predicive checking see \code{\link{ppcheck}}.
 #' 
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
-#' @examples 
-#' # Intervals and point estimates
-#' plot(example_model, ci_level = 0.8)
-#' plot(example_model, pars = "size", regex_pars = "period", show_density = TRUE)
-#' 
-#' # Traceplot
-#' (trace <- plot(example_model, plotfun = "trace", pars = "(Intercept)"))
-#' trace + ggplot2::scale_color_discrete()
-#' 
-#' # Distributions 
-#' plot(example_model, "hist", fill = "skyblue") + ggplot2::ggtitle("Posterior Distributions")
-#' plot(example_model, "dens", regex_pars = "period", 
-#'      separate_chains = TRUE, alpha = 0.25)
-#' 
-#' # Scatterplot
-#' plot(example_model, plotfun = "scat", pars = paste0("period", 2:3))
-#' 
-#' # Some diagnostics
-#' plot(example_model, "rhat")
-#' plot(example_model, "ess")
-#' 
-#' # Using regex_pars
-#' plot(example_model, regex_pars = "herd:1")
-#' plot(example_model, regex_pars = "herd:1\\]")
-#' plot(example_model, regex_pars = "herd:[279]")
-#' plot(example_model, regex_pars = "herd:[279]|period2")
-#' plot(example_model, regex_pars = c("herd:[279]", "period2"))
-#' 
-#' # Posterior predictive checks (see ?ppcheck for examples)
+#' @examples
+#' # See examples at help("plot.stanreg", package = "rstanarm")
 NULL
