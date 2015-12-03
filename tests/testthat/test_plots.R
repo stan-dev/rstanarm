@@ -9,6 +9,27 @@ CORES <- 1
 
 fit <- example_model
 
+context("plot.stanreg helpers")
+test_that(".grep_for_pars works", {
+  .grep_for_pars <- rstanarm:::.grep_for_pars
+  .bnames <- rstanarm:::.bnames
+  
+  all_period <- paste0("period", 2:4)
+  all_varying <- .bnames(rownames(fit$stan_summary), value = TRUE)
+  
+  expect_equal(.grep_for_pars(fit, "period"), all_period)
+  expect_equal(.grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
+  expect_equal(.grep_for_pars(fit, "period|size"), c("size", all_period))
+  expect_equal(.grep_for_pars(fit, "(2|3)$"), all_period[1:2])
+  expect_equal(.grep_for_pars(fit, "herd"), all_varying)
+  expect_equal(.grep_for_pars(fit, "b\\["), all_varying)
+  expect_equal(.grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
+  expect_equal(.grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
+  expect_equal(.grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
+  expect_error(.grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
+  expect_error(.grep_for_pars(fit, "b["))
+})
+
 context("plot.stanreg")
 test_that("plot method doesn't throw bad errors and creates ggplot objects", {
   expect_default_message <- function(fit, message = "default", ...) {
@@ -22,9 +43,22 @@ test_that("plot method doesn't throw bad errors and creates ggplot objects", {
     expect_message(p <- plot(fit, plotfun = plotters1[j]), regexp = "default")
     expect_is(p, "ggplot")
     expect_is(p <- plot(fit, plotfun = plotters1[j], pars = "beta"), "ggplot")
+    expect_is(p <- plot(fit, plotfun = plotters1[j], pars = "alpha", 
+                        regex_pars = "period"), "ggplot")
+    expect_is(p <- plot(fit, plotfun = plotters1[j], regex_pars = "period"), 
+              "ggplot")
   }
   for (j in seq_along(plotters2)) {
     expect_silent(p <- plot(fit, plotfun = plotters2[j]))
     expect_is(p, "ggplot")
   }
+})
+
+test_that("plot method doesn't throw error for optimization", {
+  fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing")
+  expect_silent(plot(fito))
+  expect_silent(plot(fito, pars = "alpha"))
+  expect_silent(plot(fito, pars = "beta"))
+  expect_silent(plot(fito, pars = c("wt", "gear")))
+  expect_warning(plot(fito, regex_pars = "wt"), regexp = "'regex_pars' ignored")
 })

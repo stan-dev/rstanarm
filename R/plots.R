@@ -1,8 +1,15 @@
 # @param x stanreg object
 # @param pars user specified character vector
 .check_plotting_pars <- function(x, pars) {
-  sim <- x$stanfit@sim
-  allpars <- c(sim$pars_oi, sim$fnames_oi)
+  if (used.sampling(x)) {
+    sim <- x$stanfit@sim
+    allpars <- c(sim$pars_oi, sim$fnames_oi)    
+  }
+  else if (used.optimizing(x)) {
+    allpars <- c("alpha", "beta", rownames(x$stan_summary))
+  }
+  else stop("Not yet enabled for advi")
+
   m <- which(match(pars, allpars, nomatch = 0) == 0)
   if (length(m) > 0) stop("no parameter ", paste(pars[m], collapse = ', ')) 
   return(unique(pars))
@@ -62,13 +69,20 @@
 plot.stanreg <- function(x, plotfun, pars, regex_pars, ...) {
   args <- list(x, ...)
   if (missing(plotfun)) plotfun <- "plot"
+  if (missing(regex_pars)) check_regex <- FALSE
+  else {
+    check_regex <- !used.optimizing(x)
+    if (!check_regex) {
+      warning("'regex_pars' ignored for models with algorithm='optimizing'.")
+    }
+  }
   if (!missing(pars)) {
     pars[pars == "varying"] <- "b"
-    if (!missing(regex_pars)) pars <- c(pars, .grep_for_pars(x, regex_pars))
+    if (check_regex) pars <- c(pars, .grep_for_pars(x, regex_pars))
     pars <- .check_plotting_pars(x, pars)
     args$pars <- pars
   }
-  else if (!missing(regex_pars)) {
+  else if (check_regex) {
     args$pars <- .check_plotting_pars(x, .grep_for_pars(x, regex_pars))
   }
   
