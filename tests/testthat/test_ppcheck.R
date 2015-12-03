@@ -21,8 +21,6 @@ test_that("ppcheck doesn't throw bad errors", {
   expect_silent(p <- ppcheck(fit, check = "test"))
   expect_silent(p <- ppcheck(fit, check = "test", test = "sd"))
   expect_silent(p <- ppcheck(fit, check = "test", test = c("mean","sd")))
-  Ty <- function(x) quantile(x, probs = 0.9)
-  expect_silent(p <- ppcheck(fit, check = "test", test = "Ty"))
 })
 
 test_that("ppcheck throws appropriate errors", {
