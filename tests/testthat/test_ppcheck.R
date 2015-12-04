@@ -8,16 +8,20 @@ CHAINS <- 2
 CORES <- 1
 
 fit <- example_model
+fit2 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                                  chains = CHAINS, cores = CORES, seed = SEED))
 
 context("ppcheck")
 test_that("ppcheck doesn't throw bad errors", {
   expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE))
   expect_silent(p <- ppcheck(fit, check = "resid"))
+  expect_silent(p <- ppcheck(fit2, check = "resid"))
   expect_is(p, "ggplot")
   for (j in 1:2) {
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = FALSE, nreps = j))
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE, nreps = j))
     expect_silent(p <- ppcheck(fit, check = "resid", nreps = j))
+    expect_silent(p <- ppcheck(fit2, check = "resid", nreps = j))
   }
   expect_silent(p <- ppcheck(fit, check = "test"))
   expect_silent(p <- ppcheck(fit, check = "test", test = "sd"))
