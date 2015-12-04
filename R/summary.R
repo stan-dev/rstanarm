@@ -1,3 +1,9 @@
+.posterior_sample_size <- function(x) {
+  stopifnot(is.stanreg(x))
+  if (!used.sampling(x)) return(NULL)
+  else return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+}
+
 #' Summary method for stanreg objects
 #' 
 #' Summaries of parameter estimates and MCMC convergence diagnostics 
@@ -59,16 +65,12 @@ summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
     }
     out <- object$stan_summary[mark,, drop=FALSE]
   }
-  SS <- if (!used.sampling(object))
-    NULL else sum(object$stanfit@sim$n_save - object$stanfit@sim$warmup2)
-  groups <- if (!is.null(object$glmod)) ngrps(object) else NULL
-  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
-            nobs = NROW(get_y(object)),
-            posterior_sample_size = SS, 
-            ngrps = groups,
+            posterior_sample_size = .posterior_sample_size(object),
+            nobs = nobs(object),
+            ngrps = if (!is.null(object$glmod)) ngrps(object) else NULL,
             print.digits = digits, 
             class = "summary.stanreg")
 }

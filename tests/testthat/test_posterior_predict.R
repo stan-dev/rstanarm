@@ -7,7 +7,8 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-# These tests just make sure that posterior_predict doesn't throw errors.
+# These tests just make sure that posterior_predict doesn't throw errors and
+# that result has correct dimensions
 check_for_error <- function(fit) {
   nsims <- nrow(as.matrix(fit))
   
