@@ -35,7 +35,6 @@ test_that("posterior_predict compatible with stan_lm", {
   fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(0.5), 
                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
-  posterior_predict(fit, newdata = mtcars[1,])
 })
 
 context("posterior_predict (stan_glm)")
