@@ -3,17 +3,31 @@
 
 library(rstanarm)
 SEED <- 123
-ITER <- 5
+ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
 # These tests just make sure that posterior_predict doesn't throw errors.
 check_for_error <- function(fit) {
+  nsims <- nrow(as.matrix(fit))
+  
   expect_silent(yrep1 <- posterior_predict(fit))
+  expect_equal(dim(yrep1), c(nsims, nobs(fit)))
+
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
-  expect_equal(ncol(yrep1), nobs(fit))
-  expect_equal(ncol(yrep2), nobs(fit))
-  expect_equal(nrow(yrep2), 1)
+  expect_equal(dim(yrep2), c(1, nobs(fit)))
+  
+  expect_silent(yrep3 <- posterior_predict(fit, newdata = model.frame(fit)[1,]))
+  expect_equal(dim(yrep3), c(nsims, 1))
+  
+  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = model.frame(fit)[1,]))
+  expect_equal(dim(yrep4), c(2, 1))
+  
+  expect_silent(yrep5 <- posterior_predict(fit, newdata = model.frame(fit)[1:5,]))
+  expect_equal(dim(yrep5), c(nsims, 5))
+  
+  expect_silent(yrep5 <- posterior_predict(fit, draws = 3, newdata = model.frame(fit)[1:5,]))
+  expect_equal(dim(yrep5), c(3, 5))
 }
 
 context("posterior_predict (stan_lm)")
@@ -21,6 +35,7 @@ test_that("posterior_predict compatible with stan_lm", {
   fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(0.5), 
                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
+  posterior_predict(fit, newdata = mtcars[1,])
 })
 
 context("posterior_predict (stan_glm)")
