@@ -66,7 +66,7 @@
 #'   are very concentrated near zero, unless the predictor has a strong
 #'   influence on the outcome, in which case the prior has little influence.
 #'   Hierarchical shrinkage priors often require you to increase the
-#'   \code{adapt_delta} tuning parameter to \code{\link[rstan]{stan}} in order
+#'   \code{\link{adapt_delta}} tuning parameter in order
 #'   to diminish the number of divergent transitions. For more details on 
 #'   tuning parameters and divergent transitions see the Troubleshooting section
 #'   of the "How to Use the rstanarm Package" vignette. 
@@ -134,9 +134,7 @@
 #'   reasonable to use a scale-invariant prior distribution, and in this case 
 #'   we utilize a Gamma distribution, whose \code{shape} and \code{scale} 
 #'   parameters are both \eqn{1} by default, implying a unit-exponential 
-#'   distribution. We scale up by the square root of the number of variables to 
-#'   make the default value of the \code{scale} parameter more widely 
-#'   applicable. Set the \code{shape} hyperparameter to some value
+#'   distribution. Set the \code{shape} hyperparameter to some value
 #'   greater than one to ensure that the posterior trace is not zero.
 #'   
 #'   If \code{regularization}, \code{concentration}, \code{shape} and / or 
@@ -260,11 +258,11 @@ cauchy <- function(location = 0, scale = NULL) {
 #' @rdname priors
 #' @export
 #' @param regularization Exponent for an LKJ prior on the correlation matrix 
-#'  in the \code{decov} prior.
-#' @param concentration Concentration parameter for a Dirichlet 
-#'  distribution, such as that used by the \code{decov} prior.
+#'  in the \code{decov} prior; defaults to \eqn{1} implying a joint uniform prior
+#' @param concentration Concentration parameter for a symmetric Dirichlet 
+#'  distribution; defaults to \eqn{1} implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale 
-#'   parameter in the \code{decov} prior.
+#'   parameter in the \code{decov} prior, defaults to \eqn{1}
 decov <- function(regularization = 1, concentration = 1, 
                   shape = 1, scale = 1) {
   validate_parameter_value(regularization)
