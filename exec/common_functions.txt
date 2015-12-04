@@ -1,13 +1,17 @@
   /* for multiple .stan files */
   
   /** 
-   * Create group-specific block-diagonal Cholesky factor, see section 2.3 of
+   * Create group-specific block-diagonal Cholesky factor, see section 2 of
    * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+   * @param len_theta_L An integer indicating the length of returned vector, 
+   *   which lme4 denotes as m
    * @param p An integer array with the number variables on the LHS of each |
-   * @param dispersion Scalar standard deviation of the errors
-   * @param tau Vector of scale parameters for the decomposed covariance matrices
-   * @param scale Vector of scale hyperparameters
+   * @param dispersion Scalar standard deviation of the errors, calles sigma by lme4
+   * @param tau Vector of scale parameters whose squares are proportional to the 
+   *   traces of the relative covariance matrices of the group-specific terms
+   * @param scale Vector of prior scales that are multiplied by elements of tau
    * @param zeta Vector of positive parameters that are normalized into simplexes
+   *   and multiplied by the trace of the covariance matrix to produce variances
    * @param rho Vector of radii in the onion method for creating Cholesky factors
    * @param z_T Vector used in the onion method for creating Cholesky factors
    * @return A vector that corresponds to theta in lme4
@@ -17,12 +21,12 @@
                       vector rho, vector z_T) {
     vector[len_theta_L] theta_L;
     int zeta_mark;
-    int z_T_mark;
     int rho_mark;
+    int z_T_mark;
     int theta_L_mark;
     zeta_mark <- 1;
-    z_T_mark <- 1;
     rho_mark <- 1;
+    z_T_mark <- 1;
     theta_L_mark <- 1;
     
     // each of these is a diagonal block of the implicit Cholesky factor
@@ -31,6 +35,7 @@
       nc <- p[i];
       if (nc == 1) { // "block" is just a standard deviation
         theta_L[theta_L_mark] <- tau[i] * scale[i] * dispersion;
+        // unlike lme4, theta[theta_L_mark] includes the dispersion term in it
         theta_L_mark <- theta_L_mark + 1;
       }
       else { // block is lower-triangular               
@@ -41,6 +46,7 @@
         real T21;
         
         trace_T_i <- square(tau[i] * scale[i] * dispersion) * nc;
+        // unlike lme4, T_i includes the dispersion term in it
         pi <- segment(zeta, zeta_mark, nc); // zeta ~ gamma(shape, 1)
         pi <- pi / sum(pi);                 // thus pi ~ dirichlet(shape)
         zeta_mark <- zeta_mark + nc;
@@ -54,7 +60,7 @@
         T_i[2,2] <- std_dev * sqrt(1.0 - square(T21));
         T_i[2,1] <- std_dev * T21;
         
-        for (r in 2:(nc - 1)) { // scaled onion method
+        for (r in 2:(nc - 1)) { // scaled onion method to fill T_i
           int rp1;
           vector[r] T_row;
           real scale_factor;
@@ -68,7 +74,7 @@
           rho_mark <- rho_mark + 1;
         }
         
-        // vec T_i
+        // now vech T_i
         for (c in 1:nc) for (r in c:nc) {
           theta_L[theta_L_mark] <- T_i[r,c];
           theta_L_mark <- theta_L_mark + 1;
@@ -79,11 +85,11 @@
   }
   
   /** 
-  * Create group-specific coefficients, see section 2.3 of
+  * Create group-specific coefficients, see section 2 of
   * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
   *
   * @param z_b Vector whose elements are iid normal(0,sigma) a priori
-  * @param theta Vector with covariance parameters
+  * @param theta Vector with covariance parameters as defined in lme4
   * @param p An integer array with the number variables on the LHS of each |
   * @param l An integer array with the number of levels for the factor(s) on 
   *   the RHS of each |
@@ -100,7 +106,7 @@
       nc <- p[i];
       if (nc == 1) {
         real theta_L_start;
-        theta_L_start <- theta_L[theta_L_mark]; // needs to be positive
+        theta_L_start <- theta_L[theta_L_mark];
         for (s in b_mark:(b_mark + l[i] - 1)) 
           b[s] <- theta_L_start * z_b[s];
         b_mark <- b_mark + l[i];
@@ -110,7 +116,7 @@
         matrix[nc,nc] T_i;
         T_i <- rep_matrix(0, nc, nc);
         for (c in 1:nc) {
-          T_i[c,c] <- theta_L[theta_L_mark];    // needs to be positive
+          T_i[c,c] <- theta_L[theta_L_mark];
           theta_L_mark <- theta_L_mark + 1;
           for(r in (c+1):nc) {
             T_i[r,c] <- theta_L[theta_L_mark];
@@ -171,11 +177,6 @@
     }
     zeta ~ gamma(delta, 1);
     tau ~ gamma(shape, 1);
-  }
-  
-  vector test_csr_matrix_times_vector(int m, int n, vector w, 
-                                      int[] v, int[] u, vector b) {
-    return csr_matrix_times_vector(m, n, w, v, u, b);            
   }
   
   /** 
