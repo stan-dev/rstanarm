@@ -18,7 +18,7 @@
 stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
                          prior_intercept = NULL, prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing"),
+                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                          adapt_delta = NULL) {
   if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
@@ -113,17 +113,19 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     opt$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(opt)
   }
-  # else if (algorithm %in% c("meanfield", "fullrank")) {
-  #   stanfit <- rstan::vb(stanfit, data = standata, pars = pars, 
-  #                        algorithm = algorithm, ...)
-  # }
-  sampling_args <- set_sampling_args(
-    object = stanfit, 
-    prior = prior,
-    user_dots = list(...), 
-    user_adapt_delta = adapt_delta, 
-    init = init_fun, data = standata, pars = pars, show_messages = FALSE)
-  stanfit <- do.call(sampling, sampling_args)
+  else if (algorithm %in% c("meanfield", "fullrank")) {
+    stanfit <- rstan::vb(stanfit, data = standata, pars = pars,
+                         algorithm = algorithm, ...)
+  }
+  else {
+    sampling_args <- set_sampling_args(
+      object = stanfit, 
+      prior = prior,
+      user_dots = list(...), 
+      user_adapt_delta = adapt_delta, 
+      init = init_fun, data = standata, pars = pars, show_messages = FALSE)
+    stanfit <- do.call(sampling, sampling_args)
+  }
   new_names <- c(if (has_intercept) "(Intercept)", colnames(x), "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
@@ -135,7 +137,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
 stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_intercept = NULL, prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing"), 
+                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                         adapt_delta = NULL) {
 
   call <- match.call()
