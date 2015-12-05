@@ -19,7 +19,7 @@ Imports:
     ggplot2,
     lme4 (>= 1.1-8),
     loo (>= 0.1.3),
-    rstan (>= 2.8.2),
+    rstan (>= 2.8.9),
     shinystan (>= 2.0.1),
     stats,
     utils
@@ -35,7 +35,7 @@ Suggests:
     RSvgDevice,
     rmarkdown,
     testthat
-LinkingTo: StanHeaders (>= 2.8.0), rstan (>= 2.8.2), BH (>= 1.58.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.8.9), rstan (>= 2.8.9), BH (>= 1.58.0), Rcpp (>=
     0.11.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
