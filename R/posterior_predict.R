@@ -70,7 +70,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
     zeta <- stanmat[,grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    return(.pp_polr(eta, zeta, inverse_link))
+    ytilde <- .pp_polr(eta, zeta, inverse_link)
   }
   else {
     ppargs <- list(mu = inverse_link(eta))
@@ -91,11 +91,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     else if (is.nb(famname))
       ppargs$size <- stanmat[,"overdispersion"]
     ytilde <- do.call(ppfun, ppargs)
-    if (missing(fun)) 
-      return(ytilde)
-    else 
-      return(do.call(match.fun(fun), list(ytilde)))
   }
+  if (!missing(newdata) && nrow(newdata) == 1) ytilde <- t(ytilde)
+  if (!missing(fun)) return(do.call(match.fun(fun), list(ytilde)))
+  else return(ytilde)
 }
 
 .pp_gaussian <- function(mu, sigma) {
