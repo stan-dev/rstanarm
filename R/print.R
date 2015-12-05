@@ -5,8 +5,29 @@
   cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
 }
 
-#' @method print stanreg
+#' Print method for stanreg objects
+#' 
+#' The print method for stanreg objects displays a compact summary of the fitted
+#' model. For a more detailed summary of the fitted model use 
+#' \code{\link{summary.stanreg}}.
+#' 
 #' @export
+#' @method print stanreg
+#' @templateVar stanregArg x
+#' @template args-stanreg-object
+#' @param digits Number of digits to use for formatting numbers.
+#' @param ... Ignored.
+#' @return Returns \code{x}, invisibly.
+#' @details 
+#' Reported are 
+#' \itemize{
+#' \item Point estimates: median.
+#' \item Uncertainties: median absolute deviation (\code{\link[stats]{mad}}).
+#' }
+#' For models fit using MCMC (\code{algorithm='sampling'}) we also report these
+#' quantities for the sample average posterior predictive distribution of the
+#' outcome.
+#' 
 print.stanreg <- function(x, digits = 1, ...) {
   print(x$call)
   cat("\nEstimates:\n")
@@ -83,5 +104,5 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  return(invisible(NULL))
+  return(invisible(x))
 }
