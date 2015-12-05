@@ -17,8 +17,8 @@
 #'   (\pkg{rstan}). Currently, only \code{pars} is supported, and only for
 #'   models fit by MCMC.
 #'   
-#' @return A matrix, the dimensions of which depend on the model and estimation
-#'   algorithm as described above.
+#' @return A matrix or data frame, the dimensions of which depend on the model
+#'   and estimation algorithm as described above.
 #' 
 #' @seealso \code{\link{stanreg-methods}}
 #' 
@@ -65,4 +65,11 @@ as.matrix.stanreg <- function(x, ...) {
     out <- out[, sel, drop = FALSE]
   }
   return(out)
+}
+
+#' @rdname as.matrix.stanreg
+#' @export
+#' 
+as.data.frame.stanreg <- function(x, ...) {
+  as.data.frame(as.matrix.stanreg(x, ...))
 }
