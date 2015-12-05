@@ -27,7 +27,7 @@
 #'   probabilities specifying which \code{\link[stats]{quantile}}s to display.
 #' @param digits Number of digits to use for formatting numbers.
 #' 
-#' @seealso \code{\link{stanreg-methods}}
+#' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 #' @examples
 #' summary(example_model, probs = c(0.1, 0.9))

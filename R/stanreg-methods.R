@@ -1,6 +1,6 @@
-#' Methods
+#' Methods for stanreg objects
 #' 
-#' Methods for \link[=stanreg-objects]{stanreg} objects.
+#' S3 methods for \link[=stanreg-objects]{stanreg} objects.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps
@@ -36,7 +36,10 @@
 #' asymptotic sampling distribution (if \code{algorithm='optimizing'}).
 #' }
 #' 
-#' @seealso \code{\link{summary.stanreg}}, \code{\link{as.matrix.stanreg}}
+#' @seealso Some other S3 methods for stanreg objects have separate 
+#'   documentation, including \code{\link{as.matrix.stanreg}},
+#'   \code{\link{plot.stanreg}}, \code{\link{print.stanreg}},
+#'   \code{\link{summary.stanreg}}.
 #' 
 NULL
 

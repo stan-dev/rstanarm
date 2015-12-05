@@ -35,7 +35,7 @@
 #' # Extract draws from asymptotic Gaussian sampling distribution 
 #' # after optimization
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-#' draws <- as.matrix(fit)
+#' draws <- as.data.frame(fit)
 #' print(colnames(draws))
 #' }
 #' 
@@ -59,8 +59,8 @@ as.matrix.stanreg <- function(x, ...) {
   posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
   out <- apply(posterior, 3L, FUN = function(y) y)
   if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
-  # remove mean_PPD and log-posterior unless user specified 'pars'
   if (!"pars" %in% names(list(...))) {
+    # remove mean_PPD and log-posterior unless user specified 'pars'
     sel <- !grepl("mean_PPD|log-posterior", colnames(out))
     out <- out[, sel, drop = FALSE]
   }
