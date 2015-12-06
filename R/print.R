@@ -8,8 +8,8 @@
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
-#' fitted model (see Details). For a more detailed summary of the fitted model
-#' use the \code{\link[=summary.stanreg]{summary}} method.
+#' fitted model. For a more detailed summary of the fitted model use the
+#' \code{\link[=summary.stanreg]{summary}} method.
 #' 
 #' @export
 #' @method print stanreg
@@ -19,24 +19,36 @@
 #' @param ... Ignored.
 #' @return Returns \code{x}, invisibly.
 #' @details 
-#' The quantities reported by the \code{print} method are:
+#' The estimates reported by \code{print} depend on the modeling function used
+#' and the estimation algorithm. For all models, regression coefficients are 
+#' summarized by:
 #' \describe{
-#' \item{Point estimates}{If \code{algorithm='sampling'}, posterior medians are used 
-#' as point estimates. If \code{algorithm='optimizing'}, the point estimates are
-#' also medians, but they are computed from 1000 draws from the asymptotic
-#' sampling distribution of the parameters. These are the same as the estimates
-#' returned by calling \code{\link[=coef.stanreg]{coef}}.}
+#' \item{Point estimates}{If \code{algorithm='sampling'}, posterior medians are
+#' used as point estimates. If \code{algorithm='optimizing'}, the point
+#' estimates are also medians, but they are computed from 1000 draws from the
+#' asymptotic sampling distribution of the parameters. In all cases, these are
+#' the same as the estimates returned by calling
+#' \code{\link[=coef.stanreg]{coef}}.}
 #' \item{Uncertainty estimates}{The 'standard errors' reported (which we denote
-#' \code{MAD_SD}) are proportional to the median absolute deviation
+#' MAD_SD) are proportional to the median absolute deviation
 #' (\code{\link[stats]{mad}}) from the posterior median (if 
 #' \code{algorithm='sampling'}) or the median of the asymptotic sampling 
 #' distribution (if \code{algorithm='optimizing'}). These are the same as 
 #' the standard errors returned by calling \code{\link[=se.stanreg]{se}}.}
 #' }
 #' 
-#' For models fit using MCMC (\code{algorithm='sampling'}) we also report these
-#' quantities for the sample average posterior predictive distribution of the
+#' For models fit using MCMC (\code{algorithm='sampling'}) the median and MAD_SD
+#' are also reported for \code{mean_PPD}, the sample average 
+#' \code{\link[=posterior_predict]{posterior predictive distribution}} of the 
 #' outcome.
+#' 
+#' For \code{\link[=stan_glmer]{GLMs with group-specific terms}} the printed 
+#' output also shows point estimates of the standard deviations of the group 
+#' effects (and correlations if there are both intercept and slopes that vary by
+#' group).
+#' 
+#' For \code{\link[=stan_aov]{analysis of variance}} models, an ANOVA-like table
+#' is also displayed.
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
