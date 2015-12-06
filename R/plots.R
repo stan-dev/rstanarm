@@ -200,7 +200,7 @@ pairs.stanreg <- function(x, ...) {
 #' Each function returns at least one \code{\link[ggplot2]{ggplot}} object that 
 #' can be customized further using the \pkg{ggplot2} package. The plotting 
 #' functions described here can be called using the 
-#' \code{\link[=plot.stanreg]{plot method for stanreg objects}} without loading 
+#' \code{\link[=plot.stanreg]{plot method}} for stanreg objects without loading 
 #' the \pkg{rstan} package. For example usage see \code{\link{plot.stanreg}}.
 #' 
 #' @name plots
