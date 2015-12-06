@@ -70,7 +70,8 @@ fitted.stanreg <- function(object, ...)  {
   object$fitted.values
 }
 
-#' Pointwise log-likelihood matrix
+#' Extract pointwise log-likelihood matrix
+#' 
 #' @export
 #' @param object object
 #' @keywords internal
@@ -100,10 +101,16 @@ residuals.stanreg <- function(object, ...) {
   object$residuals
 }
 
-#' Standard errors
+#' Extract standard errors
+#' 
+#' Generic function for extracting standard errors from fitted models.
+#' 
 #' @export
 #' @keywords internal
-#' @param object object
+#' @param object A fitted model object.
+#' @param ... Arguments to methods.
+#' @return Standard errors of model parameters.
+#' 
 se <- function(object, ...) UseMethod("se")
 
 #' @rdname stanreg-methods
@@ -215,14 +222,17 @@ ranef.stanreg <- function(object, ...) {
   ans
 }
 
-#' Residual standard deviation
+#' Extract residual standard deviation
+#' 
 #' @export
 #' @keywords internal
-#' @param object object
+#' @param object Fitted model object.
+#' @param ... Arguments to methods.
 sigma <- function(object, ...) UseMethod("sigma")
 
 #' @rdname stanreg-methods
 #' @export
+#' @method sigma stanreg
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) return(1)
   else object$stan_summary["sigma", .select_median(object$algorithm)]

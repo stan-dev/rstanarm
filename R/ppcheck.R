@@ -170,11 +170,11 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   yrep <- as.data.frame(yrep)
   colnames(yrep) <- paste0("value.", 1:ncol(yrep))
   yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
-                       varying = list(1:ncol(yrep)), ids = paste0('rep_', s))
+                       varying = list(1:ncol(yrep)), ids = paste0('yrep_', s))
   dat <- rbind(yrep_melt, 
-               cbind(time = seq_along(y), value = y, id = 'Observed'))
+               cbind(time = seq_along(y), value = y, id = 'Observed y'))
   rownames(dat) <- NULL
-  dat$is_y <- dat$id == "Observed"
+  dat$is_y <- dat$id == "Observed y"
   dat$value <- as.numeric(dat$value)
   graph <- do.call(fn, list(dat = dat, ...))
   return(graph + .ppcheck_theme())
@@ -284,13 +284,13 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
     resids <- as.data.frame(-1 * sweep(yrep, 2, y))
     colnames(resids) <- paste0("r.", 1:ncol(resids))
     resids <- reshape((resids), direction = "long", v.names = "r", 
-                      varying = list(1:ncol(resids)), ids = paste0('rep_', s))
+                      varying = list(1:ncol(resids)), ids = paste0("resid(yrep_",s,")"))
     base <- ggplot(resids, aes_string(x = "r"))
   }
   graph <- base + geom_histogram(aes_string(y="..count../sum(..count..)"), 
                                  fill = "black", ...)
-  if (n == 1) 
-    graph <- graph + labs(y = NULL, x = paste0("resids(yrep_",s,")"))
+  if (n == 1)
+    graph <- graph + labs(y = NULL, x = paste0("resid(yrep_",s,")"))
   else 
     graph <- graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
   
@@ -305,7 +305,7 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
     colnames(br) <- c("xbar", "ybar", "se2")
-    data.frame(rep = paste0("rep_", sel[rep_id]), br)
+    data.frame(rep = paste0("yrep_", rep_id), br)
   }
   
   dat <- pp_data(object, newdata = NULL)

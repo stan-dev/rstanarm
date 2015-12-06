@@ -1,4 +1,5 @@
-#' Bayesian generalized linear additive models with group-specific terms
+#' Bayesian generalized linear additive models with group-specific terms via
+#' Stan
 #' 
 #' Bayesian inference for GAMs with flexible priors.
 #' 

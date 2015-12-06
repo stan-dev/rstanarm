@@ -37,7 +37,7 @@ loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel,
                valideta = function(eta) TRUE, name = "loglog")
 class(loglog) <- "link-glm"
 
-#' Ordinal regression models via Stan
+#' Bayesian ordinal regression models via Stan
 #'
 #' Bayesian inference for ordinal (or binary) regression models under
 #' a proportional odds assumption.

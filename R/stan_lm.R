@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-#' Regularized linear models via Stan
+#' Bayesian regularized linear models via Stan
 #'
 #' Bayesian inference for linear modeling with regularizing priors on the 
 #' model parameters that are driven by prior beliefs about \eqn{R^2}, the 

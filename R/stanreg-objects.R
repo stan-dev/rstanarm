@@ -2,11 +2,11 @@
 #' 
 #' @name stanreg-objects 
 #' 
-#' @description The model-fitting functions in \pkg{rstanarm} return an object
-#'   of class 'stanreg', which is a list containing at a minimum the components
-#'   listed below. Each stanreg object will also have additional
-#'   components and at least one additional class depending on the model. The
-#'   additional class(es) can be 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
+#' @description The model-fitting functions in \pkg{rstanarm} return an object 
+#'   of class 'stanreg', which is a list containing at a minimum the components 
+#'   listed below. Each stanreg object will also have additional components and
+#'   at least one additional class depending on the model. The additional
+#'   class(es) can be 'lm', 'glm', 'polr', 'lmerMod', or 'aov'.
 #'   
 #' @section stanreg objects:   
 #' \describe{

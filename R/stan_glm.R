@@ -70,7 +70,7 @@
 #' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
 #'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10), 
 #'                  cores = 1)
-#' plot(fit2, ci_level = 0.95, outer_level = 0.99, show_density = TRUE)
+#' plot(fit2, ci_level = 0.75, outer_level = 0.99, show_density = TRUE)
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
