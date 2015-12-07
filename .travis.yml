@@ -7,7 +7,6 @@ os:
   - osx
   
 r_binary_packages:
-  - rstan
   - ggplot2
   - lme4
   - arm
