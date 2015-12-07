@@ -38,8 +38,10 @@ functions {
   real ll_bern_lp(vector eta0, vector eta1, int link, int[] N) {
     if (link < 1 || link > 5) reject("Invalid link");
     if (link == 1) { // logit link
-      0 ~ bernoulli_logit(eta0);
-      1 ~ bernoulli_logit(eta1);
+//      0 ~ bernoulli_logit(eta0);
+//      1 ~ bernoulli_logit(eta1);
+      increment_log_prob(logistic_ccdf_log(eta0, 0, 1));
+      increment_log_prob(logistic_cdf_log(eta1, 0, 1));
     }
     else if (link == 2) { // probit link
       increment_log_prob(normal_ccdf_log(eta0, 0, 1));
