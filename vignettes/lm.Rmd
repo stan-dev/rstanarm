@@ -97,8 +97,8 @@ What would the prior distribution of
 $\boldsymbol{\theta} = \mathbf{Q}^\top \mathbf{y}$ be? We can write its $k$-th
 element as $\theta_k = \rho_k \sigma_Y \sqrt{N - 1}$ where $\rho_k$ is the
 correlation between the $k$th column of $\mathbf{Q}$ and the outcome, $\sigma_Y$
-is the standard deviation of the outcome, and $\frac{1}{N-1}$ is the standard
-deviation of the $k$ column of $\mathbf{Q}$. Then let 
+is the standard deviation of the outcome, and $\frac{1}{\sqrt{N-1}}$ is the
+standard deviation of the $k$ column of $\mathbf{Q}$. Then let 
 $\boldsymbol{\rho} = \sqrt{R^2}\mathbf{u}$ where $\mathbf{u}$ is a unit vector
 that is uniformally distributed on the surface of a hypersphere. Consequently,
 $R^2 = \boldsymbol{\rho}^\top \boldsymbol{\rho}$ is the familiar coefficient of
@@ -106,13 +106,13 @@ determination for the linear model.
 
 An uninformative prior on $R^2$ would be standard uniform, which is a special
 case of a Beta distribution with both shape parameters equal to $1$. A 
-non-uniform prior on $R^2$ is somewhat analagous to the lasso approach, which is 
-popular in machine learning and produces better out-of-sample predictions than
+non-uniform prior on $R^2$ is somewhat analagous to ridge regression, which is 
+popular in data mining and produces better out-of-sample predictions than
 least squares because it penalizes $\boldsymbol{\beta}^\top \boldsymbol{\beta}$,
 usually after standardizing the predictors. An informative prior on $R^2$ 
 effectively penalizes $\boldsymbol{\rho}\top \boldsymbol{\rho}$, which 
 encourages $\boldsymbol{\beta} = \omega s_y \sqrt{N-1} \mathbf{R}^{-1} 
-\boldsymbol{rho}$ to be closer to the origin.
+\boldsymbol{\rho}$ to be closer to the origin.
 
 Lewandowski, Kurowicka, and Joe (2009) derives a distribution for a correlation
 matrix that depends on a single shape parameter $\eta > 0$, which implies the 
@@ -167,7 +167,7 @@ are already implied by our prior beliefs about $\omega$ and $R^2$. That
 only leaves a prior for $\alpha = \overline{y} - \overline{\mathbf{x}}^\top
 \mathbf{R}^{-1} \boldsymbol{\theta}$. The default choice is an improper
 uniform prior, but a normal prior can also be specified such as one
-with mean zero and standard deviation $\frac{\sigma_y}{\sqrt{N}$.
+with mean zero and standard deviation $\frac{\sigma_y}{\sqrt{N}}$.
 
 # Posterior
 
