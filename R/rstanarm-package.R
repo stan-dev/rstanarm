@@ -38,50 +38,47 @@
 #' argument that can be one of the following:
 #' \enumerate{
 #'   \item \code{algorithm = "sampling"} Uses Markov Chain Monte Carlo
-#'     (MCMC) --- in particular, Hamiltonian Monte Carlo (HMC) with a 
-#'     tuned but diagonal mass matrix --- to draw from the posterior
-#'     distribution of the parameters. See \code{\link[rstan]{sampling}}
-#'     for more details. \strong{This is the default and the recommended
-#'     algorithm for statistical inference.}
+#'     (MCMC) --- in particular, Hamiltonian Monte Carlo (HMC) with a tuned but
+#'     diagonal mass matrix --- to draw from the posterior distribution of the
+#'     parameters. See \code{\link[rstan]{sampling}} for more details.
+#'     \strong{This is the default and the recommended algorithm for statistical
+#'     inference.}
 #'  \item \code{algorithm = "meanfield"} Uses variational inference to draw
-#'    from an approximation to the posterior distribution. In particular, this
+#'    from an approximation to the posterior distribution. In particular, this 
 #'    algorithm finds the set of independent normal distributions in the 
-#'    unconstrained space that --- when transformed into the constrained space
-#'    --- most closely approximate the posterior distribution. Then it draws
-#'    repeatedly from these independent normal distributions and transforms
-#'    them into the constrained space. The entire process is much faster than
-#'    HMC and yields independent draws but \strong{is not recommended for final
+#'    unconstrained space that --- when transformed into the constrained space 
+#'    --- most closely approximate the posterior distribution. Then it draws 
+#'    repeatedly from these independent normal distributions and transforms them
+#'    into the constrained space. The entire process is much faster than HMC and
+#'    yields independent draws but \strong{is not recommended for final 
 #'    statistical inference}. It can be useful to narrow the set of candidate 
-#'    models in large problems particularly when specifying \code{QR = TRUE} in
+#'    models in large problems particularly when specifying \code{QR = TRUE} in 
 #'    \code{\link{stan_glm}}, \code{\link{stan_glmer}}, and 
-#'    \code{\link{stan_gamm4}} but is \strong{only an approximation to the
+#'    \code{\link{stan_gamm4}} but is \strong{only an approximation to the 
 #'    posterior distribution}.
 #'  \item \code{algorithm = "fullrank"} Uses variational inference to draw
-#'    from an approximation to the posterior distribution by finding the
-#'    multivariate normal distribution in the constrained space that --- when
-#'    transformed into the constrained space --- most closely approximates the
-#'    posterior distribution. Then it draws repeatedly from this multivariate
-#'    normal distribution and transforms the draws into the constrained space.
-#'    This process is slower than meanfield variational inference but is faster
+#'    from an approximation to the posterior distribution by finding the 
+#'    multivariate normal distribution in the constrained space that --- when 
+#'    transformed into the constrained space --- most closely approximates the 
+#'    posterior distribution. Then it draws repeatedly from this multivariate 
+#'    normal distribution and transforms the draws into the constrained space. 
+#'    This process is slower than meanfield variational inference but is faster 
 #'    than HMC. Although still an approximation to the posterior distribution 
 #'    and thus \strong{not recommended for final statistical inference}, the 
 #'    approximation is more realistic than that of meanfield variational 
-#'    inference because the parameters are not assumed to be independent in the
-#'    unconstrained space. Nevertheless, fullrank variational inference is a more
-#'    difficult optimization problem and the algorithm is more prone to 
+#'    inference because the parameters are not assumed to be independent in the 
+#'    unconstrained space. Nevertheless, fullrank variational inference is a
+#'    more difficult optimization problem and the algorithm is more prone to 
 #'    non-convergence or convergence to a local optimum.
 #'  \item \code{algorithm = "optimizing"} Finds the posterior mode using a C++
-#'    implementation of the LBGFS algorithm. See \code{\link[rstan]{optimizing}} 
+#'    implementation of the LBGFS algorithm. See \code{\link[rstan]{optimizing}}
 #'    for more details. If there is no prior information, then this is 
 #'    equivalent to maximum likelihood, in which case there is no great reason 
 #'    to use the functions in the \pkg{rstanarm} package over the emulated 
 #'    functions in other packages. However, if priors are specified, then the 
 #'    estimates are penalized maximum likelihood estimates, which may have some 
-#'    redeeming value. 
-#'    
-#'    Optimization is not supported for \code{\link{stan_lm}}, 
-#'    \code{\link{stan_polr}}, \code{\link{stan_glmer}}, or
-#'    \code{\link{stan_gamm4}}.
+#'    redeeming value. Currently, optimization is only supported for 
+#'    \code{\link{stan_glm}}.
 #' }
 #' 
 #' 
@@ -147,7 +144,7 @@
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
 #'   by \pkg{rstanarm} for model fitting.
 #'   
-#'   \url{https://github.com/stan-dev/rstanarm/issues} to submit a bug
+#'   \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
 #'   
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}

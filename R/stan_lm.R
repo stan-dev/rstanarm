@@ -106,7 +106,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     prior = R2(stop("'location' must be specified")), 
                     prior_intercept = NULL,
                     prior_PD = FALSE, 
-                    algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+                    algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL) {
   
   call <- match.call()

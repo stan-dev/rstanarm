@@ -1,4 +1,4 @@
-#' Using the ShinyStan GUI to explore \pkg{rstanarm} models
+#' Using the ShinyStan GUI with stanreg objects
 #' 
 #' The \code{\link[shinystan]{launch_shinystan}} function will accept a 
 #' \link[=stanreg-objects]{'stanreg' object} as input. Currently, almost any

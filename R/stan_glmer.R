@@ -59,7 +59,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior = normal(), prior_intercept = normal(),
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+                       algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
   
   if (match.arg(algorithm) == "optimizing") {

@@ -1,4 +1,4 @@
-#' Family function for Negative Binomial GLMs
+#' Family function for negative binomial GLMs
 #' 
 #' Specifies the information required to fit a Negative Binomial GLM in a 
 #' similar way to \code{\link[MASS]{negative.binomial}}. However, here the 

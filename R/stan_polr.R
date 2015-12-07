@@ -74,7 +74,7 @@ class(loglog) <- "link-glm"
 #'   function calls the workhorse \code{stan_polr.fit} function, but it is 
 #'   possible to call the latter directly.
 #'   
-#'   As in \code{\link{stan_lm}}, it is necessary to specify the prior 
+#'   As for \code{\link{stan_lm}}, it is necessary to specify the prior 
 #'   location of \eqn{R^2}. In this case, the \eqn{R^2} pertains to the
 #'   proportion of variance in the latent variable (which is discretized
 #'   by the cutpoints) attributable to the predictors in the model. Prior

@@ -1,31 +1,34 @@
 #' Prior distributions and options
 #' 
 #' These functions are used to specify the prior-related arguments of various
-#' model-fitting functions in the \pkg{rstanarm} package.
+#' modeling functions in the \pkg{rstanarm} package.
 #' 
 #' @export 
 #' @name priors
-#' @param location Prior location. For \code{normal} and 
-#'   \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
-#'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
-#'   the mean does not exist and \code{location} is the prior median.
-#'   Defaults to 0, except for \code{R2} where there is no default, in which
-#'   case how \code{location} is interpreted depends on the \code{what} 
-#'   argument but always pertains to the prior location of the \eqn{R^2} 
-#'   under a Beta distribution. See the Details section.
-#' @param scale Prior scale. Default depends on the family (see Details).
-#' @param df,df1,df2 Prior degrees of freedom. Defaults to 1, in which case 
-#'   \code{student_t} is equivalent to \code{cauchy}.
+#' @param location Prior location. For \code{normal} and \code{student_t} 
+#'   (provided that \code{df > 1}) this is the prior mean. For \code{cauchy} 
+#'   (which is equivalent to \code{student_t} with \code{df=1}), the mean does 
+#'   not exist and \code{location} is the prior median. The default value is 
+#'   \eqn{0}, except for \code{R2} which has no default value for
+#'   \code{location}. For \code{R2}, \code{location} pertains to the prior
+#'   location of the \eqn{R^2} under a Beta distribution, but the interpretation
+#'   of the \code{location} parameter depends on the specified value of the
+#'   \code{what} argument (see Details).
+#' @param scale Prior scale. The default depends on the family (see Details).
+#' @param df,df1,df2 Prior degrees of freedom. The default is \eqn{1} for 
+#'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the
+#'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
+#'   freedom parameter(s) default to \eqn{3}.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
 #'   \code{location} parameter is interpreted in the \code{LKJ} case. If
 #'   \code{'log'}, then \code{location} is interpreted as the expected
 #'   logarithm of the \eqn{R^2} under a Beta distribution. Otherwise,
-#'   \code{location} is interpreted as the \code{"what"} of the \eqn{R^2}
+#'   \code{location} is interpreted as the \code{what} of the \eqn{R^2}
 #'   under a Beta distribution. If the number of predictors is less than
 #'   or equal to two, the mode of this Beta distribution does not exist
 #'   and an error will prompt the user to specify another choice for
-#'   \code{"what"}.
+#'   \code{what}.
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
@@ -47,29 +50,29 @@
 #'   The hierarchical shrinkage priors are normal with a mean of zero and a 
 #'   standard deviation that is also a random variable. The traditional 
 #'   hierarchical shrinkage prior utilizes a standard deviation that is 
-#'   distributed half Cauchy with a median of zero and a scale parameter
-#'   that is also half Cauchy. This is called the "horseshoe prior". However,
-#'   the hierarchical shrinkage (\code{hs}) prior in the \pkg{rstanarm}
-#'   package utilizes a Student t distribution for the standard deviation 
-#'   (with 3 degrees of freedom by default), scaled by a half Cauchy parameter.
-#'   It is possible to change the prior degrees of freedom to obtain less or
-#'   more shrinkage.
+#'   distributed half Cauchy with a median of zero and a scale parameter that is
+#'   also half Cauchy. This is called the "horseshoe prior". The hierarchical 
+#'   shrinkage (\code{hs}) prior in the \pkg{rstanarm} package instead utilizes 
+#'   a half Student t distribution for the standard deviation (with 3 degrees of
+#'   freedom by default), scaled by a half Cauchy parameter. It is possible to 
+#'   change the \code{df} argument, the prior degrees of freedom, to obtain less
+#'   or more shrinkage.
 #'   
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
-#'   mean of zero and a standard deviation that is distributed as the product 
-#'   of two independent half Student t parameters (again with 3 degrees of
-#'   freedom by default) that are each scaled by the same square root of a half
-#'   Cauchy parameter.
+#'   mean of zero and a standard deviation that is distributed as the product of
+#'   two independent half Student t parameters (both with 3 degrees of freedom
+#'   (\code{df1}, \code{df2}) by default) that are each scaled by the same
+#'   square root of a half Cauchy parameter.
 #'   
-#'   These hierarchical shrinkage priors have very tall modes and very fat
-#'   tails. Consequently, they tend to produce posterior distributions that
-#'   are very concentrated near zero, unless the predictor has a strong
-#'   influence on the outcome, in which case the prior has little influence.
-#'   Hierarchical shrinkage priors often require you to increase the
-#'   \code{\link{adapt_delta}} tuning parameter in order
-#'   to diminish the number of divergent transitions. For more details on 
-#'   tuning parameters and divergent transitions see the Troubleshooting section
-#'   of the "How to Use the rstanarm Package" vignette. 
+#'   These hierarchical shrinkage priors have very tall modes and very fat 
+#'   tails. Consequently, they tend to produce posterior distributions that are
+#'   very concentrated near zero, unless the predictor has a strong influence on
+#'   the outcome, in which case the prior has little influence. Hierarchical
+#'   shrinkage priors often require you to increase the 
+#'   \code{\link{adapt_delta}} tuning parameter in order to diminish the number
+#'   of divergent transitions. For more details on tuning parameters and
+#'   divergent transitions see the Troubleshooting section of the "How to Use
+#'   the rstanarm Package" vignette.
 #' }
 #' \subsection{Dirichlet family}{
 #'   The Dirichlet distribution is a multivariate generalization of the beta
@@ -113,7 +116,7 @@
 #'   
 #'   The trace of a covariance matrix is equal to the sum of the variances. We
 #'   set the trace equal to the product of the order of the covariance matrix
-#'   and the \emph{square} of a positive \code{scale} parameter. The particular
+#'   and the \emph{square} of a positive scale parameter. The particular
 #'   variances are set equal to the product of a simplex vector --- which is
 #'   non-negative and sums to \eqn{1} --- and the scalar trace. In other words,
 #'   each element of the simplex vector represents the proportion of the trace
@@ -129,13 +132,13 @@
 #'   mode becomes more pronounced. In the unlikely case that 
 #'   \code{concentration < 1}, the variances are more polarized.
 #'   
-#'   If all the variables were multiplied by a number, the trace of their
-#'   covariance matrix would increase by that number squared. Thus, it is
-#'   reasonable to use a scale-invariant prior distribution, and in this case 
-#'   we utilize a Gamma distribution, whose \code{shape} and \code{scale} 
-#'   parameters are both \eqn{1} by default, implying a unit-exponential 
-#'   distribution. Set the \code{shape} hyperparameter to some value
-#'   greater than one to ensure that the posterior trace is not zero.
+#'   If all the variables were multiplied by a number, the trace of their 
+#'   covariance matrix would increase by that number squared. Thus, it is 
+#'   reasonable to use a scale-invariant prior distribution for the positive
+#'   scale parameter, and in this case we utilize a Gamma distribution, whose
+#'   \code{shape} and \code{scale} are both \eqn{1} by default, implying a
+#'   unit-exponential distribution. Set the \code{shape} hyperparameter to some
+#'   value greater than one to ensure that the posterior trace is not zero.
 #'   
 #'   If \code{regularization}, \code{concentration}, \code{shape} and / or 
 #'   \code{scale} are positive scalars, then they are recycled to the 
@@ -148,7 +151,7 @@
 #'   variable.
 #' }
 #' \subsection{R2 family}{
-#'   The \code{\link{stan_lm}}, \code{\link{stan_aov}} and 
+#'   The \code{\link{stan_lm}}, \code{\link{stan_aov}}, and 
 #'   \code{\link{stan_polr}} functions allow the user to utilize a function 
 #'   called \code{R2} to convey prior information about all the parameters. 
 #'   This prior hinges on prior beliefs about the location of \eqn{R^2}, the 
@@ -175,7 +178,8 @@
 #'   \emph{if} the prior location of \eqn{R^2} is specified in a reasonable 
 #'   fashion.
 #' }
-#' @return A named list for use by model fitting functions. 
+#' @return A named list to be used internally by the \pkg{rstanarm} model
+#'   fitting functions.
 #' @seealso The various vignettes for the \pkg{rstanarm} package also discuss 
 #'   and demonstrate the use of some of the supported prior distributions.
 #' @examples
@@ -235,6 +239,12 @@ student_t <- function(df = 1, location = 0, scale = NULL) {
 
 #' @rdname priors
 #' @export
+cauchy <- function(location = 0, scale = NULL) {
+  student_t(df = 1, location = location, scale = scale)
+}
+
+#' @rdname priors
+#' @export
 hs <- function(df = 3) {
   validate_parameter_value(df)
   nlist(dist = "hs", df, location = 0, scale = 1)
@@ -251,18 +261,15 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 
 #' @rdname priors
 #' @export
-cauchy <- function(location = 0, scale = NULL) {
-  student_t(df = 1, location = location, scale = scale)
-}
-
-#' @rdname priors
-#' @export
-#' @param regularization Exponent for an LKJ prior on the correlation matrix 
-#'  in the \code{decov} prior; defaults to \eqn{1} implying a joint uniform prior
+#' @param regularization Exponent for an LKJ prior on the correlation matrix in
+#'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
+#'   prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
-#'  distribution; defaults to \eqn{1} implying a joint uniform prior.
-#' @param shape Shape parameter for a gamma prior on the scale 
-#'   parameter in the \code{decov} prior, defaults to \eqn{1}
+#'   distribution. The defaults is \eqn{1}, implying a joint uniform prior.
+#' @param shape Shape parameter for a gamma prior on the scale parameter in the
+#'   \code{decov} prior. If \code{shape} and \code{scale} are both \eqn{1} (the
+#'   default) then the gamma prior simplifies to the unit-exponential
+#'   distribution.
 decov <- function(regularization = 1, concentration = 1, 
                   shape = 1, scale = 1) {
   validate_parameter_value(regularization)
@@ -281,11 +288,30 @@ dirichlet <- function(concentration = 1) {
 
 #' @rdname priors
 #' @export
-R2 <- function(location = NULL, 
-                what = c("mode", "mean", "median", "log")) {
-  list(dist = "R2", location = location, what = what,
-       df = 0, scale = 0)
+R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
+  list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
+
+#' @rdname priors
+#' @export 
+#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
+#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
+#'   at zero.
+#' @param min_prior_scale Minimum prior scale for the intercept and 
+#'   coefficients.
+#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
+#'   \code{prior_scale} is further scaled by the range of the predictor if the 
+#'   predictor has exactly two unique values and scaled by twice the standard
+#'   deviation of the predictor if it has more than two unique values.
+#'
+prior_options <- function(prior_scale_for_dispersion = 5, 
+                          min_prior_scale = 1e-12, 
+                          scaled = TRUE) {
+  validate_parameter_value(prior_scale_for_dispersion)
+  validate_parameter_value(min_prior_scale)
+  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
+}
+
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) 
@@ -319,25 +345,5 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
                         f.lower = -location, f.upper = -.Machine$double.xmax)$root)
   }
   return(eta)
-}
-
-#' @rdname priors
-#' @export 
-#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
-#' @param min_prior_scale Minimum prior scale for the intercept and 
-#'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scaled by twice the standard
-#'   deviation of the predictor if it has more than two unique values.
-#'
-prior_options <- function(prior_scale_for_dispersion = 5, 
-                          min_prior_scale = 1e-12, 
-                          scaled = TRUE) {
-  validate_parameter_value(prior_scale_for_dispersion)
-  validate_parameter_value(min_prior_scale)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
 }
   

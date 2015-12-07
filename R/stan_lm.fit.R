@@ -18,7 +18,7 @@
 stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior = R2(stop("'location' must be specified")), 
                          prior_intercept = NULL, prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                         algorithm = c("sampling", "meanfield", "fullrank"),
                          adapt_delta = NULL) {
   if (NCOL(y) > 1) stop("multivariate responses not supported yet")
   if (colnames(x)[1] == "(Intercept)") {
@@ -137,7 +137,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
 stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_intercept = NULL, prior_PD = FALSE, 
-                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+                        algorithm = c("sampling", "meanfield", "fullrank"), 
                         adapt_delta = NULL) {
 
   call <- match.call()

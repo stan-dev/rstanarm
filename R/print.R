@@ -23,24 +23,25 @@
 #' and the estimation algorithm. For all models, regression coefficients are 
 #' summarized by:
 #' \describe{
-#' \item{Point estimates}{If \code{algorithm='sampling'}, posterior medians are
-#' used as point estimates. If \code{algorithm='optimizing'}, the point
-#' estimates are also medians, but they are computed from 1000 draws from the
-#' asymptotic sampling distribution of the parameters. In all cases, these are
-#' the same as the estimates returned by calling
-#' \code{\link[=coef.stanreg]{coef}}.}
-#' \item{Uncertainty estimates}{The 'standard errors' reported (which we denote
-#' MAD_SD) are proportional to the median absolute deviation
-#' (\code{\link[stats]{mad}}) from the posterior median (if 
-#' \code{algorithm='sampling'}) or the median of the asymptotic sampling 
-#' distribution (if \code{algorithm='optimizing'}). These are the same as 
-#' the standard errors returned by calling \code{\link[=se.stanreg]{se}}.}
+#' \item{Point estimates}{
+#'  If \code{algorithm='sampling'}, posterior medians are used as point
+#'  estimates. If \code{algorithm='optimizing'}, the point estimates are also
+#'  medians, but they are computed from 1000 draws from the asymptotic sampling
+#'  distribution of the parameters. In all cases, these are the same as the
+#'  estimates returned by calling \code{\link[=coef.stanreg]{coef}}.
+#' }
+#' \item{Uncertainty estimates}{
+#'  The 'standard errors' reported (which we denote MAD_SD) are proportional to
+#'  the median absolute deviation (\code{\link[stats]{mad}}) from the posterior
+#'  median (if \code{algorithm='sampling'}) or the median of the asymptotic
+#'  sampling distribution (if \code{algorithm='optimizing'}). These are the same
+#'  as the standard errors returned by calling \code{\link[=se.stanreg]{se}}.}
 #' }
 #' 
 #' For models fit using MCMC (\code{algorithm='sampling'}) the median and MAD_SD
-#' are also reported for \code{mean_PPD}, the sample average 
-#' \code{\link[=posterior_predict]{posterior predictive distribution}} of the 
-#' outcome.
+#' are also reported for \code{mean_PPD}, the sample average (\eqn{X =
+#' \bar{X}}{X = xbar}) \code{\link[=posterior_predict]{posterior predictive
+#' distribution}} of the outcome.
 #' 
 #' For \code{\link[=stan_glmer]{GLMs with group-specific terms}} the printed 
 #' output also shows point estimates of the standard deviations of the group 
