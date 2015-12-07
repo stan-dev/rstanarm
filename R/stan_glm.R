@@ -88,8 +88,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_ops = prior_options(), 
-                    prior_PD = FALSE, algorithm = c("sampling", "optimizing"), 
+                    prior_ops = prior_options(), prior_PD = FALSE, 
+                    algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE) {
 
   # Parse like glm()

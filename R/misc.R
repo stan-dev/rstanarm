@@ -96,6 +96,8 @@ STOP_sampling_only <- function(what) {
 .select_median <- function(algorithm) {
   switch(algorithm, 
          sampling = "50%",
+         meanfield = "50%",
+         fullrank = "50%",
          optimizing = "Median",
          stop("Incorrect algorithm name"))
 }

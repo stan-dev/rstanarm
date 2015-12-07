@@ -12,6 +12,7 @@ functions {
     // links in MASS::polr() are in a different order than binomial() 
     // "logistic", "probit", "loglog", "cloglog", "cauchit"
     real p;
+    if (link < 1 || link > 5) reject("Invalid link");
     if      (link == 1) p <- inv_logit(x);
     else if (link == 2) p <- Phi(x);
     else if (link == 3) p <- gumbel_cdf(x, 0, 1);
@@ -37,7 +38,7 @@ functions {
     J <- rows(cutpoints) + 1;
     if (link < 1 || link > 5) reject("Invalid link");
     for (n in 1:N) {
-      if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
+           if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
       else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
       else ll[n] <- CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
                     CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
@@ -131,34 +132,28 @@ data {
 transformed data {
   real<lower=0> half_K;
   int<lower=0,upper=1> is_constant;
-  matrix[K,K] middle;
   real<lower=0> sqrt_Nm1;
   half_K <- 0.5 * K;
   is_constant <- 1;
   for (j in 1:J) if (prior_counts[j] != 1) is_constant <- 0;
-  middle <- xbar * transpose(xbar);
   sqrt_Nm1 <- sqrt(N - 1.0);
 }
 parameters {
   simplex[J] pi;
   vector[K] z_beta;
-  real<lower=0,upper=1>  R2[prior_dist == 1];
+  real<lower=0,upper=1>  R2;
 }
 transformed parameters {
-  real Delta_y;
   vector[K] beta;
   vector[J-1] cutpoints;
-  if (prior_dist == 1) {
-    Delta_y <- inv(sqrt(1 - R2[1]));
+  {
+    real Delta_y;
+    Delta_y <- inv(sqrt(1 - R2));
     if (K > 1)
-      beta <- z_beta * sqrt(R2[1] / dot_self(z_beta)) * Delta_y * sqrt_Nm1;
-    else beta[1] <- sqrt(R2[1]) * Delta_y * sqrt_Nm1;
+      beta <- z_beta * sqrt(R2 / dot_self(z_beta)) * Delta_y * sqrt_Nm1;
+    else beta[1] <- sqrt(R2) * Delta_y * sqrt_Nm1;
+    cutpoints <- make_cutpoints(pi, Delta_y, link);
   }
-  else { // prior_dist == 0
-    beta <- z_beta;
-    Delta_y <- sqrt(quad_form(middle, beta) + 1);
-  }
-  cutpoints <- make_cutpoints(pi, Delta_y, link);
 }
 model {
   #include "make_eta.txt"
@@ -168,18 +163,17 @@ model {
   else if (prior_PD == 0) { # weighted log-likelihoods
     increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link)));
   }
-  
-  if (prior_dist == 1) {
-    z_beta ~ normal(0, 1);
-    R2[1] ~ beta(half_K, shape);
-    if (is_constant == 0) pi ~ dirichlet(prior_counts);
-  }
-  /* else prior_dist is 0 and nothing is added */
+
+  if (is_constant == 0) pi ~ dirichlet(prior_counts);
+  z_beta ~ normal(0,1);
+  if (prior_dist == 1) R2 ~ beta(half_K, shape);
 }
 generated quantities {
   vector[J-1] zeta;
   vector[(J > 2) * (J - 1) + 1] mean_PPD;
   vector[N * do_residuals] residuals;
+  
+  # xbar is actually post multiplied by R^-1
   zeta <- cutpoints + dot_product(xbar, beta);
   if (J == 2) zeta <- -zeta;
   mean_PPD <- rep_vector(0,rows(mean_PPD));

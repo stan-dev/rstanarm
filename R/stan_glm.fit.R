@@ -30,7 +30,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_ops = prior_options(),
                          group = list(),
                          prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing"), 
+                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                          adapt_delta = NULL, QR = FALSE) {
   
   if (is.character(family)) 
@@ -384,13 +384,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     return(out)
   }
   else {
-    sampling_args <- set_sampling_args(
-      object = stanfit, 
-      prior = prior, 
-      user_dots = list(...), 
-      user_adapt_delta = adapt_delta, 
-      data = standata, pars = pars, show_messages = FALSE)
-    stanfit <- do.call(sampling, sampling_args)
+    if (algorithm == "sampling") {
+      sampling_args <- set_sampling_args(
+        object = stanfit, 
+        prior = prior, 
+        user_dots = list(...), 
+        user_adapt_delta = adapt_delta, 
+        data = standata, pars = pars, show_messages = FALSE)
+      stanfit <- do.call(sampling, sampling_args)
+    }
+    else
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                           algorithm = algorithm, ...)
     if (QR) {
       thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
       betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
@@ -400,9 +405,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
           if (ncol(xtemp) > 1) betas[param,,chain] else betas[param,chain]
       }
     }
-    # else
-    #   stanfit <- vb(stanfit, pars = pars, data = standata, 
-    #                        algorithm = algorithm, ...)
     new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_names, "]")),
                                         # paste0("var[", g_names, "]")),

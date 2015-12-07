@@ -6,17 +6,18 @@
 #' @useDynLib rstanarm, .registration = TRUE 
 #' 
 #' @import methods
-#' @importFrom rstan constrain_pars extract extract_sparse_parts get_posterior_mean optimizing sampling stanc
+#' @importFrom rstan constrain_pars extract extract_sparse_parts get_posterior_mean optimizing sampling stanc vb
 #' @import stats
 #' @import Rcpp
 #' @export loo
 #' @export waic
 #' @export launch_shinystan
-#' @description An appendage to the \pkg{rstan} package that enables the most
-#'   common applied regression models to be estimated using Markov Chain Monte
-#'   Carlo (or optimization) but still specified using customary R modeling
-#'   syntax (e.g. like that of \code{\link[stats]{glm}} with a
-#'   \code{\link[stats]{formula}} and a \code{\link{data.frame}}).
+#' @description An appendage to the \pkg{rstan} package that enables some of the
+#'   most common applied regression models to be estimated using Markov Chain
+#'   Monte Carlo, variational approximations to the posterior distribution, or
+#'   optimization. Nevertheless, these models can still be specified using the 
+#'   customary R modeling syntax (e.g. like that of \code{\link[stats]{glm}} with 
+#'   a \code{\link[stats]{formula}} and a \code{\link{data.frame}}).
 #'   
 #'   The set of models supported by the \pkg{rstanarm} package is extensive (and
 #'   will continue to grow), but also limited enough so that it is possible to 
@@ -41,23 +42,47 @@
 #'     distribution of the parameters. See \code{\link[rstan]{sampling}}
 #'     for more details. \strong{This is the default and the recommended
 #'     algorithm for statistical inference.}
-#'  \item \code{algorithm = "optimizing"} Finds the posterior mode using
-#'    the LBGFS algorithm. See \code{\link[rstan]{optimizing}} for more details.
-#'    If the priors are unspecified, then this is equivalent to maximum
-#'    likelihood, in which case there is no great reason to use the functions in
-#'    the \pkg{rstanarm} package over the emulated functions in other packages. 
-#'    However, if priors are specified, then the estimates are penalized maximum
-#'    likelihood estimates, which may have some redeeming value. 
+#'  \item \code{algorithm = "meanfield"} Uses variational inference to draw
+#'    from an approximation to the posterior distribution. In particular, this
+#'    algorithm finds the set of independent normal distributions in the 
+#'    unconstrained space that --- when transformed into the constrained space
+#'    --- most closely approximate the posterior distribution. Then it draws
+#'    repeatedly from these independent normal distributions and transforms
+#'    them into the constrained space. The entire process is much faster than
+#'    HMC and yields independent draws but \strong{is not recommended for final
+#'    statistical inference}. It can be useful to narrow the set of candidate 
+#'    models in large problems particularly when specifying \code{QR = TRUE} in
+#'    \code{\link{stan_glm}}, \code{\link{stan_glmer}}, and 
+#'    \code{\link{stan_gamm4}} but is \strong{only an approximation to the
+#'    posterior distribution}.
+#'  \item \code{algorithm = "fullrank"} Uses variational inference to draw
+#'    from an approximation to the posterior distribution by finding the
+#'    multivariate normal distribution in the constrained space that --- when
+#'    transformed into the constrained space --- most closely approximates the
+#'    posterior distribution. Then it draws repeatedly from this multivariate
+#'    normal distribution and transforms the draws into the constrained space.
+#'    This process is slower than meanfield variational inference but is faster
+#'    than HMC. Although still an approximation to the posterior distribution 
+#'    and thus \strong{not recommended for final statistical inference}, the 
+#'    approximation is more realistic than that of meanfield variational 
+#'    inference because the parameters are not assumed to be independent in the
+#'    unconstrained space. Nevertheless, fullrank variational inference is a more
+#'    difficult optimization problem and the algorithm is more prone to 
+#'    non-convergence or convergence to a local optimum.
+#'  \item \code{algorithm = "optimizing"} Finds the posterior mode using a C++
+#'    implementation of the LBGFS algorithm. See \code{\link[rstan]{optimizing}} 
+#'    for more details. If there is no prior information, then this is 
+#'    equivalent to maximum likelihood, in which case there is no great reason 
+#'    to use the functions in the \pkg{rstanarm} package over the emulated 
+#'    functions in other packages. However, if priors are specified, then the 
+#'    estimates are penalized maximum likelihood estimates, which may have some 
+#'    redeeming value. 
 #'    
-#'    Optimization is known to perform poorly for mixed models and thus is
-#'    not currently enabled for models fit with the \code{\link{stan_lmer}} 
-#'    and \code{\link{stan_glmer}} functions (for these models 
-#'    \code{algorithm="sampling"} should be used).
+#'    Optimization is not supported for \code{\link{stan_lm}}, 
+#'    \code{\link{stan_polr}}, \code{\link{stan_glmer}}, or
+#'    \code{\link{stan_gamm4}}.
 #' }
 #' 
-#' (Additional algorithms --- e.g., mean-field and full-rank variational
-#' approximations to full Bayesian inference --- are in development and will be
-#' available in future releases of the package.)
 #' 
 #' See \code{\link{priors}} for an overview of the various choices the
 #' user can make for prior distributions. 
@@ -76,27 +101,36 @@
 #'  }
 #'  \item{\code{\link{stan_glm}}}{
 #'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
-#'   or hierarhical prior distributions for the coefficients and a half-Cauchy
-#'   prior for any nuisance parameter in a Generalized Linear Model (GLM) for
-#'   various outcomes that are characterized by a \code{\link[stats]{family}}
-#'   object. It is also possible to estimate a negative bionomial model in a 
-#'   similar way to the \code{\link[MASS]{glm.nb}} function in the \pkg{MASS} 
-#'   package.
+#'   or hierarhical shrinkage prior distributions for the coefficients and,
+#'   if applicable, a half-Cauchy prior for any nuisance parameter in a 
+#'   Generalized Linear Model (GLM) that is characterized by a 
+#'   \code{\link[stats]{family}} object. It is also possible to estimate a 
+#'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
+#'   function in the \pkg{MASS} package.
 #'  }
-#'  \item{\code{\link[=stan_glmer]{stan_glmer and stan_lmer}}}{
-#'   Similar to \code{\link[lme4]{glmer}} and \code{\link[lme4]{lmer}} in the
-#'   \pkg{lme4} package, which augments GLMs to have group-specific terms that
-#'   deviate from the common coefficients according to a mean-zero multivariate
-#'   normal distribution with a highly-structured but unknown covariance matrix
-#'   that itself has an innovative prior distribution. MCMC provides more 
-#'   appropriate estimates of uncertainty of such models and provides posterior 
-#'   distributions for each of the group-specific parameters.
+#'  \item{\code{\link[=stan_glmer]{stan_glmer, stan_glmer.nb, and stan_lmer}}}{
+#'   Similar to \code{\link[lme4]{glmer}},  \code{\link[lme4]{glmer.nb}} and 
+#'   \code{\link[lme4]{lmer}} functions in the \pkg{lme4} package, which augments 
+#'   GLMs to have group-specific terms that deviate from the common coefficients 
+#'   according to a mean-zero multivariate normal distribution with a 
+#'   highly-structured but unknown covariance matrix that itself has an 
+#'   innovative prior distribution. MCMC provides more appropriate estimates of 
+#'   uncertainty of models that consist of a mix of common and group-specific 
+#'   parameters.
+#'  }
+#'  \item{\code{\link{stan_gamm4}}}{
+#'  Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4}, which augments
+#'  a GLM (possibly with group-specific terms) with nonlinear smooth functions
+#'  of the predictors to form a Generalized Additive Mixed Model (GAMM). Rather
+#'  than calling \code{\link[lme4]{glmer}} like \code{\link[gamm4]{gamm4}} does,
+#'  \code{\link{stan_gamm4}} essentially calls \code{\link{stan_glmer}}, which
+#'  avoids the optimization issues that often crop up with GAMMs and provides
+#'  better estimates for the uncertainty of the estimates.
 #'  }
 #'  \item{\code{\link{stan_polr}}}{
-#'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package (in that it
-#'   models an ordinal response in a similar way to \code{\link{stan_glm}}) but
-#'   also specifies a prior on the unknown cutpoints. Can also be used to model
-#'   binary outcomes.
+#'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it
+#'   models an ordinal response but also implies a prior distribution on the 
+#'   unknown cutpoints. Can also be used to model binary outcomes.
 #'  }
 #' }
 #'   
