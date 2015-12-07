@@ -46,7 +46,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        prior = normal(), prior_intercept = normal(),
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing"), 
+                       algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
 
   mc <- match.call(expand.dots = FALSE)

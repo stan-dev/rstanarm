@@ -59,7 +59,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior = normal(), prior_intercept = normal(),
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing"), 
+                       algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
   
   if (match.arg(algorithm) == "optimizing") {
@@ -81,7 +81,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                              check.nobs.vs.nRE = "ignore")
   mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
     mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- 
-    mc$adapt_delta <- mc$... <- NULL
+    mc$adapt_delta <- mc$... <- mc$QR <- NULL
   glmod <- eval(mc, parent.frame(1L))
   y <- glmod$fr[,as.character(glmod$formula[2])]
   X <- glmod$X

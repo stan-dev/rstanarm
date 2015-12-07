@@ -235,7 +235,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
   cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
   means <- means[,ncol(means)]
-  theta <- means[grepl("^theta_L\\[[[:digit:]]+\\]", names(means))]
+  theta <- means[grepl("^theta_L", names(means))]
   sc <- sigma.stanreg(x)
   out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
                          nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),

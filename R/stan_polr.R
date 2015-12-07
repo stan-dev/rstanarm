@@ -101,7 +101,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
                                   "cauchit"),
                        prior = R2(stop("'location' must be specified")), 
                        prior_counts = dirichlet(1), prior_PD = FALSE, 
-                       algorithm = c("sampling", "optimizing"),
+                       algorithm = c("sampling", "meanfield", "fullrank"),
                        adapt_delta = NULL) {
   
   # parse it like polr does in the MASS package
