@@ -19,22 +19,23 @@
 #'   customary R modeling syntax (e.g. like that of \code{\link[stats]{glm}} with 
 #'   a \code{\link[stats]{formula}} and a \code{\link{data.frame}}).
 #'   
-#'   The set of models supported by the \pkg{rstanarm} package is extensive (and
+#'   The set of models supported by the \pkg{rstanarm} package is large (and 
 #'   will continue to grow), but also limited enough so that it is possible to 
-#'   integrate them tightly with the \code{\link{posterior_predict}} function to
-#'   estimate the effect of specific manipulations of predictor variables or to 
-#'   predict the outcome in a training set. Also, any 
-#'   \code{\link[=stanreg-objects]{stanreg}} objects can be passed to the 
-#'   \code{\link[loo]{loo}} function in the \pkg{loo} package for model 
-#'   comparison or to the \code{\link[shinystan]{launch_shinystan}} function in 
-#'   the \pkg{shinystan} package in order to better visualize the posterior 
-#'   distribution using the ShinyStan graphical user interface. See the
-#'   \pkg{rstanarm} vignettes for more details about the entire process.
+#'   integrate them tightly with the \code{\link{ppcheck}} function for 
+#'   graphical posterior predictive checks and the 
+#'   \code{\link{posterior_predict}} function to easily estimate the effect of 
+#'   specific manipulations of predictor variables or to predict the outcome in 
+#'   a training set. Also, any \code{\link[=stanreg-objects]{stanreg}} object 
+#'   can be passed to the \code{\link[loo]{loo}} function in the \pkg{loo} 
+#'   package for model comparison or to the 
+#'   \code{\link[shinystan]{launch_shinystan}} function in the \pkg{shinystan} 
+#'   package in order to visualize the posterior distribution using the 
+#'   ShinyStan graphical user interface. See the \pkg{rstanarm} vignettes for 
+#'   more details about the entire process.
 #'
-#'
-#' @section Algorithms:
-#'   The model estimating functions in the \pkg{rstanarm} package take an 
-#'   \code{algorithm} argument that can be one of the following:
+#' @section Estimation algorithms: 
+#' The modeling functions in the \pkg{rstanarm} package take an \code{algorithm}
+#' argument that can be one of the following:
 #' \enumerate{
 #'   \item \code{algorithm = "sampling"} Uses Markov Chain Monte Carlo
 #'     (MCMC) --- in particular, Hamiltonian Monte Carlo (HMC) with a 
@@ -84,22 +85,19 @@
 #' }
 #' 
 #' 
-#' See \code{\link{priors}} for an overview of the various choices the
-#' user can make for prior distributions. 
-#' 
-#' 
-#' @section Modeling functions:
-#' The model estimating functions are described in greater detail in their 
-#' individual help pages and the vignettes. Here we provide a brief overview:
+#' @section Modeling functions: 
+#' The model estimating functions are described in
+#' greater detail in their individual help pages and the vignettes. Here we
+#' provide a very brief overview:
 #' 
 #' \describe{
-#'  \item{\code{\link[=stan_lm]{stan_lm and stan_aov}}}{
+#'  \item{\code{\link{stan_lm}}, \code{stan_aov}}{
 #'   Similar to \code{\link[stats]{lm}} or \code{\link[stats]{aov}} but with 
 #'   regularizing priors on the model parameters that are driven by prior 
 #'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
 #'   attributable to the predictors in a linear model.
 #'  }
-#'  \item{\code{\link{stan_glm}}}{
+#'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{
 #'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
 #'   or hierarhical shrinkage prior distributions for the coefficients and,
 #'   if applicable, a half-Cauchy prior for any nuisance parameter in a 
@@ -108,7 +106,7 @@
 #'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
 #'   function in the \pkg{MASS} package.
 #'  }
-#'  \item{\code{\link[=stan_glmer]{stan_glmer, stan_glmer.nb, and stan_lmer}}}{
+#'  \item{\code{\link{stan_glmer}, \code{stan_glmer.nb}, \code{stan_lmer}}}{
 #'   Similar to \code{\link[lme4]{glmer}},  \code{\link[lme4]{glmer.nb}} and 
 #'   \code{\link[lme4]{lmer}} functions in the \pkg{lme4} package, which augments 
 #'   GLMs to have group-specific terms that deviate from the common coefficients 
@@ -133,18 +131,24 @@
 #'   unknown cutpoints. Can also be used to model binary outcomes.
 #'  }
 #' }
-#'   
+#' 
+#' @section Prior distributions:
+#' See \code{\link{priors}} for an overview of the various choices the user can 
+#' make for prior distributions. The package vignettes also provide 
+#' examples of using many of the available priors as well as more detailed 
+#' descriptions of some of the novel priors used by \pkg{rstanarm}.
+#'  
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
-#'   
-#'   \code{\link{priors}} for an overview of the various choices the user can
-#'   make for prior distributions.
 #'   
 #'   \code{\link{plots}} for the various plots that can be used
 #'   to explore fitted models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
-#'   by \pkg{rstanarm} to estimate the models.
+#'   by \pkg{rstanarm} for model fitting.
+#'   
+#'   \url{https://github.com/stan-dev/rstanarm/issues} to submit a bug
+#'   report or feature request.
 #'   
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
