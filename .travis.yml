@@ -36,6 +36,8 @@ before script:
 
 r_github_packages:
   - jimhester/covr
+  - stan-dev/rstan/StanHeaders@develop
+  - stan-dev/rstan/rstan/rstan@develop
 
 after_success:
   - Rscript -e 'covr::codecov()'
