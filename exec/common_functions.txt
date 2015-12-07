@@ -144,7 +144,7 @@
    * @param zeta A vector of primitives for the simplexes
    * @param tau A vector of scale parameters
    * @param regularization A real array of LKJ hyperparameters
-   * @param delta[] A real array of concentration paramters
+   * @param delta A real array of concentration paramters
    * @param shape A vector of shape parameters
    * @param t An integer indicating the number of group-specific terms
    * @param p An integer array with the number variables on the LHS of each |

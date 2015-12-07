@@ -21,8 +21,8 @@ output:
 
 # Introduction
 
-This vignette explains how to estimate linear models using the
-__rstanarm__ package.
+This vignette explains how to estimate linear models using the `stan_lm` 
+function in the __rstanarm__ package.
 
 ```{r, child = "children/four_steps.txt"}
 ```

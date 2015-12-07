@@ -22,7 +22,7 @@ output:
 # Introduction
 
 This vignette explains how to estimate ANalysis Of VAriance (ANOVA) models 
-using the __rstanarm__ package.
+using the `stan_aov` function in the __rstanarm__ package
 
 ```{r, child="children/four_steps.txt"}
 ```

@@ -355,10 +355,9 @@ __rstanarm__ we'll fit two models and run them for different numbers of
 iterations. 
 
 ```{r, Rhat-fit, results='hide', warning=TRUE}
-SEED <- 12345
-bad_rhat <- stan_glmer(mpg ~ wt + (1|cyl) + (1|gear), data = mtcars, 
-                       iter = 100, chains = CHAINS, cores = CORES, seed = SEED)
-good_rhat <- update(bad_rhat, iter = 2000, # the default for iter
+bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, 
+                     chains = CHAINS, cores = CORES, seed = SEED)
+good_rhat <- update(bad_rhat, iter = 500, 
                     chains = CHAINS, cores = CORES, seed = SEED)
 ```
 
@@ -420,15 +419,17 @@ case the posterior sample may be biased. Lowering the step size can help reduce
 the number of divergent transitions. The recommended method is to increase the 
 `adapt_delta` parameter -- target average proposal acceptance probability in the
 adaptation -- which will in turn reduce the step size. Each of the modeling 
-functions accepts an `adapt_delta` argument, so to increase `adapt_delta` you
-can simply change the value from the default of $0.95$ to a value closer to $1$. 
-For example:
+functions accepts an `adapt_delta` argument, so to increase `adapt_delta` you 
+can simply change the value from the default value to a value closer to $1$. To
+reduce the frequency with which users need to manually set `adapt_delta`, the
+default value depends on the prior distribution used (see `help("adapt_delta",
+package = "rstanarm")` for details). In the example below the default 
+value (0.95 in this case) is too low:
 
 ```{r, Divergent-fit, results='hide', warning=TRUE}
-divergences <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), 
-                       iter = 500, chains = CHAINS, 
-                       cores = CORES, seed = SEED)
-no_divergences <- update(divergences, adapt_delta = 0.99)
+divergences <- stan_glmer(mpg ~ wt + (1|cyl) + (1|gear), data = mtcars, 
+                          cores = CORES, chains = CHAINS, seed = SEED)
+no_divergences <- update(divergences, adapt_delta = 0.999)
 ```
 
 Here we see a warning about divergent transitions for the first model but 

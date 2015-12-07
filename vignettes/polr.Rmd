@@ -22,7 +22,7 @@ output:
 # Introduction
 
 This vignette explains how to estimate models for ordinal outcomes using the
-__rstanarm__ package.
+`stan_polr` function in the __rstanarm__ package.
 
 ```{r, child="children/four_steps.txt"}
 ```

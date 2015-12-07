@@ -22,7 +22,7 @@ output:
 # Introduction
 
 This vignette explains how to estimate generalized linear models (GLMs) for 
-count data using the __rstanarm__ package.
+count data using the `stan_glm` function in the __rstanarm__ package.
 
 ```{r, child="children/four_steps.txt"}
 ```
@@ -62,33 +62,14 @@ $$\frac{g^{-1}(\eta)^y}{y!} e^{-g^{-1}(\eta)} =
 
 # Priors
 
-A full Bayesian analysis requires specifying prior distributions $f(\alpha)$ and
-$f(\boldsymbol{\beta})$ for the intercept and vector of regression coefficients.
-When using `stan_glm`, these distributions can be set using the 
-`prior_intercept` and `prior` arguments. The `stan_glm` function supports a
-variety of prior distributions, which are explained in the __rstanarm__
-documentation (`help(priors, package = 'rstanarm')`).
-
-As an example, suppose we have $K$ predictors and believe --- prior to seeing 
-the data --- that $\alpha, \beta_1, \dots, \beta_K$ are as likely to be positive
-as they are to be negative, but are highly unlikely to be far from zero. These
-beliefs can be represented by normal distributions with mean zero and a small
-scale (standard deviation). To give $\alpha$ and each of the $\beta$s this prior
-(with a scale of 1, say), in the call to `stan_glm` we would include the
-arguments `prior_intercept = normal(0,1)` and 
-`prior = normal(0,1)`.
-
-If, on the other hand, we have less a priori confidence that the parameters will
-be close to zero then we could use a larger scale for the normal distribution 
-and/or a distribution with heavier tails than the normal like the Student t 
-distribution. __Step 1__ in the "How to Use the __rstanarm__ Package" vignette 
-discusses one such example.
+```{r, child="children/stan_glm_priors.txt"}
+```
 
 # Posterior
 
-With independent prior distributions, the joint posterior distribution for
-$\alpha$ and $\boldsymbol{\beta}$ is proportional to the product of the priors 
-and the $N$ likelihood contributions:
+With independent prior distributions, the joint posterior distribution for 
+$\alpha$ and $\boldsymbol{\beta}$ in the Poisson model is proportional to the
+product of the priors and the $N$ likelihood contributions:
 
 $$f\left(\alpha,\boldsymbol{\beta} | \mathbf{y},\mathbf{X}\right) \propto
   f\left(\alpha\right) \times \prod_{k=1}^K f\left(\beta_k\right) \times
@@ -136,7 +117,7 @@ glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
 stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
                       family = poisson, offset = log(exposure2), 
                       prior = normal(0,2.5), prior_intercept = normal(0,5),
-                      chains = CHAINS, cores = CORES, seed = SEED)
+                      chains = CHAINS, cores = CORES, seed = SEED, iter = 400)
 ```
 
 The `formula`, `data`, `family`, and `offset` arguments to `stan_glm` can be 
@@ -208,9 +189,10 @@ of a different `stan_glm` model, here we will instead try
 [negative binomial](https://en.wikipedia.org/wiki/Negative_binomial_distribution) 
 regression, which is also used for overdispersed or zero-inflated count data.
 The negative binomial distribution allows the (conditional) mean and variance of
-$y$ to differ unlike the Poisson distribution. We just need to change the
-`family` we specify in the call to `stan_glm`, which we now set to
-`neg_binomial_2` instead of `poisson`:
+$y$ to differ unlike the Poisson distribution. To fit the negative binomial
+model can either use the `stan_glm.nb` function or, equivalently, change the
+`family` we specify in the call to `stan_glm` to `neg_binomial_2` instead of
+`poisson`. To do the latter we can just use `update`:
 
 ```{r, ROACHES-negbin}
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
@@ -251,3 +233,8 @@ compare(loo1, loo2)
 The weight of 1 assigned to the negative binomial is not surprising given 
 the better fit we've already observed from the posterior predictive checks.
 
+
+# References
+
+Gelman, A. and Hill, J. (2007). _Data Analysis Using Regression and
+Multilevel/Hierarchical Models._ Cambridge University Press, Cambridge, UK.
