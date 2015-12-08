@@ -144,11 +144,13 @@ library(MASS)
 print(polr(tobgp ~ agegp + alcgp, data = esoph), digits = 1)
 ```
 To obtain Bayesian estimates, we prepend `stan_` and specify the priors:
-```{r MCMC_tobgp}
+```{r MCMC_tobgp, results="hide"}
 library(rstanarm)
 post0 <- stan_polr(tobgp ~ agegp + alcgp, data = esoph, 
                    prior = R2(0.25), prior_counts = dirichlet(1),
                    chains = CHAINS, cores = CORES, seed = SEED)
+```
+```{r}
 print(post0, digits = 1)
 ```
 
@@ -177,12 +179,16 @@ It is usually a good idea to rescale variables by constants so that all the
 numbers are in single or double digits. We start by estimating a linear model
 for birthweight in kilograms, flipping the sign so that positive coefficients
 are associated with _lower_ birthweights.
-```{r lm}
+```{r lm, results="hide"}
 post1 <- stan_lm(-bwt ~ smoke + age + race + ptl + ht + ftv,
                  data = birthwt, prior = R2(0.5), 
                  chains = CHAINS, cores = CORES, seed = SEED)
 post1
 ```
+```{r}
+print(post1)
+```
+
 Next, we estimate an "ordinal" model for the incidence of low birthweight, which
 is defined as a birth weight of less than $2.5$ kilograms. Even though this 
 outcome is binary, a binary variable is a special case of an ordinal variable

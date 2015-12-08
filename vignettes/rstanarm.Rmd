@@ -128,7 +128,7 @@ A model with the same likelihood but Student t priors with seven degrees of
 freedom can be specified using the __rstanarm__ package in a similar way by
 prepending `stan_` to the `glm` call and specifying priors (and optionally
 the number of cores on your computer to utilize):
-```{r MCMC}
+```{r MCMC, results="hide"}
 library(rstanarm)
 womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole,
@@ -137,6 +137,9 @@ womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               prior_intercept = student_t(df = 7),
                               chains = CHAINS, cores = CORES, seed = SEED)
 womensrole_bglm_1
+```
+```{r, echo=FALSE}
+print(womensrole_bglm_1)
 ```
 As can be seen, the "Bayesian point estimates" --- which are represented by
 the posterior medians --- are very similar to the maximum likelihood estimates.
@@ -224,10 +227,11 @@ where there are less data.
 
 Consequently, we might consider a model where education has a quadratic effect 
 on agreement, which is easy to specify using R's formula-based syntax.
-```{r}
-womensrole_bglm_2 <- update(womensrole_bglm_1, 
-                            formula. = . ~ . + I(education^2))
-womensrole_bglm_2
+```{r, results="hide"}
+(womensrole_bglm_2 <- update(womensrole_bglm_1, formula. = . ~ . + I(education^2)))
+```
+```{r, echo=FALSE}
+print(womensrole_bglm_2)
 ```
 Frequentists would test the null hypothesis that the coefficient on the 
 squared level of education is zero. Bayesians might ask whether such a model
@@ -399,7 +403,7 @@ convergence. In S. Brooks, A. Gelman, G. Jones, & X. Meng (Eds.), _Handbook of
 Markov chain Monte Carlo_. Boca Raton: Chapman & Hall/CRC.
 
 Stan Development Team. (2015). _Stan modeling language user's guide and reference
-manual, Version 2.8.0_. http://mc-stan.org/documentation. See the 
+manual, Version 2.8.0_. http://mc-stan.org/documentation/. See the 
 'Markov Chain Monte Carlo Sampling' chapter. 
 
 

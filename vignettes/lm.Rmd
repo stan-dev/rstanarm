@@ -225,10 +225,12 @@ post <- stan_lm(rainfall ~ seeding * (sne + cloudcover + prewetness +
                                         echomotion) + time, data = clouds,
                 prior = R2(location = 0.2), 
                 chains = CHAINS, cores = CORES, seed = SEED)
-```
-```{r}
 post
 ```
+```{r, echo=FALSE}
+print(post)
+```
+
 In this case, the "Bayesian point estimates", which are represented by the 
 posterior medians, appear quite different from the ordinary least squares
 estimates. However, the `log-fit_ratio` (i.e. $\ln \omega$) is quite small,

@@ -103,12 +103,15 @@ coef(aov(weightgain ~ source * type, data = weightgain))
 To obtain Bayesian estimates we can prepend `stan_` to `aov` and specify the
 prior location of the $R^2$ as well as optionally the number of cores that the
 computer is allowed to utilize:
-```{r stan_aov}
+```{r stan_aov, results="hide"}
 library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
                   prior = R2(location = 0.5), adapt_delta = 0.999,
                   chains = CHAINS, cores = CORES, seed = SEED)
 post1
+```
+```{r, echo=FALSE}
+print(post1)
 ```
 Here we have specified `adapt_delta = 0.999` to decrease the stepsize and largely prevent divergent transitions. The results suggest that only the
 treatment worth writing home about is whether the rats were fed a low protein

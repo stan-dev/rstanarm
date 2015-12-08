@@ -104,7 +104,7 @@ $y_i \sim Poisson(u_i \lambda_i)$. This is equivalent to adding $\ln{(u_i)}$
 to the linear predictor $\eta_i$ and it can be specified using the `offset` 
 argument to `stan_glm`:
 
-```{r, ROACHES-fit}
+```{r, ROACHES-fit, results="hide"}
 library(rstanarm)
 
 # Load data and rescale
@@ -117,7 +117,7 @@ glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
 stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
                       family = poisson, offset = log(exposure2), 
                       prior = normal(0,2.5), prior_intercept = normal(0,5),
-                      chains = CHAINS, cores = CORES, seed = SEED, iter = 400)
+                      chains = CHAINS, cores = CORES, seed = SEED)
 ```
 
 The `formula`, `data`, `family`, and `offset` arguments to `stan_glm` can be 
@@ -139,8 +139,10 @@ Here are the point estimates and uncertainties from the `glm` fit and `stan_glm`
 fit, which we see are nearly identical:
 
 ```{r, ROACHES-glm-ests}
-round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), digits = 2)
-rbind(glm = summary(glm1)$coefficients[, "Std. Error"], stan_glm = se(stan_glm1))
+round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), 
+      digits = 2)
+round(rbind(glm = summary(glm1)$coefficients[, "Std. Error"], stan_glm = se(stan_glm1)), 
+      digits = 3)
 ```
 
 (Note: the dataset we have is slightly different from the one used in Gelman and
@@ -194,7 +196,7 @@ model can either use the `stan_glm.nb` function or, equivalently, change the
 `family` we specify in the call to `stan_glm` to `neg_binomial_2` instead of
 `poisson`. To do the latter we can just use `update`:
 
-```{r, ROACHES-negbin}
+```{r, ROACHES-negbin, results="hide"}
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 

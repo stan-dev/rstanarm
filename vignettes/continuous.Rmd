@@ -109,22 +109,23 @@ of the predictors, the third will use both, and the fourth will also include a
 term for the interaction of the two predictors.
 
 For these models we'll use the default weakly informative priors for `stan_glm`,
-which are currently `normal(0,10)` for the intercept and `normal(0,5)` for the
-other regression coefficients. For an overview of the many other available prior
-distributions see `help("prior", package = "rstanarm")`.
+which are currently set to `normal(0,10)` for the intercept and `normal(0,5)`
+for the other regression coefficients. For an overview of the many other
+available prior distributions see `help("prior", package = "rstanarm")`.
 
-```{r, KIDIQ-fit}
+```{r, KIDIQ-fit,results="hide"}
 library(rstanarm)
-
-# Load data
 kid_iq <- read.csv(file.path("data", "kid_iq.csv.xz"))
 
-# Fit the four models
 post1 <- stan_glm(kid_score ~ mom_hs, data = kid_iq, family = gaussian(link = "identity"), 
-                  chains = CHAINS, cores = CORES, seed = SEED, iter = 300)
+                  chains = CHAINS, cores = CORES, seed = SEED)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
 (post4 <- update(post1, formula = . ~ mom_hs * mom_iq))
+```
+
+```{r, echo=FALSE}
+print(post4)
 ```
 
 Following Gelman and Hill's example, we make some plots overlaying the
@@ -136,7 +137,7 @@ base <- ggplot(kid_iq, aes(x = mom_hs, y = kid_score)) +
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
   
 base + geom_abline(intercept = coef(post1)[1], slope = coef(post1)[2], 
-                   color = "skyblue4")
+                   color = "skyblue4", size = 1)
 ```
 
 There several ways we could add the uncertainty in our estimates to the plot. 
@@ -150,9 +151,9 @@ colnames(draws)[1:2] <- c("a", "b")
 
 base + 
   geom_abline(data = draws, aes(intercept = a, slope = b), 
-              color = "skyblue", size = 0.1, alpha = 0.25) + 
+              color = "skyblue", size = 0.2, alpha = 0.25) + 
   geom_abline(intercept = coef(post1)[1], slope = coef(post1)[2], 
-              color = "skyblue4", size = 0.3)
+              color = "skyblue4", size = 1)
 ```
 
 For the second model we can make the same plot but the x-axis will show 
@@ -164,9 +165,9 @@ colnames(draws)[1:2] <- c("a", "b")
 ggplot(kid_iq, aes(x = mom_iq, y = kid_score)) + 
   geom_point() +
   geom_abline(data = draws, aes(intercept = a, slope = b), 
-              color = "skyblue", size = 0.1, alpha = 0.25) + 
+              color = "skyblue", size = 0.2, alpha = 0.25) + 
   geom_abline(intercept = coef(post2)[1], slope = coef(post2)[2], 
-              color = "skyblue4", size = 0.3)
+              color = "skyblue4", size = 1)
 ```
 
 For the third and fourth models, each of which uses both predictors, we can plot
@@ -174,26 +175,29 @@ the continuous `mom_iq` on the x-axis and use color to indicate which
 points correspond to the different subpopulatations defined by `mom_hs`. We also 
 now plot two regression lines, one for each subpopulation:
 
-```{r, KIDIQ-plot3}
-regline0 <- function(x, ests) cbind(1, 0, x) %*% ests 
-regline1 <- function(x, ests) cbind(1, 1, x) %*% ests
+```{r, KIDIQ-plot3, fig.width = 5}
+reg0 <- function(x, ests) cbind(1, 0, x) %*% ests 
+reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
 args <- list(ests = coef(post3))
-ggplot(kid_iq, aes(x = mom_iq, color = factor(mom_hs, labels = c("No HS", "HS")))) + 
-  geom_point(aes(y = kid_score)) +
-  stat_function(fun = regline0, args = args, aes(color = "No HS"), size = 1.5) + 
-  stat_function(fun = regline1, args = args, aes(color = "HS"), size = 1.5)
+kid_iq$clr <- factor(kid_iq$mom_hs, labels = c("No HS", "HS"))
+lgnd <- guide_legend(title = NULL)
+base2 <- ggplot(kid_iq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
+  geom_point(aes(y = kid_score), shape = 21, stroke = .2, size = 2) + 
+  guides(color = lgnd, fill = lgnd) + 
+  theme(legend.position = "right")
+base2 + 
+  stat_function(fun = reg0, args = args, aes(color = "No HS"), size = 1.5) +
+  stat_function(fun = reg1, args = args, aes(color = "HS"), size = 1.5)
 ```
 
-```{r, KIDIQ-plot4}
-regline0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
-regline1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
-
+```{r, KIDIQ-plot4, fig.width = 5}
+reg0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
+reg1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
 args <- list(ests = coef(post4))
-ggplot(kid_iq, aes(x = mom_iq, color = factor(mom_hs, labels = c("No HS", "HS")))) + 
-  geom_point(aes(y = kid_score)) +
-  stat_function(fun = regline0, args = args, aes(color = "No HS"), size = 1.5) + 
-  stat_function(fun = regline1, args = args, aes(color = "HS"), size = 1.5)
+base2 +
+  stat_function(fun = reg0, args = args, aes(color = "No HS"), size = 1.5) + 
+  stat_function(fun = reg1, args = args, aes(color = "HS"), size = 1.5)
 ```
 
 
@@ -349,7 +353,7 @@ To fit the analagous Bayesian models we can simply substitute `stan_glm` for
 `glm` above. However, instead of fitting separate models we can also reshape the
 data slightly and fit a model interacting lot with plasma concentration:
 
-```{r, CLOTTING-fit}
+```{r, CLOTTING-fit, results="hide"}
 clotting2 <- with(clotting, data.frame(
   log_plasma = rep(log(u), 2),
   clot_time = c(lot1, lot2),
@@ -359,6 +363,9 @@ clotting2 <- with(clotting, data.frame(
 fit <- stan_glm(clot_time ~ log_plasma * lot_id, data = clotting2, family = Gamma, 
                 prior_intercept = normal(0,1), prior = normal(0,1),
                 chains = CHAINS, cores = CORES, seed = SEED)
+```
+
+```{r}
 print(fit, digits = 3)
 ```
 
