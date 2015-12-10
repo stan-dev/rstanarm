@@ -9,6 +9,7 @@ CORES <- 1
 
 fit <- example_model
 fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing")
+fitvb <- update(fito, algorithm = "meanfield")
 
 context("plot.stanreg helpers")
 test_that(".grep_for_pars works", {
@@ -61,7 +62,15 @@ test_that("plot.stanreg ok for optimization", {
   expect_silent(plot(fito, pars = "beta"))
   expect_silent(plot(fito, pars = c("wt", "gear")))
   expect_warning(plot(fito, regex_pars = "wt"), regexp = "'regex_pars' ignored")
-  expect_warning(plot(fito, "trace"), regexp = "'plotfun' ignored")
+  expect_error(plot(fito, "trace"), regexp = "'plotfun'")
+})
+
+test_that("plot.stanreg ok for vb", {
+  expect_is(plot(fitvb), "ggplot")
+  samp_only <- c("rhat", "ess", "mcse", "par", "diag", "ac")
+  for (j in seq_along(samp_only)) {
+    expect_error(plot(fitvb, samp_only[j]), regexp = "MCMC") 
+  }
 })
 
 context("pairs.stanreg")

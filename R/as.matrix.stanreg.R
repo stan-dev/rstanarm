@@ -3,10 +3,12 @@
 #' For models fit using MCMC (\code{algorithm='sampling'}), the posterior sample
 #' is an \eqn{S} by \eqn{P} matrix, where \eqn{S} is the size of the sample --- 
 #' the number of post-warmup draws from the posterior distribution of the model 
-#' parameters --- and \eqn{P} is the number of parameters. For models fit via
-#' optimization (\code{algorithm='optimizing'}), there is no posterior sample
-#' but rather a \eqn{1000} by \eqn{P} matrix of draws from the asymptotic 
-#' multivariate Gaussian sampling distribution of the parameters.
+#' parameters --- and \eqn{P} is the number of parameters. If using optimization
+#' (\code{algorithm='optimizing'}) or variational inference 
+#' (\code{algorithm='meanfield'} or \code{algorithm='fullrank'}), there is no 
+#' posterior sample but rather a \eqn{1000} by \eqn{P} matrix of draws from
+#' either the asymptotic multivariate Gaussian sampling distribution of the
+#' parameters or the variational approximation to the posterior distribution.
 #' 
 #' @method as.matrix stanreg
 #' @export
@@ -37,6 +39,11 @@
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 #' draws <- as.data.frame(fit)
 #' print(colnames(draws))
+#' 
+#' # Extract draws from variational approximation to the posterior distribution
+#' fit2 <- update(fit, algorithm = "meanfield")
+#' draws <- as.data.frame(fit2)
+#' print(colnames(draws))
 #' }
 #' 
 as.matrix.stanreg <- function(x, ...) {
@@ -53,7 +60,6 @@ as.matrix.stanreg <- function(x, ...) {
       return(out[, keep, drop = FALSE])
     }
   }
-  stopifnot(used.sampling(x))
   sf <- x$stanfit
   if (sf@mode != 0) stop(msg)
   posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 

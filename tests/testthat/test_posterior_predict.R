@@ -74,3 +74,14 @@ test_that("posterior_predict compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
 })
 
+
+context("posterior_predict (optimizing and vb)")
+test_that("posterior_predict errors for optimizing and silent for vb", {
+  fit <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing")
+  fit2 <- update(fit, algorithm = "meanfield")
+  fit3 <- update(fit, algorithm = "fullrank")
+  expect_error(posterior_predict(fit), regexp = "optimizing")
+  expect_silent(posterior_predict(fit2))
+  expect_silent(posterior_predict(fit3))
+})
+

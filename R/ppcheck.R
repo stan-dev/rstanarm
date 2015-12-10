@@ -90,8 +90,8 @@ ppcheck <- function(object,
                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
-  if (!used.sampling(object)) 
-    STOP_sampling_only("ppcheck")
+  if (used.optimizing(object)) 
+    STOP_not_optimizing("ppcheck")
   
   fn <- switch(match.arg(check), 
                'distributions' = "ppcheck_dist",

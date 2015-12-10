@@ -80,8 +80,8 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 #' @rdname stanreg-methods
 #' @export
 log_lik.stanreg <- function(object, ...) {
-  if (!used.sampling(object)) 
-    STOP_sampling_only("Pointwise log-likelihood matrix")
+  if (used.optimizing(object)) 
+    STOP_not_optimizing("Pointwise log-likelihood matrix")
   fun <- .llfun(object$family)
   args <- .llargs(object)
   sapply(seq_len(args$N), function(i) {

@@ -29,6 +29,13 @@ test_that("ppcheck doesn't throw bad errors", {
   expect_is(p, "ggplot")
 })
 
+test_that("ppcheck ok for vb", {
+  fit3 <- update(fit2, algorithm = "meanfield")
+  expect_silent(p <- ppcheck(fit3))
+  expect_silent(p <- ppcheck(fit3, check = "resid"))
+  expect_silent(p <- ppcheck(fit3, check = "test"))
+})
+
 test_that("ppcheck throws appropriate errors", {
   expect_error(p <- ppcheck(fit, check = "test", test = "10982pqmeaw"), 
                regexp = "not found")

@@ -2,14 +2,12 @@
 # @param x stanreg object
 # @param pars user specified character vector
 .check_plotting_pars <- function(x, pars) {
-  if (used.sampling(x)) {
+  if (used.optimizing(x)) {
+    allpars <- c("alpha", "beta", rownames(x$stan_summary))
+  } else {
     sim <- x$stanfit@sim
     allpars <- c(sim$pars_oi, sim$fnames_oi)
   }
-  else if (used.optimizing(x)) {
-    allpars <- c("alpha", "beta", rownames(x$stan_summary))
-  }
-  else stop("Not yet enabled for advi")
 
   m <- which(match(pars, allpars, nomatch = 0) == 0)
   if (length(m) > 0) stop("no parameter ", paste(pars[m], collapse = ', ')) 
@@ -54,15 +52,23 @@
 # @param x stanreg object
 # @param plotfun user specified plotfun argument (can be missing)
 .set_plotting_fun <- function(x, plotfun) {
-  if (used.optimizing(x)) {
-    if (!missing(plotfun))
-      warning("'plotfun' ignored for models fit using algorithm='optimizing'.")
-    return("stan_plot_opt")
+  .plotters <- function(x) {
+    paste0("stan_", x)
   }
-  if (missing(plotfun)) plotfun <- "plot"
-  plotters <- paste0("stan_", c("plot", "trace", "scat", "hist", "dens", "ac",
-                                "diag", "rhat", "ess", "mcse", "par"))
+  if (used.optimizing(x)) {
+    if (!missing(plotfun)) 
+      stop("'plotfun' should not be specified for models fit using ",
+           "algorithm='optimizing'.")
+    else return("stan_plot_opt")
+  }
+  else if (missing(plotfun)) plotfun <- "plot"
+  
+  samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
+  plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
   funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
+  if (used.variational(x) && funname %in% .plotters(samp_only)) {
+    STOP_sampling_only(funname)
+  }
   fun <- try(getExportedValue("rstan", funname), silent = TRUE)
   if (inherits(fun, "try-error")) 
     stop("Plotting function not found. See ?rstanarm::plots for valid names.", 

@@ -10,6 +10,7 @@ CORES <- 1
 stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
                                  chains = CHAINS, cores = CORES, seed = SEED))
 stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield")
 glm1 <- glm(mpg ~ wt, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
@@ -68,22 +69,9 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
 })
 
-test_that("summary and print don't throw errors", {
-  expect_silent(summary(stan_glm1, pars = c("alpha", "beta")))
-  expect_silent(summary(stan_glm_opt1, digits = 8))
-  expect_silent(summary(stan_lmer1, pars = "varying"))
-  expect_silent(summary(stan_lmer2))
-  expect_silent(summary(stan_polr1))
-  
-  expect_output(print(stan_glm1, digits = 1), regexp = "stan_glm")
-  expect_output(print(stan_glm_opt1), regexp = "stan_glm")
-  expect_output(print(stan_lmer1, digits = 4), regexp = "stan_lmer")
-  expect_output(print(stan_lmer2), regexp = "stan_lmer")
-  expect_output(print(stan_polr1), regexp = "stan_polr")
-})
-
 test_that("log_lik method works", {
   expect_error(log_lik(stan_glm_opt1))
+  expect_silent(log_lik(stan_glm_vb1))
   expect_silent(log_lik(stan_glm1))
   
   expect_silent(log_lik(stan_polr1))
@@ -147,17 +135,33 @@ test_that("coef returns the right structure", {
 })
 
 context("print and summary methods")
-test_that("print and summary methods don't throw errors", {
-  expect_output(print(stan_lmer1), "stan_lmer")
-  expect_output(print(stan_polr1), "stan_polr")
-  expect_output(print(stan_glm_opt1), "stan_glm")
+test_that("summary and print don't throw errors", {
+  expect_silent(summary(stan_glm1, pars = c("alpha", "beta")))
+  expect_silent(summary(stan_glm_opt1, digits = 8))
+  expect_silent(summary(stan_lmer1, pars = "varying"))
+  expect_silent(summary(stan_lmer2))
+  expect_silent(summary(stan_polr1))
   
+  expect_output(print(stan_glm1, digits = 1), regexp = "stan_glm")
+  expect_output(print(stan_glm_opt1), regexp = "stan_glm")
+  expect_output(print(stan_lmer1, digits = 4), regexp = "stan_lmer")
+  expect_output(print(stan_lmer2), regexp = "stan_lmer")
+  expect_output(print(stan_polr1), regexp = "stan_polr")
+})
+test_that("print and summary methods don't throw errors", {
+  expect_output(print(stan_lmer1, digits = 2), "stan_lmer")
+  expect_output(print(stan_lmer2), "stan_lmer")
+  expect_output(print(stan_polr1), "stan_polr")
+  expect_output(print(stan_glm_opt1, digits = 5), "stan_glm")
+  expect_output(print(stan_glm_vb1, digits = 5), "stan_glm")
+  
+  expect_silent(summary(stan_lmer1, pars = "varying"))
   expect_silent(s <- summary(stan_lmer1))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_lmer")
   expect_equal(attr(s, "algorithm"), "sampling")
   
-  expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma")))
+  expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_equal(attr(s, "algorithm"), "optimizing")
@@ -167,4 +171,14 @@ test_that("print and summary methods don't throw errors", {
   expect_equal(rownames(s), c("agegp.L", "agegp.Q", "agegp.C", "agegp^4", "agegp^5"))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_polr")
+  
+  expect_silent(s <- summary(stan_glm1, pars = c("alpha", "beta")))
+  expect_is(s, "summary.stanreg")
+  expect_output(print(s), "stan_glm")
+  expect_equal(attr(s, "algorithm"), "sampling")
+  
+  expect_silent(s <- summary(stan_glm_vb1, pars = c("alpha", "beta")))
+  expect_is(s, "summary.stanreg")
+  expect_output(print(s), "stan_glm")
+  expect_equal(attr(s, "algorithm"), "meanfield")
 })

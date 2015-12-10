@@ -87,6 +87,14 @@ STOP_sampling_only <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Consistent error message to use when something is only available for 
+# MCMC or VB but not optimization
+STOP_not_optimizing <- function(what) {
+  msg <- "not available for models fit using algorithm='optimizing'."
+  if (!missing(what)) msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
 # Grep for "b" parameters (ranef)
 # @param x Character vector (often rownames(fit$stan_summary))
 .bnames <- function(x, ...) grep("^b\\[", x, ...)
