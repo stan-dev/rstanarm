@@ -1,16 +1,15 @@
 ---
 title: "Estimating ANOVA Models with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "08/30/2015"
+date: "12/07/2015"
 output: 
   html_document: 
-    fig_caption: yes
-    self_contained: no
+    self_contained: yes
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Estimating ANOVA Models with the rstanarm Package}
+%\VignetteIndexEntry{ANOVA Models}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -121,7 +120,7 @@ frequentist estimates presumably overfit the data even more.
 
 Alternatively, we could prepend `stan_` to `lmer` and specify the corresponding
 priors
-```{r eval=FALSE}
+```{r, eval=FALSE}
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),

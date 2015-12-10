@@ -1,16 +1,15 @@
 ---
 title: "Estimating Generalized Linear Models for Continuous Data with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "09/03/2015"
-output: 
-  html_document: 
-    fig_caption: yes
-    self_contained: no
+date: "12/07/2015"
+output:
+  html_document:
+    self_contained: yes
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Estimating Generalized Linear Models for Continuous Data with the rstanarm Package}
+%\VignetteIndexEntry{GLMs for Continuous Data}
 -->
 
 ```{r, child="children/SETTINGS-knitr.txt"}
@@ -25,7 +24,7 @@ output:
 This vignette explains how to estimate linear and generalized linear models 
 (GLMs) for continuous response variables using the `stan_glm` function in the
 __rstanarm__ package. For GLMs for discrete outcomes see the vigettes for
-binary/binomial and count data.
+binary/binomial and count outcomes.
 
 ```{r, child="children/four_steps.txt"}
 ```
@@ -118,7 +117,7 @@ library(rstanarm)
 kid_iq <- read.csv(file.path("data", "kid_iq.csv.xz"))
 
 post1 <- stan_glm(kid_score ~ mom_hs, data = kid_iq, family = gaussian(link = "identity"), 
-                  chains = CHAINS, cores = CORES, seed = SEED)
+                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
 (post4 <- update(post1, formula = . ~ mom_hs * mom_iq))
@@ -131,9 +130,9 @@ print(post4)
 Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
-```{r, KIDIQ-plot1a}
+```{r, KIDIQ-plot1a, fig.width = 5}
 base <- ggplot(kid_iq, aes(x = mom_hs, y = kid_score)) + 
-  geom_point(position = position_jitter(height = 0.05, width = 0.1)) + 
+  geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
   
 base + geom_abline(intercept = coef(post1)[1], slope = coef(post1)[2], 
@@ -145,7 +144,7 @@ One way is to also plot the estimated regression line at each draw from the
 posterior distribution. To do this we can extract the posterior draws from the 
 fitted model object using the `as.matrix` or `as.data.frame` methods:
 
-```{r, KIDIQ-plot1b}
+```{r, KIDIQ-plot1b, fig.width = 5}
 draws <- as.data.frame(post1)
 colnames(draws)[1:2] <- c("a", "b")
 
@@ -159,11 +158,11 @@ base +
 For the second model we can make the same plot but the x-axis will show 
 the continuous predictor `mom_iq`:
 
-```{r, KIDIQ-plot2}
+```{r, KIDIQ-plot2, fig.width = 5}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
 ggplot(kid_iq, aes(x = mom_iq, y = kid_score)) + 
-  geom_point() +
+  geom_point(size = 1) +
   geom_abline(data = draws, aes(intercept = a, slope = b), 
               color = "skyblue", size = 0.2, alpha = 0.25) + 
   geom_abline(intercept = coef(post2)[1], slope = coef(post2)[2], 
@@ -183,7 +182,7 @@ args <- list(ests = coef(post3))
 kid_iq$clr <- factor(kid_iq$mom_hs, labels = c("No HS", "HS"))
 lgnd <- guide_legend(title = NULL)
 base2 <- ggplot(kid_iq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
-  geom_point(aes(y = kid_score), shape = 21, stroke = .2, size = 2) + 
+  geom_point(aes(y = kid_score), shape = 21, stroke = .2, size = 1) + 
   guides(color = lgnd, fill = lgnd) + 
   theme(legend.position = "right")
 base2 + 
@@ -249,7 +248,7 @@ First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `ppcheck` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-ppcheck1}
+```{r, KIDIQ-ppcheck1, fig.width=5}
 ppcheck(post4, check = "distributions", overlay = FALSE, nreps = 5)
 ```
 
@@ -269,13 +268,13 @@ of $\left(T(y_1^{\rm yep}), \dots, T(y_S^{\rm yep})\right)$. In the plot below
 we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-ppcheck2}
+```{r, KIDIQ-ppcheck2, fig.height = 3}
 ppcheck(post4, check = "test", test = "mean")
 ```
 
 We can also specify two test quantities and look at a scatterplot:
 
-```{r, KIDIQ-ppcheck3}
+```{r, KIDIQ-ppcheck3, fig.height=3}
 ppcheck(post4, check = "test", test = c("mean", "sd"))
 ```
 
@@ -300,7 +299,7 @@ We now have two matrices, `y_nohs` and `y_hs`. Each matrix has
 sample). One way to show the predictors is to plot the predictions for 
 the two groups of kids side by side:
 
-```{r, KIDIQ-plot-predict}
+```{r, KIDIQ-plot-predict, fig.width=9}
 par(mfrow = c(1:2), mar = c(5,4,2,1))
 boxplot(y_hs, axes = FALSE, outline = FALSE, ylim = c(10,170),
         xlab = "Mom IQ", ylab = "Predicted Kid IQ", main = "Mom HS")

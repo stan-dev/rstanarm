@@ -1,11 +1,10 @@
 ---
 title: "How to Use the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "10/30/2015"
+date: "12/07/2015"
 output: 
   html_document: 
-    fig_caption: yes
-    self_contained: no
+    self_contained: yes
     toc: yes
 ---
 <!--
@@ -246,7 +245,8 @@ loo_bglm_2 <- loo(womensrole_bglm_2, cores = 2)
 ```
 First, we verify that the posterior is not too sensitive to any particular
 observation in the dataset.
-```{r loo_plot}
+
+```{r loo_plot, fig.width=7, fig.height=4}
 par(mfrow = 1:2, mar = c(5,3.8,1,0) + 0.1, las = 3)
 plot(loo_bglm_1, label_points = TRUE)
 plot(loo_bglm_2, label_points = TRUE)
@@ -369,7 +369,7 @@ Here the first model leads to the warning message about convergence but the
 second model does not. To see a histogram of the Rhat values we can use the 
 `plot` method for `stanreg` objects:
 
-```{r, Rhat-plot}
+```{r, Rhat-plot, fig.width=3, fig.height=3}
 plot(bad_rhat, "rhat")
 ```
 

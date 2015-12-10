@@ -1,16 +1,15 @@
 ---
 title: "Estimating Generalized Linear Models for Binary and Binomial Data with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "09/03/2015"
+date: "12/07/2015"
 output: 
   html_document: 
-    fig_caption: yes
-    self_contained: no
+    self_contained: yes
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Estimating Generalized Linear Models for Binary Data with the rstanarm Package}
+%\VignetteIndexEntry{GLMs for Binary and Binomial Data}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -138,7 +137,7 @@ wells$dist100 <- wells$dist / 100
 Before estimating any models we can visualize the distribution of 
 `dist100` in the data:
 
-```{r, ARSENIC-plot-dist100, fig.width=3, fig.height=2}
+```{r, ARSENIC-plot-dist100, fig.height=3}
 ggplot(wells, aes(x = dist100, y = ..density..)) + 
   geom_histogram(data = subset(wells, switch == 0)) +
   geom_histogram(data = subset(wells, switch == 1), fill = "skyblue", alpha = 0.3) 
@@ -162,7 +161,7 @@ library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, family = binomial(link = "logit"), 
                  prior = t_prior, prior_intercept = t_prior,  
-                 chains = CHAINS, cores = CORES, seed = SEED)
+                 chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 (coef_fit1 <- round(coef(fit1), 3))
 ```
 
@@ -195,7 +194,7 @@ model see __Step 2__ in the "How to Use the __rstanarm__ Package" vignette.
 Using the coefficient estimates we can plot the predicted probability of 
 `switch = 1` (as a function of `dist100`) together with the observed outcomes:
 
-```{r, ARSENIC-plot-model, fig.height = 2, fig.width=3}
+```{r, ARSENIC-plot-model}
 # Predicted probability as a function of x
 pr_switch <- function(x, ests) plogis(ests[1] + ests[2] * x)
 # A function to slightly jitter the binary data
@@ -239,7 +238,7 @@ tiles (the lighter the color the higher the probability). The observed value of
 ```{r,echo=FALSE}
 theme_update(legend.position = "right")
 ```
-```{r, ARSENIC-plot-model2}
+```{r, ARSENIC-plot-model2, dev="png", fig.ext=".png"}
 pr_switch2 <- function(x, y, ests) plogis(ests[1] + ests[2] * x + ests[3] * y)
 grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), 
                     arsenic = seq(0, 10, length.out = 100))

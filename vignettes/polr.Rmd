@@ -1,16 +1,15 @@
 ---
 title: "Estimating Ordinal Models with the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "10/30/2015"
+date: "12/07/2015"
 output: 
   html_document: 
-    fig_caption: yes
-    self_contained: no
+    self_contained: yes
     toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Estimating Ordinal Models with the rstanarm Package}
+%\VignetteIndexEntry{Ordinal Models}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -148,7 +147,7 @@ To obtain Bayesian estimates, we prepend `stan_` and specify the priors:
 library(rstanarm)
 post0 <- stan_polr(tobgp ~ agegp + alcgp, data = esoph, 
                    prior = R2(0.25), prior_counts = dirichlet(1),
-                   chains = CHAINS, cores = CORES, seed = SEED)
+                   chains = CHAINS, cores = CORES, seed = SEED, iter = 200)
 ```
 ```{r}
 print(post0, digits = 1)
@@ -183,7 +182,6 @@ are associated with _lower_ birthweights.
 post1 <- stan_lm(-bwt ~ smoke + age + race + ptl + ht + ftv,
                  data = birthwt, prior = R2(0.5), 
                  chains = CHAINS, cores = CORES, seed = SEED)
-post1
 ```
 ```{r}
 print(post1)
