@@ -1,9 +1,6 @@
 ```{r, SETTINGS-knitr, include=FALSE}
 my_dev <- function(file, width, height) {
-  if (require(RSvgDevice) && packageVersion("RSvgDevice") >= '0.6.4.9000')
-    devSVG(file = file, width = width, height = height)
-  else
-    grDevices::svg(filename = file, width = width, height = height)
+  svglite::svglite(file, width = width, height = height)
 }
 my_pp <- function(file) { # does not currently work
   out_path <- sub("svg$", "svgz", file)

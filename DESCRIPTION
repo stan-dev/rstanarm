@@ -26,14 +26,13 @@ Imports:
 Suggests:
     arm,
     gamm4,
-    grDevices,
     gridExtra,
     HSAUR3,
     KernSmooth,
     knitr,
     MASS,
-    RSvgDevice,
     rmarkdown,
+    svglite,
     testthat
 LinkingTo: StanHeaders (>= 2.8.9), rstan (>= 2.8.9), BH (>= 1.58.0), Rcpp (>=
     0.11.0), RcppEigen
