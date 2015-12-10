@@ -103,7 +103,7 @@
 #'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
 #'   function in the \pkg{MASS} package.
 #'  }
-#'  \item{\code{\link{stan_glmer}, \code{stan_glmer.nb}, \code{stan_lmer}}}{
+#'  \item{\code{\link{stan_glmer}}, \code{stan_glmer.nb}, \code{stan_lmer}}{
 #'   Similar to \code{\link[lme4]{glmer}},  \code{\link[lme4]{glmer.nb}} and 
 #'   \code{\link[lme4]{lmer}} functions in the \pkg{lme4} package, which augments 
 #'   GLMs to have group-specific terms that deviate from the common coefficients 
