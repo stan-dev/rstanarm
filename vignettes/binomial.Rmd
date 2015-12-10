@@ -200,7 +200,8 @@ Using the coefficient estimates we can plot the predicted probability of
 pr_switch <- function(x, ests) plogis(ests[1] + ests[2] * x)
 # A function to slightly jitter the binary data
 jitt <- function(...) {
-  geom_point(aes_string(...), position = position_jitter(height = 0.05, width = 0.1))
+  geom_point(aes_string(...), position = position_jitter(height = 0.05, width = 0.1), 
+             size = 2, shape = 21, stroke = 0.2)
 }
 ggplot(wells, aes(x = dist100, y = switch, color = switch)) + 
   scale_y_continuous(breaks = c(0, 0.5, 1)) +
@@ -249,6 +250,7 @@ ggplot(grid, aes(x = dist100, y = arsenic)) +
   scale_fill_gradient() +
   scale_color_manual("switch", values = c("white", "black"), labels = c("No", "Yes"))
 ```
+
 We can see that the black points (`switch=1`) are predominantly clustered in the
 upper-left region of the plot where the predicted probability of switching is
 highest.
