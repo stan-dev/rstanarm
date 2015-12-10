@@ -73,10 +73,10 @@ used.sampling <- function(x) {
   stopifnot(is.stanreg(x))
   x$algorithm == "sampling"
 }
-# used.variational <- function(x) {
-#   stopifnot(is.stanreg(x))
-#   x$algorithm %in% c("meanfield", "fullrank")
-# }
+used.variational <- function(x) {
+  stopifnot(is.stanreg(x))
+  x$algorithm %in% c("meanfield", "fullrank")
+}
 
 # Consistent error message to use when something is only available if
 # algorithm="sampling"
