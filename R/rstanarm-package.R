@@ -25,13 +25,13 @@
 #'   graphical posterior predictive checks and the 
 #'   \code{\link{posterior_predict}} function to easily estimate the effect of 
 #'   specific manipulations of predictor variables or to predict the outcome in 
-#'   a training set. Also, any \code{\link[=stanreg-objects]{stanreg}} object 
-#'   can be passed to the \code{\link[loo]{loo}} function in the \pkg{loo} 
-#'   package for model comparison or to the 
-#'   \code{\link[shinystan]{launch_shinystan}} function in the \pkg{shinystan} 
-#'   package in order to visualize the posterior distribution using the 
-#'   ShinyStan graphical user interface. See the \pkg{rstanarm} vignettes for 
-#'   more details about the entire process.
+#'   a training set. The fitted model objects
+#'   (\code{\link[=stanreg-objects]{stanreg}} objects) can also be passed to the
+#'   \code{\link[loo]{loo}} function in the \pkg{loo} package for model
+#'   comparison or to the \code{\link[shinystan]{launch_shinystan}} function in
+#'   the \pkg{shinystan} package in order to visualize the posterior
+#'   distribution using the ShinyStan graphical user interface. See the
+#'   \pkg{rstanarm} vignettes for more details about the entire process.
 #'
 #' @section Estimation algorithms: 
 #' The modeling functions in the \pkg{rstanarm} package take an \code{algorithm}
@@ -104,14 +104,14 @@
 #'   function in the \pkg{MASS} package.
 #'  }
 #'  \item{\code{\link{stan_glmer}}, \code{stan_glmer.nb}, \code{stan_lmer}}{
-#'   Similar to \code{\link[lme4]{glmer}},  \code{\link[lme4]{glmer.nb}} and 
-#'   \code{\link[lme4]{lmer}} functions in the \pkg{lme4} package, which augments 
-#'   GLMs to have group-specific terms that deviate from the common coefficients 
-#'   according to a mean-zero multivariate normal distribution with a 
-#'   highly-structured but unknown covariance matrix that itself has an 
-#'   innovative prior distribution. MCMC provides more appropriate estimates of 
-#'   uncertainty of models that consist of a mix of common and group-specific 
-#'   parameters.
+#'   Similar to the \code{\link[lme4]{glmer}}, \code{\link[lme4]{glmer.nb}} and 
+#'   \code{\link[lme4]{lmer}} functions in the \pkg{lme4} package in that GLMs 
+#'   are augmented to have group-specific terms that deviate from the common 
+#'   coefficients according to a mean-zero multivariate normal distribution with
+#'   a highly-structured but unknown covariance matrix (for which \pkg{rstanarm}
+#'   introduces an innovative prior distribution). MCMC provides more
+#'   appropriate estimates of uncertainty for models that consist of a mix of
+#'   common and group-specific parameters.
 #'  }
 #'  \item{\code{\link{stan_gamm4}}}{
 #'  Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4}, which augments
@@ -139,7 +139,7 @@
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
 #'   \code{\link{plots}} for the various plots that can be used
-#'   to explore fitted models.
+#'   to explore and check fitted models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
 #'   by \pkg{rstanarm} for model fitting.

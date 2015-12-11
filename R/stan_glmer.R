@@ -21,11 +21,12 @@
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
-#' @param ... For \code{stan_glmer}, further arguments passed to
-#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains},
-#'   \code{cores}, etc.). For \code{stan_lmer} and \code{stan_glmer.nb},
-#'   \code{...} should also contain all relevant arguments to pass to
-#'   \code{stan_glmer} (except \code{family}).
+#' @param ... For \code{stan_glmer}, further arguments passed to 
+#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
+#'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 
+#'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
+#'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
+#'   to pass to \code{stan_glmer} (except \code{family}).
 #' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
 #'   more information about the default arguments.
 #'
@@ -62,10 +63,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
   
-  if (match.arg(algorithm) == "optimizing") {
-    message("Only MCMC (algorithm='sampling') allowed for stan_(g)lmer.")
-    return(invisible(NULL))
-  }
   mc <- match.call(expand.dots = FALSE)
   if (is.character(family)) 
     family <- get(family, mode = "function", envir = parent.frame(2))

@@ -4,7 +4,7 @@
 #' Bayesian inference for GAMs with flexible priors.
 #' 
 #' @export
-#' @templateVar fun stan_glmm4
+#' @templateVar fun stan_gamm4
 #' @templateVar pkg gamm4
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
@@ -19,24 +19,25 @@
 #'   \code{\link[gamm4]{gamm4}}.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
-#' @param ... Further arguments passed to \code{\link[rstan]{sampling}} 
-#'   (e.g. \code{iter}, \code{chains},
+#' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
+#'   \code{iter}, \code{chains}, \code{cores}, etc.) or to
+#'   \code{\link[rstan]{vb}} (if \code{algorithm} is \code{"meanfield"} or
+#'   \code{"fullrank"}).
 #' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
 #'   more information about the default arguments.
 #'
 #' @details The \code{stan_gamm4} function is similar in syntax to 
-#'   \code{\link[gamm4]{gamm4}}, which accepts a syntax that is similar to
-#'   (but not quite as extensive as) that for \code{\link[mgcv]{gamm}} and 
-#'   converts it internally into the syntax accepted by \code{\link[lme4]{glmer}}
-#'   Rather than performing (restricted) maximum likelihood estimation the
+#'   \code{\link[gamm4]{gamm4}}, which accepts a syntax that is similar to (but 
+#'   not quite as extensive as) that for \code{\link[mgcv]{gamm}} and converts 
+#'   it internally into the syntax accepted by \code{\link[lme4]{glmer}}. But
+#'   rather than performing (restricted) maximum likelihood estimation, the 
 #'   \code{stan_gamm4} function utilizes MCMC to perform Bayesian estimation. 
-#'   The Bayesian model adds independent priors on the common regression
-#'   coefficients (in the same way as \code{\link{stan_glm}}) and priors on 
-#'   the terms of a decomposition of the covariance matrices of the
-#'   group-specific parameters, including the smooths. See
-#'   \code{\link[gamm4]{gamm4}} for more information about the model
-#'   specicification and \code{\link{priors}} for more information about the
-#'   priors.
+#'   The Bayesian model adds independent priors on the common regression 
+#'   coefficients (in the same way as \code{\link{stan_glm}}) and priors on the 
+#'   terms of a decomposition of the covariance matrices of the group-specific 
+#'   parameters, including the smooths. See \code{\link[gamm4]{gamm4}} for more 
+#'   information about the model specicification and \code{\link{priors}} for 
+#'   more information about the priors.
 #' @importFrom lme4 getME
 #' @examples
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
