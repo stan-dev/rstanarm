@@ -103,6 +103,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- as.name("model.frame")
   mf <- eval(mf, parent.frame())
+  mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   Y <- model.response(mf, "any")
   if (length(dim(Y)) == 1L) {
@@ -110,10 +111,6 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
-  is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 0
-  if (any(is_constant)) stop("Constant variable(s) found: ",
-                             paste(colnames(mf)[is_constant], collapse = ", "))
-
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)
   weights <- validate_weights(as.vector(model.weights(mf)))

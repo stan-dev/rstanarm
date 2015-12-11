@@ -121,6 +121,19 @@ test_that("validate_family works", {
   expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
 })
 
+test_that("check_constant_vars works", {
+  check_constant_vars <- rstanarm:::check_constant_vars
+  mf <- model.frame(glm(mpg ~ ., data = mtcars))
+  mf2 <- mf
+  mf2$wt <- 2
+  expect_equal(check_constant_vars(mf), mf)
+  expect_error(check_constant_vars(mf2), "wt")
+  mf2$gear <- 1
+  expect_error(check_constant_vars(mf2), "wt, gear")
+  expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
+  expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing"), "stanreg")
+})
+
 test_that("linear_predictor methods work", {
   linpred_vec <- rstanarm:::linear_predictor.default
   linpred_mat <- rstanarm:::linear_predictor.matrix

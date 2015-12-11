@@ -129,6 +129,19 @@ validate_family <- function(f) {
   return(f)
 }
 
+# Check if any variables in a model frame are constants
+# @param mf A model frame or model matrix
+# @return If no constant variables mf is returned, otherwise an error is thrown.
+check_constant_vars <- function(mf) {
+  is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 1
+  if (any(is_constant)) 
+    stop("Constant variable(s) found: ", 
+         paste(colnames(mf)[is_constant], collapse = ", "), 
+         call. = FALSE)
+  return(mf)
+}
+
+
 # Grep for "b" parameters (ranef)
 # @param x Character vector (often rownames(fit$stan_summary))
 .bnames <- function(x, ...) grep("^b\\[", x, ...)
