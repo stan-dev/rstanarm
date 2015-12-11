@@ -165,19 +165,6 @@ stan_polr <- function (formula, data, weights, ..., subset,
     class(out) <- c("stanreg", "polr")
     return(out)
   }
-  else if (algorithm == "optimizing") {
-    stanmat <- stanfit$theta_tilde
-    stan_summary <- cbind(Estimate = stanfit$par, 
-                          "Std. Error" = apply(stanmat, 2, sd),
-                          t(apply(stanmat, 2, quantile,
-                                  probs = c(0.025, .975))))
-    covmat <- cov(stanmat)
-    coefs <- stanfit$par[colnames(x)]
-    eta <- linear_predictor(coefs, x, offset)
-    mu <- inverse_link(eta)
-    residuals <- NA_real_
-    names(eta) <- names(mu) <- rownames(x)
-  }
   else {
     stanmat <- as.matrix(stanfit)
     coefs <- colMeans(stanmat[,1:K,drop=FALSE])
@@ -203,7 +190,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
               terms = Terms, prior.info = prior.info,
               algorithm = algorithm,
               stan_summary = stan_summary, family = method,
-              stanfit = if (algorithm == "optimizing") stanfit$stanfit else stanfit)
+              stanfit = stanfit)
   class(out) <- c("stanreg", "polr")
   return(out)
 }

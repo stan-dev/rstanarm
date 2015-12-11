@@ -84,10 +84,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   
   Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
                   flist = group$flist)$Z
-  if (algorithm == "optimizing") 
-    colnames(Z) <- .bnames(names(stanfit$par), value = TRUE)
-  else colnames(Z) <- .bnames(names(stanfit), value = TRUE)
-  
+  colnames(Z) <- .bnames(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
                y = y, data, prior.info, call, algorithm, glmod) 
   out <- stanreg(fit)

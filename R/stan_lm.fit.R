@@ -97,23 +97,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                     ybar, center_y, s_Y, Rb, SSR, R_inv)
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", 
             if (prior_PD == 0) "log_omega", "R2", "mean_PPD")
-  if (algorithm == "optimizing") {
-    stop("'optimizing' is not a supported estimation technique for this model")
-    opt <- optimizing(stanfit, data = standata, init = init_fun,
-                      draws = 1000, ...) # yields corner solution
-    new_names <- names(opt$par)
-    mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
-    new_names[mark] <- cn
-    new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    new_names[new_names == "sigma[1]"] <- "sigma"
-    new_names[new_names == "log_omega[1]"] <- "log-fit_ratio"
-    new_names[new_names == "R2[1]"] <- "R2"
-    names(opt$par) <- new_names
-    colnames(opt$theta_tilde) <- new_names
-    opt$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
-    return(opt)
-  }
-  else if (algorithm %in% c("meanfield", "fullrank")) {
+  if (algorithm %in% c("meanfield", "fullrank")) {
     stanfit <- rstan::vb(stanfit, data = standata, pars = pars,
                          algorithm = algorithm, ...)
   }
