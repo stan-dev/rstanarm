@@ -67,6 +67,8 @@ test_that("plot.stanreg ok for optimization", {
 
 test_that("plot.stanreg ok for vb", {
   expect_is(plot(fitvb), "ggplot")
+  expect_is(plot(fitvb, "hist"), "ggplot")
+  expect_is(plot(fitvb, "dens", separate_chains = TRUE), "ggplot")
   samp_only <- c("rhat", "ess", "mcse", "par", "diag", "ac")
   for (j in seq_along(samp_only)) {
     expect_error(plot(fitvb, samp_only[j]), regexp = "MCMC") 

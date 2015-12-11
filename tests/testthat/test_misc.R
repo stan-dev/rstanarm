@@ -2,6 +2,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
+SEED <- 12345
 
 context("helper functions")
 
@@ -102,6 +103,9 @@ test_that("validate_offset works", {
   expect_equal(validate_offset(rep(1, 10), rnorm(10)), rep(1, 10))
   expect_error(validate_offset(rep(1, 10), rnorm(5)))
   expect_error(validate_offset(rep(1, 5), rnorm(10)), regexp = "number of offsets")
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
+  fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
 })
 
 test_that("validate_family works", {
@@ -120,7 +124,6 @@ test_that("validate_family works", {
 test_that("linear_predictor methods work", {
   linpred_vec <- rstanarm:::linear_predictor.default
   linpred_mat <- rstanarm:::linear_predictor.matrix
-  
   x <- cbind(1, 1:4)
   bmat <- matrix(c(-0.5, 0, 0.5, 1), nrow = 2, ncol = 2)
   bvec <- bmat[1, ]

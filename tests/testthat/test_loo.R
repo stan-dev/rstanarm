@@ -3,7 +3,8 @@ library(loo)
 options(loo.cores = 1)
 SEED <- 1234
 CHAINS <- 2
-ITER <- 5 # small iter for speed
+CORES <- 1
+ITER <- 10 # small iter for speed
 
 # These tests just check that the loo.stanreg method (which calls loo.function
 # method) results are identical to the loo.matrix results. Since for these tests 
@@ -12,24 +13,33 @@ ITER <- 5 # small iter for speed
 # log-likelihood functions don't return any errors and whatnot (it does not check
 # that the results returned by loo are actually correct). 
 
+context("loo and waic")
+
 expect_identical_loo <- function(fit) {
-  expect_identical(loo(fit), loo(log_lik(fit)))
+  expect_identical(suppressWarnings(loo(fit)), 
+                   suppressWarnings(loo(log_lik(fit))))
   expect_equal(waic(fit), waic(log_lik(fit)))
 }
-
-
-context("loo")
+mcmc_only_error <- function(fit) {
+  msg <- "only available for models fit using MCMC"
+  expect_error(loo(fit), regexp = msg)
+  expect_error(waic(fit), regexp = msg)
+}
 
 test_that("loo & waic throw error for non mcmc models", {
   fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-  expect_error(loo(fito))
-  expect_error(waic(fito))
+  fitvb1 <- update(fito, algorithm = "meanfield")
+  fitvb2 <- update(fito, algorithm = "fullrank")
+  mcmc_only_error(fito)
+  mcmc_only_error(fitvb1)
+  mcmc_only_error(fitvb2)
 })
 
-test_that("loo for stan_glm works", {
+test_that("loo/waic for stan_glm works", {
   # gaussian
   fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
-                       chains = CHAINS, iter = ITER, seed = SEED)
+                       chains = CHAINS, iter = ITER, 
+                       cores = CORES, seed = SEED)
   expect_identical_loo(fit_gaus)
   
   # binomial
@@ -37,14 +47,16 @@ test_that("loo for stan_glm works", {
   numdead <- c(1, 4, 9, 13, 18, 20, 0, 2, 6, 10, 12, 16)
   SF <- cbind(numdead, numalive = 20-numdead)
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial, 
-                        chains = CHAINS, iter = ITER, seed = SEED)
+                        chains = CHAINS, iter = ITER, 
+                        cores = CORES, seed = SEED)
   expect_identical_loo(fit_binom)
   
   # poisson
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
                      counts = c(18,17,15,20,10,20,25,13,12))
-  fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, 
-                       family = poisson, chains = CHAINS, iter = ITER, seed = SEED)
+  fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, family = poisson,
+                       chains = CHAINS, iter = ITER, 
+                       cores = CORES, seed = SEED)
   expect_identical_loo(fit_pois)
   
   # gamma
@@ -52,27 +64,31 @@ test_that("loo for stan_glm works", {
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit_gamma <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma, 
-                        chains = CHAINS, iter = ITER, seed = SEED)
+                        chains = CHAINS, iter = ITER, 
+                        cores = CORES, seed = SEED)
   expect_identical_loo(fit_gamma)
 })
 
-test_that("loo for stan_polr works", {
+test_that("loo/waic for stan_polr works", {
   # logistic
   fit_logistic <- stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),  
-                        init_r = 0.1, chains = CHAINS, iter = ITER, seed = SEED)
+                        init_r = 0.1, chains = CHAINS, iter = ITER, 
+                        cores = CORES, seed = SEED)
   expect_identical_loo(fit_logistic)
 })
 
-test_that("loo for stan_lm works", {
+test_that("loo/waic for stan_lm works", {
   fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), 
-                    chains = CHAINS, iter = ITER, seed = SEED)
+                    chains = CHAINS, iter = ITER, 
+                    cores = CORES, seed = SEED)
   expect_identical_loo(fit_lm)
 })
 
-test_that("loo for stan_glmer works", {
+test_that("loo/waic for stan_glmer works", {
   # gaussian
   fit_glmer1 <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars, 
-                    chains = CHAINS, iter = ITER, seed = SEED)
+                           chains = CHAINS, iter = ITER, 
+                           cores = CORES, seed = SEED)
   expect_identical_loo(fit_glmer1)
   
   # binomial
