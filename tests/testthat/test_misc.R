@@ -96,6 +96,14 @@ test_that("validate_weights works", {
                      weights = rexp(nrow(mtcars))), "stanreg")
 })
 
+test_that("validate_offset works", {
+  validate_offset <- rstanarm:::validate_offset
+  expect_equal(validate_offset(NULL), double(0))
+  expect_equal(validate_offset(rep(1, 10), rnorm(10)), rep(1, 10))
+  expect_error(validate_offset(rep(1, 10), rnorm(5)))
+  expect_error(validate_offset(rep(1, 5), rnorm(10)), regexp = "number of offsets")
+})
+
 test_that("validate_family works", {
   validate_family <- rstanarm:::validate_family
   expect_equal(validate_family("gaussian"), gaussian())

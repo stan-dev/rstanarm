@@ -97,8 +97,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   if (missing(data)) data <- environment(formula)
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
-  arg_nms <- c("formula", "data", "subset", "weights", "na.action", "offset")
-  m <- match(arg_nms, names(mf), nomatch = 0L)
+  m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
+             names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- as.name("model.frame")
@@ -110,8 +110,6 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
-  
-  # check if any x variables are constants 
   is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 0
   if (any(is_constant)) stop("Constant variable(s) found: ",
                              paste(colnames(mf)[is_constant], collapse = ", "))
@@ -119,14 +117,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)
   weights <- validate_weights(as.vector(model.weights(mf)))
-  offset <- as.vector(model.offset(mf))
-  if (!is.null(offset)) {
-    if (length(offset) != NROW(Y))
-      stop(gettextf("number of offsets is %d should equal %d (number of observations)",
-                    length(offset), NROW(Y)), domain = NA)
-  }
-  else offset <- double(0)
-  
+  offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
+
   # if Y is proportion of successes and weights is total number of trials
   if (is.binomial(family$family) && NCOL(Y) == 1L && is.numeric(Y)) { 
     if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 
