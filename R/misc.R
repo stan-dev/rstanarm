@@ -95,6 +95,26 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Check weights argument
+# @param w 'weights' argument specified by user
+validate_weights <- function(w) {
+  if (missing(w) || is.null(w)) return(double(0))
+  else {
+    if (!is.numeric(w)) stop("'weights' must be a numeric vector.")
+    if (any(w < 0)) stop("Negative weights are not allowed.")
+  }
+  return(w)
+}
+
+# Check family argument
+# @param f 'family' argument specified by user
+validate_family <- function(f) {
+  if (is.character(f)) f <- get(f, mode = "function", envir = parent.frame(2))
+  if (is.function(f)) f <- f()
+  if (!is(f, "family")) stop("'family' must be a family.")
+  return(f)
+}
+
 # Grep for "b" parameters (ranef)
 # @param x Character vector (often rownames(fit$stan_summary))
 .bnames <- function(x, ...) grep("^b\\[", x, ...)

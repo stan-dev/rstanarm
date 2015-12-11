@@ -64,12 +64,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        adapt_delta = NULL, QR = FALSE) {
   
   mc <- match.call(expand.dots = FALSE)
-  if (is.character(family)) 
-    family <- get(family, mode = "function", envir = parent.frame(2))
-  if (is.function(family)) 
-    family <- family()
-  if (!is(family, "family"))
-    stop("'family' must be a family")
+  family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- glmerControl(check.nlev.gtreq.5 = "ignore",
                              check.nlev.gtr.1 = "stop",
@@ -84,9 +79,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   X <- glmod$X
 
   offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
-  if (missing(weights)) weights <- double(0)
-  if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
-  if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
+  weights <- validate_weights(weights)
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()
   if (!length(prior_ops)) prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
@@ -118,6 +111,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 #' @rdname stan_glmer
 #' @export
 stan_lmer <- function(...) {
+  if ("family" %in% names(list(...))) stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL
@@ -134,6 +128,7 @@ stan_lmer <- function(...) {
 #'   \code{\link{neg_binomial_2}}.
 #' 
 stan_glmer.nb <- function(..., link = "log") {
+  if ("family" %in% names(list(...))) stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL

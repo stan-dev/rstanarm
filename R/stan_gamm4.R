@@ -52,12 +52,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        adapt_delta = NULL, QR = FALSE) {
 
   mc <- match.call(expand.dots = FALSE)
-  if (is.character(family)) 
-    family <- get(family, mode = "function", envir = parent.frame(2))
-  if (is.function(family)) 
-    family <- family()
-  if (!is(family, "family"))
-    stop("'family' must be a family")
+  family <- validate_family(family)
   mc[[1]] <- quote(gamm4::gamm4)
   mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_covariance <-
     mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
@@ -69,11 +64,9 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   glmod$y <- NULL
   glmod$reTrms <- group
 
+  weights <- validate_weights(weights)
   if (TRUE) offset <- double(0)  
   else offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
-  if (missing(weights)) weights <- double(0)
-  if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
-  if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()
   if (!length(prior_ops)) prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)

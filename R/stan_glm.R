@@ -93,11 +93,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     adapt_delta = NULL, QR = FALSE) {
 
   # Parse like glm()
-  if (is.character(family)) 
-    family <- get(family, mode = "function", envir = parent.frame())
-  if (is.function(family)) family <- family()
-  if (!is(family, "family")) stop("'family' must be a family")
-  
+  family <- validate_family(family)
   if (missing(data)) data <- environment(formula)
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
@@ -122,17 +118,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)
-  weights <- as.vector(model.weights(mf))
-  if (!is.null(weights) && !is.numeric(weights)) stop("'weights' must be a numeric vector")
-  if (!is.null(weights) && any(weights < 0)) stop("negative weights not allowed")
-  if (is.null(weights)) weights <- double(0) #rep(1.0, NROW(Y))
+  weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- as.vector(model.offset(mf))
   if (!is.null(offset)) {
     if (length(offset) != NROW(Y))
       stop(gettextf("number of offsets is %d should equal %d (number of observations)",
                     length(offset), NROW(Y)), domain = NA)
   }
-  else offset <- double(0) #rep(0, nrow(X))
+  else offset <- double(0)
   
   # if Y is proportion of successes and weights is total number of trials
   if (is.binomial(family$family) && NCOL(Y) == 1L && is.numeric(Y)) { 
@@ -145,9 +138,9 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     }
   }
   
+  algorithm <- match.arg(algorithm)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  algorithm <- match.arg(algorithm)
 
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
                           offset = offset, family = family,
@@ -161,7 +154,6 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                call = call, terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
-  
   out <- stanreg(fit)
   if (!x) out$x <- NULL
   if (!y) out$y <- NULL
@@ -174,6 +166,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 #' @param link For \code{stan_glm.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 stan_glm.nb <- function(..., link = "log") {
+  if ("family" %in% names(list(...))) stop("'family' should not be specified.")
   mc <- call <- match.call()
   mc[[1L]] <- quote(stan_glm)
   mc$link <- NULL

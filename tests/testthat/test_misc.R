@@ -81,6 +81,34 @@ test_that("validate_parameter_value works", {
   expect_true(validate_parameter_value(.Machine$double.xmax))
 })
 
+test_that("validate_weights works", {
+  validate_weights <- rstanarm:::validate_weights
+  ff <- function(weights) validate_weights(weights)
+  expect_equal(ff(), double(0))
+  expect_equal(ff(x <- rexp(10)), x)
+  expect_equal(validate_weights(NULL), double(0))
+  expect_equal(validate_weights(1:10), 1:10)
+  expect_error(validate_weights(LETTERS), regexp = "numeric")
+  expect_error(validate_weights(c(-1,2,3)), regexp = "negative", ignore.case = TRUE)
+  expect_error(stan_glm(mpg ~ wt, data = mtcars, weights = rep(-1, nrow(mtcars))), 
+               regexp = "negative", ignore.case = TRUE)
+  expect_is(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                     weights = rexp(nrow(mtcars))), "stanreg")
+})
+
+test_that("validate_family works", {
+  validate_family <- rstanarm:::validate_family
+  expect_equal(validate_family("gaussian"), gaussian())
+  expect_equal(validate_family(gaussian), gaussian())
+  expect_equal(validate_family(gaussian()), gaussian())
+  expect_equal(validate_family(gaussian(link = "log")), gaussian(link = "log"))
+  expect_equal(validate_family(binomial(link = "probit")), binomial(link = "probit"))
+  expect_equal(validate_family(neg_binomial_2()), neg_binomial_2())
+  expect_error(validate_family("not a family"))
+  expect_error(validate_family(rnorm(10)), "must be a family")
+  expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
+})
+
 test_that("linear_predictor methods work", {
   linpred_vec <- rstanarm:::linear_predictor.default
   linpred_mat <- rstanarm:::linear_predictor.matrix
