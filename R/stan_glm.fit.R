@@ -33,14 +33,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                          adapt_delta = NULL, QR = FALSE) {
   
-  if (is.character(family)) 
-    family <- get(family, mode = "function", envir = parent.frame())
-  if (is.function(family)) 
-    family <- family()
-  if (!is(family, "family"))
-    stop("'family' must be a family")
-  
-  # these are from help(family)
+  family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
@@ -184,7 +177,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   if (QR) {
     if (ncol(xtemp) <= 1)
-      stop("'QR' can only be specified when there are multiple predictors")
+      stop("'QR' can only be specified when there are multiple predictors.")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
     sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
