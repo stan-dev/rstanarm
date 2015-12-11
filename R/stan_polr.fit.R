@@ -21,17 +21,17 @@
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets.
 #' 
 #' @importFrom utils head tail
-stan_polr.fit <- function (x, y, wt = NULL, offset = NULL, 
-                           method = c("logistic", "probit", "loglog", 
-                                      "cloglog", "cauchit"), ...,
-                           prior = R2(stop("'location' must be specified")), 
-                           prior_counts = dirichlet(1), prior_PD = FALSE, 
-                           algorithm = c("sampling", "meanfield", "fullrank"),
-                           adapt_delta = NULL) {
+stan_polr.fit <- function(x, y, wt = NULL, offset = NULL, 
+                          method = c("logistic", "probit", "loglog", 
+                                     "cloglog", "cauchit"), ...,
+                          prior = R2(stop("'location' must be specified")), 
+                          prior_counts = dirichlet(1), prior_PD = FALSE, 
+                          algorithm = c("sampling", "meanfield", "fullrank"),
+                          adapt_delta = NULL) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
   link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)
-  if (!is.factor(y)) stop("'y' must be a factor")
+  if (!is.factor(y)) stop("'y' must be a factor.")
   y_lev <- levels(y)
   J <- length(y_lev)
   y <- as.integer(y)
@@ -74,7 +74,6 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   start <- function(chain_id) {
     list(pi = pi)
   }
-
   stanfit <- stanmodels$polr
   if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
   else pars <- c("zeta", "beta", "mean_PPD")

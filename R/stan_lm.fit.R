@@ -20,7 +20,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior_intercept = NULL, prior_PD = FALSE, 
                          algorithm = c("sampling", "meanfield", "fullrank"),
                          adapt_delta = NULL) {
-  if (NCOL(y) > 1) stop("multivariate responses not supported yet")
+  if (NCOL(y) > 1) stop("Multivariate responses not supported yet.")
   if (colnames(x)[1] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[,-1,drop=FALSE]
@@ -32,8 +32,8 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   J <- 1L
   N <- array(nrow(x), c(J))
   K <- ncol(x)
-  if (K == 0) stop("'stan_lm.fit' is not suitable for estimating a mean ",
-                   "use 'stan_glm.fit' with 'family = gaussian()' instead")
+  if (K == 0) stop("'stan_lm.fit' is not suitable for estimating a mean.",
+                   "\nUse 'stan_glm.fit' with 'family = gaussian()' instead.")
   xbar <- colMeans(x)
   x <- sweep(x, 2, xbar, FUN = "-")
   b <- coef(ols)
@@ -70,7 +70,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   }
   else {
     if (!identical(prior_intercept$dist, "normal"))
-      stop("'prior_intercept' must be 'NULL' or a call to 'normal'")
+      stop("'prior_intercept' must be 'NULL' or a call to 'normal'.")
     prior_dist_for_intercept <- 1L
     prior_mean_for_intercept <- prior_intercept$location
     prior_scale_for_intercept <- prior_intercept$scale
@@ -110,8 +110,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
-  new_names <- c(if (has_intercept) "(Intercept)", colnames(x), "sigma", 
-                 if (prior_PD == 0) "log-fit_ratio", "R2", "mean_PPD", "log-posterior")
+  new_names <- c(if (has_intercept) "(Intercept)", 
+                 colnames(x), "sigma", 
+                 if (prior_PD == 0) "log-fit_ratio", 
+                 "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
 }

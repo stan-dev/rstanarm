@@ -109,27 +109,25 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL) {
   
-  call <- match.call()
+  call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
     mf$adapt_delta <- NULL
-  
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
   mt <- modelframe$terms
   Y <- modelframe$y
   X <- modelframe$x
-  if (!singular.ok) X <- X[,!is.na(modelframe$coefficients),drop = FALSE]
+  if (!singular.ok) X <- X[, !is.na(modelframe$coefficients), drop = FALSE]
   w <- modelframe$weights
   offset <- model.offset(mf)
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
-                          prior = prior,  prior_intercept = prior_intercept, 
+                          prior = prior, prior_intercept = prior_intercept, 
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
-
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, data,
                prior.info = prior, algorithm = "sampling",
