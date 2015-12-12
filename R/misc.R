@@ -134,8 +134,8 @@ validate_family <- function(f) {
 # @return If no constant variables mf is returned, otherwise an error is thrown.
 check_constant_vars <- function(mf) {
   lu <- function(x) length(unique(x))
-  consts <- c("(weights)", "(offset)", "(Intercept)")
-  sel <- !colnames(mf) %in% consts
+  nocheck <- c("(weights)", "(offset)", "(Intercept)")
+  sel <- !colnames(mf) %in% nocheck
   is_constant <- apply(mf[, sel, drop = FALSE], 2, lu) == 1
   if (any(is_constant)) 
     stop("Constant variable(s) found: ", 
