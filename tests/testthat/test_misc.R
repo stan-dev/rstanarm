@@ -102,7 +102,8 @@ test_that("validate_offset works", {
   expect_equal(validate_offset(NULL), double(0))
   expect_equal(validate_offset(rep(1, 10), rnorm(10)), rep(1, 10))
   expect_error(validate_offset(rep(1, 10), rnorm(5)))
-  expect_error(validate_offset(rep(1, 5), rnorm(10)), regexp = "number of offsets")
+  expect_error(validate_offset(rep(1, 5), rnorm(10)), 
+               regexp = "number of offsets", ignore.case = TRUE)
   fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
   fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
   expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
@@ -132,6 +133,15 @@ test_that("check_constant_vars works", {
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
   expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing"), "stanreg")
+  expect_is(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing"), 
+            "stanreg")
+  
+  esoph2 <- esoph
+  esoph2$agegp[1:nrow(esoph2)] <- "75+"
+  expect_error(stan_polr(tobgp ~ agegp, data = esoph2, cores = 1, iter = 10,
+                         prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED), 
+               regexp = "agegp")
 })
 
 test_that("linear_predictor methods work", {
