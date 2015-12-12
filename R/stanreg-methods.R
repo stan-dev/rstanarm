@@ -275,11 +275,10 @@ formula.stanreg <- function(x, ...) x$formula
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
 model.frame.stanreg <- function(formula, ...) {
-  if (is(formula, "lmerMod")) {
-    fit <- formula
-    model.frame(lme4::subbars(fit$formula), fit$data)
-  }
-  else NextMethod("model.frame")
+  if (is(formula, "lmerMod")) 
+    return(formula$glmod$fr)
+  else 
+    NextMethod("model.frame")
 }
 
 #' model.matrix method for stanreg objects
