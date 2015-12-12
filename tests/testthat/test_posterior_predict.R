@@ -39,12 +39,12 @@ test_that("posterior_predict compatible with stan_lm", {
 })
 
 context("posterior_predict (stan_glm)")
-test_that("posterior_predict compatible with gaussian glm", {
+test_that("compatible with gaussian glm", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, 
                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
 })
-test_that("posterior_predict compatible with poisson & negbin glm", {
+test_that("compatible with poisson & negbin glm", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
@@ -56,7 +56,7 @@ test_that("posterior_predict compatible with poisson & negbin glm", {
 })
 
 context("posterior_predict (stan_polr)")
-test_that("posterior_predict compatible with stan_polr", {
+test_that("compatible with stan_polr", {
   fit <- stan_polr(tobgp ~ agegp + alcgp, data = esoph, 
                    prior = R2(location = 0.4),
                    iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
@@ -64,19 +64,25 @@ test_that("posterior_predict compatible with stan_polr", {
 })
 
 context("posterior_predict (stan_(g)lmer)")
-test_that("posterior_predict compatible with stan_lmer", {
+test_that("compatible with stan_lmer", {
   fit <- stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
                    prior = normal(0,1), 
                    iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
 })
-test_that("posterior_predict compatible with stan_glmer (binomial)", {
+test_that("compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
+})
+test_that("compatible with stan_glmer with transformation in formula", {
+  fit <- stan_lmer(mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = mtcars, 
+                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
+  expect_silent(yrep1 <- posterior_predict(fit))
+  expect_silent(yrep1 <- posterior_predict(fit, newdata = mtcars[1:5, ]))
 })
 
 
 context("posterior_predict (optimizing and vb)")
-test_that("posterior_predict errors for optimizing and silent for vb", {
+test_that("errors for optimizing and silent for vb", {
   fit <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing")
   fit2 <- update(fit, algorithm = "meanfield")
   fit3 <- update(fit, algorithm = "fullrank")
