@@ -17,7 +17,7 @@
 #' Bayesian generalized linear models via Stan
 #'
 #' Generalized linear modeling with optional prior distributions for 
-#' the coefficients, intercept, and nuisance parameter
+#' the coefficients, intercept, and nuisance parameter.
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
