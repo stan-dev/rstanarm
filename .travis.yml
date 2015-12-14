@@ -13,7 +13,6 @@ r_binary_packages:
   - gridExtra
   - KernSmooth
   - knitr
-  - RSvgDevice
   - testthat
 
 env:
