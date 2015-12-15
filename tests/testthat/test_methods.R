@@ -60,7 +60,7 @@ test_that("stanreg extractor methods work properly", {
 
 test_that("log_lik method works", {
   expect_error(log_lik(stan_glm_opt1))
-  expect_silent(log_lik(stan_glm_vb1))
+  expect_error(log_lik(stan_glm_vb1))
   expect_silent(log_lik(stan_glm1))
   
   expect_silent(log_lik(stan_polr1))
