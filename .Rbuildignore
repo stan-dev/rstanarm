@@ -3,6 +3,7 @@
 ^\.Rproj\.user$
 man-roxygen/*
 vignettes/_output.yaml
+README.md
 ^.*\.o$
 ^\cleanup*
 ^inst/doc/[A-Za-z0-9\-_]+[.]svg$
