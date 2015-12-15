@@ -44,19 +44,19 @@ pp_data <- function(object, newdata = NULL, ...) {
 
 .pp_data_mer <- function(object, newdata, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
-  Z <- .pp_data_mer_z(object, newdata, ...)
-  if (!is.null(Z)) {
-    x <- cbind(x, Z)
-    if (!is.null(attr(Z, "NEW_cols"))) {
-      attr(x, "NEW_cols") <- attr(Z, "NEW_cols") + ncol(X)
-    }
+  z <- .pp_data_mer_z(object, newdata, ...)
+  if (!is.null(z)) {
+    K <- ncol(x)
+    x <- cbind(x, z)
+    if (!is.null(attr(z, "NEW_cols")))
+      attr(x, "NEW_cols") <- attr(z, "NEW_cols") + K
   }
   return(nlist(x, offset = object$offset))
 }
 
 .pp_data_mer_x <- function(object, newdata, ...) {
-  X <- get_x(object)
-  if (is.null(newdata)) return(X)
+  x <- get_x(object)
+  if (is.null(newdata)) return(x)
   form <- attr(object$glmod$fr, "formula")
   L <- length(form)
   form[[L]] <- lme4::nobars(form[[L]])
@@ -71,8 +71,8 @@ pp_data <- function(object, newdata = NULL, ...) {
   orig_levs <- if (length(isFac) == 0) 
     NULL else lapply(mf[isFac], levels)
   mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
-  X <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(X, "contrasts"))
-  return(X)
+  x <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(x, "contrasts"))
+  return(x)
 }
 
 # based on lme4:::mkNewReTrms
@@ -81,17 +81,21 @@ pp_data <- function(object, newdata = NULL, ...) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
   fmla0check <- is(re.form, "formula") && length(re.form) == 2 && identical(re.form[[2]], 0)
   if (NAcheck || fmla0check) return(NULL)
-  if (is.null(newdata)) return(get_z(object))
-  mfnew <- model.frame(delete.response(terms(object, fixed.only=TRUE)),
-                       newdata, na.action=na.action)
-  newdata.NA <- newdata
-  if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
-    newdata.NA <- newdata.NA[-fixed.na.action,]
+  if (is.null(newdata) && is.null(re.form)) return(get_z(object))
+  else if (is.null(newdata)) {
+    rfd <- mfnew <- model.frame(object)
+  } else {
+    mfnew <- model.frame(delete.response(terms(object, fixed.only=TRUE)),
+                         newdata, na.action=na.action)
+    newdata.NA <- newdata
+    if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
+      newdata.NA <- newdata.NA[-fixed.na.action,]
+    }
+    tt <- delete.response(terms(object, random.only=TRUE))
+    rfd <- model.frame(tt,newdata.NA,na.action=na.pass)
+    if (!is.null(fixed.na.action))
+      attr(rfd,"na.action") <- fixed.na.action
   }
-  tt <- delete.response(terms(object, random.only=TRUE))
-  rfd <- model.frame(tt,newdata.NA,na.action=na.pass)
-  if (!is.null(fixed.na.action))
-    attr(rfd,"na.action") <- fixed.na.action
   if (is.null(re.form)) 
     re.form <- justRE(formula(object))
   if (!inherits(re.form, "formula"))
@@ -133,10 +137,10 @@ pp_data <- function(object, newdata = NULL, ...) {
       if (length(NEW_vars[[j]])) names(NEW_cols)[NEW_vars[[j]]] <- nRnms[j]
     } 
   }
-  Z <- structure(t(as.matrix(ReTrms$Zt)), 
+  z <- structure(t(as.matrix(ReTrms$Zt)), 
                  na.action = attr(mfnew, "na.action"), 
                  NEW_cols = NEW_cols)
-  return(Z)
+  return(z)
 }
 
 #copied from lme4:::levelfun except use NAs instead of 0s in matrix
