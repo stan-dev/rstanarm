@@ -7,10 +7,8 @@ os:
   - osx
   
 r_binary_packages:
-  - ggplot2
   - lme4
   - arm
-  - gridExtra
   - KernSmooth
   - knitr
   - testthat
@@ -20,19 +18,18 @@ env:
     - CXX_OLEVEL=2 CXX=clang++
 
 
-before script:
-  - echo "CXX = `R CMD config CXX`" >> ./rstan/R_Makevars 
-  - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ./rstan/R_Makevars 
+before_install:
+  - mkdir -p ~/.R/
+  - echo "CXX = `R CMD config CXX`" >> ~/.R/Makevars
+  - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ~/.R/Makevars 
   - export CLANG_EXTRA_ARG=""
   - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
-  - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ./rstan/R_Makevars
-  - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ./rstan/R_Makevars
-  - rm ./rstan/R_Makevars.bak
-  - more ./rstan/R_Makevars
-  - mkdir -p ~/.R/; cat ./rstan/R_Makevars > ~/.R/Makevars
-  - more ~/.R/Makevars
-  - Rscript -e "devtools::install_git('http://github.com/stan-dev/rstan/', ref = 'develop', subdir = 'StanHeaders')"
-  - Rscript -e "devtools::install_github('stan-dev/rstan', ref = 'develop', subdir = 'rstan/rstan')"
+  - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
+  - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
+  - git clone --recursive "http://github.com/stan-dev/rstan/"
+  - R CMD INSTALL rstan/StanHeaders
+  - Rscript -e "install.packages(c('inline', 'Rcpp', 'coda', 'BH', 'RcppEigen', 'RInside', 'RUnit', 'ggplot2', 'gridExtra'), repos='http://cran.rstudio.com')"
+  - R CMD INSTALL rstan/rstan/rstan
 
 r_github_packages:
   - jimhester/covr
