@@ -55,6 +55,8 @@ pp_data <- function(object, newdata = NULL, ...) {
   return(nlist(x, offset = object$offset))
 }
 
+# the functions below are heavily based on a combination of
+# lme4:::predict.merMod and lme4:::mkNewReTrms
 .pp_data_mer_x <- function(object, newdata, ...) {
   x <- get_x(object)
   if (is.null(newdata)) return(x)
@@ -76,9 +78,8 @@ pp_data <- function(object, newdata = NULL, ...) {
   return(x)
 }
 
-# based on lme4:::mkNewReTrms
-.pp_data_mer_z <- function(object, newdata, re.form = NULL, na.action = na.pass,
-                           allow.new.levels = FALSE) {
+.pp_data_mer_z <- function(object, newdata, allow.new.levels = FALSE, 
+                           re.form = NULL, na.action = na.pass) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
   fmla0check <- is(re.form, "formula") && length(re.form) == 2 && identical(re.form[[2]], 0)
   if (NAcheck || fmla0check) return(NULL)
@@ -104,7 +105,6 @@ pp_data <- function(object, newdata = NULL, ...) {
   if (length(fit.na.action <- attr(mfnew,"na.action")) > 0) {
     newdata <- newdata[-fit.na.action,]
   }
-  ## note: mkReTrms automatically *drops* unused levels
   ReTrms <- lme4::mkReTrms(lme4::findbars(re.form[[2]]), rfd)
   if (!allow.new.levels && any(vapply(ReTrms$flist, anyNA, NA)))
     stop("NAs are not allowed in prediction data",
@@ -114,16 +114,12 @@ pp_data <- function(object, newdata = NULL, ...) {
   if (!all(nRnms %in% ns.re))
     stop("Grouping factors specified in re.form that were not present in original model.")
   new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
-  ## fill in/delete levels as appropriate
   re_x <- Map(function(r,n) levelfun(r,n,allow.new.levels=allow.new.levels),
               re[names(new_levels)], new_levels)
-  ## pick out random effects values that correspond to
-  ##  random effects incorporated in re.form ...
-  ## NB: Need integer indexing, as nRnms can be duplicated: (age|Subj) + (sex|Subj) :
   re_new <- lapply(seq_along(nRnms), function(i) {
     rname <- nRnms[i]
     if (!all(Rcnms[[i]] %in% names(re[[rname]])))
-      stop("Terms specified in re.form that were not present in original model")
+      stop("Terms specified in re.form that were not in original model.")
     re_x[[rname]][,Rcnms[[i]]]
   })
   names(re_new) <- nRnms
@@ -144,10 +140,10 @@ pp_data <- function(object, newdata = NULL, ...) {
   return(z)
 }
 
-#copied from lme4:::levelfun except use NAs instead of 0s in matrix
+# lme4:::levelfun except use NAs instead of 0s in matrix
 levelfun <- function(x, nl.n, allow.new.levels = FALSE) {
   if (!all(nl.n %in% rownames(x))) {
-    if (!allow.new.levels) stop("new levels detected in newdata")
+    if (!allow.new.levels) stop("New levels detected in newdata.")
     newx <- as.data.frame(matrix(NA, # use NA instead of zero
                                  nrow = length(nl.n), ncol = ncol(x), 
                                  dimnames = list(nl.n, names(x))))

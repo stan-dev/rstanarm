@@ -20,6 +20,10 @@
 #'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
 #'   See Examples.
 #' @param ... Currently ignored.
+#' @param allow.new.levels A logical scalar (defaulting to \code{FALSE})
+#'   indicating whether new levels in grouping variables are allowed in
+#'   \code{newdata}. Only relevant for \code{\link[=stan_glmer]{GLMS with
+#'   group-specific terms}}.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -44,7 +48,8 @@
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
 #' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
+posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ..., 
+                              allow.new.levels = FALSE) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
@@ -63,7 +68,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
   if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
                       call. = FALSE)
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
-  dat <- pp_data(object, newdata, ...)
+  dat <- pp_data(object, newdata, allow.new.levels, ...)
   x <- dat$x
   NEW_cols <- attr(x, "NEW_cols")
   if (!is.null(NEW_cols)) {
@@ -74,6 +79,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
   if (!is.null(NEW_cols)) {
     x <- cbind(x, xNEW)
     sel <- list()
+    browser()
     for (j in seq_along(NEW_cols)) {
       sel[[j]] <- grep(paste0(names(NEW_cols)[j],":_NEW_"), 
                        colnames(NEW_draws), fixed = TRUE)
