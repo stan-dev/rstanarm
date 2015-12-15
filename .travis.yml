@@ -7,11 +7,8 @@ os:
   - osx
   
 r_binary_packages:
-  - rstan
-  - ggplot2
   - lme4
   - arm
-  - gridExtra
   - KernSmooth
   - knitr
   - testthat
@@ -31,6 +28,7 @@ before_install:
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
   - git clone --recursive "http://github.com/stan-dev/rstan/"
   - R CMD INSTALL rstan/StanHeaders
+  - Rscript -e "install.packages(c('inline', 'Rcpp', 'coda', 'BH', 'RcppEigen', 'RInside', 'RUnit', 'ggplot2', 'gridExtra'), repos='http://cran.rstudio.com')"
   - R CMD INSTALL rstan/rstan/rstan
 
 r_github_packages:
