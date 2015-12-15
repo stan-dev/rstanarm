@@ -150,9 +150,10 @@
 #'   
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
+#' @template reference-lme4
 #' @template reference-bda
 #' @template reference-gelman-hill
-#' @template reference-loo
 #' @template reference-stan-manual
+#' @template reference-loo
 #'   
 NULL
