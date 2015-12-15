@@ -7,6 +7,7 @@ os:
   - osx
   
 r_binary_packages:
+  - rstan
   - ggplot2
   - lme4
   - arm
@@ -20,7 +21,7 @@ env:
     - CXX_OLEVEL=2 CXX=clang++
 
 
-before script:
+before_install:
   - echo "CXX = `R CMD config CXX`" >> ./rstan/R_Makevars 
   - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ./rstan/R_Makevars 
   - export CLANG_EXTRA_ARG=""
@@ -31,8 +32,9 @@ before script:
   - more ./rstan/R_Makevars
   - mkdir -p ~/.R/; cat ./rstan/R_Makevars > ~/.R/Makevars
   - more ~/.R/Makevars
-  - Rscript -e "devtools::install_git('http://github.com/stan-dev/rstan/', ref = 'develop', subdir = 'StanHeaders')"
-  - Rscript -e "devtools::install_github('stan-dev/rstan', ref = 'develop', subdir = 'rstan/rstan')"
+  - git clone --recursive "http://github.com/stan-dev/rstan/"
+  - R CMD INSTALL rstan/StanHeaders
+  - R CMD INSTALL rstan/rstan/rstan
 
 r_github_packages:
   - jimhester/covr
