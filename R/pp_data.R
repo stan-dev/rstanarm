@@ -1,5 +1,6 @@
 # This file is part of rstanarm.
 # Copyright 1995-2007 R Core Development Team
+# Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
 # Copyright 2015 Stan Development Team
 #
 # rstanarm is free software: you can redistribute it and/or modify
