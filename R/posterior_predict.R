@@ -79,7 +79,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...,
   if (!is.null(NEW_cols)) {
     x <- cbind(x, xNEW)
     sel <- list()
-    browser()
+    # FIXME this doesn't work because e.g. grepping for gear will get both
+    # b[(Intercept) gear:_NEW_] and b[wt gear:_NEW_]
     for (j in seq_along(NEW_cols)) {
       sel[[j]] <- grep(paste0(names(NEW_cols)[j],":_NEW_"), 
                        colnames(NEW_draws), fixed = TRUE)

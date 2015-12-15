@@ -110,6 +110,8 @@ test_that("posterior_predict close to predict.merMod", {
   
   nd <- nd2 <- mtcars[1:5, ]
   nd2$cyl[2] <- 5 # new level
+  nd3 <- nd2
+  nd3$gear[2] <- 7
   for (j in 1:3) {
     expect_equal(
       predict(get(paste0("sfit", j))),
@@ -128,6 +130,16 @@ test_that("posterior_predict close to predict.merMod", {
                                  allow.new.levels = TRUE)),
       unname(predict(lfit1, newdata = nd2, allow.new.levels = TRUE)),
       tol = 0.5)
+    expect_equal(
+      colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd3, 
+                                 allow.new.levels = TRUE)),
+      unname(predict(lfit1, newdata = nd3, allow.new.levels = TRUE)),
+      tol = 0.5)
+    
+    expect_error(
+      posterior_predict(get(paste0("sfit", j)), newdata = nd3, 
+                        allow.new.levels = FALSE),
+      regexp = "new levels", ignore.case = TRUE)
   }
 })
 
