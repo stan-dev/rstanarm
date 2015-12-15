@@ -17,6 +17,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 

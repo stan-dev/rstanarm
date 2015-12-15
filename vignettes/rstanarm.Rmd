@@ -17,6 +17,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 
@@ -240,8 +242,8 @@ leave-one-out cross-validation or the approximation thereof provided by the
 `loo` function in the __loo__ package, for which a method is provided by the
 __rstanarm__ package.
 ```{r loo}
-loo_bglm_1 <- loo(womensrole_bglm_1, cores = 2)
-loo_bglm_2 <- loo(womensrole_bglm_2, cores = 2)
+loo_bglm_1 <- loo(womensrole_bglm_1)
+loo_bglm_2 <- loo(womensrole_bglm_2)
 ```
 First, we verify that the posterior is not too sensitive to any particular
 observation in the dataset.
@@ -256,7 +258,6 @@ There are only one or two moderate outliers (whose statistics are greater
 than $0.5$), which should not have too much of an effect on the resulting model
 comparison:
 ```{r}
-library(loo)
 compare(loo_bglm_1, loo_bglm_2)
 ```
 In this case, there is little difference in the expected log pointwise

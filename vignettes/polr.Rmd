@@ -17,6 +17,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 
@@ -198,7 +200,7 @@ post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
                    prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
                    method = "probit", 
                    chains = CHAINS, cores = CORES, seed = SEED)
-plot(loo(post2, cores = CORES))
+plot(loo(post2))
 ```
 
 This prior seems to have worked well in this case because none of the points

@@ -5,7 +5,7 @@
 #' Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Compare
 #' two or more models using the \code{\link[loo]{compare}} function.
 #' 
-#' @aliases loo waic
+#' @aliases loo waic compare
 #'
 #' @export
 #' @templateVar stanregArg x
@@ -22,7 +22,6 @@
 #' \dontrun{
 #' SEED <- 42024
 #' set.seed(SEED)
-#' library(loo)
 #' 
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
 #' fit2 <- update(fit1, formula = . ~ . + cyl)
@@ -51,7 +50,7 @@
 #' compare(loo_lalonde1, loo_lalonde2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function compare
 #' 
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x)) STOP_sampling_only("loo")
