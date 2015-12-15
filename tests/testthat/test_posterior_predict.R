@@ -2,7 +2,9 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
+library(lme4)
 SEED <- 123
+set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
 CORES <- 1
@@ -89,5 +91,43 @@ test_that("errors for optimizing and silent for vb", {
   expect_error(posterior_predict(fit), regexp = "optimizing")
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit3))
+})
+
+
+context("posterior_predict (compare to lme4)")
+test_that("posterior_predict close to predict.merMod", {
+  mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
+  mod2 <- as.formula(mpg ~ log1p(wt) + (1|cyl))
+  mod3 <- as.formula(mpg ~ wt + (1|cyl) + (1 + wt|gear))
+
+  lfit1 <- lmer(mod1, data = mtcars)
+  sfit1 <- stan_glmer(mod1, data = mtcars, cores = CORES, chains = CHAINS, 
+                      iter = 400, seed = SEED)
+  lfit2 <- update(lfit1, formula = mod2)
+  sfit2 <- update(sfit1, formula = mod2)
+  lfit3 <- update(lfit1, formula = mod3)
+  sfit3 <- update(sfit1, formula = mod3)
+  
+  nd <- nd2 <- mtcars[1:5, ]
+  nd2$cyl[2] <- 5 # new level
+  for (j in 1:3) {
+    expect_equal(
+      predict(get(paste0("sfit", j))),
+      unname(predict(get(paste0("lfit", j)))),
+      tol = 0.5)
+    expect_equal(
+      predict(get(paste0("sfit", j)), newdata = nd),
+      predict(get(paste0("lfit", j)), newdata = nd),
+      tol = 0.5)
+    expect_equal(
+      colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd)),
+      unname(predict(get(paste0("lfit", j)), newdata = nd)),
+      tol = 0.5)
+    expect_equal(
+      colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd2, 
+                                 allow.new.levels = TRUE)),
+      unname(predict(lfit1, newdata = nd2, allow.new.levels = TRUE)),
+      tol = 0.5)
+  }
 })
 
