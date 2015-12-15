@@ -17,6 +17,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 
@@ -288,9 +290,8 @@ for estimating out of sample predictive performance and is implemented
 by the `loo` function in the __loo__ package:
 
 ```{r, LOO}
-library(loo)
-(loo1 <- loo(fit1, cores = 2))
-(loo2 <- loo(fit2, cores = 2))
+(loo1 <- loo(fit1))
+(loo2 <- loo(fit2))
 compare(loo1, loo2)
 ```
 
