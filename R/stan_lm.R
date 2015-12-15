@@ -131,7 +131,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           ...)
 
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
-               weights = w, x = X, y = Y, data,
+               weights = w, x = X, y = Y, 
+               data = if(missing("data")) environment(formula) else data,
                prior.info = prior, algorithm = "sampling",
                call = call, terms = mt,
                model = if (model) model.frame(modelframe) else NULL,
