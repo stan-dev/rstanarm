@@ -112,6 +112,8 @@ test_that("posterior_predict close to predict.merMod", {
   nd2$cyl[2] <- 5 # new level
   nd3 <- nd2
   nd3$gear[2] <- 7
+  nd3$gear[5] <- 1
+  
   for (j in 1:3) {
     expect_equal(
       predict(get(paste0("sfit", j))),

@@ -61,8 +61,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...,
   }
   stanmat <- as.matrix(object$stanfit)
   mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
-  NEW_draws <- stanmat[, mark, drop = FALSE]
-  stanmat <- stanmat[, !mark, drop = FALSE]
+  if (any(mark)) {
+    NEW_draws <- stanmat[, mark, drop = FALSE]
+    stanmat <- stanmat[, !mark, drop = FALSE] 
+  }
   S <- nrow(stanmat)
   if (is.null(draws)) draws <- S
   if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
@@ -70,21 +72,23 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...,
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
   dat <- pp_data(object, newdata, allow.new.levels, ...)
   x <- dat$x
-  NEW_cols <- attr(x, "NEW_cols")
-  if (!is.null(NEW_cols)) {
+  if (is.null(NEW_ids <- attr(x, "NEW_ids")))
+    beta <- stanmat[, 1:ncol(x), drop = FALSE] 
+  else {
+    NEW_cols <- unlist(NEW_ids, use.names = FALSE, recursive = TRUE)
     xNEW <- x[, NEW_cols, drop = FALSE]
     x <- x[, -NEW_cols, drop = FALSE]
-  }
-  beta <- stanmat[, 1:ncol(x), drop = FALSE]
-  if (!is.null(NEW_cols)) {
+    beta <- stanmat[, 1:ncol(x), drop = FALSE]
     x <- cbind(x, xNEW)
-    sel <- list()
-    # FIXME this doesn't work because e.g. grepping for gear will get both
-    # b[(Intercept) gear:_NEW_] and b[wt gear:_NEW_]
-    for (j in seq_along(NEW_cols)) {
-      sel[[j]] <- grep(paste0(names(NEW_cols)[j],":_NEW_"), 
-                       colnames(NEW_draws), fixed = TRUE)
-      
+    sel <- vector("list", length(NEW_ids))
+    for (j in seq_along(NEW_ids)) {
+      sel[[j]] <- list()
+      idj <- NEW_ids[[j]]
+      for (k in seq_along(idj)) {
+        patt <- paste0("b[", names(idj)[k],":_NEW_]")
+        sel[[j]][[k]] <- rep(grep(patt, colnames(NEW_draws), fixed = TRUE), 
+                             length = length(idj[[k]])) # replicate to select same column of NEW_draws multiple times (if necessary)
+      }
     }
     beta <- cbind(beta, NEW_draws[, unlist(sel)])
   }
