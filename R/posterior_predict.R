@@ -19,6 +19,7 @@
 #'   of a function as a character string (e.g. \code{fun = "exp"}) or a function
 #'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
 #'   See Examples.
+#' @param ... Currently ignored.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -43,7 +44,7 @@
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
 #' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
+posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
@@ -53,23 +54,36 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     famname <- family$family
     ppfun <- paste0(".pp_", famname) 
   }
-  stanmat <- as.matrix.stanreg(object)
+  stanmat <- as.matrix.stanreg(object, pad_reTrms = TRUE)
+  mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
+  NEW_draws <- stanmat[, mark, drop = FALSE]
+  stanmat <- stanmat[, !mark, drop = FALSE]
   S <- nrow(stanmat)
-  if (is.null(draws)) 
-    draws <- S
-  else {
-    if (draws > S)
-      stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
-  }
+  if (is.null(draws)) draws <- S
+  if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
+                      call. = FALSE)
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
-  dat <- pp_data(object, newdata)
-  beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
-  eta <- linear_predictor(beta, dat$x, dat$offset)
+  dat <- pp_data(object, newdata, ...)
+  x <- dat$x
+  NEW_cols <- attr(x, "NEW_cols")
+  if (!is.null(NEW_cols)) {
+    NEW <- x[, NEW_cols, drop = FALSE]
+    x <- x[, -NEW_cols, drop = FALSE]
+  }
+  beta <- stanmat[, 1:ncol(x), drop = FALSE]
+  if (!is.null(NEW_cols)) {
+    x <- cbind(x, NEW)
+    for (j in seq_along(NEW_cols)) {
+      sel <- grep(paste0(names(NEW_cols)[j],":_NEW_"), colnames(NEW_draws), fixed = TRUE)
+      beta <- cbind(beta, NEW_draws[, sel])
+    }
+  }
+  eta <- linear_predictor(beta, x, dat$offset)
   inverse_link <- linkinv(object)
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
-    zeta <- stanmat[,grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
+    zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     ytilde <- .pp_polr(eta, zeta, inverse_link)
   }
   else {
@@ -79,10 +93,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     else if (is.binomial(famname)) {
       y <- get_y(object)
       if (NCOL(y) == 2L) ppargs$trials <- rowSums(y)
-      else {
-        if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
-        else ppargs$trials <- rep(1, NROW(y))
-      }
+      else if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
+      else ppargs$trials <- rep(1, NROW(y))
     }
     else if (is.gamma(famname))
       ppargs$scale <- stanmat[,"scale"]
@@ -90,9 +102,11 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
       ppargs$lambda <- stanmat[,"lambda"]
     else if (is.nb(famname))
       ppargs$size <- stanmat[,"overdispersion"]
+    
     ytilde <- do.call(ppfun, ppargs)
   }
-  if (!missing(newdata) && nrow(newdata) == 1) ytilde <- t(ytilde)
+  
+  if (!missing(newdata) && nrow(newdata) == 1L) ytilde <- t(ytilde)
   if (!missing(fun)) return(do.call(match.fun(fun), list(ytilde)))
   else return(ytilde)
 }

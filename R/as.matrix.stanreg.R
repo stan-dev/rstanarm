@@ -15,9 +15,7 @@
 #' 
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
-#' @param ... Optional arguments passed to \code{\link[rstan]{extract}}
-#'   (\pkg{rstan}). Currently, only \code{pars} is supported, and only for
-#'   models fit by MCMC.
+#' @param ... Ignored.
 #'   
 #' @return A matrix or data frame, the dimensions of which depend on the model
 #'   and estimation algorithm as described above.
@@ -49,8 +47,8 @@
 as.matrix.stanreg <- function(x, ...) {
   msg <- "No draws found."
   if (used.optimizing(x)) {
-    if ("pars" %in% names(list(...))) 
-      message("'pars' argument ignored for models with algorithm='optimizing'.")
+    # if ("pars" %in% names(list(...))) 
+    #   message("'pars' argument ignored for models with algorithm='optimizing'.")
     out <- x$asymptotic_sampling_dist 
     if (is.null(out)) stop(msg)
     else {
@@ -62,14 +60,17 @@ as.matrix.stanreg <- function(x, ...) {
   }
   sf <- x$stanfit
   if (sf@mode != 0) stop(msg)
-  posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
+  posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE) 
   out <- apply(posterior, 3L, FUN = function(y) y)
-  if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
-  if (!"pars" %in% names(list(...))) {
-    # remove mean_PPD and log-posterior unless user specified 'pars'
-    sel <- !grepl("mean_PPD|log-posterior", colnames(out))
-    out <- out[, sel, drop = FALSE]
+  if (is(x, "lmerMod")) {
+    if (!"pad_reTrms" %in% names(list(...)))
+      out <- unpad_reTrms(out, columns = TRUE)
   }
+  # if (!"pars" %in% names(list(...))) {
+  #   # remove mean_PPD and log-posterior unless user specified 'pars'
+  #   sel <- !grepl("mean_PPD|log-posterior", colnames(out))
+  #   out <- out[, sel, drop = FALSE]
+  # }
   return(out)
 }
 
