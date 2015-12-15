@@ -12,6 +12,7 @@
 #' @import Rcpp
 #' @export loo
 #' @export waic
+#' @export compare
 #' @export launch_shinystan
 #' @description An appendage to the \pkg{rstan} package that enables some of the
 #'   most common applied regression models to be estimated using Markov Chain
