@@ -54,7 +54,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
     famname <- family$family
     ppfun <- paste0(".pp_", famname) 
   }
-  stanmat <- as.matrix.stanreg(object, pad_reTrms = TRUE)
+  stanmat <- as.matrix(object$stanfit)
   mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
   NEW_draws <- stanmat[, mark, drop = FALSE]
   stanmat <- stanmat[, !mark, drop = FALSE]
@@ -67,16 +67,19 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...) {
   x <- dat$x
   NEW_cols <- attr(x, "NEW_cols")
   if (!is.null(NEW_cols)) {
-    NEW <- x[, NEW_cols, drop = FALSE]
+    xNEW <- x[, NEW_cols, drop = FALSE]
     x <- x[, -NEW_cols, drop = FALSE]
   }
   beta <- stanmat[, 1:ncol(x), drop = FALSE]
   if (!is.null(NEW_cols)) {
-    x <- cbind(x, NEW)
+    x <- cbind(x, xNEW)
+    sel <- list()
     for (j in seq_along(NEW_cols)) {
-      sel <- grep(paste0(names(NEW_cols)[j],":_NEW_"), colnames(NEW_draws), fixed = TRUE)
-      beta <- cbind(beta, NEW_draws[, sel])
+      sel[[j]] <- grep(paste0(names(NEW_cols)[j],":_NEW_"), 
+                       colnames(NEW_draws), fixed = TRUE)
+      
     }
+    beta <- cbind(beta, NEW_draws[, unlist(sel)])
   }
   eta <- linear_predictor(beta, x, dat$offset)
   inverse_link <- linkinv(object)
