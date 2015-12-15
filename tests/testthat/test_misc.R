@@ -2,6 +2,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
+SEED <- 12345
 
 context("helper functions")
 
@@ -96,6 +97,18 @@ test_that("validate_weights works", {
                      weights = rexp(nrow(mtcars))), "stanreg")
 })
 
+test_that("validate_offset works", {
+  validate_offset <- rstanarm:::validate_offset
+  expect_equal(validate_offset(NULL), double(0))
+  expect_equal(validate_offset(rep(1, 10), rnorm(10)), rep(1, 10))
+  expect_error(validate_offset(rep(1, 10), rnorm(5)))
+  expect_error(validate_offset(rep(1, 5), rnorm(10)), 
+               regexp = "number of offsets", ignore.case = TRUE)
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
+  fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
+})
+
 test_that("validate_family works", {
   validate_family <- rstanarm:::validate_family
   expect_equal(validate_family("gaussian"), gaussian())
@@ -109,10 +122,31 @@ test_that("validate_family works", {
   expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
 })
 
+test_that("check_constant_vars works", {
+  check_constant_vars <- rstanarm:::check_constant_vars
+  mf <- model.frame(glm(mpg ~ ., data = mtcars))
+  mf2 <- mf
+  mf2$wt <- 2
+  expect_equal(check_constant_vars(mf), mf)
+  expect_error(check_constant_vars(mf2), "wt")
+  mf2$gear <- 1
+  expect_error(check_constant_vars(mf2), "wt, gear")
+  expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
+  expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing"), "stanreg")
+  expect_is(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing"), 
+            "stanreg")
+  
+  esoph2 <- esoph
+  esoph2$agegp[1:nrow(esoph2)] <- "75+"
+  expect_error(stan_polr(tobgp ~ agegp, data = esoph2, cores = 1, iter = 10,
+                         prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED), 
+               regexp = "agegp")
+})
+
 test_that("linear_predictor methods work", {
   linpred_vec <- rstanarm:::linear_predictor.default
   linpred_mat <- rstanarm:::linear_predictor.matrix
-  
   x <- cbind(1, 1:4)
   bmat <- matrix(c(-0.5, 0, 0.5, 1), nrow = 2, ncol = 2)
   bvec <- bmat[1, ]

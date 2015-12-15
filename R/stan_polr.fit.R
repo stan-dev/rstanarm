@@ -21,17 +21,17 @@
 #' @param offset A numeric vector (possibly \code{NULL}) of offsets.
 #' 
 #' @importFrom utils head tail
-stan_polr.fit <- function (x, y, wt = NULL, offset = NULL, 
-                           method = c("logistic", "probit", "loglog", 
-                                      "cloglog", "cauchit"), ...,
-                           prior = R2(stop("'location' must be specified")), 
-                           prior_counts = dirichlet(1), prior_PD = FALSE, 
-                           algorithm = c("sampling", "meanfield", "fullrank"),
-                           adapt_delta = NULL) {
+stan_polr.fit <- function(x, y, wt = NULL, offset = NULL, 
+                          method = c("logistic", "probit", "loglog", 
+                                     "cloglog", "cauchit"), ...,
+                          prior = R2(stop("'location' must be specified")), 
+                          prior_counts = dirichlet(1), prior_PD = FALSE, 
+                          algorithm = c("sampling", "meanfield", "fullrank"),
+                          adapt_delta = NULL) {
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
   link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)
-  if (!is.factor(y)) stop("'y' must be a factor")
+  if (!is.factor(y)) stop("'y' must be a factor.")
   y_lev <- levels(y)
   J <- length(y_lev)
   y <- as.integer(y)
@@ -74,53 +74,33 @@ stan_polr.fit <- function (x, y, wt = NULL, offset = NULL,
   start <- function(chain_id) {
     list(pi = pi)
   }
-
   stanfit <- stanmodels$polr
-  if (algorithm == "optimizing") {
-    stop("'optimizing' is not supported for ordinal models")
-    standata$do_residuals <- 0L
-    out <- optimizing(stanfit, data = standata, #init = start,
-                      constrained = TRUE, draws = 1000, ...)
-    mark <- grepl("^beta\\[[[:digit:]]+\\]$", names(out$par))
-    new_names <- c(paste0("pi[", y_lev, "]"), paste0("z_beta[", colnames(x), "]"),
-                   "Delta_y", colnames(x), paste0("cutpoints[", y_lev[-1], "]"),
-                   paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
-                   paste("mean_PPD", y_lev, sep = ":"))
-    out$par[mark] <- R_inv %*% out$par[mark]
-    out$theta_tilde[,mark] <- out$theta_tilde[,mark] %*% t(R_inv)
-    names(out$par) <- new_names
-    colnames(out$theta_tilde) <- new_names
-    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
-    return(out)
+  if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
+  else pars <- c("zeta", "beta", "mean_PPD")
+  standata$do_residuals <- J > 2
+  if (algorithm == "sampling") {
+    sampling_args <- set_sampling_args(
+      object = stanfit, 
+      prior = prior,
+      user_dots = list(...), 
+      user_adapt_delta = adapt_delta, 
+      data = standata, pars = pars, show_messages = FALSE)
+    stanfit <- do.call(sampling, sampling_args)
   }
-  else {
-    if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-    else pars <- c("zeta", "beta", "mean_PPD")
-    standata$do_residuals <- J > 2
-    if (algorithm == "sampling") {
-      sampling_args <- set_sampling_args(
-        object = stanfit, 
-        prior = prior,
-        user_dots = list(...), 
-        user_adapt_delta = adapt_delta, 
-        data = standata, pars = pars, show_messages = FALSE)
-      stanfit <- do.call(sampling, sampling_args)
-    }
-    else stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
-                              algorithm = algorithm, ...)
-      
-    thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
-    betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
-    for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
-      stanfit@sim$samples[[chain]][[(J == 2) + param]] <- 
-        if (ncol(X) > 1) betas[param,,chain] else betas[param,chain]
-    }
-    
-    if (J > 2)
-      new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
-                     paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
-    else new_names <- c("(Intercept)", colnames(x), "mean_PPD", "log-posterior")
-    stanfit@sim$fnames_oi <- new_names
-    return(stanfit)
+  else stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
+                            algorithm = algorithm, ...)
+  
+  thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
+  betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+  for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
+    stanfit@sim$samples[[chain]][[(J == 2) + param]] <- 
+      if (ncol(X) > 1) betas[param,,chain] else betas[param,chain]
   }
+  
+  if (J > 2)
+    new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
+                   paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
+  else new_names <- c("(Intercept)", colnames(x), "mean_PPD", "log-posterior")
+  stanfit@sim$fnames_oi <- new_names
+  return(stanfit)
 }

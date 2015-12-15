@@ -8,7 +8,8 @@
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
-#' fitted model. For a more detailed summary of the fitted model use the
+#' fitted model. See the Details section below for a description of the printed 
+#' output. For additional summary statistics and diagnostics use the 
 #' \code{\link[=summary.stanreg]{summary}} method.
 #' 
 #' @export
@@ -19,28 +20,28 @@
 #' @param ... Ignored.
 #' @return Returns \code{x}, invisibly.
 #' @details 
-#' The estimates reported by \code{print} depend on the modeling function used
-#' and the estimation algorithm. For all models, regression coefficients are 
-#' summarized by:
-#' \describe{
-#' \item{Point estimates}{
-#'  If \code{algorithm='sampling'}, posterior medians are used as point
-#'  estimates. If \code{algorithm='optimizing'}, the point estimates are also
-#'  medians, but they are computed from 1000 draws from the asymptotic sampling
-#'  distribution of the parameters. In all cases, these are the same as the
-#'  estimates returned by calling \code{\link[=coef.stanreg]{coef}}.
+#' \subsection{Point estimates}{
+#' Regardless of the estimation algorithm, point estimates are medians computed
+#' from simulations. For \code{algorithm="sampling"} the posterior sample is 
+#' used, for \code{'optimizing'} the simulations are generated from the 
+#' asymptotic Gaussian sampling distribution of the parameters, and for 
+#' \code{"meanfield"} and \code{"fullrank"} draws from the variational 
+#' approximation to the posterior are used. In all cases, the point estimates 
+#' reported are the same as the values returned by 
+#' \code{\link[=coef.stanreg]{coef}}.
 #' }
-#' \item{Uncertainty estimates}{
-#'  The 'standard errors' reported (which we denote MAD_SD) are proportional to
-#'  the median absolute deviation (\code{\link[stats]{mad}}) from the posterior
-#'  median (if \code{algorithm='sampling'}) or the median of the asymptotic
-#'  sampling distribution (if \code{algorithm='optimizing'}). These are the same
-#'  as the standard errors returned by calling \code{\link[=se.stanreg]{se}}.}
+#' \subsection{Uncertainty estimates}{
+#' The 'standard errors' reported (labeled MAD_SD in the print output) are 
+#' computed from the same set of draws described above and are proportional to 
+#' the median absolute deviation (\code{\link[stats]{mad}}) from the median. 
+#' Compared to the posterior standard deviation, the MAD_SD will be more robust 
+#' for long-tailed distributions. These are the same as the values returned by 
+#' \code{\link[=se.stanreg]{se}}.
 #' }
-#' 
-#' For models fit using MCMC (\code{algorithm='sampling'}) the median and MAD_SD
-#' are also reported for \code{mean_PPD}, the sample average (\eqn{X =
-#' \bar{X}}{X = xbar}) \code{\link[=posterior_predict]{posterior predictive
+#' \subsection{Additional output}{
+#' For models fit using MCMC or a variational approximation, the median and 
+#' MAD_SD are also reported for mean_PPD, the sample average (\eqn{X = 
+#' \bar{X}}{X = xbar}) \code{\link[=posterior_predict]{posterior predictive 
 #' distribution}} of the outcome.
 #' 
 #' For \code{\link[=stan_glmer]{GLMs with group-specific terms}} the printed 
@@ -50,6 +51,7 @@
 #' 
 #' For \code{\link[=stan_aov]{analysis of variance}} models, an ANOVA-like table
 #' is also displayed.
+#' }
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
@@ -115,8 +117,8 @@ print.stanreg <- function(x, digits = 1, ...) {
   if (is(x, "aov")) {
     labels <- attributes(x$terms)$term.labels
     patterns <- gsub(":", ".*:", labels)
-    groups <- sapply(patterns, simplify = FALSE, FUN = grep, 
-                     x = dimnames(extract(x$stanfit, pars = "beta", permuted = FALSE))$parameters)
+    dnms <- dimnames(extract(x$stanfit, pars = "beta", permuted = FALSE))$parameters
+    groups <- sapply(patterns, simplify = FALSE, FUN = grep, x = dnms)
     names(groups) <- gsub(".*", "", names(groups), fixed = TRUE)
     groups <- groups[sapply(groups, length) > 0]
     effects_dim <- dim(x$effects)

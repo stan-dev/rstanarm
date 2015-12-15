@@ -44,17 +44,6 @@ check_sizes <- function(x,y) {
   expect_equal(lapply(x, dim), lapply(y, dim))
 }
 
-
-# context("methods for stanreg objects")
-# test_that("stanreg methods are exported properly", {
-#   meths <- paste0(c("coef", "confint", "fitted", "fixef", "formula", "log_lik", 
-#                     "loo", "model.frame", "ngrps", "pairs", "plot", "predict", "print", "ranef", 
-#                     "residuals", "se", "sigma", "summary", "VarCorr", "vcov", "waic"), 
-#                   ".stanreg")
-#   found <- as.vector(utils::.S3methods(class = "stanreg"))
-#   expect_identical(found, meths)
-#   expect_identical(found[1], meths[1])
-# })
 test_that("stanreg extractor methods work properly", {
   expect_equal(resid(stan_glm1), stan_glm1$residuals)
   expect_equal(coef(stan_glm1), stan_glm1$coefficients)

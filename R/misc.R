@@ -96,7 +96,8 @@ STOP_not_optimizing <- function(what) {
 }
 
 # Check weights argument
-# @param w 'weights' argument specified by user
+# @param w 'weights' argument specified by user or the result of calling 
+#   model.weights on a model frame
 validate_weights <- function(w) {
   if (missing(w) || is.null(w)) return(double(0))
   else {
@@ -106,14 +107,43 @@ validate_weights <- function(w) {
   return(w)
 }
 
+# Check offset argument
+# @param o 'offset' argument specified by user or the result of calling 
+#   model.offset on a model frame
+# @param y result of calling model.response on a model frame
+validate_offset <- function(o, y) {
+  if (is.null(o)) return(double(0))
+  if (length(o) != NROW(y))
+    stop(gettextf("Number of offsets is %d but should be %d (number of observations)",
+                  length(o), NROW(y)), domain = NA)
+  return(o)
+}
+
+
 # Check family argument
-# @param f 'family' argument specified by user
+# @param f 'family' argument specified by user (or default)
 validate_family <- function(f) {
   if (is.character(f)) f <- get(f, mode = "function", envir = parent.frame(2))
   if (is.function(f)) f <- f()
   if (!is(f, "family")) stop("'family' must be a family.")
   return(f)
 }
+
+# Check if any variables in a model frame are constants
+# @param mf A model frame or model matrix
+# @return If no constant variables mf is returned, otherwise an error is thrown.
+check_constant_vars <- function(mf) {
+  lu <- function(x) length(unique(x))
+  nocheck <- c("(weights)", "(offset)", "(Intercept)")
+  sel <- !colnames(mf) %in% nocheck
+  is_constant <- apply(mf[, sel, drop = FALSE], 2, lu) == 1
+  if (any(is_constant)) 
+    stop("Constant variable(s) found: ", 
+         paste(names(is_constant)[is_constant], collapse = ", "), 
+         call. = FALSE)
+  return(mf)
+}
+
 
 # Grep for "b" parameters (ranef)
 # @param x Character vector (often rownames(fit$stan_summary))

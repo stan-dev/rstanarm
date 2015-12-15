@@ -17,7 +17,7 @@
 #' Bayesian generalized linear models via Stan
 #'
 #' Generalized linear modeling with optional prior distributions for 
-#' the coefficients, intercept, and nuisance parameter
+#' the coefficients, intercept, and nuisance parameter.
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -58,30 +58,38 @@
 #'   \link{neg_binomial_2}(link)}.
 #' 
 #' @examples 
-#' \dontrun{ 
+#' \dontrun{
 #' ### Linear regression
-#' fit <- stan_glm(mpg ~ ., data = mtcars, seed = 12345, cores = 1)
+#' fit <- stan_glm(mpg ~ ., data = mtcars, cores = 1)
 #' plot(fit, ci_level = 0.5)
-#' 
-#' ### Poisson regression  
-#' counts <- c(18,17,15,20,10,20,25,13,12)
-#' outcome <- gl(3,1,9)
-#' treatment <- gl(3,3)
-#' fit2 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10), 
-#'                  cores = 1)
-#' plot(fit2, ci_level = 0.75, outer_level = 0.99, show_density = TRUE)
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
-#' ?lalonde
 #' t7 <- student_t(df = 7) 
 #' f <- treat ~ re74 + re75 + educ + black + hisp + married + nodegr + u74 + u75
-#' fit3 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
-#'                  prior = t7, prior_intercept = t7, cores = 1)
-#' plot(fit3)
-#' ppcheck(fit3, check = "resid")
-#' ppcheck(fit3, check = "test", test = "mean")
+#' fit2 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
+#'                  prior = t7, prior_intercept = t7, 
+#'                  cores = 1)
+#' plot(fit2)
+#' ppcheck(fit2, check = "resid")
+#' ppcheck(fit2, check = "test", test = "mean")
+#' 
+#' ### Poisson regression (example from help("glm")) 
+#' counts <- c(18,17,15,20,10,20,25,13,12)
+#' outcome <- gl(3,1,9)
+#' treatment <- gl(3,3)
+#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
+#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10), 
+#'                  cores = 1)
+#' plot(fit3, ci_level = 0.75, outer_level = 0.99, show_density = TRUE)
+#' 
+#' ### Gamma regression (example from help("glm"))
+#' clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
+#'                        lot1 = c(118,58,42,35,27,25,21,19,18),
+#'                        lot2 = c(69,35,26,21,18,16,13,12,12))
+#' fit4 <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma, 
+#'                  cores = 1)
+#' fit5 <- update(fit4, formula = lot2 ~ log(u))
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
@@ -97,12 +105,13 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   if (missing(data)) data <- environment(formula)
   call <- match.call()
   mf <- match.call(expand.dots = FALSE)
-  arg_nms <- c("formula", "data", "subset", "weights", "na.action", "offset")
-  m <- match(arg_nms, names(mf), nomatch = 0L)
+  m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
+             names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- as.name("model.frame")
   mf <- eval(mf, parent.frame())
+  mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   Y <- model.response(mf, "any")
   if (length(dim(Y)) == 1L) {
@@ -110,23 +119,11 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     dim(Y) <- NULL
     if (!is.null(nm)) names(Y) <- nm
   }
-  
-  # check if any x variables are constants 
-  is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 0
-  if (any(is_constant)) stop("Constant variable(s) found: ",
-                             paste(colnames(mf)[is_constant], collapse = ", "))
-
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)
   weights <- validate_weights(as.vector(model.weights(mf)))
-  offset <- as.vector(model.offset(mf))
-  if (!is.null(offset)) {
-    if (length(offset) != NROW(Y))
-      stop(gettextf("number of offsets is %d should equal %d (number of observations)",
-                    length(offset), NROW(Y)), domain = NA)
-  }
-  else offset <- double(0)
-  
+  offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
+
   # if Y is proportion of successes and weights is total number of trials
   if (is.binomial(family$family) && NCOL(Y) == 1L && is.numeric(Y)) { 
     if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 

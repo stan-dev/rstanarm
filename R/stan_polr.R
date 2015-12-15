@@ -94,15 +94,15 @@ class(loglog) <- "link-glm"
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
 #' }
 #' 
-stan_polr <- function (formula, data, weights, ..., subset, 
-                       na.action = getOption("na.action", "na.omit"), 
-                       contrasts = NULL, model = TRUE, 
-                       method = c("logistic", "probit", "loglog", "cloglog", 
-                                  "cauchit"),
-                       prior = R2(stop("'location' must be specified")), 
-                       prior_counts = dirichlet(1), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"),
-                       adapt_delta = NULL) {
+stan_polr <- function(formula, data, weights, ..., subset, 
+                      na.action = getOption("na.action", "na.omit"), 
+                      contrasts = NULL, model = TRUE, 
+                      method = c("logistic", "probit", "loglog", "cloglog", 
+                                 "cauchit"),
+                      prior = R2(stop("'location' must be specified")), 
+                      prior_counts = dirichlet(1), prior_PD = FALSE, 
+                      algorithm = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta = NULL) {
   
   # parse it like polr does in the MASS package
   m <- match.call(expand.dots = FALSE)
@@ -113,6 +113,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
     m$prior_PD <- m$algorithm <- m$adapt_delta <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
+  m <- check_constant_vars(m)
   Terms <- attr(m, "terms")
   x <- model.matrix(Terms, m, contrasts)
   xint <- match("(Intercept)", colnames(x), nomatch = 0L)
@@ -123,17 +124,17 @@ stan_polr <- function (formula, data, weights, ..., subset,
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
   }
-  else warning("an intercept is needed and assumed")
+  else warning("An intercept is needed and assumed.")
   K <- ncol(x)
   wt <- model.weights(m)
   if (!length(wt)) wt <- rep(1, n)
   offset <- model.offset(m)
   if (length(offset) <= 1L) offset <- rep(0, n)
   y <- model.response(m)
-  if (!is.factor(y)) stop("response must be a factor")
+  if (!is.factor(y)) stop("Response variable must be a factor.")
   lev <- levels(y)
   llev <- length(lev)
-  if (llev < 2L) stop("response must have 2 or more levels")
+  if (llev < 2L) stop("Response variable must have 2 or more levels.")
   # y <- unclass(y)
   q <- llev - 1L
 
@@ -165,19 +166,6 @@ stan_polr <- function (formula, data, weights, ..., subset,
     class(out) <- c("stanreg", "polr")
     return(out)
   }
-  else if (algorithm == "optimizing") {
-    stanmat <- stanfit$theta_tilde
-    stan_summary <- cbind(Estimate = stanfit$par, 
-                          "Std. Error" = apply(stanmat, 2, sd),
-                          t(apply(stanmat, 2, quantile,
-                                  probs = c(0.025, .975))))
-    covmat <- cov(stanmat)
-    coefs <- stanfit$par[colnames(x)]
-    eta <- linear_predictor(coefs, x, offset)
-    mu <- inverse_link(eta)
-    residuals <- NA_real_
-    names(eta) <- names(mu) <- rownames(x)
-  }
   else {
     stanmat <- as.matrix(stanfit)
     coefs <- colMeans(stanmat[,1:K,drop=FALSE])
@@ -203,7 +191,7 @@ stan_polr <- function (formula, data, weights, ..., subset,
               terms = Terms, prior.info = prior.info,
               algorithm = algorithm,
               stan_summary = stan_summary, family = method,
-              stanfit = if (algorithm == "optimizing") stanfit$stanfit else stanfit)
+              stanfit = stanfit)
   class(out) <- c("stanreg", "polr")
   return(out)
 }

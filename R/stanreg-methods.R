@@ -14,26 +14,35 @@
 #' @details Most of these methods are similar to the methods defined for objects
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
 #'   
-#' \itemize{
-#' \item \code{confint} If \code{algorithm='sampling'}, \code{confint} returns
-#' Bayesian \emph{credible} intervals based on posterior quantiles. If 
-#' \code{algorithm='optimizing'}, confidence intervals are returned via a
-#' call to \code{\link[stats]{confint.default}}.
-#' \item \code{log_lik} If \code{algorithm='sampling'}, \code{log_lik} returns 
-#' the \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the 
-#' size of the posterior sample and \eqn{N} is the number of data points. There 
-#' is no pointwise log-likelihood matrix for models fit using
-#' \code{algorithm='optimizing'}.
-#' \item \code{residuals} Residuals are \emph{always} of type \code{'response'} 
-#' and never \code{'deviance'} residuals or any other type.
-#' \item \code{coef} If \code{algorithm='sampling'}, posterior medians are used 
-#' as point estimates. If \code{algorithm='optimizing'}, the coefficients are
-#' also medians, but they are computed from 1000 draws from the asymptotic
-#' sampling distribution of the parameters.
-#' \item \code{se} The \code{se} function returns standard errors, which are 
-#' proportional to the median absolute deviation (\code{\link[stats]{mad}}) from
-#' the posterior median (if \code{algorithm='sampling'}) or the median of the
-#' asymptotic sampling distribution (if \code{algorithm='optimizing'}).
+#' \describe{
+#' \item{\code{confint}}{
+#' If \code{algorithm="sampling"}, \code{confint} returns 
+#' Bayesian \emph{credible} intervals based on posterior quantiles. For
+#' \code{"meanfield"} and \code{"fullrank"}, approximate credible intervals are
+#' computed from the variational approximation to the posterior. For 
+#' \code{"optimizing"}, confidence intervals are returned via a call to
+#' \code{\link[stats]{confint.default}}.
+#' }
+#' 
+#' \item{\code{log_lik}}{
+#' For \code{algorithm="sampling"} only, the \code{log_lik} function returns the
+#' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
+#' of the posterior sample and \eqn{N} is the number of data points.
+#' }
+#' 
+#' \item{\code{residuals}}{
+#' Residuals are \emph{always} of type \code{'response'} 
+#' (not \code{'deviance'} residuals or any other type). 
+#' }
+#' \item{\code{coef}}{
+#' Medians are used for point estimates. See the \emph{Point estimates} section
+#' in \code{\link{print.stanreg}} for more details.
+#' }
+#' \item{\code{se}}{
+#' The \code{se} function returns standard errors based on 
+#' \code{\link{mad}}. See the \emph{Uncertainty estimates} section in
+#' \code{\link{print.stanreg}} for more details.
+#' }
 #' }
 #' 
 #' @seealso Some other S3 methods for stanreg objects have separate 
@@ -80,8 +89,8 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 #' @rdname stanreg-methods
 #' @export
 log_lik.stanreg <- function(object, ...) {
-  if (used.optimizing(object)) 
-    STOP_not_optimizing("Pointwise log-likelihood matrix")
+  if (!used.sampling(object)) 
+    STOP_sampling_only("Pointwise log-likelihood matrix")
   fun <- .llfun(object$family)
   args <- .llargs(object)
   sapply(seq_len(args$N), function(i) {
@@ -275,10 +284,7 @@ formula.stanreg <- function(x, ...) x$formula
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
 model.frame.stanreg <- function(formula, ...) {
-  if (is(formula, "lmerMod")) {
-    fit <- formula
-    model.frame(lme4::subbars(fit$formula), fit$data)
-  }
+  if (is(formula, "lmerMod")) return(formula$glmod$fr)
   else NextMethod("model.frame")
 }
 
