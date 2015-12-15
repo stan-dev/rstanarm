@@ -49,8 +49,11 @@ pp_data <- function(object, newdata = NULL, ...) {
   if (!is.null(z)) {
     K <- ncol(x)
     x <- cbind(x, z)
-    if (!is.null(attr(z, "NEW_cols")))
-      attr(x, "NEW_cols") <- attr(z, "NEW_cols") + K
+    if (!is.null(attr(z, "NEW_ids"))) {
+      # Need to shift each id by K
+      NEW_ids <- attr(z, "NEW_ids")
+      attr(x, "NEW_ids") <- lapply(NEW_ids, function(x) lapply(x, "+", K))
+    }
   }
   return(nlist(x, offset = object$offset))
 }
@@ -124,19 +127,27 @@ pp_data <- function(object, newdata = NULL, ...) {
   })
   names(re_new) <- nRnms
   NEW_cols <- which(is.na(unlist(lapply(re_new, t))))
-  if (!length(NEW_cols)) NEW_cols <- NULL
+  if (!length(NEW_cols)) NEW_ids <- NULL
   else {
-    NEW_vars <- lapply(nRnms, function(x) {
-      grep(paste0("^", x, "[1-9]"), names(NEW_cols))
-      })
-    names(NEW_vars) <- nRnms
-    for (j in seq_along(NEW_vars)) {
-      if (length(NEW_vars[[j]])) names(NEW_cols)[NEW_vars[[j]]] <- nRnms[j]
-    } 
+    NEW_ids <- vector(mode = "list", length = length(nRnms))
+    names(NEW_ids) <- nRnms
+    for (j in seq_along(NEW_ids)) {
+      dfj <- re_x[[j]]
+      cn <- colnames(dfj)
+      NEW_ids[[j]] <- vector(mode = "list", length = ncol(dfj))
+      names(NEW_ids[[j]]) <- paste(cn, nRnms[j])
+      sel <- grep(paste0("^", nRnms[j], "[1-9]"), names(NEW_cols))
+      NEW_cols_sel <- unname(NEW_cols[sel])
+      
+      for (k in seq_along(NEW_ids[[j]])) {
+        llk <- length(which(is.na(dfj[, k])))
+        NEW_ids[[j]][[k]] <- NEW_cols_sel[seq(k, length(NEW_cols_sel), by = llk)]
+      }
+    }
   }
   z <- structure(t(as.matrix(ReTrms$Zt)), 
                  na.action = attr(mfnew, "na.action"), 
-                 NEW_cols = NEW_cols)
+                 NEW_ids = NEW_ids)
   return(z)
 }
 
