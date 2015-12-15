@@ -133,10 +133,13 @@ validate_family <- function(f) {
 # @param mf A model frame or model matrix
 # @return If no constant variables mf is returned, otherwise an error is thrown.
 check_constant_vars <- function(mf) {
-  is_constant <- apply(mf, 2, FUN = function(x) length(unique(x))) == 1
+  lu <- function(x) length(unique(x))
+  nocheck <- c("(weights)", "(offset)", "(Intercept)")
+  sel <- !colnames(mf) %in% nocheck
+  is_constant <- apply(mf[, sel, drop = FALSE], 2, lu) == 1
   if (any(is_constant)) 
     stop("Constant variable(s) found: ", 
-         paste(colnames(mf)[is_constant], collapse = ", "), 
+         paste(names(is_constant)[is_constant], collapse = ", "), 
          call. = FALSE)
   return(mf)
 }

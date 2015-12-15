@@ -1,11 +1,11 @@
 #' Extract posterior sample
 #' 
-#' For models fit using MCMC (\code{algorithm='sampling'}), the posterior sample
+#' For models fit using MCMC (\code{algorithm="sampling"}), the posterior sample
 #' is an \eqn{S} by \eqn{P} matrix, where \eqn{S} is the size of the sample --- 
 #' the number of post-warmup draws from the posterior distribution of the model 
 #' parameters --- and \eqn{P} is the number of parameters. If using optimization
-#' (\code{algorithm='optimizing'}) or variational inference 
-#' (\code{algorithm='meanfield'} or \code{algorithm='fullrank'}), there is no 
+#' (\code{algorithm="optimizing"}) or variational inference 
+#' (\code{algorithm="meanfield"} or \code{algorithm="fullrank"}), there is no 
 #' posterior sample but rather a \eqn{1000} by \eqn{P} matrix of draws from
 #' either the asymptotic multivariate Gaussian sampling distribution of the
 #' parameters or the variational approximation to the posterior distribution.
