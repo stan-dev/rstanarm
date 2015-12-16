@@ -167,8 +167,12 @@ stan_polr <- function(formula, data, weights, ..., subset,
     return(out)
   }
   else {
-    stanmat <- as.matrix(stanfit)
-    coefs <- colMeans(stanmat[,1:K,drop=FALSE])
+    K2 <- K + llev - 1 # number of coefficients + number of cutpoints
+    stanmat <- as.matrix(stanfit)[, 1:K2, drop = FALSE] 
+    covmat <- cov(stanmat)
+    coefs <- apply(stanmat[, 1:K, drop = FALSE], 2, median)
+    ses <- apply(stanmat[, 1:K, drop = FALSE], 2, mad)
+    zeta <- apply(stanmat[, K:K2, drop = FALSE], 2, mad)
     eta <- linear_predictor(coefs, x, offset)
     mu <- inverse_link(eta)
     
@@ -182,8 +186,9 @@ stan_polr <- function(formula, data, weights, ..., subset,
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
   }
   
-  out <- list(coefficients = coefs, fitted.values = mu, linear.predictors = eta,
-              residuals = residuals, df.residual = df.residual, covmat = cov(stanmat),
+  out <- list(coefficients = coefs, ses = ses, zeta = zeta,
+              fitted.values = mu, linear.predictors = eta,
+              residuals = residuals, df.residual = df.residual, covmat = covmat,
               y = y, x = x, model = if (model) m, data = data, rank = rank,
               offset = offset, weights = wt, prior.weights = wt,
               method = method, contrasts = contrasts, na.action = na.action,
