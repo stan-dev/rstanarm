@@ -46,10 +46,10 @@ stanreg <- function(object) {
   df.residual <- nobs - sum(weights == 0) - rank
   
   if (!opt) {
-    stanmat <- as.matrix(stanfit)
-    covmat <- cov(stanmat[,1:nvars,drop=FALSE])
+    stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
+    covmat <- cov(stanmat)
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
-    ses <- apply(stanmat[,1:nvars,drop=FALSE], 2, mad)
+    ses <- apply(stanmat, 2, mad)
   }
   
   names(eta) <- names(mu) <- names(residuals) <- ynames
