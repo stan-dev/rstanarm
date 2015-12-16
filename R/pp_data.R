@@ -58,8 +58,9 @@ pp_data <- function(object, newdata = NULL, ...) {
   return(nlist(x, offset = object$offset))
 }
 
-# the functions below are heavily based on a combination of
-# lme4:::predict.merMod and lme4:::mkNewReTrms
+# the functions below are heavily based on a combination of 
+# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have quite
+# a few changes
 .pp_data_mer_x <- function(object, newdata, ...) {
   x <- get_x(object)
   if (is.null(newdata)) return(x)

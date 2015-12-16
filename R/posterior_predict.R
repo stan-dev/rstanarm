@@ -12,7 +12,12 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param newdata Optionally, a data frame in which to look for variables with 
-#'   which to predict. If omitted, the model matrix is used.
+#'   which to predict. If omitted, the model matrix is used. If \code{newdata} 
+#'   is provided and any variables were transformed (e.g. rescaled) in the data 
+#'   used to fit the model, then these variables must also be transformed in 
+#'   \code{newdata}. This only applies if variables were transformed before 
+#'   passing the data to one of the modeling functions and \emph{not} if 
+#'   transformations were specified inside the model formula.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
 #' @param fun An optional function to apply to the results. This can be the name
