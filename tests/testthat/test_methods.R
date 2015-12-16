@@ -51,6 +51,12 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(fitted(stan_glm1), stan_glm1$fitted.values)
   expect_equal(se(stan_glm1), stan_glm1$ses)
   
+  expect_equal(resid(stan_polr1), stan_polr1$residuals)
+  expect_equal(coef(stan_polr1), stan_polr1$coefficients)
+  expect_equal(vcov(stan_polr1), stan_polr1$covmat)
+  expect_equal(fitted(stan_polr1), stan_polr1$fitted.values)
+  expect_equal(se(stan_polr1), stan_polr1$ses)
+  
   expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
   expect_equal(vcov(stan_glm_opt1, correlation = TRUE), cov2cor(stan_glm_opt1$covmat))
   expect_equal(resid(stan_glm_opt1), stan_glm_opt1$residuals)
