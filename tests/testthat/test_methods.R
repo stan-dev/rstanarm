@@ -28,7 +28,7 @@ stan_polr1 <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph,
                                        prior = R2(0.2, "mean"), init_r = 0.1, 
                                        iter = ITER, chains = CHAINS, 
                                        cores = CORES, seed = SEED))
-polr1 <- polr(tobgp ~ agegp, data = esoph)
+polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
 
 att_names <- function(object) {
   nms <- names(object)
@@ -51,9 +51,16 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(fitted(stan_glm1), stan_glm1$fitted.values)
   expect_equal(se(stan_glm1), stan_glm1$ses)
   
+  expect_equal(resid(stan_polr1), stan_polr1$residuals)
+  expect_equal(coef(stan_polr1), stan_polr1$coefficients)
+  expect_equal(vcov(stan_polr1), stan_polr1$covmat)
+  expect_equal(fitted(stan_polr1), stan_polr1$fitted.values)
+  expect_equal(se(stan_polr1), stan_polr1$ses)
+  
+  expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
+  expect_equal(vcov(stan_glm_opt1, correlation = TRUE), cov2cor(stan_glm_opt1$covmat))
   expect_equal(resid(stan_glm_opt1), stan_glm_opt1$residuals)
   expect_equal(coef(stan_glm_opt1), stan_glm_opt1$coefficients)
-  expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
   expect_equal(fitted(stan_glm_opt1), stan_glm_opt1$fitted.values)
   expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
 })
@@ -91,6 +98,12 @@ test_that("nobs is right", {
   expect_equal(nobs(glm1), nobs(stan_glm_opt1))
   expect_equal(nobs(glm1), nobs(stan_glm1))
   expect_equal(nobs(polr1), nobs(stan_polr1))
+})
+test_that("vcov returns correct structure", {
+  expect_equal(dimnames(vcov(stan_glm1)), dimnames(vcov(glm1)))
+  expect_equal(dimnames(vcov(stan_polr1)), dimnames(vcov(polr1)))
+  expect_equal(dimnames(vcov(stan_lmer1)), dimnames(vcov(lmer1)))
+  expect_equal(dimnames(vcov(stan_lmer2)), dimnames(vcov(lmer2)))
 })
 test_that("VarCorr returns correct structure", {
   vc_lmer1 <- VarCorr(lmer1); vc_stan1 <- VarCorr(stan_lmer1)

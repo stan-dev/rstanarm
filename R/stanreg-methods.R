@@ -8,8 +8,12 @@
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
 #' @param ... Ignored.
-#' @param parm A character vector of parameter names.
-#' @param level The confidence level to use.
+#' @param parm For \code{confint}, a character vector of parameter names.
+#' @param level For \code{confint}, a number between 0 and 1 indicating the
+#'   confidence level to use.
+#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
+#'   covariance matrix is return. If \code{TRUE}, the correlation matrix is
+#'   returned instead.
 #' 
 #' @details Most of these methods are similar to the methods defined for objects
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
@@ -130,12 +134,14 @@ se.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export 
-vcov.stanreg <- function(object, ...) {
-  if (is(object, "lmerMod")) {
+vcov.stanreg <- function(object, correlation = FALSE, ...) {
+  if (!is(object, "lmerMod")) out <- object$covmat
+  else {
     sel <- seq_along(fixef(object))
-    object$covmat[sel, sel, drop=FALSE]
+    out <- object$covmat[sel, sel, drop=FALSE]
   }
-  else object$covmat
+  if (correlation) out <- cov2cor(out)
+  return(out)
 }
 
 

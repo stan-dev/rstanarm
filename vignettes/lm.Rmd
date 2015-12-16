@@ -17,6 +17,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 
@@ -278,8 +280,8 @@ We can compare the two approaches using an approximation to Leave-One-Out
 __loo__ package.
 
 ```{r LOO, warning=TRUE}
-(loo_post <- loo(post, cores = 2))
-(loo(simple, cores = 2))
+(loo_post <- loo(post))
+(loo(simple))
 ```
 
 The results indicate that the first approach is expected to produce better

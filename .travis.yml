@@ -7,6 +7,8 @@ os:
   - osx
   
 r_binary_packages:
+  - git2r
+  - loo
   - lme4
   - arm
   - KernSmooth

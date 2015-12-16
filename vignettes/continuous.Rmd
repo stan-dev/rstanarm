@@ -18,6 +18,8 @@ output:
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
+```{r, child="children/SETTINGS-loo.txt"}
+```
 
 # Introduction
 
@@ -208,11 +210,11 @@ in the __loo__ package:
 
 ```{r, KIDIQ-loo}
 # Compare them with loo
-loo1 <- loo(post1, cores = CORES)
-loo2 <- loo(post2, cores = CORES)
-loo3 <- loo(post3, cores = CORES)
-loo4 <- loo(post4, cores = CORES)
-loo::compare(loo1, loo2, loo3, loo4)
+loo1 <- loo(post1)
+loo2 <- loo(post2)
+loo3 <- loo(post3)
+loo4 <- loo(post4)
+compare(loo1, loo2, loo3, loo4)
 ```
 
 The `weights` column gives the estimated posterior probability that each model

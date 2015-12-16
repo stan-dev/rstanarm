@@ -13,9 +13,11 @@ output:
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
+```{r, child="children/SETTINGS-gg.txt"}
+```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
-```{r, child="children/SETTINGS-gg.txt"}
+```{r, child="children/SETTINGS-loo.txt"}
 ```
 
 # Introduction
@@ -225,9 +227,8 @@ When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model:
 
 ```{r, ROACHES-loo}
-library(loo)
-loo1 <- loo(stan_glm1, cores = CORES)
-loo2 <- loo(stan_glm2, cores = CORES)
+loo1 <- loo(stan_glm1)
+loo2 <- loo(stan_glm2)
 compare(loo1, loo2)
 ```
 
