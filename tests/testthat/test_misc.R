@@ -162,9 +162,49 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 1))
+fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 2))
 fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                                    iter = 5, chains = 1))
+                                    iter = 5, chains = 2))
+fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+fitvb <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield")
+fitvb2 <- update(fitvb, algorithm = "fullrank")
+
+test_that("is.stanreg works", {
+  is.stanreg <- rstanarm:::is.stanreg
+  expect_true(is.stanreg(fit))
+  expect_true(is.stanreg(fit2))
+  expect_true(is.stanreg(fito))
+  expect_true(is.stanreg(fitvb))
+  expect_false(is.stanreg(fit$stanfit))
+})
+
+test_that("used.sampling, used.optimizing, and used.variational work", {
+  used.sampling <- rstanarm:::used.sampling
+  used.optimizing <- rstanarm:::used.optimizing
+  used.variational <- rstanarm:::used.variational
+  expect_true(used.sampling(fit))
+  expect_true(used.sampling(fit2))
+  expect_false(used.optimizing(fit))
+  expect_false(used.optimizing(fit2))
+  expect_false(used.variational(fit))
+  expect_false(used.variational(fit2))
+  
+  expect_true(used.optimizing(fito))
+  expect_false(used.sampling(fito))
+  expect_false(used.variational(fito))
+  
+  expect_true(used.variational(fitvb))
+  expect_true(used.variational(fitvb2))
+  expect_false(used.sampling(fitvb))
+  expect_false(used.sampling(fitvb2))
+  expect_false(used.optimizing(fitvb))
+  expect_false(used.optimizing(fitvb2))
+  
+  # should return error if passed anything but a stanreg object
+  expect_error(used.sampling(fit$stanfit))
+  expect_error(used.variational(fitvb$stanfit))
+  expect_error(used.optimizing(fito$stanfit))
+})
 
 test_that("get_x, get_y, get_z work", {
   x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
