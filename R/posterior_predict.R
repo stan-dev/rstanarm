@@ -59,22 +59,25 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...,
     famname <- family$family
     ppfun <- paste0(".pp_", famname) 
   }
-  stanmat <- as.matrix(object$stanfit)
-  mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
-  if (any(mark)) {
-    NEW_draws <- stanmat[, mark, drop = FALSE]
-    stanmat <- stanmat[, !mark, drop = FALSE] 
-  }
-  S <- nrow(stanmat)
+
+  S <- .posterior_sample_size(object)
   if (is.null(draws)) draws <- S
   if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
                       call. = FALSE)
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
   dat <- pp_data(object, newdata, allow.new.levels, ...)
   x <- dat$x
-  if (is.null(NEW_ids <- attr(x, "NEW_ids")))
-    beta <- stanmat[, 1:ncol(x), drop = FALSE] 
+  if (is.null(NEW_ids <- attr(x, "NEW_ids"))) {
+    stanmat <- as.matrix(object)
+    beta <- stanmat[, 1:ncol(x), drop = FALSE]
+  }
   else {
+    stanmat <- as.matrix(object$stanfit)
+    mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
+    if (any(mark)) {
+      NEW_draws <- stanmat[, mark, drop = FALSE]
+      stanmat <- stanmat[, !mark, drop = FALSE] 
+    }
     NEW_cols <- unlist(NEW_ids, use.names = FALSE, recursive = TRUE)
     xNEW <- x[, NEW_cols, drop = FALSE]
     x <- x[, -NEW_cols, drop = FALSE]

@@ -132,15 +132,17 @@ pp_data <- function(object, newdata = NULL, ...) {
     NEW_ids <- vector(mode = "list", length = length(nRnms))
     names(NEW_ids) <- nRnms
     for (j in seq_along(NEW_ids)) {
-      dfj <- re_x[[j]]
-      cn <- colnames(dfj)
-      NEW_ids[[j]] <- vector(mode = "list", length = ncol(dfj))
-      names(NEW_ids[[j]]) <- paste(cn, nRnms[j])
       sel <- grep(paste0("^", nRnms[j], "[1-9]"), names(NEW_cols))
+      if (!length(sel)) {
+        next
+      }
       NEW_cols_sel <- unname(NEW_cols[sel])
+      dfj <- re_x[[j]]
+      NEW_ids[[j]] <- vector(mode = "list", length = ncol(dfj))
+      names(NEW_ids[[j]]) <- paste(colnames(dfj), nRnms[j])
       
       for (k in seq_along(NEW_ids[[j]])) {
-        llk <- length(which(is.na(dfj[, k])))
+        llk <- sum(is.na(dfj[, k]))
         NEW_ids[[j]][[k]] <- NEW_cols_sel[seq(k, length(NEW_cols_sel), by = llk)]
       }
     }
