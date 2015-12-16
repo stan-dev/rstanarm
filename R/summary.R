@@ -49,7 +49,11 @@ summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
     if ("n_eff" %in% colnames(out))
       out[, "n_eff"] <- round(out[, "n_eff"])
     if ("se_mean" %in% colnames(out)) # So people don't confuse se_mean and sd
-      colnames(out)[which(colnames(out) == "se_mean")] <- "mcse" 
+      colnames(out)[which(colnames(out) == "se_mean")] <- "mcse"
+    if (used.variational(object)) {
+      sel <- which(rownames(out) == "log-posterior")
+      if (length(sel)) out <- out[-sel, ]
+    }
   }
   else {
     if (missing(pars)) {
