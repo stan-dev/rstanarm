@@ -19,11 +19,11 @@
 #'   of a function as a character string (e.g. \code{fun = "exp"}) or a function
 #'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
 #'   See Examples.
-#' @param ... Currently ignored.
 #' @param allow.new.levels A logical scalar (defaulting to \code{FALSE})
 #'   indicating whether new levels in grouping variables are allowed in
 #'   \code{newdata}. Only relevant for \code{\link[=stan_glmer]{GLMS with
 #'   group-specific terms}}.
+#' @param ... Currently ignored.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -48,8 +48,8 @@
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
 #' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ..., 
-                              allow.new.levels = FALSE) {
+posterior_predict <- function(object, newdata = NULL, draws = NULL, 
+                              allow.new.levels = FALSE, fun, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
@@ -71,7 +71,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, ...,
     stanmat <- as.matrix(object)
     beta <- stanmat[, 1:ncol(x), drop = FALSE]
   }
-  else {
+  else { # newdata has new levels
     stanmat <- as.matrix(object$stanfit)
     mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
     if (any(mark)) {
