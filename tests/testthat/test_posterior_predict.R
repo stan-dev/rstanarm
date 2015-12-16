@@ -99,6 +99,7 @@ test_that("posterior_predict close to predict.merMod", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
   mod2 <- as.formula(mpg ~ log1p(wt) + (1|cyl))
   mod3 <- as.formula(mpg ~ wt + (1|cyl) + (1 + wt|gear))
+  mod4 <- as.formula(mpg ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
 
   lfit1 <- lmer(mod1, data = mtcars)
   sfit1 <- stan_glmer(mod1, data = mtcars, cores = CORES, chains = CHAINS, 
@@ -107,14 +108,16 @@ test_that("posterior_predict close to predict.merMod", {
   sfit2 <- update(sfit1, formula = mod2)
   lfit3 <- update(lfit1, formula = mod3)
   sfit3 <- update(sfit1, formula = mod3)
+  lfit4 <- update(lfit1, formula = mod4)
+  sfit4 <- update(sfit1, formula = mod4)
   
   nd <- nd2 <- mtcars[1:5, ]
-  nd2$cyl[2] <- 5 # new level
+  nd2$cyl[2] <- 5 # add new levels
   nd3 <- nd2
   nd3$gear[2] <- 7
   nd3$gear[5] <- 1
   
-  for (j in 1:3) {
+  for (j in 1:4) {
     expect_equal(
       predict(get(paste0("sfit", j))),
       unname(predict(get(paste0("lfit", j)))),
