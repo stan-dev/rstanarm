@@ -7,7 +7,7 @@ os:
   - osx
   
 r_binary_packages:
-  - git2r
+  - covr
   - loo
   - lme4
   - arm
@@ -32,9 +32,6 @@ before_install:
   - R CMD INSTALL rstan/StanHeaders
   - Rscript -e "install.packages(c('inline', 'Rcpp', 'coda', 'BH', 'RcppEigen', 'RInside', 'RUnit', 'ggplot2', 'gridExtra'), repos='http://cran.rstudio.com')"
   - R CMD INSTALL rstan/rstan/rstan
-
-r_github_packages:
-  - jimhester/covr
 
 after_success:
   - Rscript -e 'covr::codecov()'
