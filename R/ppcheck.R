@@ -67,15 +67,20 @@
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
 #' # Check residuals
-#' ppcheck(example_model, check = "residuals", nreps = 3, fill = "blue") + 
-#'   ggplot2::ggtitle("Residuals (y - yrep)")
+#' ppcheck(example_model, check = "residuals", nreps = 6)
 #'
 #' # Check histograms of test statistics
 #' test_mean <- ppcheck(example_model, check = "test", test = "mean")
 #' test_sd <- ppcheck(example_model, check = "test", test = "sd")
 #' gridExtra::grid.arrange(test_mean, test_sd, ncol = 2)
+#' 
 #' # Scatterplot of two test statistics
 #' ppcheck(example_model, check = "test", test = c("mean", "sd"))
+#' 
+#' # Define a test function 
+#' prop_zero <- function(y) mean(y == 0)
+#' ppcheck(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
+#' 
 #' 
 #' # Refit using yrep and compare posterior predictive distributions of 
 #' # original model and checking model
@@ -196,7 +201,7 @@ ppcheck_hist <- function(dat, ...) {
 #'   scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
   graph <- ggplot(dat, aes_string(x = 'value', group = 'id',
-                         color = "is_y", fill = "is_y", size = 'is_y')) + 
+                                  color = "is_y", fill = "is_y", size = 'is_y')) + 
     geom_density(...) + 
     scale_color_manual(values = c("black", .PP_DARK)) +
     scale_fill_manual(values = c(NA, .PP_FILL)) +
@@ -233,7 +238,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                            labels = c("T(y)", "T(yrep)"))
     } else {
       graph <- base + 
-        geom_histogram(aes_string(y = "..count../sum(..count..)"), 
+        geom_histogram(aes_string(y = "..density.."), 
                        fill = fill_color, show.legend = FALSE, 
                        na.rm = TRUE, ...)  +
         geom_vline(data = data.frame(t = T_y), 
@@ -254,7 +259,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     T_yrep1 <- apply(yrep, 1, test1)
     T_yrep2 <- apply(yrep, 1, test2)
     base <- ggplot(data.frame(x = T_yrep1, y = T_yrep2), 
-                    aes_string(x = "x", y = "y", color = "'A'"))
+                   aes_string(x = "x", y = "y", color = "'A'"))
     graph <- base + 
       geom_point(...) + 
       annotate("segment", x = c(T_y1, -Inf), xend = c(T_y1, T_y1), 
@@ -287,7 +292,7 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
                       varying = list(1:ncol(resids)), ids = paste0("resid(yrep_",s,")"))
     base <- ggplot(resids, aes_string(x = "r"))
   }
-  graph <- base + geom_histogram(aes_string(y="..count../sum(..count..)"), 
+  graph <- base + geom_histogram(aes_string(y="..density.."), 
                                  fill = "black", ...)
   if (n == 1)
     graph <- graph + labs(y = NULL, x = paste0("resid(yrep_",s,")"))
@@ -407,4 +412,3 @@ ppcheck_refit <- function(object, n = 1, ...) {
   
   return(graph + thm)
 }
-
