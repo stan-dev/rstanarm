@@ -48,10 +48,10 @@
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
-#'   performed (if \code{algorithm = "sampling"}) via MCMC. The Bayesian model 
+#'   performed (if \code{algorithm="sampling"}) via MCMC. The Bayesian model 
 #'   adds independent priors on the coefficients of the GLM. The 
 #'   \code{stan_glm} function calls the workhorse \code{stan_glm.fit} function,
-#'   but it is possible to call the latter directly.
+#'   but it is also possible to call the latter directly.
 #'   
 #'   The \code{stan_glm.nb} function, which takes the extra argument
 #'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =

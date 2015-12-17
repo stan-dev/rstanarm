@@ -159,18 +159,27 @@ test_that("print and summary methods don't throw errors", {
   
   expect_silent(summary(stan_lmer1, pars = "varying"))
   expect_silent(s <- summary(stan_lmer1))
+  expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_lmer")
   expect_equal(attr(s, "algorithm"), "sampling")
+  expect_equal(colnames(s), colnames(d))
+  expect_equal(rownames(s), rownames(d))
   
   expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
+  expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_equal(attr(s, "algorithm"), "optimizing")
+  expect_equal(colnames(s), colnames(d))
+  expect_equal(rownames(s), rownames(d))
   
   expect_silent(s <- summary(stan_polr1, pars = "beta", probs = c(0.25, 0.75)))
+  expect_silent(d <- as.data.frame(s))
   expect_equal(colnames(s), c("mean", "mcse", "sd", "25%", "75%", "n_eff", "Rhat"))
   expect_equal(rownames(s), c("agegp.L", "agegp.Q", "agegp.C", "agegp^4", "agegp^5"))
+  expect_equal(colnames(s), colnames(d))
+  expect_equal(rownames(s), rownames(d))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_polr")
   
@@ -180,6 +189,7 @@ test_that("print and summary methods don't throw errors", {
   expect_equal(attr(s, "algorithm"), "sampling")
   
   expect_silent(s <- summary(stan_glm_vb1, pars = c("alpha", "beta")))
+  expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_equal(attr(s, "algorithm"), "meanfield")
