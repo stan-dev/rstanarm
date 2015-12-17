@@ -2,11 +2,13 @@
 #' 
 #' The posterior predictive distribution is the distribution of the outcome 
 #' implied by the model after using the observed data to update our beliefs 
-#' about the unknown parameters. Simulating data from the posterior predictive 
-#' distribution using the observed predictors is useful for checking the fit of
-#' the model. Drawing from the posterior predictive distribution at interesting
-#' values of the predictors also lets us visualize how a manipulation of a
-#' predictor affects (a function of) the outcome(s).
+#' about the unknown parameters in the model. Simulating data from the posterior
+#' predictive distribution using the observed predictors is useful for checking 
+#' the fit of the model. Drawing from the posterior predictive distribution at 
+#' interesting values of the predictors also lets us visualize how a 
+#' manipulation of a predictor affects (a function of) the outcome(s). With new 
+#' observations of predictor variables we can use posterior predictive 
+#' distribution to generate predicted outcomes.
 #' 
 #' @export
 #' @templateVar stanregArg object
@@ -72,33 +74,14 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
   dat <- pp_data(object, newdata, allow.new.levels, ...)
   x <- dat$x
-  if (is.null(NEW_ids <- attr(x, "NEW_ids"))) {
+  if (is.null(attr(x, "NEW_ids"))) {
     stanmat <- as.matrix(object)
     beta <- stanmat[, 1:ncol(x), drop = FALSE]
-  }
-  else { # newdata has new levels
+  } else { # newdata has new levels
     stanmat <- as.matrix(object$stanfit)
-    mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
-    if (any(mark)) {
-      NEW_draws <- stanmat[, mark, drop = FALSE]
-      stanmat <- stanmat[, !mark, drop = FALSE] 
-    }
-    NEW_cols <- unlist(NEW_ids, use.names = FALSE, recursive = TRUE)
-    xNEW <- x[, NEW_cols, drop = FALSE]
-    x <- x[, -NEW_cols, drop = FALSE]
-    beta <- stanmat[, 1:ncol(x), drop = FALSE]
-    x <- cbind(x, xNEW)
-    sel <- vector("list", length(NEW_ids))
-    for (j in seq_along(NEW_ids)) {
-      sel[[j]] <- list()
-      idj <- NEW_ids[[j]]
-      for (k in seq_along(idj)) {
-        patt <- paste0("b[", names(idj)[k],":_NEW_]")
-        sel[[j]][[k]] <- rep(grep(patt, colnames(NEW_draws), fixed = TRUE), 
-                             length = length(idj[[k]])) # replicate to select same column of NEW_draws multiple times (if necessary)
-      }
-    }
-    beta <- cbind(beta, NEW_draws[, unlist(sel)])
+    tmp <- pp_new_levels(stanmat, x)
+    x <- tmp$x
+    beta <- tmp$beta
   }
   eta <- linear_predictor(beta, x, dat$offset)
   inverse_link <- linkinv(object)
@@ -179,4 +162,41 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   z <- runif(n)
   x <- mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * y^2) ) / (2 * lambda)
   ifelse (z <= (mu / (mu + x)), x, mu2 / x)
+}
+
+# Create x and beta when new grouping levels are present 
+# 
+# @param stanmat Matrix of posterior draws, from calling
+#   as.matrix(object$stanfit) instead of as.matrix(object) since we need to
+#   include the extra "_NEW_" parameters used for predicting new levels.
+# @param x The x matrix returned by \code{.pp_data_mer} (which also includes the
+#   Z matrix). \code{x} should have a "NEW_ids" attribute.
+# @return A named list containing \code{x} and \code{beta}.
+pp_new_levels <- function(stanmat, x) {
+  NEW_ids <- attr(x, "NEW_ids")
+  mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
+  if (is.null(NEW_ids)) 
+    stop("Missing 'NEW_ids' attribute necessary for prediction.")
+  if (!any(mark)) 
+    stop("Draws used to predict for new levels were not found.")
+  
+  NEW_draws <- stanmat[, mark, drop = FALSE]
+  stanmat <- stanmat[, !mark, drop = FALSE] 
+  NEW_cols <- unlist(NEW_ids, use.names = FALSE, recursive = TRUE)
+  xNEW <- x[, NEW_cols, drop = FALSE]
+  x <- x[, -NEW_cols, drop = FALSE]
+  beta <- stanmat[, 1:ncol(x), drop = FALSE]
+  x <- cbind(x, xNEW)
+  sel <- vector("list", length(NEW_ids))
+  for (j in seq_along(NEW_ids)) {
+    sel[[j]] <- list()
+    idj <- NEW_ids[[j]]
+    for (k in seq_along(idj)) {
+      patt <- paste0("b[", names(idj)[k],":_NEW_]")
+      sel[[j]][[k]] <- rep(grep(patt, colnames(NEW_draws), fixed = TRUE), 
+                           length = length(idj[[k]])) # replicate to select same column of NEW_draws multiple times (if necessary)
+    }
+  }
+  beta <- cbind(beta, NEW_draws[, unlist(sel)])
+  return(nlist(x, beta))
 }
