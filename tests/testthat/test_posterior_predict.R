@@ -75,20 +75,28 @@ test_that("compatible with stan_lmer", {
 test_that("compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
 })
-test_that("compatible with stan_glmer with transformation in formula", {
-  fit <- stan_lmer(mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = mtcars, 
-                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
-  expect_silent(yrep1 <- posterior_predict(fit))
-  expect_silent(yrep1 <- posterior_predict(fit, newdata = mtcars[1:5, ]))
+test_that("compatible with stan_(g)lmer with transformation in formula", {
+  d <- mtcars
+  d$cyl <- as.factor(d$cyl)
+  args <- list(formula = mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = d, 
+               iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
+  fit1 <- do.call("stan_lmer", args)
+  fit2 <- do.call("stan_glmer", args)
+  nd <- d[6:10, ]
+  nd$wt <- rnorm(5)
+  expect_silent(posterior_predict(fit1))
+  expect_silent(posterior_predict(fit2))
+  expect_silent(posterior_predict(fit1, newdata = nd))
+  expect_silent(posterior_predict(fit2, newdata = nd))
 })
 
 
 context("posterior_predict (optimizing and vb)")
 test_that("errors for optimizing and silent for vb", {
-  fit <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing")
-  fit2 <- update(fit, algorithm = "meanfield")
-  fit3 <- update(fit, algorithm = "fullrank")
-  expect_error(posterior_predict(fit), regexp = "optimizing")
+  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing")
+  fit2 <- update(fit1, algorithm = "meanfield")
+  fit3 <- update(fit1, algorithm = "fullrank")
+  expect_error(posterior_predict(fit1), regexp = "optimizing")
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit3))
 })
@@ -97,9 +105,9 @@ test_that("errors for optimizing and silent for vb", {
 context("posterior_predict (compare to lme4)")
 test_that("posterior_predict close to predict.merMod", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
-  mod2 <- as.formula(mpg ~ log1p(wt) + (1|cyl))
+  mod2 <- as.formula(mpg ~ log1p(wt) + I(disp/100) + (1|cyl))
   mod3 <- as.formula(mpg ~ wt + (1|cyl) + (1 + wt|gear))
-  mod4 <- as.formula(mpg ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
+  mod4 <- as.formula(log(mpg) ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
 
   lfit1 <- lmer(mod1, data = mtcars)
   sfit1 <- stan_glmer(mod1, data = mtcars, cores = CORES, chains = CHAINS, 
@@ -133,12 +141,12 @@ test_that("posterior_predict close to predict.merMod", {
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd2, 
                                  allow.new.levels = TRUE)),
-      unname(predict(lfit1, newdata = nd2, allow.new.levels = TRUE)),
+      unname(predict(get(paste0("lfit", j)), newdata = nd2, allow.new.levels = TRUE)),
       tol = 0.5)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd3, 
                                  allow.new.levels = TRUE)),
-      unname(predict(lfit1, newdata = nd3, allow.new.levels = TRUE)),
+      unname(predict(get(paste0("lfit", j)), newdata = nd3, allow.new.levels = TRUE)),
       tol = 0.5)
     
     expect_error(
