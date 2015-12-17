@@ -6,8 +6,9 @@
 }
 .posterior_sample_size <- function(x) {
   stopifnot(is.stanreg(x))
-  if (!used.sampling(x)) return(NULL)
-  else return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+  if (used.sampling(x)) return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+  else if (used.variational(x)) return(x$stanfit@sim$n_save) 
+  else return(NULL)
 }
 
 #' Print method for stanreg objects
