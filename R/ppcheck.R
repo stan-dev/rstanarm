@@ -9,17 +9,21 @@
 #' @templateVar stanregArg object
 #' @template reference-bda
 #' @template args-stanreg-object
-#' @param check The type of plot (possibly abbreviated) to show. See Details.
+#' @param check The type of plot (possibly abbreviated) to show. One of 
+#'   \code{"distributions"}, \code{"residuals"}, \code{"scatter"}, 
+#'   \code{"test"}, or \code{"refit"}. See Details for descriptions.
 #' @param nreps The number of \eqn{yrep} datasets to generate from the posterior
-#'   predictive distribution and show in the plots. The default is
-#'   \code{nreps=3} for \code{check='residuals'} and \code{check='refit'}, and
-#'   \code{nreps=8} for \code{check='distributions'}. If \code{check='test'}
-#'   then \code{nreps} is ignored and the number of simulated datasets is the
-#'   number of post-warmup draws from the posterior distribution.
-#' @param overlay For \code{check='distributions'} only, should distributions be
+#'   predictive distribution and show in the plots. The default is 
+#'   \code{nreps=3} for \code{check="residuals"} and \code{check="refit"}, and 
+#'   \code{nreps=8} for \code{check="distributions"}. If \code{check="test"} 
+#'   then \code{nreps} is ignored and the number of simulated datasets is the 
+#'   number of post-warmup draws from the posterior distribution. If
+#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
+#'   number of post-warmup draws.
+#' @param overlay For \code{check="distributions"} only, should distributions be
 #'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the
 #'   default) or as separate histograms (\code{FALSE})?
-#' @param test For \code{check='test'} only, a character vector (of length 1 or 
+#' @param test For \code{check="test"} only, a character vector (of length 1 or 
 #'   2) naming a single function or a pair of functions. The function(s) should 
 #'   take a vector input and return a scalar test statistic. See Details.
 #' @param ... Optional arguments to geoms to control features of the plots 
@@ -31,8 +35,20 @@
 #' @details Descriptions of the plots corresponding to the different values of 
 #' \code{check}:
 #' \describe{
-#'  \item{\code{distributions}}{The distributions of \eqn{y} and \code{nreps}
-#'  simulated \eqn{yrep} datasets.}
+#'  \item{\code{distributions}}{The distributions of \eqn{y} and \code{nreps} 
+#'  simulated \eqn{yrep} datasets.} \item{\code{residuals}}{The distributions of
+#'  residuals computed from \eqn{y} and each of \code{nreps} simulated datasets.
+#'  For binomial data, binned residual plots are generated.} 
+#'  \item{\code{residuals}}{The distributions of residuals computed from
+#'  \eqn{y} and each of \code{nreps} simulated datasets. For binomial data,
+#'  binned residual plots are generated.}
+#'  \item{\code{scatter}}{If \code{nreps} is \code{NULL} then \eqn{y} is plotted
+#'  against the average values of \eqn{yrep}, i.e., the points \eqn{(y_n, 
+#'  \bar{yrep}_n), \quad n = 1, \dots, N}{(y_n, mean(yrep_n))}, where each 
+#'  \eqn{yrep_n} is a vector of length equal to the number of posterior draws. 
+#'  If \code{nreps} is a (preferably small) integer, then only \code{nreps} 
+#'  \eqn{yrep} datasets are simulated and they are each plotted separately 
+#'  against \eqn{y}.}
 #'  \item{\code{test}}{The distribution of a single test statistic \eqn{T(yrep)}
 #'  or a pair of test statistics over the \code{nreps} simulated datasets. If 
 #'  the \code{test} argument specifies only one function then the resulting plot
@@ -40,9 +56,6 @@
 #'  observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two
 #'  functions are specified then the plot is a scatterplot and \eqn{T(y)} is
 #'  shown as a large point.}
-#'  \item{\code{residuals}}{The distributions of residuals computed from
-#'  \eqn{y} and each of \code{nreps} simulated datasets. For binomial data,
-#'  binned residual plots are generated.}
 #'  \item{\code{refit}}{First a \emph{checking model} is fit using the same 
 #'  predictors but replacing the outcome \eqn{y} with a single realization of
 #'  \eqn{yrep} from the posterior predictive distribution. Then \code{nreps}
@@ -59,15 +72,24 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples
+#' \dontrun{
+#' # Scatterplot of y vs. average yrep
+#' fit <- stan_glm(mpg ~ wt, data = mtcars)
+#' ppcheck(fit, check = "scatter")
+#' 
+#' # Separate scatterplots of y vs. a few different yrep datasets 
+#' ppcheck(fit, check = "scatter", nreps = 3)
+#' }
+#' 
 #' # Compare distribution of y to distributions of yrep
-#' (pp_dist <- ppcheck(example_model, check = "distributions", overlay = TRUE))
+#' (pp_dist <- ppcheck(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
 #'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
 #'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
 #' # Check residuals
-#' ppcheck(example_model, check = "residuals", nreps = 6)
+#' ppcheck(example_model, check = "resid", nreps = 6)
 #'
 #' # Check histograms of test statistics
 #' test_mean <- ppcheck(example_model, check = "test", test = "mean")
@@ -82,28 +104,30 @@
 #' ppcheck(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
 #' 
 #' 
+#' \dontrun{
 #' # Refit using yrep and compare posterior predictive distributions of 
 #' # original model and checking model
-#' \dontrun{
 #' ppcheck(example_model, check = "refit", nreps = 3)
 #' }
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
 ppcheck <- function(object,
-                    check = c("distributions", "test", "residuals", "refit"),
+                    check = "distributions",
                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
     STOP_not_optimizing("ppcheck")
   
-  fn <- switch(match.arg(check), 
+  checks <- c("distributions", "residuals", "scatter", "test", "refit")
+  fn <- switch(match.arg(arg = check, choices = checks),
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
                'test' = "ppcheck_stat",
+               'scatter' = "ppcheck_scatter",
                'refit' = "ppcheck_refit")
-  if (is.null(nreps) && fn != "ppcheck_stat")
+  if (is.null(nreps) && !fn %in%  c("ppcheck_stat", "ppcheck_scatter"))
     nreps <- ifelse(fn == "ppcheck_dist", 8, 3)
   if (!is.null(nreps) && fn == "ppcheck_stat") {
     warning("'nreps' is ignored if check='test'")
@@ -133,6 +157,8 @@ ppcheck <- function(object,
     args <- list(y = y, yrep = yrep, n = nreps, ...)
   else if (fn == "ppcheck_stat")
     args <- list(y = y, yrep = yrep, test = test, ...)
+  else if (fn == "ppcheck_scatter")
+    args <- list(y = y, yrep = yrep, n = nreps, ...)
   
   return(do.call(fn, args))
 }
@@ -168,6 +194,24 @@ ppcheck <- function(object,
   thm
 }
 
+set_geom_args <- function(defaults, ...) {
+  dots <- list(...)
+  if (!length(dots)) return(defaults)
+  dot_names <- names(dots)
+  def_names <- names(defaults)
+  for (j in seq_along(def_names)) {
+    if (def_names[j] %in% dot_names)
+      defaults[[j]] <- dots[[def_names[j]]]
+  }
+  
+  extras <- setdiff(dot_names, def_names)
+  if (length(extras))
+  for (j in seq_along(extras)) {
+    defaults[[extras[j]]] <- dots[[extras[j]]]
+  }
+  return(defaults)
+}
+
 ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   fn <- if (overlay) "ppcheck_dens" else "ppcheck_hist"
   stopifnot(n <= nrow(yrep))
@@ -187,9 +231,13 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
 
 #' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
 ppcheck_hist <- function(dat, ...) {
+  defaults <- list(size = 0.2)
+  geom_args <- set_geom_args(defaults, ...)
+  geom_args$mapping <- aes_string(y = "..density..")
+  
   ggplot(dat, aes_string(x = 'value', fill = 'is_y', 
                          color = "is_y", size = "is_y")) + 
-    geom_histogram(aes_string(y="..density.."), size = .2, ...) + 
+    do.call("geom_histogram", geom_args) + 
     facet_wrap(~id, scales = "free") + 
     scale_fill_manual(values = c("black", .PP_FILL)) +
     scale_color_manual(values = c(NA, NA)) + 
@@ -201,7 +249,8 @@ ppcheck_hist <- function(dat, ...) {
 #'   scale_fill_manual scale_color_manual xlab
 ppcheck_dens <- function(dat, ...) {
   graph <- ggplot(dat, aes_string(x = 'value', group = 'id',
-                                  color = "is_y", fill = "is_y", size = 'is_y')) + 
+                                  color = "is_y", fill = "is_y", 
+                                  size = 'is_y')) + 
     geom_density(...) + 
     scale_color_manual(values = c("black", .PP_DARK)) +
     scale_fill_manual(values = c(NA, .PP_FILL)) +
@@ -220,6 +269,14 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     stop("'test' should be a character vector.")
   
   if (length(test) == 1) {
+    defaults <- list(fill = fill_color, na.rm = TRUE)
+    geom_args <- set_geom_args(defaults, ...)
+    geom_args$mapping <- aes_string(y = "..density..")
+    if (packageVersion("ggplot2") < "2.0.0") geom_args$show_guide <- FALSE
+    else geom_args$show.legend <- FALSE
+    color_scale <-  scale_color_manual(name = "", 
+                                       values = c(vline_color, fill_color),
+                                       labels = c("T(y)", "T(yrep)"))
     test1 <- match.fun(test)
     T_y <- test1(y)
     T_yrep <- apply(yrep, 1, test1)
@@ -227,31 +284,26 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
       xlab(paste("Test =", test))
     if (packageVersion("ggplot2") < "2.0.0") {
       graph <- base + 
-        geom_histogram(aes_string(y = "..count../sum(..count..)"), 
-                       fill = fill_color, show_guide = FALSE, na.rm = TRUE, 
-                       ...)  +
+        do.call("geom_histogram", geom_args) + 
         geom_vline(data = data.frame(t = T_y), 
                    aes_string(xintercept = "t", color = "factor(t)"), 
                    size = 2, show_guide = TRUE) +
-        scale_color_manual(name = "", 
-                           values = c(vline_color, fill_color),
-                           labels = c("T(y)", "T(yrep)"))
+        color_scale
     } else {
       graph <- base + 
-        geom_histogram(aes_string(y = "..density.."), 
-                       fill = fill_color, show.legend = FALSE, 
-                       na.rm = TRUE, ...)  +
+        do.call("geom_histogram", geom_args) + 
         geom_vline(data = data.frame(t = T_y), 
                    aes_string(xintercept = "t", color = "factor(t)"), 
                    size = 2, show.legend = TRUE) +
-        scale_color_manual(name = "", 
-                           values = c(vline_color, fill_color),
-                           labels = c("T(y)", "T(yrep)"))
+        color_scale
     }
     thm <- .ppcheck_theme() %+replace% theme(legend.position = "right")
     return(graph + thm)
   }
   else { # length(test) == 2
+    defaults <- list(shape = 21, color = "black", fill = "black", alpha = 0.75)
+    geom_args <- set_geom_args(defaults, ...)
+    
     if (is.character(test[1])) test1 <- match.fun(test[1])
     if (is.character(test[2])) test2 <- match.fun(test[2])
     T_y1 <- test1(y)
@@ -261,7 +313,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     base <- ggplot(data.frame(x = T_yrep1, y = T_yrep2), 
                    aes_string(x = "x", y = "y", color = "'A'"))
     graph <- base + 
-      geom_point(...) + 
+      do.call("geom_point", geom_args) + 
       annotate("segment", x = c(T_y1, -Inf), xend = c(T_y1, T_y1), 
                y = c(-Inf, T_y2), yend = c(T_y2, T_y2), 
                color = vline_color, linetype = 2) + 
@@ -281,6 +333,9 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
 
 #' @importFrom ggplot2 labs
 ppcheck_resid <- function(y, yrep, n = 1, ...) {
+  defaults <- list(fill = "black")
+  geom_args <- set_geom_args(defaults, ...)
+  geom_args$mapping <- aes_string(y = "..density..")
   stopifnot(n <= nrow(yrep))
   s <- 1:n
   if (n == 1) {
@@ -288,12 +343,12 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
   } else {
     resids <- as.data.frame(-1 * sweep(yrep, 2, y))
     colnames(resids) <- paste0("r.", 1:ncol(resids))
-    resids <- reshape((resids), direction = "long", v.names = "r", 
-                      varying = list(1:ncol(resids)), ids = paste0("resid(yrep_",s,")"))
+    resids <- reshape(resids, direction = "long", v.names = "r", 
+                      varying = list(1:ncol(resids)), 
+                      ids = paste0("resid(yrep_",s,")"))
     base <- ggplot(resids, aes_string(x = "r"))
   }
-  graph <- base + geom_histogram(aes_string(y="..density.."), 
-                                 fill = "black", ...)
+  graph <- base + do.call("geom_histogram", geom_args)
   if (n == 1)
     graph <- graph + labs(y = NULL, x = paste0("resid(yrep_",s,")"))
   else 
@@ -399,10 +454,14 @@ ppcheck_refit <- function(object, n = 1, ...) {
                  varying = varying)[, c("value", "id")]
   dat <- cbind(rbind(pp1, pp2), 
                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
+  
+  defaults <- list(size = 0.2)
+  geom_args <- set_geom_args(defaults, ...)
+  geom_args$mapping <- aes_string(y = "..density..")
   clr_vals <- c("black", .PP_FILL)
   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
   graph <- base +
-    geom_histogram(aes_string(y = "..density.."), size = .2, ...) +
+    do.call("geom_histogram", geom_args) + 
     scale_fill_manual("", values = clr_vals) +
     scale_color_manual("", values = clr_vals) + 
     facet_grid(model ~ id, scales = "fixed") + 
@@ -411,4 +470,38 @@ ppcheck_refit <- function(object, n = 1, ...) {
     theme(strip.text = element_blank(), legend.position = "right")
   
   return(graph + thm)
+}
+
+#' @importFrom ggplot2 geom_abline
+ppcheck_scatter <- function(y, yrep, n = NULL, ...){
+  # If n is null the avg yrep is compared to y, otherwise n single yrep datasets
+  # are compared to y in separate facets.
+  
+  defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
+                   size = 2.5, alpha = 1)
+  geom_args <- set_geom_args(defaults, ...)
+
+  if (is.null(n)) {
+    avg_yrep <- colMeans(yrep)
+    dat <- data.frame(x = y, y = avg_yrep, z = abs(y - avg_yrep))
+    graph <- ggplot(dat, aes_string("x", "y")) + 
+      geom_abline(intercept = 0, slope = 1, linetype = 2) +
+      do.call("geom_point", geom_args) +
+      labs(x = "y", y = "Average yrep")
+  }
+  else {
+    stopifnot(n <= nrow(yrep))
+    s <- 1:n
+    yrep <- as.data.frame(yrep)
+    colnames(yrep) <- paste0("value.", 1:ncol(yrep))
+    yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
+                         varying = list(1:ncol(yrep)), ids = paste0('yrep_', s))
+    yrep_melt$y <- rep(y, each = n)
+    graph <- ggplot(yrep_melt, aes_string(x = "y", y = "value")) + 
+      geom_abline(intercept = 0, slope = 1, linetype = 2) +
+      do.call("geom_point", geom_args) +
+      labs(x = "y", y = "yrep") + 
+      facet_wrap(~id, scales = "free")
+  }
+  return(graph + .ppcheck_theme(no_y = FALSE))
 }
