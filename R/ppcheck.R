@@ -36,19 +36,17 @@
 #' \code{check}:
 #' \describe{
 #'  \item{\code{distributions}}{The distributions of \eqn{y} and \code{nreps} 
-#'  simulated \eqn{yrep} datasets.} \item{\code{residuals}}{The distributions of
-#'  residuals computed from \eqn{y} and each of \code{nreps} simulated datasets.
-#'  For binomial data, binned residual plots are generated.} 
-#'  \item{\code{residuals}}{The distributions of residuals computed from
-#'  \eqn{y} and each of \code{nreps} simulated datasets. For binomial data,
-#'  binned residual plots are generated.}
+#'  simulated \eqn{yrep} datasets.} 
+#'  \item{\code{residuals}}{The distributions of residuals computed from \eqn{y}
+#'  and each of \code{nreps} simulated datasets. For binomial data, binned 
+#'  residual plots are generated (similar to \code{\link[arm]{binnedplot}}).}
 #'  \item{\code{scatter}}{If \code{nreps} is \code{NULL} then \eqn{y} is plotted
 #'  against the average values of \eqn{yrep}, i.e., the points \eqn{(y_n, 
-#'  \bar{yrep}_n), \quad n = 1, \dots, N}{(y_n, mean(yrep_n))}, where each 
-#'  \eqn{yrep_n} is a vector of length equal to the number of posterior draws. 
-#'  If \code{nreps} is a (preferably small) integer, then only \code{nreps} 
-#'  \eqn{yrep} datasets are simulated and they are each plotted separately 
-#'  against \eqn{y}.}
+#'  \bar{yrep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n = 1,...,N},
+#'  where each \eqn{yrep_n} is a vector of length equal to the number of
+#'  posterior draws. If \code{nreps} is a (preferably small) integer, then only
+#'  \code{nreps} \eqn{yrep} datasets are simulated and they are each plotted
+#'  separately against \eqn{y}.}
 #'  \item{\code{test}}{The distribution of a single test statistic \eqn{T(yrep)}
 #'  or a pair of test statistics over the \code{nreps} simulated datasets. If 
 #'  the \code{test} argument specifies only one function then the resulting plot
@@ -194,7 +192,7 @@ ppcheck <- function(object,
   thm
 }
 
-set_geom_args <- function(defaults, ...) {
+.set_geom_args <- function(defaults, ...) {
   dots <- list(...)
   if (!length(dots)) return(defaults)
   dot_names <- names(dots)
@@ -232,7 +230,7 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
 #' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
 ppcheck_hist <- function(dat, ...) {
   defaults <- list(size = 0.2)
-  geom_args <- set_geom_args(defaults, ...)
+  geom_args <- .set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
   
   ggplot(dat, aes_string(x = 'value', fill = 'is_y', 
@@ -270,7 +268,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   
   if (length(test) == 1) {
     defaults <- list(fill = fill_color, na.rm = TRUE)
-    geom_args <- set_geom_args(defaults, ...)
+    geom_args <- .set_geom_args(defaults, ...)
     geom_args$mapping <- aes_string(y = "..density..")
     if (packageVersion("ggplot2") < "2.0.0") geom_args$show_guide <- FALSE
     else geom_args$show.legend <- FALSE
@@ -302,7 +300,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
   }
   else { # length(test) == 2
     defaults <- list(shape = 21, color = "black", fill = "black", alpha = 0.75)
-    geom_args <- set_geom_args(defaults, ...)
+    geom_args <- .set_geom_args(defaults, ...)
     
     if (is.character(test[1])) test1 <- match.fun(test[1])
     if (is.character(test[2])) test2 <- match.fun(test[2])
@@ -334,7 +332,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
 #' @importFrom ggplot2 labs
 ppcheck_resid <- function(y, yrep, n = 1, ...) {
   defaults <- list(fill = "black")
-  geom_args <- set_geom_args(defaults, ...)
+  geom_args <- .set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
   stopifnot(n <= nrow(yrep))
   s <- 1:n
@@ -456,7 +454,7 @@ ppcheck_refit <- function(object, n = 1, ...) {
                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
   
   defaults <- list(size = 0.2)
-  geom_args <- set_geom_args(defaults, ...)
+  geom_args <- .set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
   clr_vals <- c("black", .PP_FILL)
   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
@@ -479,7 +477,7 @@ ppcheck_scatter <- function(y, yrep, n = NULL, ...){
   
   defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
                    size = 2.5, alpha = 1)
-  geom_args <- set_geom_args(defaults, ...)
+  geom_args <- .set_geom_args(defaults, ...)
 
   if (is.null(n)) {
     avg_yrep <- colMeans(yrep)
