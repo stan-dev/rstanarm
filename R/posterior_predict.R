@@ -30,6 +30,7 @@
 #'   indicating whether new levels in grouping variables are allowed in
 #'   \code{newdata}. Only relevant for \code{\link[=stan_glmer]{GLMS with
 #'   group-specific terms}}.
+#' @param seed Optionally, a PRNG \code{\link[=set.seed]{seed}} to use.
 #' @param ... Currently ignored.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
@@ -56,7 +57,10 @@
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
-                              allow.new.levels = FALSE, fun, ...) {
+                              allow.new.levels = FALSE, fun, seed, ...) {
+  
+  if (!missing(seed)) 
+    set.seed(seed)
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
