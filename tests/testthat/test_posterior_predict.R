@@ -103,7 +103,7 @@ test_that("errors for optimizing and silent for vb", {
 
 
 context("posterior_predict (compare to lme4)")
-test_that("posterior_predict close to predict.merMod", {
+test_that("posterior_predict close to predict.merMod for gaussian", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
   mod2 <- as.formula(mpg ~ log1p(wt) + I(disp/100) + (1|cyl))
   mod3 <- as.formula(mpg ~ wt + (1|cyl) + (1 + wt|gear))
@@ -154,5 +154,23 @@ test_that("posterior_predict close to predict.merMod", {
                         allow.new.levels = FALSE),
       regexp = "new levels", ignore.case = TRUE)
   }
+})
+
+test_that("pp_new_levels works properly", {
+  sfit <- example_model
+  nd <- lme4::cbpp
+  levels(nd$herd) <- c(levels(nd$herd), "99")
+  nd$herd[1:2] <- "99"
+  dat <- rstanarm:::pp_data(sfit, newdata = nd, allow.new.levels = TRUE)
+  x <- dat$x
+  stanmat <- as.matrix(sfit$stanfit)
+  tmp <- rstanarm:::pp_new_levels(stanmat, x)
+  x <- tmp$x
+  beta <- tmp$beta
+  expect_equal(dim(x), c(56, 21))
+  expect_equal(dim(beta), c(500, 21))
+  expect_equal(colnames(x)[1], "(Intercept)")
+  expect_equal(colnames(x)[dim(x)[2]], "99")
+  expect_equal(colnames(beta), c(rownames(summary(sfit))[1:20], ""))
 })
 
