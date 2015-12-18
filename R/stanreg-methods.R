@@ -280,8 +280,17 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 #' @keywords internal
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-model.frame.stanreg <- function(formula, ...) {
-  if (is(formula, "lmerMod")) return(formula$glmod$fr)
+#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (is(formula, "lmerMod")) {
+    fr <- formula$glmod$fr
+    if (fixed.only) {
+      ff <- formula(formula, fixed.only = TRUE)
+      vars <- rownames(attr(terms.formula(ff), "factors"))
+      fr <- fr[vars]
+    }
+    return(fr)
+  }
   else NextMethod("model.frame")
 }
 
