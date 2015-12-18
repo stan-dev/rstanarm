@@ -34,7 +34,7 @@ test_that("ppcheck doesn't throw bad errors", {
 })
 
 test_that("ppcheck ok for vb", {
-  fit3 <- update(fit2, algorithm = "meanfield")
+  fit3 <- update(fit2, algorithm = "meanfield", iter = 10000)
   expect_silent(p <- ppcheck(fit3))
   expect_silent(p <- ppcheck(fit3, check = "resid"))
   expect_silent(p <- ppcheck(fit3, check = "scat"))

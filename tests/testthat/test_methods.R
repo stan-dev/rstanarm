@@ -10,7 +10,7 @@ CORES <- 1
 stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
                                  chains = CHAINS, cores = CORES, seed = SEED))
 stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield")
+stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000)
 glm1 <- glm(mpg ~ wt, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
