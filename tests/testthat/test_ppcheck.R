@@ -13,15 +13,19 @@ fit2 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER,
 
 context("ppcheck")
 test_that("ppcheck doesn't throw bad errors", {
-  expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE))
+  expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE, size = 2))
   expect_silent(p <- ppcheck(fit, check = "resid"))
-  expect_silent(p <- ppcheck(fit2, check = "resid"))
+  expect_silent(p <- ppcheck(fit2, check = "resid", fill = "red", bins = 15))
+  expect_silent(p <- ppcheck(fit, check = "scatter"))
+  expect_silent(p <- ppcheck(fit2, check = "scatter", color = "purple"))
   expect_is(p, "ggplot")
   for (j in 1:2) {
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = FALSE, nreps = j))
     expect_silent(p <- ppcheck(fit, check = "dist", overlay = TRUE, nreps = j))
     expect_silent(p <- ppcheck(fit, check = "resid", nreps = j))
     expect_silent(p <- ppcheck(fit2, check = "resid", nreps = j))
+    expect_silent(p <- ppcheck(fit, check = "scat", nreps = j))
+    expect_silent(p <- ppcheck(fit2, check = "scat", nreps = j))
   }
   expect_silent(p <- ppcheck(fit, check = "test"))
   expect_silent(p <- ppcheck(fit, check = "test", test = "sd"))
@@ -30,9 +34,10 @@ test_that("ppcheck doesn't throw bad errors", {
 })
 
 test_that("ppcheck ok for vb", {
-  fit3 <- update(fit2, algorithm = "meanfield")
+  fit3 <- update(fit2, algorithm = "meanfield", iter = 10000)
   expect_silent(p <- ppcheck(fit3))
   expect_silent(p <- ppcheck(fit3, check = "resid"))
+  expect_silent(p <- ppcheck(fit3, check = "scat"))
   expect_silent(p <- ppcheck(fit3, check = "test"))
 })
 

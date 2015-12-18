@@ -166,7 +166,7 @@ fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 2)
 fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
                                     iter = 5, chains = 2))
 fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-fitvb <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield")
+fitvb <- update(fito, algorithm = "meanfield")
 fitvb2 <- update(fitvb, algorithm = "fullrank")
 
 test_that("is.stanreg works", {

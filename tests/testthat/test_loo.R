@@ -28,8 +28,8 @@ mcmc_only_error <- function(fit) {
 
 test_that("loo & waic throw error for non mcmc models", {
   fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-  fitvb1 <- update(fito, algorithm = "meanfield")
-  fitvb2 <- update(fito, algorithm = "fullrank")
+  fitvb1 <- update(fito, algorithm = "meanfield", iter = 10000)
+  fitvb2 <- update(fito, algorithm = "fullrank", iter = 10000)
   mcmc_only_error(fito)
   mcmc_only_error(fitvb1)
   mcmc_only_error(fitvb2)
