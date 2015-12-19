@@ -21,6 +21,7 @@ pp_data <- function(object, newdata = NULL, ...) {
   else .pp_data(object, newdata, ...)
 }
 
+# for models not fit using stan_(g)lmer
 .pp_data <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
     x <- get_x(object)
@@ -43,6 +44,7 @@ pp_data <- function(object, newdata = NULL, ...) {
   nlist(x, offset)
 }
 
+# for models fit using stan_(g)lmer
 .pp_data_mer <- function(object, newdata, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
   z <- .pp_data_mer_z(object, newdata, ...)
@@ -59,8 +61,8 @@ pp_data <- function(object, newdata = NULL, ...) {
 }
 
 # the functions below are heavily based on a combination of 
-# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have quite
-# a few changes
+# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 
+# substantial modifications
 .pp_data_mer_x <- function(object, newdata, ...) {
   x <- get_x(object)
   if (is.null(newdata)) return(x)
@@ -85,7 +87,9 @@ pp_data <- function(object, newdata = NULL, ...) {
 .pp_data_mer_z <- function(object, newdata, allow.new.levels = FALSE, 
                            re.form = NULL, na.action = na.pass) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
-  fmla0check <- is(re.form, "formula") && length(re.form) == 2 && identical(re.form[[2]], 0)
+  fmla0check <- (is(re.form, "formula") && 
+                   length(re.form) == 2 && 
+                   identical(re.form[[2]], 0))
   if (NAcheck || fmla0check) return(NULL)
   if (is.null(newdata) && is.null(re.form)) return(get_z(object))
   else if (is.null(newdata)) {
@@ -158,7 +162,8 @@ pp_data <- function(object, newdata = NULL, ...) {
 # lme4:::levelfun except use NAs instead of 0s in matrix
 levelfun <- function(x, nl.n, allow.new.levels = FALSE) {
   if (!all(nl.n %in% rownames(x))) {
-    if (!allow.new.levels) stop("New levels detected in newdata.")
+    if (!allow.new.levels) 
+      stop("New levels detected in newdata but 'allow.new.levels' is FALSE.")
     newx <- as.data.frame(matrix(NA, # use NA instead of zero
                                  nrow = length(nl.n), ncol = ncol(x), 
                                  dimnames = list(nl.n, names(x))))

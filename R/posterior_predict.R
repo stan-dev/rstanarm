@@ -25,7 +25,7 @@
 #' @param fun An optional function to apply to the results. \code{fun} is found 
 #'   by a call to \code{\link{match.fun}} and so can be specified as a function
 #'   object, a string naming a function, etc.
-#' @param seed Optionally, a PRNG \code{\link[=set.seed]{seed}} to use.
+#' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Currently, \code{...} can contain two arguments that are only 
 #' relevant for \code{\link[=stan_glmer]{GLMS with
 #' group-specific terms}}:  
@@ -86,10 +86,9 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dots <- list(...)
   dat <- pp_data(object, newdata, ...)
   x <- dat$x
-  if (is.null(attr(x, "NEW_ids"))) {
+  if (is.null(attr(x, "NEW_ids"))) { # no new levels in grouping variables
     stanmat <- as.matrix(object)
     beta <- stanmat[, 1:ncol(x), drop = FALSE]
   } else { # newdata has new levels
