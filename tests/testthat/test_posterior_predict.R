@@ -10,7 +10,7 @@ CORES <- 1
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
 check_for_error <- function(fit) {
-  nsims <- nrow(as.matrix(fit))
+  nsims <- nrow(as.data.frame(fit))
   
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
