@@ -75,7 +75,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   if (is.null(draws)) draws <- S
   if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
                       call. = FALSE)
-  if (!is.null(newdata)) newdata <- as.data.frame(newdata)
+  if (!is.null(newdata)) {
+    newdata <- as.data.frame(newdata)
+    if (any(is.na(newdata))) stop("Currently NAs are not allowed in 'newdata'.")
+  }
   dat <- pp_data(object, newdata, allow.new.levels, ...)
   x <- dat$x
   if (is.null(attr(x, "NEW_ids"))) {
