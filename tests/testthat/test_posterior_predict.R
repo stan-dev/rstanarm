@@ -33,7 +33,7 @@ check_for_error <- function(fit) {
 
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
-  fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(0.5), 
+  fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log")
                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
 })
