@@ -65,6 +65,18 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
 })
 
+test_that("confint method returns correct structure", {
+  expect_silent(ci <- confint(stan_glm1, level = 0.5))
+  expect_silent(ci2 <- confint(stan_glm_vb1, parm = "wt"))
+  expect_equal(rownames(ci), c("(Intercept)", "wt", "sigma"))
+  expect_equal(rownames(ci2), "wt")
+  expect_equal(colnames(ci), c("25%", "75%"))
+  expect_equal(colnames(ci2), c("2.5%", "97.5%"))
+  
+  expect_silent(ci3 <- confint(stan_glm_opt1))
+  expect_silent(ci4 <- confint(stan_polr1))
+})
+
 test_that("log_lik method works", {
   expect_error(log_lik(stan_glm_opt1))
   expect_error(log_lik(stan_glm_vb1))
