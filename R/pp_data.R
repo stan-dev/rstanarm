@@ -144,7 +144,8 @@ pp_data <- function(object, newdata = NULL, ...) {
       
       for (k in seq_along(NEW_ids[[j]])) {
         llk <- sum(is.na(dfj[, k]))
-        NEW_ids[[j]][[k]] <- NEW_cols_sel[seq(k, length(NEW_cols_sel), by = llk)]
+        tmp <- NEW_cols_sel[seq(k, length(NEW_cols_sel), by = llk + 1)]
+        NEW_ids[[j]][[k]] <- tmp
       }
     }
   }

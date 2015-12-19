@@ -22,16 +22,21 @@
 #'   transformations were specified inside the model formula.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
-#' @param fun An optional function to apply to the results. This can be the name
-#'   of a function as a character string (e.g. \code{fun = "exp"}) or a function
-#'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
-#'   See Examples.
-#' @param allow.new.levels A logical scalar (defaulting to \code{FALSE})
-#'   indicating whether new levels in grouping variables are allowed in
-#'   \code{newdata}. Only relevant for \code{\link[=stan_glmer]{GLMS with
-#'   group-specific terms}}.
+#' @param fun An optional function to apply to the results. \code{fun} is found 
+#'   by a call to \code{\link{match.fun}} and so can be specified as a function
+#'   object, a string naming a function, etc.
 #' @param seed Optionally, a PRNG \code{\link[=set.seed]{seed}} to use.
-#' @param ... Currently ignored.
+#' @param ... Currently, \code{...} can contain two arguments that are only 
+#' relevant for \code{\link[=stan_glmer]{GLMS with
+#' group-specific terms}}:  
+#' \describe{
+#' \item{\code{allow.new.levels}}{A logical scalar (defaulting to \code{FALSE}) 
+#' indicating whether new levels in grouping variables are allowed in 
+#' \code{newdata}.}
+#' \item{\code{re.form}}{A formula for "random effects" to condition on. If
+#' \code{NULL} (the default), all are included. If \code{NA} or \code{~0}, all
+#' are omitted.}
+#'}
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -57,8 +62,7 @@
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
-                              allow.new.levels = FALSE, fun, seed, ...) {
-  
+                              fun, seed, ...) {
   if (!missing(seed)) 
     set.seed(seed)
   if (!is.stanreg(object))
@@ -73,13 +77,17 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
 
   S <- .posterior_sample_size(object)
   if (is.null(draws)) draws <- S
-  if (draws > S) stop(paste("draws =", draws, "but only", S, "draws found."), 
-                      call. = FALSE)
+  if (draws > S) {
+    stop(paste0("'draws' = ", draws, 
+                " but posterior sample size is only ", S, "."))
+  }
   if (!is.null(newdata)) {
     newdata <- as.data.frame(newdata)
-    if (any(is.na(newdata))) stop("Currently NAs are not allowed in 'newdata'.")
+    if (any(is.na(newdata))) 
+      stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dat <- pp_data(object, newdata, allow.new.levels, ...)
+  dots <- list(...)
+  dat <- pp_data(object, newdata, ...)
   x <- dat$x
   if (is.null(attr(x, "NEW_ids"))) {
     stanmat <- as.matrix(object)
@@ -128,6 +136,11 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     rnorm(ncol(mu), mu[s,], sigma[s])
   }))
 }
+.pp_binomial <- function(mu, trials) {
+  t(sapply(1:nrow(mu), function(s) {
+    rbinom(ncol(mu), size = trials, prob = mu[s,])
+  }))
+}
 .pp_poisson <- function(mu) {
   t(sapply(1:nrow(mu), function(s) {
     rpois(ncol(mu), mu[s,])
@@ -136,11 +149,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
 .pp_neg_binomial_2 <- function(mu, size) {
   t(sapply(1:nrow(mu), function(s) {
     rnbinom(ncol(mu), size = size[s], mu = mu[s,])
-  }))
-}
-.pp_binomial <- function(mu, trials) {
-  t(sapply(1:nrow(mu), function(s) {
-    rbinom(ncol(mu), size = trials, prob = mu[s,])
   }))
 }
 .pp_Gamma <- function(mu, shape) {
@@ -193,7 +201,6 @@ pp_new_levels <- function(stanmat, x) {
   xNEW <- x[, NEW_cols, drop = FALSE]
   x <- x[, -NEW_cols, drop = FALSE]
   beta <- stanmat[, 1:ncol(x), drop = FALSE]
-  x <- cbind(x, xNEW)
   sel <- vector("list", length(NEW_ids))
   for (j in seq_along(NEW_ids)) {
     sel[[j]] <- list()
@@ -204,6 +211,15 @@ pp_new_levels <- function(stanmat, x) {
                            length = length(idj[[k]])) # replicate to select same column of NEW_draws multiple times (if necessary)
     }
   }
-  beta <- cbind(beta, NEW_draws[, unlist(sel)])
-  return(nlist(x, beta))
+  betaNEW <- NEW_draws[, unlist(sel), drop = FALSE]
+  
+  nc <- ncol(x) + ncol(xNEW)
+  mark <- c(OLD_cols = setdiff(1:nc, NEW_cols), NEW_cols)
+  xout <- matrix(NA, nrow = nrow(x), ncol = nc)
+  bout <- matrix(NA, nrow = nrow(beta), ncol = nc)
+  xout[, mark] <- cbind(x, xNEW)
+  bout[, mark] <- cbind(beta, betaNEW)
+  colnames(xout)[mark] <- c(colnames(x), colnames(xNEW))
+  colnames(bout)[mark] <- c(colnames(beta), colnames(betaNEW))
+  return(list(x = xout, beta = bout))
 }
