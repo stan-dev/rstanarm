@@ -33,6 +33,8 @@ test_that("stan_aov returns expected result for npk example", {
   fit_sigma <- fit$stan_summary["sigma", "mean"]
   lm_sigma <- summary(lm(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly"))$sigma
   expect_equal(fit_sigma, lm_sigma, tol = threshold)
+  expect_output(print(fit), regexp = "stan_aov")
+  expect_output(print(fit), regexp = "ANOVA-like table")
 })
 
 
