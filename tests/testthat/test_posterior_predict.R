@@ -12,7 +12,7 @@ CORES <- 1
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
 check_for_error <- function(fit) {
-  nsims <- nrow(as.matrix(fit))
+  nsims <- nrow(as.data.frame(fit))
   
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
@@ -35,7 +35,7 @@ check_for_error <- function(fit) {
 
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
-  fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(0.5), 
+  fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED)
   check_for_error(fit)
 })

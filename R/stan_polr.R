@@ -89,10 +89,9 @@ class(loglog) <- "link-glm"
 #'   prior on the coefficients is different.
 #' 
 #' @examples 
-#' \dontrun{
-#' stan_polr(tobgp ~ agegp, data = esoph, cores = 1,
-#'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345)
-#' }
+#' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+#'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
+#'           algorithm = "fullrank") # for speed only
 #' 
 stan_polr <- function(formula, data, weights, ..., subset, 
                       na.action = getOption("na.action", "na.omit"), 

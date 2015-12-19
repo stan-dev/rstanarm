@@ -15,14 +15,8 @@
 #'   
 #' @examples
 #' \dontrun{
-#' # Fit a model
-#' fit <- stan_glm(mpg ~ wt, data = mtcars, seed = 12345)   
-#' 
-#' # Launch the ShinyStan app (saving resulting shinystan object as fit_sso)
-#' fit_sso <- launch_shinystan(fit) 
-#' 
-#' # Launch the ShinyStan app (without saving shinystan object)
-#' launch_shinystan(fit) 
+#' # Launch the ShinyStan app (saving resulting shinystan object as sso)
+#' sso <- launch_shinystan(example_model)
 #' }
 #' 
 #' 

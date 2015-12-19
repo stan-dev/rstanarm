@@ -16,18 +16,10 @@
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{poisson}} but with a different family name.
 #' @examples
-#' \dontrun{
-#' # Example usage with stan_glm
-#' SEED <- 12345
-#' 
-#' # can specify family = neg_binomial_2
-#' fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'                 family = neg_binomial_2, seed = SEED, cores = 1) 
+#' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
+#'          family = neg_binomial_2, QR = TRUE, algorithm = "fullrank") 
 #'                 
-#' # or, equivalently, use stan_glm.nb 
-#' stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'             seed = SEED, cores = 1) 
-#' }
+#' # or, equivalently, call stan_glm.nb() without specifying the family
 #'
 neg_binomial_2 <- function(link = "log") {
   out <- poisson(link)

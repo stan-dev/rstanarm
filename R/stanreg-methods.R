@@ -68,13 +68,17 @@ coef.stanreg <- function(object, ...) {
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (used.optimizing(object))
     return(confint.default(object, parm, level, ...))
-  if (missing(parm)) mat <- as.matrix.stanreg(object)
+  if (missing(parm)) {
+    mat <- as.matrix.stanreg(object)
+    sel <- grepl("mean_PPD|log-posterior", colnames(mat))
+    mat <- mat[, !sel, drop = FALSE]
+  }
   else {
     parm[parm == "varying"] <- "b"
     mat <- as.matrix.stanreg(object, pars = parm)
   }
   alpha <- (1 - level) / 2
-  t(apply(mat, 2, FUN = quantile, probs = c(alpha, 1 - alpha)))
+  t(apply(mat, 2L, quantile, probs = c(alpha, 1 - alpha)))
 }
 
 #' @rdname stanreg-methods

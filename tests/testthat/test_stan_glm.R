@@ -52,7 +52,7 @@ test_that("stan_glm returns something for glm negative binomial example", {
   for (i in 1:length(links)) 
     fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                     family = neg_binomial_2(links[i]), seed  = SEED,
-                    prior_PD = TRUE, chains = 1)
+                    prior_PD = TRUE, chains = 1, QR = TRUE)
     # testing results against MASS::glm.nb is unreliable
 })
 

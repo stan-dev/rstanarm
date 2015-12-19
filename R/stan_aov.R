@@ -24,7 +24,7 @@
 #' @examples
 #' \dontrun{
 #' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
-#'          prior = R2(0.5), seed = 12345, cores = 1) 
+#'          prior = R2(0.5), seed = 12345) 
 #' }
 #'             
 stan_aov <- function(formula, data = NULL, projections = FALSE,

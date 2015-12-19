@@ -70,10 +70,6 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     # the rest of these are not actually used
                     has_intercept = 0L, prior_dist_for_intercept = 0L, 
                     family = 1L)
-  pi <- table(y) / N               
-  start <- function(chain_id) {
-    list(pi = pi)
-  }
   stanfit <- stanmodels$polr
   if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
   else pars <- c("zeta", "beta", "mean_PPD")

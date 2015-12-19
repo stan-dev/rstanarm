@@ -58,37 +58,40 @@
 #'   \link{neg_binomial_2}(link)}.
 #' 
 #' @examples 
-#' \dontrun{
 #' ### Linear regression
-#' fit <- stan_glm(mpg ~ ., data = mtcars, cores = 1)
+#' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
+#'                 algorithm = "fullrank") # for speed only
 #' plot(fit, ci_level = 0.5)
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
 #' t7 <- student_t(df = 7) 
-#' f <- treat ~ re74 + re75 + educ + black + hisp + married + nodegr + u74 + u75
+#' f <- treat ~ I(re74 / 1000) + I(re75 / 1000) + educ + black + hisp + 
+#'              married + nodegr + u74 + u75
 #' fit2 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
 #'                  prior = t7, prior_intercept = t7, 
-#'                  cores = 1)
+#'                  algorithm = "fullrank") # for speed only
+#'                  
 #' plot(fit2)
 #' ppcheck(fit2, check = "resid")
 #' ppcheck(fit2, check = "test", test = "mean")
 #' 
+#' \dontrun{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10), 
-#'                  cores = 1)
+#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
+#'                  
 #' plot(fit3, ci_level = 0.75, outer_level = 0.99, show_density = TRUE)
 #' 
 #' ### Gamma regression (example from help("glm"))
 #' clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
 #'                        lot1 = c(118,58,42,35,27,25,21,19,18),
 #'                        lot2 = c(69,35,26,21,18,16,13,12,12))
-#' fit4 <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma, 
-#'                  cores = 1)
+#' fit4 <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma) 
+#'                  
 #' fit5 <- update(fit4, formula = lot2 ~ log(u))
 #' }
 #'
