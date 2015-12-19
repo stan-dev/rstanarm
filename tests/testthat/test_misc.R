@@ -263,6 +263,9 @@ test_that("set_sampling_args works", {
   ans5 <- set_sampling_args(fit, prior = hs(), 
                             user_dots = no_control,
                             user_adapt_delta = NULL)
+  ans6 <- set_sampling_args(fit, prior = hs_plus(), 
+                            user_dots = no_control,
+                            user_adapt_delta = NULL)
   expect_equal(ans1$control, c(control1, adapt_delta = 0.95))
   expect_equal(ans1$iter, 100)
   expect_equal(ans1$control, ans1b$control)
@@ -270,6 +273,7 @@ test_that("set_sampling_args works", {
   expect_equal(ans3$control, c(control1, adapt_delta = 0.99))
   expect_equal(ans4$control, c(control2, adapt_delta = 0.8, max_treedepth = 15))
   expect_equal(ans5$control, list(adapt_delta = 0.99, max_treedepth = 15))
+  expect_equal(ans6$control, list(adapt_delta = 0.99, max_treedepth = 15))
 })
 
 test_that("linkinv methods work", {
