@@ -16,7 +16,7 @@
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{poisson}} but with a different family name.
 #' @examples
-#' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
+#' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 12345,
 #'          family = neg_binomial_2, QR = TRUE, algorithm = "fullrank") 
 #'                 
 #' # or, equivalently, call stan_glm.nb() without specifying the family
