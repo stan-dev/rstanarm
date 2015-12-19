@@ -7,10 +7,10 @@ CHAINS <- 2
 ITER <- 100
 set.seed(SEED)
 
-plink <- function(fit, nd = NULL) 
-  predict(fit, newdata = nd, type = "link", se.fit = TRUE)
-presp <- function(fit, nd = NULL) 
-  predict(fit, newdata = nd, type = "response", se.fit = TRUE)
+plink <- function(fit, nd = NULL, sef = TRUE) 
+  predict(fit, newdata = nd, type = "link", se.fit = sef)
+presp <- function(fit, nd = NULL, sef = TRUE) 
+  predict(fit, newdata = nd, type = "response", se.fit = sef)
 
 context("predict")
 test_that("predict ok for binomial", {
@@ -95,7 +95,10 @@ test_that("predict ok for Poisson", {
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit)[1:2], presp(stanfit_opt), tol = 0.1)
   expect_error(presp(stanfit))
-  
+
+  expect_equal(plink(stanfit, sef = FALSE), plink(glmfit, sef = FALSE), tol = 0.05)
+  expect_equal(presp(stanfit, sef = FALSE), presp(glmfit, sef = FALSE), tol = 0.05)
+
   newd <- dat[1:2, ]
   pg <- plink(glmfit, newd)
   ps <- plink(stanfit, newd)
