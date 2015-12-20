@@ -4,7 +4,7 @@ options(loo.cores = 1)
 SEED <- 1234
 CHAINS <- 2
 CORES <- 1
-ITER <- 10 # small iter for speed
+ITER <- 40 # small iter for speed but large enough for psis
 
 # These tests just check that the loo.stanreg method (which calls loo.function
 # method) results are identical to the loo.matrix results. Since for these tests 
@@ -49,7 +49,10 @@ test_that("loo/waic for stan_glm works", {
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial, 
                         chains = CHAINS, iter = ITER, 
                         cores = CORES, seed = SEED)
+  dead <- rbinom(length(numdead), 1, prob = 0.5)
+  fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .)
   expect_identical_loo(fit_binom)
+  expect_identical_loo(fit_binom2)
   
   # poisson
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
