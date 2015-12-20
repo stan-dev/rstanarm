@@ -64,6 +64,7 @@ test_that("loo/waic for stan_glm works", {
   
   # negative binomial
   fit_negbin <- update(fit_pois, family = neg_binomial_2)
+  expect_identical_loo(fit_negbin)
   
   # gamma
   clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
