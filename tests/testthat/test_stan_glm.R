@@ -21,7 +21,6 @@ test_that("gaussian returns expected result for trees example", {
   }
 })
 
-
 context("stan_glm (poisson)")
 links <- c("log", "identity", "sqrt")
 test_that("stan_glm returns expected result for glm poisson example", {
@@ -49,11 +48,20 @@ context("stan_glm (negative binomial)")
 test_that("stan_glm returns something for glm negative binomial example", {
   # example from MASS::glm.nb
   require(MASS)
-  for (i in 1:length(links)) 
-    fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
-                    family = neg_binomial_2(links[i]), seed  = SEED,
-                    prior_PD = TRUE, chains = 1, QR = TRUE)
-    # testing results against MASS::glm.nb is unreliable
+  for (i in 1:length(links)) {
+    fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
+                     family = neg_binomial_2(links[i]), 
+                     seed  = SEED, chains = 1, iter = 500,
+                     prior_PD = TRUE, QR = TRUE)
+    fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
+                        link = links[i],
+                        seed  = SEED, chains = 1, iter = 500,
+                        prior_PD = TRUE, QR = TRUE)
+    expect_is(fit1, "stanreg")
+    expect_is(fit2, "stanreg")
+    expect_equal(as.matrix(fit1), as.matrix(fit2))
+  }
+  # testing results against MASS::glm.nb is unreliable
 })
 
 context("stan_glm (gaussian)")
