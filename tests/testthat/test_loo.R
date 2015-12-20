@@ -54,13 +54,16 @@ test_that("loo/waic for stan_glm works", {
   expect_identical_loo(fit_binom)
   expect_identical_loo(fit_binom2)
   
-  # poisson
+  # poisson 
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
                      counts = c(18,17,15,20,10,20,25,13,12))
   fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, family = poisson,
                        chains = CHAINS, iter = ITER, 
                        cores = CORES, seed = SEED)
   expect_identical_loo(fit_pois)
+  
+  # negative binomial
+  fit_negbin <- update(fit_pois, family = neg_binomial_2)
   
   # gamma
   clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
@@ -70,6 +73,10 @@ test_that("loo/waic for stan_glm works", {
                         chains = CHAINS, iter = ITER, 
                         cores = CORES, seed = SEED)
   expect_identical_loo(fit_gamma)
+  
+  # inverse gaussian
+  fit_igaus <- update(fit_gamma, family = inverse.gaussian)
+  expect_identical_loo(fit_igaus)
 })
 
 test_that("loo/waic for stan_polr works", {
