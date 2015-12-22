@@ -1,3 +1,5 @@
+#include "license.txt"
+
 # GLM for a count outcome
 functions {
   #include "common_functions.txt"
