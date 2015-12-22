@@ -103,6 +103,7 @@ context("methods for stan_lmer models")
 test_that("ngrps is right", {
   expect_equal(ngrps(lmer1), ngrps(stan_lmer1))
   expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
+  expect_error(ngrps(stan_glm1), "stan_glmer and stan_lmer models only")
 })
 test_that("nobs is right", {
   expect_equal(nobs(lmer1), nobs(stan_lmer1))
@@ -124,6 +125,7 @@ test_that("VarCorr returns correct structure", {
   expect_is(vc_stan2, class(vc_lmer2))
   check_att_names(vc_stan1, vc_lmer1)
   check_att_names(vc_stan2, vc_lmer2)
+  expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
 })
 test_that("ranef returns correct structure", {
   re_stan1 <- ranef(stan_lmer1); re_lmer1 <- ranef(lmer1)
@@ -134,6 +136,7 @@ test_that("ranef returns correct structure", {
   check_att_names(re_stan2, re_lmer2)
   check_sizes(re_stan1, re_lmer1)
   check_sizes(re_stan2, re_lmer2)
+  expect_error(ranef(stan_glm1), "stan_glmer and stan_lmer models only")
 })
 test_that("fixef returns the right coefs", {
   expect_identical(names(fixef(stan_lmer1)), names(fixef(lmer1)))
