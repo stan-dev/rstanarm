@@ -270,8 +270,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     defaults <- list(fill = fill_color, na.rm = TRUE)
     geom_args <- .set_geom_args(defaults, ...)
     geom_args$mapping <- aes_string(y = "..density..")
-    if (packageVersion("ggplot2") < "2.0.0") geom_args$show_guide <- FALSE
-    else geom_args$show.legend <- FALSE
+    geom_args$show.legend <- FALSE
     color_scale <-  scale_color_manual(name = "", 
                                        values = c(vline_color, fill_color),
                                        labels = c("T(y)", "T(yrep)"))
@@ -280,21 +279,12 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     T_yrep <- apply(yrep, 1, test1)
     base <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) + 
       xlab(paste("Test =", test))
-    if (packageVersion("ggplot2") < "2.0.0") {
-      graph <- base + 
-        do.call("geom_histogram", geom_args) + 
-        geom_vline(data = data.frame(t = T_y), 
-                   aes_string(xintercept = "t", color = "factor(t)"), 
-                   size = 2, show_guide = TRUE) +
-        color_scale
-    } else {
-      graph <- base + 
-        do.call("geom_histogram", geom_args) + 
-        geom_vline(data = data.frame(t = T_y), 
-                   aes_string(xintercept = "t", color = "factor(t)"), 
-                   size = 2, show.legend = TRUE) +
-        color_scale
-    }
+    graph <- base + 
+      do.call("geom_histogram", geom_args) + 
+      geom_vline(data = data.frame(t = T_y), 
+                 aes_string(xintercept = "t", color = "factor(t)"), 
+                 size = 2, show.legend = TRUE) +
+      color_scale
     thm <- .ppcheck_theme() %+replace% theme(legend.position = "right")
     return(graph + thm)
   }
