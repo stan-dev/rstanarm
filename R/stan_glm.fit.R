@@ -363,7 +363,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
       if (is_gaussian) "sigma" else
-        if (is_gamma) "scale" else
+        if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
             if (is_nb) "overdispersion" else NA
     if (length(group)) {
