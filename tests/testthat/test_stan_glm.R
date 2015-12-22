@@ -19,6 +19,14 @@ test_that("gaussian returns expected result for trees example", {
                family = gaussian(link = links[i]))
     expect_equal(coef(fit), coef(ans), tol = 0.021)
   }
+  expect_error(update(fit, prior = dnorm), 
+               regexp = "should be a named list")
+  expect_error(update(fit, prior_intercept = dnorm), 
+               regexp = "should be a named list")
+  expect_error(update(fit, prior = R2(0.5)), 
+               regexp = "should be one of")
+  expect_error(update(fit, prior_intercept = R2(0.5)), 
+               regexp = "should be one of")
 })
 
 context("stan_glm (poisson)")
