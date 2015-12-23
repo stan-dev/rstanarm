@@ -116,7 +116,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
       else ppargs$trials <- rep(1, NROW(y))
     }
     else if (is.gamma(famname))
-      ppargs$scale <- stanmat[,"scale"]
+      ppargs$shape <- stanmat[,"shape"]
     else if (is.ig(famname))
       ppargs$lambda <- stanmat[,"lambda"]
     else if (is.nb(famname))

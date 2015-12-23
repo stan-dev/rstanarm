@@ -48,7 +48,13 @@ stanreg <- function(object) {
   # glm which does 'deviance' residuals by default)
   eta <- linear_predictor(coefs, x, object$offset)
   mu <- family$linkinv(eta)
-  residuals <- if (NCOL(y) == 2L) y[, 1L] / rowSums(y) - mu else y - mu
+
+  if (NCOL(y) == 2L) {
+    residuals <- y[, 1L] / rowSums(y) - mu 
+  } else {
+    ytmp <- if (is.factor(y)) as.integer(y != levels(y)[1L]) else y
+    residuals <- ytmp - mu
+  }
   df.residual <- nobs - sum(object$weights == 0) - rank
   names(eta) <- names(mu) <- names(residuals) <- ynames
   

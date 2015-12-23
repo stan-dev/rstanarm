@@ -67,7 +67,7 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
         if(projections) fit$projections <- proj(fit)
         fit$call <- Call
         return(fit)
-    } else {
+    } else { # nocov start
         stop("Error terms not supported yet")
         if(pmatch("weights", names(match.call()), 0L))
             stop("weights are not supported in a multistratum aov() fit")
@@ -168,5 +168,5 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
         attr(result, "contrasts") <- cons
         attr(result, "xlevels") <- xlev
         result
-    }
+    } # nocov end
 }

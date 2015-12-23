@@ -4,7 +4,7 @@ options(loo.cores = 1)
 SEED <- 1234
 CHAINS <- 2
 CORES <- 1
-ITER <- 10 # small iter for speed
+ITER <- 40 # small iter for speed but large enough for psis
 
 # These tests just check that the loo.stanreg method (which calls loo.function
 # method) results are identical to the loo.matrix results. Since for these tests 
@@ -49,9 +49,12 @@ test_that("loo/waic for stan_glm works", {
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial, 
                         chains = CHAINS, iter = ITER, 
                         cores = CORES, seed = SEED)
+  dead <- rbinom(length(numdead), 1, prob = 0.5)
+  fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .)
   expect_identical_loo(fit_binom)
+  expect_identical_loo(fit_binom2)
   
-  # poisson
+  # poisson 
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
                      counts = c(18,17,15,20,10,20,25,13,12))
   fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, family = poisson,
@@ -59,14 +62,22 @@ test_that("loo/waic for stan_glm works", {
                        cores = CORES, seed = SEED)
   expect_identical_loo(fit_pois)
   
+  # negative binomial
+  fit_negbin <- update(fit_pois, family = neg_binomial_2)
+  expect_identical_loo(fit_negbin)
+  
   # gamma
-  clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
+  clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
-  fit_gamma <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma, 
+  fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma, 
                         chains = CHAINS, iter = ITER, 
                         cores = CORES, seed = SEED)
   expect_identical_loo(fit_gamma)
+  
+  # inverse gaussian
+  fit_igaus <- update(fit_gamma, family = inverse.gaussian)
+  expect_identical_loo(fit_igaus)
 })
 
 test_that("loo/waic for stan_polr works", {
