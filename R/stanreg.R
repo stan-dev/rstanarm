@@ -80,6 +80,7 @@ stanreg <- function(object) {
     call = object$call, 
     formula = object$formula, 
     terms = object$terms,
+    xlevels = object$xlevels,
     prior.info = object$prior.info,
     algorithm = object$algorithm,
     stan_summary,  

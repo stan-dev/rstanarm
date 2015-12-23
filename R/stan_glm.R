@@ -157,7 +157,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                data, prior.info = get_prior_info(call, formals()), 
                call = call, terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"))
+               contrasts = attr(X, "contrasts"), 
+               xlevels = .getXlevels(mt, mf))
   out <- stanreg(fit)
   if (!x) out$x <- NULL
   if (!y) out$y <- NULL
