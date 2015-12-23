@@ -106,7 +106,7 @@ ppcheck <- function(object,
   if (used.optimizing(object)) 
     STOP_not_optimizing("ppcheck")
   
-  checks <- c("distributions", "residuals", "scatter", "test", "refit")
+  checks <- c("distributions", "residuals", "scatter", "test") #, "refit")
   fn <- switch(match.arg(arg = check, choices = checks),
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
