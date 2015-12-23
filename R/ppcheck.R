@@ -56,9 +56,8 @@
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data with a number of trials greater than 1
-#'   (i.e. not Bernoulli), plots of \eqn{y} and \eqn{yrep} show the
-#'   proportion of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{yrep} show the proportion
+#'   of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also
