@@ -63,17 +63,22 @@
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
 #'                 algorithm = "fullrank") # for speed only
 #' plot(fit, ci_level = 0.5)
+#' plot(fit, ci_level = 0.5, pars = "beta") # plot without intercept
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
-#' t7 <- student_t(df = 7) 
-#' f <- treat ~ I(re74 / 1000) + I(re75 / 1000) + educ + black + hisp + 
-#'              married + nodegr + u74 + u75
-#' fit2 <- stan_glm(f, data = lalonde, family = binomial(link="logit"), 
+#' t7 <- student_t(df = 7)
+#' dat <- within(lalonde, {
+#'  re74_1k <- re74 / 1000
+#'  re75_1k <- re75 / 1000
+#' })
+#' f <- treat ~ re74_1k + re75_1k + educ + black + hisp + 
+#'                married + nodegr + u74 + u75
+#' fit2 <- stan_glm(f, data = dat, family = binomial(link="logit"), 
 #'                  prior = t7, prior_intercept = t7, 
 #'                  algorithm = "fullrank") # for speed only
-#'                  
-#' plot(fit2)
+#' plot(fit2, pars = c("black", "hisp", "nodegr", "u74", "u75"), 
+#'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
 #' ppcheck(fit2, check = "resid")
 #' ppcheck(fit2, check = "test", test = "mean")
 #' 
@@ -84,16 +89,15 @@
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
 #'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
-#'                  
-#' plot(fit3, ci_level = 0.75, outer_level = 0.99, show_density = TRUE)
+#' plot(fit3, fill_color = "skyblue4", est_color = "maroon")
 #' 
 #' ### Gamma regression (example from help("glm"))
-#' clotting <- data.frame(u = c(5,10,15,20,30,40,60,80,100),
+#' clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
 #'                        lot1 = c(118,58,42,35,27,25,21,19,18),
 #'                        lot2 = c(69,35,26,21,18,16,13,12,12))
-#' fit4 <- stan_glm(lot1 ~ log(u), data = clotting, family = Gamma) 
-#'                  
-#' fit5 <- update(fit4, formula = lot2 ~ log(u))
+#' fit4 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma) 
+#' print(fit4, digits = 2)                 
+#' fit5 <- update(fit4, formula = lot2 ~ log_u)
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
@@ -156,6 +160,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
+  out$xlevels <- .getXlevels(mt, mf)
   if (!x) out$x <- NULL
   if (!y) out$y <- NULL
   if (!model) out$model <- NULL

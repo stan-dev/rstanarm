@@ -349,11 +349,11 @@ get_z <- function(object) UseMethod("get_z")
 
 #' @export
 get_y.default <- function(object) {
-  object$y %ORifNULL% model.response(model.frame(object))
+  object[["y"]] %ORifNULL% model.response(model.frame(object))
 }
 #' @export
 get_x.default <- function(object) {
-  object$x %ORifNULL% model.matrix(object)
+  object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
 get_x.lmerMod <- function(object) {

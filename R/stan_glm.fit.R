@@ -101,6 +101,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # prior distributions
   if (!is.null(prior)) {
+    if (!is.list(prior)) stop("'prior' should be a named list.")
     prior_dist <- prior$dist
     prior_scale <- prior$scale
     prior_mean <- prior$location
@@ -108,7 +109,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_df[is.na(prior_df)] <- 1
     if (!prior_dist %in% unlist(ok_dists)) {
       stop("The prior distribution for the coefficients should be one of ",
-           paste(names(ok_dists), collapse = ", "), call. = FALSE)
+           paste(names(ok_dists), collapse = ", "))
     }
     if (prior_dist == "normal" || prior_dist == "t") {
       prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
@@ -128,6 +129,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale <- prior_df <- as.array(rep(1, nvars))
   }
   if (!is.null(prior_intercept)) {
+    if (!is.list(prior_intercept)) stop("'prior' should be a named list.")
     prior_dist_for_intercept <- prior_intercept$dist
     prior_scale_for_intercept <- prior_intercept$scale
     prior_mean_for_intercept <- prior_intercept$location
@@ -136,7 +138,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     
     if (!prior_dist_for_intercept %in% unlist(ok_intercept_dists)) {
       stop("The prior distribution for the intercept should be one of ",
-           paste(names(ok_intercept_dists), collapse = ", "), call. = FALSE)
+           paste(names(ok_intercept_dists), collapse = ", "))
     }
     prior_dist_for_intercept <- 
       ifelse(prior_dist_for_intercept == "normal", 1L, 2L)
@@ -365,7 +367,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
       if (is_gaussian) "sigma" else
-        if (is_gamma) "scale" else
+        if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
             if (is_nb) "overdispersion" else NA
     if (length(group)) {

@@ -28,15 +28,15 @@
 #' @template args-stanreg-object
 #' @param check The type of plot (possibly abbreviated) to show. One of 
 #'   \code{"distributions"}, \code{"residuals"}, \code{"scatter"}, 
-#'   \code{"test"}, or \code{"refit"}. See Details for descriptions.
+#'   \code{"test"}. See Details for descriptions.
 #' @param nreps The number of \eqn{yrep} datasets to generate from the posterior
 #'   predictive distribution and show in the plots. The default is 
-#'   \code{nreps=3} for \code{check="residuals"} and \code{check="refit"}, and 
-#'   \code{nreps=8} for \code{check="distributions"}. If \code{check="test"} 
-#'   then \code{nreps} is ignored and the number of simulated datasets is the 
-#'   number of post-warmup draws from the posterior distribution. If
-#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
-#'   number of post-warmup draws.
+#'   \code{nreps=3} for \code{check="residuals"} and \code{nreps=8} for
+#'   \code{check="distributions"}. If \code{check="test"} then \code{nreps} is
+#'   ignored and the number of simulated datasets is the number of post-warmup
+#'   draws from the posterior distribution. If \code{check="scatter"},
+#'   \code{nreps} is not ignored but defaults to the number of post-warmup
+#'   draws.
 #' @param overlay For \code{check="distributions"} only, should distributions be
 #'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the
 #'   default) or as separate histograms (\code{FALSE})?
@@ -71,16 +71,10 @@
 #'  observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two
 #'  functions are specified then the plot is a scatterplot and \eqn{T(y)} is
 #'  shown as a large point.}
-#'  \item{\code{refit}}{First a \emph{checking model} is fit using the same 
-#'  predictors but replacing the outcome \eqn{y} with a single realization of
-#'  \eqn{yrep} from the posterior predictive distribution. Then \code{nreps}
-#'  datasets are simulated from both the original model and the checking model
-#'  and plotted.}
 #' }
 #' 
-#' @note For binomial data with a number of trials greater than 1
-#'   (i.e. not Bernoulli), plots of \eqn{y} and \eqn{yrep} show the
-#'   proportion of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{yrep} show the proportion
+#'   of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also
@@ -118,13 +112,6 @@
 #' prop_zero <- function(y) mean(y == 0)
 #' ppcheck(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
 #' 
-#' 
-#' \dontrun{
-#' # Refit using yrep and compare posterior predictive distributions of 
-#' # original model and checking model
-#' ppcheck(example_model, check = "refit", nreps = 3)
-#' }
-#' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
 ppcheck <- function(object,
@@ -135,7 +122,7 @@ ppcheck <- function(object,
   if (used.optimizing(object)) 
     STOP_not_optimizing("ppcheck")
   
-  checks <- c("distributions", "residuals", "scatter", "test", "refit")
+  checks <- c("distributions", "residuals", "scatter", "test") #, "refit")
   fn <- switch(match.arg(arg = check, choices = checks),
                'distributions' = "ppcheck_dist",
                'residuals' = "ppcheck_resid",
@@ -287,8 +274,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     defaults <- list(fill = fill_color, na.rm = TRUE)
     geom_args <- .set_geom_args(defaults, ...)
     geom_args$mapping <- aes_string(y = "..density..")
-    if (packageVersion("ggplot2") < "2.0.0") geom_args$show_guide <- FALSE
-    else geom_args$show.legend <- FALSE
+    geom_args$show.legend <- FALSE
     color_scale <-  scale_color_manual(name = "", 
                                        values = c(vline_color, fill_color),
                                        labels = c("T(y)", "T(yrep)"))
@@ -297,21 +283,12 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
     T_yrep <- apply(yrep, 1, test1)
     base <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) + 
       xlab(paste("Test =", test))
-    if (packageVersion("ggplot2") < "2.0.0") {
-      graph <- base + 
-        do.call("geom_histogram", geom_args) + 
-        geom_vline(data = data.frame(t = T_y), 
-                   aes_string(xintercept = "t", color = "factor(t)"), 
-                   size = 2, show_guide = TRUE) +
-        color_scale
-    } else {
-      graph <- base + 
-        do.call("geom_histogram", geom_args) + 
-        geom_vline(data = data.frame(t = T_y), 
-                   aes_string(xintercept = "t", color = "factor(t)"), 
-                   size = 2, show.legend = TRUE) +
-        color_scale
-    }
+    graph <- base + 
+      do.call("geom_histogram", geom_args) + 
+      geom_vline(data = data.frame(t = T_y), 
+                 aes_string(xintercept = "t", color = "factor(t)"), 
+                 size = 2, show.legend = TRUE) +
+      color_scale
     thm <- .ppcheck_theme() %+replace% theme(legend.position = "right")
     return(graph + thm)
   }
@@ -424,68 +401,69 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
   return(graph + .ppcheck_theme(no_y = FALSE))
 }
 
-ppcheck_refit <- function(object, n = 1, ...) {
-  message("Refitting model using y = yrep...\n")
-  yrep <- as.vector(posterior_predict(object, draws = 1))
-  mf <- model.frame(object)
-  if (is(object, "polr")) fam <- "polr"
-  else fam <- object$family$family
-  
-  if (!is.binomial(fam)) {
-    if (is(object, "polr"))
-      yrep <- factor(yrep, labels = levels(get_y(object)), ordered = TRUE)
-    mf[[1]] <- yrep
-    refit <- update(object, data = mf)
-  }
-  else {
-    y <- get_y(object)
-    if (NCOL(y) == 2) {
-      new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
-      mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1])
-      refit <- update(object, formula = new_f, 
-                      data = get_all_vars(new_f, data = mf2))
-    } 
-    else {
-      if (NCOL(y) == 1 && !all(y %in% c(0, 1)))
-        yrep <- yrep / object$weights
-      mf[[1]] <- yrep
-      refit <- update(object, data = mf)
-    }
-  }
-  
-  pp1 <- posterior_predict(object, draws = n)
-  pp2 <- posterior_predict(refit, draws = n)
-  if (is.binomial(fam)) {
-    if (NCOL(y) == 2) {
-      trials <- rowSums(y)
-      pp1 <- sweep(pp1, 2, trials, "/")
-      pp2 <- sweep(pp2, 2, trials, "/")
-    }
-  }
-  varying <- list(1:ncol(pp1))
-  pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
-                 varying = varying)[, c("value", "id")]
-  pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
-                 varying = varying)[, c("value", "id")]
-  dat <- cbind(rbind(pp1, pp2), 
-               model = rep(c("Model", "Checking model"), each = nrow(pp1)))
-  
-  defaults <- list(size = 0.2)
-  geom_args <- .set_geom_args(defaults, ...)
-  geom_args$mapping <- aes_string(y = "..density..")
-  clr_vals <- c("black", .PP_FILL)
-  base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
-  graph <- base +
-    do.call("geom_histogram", geom_args) + 
-    scale_fill_manual("", values = clr_vals) +
-    scale_color_manual("", values = clr_vals) + 
-    facet_grid(model ~ id, scales = "fixed") + 
-    xlab("yrep")
-  thm <- .ppcheck_theme() %+replace%
-    theme(strip.text = element_blank(), legend.position = "right")
-  
-  return(graph + thm)
-}
+
+# ppcheck_refit <- function(object, n = 1, ...) { # nocov start
+#   message("Refitting model using y = yrep...\n")
+#   yrep <- as.vector(posterior_predict(object, draws = 1))
+#   mf <- model.frame(object)
+#   if (is(object, "polr")) fam <- "polr"
+#   else fam <- object$family$family
+#   
+#   if (!is.binomial(fam)) {
+#     if (is(object, "polr"))
+#       yrep <- factor(yrep, labels = levels(get_y(object)), ordered = TRUE)
+#     mf[[1]] <- yrep
+#     refit <- update(object, data = mf)
+#   }
+#   else {
+#     y <- get_y(object)
+#     if (NCOL(y) == 2) {
+#       new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
+#       mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1])
+#       refit <- update(object, formula = new_f, 
+#                       data = get_all_vars(new_f, data = mf2))
+#     } 
+#     else {
+#       if (NCOL(y) == 1 && !all(y %in% c(0, 1)))
+#         yrep <- yrep / object$weights
+#       mf[[1]] <- yrep
+#       refit <- update(object, data = mf)
+#     }
+#   }
+#   
+#   pp1 <- posterior_predict(object, draws = n)
+#   pp2 <- posterior_predict(refit, draws = n)
+#   if (is.binomial(fam)) {
+#     if (NCOL(y) == 2) {
+#       trials <- rowSums(y)
+#       pp1 <- sweep(pp1, 2, trials, "/")
+#       pp2 <- sweep(pp2, 2, trials, "/")
+#     }
+#   }
+#   varying <- list(1:ncol(pp1))
+#   pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
+#                  varying = varying)[, c("value", "id")]
+#   pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
+#                  varying = varying)[, c("value", "id")]
+#   dat <- cbind(rbind(pp1, pp2), 
+#                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
+#   
+#   defaults <- list(size = 0.2)
+#   geom_args <- .set_geom_args(defaults, ...)
+#   geom_args$mapping <- aes_string(y = "..density..")
+#   clr_vals <- c("black", .PP_FILL)
+#   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
+#   graph <- base +
+#     do.call("geom_histogram", geom_args) + 
+#     scale_fill_manual("", values = clr_vals) +
+#     scale_color_manual("", values = clr_vals) + 
+#     facet_grid(model ~ id, scales = "fixed") + 
+#     xlab("yrep")
+#   thm <- .ppcheck_theme() %+replace%
+#     theme(strip.text = element_blank(), legend.position = "right")
+#   
+#   return(graph + thm)
+# } # nocov end
 
 #' @importFrom ggplot2 geom_abline
 ppcheck_scatter <- function(y, yrep, n = NULL, ...){
