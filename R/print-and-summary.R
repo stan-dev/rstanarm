@@ -6,8 +6,9 @@
 }
 .posterior_sample_size <- function(x) {
   stopifnot(is.stanreg(x))
-  if (!used.sampling(x)) return(NULL)
-  else return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+  if (used.sampling(x)) return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+  else if (used.variational(x)) return(x$stanfit@sim$n_save) 
+  else return(NULL)
 }
 
 #' Print method for stanreg objects
@@ -243,7 +244,7 @@ print.summary.stanreg <- function(x, digits = attr(x, "print.digits"), ...) {
   # digits <- dots$digits %ORifNULL% atts$print.digits
   print(atts$call)
   cat("\nAlgorithm:", atts$algorithm)
-  if (!is.null(atts$posterior_sample_size))
+  if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)
   cat("\nObservations:", atts$nobs)
   if (!is.null(atts$ngrps))
