@@ -26,7 +26,7 @@
 #'   vector of predictions generated using a single draw of the model parameters
 #'   from the posterior distribution.
 #' 
-#' @seealso \code{\link{ppcheck}} for graphical posterior predictive checks.
+#' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
 #'   \pkg{rstanarm} vignettes and demos.
 #'   

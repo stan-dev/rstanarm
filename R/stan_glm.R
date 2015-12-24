@@ -78,8 +78,8 @@
 #'                  algorithm = "fullrank") # for speed only
 #' plot(fit2, pars = c("black", "hisp", "nodegr", "u74", "u75"), 
 #'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
-#' ppcheck(fit2, check = "resid")
-#' ppcheck(fit2, check = "test", test = "mean")
+#' pp_check(fit2, check = "resid")
+#' pp_check(fit2, check = "test", test = "mean")
 #' 
 #' \dontrun{
 #' ### Poisson regression (example from help("glm")) 

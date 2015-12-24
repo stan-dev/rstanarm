@@ -145,7 +145,7 @@
 #' plot(fit, regex_pars = c("herd:[279]", "period2"))
 #' 
 #' # For graphical posterior predictive checks see 
-#' # help("ppcheck", package = "rstanarm")
+#' # help("pp_check", package = "rstanarm")
 #' 
 #' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
@@ -229,7 +229,7 @@ pairs.stanreg <- function(x, ...) {
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
-#' For graphical posterior predicive checking see \code{\link{ppcheck}}.
+#' For graphical posterior predicive checking see \code{\link{pp_check}}.
 #' 
 #' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
 #' @examples

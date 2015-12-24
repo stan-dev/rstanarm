@@ -1,3 +1,20 @@
+#' ppcheck (deprecated)
+#' 
+#' ppcheck is deprecated and will be removed in the near future. Use
+#' \code{\link{pp_check}} instead.
+#' 
+#' @export
+#' @keywords internal
+#' @inheritParams pp_check
+ppcheck <- function(object,
+                    check = "distributions",
+                    nreps = NULL, overlay = TRUE, test = "mean", ...) {
+  .Deprecated("pp_check")
+  mc <- match.call()
+  mc[[1L]] <- as.name("pp_check")
+  eval(mc, parent.frame())
+}
+
 #' Graphical posterior predictive checks
 #' 
 #' Various plots comparing the observed outcome variable \eqn{y} to simulated 
@@ -67,64 +84,63 @@
 #' \dontrun{
 #' # Scatterplot of y vs. average yrep
 #' fit <- stan_glm(mpg ~ wt, data = mtcars)
-#' ppcheck(fit, check = "scatter")
+#' pp_check(fit, check = "scatter")
 #' 
 #' # Separate scatterplots of y vs. a few different yrep datasets 
-#' ppcheck(fit, check = "scatter", nreps = 3)
+#' pp_check(fit, check = "scatter", nreps = 3)
 #' }
 #' 
 #' # Compare distribution of y to distributions of yrep
-#' (pp_dist <- ppcheck(example_model, check = "dist", overlay = TRUE))
+#' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
 #'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
 #'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
 #'
 #' # Check residuals
-#' ppcheck(example_model, check = "resid", nreps = 6)
+#' pp_check(example_model, check = "resid", nreps = 6)
 #'
 #' # Check histograms of test statistics
-#' test_mean <- ppcheck(example_model, check = "test", test = "mean")
-#' test_sd <- ppcheck(example_model, check = "test", test = "sd")
+#' test_mean <- pp_check(example_model, check = "test", test = "mean")
+#' test_sd <- pp_check(example_model, check = "test", test = "sd")
 #' gridExtra::grid.arrange(test_mean, test_sd, ncol = 2)
 #' 
 #' # Scatterplot of two test statistics
-#' ppcheck(example_model, check = "test", test = c("mean", "sd"))
+#' pp_check(example_model, check = "test", test = c("mean", "sd"))
 #' 
 #' # Define a test function 
 #' prop_zero <- function(y) mean(y == 0)
-#' ppcheck(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
+#' pp_check(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
-ppcheck <- function(object,
+pp_check <- function(object,
                     check = "distributions",
                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
-    STOP_not_optimizing("ppcheck")
+    STOP_not_optimizing("pp_check")
   
   checks <- c("distributions", "residuals", "scatter", "test") #, "refit")
   fn <- switch(match.arg(arg = check, choices = checks),
-               'distributions' = "ppcheck_dist",
-               'residuals' = "ppcheck_resid",
-               'test' = "ppcheck_stat",
-               'scatter' = "ppcheck_scatter",
-               'refit' = "ppcheck_refit")
-  if (is.null(nreps) && !fn %in%  c("ppcheck_stat", "ppcheck_scatter"))
-    nreps <- ifelse(fn == "ppcheck_dist", 8, 3)
-  if (!is.null(nreps) && fn == "ppcheck_stat") {
+               'distributions' = "pp_check_dist",
+               'residuals' = "pp_check_resid",
+               'test' = "pp_check_stat",
+               'scatter' = "pp_check_scatter") #, 'refit' = "pp_check_refit")
+  if (is.null(nreps) && !fn %in%  c("pp_check_stat", "pp_check_scatter"))
+    nreps <- ifelse(fn == "pp_check_dist", 8, 3)
+  if (!is.null(nreps) && fn == "pp_check_stat") {
     warning("'nreps' is ignored if check='test'")
     nreps <- NULL
   }
   
-  if (fn == "ppcheck_refit") {
-    return(ppcheck_refit(object, n = nreps, ...))
-  }
-  if (fn == "ppcheck_resid") {
+  # if (fn == "pp_check_refit") {
+  #   return(pp_check_refit(object, n = nreps, ...))
+  # }
+  if (fn == "pp_check_resid") {
     if (!is(object, "polr") && is.binomial(object$family$family)) {
-      return(ppcheck_binned_resid(object, n = nreps, ...))
+      return(pp_check_binned_resid(object, n = nreps, ...))
     }
   }
   
@@ -136,20 +152,20 @@ ppcheck <- function(object,
     y <- y[, 1] / trials
     yrep <- sweep(yrep, 2, trials, "/")
   }
-  if (fn == "ppcheck_dist") 
+  if (fn == "pp_check_dist") 
     args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, ...)
-  else if (fn == "ppcheck_resid")
+  else if (fn == "pp_check_resid")
     args <- list(y = y, yrep = yrep, n = nreps, ...)
-  else if (fn == "ppcheck_stat")
+  else if (fn == "pp_check_stat")
     args <- list(y = y, yrep = yrep, test = test, ...)
-  else if (fn == "ppcheck_scatter")
+  else if (fn == "pp_check_scatter")
     args <- list(y = y, yrep = yrep, n = nreps, ...)
   
   return(do.call(fn, args))
 }
 
 
-# ppcheck stuff -----------------------------------------------------------
+# pp_check stuff -----------------------------------------------------------
 .PP_FILL <- "skyblue"
 .PP_DARK <- "skyblue4"
 .PP_VLINE_CLR <- "#222222"
@@ -158,7 +174,7 @@ ppcheck <- function(object,
 
 #' @importFrom ggplot2 ggtitle element_blank element_line element_text
 #'   theme_classic
-.ppcheck_theme <- function(no_y = TRUE) {
+.pp_check_theme <- function(no_y = TRUE) {
   blank <- element_blank()
   thm <- theme_classic() +
     theme(axis.line = element_line(color = "#222222"),
@@ -197,8 +213,8 @@ ppcheck <- function(object,
   return(defaults)
 }
 
-ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
-  fn <- if (overlay) "ppcheck_dens" else "ppcheck_hist"
+pp_check_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
+  fn <- if (overlay) "pp_check_dens" else "pp_check_hist"
   stopifnot(n <= nrow(yrep))
   s <- 1:n
   yrep <- as.data.frame(yrep)
@@ -211,11 +227,11 @@ ppcheck_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
   dat$is_y <- dat$id == "Observed y"
   dat$value <- as.numeric(dat$value)
   graph <- do.call(fn, list(dat = dat, ...))
-  return(graph + .ppcheck_theme())
+  return(graph + .pp_check_theme())
 }
 
 #' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
-ppcheck_hist <- function(dat, ...) {
+pp_check_hist <- function(dat, ...) {
   defaults <- list(size = 0.2)
   geom_args <- .set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
@@ -232,7 +248,7 @@ ppcheck_hist <- function(dat, ...) {
 
 #' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual
 #'   scale_fill_manual scale_color_manual xlab
-ppcheck_dens <- function(dat, ...) {
+pp_check_dens <- function(dat, ...) {
   graph <- ggplot(dat, aes_string(x = 'value', group = 'id',
                                   color = "is_y", fill = "is_y", 
                                   size = 'is_y')) + 
@@ -245,7 +261,7 @@ ppcheck_dens <- function(dat, ...) {
 
 #' @importFrom ggplot2 geom_vline annotate
 #' @importFrom utils packageVersion
-ppcheck_stat <- function(y, yrep, test = "mean", ...) {
+pp_check_stat <- function(y, yrep, test = "mean", ...) {
   vline_color <- .PP_FILL
   fill_color <- "black"
   if (missing(test) || !length(test) || length(test) > 2) 
@@ -272,7 +288,7 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                  aes_string(xintercept = "t", color = "factor(t)"), 
                  size = 2, show.legend = TRUE) +
       color_scale
-    thm <- .ppcheck_theme() %+replace% theme(legend.position = "right")
+    thm <- .pp_check_theme() %+replace% theme(legend.position = "right")
     return(graph + thm)
   }
   else { # length(test) == 2
@@ -300,14 +316,14 @@ ppcheck_stat <- function(y, yrep, test = "mean", ...) {
                          labels = c('B' = "T(y)", 'A' = "T(yrep)")) + 
       labs(x = paste("Test =", test[1]), y = paste("Test =", test[2]))
     
-    thm <- .ppcheck_theme(no_y = FALSE) %+replace% 
+    thm <- .pp_check_theme(no_y = FALSE) %+replace% 
       theme(legend.position = "right")
     return(graph + thm)
   }
 }
 
 #' @importFrom ggplot2 labs
-ppcheck_resid <- function(y, yrep, n = 1, ...) {
+pp_check_resid <- function(y, yrep, n = 1, ...) {
   defaults <- list(fill = "black")
   geom_args <- .set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
@@ -329,11 +345,11 @@ ppcheck_resid <- function(y, yrep, n = 1, ...) {
   else 
     graph <- graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
   
-  return(graph + .ppcheck_theme())
+  return(graph + .pp_check_theme())
 }
 
 #' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
-ppcheck_binned_resid <- function(object, n = 1, ...) {
+pp_check_binned_resid <- function(object, n = 1, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
     stop("This plot requires the 'arm' package (install.packages('arm'))")
   
@@ -381,11 +397,11 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
   
   if (n > 1) graph <- graph + facet_wrap(~rep, scales = "free")
   
-  return(graph + .ppcheck_theme(no_y = FALSE))
+  return(graph + .pp_check_theme(no_y = FALSE))
 }
 
 
-# ppcheck_refit <- function(object, n = 1, ...) { # nocov start
+# pp_check_refit <- function(object, n = 1, ...) { # nocov start
 #   message("Refitting model using y = yrep...\n")
 #   yrep <- as.vector(posterior_predict(object, draws = 1))
 #   mf <- model.frame(object)
@@ -442,14 +458,14 @@ ppcheck_binned_resid <- function(object, n = 1, ...) {
 #     scale_color_manual("", values = clr_vals) + 
 #     facet_grid(model ~ id, scales = "fixed") + 
 #     xlab("yrep")
-#   thm <- .ppcheck_theme() %+replace%
+#   thm <- .pp_check_theme() %+replace%
 #     theme(strip.text = element_blank(), legend.position = "right")
 #   
 #   return(graph + thm)
 # } # nocov end
 
 #' @importFrom ggplot2 geom_abline
-ppcheck_scatter <- function(y, yrep, n = NULL, ...){
+pp_check_scatter <- function(y, yrep, n = NULL, ...){
   # If n is null the avg yrep is compared to y, otherwise n single yrep datasets
   # are compared to y in separate facets.
   
@@ -479,5 +495,5 @@ ppcheck_scatter <- function(y, yrep, n = NULL, ...){
       labs(x = "y", y = "yrep") + 
       facet_wrap(~id, scales = "free")
   }
-  return(graph + .ppcheck_theme(no_y = FALSE))
+  return(graph + .pp_check_theme(no_y = FALSE))
 }
