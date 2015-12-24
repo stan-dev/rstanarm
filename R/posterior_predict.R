@@ -61,7 +61,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
     if (draws > S)
       stop(paste("draws =", draws, "but only", S, "draws found."), call. = FALSE)
   }
-  if (!is.null(newdata)) newdata <- as.data.frame(newdata)
+  if (!is.null(newdata)) {
+    newdata <- as.data.frame(newdata)
+    if (any(is.na(newdata))) stop("Currently NAs are not allowed in 'newdata'.")
+  }
   dat <- pp_data(object, newdata)
   beta <- stanmat[, 1:ncol(dat$x), drop = FALSE]
   eta <- linear_predictor(beta, dat$x, dat$offset)
