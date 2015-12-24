@@ -15,10 +15,11 @@
 #'   which to predict. If omitted, the model matrix is used.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
-#' @param fun An optional function to apply to the results. This can be the name
-#'   of a function as a character string (e.g. \code{fun = "exp"}) or a function
-#'   object (e.g. \code{fun = exp}, or \code{fun = function(x) exp(x)}, etc.).
-#'   See Examples.
+#' @param fun An optional function to apply to the results. \code{fun} is found 
+#'   by a call to \code{\link{match.fun}} and so can be specified as a function
+#'   object, a string naming a function, etc.
+#' @param seed An optional \code{\link[=set.seed]{seed}} to use.
+#' @param ... Currently ignored.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -43,7 +44,10 @@
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
 #' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, fun) {
+posterior_predict <- function(object, newdata = NULL, draws = NULL, fun, seed, ...) {
+  
+  if (!missing(seed)) 
+    set.seed(seed)
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
