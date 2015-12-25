@@ -71,8 +71,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                              check.nobs.vs.rankZ = "ignore",
                              check.nobs.vs.nlev = "ignore",
                              check.nobs.vs.nRE = "ignore")
-  mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <-
-    mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <- 
+  mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_ops <-
+    mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- NULL
   glmod <- eval(mc, parent.frame(1L))
   y <- glmod$fr[,as.character(glmod$formula[2])]
