@@ -57,7 +57,7 @@ test_that("stan_glmer returns expected result for bernoulli (lalonde)", {
     re74_1k <- re74 / 1000
     re75_1k <- re75 / 1000
   })
-  fmla <- treat ~ (1|educ) + re74_1k + re75_1k + black + hisp +
+  fmla <- treat ~ (1|black) + re74_1k + re75_1k + educ + hisp +
     married + nodegr + u74 + u75
   fit <- stan_glmer(fmla, data = dat, family = binomial(link = "logit"),
                     prior = student_t(7), prior_intercept = normal(0, 2.5),
