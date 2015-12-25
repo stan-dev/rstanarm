@@ -256,7 +256,8 @@ test_that("formula works properly", {
   
   tmp <- stan_lmer1
   tmp$formula <- NULL
-  tmp$call <- NULL
   attr(tmp$glmod$fr, "formula") <- NULL
+  expect_equal(formula(tmp), formula(lmer1))
+  tmp$call <- NULL
   expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
 })
