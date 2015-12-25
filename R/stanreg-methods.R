@@ -279,15 +279,6 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 
 # Exported but doc kept internal ----------------------------------------------
 
-#' formula method for stanreg objects
-#' 
-#' @keywords internal
-#' @export
-#' @param x A stanreg object.
-#' @param ... Ignored. 
-#' 
-formula.stanreg <- function(x, ...) x$formula
-
 #' model.frame method for stanreg objects
 #' 
 #' @keywords internal
@@ -324,7 +315,8 @@ model.matrix.stanreg <- function(object, ...) {
 #' @keywords internal
 #' @export
 #' @param x A stanreg object.
-#' @param ... Ignored. 
+#' @param ... Can contain \code{fixed.only} and \code{random.only} arguments 
+#'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
   if (!is(x, "lmerMod")) return(x$formula)
