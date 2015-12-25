@@ -7,9 +7,11 @@
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
-#' @param ... Ignored.
-#' @param parm For \code{confint}, a character vector of parameter names.
-#' @param level For \code{confint}, a number between 0 and 1 indicating the
+#' @param ... Ignored, except by the \code{update} method. See
+#'   \code{\link{update}}.
+#' @param parm For \code{confint}, an optional character vector of parameter
+#'   names.
+#' @param level For \code{confint}, a number between 0 and 1 indicating the 
 #'   confidence level to use.
 #' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
 #'   covariance matrix is return. If \code{TRUE}, the correlation matrix is
@@ -137,6 +139,41 @@ se.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
+#' @export
+#' @method update stanreg
+#' @param formula.,evaluate See \code{\link[stats]{update}}.
+#' 
+update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
+  if (is.null(call <- getCall(object))) 
+    stop("'object' does not contain a 'call' component.")
+  extras <- match.call(expand.dots = FALSE)$...
+  if (!missing(formula.)) 
+    call$formula <- update.formula(formula(object), formula.)
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  if (!evaluate) return(call)
+  else {
+    # do this like lme4 update.merMod instead of update.default
+    ff <- environment(formula(object))
+    pf <- parent.frame()
+    sf <- sys.frames()[[1L]]
+    tryCatch(eval(call, envir = ff),
+             error = function(e) {
+               tryCatch(eval(call, envir = sf),
+                        error = function(e) {
+                          eval(call, pf)
+                        })
+             })
+  }
+}
+
+#' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
   if (!is(object, "lmerMod")) out <- object$covmat
@@ -258,8 +295,8 @@ sigma.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param sigma Ignored scalar.
-#' @param rdig Ignored integer.
+#' @param sigma,rdig Ignored (included for compatibility with
+#'   \code{\link[lme4]{VarCorr}}).
 #' @export
 #' @export VarCorr
 #' @importFrom lme4 VarCorr mkVarCorr
@@ -274,7 +311,6 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
                          theta = theta / sc, nms = names(cnms))
   structure(out, useSc = sc != 1, class = "VarCorr.merMod")
 }
-
 
 
 # Exported but doc kept internal ----------------------------------------------

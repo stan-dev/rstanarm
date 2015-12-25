@@ -111,7 +111,9 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 stan_lmer <- function(...) {
   if ("family" %in% names(list(...))) stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
-  mc[[1]] <- quote(stan_glmer)
+  if (!"formula" %in% names(call)) 
+    names(call)[2L] <- "formula"
+  mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
   out <- eval(mc, parent.frame(1L))
@@ -128,6 +130,8 @@ stan_lmer <- function(...) {
 stan_glmer.nb <- function(..., link = "log") {
   if ("family" %in% names(list(...))) stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
+  if (!"formula" %in% names(call)) 
+    names(call)[2L] <- "formula"
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$link <- NULL
