@@ -371,12 +371,12 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
-    stop("can't specify 'only fixed' and 'only random' terms")
+    stop("'fixed.only' and 'random.only' can't both be TRUE.")
   
   fr <- x$glmod$fr
   if (is.null(form <- attr(fr, "formula"))) {
     if (!grepl("lmer$", deparse(getCall(x)[[1L]]))) 
-      stop("can't find formula stored in model frame or call")
+      stop("Can't find formula stored in model frame or call.")
     form <- as.formula(formula(getCall(x), ...))
   }
   if (fixed.only) {
@@ -401,7 +401,7 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     if (missing(fixed.only) && random.only) 
       fixed.only <- FALSE
     if (fixed.only && random.only) 
-      stop("'fixed.only' and 'random.only' can't both be TRUE")
+      stop("'fixed.only' and 'random.only' can't both be TRUE.")
     
     Terms <- attr(fr, "terms")
     if (fixed.only) {
