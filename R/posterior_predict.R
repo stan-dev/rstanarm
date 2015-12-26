@@ -222,3 +222,102 @@ pp_new_levels <- function(stanmat, x) {
   colnames(bout)[mark] <- c(colnames(beta), colnames(betaNEW))
   return(list(x = xout, beta = bout))
 }
+
+# this is mostly copied from lme4:::predict.merMod and lme4:::mkNewReTrms
+new_thing <- function(object, newdata = NULL, draws = NULL, 
+                      fun, seed, re.form, ...) {
+  X <- object$x[,1:length(fixef(object)), drop = FALSE]
+  R <- formula(object, fixed.only = TRUE)
+  R <- R[[length(R)]]
+  RHS <- formula(substitute(~R, list(R = R)))
+  Terms <- terms(object, fixed.only = TRUE)
+  mf <- model.frame(object, fixed.only = TRUE)
+  isFac <- vapply(mf, is.factor, FUN.VALUE = TRUE)
+  isFac[attr(Terms, "response")] <- FALSE
+  orig_levs <- if (length(isFac) == 0) NULL else lapply(mf[isFac], levels)
+  mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
+  X <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(X, "contrasts"))
+  offset <- 0
+  tt <- terms(object)
+  if (!is.null(off.num <- attr(tt, "offset"))) {
+    for (i in off.num)
+      offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
+  }
+  stanmat <- as.matrix(object$stanfit)
+  beta <- stanmat[,1:ncol(X), drop = FALSE]
+  eta <- linear_predictor(beta, X, offset)
+  if (!missing(re.form)) {
+    if (is.null(newdata)) rfd <- mfnew <- model.frame(object)
+    else {
+      mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)), 
+                           newdata)
+      tt <- delete.response(terms(object, random.only = TRUE))
+      rfd <- model.frame(tt, newdata, na.action = na.pass)
+    }
+    if (inherits(re.form, "formula")) {
+      ReTrms <- lme4::mkReTrms(lme4::findbars(re.form[[2]]), rfd)
+      ns.re <- names(re <- ranef(object))
+      nRnms <- names(Rcnms <- ReTrms$cnms)
+      if (!all(nRnms %in% ns.re)) 
+        stop("grouping factors specified in re.form that were not present in original model")
+      new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
+      Zt <- ReTrms$Zt
+      p <- sapply(ReTrms$cnms, FUN = length)
+      l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
+        nlevels(ReTrms$flist[[i]]))
+      t <- length(p)
+      group_nms <- names(ReTrms$cnms)
+      Z_names <- unlist(lapply(1:t, FUN = function(i) {
+        paste0(ReTrms$cnms[[i]], " ", group_nms[i], ":", levels(ReTrms$flist[[i]]))
+      }))
+      b <- stanmat[,grepl("^b\\[", colnames(stanmat)), drop = FALSE]
+      ord <- sapply(Z_names, FUN = function(x) {
+        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+        len <- length(m)
+        if (len == 1) return(m)
+        if (len > 1) stop("multiple matches bug")
+        x <- sub(":.*$", ":_NEW_", x)
+        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+      })
+      b <- b[,ord, drop = FALSE]
+      eta <- eta + as.matrix(b %*% Zt)
+    }
+  }
+  inverse_link <- linkinv(object)
+  family <- object$family
+  if (!is(object, "polr")) {
+    famname <- family$family
+    ppfun <- paste0(".pp_", famname) 
+  }
+  S <- .posterior_sample_size(object)
+  if (is.null(draws)) draws <- S
+  if (draws < S)
+    eta <- eta[sample(S, draws),, drop = FALSE]
+  if (is(object, "polr")) {
+    zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
+    ytilde <- .pp_polr(eta, zeta, inverse_link)
+  }
+  else {
+    ppargs <- list(mu = inverse_link(eta))
+    if (is.gaussian(famname))
+      ppargs$sigma <- stanmat[, "sigma"]
+    else if (is.binomial(famname)) {
+      y <- get_y(object)
+      if (NCOL(y) == 2L) ppargs$trials <- rowSums(y)
+      else if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
+      else ppargs$trials <- rep(1, NROW(y))
+    }
+    else if (is.gamma(famname))
+      ppargs$shape <- stanmat[,"shape"]
+    else if (is.ig(famname))
+      ppargs$lambda <- stanmat[,"lambda"]
+    else if (is.nb(famname))
+      ppargs$size <- stanmat[,"overdispersion"]
+    
+    ytilde <- do.call(ppfun, ppargs)
+  }
+  
+  if (!missing(newdata) && nrow(newdata) == 1L) ytilde <- t(ytilde)
+  if (!missing(fun)) return(do.call(match.fun(fun), list(ytilde)))
+  else return(ytilde)
+}
