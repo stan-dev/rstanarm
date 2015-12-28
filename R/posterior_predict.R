@@ -60,7 +60,7 @@
 #'   vector of predictions generated using a single draw of the model parameters
 #'   from the posterior distribution.
 #' 
-#' @seealso \code{\link{ppcheck}} for graphical posterior predictive checks.
+#' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
@@ -130,7 +130,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     }
     eta <- eta + as.matrix(b %*% dat$Zt)
   }
-  
+
   inverse_link <- linkinv(object)
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]

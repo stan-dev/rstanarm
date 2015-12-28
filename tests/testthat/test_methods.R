@@ -62,6 +62,9 @@ check_sizes <- function(x,y) {
   expect_equal(lapply(x, dim), lapply(y, dim))
 }
 
+
+context("methods for stanreg objects")
+
 test_that("stanreg extractor methods work properly", {
   expect_equal(resid(stan_glm1), stan_glm1$residuals)
   expect_equal(coef(stan_glm1), stan_glm1$coefficients)
@@ -117,12 +120,12 @@ test_that("log_lik method works", {
   expect_equal(llmat, log_lik(stan_glm1))
 })
 
-context("methods for stan_lmer models")
 test_that("ngrps is right", {
   expect_equal(ngrps(lmer1), ngrps(stan_lmer1))
   expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
   expect_error(ngrps(stan_glm1), "stan_glmer and stan_lmer models only")
 })
+
 test_that("nobs is right", {
   expect_equal(nobs(lmer1), nobs(stan_lmer1))
   expect_equal(nobs(lmer2), nobs(stan_lmer2))
@@ -130,12 +133,14 @@ test_that("nobs is right", {
   expect_equal(nobs(glm1), nobs(stan_glm1))
   expect_equal(nobs(polr1), nobs(stan_polr1))
 })
+
 test_that("vcov returns correct structure", {
   expect_equal(dimnames(vcov(stan_glm1)), dimnames(vcov(glm1)))
   expect_equal(dimnames(vcov(stan_polr1)), dimnames(vcov(polr1)))
   expect_equal(dimnames(vcov(stan_lmer1)), dimnames(vcov(lmer1)))
   expect_equal(dimnames(vcov(stan_lmer2)), dimnames(vcov(lmer2)))
 })
+
 test_that("VarCorr returns correct structure", {
   vc_lmer1 <- VarCorr(lmer1); vc_stan1 <- VarCorr(stan_lmer1)
   vc_lmer2 <- VarCorr(lmer2); vc_stan2 <- VarCorr(stan_lmer2)
@@ -145,6 +150,7 @@ test_that("VarCorr returns correct structure", {
   check_att_names(vc_stan2, vc_lmer2)
   expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
 })
+
 test_that("ranef returns correct structure", {
   re_stan1 <- ranef(stan_lmer1); re_lmer1 <- ranef(lmer1)
   re_stan2 <- ranef(stan_lmer1); re_lmer2 <- ranef(lmer1)
@@ -156,10 +162,12 @@ test_that("ranef returns correct structure", {
   check_sizes(re_stan2, re_lmer2)
   expect_error(ranef(stan_glm1), "stan_glmer and stan_lmer models only")
 })
+
 test_that("fixef returns the right coefs", {
   expect_identical(names(fixef(stan_lmer1)), names(fixef(lmer1)))
   expect_identical(names(fixef(stan_lmer2)), names(fixef(lmer2)))
 })
+
 test_that("coef returns the right structure", {
   coef_stan1 <- coef(stan_lmer1); coef_lmer1 <- coef(lmer1)
   coef_stan2 <- coef(stan_lmer1); coef_lmer2 <- coef(lmer1)
@@ -169,20 +177,6 @@ test_that("coef returns the right structure", {
   check_sizes(coef_stan2, coef_lmer2)
 })
 
-context("print and summary methods")
-test_that("summary and print don't throw errors", {
-  expect_silent(summary(stan_glm1, pars = c("alpha", "beta")))
-  expect_silent(summary(stan_glm_opt1, digits = 8))
-  expect_silent(summary(stan_lmer1, pars = "varying"))
-  expect_silent(summary(stan_lmer2))
-  expect_silent(summary(stan_polr1))
-  
-  expect_output(print(stan_glm1, digits = 1), regexp = "stan_glm")
-  expect_output(print(stan_glm_opt1), regexp = "stan_glm")
-  expect_output(print(stan_lmer1, digits = 4), regexp = "stan_lmer")
-  expect_output(print(stan_lmer2), regexp = "stan_lmer")
-  expect_output(print(stan_polr1), regexp = "stan_polr")
-})
 test_that("print and summary methods don't throw errors", {
   expect_output(print(stan_lmer1, digits = 2), "stan_lmer")
   expect_output(print(stan_lmer2), "stan_lmer")
@@ -216,7 +210,7 @@ test_that("print and summary methods don't throw errors", {
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_polr")
   
-  expect_silent(s <- summary(stan_glm1, pars = c("alpha", "beta")))
+  expect_silent(s <- summary(stan_glm1, pars = c("alpha", "beta"), digits = 3))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_equal(attr(s, "algorithm"), "sampling")
@@ -248,7 +242,60 @@ test_that("formula method ok for stan_lmer", {
   expect_equal(formula(sfit, fixed.only = TRUE), 
                formula(lfit, fixed.only = TRUE))
 })
-test_that("model.frame & model.matrix methods ok for stan_lmer", {
-  expect_equal(model.frame(sfit), model.frame(lfit))
-  expect_equal(model.matrix(sfit), model.matrix(lfit))
+test_that("model.frame works properly", {
+  expect_identical(model.frame(stan_glm1), model.frame(glm1))
+  expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
+  expect_identical(model.frame(stan_glm_vb1), model.frame(glm1))
+  expect_identical(model.frame(stan_polr1), model.frame(polr1))
+  expect_identical(model.frame(stan_lmer1), model.frame(lmer1))
+  expect_identical(model.frame(stan_lmer2), model.frame(lmer2))
+  expect_identical(model.frame(stan_lmer1, fixed.only = TRUE), 
+                   model.frame(lmer1, fixed.only = TRUE))
+  expect_identical(model.frame(stan_lmer2, fixed.only = TRUE), 
+                   model.frame(lmer2, fixed.only = TRUE))
+})
+
+test_that("terms works properly", {
+  expect_identical(terms(stan_glm1), terms(glm1))
+  expect_identical(terms(stan_glm_opt1), terms(glm1))
+  expect_identical(terms(stan_glm_vb1), terms(glm1))
+  expect_identical(terms(stan_polr1), terms(polr1))
+  expect_identical(terms(stan_lmer1), terms(lmer1))
+  expect_identical(terms(stan_lmer2), terms(lmer2))
+  expect_identical(terms(stan_lmer1, fixed.only = TRUE), 
+                   terms(lmer1, fixed.only = TRUE))
+  expect_identical(terms(stan_lmer2, fixed.only = TRUE), 
+                   terms(lmer2, fixed.only = TRUE))
+  expect_equal(terms(stan_lmer1, random.only = TRUE), 
+                   terms(lmer1, random.only = TRUE))
+  expect_equal(terms(stan_lmer2, random.only = TRUE), 
+               terms(lmer2, random.only = TRUE))
+  expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
+               regexp = "can't both be TRUE")
+})
+
+test_that("formula works properly", {
+  expect_identical(formula(stan_glm1), formula(glm1))
+  expect_identical(formula(stan_glm_opt1), formula(glm1))
+  expect_identical(formula(stan_glm_vb1), formula(glm1))
+  expect_equal(terms(stan_polr1), formula(polr1))
+  expect_identical(formula(stan_lmer1), formula(lmer1))
+  expect_identical(formula(stan_lmer2), formula(lmer2))
+  expect_identical(formula(stan_lmer1, fixed.only = TRUE), 
+                   formula(lmer1, fixed.only = TRUE))
+  expect_identical(formula(stan_lmer2, fixed.only = TRUE), 
+                   formula(lmer2, fixed.only = TRUE))
+  expect_equal(formula(stan_lmer1, random.only = TRUE), 
+               formula(lmer1, random.only = TRUE))
+  expect_equal(formula(stan_lmer2, random.only = TRUE), 
+               formula(lmer2, random.only = TRUE))
+  expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
+               regexp = "can't both be TRUE")
+  
+  tmp <- stan_lmer1
+  tmp$formula <- NULL
+  attr(tmp$glmod$fr, "formula") <- NULL
+  expect_equal(formula(tmp), formula(lmer1))
+  tmp$call <- NULL
+  expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
 })

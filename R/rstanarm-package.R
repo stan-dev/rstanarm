@@ -40,7 +40,7 @@
 #'   
 #'   The set of models supported by the \pkg{rstanarm} package is large (and 
 #'   will continue to grow), but also limited enough so that it is possible to 
-#'   integrate them tightly with the \code{\link{ppcheck}} function for 
+#'   integrate them tightly with the \code{\link{pp_check}} function for 
 #'   graphical posterior predictive checks and the 
 #'   \code{\link{posterior_predict}} function to easily estimate the effect of 
 #'   specific manipulations of predictor variables or to predict the outcome in 

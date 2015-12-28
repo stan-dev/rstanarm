@@ -239,19 +239,19 @@ outcome(s).
 
 ### Graphical posterior predictive checks
 
-The `ppcheck` function generates a variety of plots comparing the observed 
+The `pp_check` function generates a variety of plots comparing the observed 
 outcome $y$ to simulated datasets $y^{\rm rep}$ from the posterior predictive 
 distribution using the same observations of the predictors $X$ as we used to fit
 the model. He we show a few of the possible displays. The documentation at
-`help("ppcheck", package = "rstanarm")` has details on all of the `ppcheck`
+`help("pp_check", package = "rstanarm")` has details on all of the `pp_check`
 options.
 
 First we'll look at a plot directly comparing the distributions of $y$ and
-$y^{\rm rep}$. The following call to `ppcheck` will create a plot juxtaposing
+$y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-ppcheck1, fig.width=5}
-ppcheck(post4, check = "distributions", overlay = FALSE, nreps = 5)
+```{r, KIDIQ-pp_check1, fig.width=5}
+pp_check(post4, check = "distributions", overlay = FALSE, nreps = 5)
 ```
 
 The idea is that if the model is a good fit to the data we should be able to 
@@ -259,9 +259,9 @@ generate data $y^{\rm rep}$ from the posterior predictive distribution that
 looks a lot like the observed data $y$. That is, given $y$, the $y^{\rm
 rep}$ we generate should be plausible.
 
-Another useful plot we can make using `ppcheck` shows the distribution of a test
+Another useful plot we can make using `pp_check` shows the distribution of a test
 quantity $T(y^{\rm rep})$ compared to $T(y)$, the value of the quantity in the 
-observed data. When the argument `check = "test"` is specified, `ppcheck` will 
+observed data. When the argument `check = "test"` is specified, `pp_check` will 
 simulate $S$ datasets $y_1^{\rm rep}, \dots, y_S^{\rm rep}$, each containing $N$
 observations. Here $S$ is the size of the posterior sample (the number of MCMC 
 draws from the posterior distribution of the model parameters) and $N$ is the 
@@ -270,14 +270,14 @@ of $\left(T(y_1^{\rm yep}), \dots, T(y_S^{\rm yep})\right)$. In the plot below
 we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-ppcheck2, fig.height = 3}
-ppcheck(post4, check = "test", test = "mean")
+```{r, KIDIQ-pp_check2, fig.height = 3}
+pp_check(post4, check = "test", test = "mean")
 ```
 
 We can also specify two test quantities and look at a scatterplot:
 
-```{r, KIDIQ-ppcheck3, fig.height=3}
-ppcheck(post4, check = "test", test = c("mean", "sd"))
+```{r, KIDIQ-pp_check3, fig.height=3}
+pp_check(post4, check = "test", test = c("mean", "sd"))
 ```
 
 ### Generating predictions

@@ -369,11 +369,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
             if (is_nb) "overdispersion" else NA
-    if (length(group)) {
-      new_names[grepl("^b\\[[[:digit:]]+\\]$", new_names)] <- paste0("b[", b_names, "]")
-      # new_names[grepl("^var_group\\[[[:digit:]]+\\]$", new_names)] <- paste0("var[", g_names, "]")
-      # rename theta_L ?
-    }
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
@@ -401,13 +396,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
           if (ncol(xtemp) > 1) betas[param,,chain] else betas[param,chain]
       }
     }
-    new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
+    new_names <- c(if (has_intercept) "(Intercept)", 
+                   colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_names, "]")),
-                                        # paste0("var[", g_names, "]")),
-                   if (is_gaussian) "sigma", if (is_gamma) "shape", 
+                   if (is_gaussian) "sigma", 
+                   if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
-                   "mean_PPD", "log-posterior")
+                   "mean_PPD", 
+                   "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }

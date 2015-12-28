@@ -199,6 +199,12 @@
 #'   fitting functions.
 #' @seealso The various vignettes for the \pkg{rstanarm} package also discuss 
 #'   and demonstrate the use of some of the supported prior distributions.
+#' 
+#' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
+#' @template reference-bda
+#' @template reference-piironen-vehtari
+#' @template reference-stan-manual
+#' 
 #' @examples
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' t7_prior <- student_t(df = 7)

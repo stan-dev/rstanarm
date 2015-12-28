@@ -24,9 +24,11 @@
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
-#' @param ... Ignored.
-#' @param parm For \code{confint}, a character vector of parameter names.
-#' @param level For \code{confint}, a number between 0 and 1 indicating the
+#' @param ... Ignored, except by the \code{update} method. See
+#'   \code{\link{update}}.
+#' @param parm For \code{confint}, an optional character vector of parameter
+#'   names.
+#' @param level For \code{confint}, a number between 0 and 1 indicating the 
 #'   confidence level to use.
 #' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
 #'   covariance matrix is return. If \code{TRUE}, the correlation matrix is
@@ -154,6 +156,41 @@ se.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
+#' @export
+#' @method update stanreg
+#' @param formula.,evaluate See \code{\link[stats]{update}}.
+#' 
+update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
+  if (is.null(call <- getCall(object))) 
+    stop("'object' does not contain a 'call' component.")
+  extras <- match.call(expand.dots = FALSE)$...
+  if (!missing(formula.)) 
+    call$formula <- update.formula(formula(object), formula.)
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  if (!evaluate) return(call)
+  else {
+    # do this like lme4 update.merMod instead of update.default
+    ff <- environment(formula(object))
+    pf <- parent.frame()
+    sf <- sys.frames()[[1L]]
+    tryCatch(eval(call, envir = ff),
+             error = function(e) {
+               tryCatch(eval(call, envir = sf),
+                        error = function(e) {
+                          eval(call, pf)
+                        })
+             })
+  }
+}
+
+#' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
   if (!is(object, "lmerMod")) out <- object$covmat
@@ -275,8 +312,8 @@ sigma.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param sigma Ignored scalar.
-#' @param rdig Ignored integer.
+#' @param sigma,rdig Ignored (included for compatibility with
+#'   \code{\link[lme4]{VarCorr}}).
 #' @export
 #' @export VarCorr
 #' @importFrom lme4 VarCorr mkVarCorr
@@ -293,8 +330,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 }
 
 
-
-# Exported but kept internal ----------------------------------------------
+# Exported but doc kept internal ----------------------------------------------
 
 #' model.frame method for stanreg objects
 #' 
@@ -302,6 +338,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
   if (is(formula, "lmerMod")) {
     fr <- formula$glmod$fr
@@ -320,18 +357,19 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @keywords internal
 #' @export
 #' @param object,... See \code{\link[stats]{model.matrix}}.
+#' 
 model.matrix.stanreg <- function(object, ...) {
   if (is(object, "lmerMod")) object$glmod$X
   else NextMethod("model.matrix")
 }
-
 
 #' formula method for stanreg objects
 #' 
 #' @keywords internal
 #' @export
 #' @param x A stanreg object.
-#' @param ... Ignored. 
+#' @param ... Can contain \code{fixed.only} and \code{random.only} arguments 
+#'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
   if (!is(x, "lmerMod")) return(x$formula)
@@ -346,15 +384,16 @@ justRE <- function(f, response = FALSE) {
               response = response)
 }
 formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
+
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
-    stop("can't specify 'only fixed' and 'only random' terms")
+    stop("'fixed.only' and 'random.only' can't both be TRUE.")
   
   fr <- x$glmod$fr
   if (is.null(form <- attr(fr, "formula"))) {
-    if (!grepl("lmer$", deparse(getCall(x)[[1]]))) 
-      stop("can't find formula stored in model frame or call")
+    if (!grepl("lmer$", deparse(getCall(x)[[1L]]))) 
+      stop("Can't find formula stored in model frame or call.")
     form <- as.formula(formula(getCall(x), ...))
   }
   if (fixed.only) {
@@ -371,6 +410,11 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
 #' @export
 #' @keywords internal
 #' @param x,fixed.only,random.only,... See lme4:::terms.merMod
+#' terms method for stanreg objects
+#' @export
+#' @keywords internal
+#' @param x,fixed.only,random.only,... See lme4:::terms.merMod
+#' 
 terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   if (!is(x, "lmerMod")) NextMethod("terms")
   else {
@@ -384,6 +428,10 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     if (fixed.only) {
       # fmla <- attr(fr, "formula")
       # fmla[[length(fmla)]] <- lme4::nobars(fmla[[length(fmla)]])
+      stop("'fixed.only' and 'random.only' can't both be TRUE.")
+    
+    Terms <- attr(fr, "terms")
+    if (fixed.only) {
       Terms <- terms.formula(formula(x, fixed.only = TRUE))
       attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
     } 
@@ -394,4 +442,3 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     return(Terms)
   }
 }
-
