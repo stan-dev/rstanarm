@@ -426,12 +426,6 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     
     Terms <- attr(fr, "terms")
     if (fixed.only) {
-      # fmla <- attr(fr, "formula")
-      # fmla[[length(fmla)]] <- lme4::nobars(fmla[[length(fmla)]])
-      stop("'fixed.only' and 'random.only' can't both be TRUE.")
-    
-    Terms <- attr(fr, "terms")
-    if (fixed.only) {
       Terms <- terms.formula(formula(x, fixed.only = TRUE))
       attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
     } 
