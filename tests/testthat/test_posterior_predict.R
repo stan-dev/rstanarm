@@ -182,29 +182,20 @@ test_that("posterior_predict close to predict.merMod for binomial", {
   }
   lpred <- t(as.matrix(lpred))
   spred <- posterior_predict(sfit, draws = 500, newdata = nd, 
-                             allow.new.levels = TRUE, seed = SEED)
+                             seed = SEED)
   spred <- sweep(spred, 2, rowSums(get_y(sfit)), "/")
   expect_equal(colMeans(spred), unname(colMeans(lpred)),
                tol = .05)
-  max(abs(colMeans(spred) - colMeans(lpred)))
 })
 
-test_that("pp_new_levels works properly", {
-  sfit <- example_model
-  nd <- lme4::cbpp
-  levels(nd$herd) <- c(levels(nd$herd), "99")
-  nd$herd[1:2] <- "99"
-  dat <- rstanarm:::pp_data(sfit, newdata = nd, allow.new.levels = TRUE)
-  x <- dat$x
-  stanmat <- as.matrix(sfit$stanfit)
-  tmp <- rstanarm:::pp_new_levels(stanmat, x)
-  x <- tmp$x
-  beta <- tmp$beta
-  expect_equal(dim(x), c(56, 21))
-  expect_equal(dim(beta), c(500, 21))
-  expect_equal(colnames(x)[1], "(Intercept)")
-  expect_equal(colnames(x)[dim(x)[2]], "99")
-  expect_equal(colnames(beta), rownames(summary(sfit))[1:ncol(beta)])
+test_that("edge cases for posterior_predict work correctly", {
+  dims <- c(nrow(as.matrix(example_model)), nrow(lme4::cbpp))
+  expect_identical(posterior_predict(example_model, re.form = NA, seed = SEED),
+                   posterior_predict(example_model, re.form = ~0, seed = SEED))
+  expect_identical(posterior_predict(example_model, seed = SEED),
+                   posterior_predict(example_model, newdata = lme4::cbpp, seed = SEED))
+  expect_error(posterior_predict(example_model, re.form = ~1))
+  expect_error(posterior_predict(example_model, re.form = ~(1|foo)))
 })
 
 test_that("lme4 tests work similarly", {
@@ -254,5 +245,7 @@ test_that("lme4 tests work similarly", {
   p4 <- posterior_predict(sfit, nd, re.form=~(1|plate)+(~1|sample), seed = SEED)
   p4b <- posterior_predict(sfit, nd, re.form=~(1|sample)+(~1|plate), seed = SEED)
   expect_equal(p2,p4,p4b)
+  p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
+  
 })
 
