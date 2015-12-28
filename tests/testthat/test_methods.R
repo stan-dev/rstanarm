@@ -222,26 +222,9 @@ test_that("print and summary methods don't throw errors", {
   expect_equal(attr(s, "algorithm"), "meanfield")
 })
 
-context("terms, formula, model.frame, and model.matrix methods")
-mod <- mpg ~ wt + (1|cyl) + (1|gear) 
-lfit <- lmer(mod, data = mtcars)
-sfit <- stan_lmer(mod, data = mtcars, cores = CORES, chains = CHAINS, 
-                  iter = ITER, seed = SEED)
 
-test_that("terms method ok for stan_lmer", {
-  expect_equal(terms(sfit), terms(lfit))
-  expect_equal(terms(sfit, random.only = TRUE), 
-               terms(lfit, random.only = TRUE))
-  expect_equal(terms(sfit, fixed.only = TRUE), 
-               terms(lfit, fixed.only = TRUE))
-})
-test_that("formula method ok for stan_lmer", {
-  expect_equal(formula(sfit), formula(lfit))
-  expect_equal(formula(sfit, random.only = TRUE), 
-               formula(lfit, random.only = TRUE))
-  expect_equal(formula(sfit, fixed.only = TRUE), 
-               formula(lfit, fixed.only = TRUE))
-})
+context("terms, formula, model.frame, and model.matrix methods")
+
 test_that("model.frame works properly", {
   expect_identical(model.frame(stan_glm1), model.frame(glm1))
   expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
