@@ -39,21 +39,21 @@
 #'   transformations were specified inside the model formula.
 #' @param draws The number of draws to return. The default and maximum number of
 #'   draws is the size of the posterior sample.
+#' @param re.form A formula indicating what group-level parameters to condition
+#'   on when making predictions in the same form as for 
+#'   \code{\link[lme4]{predict.merMod}} when \code{object} contains group-level
+#'   parameters. The default, \code{NULL}, indicates that all estimated 
+#'   group-level parameters are conditioned on. To refrain from conditioning on
+#'   any group-level parameters, specify \code{NA} or \code{~0}. The 
+#'   \code{newdata} argument may include new \emph{levels} of the grouping 
+#'   factors that were specified when the model was estimated, in which case
+#'   the resulting posterior predictions marginalize over the relevant 
+#'   variables, but may not include new grouping factors.
 #' @param fun An optional function to apply to the results. \code{fun} is found 
 #'   by a call to \code{\link{match.fun}} and so can be specified as a function
 #'   object, a string naming a function, etc.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
-#' @param ... Currently, \code{...} can contain two arguments that are only 
-#' relevant for \code{\link[=stan_glmer]{GLMS with
-#' group-specific terms}}:  
-#' \describe{
-#' \item{\code{allow.new.levels}}{A logical scalar (defaulting to \code{FALSE}) 
-#' indicating whether new levels in grouping variables are allowed in 
-#' \code{newdata}.}
-#' \item{\code{re.form}}{A formula for "random effects" to condition on. If
-#' \code{NULL} (the default), all are included. If \code{NA} or \code{~0}, all
-#' are omitted.}
-#'}
+#' @param ... Currently unused
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
