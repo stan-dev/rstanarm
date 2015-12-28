@@ -1,3 +1,5 @@
+#include "license.txt"
+
 # GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.txt"

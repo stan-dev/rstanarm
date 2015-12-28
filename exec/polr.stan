@@ -1,3 +1,5 @@
+#include "license.txt"
+
 # GLM for an ordinal outcome with coherent priors
 functions {
   

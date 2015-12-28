@@ -1,11 +1,30 @@
+# Part of the rstanarm package for estimating model parameters
+# Copyright (C) 2015 Trustees of Columbia University
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 stan_files <- dir("exec", pattern = "stan$", full.names = TRUE)
-cat("#ifndef MODELS_HPP", "#define MODELS_HPP",
+cat(readLines(file.path("exec", "license.txt")),
+  "#ifndef MODELS_HPP", "#define MODELS_HPP",
   "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
   sapply(stan_files, FUN = function(f) {
     cppcode <- rstan::stanc_builder(f)$cppcode
     cppcode <- gsub("typedef.*stan_model.*;", "", cppcode, perl = TRUE)
     return(cppcode)
-  }), "#endif", file = file.path("src", "include", "models.hpp"), sep = "\n", append = FALSE)
+  }), "#endif", file = file.path("src", "include", "models.hpp"), 
+  sep = "\n", append = FALSE)
 
 options("useFancyQuotes" = FALSE)
 
