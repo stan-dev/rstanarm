@@ -27,7 +27,8 @@ CORES <- 1
 stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
                                  chains = CHAINS, cores = CORES, seed = SEED))
 stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000)
+stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000, 
+                       seed = SEED)
 glm1 <- glm(mpg ~ wt, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
@@ -225,4 +226,29 @@ test_that("print and summary methods don't throw errors", {
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_equal(attr(s, "algorithm"), "meanfield")
+})
+
+context("terms, formula, model.frame, and model.matrix methods")
+mod <- mpg ~ wt + (1|cyl) + (1|gear) 
+lfit <- lmer(mod, data = mtcars)
+sfit <- stan_lmer(mod, data = mtcars, cores = CORES, chains = CHAINS, 
+                  iter = ITER, seed = SEED)
+
+test_that("terms method ok for stan_lmer", {
+  expect_equal(terms(sfit), terms(lfit))
+  expect_equal(terms(sfit, random.only = TRUE), 
+               terms(lfit, random.only = TRUE))
+  expect_equal(terms(sfit, fixed.only = TRUE), 
+               terms(lfit, fixed.only = TRUE))
+})
+test_that("formula method ok for stan_lmer", {
+  expect_equal(formula(sfit), formula(lfit))
+  expect_equal(formula(sfit, random.only = TRUE), 
+               formula(lfit, random.only = TRUE))
+  expect_equal(formula(sfit, fixed.only = TRUE), 
+               formula(lfit, fixed.only = TRUE))
+})
+test_that("model.frame & model.matrix methods ok for stan_lmer", {
+  expect_equal(model.frame(sfit), model.frame(lfit))
+  expect_equal(model.matrix(sfit), model.matrix(lfit))
 })

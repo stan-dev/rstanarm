@@ -296,22 +296,22 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 
 # Exported but kept internal ----------------------------------------------
 
-#' formula method for stanreg objects
-#' 
-#' @keywords internal
-#' @export
-#' @param x A stanreg object.
-#' @param ... Ignored. 
-#' 
-formula.stanreg <- function(x, ...) x$formula
-
 #' model.frame method for stanreg objects
 #' 
 #' @keywords internal
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-model.frame.stanreg <- function(formula, ...) {
-  if (is(formula, "lmerMod")) return(formula$glmod$fr)
+#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (is(formula, "lmerMod")) {
+    fr <- formula$glmod$fr
+    if (fixed.only) {
+      ff <- formula(formula, fixed.only = TRUE)
+      vars <- rownames(attr(terms.formula(ff), "factors"))
+      fr <- fr[vars]
+    }
+    return(fr)
+  }
   else NextMethod("model.frame")
 }
 
@@ -324,3 +324,74 @@ model.matrix.stanreg <- function(object, ...) {
   if (is(object, "lmerMod")) object$glmod$X
   else NextMethod("model.matrix")
 }
+
+
+#' formula method for stanreg objects
+#' 
+#' @keywords internal
+#' @export
+#' @param x A stanreg object.
+#' @param ... Ignored. 
+#' 
+formula.stanreg <- function(x, ...) {
+  if (!is(x, "lmerMod")) return(x$formula)
+  else return(formula_mer(x, ...))
+}
+
+justRE <- function(f, response = FALSE) {
+  response <- if (response && length(f) == 3) f[[2]] else NULL
+  reformulate(paste0("(", vapply(lme4::findbars(f), 
+                                 function(x) paste(deparse(x, 500L), collapse = " "), 
+                                 ""), ")"), 
+              response = response)
+}
+formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
+  if (missing(fixed.only) && random.only) 
+    fixed.only <- FALSE
+  if (fixed.only && random.only) 
+    stop("can't specify 'only fixed' and 'only random' terms")
+  
+  fr <- x$glmod$fr
+  if (is.null(form <- attr(fr, "formula"))) {
+    if (!grepl("lmer$", deparse(getCall(x)[[1]]))) 
+      stop("can't find formula stored in model frame or call")
+    form <- as.formula(formula(getCall(x), ...))
+  }
+  if (fixed.only) {
+    form <- attr(fr, "formula")
+    form[[length(form)]] <- lme4::nobars(form[[length(form)]])
+  }
+  if (random.only) {
+    form <- justRE(form, response = TRUE)
+  }
+  form
+}
+
+#' terms method
+#' @export
+#' @keywords internal
+#' @param x,fixed.only,random.only,... See lme4:::terms.merMod
+terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
+  if (!is(x, "lmerMod")) NextMethod("terms")
+  else {
+    fr <- x$glmod$fr
+    if (missing(fixed.only) && random.only) 
+      fixed.only <- FALSE
+    if (fixed.only && random.only) 
+      stop("can't specify 'only fixed' and 'only random' terms")
+    
+    Terms <- attr(fr, "terms")
+    if (fixed.only) {
+      # fmla <- attr(fr, "formula")
+      # fmla[[length(fmla)]] <- lme4::nobars(fmla[[length(fmla)]])
+      Terms <- terms.formula(formula(x, fixed.only = TRUE))
+      attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
+    } 
+    if (random.only) {
+      Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE)))
+      attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
+    }
+    return(Terms)
+  }
+}
+

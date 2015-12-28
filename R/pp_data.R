@@ -1,4 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
+# Copyright 1995-2007 R Core Development Team
+# Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
 # Copyright (C) 2015 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
@@ -15,11 +17,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-pp_data <- function(object, newdata = NULL, ...) {
-  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, ...)
+pp_data <- function(object, newdata = NULL, re.form, ...) {
+  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
 
+# for models not fit using stan_(g)lmer or stan_gamm4
 .pp_data <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
     x <- get_x(object)
@@ -42,41 +45,87 @@ pp_data <- function(object, newdata = NULL, ...) {
   nlist(x, offset)
 }
 
-.pp_data_mer <- function(object, newdata = NULL, ...) {
-  if (is.null(newdata)) {
-    X <- get_x(object)
+# for models fit using stan_(g)lmer or stan_gamm4
+.pp_data_mer <- function(object, newdata, re.form, ...) {
+  x <- .pp_data_mer_x(object, newdata, ...)
+  z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  return(nlist(x, offset = object$offset, Zt = z$Zt, Z_names = z$Z_names))
+}
+
+# the functions below are heavily based on a combination of 
+# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 
+# substantial modifications
+.pp_data_mer_x <- function(object, newdata, ...) {
+  x <- get_x(object)
+  if (is.null(newdata)) return(x)
+  form <- attr(object$glmod$fr, "formula")
+  L <- length(form)
+  form[[L]] <- lme4::nobars(form[[L]])
+  RHS <- formula(substitute(~R, list(R = form[[L]])))
+  Terms <- terms(object)
+  mf <- model.frame(object)
+  ff <- formula(form)
+  vars <- rownames(attr(terms.formula(ff), "factors"))
+  mf <- mf[vars]
+  isFac <- vapply(mf, is.factor, FUN.VALUE = TRUE)
+  isFac[attr(Terms, "response")] <- FALSE
+  orig_levs <- if (length(isFac) == 0) 
+    NULL else lapply(mf[isFac], levels)
+  mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
+  x <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(x, "contrasts"))
+  return(x)
+}
+
+.pp_data_mer_z <- function(object, newdata, re.form = NULL,
+                           allow.new.levels = TRUE, na.action = na.pass) {
+  NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
+  fmla0check <- (is(re.form, "formula") && 
+                   length(re.form) == 2 && 
+                   identical(re.form[[2]], 0))
+  if (NAcheck || fmla0check) return(list())
+  if (is.null(newdata) && is.null(re.form)) {
     Z <- get_z(object)
-  } else {
-    if (!is.data.frame(newdata))
-      stop("newdata should be a data.frame")
-    if (any(is.na(newdata))) 
-      stop("NAs not allowed in newdata")
-    
-    # check levels of grouping variables in newdata
-    levs <- lapply(.flist(object), levels)
-    grps <- names(levs)
-    has_new_levels <- sapply(seq_along(levs), function(j) {
-      new_levs <- unique(newdata[, grps[j]])
-      out <- c(!all(new_levs %in% levs[[j]]))
-      names(out) <- grps[j]
-      out
-    })
-    if (any(has_new_levels)) { # FIXME (allow new levels)
-      stop("New levels found in grouping variable(s) ", 
-           paste(grps[has_new_levels], collapse = ", "))
-    }
-    # get X and Z matrices
-    fr <- object$glmod$fr # original model frame
-    frX <- fr[, -1, drop = FALSE] # drop response
-    newdata <- newdata[, colnames(frX)] # make sure columns in same order
-    keep <- 1:nrow(newdata)
-    fr2 <- rbind(data.frame(newdata, y = 0), data.frame(frX, y = 0))
-    newf <- update.formula(formula(object), y ~ .)
-    glF <- glFormula(newf, data = fr2)
-    X <- glF$X[keep,, drop=FALSE]
-    Z <- t(as.matrix(glF$reTrms$Zt))[keep,, drop=FALSE]
+    return(list(Zt = t(Z)))
   }
-  # combine X and Z matrices for posterior_predict
-  x <- cbind(X, Z)
-  nlist(x, offset = object$offset)
+  else if (is.null(newdata)) {
+    rfd <- mfnew <- model.frame(object)
+  } else {
+    mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
+                         newdata, na.action = na.action)
+    newdata.NA <- newdata
+    if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
+      newdata.NA <- newdata.NA[-fixed.na.action,]
+    }
+    tt <- delete.response(terms(object, random.only = TRUE))
+    rfd <- model.frame(tt, newdata.NA, na.action = na.pass)
+    if (!is.null(fixed.na.action))
+      attr(rfd,"na.action") <- fixed.na.action
+  }
+  if (is.null(re.form)) 
+    re.form <- justRE(formula(object))
+  if (!inherits(re.form, "formula"))
+    stop("'re.form' must be NULL, NA, or a formula.")
+  if (length(fit.na.action <- attr(mfnew,"na.action")) > 0) {
+    newdata <- newdata[-fit.na.action,]
+  }
+  ReTrms <- lme4::mkReTrms(lme4::findbars(re.form[[2]]), rfd)
+  if (!allow.new.levels && any(vapply(ReTrms$flist, anyNA, NA)))
+    stop("NAs are not allowed in prediction data",
+         " for grouping variables unless 'allow.new.levels' is TRUE.")
+  ns.re <- names(re <- ranef(object))
+  nRnms <- names(Rcnms <- ReTrms$cnms)
+  if (!all(nRnms %in% ns.re))
+    stop("Grouping factors specified in re.form that were not present in original model.")
+  new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
+  Zt <- ReTrms$Zt
+  p <- sapply(ReTrms$cnms, FUN = length)
+  l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
+    nlevels(ReTrms$flist[[i]]))
+  t <- length(p)
+  group_nms <- names(ReTrms$cnms)
+  Z_names <- unlist(lapply(1:t, FUN = function(i) {
+    paste0(ReTrms$cnms[[i]], " ", group_nms[i], ":", levels(ReTrms$flist[[i]]))
+  }))
+  z <- nlist(Zt = ReTrms$Zt, Z_names)
+  return(z)
 }
