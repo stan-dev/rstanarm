@@ -62,12 +62,12 @@
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
-                              fun, seed, ...) {
+                              re.form = NULL, fun, seed, ...) {
   if (!missing(seed)) 
     set.seed(seed)
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
-  if (used.optimizing(object)) 
+  if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
   family <- object$family
   if (!is(object, "polr")) {
@@ -86,18 +86,34 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dat <- pp_data(object, newdata, ...)
+  dat <- pp_data(object, newdata, re.form, ...)
   x <- dat$x
-  if (is.null(attr(x, "NEW_ids"))) { # no new levels in grouping variables
+  if (is.null(dat$Zt)) {
     stanmat <- as.matrix(object)
     beta <- stanmat[, 1:ncol(x), drop = FALSE]
-  } else { # newdata has new levels
-    stanmat <- as.matrix(object$stanfit)
-    tmp <- pp_new_levels(stanmat, x)
-    x <- tmp$x
-    beta <- tmp$beta
+    eta <- linear_predictor(beta, x, dat$offset)
   }
-  eta <- linear_predictor(beta, x, dat$offset)
+  else {
+    stanmat <- as.matrix(object$stanfit)
+    beta <- stanmat[, 1:ncol(x), drop = FALSE]
+    eta <- linear_predictor(beta, x, dat$offset)
+    b <- stanmat[, grepl("^b\\[", colnames(stanmat)), drop = FALSE]
+    if (is.null(dat$Z_names)) 
+      b <- b[,!grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
+    else {
+      ord <- sapply(dat$Z_names, FUN = function(x) {
+        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+        len <- length(m)
+        if (len == 1) return(m)
+        if (len > 1) stop("multiple matches bug")
+        x <- sub(":.*$", ":_NEW_", x)
+        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+      })
+      b <- b[,ord, drop = FALSE]
+    }
+    eta <- eta + as.matrix(b %*% dat$Zt)
+  }
+  
   inverse_link <- linkinv(object)
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
@@ -176,148 +192,4 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   z <- runif(n)
   x <- mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * y^2) ) / (2 * lambda)
   ifelse (z <= (mu / (mu + x)), x, mu2 / x)
-}
-
-# Create x and beta when new grouping levels are present 
-# 
-# @param stanmat Matrix of posterior draws, from calling
-#   as.matrix(object$stanfit) instead of as.matrix(object) since we need to
-#   include the extra "_NEW_" parameters used for predicting new levels.
-# @param x The x matrix returned by \code{.pp_data_mer} (which also includes the
-#   Z matrix). \code{x} should have a "NEW_ids" attribute.
-# @return A named list containing \code{x} and \code{beta}.
-pp_new_levels <- function(stanmat, x) {
-  NEW_ids <- attr(x, "NEW_ids")
-  mark <- grepl("_NEW_", colnames(stanmat), fixed = TRUE)
-  if (is.null(NEW_ids)) 
-    stop("Missing 'NEW_ids' attribute necessary for prediction.")
-  if (!any(mark)) 
-    stop("Draws used to predict for new levels were not found.")
-  
-  NEW_draws <- stanmat[, mark, drop = FALSE]
-  stanmat <- stanmat[, !mark, drop = FALSE] 
-  NEW_cols <- unlist(NEW_ids, use.names = FALSE, recursive = TRUE)
-  xNEW <- x[, NEW_cols, drop = FALSE]
-  x <- x[, -NEW_cols, drop = FALSE]
-  beta <- stanmat[, 1:ncol(x), drop = FALSE]
-  sel <- vector("list", length(NEW_ids))
-  for (j in seq_along(NEW_ids)) {
-    sel[[j]] <- list()
-    idj <- NEW_ids[[j]]
-    for (k in seq_along(idj)) {
-      patt <- paste0("b[", names(idj)[k],":_NEW_]")
-      sel[[j]][[k]] <- rep(grep(patt, colnames(NEW_draws), fixed = TRUE), 
-                           length = length(idj[[k]])) # replicate to select same column of NEW_draws multiple times (if necessary)
-    }
-  }
-  betaNEW <- NEW_draws[, unlist(sel), drop = FALSE]
-  
-  nc <- ncol(x) + ncol(xNEW)
-  mark <- c(OLD_cols = setdiff(1:nc, NEW_cols), NEW_cols)
-  xout <- matrix(NA, nrow = nrow(x), ncol = nc)
-  bout <- matrix(NA, nrow = nrow(beta), ncol = nc)
-  xout[, mark] <- cbind(x, xNEW)
-  bout[, mark] <- cbind(beta, betaNEW)
-  colnames(xout)[mark] <- c(colnames(x), colnames(xNEW))
-  colnames(bout)[mark] <- c(colnames(beta), colnames(betaNEW))
-  return(list(x = xout, beta = bout))
-}
-
-# this is mostly copied from lme4:::predict.merMod and lme4:::mkNewReTrms
-new_thing <- function(object, newdata = NULL, draws = NULL, 
-                      fun, seed, re.form, ...) {
-  X <- object$x[,1:length(fixef(object)), drop = FALSE]
-  R <- formula(object, fixed.only = TRUE)
-  R <- R[[length(R)]]
-  RHS <- formula(substitute(~R, list(R = R)))
-  Terms <- terms(object, fixed.only = TRUE)
-  mf <- model.frame(object, fixed.only = TRUE)
-  isFac <- vapply(mf, is.factor, FUN.VALUE = TRUE)
-  isFac[attr(Terms, "response")] <- FALSE
-  orig_levs <- if (length(isFac) == 0) NULL else lapply(mf[isFac], levels)
-  mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
-  X <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(X, "contrasts"))
-  offset <- 0
-  tt <- terms(object)
-  if (!is.null(off.num <- attr(tt, "offset"))) {
-    for (i in off.num)
-      offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
-  }
-  stanmat <- as.matrix(object$stanfit)
-  beta <- stanmat[,1:ncol(X), drop = FALSE]
-  eta <- linear_predictor(beta, X, offset)
-  if (!missing(re.form)) {
-    if (is.null(newdata)) rfd <- mfnew <- model.frame(object)
-    else {
-      mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)), 
-                           newdata)
-      tt <- delete.response(terms(object, random.only = TRUE))
-      rfd <- model.frame(tt, newdata, na.action = na.pass)
-    }
-    if (inherits(re.form, "formula")) {
-      ReTrms <- lme4::mkReTrms(lme4::findbars(re.form[[2]]), rfd)
-      ns.re <- names(re <- ranef(object))
-      nRnms <- names(Rcnms <- ReTrms$cnms)
-      if (!all(nRnms %in% ns.re)) 
-        stop("grouping factors specified in re.form that were not present in original model")
-      new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
-      Zt <- ReTrms$Zt
-      p <- sapply(ReTrms$cnms, FUN = length)
-      l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
-        nlevels(ReTrms$flist[[i]]))
-      t <- length(p)
-      group_nms <- names(ReTrms$cnms)
-      Z_names <- unlist(lapply(1:t, FUN = function(i) {
-        paste0(ReTrms$cnms[[i]], " ", group_nms[i], ":", levels(ReTrms$flist[[i]]))
-      }))
-      b <- stanmat[,grepl("^b\\[", colnames(stanmat)), drop = FALSE]
-      ord <- sapply(Z_names, FUN = function(x) {
-        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-        len <- length(m)
-        if (len == 1) return(m)
-        if (len > 1) stop("multiple matches bug")
-        x <- sub(":.*$", ":_NEW_", x)
-        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-      })
-      b <- b[,ord, drop = FALSE]
-      eta <- eta + as.matrix(b %*% Zt)
-    }
-  }
-  inverse_link <- linkinv(object)
-  family <- object$family
-  if (!is(object, "polr")) {
-    famname <- family$family
-    ppfun <- paste0(".pp_", famname) 
-  }
-  S <- .posterior_sample_size(object)
-  if (is.null(draws)) draws <- S
-  if (draws < S)
-    eta <- eta[sample(S, draws),, drop = FALSE]
-  if (is(object, "polr")) {
-    zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    ytilde <- .pp_polr(eta, zeta, inverse_link)
-  }
-  else {
-    ppargs <- list(mu = inverse_link(eta))
-    if (is.gaussian(famname))
-      ppargs$sigma <- stanmat[, "sigma"]
-    else if (is.binomial(famname)) {
-      y <- get_y(object)
-      if (NCOL(y) == 2L) ppargs$trials <- rowSums(y)
-      else if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
-      else ppargs$trials <- rep(1, NROW(y))
-    }
-    else if (is.gamma(famname))
-      ppargs$shape <- stanmat[,"shape"]
-    else if (is.ig(famname))
-      ppargs$lambda <- stanmat[,"lambda"]
-    else if (is.nb(famname))
-      ppargs$size <- stanmat[,"overdispersion"]
-    
-    ytilde <- do.call(ppfun, ppargs)
-  }
-  
-  if (!missing(newdata) && nrow(newdata) == 1L) ytilde <- t(ytilde)
-  if (!missing(fun)) return(do.call(match.fun(fun), list(ytilde)))
-  else return(ytilde)
 }

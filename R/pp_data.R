@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with rstanarm.  If not, see <http://www.gnu.org/licenses/>.
 
-pp_data <- function(object, newdata = NULL, ...) {
-  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, ...)
+pp_data <- function(object, newdata = NULL, re.form, ...) {
+  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
 
-# for models not fit using stan_(g)lmer
+# for models not fit using stan_(g)lmer or stan_gamm4
 .pp_data <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) {
     x <- get_x(object)
@@ -44,20 +44,11 @@ pp_data <- function(object, newdata = NULL, ...) {
   nlist(x, offset)
 }
 
-# for models fit using stan_(g)lmer
-.pp_data_mer <- function(object, newdata, ...) {
+# for models fit using stan_(g)lmer or stan_gamm4
+.pp_data_mer <- function(object, newdata, re.form, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
-  z <- .pp_data_mer_z(object, newdata, ...)
-  if (!is.null(z)) {
-    K <- ncol(x)
-    x <- cbind(x, z)
-    if (!is.null(attr(z, "NEW_ids"))) {
-      # Need to shift each id by K
-      NEW_ids <- attr(z, "NEW_ids")
-      attr(x, "NEW_ids") <- lapply(NEW_ids, function(x) lapply(x, "+", K))
-    }
-  }
-  return(nlist(x, offset = object$offset))
+  z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  return(nlist(x, offset = object$offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
 # the functions below are heavily based on a combination of 
@@ -84,25 +75,28 @@ pp_data <- function(object, newdata = NULL, ...) {
   return(x)
 }
 
-.pp_data_mer_z <- function(object, newdata, allow.new.levels = FALSE, 
-                           re.form = NULL, na.action = na.pass) {
+.pp_data_mer_z <- function(object, newdata, re.form = NULL,
+                           allow.new.levels = TRUE, na.action = na.pass) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
   fmla0check <- (is(re.form, "formula") && 
                    length(re.form) == 2 && 
                    identical(re.form[[2]], 0))
-  if (NAcheck || fmla0check) return(NULL)
-  if (is.null(newdata) && is.null(re.form)) return(get_z(object))
+  if (NAcheck || fmla0check) return(list())
+  if (is.null(newdata) && is.null(re.form)) {
+    Z <- get_z(object)
+    return(list(Zt = t(Z)))
+  }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
   } else {
-    mfnew <- model.frame(delete.response(terms(object, fixed.only=TRUE)),
-                         newdata, na.action=na.action)
+    mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
+                         newdata, na.action = na.action)
     newdata.NA <- newdata
     if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
       newdata.NA <- newdata.NA[-fixed.na.action,]
     }
-    tt <- delete.response(terms(object, random.only=TRUE))
-    rfd <- model.frame(tt,newdata.NA,na.action=na.pass)
+    tt <- delete.response(terms(object, random.only = TRUE))
+    rfd <- model.frame(tt, newdata.NA, na.action = na.pass)
     if (!is.null(fixed.na.action))
       attr(rfd,"na.action") <- fixed.na.action
   }
@@ -122,57 +116,15 @@ pp_data <- function(object, newdata = NULL, ...) {
   if (!all(nRnms %in% ns.re))
     stop("Grouping factors specified in re.form that were not present in original model.")
   new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
-  re_x <- Map(function(r,n) levelfun(r,n,allow.new.levels=allow.new.levels),
-              re[names(new_levels)], new_levels)
-  re_new <- lapply(seq_along(nRnms), function(i) {
-    rname <- nRnms[i]
-    if (!all(Rcnms[[i]] %in% names(re[[rname]])))
-      stop("Terms specified in re.form that were not in original model.")
-    re_x[[rname]][,Rcnms[[i]]]
-  })
-  names(re_new) <- nRnms
-  NEW_cols <- which(is.na(unlist(lapply(re_new, t))))
-  if (!length(NEW_cols)) NEW_ids <- NULL
-  else {
-    NEW_ids <- vector(mode = "list", length = length(nRnms))
-    names(NEW_ids) <- nRnms
-    for (j in seq_along(NEW_ids)) {
-      sel <- grep(paste0("^", nRnms[j], "[1-9]"), names(NEW_cols))
-      if (!length(sel)) {
-        next
-      }
-      NEW_cols_sel <- unname(NEW_cols[sel])
-      dfj <- re_x[[j]]
-      NEW_ids[[j]] <- vector(mode = "list", length = ncol(dfj))
-      names(NEW_ids[[j]]) <- paste(colnames(dfj), nRnms[j])
-      
-      for (k in seq_along(NEW_ids[[j]])) {
-        llk <- sum(is.na(dfj[, k]))
-        tmp <- NEW_cols_sel[seq(k, length(NEW_cols_sel), by = llk + 1)]
-        NEW_ids[[j]][[k]] <- tmp
-      }
-    }
-  }
-  z <- structure(t(as.matrix(ReTrms$Zt)), 
-                 na.action = attr(mfnew, "na.action"), 
-                 NEW_ids = NEW_ids)
+  Zt <- ReTrms$Zt
+  p <- sapply(ReTrms$cnms, FUN = length)
+  l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
+    nlevels(ReTrms$flist[[i]]))
+  t <- length(p)
+  group_nms <- names(ReTrms$cnms)
+  Z_names <- unlist(lapply(1:t, FUN = function(i) {
+    paste0(ReTrms$cnms[[i]], " ", group_nms[i], ":", levels(ReTrms$flist[[i]]))
+  }))
+  z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
 }
-
-# lme4:::levelfun except use NAs instead of 0s in matrix
-levelfun <- function(x, nl.n, allow.new.levels = FALSE) {
-  if (!all(nl.n %in% rownames(x))) {
-    if (!allow.new.levels) 
-      stop("New levels detected in newdata but 'allow.new.levels' is FALSE.")
-    newx <- as.data.frame(matrix(NA, # use NA instead of zero
-                                 nrow = length(nl.n), ncol = ncol(x), 
-                                 dimnames = list(nl.n, names(x))))
-    newx[rownames(x), ] <- x
-    x <- newx
-  }
-  if (!all(r.inn <- rownames(x) %in% nl.n)) {
-    x <- x[r.inn, , drop = FALSE]
-  }
-  return(x)
-}
-
