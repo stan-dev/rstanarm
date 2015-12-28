@@ -422,12 +422,6 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     if (missing(fixed.only) && random.only) 
       fixed.only <- FALSE
     if (fixed.only && random.only) 
-      stop("can't specify 'only fixed' and 'only random' terms")
-    
-    Terms <- attr(fr, "terms")
-    if (fixed.only) {
-      # fmla <- attr(fr, "formula")
-      # fmla[[length(fmla)]] <- lme4::nobars(fmla[[length(fmla)]])
       stop("'fixed.only' and 'random.only' can't both be TRUE.")
     
     Terms <- attr(fr, "terms")
