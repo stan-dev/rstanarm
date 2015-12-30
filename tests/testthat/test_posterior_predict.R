@@ -179,10 +179,6 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
       unname(predict(get(paste0("lfit", j)), newdata = nd3, allow.new.levels = TRUE)),
       tol = tol)
     
-    expect_error(
-      posterior_predict(get(paste0("sfit", j)), newdata = nd3, 
-                        allow.new.levels = FALSE),
-      regexp = "new levels", ignore.case = TRUE)
   }
 })
 
@@ -242,9 +238,7 @@ test_that("lme4 tests work similarly", {
   nd3 <- rbind(nd2, data.frame(period = as.character(1:4), 
                                herd = rep("new",4), 
                                size = 20))
-  expect_error(posterior_predict(sfit, nd3), regexp = "new levels detected", 
-               ignore.case = TRUE)
-  
+
   p6 <- posterior_predict(sfit, nd3, allow.new.levels = TRUE, seed = SEED)
   expect_equal(colMeans(p3), colMeans(p6[, 1:ncol(p3)]), tol = 0.05)
   expect_equal(apply(p3, 2, sd), apply(p6[, 1:ncol(p3)], 2, sd), tol = 0.05)
