@@ -112,7 +112,7 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   fit1 <- do.call("stan_lmer", args)
   fit2 <- do.call("stan_glmer", args)
   nd <- d[6:10, ]
-  nd$wt <- rnorm(5)
+  nd$wt <- runif(5)
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit1, newdata = nd))
