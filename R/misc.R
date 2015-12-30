@@ -135,6 +135,17 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Issue warning if high rhat values
+# 
+# @param rhats Vector of rhat values.
+# @param threshold Threshold value. If any rhat values are above threshold a 
+#   warning is issued.
+check_rhats <- function(rhats, threshold = 1.1) {
+  if (any(rhats > threshold, na.rm = TRUE)) 
+    warning("Markov chains did not converge! Do not analyze results!", 
+            call. = FALSE, noBreaks. = TRUE)
+}
+
 # Check weights argument
 # 
 # @param w The \code{weights} argument specified by user or the result of

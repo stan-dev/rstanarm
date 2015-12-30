@@ -185,6 +185,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     qq <- (1 - levs) / 2
     probs <- sort(c(0.5, qq, 1 - qq))
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
+    if (algorithm == "sampling") 
+      check_rhats(stan_summary[, "Rhat"])
   }
   
   out <- list(coefficients = coefs, ses = ses, zeta = zeta,
