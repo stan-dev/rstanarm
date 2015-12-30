@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-pp_data <- function(object, newdata = NULL, re.form, ...) {
+pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   if (is(object, "lmerMod")) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
@@ -124,7 +124,9 @@ pp_data <- function(object, newdata = NULL, re.form, ...) {
   t <- length(p)
   group_nms <- names(ReTrms$cnms)
   Z_names <- unlist(lapply(1:t, FUN = function(i) {
-    paste0(ReTrms$cnms[[i]], " ", group_nms[i], ":", levels(ReTrms$flist[[i]]))
+    nms_i <- paste(ReTrms$cnms[[i]], group_nms[i])
+    if (length(nms_i) == 1) paste0(nms_i, ":", levels(ReTrms$flist[[i]]))
+    else sapply(nms_i, paste0, ":", new_levels[[i]])
   }))
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
