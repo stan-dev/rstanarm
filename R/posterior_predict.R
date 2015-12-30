@@ -123,7 +123,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
         len <- length(m)
         if (len == 1) return(m)
         if (len > 1) stop("multiple matches bug")
-        x <- sub(":.*$", ":_NEW_", x)
+        x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
         grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
       })
       b <- b[,ord, drop = FALSE]
