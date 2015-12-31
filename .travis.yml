@@ -5,10 +5,7 @@ warnings_are_errors: TRUE
 
 os:
   - osx
-  
-r_github_packages:
-  - rstudio/dygraphs
-  
+
 r_binary_packages:
   - covr
   - loo
