@@ -54,6 +54,8 @@ ppcheck <- function(object,
 #'   draws from the posterior distribution. If \code{check="scatter"},
 #'   \code{nreps} is not ignored but defaults to the number of post-warmup
 #'   draws.
+#' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
+#'   \code{\link{posterior_predict}}.
 #' @param overlay For \code{check="distributions"} only, should distributions be
 #'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the
 #'   default) or as separate histograms (\code{FALSE})?
@@ -131,9 +133,8 @@ ppcheck <- function(object,
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
-pp_check <- function(object,
-                     check = "distributions",
-                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
+pp_check <- function(object, check = "distributions", nreps = NULL, 
+                     seed = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 
@@ -161,7 +162,7 @@ pp_check <- function(object,
     }
   }
   
-  yrep <- posterior_predict(object, draws = nreps)
+  yrep <- posterior_predict(object, draws = nreps, seed = seed)
   y <- get_y(object)
   if (is(object, "polr")) y <- as.integer(y)
   if (NCOL(y) == 2) {
