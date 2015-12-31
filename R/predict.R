@@ -41,10 +41,11 @@ predict.stanreg <- function(object, ..., newdata = NULL,
     if (type == "link") return(object$linear.predictors)
     else return(object$fitted.values)
   }
-  if (used.sampling(object) && type == "response")
-    stop("type='response' should not be used for models estimated by MCMC.",
-         "\nInstead, use posterior_predict() to draw from the posterior ", 
-         "predictive distribution.", call. = FALSE)
+  if (!used.optimizing(object) && type == "response")
+    stop("type='response' should not be used for models estimated by MCMC",
+         "\nor variational approximation. Instead, use posterior_predict() ",
+         "to draw \nfrom the posterior predictive distribution.", 
+         call. = FALSE)
   
   dat <- pp_data(object, newdata)
   stanmat <- as.matrix.stanreg(object)

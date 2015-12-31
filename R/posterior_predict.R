@@ -37,23 +37,23 @@
 #'   \code{newdata}. This only applies if variables were transformed before 
 #'   passing the data to one of the modeling functions and \emph{not} if 
 #'   transformations were specified inside the model formula.
-#' @param draws The number of draws to return. The default and maximum number of
-#'   draws is the size of the posterior sample.
-#' @param re.form A formula indicating what group-level parameters to condition
-#'   on when making predictions in the same form as for 
-#'   \code{\link[lme4]{predict.merMod}} when \code{object} contains group-level
-#'   parameters. The default, \code{NULL}, indicates that all estimated 
-#'   group-level parameters are conditioned on. To refrain from conditioning on
-#'   any group-level parameters, specify \code{NA} or \code{~0}. The 
-#'   \code{newdata} argument may include new \emph{levels} of the grouping 
-#'   factors that were specified when the model was estimated, in which case
-#'   the resulting posterior predictions marginalize over the relevant 
-#'   variables, but may not include new grouping factors.
+#' @param draws An integer indicating the number of draws to return. The default
+#'   and maximum number of draws is the size of the posterior sample.
+#' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level
+#'   parameters}}, a formula indicating which group-level parameters to 
+#'   condition on when making predictions. \code{re.form} is specified in the 
+#'   same form as for \code{\link[lme4]{predict.merMod}}. The default, 
+#'   \code{NULL}, indicates that all estimated group-level parameters are 
+#'   conditioned on. To refrain from conditioning on any group-level parameters,
+#'   specify \code{NA} or \code{~0}. The \code{newdata} argument may include new
+#'   \emph{levels} of the grouping factors that were specified when the model 
+#'   was estimated, in which case the resulting posterior predictions 
+#'   marginalize over the relevant variables.
 #' @param fun An optional function to apply to the results. \code{fun} is found 
 #'   by a call to \code{\link{match.fun}} and so can be specified as a function
 #'   object, a string naming a function, etc.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
-#' @param ... Currently unused
+#' @param ... Currently unused.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -79,26 +79,30 @@
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
-                              re.form = NULL, fun, seed, ...) {
-  if (!missing(seed)) 
-    set.seed(seed)
+                              re.form = NULL, fun = NULL, seed = NULL, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
+  
+  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(fun)) fun <- match.fun(fun)
+  
   family <- object$family
   if (!is(object, "polr")) {
     famname <- family$family
     ppfun <- paste0(".pp_", famname) 
   }
-
+  
   S <- .posterior_sample_size(object)
   if (is.null(draws)) draws <- S
   if (draws > S) {
     stop(paste0("'draws' = ", draws, 
                 " but posterior sample size is only ", S, "."))
   }
-  if (!is.null(newdata)) {
+  
+  has_newdata <- !is.null(newdata)
+  if (has_newdata) {
     newdata <- as.data.frame(newdata)
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
@@ -126,11 +130,11 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
         x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
         grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
       })
-      b <- b[,ord, drop = FALSE]
+      b <- b[, ord, drop = FALSE]
     }
     eta <- eta + as.matrix(b %*% dat$Zt)
   }
-
+  
   inverse_link <- linkinv(object)
   if (draws < S)
     eta <- eta[sample(S, draws),, drop = FALSE]
@@ -149,17 +153,19 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
       else ppargs$trials <- rep(1, NROW(y))
     }
     else if (is.gamma(famname))
-      ppargs$shape <- stanmat[,"shape"]
+      ppargs$shape <- stanmat[, "shape"]
     else if (is.ig(famname))
-      ppargs$lambda <- stanmat[,"lambda"]
+      ppargs$lambda <- stanmat[, "lambda"]
     else if (is.nb(famname))
-      ppargs$size <- stanmat[,"overdispersion"]
+      ppargs$size <- stanmat[, "overdispersion"]
     
     ytilde <- do.call(ppfun, ppargs)
   }
   
-  if (!missing(newdata) && nrow(newdata) == 1L) ytilde <- t(ytilde)
-  if (!missing(fun)) return(do.call(match.fun(fun), list(ytilde)))
+  if (has_newdata && nrow(newdata) == 1L) 
+    ytilde <- t(ytilde)
+  
+  if (!is.null(fun)) return(do.call(fun, list(ytilde)))
   else return(ytilde)
 }
 

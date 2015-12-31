@@ -25,7 +25,7 @@ CHAINS <- 2
 CORES <- 1
 
 fit <- example_model
-fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing")
+fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield")
 
 context("plot.stanreg helpers")

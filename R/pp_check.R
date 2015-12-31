@@ -49,7 +49,7 @@ ppcheck <- function(object,
 #' @param nreps The number of \eqn{yrep} datasets to generate from the posterior
 #'   predictive distribution and show in the plots. The default is 
 #'   \code{nreps=3} for \code{check="residuals"} and \code{nreps=8} for
-#'   \code{check="distributions"}. If \code{check="test"} then \code{nreps} is
+#'   \code{check="distributions"}. If \code{check="test"}, \code{nreps} is
 #'   ignored and the number of simulated datasets is the number of post-warmup
 #'   draws from the posterior distribution. If \code{check="scatter"},
 #'   \code{nreps} is not ignored but defaults to the number of post-warmup
@@ -132,8 +132,8 @@ ppcheck <- function(object,
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
 pp_check <- function(object,
-                    check = "distributions",
-                    nreps = NULL, overlay = TRUE, test = "mean", ...) {
+                     check = "distributions",
+                     nreps = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
     stop(deparse(substitute(object)), " is not a stanreg object")
   if (used.optimizing(object)) 

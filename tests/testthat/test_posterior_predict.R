@@ -46,8 +46,8 @@ check_for_error <- function(fit) {
   expect_silent(yrep5 <- posterior_predict(fit, newdata = model.frame(fit)[1:5,]))
   expect_equal(dim(yrep5), c(nsims, 5))
   
-  expect_silent(yrep5 <- posterior_predict(fit, draws = 3, newdata = model.frame(fit)[1:5,]))
-  expect_equal(dim(yrep5), c(3, 5))
+  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = model.frame(fit)[1:5,]))
+  expect_equal(dim(yrep6), c(3, 5))
 }
 
 context("posterior_predict (stan_lm)")

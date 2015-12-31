@@ -85,8 +85,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   mer <- is(x, "lmerMod")
   ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
   if (!used.optimizing(x)) {
-    # don't used as.matrix.stanreg method b/c want access to mean_PPD
-    mat <- as.matrix(x$stanfit)
+    mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
     if (mer) nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     if (ord) {
@@ -123,14 +122,10 @@ print.stanreg <- function(x, digits = 1, ...) {
                          fixed = TRUE, value = TRUE))
     else {
       famname <- x$family$family
-      if (is.gaussian(famname))
-        nms <- c(nms, "sigma")
-      else if (is.gamma(famname))
-        nms <- c(nms, "shape")
-      else if (is.ig(famname))
-        nms <- c(nms, "lambda")
-      else if (is.nb(famname))
-        nms <- c(nms, "overdispersion")
+      if (is.gaussian(famname)) nms <- c(nms, "sigma")
+      else if (is.gamma(famname)) nms <- c(nms, "shape")
+      else if (is.ig(famname)) nms <- c(nms, "lambda")
+      else if (is.nb(famname)) nms <- c(nms, "overdispersion")
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
@@ -221,7 +216,7 @@ summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
       colnames(out)[which(colnames(out) == "se_mean")] <- "mcse"
     if (used.variational(object)) {
       sel <- which(rownames(out) == "log-posterior")
-      if (length(sel)) out <- out[-sel, ]
+      if (length(sel)) out <- out[-sel,, drop = FALSE]
     }
   }
   else {
@@ -277,9 +272,9 @@ print.summary.stanreg <- function(x, digits = attr(x, "print.digits"), ...) {
     colnames(xtemp) <- paste(" ", colnames(xtemp))
     .printfr(xtemp, digits)
     cat("\nDiagnostics:\n")
-    mcse_rhat <- format(round(x[, c("mcse", "Rhat"), drop=FALSE], digits), 
+    mcse_rhat <- format(round(x[, c("mcse", "Rhat"), drop = FALSE], digits), 
                         nsmall = digits)
-    n_eff <- format(x[, "n_eff", drop=FALSE], drop0trailing = TRUE)
+    n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
     print(cbind(mcse_rhat, n_eff), quote = FALSE)
     cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
         "n_eff is a crude measure of effective sample size, ", 
@@ -295,4 +290,3 @@ print.summary.stanreg <- function(x, digits = attr(x, "print.digits"), ...) {
 as.data.frame.summary.stanreg <- function(x, ...) {
   as.data.frame(unclass(x), ...)
 }
-

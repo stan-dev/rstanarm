@@ -207,17 +207,24 @@
 #' 
 #' @examples
 #' fmla <- mpg ~ wt + qsec + drat + am
-#' t7_prior <- student_t(df = 7)
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' stan_glm(fmla, data = mtcars, prior_PD = TRUE, chains = 1,
-#'          prior = student_t(4, 0, 2.5), prior_intercept = cauchy(0,10), 
-#'          prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, prior_PD = TRUE,
+#'                            prior = student_t(df = 4, 0, 2.5), 
+#'                            prior_intercept = cauchy(0,10), 
+#'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#' 
+#' \dontrun{
+#' # Can assign priors to names
+#' N05 <- normal(0, 5)
+#' fit <- stan_glm(fmla, data = mtcars, prior = N05, prior_intercept = N05)
+#' }
 #' 
 #' # Visually compare normal, student_t, and cauchy
 #' library(ggplot2)
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
-#'   dt_loc_scale <- function(x, df, location, scale) {
+#'   dt_loc_scale <- function(x, df, location, scale) { 
+#'     # t distribution with location & scale parameters
 #'     1 / scale * dt((x - location) / scale, df)  
 #'   }
 #'   ggplot(data.frame(x = xlim), aes(x)) + 
@@ -229,18 +236,22 @@
 #'                   color = "orange", size = .75) +
 #'     stat_function(fun = dcauchy, 
 #'                   args = list(location = 0, scale = scale), 
-#'                   color = "skyblue", size = .75) + 
+#'                   color = "skyblue", size = .75, linetype = 2) + 
 #'     ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
 #' }
-#' # Cauchy has fattest tails, then student_t, then normal:
+#' # Cauchy has fattest tails, then student_t, then normal
 #' compare_priors()
-#' # The student_t with df = 1 is the same as the cauchy:
+#' 
+#' # The student_t with df = 1 is the same as the cauchy
 #' compare_priors(df_t = 1) 
-#' # Even a scale of 5 is somewhat large. It gives plausibility to rather extreme values:
+#' 
+#' # Even a scale of 5 is somewhat large. It gives plausibility to rather 
+#' # extreme values
 #' compare_priors(scale = 5, xlim = c(-20,20)) 
+#' 
 #' # If you use a prior like normal(0, 1000) to be "non-informative" you are 
-#' # actually saying that coefficient a value of e.g. -500 is quite plausible:
-#' compare_priors(scale = 1000, xlim = c(-1000,1000)) 
+#' # actually saying that coefficient a value of e.g. -500 is quite plausible
+#' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)

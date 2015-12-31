@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)[![Coverage Status](https://img.shields.io/codecov/c/github/stan-dev/rstanarm/master.svg)](https://codecov.io/github/stan-dev/rstanarm?branch=master) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
+[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm) [![Coverage Status](https://img.shields.io/codecov/c/github/stan-dev/rstanarm/master.svg)](https://codecov.io/github/stan-dev/rstanarm?branch=master) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
 
 
 rstanarm

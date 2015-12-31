@@ -154,8 +154,8 @@ check_rhats <- function(rhats, threshold = 1.1) {
 validate_weights <- function(w) {
   if (missing(w) || is.null(w)) return(double(0))
   else {
-    if (!is.numeric(w)) stop("'weights' must be a numeric vector.")
-    if (any(w < 0)) stop("Negative weights are not allowed.")
+    if (!is.numeric(w)) stop("'weights' must be a numeric vector.", call. = FALSE)
+    if (any(w < 0)) stop("Negative weights are not allowed.", call. = FALSE)
   }
   return(w)
 }
@@ -170,7 +170,7 @@ validate_offset <- function(o, y) {
   if (is.null(o)) return(double(0))
   if (length(o) != NROW(y))
     stop(gettextf("Number of offsets is %d but should be %d (number of observations)",
-                  length(o), NROW(y)), domain = NA)
+                  length(o), NROW(y)), domain = NA, call. = FALSE)
   return(o)
 }
 
@@ -184,7 +184,7 @@ validate_offset <- function(o, y) {
 validate_family <- function(f) {
   if (is.character(f)) f <- get(f, mode = "function", envir = parent.frame(2))
   if (is.function(f)) f <- f()
-  if (!is(f, "family")) stop("'family' must be a family.")
+  if (!is(f, "family")) stop("'family' must be a family.", call. = FALSE)
   return(f)
 }
 
@@ -224,7 +224,8 @@ check_constant_vars <- function(mf) {
          meanfield = "50%",
          fullrank = "50%",
          optimizing = "Median",
-         stop("Incorrect algorithm name"))
+         stop("Bug found (incorrect algorithm name passed to .select_median)", 
+              call. = FALSE))
 }
 
 # If a is NULL (and Inf, respectively) return b, otherwise just return a
@@ -273,8 +274,8 @@ nlist <- function(...) {
 validate_parameter_value <- function(x) {
   nm <- deparse(substitute(x))
   if (!is.null(x)) {
-    if (!is.numeric(x)) stop(nm, " should be NULL or numeric")
-    if (any(x <= 0)) stop(nm, " should be positive")
+    if (!is.numeric(x)) stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) stop(nm, " should be positive", call. = FALSE)
   }
   return(invisible(TRUE))
 }

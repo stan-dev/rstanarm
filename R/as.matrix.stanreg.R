@@ -46,7 +46,7 @@
 #' draws <- as.matrix(example_model)
 #' 
 #' # For example, we can see that the median of the draws for the intercept 
-#' # is the same as the point estimate used for the intercept
+#' # is the same as the point estimate rstanarm uses
 #' print(median(draws[, "(Intercept)"]))
 #' print(example_model$coefficients["(Intercept)"])
 #' 
@@ -64,25 +64,26 @@
 #' }
 #' 
 as.matrix.stanreg <- function(x, ...) {
-  msg <- "No draws found."
+  dotnames <- names(list(...))
+  NO_DRAWS <- "No draws found."
   if (used.optimizing(x)) {
-    if ("pars" %in% names(list(...))) 
-      message("'pars' argument ignored for models with algorithm='optimizing'.")
+    if ("pars" %in% dotnames) 
+      message("'pars' ignored for models fit using algorithm='optimizing'.")
     out <- x$asymptotic_sampling_dist 
-    if (is.null(out)) stop(msg)
+    if (is.null(out)) stop(NO_DRAWS)
     else {
-      dispersion <- c("sigma", "scale", "lambda", "overdispersion")
+      dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
       keep <- c(names(coef(x)), # return with coefficients first
                 dispersion[which(dispersion %in% colnames(out))])
       return(out[, keep, drop = FALSE])
     }
   }
   sf <- x$stanfit
-  if (sf@mode != 0) stop(msg)
+  if (sf@mode != 0) stop(NO_DRAWS)
   posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
   out <- apply(posterior, 3L, FUN = function(y) y)
   if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
-  if (!"pars" %in% names(list(...))) {
+  if (!"pars" %in% dotnames) {
     # remove mean_PPD and log-posterior unless user specified 'pars'
     sel <- !grepl("mean_PPD|log-posterior", colnames(out))
     out <- out[, sel, drop = FALSE]

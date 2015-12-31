@@ -63,18 +63,18 @@
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
 #'                 algorithm = "fullrank") # for speed only
 #' plot(fit, ci_level = 0.5)
-#' plot(fit, ci_level = 0.5, pars = "beta") # plot without intercept
+#' plot(fit, ci_level = 0.5, pars = "beta")
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
-#' t7 <- student_t(df = 7)
 #' dat <- within(lalonde, {
 #'  re74_1k <- re74 / 1000
 #'  re75_1k <- re75 / 1000
 #' })
-#' f <- treat ~ re74_1k + re75_1k + educ + black + hisp + 
+#' t7 <- student_t(df = 7)
+#' fmla <- treat ~ re74_1k + re75_1k + educ + black + hisp + 
 #'                married + nodegr + u74 + u75
-#' fit2 <- stan_glm(f, data = dat, family = binomial(link="logit"), 
+#' fit2 <- stan_glm(fmla, data = dat, family = binomial(link="logit"), 
 #'                  prior = t7, prior_intercept = t7, 
 #'                  algorithm = "fullrank") # for speed only
 #' plot(fit2, pars = c("black", "hisp", "nodegr", "u74", "u75"), 
@@ -108,20 +108,19 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE) {
 
-  # Parse like glm()
   family <- validate_family(family)
   if (missing(data)) data <- environment(formula)
-  call <- match.call()
+  call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
-             names(mf), nomatch = 0L)
+             table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- as.name("model.frame")
   mf <- eval(mf, parent.frame())
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
-  Y <- model.response(mf, "any")
+  Y <- model.response(mf, type = "any")
   if (length(dim(Y)) == 1L) {
     nm <- rownames(Y)
     dim(Y) <- NULL
@@ -180,7 +179,7 @@ stan_glm.nb <- function(..., link = "log") {
   mc[[1L]] <- quote(stan_glm)
   mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
-  out <- eval(mc, parent.frame(1L))
+  out <- eval(mc, parent.frame())
   out$call <- call
   out
 }

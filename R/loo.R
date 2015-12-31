@@ -87,7 +87,7 @@ waic.stanreg <- function(x, ...) {
 .llfun <- function(f) {
   if (is(f, "family")) get(paste0(".ll_", f$family, "_i"))
   else if (is.character(f)) .ll_polr_i
-  else stop("'family' must be a family or a character string")
+  else stop("'family' must be a family or a character string.", call. = FALSE)
 }
 
 # returns args argument for loo.function() and waic.function()
@@ -127,7 +127,7 @@ waic.stanreg <- function(x, ...) {
                           drop = FALSE]
     draws$max_y <- max(y)
   }
-  else stop("'family' must be a family or a character string")
+  else stop("'family' must be a family or a character string.", call. = FALSE)
   
   data$offset <- object$offset
   if (!all(object$weights == 1)) data$weights <- object$weights
