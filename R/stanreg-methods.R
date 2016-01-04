@@ -17,7 +17,9 @@
 
 #' Methods for stanreg objects
 #' 
-#' S3 methods for \link[=stanreg-objects]{stanreg} objects.
+#' S3 methods for \link[=stanreg-objects]{stanreg} objects. There are also 
+#' several methods (listed in See Also, below) with their own individual help
+#' pages.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps
@@ -50,7 +52,11 @@
 #' \item{\code{log_lik}}{
 #' For \code{algorithm="sampling"} only, the \code{log_lik} function returns the
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
-#' of the posterior sample and \eqn{N} is the number of data points.
+#' of the posterior sample and \eqn{N} is the number of data points. Note: we 
+#' use \code{log_lik} rather than defining a \code{\link[stats]{logLik}} method 
+#' because (in addition to the conceptual difference) the documentation for
+#' \code{logLik} states that the return value will be a single number, whereas
+#' we return a matrix.
 #' }
 #' 
 #' \item{\code{residuals}}{
@@ -109,8 +115,11 @@ fitted.stanreg <- function(object, ...)  {
 #' Extract pointwise log-likelihood matrix
 #' 
 #' @export
-#' @param object object
 #' @keywords internal
+#' @param object Fitted model object.
+#' @param ... Arguments to methods.
+#' @return Pointwise log-likelihood matrix.
+#' @seealso \code{\link{log_lik.stanreg}}
 log_lik <- function(object, ...) UseMethod("log_lik")
 
 #' @rdname stanreg-methods
@@ -146,6 +155,7 @@ residuals.stanreg <- function(object, ...) {
 #' @param object A fitted model object.
 #' @param ... Arguments to methods.
 #' @return Standard errors of model parameters.
+#' @seealso \code{\link{se.stanreg}}
 #' 
 se <- function(object, ...) UseMethod("se")
 
