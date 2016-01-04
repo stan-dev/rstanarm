@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 504.00 216.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    line, polyline, path, rect, circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<line x1='141.18' y1='142.56' x2='391.62' y2='142.56' style='stroke-width: 0.75;' />
+<line x1='141.18' y1='142.56' x2='141.18' y2='149.76' style='stroke-width: 0.75;' />
+<line x1='224.66' y1='142.56' x2='224.66' y2='149.76' style='stroke-width: 0.75;' />
+<line x1='308.14' y1='142.56' x2='308.14' y2='149.76' style='stroke-width: 0.75;' />
+<line x1='391.62' y1='142.56' x2='391.62' y2='149.76' style='stroke-width: 0.75;' />
+<text x='137.85' y='168.48' style='font-size: 12.00pt; font-family: Arial;'>5</text>
+<text x='217.99' y='168.48' style='font-size: 12.00pt; font-family: Arial;'>10</text>
+<text x='301.47' y='168.48' style='font-size: 12.00pt; font-family: Arial;'>15</text>
+<text x='384.94' y='168.48' style='font-size: 12.00pt; font-family: Arial;'>20</text>
+<polyline points='59.04,59.04 59.04,142.56 473.76,142.56 ' style='stroke-width: 0.75;' />
+<text x='239.05' y='197.28' style='font-size: 12.00pt; font-family: Arial;'>Data point</text>
+<text transform='translate(12.96,151.83) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>Shape parameter k</text>
+<line x1='59.04' y1='136.27' x2='59.04' y2='70.51' style='stroke-width: 0.75;' />
+<line x1='59.04' y1='136.27' x2='51.84' y2='136.27' style='stroke-width: 0.75;' />
+<line x1='59.04' y1='119.83' x2='51.84' y2='119.83' style='stroke-width: 0.75;' />
+<line x1='59.04' y1='103.39' x2='51.84' y2='103.39' style='stroke-width: 0.75;' />
+<line x1='59.04' y1='86.95' x2='51.84' y2='86.95' style='stroke-width: 0.75;' />
+<line x1='59.04' y1='70.51' x2='51.84' y2='70.51' style='stroke-width: 0.75;' />
+<text x='27.96' y='140.40' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
+<text x='27.96' y='123.96' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
+<text x='27.96' y='107.52' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
+<text x='27.96' y='91.08' style='font-size: 12.00pt; font-family: Arial;'>0.6</text>
+<text x='27.96' y='74.64' style='font-size: 12.00pt; font-family: Arial;'>0.8</text>
+<line x1='59.04' y1='136.27' x2='473.76' y2='136.27' style='stroke-width: 0.75; stroke: #A9A9A9; stroke-dasharray: 4,4;' />
+<line x1='59.04' y1='95.17' x2='473.76' y2='95.17' style='stroke-width: 0.75; stroke: #B17E64; stroke-dasharray: 4,4;' />
+<line x1='72.11' y1='116.92' x2='76.69' y2='116.92' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='74.40' y1='119.22' x2='74.40' y2='114.63' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='88.80' y1='114.22' x2='93.39' y2='114.22' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='91.10' y1='116.51' x2='91.10' y2='111.93' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='105.50' y1='107.89' x2='110.08' y2='107.89' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='107.79' y1='110.18' x2='107.79' y2='105.59' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='122.20' y1='109.87' x2='126.78' y2='109.87' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='124.49' y1='112.16' x2='124.49' y2='107.58' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='138.89' y1='126.79' x2='143.47' y2='126.79' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='141.18' y1='129.08' x2='141.18' y2='124.50' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='155.59' y1='104.67' x2='160.17' y2='104.67' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='157.88' y1='106.96' x2='157.88' y2='102.38' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='172.28' y1='117.53' x2='176.86' y2='117.53' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='174.57' y1='119.82' x2='174.57' y2='115.24' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='188.98' y1='119.99' x2='193.56' y2='119.99' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='191.27' y1='122.28' x2='191.27' y2='117.70' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='205.67' y1='134.43' x2='210.26' y2='134.43' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='207.97' y1='136.72' x2='207.97' y2='132.14' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='222.37' y1='100.92' x2='226.95' y2='100.92' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='224.66' y1='103.21' x2='224.66' y2='98.63' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='239.07' y1='139.47' x2='243.65' y2='139.47' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='241.36' y1='141.76' x2='241.36' y2='137.18' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='255.76' y1='116.80' x2='260.34' y2='116.80' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='258.05' y1='119.09' x2='258.05' y2='114.51' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='272.46' y1='111.25' x2='277.04' y2='111.25' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='274.75' y1='113.54' x2='274.75' y2='108.96' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='289.15' y1='97.34' x2='293.73' y2='97.34' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='291.44' y1='99.63' x2='291.44' y2='95.05' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='305.85' y1='122.17' x2='310.43' y2='122.17' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='308.14' y1='124.46' x2='308.14' y2='119.88' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='322.54' y1='101.20' x2='327.13' y2='101.20' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='324.83' y1='103.49' x2='324.83' y2='98.91' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='339.24' y1='123.44' x2='343.82' y2='123.44' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='341.53' y1='125.73' x2='341.53' y2='121.15' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='355.94' y1='120.00' x2='360.52' y2='120.00' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='358.23' y1='122.29' x2='358.23' y2='117.71' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='372.63' y1='108.15' x2='377.21' y2='108.15' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='374.92' y1='110.44' x2='374.92' y2='105.86' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='389.33' y1='111.20' x2='393.91' y2='111.20' style='stroke-width: 0.75; stroke: #6497B1;' />
+<line x1='391.62' y1='113.50' x2='391.62' y2='108.91' style='stroke-width: 0.75; stroke: #6497B1;' />
+<text x='71.06' y='76.64' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>1</text>
+<text x='87.76' y='92.45' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>2</text>
+<text x='171.24' y='95.91' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>7</text>
+</svg>

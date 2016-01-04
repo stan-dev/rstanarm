@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 504.00 216.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    line, polyline, path, rect, circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<polyline points='0.00,216.00 0.00,0.00 504.00,0.00 504.00,216.00 ' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+<polyline points='8.97,181.66 8.97,5.98 411.18,5.98 411.18,181.66 ' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='27.25' y='173.67' width='11.08' height='0.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='38.33' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='49.41' y='173.67' width='11.08' height='0.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='60.49' y='173.67' width='11.08' height='0.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='71.57' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='82.65' y='173.67' width='11.08' height='0.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='93.73' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='104.81' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='115.89' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='126.97' y='134.56' width='11.08' height='39.11' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='138.05' y='124.78' width='11.08' height='48.89' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='149.13' y='137.82' width='11.08' height='35.85' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='160.21' y='118.26' width='11.08' height='55.41' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='171.29' y='85.67' width='11.08' height='88.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='182.37' y='66.11' width='11.08' height='107.56' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='193.45' y='49.82' width='11.08' height='123.86' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='204.54' y='36.78' width='11.08' height='136.89' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='215.62' y='13.96' width='11.08' height='159.71' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='226.70' y='59.59' width='11.08' height='114.08' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='237.78' y='49.82' width='11.08' height='123.86' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='248.86' y='40.04' width='11.08' height='133.63' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='259.94' y='85.67' width='11.08' height='88.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='271.02' y='75.89' width='11.08' height='97.78' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='282.10' y='92.19' width='11.08' height='81.48' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='293.18' y='118.26' width='11.08' height='55.41' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='304.26' y='124.78' width='11.08' height='48.89' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='315.34' y='144.34' width='11.08' height='29.33' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='326.42' y='154.12' width='11.08' height='19.56' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='337.50' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='348.58' y='160.63' width='11.08' height='13.04' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='359.66' y='170.41' width='11.08' height='3.26' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='370.74' y='167.15' width='11.08' height='6.52' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<rect x='381.82' y='173.67' width='11.08' height='0.00' style='stroke-width: 1.07; stroke-linecap: butt; fill: #000000;' />
+<line x1='235.42' y1='181.66' x2='235.42' y2='5.98' style='stroke-width: 4.27; stroke: #87CEEB; stroke-linecap: butt;' />
+<polyline points='8.97,181.66 411.18,181.66 ' style='stroke-width: 4.27; stroke: #222222; stroke-linecap: butt;' />
+<polyline points='32.84,184.65 32.84,181.66 ' style='stroke-width: 1.07; stroke-linecap: butt;' />
+<polyline points='117.30,184.65 117.30,181.66 ' style='stroke-width: 1.07; stroke-linecap: butt;' />
+<polyline points='201.75,184.65 201.75,181.66 ' style='stroke-width: 1.07; stroke-linecap: butt;' />
+<polyline points='286.21,184.65 286.21,181.66 ' style='stroke-width: 1.07; stroke-linecap: butt;' />
+<polyline points='370.66,184.65 370.66,181.66 ' style='stroke-width: 1.07; stroke-linecap: butt;' />
+<text x='27.28' y='193.91' style='font-size: 9.60pt; font-family: Arial;'>82</text>
+<text x='111.73' y='193.91' style='font-size: 9.60pt; font-family: Arial;'>84</text>
+<text x='196.19' y='193.91' style='font-size: 9.60pt; font-family: Arial;'>86</text>
+<text x='280.65' y='193.91' style='font-size: 9.60pt; font-family: Arial;'>88</text>
+<text x='365.10' y='193.91' style='font-size: 9.60pt; font-family: Arial;'>90</text>
+<text x='172.32' y='207.63' style='font-size: 13.00pt; font-weight: bold; font-family: Arial;'>Test = mean</text>
+<rect x='419.69' y='66.18' width='69.83' height='55.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<line x1='432.58' y1='99.93' x2='432.58' y2='82.65' style='stroke-width: 4.27; stroke: #87CEEB; stroke-linecap: butt;' />
+<line x1='432.58' y1='117.21' x2='432.58' y2='99.93' style='stroke-width: 4.27; stroke-linecap: butt;' />
+<text x='443.38' y='95.76' style='font-size: 13.00pt; font-family: Arial;'>T(y)</text>
+<text x='443.38' y='113.04' style='font-size: 13.00pt; font-family: Arial;'>T(yrep)</text>
+</svg>

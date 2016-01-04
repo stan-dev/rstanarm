@@ -4,7 +4,7 @@ author: "Jonah Gabry and Ben Goodrich"
 date: "12/07/2015"
 output: 
   html_document: 
-    self_contained: yes
+    self_contained: no
     toc: yes
 ---
 <!--
@@ -240,7 +240,7 @@ tiles (the lighter the color the higher the probability). The observed value of
 ```{r,echo=FALSE}
 theme_update(legend.position = "right")
 ```
-```{r, ARSENIC-plot-model2, dev="png", fig.ext=".png"}
+```{r, ARSENIC-plot-model2}
 pr_switch2 <- function(x, y, ests) plogis(ests[1] + ests[2] * x + ests[3] * y)
 grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), 
                     arsenic = seq(0, 10, length.out = 100))
