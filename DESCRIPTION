@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Applied Regression Modeling Via 'rstan'
-Version: 2.8.9
-Date: 2015-12-06
+Version: 2.9.0
+Date: 2016-01-03
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
@@ -20,7 +20,7 @@ Imports:
     ggplot2 (>= 2.0.0),
     lme4 (>= 1.1-8),
     loo (>= 0.1.4),
-    rstan (>= 2.8.9),
+    rstan (>= 2.9.0),
     shinystan (>= 2.0.1),
     stats,
     utils
@@ -35,7 +35,7 @@ Suggests:
     rmarkdown,
     svglite,
     testthat
-LinkingTo: StanHeaders (>= 2.8.9), rstan (>= 2.8.9), BH (>= 1.58.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.9.0), rstan (>= 2.9.0), BH (>= 1.58.0), Rcpp (>=
     0.11.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
