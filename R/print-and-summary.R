@@ -144,7 +144,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     effects <- x$effects^2
     effects <- sapply(groups, FUN = function(i) {
       apply(effects[,, i, drop = FALSE], 1:2, mean)
-      })
+    })
     dim(effects) <- c(effects_dim[-3], ncol(effects))
     dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
     colnames(effects) <- paste("Mean Sq", names(groups))
@@ -166,6 +166,7 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' 
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
+#' @template args-regex-pars
 #' 
 #' @param ... Currently ignored.
 #' @param pars An optional character vector specifying a subset of parameters to
@@ -206,23 +207,27 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' summary(example_model, pars = "varying") 
 #' 
 #' @importMethodsFrom rstan summary
-summary.stanreg <- function(object, ..., pars, probs, digits = 1) {
+summary.stanreg <- function(object, ..., pars = NULL, regex_pars = NULL, 
+                            probs = NULL, digits = 1) {
   if (!used.optimizing(object)) {
-    if (!missing(pars)) pars[pars == "varying"] <- "b"
-    out <- summary(object$stanfit, pars, probs)$summary
+    args <- list(object = object$stanfit)
+    pars <- .collect_pars(object, pars, regex_pars)
+    if (!is.null(pars)) args$pars <- pars
+    if (!is.null(probs)) args$probs <- probs
+    out <- do.call("summary", args)$summary
     if ("n_eff" %in% colnames(out))
       out[, "n_eff"] <- round(out[, "n_eff"])
     if ("se_mean" %in% colnames(out)) # So people don't confuse se_mean and sd
       colnames(out)[which(colnames(out) == "se_mean")] <- "mcse"
-    if (used.variational(object)) {
-      sel <- which(rownames(out) == "log-posterior")
-      if (length(sel)) out <- out[-sel,, drop = FALSE]
-    }
+    
+    out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE),, drop = FALSE]
+    if (used.variational(object))
+      out <- out[!rownames(out) %in% "log-posterior",, drop = FALSE]
   }
   else {
-    if (!missing(probs)) 
-      warning("'probs' ignored if object$algorithm='optimizing'")
-    if (missing(pars)) {
+    if (!is.null(probs)) 
+      warning("'probs' ignored if object$algorithm='optimizing'.")
+    if (is.null(pars)) {
       mark <- names(object$coefficients)
       if (is.gaussian(object$family$family)) mark <- c(mark, "sigma")
       else if (is.nb(object$family$family)) mark <- c(mark, "overdispersion") 
