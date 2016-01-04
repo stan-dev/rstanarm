@@ -113,7 +113,7 @@
 #' fit <- example_model
 #' 
 #' # Intervals and point estimates
-#' plot(fit) + ggtitle("Posterior medians \n with 80% and 95% credible intervals")
+#' plot(fit) + ggplot2::ggtitle("Posterior medians \n with 80% and 95% credible intervals")
 #' plot(fit, pars = "size", regex_pars = "period", 
 #'      ci_level = 0.95, outer_level = 1, show_density = TRUE)
 #' 
