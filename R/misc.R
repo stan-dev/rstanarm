@@ -57,6 +57,7 @@ set_sampling_args <- function(object, prior, user_dots = list(),
       args$control$max_treedepth <- defaults$max_treedepth
     }
   }
+  args$save_warmup <- FALSE
   return(args)
 }
 
