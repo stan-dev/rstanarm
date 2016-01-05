@@ -35,7 +35,7 @@ RANEF_tol <- 0.20
 context("stan_lmer")
 test_that("stan_lmer returns expected result for slepstudy example", {
   fmla <- Reaction / 10 ~ Days + (Days | Subject)
-  fit <- stan_lmer(fmla, data = sleepstudy, 
+  fit <- stan_lmer(fmla, data = sleepstudy,
                    init_r = 0.05, chains = CHAINS, iter = ITER, seed = SEED)
   ans <- lmer(fmla, data = sleepstudy)
   expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)

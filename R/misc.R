@@ -229,6 +229,39 @@ check_constant_vars <- function(mf) {
               call. = FALSE))
 }
 
+# Regex parameter selection
+#
+# @param x stanreg object
+# @param regex_pars Character vector of patterns
+.grep_for_pars <- function(x, regex_pars) {
+  if (used.optimizing(x)) {
+    warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
+            call. = FALSE)
+    return(NULL)
+  }
+  stopifnot(is.character(regex_pars))
+  out <- unlist(lapply(seq_along(regex_pars), function(j) {
+    grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
+  }))
+  if (length(out)) return(out) 
+  else stop("No matches for regex_pars.", call. = FALSE)
+}
+
+# Combine pars and regex_pars
+#
+# @param x stanreg object
+# @param pars Character vector of parameter names
+# @param regex_pars Character vector of patterns
+.collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
+  if (is.null(pars) && is.null(regex_pars)) 
+    return(NULL)
+  if (!is.null(pars)) 
+    pars[pars == "varying"] <- "b"
+  if (!is.null(regex_pars)) 
+    pars <- c(pars, .grep_for_pars(x, regex_pars))
+  return(pars)
+}
+
 # If a is NULL (and Inf, respectively) return b, otherwise just return a
 # @param a,b Objects
 `%ORifNULL%` <- function(a, b) {

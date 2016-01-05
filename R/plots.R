@@ -25,28 +25,11 @@
     sim <- x$stanfit@sim
     allpars <- c(sim$pars_oi, sim$fnames_oi)
   }
-
+  
   m <- which(match(pars, allpars, nomatch = 0) == 0)
   if (length(m) > 0) stop("No parameter ", paste(pars[m], collapse = ', '), 
                           call. = FALSE) 
   return(unique(pars))
-}
-
-# Regex parameter selection
-# @param x stanreg object
-# @param regex_pars character vector of patterns
-.grep_for_pars <- function(x, regex_pars) {
-  if (used.optimizing(x)) {
-    warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
-            call. = FALSE)
-    return(NULL)
-  }
-  stopifnot(is.character(regex_pars))
-  out <- unlist(lapply(seq_along(regex_pars), function(j) {
-    grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
-  }))
-  if (length(out)) return(out) 
-  else stop("No matches for regex_pars.", call. = FALSE)
 }
 
 # Prepare argument list to pass to plotting function
@@ -55,16 +38,8 @@
 #   missing)
 .set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
   args <- list(x, ...)
-  if (is.null(pars) && is.null(regex_pars)) 
-    return(args)
-  
-  if (!is.null(pars)) 
-    pars[pars == "varying"] <- "b"
-  
-  if (!is.null(regex_pars)) 
-    pars <- c(pars, .grep_for_pars(x, regex_pars))
-  
-  args$pars <- .check_plotting_pars(x, pars)
+  pars <- .collect_pars(x, pars, regex_pars)
+  if (!is.null(pars)) args$pars <- .check_plotting_pars(x, pars)
   return(args)
 }
 
@@ -110,6 +85,7 @@
 #' @export
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
+#' @template args-regex-pars
 #' @param plotfun A character string naming the plotting function to apply to 
 #'   the stanreg object. See \code{\link{plots}} for the names and descriptions.
 #'   Also see the Examples section below. \code{plotfun} can be either the full 
@@ -120,10 +96,6 @@
 #'   fit using \code{algorithm="optimizing"} as there is currently only one
 #'   plotting function for these models.
 #' @param pars An optional character vector of parameter names.
-#' @param regex_pars An optional character vector of \link[=grep]{regular 
-#'   expressions} to use for parameter selection. Can be used in place of 
-#'   \code{pars} or in addition to \code{pars}. Currently, the \code{regex_pars}
-#'   argument is ignored for models fit using \code{algorithm="optimizing"}.
 #' @param ... Additional arguments to pass to \code{plotfun} (see
 #'   \code{\link{plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
@@ -141,8 +113,12 @@
 #' fit <- example_model
 #' 
 #' # Intervals and point estimates
+<<<<<<< HEAD
 #' plot(fit) + 
 #' ggplot2::ggtitle("Posterior medians \n with 80% and 95% credible intervals")
+=======
+#' plot(fit) + ggplot2::ggtitle("Posterior medians \n with 80% and 95% credible intervals")
+>>>>>>> 17aaf588d095e9b8c293956a17bc1b34ae837d41
 #' plot(fit, pars = "size", regex_pars = "period", 
 #'      ci_level = 0.95, outer_level = 1, show_density = TRUE)
 #' 
@@ -181,7 +157,8 @@
 #' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
 #' 
-plot.stanreg <- function(x, plotfun = NULL, pars = NULL, regex_pars = NULL, ...) {
+plot.stanreg <- function(x, plotfun = NULL, pars = NULL, 
+                         regex_pars = NULL, ...) {
   args <- .set_plotting_args(x, pars, regex_pars, ...)
   fun <- .set_plotting_fun(x, plotfun)
   do.call(fun, args)
