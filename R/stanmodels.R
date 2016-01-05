@@ -18,14 +18,14 @@
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
-make_stanmodel <- function(f) {
+make_stanmodel <- function(f) { # nocov start
   model_cppname <- sub("\\.stan$", "", basename(f))
   stanfit <- rstan::stanc_builder(f)
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
   return(do.call(methods::new, args = c(stanfit[-(1:3)], Class = "stanmodel", 
                  mk_cppmodule = function(x) get(paste0("model_", model_cppname)))))
-}
+} # nocov end
 
 stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
 stanmodels <- sapply(stan_files, make_stanmodel)

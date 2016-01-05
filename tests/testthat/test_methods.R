@@ -193,6 +193,7 @@ test_that("print and summary methods don't throw errors", {
   expect_equal(colnames(s), colnames(d))
   expect_equal(rownames(s), rownames(d))
   
+  expect_silent(s <- summary(stan_glm_opt1))
   expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
   expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
