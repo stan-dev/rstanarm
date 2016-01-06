@@ -6,7 +6,7 @@ warnings_are_errors: TRUE
 os:
   - osx
   
-r_github_package:
+r_github_packages:
   - stan-dev/shinystan
 
 r_binary_packages:
