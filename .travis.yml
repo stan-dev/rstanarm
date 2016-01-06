@@ -5,6 +5,9 @@ warnings_are_errors: TRUE
 
 os:
   - osx
+  
+r_github_package:
+  - stan-dev/shinystan
 
 r_binary_packages:
   - covr
