@@ -23,9 +23,11 @@ set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
 CORES <- 1
+REFRESH <- ITER
 
 stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                                 chains = CHAINS, cores = CORES, seed = SEED))
+                                 chains = CHAINS, cores = CORES, seed = SEED, 
+                                 refresh = REFRESH))
 stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000, 
                        seed = SEED)
@@ -35,17 +37,17 @@ lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 stan_lmer1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), 
                                         data = Penicillin, iter = ITER, 
                                         chains = CHAINS, cores = CORES,
-                                        seed = SEED))
+                                        seed = SEED, refresh = REFRESH))
 lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
 stan_lmer2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), 
                                         data = sleepstudy, iter = ITER, 
                                         chains = CHAINS, cores = CORES,
-                                        seed = SEED))
+                                        seed = SEED, refresh = REFRESH))
 
 stan_polr1 <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph,
                                        prior = R2(0.2, "mean"), init_r = 0.1, 
                                        iter = ITER, chains = CHAINS, 
-                                       cores = CORES, seed = SEED))
+                                       cores = CORES, seed = SEED, refresh = REFRESH))
 polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
 
 att_names <- function(object) {

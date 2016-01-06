@@ -28,10 +28,10 @@ test_that("stan_polr returns expected result for esoph example", {
   library(MASS)
   f <- tobgp ~ agegp + alcgp
   fit <- stan_polr(f, data = esoph, prior = R2(location = 0.4, what = "median"),
-                   chains = 2, iter = 400, seed = SEED)
+                   chains = 2, iter = 400, seed = SEED, refresh = 400)
   fit <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                    prior = R2(location = 0.4), method = "loglog",
-                   chains = 2, iter = 400, seed = SEED)
+                   chains = 2, iter = 400, seed = SEED, refresh = 400)
   
   # fit <- stan_polr(f, data = esoph, prior = NULL, 
   #                  algorithm = "fullrank", seed = SEED)

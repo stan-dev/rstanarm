@@ -157,7 +157,8 @@ test_that("check_constant_vars works", {
   esoph2 <- esoph
   esoph2$agegp[1:nrow(esoph2)] <- "75+"
   expect_error(stan_polr(tobgp ~ agegp, data = esoph2, cores = 1, iter = 10,
-                         prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED), 
+                         prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED, 
+                         refresh = 10), 
                regexp = "agegp")
 })
 
@@ -179,9 +180,10 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 2))
+fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 2, 
+                                 refresh = 10))
 fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                                    iter = 5, chains = 2))
+                                    iter = 5, chains = 2, refresh = 5))
 fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
 fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
@@ -236,7 +238,7 @@ test_that("get_x, get_y, get_z work", {
   expect_equivalent(z_ans2, get_z(fit2))
   
   fit3 <- suppressWarnings(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
-                                      iter = 5, chains = 1))
+                                      iter = 5, chains = 1, refresh = 5))
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
@@ -307,7 +309,8 @@ test_that("linkinv methods work", {
                                          method = "loglog",
                                          cores = 1, chains = 1, iter = 5,
                                          prior = R2(0.2, "mean"), 
-                                         init_r = 0.1, seed = 12345))
+                                         init_r = 0.1, seed = 12345, 
+                                         refresh = 5))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)

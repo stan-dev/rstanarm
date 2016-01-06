@@ -23,9 +23,10 @@ SEED <- 123
 ITER <- 10
 CHAINS <- 2
 CORES <- 1
+REFRESH <- ITER
 
 fit <- example_model
-fit2 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+fit2 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, refresh = REFRESH,
                                   chains = CHAINS, cores = CORES, seed = SEED))
 
 context("pp_check")

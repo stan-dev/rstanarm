@@ -23,6 +23,7 @@ SEED <- 123
 CHAINS <- 2
 ITER <- 100
 set.seed(SEED)
+REFRESH <- ITER
 
 plink <- function(fit, nd = NULL, sef = TRUE) 
   predict(fit, newdata = nd, type = "link", se.fit = sef)
@@ -38,7 +39,7 @@ test_that("predict ok for binomial", {
   SF <- cbind(numdead, numalive = 20-numdead)
   
   glmfit <- glm(SF ~ sex*ldose, family = binomial)
-  stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, 
+  stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, refresh = REFRESH,
                       chains = CHAINS, iter = ITER, seed = SEED)
   stanfit_opt <- update(stanfit, algorithm = "optimizing")
   
@@ -68,7 +69,7 @@ test_that("predict ok for binomial", {
 
 test_that("predict ok for gaussian", {
   glmfit <- glm(mpg ~ wt, data = mtcars)
-  stanfit <- stan_glm(mpg ~ wt, data = mtcars, 
+  stanfit <- stan_glm(mpg ~ wt, data = mtcars, refresh = 2 * REFRESH,
                       chains = CHAINS, iter = 2 * ITER, seed = SEED)
   stanfit_opt <- update(stanfit, algorithm = "optimizing")
   
@@ -99,7 +100,7 @@ test_that("predict ok for Poisson", {
 
   glmfit <- glm(counts ~ outcome + treatment, data = dat, family = poisson())
   stanfit <- stan_glm(counts ~ outcome + treatment, 
-                      data = dat, family = poisson(), 
+                      data = dat, family = poisson(), refresh = REFRESH,
                       chains = CHAINS, iter = ITER, seed = SEED)
   stanfit_opt <- update(stanfit, algorithm = "optimizing")
 

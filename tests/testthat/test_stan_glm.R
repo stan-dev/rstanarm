@@ -77,11 +77,11 @@ test_that("stan_glm returns something for glm negative binomial example", {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
                      seed  = SEED, chains = 1, iter = 500,
-                     prior_PD = TRUE, QR = TRUE)
+                     prior_PD = TRUE, QR = TRUE, refresh = 500)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
                         seed  = SEED, chains = 1, iter = 500,
-                        prior_PD = TRUE, QR = TRUE)
+                        prior_PD = TRUE, QR = TRUE, refresh = 500)
     expect_is(fit1, "stanreg")
     expect_is(fit2, "stanreg")
     expect_equal(as.matrix(fit1), as.matrix(fit2))
