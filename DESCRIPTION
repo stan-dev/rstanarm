@@ -21,7 +21,7 @@ Imports:
     lme4 (>= 1.1-8),
     loo (>= 0.1.4),
     rstan (>= 2.9.0),
-    shinystan (>= 2.0.1),
+    shinystan (>= 2.1.0),
     stats,
     utils
 Suggests:
