@@ -14,6 +14,16 @@ r_binary_packages:
   - KernSmooth
   - knitr
   - testthat
+  - StanHeaders
+  - inline 
+  - Rcpp
+  - coda
+  - BH
+  - RcppEigen
+  - RInside
+  - ggplot2
+  - gridExtra
+  - rstan
 
 env:
   matrix: 
@@ -28,12 +38,6 @@ before_install:
   - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
-  - git clone --recursive "http://github.com/stan-dev/rstan/"
-  - rm -rf rstan/StanHeaders/inst/include/mathlib/lib
-  - R CMD INSTALL rstan/StanHeaders
-  - Rscript -e "install.packages(c('inline', 'Rcpp', 'coda', 'BH', 'RcppEigen', 'RInside', 'RUnit', 'ggplot2', 'gridExtra'), repos='http://cran.rstudio.com')"
-  - R CMD INSTALL rstan/rstan/rstan
-  - rm -rf rstan
 
 after_success:
   - Rscript -e 'covr::codecov()'
