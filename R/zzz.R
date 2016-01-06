@@ -15,10 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-.onLoad <- function(libname, pkgname) {
+.onLoad <- function(libname, pkgname) { # nocov start
   if (!("methods" %in% .packages())) attachNamespace("methods")
   loadRcppModules()
-}
+} # nocov end
 
 .onAttach <- function(...) {
   rstanarmLib <- dirname(system.file(package = "rstanarm"))

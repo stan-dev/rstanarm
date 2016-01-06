@@ -49,6 +49,9 @@ check_for_error <- function(fit) {
   
   expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = model.frame(fit)[1:5,]))
   expect_equal(dim(yrep6), c(3, 5))
+  
+  expect_error(posterior_predict(fit, draws = nsims + 1), 
+               regexep = "posterior sample size is only")
 }
 
 context("posterior_predict (stan_lm)")
