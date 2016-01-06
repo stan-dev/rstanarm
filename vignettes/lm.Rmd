@@ -1,7 +1,7 @@
 ---
-title: "Estimating Linear Models with the rstanarm Package"
+title: "Estimating Regularized Linear Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "12/07/2015"
+date: "01/06/2015"
 output: 
   html_document:
     self_contained: no
@@ -9,7 +9,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Regularized Linear Models}
+%\VignetteIndexEntry{stan_lm: Regularized Linear Models}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```

@@ -1,7 +1,7 @@
 ---
 title: "How to Use the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "12/07/2015"
+date: "01/06/2015"
 output: 
   html_document: 
     self_contained: no

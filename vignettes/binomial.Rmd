@@ -1,7 +1,7 @@
 ---
-title: "Estimating Generalized Linear Models for Binary and Binomial Data with the rstanarm Package"
+title: "Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "12/07/2015"
+date: "01/06/2015"
 output: 
   html_document: 
     self_contained: no
@@ -9,7 +9,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{GLMs for Binary and Binomial Data}
+%\VignetteIndexEntry{stan_glm: GLMs for Binary and Binomial Data}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -303,9 +303,9 @@ counter overfitting), but in this case `fit2` represents enough of an
 improvement over `fit1` that the penalty for including `arsenic` is negligible
 (as it should be if `arsenic` is an important predictor).
 
-The vignette for `stan_lm` also has an example of using the `loo` function
-where the results are quite a bit different from what we see here and some 
-important additional considerations are discussed.
+The vignette for the `stan_lm` function also has an example of using the `loo`
+function where the results are quite a bit different from what we see here and
+some important additional considerations are discussed.
 
 # Binomial Models
 

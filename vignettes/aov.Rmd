@@ -1,7 +1,7 @@
 ---
-title: "Estimating ANOVA Models with the rstanarm Package"
+title: "Estimating ANOVA Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "12/07/2015"
+date: "01/06/2015"
 output: 
   html_document: 
     self_contained: no
@@ -9,7 +9,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{ANOVA Models}
+%\VignetteIndexEntry{stan_aov: ANOVA Models}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -63,11 +63,11 @@ of variance in the outcome attributable to the predictors under a linear model.
 This prior specification is appealing in an ANOVA context because of the 
 fundamental identity 
 $$SS_{\mbox{total}} = SS_{\mbox{model}} + SS_{\mbox{error}},$$
-where $SS$ stands for sum-of-squares. If we normalize this identity, we obtain
-the tautology $1 = R^2 + \left(1 - R^2\right)$ but it is reasonable to expect
-a researcher to have a plausible guess for $R^2$ before conducting an ANOVA.
-See the vignette entitled "Estimating Linear Models with the __rstanarm__ 
-Package" for more information on this approach.
+where $SS$ stands for sum-of-squares. If we normalize this identity, we obtain 
+the tautology $1 = R^2 + \left(1 - R^2\right)$ but it is reasonable to expect a
+researcher to have a plausible guess for $R^2$ before conducting an ANOVA. See
+the vignette for the `stan_lm` function (regularized linear models) for more
+information on this approach.
 
 If we view the ANOVA model as a difference of means, then the model could be
 estimated using the prior specification in the `stan_lmer` function. In the
@@ -80,8 +80,8 @@ $1$, which is just an standard exponential distribution. However, the shape
 and scale parameters can be specified as other positive values. This approach
 also requires specifying a prior distribution on the standard deviation of the
 errors that is independent of the prior distribution for each $\alpha_j$. See
-the vignette entitled "Estimating __lme4__-style Models with the __rstanarm__
-Pakcage" for more information on this approach.
+the vignette for the `stan_glmer` function (__lme4__-style models using
+__rstanarm__) for more information on this approach.
 
 # Example
 

@@ -1,7 +1,7 @@
 ---
-title: "Estimating Generalized Linear Models for Continuous Data with the rstanarm Package"
+title: "Estimating Generalized Linear Models for Continuous Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "12/07/2015"
+date: "01/06/2015"
 output:
   html_document:
     self_contained: no
@@ -9,7 +9,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{GLMs for Continuous Data}
+%\VignetteIndexEntry{stan_glm: GLMs for Continuous Data}
 -->
 
 ```{r, child="children/SETTINGS-knitr.txt"}
@@ -91,8 +91,8 @@ This is posterior distribution that `stan_glm` will draw from when using MCMC.
 
 The `stan_lm` function (which has its own vignette) fits regularized linear 
 models using a novel means of specifying priors for the regression coefficients.
-Here we focus on the `stan_glm` function, which simply puts independent priors
-on the regression coefficients.
+Here we focus using the `stan_glm` function, which can be used to estimate 
+linear models with independent priors on the regression coefficients.
 
 To illustrate the usage of `stan_glm` and some of the post-processing functions
 in the __rstanarm__ package we'll use a simple example from Chapter 3 of [Gelman
