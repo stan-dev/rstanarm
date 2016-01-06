@@ -22,10 +22,10 @@ output:
 
 # Introduction
 
-This vignette provides an _overview_ of how to use the functions in the
-__rstanarm__ package that focuses on commonalities. Each specific estimation
-function in the __rstanarm__ package has a separate vignette that goes into
-the particularities of that function.
+This vignette provides an _overview_ of how to use the functions in the 
+__rstanarm__ package that focuses on commonalities. The other __rstanarm__ 
+vignettes go into the particularities of each of the individual model-estimating
+functions.
 
 The goal of the __rstanarm__ package is to make Bayesian estimation
 _routine_ for the most common regression models that applied researchers use.
@@ -36,31 +36,31 @@ their existing R scripts.
 ```{r, child="children/four_steps.txt"}
 ```
 
-Step 1 is necessarily model-specific and is covered in more detail in the other
-vignettes that cover specific forms of the marginal prior distribution and
-likelihood of the outcome. It is somewhat more involved than the corresponding
-first step of a frequentist analysis, which only requires that the likelihood
-of the outcome be specified. However, the default priors in the __rstanarm__
-package should work well in many cases. Steps 2, 3, and 4 are the focus of this 
-vignette because they are largely not specific to how the joint distribution in 
-Step 1 is specified.
+Step 1 is necessarily model-specific and is covered in more detail in the other 
+vignettes that cover specific forms of the marginal prior distribution and 
+likelihood of the outcome. It is somewhat more involved than the corresponding 
+first step of a frequentist analysis, which only requires that the likelihood of
+the outcome be specified. However, the default priors in the __rstanarm__ 
+package should work well in the majority of cases. Steps 2, 3, and 4 are the
+focus of this vignette because they are largely not specific to how the joint
+distribution in Step 1 is specified.
 
-The key concept in steps 3 and 4 is the posterior predictive distribution, 
+The key concept in Step 3 and Step 4 is the posterior predictive distribution, 
 which is the distribution of the outcome implied by the model after having 
 used the observed data to update our beliefs about the unknown parameters.
 Frequentists, by definition, have no posterior predictive distribution and 
 frequentist predictions are subtly different from what applied researchers seek.
-Maximum likelihood estimates do _not_ condition on the observed outcome
-data and the uncertainty pertains to the variation in the sampling distribution
-of the estimator, i.e. the distribution of estimates that would occur if we
-could repeat the process of drawing a random sample from a well-defined 
-population and apply the estimator to each sample. It is possible to construct
-a distribution of predictions under the frequentist paradigm but it evokes the
-hypothetical of repeating the process of drawing a random sample, applying the
-estimator each time, and generating point predictions of the outcome. In
-contrast, the posterior predictive distribution conditions on the observed 
-outcome data in hand to update beliefs about the unknowns and the
-variation in the resulting distribution of predictions reflects the remaining
+Maximum likelihood estimates do _not_ condition on the observed outcome data and
+so the uncertainty in the estimates pertains to the variation in the sampling
+distribution of the estimator, i.e. the distribution of estimates that would
+occur if we could repeat the process of drawing a random sample from a
+well-defined population and apply the estimator to each sample. It is possible
+to construct a distribution of predictions under the frequentist paradigm but it
+evokes the hypothetical of repeating the process of drawing a random sample,
+applying the estimator each time, and generating point predictions of the
+outcome. In contrast, the posterior predictive distribution conditions on the
+observed outcome data in hand to update beliefs about the unknowns and the 
+variation in the resulting distribution of predictions reflects the remaining 
 uncertainty in our beliefs about the unknowns.
 
 # Step 1: Specify a posterior distribution
@@ -85,9 +85,9 @@ where $\eta_i = \alpha + \beta_1 \mbox{education}_i + \beta_2 \mbox{Female}_i$
 is the linear predictor and a function of an intercept $\left(\alpha\right)$, 
 a coefficient on the years of education $\left(\beta_1\right)$, and an 
 intercept-shift $\left(\beta_2\right)$ for the case where the respondent is 
-female. These data are organized such that $y_i$ is the number of people who 
-agree with the statement that have the same level of education and the same
-gender and $n_i - y_i$ is the number of such people who disagree with the 
+female. These data are organized such that $y_i$ is the number of respondents
+who agree with the statement that have the same level of education and the same
+gender, and $n_i - y_i$ is the number of such people who disagree with the 
 statement. The inverse link function, $p = g^{-1}\left(\eta_i \right)$, for a
 binomial likelihood can be one of several Cumulative Distribution Functions
 (CDFs) but in this case is the standard logistic CDF, 
@@ -102,6 +102,27 @@ heavy tails. In particular, we will specify seven degrees of freedom.
 Note that these purported beliefs may well be more skeptical than your 
 actual beliefs, which are probably that women and people with more
 education have less conservative societal views.
+
+### Note on "prior beliefs" and default priors
+
+In this vignette we use the term "prior beliefs" to refer in generality to the 
+information content of the prior distribution (conditional on the model). 
+Sometimes previous research on the topic of interest motivates beliefs about 
+model parameters, but other times such work may not exist or several studies may
+make contradictory claims. Regardless, we nearly always have _some_ knowledge 
+that should be reflected in our choice of prior distributions. For example, no 
+one believes a logistic regression coefficient will be greater than five in 
+absoluate value if the predictors are scaled reasonably. You may also have seen 
+examples of so-called "non-informative" (or "vague", "diffuse", etc.) priors 
+like a normal distribution with a variance of 1000. When data are reasonably 
+scaled, these priors are almost always a bad idea for various reasons (they give
+non-trivial weight to extreme values, reduce computational efficiency, etc). The
+default priors in __rstanarm__ are designed to be _weakly informative_, by which
+we mean that they avoid placing unwarranted prior weight on nonsensical 
+parameter values and provide some regularization to avoid overfitting, but also 
+do allow for extreme values if warranted by the data. If additional information 
+is available, the weakly informative defaults can be replaced with more 
+informative priors.
 
 # Step 2: Draw from the posterior distribution
 
@@ -121,7 +142,7 @@ The p-value for the null hypothesis that $\beta_1 = 0$ is very small, while
 the p-value for the null hypothesis that $\beta_2 = 0$ is very large. However,
 frequentist p-values are awkward because they do not pertain to the probability
 that a scientific hypothesis is true but rather to the probability of observing
-a z-statistic that is so large (in magnitude) if the null hypothesis were true.
+a $z$-statistic that is so large (in magnitude) if the null hypothesis were true.
 The desire to make probabalistic statements about a scientific hypothesis is
 one reason why many people are drawn to the Bayesian approach. 
 
