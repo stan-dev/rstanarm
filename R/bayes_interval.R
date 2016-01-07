@@ -18,54 +18,59 @@
 #' Bayesian uncertainty intervals
 #' 
 #' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
-#' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the
-#' \code{prob_int} function computes Bayesian uncertainty intervals.
+#' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
+#' \code{bayes_interval} function computes Bayesian uncertainty intervals. These
+#' intervals are often referred to as \emph{credible} intervals, but we use the
+#' term \emph{uncertainty} intervals to highlight the fact that wider intervals
+#' correspond to greater uncertainty.
 #' 
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @template args-regex-pars
-#' @param type The type of interval to compute. If \code{type="central"} (the 
-#'   default), the intervals are computed from posterior quantiles. The central 
-#'   \eqn{100p}\% interval is defined by the \eqn{\alpha} and \eqn{1 - \alpha} 
-#'   quantiles, where \eqn{\alpha = (1 - p) / 2}. If \code{type="spin"}, 
-#'   shortest probability intervals are computed via \code{\link[SPIn]{SPIn}}.
-#'   A shortest probability interval is a particular type of highest probability
-#'   density (HPD) interval, i.e., the shortest interval with probability 
-#'   coverage \eqn{p}. See Liu, Gelman, and Zheng (2015) for a detailed
-#'   discussion.
-#'   
+#' @param prob A number between 0 and 1 indicating the desired posterior 
+#'   probability mass \eqn{p} to include in the intervals. The default is to 
+#'   report 50\% intervals (\code{prob=0.5}) rather than the traditionally used
+#'   95\%, although the latter can be computed by specifying \code{prob=0.95}. 
+#'   We use this default for several reasons:
+#'   \itemize{
+#'   \item Computational stability: 50\% intervals are more stable than 95\%
+#'   intervals (for which each end relies on only 2.5\% of the posterior draws).
+#'   \item More intuitive evaluation: (roughly) half of the 50\% intervals
+#'   should contain the true value.
+#'   \item In aplications, a good first step is to get a sense of where the 
+#'   parameters and predicted values will be, not to attempt an unrealistic 
+#'   near-certainty.
+#'   }
+#' @param type The type of interval to compute. Currently the only option is 
+#'   \code{"central"}, although other possibilities may be available in future
+#'   releases. A central \eqn{100p}\% interval is defined by the \eqn{\alpha}
+#'   and \eqn{1 - \alpha} quantiles, where \eqn{\alpha = (1 - p)/2}.
 #' @param pars An optional character vector of parameter names.
-#' @param prob A number between 0 and 1 indicating the desired posterior
-#'   probability mass \eqn{p} to include in the interval. The default is 0.5,
-#'   yielding a 50\% interval.
 #' @param ... Currently ignored.
 #' 
 #' @return A two-column matrix.
-#' 
-#' @references 
-#' Liu, Y., Gelman, A., and Zheng, T. (2015). Simulation-efficient shortest
-#' probability intervals. \emph{Statistics and Computing}. 25(4), 809--819.
 #'   
 #' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
 #'   optimization, can be used to compute traditional confidence intervals.
 #' 
 #' @examples 
-#' prob_int(example_model)
-#' prob_int(example_model, regex_pars = "herd")
-#' prob_int(example_model, type = "hpd", pars = "period2", prob = 0.5)
+#' bayes_interval(example_model)
+#' bayes_interval(example_model, regex_pars = "herd")
+#' bayes_interval(example_model, pars = "period2", prob = 0.9)
 #' 
-prob_int <- function(object, type = c("central", "spin"), prob = 0.5, 
+bayes_interval <- function(object, prob = 0.5, type = "central",
                     pars = NULL, regex_pars = NULL, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   if (used.optimizing(object))
-    STOP_not_optimizing("credint")
+    STOP_not_optimizing("bayes_interval")
   if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
     stop("'prob' should be a single number greater than 0 and less than 1.", 
          call. = FALSE)
+  if (!identical(type, "central"))
+    stop("Currently the only option for 'type' is 'central'.", call. = FALSE)
   
-  type <- match.arg(type)
   mat <- as.matrix.stanreg(object)
   pars <- .collect_pars(object, pars, regex_pars)
   if (!is.null(pars)) {
@@ -75,20 +80,9 @@ prob_int <- function(object, type = c("central", "spin"), prob = 0.5,
                  value = TRUE)
     mat <- mat[, pars, drop = FALSE]
   }
-  if (type == "central") {
-    alpha <- (1 - prob) / 2
-    probs <- c(alpha, 1 - alpha)
-    labs <- paste0(100 * probs, "%")
-    ci <- t(apply(mat, 2L, quantile, probs = probs))
-  } 
-  else {
-    stopifnot(type == "spin") 
-    if (!requireNamespace("SPIn", quietly = TRUE)) {
-      stop("Please install the 'SPIn' package.", call. = FALSE)
-    }
-    spin <- function(x, prob) SPIn::SPIn(x, conf = prob)[["spin"]]
-    ci <- t(apply(mat, 2L, spin, prob = prob))
-    labs <- paste0(c("lower", "upper"), 100 * prob)
-  }
+  alpha <- (1 - prob) / 2
+  probs <- c(alpha, 1 - alpha)
+  labs <- paste0(100 * probs, "%")
+  ci <- t(apply(mat, 2L, quantile, probs = probs))
   return(structure(ci, dimnames = list(colnames(mat), labs)))
 }

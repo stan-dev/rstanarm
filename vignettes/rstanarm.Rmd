@@ -163,16 +163,16 @@ womensrole_bglm_1
 ```{r, echo=FALSE}
 print(womensrole_bglm_1)
 ```
-As can be seen, the "Bayesian point estimates" --- which are represented by
-the posterior medians --- are very similar to the maximum likelihood estimates.
-Frequentists would ask whether the point estimate is greater in magnitude than
-double the estimated standard deviation of the sampling distribution. But here
-we simply have estimates of the standard deviation of the marginal posterior
-distributions, which are based on a scaling of the Median Absolute Deviation
-(MAD) from the posterior medians. In addition, using the `prob_int` function
-we can obtain a Bayesian uncertainty interval for $\beta_1$:
+As can be seen, the "Bayesian point estimates" --- which are represented by the
+posterior medians --- are very similar to the maximum likelihood estimates. 
+Frequentists would ask whether the point estimate is greater in magnitude than 
+double the estimated standard deviation of the sampling distribution. But here 
+we simply have estimates of the standard deviation of the marginal posterior 
+distributions, which are based on a scaling of the Median Absolute Deviation 
+(MAD) from the posterior medians. In addition, using the `bayes_interval`
+function we can obtain a Bayesian uncertainty interval for $\beta_1$:
 ```{r CI}
-ci95 <- prob_int(womensrole_bglm_1, pars = "education", prob = 0.95)
+ci95 <- bayes_interval(womensrole_bglm_1, prob = 0.95, pars = "education")
 round(ci95, 2)
 ```
 Unlike frequentist confidence intervals --- which are _not_ interpretable as
@@ -194,8 +194,8 @@ cov2cor(vcov(womensrole_bglm_1))
 __rstanarm__ does provide a `confint` method, although it is reserved for 
 computing confidence intervals in the case that the user elects to estimate a 
 model by (penalized) maximum likelihood. When using full Bayesian inference (the
-__rstanarm__ default) or approximate Bayesian inference the `prob_int` function
-should be used to obtain Bayesian uncertainty intervals.
+__rstanarm__ default) or approximate Bayesian inference the `bayes_interval`
+function should be used to obtain Bayesian uncertainty intervals.
 
 # Step 3: Criticize the model
 

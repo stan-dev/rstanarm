@@ -32,7 +32,6 @@ Suggests:
     knitr,
     MASS,
     rmarkdown,
-    SPIn (>= 1.1),
     svglite,
     testthat
 LinkingTo: StanHeaders (>= 2.9.0), rstan (>= 2.9.0), BH (>= 1.58.0), Rcpp (>=

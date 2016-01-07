@@ -96,42 +96,43 @@ test_that("confint method returns correct structure", {
   expect_equal(rownames(ci2), "wt")
   expect_equal(colnames(ci2), c("5 %", "95 %"))
   
-  expect_error(confint(stan_glm1), regexp = "use prob_int")
-  expect_error(confint(stan_glm_vb1), regexp = "use prob_int")
-  expect_error(confint(stan_polr1), regexp = "use prob_int")
-  expect_error(confint(stan_lmer1), regexp = "use prob_int")
-  expect_error(confint(stan_lmer2), regexp = "use prob_int")
+  expect_error(confint(stan_glm1), regexp = "use bayes_interval")
+  expect_error(confint(stan_glm_vb1), regexp = "use bayes_interval")
+  expect_error(confint(stan_polr1), regexp = "use bayes_interval")
+  expect_error(confint(stan_lmer1), regexp = "use bayes_interval")
+  expect_error(confint(stan_lmer2), regexp = "use bayes_interval")
 })
 
-test_that("prob_int returns correct structure", {
-  # NOTE: prob_int is not an S3 method but is tested here because it's the 
+test_that("bayes_interval returns correct structure", {
+  # NOTE: bayes_interval is not an S3 method but is tested here because it's the 
   # analog of confint but for MCMC and VB
-  expect_silent(ci <- prob_int(stan_glm1, prob = 0.5))
-  expect_silent(ci2 <- prob_int(stan_glm_vb1, pars = "wt", prob = 0.95))
-  expect_silent(ci3 <- prob_int(example_model, prob = 0.95, 
-                                regex_pars = "herd", type = "spin"))
-  expect_silent(ci4 <- prob_int(example_model, prob = 0.75, pars = "(Intercept)", 
-                               regex_pars = "period", type = "spin"))
-  expect_silent(ci5 <- prob_int(stan_polr1, prob = 0.8))
+  expect_silent(ci <- bayes_interval(stan_glm1, prob = 0.5))
+  expect_silent(ci2 <- bayes_interval(stan_glm_vb1, pars = "wt", prob = 0.95))
+  expect_silent(ci3 <- bayes_interval(example_model, prob = 0.95, regex_pars = "herd"))
+  expect_silent(ci4 <- bayes_interval(example_model, prob = 0.8, pars = "(Intercept)", 
+                               regex_pars = "period"))
+  expect_silent(ci5 <- bayes_interval(stan_polr1, prob = 0.8))
   expect_equal(rownames(ci), c("(Intercept)", "wt", "sigma"))
   expect_equal(rownames(ci2), "wt")
   expect_equal(rownames(ci3), rstanarm:::.bnames(rownames(example_model$stan_summary), value = TRUE)[1:15])
   expect_equal(rownames(ci4), c("(Intercept)", paste0("period", 2:4)))
   expect_equal(colnames(ci), c("25%", "75%"))
   expect_equal(colnames(ci2), c("2.5%", "97.5%"))
-  expect_equal(colnames(ci2), c("2.5%", "97.5%"))
-  expect_equal(colnames(ci3), c("lower95", "upper95"))
-  expect_equal(colnames(ci4), c("lower75", "upper75"))
+  expect_equal(colnames(ci3), c("2.5%", "97.5%"))
+  expect_equal(colnames(ci4), c("10%", "90%"))
+  expect_equal(colnames(ci5), c("10%", "90%"))
   
-  expect_error(prob_int(stan_glm_opt1), regexp = "not available")
-  expect_error(prob_int(lm(mpg ~ wt, data = mtcars)), 
+  expect_error(bayes_interval(stan_glm1, type = "HPD"), 
+               regexp = "only option for 'type' is 'central'")
+  expect_error(bayes_interval(stan_glm_opt1), regexp = "not available")
+  expect_error(bayes_interval(lm(mpg ~ wt, data = mtcars)), 
                regexp = "not a stanreg object")
   
   prob_msg <- "'prob' should be a single number greater than 0 and less than 1."
-  expect_error(prob_int(stan_glm1, prob = c(0.25, 0.75)), regexp = prob_msg)
-  expect_error(prob_int(stan_glm1, prob = 0), regexp = prob_msg)
-  expect_error(prob_int(stan_glm1, prob = 1), regexp = prob_msg)
-  expect_error(prob_int(stan_glm1, prob = 2), regexp = prob_msg)
+  expect_error(bayes_interval(stan_glm1, prob = c(0.25, 0.75)), regexp = prob_msg)
+  expect_error(bayes_interval(stan_glm1, prob = 0), regexp = prob_msg)
+  expect_error(bayes_interval(stan_glm1, prob = 1), regexp = prob_msg)
+  expect_error(bayes_interval(stan_glm1, prob = 2), regexp = prob_msg)
 })
 
 test_that("log_lik method works", {
