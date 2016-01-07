@@ -16,10 +16,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #' Leave-one-out cross-validation (LOO)
 #' 
-#' For models fit using MCMC (\code{algorithm="sampling"}), compute approximate
-#' leave-one-out cross-validation (LOO) or the Widely Applicable Information
-#' Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Compare
-#' two or more models using the \code{\link[loo]{compare}} function.
+#' For models fit using MCMC, compute approximate leave-one-out cross-validation
+#' (LOO) or the Widely Applicable Information Criterion (WAIC) using the
+#' \pkg{\link[=loo-package]{loo}} package. Compare two or more models using the
+#' \code{\link[loo]{compare}} function.
 #' 
 #' @aliases loo waic compare
 #'

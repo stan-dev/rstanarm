@@ -35,8 +35,7 @@ ppcheck <- function(object,
 #' Graphical posterior predictive checks
 #' 
 #' Various plots comparing the observed outcome variable \eqn{y} to simulated 
-#' datasets \eqn{yrep} from the \link[=posterior_predict]{posterior predictive
-#' distribution}.
+#' datasets \eqn{yrep} from the posterior predictive distribution.
 #' 
 #' @export
 #' @templateVar bdaRef (Ch. 6)
@@ -47,17 +46,17 @@ ppcheck <- function(object,
 #'   \code{"distributions"}, \code{"residuals"}, \code{"scatter"}, 
 #'   \code{"test"}. See Details for descriptions.
 #' @param nreps The number of \eqn{yrep} datasets to generate from the posterior
-#'   predictive distribution and show in the plots. The default is 
-#'   \code{nreps=3} for \code{check="residuals"} and \code{nreps=8} for
-#'   \code{check="distributions"}. If \code{check="test"}, \code{nreps} is
-#'   ignored and the number of simulated datasets is the number of post-warmup
-#'   draws from the posterior distribution. If \code{check="scatter"},
-#'   \code{nreps} is not ignored but defaults to the number of post-warmup
-#'   draws.
+#'   predictive distribution (\code{\link{posterior_predict}}) and show in the
+#'   plots. The default is \code{nreps=3} for \code{check="residuals"} and
+#'   \code{nreps=8} for \code{check="distributions"}. If \code{check="test"},
+#'   \code{nreps} is ignored and the number of simulated datasets is the number
+#'   of post-warmup draws from the posterior distribution. If
+#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
+#'   number of post-warmup draws.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
 #' @param overlay For \code{check="distributions"} only, should distributions be
-#'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the
+#'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the 
 #'   default) or as separate histograms (\code{FALSE})?
 #' @param test For \code{check="test"} only, a character vector (of length 1 or 
 #'   2) naming a single function or a pair of functions. The function(s) should 

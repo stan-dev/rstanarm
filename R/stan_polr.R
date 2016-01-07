@@ -203,4 +203,3 @@ stan_polr <- function(formula, data, weights, ..., subset,
   class(out) <- c("stanreg", "polr")
   return(out)
 }
-

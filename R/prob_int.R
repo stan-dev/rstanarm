@@ -37,7 +37,7 @@
 #'   
 #' @param pars An optional character vector of parameter names.
 #' @param prob A number between 0 and 1 indicating the desired posterior
-#'   probability mass $\eqn{p}$ to include in the interval. The default is 0.5,
+#'   probability mass \eqn{p} to include in the interval. The default is 0.5,
 #'   yielding a 50\% interval.
 #' @param ... Currently ignored.
 #' 
@@ -46,10 +46,9 @@
 #' @references 
 #' Liu, Y., Gelman, A., and Zheng, T. (2015). Simulation-efficient shortest
 #' probability intervals. \emph{Statistics and Computing}. 25(4), 809--819.
-#' \url{http://www.stat.columbia.edu/~gelman/research/published/spin.pdf}
 #'   
 #' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
-#'   optimiziation, can be used to compute traditional confidence intervals.
+#'   optimization, can be used to compute traditional confidence intervals.
 #' 
 #' @examples 
 #' prob_int(example_model)

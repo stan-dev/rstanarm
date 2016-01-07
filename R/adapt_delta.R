@@ -19,9 +19,10 @@
 #' @name adapt_delta
 #' @template reference-stan-manual
 #'   
-#' @details For the No-U-Turn Sampler (NUTS) (\code{algorithm='sampling'}), 
-#' \code{adapt_delta} is the target average proposal acceptance probability for 
-#' adaptation.
+#' @details For the No-U-Turn Sampler (NUTS), the variant of Hamiltonian Monte
+#'   Carlo used used by \pkg{rstanarm}, \code{adapt_delta} is the target average
+#'   proposal acceptance probability for adaptation. \code{adapt_delta} is
+#'   ignored if \code{algorithm} is not \code{"sampling"}.
 #' 
 #' The default value of \code{adapt_delta} is 0.95, except when the prior for
 #' the regression coefficients is \code{\link{R2}}, \code{\link{hs}},

@@ -74,12 +74,10 @@
 
 #' Plot method for stanreg objects
 #' 
-#' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
-#' variational approximations (\code{algorithm="meanfield"} or 
-#' \code{algorithm="fullrank"}) there are a variety of plots that can be 
-#' generated. For models fit with \code{algorithm="optimizing"} the regression 
-#' coefficients and standard errors are passed to \code{\link[arm]{coefplot}} 
-#' (\pkg{arm}).
+#' For models fit using MCMC or one of the variational approximations, there are
+#' a variety of plots that can be generated. For models fit using optimization,
+#' the regression coefficients and standard errors are passed to
+#' \code{\link[arm]{coefplot}} (\pkg{arm}).
 #' 
 #' @method plot stanreg
 #' @export
@@ -102,8 +100,8 @@
 #'
 #' @return In most cases, a ggplot object (or several) that can be further 
 #'   customized using the \pkg{ggplot2} package. The exception is for models fit
-#'   using \code{algorithm="optimizing"}, in which case a plot is produced but 
-#'   nothing is returned.
+#'   using \code{"optimizing"} as the estimation algorithm, in which case a plot
+#'   is produced but nothing is returned.
 #'
 #' @seealso \code{\link{plots}} for details on the individual plotting
 #'   functions.

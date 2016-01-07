@@ -32,7 +32,9 @@
 #' @return A vector if \code{se.fit} is \code{FALSE} and a list if \code{se.fit}
 #'   is \code{TRUE}.
 #'
-#' @seealso \code{\link{posterior_predict}}, \code{\link[stats]{predict.glm}}
+#' @seealso \code{\link{posterior_predict}} to draw from the posterior 
+#'   predictive distribution for models fit using MCMC or variational 
+#'   approximation.
 #' 
 predict.stanreg <- function(object, ..., newdata = NULL, 
                             type = c("link", "response"), se.fit = FALSE) {

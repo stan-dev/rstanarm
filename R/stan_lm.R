@@ -59,14 +59,14 @@
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
-#'   \code{\link[stats]{lm}} function but rather than choosing the parameters
-#'   to minimize the sum of squared residuals, samples from the posterior
-#'   distribution (if \code{algorithm = "sampling"}) are drawn using MCMC. The
-#'   \code{stan_lm} function has a formula-based interface and would usually
-#'   be called by users but the \code{stan_lm.fit} and \code{stan_lm.wfit}
-#'   functions might be called by other functions that parse the data 
-#'   themselves and are analagous to \code{\link[stats]{lm.fit}} and
-#'   \code{\link[stats]{lm.wfit}} respectively.
+#'   \code{\link[stats]{lm}} function but rather than choosing the parameters to
+#'   minimize the sum of squared residuals, samples from the posterior 
+#'   distribution are drawn using MCMC (if \code{algorithm} is
+#'   \code{"sampling"}). The \code{stan_lm} function has a formula-based
+#'   interface and would usually be called by users but the \code{stan_lm.fit}
+#'   and \code{stan_lm.wfit} functions might be called by other functions that
+#'   parse the data themselves and are analagous to \code{\link[stats]{lm.fit}}
+#'   and \code{\link[stats]{lm.wfit}} respectively.
 #'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter
@@ -92,7 +92,7 @@
 #' thorough descriptions and examples.
 #' 
 #' Also see \code{\link{stan_glm}}, which --- if \code{family =
-#' gaussian(link = "identity")} --- also estimates a linear model with
+#' gaussian(link="identity")} --- also estimates a linear model with
 #' normally-distributed errors but specifies different priors.
 #'   
 #'   

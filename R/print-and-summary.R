@@ -44,14 +44,14 @@
 #' @return Returns \code{x}, invisibly.
 #' @details 
 #' \subsection{Point estimates}{
-#' Regardless of the estimation algorithm, point estimates are medians computed
-#' from simulations. For \code{algorithm="sampling"} the posterior sample is 
-#' used, for \code{'optimizing'} the simulations are generated from the 
-#' asymptotic Gaussian sampling distribution of the parameters, and for 
-#' \code{"meanfield"} and \code{"fullrank"} draws from the variational 
-#' approximation to the posterior are used. In all cases, the point estimates 
-#' reported are the same as the values returned by 
-#' \code{\link[=coef.stanreg]{coef}}.
+#' Regardless of the estimation algorithm, point estimates are medians computed 
+#' from simulations. For models fit using MCMC (\code{"sampling"}) the posterior
+#' sample is used. For optimization (\code{"optimizing"}), the simulations are
+#' generated from the asymptotic Gaussian sampling distribution of the
+#' parameters. For the \code{"meanfield"} and \code{"fullrank"} variational
+#' approximations, draws from the variational approximation to the posterior are
+#' used. In all cases, the point estimates reported are the same as the values
+#' returned by \code{\link[=coef.stanreg]{coef}}.
 #' }
 #' \subsection{Uncertainty estimates}{
 #' The 'standard errors' reported (labeled MAD_SD in the print output) are 
@@ -64,16 +64,15 @@
 #' \subsection{Additional output}{
 #' For models fit using MCMC or a variational approximation, the median and 
 #' MAD_SD are also reported for mean_PPD, the sample average (\eqn{X = 
-#' \bar{X}}{X = xbar}) \code{\link[=posterior_predict]{posterior predictive 
-#' distribution}} of the outcome.
+#' \bar{X}}{X = xbar}) posterior predictive distribution of the outcome.
 #' 
-#' For \code{\link[=stan_glmer]{GLMs with group-specific terms}} the printed 
+#' For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
 #' output also shows point estimates of the standard deviations of the group 
 #' effects (and correlations if there are both intercept and slopes that vary by
 #' group).
 #' 
-#' For \code{\link[=stan_aov]{analysis of variance}} models, an ANOVA-like table
-#' is also displayed.
+#' For analysis of variance models (see \code{\link{stan_aov}}) models, an
+#' ANOVA-like table is also displayed.
 #' }
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}

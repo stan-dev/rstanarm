@@ -41,15 +41,15 @@
 #'   
 #' \describe{
 #' \item{\code{confint}}{
-#' For models fit using \code{algorithm="optimizing"}, confidence intervals are 
+#' For models fit using optimization, confidence intervals are 
 #' returned via a call to \code{\link[stats]{confint.default}}. If 
-#' \code{algorithm="sampling"}, \code{"meanfield"}, or \code{"fullrank"} the 
-#' \code{\link{prob_int}} function should be used to compute Bayesian
-#' uncertainty intervals.
+#' \code{algorithm} is \code{"sampling"}, \code{"meanfield"}, or
+#' \code{"fullrank"} the \code{\link{prob_int}} function should be used to
+#' compute Bayesian uncertainty intervals.
 #' }
 #' 
 #' \item{\code{log_lik}}{
-#' For models fit using \code{algorithm="sampling"} only, the \code{log_lik}
+#' For models fit using MCMC only, the \code{log_lik}
 #' function returns the \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
 #' where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
 #' of data points. Note: we use \code{log_lik} rather than defining a
@@ -73,10 +73,11 @@
 #' }
 #' }
 #' 
-#' @seealso Some other S3 methods for stanreg objects have separate 
-#'   documentation, including \code{\link{as.matrix.stanreg}},
-#'   \code{\link{plot.stanreg}}, \code{\link{print.stanreg}},
-#'   \code{\link{summary.stanreg}}.
+#' @seealso \code{\link{prob_int}} for Bayesian uncertainty intervals.
+#' 
+#' Other S3 methods for stanreg objects, which have separate documentation,
+#' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}},
+#' \code{\link{print.stanreg}}, and \code{\link{summary.stanreg}}.
 #' 
 NULL
 
