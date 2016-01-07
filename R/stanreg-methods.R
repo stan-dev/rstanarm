@@ -33,7 +33,7 @@
 #' @param level For \code{confint}, a number between 0 and 1 indicating the 
 #'   confidence level to use.
 #' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
-#'   covariance matrix is return. If \code{TRUE}, the correlation matrix is
+#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
 #'   returned instead.
 #' 
 #' @details Most of these methods are similar to the methods defined for objects
@@ -44,7 +44,7 @@
 #' For models fit using optimization, confidence intervals are 
 #' returned via a call to \code{\link[stats]{confint.default}}. If 
 #' \code{algorithm} is \code{"sampling"}, \code{"meanfield"}, or
-#' \code{"fullrank"} the \code{\link{prob_int}} function should be used to
+#' \code{"fullrank"}, the \code{\link{bayes_interval}} function should be used to
 #' compute Bayesian uncertainty intervals.
 #' }
 #' 
@@ -59,8 +59,8 @@
 #' }
 #' 
 #' \item{\code{residuals}}{
-#' Residuals are \emph{always} of type \code{'response'} 
-#' (not \code{'deviance'} residuals or any other type). 
+#' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
+#' residuals or any other type).
 #' }
 #' \item{\code{coef}}{
 #' Medians are used for point estimates. See the \emph{Point estimates} section
@@ -73,7 +73,7 @@
 #' }
 #' }
 #' 
-#' @seealso \code{\link{prob_int}} for Bayesian uncertainty intervals.
+#' @seealso \code{\link{bayes_interval}} for Bayesian uncertainty intervals.
 #' 
 #' Other S3 methods for stanreg objects, which have separate documentation,
 #' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}},
@@ -93,7 +93,7 @@ coef.stanreg <- function(object, ...) {
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (!used.optimizing(object)) {
     stop("For models fit using MCMC or a variational approximation please use ", 
-         "prob_int() to obtain Bayesian interval estimates.", call. = FALSE)
+         "bayes_interval() to obtain Bayesian interval estimates.", call. = FALSE)
   }
   confint.default(object, parm, level, ...)
 }
