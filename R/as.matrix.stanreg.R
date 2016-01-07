@@ -65,7 +65,7 @@
 #' print(nrow(draws)) # 1000 draws are taken
 #' }
 #' 
-as.matrix.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {
+as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
   NO_DRAWS <- "No draws found."
   pars <- .collect_pars(x, pars, regex_pars)
   no_user_pars <- is.null(pars)
@@ -97,7 +97,6 @@ as.matrix.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {
 
 #' @rdname as.matrix.stanreg
 #' @export
-#' 
-as.data.frame.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {
-  as.data.frame(as.matrix.stanreg(x, pars, regex_pars, ...))
+as.data.frame.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
+  as.data.frame(as.matrix.stanreg(x, pars = pars, regex_pars = regex_pars, ...))
 }
