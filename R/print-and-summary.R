@@ -180,9 +180,9 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   an optional numeric vector of probabilities passed to 
 #'   \code{\link[stats]{quantile}}.
 #' @param digits Number of digits to use for formatting numbers when printing. 
-#'   When calling the \code{print} method directly, if \code{digits} is not 
-#'   specified then it is taken from the \code{summary.stanreg} object.
-#' 
+#'   When calling \code{summary}, the value of digits is stored as the 
+#'   \code{"print.digits"} attribute of the returned object.
+#'   
 #' @return The \code{summary} method returns an object of class 
 #'   \code{"summary.stanreg"}, which is a matrix of summary statistics and 
 #'   diagnostics, with attributes storing information for use by the
@@ -207,22 +207,40 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' summary(example_model, pars = "varying") 
 #' 
 #' @importMethodsFrom rstan summary
-summary.stanreg <- function(object, ..., pars = NULL, regex_pars = NULL, 
-                            probs = NULL, digits = 1) {
+summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
+                            probs = NULL, ..., digits = 1) {
+  mer <- !is.null(object$glmod)
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
-    pars <- .collect_pars(object, pars, regex_pars)
-    if (!is.null(pars)) args$pars <- pars
     if (!is.null(probs)) args$probs <- probs
     out <- do.call("summary", args)$summary
-    if ("n_eff" %in% colnames(out))
-      out[, "n_eff"] <- round(out[, "n_eff"])
-    if ("se_mean" %in% colnames(out)) # So people don't confuse se_mean and sd
-      colnames(out)[which(colnames(out) == "se_mean")] <- "mcse"
-    
+    pars <- .collect_pars(object, pars, regex_pars)
+    if (is.null(pars)) {
+      if (used.variational(object))
+        out <- out[!rownames(out) %in% "log-posterior",, drop = FALSE]
+    }
+    if (!is.null(pars)) {
+      pars2 <- NA
+      if ("alpha" %in% pars) pars2 <- c(pars2, "(Intercept)")
+      if ("beta" %in% pars) {
+        beta_nms <- if (mer) names(fixef(object)) else names(object$coefficients)
+        pars2 <- c(pars2, setdiff(beta_nms, "(Intercept)"))
+      }
+      if ("b" %in% pars) {
+        if (mer) pars2 <- c(pars2, .bnames(rownames(object$stan_summary), value = TRUE))
+        else warning("No group-specific parameters. 'varying' ignored.", 
+                     call. = FALSE)
+      }
+      pars2 <- c(pars2, setdiff(pars, c("alpha", "beta", "varying")))
+      pars <- pars2[!is.na(pars2)]
+      out <- out[rownames(out) %in% pars,, drop = FALSE]
+    }
     out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE),, drop = FALSE]
-    if (used.variational(object))
-      out <- out[!rownames(out) %in% "log-posterior",, drop = FALSE]
+    stats <- colnames(out)
+    if ("n_eff" %in% stats)
+      out[, "n_eff"] <- round(out[, "n_eff"])
+    if ("se_mean" %in% stats) # So people don't confuse se_mean and sd
+      colnames(out)[stats %in% "se_mean"] <- "mcse"
   }
   else {
     if (!is.null(probs)) 
@@ -246,7 +264,7 @@ summary.stanreg <- function(object, ..., pars = NULL, regex_pars = NULL,
             algorithm = object$algorithm,
             posterior_sample_size = .posterior_sample_size(object),
             nobs = nobs(object),
-            ngrps = if (!is.null(object$glmod)) ngrps(object) else NULL,
+            ngrps = if (mer) ngrps(object) else NULL,
             print.digits = digits, 
             class = "summary.stanreg")
 }
@@ -256,7 +274,7 @@ summary.stanreg <- function(object, ..., pars = NULL, regex_pars = NULL,
 #' @method print summary.stanreg
 #'
 #' @param x An object of class \code{"summary.stanreg"}.
-print.summary.stanreg <- function(x, digits = attr(x, "print.digits"), ...) {
+print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), ...) {
   atts <- attributes(x)
   # digits <- dots$digits %ORifNULL% atts$print.digits
   print(atts$call)
