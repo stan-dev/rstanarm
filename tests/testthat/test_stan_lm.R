@@ -44,6 +44,14 @@ test_that("stan_lm returns expected result for trees example", {
   expect_equal(fit_sigma, lm_sigma, tol = threshold)
 })
 
+test_that("stan_lm doesn't break with less common priors", {
+  # prior = NULL
+  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, prior = NULL,
+                iter = 10, chains = 1, seed = SEED), regexp = "SAMPLING")
+  # prior_intercept = normal()
+  expect_output(update(fit, prior_intercept = normal()), regexp = "SAMPLING")
+})
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
