@@ -44,7 +44,7 @@
 #' For models fit using optimization, confidence intervals are 
 #' returned via a call to \code{\link[stats]{confint.default}}. If 
 #' \code{algorithm} is \code{"sampling"}, \code{"meanfield"}, or
-#' \code{"fullrank"}, the \code{\link{bayes_interval}} function should be used to
+#' \code{"fullrank"}, the \code{\link{posterior_interval}} function should be used to
 #' compute Bayesian uncertainty intervals.
 #' }
 #' 
@@ -73,7 +73,7 @@
 #' }
 #' }
 #' 
-#' @seealso \code{\link{bayes_interval}} for Bayesian uncertainty intervals.
+#' @seealso \code{\link{posterior_interval}} for Bayesian uncertainty intervals.
 #' 
 #' Other S3 methods for stanreg objects, which have separate documentation,
 #' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}},
@@ -93,7 +93,7 @@ coef.stanreg <- function(object, ...) {
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (!used.optimizing(object)) {
     stop("For models fit using MCMC or a variational approximation please use ", 
-         "bayes_interval() to obtain Bayesian interval estimates.", call. = FALSE)
+         "posterior_interval() to obtain Bayesian interval estimates.", call. = FALSE)
   }
   confint.default(object, parm, level, ...)
 }

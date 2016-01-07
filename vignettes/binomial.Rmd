@@ -175,15 +175,15 @@ cores we want the computer to utilize) and `seed`
 `stan_glm` documentation (`help(stan_glm, package = 'rstanarm')`).
 
 To get a sense for the uncertainty in our estimates we can use the
-`bayes_interval` function to get Bayesian uncertainty intervals. The uncertainty
+`posterior_interval` function to get Bayesian uncertainty intervals. The uncertainty
 intervals are computed by finding the relevant quantiles of the draws from the
 posterior distribution. For example, to compute 50% intervals we use:
 
 ```{r, ARSENIC-CI}
-round(bayes_interval(fit1, prob = 0.5), 2)
+round(posterior_interval(fit1, prob = 0.5), 2)
 ```
 
-For more on `bayes_interval` and interpreting the parameter estimates from a Bayesian
+For more on `posterior_interval` and interpreting the parameter estimates from a Bayesian
 model see Step 2 in the "How to Use the __rstanarm__ Package" vignette.
 
 

@@ -19,7 +19,7 @@
 #' 
 #' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
 #' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
-#' \code{bayes_interval} function computes Bayesian uncertainty intervals. These
+#' \code{posterior_interval} function computes Bayesian uncertainty intervals. These
 #' intervals are often referred to as \emph{credible} intervals, but we use the
 #' term \emph{uncertainty} intervals to highlight the fact that wider intervals
 #' correspond to greater uncertainty.
@@ -53,18 +53,23 @@
 #'   
 #' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
 #'   optimization, can be used to compute traditional confidence intervals.
+#'   
+#' @references 
+#' Morey, R. D., Hoekstra, R., Rouder, J., Lee, M. D., and Wagenmakers, E.
+#' (2015). The fallacy of placing confidence in confidence intervals.
+#' \emph{Psychonomic Bulletin & Review}. 1–21.
 #' 
 #' @examples 
-#' bayes_interval(example_model)
-#' bayes_interval(example_model, regex_pars = "herd")
-#' bayes_interval(example_model, pars = "period2", prob = 0.9)
+#' posterior_interval(example_model)
+#' posterior_interval(example_model, regex_pars = "herd")
+#' posterior_interval(example_model, pars = "period2", prob = 0.9)
 #' 
-bayes_interval <- function(object, prob = 0.5, type = "central",
+posterior_interval <- function(object, prob = 0.5, type = "central",
                     pars = NULL, regex_pars = NULL, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   if (used.optimizing(object))
-    STOP_not_optimizing("bayes_interval")
+    STOP_not_optimizing("posterior_interval")
   if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
     stop("'prob' should be a single number greater than 0 and less than 1.", 
          call. = FALSE)
