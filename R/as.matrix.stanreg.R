@@ -32,12 +32,13 @@
 #' 
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
-#' @param ... Optional arguments passed to \code{\link[rstan]{extract}}
-#'   (\pkg{rstan}). Currently, only \code{pars} is supported, and only for
-#'   models fit by MCMC.
+#' @template args-regex-pars
+#' @param pars An optional character vector of parameter names.
+#' @param ... Ignored.
 #'   
-#' @return A matrix or data frame, the dimensions of which depend on the model
-#'   and estimation algorithm as described above.
+#' @return A matrix or data frame, the dimensions of which depend on \code{pars}
+#'   and \code{regex_pars} (if specified), as well as the model and estimation
+#'   algorithm (as described above).
 #' 
 #' @seealso \code{\link{stanreg-methods}}
 #' 
@@ -63,37 +64,39 @@
 #' print(colnames(draws))
 #' }
 #' 
-as.matrix.stanreg <- function(x, ...) {
-  dotnames <- names(list(...))
+as.matrix.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {
   NO_DRAWS <- "No draws found."
+  pars <- .collect_pars(x, pars, regex_pars)
+  no_user_pars <- is.null(pars)
   if (used.optimizing(x)) {
-    if ("pars" %in% dotnames) 
-      message("'pars' ignored for models fit using algorithm='optimizing'.")
-    out <- x$asymptotic_sampling_dist 
-    if (is.null(out)) stop(NO_DRAWS)
-    else {
+    mat <- x$asymptotic_sampling_dist
+    if (is.null(mat)) stop(NO_DRAWS, call. = FALSE)
+    if (is.null(pars)) {
       dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
-      keep <- c(names(coef(x)), # return with coefficients first
-                dispersion[which(dispersion %in% colnames(out))])
-      return(out[, keep, drop = FALSE])
+      pars <- c(names(coef(x)), # return with coefficients first
+                dispersion[which(dispersion %in% colnames(mat))])
     }
+  } else { # used mcmc or vb
+    if (x$stanfit@mode != 0) stop(NO_DRAWS, call. = FALSE)
+    posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
+    mat <- apply(posterior, 3L, FUN = function(y) y)
+    if (is.null(pars))
+      pars <- grep("mean_PPD|log-posterior", colnames(mat), invert = TRUE, 
+                   value = TRUE)
   }
-  sf <- x$stanfit
-  if (sf@mode != 0) stop(NO_DRAWS)
-  posterior <- rstan::extract(sf, permuted = FALSE, inc_warmup = FALSE, ...) 
-  out <- apply(posterior, 3L, FUN = function(y) y)
-  if (is(x, "lmerMod")) out <- unpad_reTrms(out, columns = TRUE)
-  if (!"pars" %in% dotnames) {
-    # remove mean_PPD and log-posterior unless user specified 'pars'
-    sel <- !grepl("mean_PPD|log-posterior", colnames(out))
-    out <- out[, sel, drop = FALSE]
+  if (!no_user_pars) {
+    badpars <- which(!pars %in% colnames(mat))
+    if (length(badpars)) 
+      stop("No parameter(s) ", paste(pars[badpars], collapse = ", "), 
+           call. = FALSE)
   }
-  return(out)
+  mat <- mat[, pars, drop = FALSE]
+  if (!is.mer(x)) return(mat) else return(unpad_reTrms(mat, columns = TRUE))
 }
 
 #' @rdname as.matrix.stanreg
 #' @export
 #' 
-as.data.frame.stanreg <- function(x, ...) {
-  as.data.frame(as.matrix.stanreg(x, ...))
+as.data.frame.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {
+  as.data.frame(as.matrix.stanreg(x, pars, regex_pars, ...))
 }
