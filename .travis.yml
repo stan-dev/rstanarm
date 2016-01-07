@@ -6,9 +6,6 @@ warnings_are_errors: TRUE
 os:
   - osx
   
-r_github_packages:
-  - stan-dev/shinystan
-
 r_binary_packages:
   - covr
   - loo
@@ -27,6 +24,7 @@ r_binary_packages:
   - ggplot2
   - gridExtra
   - rstan
+  - shinystan
 
 env:
   matrix: 
