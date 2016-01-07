@@ -29,7 +29,6 @@
 #' 
 #' @method as.matrix stanreg
 #' @export
-#' 
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template args-regex-pars
