@@ -15,14 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian uncertainty intervals
+#' Posterior uncertainty intervals
 #' 
 #' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
 #' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
-#' \code{posterior_interval} function computes Bayesian uncertainty intervals. These
-#' intervals are often referred to as \emph{credible} intervals, but we use the
-#' term \emph{uncertainty} intervals to highlight the fact that wider intervals
-#' correspond to greater uncertainty.
+#' \code{posterior_interval} function computes Bayesian posterior uncertainty 
+#' intervals. These intervals are often referred to as \emph{credible} 
+#' intervals, but we use the term \emph{uncertainty} intervals to highlight the 
+#' fact that wider intervals correspond to greater uncertainty.
 #' 
 #' @export
 #' @templateVar stanregArg object
@@ -30,17 +30,17 @@
 #' @template args-regex-pars
 #' @param prob A number between 0 and 1 indicating the desired posterior 
 #'   probability mass \eqn{p} to include in the intervals. The default is to 
-#'   report 50\% intervals (\code{prob=0.5}) rather than the traditionally used
+#'   report 90\% intervals (\code{prob=0.9}) rather than the traditionally used
 #'   95\%, although the latter can be computed by specifying \code{prob=0.95}. 
 #'   We use this default for several reasons:
 #'   \itemize{
-#'   \item Computational stability: 50\% intervals are more stable than 95\%
+#'   \item Computational stability: 90\% intervals are more stable than 95\% 
 #'   intervals (for which each end relies on only 2.5\% of the posterior draws).
-#'   \item More intuitive evaluation: (roughly) half of the 50\% intervals
-#'   should contain the true value.
-#'   \item In aplications, a good first step is to get a sense of where the 
-#'   parameters and predicted values will be, not to attempt an unrealistic 
-#'   near-certainty.
+#'   \item Relation to Type-S errors: for 95\% of the mass in a 90\% central 
+#'   interval is above the lower value and 95\% of the mass is below the upper 
+#'   value. It is therefore easy to see if the probability that a parameter 
+#'   \eqn{\theta > 0} or \eqn{\theta<0} is larger or smaller than 95\%. See
+#'   Gelman and Carlin (2014).
 #'   }
 #' @param type The type of interval to compute. Currently the only option is 
 #'   \code{"central"}, although other possibilities may be available in future
@@ -54,10 +54,8 @@
 #' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
 #'   optimization, can be used to compute traditional confidence intervals.
 #'   
-#' @references 
-#' Morey, R. D., Hoekstra, R., Rouder, J., Lee, M. D., and Wagenmakers, E.
-#' (2015). The fallacy of placing confidence in confidence intervals.
-#' \emph{Psychonomic Bulletin & Review}. 1–21.
+#' @template reference-gelman-carlin
+#' @template reference-morey
 #' 
 #' @examples 
 #' posterior_interval(example_model)
@@ -76,15 +74,7 @@ posterior_interval <- function(object, prob = 0.5, type = "central",
   if (!identical(type, "central"))
     stop("Currently the only option for 'type' is 'central'.", call. = FALSE)
   
-  mat <- as.matrix.stanreg(object)
-  pars <- .collect_pars(object, pars, regex_pars)
-  if (!is.null(pars)) {
-    mat <- mat[, colnames(mat) %in% pars, drop = FALSE]
-  } else {
-    pars <- grep("mean_PPD|log-posterior", colnames(mat), invert = TRUE, 
-                 value = TRUE)
-    mat <- mat[, pars, drop = FALSE]
-  }
+  mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
   alpha <- (1 - prob) / 2
   probs <- c(alpha, 1 - alpha)
   labs <- paste0(100 * probs, "%")
