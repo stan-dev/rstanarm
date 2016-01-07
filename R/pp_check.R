@@ -35,7 +35,7 @@ ppcheck <- function(object,
 #' Graphical posterior predictive checks
 #' 
 #' Various plots comparing the observed outcome variable \eqn{y} to simulated 
-#' datasets \eqn{yrep} from the posterior predictive distribution.
+#' datasets \eqn{y^{rep}}{yrep} from the posterior predictive distribution.
 #' 
 #' @export
 #' @templateVar bdaRef (Ch. 6)
@@ -45,14 +45,15 @@ ppcheck <- function(object,
 #' @param check The type of plot (possibly abbreviated) to show. One of 
 #'   \code{"distributions"}, \code{"residuals"}, \code{"scatter"}, 
 #'   \code{"test"}. See Details for descriptions.
-#' @param nreps The number of \eqn{yrep} datasets to generate from the posterior
-#'   predictive distribution (\code{\link{posterior_predict}}) and show in the
-#'   plots. The default is \code{nreps=3} for \code{check="residuals"} and
-#'   \code{nreps=8} for \code{check="distributions"}. If \code{check="test"},
-#'   \code{nreps} is ignored and the number of simulated datasets is the number
-#'   of post-warmup draws from the posterior distribution. If
-#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
-#'   number of post-warmup draws.
+#' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the
+#'   posterior predictive distribution (\code{\link{posterior_predict}}) and
+#'   show in the plots. The default is \code{nreps=3} for
+#'   \code{check="residuals"} and \code{nreps=8} for
+#'   \code{check="distributions"}. If \code{check="test"}, \code{nreps} is
+#'   ignored and the number of simulated datasets is the number of post-warmup
+#'   draws from the posterior distribution. If \code{check="scatter"},
+#'   \code{nreps} is not ignored but defaults to the number of post-warmup
+#'   draws.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
 #' @param overlay For \code{check="distributions"} only, should distributions be
@@ -71,27 +72,28 @@ ppcheck <- function(object,
 #' \code{check}:
 #' \describe{
 #'  \item{\code{distributions}}{The distributions of \eqn{y} and \code{nreps} 
-#'  simulated \eqn{yrep} datasets.} 
+#'  simulated \eqn{y^{rep}}{yrep} datasets.} 
 #'  \item{\code{residuals}}{The distributions of residuals computed from \eqn{y}
 #'  and each of \code{nreps} simulated datasets. For binomial data, binned 
 #'  residual plots are generated (similar to \code{\link[arm]{binnedplot}}).}
 #'  \item{\code{scatter}}{If \code{nreps} is \code{NULL} then \eqn{y} is plotted
-#'  against the average values of \eqn{yrep}, i.e., the points \eqn{(y_n, 
-#'  \bar{yrep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n = 1,...,N},
-#'  where each \eqn{yrep_n} is a vector of length equal to the number of
-#'  posterior draws. If \code{nreps} is a (preferably small) integer, then only
-#'  \code{nreps} \eqn{yrep} datasets are simulated and they are each plotted
-#'  separately against \eqn{y}.}
-#'  \item{\code{test}}{The distribution of a single test statistic \eqn{T(yrep)}
-#'  or a pair of test statistics over the \code{nreps} simulated datasets. If 
-#'  the \code{test} argument specifies only one function then the resulting plot
-#'  is a histogram of \eqn{T(yrep)} and the value of the test statistic in the
-#'  observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two
-#'  functions are specified then the plot is a scatterplot and \eqn{T(y)} is
+#'  against the average values of \eqn{y^{rep}}{yrep}, i.e., the points
+#'  \eqn{(y_n, \bar{y}^{rep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n =
+#'  1,...,N}, where each \eqn{y^{rep}_n}{yrep_n} is a vector of length equal to
+#'  the number of posterior draws. If \code{nreps} is a (preferably small)
+#'  integer, then only \code{nreps} \eqn{y^{rep}}{yrep} datasets are simulated
+#'  and they are each plotted separately against \eqn{y}.}
+#'  \item{\code{test}}{The distribution of a single test statistic
+#'  \eqn{{T(y^{rep})}}{T(yrep)} or a pair of test statistics over the
+#'  \code{nreps} simulated datasets. If the \code{test} argument specifies only
+#'  one function then the resulting plot is a histogram of
+#'  \eqn{{T(y^{rep})}}{T(yrep)} and the value of the test statistic in the 
+#'  observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two 
+#'  functions are specified then the plot is a scatterplot and \eqn{T(y)} is 
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{yrep} show the proportion
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the proportion
 #'   of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 

@@ -233,9 +233,9 @@ pairs.stanreg <- function(x, ...) {
 #' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
 #' }
 #' 
-#' For graphical posterior predicive checking see \code{\link{pp_check}}.
-#' 
-#' @seealso \code{\link{plot.stanreg}}, \code{\link{shinystan}}
+#' @seealso \code{\link{plot.stanreg}} for how to call the \code{plot} method, 
+#'   \code{\link{shinystan}} for interactive model exploration,
+#'   \code{\link{pp_check}} for graphical posterior predicive checking.
 #' @examples
 #' # See examples at help("plot.stanreg", package = "rstanarm")
 NULL

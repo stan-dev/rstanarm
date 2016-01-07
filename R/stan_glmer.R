@@ -43,8 +43,8 @@
 #'   \code{family = gaussian(link = "identity")}. 
 #'   
 #'   The \code{stan_glmer.nb} function, which takes the extra argument
-#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family =
-#'   \link{neg_binomial_2}(link)}.
+#'   \code{link}, is a simple wrapper for \code{stan_glmer} with 
+#'   \code{family = \link{neg_binomial_2}(link)}.
 #'   
 #'   
 #' @examples
