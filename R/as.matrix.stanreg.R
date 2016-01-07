@@ -48,7 +48,7 @@
 #' # For example, we can see that the median of the draws for the intercept 
 #' # is the same as the point estimate rstanarm uses
 #' print(median(draws[, "(Intercept)"]))
-#' print(example_model$coefficients["(Intercept)"])
+#' print(example_model$coefficients[["(Intercept)"]])
 #' 
 #' \dontrun{
 #' # Extract draws from asymptotic Gaussian sampling distribution 
@@ -56,11 +56,13 @@
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 #' draws <- as.data.frame(fit)
 #' print(colnames(draws))
+#' print(nrow(draws)) # 1000 draws are taken
 #' 
 #' # Extract draws from variational approximation to the posterior distribution
 #' fit2 <- update(fit, algorithm = "meanfield")
-#' draws <- as.data.frame(fit2)
+#' draws <- as.data.frame(fit2, pars = "wt")
 #' print(colnames(draws))
+#' print(nrow(draws)) # 1000 draws are taken
 #' }
 #' 
 as.matrix.stanreg <- function(x, pars = NULL, regex_pars = NULL, ...) {

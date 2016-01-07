@@ -31,8 +31,7 @@
 #' @param prob A number between 0 and 1 indicating the desired posterior 
 #'   probability mass \eqn{p} to include in the intervals. The default is to 
 #'   report 90\% intervals (\code{prob=0.9}) rather than the traditionally used 
-#'   95\% (see Details). If desired, 95\% intervals can be computed by 
-#'   specifying \code{prob=0.95}.
+#'   95\% (see Details).
 #' @param type The type of interval to compute. Currently the only option is 
 #'   \code{"central"} (see Details). A central \eqn{100p}\%
 #'   interval is defined by the \eqn{\alpha} and \eqn{1 - \alpha} quantiles,
@@ -43,8 +42,18 @@
 #' @return A two-column matrix.
 #' 
 #' @details
-#'  
-#' We default to reporting 90\% intervals rather than 95\% intervals for several reasons:
+#' \subsection{Interpretation}{
+#' Unlike for a frenquentist confidence interval, it is valid to say that, 
+#' conditional on the data and model, we believe that with probability \eqn{p} 
+#' the value of a parameter is in its \eqn{100p}\% posterior interval. This 
+#' intuitive interpretation of Bayesian intervals is often erroneously applied 
+#' to frequentist confidence intervals. See Morey et al. (2015) for more details
+#' on this issue and the advantages of using Bayesian posterior uncertainty
+#' intervals (also known as credible intervals).
+#' }
+#' \subsection{Default 90\% intervals}{
+#' We default to reporting 90\% intervals rather than 95\% intervals for several
+#' reasons:
 #' \itemize{
 #'  \item Computational stability: 90\% intervals are more stable than 95\% 
 #'  intervals (for which each end relies on only 2.5\% of the posterior draws).
@@ -54,11 +63,15 @@
 #'  easy to see if the posterior probability that \eqn{\theta > 0} (or
 #'  \eqn{\theta < 0}) is larger or smaller than 95\%.
 #' }
-#' 
+#' Of course, if 95\% intervals are desired they can be computed by specifying
+#' \code{prob=0.95}.
+#' }
+#' \subsection{Types of intervals}{
 #' Currently \code{posterior_interval} only computes central intervals because
 #' other types of intervals are rarely useful for the models that \pkg{rstanarm}
 #' can estimate. Additional possibilities may be provided in future releases as
 #' more models become available.
+#' }
 #' 
 #' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
 #'   optimization, can be used to compute traditional confidence intervals.
@@ -69,19 +82,21 @@
 #' @examples 
 #' posterior_interval(example_model)
 #' posterior_interval(example_model, regex_pars = "herd")
-#' posterior_interval(example_model, pars = "period2", prob = 0.9)
+#' posterior_interval(example_model, pars = "period2", prob = 0.5)
 #' 
 posterior_interval <- function(object, prob = 0.9, type = "central",
-                    pars = NULL, regex_pars = NULL, ...) {
+                               pars = NULL, regex_pars = NULL, ...) {
   if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.")
+    stop(deparse(substitute(object)), " is not a stanreg object.", 
+         call. = FALSE)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_interval")
   if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
     stop("'prob' should be a single number greater than 0 and less than 1.", 
          call. = FALSE)
   if (!identical(type, "central"))
-    stop("Currently the only option for 'type' is 'central'.", call. = FALSE)
+    stop("Currently the only option for 'type' is 'central'.", 
+         call. = FALSE)
   
   mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
   alpha <- (1 - prob) / 2
