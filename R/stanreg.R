@@ -21,6 +21,8 @@
 # @return A stanreg object.
 #
 stanreg <- function(object) {
+  opt <- object$algorithm == "optimizing"
+  mer <- !is.null(object$glmod) # used stan_(g)lmer
   stanfit <- object$stanfit
   family <- object$family
   y <- object$y
@@ -28,24 +30,21 @@ stanreg <- function(object) {
   nvars <- ncol(x)
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
-  rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank 
-  
-  opt <- object$algorithm == "optimizing"
-  mer <- !is.null(object$glmod) # used stan_(g)lmer
-  
-  levs <- c(0.5, 0.8, 0.95, 0.99)
-  qq <- (1 - levs) / 2
-  probs <- sort(c(0.5, qq, 1 - qq))
   if (opt) {
     stanmat <- stanfit$theta_tilde
+    probs <- c(0.025, .975)
     stan_summary <- cbind(Median = apply(stanmat, 2L, median), 
                           MAD_SD = apply(stanmat, 2L, mad),
-                          t(apply(stanmat, 2L, quantile, 
-                                  probs = c(0.025, .975))))
+                          t(apply(stanmat, 2L, quantile, probs)))
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[, colnames(x), drop = FALSE], 2L, median)
     ses <- apply(stanmat[, colnames(x), drop = FALSE], 2L, mad)
+    rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
+    df.residual <- nobs - sum(object$weights == 0) - rank
   } else {
+    levs <- c(0.5, 0.8, 0.95, 0.99)
+    qq <- (1 - levs) / 2
+    probs <- sort(c(0.5, qq, 1 - qq))
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
     coefs <- stan_summary[1:nvars, .select_median(object$algorithm)]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
@@ -55,29 +54,28 @@ stanreg <- function(object) {
     covmat <- cov(stanmat)
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
     ses <- apply(stanmat, 2L, mad)
-    
+    df.residual <- NA_integer_
     if (object$algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
   }
   
-  # linear predictor, fitted values, and residuals (of type 'response', unlike
-  # glm which does 'deviance' residuals by default)
+  # linear predictor, fitted values
   eta <- linear_predictor(coefs, x, object$offset)
   mu <- family$linkinv(eta)
 
   if (NCOL(y) == 2L) {
+    # residuals of type 'response', (glm which does 'deviance' residuals by default)
     residuals <- y[, 1L] / rowSums(y) - mu 
   } else {
     ytmp <- if (is.factor(y)) as.integer(y != levels(y)[1L]) else y
     residuals <- ytmp - mu
   }
-  df.residual <- nobs - sum(object$weights == 0) - rank
   names(eta) <- names(mu) <- names(residuals) <- ynames
   
   out <- nlist(
     coefficients = coefs, 
     ses,
-    fitted.values = mu, 
+    fitted.values = mu,
     linear.predictors = eta,
     residuals, 
     df.residual, 
