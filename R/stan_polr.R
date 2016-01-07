@@ -89,29 +89,48 @@ class(loglog) <- "link-glm"
 #'   As for \code{\link{stan_lm}}, it is necessary to specify the prior 
 #'   location of \eqn{R^2}. In this case, the \eqn{R^2} pertains to the
 #'   proportion of variance in the latent variable (which is discretized
-#'   by the cutpoints) attributable to the predictors in the model. Prior
-#'   beliefs about the cutpoints are governed by prior beliefs about the
+#'   by the cutpoints) attributable to the predictors in the model. 
+#'   
+#'   Prior beliefs about the cutpoints are governed by prior beliefs about the
 #'   outcome when the predictors are at their sample means. Both of these
 #'   are explained in the help page on \code{\link{priors}} and in the 
 #'   \pkg{rstanarm} vignettes.
-#'   
+#'  
 #'   Unlike \code{\link[MASS]{polr}}, \code{stan_polr} also allows the "ordinal"
 #'   outcome to contain only two levels, in which case the likelihood is the
 #'   same by default as for \code{\link{stan_glm}} with \code{family = binomial}
-#'   but the prior on the coefficients is different. Also, \code{stan_polr}
+#'   but the prior on the coefficients is different. However, \code{stan_polr}
 #'   allows the user to specify the \code{shape} and \code{rate} hyperparameters,
-#'   in which case the probability of success is defined as the CDF of the
-#'   linear predictor, raised to the power of \code{lambda} where \code{lambda}
+#'   in which case the probability of success is defined as the logistic CDF of
+#'   the linear predictor, raised to the power of \code{alpha} where \code{alpha}
 #'   has a gamma prior with the specified \code{shape} and \code{rate}. This
-#'   likelihood is sometimes called \dQuote{scobit} because if \code{lambda} is
-#'   not equal to \eqn{1}, then the relationship between the linear predictor
+#'   likelihood is called \dQuote{scobit} by Nagler (1994) because if \code{alpha}
+#'   is not equal to \eqn{1}, then the relationship between the linear predictor
 #'   and the probability of success is skewed. If \code{shape} or \code{rate} is
-#'   \code{NULL}, then \code{lambda} is assumed to be fixed to \eqn{1}. 
+#'   \code{NULL}, then \code{alpha} is assumed to be fixed to \eqn{1}. 
+#'   
 #'   Otherwise, it is usually advisible to set \code{shape} and \code{rate} to
-#'   the same number so that the expected value of \code{lambda} is \eqn{1} while
-#'   leaving open the possibility that \code{lambda} may depart from \eqn{1} a
-#'   little bit.
-#' 
+#'   the same number so that the expected value of \code{alpha} is \eqn{1} while
+#'   leaving open the possibility that \code{alpha} may depart from \eqn{1} a
+#'   little bit. It is often necessary to have a lot of data in order to estimate
+#'   \code{alpha} with much precision and always necessary to inspect the
+#'   Pareto shape parameters calculated by \code{\link{loo}} to see if the 
+#'   results are particularly sensitive to individual observations.
+#'   
+#'   Users should think carefully about how the outcome is coded when using 
+#'   a scobit-type model. When \code{alpha} is not \eqn{1}, the asymmetry
+#'   implies that the probability of success is most sensitive to the predictors
+#'   when the probability of success is less than \eqn{0.63}. Reversing the
+#'   coding of the successes and failures allows the predictors to have the
+#'   greatest impact when the probability of failure is less than \eqn{0.63}.
+#'   Also, the gamma prior on \code{alpha} is positively skewed, but you
+#'   can reverse the coding of the successes and failures to circumvent this
+#'   property.
+#'   
+#' @references 
+#' Nagler, J., (1994). Scobit: An Alternative Estimator to Logit and Probit.
+#' \emph{American Journal of Political Science}. 230 -- 255.
+#'
 #' @examples 
 #' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,

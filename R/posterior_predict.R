@@ -140,8 +140,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    if ("lambda" %in% colnames(stanmat))
-      ytiled <- .pp_polr(eta, zeta, inverse_link, stanmat[,"lambda"])
+    if ("alpha" %in% colnames(stanmat))
+      ytiled <- .pp_polr(eta, zeta, inverse_link, stanmat[,"alpha"])
     else
       ytilde <- .pp_polr(eta, zeta, inverse_link)
   }
@@ -202,12 +202,12 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda[s])
   }))
 }
-.pp_polr <- function(eta, zeta, linkinv, lambda = NULL) {
+.pp_polr <- function(eta, zeta, linkinv, alpha = NULL) {
   n <- ncol(eta)
   q <- ncol(zeta)
-  if (!is.null(lambda))
+  if (!is.null(alpha))
     t(sapply(1:nrow(eta), FUN = function(s) {
-      pr <- matrix(linkinv(matrix(zeta[s,], n, q, byrow = TRUE) - eta[s,])^lambda, , q)
+      pr <- matrix(linkinv(matrix(zeta[s,], n, q, byrow = TRUE) - eta[s,])^alpha, , q)
       rbinom(ncol(eta), size = 1, prob = pr[s,])
     }))
   else t(sapply(1:nrow(eta), FUN = function(s) {

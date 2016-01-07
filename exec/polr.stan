@@ -33,24 +33,23 @@ functions {
   * @return A vector of log-likelihods
   */
   vector pw_polr(int[] y, vector eta, vector cutpoints, 
-                 int link, real lambda) {
+                 int link, real alpha) {
     vector[rows(eta)] ll;
     int N;
     int J;
     N <- rows(eta);
     J <- rows(cutpoints) + 1;
     if (link < 1 || link > 5) reject("Invalid link");
-    if (lambda == 1) for (n in 1:N) {
+    if (alpha == 1) for (n in 1:N) {
            if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
       else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
       else ll[n] <- CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
                     CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
     }
     else for (n in 1:N) {
-           if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link) ^ lambda;
-      else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link) ^ lambda;
-      else ll[n] <- (CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
-                     CDF_polr(cutpoints[y[n] - 1] - eta[n], link)) ^ lambda;
+           if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link) ^ alpha;
+      else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link) ^ alpha;
+      else reject("alpha not allowed with more than 2 outcome categories")
     }
     return log(ll);
   }
@@ -153,7 +152,7 @@ parameters {
   simplex[J] pi;
   vector[K] z_beta;
   real<lower=0,upper=1>  R2;
-  real<lower=0> lambda[is_skewed];
+  real<lower=0> alpha[is_skewed];
 }
 transformed parameters {
   vector[K] beta;
@@ -172,18 +171,18 @@ model {
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if (is_skewed == 0)
       increment_log_prob(pw_polr(y, eta, cutpoints, link, 1.0));
-    else increment_log_prob(pw_polr(y, eta, cutpoints, link, lambda[1]));
+    else increment_log_prob(pw_polr(y, eta, cutpoints, link, alpha[1]));
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     if (is_skewed == 0)
       increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0)));
-    else increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, lambda[1])));
+    else increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1])));
   }
 
   if (is_constant == 0) pi ~ dirichlet(prior_counts);
   z_beta ~ normal(0,1);
   if (prior_dist == 1) R2 ~ beta(half_K, regularization);
-  if (is_skewed == 1) lambda ~ gamma(shape, rate);
+  if (is_skewed == 1) alpha ~ gamma(shape, rate);
 }
 generated quantities {
   vector[J-1] zeta;
@@ -202,17 +201,16 @@ generated quantities {
       real previous;
       real ystar;
       theta[1] <- CDF_polr(cutpoints[1] - eta[n], link);
-      if (is_skewed) theta[1] <- theta[1] ^ lambda[1];
+      if (is_skewed) theta[1] <- theta[1] ^ alpha[1];
       previous <- theta[1];
       for (j in 2:(J-1)) {
         real current;
         current <- CDF_polr(cutpoints[j] - eta[n], link);
         theta[j] <- current - previous;
-        if (is_skewed) theta[j] <- theta[j] ^ lambda[1];
         previous <- current;
       }
       if (is_skewed == 0) theta[J] <- 1 - previous;
-      else theta[J] <- 1 - previous ^ lambda[1];
+      else theta[J] <- 1 - previous ^ alpha[1];
       if (previous <= 0 || previous >= 1) {
         # do nothing
       }

@@ -76,6 +76,8 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   }
   else rate <- 0L
   is_skewed <- as.integer(shape > 0 & rate > 0)
+  if (is_skewed && method != "logistic")
+    stop("skewed models are only supported when method = 'logistic'")
     
   N <- nrow(X)
   K <- ncol(X)
@@ -88,7 +90,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     family = 1L)
   stanfit <- stanmodels$polr
   if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-  else pars <- c("zeta", "beta", if(is_skewed) "lambda", "mean_PPD")
+  else pars <- c("zeta", "beta", if(is_skewed) "alpha", "mean_PPD")
   standata$do_residuals <- J > 2
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(
@@ -112,7 +114,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   if (J > 2)
     new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                    paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
-  else new_names <- c("(Intercept)", colnames(x), if (is_skewed) "lambda",
+  else new_names <- c("(Intercept)", colnames(x), if (is_skewed) "alpha",
                       "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)

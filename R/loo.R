@@ -126,7 +126,7 @@ waic.stanreg <- function(x, ...) {
     draws$zeta <- stanmat[, grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),
                           drop = FALSE]
     draws$max_y <- max(y)
-    if ("lambda" %in% colnames(stanmat)) draws$lambda <- stanmat[,"lambda"]
+    if ("alpha" %in% colnames(stanmat)) draws$alpha <- stanmat[,"alpha"]
   }
   else stop("'family' must be a family or a character string.", call. = FALSE)
   
@@ -192,14 +192,14 @@ waic.stanreg <- function(x, ...) {
   J <- draws$max_y
   y_i <- data$y
   linkinv <- polr_linkinv(f)
-  if (is.null(draws$lambda)) val <- 
+  if (is.null(draws$alpha)) val <- 
     if (y_i == 1) log(linkinv(draws$zeta[,1] - eta))
     else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta))
     else log(linkinv(draws$zeta[,y_i] - eta) - 
              linkinv(draws$zeta[,y_i - 1L] - eta))
   else val <- 
-    if (y_i == 1) draws$lambda * log(linkinv(draws$zeta[,1] - eta))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta) ^ draws$lambda)
+    if (y_i == 1) draws$alpha * log(linkinv(draws$zeta[,1] - eta))
+    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta) ^ draws$alpha)
     else stop("exponentiation only possible when there are exactly 2 outcomes")
   
   .weighted(val, data$weights)
