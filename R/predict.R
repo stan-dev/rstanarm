@@ -56,6 +56,8 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   if (type == "response") {
     inverse_link <- linkinv(object)
     eta <- inverse_link(eta)
+    if (is(object, "polr") && ("lambda" %in% colnames(stanmat)))
+      eta <- apply(eta, 1, FUN = `^`, e2 = stanmat[,"lambda"])
   }
   fit <- colMeans(eta)
   if (!se.fit) return(fit)

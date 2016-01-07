@@ -140,7 +140,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     eta <- eta[sample(S, draws),, drop = FALSE]
   if (is(object, "polr")) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
-    ytilde <- .pp_polr(eta, zeta, inverse_link)
+    if ("lambda" %in% colnames(stanmat))
+      ytiled <- .pp_polr(eta, zeta, inverse_link, stanmat[,"lambda"])
+    else
+      ytilde <- .pp_polr(eta, zeta, inverse_link)
   }
   else {
     ppargs <- list(mu = inverse_link(eta))
@@ -199,10 +202,15 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     .rinvGauss(ncol(mu), mu = mu[s,], lambda = lambda[s])
   }))
 }
-.pp_polr <- function(eta, zeta, linkinv) {
+.pp_polr <- function(eta, zeta, linkinv, lambda = NULL) {
   n <- ncol(eta)
   q <- ncol(zeta)
-  t(sapply(1:nrow(eta), FUN = function(s) {
+  if (!is.null(lambda))
+    t(sapply(1:nrow(eta), FUN = function(s) {
+      pr <- matrix(linkinv(matrix(zeta[s,], n, q, byrow = TRUE) - eta[s,])^lambda, , q)
+      rbinom(ncol(eta), size = 1, prob = pr[s,])
+    }))
+  else t(sapply(1:nrow(eta), FUN = function(s) {
     cumpr <- matrix(linkinv(matrix(zeta[s,], n, q, byrow = TRUE) - eta[s,]), , q)
     fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
     apply(fitted, 1, function(p) which(rmultinom(1, 1, p) == 1))

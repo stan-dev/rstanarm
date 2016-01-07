@@ -228,6 +228,20 @@ is continuous and observed, we can estimate the scale of the errors
 meaningfully. When the outcome is ordinal, we can only fix the scale of the
 latent errors to $1$ arbitrarily.
 
+Finally, when $J = 2$, the `stan_polr` function allows you to specify non-`NULL`
+values of the `shape` and `rate` arguments, which implies a "scobit"-type 
+likelihood where the probability of success is given by 
+$F\left(\eta\right)^\lambda$, where $F\left(\right)$ is some CDF and 
+$\lambda > 0$ is a skewing parameter that has a gamma prior with a given 
+`shape` and `rate`. If $\lambda \neq 1$, then the relationship between $\eta$ 
+and the probability of success is asymmetric. In principle, it seems appropriate
+to estimate $\lambda$ but in practice, a lot of data is needed to estimate
+$\lambda$ with adequate precision. In the previous example, if we specify
+`shape = 2` and `rate = 2` to reflect our prior beliefs that $\lambda$ is
+expected to be $1$ but has a variance of $\frac{1}{2}$, then the loo calculation
+yields many Pareto shape parameters that are excessively large. However, with
+more than $189$ observations, such a model may be more fruitful.
+
 # Conclusion
 
 The posterior distribution for an ordinal model requires priors on the 

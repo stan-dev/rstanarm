@@ -432,7 +432,8 @@ linkinv.character <- function(x, ...) {
   return(polr_linkinv(x))
 }
 
-# Make inverse link function for stan_polr models
+# Make inverse link function for stan_polr models, neglecting any
+# exponent in the scobit case
 #
 # @param x A stanreg object or character scalar giving the "method".
 # @return The inverse link function associated with x.

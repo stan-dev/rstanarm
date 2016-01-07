@@ -68,6 +68,16 @@ class(loglog) <- "link-glm"
 #' @param prior_counts A call to \code{\link{dirichlet}} to specify the 
 #'   prior counts of the outcome when the predictors are at their sample
 #'   means.
+#' @param shape Either \code{NULL} or a positive scalar that is interpreted
+#'   as the shape parameter for a \code{\link[stats]{GammaDist}}ribution on
+#'   the exponent applied to the probability of success when there are only
+#'   two outcome categories. If \code{NULL}, which is the default, then the
+#'   exponent is taken to be fixed at \eqn{1}.
+#' @param rate Either \code{NULL} or a positive scalar that is interpreted
+#'   as the rate parameter for a \code{\link[stats]{GammaDist}}ribution on
+#'   the exponent applied to the probability of success when there are only
+#'   two outcome categories. If \code{NULL}, which is the default, then the
+#'   exponent is taken to be fixed at \eqn{1}.   
 #'
 #' @details The \code{stan_polr} function is similar in syntax to 
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood 
@@ -87,8 +97,20 @@ class(loglog) <- "link-glm"
 #'   
 #'   Unlike \code{\link[MASS]{polr}}, \code{stan_polr} also allows the "ordinal"
 #'   outcome to contain only two levels, in which case the likelihood is the
-#'   same as for \code{\link{stan_glm}} with \code{family = binomial} but the
-#'   prior on the coefficients is different.
+#'   same by default as for \code{\link{stan_glm}} with \code{family = binomial}
+#'   but the prior on the coefficients is different. Also, \code{stan_polr}
+#'   allows the user to specify the \code{shape} and \code{rate} hyperparameters,
+#'   in which case the probability of success is defined as the CDF of the
+#'   linear predictor, raised to the power of \code{lambda} where \code{lambda}
+#'   has a gamma prior with the specified \code{shape} and \code{rate}. This
+#'   likelihood is sometimes called \dQuote{scobit} because if \code{lambda} is
+#'   not equal to \eqn{1}, then the relationship between the linear predictor
+#'   and the probability of success is skewed. If \code{shape} or \code{rate} is
+#'   \code{NULL}, then \code{lambda} is assumed to be fixed to \eqn{1}. 
+#'   Otherwise, it is usually advisible to set \code{shape} and \code{rate} to
+#'   the same number so that the expected value of \code{lambda} is \eqn{1} while
+#'   leaving open the possibility that \code{lambda} may depart from \eqn{1} a
+#'   little bit.
 #' 
 #' @examples 
 #' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
@@ -101,7 +123,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       method = c("logistic", "probit", "loglog", "cloglog", 
                                  "cauchit"),
                       prior = R2(stop("'location' must be specified")), 
-                      prior_counts = dirichlet(1), prior_PD = FALSE, 
+                      prior_counts = dirichlet(1), shape = NULL, rate = NULL, 
+                      prior_PD = FALSE, 
                       algorithm = c("sampling", "meanfield", "fullrank"),
                       adapt_delta = NULL) {
   
@@ -111,7 +134,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   if (is.matrix(eval.parent(m$data))) 
     m$data <- as.data.frame(data)
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <- 
-    m$prior_PD <- m$algorithm <- m$adapt_delta <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
   m <- check_constant_vars(m)
@@ -142,6 +165,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   algorithm <- match.arg(algorithm)  
   stanfit <- stan_polr.fit(x, y, wt, offset, method, 
                            prior = prior, prior_counts = prior_counts,
+                           shape = shape, rate = rate,
                            prior_PD = prior_PD, algorithm = algorithm, 
                            adapt_delta = adapt_delta, ...)
   

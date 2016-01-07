@@ -27,7 +27,8 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                           method = c("logistic", "probit", "loglog", 
                                      "cloglog", "cauchit"), ...,
                           prior = R2(stop("'location' must be specified")), 
-                          prior_counts = dirichlet(1), prior_PD = FALSE, 
+                          prior_counts = dirichlet(1), shape = NULL, rate = NULL, 
+                          prior_PD = FALSE, 
                           algorithm = c("sampling", "meanfield", "fullrank"),
                           adapt_delta = NULL) {
   algorithm <- match.arg(algorithm)
@@ -54,27 +55,40 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   if (!has_offset) offset <- double(0)
 
   if (length(prior)) {
-    shape <- make_eta(prior$location, prior$what, K = ncol(x))
+    regularization <- make_eta(prior$location, prior$what, K = ncol(x))
     prior_dist <- 1L
   }
   else {
-    shape <- 0
+    regularization <- 0
     prior_dist <- 0L
   }
   if (!length(prior_counts)) prior_counts <- rep(1, J)
   else prior_counts <- maybe_broadcast(prior_counts$concentration, J)
-  
+
+  if (!is.null(shape)) {
+    if (J > 2) stop("'shape' must be NULL when there are more than 2 outcome categories")
+    if (!is.numeric(shape) || shape <= 0) stop("'shape' must be positive")
+  }
+  else shape <- 0L
+  if (!is.null(rate)) {
+    if (J > 2) stop("'rate' must be NULL when there are more than 2 outcome categories")
+    if (!is.numeric(rate) || rate <= 0) stop("'rate' must be positive")
+  }
+  else rate <- 0L
+  is_skewed <- as.integer(shape > 0 & rate > 0)
+    
   N <- nrow(X)
   K <- ncol(X)
   standata <- nlist(J, N, K, X, xbar, y, prior_PD, link, 
                     has_weights, weights, has_offset, offset,
-                    prior_dist, shape, prior_counts,
+                    prior_dist, regularization, prior_counts,
+                    is_skewed, shape, rate,
                     # the rest of these are not actually used
                     has_intercept = 0L, prior_dist_for_intercept = 0L, 
                     family = 1L)
   stanfit <- stanmodels$polr
   if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-  else pars <- c("zeta", "beta", "mean_PPD")
+  else pars <- c("zeta", "beta", if(is_skewed) "lambda", "mean_PPD")
   standata$do_residuals <- J > 2
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(
@@ -98,7 +112,8 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   if (J > 2)
     new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
                    paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
-  else new_names <- c("(Intercept)", colnames(x), "mean_PPD", "log-posterior")
+  else new_names <- c("(Intercept)", colnames(x), if (is_skewed) "lambda",
+                      "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
 }

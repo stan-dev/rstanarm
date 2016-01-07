@@ -144,7 +144,8 @@
 #'  \item{\code{\link{stan_polr}}}{
 #'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it
 #'   models an ordinal response but also implies a prior distribution on the 
-#'   unknown cutpoints. Can also be used to model binary outcomes.
+#'   unknown cutpoints. Can also be used to model binary outcomes, possibly
+#'   while estimating an unknown exponent governing the probability of success.
 #'  }
 #' }
 #' 
