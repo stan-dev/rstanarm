@@ -174,23 +174,17 @@ cores we want the computer to utilize) and `seed`
 (for reproducibility). You can read about other possible arguments in the
 `stan_glm` documentation (`help(stan_glm, package = 'rstanarm')`).
 
-To get a sense for the uncertainty in our estimates we can use the `confint`
-function to get Bayesian credible intervals. The credible intervals are computed
-by finding the relevant quantiles of the draws from the posterior distribution.
-By default, `confint` reports the 95% credible interval:
+To get a sense for the uncertainty in our estimates we can use the `prob_int` 
+function to get Bayesian uncertainty intervals. The uncertainty intervals are 
+computed by finding the relevant quantiles of the draws from the posterior 
+distribution. For example, to compute 50% intervals we use:
 
-```{r, ARSENIC-confint}
-round(confint(fit1), 2)
+```{r, ARSENIC-CI}
+round(prob_int(fit1, prob = 0.5), 2)
 ```
 
-In addition to credible intervals for the coefficients, intervals are also 
-reported for the log posterior and `mean_PPD`. 
-`mean_PPD` is the average of simulated outcomes generated from the posterior
-predictive distribution (one for each draw of the regression coefficients). For 
-this model, we find (as we should expect) that `mean_PPD` is similar to 
-the proportion of `switch = 1` in the data (`r round(mean(wells$switch),2)`).
-For more on `confint` and interpreting the parameter estimates from a Bayesian
-model see __Step 2__ in the "How to Use the __rstanarm__ Package" vignette.
+For more on `prob_int` and interpreting the parameter estimates from a Bayesian
+model see Step 2 in the "How to Use the __rstanarm__ Package" vignette.
 
 
 Using the coefficient estimates we can plot the predicted probability of 

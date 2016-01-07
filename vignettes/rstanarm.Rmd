@@ -169,26 +169,33 @@ Frequentists would ask whether the point estimate is greater in magnitude than
 double the estimated standard deviation of the sampling distribution. But here
 we simply have estimates of the standard deviation of the marginal posterior
 distributions, which are based on a scaling of the Median Absolute Deviation
-(MAD) from the posterior medians. In addition, we can obtain a credible 
-interval for $\beta_1$ by calling
+(MAD) from the posterior medians. In addition, using the `prob_int` function
+we can obtain a Bayesian uncertainty interval for $\beta_1$:
 ```{r CI}
-round(confint(womensrole_bglm_1, parm = "education"), 2)
+ci95 <- prob_int(womensrole_bglm_1, pars = "education", prob = 0.95)
+round(ci95, 2)
 ```
-which --- unlike frequentist confidence intervals, despite using the `confint`
-method --- indicates that we believe after seeing the data that there is a 
-$0.95$ probability that $\beta_2$ is between $-0.30$ and $-0.24$. 
-Alternatively, we could say that there is essentially zero probability that
-$\beta_2 > 0$, although frequentists cannot make such a claim coherently.
+Unlike frequentist confidence intervals --- which are _not_ interpretable as
+post-data probabilities --- the Bayesian uncertainty interval indicates we believe 
+after seeing the data that there is a $0.95$ probability that $\beta_2$ is 
+between `r round(ci95[1,1],2)` and `r round(ci95[1,2],2)`. Alternatively, we
+could say that there is essentially zero probability that $\beta_2 > 0$,
+although frequentists cannot make such a claim coherently.
 
-Many of the postestimation methods --- such as `confint` --- that are available
-for a model that is estimated by `glm` are also available for a model that is
-estimated by `stan_glm`. For example,
+Many of the postestimation methods that are available for a model that is
+estimated by `glm` are also available for a model that is estimated by
+`stan_glm`. For example,
 ```{r methods}
 cbind(Median = coef(womensrole_bglm_1), MAD_SD = se(womensrole_bglm_1))
 summary(residuals(womensrole_bglm_1)) # not deviance residuals
 cov2cor(vcov(womensrole_bglm_1))
 ```
 
+__rstanarm__ does provide a `confint` method, although it is reserved for 
+computing confidence intervals in the case that the user elects to estimate a 
+model by (penalized) maximum likelihood. When using full Bayesian inference (the
+__rstanarm__ default) or approximate Bayesian inference the `prob_int` function
+should be used to obtain Bayesian uncertainty intervals.
 
 # Step 3: Criticize the model
 

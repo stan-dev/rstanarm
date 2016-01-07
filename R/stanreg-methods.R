@@ -41,22 +41,21 @@
 #'   
 #' \describe{
 #' \item{\code{confint}}{
-#' If \code{algorithm="sampling"}, \code{confint} returns 
-#' Bayesian \emph{credible} intervals based on posterior quantiles. For
-#' \code{"meanfield"} and \code{"fullrank"}, approximate credible intervals are
-#' computed from the variational approximation to the posterior. For 
-#' \code{"optimizing"}, confidence intervals are returned via a call to
-#' \code{\link[stats]{confint.default}}.
+#' For models fit using \code{algorithm="optimizing"}, confidence intervals are 
+#' returned via a call to \code{\link[stats]{confint.default}}. If 
+#' \code{algorithm="sampling"}, \code{"meanfield"}, or \code{"fullrank"} the 
+#' \code{\link{prob_int}} function should be used to compute Bayesian
+#' uncertainty intervals.
 #' }
 #' 
 #' \item{\code{log_lik}}{
-#' For \code{algorithm="sampling"} only, the \code{log_lik} function returns the
-#' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
-#' of the posterior sample and \eqn{N} is the number of data points. Note: we 
-#' use \code{log_lik} rather than defining a \code{\link[stats]{logLik}} method 
-#' because (in addition to the conceptual difference) the documentation for
-#' \code{logLik} states that the return value will be a single number, whereas
-#' we return a matrix.
+#' For models fit using \code{algorithm="sampling"} only, the \code{log_lik}
+#' function returns the \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
+#' where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
+#' of data points. Note: we use \code{log_lik} rather than defining a
+#' \code{\link[stats]{logLik}} method because (in addition to the conceptual
+#' difference) the documentation for \code{logLik} states that the return value
+#' will be a single number, whereas we return a matrix.
 #' }
 #' 
 #' \item{\code{residuals}}{
@@ -91,19 +90,11 @@ coef.stanreg <- function(object, ...) {
 #' @rdname stanreg-methods
 #' @export
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
-  if (used.optimizing(object))
-    return(confint.default(object, parm, level, ...))
-  if (missing(parm)) {
-    mat <- as.matrix.stanreg(object)
-    sel <- grepl("mean_PPD|log-posterior", colnames(mat))
-    mat <- mat[, !sel, drop = FALSE]
+  if (!used.optimizing(object)) {
+    stop("For models fit using MCMC or a variational approximation please use ", 
+         "prob_int() to obtain Bayesian interval estimates.", call. = FALSE)
   }
-  else {
-    parm[parm == "varying"] <- "b"
-    mat <- as.matrix.stanreg(object, pars = parm)
-  }
-  alpha <- (1 - level) / 2
-  t(apply(mat, 2L, quantile, probs = c(alpha, 1 - alpha)))
+  confint.default(object, parm, level, ...)
 }
 
 #' @rdname stanreg-methods
