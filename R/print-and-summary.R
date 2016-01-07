@@ -81,7 +81,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   print(x$call)
   cat("\nEstimates:\n")
   
-  mer <- is(x, "lmerMod")
+  mer <- is.mer(x)
   ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
@@ -208,7 +208,7 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' @importMethodsFrom rstan summary
 summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
                             probs = NULL, ..., digits = 1) {
-  mer <- !is.null(object$glmod)
+  mer <- is.mer(object)
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
     if (!is.null(probs)) args$probs <- probs

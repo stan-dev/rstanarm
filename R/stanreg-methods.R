@@ -84,7 +84,7 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (is(object, "lmerMod")) .mermod_coef(object, ...)
+  if (is.mer(object)) .mermod_coef(object, ...)
   else object$coefficients
 }
 
@@ -195,7 +195,7 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
 #' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is(object, "lmerMod")) out <- object$covmat
+  if (!is.mer(object)) out <- object$covmat
   else {
     sel <- seq_along(fixef(object))
     out <- object$covmat[sel, sel, drop=FALSE]
@@ -206,9 +206,9 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
 
 
 .glmer_check <- function(object) {
-  if (is.null(object$glmod)) {
-    stop("This method is for stan_glmer and stan_lmer models only.")
-  }
+  if (!is.mer(object))
+    stop("This method is for stan_glmer and stan_lmer models only.", 
+         call. = FALSE)
 }
 .cnms <- function(object) {
   .glmer_check(object)
@@ -342,7 +342,7 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
-  if (is(formula, "lmerMod")) {
+  if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
       ff <- formula(formula, fixed.only = TRUE)
@@ -361,7 +361,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (is(object, "lmerMod")) object$glmod$X
+  if (is.mer(object)) object$glmod$X
   else NextMethod("model.matrix")
 }
 
@@ -374,7 +374,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
-  if (!is(x, "lmerMod")) return(x$formula)
+  if (!is.mer(x)) return(x$formula)
   else return(formula_mer(x, ...))
 }
 
@@ -386,7 +386,6 @@ justRE <- function(f, response = FALSE) {
               response = response)
 }
 formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
-
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
@@ -418,7 +417,7 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
 #' @param x,fixed.only,random.only,... See lme4:::terms.merMod
 #' 
 terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
-  if (!is(x, "lmerMod")) NextMethod("terms")
+  if (!is.mer(x)) NextMethod("terms")
   else {
     fr <- x$glmod$fr
     if (missing(fixed.only) && random.only) 

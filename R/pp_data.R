@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
-  if (is(object, "lmerMod")) .pp_data_mer(object, newdata, re.form, ...)
+  if (is.mer(object)) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
 
