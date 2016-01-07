@@ -28,18 +28,25 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @template args-regex-pars
-#' @param prob A number between 0 and 1 indicating the desired posterior 
-#'   probability mass \eqn{p} to include in the intervals. The default is to 
-#'   report 90\% intervals (\code{prob=0.9}) rather than the traditionally used 
-#'   95\% (see Details).
+#' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired
+#'   posterior probability mass to include in the intervals. The default is to
+#'   report \eqn{90}\% intervals (\code{prob=0.9}) rather than the traditionally
+#'   used \eqn{95}\% (see Details).
 #' @param type The type of interval to compute. Currently the only option is 
 #'   \code{"central"} (see Details). A central \eqn{100p}\%
-#'   interval is defined by the \eqn{\alpha} and \eqn{1 - \alpha} quantiles,
-#'   where \eqn{\alpha = (1 - p)/2}.
+#'   interval is defined by the \eqn{\alpha/2} and \eqn{1 - \alpha/2} quantiles,
+#'   where \eqn{\alpha = 1 - p}.
 #' @param pars An optional character vector of parameter names.
 #' @param ... Currently ignored.
 #' 
-#' @return A two-column matrix.
+#' @return A matrix with two columns and as many rows as model parameters (or 
+#'   the subset of parameters specified by \code{pars} and/or 
+#'   \code{regex_pars}). For a given value of \code{prob}, \eqn{p}, the columns 
+#'   correspond to the lower and upper \eqn{100p}\% interval limits and have the
+#'   names \eqn{100\alpha/2}\% and \eqn{100(1 - \alpha/2)}\%, where \eqn{\alpha 
+#'   = 1-p}. For example, if \code{prob=0.9} is specified (a \eqn{90}\%
+#'   interval), then the column names will be \code{"5\%"} and \code{"95\%"},
+#'   respectively.
 #' 
 #' @details
 #' \subsection{Interpretation}{
@@ -52,19 +59,19 @@
 #' intervals (also known as credible intervals).
 #' }
 #' \subsection{Default 90\% intervals}{
-#' We default to reporting 90\% intervals rather than 95\% intervals for several
-#' reasons:
+#' We default to reporting \eqn{90}\% intervals rather than \eqn{95}\% intervals
+#' for several reasons:
 #' \itemize{
-#'  \item Computational stability: 90\% intervals are more stable than 95\% 
-#'  intervals (for which each end relies on only 2.5\% of the posterior draws).
-#'  \item Relation to Type-S errors (Gelman and Carlin, 2014): 95\% of the 
-#'  mass in a 90\% central interval is above the lower value and 95\% of the 
-#'  mass is below the upper value. For a parameter \eqn{\theta}, it is therefore
-#'  easy to see if the posterior probability that \eqn{\theta > 0} (or
-#'  \eqn{\theta < 0}) is larger or smaller than 95\%.
+#'  \item Computational stability: \eqn{90}\% intervals are more stable than
+#'  \eqn{95}\% intervals (for which each end relies on only \eqn{2.5}\% of the
+#'  posterior draws). \item Relation to Type-S errors (Gelman and Carlin, 2014):
+#'  \eqn{95}\% of the mass in a \eqn{90}\% central interval is above the lower
+#'  value (and \eqn{95}\% is below the upper value). For a parameter
+#'  \eqn{\theta}, it is therefore easy to see if the posterior probability that
+#'  \eqn{\theta > 0} (or \eqn{\theta < 0}) is larger or smaller than \eqn{95}\%.
 #' }
-#' Of course, if 95\% intervals are desired they can be computed by specifying
-#' \code{prob=0.95}.
+#' Of course, if \eqn{95}\% intervals are desired they can be computed by
+#' specifying \code{prob=0.95}.
 #' }
 #' \subsection{Types of intervals}{
 #' Currently \code{posterior_interval} only computes central intervals because
