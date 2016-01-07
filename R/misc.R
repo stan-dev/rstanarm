@@ -116,6 +116,20 @@ used.variational <- function(x) {
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
+# Test if stanreg object used stan_(g)lmer
+#
+# @param x A stanreg object.
+is.mer <- function(x) {
+  stopifnot(is.stanreg(x))
+  check1 <- is(x, "lmerMod")
+  check2 <- !is.null(x$glmod)
+  if (check1 && !check2) 
+    stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
+  else if (!check1 && check2)
+    stop("Bug found. 'x' has 'glmod' component but not class 'lmerMod'.")
+  return(check1 && check2)
+}
+
 # Consistent error message to use when something is only available for 
 # models fit using MCMC
 #

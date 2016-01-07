@@ -133,7 +133,7 @@ waic.stanreg <- function(x, ...) {
   data$offset <- object$offset
   if (!all(object$weights == 1)) data$weights <- object$weights
   
-  if (is(object, "lmerMod")) {
+  if (is.mer(object)) {
     z <- get_z(object)
     b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
     data <- cbind(data, z)

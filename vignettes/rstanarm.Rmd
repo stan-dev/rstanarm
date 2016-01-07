@@ -175,12 +175,12 @@ function we can obtain a Bayesian uncertainty interval for $\beta_1$:
 ci95 <- posterior_interval(womensrole_bglm_1, prob = 0.95, pars = "education")
 round(ci95, 2)
 ```
-Unlike frequentist confidence intervals --- which are _not_ interpretable as
-post-data probabilities --- the Bayesian uncertainty interval indicates we believe 
-after seeing the data that there is a $0.95$ probability that $\beta_2$ is 
-between `r round(ci95[1,1],2)` and `r round(ci95[1,2],2)`. Alternatively, we
-could say that there is essentially zero probability that $\beta_2 > 0$,
-although frequentists cannot make such a claim coherently.
+Unlike frequentist confidence intervals --- which are _not_ interpretable in 
+terms of post-data probabilities --- the Bayesian uncertainty interval indicates
+we believe after seeing the data that there is a $0.95$ probability that
+$\beta_2$ is between `r round(ci95[1,1],2)` and `r round(ci95[1,2],2)`.
+Alternatively, we could say that there is essentially zero probability that
+$\beta_2 > 0$, although frequentists cannot make such a claim coherently.
 
 Many of the postestimation methods that are available for a model that is
 estimated by `glm` are also available for a model that is estimated by

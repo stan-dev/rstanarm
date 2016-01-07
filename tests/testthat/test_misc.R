@@ -225,6 +225,22 @@ test_that("used.sampling, used.optimizing, and used.variational work", {
   expect_error(used.optimizing(fito$stanfit))
 })
 
+test_that("is.mer works", {
+  is.mer <- rstanarm:::is.mer
+  bad1 <- bad2 <- example_model
+  bad1$glmod <- NULL
+  class(bad2) <- "stanreg"
+  
+  expect_true(is.mer(example_model))
+  expect_true(is.mer(fit2))
+  expect_false(is.mer(fit))
+  expect_false(is.mer(fito))
+  expect_false(is.mer(fitvb))
+  expect_false(is.mer(fitvb2))
+  expect_error(is.mer(bad1), regexp = "Bug found")
+  expect_error(is.mer(bad2), regexp = "Bug found")
+})
+
 test_that("get_x, get_y, get_z work", {
   x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
   y_ans <- mtcars$mpg
