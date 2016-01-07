@@ -197,7 +197,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
     covmat <- cov(stanmat)
     coefs <- apply(stanmat[, 1:K, drop = FALSE], 2, median)
     ses <- apply(stanmat[, 1:K, drop = FALSE], 2, mad)
-    zeta <- apply(stanmat[, K:K2, drop = FALSE], 2, mad)
+    zeta <- apply(stanmat[, (K+1):K2, drop = FALSE], 2, mad)
     eta <- linear_predictor(coefs, x, offset)
     mu <- inverse_link(eta)
     

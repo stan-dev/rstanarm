@@ -39,8 +39,8 @@
 #'   transformations were specified inside the model formula.
 #' @param draws An integer indicating the number of draws to return. The default
 #'   and maximum number of draws is the size of the posterior sample.
-#' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level
-#'   parameters}}, a formula indicating which group-level parameters to 
+#' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
+#'   parameters, a formula indicating which group-level parameters to 
 #'   condition on when making predictions. \code{re.form} is specified in the 
 #'   same form as for \code{\link[lme4]{predict.merMod}}. The default, 
 #'   \code{NULL}, indicates that all estimated group-level parameters are 
