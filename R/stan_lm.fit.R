@@ -126,11 +126,9 @@ stan_lm.fit <- function(x, y, offset = NULL, singular.ok = TRUE, ...,
                         prior = R2(stop("'location' must be specified")), 
                         prior_intercept = NULL, prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL) {
-
-  call <- match.call()
+                        adapt_delta = NULL) { # nocov start
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("stan_lm.wfit")
   mf$w <- as.name("NULL")
   return(eval(mf, parent.frame()))
-}
+} # nocov end
