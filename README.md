@@ -15,7 +15,8 @@ point estimates.
 
 ### Installation
 
-**rstanarm** is not yet on CRAN. To install it, first make sure that you can install the **rstan** package by following these [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once **rstan** is successfully installed, execute the following in R:
+**rstanarm** is not yet on CRAN. To install it, first make sure that you can install the **rstan** package by following these [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once **rstan** is successfully installed, you can 
+install **rstanarm** from GitHub using the **devtools** package by executing the following in R:
 
 ```{r}
 if (!require(devtools)) {
@@ -24,6 +25,8 @@ if (!require(devtools)) {
 }
 devtools::install_github("stan-dev/rstanarm", args = "--preclean")
 ```
+
+Make sure to include the `args == "--preclean"` argument or the package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ### Contributing 
 
