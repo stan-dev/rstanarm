@@ -52,6 +52,15 @@ test_that("stan_lm doesn't break with less common priors", {
   expect_output(update(fit, prior_intercept = normal()), regexp = "SAMPLING")
 })
 
+test_that("stan_lm doesn't break with vb algorithms", {
+  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
+                               prior = R2(location = 0.75),
+                               algorithm = "meanfield", seed = SEED), 
+                regexp = "MEDIAN ELBO CONVERGED")
+  expect_output(update(fit, algorithm = "fullrank"), 
+                regexp = "MEDIAN ELBO CONVERGED")
+})
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
