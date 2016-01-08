@@ -2,14 +2,14 @@ Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
 Version: 2.9.0
-Date: 2016-01-03
+Date: 2016-01-08
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Estimates precompiled regression models using the 'rstan' package, which provides
+Description: Estimates pre-compiled regression models using the 'rstan' package, which provides
     the R interface to the Stan C++ library for Bayesian estimation. Models are specified via the
-    customary R syntax with a formula and data.frame, with some additional arguments for priors.
+    customary R syntax with a formula and data.frame and some additional arguments for priors.
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
