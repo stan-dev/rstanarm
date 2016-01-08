@@ -158,13 +158,16 @@ prior with 7 degrees of freedom and a scale of 2.5, which, as discussed above,
 is a reasonable default prior when coefficients should be close to zero but 
 have some chance of being large. 
 
-```{r, ARSENIC-stan_glm}
+```{r, ARSENIC-stan_glm, results="hide"}
 library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, family = binomial(link = "logit"), 
                  prior = t_prior, prior_intercept = t_prior,  
                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 (coef_fit1 <- round(coef(fit1), 3))
+```
+```{r, echo=FALSE}
+print(coef_fit1)
 ```
 
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
@@ -219,10 +222,14 @@ from arsenic are roughly proportional to exposure, and so we would expect
 switching to be more likely from wells with high arsenic levels" (pg. 90). 
 We only need to change the formula, so we can use the `update` function:
 
-```{r ARSENIC-stan_glm2}
+```{r ARSENIC-stan_glm2, results="hide"}
 fit2 <- update(fit1, formula = switch ~ dist100 + arsenic) 
 (coef_fit2 <- round(coef(fit2), 3))
 ```
+```{r, echo=FALSE}
+print(coef_fit2)
+```
+
 
 As expected the coefficient on `arsenic` is positive. Net of distance, an 
 increase of 1 in the concentration of arsenic is associated with an increase 

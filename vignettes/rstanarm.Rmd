@@ -395,16 +395,7 @@ good_rhat <- update(bad_rhat, iter = 500,
 ```
 
 Here the first model leads to the warning message about convergence but the 
-second model does not. To see a histogram of the Rhat values we can use the 
-`plot` method for `stanreg` objects:
-
-```{r, Rhat-plot, fig.width=3, fig.height=3}
-plot(bad_rhat, "rhat")
-```
-
-Indeed, we can see that not all Rhat values are less than 1.1. The Rhat values
-for all parameters are returned by the `summary` function (e.g. `summary(bad_rhat)`). 
-Checking only the parameters with an Rhat value above 1.1 can be done like this:
+second model does not. Indeed, we can see that not all Rhat values are less than 1.1 for the first model:
 
 ```{r, Rhat-summary-bad}
 rhat <- summary(bad_rhat)[, "Rhat"]
@@ -495,9 +486,9 @@ maximum allowed tree depth is reached it indicates that NUTS is terminating
 prematurely to avoid excessively long execution time. If __rstanarm__ arm prints
 a warning about transitions exceeding the maximum treedepth you should try
 increasing the `max_treedepth` parameter using the optional `control` argument. 
-For example, to increase `max_treedepth` to 20 (the default used __rstanarm__ is
-15) you can provide the argument `control = list(max_treedepth = 20)` to any of
-the __rstanarm__ modeling functions.
+For example, to increase `max_treedepth` to 20 (the default used by __rstanarm__
+is 15) you can provide the argument `control = list(max_treedepth = 20)` to any
+of the __rstanarm__ modeling functions.
 
 __References__
 
