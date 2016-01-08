@@ -73,11 +73,15 @@
 #' }
 #' }
 #' 
-#' @seealso \code{\link{posterior_interval}} for Bayesian uncertainty intervals.
+#' @seealso
+#' Other S3 methods for stanreg objects, which have separate documentation, 
+#' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 
+#' \code{\link{predict.stanreg}}, \code{\link{print.stanreg}}, and
+#' \code{\link{summary.stanreg}}.
 #' 
-#' Other S3 methods for stanreg objects, which have separate documentation,
-#' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}},
-#' \code{\link{print.stanreg}}, and \code{\link{summary.stanreg}}.
+#' \code{\link{posterior_interval}} and \code{\link{posterior_predict}} for 
+#' alternatives to \code{confint} and \code{predict} for models fit using MCMC 
+#' or variational approximation.
 #' 
 NULL
 

@@ -32,64 +32,70 @@
 #' @export compare
 #' @export launch_shinystan
 #' @description An appendage to the \pkg{rstan} package that enables some of the
-#'   most common applied regression models to be estimated using Markov Chain
-#'   Monte Carlo, variational approximations to the posterior distribution, or
-#'   optimization. Nevertheless, these models can still be specified using the 
-#'   customary R modeling syntax (e.g. like that of \code{\link[stats]{glm}} with 
-#'   a \code{\link[stats]{formula}} and a \code{\link{data.frame}}).
+#'   most common applied regression models to be estimated using Markov Chain 
+#'   Monte Carlo, variational approximations to the posterior distribution, or 
+#'   optimization. The \pkg{rstanarm} package allows these models to be 
+#'   specified using the customary R modeling syntax (e.g., like that of 
+#'   \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
 #'   
-#'   The set of models supported by the \pkg{rstanarm} package is large (and 
-#'   will continue to grow), but also limited enough so that it is possible to 
-#'   integrate them tightly with the \code{\link{pp_check}} function for 
-#'   graphical posterior predictive checks and the 
-#'   \code{\link{posterior_predict}} function to easily estimate the effect of 
-#'   specific manipulations of predictor variables or to predict the outcome in 
-#'   a training set. The fitted model objects
-#'   (\code{\link[=stanreg-objects]{stanreg}} objects) can also be passed to the
-#'   \code{\link[loo]{loo}} function in the \pkg{loo} package for model
-#'   comparison or to the \code{\link[shinystan]{launch_shinystan}} function in
-#'   the \pkg{shinystan} package in order to visualize the posterior
-#'   distribution using the ShinyStan graphical user interface. See the
-#'   \pkg{rstanarm} vignettes for more details about the entire process.
+#'   The set of models supported by \pkg{rstanarm} is large (and will continue
+#'   to grow), but also limited enough so that it is possible to integrate them
+#'   tightly with the \code{\link{pp_check}} function for graphical posterior
+#'   predictive checks and the \code{\link{posterior_predict}} function to
+#'   easily estimate the effect of specific manipulations of predictor variables
+#'   or to predict the outcome in a training set. 
+#'   
+#'   The objects returned by the \pkg{rstanarm} modeling functions are called
+#'   \code{\link[=stanreg-objects]{stanreg}} objects. In addition to all of the
+#'   typical \code{\link[=stanreg-methods]{methods}} defined for fitted model
+#'   objects, stanreg objects can be passed to the \code{\link[loo]{loo}}
+#'   function in the \pkg{loo} package for model comparison or to the
+#'   \code{\link[shinystan]{launch_shinystan}} function in the \pkg{shinystan}
+#'   package in order to visualize the posterior distribution using the
+#'   ShinyStan graphical user interface. See the \pkg{rstanarm} vignettes for
+#'   more details about the entire process.
 #'
 #' @section Estimation algorithms: 
 #' The modeling functions in the \pkg{rstanarm} package take an \code{algorithm}
 #' argument that can be one of the following:
 #' \describe{
-#'   \item{\strong{Sampling} (\code{algorithm="sampling"})}{
-#'   Uses Markov Chain Monte Carlo (MCMC) --- in particular, Hamiltonian Monte
-#'   Carlo (HMC) with a tuned but diagonal mass matrix --- to draw from the
-#'   posterior distribution of the parameters. See \code{\link[rstan]{sampling}}
-#'   for more details. \strong{This is the default and the recommended algorithm
-#'   for statistical inference.}}
+#'  \item{\strong{Sampling} (\code{algorithm="sampling"})}{
+#'  Uses Markov Chain Monte Carlo (MCMC) --- in particular, Hamiltonian Monte
+#'  Carlo (HMC) with a tuned but diagonal mass matrix --- to draw from the
+#'  posterior distribution of the parameters. See \code{\link[rstan]{sampling}}
+#'  for more details. \strong{This is the default and the recommended algorithm
+#'  for statistical inference.}
+#'  }
 #'  \item{\strong{Mean-field} (\code{algorithm="meanfield"})}{
-#'  Uses variational inference to draw from an approximation to the posterior
-#'  distribution. In particular, this algorithm finds the set of independent
-#'  normal distributions in the unconstrained space that --- when transformed
-#'  into the constrained space --- most closely approximate the posterior
-#'  distribution. Then it draws repeatedly from these independent normal
-#'  distributions and transforms them into the constrained space. The entire
-#'  process is much faster than HMC and yields independent draws but \strong{is
-#'  not recommended for final statistical inference}. It can be useful to narrow
-#'  the set of candidate models in large problems particularly when specifying
-#'  \code{QR=TRUE} in \code{\link{stan_glm}}, \code{\link{stan_glmer}}, and 
-#'  \code{\link{stan_gamm4}} but is \strong{only an approximation to the 
-#'  posterior distribution}.}
+#'  Uses mean-field variational inference to draw from an approximation to the
+#'  posterior distribution. In particular, this algorithm finds the set of
+#'  independent normal distributions in the unconstrained space that --- when
+#'  transformed into the constrained space --- most closely approximate the
+#'  posterior distribution. Then it draws repeatedly from these independent
+#'  normal distributions and transforms them into the constrained space. The
+#'  entire process is much faster than HMC and yields independent draws but
+#'  \strong{is not recommended for final statistical inference}. It can be
+#'  useful to narrow the set of candidate models in large problems particularly
+#'  when specifying \code{QR=TRUE} in \code{\link{stan_glm}},
+#'  \code{\link{stan_glmer}}, and \code{\link{stan_gamm4}} but is \strong{only
+#'  an approximation to the posterior distribution}.
+#'  }
 #'  \item{\strong{Full-rank} (\code{algorithm="fullrank"})}{
-#'  Uses variational inference to draw from an approximation to the posterior
-#'  distribution by finding the multivariate normal distribution in the
-#'  constrained space that --- when transformed into the constrained space ---
-#'  most closely approximates the posterior distribution. Then it draws
-#'  repeatedly from this multivariate normal distribution and transforms the
-#'  draws into the constrained space. This process is slower than meanfield
-#'  variational inference but is faster than HMC. Although still an
+#'  Uses full-rank variational inference to draw from an approximation to the
+#'  posterior distribution by finding the multivariate normal distribution in
+#'  the constrained space that --- when transformed into the constrained space
+#'  --- most closely approximates the posterior distribution. Then it draws 
+#'  repeatedly from this multivariate normal distribution and transforms the 
+#'  draws into the constrained space. This process is slower than meanfield 
+#'  variational inference but is faster than HMC. Although still an 
 #'  approximation to the posterior distribution and thus \strong{not recommended
-#'  for final statistical inference}, the approximation is more realistic than
-#'  that of meanfield variational inference because the parameters are not
+#'  for final statistical inference}, the approximation is more realistic than 
+#'  that of mean-field variational inference because the parameters are not 
 #'  assumed to be independent in the unconstrained space. Nevertheless, fullrank
-#'  variational inference is a more difficult optimization problem and the
-#'  algorithm is more prone to non-convergence or convergence to a local
-#'  optimum.}
+#'  variational inference is a more difficult optimization problem and the 
+#'  algorithm is more prone to non-convergence or convergence to a local 
+#'  optimum.
+#'  }
 #'  \item{\strong{Optimizing} (\code{algorithm="optimizing"})}{
 #'  Finds the posterior mode using a C++ implementation of the LBGFS algorithm.
 #'  See \code{\link[rstan]{optimizing}} for more details. If there is no prior 
@@ -98,19 +104,20 @@
 #'  over the emulated functions in other packages. However, if priors are 
 #'  specified, then the estimates are penalized maximum likelihood estimates, 
 #'  which may have some redeeming value. Currently, optimization is only 
-#'  supported for \code{\link{stan_glm}}.}
+#'  supported for \code{\link{stan_glm}}.
+#'  }
 #' }
 #' 
 #' 
 #' @section Modeling functions: 
-#' The model estimating functions are described in
-#' greater detail in their individual help pages and the vignettes. Here we
-#' provide a very brief overview:
+#' The model estimating functions are described in greater detail in their
+#' individual help pages and the vignettes. Here we provide a very brief
+#' overview:
 #' 
 #' \describe{
 #'  \item{\code{\link{stan_lm}}, \code{stan_aov}}{
 #'   Similar to \code{\link[stats]{lm}} or \code{\link[stats]{aov}} but with 
-#'   regularizing priors on the model parameters that are driven by prior 
+#'   novel regularizing priors on the model parameters that are driven by prior 
 #'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
 #'   attributable to the predictors in a linear model.
 #'  }
@@ -134,13 +141,14 @@
 #'   common and group-specific parameters.
 #'  }
 #'  \item{\code{\link{stan_gamm4}}}{
-#'  Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4}, which augments
-#'  a GLM (possibly with group-specific terms) with nonlinear smooth functions
-#'  of the predictors to form a Generalized Additive Mixed Model (GAMM). Rather
-#'  than calling \code{\link[lme4]{glmer}} like \code{\link[gamm4]{gamm4}} does,
-#'  \code{\link{stan_gamm4}} essentially calls \code{\link{stan_glmer}}, which
-#'  avoids the optimization issues that often crop up with GAMMs and provides
-#'  better estimates for the uncertainty of the estimates.
+#'   Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package, which 
+#'   augments a GLM (possibly with group-specific terms) with nonlinear smooth 
+#'   functions of the predictors to form a Generalized Additive Mixed Model 
+#'   (GAMM). Rather than calling \code{\link[lme4]{glmer}} like 
+#'   \code{\link[gamm4]{gamm4}} does, \code{\link{stan_gamm4}} essentially calls
+#'   \code{\link{stan_glmer}}, which avoids the optimization issues that often 
+#'   crop up with GAMMs and provides better estimates for the uncertainty of the
+#'   parameter estimates.
 #'  }
 #'  \item{\code{\link{stan_polr}}}{
 #'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it

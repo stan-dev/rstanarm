@@ -18,7 +18,7 @@
 #' Bayesian generalized linear additive models with group-specific terms via
 #' Stan
 #' 
-#' Bayesian inference for GAMs with flexible priors.
+#' Bayesian inference for GAMMs with flexible priors.
 #' 
 #' @export
 #' @templateVar fun stan_gamm4
@@ -46,15 +46,19 @@
 #' @details The \code{stan_gamm4} function is similar in syntax to 
 #'   \code{\link[gamm4]{gamm4}}, which accepts a syntax that is similar to (but 
 #'   not quite as extensive as) that for \code{\link[mgcv]{gamm}} and converts 
-#'   it internally into the syntax accepted by \code{\link[lme4]{glmer}}. But
+#'   it internally into the syntax accepted by \code{\link[lme4]{glmer}}. But 
 #'   rather than performing (restricted) maximum likelihood estimation, the 
 #'   \code{stan_gamm4} function utilizes MCMC to perform Bayesian estimation. 
 #'   The Bayesian model adds independent priors on the common regression 
 #'   coefficients (in the same way as \code{\link{stan_glm}}) and priors on the 
 #'   terms of a decomposition of the covariance matrices of the group-specific 
-#'   parameters, including the smooths. See \code{\link[gamm4]{gamm4}} for more 
-#'   information about the model specicification and \code{\link{priors}} for 
-#'   more information about the priors.
+#'   parameters, including the smooths. Estimating these models via MCMC avoids
+#'   the optimization issues that often crop up with GAMMs and provides better
+#'   estimates for the uncertainty in the parameter estimates. 
+#'   
+#'   See \code{\link[gamm4]{gamm4}} for more information about the model
+#'   specicification and \code{\link{priors}} for more information about the
+#'   priors.
 #' @importFrom lme4 getME
 #' @examples
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
@@ -68,11 +72,12 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
 
+  call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
   family <- validate_family(family)
   mc[[1]] <- quote(gamm4::gamm4)
-  mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_covariance <-
-    mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
+  mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- 
+    mc$prior_covariance <- mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
   result <- suppressWarnings(eval(mc, parent.frame(1L)))
   group <- getME(result$mer, c("Zt", "cnms", "flist"))
   glmod <- getME(result$mer, c("X", "y"))               
@@ -86,7 +91,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   else offset <- eval(attr(glmod$fr, "offset"), parent.frame(1L)) %ORifNULL% double(0)
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()
-  if (!length(prior_ops)) prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
+  if (!length(prior_ops)) 
+    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
@@ -96,7 +102,6 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
-  call <- match.call(expand.dots = TRUE)
   prior.info <- get_prior_info(call, formals())
   
   Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 

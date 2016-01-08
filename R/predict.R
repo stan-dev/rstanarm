@@ -17,6 +17,10 @@
 
 #' Predict method for stanreg objects
 #' 
+#' This method is primarily intended to be used only for models fit using 
+#' optimization. For models fit using MCMC or one of the variational
+#' approximations, see \code{\link{posterior_predict}}.
+#' 
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
@@ -32,9 +36,7 @@
 #' @return A vector if \code{se.fit} is \code{FALSE} and a list if \code{se.fit}
 #'   is \code{TRUE}.
 #'
-#' @seealso \code{\link{posterior_predict}} to draw from the posterior 
-#'   predictive distribution for models fit using MCMC or variational 
-#'   approximation.
+#' @seealso \code{\link{posterior_predict}}
 #' 
 predict.stanreg <- function(object, ..., newdata = NULL, 
                             type = c("link", "response"), se.fit = FALSE) {
