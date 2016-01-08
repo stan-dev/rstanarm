@@ -166,8 +166,8 @@ fit1 <- stan_glm(switch ~ dist100, data = wells,
                  prior = t_prior, prior_intercept = t_prior,  
                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 ```
-```{r}
-(coef_fit1 <- round(coef(fit1), 3))
+```{r, echo=FALSE}
+print(coef_fit1)
 ```
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
 exactly the same way as for `glm`. We've also added the optional additional 
@@ -221,12 +221,13 @@ from arsenic are roughly proportional to exposure, and so we would expect
 switching to be more likely from wells with high arsenic levels" (pg. 90). 
 We only need to change the formula, so we can use the `update` function:
 
-```{r ARSENIC-stan_glm2, results = "hide"}
+```{r ARSENIC-stan_glm2, results="hide"}
 fit2 <- update(fit1, formula = switch ~ dist100 + arsenic) 
 ```
 ```{r}
 (coef_fit2 <- round(coef(fit2), 3))
 ```
+
 As expected the coefficient on `arsenic` is positive. Net of distance, an 
 increase of 1 in the concentration of arsenic is associated with an increase 
 of `r coef_fit2[3]` in the log-odds of well-switching. The plot
