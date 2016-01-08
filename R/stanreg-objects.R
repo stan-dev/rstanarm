@@ -22,8 +22,8 @@
 #' @description The model-fitting functions in \pkg{rstanarm} return an object 
 #'   of class 'stanreg', which is a list containing at a minimum the components 
 #'   listed below. Each stanreg object will also have additional classes (e.g. 
-#'   'aov', 'glm', 'polr', etc.) and additional components depending on the 
-#'   model and estimation algorithm.
+#'   'aov', 'glm', 'polr', etc.) and several additional components depending on
+#'   the model and estimation algorithm.
 #'   
 #' @section stanreg objects:   
 #' \describe{
@@ -56,9 +56,6 @@
 #'   }
 #'   \item{\code{family}}{
 #'   The \code{\link[stats]{family}} object used.
-#'   }
-#'   \item{\code{df.residual}}{
-#'   The residual degrees of freedom.
 #'   }
 #'   \item{\code{call}}{
 #'   The matched call.

@@ -75,6 +75,12 @@
 #' }
 #' }
 #' 
+#' @note Because \code{sigma} is not yet included in \pkg{stats}, both 
+#'   \pkg{rstanarm} and \pkg{lme4} export a \code{sigma} generic. If both
+#'   packages are loaded it may be necessary to use \code{rstanarm::sigma} or
+#'   \code{lme4::sigma} (depending on which package is loaded first) in order to
+#'   access the appropriate method.
+#' 
 #' @seealso
 #' Other S3 methods for stanreg objects, which have separate documentation, 
 #' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 

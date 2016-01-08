@@ -54,7 +54,6 @@ stanreg <- function(object) {
     covmat <- cov(stanmat)
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
     ses <- apply(stanmat, 2L, mad)
-    df.residual <- NA_integer_
     if (object$algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
   }
@@ -78,14 +77,13 @@ stanreg <- function(object) {
     fitted.values = mu,
     linear.predictors = eta,
     residuals, 
-    df.residual, 
+    df.residual = if (opt) df.residual else NA_integer_, 
     covmat,
     y, 
     x, 
     model = object$model, 
     data = object$data, 
     family, 
-    rank,
     offset = if (any(object$offset != 0)) object$offset else NULL,
     weights = object$weights, 
     prior.weights = object$weights, 
@@ -97,9 +95,10 @@ stanreg <- function(object) {
     prior.info = object$prior.info,
     algorithm = object$algorithm,
     stan_summary,  
-    stanfit = if (opt) stanfit$stanfit else stanfit,
-    asymptotic_sampling_dist = if (opt) stanmat else NULL,
-    glmod = if (mer) object$glmod else NULL
+    stanfit = if (opt) stanfit$stanfit else stanfit
   )
+  if (opt) out$asymptotic_sampling_dist <- stanmat
+  if (mer) out$glmod <- object$glmod
+  
   structure(out, class = c("stanreg", "glm", "lm"))
 }
