@@ -38,3 +38,14 @@ test_that("stan_polr returns expected result for esoph example", {
   # check <- polr(f, data = esoph)
   # expect_equal(coef(fit), coef(check), threshold)
 })
+
+test_that("gumbel functions ok", {
+  # formulas are correct
+  # just test a few cases so they're flagged if anything changes by accident
+  # maybe should compare to corresponding functions in ordinal package?
+  expect_equal(rstanarm:::dgumbel(0), 0.3678794, tol = 0.00001)
+  expect_equal(rstanarm:::qgumbel(0), -Inf)
+  expect_equal(rstanarm:::qgumbel(0.5), 0.3665129, tol = 0.00001)
+  expect_equal(rstanarm:::pgumbel(0.3665129), 0.5, tol = 0.00001)
+  expect_equal(rstanarm:::qgumbel(1), Inf)
+})
