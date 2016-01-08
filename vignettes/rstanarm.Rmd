@@ -447,17 +447,7 @@ functions accepts an `adapt_delta` argument, so to increase `adapt_delta` you
 can simply change the value from the default value to a value closer to $1$. To
 reduce the frequency with which users need to manually set `adapt_delta`, the
 default value depends on the prior distribution used (see `help("adapt_delta",
-package = "rstanarm")` for details). In the example below the default 
-value (0.95 in this case) is too low:
-
-```{r, Divergent-fit, results='hide', warning=TRUE}
-divergences <- stan_glmer(mpg ~ wt + (1|cyl) + (1|gear), data = mtcars, 
-                          cores = CORES, chains = CHAINS, seed = SEED)
-no_divergences <- update(divergences, adapt_delta = 0.999)
-```
-
-Here we see a warning about divergent transitions for the first model but 
-no warning after increasing `adapt_delta`.
+package = "rstanarm")` for details). 
 
 The downside to increasing the target acceptance rate -- and, as a consequence, 
 decreasing the step size -- is that sampling will tend to be slower.
