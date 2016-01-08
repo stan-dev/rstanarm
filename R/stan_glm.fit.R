@@ -411,6 +411,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
 }
 
+
+# Add extra level _NEW_ to each group
+# 
+# @param Z ranef indicator matrix
+# @param cnms group$cnms
+# @param flist group$flist
 pad_reTrms <- function(Z, cnms, flist) {
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
   p <- sapply(cnms, FUN = length)
@@ -432,6 +438,7 @@ pad_reTrms <- function(Z, cnms, flist) {
 }
 
 # Drop the extra reTrms from a matrix x
+#
 # @param x A matrix (e.g. the posterior sample or matrix of summary stats)
 # @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
 #   variables?

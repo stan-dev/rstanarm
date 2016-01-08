@@ -292,7 +292,7 @@ test_that("as.matrix and as.data.frame methods work", {
   expect_error(as.matrix(stan_glm1, pars = c("bad1", "sigma")), 
                regexp = "No parameter(s) bad1", fixed = TRUE)
   expect_error(as.matrix(stan_glm1, regex_pars = "not a parameter"), 
-               regexp = "No matches for regex_pars")
+               regexp = "No matches for 'regex_pars'")
   expect_warning(as.matrix(stan_glm_opt1, regex_pars = "wt"), 
                  regexp = "'regex_pars' ignored")
 })
@@ -304,10 +304,13 @@ test_that("print and summary methods don't throw errors", {
   expect_output(print(stan_lmer1, digits = 2), "Estimates")
   expect_output(print(stan_lmer2), "stan_lmer")
   expect_output(print(stan_polr1), "stan_polr")
+  expect_output(print(stan_polr1), "Cutpoints")
   expect_output(print(stan_glm_opt1, digits = 5), "stan_glm")
   expect_output(print(stan_glm_vb1, digits = 5), "stan_glm")
   
-  expect_silent(summary(stan_lmer1, pars = "varying"))
+  expect_silent(s <- summary(stan_lmer1, pars = "varying"))
+  expect_silent(s_alt <- summary(stan_lmer1, regex_pars = c("plate", "sample")))
+  expect_identical(s, s_alt)
   expect_silent(s <- summary(stan_lmer1))
   expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
@@ -330,6 +333,8 @@ test_that("print and summary methods don't throw errors", {
   
   expect_silent(s <- summary(stan_glm_opt1))
   expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
+  expect_warning(s <- summary(stan_glm_opt1, regex_pars = c("wt", "sigma")), 
+               regexp = "'regex_pars' ignored")
   expect_silent(d <- as.data.frame(s))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")

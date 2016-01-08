@@ -66,6 +66,8 @@ test_that("compatible with gaussian glm", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, 
                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
   check_for_error(fit)
+  fit_off <- update(fit, offset = runif(nrow(mtcars)))
+  check_for_error(fit)
 })
 test_that("compatible with poisson & negbin glm", {
   counts <- c(18,17,15,20,10,20,25,13,12)

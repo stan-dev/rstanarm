@@ -30,8 +30,8 @@
 #'   \code{\link{update}}.
 #' @param parm For \code{confint}, an optional character vector of parameter
 #'   names.
-#' @param level For \code{confint}, a number between 0 and 1 indicating the 
-#'   confidence level to use.
+#' @param level For \code{confint}, a scalar between \eqn{0} and \eqn{1}
+#'   indicating the confidence level to use.
 #' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
 #'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
 #'   returned instead.
@@ -41,11 +41,11 @@
 #'   
 #' \describe{
 #' \item{\code{confint}}{
-#' For models fit using optimization, confidence intervals are 
-#' returned via a call to \code{\link[stats]{confint.default}}. If 
-#' \code{algorithm} is \code{"sampling"}, \code{"meanfield"}, or
-#' \code{"fullrank"}, the \code{\link{posterior_interval}} function should be used to
-#' compute Bayesian uncertainty intervals.
+#' For models fit using optimization, confidence intervals are returned via a
+#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is
+#' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
+#' \code{\link{posterior_interval}} function should be used to compute Bayesian
+#' uncertainty intervals.
 #' }
 #' 
 #' \item{\code{log_lik}}{
@@ -93,7 +93,8 @@ coef.stanreg <- function(object, ...) {
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (!used.optimizing(object)) {
     stop("For models fit using MCMC or a variational approximation please use ", 
-         "posterior_interval() to obtain Bayesian interval estimates.", call. = FALSE)
+         "posterior_interval() to obtain Bayesian interval estimates.", 
+         call. = FALSE)
   }
   confint.default(object, parm, level, ...)
 }
@@ -164,7 +165,7 @@ se.stanreg <- function(object, ...) {
 #' 
 update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
   if (is.null(call <- getCall(object))) 
-    stop("'object' does not contain a 'call' component.")
+    stop("'object' does not contain a 'call' component.", call. = FALSE)
   extras <- match.call(expand.dots = FALSE)$...
   if (!missing(formula.)) 
     call$formula <- update.formula(formula(object), formula.)
@@ -221,8 +222,8 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
 
 .mermod_coef <- function(object, ...) {
   if (length(list(...))) 
-    warning("arguments named \"", paste(names(list(...)), 
-                                        collapse = ", "), "\" ignored")
+    warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
+            "\" ignored.", call. = FALSE)
   fef <- data.frame(rbind(fixef(object)), check.names = FALSE)
   ref <- ranef(object)
   refnames <- unlist(lapply(ref, colnames))
@@ -238,7 +239,7 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
     row.names(val[[i]]) <- row.names(refi)
     nmsi <- colnames(refi)
     if (!all(nmsi %in% names(fef))) 
-      stop("unable to align random and fixed effects")
+      stop("Unable to align random and fixed effects.", call. = FALSE)
     for (nm in nmsi) val[[i]][[nm]] <- val[[i]][[nm]] + refi[, nm]
   }
   class(val) <- "coef.mer"
@@ -389,12 +390,12 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
-    stop("'fixed.only' and 'random.only' can't both be TRUE.")
+    stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
   
   fr <- x$glmod$fr
   if (is.null(form <- attr(fr, "formula"))) {
     if (!grepl("lmer$", deparse(getCall(x)[[1L]]))) 
-      stop("Can't find formula stored in model frame or call.")
+      stop("Can't find formula stored in model frame or call.", call. = FALSE)
     form <- as.formula(formula(getCall(x), ...))
   }
   if (fixed.only) {
@@ -423,7 +424,7 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     if (missing(fixed.only) && random.only) 
       fixed.only <- FALSE
     if (fixed.only && random.only) 
-      stop("'fixed.only' and 'random.only' can't both be TRUE.")
+      stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
 
     Terms <- attr(fr, "terms")
     if (fixed.only) {

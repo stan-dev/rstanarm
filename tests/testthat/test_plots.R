@@ -28,27 +28,6 @@ fit <- example_model
 fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield")
 
-context("plot.stanreg helpers")
-test_that(".grep_for_pars works", {
-  .grep_for_pars <- rstanarm:::.grep_for_pars
-  .bnames <- rstanarm:::.bnames
-  
-  all_period <- paste0("period", 2:4)
-  all_varying <- .bnames(rownames(fit$stan_summary), value = TRUE)
-  
-  expect_equal(.grep_for_pars(fit, "period"), all_period)
-  expect_equal(.grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
-  expect_equal(.grep_for_pars(fit, "period|size"), c("size", all_period))
-  expect_equal(.grep_for_pars(fit, "(2|3)$"), all_period[1:2])
-  expect_equal(.grep_for_pars(fit, "herd"), all_varying)
-  expect_equal(.grep_for_pars(fit, "b\\["), all_varying)
-  expect_equal(.grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
-  expect_equal(.grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
-  expect_equal(.grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
-  expect_error(.grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
-  expect_error(.grep_for_pars(fit, "b["))
-})
-
 context("plot.stanreg")
 test_that("plot method doesn't throw bad errors and creates ggplot objects", {
   expect_default_message <- function(fit, message = "default", ...) {

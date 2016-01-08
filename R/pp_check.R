@@ -137,7 +137,8 @@ ppcheck <- function(object,
 pp_check <- function(object, check = "distributions", nreps = NULL, 
                      seed = NULL, overlay = TRUE, test = "mean", ...) {
   if (!is.stanreg(object)) 
-    stop(deparse(substitute(object)), " is not a stanreg object")
+    stop(deparse(substitute(object)), " is not a stanreg object", 
+         call. = FALSE)
   if (used.optimizing(object)) 
     STOP_not_optimizing("pp_check")
   
@@ -150,7 +151,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   if (is.null(nreps) && !fn %in%  c("pp_check_stat", "pp_check_scatter"))
     nreps <- ifelse(fn == "pp_check_dist", 8, 3)
   if (!is.null(nreps) && fn == "pp_check_stat") {
-    warning("'nreps' is ignored if check='test'")
+    warning("'nreps' is ignored if check='test'", call. = FALSE)
     nreps <- NULL
   }
   
@@ -284,9 +285,9 @@ pp_check_stat <- function(y, yrep, test = "mean", ...) {
   vline_color <- .PP_FILL
   fill_color <- "black"
   if (missing(test) || !length(test) || length(test) > 2) 
-    stop("'test' should have length 1 or 2.")
+    stop("'test' should have length 1 or 2.", call. = FALSE)
   if (!is.character(test)) 
-    stop("'test' should be a character vector.")
+    stop("'test' should be a character vector.", call. = FALSE)
   
   if (length(test) == 1) {
     defaults <- list(fill = fill_color, na.rm = TRUE)
@@ -370,7 +371,8 @@ pp_check_resid <- function(y, yrep, n = 1, ...) {
 #' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
 pp_check_binned_resid <- function(object, n = 1, ...) {
   if (!requireNamespace("arm", quietly = TRUE)) 
-    stop("This plot requires the 'arm' package (install.packages('arm'))")
+    stop("This plot requires the 'arm' package (install.packages('arm'))", 
+         call. = FALSE)
   
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]

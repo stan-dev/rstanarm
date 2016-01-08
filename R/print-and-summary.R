@@ -21,12 +21,6 @@
 .median_and_madsd <- function(x) {
   cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
 }
-.posterior_sample_size <- function(x) {
-  stopifnot(is.stanreg(x))
-  if (used.sampling(x)) return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
-  else if (used.variational(x)) return(x$stanfit@sim$n_save) 
-  else return(NULL)
-}
 
 #' Print method for stanreg objects
 #' 
@@ -209,11 +203,11 @@ print.stanreg <- function(x, digits = 1, ...) {
 summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
                             probs = NULL, ..., digits = 1) {
   mer <- is.mer(object)
+  pars <- .collect_pars(object, pars, regex_pars)
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
     if (!is.null(probs)) args$probs <- probs
     out <- do.call("summary", args)$summary
-    pars <- .collect_pars(object, pars, regex_pars)
     if (is.null(pars)) {
       if (used.variational(object))
         out <- out[!rownames(out) %in% "log-posterior",, drop = FALSE]

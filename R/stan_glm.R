@@ -121,11 +121,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   Y <- model.response(mf, type = "any")
-  if (length(dim(Y)) == 1L) {
-    nm <- rownames(Y)
-    dim(Y) <- NULL
-    if (!is.null(nm)) names(Y) <- nm
-  }
+  Y <- array1D_check(Y)
   if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
   else X <- matrix(NA_real_, NROW(Y), 0L)
   weights <- validate_weights(as.vector(model.weights(mf)))

@@ -22,8 +22,9 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          prior_intercept = NULL, prior_PD = FALSE, 
                          algorithm = c("sampling", "meanfield", "fullrank"),
                          adapt_delta = NULL) {
+  algorithm <- match.arg(algorithm)
   if (NCOL(y) > 1) stop("Multivariate responses not supported yet.")
-  if (colnames(x)[1] == "(Intercept)") {
+  if (colnames(x)[1L] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[,-1,drop=FALSE]
   }
@@ -57,7 +58,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   else center_y <- 0
   ybar <- array(mean(y), J)
 
-  if (length(prior) == 0) {
+  if (!length(prior)) {
     prior_dist <- 0L
     eta <- 0
   }
@@ -65,7 +66,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     prior_dist <- 1L
     eta <- prior$eta <- make_eta(prior$location, prior$what, K = K)
   }
-  if (length(prior_intercept) == 0) {
+  if (!length(prior_intercept)) {
     prior_dist_for_intercept <- 0L
     prior_mean_for_intercept <- 0
     prior_scale_for_intercept <- 0
@@ -89,7 +90,6 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     out <- list(R2 = R2, log_omega = log_omega)
     return(out)
   }
-  algorithm <- match.arg(algorithm)
   stanfit <- stanmodels$lm
   standata <- nlist(K, has_intercept, prior_dist,
                     prior_dist_for_intercept, 
@@ -113,9 +113,12 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     stanfit <- do.call(sampling, sampling_args)
   }
   new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(x), "sigma", 
+                 colnames(x), 
+                 "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", 
-                 "R2", "mean_PPD", "log-posterior")
+                 "R2", 
+                 "mean_PPD", 
+                 "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
 }

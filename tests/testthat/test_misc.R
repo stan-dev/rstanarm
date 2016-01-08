@@ -20,6 +20,9 @@
 
 library(rstanarm)
 SEED <- 12345
+ITER <- 10L
+CHAINS <- 2L
+REFRESH <- ITER
 
 context("helper functions")
 
@@ -139,6 +142,18 @@ test_that("validate_family works", {
   expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
 })
 
+test_that("array1D_check works", {
+  array1D_check <- rstanarm:::array1D_check
+  y1 <- rnorm(10)
+  expect_equal(array1D_check(y1), y1)
+  names(y1) <- rep_len(letters, length(y1))
+  expect_equal(array1D_check(y1), y1)
+  expect_identical(array1D_check(as.array(y1)), y1)
+  
+  y2 <- cbind(1:10, 11:20)
+  expect_equal(array1D_check(y2), y2)
+})
+
 test_that("check_constant_vars works", {
   check_constant_vars <- rstanarm:::check_constant_vars
   mf <- model.frame(glm(mpg ~ ., data = mtcars))
@@ -180,10 +195,11 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 2, 
-                                 refresh = 10))
+fit <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                                 chains = CHAINS, refresh = REFRESH))
 fit2 <- suppressWarnings(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                                    iter = 5, chains = 2, refresh = 5))
+                                    iter = ITER, chains = CHAINS, 
+                                    refresh = REFRESH))
 fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
 fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
@@ -331,4 +347,50 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
   expect_identical(linkinv.stanreg(fit), gaussian()$linkinv)
+})
+
+test_that(".collect_pars and .grep_for_pars work", {
+  fit <- example_model
+  .collect_pars <- rstanarm:::.collect_pars
+  .grep_for_pars <- rstanarm:::.grep_for_pars
+  
+  all_period <- paste0("period", 2:4)
+  all_varying <- rstanarm:::.bnames(rownames(fit$stan_summary), value = TRUE)
+  
+  expect_identical(.grep_for_pars(fit, "period"), all_period)
+  expect_identical(.grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
+  expect_identical(.grep_for_pars(fit, "period|size"), c("size", all_period))
+  expect_identical(.grep_for_pars(fit, "(2|3)$"), all_period[1:2])
+  expect_identical(.grep_for_pars(fit, "herd"), all_varying)
+  expect_identical(.grep_for_pars(fit, "b\\["), all_varying)
+  expect_identical(.grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
+  expect_identical(.grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
+  expect_identical(.grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
+  expect_error(.grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
+  expect_error(.grep_for_pars(fit, "b["))
+  
+  expect_identical(.collect_pars(fit, regex_pars = "period"), all_period)
+  expect_identical(.collect_pars(fit, pars = "size", regex_pars = "period"), 
+                   c("size", all_period))
+  expect_identical(.collect_pars(fit, pars = c("(Intercept)", "size")), 
+                   c("(Intercept)", "size"))
+  expect_identical(.collect_pars(fit, pars = "period2", regex_pars = "herd:[[1]]"), 
+                   c("period2", all_varying[1]))
+  expect_identical(.collect_pars(fit, pars = "size", regex_pars = "size"), "size")
+  expect_identical(.collect_pars(fit, regex_pars = c("period", "herd")), 
+                   c(all_period, all_varying))
+})
+
+test_that(".posterior_sample_size works", {
+  pss <- rstanarm:::.posterior_sample_size
+  expect_equal(pss(example_model), 500)
+  expect_equal(pss(fit), nrow(as.matrix(fit)))
+  expect_equal(pss(fit2), ITER * CHAINS / 2)
+  expect_equal(pss(fitvb), 1000)
+  expect_equal(pss(fitvb2), 1000)
+  expect_null(pss(fito))
+  
+  fit3 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 20, 
+                                    chains = 1, thin = 2))
+  expect_equal(pss(fit3), nrow(as.matrix(fit3)))
 })

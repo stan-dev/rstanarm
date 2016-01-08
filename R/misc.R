@@ -161,6 +161,18 @@ check_rhats <- function(rhats, threshold = 1.1) {
             call. = FALSE, noBreaks. = TRUE)
 }
 
+# If y is a 1D array keep any names but convert to vector (used in stan_glm)
+#
+# @param y Result of calling model.response
+array1D_check <- function(y) {
+  if (length(dim(y)) == 1L) {
+    nm <- rownames(y)
+    dim(y) <- NULL
+    if (!is.null(nm)) names(y) <- nm
+  }
+  return(y)
+}
+
 # Check weights argument
 # 
 # @param w The \code{weights} argument specified by user or the result of
@@ -258,7 +270,7 @@ check_constant_vars <- function(mf) {
     grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
   }))
   if (length(out)) return(out) 
-  else stop("No matches for regex_pars.", call. = FALSE)
+  else stop("No matches for 'regex_pars'.", call. = FALSE)
 }
 
 # Combine pars and regex_pars
@@ -273,7 +285,18 @@ check_constant_vars <- function(mf) {
     pars[pars == "varying"] <- "b"
   if (!is.null(regex_pars)) 
     pars <- c(pars, .grep_for_pars(x, regex_pars))
-  return(pars)
+  return(unique(pars))
+}
+
+# Get the posterior sample size
+#
+# @param x A stanreg object
+# @return NULL if used.optimizing(x), otherwise the posterior sample size
+.posterior_sample_size <- function(x) {
+  stopifnot(is.stanreg(x))
+  if (used.sampling(x)) return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
+  else if (used.variational(x)) return(x$stanfit@sim$n_save) 
+  else return(NULL)
 }
 
 # If a is NULL (and Inf, respectively) return b, otherwise just return a
