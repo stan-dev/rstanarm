@@ -60,11 +60,12 @@
 #' argument that can be one of the following:
 #' \describe{
 #'  \item{\strong{Sampling} (\code{algorithm="sampling"})}{
-#'  Uses Markov Chain Monte Carlo (MCMC) --- in particular, Hamiltonian Monte
-#'  Carlo (HMC) with a tuned but diagonal mass matrix --- to draw from the
-#'  posterior distribution of the parameters. See \code{\link[rstan]{sampling}}
-#'  for more details. \strong{This is the default and the recommended algorithm
-#'  for statistical inference.}
+#'  Uses Markov Chain Monte Carlo (MCMC) --- in particular, Hamiltonian Monte 
+#'  Carlo (HMC) with a tuned but diagonal mass matrix --- to draw from the 
+#'  posterior distribution of the parameters. See \code{\link[rstan]{sampling}} 
+#'  for more details. This is the slowest but most reliable of the available
+#'  estimation algorithms and it is \strong{the default and recommended
+#'  algorithm for statistical inference.}
 #'  }
 #'  \item{\strong{Mean-field} (\code{algorithm="meanfield"})}{
 #'  Uses mean-field variational inference to draw from an approximation to the
@@ -75,9 +76,9 @@
 #'  normal distributions and transforms them into the constrained space. The
 #'  entire process is much faster than HMC and yields independent draws but
 #'  \strong{is not recommended for final statistical inference}. It can be
-#'  useful to narrow the set of candidate models in large problems particularly
+#'  useful to narrow the set of candidate models in large problems, particularly
 #'  when specifying \code{QR=TRUE} in \code{\link{stan_glm}},
-#'  \code{\link{stan_glmer}}, and \code{\link{stan_gamm4}} but is \strong{only
+#'  \code{\link{stan_glmer}}, and \code{\link{stan_gamm4}}, but is \strong{only
 #'  an approximation to the posterior distribution}.
 #'  }
 #'  \item{\strong{Full-rank} (\code{algorithm="fullrank"})}{
