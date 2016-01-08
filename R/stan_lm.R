@@ -99,7 +99,7 @@
 #' @examples
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
-#'                 chains = 1, seed = 12345))
+#'                 chains = 1, iter = 1000, seed = 12345))
 #' plot(fit)
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,
