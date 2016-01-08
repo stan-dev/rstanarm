@@ -48,12 +48,12 @@
 #' returned by \code{\link[=coef.stanreg]{coef}}.
 #' }
 #' \subsection{Uncertainty estimates}{
-#' The 'standard errors' reported (labeled MAD_SD in the print output) are 
+#' The standard deviations reported (labeled MAD_SD in the print output) are 
 #' computed from the same set of draws described above and are proportional to 
 #' the median absolute deviation (\code{\link[stats]{mad}}) from the median. 
-#' Compared to the posterior standard deviation, the MAD_SD will be more robust 
-#' for long-tailed distributions. These are the same as the values returned by 
-#' \code{\link[=se.stanreg]{se}}.
+#' Compared to the raw posterior standard deviation, the MAD_SD will be more 
+#' robust for long-tailed distributions. These are the same as the values 
+#' returned by \code{\link[=se.stanreg]{se}}.
 #' }
 #' \subsection{Additional output}{
 #' For models fit using MCMC or a variational approximation, the median and 

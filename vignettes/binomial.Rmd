@@ -161,15 +161,14 @@ have some chance of being large.
 ```{r, ARSENIC-stan_glm, results="hide"}
 library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
-fit1 <- stan_glm(switch ~ dist100, data = wells, family = binomial(link = "logit"), 
+fit1 <- stan_glm(switch ~ dist100, data = wells, 
+                 family = binomial(link = "logit"), 
                  prior = t_prior, prior_intercept = t_prior,  
                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
-(coef_fit1 <- round(coef(fit1), 3))
 ```
 ```{r, echo=FALSE}
-print(coef_fit1)
+(coef_fit1 <- round(coef(fit1), 3))
 ```
-
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
 exactly the same way as for `glm`. We've also added the optional additional 
 arguments `chains` (how many chains we want to execute), `cores` (how many 
@@ -224,12 +223,10 @@ We only need to change the formula, so we can use the `update` function:
 
 ```{r ARSENIC-stan_glm2, results="hide"}
 fit2 <- update(fit1, formula = switch ~ dist100 + arsenic) 
+```
+```{r}
 (coef_fit2 <- round(coef(fit2), 3))
 ```
-```{r, echo=FALSE}
-print(coef_fit2)
-```
-
 
 As expected the coefficient on `arsenic` is positive. Net of distance, an 
 increase of 1 in the concentration of arsenic is associated with an increase 
