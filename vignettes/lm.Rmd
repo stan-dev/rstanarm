@@ -112,8 +112,8 @@ popular in data mining and produces better out-of-sample predictions than
 least squares because it penalizes $\boldsymbol{\beta}^\top \boldsymbol{\beta}$,
 usually after standardizing the predictors. An informative prior on $R^2$ 
 effectively penalizes $\boldsymbol{\rho}\top \boldsymbol{\rho}$, which 
-encourages $\boldsymbol{\beta} = \omega s_y \sqrt{N-1} \mathbf{R}^{-1} 
-\boldsymbol{\rho}$ to be closer to the origin.
+encourages $\boldsymbol{\beta} = \mathbf{R}^{-1} \boldsymbol{\theta}$ to 
+be closer to the origin.
 
 Lewandowski, Kurowicka, and Joe (2009) derives a distribution for a correlation
 matrix that depends on a single shape parameter $\eta > 0$, which implies the 
@@ -270,7 +270,8 @@ regression coefficients. This simpler approach can be executed by calling the
 `stan_glm` function with `family = gaussian()` and specifying the priors:
 ```{r SIMPLE, results="hide"}
 simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
-                                        echomotion) + time, data = clouds,
+                                        echomotion) + time,
+                   data = clouds, family = gaussian(), 
                    prior = cauchy(), prior_intercept = cauchy(),
                    chains = CHAINS, cores = CORES, seed = SEED)
 ```
@@ -286,15 +287,15 @@ __loo__ package.
 
 The results indicate that the first approach is expected to produce better
 out-of-sample predictions but the Warning messages are at least as important. 
-Most of the estimated shape parameters for the Generalized Pareto distribution 
+Many of the estimated shape parameters for the Generalized Pareto distribution 
 are above $0.5$ in the model with Cauchy priors, which indicates that these 
 estimates are only going to converge slowly to the true out-of-sample deviance 
 measures. Thus, with only $24$ observations, they should not be considered 
 reliable. The more complicated prior derived above is stronger --- as 
 evidenced by the fact that the effective number of parameters is about half
 of that in the simpler approach and $12$ for the maximum likelihood estimator 
---- and only has $2$ out of $24$ shape estimates in the "danger zone". We 
-might want to reexamine these two observations (1, and 15)
+--- and only has $4$ out of $24$ shape estimates in the "danger zone". We 
+might want to reexamine these observations
 
 ```{r LOO_POST}
 plot(loo_post, label_points = TRUE)

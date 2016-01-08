@@ -114,11 +114,10 @@ post1
 ```{r, echo=FALSE}
 print(post1)
 ```
-Here we have specified `adapt_delta = 0.999` to decrease the stepsize and largely prevent divergent transitions. The results suggest that only the
-treatment worth writing home about is whether the rats were fed a low protein
-or high protein diet. Also, our prior guess that $R^2 = 0.5$ was overly 
-optimistic, and the model overfits the data a little bit. However, the 
-frequentist estimates presumably overfit the data even more.
+Here we have specified `adapt_delta = 0.999` to decrease the stepsize and 
+largely prevent divergent transitions. See the Troubleshooting section in the 
+main rstanarm vignette for more details about `adapt_delta`. Also, our prior 
+guess that $R^2 = 0.5$ was overly optimistic. However, the frequentist estimates presumably overfit the data even more.
 
 Alternatively, we could prepend `stan_` to `lmer` and specify the corresponding
 priors

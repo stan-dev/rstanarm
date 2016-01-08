@@ -79,7 +79,7 @@ linear regression model and the description of the priors in the other vignette
 does apply (and should be read before continuing with this subsection).
 
 The `stan_lm` function essentially specifies a prior on 
-$\boldsymbol{\theta} = \mathbf{R}^-1 \boldsymbol{\beta}$, where $\mathbf{R}$
+$\boldsymbol{\theta} = \mathbf{R}^{-1} \boldsymbol{\beta}$, where $\mathbf{R}$
 is the upper triangular matrix in the QR decomposition of the design matrix,
 $\mathbf{X} = \mathbf{Q} \mathbf{R}$. Furthermore, in `stan_lm`, 
 $\sigma_{\epsilon} = \sigma_y \sqrt{1 - R^2}$ where $R^2$ is the proportion of
@@ -156,7 +156,8 @@ print(post0, digits = 1)
 ```
 
 ```{r, cutpoints, echo=FALSE}
-zeta_medians <- round(summary(post0, pars = "zeta")[, "50%"], 1)
+zeta_medians <- round(apply(rstan::extract(post0$stanfit, pars = "zeta")[[1]], 
+                            2, median), digits = 2)
 ```
 The point estimates, represented by the posterior medians, are qualitatively
 similar to the maximum-likelihood estimates but are somewhat shrunk toward
@@ -195,16 +196,18 @@ outcome is binary, a binary variable is a special case of an ordinal variable
 with $J=2$ categories and is acceptable to `stan_polr`. We can think of `bwt`
 as something proportional to $y^\ast$ and pretend that it is not observed, 
 forcing us to estimate an ordinal model.
-```{r polr}
+```{r polr, results="hide"}
 post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
                    prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
                    method = "probit", 
                    chains = CHAINS, cores = CORES, seed = SEED)
+```
+```{r}
 plot(loo(post2))
 ```
 
 This prior seems to have worked well in this case because none of the points
-in the plot are above $0.5$, which would indicate the the posterior is very
+in the plot are above $0.5$, which would have indicated the the posterior is very
 sensitive to those observations. If we compare the estimated coefficients,
 ```{r comparison}
 round(cbind(Linear = coef(post1), Ordinal = coef(post2), 
