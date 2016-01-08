@@ -167,7 +167,7 @@ fit1 <- stan_glm(switch ~ dist100, data = wells,
                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 ```
 ```{r, echo=FALSE}
-print(coef_fit1)
+(coef_fit1 <- round(coef(fit1), 3))
 ```
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
 exactly the same way as for `glm`. We've also added the optional additional 
