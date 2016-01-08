@@ -60,7 +60,9 @@
 #' 
 #' \item{\code{residuals}}{
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
-#' residuals or any other type).
+#' residuals or any other type). However, in the case of \code{\link{stan_polr}}
+#' with more than two response categories, the residuals are the difference 
+#' between the latent utility and its linear predictor.
 #' }
 #' \item{\code{coef}}{
 #' Medians are used for point estimates. See the \emph{Point estimates} section

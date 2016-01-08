@@ -62,9 +62,9 @@ class(loglog) <- "link-glm"
 #'
 #' @param method One of 'logistic', 'probit', 'loglog', 'cloglog' or 'cauchit',
 #'   but can be abbreviated. See \code{\link[MASS]{polr}} for more details.
-#' @param prior Prior for coefficients. Can be \code{NULL} to omit a prior
-#'   but otherwise must be a call to \code{\link{R2}} to specify the 
-#'   prior location of the \eqn{R^2}. See \code{\link{priors}}.
+#' @param prior Prior for coefficients. Should be a call to \code{\link{R2}} 
+#'   to specify the prior location of the \eqn{R^2} but can be \code{NULL}
+#'   to indicate a standard uniform prior. See \code{\link{priors}}.
 #' @param prior_counts A call to \code{\link{dirichlet}} to specify the 
 #'   prior counts of the outcome when the predictors are at their sample
 #'   means.
