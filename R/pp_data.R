@@ -90,6 +90,9 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
   } else {
+    if ("gam" %in% names(object))
+      stop("'posterior_predict' with non-NULL 're.form' not yet supported ", 
+           "for models estimated via 'stan_gamm4'")
     mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
                          newdata, na.action = na.action)
     newdata.NA <- newdata

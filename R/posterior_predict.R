@@ -103,6 +103,9 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   
   has_newdata <- !is.null(newdata)
   if (has_newdata) {
+    if ("gam" %in% names(object))
+      stop("'posterior_predict' with 'newdata' not yet supported ", 
+           "for models estimated via 'stan_gamm4'")
     newdata <- as.data.frame(newdata)
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
