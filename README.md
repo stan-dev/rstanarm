@@ -5,7 +5,7 @@
 # rstanarm
 
 [![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm) 
-[![Coverage Status](https://img.shields.io/codecov/c/github/stan-dev/rstanarm/master.svg)](https://codecov.io/github/stan-dev/rstanarm?branch=master) 
+[![Coverage Status](https://codecov.io/github/stan-dev/rstanarm/coverage.svg?branch=master)](https://codecov.io/github/stan-dev/rstanarm?branch=master) 
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
 
 This is an R package that emulates other R model-fitting functions but uses [Stan](http://mc-stan.org) (via the **rstan** package) 
@@ -15,7 +15,8 @@ point estimates.
 
 ### Installation
 
-**rstanarm** is not yet on CRAN. To install it, first make sure that you can install the **rstan** package by following these [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once **rstan** is successfully installed, execute the following in R:
+**rstanarm** is not yet on CRAN. To install it, first make sure that you can install the **rstan** package by following these [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started). Once **rstan** is successfully installed, you can 
+install **rstanarm** from GitHub using the **devtools** package by executing the following in R:
 
 ```{r}
 if (!require(devtools)) {
@@ -24,6 +25,8 @@ if (!require(devtools)) {
 }
 devtools::install_github("stan-dev/rstanarm", args = "--preclean")
 ```
+
+Make sure to include the `args == "--preclean"` argument or the package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ### Contributing 
 
