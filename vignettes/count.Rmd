@@ -173,7 +173,7 @@ importance of the `posterior_predict` function, see the
 "How to Use the __rstanarm__ Package" vignette.
 
 Gelman and Hill take the simulated datasets and for each of them compute the 
-proportion of zeros and compare to the observed proportion of in the original 
+proportion of zeros and compare to the observed proportion in the original 
 data. We can do this easily using the `pp_check` function, which generates 
 graphical comparisons of the data `y` and replicated datasets `yrep`.
 
