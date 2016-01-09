@@ -71,9 +71,9 @@
 #'   also half Cauchy. This is called the "horseshoe prior". The hierarchical 
 #'   shrinkage (\code{hs}) prior in the \pkg{rstanarm} package instead utilizes 
 #'   a half Student t distribution for the standard deviation (with 3 degrees of
-#'   freedom by default), scaled by a half Cauchy parameter. It is possible to 
-#'   change the \code{df} argument, the prior degrees of freedom, to obtain less
-#'   or more shrinkage.
+#'   freedom by default), scaled by a half Cauchy parameter, as described by
+#'   Piironen and Vehtari (2015). It is possible to change the \code{df}
+#'   argument, the prior degrees of freedom, to obtain less or more shrinkage.
 #'   
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
 #'   mean of zero and a standard deviation that is distributed as the product of
@@ -97,22 +97,24 @@
 #'   because the concentration parameters can be interpreted as prior counts
 #'   (although they need not be integers) of a multinomial random variable.
 #'   
-#'   The Dirichlet distribution is used for an implicit prior on the cutpoints
-#'   in \code{\link{stan_polr}}. More specifically, the Dirichlet prior 
-#'   pertains to the prior probability of observing each category of the 
-#'   ordinal outcome when the predictors are at their sample means. Given 
-#'   these prior probabilities, it is straightforward to add them to form
-#'   cumulative probabilities and then use an inverse CDF transformation
-#'   of the cumulative probabilities to define the cutpoints.
+#'   The Dirichlet distribution is used in \code{\link{stan_polr}} for an 
+#'   implicit prior on the cutpoints in an ordinal regression model. More
+#'   specifically, the Dirichlet prior pertains to the prior probability of
+#'   observing each category of the ordinal outcome when the predictors are at
+#'   their sample means. Given these prior probabilities, it is straightforward
+#'   to add them to form cumulative probabilities and then use an inverse CDF
+#'   transformation of the cumulative probabilities to define the cutpoints.
 #'   
 #'   If a scalar is passed to the \code{concentration} argument of the 
-#'   \code{dirichlet} function, then it is replicated to the appropriate length
-#'   and the Dirichlet distribution is symmetric. If all the concentration
-#'   parameters are \eqn{1}, then the Dirichlet distribution is jointly uniform.
-#'   If all concentration parameters are equal but greater than \eqn{1} then the
-#'   prior mode is that the categories are equiprobable, and the larger the
-#'   value of the identical concentration parameters, the more sharply peaked
-#'   the distribution is at the mode.
+#'   \code{dirichlet} function, then it is replicated to the appropriate length 
+#'   and the Dirichlet distribution is symmetric. If \code{concentration} is a
+#'   vector and all elements are \eqn{1}, then the Dirichlet distribution is
+#'   jointly uniform. If all concentration parameters are equal but greater than
+#'   \eqn{1} then the prior mode is that the categories are equiprobable, and
+#'   the larger the value of the identical concentration parameters, the more
+#'   sharply peaked the distribution is at the mode. The elements in 
+#'   \code{concentration} can also be given different values to represent that 
+#'   not all outcome categories are a priori equiprobable.
 #' }
 #' \subsection{Covariance matrices}{
 #'   Covariance matrices are decomposed into correlation matrices and 
@@ -139,7 +141,7 @@
 #'   each element of the simplex vector represents the proportion of the trace
 #'   attributable to the corresponding variable.
 #'   
-#'   A symmetric Dirichlet prior is used for a simplex vector, which has a 
+#'   A symmetric Dirichlet prior is used for the simplex vector, which has a 
 #'   single (positive) \code{concentration} parameter, which defaults to
 #'   \eqn{1} and implies that the prior is jointly uniform over the space of
 #'   simplex vectors of that size. If \code{concentration > 1}, then the prior
@@ -155,7 +157,7 @@
 #'   scale parameter, and in this case we utilize a Gamma distribution, whose
 #'   \code{shape} and \code{scale} are both \eqn{1} by default, implying a
 #'   unit-exponential distribution. Set the \code{shape} hyperparameter to some
-#'   value greater than one to ensure that the posterior trace is not zero.
+#'   value greater than \eqn{1} to ensure that the posterior trace is not zero.
 #'   
 #'   If \code{regularization}, \code{concentration}, \code{shape} and / or 
 #'   \code{scale} are positive scalars, then they are recycled to the 
@@ -164,7 +166,7 @@
 #'   covariance matrices in the model and their sizes. A one-by-one covariance 
 #'   matrix is just a variance and thus does not have \code{regularization} or 
 #'   \code{concentration} parameters, but does have \code{shape} and 
-#'   \code{scale} parameter for the the prior standard deviation of that 
+#'   \code{scale} parameters for the prior standard deviation of that 
 #'   variable.
 #' }
 #' \subsection{R2 family}{
@@ -175,7 +177,7 @@
 #'   proportion of variance in the outcome attributable to the predictors, 
 #'   which has a \code{\link[stats]{Beta}} prior with first shape 
 #'   hyperparameter equal to half the number of predictors and second shape 
-#'   hyperparameter free. By specifying the prior mode (the default) mean, 
+#'   hyperparameter free. By specifying the prior mode (the default), mean, 
 #'   median, or expected log of \eqn{R^2}, the second shape parameter for this 
 #'   Beta distribution is determined internally. If \code{what = 'log'}, 
 #'   location should be a negative scalar; otherwise it should be a scalar on 
