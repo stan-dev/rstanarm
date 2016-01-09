@@ -171,7 +171,7 @@ test_that("check_constant_vars works", {
   
   esoph2 <- esoph
   esoph2$agegp[1:nrow(esoph2)] <- "75+"
-  expect_error(stan_polr(tobgp ~ agegp, data = esoph2, cores = 1, iter = 10,
+  expect_error(stan_polr(tobgp ~ agegp, data = esoph2, iter = 10,
                          prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED, 
                          refresh = 10), 
                regexp = "agegp")
@@ -339,7 +339,7 @@ test_that("linkinv methods work", {
   
   fit_polr <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph, 
                                          method = "loglog",
-                                         cores = 1, chains = 1, iter = 5,
+                                         chains = 1, iter = 5,
                                          prior = R2(0.2, "mean"), 
                                          init_r = 0.1, seed = 12345, 
                                          refresh = 5))

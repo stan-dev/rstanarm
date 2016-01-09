@@ -27,7 +27,6 @@ CHAINS <- 2
 SEED <- 123
 REFRESH <- ITER
 set.seed(SEED)
-options(mc.cores = 2L)
 if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
 RANEF_tol <- 0.20 

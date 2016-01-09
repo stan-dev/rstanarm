@@ -24,7 +24,6 @@ SEED <- 123
 set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
-CORES <- 1
 REFRESH <- ITER
 
 # These tests just make sure that posterior_predict doesn't throw errors and
@@ -57,14 +56,14 @@ check_for_error <- function(fit) {
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
   fit <- stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
-                 iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+                 iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   check_for_error(fit)
 })
 
 context("posterior_predict (stan_glm)")
 test_that("compatible with gaussian glm", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, 
-                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+                  iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   check_for_error(fit)
   fit_off <- update(fit, offset = runif(nrow(mtcars)))
   check_for_error(fit)
@@ -74,7 +73,7 @@ test_that("compatible with poisson & negbin glm", {
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
   fit <- stan_glm(counts ~ outcome + treatment, family = poisson(), 
-                  iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+                  iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   fitnb <- update(fit, family = neg_binomial_2)
   check_for_error(fit)
   check_for_error(fitnb)
@@ -84,7 +83,7 @@ test_that("posterior_predict compatible with gamma & inverse.gaussian glm", {
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma, 
-                  chains = CHAINS, iter = ITER, cores = CORES, seed = SEED, refresh = REFRESH)
+                  chains = CHAINS, iter = ITER,  seed = SEED, refresh = REFRESH)
   check_for_error(fit)
   
   # inverse gaussian
@@ -96,7 +95,7 @@ context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
   fit <- stan_polr(tobgp ~ agegp + alcgp, data = esoph, 
                    prior = R2(location = 0.4),
-                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+                   iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   check_for_error(fit)
 })
 
@@ -104,7 +103,7 @@ context("posterior_predict (stan_(g)lmer)")
 test_that("compatible with stan_lmer", {
   fit <- stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
                    prior = normal(0,1), 
-                   iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+                   iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   check_for_error(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
@@ -114,7 +113,7 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   d <- mtcars
   d$cyl <- as.factor(d$cyl)
   args <- list(formula = mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = d, 
-               iter = ITER, chains = CHAINS, cores = CORES, seed = SEED, refresh = REFRESH)
+               iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
   fit1 <- do.call("stan_lmer", args)
   fit2 <- do.call("stan_glmer", args)
   nd <- d[6:10, ]
@@ -145,7 +144,7 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   mod4 <- as.formula(log(mpg) ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
   
   lfit1 <- lmer(mod1, data = mtcars)
-  sfit1 <- stan_glmer(mod1, data = mtcars, cores = CORES, chains = CHAINS, 
+  sfit1 <- stan_glmer(mod1, data = mtcars,  chains = CHAINS, 
                       iter = 400, seed = SEED, refresh = 400)
   lfit2 <- update(lfit1, formula = mod2)
   sfit2 <- update(sfit1, formula = mod2)
@@ -252,7 +251,7 @@ test_that("lme4 tests work similarly", {
   # multiple groups
   lfit <- lmer(diameter ~ (1|plate) + (1|sample), Penicillin)
   sfit <- stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, 
-                    cores = CORES, chains = CHAINS, 
+                     chains = CHAINS, 
                     iter = 400, seed = SEED, refresh = 400)
  
   nd <- with(Penicillin, expand.grid(plate=unique(plate), sample=unique(sample)))

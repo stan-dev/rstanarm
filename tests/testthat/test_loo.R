@@ -20,7 +20,6 @@ library(loo)
 options(loo.cores = 2)
 SEED <- 1234
 CHAINS <- 2
-CORES <- 1
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- ITER
 
@@ -57,7 +56,7 @@ test_that("loo/waic for stan_glm works", {
   # gaussian
   fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
                        chains = CHAINS, iter = ITER, 
-                       cores = CORES, seed = SEED, refresh = REFRESH)
+                        seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_gaus)
   
   # binomial
@@ -66,7 +65,7 @@ test_that("loo/waic for stan_glm works", {
   SF <- cbind(numdead, numalive = 20-numdead)
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial, 
                         chains = CHAINS, iter = ITER, 
-                        cores = CORES, seed = SEED, refresh = REFRESH)
+                         seed = SEED, refresh = REFRESH)
   dead <- rbinom(length(numdead), 1, prob = 0.5)
   fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .)
   expect_identical_loo(fit_binom)
@@ -77,7 +76,7 @@ test_that("loo/waic for stan_glm works", {
                      counts = c(18,17,15,20,10,20,25,13,12))
   fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD, family = poisson,
                        chains = CHAINS, iter = ITER, 
-                       cores = CORES, seed = SEED, refresh = REFRESH)
+                        seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_pois)
   
   # negative binomial
@@ -90,7 +89,7 @@ test_that("loo/waic for stan_glm works", {
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma, 
                         chains = CHAINS, iter = ITER, 
-                        cores = CORES, seed = SEED, refresh = REFRESH)
+                         seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_gamma)
   
   # inverse gaussian
@@ -102,14 +101,14 @@ test_that("loo/waic for stan_polr works", {
   # logistic
   fit_logistic <- stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),  
                         init_r = 0.1, chains = CHAINS, iter = ITER, 
-                        cores = CORES, seed = SEED, refresh = REFRESH)
+                         seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_logistic)
 })
 
 test_that("loo/waic for stan_lm works", {
   fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75), 
                     chains = CHAINS, iter = ITER, 
-                    cores = CORES, seed = SEED, refresh = REFRESH)
+                     seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_lm)
 })
 
@@ -117,7 +116,7 @@ test_that("loo/waic for stan_glmer works", {
   # gaussian
   fit_glmer1 <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars, 
                            chains = CHAINS, iter = ITER, 
-                           cores = CORES, seed = SEED, refresh = REFRESH)
+                            seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_glmer1)
   
   # binomial
