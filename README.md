@@ -26,7 +26,7 @@ if (!require(devtools)) {
 devtools::install_github("stan-dev/rstanarm", args = "--preclean")
 ```
 
-Make sure to include the `args == "--preclean"` argument or the package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
+Make sure to include the `args = "--preclean"` argument or the package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ### Contributing 
 
