@@ -66,7 +66,7 @@ stanreg <- function(object) {
     # residuals of type 'response', (glm which does 'deviance' residuals by default)
     residuals <- y[, 1L] / rowSums(y) - mu 
   } else {
-    ytmp <- if (is.factor(y)) as.integer(y != levels(y)[1L]) else y
+    ytmp <- if (is.factor(y)) fac2bin(y) else y
     residuals <- ytmp - mu
   }
   names(eta) <- names(mu) <- names(residuals) <- ynames

@@ -63,8 +63,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     } else if (all(weights == 1)) {
       # convert factors to 0/1 using R's convention that first factor level is
       # treated as failure
-      if (is.factor(y)) 
-        y <- y != levels(y)[1L]
+      if (is.factor(y)) y <- fac2bin(y)
       y <- as.integer(y)
       if (!all(y %in% c(0L, 1L))) 
         stop("y values must be 0 or 1 for bernoulli regression.")

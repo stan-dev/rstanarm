@@ -173,6 +173,15 @@ array1D_check <- function(y) {
   return(y)
 }
 
+# Convert 2-level factor to 0/1
+fac2bin <- function(y) {
+  if (!is.factor(y)) 
+    stop("Bug found: non-factor as input to fac2bin.")
+  if (!identical(nlevels(y), 2L)) 
+    stop("Bug found: factor with nlevels != 2 as input to fac2bin.")
+  return(as.integer(y != levels(y)[1L]))
+}
+
 # Check weights argument
 # 
 # @param w The \code{weights} argument specified by user or the result of
