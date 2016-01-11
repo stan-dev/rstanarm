@@ -105,7 +105,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   if (has_newdata) {
     if ("gam" %in% names(object))
       stop("'posterior_predict' with 'newdata' not yet supported ", 
-           "for models estimated via 'stan_gamm4'")
+           "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
@@ -155,7 +155,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     else if (is.binomial(famname)) {
       y <- get_y(object)
       if (NCOL(y) == 2L) ppargs$trials <- rowSums(y)
-      else if (!all(y %in% c(0, 1))) ppargs$trials <- object$weights
+      else if (is.numeric(y) && !all(y %in% c(0, 1))) ppargs$trials <- object$weights
       else ppargs$trials <- rep(1, NROW(y))
     }
     else if (is.gamma(famname))

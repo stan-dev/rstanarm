@@ -167,11 +167,15 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
   y <- get_y(object)
   if (is(object, "polr")) y <- as.integer(y)
-  if (NCOL(y) == 2) {
-    trials <- rowSums(y)
-    y <- y[, 1] / trials
-    yrep <- sweep(yrep, 2, trials, "/")
+  if (is.binomial(family(object)$family)) {
+    if (NCOL(y) == 2) {
+      trials <- rowSums(y)
+      y <- y[, 1] / trials
+      yrep <- sweep(yrep, 2, trials, "/")
+    } 
+    else if (is.factor(y)) y <- as.integer(y != levels(y)[1])
   }
+  
   if (fn == "pp_check_dist") 
     args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, ...)
   else if (fn == "pp_check_resid")
