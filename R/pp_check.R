@@ -389,7 +389,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   Ey <- inverse_link(eta)
   y <- get_y(object)
   if (NCOL(y) == 2) y <- y[, 1] / rowSums(y)
-  resids <- sweep(-Ey, MARGIN = 2, STATS = y, "+")
+  ytmp <- if (is.factor(y)) as.integer(y != levels(y)[1L]) else y
+  resids <- sweep(-Ey, MARGIN = 2, STATS = ytmp, "+")
   ny <- length(y)
   stopifnot(ny == ncol(Ey))
   if (ny >= 100) nbins <- floor(sqrt(ny))

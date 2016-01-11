@@ -79,3 +79,12 @@ test_that("pp_check throws appropriate warnings", {
   expect_warning(p <- pp_check(fit, check = "test", nreps = 1), 
                  regexp = "'nreps' is ignored")
 })
+
+test_that("pp_check binned residual plot ok for factors", {
+  ir2 <- iris[-c(1:50), ]
+  ir2$Species <- factor(ir2$Species)
+  fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
+                   data=ir2, family = "binomial", iter = ITER, refresh = REFRESH,
+                  chains = CHAINS,  seed = SEED)
+  expect_silent(p <- pp_check(fit3, check = "resid"))
+})
