@@ -176,9 +176,11 @@ array1D_check <- function(y) {
 # Convert 2-level factor to 0/1
 fac2bin <- function(y) {
   if (!is.factor(y)) 
-    stop("Bug found: non-factor as input to fac2bin.")
+    stop("Bug found: non-factor as input to fac2bin.", 
+         call. = FALSE)
   if (!identical(nlevels(y), 2L)) 
-    stop("Bug found: factor with nlevels != 2 as input to fac2bin.")
+    stop("Bug found: factor with nlevels != 2 as input to fac2bin.", 
+         call. = FALSE)
   return(as.integer(y != levels(y)[1L]))
 }
 
@@ -190,8 +192,12 @@ fac2bin <- function(y) {
 validate_weights <- function(w) {
   if (missing(w) || is.null(w)) return(double(0))
   else {
-    if (!is.numeric(w)) stop("'weights' must be a numeric vector.", call. = FALSE)
-    if (any(w < 0)) stop("Negative weights are not allowed.", call. = FALSE)
+    if (!is.numeric(w)) 
+      stop("'weights' must be a numeric vector.", 
+           call. = FALSE)
+    if (any(w < 0)) 
+      stop("Negative weights are not allowed.", 
+           call. = FALSE)
   }
   return(w)
 }
