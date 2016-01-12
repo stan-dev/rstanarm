@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Continuous Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output:
   html_document:
     self_contained: no
@@ -114,7 +114,7 @@ which are currently set to `normal(0,10)` for the intercept and `normal(0,5)`
 for the other regression coefficients. For an overview of the many other
 available prior distributions see `help("prior", package = "rstanarm")`.
 
-```{r, KIDIQ-fit,results="hide"}
+```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
 kid_iq <- read.csv(file.path("data", "kid_iq.csv.xz"))
 
@@ -125,14 +125,14 @@ post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
 (post4 <- update(post1, formula = . ~ mom_hs * mom_iq))
 ```
 
-```{r, echo=FALSE}
+```{r, continuous-kidiq-print, echo=FALSE}
 print(post4)
 ```
 
 Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
-```{r, KIDIQ-plot1a, fig.width = 5}
+```{r, continuous-kidiq-plot1a, fig.width = 5}
 base <- ggplot(kid_iq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
@@ -146,7 +146,7 @@ One way is to also plot the estimated regression line at each draw from the
 posterior distribution. To do this we can extract the posterior draws from the 
 fitted model object using the `as.matrix` or `as.data.frame` methods:
 
-```{r, KIDIQ-plot1b, fig.width = 5}
+```{r, continuous-kidiq-plot1b, fig.width = 5}
 draws <- as.data.frame(post1)
 colnames(draws)[1:2] <- c("a", "b")
 
@@ -160,7 +160,7 @@ base +
 For the second model we can make the same plot but the x-axis will show 
 the continuous predictor `mom_iq`:
 
-```{r, KIDIQ-plot2, fig.width = 5}
+```{r, continuous-kidiq-plot2, fig.width = 5}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
 ggplot(kid_iq, aes(x = mom_iq, y = kid_score)) + 
@@ -176,7 +176,7 @@ the continuous `mom_iq` on the x-axis and use color to indicate which
 points correspond to the different subpopulatations defined by `mom_hs`. We also 
 now plot two regression lines, one for each subpopulation:
 
-```{r, KIDIQ-plot3, fig.width = 5}
+```{r, continuous-kidiq-plot3, fig.width = 5}
 reg0 <- function(x, ests) cbind(1, 0, x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
@@ -192,7 +192,7 @@ base2 +
   stat_function(fun = reg1, args = args, aes(color = "HS"), size = 1.5)
 ```
 
-```{r, KIDIQ-plot4, fig.width = 5}
+```{r, continuous-kidiq-plot4, fig.width = 5}
 reg0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
 args <- list(ests = coef(post4))
@@ -208,7 +208,7 @@ One way we can compare the four contending models is to use an approximation to
 Leave-One-Out (LOO) cross-validation, which is implemented by the `loo` function
 in the __loo__ package:
 
-```{r, KIDIQ-loo}
+```{r, continuous-kidiq-loo}
 # Compare them with loo
 loo1 <- loo(post1)
 loo2 <- loo(post2)
@@ -250,7 +250,7 @@ First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-pp_check1, fig.width=5}
+```{r, continuous-kidiq-pp_check1, fig.width=5}
 pp_check(post4, check = "distributions", overlay = FALSE, nreps = 5)
 ```
 
@@ -270,13 +270,13 @@ of $\left(T(y_1^{\rm yep}), \dots, T(y_S^{\rm yep})\right)$. In the plot below
 we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
-```{r, KIDIQ-pp_check2, fig.height = 3}
+```{r, continuous-kidiq-pp_check2, fig.height = 3}
 pp_check(post4, check = "test", test = "mean")
 ```
 
 We can also specify two test quantities and look at a scatterplot:
 
-```{r, KIDIQ-pp_check3, fig.height=3}
+```{r, continuous-kidiq-pp_check3, fig.height=3}
 pp_check(post4, check = "test", test = c("mean", "sd"))
 ```
 
@@ -289,7 +289,7 @@ range of different values of `mom_iq` and for both subpopulations defined by
 `mom_hs`.
 
 
-```{r, KIDIQ-predict}
+```{r, continuous-kidiq-posterior_predict}
 IQ_SEQ <- seq(from = 75, to = 135, by = 5)
 y_nohs <- posterior_predict(post4, newdata = data.frame(mom_hs = 0, mom_iq = IQ_SEQ))
 y_hs <- posterior_predict(post4, newdata = data.frame(mom_hs = 1, mom_iq = IQ_SEQ))
@@ -301,7 +301,7 @@ We now have two matrices, `y_nohs` and `y_hs`. Each matrix has
 sample). One way to show the predictors is to plot the predictions for 
 the two groups of kids side by side:
 
-```{r, KIDIQ-plot-predict, fig.width=9}
+```{r, continuous-kidiq-plot-predict, fig.width=9}
 par(mfrow = c(1:2), mar = c(5,4,2,1))
 boxplot(y_hs, axes = FALSE, outline = FALSE, ylim = c(10,170),
         xlab = "Mom IQ", ylab = "Predicted Kid IQ", main = "Mom HS")
@@ -312,7 +312,7 @@ boxplot(y_nohs, outline = FALSE, col = "red", axes = FALSE, ylim = c(10,170),
 axis(1, at = 1:ncol(y_hs), labels = IQ_SEQ, las = 3)
 ```
 
-```{r, KIDIQ-validation, eval=FALSE, include=FALSE}
+```{r, continuous-kidiq-validation, eval=FALSE, include=FALSE}
 # # External Validation
 # source(paste0(ROOT, "ARM/Ch.3/kids_before1987.data.R"), 
 #        local = kid_iq, verbose = FALSE)
@@ -341,7 +341,7 @@ two lots of thromboplastin" (p. 300).
 
 The help page for R's `glm` function presents the example as follows:
 
-```{r, CLOTTING, results='hide'}
+```{r, continuous-clotting-mle, results='hide'}
 clotting <- data.frame(
     u = c(5,10,15,20,30,40,60,80,100),
     lot1 = c(118,58,42,35,27,25,21,19,18),
@@ -354,7 +354,7 @@ To fit the analagous Bayesian models we can simply substitute `stan_glm` for
 `glm` above. However, instead of fitting separate models we can also reshape the
 data slightly and fit a model interacting lot with plasma concentration:
 
-```{r, CLOTTING-fit, results="hide"}
+```{r, continuous-clotting-mcmc, results="hide"}
 clotting2 <- with(clotting, data.frame(
   log_plasma = rep(log(u), 2),
   clot_time = c(lot1, lot2),

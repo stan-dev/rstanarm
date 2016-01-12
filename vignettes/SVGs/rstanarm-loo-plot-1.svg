@@ -18,11 +18,11 @@
 <line x1='146.77' y1='214.56' x2='146.77' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='190.68' y1='214.56' x2='190.68' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='234.58' y1='214.56' x2='234.58' y2='221.76' style='stroke-width: 0.75;' />
-<text transform='translate(63.09,235.63) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>0</text>
-<text transform='translate(107.00,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>10</text>
-<text transform='translate(150.90,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>20</text>
-<text transform='translate(194.80,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>30</text>
-<text transform='translate(238.70,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>40</text>
+<text transform='translate(63.26,235.63) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>0</text>
+<text transform='translate(107.17,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>10</text>
+<text transform='translate(151.07,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>20</text>
+<text transform='translate(194.97,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>30</text>
+<text transform='translate(238.87,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>40</text>
 <polyline points='56.16,15.84 56.16,214.56 250.56,214.56 ' style='stroke-width: 0.75;' />
 <text x='126.01' y='269.28' style='font-size: 12.00pt; font-family: Arial;'>Data point</text>
 <text transform='translate(10.08,166.23) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>Shape parameter k</text>
@@ -31,10 +31,10 @@
 <line x1='56.16' y1='157.49' x2='48.96' y2='157.49' style='stroke-width: 0.75;' />
 <line x1='56.16' y1='109.43' x2='48.96' y2='109.43' style='stroke-width: 0.75;' />
 <line x1='56.16' y1='61.37' x2='48.96' y2='61.37' style='stroke-width: 0.75;' />
-<text x='21.08' y='209.67' style='font-size: 12.00pt; font-family: Arial;'>-0.2</text>
-<text x='25.08' y='161.61' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
-<text x='25.08' y='113.55' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
-<text x='25.08' y='65.49' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
+<text x='21.08' y='209.84' style='font-size: 12.00pt; font-family: Arial;'>-0.2</text>
+<text x='25.08' y='161.78' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
+<text x='25.08' y='113.72' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
+<text x='25.08' y='65.66' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
 <line x1='56.16' y1='157.49' x2='250.56' y2='157.49' style='stroke-width: 0.75; stroke: #A9A9A9; stroke-dasharray: 4,4;' />
 <line x1='56.16' y1='37.33' x2='250.56' y2='37.33' style='stroke-width: 0.75; stroke: #B17E64; stroke-dasharray: 4,4;' />
 <line x1='61.07' y1='178.10' x2='65.65' y2='178.10' style='stroke-width: 0.75; stroke: #6497B1;' />
@@ -117,18 +117,18 @@
 <line x1='230.19' y1='209.49' x2='230.19' y2='204.91' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='232.29' y1='188.49' x2='236.87' y2='188.49' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='234.58' y1='190.78' x2='234.58' y2='186.20' style='stroke-width: 0.75; stroke: #6497B1;' />
-<text x='184.00' y='26.29' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>30</text>
+<text x='184.00' y='26.38' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>30</text>
 <line x1='310.97' y1='214.56' x2='486.58' y2='214.56' style='stroke-width: 0.75;' />
 <line x1='310.97' y1='214.56' x2='310.97' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='354.87' y1='214.56' x2='354.87' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='398.77' y1='214.56' x2='398.77' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='442.68' y1='214.56' x2='442.68' y2='221.76' style='stroke-width: 0.75;' />
 <line x1='486.58' y1='214.56' x2='486.58' y2='221.76' style='stroke-width: 0.75;' />
-<text transform='translate(315.09,235.63) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>0</text>
-<text transform='translate(359.00,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>10</text>
-<text transform='translate(402.90,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>20</text>
-<text transform='translate(446.80,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>30</text>
-<text transform='translate(490.70,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>40</text>
+<text transform='translate(315.26,235.63) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>0</text>
+<text transform='translate(359.17,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>10</text>
+<text transform='translate(403.07,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>20</text>
+<text transform='translate(446.97,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>30</text>
+<text transform='translate(490.87,242.31) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>40</text>
 <polyline points='308.16,15.84 308.16,214.56 502.56,214.56 ' style='stroke-width: 0.75;' />
 <text x='378.01' y='269.28' style='font-size: 12.00pt; font-family: Arial;'>Data point</text>
 <text transform='translate(262.08,166.23) rotate(-90)' style='font-size: 12.00pt; font-family: Arial;'>Shape parameter k</text>
@@ -141,14 +141,14 @@
 <line x1='308.16' y1='73.50' x2='300.96' y2='73.50' style='stroke-width: 0.75;' />
 <line x1='308.16' y1='46.91' x2='300.96' y2='46.91' style='stroke-width: 0.75;' />
 <line x1='308.16' y1='20.31' x2='300.96' y2='20.31' style='stroke-width: 0.75;' />
-<text x='273.08' y='210.60' style='font-size: 12.00pt; font-family: Arial;'>-0.1</text>
-<text x='277.08' y='184.00' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
-<text x='277.08' y='157.41' style='font-size: 12.00pt; font-family: Arial;'>0.1</text>
-<text x='277.08' y='130.82' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
-<text x='277.08' y='104.22' style='font-size: 12.00pt; font-family: Arial;'>0.3</text>
-<text x='277.08' y='77.63' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
-<text x='277.08' y='51.03' style='font-size: 12.00pt; font-family: Arial;'>0.5</text>
-<text x='277.08' y='24.44' style='font-size: 12.00pt; font-family: Arial;'>0.6</text>
+<text x='273.08' y='210.77' style='font-size: 12.00pt; font-family: Arial;'>-0.1</text>
+<text x='277.08' y='184.17' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
+<text x='277.08' y='157.58' style='font-size: 12.00pt; font-family: Arial;'>0.1</text>
+<text x='277.08' y='130.99' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
+<text x='277.08' y='104.39' style='font-size: 12.00pt; font-family: Arial;'>0.3</text>
+<text x='277.08' y='77.80' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
+<text x='277.08' y='51.20' style='font-size: 12.00pt; font-family: Arial;'>0.5</text>
+<text x='277.08' y='24.61' style='font-size: 12.00pt; font-family: Arial;'>0.6</text>
 <line x1='308.16' y1='179.88' x2='502.56' y2='179.88' style='stroke-width: 0.75; stroke: #A9A9A9; stroke-dasharray: 4,4;' />
 <line x1='308.16' y1='46.91' x2='502.56' y2='46.91' style='stroke-width: 0.75; stroke: #B17E64; stroke-dasharray: 4,4;' />
 <line x1='313.07' y1='150.35' x2='317.65' y2='150.35' style='stroke-width: 0.75; stroke: #6497B1;' />
@@ -231,5 +231,5 @@
 <line x1='482.19' y1='208.40' x2='482.19' y2='203.81' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='484.29' y1='166.56' x2='488.87' y2='166.56' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='486.58' y1='168.85' x2='486.58' y2='164.27' style='stroke-width: 0.75; stroke: #6497B1;' />
-<text x='436.00' y='26.29' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>30</text>
+<text x='436.00' y='26.38' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>30</text>
 </svg>

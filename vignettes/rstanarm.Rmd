@@ -1,7 +1,7 @@
 ---
 title: "How to Use the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output: 
   html_document: 
     self_contained: no
@@ -131,7 +131,7 @@ $$g^{-1}\left(\eta_i \right)^{y_i}
   \left(1 - g^{-1}\left(\eta_i \right)\right)^{n_i-y_i},$$
 which can be maximized over $\alpha$, $\beta_1$, and $\beta_2$ to obtain 
 frequentist estimates by calling
-```{r MLE}
+```{r rstanarm-mle}
 data("womensrole", package = "HSAUR3")
 womensrole$total <- womensrole$agree + womensrole$disagree
 womensrole_glm_1 <- glm(cbind(agree, disagree) ~ education + gender,
@@ -150,7 +150,7 @@ A model with the same likelihood but Student t priors with seven degrees of
 freedom can be specified using the __rstanarm__ package in a similar way by
 prepending `stan_` to the `glm` call and specifying priors (and optionally
 the number of cores on your computer to utilize):
-```{r MCMC, results="hide"}
+```{r rstanarm-mcmc, results="hide"}
 library(rstanarm)
 womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole,
@@ -172,7 +172,7 @@ distributions, which are based on a scaling of the Median Absolute Deviation
 (MAD) from the posterior medians to obtain a robust estimator of the posterior
 standard deviation. In addition, we can use the `posterior_interval` function
 to obtain a Bayesian uncertainty interval for $\beta_1$:
-```{r CI}
+```{r rstanarm-ci}
 ci95 <- posterior_interval(womensrole_bglm_1, prob = 0.95, pars = "education")
 round(ci95, 2)
 ```
@@ -186,7 +186,7 @@ $\beta_2 > 0$, although frequentists cannot make such a claim coherently.
 Many of the postestimation methods that are available for a model that is
 estimated by `glm` are also available for a model that is estimated by
 `stan_glm`. For example,
-```{r methods}
+```{r rstanarm-methods}
 cbind(Median = coef(womensrole_bglm_1), MAD_SD = se(womensrole_bglm_1))
 summary(residuals(womensrole_bglm_1)) # not deviance residuals
 cov2cor(vcov(womensrole_bglm_1))
@@ -204,7 +204,7 @@ The `launch_shinystan` function in the __shinystan__ package provides almost
 all the tools you need to visualize the posterior distribution and diagnose
 any problems with the Markov chains. In this case, the results are fine and
 to verify that, you can call
-```{r shinystan,eval=FALSE}
+```{r rstanarm-shinystan,eval=FALSE}
 launch_shinystan(womensrole_bglm_1)
 ```
 which will open a web browser that drives the visualizations. 
@@ -215,7 +215,7 @@ estimates is that the model should fit the data that the estimates conditioned
 on. The key function here is `posterior_predict`, which can be passed a new 
 `data.frame` to predict out-of-sample, but in this case is omitted to obtain 
 in-sample posterior predictions:
-```{r PPD}
+```{r rstanarm-posterior_predict}
 y_rep <- posterior_predict(womensrole_bglm_1)
 dim(y_rep)
 ```
@@ -226,7 +226,7 @@ Each element of this matrix is a predicted number of respondents with that
 value of education and gender who agreed with the survey question and thus 
 should be reasonably close to the observed proportion of agreements in the 
 data. We can create a plot to check this:
-```{r criticism, fig.width=10, fig.cap="Posterior predictive boxplots vs. observed datapoints"}
+```{r rstanarm-criticism-plot, fig.width=10, fig.cap="Posterior predictive boxplots vs. observed datapoints"}
 par(mfrow = 1:2, mar = c(5,3.7,1,0) + 0.1, las = 3)
 boxplot(sweep(y_rep[,womensrole$gender == "Male"], 2, STATS = 
                womensrole$total[womensrole$gender == "Male"], FUN = "/"), 
@@ -257,7 +257,7 @@ where there are less data.
 
 Consequently, we might consider a model where education has a quadratic effect 
 on agreement, which is easy to specify using R's formula-based syntax.
-```{r, results="hide"}
+```{r, rstanarm-update, results="hide"}
 (womensrole_bglm_2 <- update(womensrole_bglm_1, formula. = . ~ . + I(education^2)))
 ```
 ```{r, echo=FALSE}
@@ -270,14 +270,14 @@ only the level of education. The latter question can be answered using
 leave-one-out cross-validation or the approximation thereof provided by the
 `loo` function in the __loo__ package, for which a method is provided by the
 __rstanarm__ package.
-```{r loo}
+```{r rstanarm-loo}
 loo_bglm_1 <- loo(womensrole_bglm_1)
 loo_bglm_2 <- loo(womensrole_bglm_2)
 ```
 First, we verify that the posterior is not too sensitive to any particular
 observation in the dataset.
 
-```{r loo_plot, fig.width=7, fig.height=4}
+```{r rstanarm-loo-plot, fig.width=7, fig.height=4}
 par(mfrow = 1:2, mar = c(5,3.8,1,0) + 0.1, las = 3)
 plot(loo_bglm_1, label_points = TRUE)
 plot(loo_bglm_2, label_points = TRUE)
@@ -286,14 +286,14 @@ plot(loo_bglm_2, label_points = TRUE)
 There are only one or two moderate outliers (whose statistics are greater
 than $0.5$), which should not have too much of an effect on the resulting model
 comparison:
-```{r}
+```{r, rstanarm-loo-compare}
 compare(loo_bglm_1, loo_bglm_2)
 ```
 In this case, there is little difference in the expected log pointwise
 deviance between the two models, so we are essentially indifferent between
 them after taking into account that the second model estimates an additional
 parameter. The "LOO Information Criterion (LOOIC)"
-```{r}
+```{r, rstanarm-loo-print}
 loo_bglm_1
 ```
 has the same purpose as the Aikaike Information Criterion (AIC) that is used by
@@ -312,7 +312,7 @@ difficult except when the model is linear, has no inverse link function,
 and contains no interaction terms. Bayesians can avoid this difficulty 
 simply by inspecting the posterior predictive distribution at different
 levels of the predictors. For example,
-```{r}
+```{r, rstanarm-posterior_predict-manipulate}
 y_rep <- posterior_predict(womensrole_bglm_2, newdata = 
                              data.frame(education = c(12,16),
                                         gender = factor("Female", levels = 
@@ -372,7 +372,7 @@ To illustrate how to check the Rhat values after fitting a model using
 __rstanarm__ we'll fit two models and run them for different numbers of
 iterations. 
 
-```{r, Rhat-fit, results='hide', warning=TRUE}
+```{r, rstanarm-rhat-fit, results='hide', warning=TRUE}
 bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, 
                      chains = CHAINS, cores = CORES, seed = SEED)
 good_rhat <- update(bad_rhat, iter = 500, 
@@ -382,7 +382,7 @@ good_rhat <- update(bad_rhat, iter = 500,
 Here the first model leads to the warning message about convergence but the 
 second model does not. Indeed, we can see that not all Rhat values are less than 1.1 for the first model:
 
-```{r, Rhat-summary-bad}
+```{r, rstasnarm-rhat-bad}
 rhat <- summary(bad_rhat)[, "Rhat"]
 rhat[rhat > 1.1]
 ```
@@ -390,7 +390,7 @@ rhat[rhat > 1.1]
 Since we didn't get a warning for the second model we shouldn't find any 
 parameters with an Rhat greater than 1.1:
 
-```{r, Rhat-summary-good}
+```{r, rstasnarm-rhat-good}
 any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 

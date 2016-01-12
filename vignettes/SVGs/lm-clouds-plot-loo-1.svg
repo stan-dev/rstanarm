@@ -30,11 +30,11 @@
 <line x1='59.04' y1='103.39' x2='51.84' y2='103.39' style='stroke-width: 0.75;' />
 <line x1='59.04' y1='86.95' x2='51.84' y2='86.95' style='stroke-width: 0.75;' />
 <line x1='59.04' y1='70.51' x2='51.84' y2='70.51' style='stroke-width: 0.75;' />
-<text x='27.96' y='140.40' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
-<text x='27.96' y='123.96' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
-<text x='27.96' y='107.52' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
-<text x='27.96' y='91.08' style='font-size: 12.00pt; font-family: Arial;'>0.6</text>
-<text x='27.96' y='74.64' style='font-size: 12.00pt; font-family: Arial;'>0.8</text>
+<text x='27.96' y='140.57' style='font-size: 12.00pt; font-family: Arial;'>0.0</text>
+<text x='27.96' y='124.13' style='font-size: 12.00pt; font-family: Arial;'>0.2</text>
+<text x='27.96' y='107.69' style='font-size: 12.00pt; font-family: Arial;'>0.4</text>
+<text x='27.96' y='91.25' style='font-size: 12.00pt; font-family: Arial;'>0.6</text>
+<text x='27.96' y='74.81' style='font-size: 12.00pt; font-family: Arial;'>0.8</text>
 <line x1='59.04' y1='136.27' x2='473.76' y2='136.27' style='stroke-width: 0.75; stroke: #A9A9A9; stroke-dasharray: 4,4;' />
 <line x1='59.04' y1='95.17' x2='473.76' y2='95.17' style='stroke-width: 0.75; stroke: #B17E64; stroke-dasharray: 4,4;' />
 <line x1='72.11' y1='116.92' x2='76.69' y2='116.92' style='stroke-width: 0.75; stroke: #6497B1;' />
@@ -77,7 +77,7 @@
 <line x1='374.92' y1='110.44' x2='374.92' y2='105.86' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='389.33' y1='111.20' x2='393.91' y2='111.20' style='stroke-width: 0.75; stroke: #6497B1;' />
 <line x1='391.62' y1='113.50' x2='391.62' y2='108.91' style='stroke-width: 0.75; stroke: #6497B1;' />
-<text x='71.06' y='76.64' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>1</text>
-<text x='87.76' y='92.45' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>2</text>
-<text x='171.24' y='95.91' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>7</text>
+<text x='71.06' y='76.78' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>1</text>
+<text x='87.76' y='92.54' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>2</text>
+<text x='171.24' y='95.99' style='font-size: 9.00pt; fill: #005B96; font-family: Arial;'>7</text>
 </svg>

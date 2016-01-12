@@ -1,7 +1,7 @@
 ---
 title: "Estimating ANOVA Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output: 
   html_document: 
     self_contained: no
@@ -97,14 +97,14 @@ factors were whether their diet had low or high protein and whether the protein
 was derived from beef or cereal. Before seeing the data, one might expect that
 a moderate proportion of the variance in weight gain might be attributed to
 protein (source) in the diet. The frequentist ANOVA estimates can be obtained:
-```{r aov}
+```{r aov-weightgain-aov}
 data("weightgain", package = "HSAUR3")
 coef(aov(weightgain ~ source * type, data = weightgain))
 ```
 To obtain Bayesian estimates we can prepend `stan_` to `aov` and specify the
 prior location of the $R^2$ as well as optionally the number of cores that the
 computer is allowed to utilize:
-```{r stan_aov, results="hide"}
+```{r aov-weightgain-mcmc, results="hide"}
 library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
                   prior = R2(location = 0.5), adapt_delta = 0.999,
@@ -121,7 +121,7 @@ guess that $R^2 = 0.5$ was overly optimistic. However, the frequentist estimates
 
 Alternatively, we could prepend `stan_` to `lmer` and specify the corresponding
 priors
-```{r, eval=FALSE}
+```{r, aov-weightgain-stan_lmer, eval=FALSE}
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),
