@@ -80,8 +80,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   has_intercept <- grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
   xbar <- colMeans(xtemp)
-  if (has_intercept)
-    xtemp <- sweep(xtemp, 2L, xbar, FUN = "-")
+  xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   
   # drop any column of x with < 2 unique values (empty interaction levels)
   sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
