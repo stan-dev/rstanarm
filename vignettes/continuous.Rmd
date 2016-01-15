@@ -3,7 +3,7 @@ title: "Estimating Generalized Linear Models for Continuous Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
 date: "01/12/2015"
 output:
-  html_document:
+  html_vignette:
     toc: yes
 ---
 <!--
