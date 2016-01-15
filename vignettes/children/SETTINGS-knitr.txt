@@ -3,7 +3,6 @@ stopifnot(require(svglite))
 stopifnot(require(knitr))
 opts_chunk$set(
   comment=NA, message = FALSE, warning = FALSE,
-  dev = 'svglite', fig.ext='svg', fig.path = "SVGs/",
   fig.align='center', fig.width = 7, fig.height = 3
 )
 ```
