@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #' Leave-one-out cross-validation (LOO)
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
@@ -28,12 +29,31 @@
 #' @template args-stanreg-object
 #' @template reference-loo
 #' @inheritParams loo::loo
-#' @return An object of class 'loo'. See \code{\link[loo]{loo}} and
-#'   \code{\link[loo]{waic}}.
+#' @return An object of class 'loo'. See the 'Value' section in 
+#'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
+#'   structure of these objects.
 #'   
-#' @seealso \code{\link[loo]{loo-package}}, \code{\link[loo]{compare}}, 
-#'   \code{\link[loo]{plot.loo}}
+#' @details 
+#' The LOO Information Criterion (LOOIC) has the same purpose as the Aikaike
+#' Information Criterion (AIC) that is used by frequentists. Both are intended
+#' to estimate the expected log predicted density (ELPD) for a new dataset.
+#' However, the AIC ignores priors and assumes that the posterior distribution
+#' is multivariate normal, whereas the functions from the 
+#' \pkg{\link[=loo-package]{loo}} package do not make this distributional 
+#' assumption and integrate over uncertainty in the parameters. This only 
+#' assumes that any one observation can be omitted without having a major effect
+#' on the posterior distribution, which can be judged using the diagnostic plot
+#' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the
+#' rstanarm Package} vignette has an example of this entire process.
+#'   
+#' @seealso 
+#' \code{\link[loo]{compare}} for comparing two or more models on LOO and WAIC.
 #' 
+#' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
+#' for details on the computations implemented by the \pkg{loo} package and the 
+#' interpretation of the Pareto \eqn{k} estimates displayed when using the 
+#' \code{\link{plot.loo}} method.
+#'   
 #' @examples 
 #' \dontrun{
 #' SEED <- 42024
@@ -69,7 +89,8 @@
 #' @importFrom loo loo loo.function compare
 #' 
 loo.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) STOP_sampling_only("loo")
+  if (!used.sampling(x)) 
+    STOP_sampling_only("loo")
   loo.function(.llfun(x$family), args = .llargs(x), ...)
 }
 
@@ -79,15 +100,20 @@ loo.stanreg <- function(x, ...) {
 #' @note The \code{...} is ignored for \code{waic}.
 #' 
 waic.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) STOP_sampling_only("waic")
+  if (!used.sampling(x)) 
+    STOP_sampling_only("waic")
   waic.function(.llfun(x$family), args = .llargs(x))
 }
 
 # returns log-likelihood function for loo() and waic()
 .llfun <- function(f) {
-  if (is(f, "family")) get(paste0(".ll_", f$family, "_i"))
-  else if (is.character(f)) .ll_polr_i
-  else stop("'family' must be a family or a character string.", call. = FALSE)
+  if (is(f, "family")) 
+    return(get(paste0(".ll_", f$family, "_i")))
+  else if (is.character(f)) 
+    return(.ll_polr_i)
+  else 
+    stop("'family' must be a family or a character string.", 
+         call. = FALSE)
 }
 
 # returns args argument for loo.function() and waic.function()
@@ -99,39 +125,47 @@ waic.stanreg <- function(x, ...) {
   y <- get_y(object)
 
   if (is(f, "family")) {
-    if (!is.binomial(f$family)) data <- data.frame(y, x)
-    else {
+    fname <- f$family
+    if (!is.binomial(fname)) {
+      data <- data.frame(y, x)
+    } else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L]
       } else {
         trials <- 1
         if (is.factor(y)) 
-          y <- y != levels(y)[1L]
+          y <- fac2bin(y)
         stopifnot(all(y %in% c(0, 1)))
       }
       data <- data.frame(y, trials, x)
     }
-    draws$beta <- stanmat[, 1:ncol(x), drop = FALSE]
-    if (is.gaussian(f$family)) draws$sigma <- stanmat[, "sigma"]
-    if (is.gamma(f$family)) draws$shape <- stanmat[, "shape"]
-    if (is.ig(f$family)) draws$lambda <- stanmat[, "lambda"]
-    if (is.nb(f$family)) draws$size <- stanmat[,"overdispersion"]
+    draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
+    if (is.gaussian(fname)) 
+      draws$sigma <- stanmat[, "sigma"]
+    if (is.gamma(fname)) 
+      draws$shape <- stanmat[, "shape"]
+    if (is.ig(fname)) 
+      draws$lambda <- stanmat[, "lambda"]
+    if (is.nb(fname)) 
+      draws$size <- stanmat[,"overdispersion"]
   }
   else if (is.character(f)) {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    draws$zeta <- stanmat[, grep("|", colnames(stanmat), fixed = TRUE, value = TRUE),
-                          drop = FALSE]
+    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
+    draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) draws$alpha <- stanmat[,"alpha"]
+    if ("alpha" %in% colnames(stanmat)) 
+      draws$alpha <- stanmat[, "alpha"]
   }
   else stop("'family' must be a family or a character string.", call. = FALSE)
   
   data$offset <- object$offset
-  if (!all(object$weights == 1)) data$weights <- object$weights
+  if (!all(object$weights == 1)) 
+    data$weights <- object$weights
   
   if (is.mer(object)) {
     z <- get_z(object)
@@ -152,8 +186,10 @@ waic.stanreg <- function(x, ...) {
   draws$f$linkinv(eta)
 }
 .weighted <- function(val, w) {
-  if (is.null(w)) val
-  else val * w
+  if (is.null(w)) 
+    val
+  else 
+    val * w
 }
 
 # log-likelihood functions
@@ -200,7 +236,7 @@ waic.stanreg <- function(x, ...) {
   else val <- 
     if (y_i == 1) draws$alpha * log(linkinv(draws$zeta[,1] - eta))
     else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta) ^ draws$alpha)
-    else stop("exponentiation only possible when there are exactly 2 outcomes")
+    else stop("Exponentiation only possible when there are exactly 2 outcomes.")
   
   .weighted(val, data$weights)
 }
