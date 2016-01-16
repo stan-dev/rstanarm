@@ -150,6 +150,13 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Message to issue when mean-field selected but 'QR=FALSE'. 
+msg_meanfieldQR <- function() {
+  message("Setting 'QR' to TRUE can often be helpful when ", 
+          "using the 'meanfield' algorithm.",
+          "\nSee the documentation for the 'QR' argument.")
+}
+
 # Issue warning if high rhat values
 # 
 # @param rhats Vector of rhat values.

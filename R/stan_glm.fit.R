@@ -394,6 +394,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     } else {
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, ...)
+      if (algorithm == "meanfield" && !QR) msg_meanfieldQR()
     }
     if (QR) {
       thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
