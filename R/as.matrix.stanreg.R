@@ -31,8 +31,8 @@
 #' @export
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
+#' @template args-pars
 #' @template args-regex-pars
-#' @param pars An optional character vector of parameter names.
 #' @param ... Ignored.
 #'   
 #' @return A matrix or data frame, the dimensions of which depend on \code{pars}
