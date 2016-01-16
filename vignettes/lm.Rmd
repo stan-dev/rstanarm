@@ -1,10 +1,9 @@
 ---
 title: "Estimating Regularized Linear Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output: 
-  html_document:
-    self_contained: no
+  html_vignette:
     toc: yes
 ---
 <!--
@@ -210,7 +209,7 @@ that cloud hacking could explain very much of the variation in rainfall and
 thus the prior mode of the $R^2$ would probably be fairly small.
 
 The frequentist estimator of this model can be replicated by executing
-```{r OLS}
+```{r lm-clouds-ols}
 data("clouds", package = "HSAUR3")
 ols <- lm(rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) +
             time, data = clouds)
@@ -220,7 +219,7 @@ Note that we have _not_ looked at the estimated $R^2$ or $\sigma$ for the
 ordinary least squares model. We can estimate a Bayesian version of this model
 by prepending `stan_` to the `lm` call, specifying a prior mode for $R^2$, and
 optionally specifying how many cores the computer may utilize:
-```{r MCMC, results='hide'}
+```{r lm-clouds-mcmc, results='hide'}
 library(rstanarm)
 post <- stan_lm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time, data = clouds,
@@ -246,7 +245,7 @@ treatment variable, `seeding`, is interacted with four other correlated
 predictors. However, it is easy to estimate or visualize the average treatment 
 effect (ATE) using __rstanarm__'s `posterior_predict` function.
 
-```{r ATE, fig.height=3}
+```{r lm-clouds-ate-plot, fig.height=3}
 clouds_cf <- clouds
 clouds_cf$seeding[] <- "yes"
 y1_rep <- posterior_predict(post, newdata = clouds_cf)
@@ -268,7 +267,7 @@ to _conceptualize_. Thus, it is perhaps worthwhile to compare to another
 estimator of a linear model that simply puts independent Cauchy priors on the 
 regression coefficients. This simpler approach can be executed by calling the 
 `stan_glm` function with `family = gaussian()` and specifying the priors:
-```{r SIMPLE, results="hide"}
+```{r lm-clouds-simple, results="hide"}
 simple <- stan_glm(rainfall ~ seeding * (sne + cloudcover + prewetness + 
                                         echomotion) + time,
                    data = clouds, family = gaussian(), 
@@ -280,7 +279,7 @@ We can compare the two approaches using an approximation to Leave-One-Out
 (LOO) cross-validation, which is implemented by the `loo` function in the
 __loo__ package.
 
-```{r LOO, warning=TRUE}
+```{r lm-clouds-loo, warning=TRUE}
 (loo_post <- loo(post))
 (loo(simple))
 ```
@@ -297,7 +296,7 @@ of that in the simpler approach and $12$ for the maximum likelihood estimator
 --- and only has $4$ out of $24$ shape estimates in the "danger zone". We 
 might want to reexamine these observations
 
-```{r LOO_POST}
+```{r lm-clouds-plot-loo}
 plot(loo_post, label_points = TRUE)
 ```
 

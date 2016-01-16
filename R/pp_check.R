@@ -167,11 +167,15 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
   y <- get_y(object)
   if (is(object, "polr")) y <- as.integer(y)
-  if (NCOL(y) == 2) {
-    trials <- rowSums(y)
-    y <- y[, 1] / trials
-    yrep <- sweep(yrep, 2, trials, "/")
+  if (is.binomial(family(object)$family)) {
+    if (NCOL(y) == 2) {
+      trials <- rowSums(y)
+      y <- y[, 1] / trials
+      yrep <- sweep(yrep, 2, trials, "/")
+    } 
+    else if (is.factor(y)) y <- fac2bin(y)
   }
+  
   if (fn == "pp_check_dist") 
     args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, ...)
   else if (fn == "pp_check_resid")
@@ -389,7 +393,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   Ey <- inverse_link(eta)
   y <- get_y(object)
   if (NCOL(y) == 2) y <- y[, 1] / rowSums(y)
-  resids <- sweep(-Ey, MARGIN = 2, STATS = y, "+")
+  ytmp <- if (is.factor(y)) fac2bin(y) else y
+  resids <- sweep(-Ey, MARGIN = 2, STATS = ytmp, "+")
   ny <- length(y)
   stopifnot(ny == ncol(Ey))
   if (ny >= 100) nbins <- floor(sqrt(ny))

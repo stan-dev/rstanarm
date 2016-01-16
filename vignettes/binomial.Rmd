@@ -1,10 +1,9 @@
 ---
 title: "Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output: 
-  html_document: 
-    self_contained: no
+  html_vignette: 
     toc: yes
 ---
 <!--
@@ -130,7 +129,7 @@ meters. If we leave `dist` in its original units then the corresponding
 regression coefficient will represent the effect of the marginal meter, which is
 too small to have a useful interpretation.
 
-```{r ARSENIC-load-data}
+```{r binom-arsenic-data}
 # Load data and create dist100 variable 
 wells <- read.csv(file.path("data", "wells.csv.xz"))
 wells$dist100 <- wells$dist / 100
@@ -139,7 +138,7 @@ wells$dist100 <- wells$dist / 100
 Before estimating any models we can visualize the distribution of 
 `dist100` in the data:
 
-```{r, ARSENIC-plot-dist100, fig.height=3}
+```{r, binom-arsenic-plot-dist100, fig.height=3}
 ggplot(wells, aes(x = dist100, y = ..density..)) + 
   geom_histogram(data = subset(wells, switch == 0)) +
   geom_histogram(data = subset(wells, switch == 1), fill = "skyblue", alpha = 0.3) 
@@ -158,7 +157,7 @@ prior with 7 degrees of freedom and a scale of 2.5, which, as discussed above,
 is a reasonable default prior when coefficients should be close to zero but 
 have some chance of being large. 
 
-```{r, ARSENIC-stan_glm, results="hide"}
+```{r, binom-arsenic-mcmc, results="hide"}
 library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, 
@@ -166,7 +165,7 @@ fit1 <- stan_glm(switch ~ dist100, data = wells,
                  prior = t_prior, prior_intercept = t_prior,  
                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 ```
-```{r, echo=FALSE}
+```{r, binom-arsenic-print, echo=FALSE}
 (coef_fit1 <- round(coef(fit1), 3))
 ```
 The `formula`, `data` and `family` arguments to `stan_glm` are specified in
@@ -182,7 +181,7 @@ uncertainty intervals are computed by finding the relevant quantiles of the
 draws from the posterior distribution. For example, to compute 50% intervals we
 use:
 
-```{r, ARSENIC-CI}
+```{r, binom-arsenic-ci}
 round(posterior_interval(fit1, prob = 0.5), 2)
 ```
 
@@ -193,7 +192,7 @@ model see Step 2 in the "How to Use the __rstanarm__ Package" vignette.
 Using the coefficient estimates we can plot the predicted probability of 
 `switch = 1` (as a function of `dist100`) together with the observed outcomes:
 
-```{r, ARSENIC-plot-model}
+```{r, binom-arsenic-plot-model}
 # Predicted probability as a function of x
 pr_switch <- function(x, ests) plogis(ests[1] + ests[2] * x)
 # A function to slightly jitter the binary data
@@ -221,7 +220,7 @@ from arsenic are roughly proportional to exposure, and so we would expect
 switching to be more likely from wells with high arsenic levels" (pg. 90). 
 We only need to change the formula, so we can use the `update` function:
 
-```{r ARSENIC-stan_glm2, results="hide"}
+```{r binom-arsenic-mcmc2, results="hide"}
 fit2 <- update(fit1, formula = switch ~ dist100 + arsenic) 
 ```
 ```{r}
@@ -239,7 +238,7 @@ tiles (the lighter the color the higher the probability). The observed value of
 ```{r,echo=FALSE}
 theme_update(legend.position = "right")
 ```
-```{r, ARSENIC-plot-model2}
+```{r, binom-arsenic-plot-model2}
 pr_switch2 <- function(x, y, ests) plogis(ests[1] + ests[2] * x + ests[3] * y)
 grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), 
                     arsenic = seq(0, 10, length.out = 100))
@@ -263,7 +262,7 @@ maximum and quartile values of both variables.
 ```{r,echo=FALSE}
 theme_update(legend.position = "none")
 ```
-```{r, ARSENIC-plot-model2-alt}
+```{r, binom-arsenic-plot-model2-alt}
 library(gridExtra)
 # Quantiles
 q_ars <- quantile(wells$dist100, seq(0, 1, 0.25))
@@ -288,7 +287,7 @@ approximation to Leave-One-Out (LOO) cross-validation, which is a method
 for estimating out of sample predictive performance and is implemented 
 by the `loo` function in the __loo__ package:
 
-```{r, LOO}
+```{r, binom-arsenic-loo}
 (loo1 <- loo(fit1))
 (loo2 <- loo(fit2))
 compare(loo1, loo2)

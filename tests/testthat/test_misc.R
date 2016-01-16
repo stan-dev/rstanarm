@@ -154,6 +154,18 @@ test_that("array1D_check works", {
   expect_equal(array1D_check(y2), y2)
 })
 
+test_that("fac2bin works", {
+  fac2bin <- rstanarm:::fac2bin
+  y <- gl(2, 2, 20, labels = c("lo", "hi"))
+  expect_identical(fac2bin(y), rep_len(c(0L, 0L, 1L, 1L), 20))
+  y <- gl(2, 8, labels = c("Control", "Treat"))
+  expect_identical(fac2bin(y), rep(c(0L, 1L), each = 8))
+  expect_identical(fac2bin(factor(c(1,2))), c(0L, 1L))
+  expect_error(fac2bin(rnorm(10)))
+  expect_error(fac2bin(factor(c(1,2,3))))
+  expect_error(fac2bin(factor(mtcars$cyl, labels = c("lo", "mid", "hi"))))
+})
+
 test_that("check_constant_vars works", {
   check_constant_vars <- rstanarm:::check_constant_vars
   mf <- model.frame(glm(mpg ~ ., data = mtcars))

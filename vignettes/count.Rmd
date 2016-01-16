@@ -1,10 +1,9 @@
 ---
 title: "Estimating Generalized Linear Models for Count Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/06/2015"
+date: "01/12/2015"
 output:
-  html_document:
-    self_contained: no
+  html_vignette:
     toc: yes
 ---
 <!--
@@ -105,7 +104,7 @@ $y_i \sim Poisson(u_i \lambda_i)$. This is equivalent to adding $\ln{(u_i)}$
 to the linear predictor $\eta_i$ and it can be specified using the `offset` 
 argument to `stan_glm`:
 
-```{r, ROACHES-fit, results="hide"}
+```{r, count-roaches-mcmc, results="hide"}
 library(rstanarm)
 
 # Load data and rescale
@@ -139,11 +138,10 @@ related to GLM estimation.
 Here are the point estimates and uncertainties from the `glm` fit and `stan_glm`
 fit, which we see are nearly identical:
 
-```{r, ROACHES-glm-ests}
-round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), 
-      digits = 2)
-round(rbind(glm = summary(glm1)$coefficients[, "Std. Error"], stan_glm = se(stan_glm1)), 
-      digits = 3)
+```{r, count-roaches-comparison}
+round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), digits = 2)
+round(rbind(glm = summary(glm1)$coefficients[, "Std. Error"], 
+            stan_glm = se(stan_glm1)), digits = 3)
 ```
 
 (Note: the dataset we have is slightly different from the one used in Gelman and
@@ -160,7 +158,7 @@ On the other hand, the __rstanarm__ package makes this easy. We can generate
 replicated datasets with a single line of code using the `posterior_predict`
 function:
 
-```{r, ROACHES-posterior_predict}
+```{r, count-roaches-posterior_predict}
 yrep <- posterior_predict(stan_glm1)
 ```
 
@@ -177,7 +175,7 @@ proportion of zeros and compare to the observed proportion in the original
 data. We can do this easily using the `pp_check` function, which generates 
 graphical comparisons of the data `y` and replicated datasets `yrep`.
 
-```{r, ROACHES-plot-pp_check1, fig.height=3, fig.width=4}
+```{r, count-roaches-plot-pp_check1, fig.height=3, fig.width=4}
 prop_zero <- function(y) mean(y == 0)
 (prop_zero_test1 <- pp_check(stan_glm1, check = "test", test = "prop_zero"))
 ```
@@ -197,14 +195,14 @@ model can either use the `stan_glm.nb` function or, equivalently, change the
 `family` we specify in the call to `stan_glm` to `neg_binomial_2` instead of
 `poisson`. To do the latter we can just use `update`:
 
-```{r, ROACHES-negbin, results="hide"}
+```{r, count-roaches-negbin, results="hide"}
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 
 We now use `pp_check` again, this time to check the proportion of zeros in the
 replicated datasets under the negative binomial model:
 
-```{r, ROACHES-plot-pp_check2, fig.height=3, fig.width=8}
+```{r, count-roaches-plot-pp_check2, fig.height=3, fig.width=8}
 library(gridExtra)
 prop_zero_test2 <- pp_check(stan_glm2, check = "test", test = "prop_zero")
 # Show graphs for Poisson and negative binomial side by side
@@ -226,7 +224,7 @@ other posterior predictive checks that aren't automated by `pp_check`.
 When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model:
 
-```{r, ROACHES-loo}
+```{r, count-roaches-loo}
 loo1 <- loo(stan_glm1)
 loo2 <- loo(stan_glm2)
 compare(loo1, loo2)
