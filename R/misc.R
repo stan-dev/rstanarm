@@ -173,6 +173,27 @@ array1D_check <- function(y) {
   return(y)
 }
 
+
+# Check for a binomial model with Y given as proportion of successes and weights 
+# given as total number of trials
+# 
+binom_y_prop <- function(y, family, weights) {
+  if (!is.binomial(family$family)) 
+    return(FALSE)
+
+  yprop <- NCOL(y) == 1L && 
+    is.numeric(y) && 
+    any(y > 0 & y < 1) && 
+    !any(y < 0 | y > 1)
+  if (!yprop)
+    return(FALSE)
+  
+  wtrials <- !identical(weights, double(0)) && 
+    all(weights > 0) && 
+    all(abs(weights - round(weights)) < .Machine$double.eps^0.5)
+  isTRUE(wtrials)
+}
+
 # Convert 2-level factor to 0/1
 fac2bin <- function(y) {
   if (!is.factor(y)) 
