@@ -82,9 +82,9 @@
 #'  an approximation to the posterior distribution}.
 #'  }
 #'  \item{\strong{Full-rank} (\code{algorithm="fullrank"})}{
-#'  Uses full-rank variational inference to draw from an approximation to the
-#'  posterior distribution by finding the multivariate normal distribution in
-#'  the constrained space that --- when transformed into the constrained space
+#'  Uses full-rank variational inference to draw from an approximation to the 
+#'  posterior distribution by finding the multivariate normal distribution in 
+#'  the unconstrained space that --- when transformed into the constrained space
 #'  --- most closely approximates the posterior distribution. Then it draws 
 #'  repeatedly from this multivariate normal distribution and transforms the 
 #'  draws into the constrained space. This process is slower than meanfield 
