@@ -50,6 +50,14 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   # message: recommend QR if using meanfield vb
   expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
                regexp = "Setting 'QR' to TRUE can often be helpful")
+  
+  # require intercept for certain family and link combinations
+  expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
+                        family = poisson(link="identity"), seed = SEED), 
+               regexp = "model must have an intercept")
+  expect_error(stan_glm(I(counts > 20) ~ -1 + outcome + treatment, 
+                        family = binomial(link="log"), seed = SEED), 
+               regexp = "model must have an intercept")
 })
 
 context("stan_glm (gaussian)")

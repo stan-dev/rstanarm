@@ -161,6 +161,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   is_gamma <- is.gamma(famname)
   is_ig <- is.ig(famname)
   is_continuous <- is_gaussian || is_gamma || is_ig
+  
+  # require intercept for certain family and link combinations
+  if (!has_intercept) {
+    linkname <- supported_links[link]
+    needs_intercept <- !is_gaussian && linkname == "identity" ||
+      is_gamma && linkname == "inverse" ||
+      is.binomial(famname) && linkname == "log"
+    if (needs_intercept)
+      stop("To use this combination of family and link ", 
+           "the model must have an intercept.")
+  }
+  
   if (scaled && prior_dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
