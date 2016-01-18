@@ -20,18 +20,31 @@
 
 library(rstanarm)
 SEED <- 123
+ITER <- 100
+CHAINS <- 2
+CORES <- 1
+REFRESH <- ITER
 
 threshold <- 0.03
 
 context("stan_polr")
-test_that("stan_polr returns expected result for esoph example", {
+test_that("stan_polr runs for esoph example", {
   library(MASS)
   f <- tobgp ~ agegp + alcgp
-  fit <- stan_polr(f, data = esoph, prior = R2(location = 0.4, what = "median"),
-                   chains = 2, iter = 400, method = "loglog", seed = SEED, refresh = 400)
-  fit <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
+  fit1 <- stan_polr(f, data = esoph, method = "loglog",
+                    prior = R2(location = 0.4, what = "median"),
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+  fit1vb <- stan_polr(f, data = esoph, method = "loglog",
+                      prior = R2(location = 0.4, what = "median"),
+                      seed = SEED, algorithm = "fullrank")
+  fit2 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                    prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
-                   chains = 2, iter = 400, seed = SEED, refresh = 400)
+                   chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+
+  expect_is(fit1, "stanreg")
+  expect_is(fit2, "stanreg")
+  expect_is(fit1vb, "stanreg")
+  
   
   # fit <- stan_polr(f, data = esoph, prior = NULL, 
   #                  algorithm = "fullrank", seed = SEED)

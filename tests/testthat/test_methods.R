@@ -296,7 +296,7 @@ test_that("as.matrix and as.data.frame methods work", {
                  regexp = "'regex_pars' ignored")
 })
 
-test_that("print and summary methods don't throw errors", {
+test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(example_model, digits = 2), "stan_glmer")
   expect_output(print(example_model, digits = 2), "Error terms")
   expect_output(print(stan_lmer1, digits = 2), "stan_lmer")
@@ -330,17 +330,6 @@ test_that("print and summary methods don't throw errors", {
   expect_identical(colnames(s), colnames(d))
   expect_identical(rownames(s), rownames(d))
   
-  expect_silent(s <- summary(stan_glm_opt1))
-  expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
-  expect_warning(s <- summary(stan_glm_opt1, regex_pars = c("wt", "sigma")), 
-               regexp = "'regex_pars' ignored")
-  expect_silent(d <- as.data.frame(s))
-  expect_is(s, "summary.stanreg")
-  expect_output(print(s), "stan_glm")
-  expect_identical(attr(s, "algorithm"), "optimizing")
-  expect_identical(colnames(s), colnames(d))
-  expect_identical(rownames(s), rownames(d))
-  
   expect_silent(s <- summary(stan_polr1, pars = "beta", probs = c(0.25, 0.75)))
   expect_silent(d <- as.data.frame(s))
   expect_identical(colnames(s), c("mean", "mcse", "sd", "25%", "75%", "n_eff", "Rhat"))
@@ -350,6 +339,8 @@ test_that("print and summary methods don't throw errors", {
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_polr")
   
+  expect_warning(s <- summary(stan_glm1, pars = "varying"), 
+                 regexp = "No group-specific parameters. 'varying' ignored.")
   expect_silent(s <- summary(stan_glm1, pars = c("alpha", "beta"), digits = 3))
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
@@ -360,6 +351,26 @@ test_that("print and summary methods don't throw errors", {
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glm")
   expect_identical(attr(s, "algorithm"), "meanfield")
+})
+
+test_that("print and summary methods ok for optimization", {
+  expect_silent(s <- summary(stan_glm_opt1))
+  expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
+  expect_warning(s <- summary(stan_glm_opt1, regex_pars = c("wt", "sigma")), 
+                 regexp = "'regex_pars' ignored")
+  expect_silent(d <- as.data.frame(s))
+  expect_is(s, "summary.stanreg")
+  expect_output(print(s), "stan_glm")
+  expect_identical(attr(s, "algorithm"), "optimizing")
+  expect_identical(colnames(s), colnames(d))
+  expect_identical(rownames(s), rownames(d))
+  
+  counts <- c(18,17,15,20,10,20,25,13,12)
+  outcome <- gl(3,1,9)
+  treatment <- gl(3,3)
+  f <- counts ~ outcome + treatment
+  fit <- stan_glm.nb(f, algorithm = "optimizing", seed = SEED)
+  expect_output(print(fit), "overdispersion")
 })
 
 
@@ -421,4 +432,25 @@ test_that("formula works properly", {
   expect_equal(formula(tmp), formula(lmer1))
   tmp$call <- NULL
   expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
+})
+
+test_that("update works properly", {
+  pss <- rstanarm:::posterior_sample_size
+  
+  fit <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS)
+  expect_equal(pss(fit), 4 * pss(stan_lmer2))
+  
+  fit <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS)
+  expect_equal(pss(fit), 4 * pss(stan_glm1))
+  
+  call_only <- update(fit, evaluate = FALSE)
+  expect_is(call_only, "call")
+  expect_identical(call_only, getCall(fit))
+  
+  expect_warning(fit <- update(fit, algorithm = "optimizing"), 
+                 regexp = "unknown arguments: chains")
+  expect_identical(fit$algorithm, "optimizing")
+  
+  fit$call <- NULL
+  expect_error(update(fit), "does not contain a 'call' component")
 })
