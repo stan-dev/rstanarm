@@ -88,16 +88,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     set.seed(seed)
   if (!is.null(fun)) 
     fun <- match.fun(fun)
-  
-  S <- posterior_sample_size(object)
-  if (is.null(draws)) 
-    draws <- S
-  if (draws > S)
-    stop(paste0("'draws' = ", draws, " but posterior sample size is only ", 
-                S, "."))
-  
-  has_newdata <- !is.null(newdata)
-  if (has_newdata) {
+  if (!is.null(newdata)) {
     if ("gam" %in% names(object))
       stop("'posterior_predict' with 'newdata' not yet supported ", 
            "for models estimated via 'stan_gamm4'.")
@@ -106,44 +97,10 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
       stop("Currently NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object, newdata, re.form, ...)
-  x <- dat$x
-  if (is.null(dat$Zt)) {
-    stanmat <- as.matrix.stanreg(object)
-    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (draws < S) 
-      beta <- beta[sample(S, draws), , drop = FALSE]
-    eta <- linear_predictor(beta, x, dat$offset)
-  } else {
-    stanmat <- as.matrix(object$stanfit)
-    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (draws < S) 
-      beta <- beta[sample(S, draws), , drop = FALSE]
-    eta <- linear_predictor(beta, x, dat$offset)
-    b <- stanmat[, grepl("^b\\[", colnames(stanmat)), drop = FALSE]
-    if (draws < S) 
-      b <- b[sample(S, draws), , drop = FALSE]
-    if (is.null(dat$Z_names)) {
-      b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
-    } else {
-      ord <- sapply(dat$Z_names, FUN = function(x) {
-        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-        len <- length(m)
-        if (len == 1) 
-          return(m)
-        if (len > 1) 
-          stop("multiple matches bug")
-        x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
-        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-      })
-      b <- b[, ord, drop = FALSE]
-    }
-    eta <- eta + as.matrix(b %*% dat$Zt)
-  }
-  
-  ppargs <- pp_args(object, stanmat, eta)
+  ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
-  if (has_newdata && nrow(newdata) == 1L) 
+  if (!is.null(newdata) && nrow(newdata) == 1L) 
     ytilde <- t(ytilde)
   if (!is.null(fun)) 
     ytilde <- do.call(fun, list(ytilde))
@@ -218,7 +175,13 @@ pp_fun <- function(object) {
 
 
 # create list of arguments to pass to the function returned by pp_fun
-pp_args <- function(object, stanmat, eta) {
+#
+# @param object stanreg object
+# @data output from pp_eta (named list with eta and stanmat)
+# @return named list
+pp_args <- function(object, data) {
+  stanmat <- data$stanmat
+  eta <- data$eta
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   inverse_link <- linkinv(object)
   if (is(object, "polr")) {
@@ -250,4 +213,58 @@ pp_args <- function(object, stanmat, eta) {
     args$size <- stanmat[, "overdispersion"]
   }
   args
+}
+
+# create eta and stanmat (matrix of posterior draws)
+# 
+# @param object stanreg object
+# @param data output from pp_data()
+# @param draws number of draws
+# @return linear predictor "eta" and matrix of posterior draws stanmat"
+pp_eta <- function(object, data, draws = NULL) {
+  x <- data$x
+  S <- posterior_sample_size(object)
+  if (is.null(draws)) 
+    draws <- S
+  if (draws > S) {
+    err <- paste0("'draws' should be <= posterior sample size (", 
+                  S, ").")
+    stop(err)
+  }
+  some_draws <- isTRUE(draws < S)
+  if (some_draws)
+    samp <- sample(S, draws)
+  if (is.null(data$Zt)) {
+    stanmat <- as.matrix.stanreg(object)
+    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
+    if (some_draws) 
+      beta <- beta[samp, , drop = FALSE]
+    eta <- linear_predictor(beta, x, data$offset)
+  } else {
+    stanmat <- as.matrix(object$stanfit)
+    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
+    if (some_draws) 
+      beta <- beta[samp, , drop = FALSE]
+    eta <- linear_predictor(beta, x, data$offset)
+    b <- stanmat[, grepl("^b\\[", colnames(stanmat)), drop = FALSE]
+    if (some_draws) 
+      b <- b[samp, , drop = FALSE]
+    if (is.null(data$Z_names)) {
+      b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
+    } else {
+      ord <- sapply(data$Z_names, FUN = function(x) {
+        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+        len <- length(m)
+        if (len == 1) 
+          return(m)
+        if (len > 1) 
+          stop("multiple matches bug")
+        x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
+        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+      })
+      b <- b[, ord, drop = FALSE]
+    }
+    eta <- eta + as.matrix(b %*% data$Zt)
+  }
+  nlist(eta, stanmat)
 }
