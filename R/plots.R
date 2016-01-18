@@ -96,8 +96,8 @@
 #' 
 plot.stanreg <- function(x, plotfun = NULL, pars = NULL, 
                          regex_pars = NULL, ...) {
-  args <- .set_plotting_args(x, pars, regex_pars, ...)
-  fun <- .set_plotting_fun(x, plotfun)
+  args <- set_plotting_args(x, pars, regex_pars, ...)
+  fun <- set_plotting_fun(x, plotfun)
   do.call(fun, args)
 }
 
@@ -105,17 +105,17 @@ plot.stanreg <- function(x, plotfun = NULL, pars = NULL,
 # Check for valid parameters
 # @param x stanreg object
 # @param pars user specified character vector
-.check_plotting_pars <- function(x, pars) {
+check_plotting_pars <- function(x, pars) {
   if (used.optimizing(x)) {
     allpars <- c("alpha", "beta", rownames(x$stan_summary))
   } else {
     sim <- x$stanfit@sim
     allpars <- c(sim$pars_oi, sim$fnames_oi)
   }
-  
   m <- which(match(pars, allpars, nomatch = 0) == 0)
-  if (length(m) > 0) stop("No parameter ", paste(pars[m], collapse = ', '), 
-                          call. = FALSE) 
+  if (length(m) > 0) 
+    stop("No parameter ", paste(pars[m], collapse = ', '), 
+         call. = FALSE) 
   return(unique(pars))
 }
 
@@ -123,29 +123,30 @@ plot.stanreg <- function(x, plotfun = NULL, pars = NULL,
 # @param x stanreg object
 # @param pars, regex_pars user specified pars and regex_pars arguments (can be
 #   missing)
-.set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
+set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
   args <- list(x, ...)
-  pars <- .collect_pars(x, pars, regex_pars)
+  pars <- collect_pars(x, pars, regex_pars)
   if (!is.null(pars)) 
-    args$pars <- .check_plotting_pars(x, pars)
+    args$pars <- check_plotting_pars(x, pars)
   return(args)
 }
 
 # Select the correct plotting function
 # @param x stanreg object
 # @param plotfun user specified plotfun argument (can be missing)
-.set_plotting_fun <- function(x, plotfun = NULL) {
+set_plotting_fun <- function(x, plotfun = NULL) {
   .plotters <- function(x) paste0("stan_", x)
   
   if (used.optimizing(x)) {
-    if (!is.null(plotfun)) 
+    if (!is.null(plotfun)) {
       stop("'plotfun' should not be specified for models fit using ",
            "algorithm='optimizing'.", call. = FALSE)
-    else 
+    } else {
       return("stan_plot_opt")
-  }
-  else if (is.null(plotfun)) 
+    }
+  } else if (is.null(plotfun)) {
     plotfun <- "stan_plot"
+  }
   
   samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
   plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
@@ -156,6 +157,7 @@ plot.stanreg <- function(x, plotfun = NULL, pars = NULL,
   if (inherits(fun, "try-error")) 
     stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
          call. = FALSE)
+  
   return(fun)
 }
 

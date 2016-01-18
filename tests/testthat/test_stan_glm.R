@@ -76,12 +76,12 @@ test_that("stan_glm returns something for glm negative binomial example", {
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
-                     seed  = SEED, chains = 1, iter = 500,
-                     prior_PD = TRUE, QR = TRUE, refresh = 500)
+                     seed  = SEED, chains = 1, iter = 100,
+                     prior_PD = TRUE, QR = TRUE, refresh = 100)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
-                        seed  = SEED, chains = 1, iter = 500,
-                        prior_PD = TRUE, QR = TRUE, refresh = 500)
+                        seed  = SEED, chains = 1, iter = 100,
+                        prior_PD = TRUE, QR = TRUE, refresh = 100)
     expect_is(fit1, "stanreg")
     expect_is(fit2, "stanreg")
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -99,6 +99,14 @@ test_that("stan_glm returns expected result for cars example", {
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
+# test_that("stan_glm returns expected result with no intercept for mtcars example", {
+#   fit <- stan_glm(mpg ~ -1 + ., data = mtcars, 
+#                   family = gaussian(link = "identity"), seed  = SEED,
+#                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+#                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+#   ans <- glm(mpg ~ -1 + ., data = mtcars, family = gaussian(link = "identity"))
+#   expect_equal(coef(fit), coef(ans), tol = 0.04)
+# })
 
 context("stan_glm (bernoulli)")
 links <- c("logit", "probit", "cauchit", "log", "cloglog")
@@ -118,8 +126,8 @@ test_that("stan_glm returns expected result for bernoulli", {
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
     ans <- coef(glm(y ~ x, family = fam, start = val))
-    if (links[i] != "log") expect_equal(val, ans, 0.03)
-    else expect_equal(val[-1], ans[-1], 0.06)
+    if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
+    else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
 })
 

@@ -142,50 +142,50 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   if (used.optimizing(object)) 
     STOP_not_optimizing("pp_check")
   
-  checks <- c("distributions", "residuals", "scatter", "test") #, "refit")
+  checks <- c("distributions", "residuals", "scatter", "test")
   fn <- switch(match.arg(arg = check, choices = checks),
                'distributions' = "pp_check_dist",
                'residuals' = "pp_check_resid",
                'test' = "pp_check_stat",
-               'scatter' = "pp_check_scatter") #, 'refit' = "pp_check_refit")
+               'scatter' = "pp_check_scatter")
   if (is.null(nreps) && !fn %in%  c("pp_check_stat", "pp_check_scatter"))
     nreps <- ifelse(fn == "pp_check_dist", 8, 3)
   if (!is.null(nreps) && fn == "pp_check_stat") {
     warning("'nreps' is ignored if check='test'", call. = FALSE)
     nreps <- NULL
   }
-  
-  # if (fn == "pp_check_refit") {
-  #   return(pp_check_refit(object, n = nreps, ...))
-  # }
-  if (fn == "pp_check_resid") {
-    if (!is(object, "polr") && is.binomial(object$family$family)) {
-      return(pp_check_binned_resid(object, n = nreps, ...))
-    }
+
+  is_binomial <- if (is(object, "polr"))
+    FALSE else is.binomial(family(object)$family)
+  if (is_binomial && fn == "pp_check_resid") {
+    graph <- pp_check_binned_resid(object, n = nreps, ...)
+    return(graph)
   }
   
-  yrep <- posterior_predict(object, draws = nreps, seed = seed)
   y <- get_y(object)
-  if (is(object, "polr")) y <- as.integer(y)
-  if (is.binomial(family(object)$family)) {
-    if (NCOL(y) == 2) {
+  yrep <- posterior_predict(object, draws = nreps, seed = seed)
+  if (is(object, "polr")) 
+    y <- as.integer(y)
+  if (is_binomial) {
+    if (NCOL(y) == 2L) {
       trials <- rowSums(y)
-      y <- y[, 1] / trials
-      yrep <- sweep(yrep, 2, trials, "/")
-    } 
-    else if (is.factor(y)) y <- fac2bin(y)
+      y <- y[, 1L] / trials
+      yrep <- sweep(yrep, 2L, trials, "/")
+    } else if (is.factor(y))
+      y <- fac2bin(y)
   }
   
-  if (fn == "pp_check_dist") 
+  if (fn == "pp_check_dist") {
     args <- list(y = y, yrep = yrep, n = nreps, overlay = overlay, ...)
-  else if (fn == "pp_check_resid")
+  } else if (fn == "pp_check_resid") {
     args <- list(y = y, yrep = yrep, n = nreps, ...)
-  else if (fn == "pp_check_stat")
+  } else if (fn == "pp_check_stat") {
     args <- list(y = y, yrep = yrep, test = test, ...)
-  else if (fn == "pp_check_scatter")
+  } else if (fn == "pp_check_scatter") {
     args <- list(y = y, yrep = yrep, n = nreps, ...)
+  }
   
-  return(do.call(fn, args))
+  do.call(fn, args)
 }
 
 
@@ -198,7 +198,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
 
 #' @importFrom ggplot2 ggtitle element_blank element_line element_text
 #'   theme_classic
-.pp_check_theme <- function(no_y = TRUE) {
+pp_check_theme <- function(no_y = TRUE) {
   blank <- element_blank()
   thm <- theme_classic() +
     theme(axis.line = element_line(color = "#222222"),
@@ -211,53 +211,56 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
           legend.title = element_text(size = 11),
           legend.text = element_text(size = 13),
           plot.title = element_text(size = 18))
-  if (no_y) {
+  if (no_y)
     thm <- thm %+replace% theme(axis.text.y = element_blank(),
                                 axis.ticks.y = element_blank(),
                                 axis.title.y = element_blank())
-  }
-  thm
+  return(thm)
 }
 
-.set_geom_args <- function(defaults, ...) {
+set_geom_args <- function(defaults, ...) {
   dots <- list(...)
-  if (!length(dots)) return(defaults)
+  if (!length(dots)) 
+    return(defaults)
   dot_names <- names(dots)
   def_names <- names(defaults)
   for (j in seq_along(def_names)) {
     if (def_names[j] %in% dot_names)
       defaults[[j]] <- dots[[def_names[j]]]
   }
-  
   extras <- setdiff(dot_names, def_names)
-  if (length(extras))
-  for (j in seq_along(extras)) {
-    defaults[[extras[j]]] <- dots[[extras[j]]]
+  if (length(extras)) {
+    for (j in seq_along(extras))
+      defaults[[extras[j]]] <- dots[[extras[j]]]
   }
   return(defaults)
 }
 
-pp_check_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
-  fn <- if (overlay) "pp_check_dens" else "pp_check_hist"
+melt_yrep <- function(yrep, n) {
   stopifnot(n <= nrow(yrep))
-  s <- 1:n
+  Nseq <- seq_len(ncol(yrep))
   yrep <- as.data.frame(yrep)
-  colnames(yrep) <- paste0("value.", 1:ncol(yrep))
-  yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
-                       varying = list(1:ncol(yrep)), ids = paste0('yrep_', s))
-  dat <- rbind(yrep_melt, 
+  colnames(yrep) <- paste0("value.", Nseq)
+  reshape(yrep, direction = "long", v.names = "value", 
+          varying = list(Nseq), ids = paste0('yrep_', seq_len(n)))
+}
+
+pp_check_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
+  dat <- rbind(melt_yrep(yrep, n), 
                cbind(time = seq_along(y), value = y, id = 'Observed y'))
   rownames(dat) <- NULL
   dat$is_y <- dat$id == "Observed y"
   dat$value <- as.numeric(dat$value)
+  fn <- if (overlay) 
+    "pp_check_dens" else "pp_check_hist"
   graph <- do.call(fn, list(dat = dat, ...))
-  return(graph + .pp_check_theme())
+  graph + pp_check_theme()
 }
 
 #' @importFrom ggplot2 geom_histogram facet_wrap facet_grid stat_bin
 pp_check_hist <- function(dat, ...) {
   defaults <- list(size = 0.2)
-  geom_args <- .set_geom_args(defaults, ...)
+  geom_args <- set_geom_args(defaults, ...)
   geom_args$mapping <- aes_string(y = "..density..")
   
   ggplot(dat, aes_string(x = 'value', fill = 'is_y', 
@@ -273,9 +276,9 @@ pp_check_hist <- function(dat, ...) {
 #' @importFrom ggplot2 geom_density scale_alpha_manual scale_size_manual
 #'   scale_fill_manual scale_color_manual xlab
 pp_check_dens <- function(dat, ...) {
-  graph <- ggplot(dat, aes_string(x = 'value', group = 'id',
-                                  color = "is_y", fill = "is_y", 
-                                  size = 'is_y')) + 
+  ggplot(dat, aes_string(x = 'value', group = 'id',
+                         color = "is_y", fill = "is_y", 
+                         size = 'is_y')) + 
     geom_density(...) + 
     scale_color_manual(values = c("black", .PP_DARK)) +
     scale_fill_manual(values = c(NA, .PP_FILL)) +
@@ -288,43 +291,46 @@ pp_check_dens <- function(dat, ...) {
 pp_check_stat <- function(y, yrep, test = "mean", ...) {
   vline_color <- .PP_FILL
   fill_color <- "black"
-  if (missing(test) || !length(test) || length(test) > 2) 
+  if (missing(test) || !length(test) || length(test) > 2L) 
     stop("'test' should have length 1 or 2.", call. = FALSE)
   if (!is.character(test)) 
     stop("'test' should be a character vector.", call. = FALSE)
   
-  if (length(test) == 1) {
+  if (length(test) == 1L) {
     defaults <- list(fill = fill_color, na.rm = TRUE)
-    geom_args <- .set_geom_args(defaults, ...)
+    geom_args <- set_geom_args(defaults, ...)
     geom_args$mapping <- aes_string(y = "..density..")
     geom_args$show.legend <- FALSE
-    color_scale <-  scale_color_manual(name = "", 
-                                       values = c(vline_color, fill_color),
-                                       labels = c("T(y)", "T(yrep)"))
+
     test1 <- match.fun(test)
     T_y <- test1(y)
-    T_yrep <- apply(yrep, 1, test1)
-    base <- ggplot(data.frame(x = T_yrep), aes_string(x = "x", color = "'A'")) + 
-      xlab(paste("Test =", test))
+    T_yrep <- apply(yrep, 1L, test1)
+    base <- ggplot(data.frame(x = T_yrep), 
+                   aes_string(x = "x", color = "'A'"))
     graph <- base + 
       do.call("geom_histogram", geom_args) + 
       geom_vline(data = data.frame(t = T_y), 
                  aes_string(xintercept = "t", color = "factor(t)"), 
                  size = 2, show.legend = TRUE) +
-      color_scale
-    thm <- .pp_check_theme() %+replace% theme(legend.position = "right")
-    return(graph + thm)
-  }
-  else { # length(test) == 2
-    defaults <- list(shape = 21, color = "black", fill = "black", alpha = 0.75)
-    geom_args <- .set_geom_args(defaults, ...)
+      scale_color_manual(name = "", 
+                         values = c(vline_color, fill_color),
+                         labels = c("T(y)", "T(yrep)")) +
+      xlab(paste("Test =", test))
     
-    if (is.character(test[1])) test1 <- match.fun(test[1])
-    if (is.character(test[2])) test2 <- match.fun(test[2])
+    thm <- pp_check_theme() %+replace% theme(legend.position = "right")
+    
+  } else { # length(test) == 2
+    defaults <- list(shape = 21, color = "black", fill = "black", alpha = 0.75)
+    geom_args <- set_geom_args(defaults, ...)
+    
+    if (is.character(test[1L])) 
+      test1 <- match.fun(test[1L])
+    if (is.character(test[2L])) 
+      test2 <- match.fun(test[2L])
     T_y1 <- test1(y)
     T_y2 <- test2(y)
-    T_yrep1 <- apply(yrep, 1, test1)
-    T_yrep2 <- apply(yrep, 1, test2)
+    T_yrep1 <- apply(yrep, 1L, test1)
+    T_yrep2 <- apply(yrep, 1L, test2)
     base <- ggplot(data.frame(x = T_yrep1, y = T_yrep2), 
                    aes_string(x = "x", y = "y", color = "'A'"))
     graph <- base + 
@@ -338,38 +344,40 @@ pp_check_stat <- function(y, yrep, test = "mean", ...) {
       scale_color_manual(name = "", 
                          values = c('B' = vline_color, 'A' = fill_color),
                          labels = c('B' = "T(y)", 'A' = "T(yrep)")) + 
-      labs(x = paste("Test =", test[1]), y = paste("Test =", test[2]))
+      labs(x = paste("Test =", test[1L]), y = paste("Test =", test[2L]))
     
-    thm <- .pp_check_theme(no_y = FALSE) %+replace% 
+    thm <- pp_check_theme(no_y = FALSE) %+replace% 
       theme(legend.position = "right")
-    return(graph + thm)
   }
+  
+  graph + thm
 }
 
 #' @importFrom ggplot2 labs
 pp_check_resid <- function(y, yrep, n = 1, ...) {
-  defaults <- list(fill = "black")
-  geom_args <- .set_geom_args(defaults, ...)
-  geom_args$mapping <- aes_string(y = "..density..")
   stopifnot(n <= nrow(yrep))
-  s <- 1:n
+  defaults <- list(fill = "black")
+  geom_args <- set_geom_args(defaults, ...)
+  geom_args$mapping <- aes_string(y = "..density..")
   if (n == 1) {
     base <- ggplot(data.frame(x = y - yrep), aes_string(x = "x"))
   } else {
-    resids <- as.data.frame(-1 * sweep(yrep, 2, y))
-    colnames(resids) <- paste0("r.", 1:ncol(resids))
+    resids <- as.data.frame(-1 * sweep(yrep, 2L, y))
+    N <- ncol(resids)
+    colnames(resids) <- paste0("r.", seq_len(N))
     resids <- reshape(resids, direction = "long", v.names = "r", 
-                      varying = list(1:ncol(resids)), 
-                      ids = paste0("resid(yrep_",s,")"))
+                      varying = list(seq_len(N)), 
+                      ids = paste0("resid(yrep_", seq_len(n), ")"))
     base <- ggplot(resids, aes_string(x = "r"))
   }
   graph <- base + do.call("geom_histogram", geom_args)
-  if (n == 1)
-    graph <- graph + labs(y = NULL, x = paste0("resid(yrep_",s,")"))
-  else 
+  if (n == 1) {
+    graph <- graph + labs(y = NULL, x = paste0("resid(yrep_", seq_len(n),")"))
+  } else {
     graph <- graph + labs(y = NULL, x = NULL) + facet_wrap(~id, scales = "free")
+  }
   
-  return(graph + .pp_check_theme())
+  graph + pp_check_theme()
 }
 
 #' @importFrom ggplot2 geom_hline geom_point geom_path labs facet_wrap
@@ -392,21 +400,26 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   inverse_link <- linkinv(object)
   Ey <- inverse_link(eta)
   y <- get_y(object)
-  if (NCOL(y) == 2) y <- y[, 1] / rowSums(y)
-  ytmp <- if (is.factor(y)) fac2bin(y) else y
-  resids <- sweep(-Ey, MARGIN = 2, STATS = ytmp, "+")
+  if (NCOL(y) == 2L) 
+    y <- y[, 1L] / rowSums(y)
+  ytmp <- if (is.factor(y)) 
+    fac2bin(y) else y
+  resids <- sweep(-Ey, MARGIN = 2L, STATS = ytmp, "+")
   ny <- length(y)
   stopifnot(ny == ncol(Ey))
-  if (ny >= 100) nbins <- floor(sqrt(ny))
-  else if (ny > 10 && ny < 100) nbins <- 10
-  else nbins <- floor(ny / 2) # if (ny <= 10)
+  if (ny >= 100) {
+    nbins <- floor(sqrt(ny))
+  } else if (ny > 10 && ny < 100) {
+    nbins <- 10
+  } else { # if (ny <= 10)
+    nbins <- floor(ny / 2) 
+  }
   
-  binned <- binner(rep_id = 1, ey = Ey[1, ], r = resids[1, ], nbins)
+  binned <- binner(rep_id = 1, ey = Ey[1L, ], r = resids[1L, ], nbins)
   if (n > 1) {
-    for (i in 2:nrow(resids)) {
+    for (i in 2:nrow(resids))
       binned <- rbind(binned, binner(rep_id = i, ey = Ey[i, ], 
                                      r = resids[i, ], nbins))
-    }
   }
   dots <- list(...)
   line_color <- dots$color %ORifNULL% .PP_FILL
@@ -421,9 +434,39 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
     labs(x = "Expected Values", y = "Average Residual \n (with 2SE bounds)") + 
     ggtitle("Binned Residuals")
   
-  if (n > 1) graph <- graph + facet_wrap(~rep, scales = "free")
+  if (n > 1) 
+    graph <- graph + facet_wrap(~rep, scales = "free")
   
-  return(graph + .pp_check_theme(no_y = FALSE))
+  return(graph + pp_check_theme(no_y = FALSE))
+}
+
+#' @importFrom ggplot2 geom_abline
+pp_check_scatter <- function(y, yrep, n = NULL, ...){
+  # If n is null the avg yrep is compared to y, otherwise n single yrep datasets
+  # are compared to y in separate facets.
+  
+  defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
+                   size = 2.5, alpha = 1)
+  geom_args <- set_geom_args(defaults, ...)
+
+  if (is.null(n)) {
+    avg_yrep <- colMeans(yrep)
+    dat <- data.frame(x = y, y = avg_yrep, z = abs(y - avg_yrep))
+    graph <- ggplot(dat, aes_string("x", "y")) + 
+      geom_abline(intercept = 0, slope = 1, linetype = 2) +
+      do.call("geom_point", geom_args) +
+      labs(x = "y", y = "Average yrep")
+  } else {
+    dat <- melt_yrep(yrep, n)
+    dat$y <- rep(y, each = n)
+    graph <- ggplot(dat, aes_string(x = "y", y = "value")) + 
+      geom_abline(intercept = 0, slope = 1, linetype = 2) +
+      do.call("geom_point", geom_args) +
+      labs(x = "y", y = "yrep") + 
+      facet_wrap(~id, scales = "free")
+  }
+  
+  graph + pp_check_theme(no_y = FALSE)
 }
 
 
@@ -474,7 +517,7 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
 #                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
 #   
 #   defaults <- list(size = 0.2)
-#   geom_args <- .set_geom_args(defaults, ...)
+#   geom_args <- set_geom_args(defaults, ...)
 #   geom_args$mapping <- aes_string(y = "..density..")
 #   clr_vals <- c("black", .PP_FILL)
 #   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
@@ -484,42 +527,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
 #     scale_color_manual("", values = clr_vals) + 
 #     facet_grid(model ~ id, scales = "fixed") + 
 #     xlab("yrep")
-#   thm <- .pp_check_theme() %+replace%
+#   thm <- pp_check_theme() %+replace%
 #     theme(strip.text = element_blank(), legend.position = "right")
 #   
 #   return(graph + thm)
 # } # nocov end
-
-#' @importFrom ggplot2 geom_abline
-pp_check_scatter <- function(y, yrep, n = NULL, ...){
-  # If n is null the avg yrep is compared to y, otherwise n single yrep datasets
-  # are compared to y in separate facets.
-  
-  defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
-                   size = 2.5, alpha = 1)
-  geom_args <- .set_geom_args(defaults, ...)
-
-  if (is.null(n)) {
-    avg_yrep <- colMeans(yrep)
-    dat <- data.frame(x = y, y = avg_yrep, z = abs(y - avg_yrep))
-    graph <- ggplot(dat, aes_string("x", "y")) + 
-      geom_abline(intercept = 0, slope = 1, linetype = 2) +
-      do.call("geom_point", geom_args) +
-      labs(x = "y", y = "Average yrep")
-  }
-  else {
-    stopifnot(n <= nrow(yrep))
-    s <- 1:n
-    yrep <- as.data.frame(yrep)
-    colnames(yrep) <- paste0("value.", 1:ncol(yrep))
-    yrep_melt <- reshape(yrep, direction = "long", v.names = "value", 
-                         varying = list(1:ncol(yrep)), ids = paste0('yrep_', s))
-    yrep_melt$y <- rep(y, each = n)
-    graph <- ggplot(yrep_melt, aes_string(x = "y", y = "value")) + 
-      geom_abline(intercept = 0, slope = 1, linetype = 2) +
-      do.call("geom_point", geom_args) +
-      labs(x = "y", y = "yrep") + 
-      facet_wrap(~id, scales = "free")
-  }
-  return(graph + .pp_check_theme(no_y = FALSE))
-}

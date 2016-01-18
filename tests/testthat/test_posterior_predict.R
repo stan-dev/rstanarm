@@ -183,7 +183,6 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
                                  allow.new.levels = TRUE)),
       unname(predict(get(paste0("lfit", j)), newdata = nd3, allow.new.levels = TRUE)),
       tol = tol)
-    
   }
 })
 
@@ -262,6 +261,5 @@ test_that("lme4 tests work similarly", {
   p4b <- posterior_predict(sfit, nd, re.form=~(1|sample)+(~1|plate), seed = SEED)
   expect_equal(p2,p4,p4b)
   p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
-  
 })
 

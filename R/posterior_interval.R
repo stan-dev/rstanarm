@@ -110,5 +110,5 @@ posterior_interval <- function(object, prob = 0.9, type = "central",
   probs <- c(alpha, 1 - alpha)
   labs <- paste0(100 * probs, "%")
   ci <- t(apply(mat, 2L, quantile, probs = probs))
-  return(structure(ci, dimnames = list(colnames(mat), labs)))
+  structure(ci, dimnames = list(colnames(mat), labs))
 }

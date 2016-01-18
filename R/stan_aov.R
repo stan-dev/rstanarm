@@ -35,8 +35,8 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
                      algorithm = c("sampling", "meanfield", "fullrank"), 
                      adapt_delta = NULL) {
     # parse like aov() does
-    Terms <- if(missing(data)) terms(formula, "Error")
-    else terms(formula, "Error", data = data)
+    Terms <- if(missing(data)) 
+      terms(formula, "Error") else terms(formula, "Error", data = data)
     indError <- attr(Terms, "specials")$Error
     ## NB: this is only used for n > 1, so singular form makes no sense
     ## in English.  But some languages have multiple plurals.
@@ -49,9 +49,10 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
     ## need rstanarm:: for non-standard evaluation
     lmcall[[1L]] <- quote(rstanarm::stan_lm)
     lmcall$singular.ok <- FALSE
-    if(projections) qr <- lmcall$qr <- TRUE
+    if (projections) 
+      qr <- lmcall$qr <- TRUE
     lmcall$projections <- NULL
-    if(is.null(indError)) {
+    if (is.null(indError)) {
         ## no Error term
         fit <- eval(lmcall, parent.frame())
         fit$terms <- Terms
@@ -60,12 +61,13 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
         beta <- extract(fit$stanfit, pars = "beta", permuted = FALSE)
         pnames <- dimnames(beta)$parameters
         rownames(R) <- colnames(R)
-        R <- R[pnames,pnames,drop = FALSE]
+        R <- R[pnames, pnames, drop = FALSE]
         effects <- apply(beta, 1:2, FUN = function(x) R %*% x)
         effects <- aperm(effects, c(2,3,1))
         fit$effects <- effects
         class(fit) <- c("stanreg", "aov", "lm")
-        if(projections) fit$projections <- proj(fit)
+        if (projections) 
+          fit$projections <- proj(fit)
         fit$call <- Call
         return(fit)
     } else { # nocov start

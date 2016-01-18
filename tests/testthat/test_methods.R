@@ -113,7 +113,7 @@ test_that("posterior_interval returns correct structure", {
   expect_silent(ci5 <- posterior_interval(stan_polr1, prob = 0.9))
   expect_identical(rownames(ci), c("(Intercept)", "wt", "sigma"))
   expect_identical(rownames(ci2), "wt")
-  expect_identical(rownames(ci3), rstanarm:::.bnames(rownames(example_model$stan_summary), value = TRUE)[1:15])
+  expect_identical(rownames(ci3), rstanarm:::b_names(rownames(example_model$stan_summary), value = TRUE)[1:15])
   expect_identical(rownames(ci4), c("(Intercept)", paste0("period", 2:4)))
   expect_identical(colnames(ci), c("25%", "75%"))
   expect_identical(colnames(ci2), c("2.5%", "97.5%"))
@@ -252,7 +252,7 @@ test_that("as.matrix and as.data.frame methods work", {
   df <- as.data.frame(example_model)
   expect_identical(df, as.data.frame(mat))
   nc <- length(c(fixef(example_model), unlist(ranef(example_model))))
-  nr <- rstanarm:::.posterior_sample_size(example_model)
+  nr <- rstanarm:::posterior_sample_size(example_model)
   nms <- rownames(summary(example_model))[seq_len(nc)]
   expect_equal(dim(mat), c(nr, nc))
   expect_identical(colnames(mat), nms)
@@ -325,7 +325,7 @@ test_that("print and summary methods don't throw errors", {
   expect_is(s, "summary.stanreg")
   expect_output(print(s), "stan_glmer")
   expect_output(print(s), paste("Posterior sample size:",  
-                                rstanarm:::.posterior_sample_size(example_model)))
+                                rstanarm:::posterior_sample_size(example_model)))
   expect_identical(attr(s, "algorithm"), "sampling")
   expect_identical(colnames(s), colnames(d))
   expect_identical(rownames(s), rownames(d))

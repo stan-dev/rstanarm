@@ -42,8 +42,9 @@ predict.stanreg <- function(object, ..., newdata = NULL,
                             type = c("link", "response"), se.fit = FALSE) {
   type <- match.arg(type)
   if (!se.fit && is.null(newdata)) {
-    if (type == "link") return(object$linear.predictors)
-    else return(object$fitted.values)
+    preds <- if (type == "link") 
+      object$linear.predictors else object$fitted.values
+    return(preds)
   }
   if (!used.optimizing(object) && type == "response")
     stop("type='response' should not be used for models estimated by MCMC",
@@ -53,18 +54,18 @@ predict.stanreg <- function(object, ..., newdata = NULL,
   
   dat <- pp_data(object, newdata)
   stanmat <- as.matrix.stanreg(object)
-  beta <- stanmat[, 1:ncol(dat$x)]
+  beta <- stanmat[, seq_len(ncol(dat$x))]
   eta <- linear_predictor(beta, dat$x, dat$offset)
   if (type == "response") {
     inverse_link <- linkinv(object)
     eta <- inverse_link(eta)
     if (is(object, "polr") && ("alpha" %in% colnames(stanmat)))
-      eta <- apply(eta, 1, FUN = `^`, e2 = stanmat[,"alpha"])
+      eta <- apply(eta, 1L, FUN = `^`, e2 = stanmat[, "alpha"])
   }
   fit <- colMeans(eta)
-  if (!se.fit) return(fit)
-  else {
-    se.fit <- apply(eta, 2L, sd)
-    nlist(fit, se.fit)
-  }
+  if (!se.fit) 
+    return(fit)
+  
+  se.fit <- apply(eta, 2L, sd)
+  nlist(fit, se.fit)
 }

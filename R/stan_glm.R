@@ -105,12 +105,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), prior_PD = FALSE, 
-                    algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                    algorithm = c("sampling", "optimizing", 
+                                  "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
-  if (missing(data)) data <- environment(formula)
+  if (missing(data)) 
+    data <- environment(formula)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
@@ -122,8 +124,12 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   Y <- array1D_check(model.response(mf, type = "any"))
-  if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
-  else X <- matrix(NA_real_, NROW(Y), 0L)
+  if (!is.empty.model(mt)) {
+    X <- model.matrix(mt, mf, contrasts)
+  } else {
+    X <- matrix(NA_real_, NROW(Y), 0L)
+  }
+  
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (binom_y_prop(Y, family, weights)) {
@@ -147,10 +153,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
-  if (!x) out$x <- NULL
-  if (!y) out$y <- NULL
-  if (!model) out$model <- NULL
-  out
+  if (!x) 
+    out$x <- NULL
+  if (!y) 
+    out$y <- NULL
+  if (!model) 
+    out$model <- NULL
+  
+  return(out)
 }
 
 #' @rdname stan_glm
@@ -168,5 +178,6 @@ stan_glm.nb <- function(..., link = "log") {
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  out
+  
+  return(out)
 }

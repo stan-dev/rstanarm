@@ -66,37 +66,47 @@
 #' }
 #' 
 as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
-  NO_DRAWS <- "No draws found."
-  pars <- .collect_pars(x, pars, regex_pars)
+  NO_DRAWS_msg <- "No draws found."
+  pars <- collect_pars(x, pars, regex_pars)
   no_user_pars <- is.null(pars)
+  
   if (used.optimizing(x)) {
     mat <- x$asymptotic_sampling_dist
-    if (is.null(mat)) stop(NO_DRAWS, call. = FALSE)
+    if (is.null(mat)) 
+      stop(NO_DRAWS_msg, call. = FALSE)
     if (is.null(pars)) {
       dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
       pars <- c(names(coef(x)), # return with coefficients first
                 dispersion[which(dispersion %in% colnames(mat))])
     }
-  } else { # used mcmc or vb
-    if (x$stanfit@mode != 0) stop(NO_DRAWS, call. = FALSE)
+  } else { 
+    # used mcmc or vb
+    if (x$stanfit@mode != 0) 
+      stop(NO_DRAWS_msg, call. = FALSE)
     posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
     mat <- apply(posterior, 3L, FUN = function(y) y)
     if (is.null(pars))
-      pars <- grep("mean_PPD|log-posterior", colnames(mat), invert = TRUE, 
-                   value = TRUE)
+      pars <- grep("mean_PPD|log-posterior", colnames(mat), 
+                   invert = TRUE, value = TRUE)
   }
+  
   if (!no_user_pars) {
     badpars <- which(!pars %in% colnames(mat))
     if (length(badpars)) 
       stop("No parameter(s) ", paste(pars[badpars], collapse = ", "), 
            call. = FALSE)
   }
+  
   mat <- mat[, pars, drop = FALSE]
-  if (!is.mer(x)) return(mat) else return(unpad_reTrms(mat, columns = TRUE))
+  if (is.mer(x))
+    mat <- unpad_reTrms(mat, columns = TRUE)
+
+  return(mat)
 }
 
 #' @rdname as.matrix.stanreg
 #' @export
 as.data.frame.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
-  as.data.frame(as.matrix.stanreg(x, pars = pars, regex_pars = regex_pars, ...))
+  mat <- as.matrix.stanreg(x, pars = pars, regex_pars = regex_pars, ...)
+  as.data.frame(mat)
 }

@@ -31,14 +31,18 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                           prior_PD = FALSE, 
                           algorithm = c("sampling", "meanfield", "fullrank"),
                           adapt_delta = NULL) {
+  
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
-  link <- which(c("logistic", "probit", "loglog", "cloglog", "cauchit") == method)
-  if (!is.factor(y)) stop("'y' must be a factor.")
+  all_methods <- c("logistic", "probit", "loglog", "cloglog", "cauchit")
+  link <- which(all_methods == method)
+  if (!is.factor(y)) 
+    stop("'y' must be a factor.")
   y_lev <- levels(y)
   J <- length(y_lev)
   y <- as.integer(y)
-  if (colnames(x)[1] == "(Intercept)") x <- x[,-1,drop=FALSE]
+  if (colnames(x)[1] == "(Intercept)")
+    x <- x[, -1, drop=FALSE]
   xbar <- as.array(colMeans(x))
   X <- sweep(x, 2, xbar, FUN = "-")
   cn <- colnames(X)
@@ -49,35 +53,47 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   colnames(X) <- cn
   xbar <- c(xbar %*% R_inv)
   
-  has_weights <- length(wt) > 0 && !all(wt == 1)
-  if (!has_weights) weights <- double(0)
-  has_offset <- length(offset) > 0 && !all(offset == 0)
-  if (!has_offset) offset <- double(0)
+  has_weights <- isTRUE(length(wt) > 0 && !all(wt == 1))
+  if (!has_weights) 
+    weights <- double(0)
+  has_offset <- isTRUE(length(offset) > 0 && !all(offset == 0))
+  if (!has_offset) 
+    offset <- double(0)
 
   if (length(prior)) {
     regularization <- make_eta(prior$location, prior$what, K = ncol(x))
     prior_dist <- 1L
-  }
-  else {
+  } else {
     regularization <- 0
     prior_dist <- 0L
   }
-  if (!length(prior_counts)) prior_counts <- rep(1, J)
-  else prior_counts <- maybe_broadcast(prior_counts$concentration, J)
+  if (!length(prior_counts)) {
+    prior_counts <- rep(1, J)
+  } else {
+    prior_counts <- maybe_broadcast(prior_counts$concentration, J)
+  }
 
-  if (!is.null(shape)) {
-    if (J > 2) stop("'shape' must be NULL when there are more than 2 outcome categories")
-    if (!is.numeric(shape) || shape <= 0) stop("'shape' must be positive")
+  if (is.null(shape)) {
+    shape <- 0L
+  } else {
+    if (J > 2) 
+      stop("'shape' must be NULL when there are more than 2 outcome categories.")
+    if (!is.numeric(shape) || shape <= 0) 
+      stop("'shape' must be positive")
   }
-  else shape <- 0L
-  if (!is.null(rate)) {
-    if (J > 2) stop("'rate' must be NULL when there are more than 2 outcome categories")
-    if (!is.numeric(rate) || rate <= 0) stop("'rate' must be positive")
+  
+  if (is.null(rate)) {
+    rate <- 0L
+  } else {
+    if (J > 2) 
+      stop("'rate' must be NULL when there are more than 2 outcome categories.")
+    if (!is.numeric(rate) || rate <= 0) 
+      stop("'rate' must be positive")
   }
-  else rate <- 0L
+
   is_skewed <- as.integer(shape > 0 & rate > 0)
   if (is_skewed && method != "logistic")
-    stop("skewed models are only supported when method = 'logistic'")
+    stop("Skewed models are only supported when method = 'logistic'.")
     
   N <- nrow(X)
   K <- ncol(X)
@@ -89,9 +105,13 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     has_intercept = 0L, prior_dist_for_intercept = 0L, 
                     family = 1L)
   stanfit <- stanmodels$polr
-  if (J > 2) pars <- c("beta", "zeta", "mean_PPD")
-  else pars <- c("zeta", "beta", if(is_skewed) "alpha", "mean_PPD")
-  standata$do_residuals <- J > 2
+  if (J > 2) {
+    pars <- c("beta", "zeta", "mean_PPD")
+  } else { 
+    pars <- c("zeta", "beta", if (is_skewed) "alpha", "mean_PPD")
+  }
+  standata$do_residuals <- isTRUE(J > 2)
+  
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(
       object = stanfit, 
@@ -100,22 +120,31 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
       user_adapt_delta = adapt_delta, 
       data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
+  } else {
+    stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
+                         algorithm = algorithm, ...)
   }
-  else stanfit <- rstan::vb(stanfit, pars = pars, data = standata, 
-                            algorithm = algorithm, ...)
   
   thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
   betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
   for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
     stanfit@sim$samples[[chain]][[(J == 2) + param]] <- 
-      if (ncol(X) > 1) betas[param,,chain] else betas[param,chain]
+      if (ncol(X) > 1) betas[param, , chain] else betas[param, chain]
   }
   
-  if (J > 2)
-    new_names <- c(colnames(x), paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
-                   paste("mean_PPD", y_lev, sep = ":"), "log-posterior")
-  else new_names <- c("(Intercept)", colnames(x), if (is_skewed) "alpha",
-                      "mean_PPD", "log-posterior")
+  if (J > 2) {
+    new_names <- c(colnames(x), 
+                   paste(head(y_lev, -1), tail(y_lev, -1), sep = "|"),
+                   paste("mean_PPD", y_lev, sep = ":"), 
+                   "log-posterior")
+  } else {
+    new_names <- c("(Intercept)", 
+                   colnames(x), 
+                   if (is_skewed) "alpha",
+                   "mean_PPD", 
+                   "log-posterior")
+  }
   stanfit@sim$fnames_oi <- new_names
+  
   return(stanfit)
 }

@@ -91,7 +91,7 @@
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  loo.function(.llfun(x$family), args = .llargs(x), ...)
+  loo.function(ll_fun(x$family), args = ll_args(x), ...)
 }
 
 #' @rdname loo.stanreg
@@ -102,22 +102,23 @@ loo.stanreg <- function(x, ...) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  waic.function(.llfun(x$family), args = .llargs(x))
+  waic.function(ll_fun(x$family), args = ll_args(x))
 }
 
 # returns log-likelihood function for loo() and waic()
-.llfun <- function(f) {
-  if (is(f, "family")) 
+ll_fun <- function(f) {
+  if (is(f, "family")) {
     return(get(paste0(".ll_", f$family, "_i")))
-  else if (is.character(f)) 
+  } else if (is.character(f)) {
     return(.ll_polr_i)
-  else 
+  } else {
     stop("'family' must be a family or a character string.", 
          call. = FALSE)
+  }
 }
 
 # returns args argument for loo.function() and waic.function()
-.llargs <- function(object) {
+ll_args <- function(object) {
   f <- object$family
   draws <- nlist(f)
   stanmat <- as.matrix.stanreg(object)
@@ -149,8 +150,8 @@ waic.stanreg <- function(x, ...) {
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
       draws$size <- stanmat[,"overdispersion"]
-  }
-  else if (is.character(f)) {
+    
+  } else if (is.character(f)) {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
     data <- data.frame(y, x)
@@ -160,8 +161,10 @@ waic.stanreg <- function(x, ...) {
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) 
       draws$alpha <- stanmat[, "alpha"]
+    
+  } else {
+    stop("'family' must be a family or a character string.", call. = FALSE)
   }
-  else stop("'family' must be a family or a character string.", call. = FALSE)
   
   data$offset <- object$offset
   if (!all(object$weights == 1)) 
@@ -169,10 +172,11 @@ waic.stanreg <- function(x, ...) {
   
   if (is.mer(object)) {
     z <- get_z(object)
-    b <- stanmat[, .bnames(colnames(stanmat)), drop = FALSE]
+    b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
     data <- cbind(data, z)
     draws$beta <- cbind(draws$beta, b)
   }
+  
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
@@ -186,10 +190,11 @@ waic.stanreg <- function(x, ...) {
   draws$f$linkinv(eta)
 }
 .weighted <- function(val, w) {
-  if (is.null(w)) 
+  if (is.null(w)) {
     val
-  else 
+  } else {
     val * w
+  } 
 }
 
 # log-likelihood functions
@@ -228,15 +233,23 @@ waic.stanreg <- function(x, ...) {
   J <- draws$max_y
   y_i <- data$y
   linkinv <- polr_linkinv(f)
-  if (is.null(draws$alpha)) val <- 
-    if (y_i == 1) log(linkinv(draws$zeta[,1] - eta))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta))
-    else log(linkinv(draws$zeta[,y_i] - eta) - 
-             linkinv(draws$zeta[,y_i - 1L] - eta))
-  else val <- 
-    if (y_i == 1) draws$alpha * log(linkinv(draws$zeta[,1] - eta))
-    else if (y_i == J) log1p(-linkinv(draws$zeta[,J-1] - eta) ^ draws$alpha)
-    else stop("Exponentiation only possible when there are exactly 2 outcomes.")
-  
+  if (is.null(draws$alpha)) {
+      if (y_i == 1) {
+        val <- log(linkinv(draws$zeta[, 1] - eta))
+      } else if (y_i == J) {
+        val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
+      } else {
+        val <- log(linkinv(draws$zeta[, y_i] - eta) - 
+                     linkinv(draws$zeta[, y_i - 1L] - eta))
+      }
+  } else {
+      if (y_i == 1) {
+        val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
+      } else if (y_i == J) {
+        val <- log1p(-linkinv(draws$zeta[, J-1] - eta) ^ draws$alpha)
+      } else {
+        stop("Exponentiation only possible when there are exactly 2 outcomes.")
+      }
+  }
   .weighted(val, data$weights)
 }
