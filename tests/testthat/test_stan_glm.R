@@ -129,14 +129,15 @@ test_that("stan_glm returns expected result for cars example", {
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
-# test_that("stan_glm returns expected result with no intercept for mtcars example", {
-#   fit <- stan_glm(mpg ~ -1 + ., data = mtcars, 
-#                   family = gaussian(link = "identity"), seed  = SEED,
-#                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
-#                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
-#   ans <- glm(mpg ~ -1 + ., data = mtcars, family = gaussian(link = "identity"))
-#   expect_equal(coef(fit), coef(ans), tol = 0.04)
-# })
+test_that("stan_glm returns expected result with no intercept for mtcars example", {
+  f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)
+  fit <- stan_glm(f, data = mtcars,
+                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                  tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
+                  seed  = SEED)
+  ans <- glm(f, data = mtcars, family = gaussian(link = "identity"))
+  expect_equal(coef(fit), coef(ans), tol = 0.04)
+})
 
 context("stan_glm (bernoulli)")
 links <- c("logit", "probit", "cauchit", "log", "cloglog")
