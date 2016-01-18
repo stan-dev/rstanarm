@@ -359,42 +359,44 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
   expect_identical(linkinv.stanreg(fit), gaussian()$linkinv)
+  expect_error(rstanarm:::polr_linkinv(example_model), 
+               regexp = "should be a stanreg object created by stan_polr")
 })
 
-test_that(".collect_pars and .grep_for_pars work", {
+test_that("collect_pars and grep_for_pars work", {
   fit <- example_model
-  .collect_pars <- rstanarm:::.collect_pars
-  .grep_for_pars <- rstanarm:::.grep_for_pars
+  collect_pars <- rstanarm:::collect_pars
+  grep_for_pars <- rstanarm:::grep_for_pars
   
   all_period <- paste0("period", 2:4)
-  all_varying <- rstanarm:::.bnames(rownames(fit$stan_summary), value = TRUE)
+  all_varying <- rstanarm:::b_names(rownames(fit$stan_summary), value = TRUE)
   
-  expect_identical(.grep_for_pars(fit, "period"), all_period)
-  expect_identical(.grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
-  expect_identical(.grep_for_pars(fit, "period|size"), c("size", all_period))
-  expect_identical(.grep_for_pars(fit, "(2|3)$"), all_period[1:2])
-  expect_identical(.grep_for_pars(fit, "herd"), all_varying)
-  expect_identical(.grep_for_pars(fit, "b\\["), all_varying)
-  expect_identical(.grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
-  expect_identical(.grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
-  expect_identical(.grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
-  expect_error(.grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
-  expect_error(.grep_for_pars(fit, "b["))
+  expect_identical(grep_for_pars(fit, "period"), all_period)
+  expect_identical(grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
+  expect_identical(grep_for_pars(fit, "period|size"), c("size", all_period))
+  expect_identical(grep_for_pars(fit, "(2|3)$"), all_period[1:2])
+  expect_identical(grep_for_pars(fit, "herd"), all_varying)
+  expect_identical(grep_for_pars(fit, "b\\["), all_varying)
+  expect_identical(grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
+  expect_identical(grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
+  expect_identical(grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
+  expect_error(grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
+  expect_error(grep_for_pars(fit, "b["))
   
-  expect_identical(.collect_pars(fit, regex_pars = "period"), all_period)
-  expect_identical(.collect_pars(fit, pars = "size", regex_pars = "period"), 
+  expect_identical(collect_pars(fit, regex_pars = "period"), all_period)
+  expect_identical(collect_pars(fit, pars = "size", regex_pars = "period"), 
                    c("size", all_period))
-  expect_identical(.collect_pars(fit, pars = c("(Intercept)", "size")), 
+  expect_identical(collect_pars(fit, pars = c("(Intercept)", "size")), 
                    c("(Intercept)", "size"))
-  expect_identical(.collect_pars(fit, pars = "period2", regex_pars = "herd:[[1]]"), 
+  expect_identical(collect_pars(fit, pars = "period2", regex_pars = "herd:[[1]]"), 
                    c("period2", all_varying[1]))
-  expect_identical(.collect_pars(fit, pars = "size", regex_pars = "size"), "size")
-  expect_identical(.collect_pars(fit, regex_pars = c("period", "herd")), 
+  expect_identical(collect_pars(fit, pars = "size", regex_pars = "size"), "size")
+  expect_identical(collect_pars(fit, regex_pars = c("period", "herd")), 
                    c(all_period, all_varying))
 })
 
-test_that(".posterior_sample_size works", {
-  pss <- rstanarm:::.posterior_sample_size
+test_that("posterior_sample_size works", {
+  pss <- rstanarm:::posterior_sample_size
   expect_equal(pss(example_model), 500)
   expect_equal(pss(fit), nrow(as.matrix(fit)))
   expect_equal(pss(fit2), ITER * CHAINS / 2)

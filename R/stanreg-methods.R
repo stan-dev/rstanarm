@@ -96,8 +96,10 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (is.mer(object)) .mermod_coef(object, ...)
-  else object$coefficients
+  if (!is.mer(object)) 
+    object$coefficients
+  else 
+    coef_mer(object, ...)
 }
 
 #' @rdname stanreg-methods
@@ -132,10 +134,11 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 log_lik.stanreg <- function(object, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  fun <- .llfun(object$family)
-  args <- .llargs(object)
+  fun <- ll_fun(object$family)
+  args <- ll_args(object)
   sapply(seq_len(args$N), function(i) {
-    as.vector(fun(i = i, data = args$data[i,, drop=FALSE], draws = args$draws)) 
+    as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
+                  draws = args$draws))
   })
 }
 
@@ -176,21 +179,24 @@ se.stanreg <- function(object, ...) {
 #' @param formula.,evaluate See \code{\link[stats]{update}}.
 #' 
 update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
-  if (is.null(call <- getCall(object))) 
+  call <- getCall(object)
+  if (is.null(call)) 
     stop("'object' does not contain a 'call' component.", call. = FALSE)
   extras <- match.call(expand.dots = FALSE)$...
   if (!missing(formula.)) 
     call$formula <- update.formula(formula(object), formula.)
   if (length(extras)) {
     existing <- !is.na(match(names(extras), names(call)))
-    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    for (a in names(extras)[existing]) 
+      call[[a]] <- extras[[a]]
     if (any(!existing)) {
       call <- c(as.list(call), extras[!existing])
       call <- as.call(call)
     }
   }
-  if (!evaluate) return(call)
-  else {
+  if (!evaluate) {
+    return(call)
+  } else {
     # do this like lme4 update.merMod instead of update.default
     ff <- environment(formula(object))
     pf <- parent.frame()
@@ -208,12 +214,14 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
 #' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is.mer(object)) out <- object$covmat
+  if (!is.mer(object)) 
+    out <- object$covmat
   else {
     sel <- seq_along(fixef(object))
     out <- object$covmat[sel, sel, drop=FALSE]
   }
-  if (correlation) out <- cov2cor(out)
+  if (correlation) 
+    out <- cov2cor(out)
   return(out)
 }
 
@@ -232,17 +240,17 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
   as.list(object$glmod$reTrms$flist)
 }
 
-.mermod_coef <- function(object, ...) {
+coef_mer <- function(object, ...) {
   if (length(list(...))) 
     warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
             "\" ignored.", call. = FALSE)
   fef <- data.frame(rbind(fixef(object)), check.names = FALSE)
   ref <- ranef(object)
   refnames <- unlist(lapply(ref, colnames))
-  nmiss <- length(missnames <- setdiff(refnames, names(fef)))
+  missnames <- setdiff(refnames, names(fef))
+  nmiss <- length(missnames)
   if (nmiss > 0) {
-    fillvars <- setNames(data.frame(rbind(rep(0, nmiss))), 
-                         missnames)
+    fillvars <- setNames(data.frame(rbind(rep(0, nmiss))), missnames)
     fef <- cbind(fillvars, fef)
   }
   val <- lapply(ref, function(x) fef[rep.int(1L, nrow(x)), , drop = FALSE])
@@ -252,10 +260,10 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
     nmsi <- colnames(refi)
     if (!all(nmsi %in% names(fef))) 
       stop("Unable to align random and fixed effects.", call. = FALSE)
-    for (nm in nmsi) val[[i]][[nm]] <- val[[i]][[nm]] + refi[, nm]
+    for (nm in nmsi) 
+      val[[i]][[nm]] <- val[[i]][[nm]] + refi[, nm]
   }
-  class(val) <- "coef.mer"
-  val
+  structure(val, class = "coef.mer")
 }
 
 #' @rdname stanreg-methods
@@ -265,7 +273,7 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
 #' 
 fixef.stanreg <- function(object, ...) {
   coefs <- object$coefficients
-  coefs[.bnames(names(coefs), invert = TRUE)]
+  coefs[b_names(names(coefs), invert = TRUE)]
 }
 
 #' @rdname stanreg-methods
@@ -283,10 +291,10 @@ ngrps.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  if (used.optimizing(object)) 
-    sel <- .bnames(rownames(object$stan_summary))
-  else sel <- .bnames(object$stanfit@sim$fnames_oi)
-  ans <- object$stan_summary[sel, .select_median(object$algorithm)]
+  all_names <- if (used.optimizing(object))
+    rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
+  sel <- b_names(all_names)
+  ans <- object$stan_summary[sel, select_median(object$algorithm)]
   # avoid returning the extra levels that were included
   ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]
   fl <- .flist(object)
@@ -306,8 +314,7 @@ ranef.stanreg <- function(object, ...) {
                check.names = FALSE)
   })
   names(ans) <- names(fl)
-  class(ans) <- "ranef.mer"
-  ans
+  structure(ans, class = "ranef.mer")
 }
 
 #' Extract residual standard deviation
@@ -322,8 +329,10 @@ sigma <- function(object, ...) UseMethod("sigma")
 #' @export
 #' @method sigma stanreg
 sigma.stanreg <- function(object, ...) {
-  if (!("sigma" %in% rownames(object$stan_summary))) return(1)
-  else object$stan_summary["sigma", .select_median(object$algorithm)]
+  if (!("sigma" %in% rownames(object$stan_summary))) 
+    return(1)
+  else 
+    object$stan_summary["sigma", select_median(object$algorithm)]
 }
 
 #' @rdname stanreg-methods
@@ -335,7 +344,7 @@ sigma.stanreg <- function(object, ...) {
 VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
   cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
-  means <- means[,ncol(means)]
+  means <- means[, ncol(means)]
   theta <- means[grepl("^theta_L", names(means))]
   sc <- sigma.stanreg(x)
   out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
@@ -347,6 +356,13 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 
 # Exported but doc kept internal ----------------------------------------------
 
+#' family method for stanreg objects
+#'
+#' @keywords internal
+#' @export
+#' @param object,... See \code{\link[stats]{family}}.
+family.stanreg <- function(object, ...) object$family
+
 #' model.frame method for stanreg objects
 #' 
 #' @keywords internal
@@ -355,16 +371,17 @@ VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
-  if (is.mer(formula)) {
-    fr <- formula$glmod$fr
-    if (fixed.only) {
-      ff <- formula(formula, fixed.only = TRUE)
-      vars <- rownames(attr(terms.formula(ff), "factors"))
-      fr <- fr[vars]
-    }
-    return(fr)
+  if (!is.mer(formula))
+    return(NextMethod("model.frame"))
+  
+  fr <- formula$glmod$fr
+  if (fixed.only) {
+    ff <- formula(formula, fixed.only = TRUE)
+    vars <- rownames(attr(terms.formula(ff), "factors"))
+    fr <- fr[vars]
   }
-  else NextMethod("model.frame")
+  
+  return(fr)
 }
 
 #' model.matrix method for stanreg objects
@@ -374,8 +391,10 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (is.mer(object)) object$glmod$X
-  else NextMethod("model.matrix")
+  if (!is.mer(object)) 
+    NextMethod("model.matrix")
+  else 
+    object$glmod$X
 }
 
 #' formula method for stanreg objects
@@ -387,14 +406,17 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
-  if (!is.mer(x)) return(x$formula)
-  else return(formula_mer(x, ...))
+  if (!is.mer(x)) 
+    x$formula
+  else 
+    formula_mer(x, ...)
 }
 
 justRE <- function(f, response = FALSE) {
   response <- if (response && length(f) == 3) f[[2]] else NULL
   reformulate(paste0("(", vapply(lme4::findbars(f), 
-                                 function(x) paste(deparse(x, 500L), collapse = " "), 
+                                 function(x) paste(deparse(x, 500L), 
+                                                   collapse = " "), 
                                  ""), ")"), 
               response = response)
 }
@@ -414,39 +436,36 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
     form <- attr(fr, "formula")
     form[[length(form)]] <- lme4::nobars(form[[length(form)]])
   }
-  if (random.only) {
+  if (random.only)
     form <- justRE(form, response = TRUE)
-  }
-  form
+
+  return(form)
 }
 
-#' terms method
-#' @export
-#' @keywords internal
-#' @param x,fixed.only,random.only,... See lme4:::terms.merMod
 #' terms method for stanreg objects
 #' @export
 #' @keywords internal
-#' @param x,fixed.only,random.only,... See lme4:::terms.merMod
+#' @param x,fixed.only,random.only,... See lme4:::terms.merMod.
 #' 
 terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
-  if (!is.mer(x)) NextMethod("terms")
-  else {
-    fr <- x$glmod$fr
-    if (missing(fixed.only) && random.only) 
-      fixed.only <- FALSE
-    if (fixed.only && random.only) 
-      stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
-
-    Terms <- attr(fr, "terms")
-    if (fixed.only) {
-      Terms <- terms.formula(formula(x, fixed.only = TRUE))
-      attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
-    } 
-    if (random.only) {
-      Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE)))
-      attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
-    }
-    return(Terms)
+  if (!is.mer(x))
+    return(NextMethod("terms"))
+  
+  fr <- x$glmod$fr
+  if (missing(fixed.only) && random.only) 
+    fixed.only <- FALSE
+  if (fixed.only && random.only) 
+    stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
+  
+  Terms <- attr(fr, "terms")
+  if (fixed.only) {
+    Terms <- terms.formula(formula(x, fixed.only = TRUE))
+    attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
+  } 
+  if (random.only) {
+    Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE)))
+    attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
   }
+  
+  return(Terms)
 }

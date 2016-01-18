@@ -27,6 +27,7 @@
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
+#' @template args-pars
 #' @template args-regex-pars
 #' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired
 #'   posterior probability mass to include in the intervals. The default is to
@@ -36,7 +37,6 @@
 #'   \code{"central"} (see Details). A central \eqn{100p}\%
 #'   interval is defined by the \eqn{\alpha/2} and \eqn{1 - \alpha/2} quantiles,
 #'   where \eqn{\alpha = 1 - p}.
-#' @param pars An optional character vector of parameter names.
 #' @param ... Currently ignored.
 #' 
 #' @return A matrix with two columns and as many rows as model parameters (or 
@@ -110,5 +110,5 @@ posterior_interval <- function(object, prob = 0.9, type = "central",
   probs <- c(alpha, 1 - alpha)
   labs <- paste0(100 * probs, "%")
   ci <- t(apply(mat, 2L, quantile, probs = probs))
-  return(structure(ci, dimnames = list(colnames(mat), labs)))
+  structure(ci, dimnames = list(colnames(mat), labs))
 }

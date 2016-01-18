@@ -31,7 +31,7 @@ if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
 }
-devtools::install_github("stan-dev/rstanarm", args = "--preclean")
+devtools::install_github("stan-dev/rstanarm", args = "--preclean", build_vignettes = TRUE)
 ```
 
 Make sure to include the `args = "--preclean"` argument or the development version of package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).

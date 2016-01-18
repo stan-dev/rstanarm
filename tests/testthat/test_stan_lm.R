@@ -71,5 +71,3 @@ test_that("stan_aov returns expected result for npk example", {
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
 })
-
-

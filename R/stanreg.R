@@ -46,7 +46,7 @@ stanreg <- function(object) {
     qq <- (1 - levs) / 2
     probs <- sort(c(0.5, qq, 1 - qq))
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
-    coefs <- stan_summary[1:nvars, .select_median(object$algorithm)]
+    coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
     
@@ -97,8 +97,10 @@ stanreg <- function(object) {
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
-  if (opt) out$asymptotic_sampling_dist <- stanmat
-  if (mer) out$glmod <- object$glmod
+  if (opt) 
+    out$asymptotic_sampling_dist <- stanmat
+  if (mer) 
+    out$glmod <- object$glmod
   
   structure(out, class = c("stanreg", "glm", "lm"))
 }

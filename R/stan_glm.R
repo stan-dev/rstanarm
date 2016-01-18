@@ -105,11 +105,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
                     prior_ops = prior_options(), prior_PD = FALSE, 
-                    algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                    algorithm = c("sampling", "optimizing", 
+                                  "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE) {
-
+  
+  algorithm <- match.arg(algorithm)
   family <- validate_family(family)
-  if (missing(data)) data <- environment(formula)
+  if (missing(data)) 
+    data <- environment(formula)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
@@ -120,35 +123,26 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   mf <- eval(mf, parent.frame())
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
-  Y <- model.response(mf, type = "any")
-  Y <- array1D_check(Y)
-  if (!is.empty.model(mt)) X <- model.matrix(mt, mf, contrasts)
-  else X <- matrix(NA_real_, NROW(Y), 0L)
+  Y <- array1D_check(model.response(mf, type = "any"))
+  if (is.empty.model(mt))
+    stop("No intercept or predictors specified.", call. = FALSE)
+  X <- model.matrix(mt, mf, contrasts)
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
-
-  # if Y is proportion of successes and weights is total number of trials
-  if (is.binomial(family$family) && NCOL(Y) == 1L && is.numeric(Y)) { 
-    if (all(findInterval(Y, c(.Machine$double.eps,1)) == 1)) { 
-      if (!identical(weights, double(0)) && all(weights > 0)) {
-        y1 <- as.integer(as.vector(Y) * weights)
-        Y <- cbind(y1, weights - y1)
-        weights <- double(0)
-      }
-    }
+  if (binom_y_prop(Y, family, weights)) {
+    y1 <- as.integer(as.vector(Y) * weights)
+    Y <- cbind(y1, y0 = weights - y1)
+    weights <- double(0)
   }
-  
-  algorithm <- match.arg(algorithm)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
                           offset = offset, family = family,
-                          prior = prior,
-                          prior_intercept = prior_intercept,
-                          prior_ops = prior_ops,
-                          prior_PD = prior_PD, algorithm = algorithm, 
-                          adapt_delta = adapt_delta, QR = QR, ...)
+                          prior = prior, prior_intercept = prior_intercept,
+                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          algorithm = algorithm, adapt_delta = adapt_delta, 
+                          QR = QR, ...)
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
                data, prior.info = get_prior_info(call, formals()), 
                call = call, terms = mt, model = mf, 
@@ -156,10 +150,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
-  if (!x) out$x <- NULL
-  if (!y) out$y <- NULL
-  if (!model) out$model <- NULL
-  out
+  if (!x) 
+    out$x <- NULL
+  if (!y) 
+    out$y <- NULL
+  if (!model) 
+    out$model <- NULL
+  
+  return(out)
 }
 
 #' @rdname stan_glm
@@ -177,5 +175,6 @@ stan_glm.nb <- function(..., link = "log") {
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  out
+  
+  return(out)
 }

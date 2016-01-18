@@ -122,3 +122,21 @@ test_that("loo/waic for stan_glmer works", {
   # binomial
   expect_identical_loo(example_model)
 })
+
+
+context("loo and waic helpers")
+test_that("ll_fun works", {
+  ll_fun <- rstanarm:::ll_fun
+  expect_identical(ll_fun(gaussian(link = "log")), rstanarm:::.ll_gaussian_i)
+  expect_identical(ll_fun(binomial()), rstanarm:::.ll_binomial_i)
+  expect_identical(ll_fun(poisson()), rstanarm:::.ll_poisson_i)
+  expect_identical(ll_fun("logistic"), rstanarm:::.ll_polr_i)
+  expect_error(ll_fun(example_model), "must be a family or a character string")
+})
+test_that(".weighted works", {
+  f <- rstanarm:::.weighted
+  expect_equal(f(2, NULL), 2)
+  expect_equal(f(2, 3), 6)
+  expect_equal(f(8, 0.25), 2)
+  expect_error(f(2), "missing, with no default")
+})

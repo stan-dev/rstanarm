@@ -40,10 +40,11 @@ set_sampling_args <- function(object, prior, user_dots = list(),
   defaults <- default_stan_control(prior = prior, 
                                    adapt_delta = user_adapt_delta)
   
-  if (!"control" %in% unms) { # no user-specified 'control' argument
+  if (!"control" %in% unms) { 
+    # no user-specified 'control' argument
     args$control <- defaults
-  }
-  else { # user specifies a 'control' argument
+  } else { 
+    # user specifies a 'control' argument
     if (!is.null(user_adapt_delta)) { 
       # if user specified adapt_delta argument to stan_* then 
       # set control$adapt_delta to user-specified value
@@ -58,6 +59,7 @@ set_sampling_args <- function(object, prior, user_dots = list(),
     }
   }
   args$save_warmup <- FALSE
+  
   return(args)
 }
 
@@ -73,8 +75,9 @@ set_sampling_args <- function(object, prior, user_dots = list(),
 # @return A list with \code{adapt_delta} and \code{max_treedepth}.
 default_stan_control <- function(prior, adapt_delta = NULL, 
                                  max_treedepth = 15L) {
-  if (is.null(prior)) adapt_delta <- 0.95
-  else if (is.null(adapt_delta)) {
+  if (is.null(prior)) {
+    adapt_delta <- 0.95
+  } else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
                           "R2" = 0.99,
                           "hs" = 0.99,
@@ -82,7 +85,7 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
-  return(nlist(adapt_delta, max_treedepth))
+  nlist(adapt_delta, max_treedepth)
 }
 
 # Test if an object is a stanreg object
@@ -123,11 +126,12 @@ is.mer <- function(x) {
   stopifnot(is.stanreg(x))
   check1 <- is(x, "lmerMod")
   check2 <- !is.null(x$glmod)
-  if (check1 && !check2) 
+  if (check1 && !check2) {
     stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
-  else if (!check1 && check2)
+  } else if (!check1 && check2) {
     stop("Bug found. 'x' has 'glmod' component but not class 'lmerMod'.")
-  return(check1 && check2)
+  }
+  isTRUE(check1 && check2)
 }
 
 # Consistent error message to use when something is only available for 
@@ -136,7 +140,8 @@ is.mer <- function(x) {
 # @param what An optional message to prepend to the default message.
 STOP_sampling_only <- function(what) {
   msg <- "only available for models fit using MCMC (algorithm='sampling')."
-  if (!missing(what)) msg <- paste(what, msg)
+  if (!missing(what)) 
+    msg <- paste(what, msg)
   stop(msg, call. = FALSE)
 }
 
@@ -146,8 +151,16 @@ STOP_sampling_only <- function(what) {
 # @param what An optional message to prepend to the default message.
 STOP_not_optimizing <- function(what) {
   msg <- "not available for models fit using algorithm='optimizing'."
-  if (!missing(what)) msg <- paste(what, msg)
+  if (!missing(what)) 
+    msg <- paste(what, msg)
   stop(msg, call. = FALSE)
+}
+
+# Message to issue when mean-field selected but 'QR=FALSE'. 
+msg_meanfieldQR <- function() {
+  message("Setting 'QR' to TRUE can often be helpful when ", 
+          "using the 'meanfield' algorithm.",
+          "\nSee the documentation for the 'QR' argument.")
 }
 
 # Issue warning if high rhat values
@@ -166,11 +179,33 @@ check_rhats <- function(rhats, threshold = 1.1) {
 # @param y Result of calling model.response
 array1D_check <- function(y) {
   if (length(dim(y)) == 1L) {
-    nm <- rownames(y)
+    nms <- rownames(y)
     dim(y) <- NULL
-    if (!is.null(nm)) names(y) <- nm
+    if (!is.null(nms)) 
+      names(y) <- nms
   }
   return(y)
+}
+
+
+# Check for a binomial model with Y given as proportion of successes and weights 
+# given as total number of trials
+# 
+binom_y_prop <- function(y, family, weights) {
+  if (!is.binomial(family$family)) 
+    return(FALSE)
+
+  yprop <- NCOL(y) == 1L && 
+    is.numeric(y) && 
+    any(y > 0 & y < 1) && 
+    !any(y < 0 | y > 1)
+  if (!yprop)
+    return(FALSE)
+  
+  wtrials <- !identical(weights, double(0)) && 
+    all(weights > 0) && 
+    all(abs(weights - round(weights)) < .Machine$double.eps^0.5)
+  isTRUE(wtrials)
 }
 
 # Convert 2-level factor to 0/1
@@ -181,7 +216,7 @@ fac2bin <- function(y) {
   if (!identical(nlevels(y), 2L)) 
     stop("Bug found: factor with nlevels != 2 as input to fac2bin.", 
          call. = FALSE)
-  return(as.integer(y != levels(y)[1L]))
+  as.integer(y != levels(y)[1L])
 }
 
 # Check weights argument
@@ -190,8 +225,9 @@ fac2bin <- function(y) {
 #   calling \code{model.weights} on a model frame.
 # @return If no error is thrown then \code{w} is returned.
 validate_weights <- function(w) {
-  if (missing(w) || is.null(w)) return(double(0))
-  else {
+  if (missing(w) || is.null(w)) {
+    w <- double(0)
+  } else {
     if (!is.numeric(w)) 
       stop("'weights' must be a numeric vector.", 
            call. = FALSE)
@@ -199,6 +235,7 @@ validate_weights <- function(w) {
       stop("Negative weights are not allowed.", 
            call. = FALSE)
   }
+  
   return(w)
 }
 
@@ -209,10 +246,13 @@ validate_weights <- function(w) {
 # @param y The result of calling \code{model.response} on a model frame.
 # @return If no error is thrown then \code{o} is returned.
 validate_offset <- function(o, y) {
-  if (is.null(o)) return(double(0))
-  if (length(o) != NROW(y))
-    stop(gettextf("Number of offsets is %d but should be %d (number of observations)",
-                  length(o), NROW(y)), domain = NA, call. = FALSE)
+  if (is.null(o)) {
+    o <- double(0)
+  } else {
+    if (length(o) != NROW(y))
+      stop(gettextf("Number of offsets is %d but should be %d (number of observations)",
+                    length(o), NROW(y)), domain = NA, call. = FALSE)
+  }
   return(o)
 }
 
@@ -224,9 +264,13 @@ validate_offset <- function(o, y) {
 #   already a family) or the family object created from \code{f} is returned (if
 #   \code{f} is a string or function).
 validate_family <- function(f) {
-  if (is.character(f)) f <- get(f, mode = "function", envir = parent.frame(2))
-  if (is.function(f)) f <- f()
-  if (!is(f, "family")) stop("'family' must be a family.", call. = FALSE)
+  if (is.character(f)) 
+    f <- get(f, mode = "function", envir = parent.frame(2))
+  if (is.function(f)) 
+    f <- f()
+  if (!is(f, "family")) 
+    stop("'family' must be a family.", call. = FALSE)
+  
   return(f)
 }
 
@@ -251,7 +295,7 @@ check_constant_vars <- function(mf) {
 #
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param ... Passed to grep
-.bnames <- function(x, ...) {
+b_names <- function(x, ...) {
   grep("^b\\[", x, ...)
 }
 
@@ -260,13 +304,13 @@ check_constant_vars <- function(mf) {
 # @param algorithm String naming the estimation algorithm (probably
 #   \code{fit$algorithm}).
 # @return Either \code{"50%"} or \code{"Median"} depending on \code{algorithm}.
-.select_median <- function(algorithm) {
+select_median <- function(algorithm) {
   switch(algorithm, 
          sampling = "50%",
          meanfield = "50%",
          fullrank = "50%",
          optimizing = "Median",
-         stop("Bug found (incorrect algorithm name passed to .select_median)", 
+         stop("Bug found (incorrect algorithm name passed to select_median)", 
               call. = FALSE))
 }
 
@@ -274,7 +318,7 @@ check_constant_vars <- function(mf) {
 #
 # @param x stanreg object
 # @param regex_pars Character vector of patterns
-.grep_for_pars <- function(x, regex_pars) {
+grep_for_pars <- function(x, regex_pars) {
   if (used.optimizing(x)) {
     warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
             call. = FALSE)
@@ -284,8 +328,10 @@ check_constant_vars <- function(mf) {
   out <- unlist(lapply(seq_along(regex_pars), function(j) {
     grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
   }))
-  if (length(out)) return(out) 
-  else stop("No matches for 'regex_pars'.", call. = FALSE)
+  if (!length(out))
+    stop("No matches for 'regex_pars'.", call. = FALSE)
+  
+  return(out)
 }
 
 # Combine pars and regex_pars
@@ -293,25 +339,28 @@ check_constant_vars <- function(mf) {
 # @param x stanreg object
 # @param pars Character vector of parameter names
 # @param regex_pars Character vector of patterns
-.collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
+collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
   if (is.null(pars) && is.null(regex_pars)) 
     return(NULL)
   if (!is.null(pars)) 
     pars[pars == "varying"] <- "b"
   if (!is.null(regex_pars)) 
-    pars <- c(pars, .grep_for_pars(x, regex_pars))
-  return(unique(pars))
+    pars <- c(pars, grep_for_pars(x, regex_pars))
+  unique(pars)
 }
 
 # Get the posterior sample size
 #
 # @param x A stanreg object
 # @return NULL if used.optimizing(x), otherwise the posterior sample size
-.posterior_sample_size <- function(x) {
+posterior_sample_size <- function(x) {
   stopifnot(is.stanreg(x))
-  if (used.sampling(x)) return(sum(x$stanfit@sim$n_save - x$stanfit@sim$warmup2))
-  else if (used.variational(x)) return(x$stanfit@sim$n_save) 
-  else return(NULL)
+  if (used.optimizing(x)) 
+    return(NULL)
+  pss <- x$stanfit@sim$n_save
+  if (used.variational(x))
+    return(pss)
+  sum(pss - x$stanfit@sim$warmup2)
 }
 
 # If a is NULL (and Inf, respectively) return b, otherwise just return a
@@ -331,9 +380,13 @@ check_constant_vars <- function(mf) {
 #   returned. If \code{x} has length 1, the \code{x} replicated \code{n} times
 #   is returned. Otherwise \code{x} itself is returned.
 maybe_broadcast <- function(x, n) {
-  if (!length(x)) rep(0, times = n)
-  else if (length(x) == 1L) rep(x, times = n)
-  else x
+  if (!length(x)) {
+    rep(0, times = n)
+  } else if (length(x) == 1L) {
+    rep(x, times = n)
+  } else {
+    x
+  }
 }
 
 # Create a named list using specified names or, if names are omitted, using the
@@ -346,10 +399,15 @@ nlist <- function(...) {
   out <- list(...)
   no_names <- is.null(names(out))
   has_name <- if (no_names) FALSE else nzchar(names(out))
-  if (all(has_name)) return(out)
-  nms <- as.character(m)[-1]
-  if (no_names) names(out) <- nms
-  else names(out)[!has_name] <- nms[!has_name]
+  if (all(has_name)) 
+    return(out)
+  nms <- as.character(m)[-1L]
+  if (no_names) {
+    names(out) <- nms
+  } else {
+    names(out)[!has_name] <- nms[!has_name]
+  } 
+  
   return(out)
 }
 
@@ -360,10 +418,12 @@ nlist <- function(...) {
 validate_parameter_value <- function(x) {
   nm <- deparse(substitute(x))
   if (!is.null(x)) {
-    if (!is.numeric(x)) stop(nm, " should be NULL or numeric", call. = FALSE)
-    if (any(x <= 0)) stop(nm, " should be positive", call. = FALSE)
+    if (!is.numeric(x)) 
+      stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) 
+      stop(nm, " should be positive", call. = FALSE)
   }
-  return(invisible(TRUE))
+  invisible(TRUE)
 }
 
 # Check and set scale parameters for priors
@@ -376,11 +436,12 @@ validate_parameter_value <- function(x) {
 #   either \code{scale} or \code{default} is returned.
 set_prior_scale <- function(scale, default, link) {
   stopifnot(is.numeric(default), is.character(link))
-  if (is.null(scale)) scale <- default
+  if (is.null(scale)) 
+    scale <- default
   if (link == "probit")
-    return(scale * dnorm(0) / dlogis(0))
-  else 
-    return(scale)
+    scale <- scale * dnorm(0) / dlogis(0)
+  
+  return(scale)
 }
 
 # Make prior.info list
@@ -391,14 +452,19 @@ set_prior_scale <- function(scale, default, link) {
 #   options used.
 get_prior_info <- function(user_call, function_formals) {
   user <- grep("prior", names(user_call), value = TRUE)
-  default <- setdiff(grep("prior", names(function_formals), value = TRUE), user)
+  default <- setdiff(grep("prior", names(function_formals), value = TRUE), 
+                     user)
   U <- length(user)
   D <- length(default)
   priors <- list()
-  for (j in 1:(U+D)) {
-    if (j <= U) priors[[user[j]]] <- eval(user_call[[user[j]]])
-    else priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+  for (j in 1:(U + D)) {
+    if (j <= U) {
+      priors[[user[j]]] <- eval(user_call[[user[j]]])
+    } else {
+      priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+    } 
   }
+  
   return(priors)
 }
 
@@ -417,15 +483,19 @@ linear_predictor <- function(beta, x, offset = NULL) {
 }
 linear_predictor.default <- function(beta, x, offset = NULL) {
   eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
-  if (!length(offset)) return(eta)
-  else return(eta + offset)
+  if (length(offset))
+    eta <- eta + offset
+  
+  return(eta)
 }
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (NCOL(beta) == 1L) 
     beta <- as.matrix(beta)
   eta <- beta %*% t(x)
-  if (!length(offset)) return(eta)
-  else return(sweep(eta, MARGIN = 2L, offset, `+`))
+  if (length(offset)) 
+    eta <- sweep(eta, 2L, offset, `+`)
+
+  return(eta)
 }
 
 
@@ -471,17 +541,14 @@ get_z.lmerMod <- function(object) {
 # @return The inverse link function associated with x.
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {
-  if (is(x, "polr")) 
-    return(polr_linkinv(x))
-  else 
-    return(family(x)$linkinv)
+  if (is(x, "polr")) polr_linkinv(x) else family(x)$linkinv
 }
 linkinv.family <- function(x, ...) {
-  return(x$linkinv)
+  x$linkinv
 }
 linkinv.character <- function(x, ...) {
   stopifnot(length(x) == 1)
-  return(polr_linkinv(x))
+  polr_linkinv(x)
 }
 
 # Make inverse link function for stan_polr models, neglecting any
@@ -490,12 +557,20 @@ linkinv.character <- function(x, ...) {
 # @param x A stanreg object or character scalar giving the "method".
 # @return The inverse link function associated with x.
 polr_linkinv <- function(x) {
-  if (is.stanreg(x) && is(x, "polr")) method <- x$method
-  else if (is.character(x) && length(x) == 1) method <- x
-  else stop("'x' should be a stanreg object created by stan_polr ", 
-            "or a single string.")
+  if (is.stanreg(x) && is(x, "polr")) {
+    method <- x$method
+  } else if (is.character(x) && length(x) == 1L) {
+    method <- x
+  } else {
+    stop("'x' should be a stanreg object created by stan_polr ", 
+         "or a single string.")
+  }
+  if (method == "logistic") 
+    method <- "logit"
   
-  if (method == "logistic") make.link("logit")$linkinv
-  else if (method == "loglog") pgumbel
-  else make.link(method)$linkinv
+  if (method == "loglog") {
+    pgumbel
+  } else {
+    make.link(method)$linkinv
+  } 
 }

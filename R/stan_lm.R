@@ -111,6 +111,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL) {
   
+  algorithm <- match.arg(algorithm)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
@@ -122,7 +123,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mt <- modelframe$terms
   Y <- modelframe$y
   X <- modelframe$x
-  if (!singular.ok) X <- X[, !is.na(modelframe$coefficients), drop = FALSE]
+  if (!singular.ok) 
+    X <- X[, !is.na(modelframe$coefficients), drop = FALSE]
   w <- modelframe$weights
   offset <- model.offset(mf)
   stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
@@ -132,14 +134,17 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           ...)
   fit <- nlist(stanfit, family = gaussian(), formula, offset, 
                weights = w, x = X, y = Y, 
-               data = if(missing("data")) environment(formula) else data,
-               prior.info = prior, algorithm = "sampling",
-               call = call, terms = mt,
+               data = if (missing("data")) environment(formula) else data,
+               prior.info = prior, 
+               algorithm, call, terms = mt,
                model = if (model) model.frame(modelframe) else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
-  fit <- stanreg(fit)
-  if (!x) fit$x <- NULL
-  if (!y) fit$y <- NULL
-  fit
+  out <- stanreg(fit)
+  if (!x) 
+    out$x <- NULL
+  if (!y) 
+    out$y <- NULL
+  
+  return(out)
 }

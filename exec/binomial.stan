@@ -110,6 +110,9 @@ model {
     if (link != 4) eta <- eta + gamma[1];
     else eta <- gamma[1] + eta - max(eta);
   }
+  else {
+    #include "eta_no_intercept.txt"
+  }
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
@@ -142,6 +145,10 @@ generated quantities {
         alpha[1] <- alpha[1] - shift;
       }
     }
+    else {
+      #include "eta_no_intercept.txt"
+    }
+    
     pi <- linkinv_binom(eta, link);
     for (n in 1:N) mean_PPD <- mean_PPD + binomial_rng(trials[n], pi[n]);
     mean_PPD <- mean_PPD / N;

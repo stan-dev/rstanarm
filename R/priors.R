@@ -347,33 +347,36 @@ prior_options <- function(prior_scale_for_dispersion = 5,
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) 
     stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
-         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.")
+         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
+         call. = FALSE)
   stopifnot(length(location) == 1, is.numeric(location))
   stopifnot(is.numeric(K), K == as.integer(K))
-  if (K == 0) stop("R2 prior is not applicable when there are no covariates.")
+  if (K == 0) 
+    stop("R2 prior is not applicable when there are no covariates.", 
+         call. = FALSE)
   what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {
     stopifnot(location > 0, location <= 1)
     if (K <= 2)
       stop(paste0("The mode of the beta distribution does not exist when K <= 2.", 
-                  "\nSpecify 'what' as 'mean', 'median', or 'log' instead."))
+                  "\nSpecify 'what' as 'mean', 'median', or 'log' instead."),
+           call. = FALSE)
     eta <- (half_K - 1  - location * half_K + location * 2) / location
-  }
-  else if (what == "mean") {
+  } else if (what == "mean") {
     stopifnot(location > 0, location < 1)
     eta <- (half_K - location * half_K) / location
-  }
-  else if (what == "median") {
+  } else if (what == "median") {
     stopifnot(location > 0, location < 1)
     FUN <- function(eta) qbeta(0.5, half_K, qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1)$root)
-  }
-  else { # what == "log"
+  } else { # what == "log"
     stopifnot(location < 0)
     FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1, 
-                        f.lower = -location, f.upper = -.Machine$double.xmax)$root)
+                        f.lower = -location, 
+                        f.upper = -.Machine$double.xmax)$root)
   }
+  
   return(eta)
 }

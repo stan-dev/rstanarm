@@ -15,63 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# Check for valid parameters
-# @param x stanreg object
-# @param pars user specified character vector
-.check_plotting_pars <- function(x, pars) {
-  if (used.optimizing(x)) {
-    allpars <- c("alpha", "beta", rownames(x$stan_summary))
-  } else {
-    sim <- x$stanfit@sim
-    allpars <- c(sim$pars_oi, sim$fnames_oi)
-  }
-  
-  m <- which(match(pars, allpars, nomatch = 0) == 0)
-  if (length(m) > 0) stop("No parameter ", paste(pars[m], collapse = ', '), 
-                          call. = FALSE) 
-  return(unique(pars))
-}
-
-# Prepare argument list to pass to plotting function
-# @param x stanreg object
-# @param pars, regex_pars user specified pars and regex_pars arguments (can be
-#   missing)
-.set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
-  args <- list(x, ...)
-  pars <- .collect_pars(x, pars, regex_pars)
-  if (!is.null(pars)) args$pars <- .check_plotting_pars(x, pars)
-  return(args)
-}
-
-# Select the correct plotting function
-# @param x stanreg object
-# @param plotfun user specified plotfun argument (can be missing)
-.set_plotting_fun <- function(x, plotfun = NULL) {
-  .plotters <- function(x) {
-    paste0("stan_", x)
-  }
-  if (used.optimizing(x)) {
-    if (!is.null(plotfun)) 
-      stop("'plotfun' should not be specified for models fit using ",
-           "algorithm='optimizing'.", call. = FALSE)
-    else return("stan_plot_opt")
-  }
-  else if (is.null(plotfun)) plotfun <- "stan_plot"
-  
-  samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
-  plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
-  funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
-  if (used.variational(x) && funname %in% .plotters(samp_only)) {
-    STOP_sampling_only(funname)
-  }
-  fun <- try(getExportedValue("rstan", funname), silent = TRUE)
-  if (inherits(fun, "try-error")) 
-    stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
-         call. = FALSE)
-  return(fun)
-}
-
-
 #' Plot method for stanreg objects
 #' 
 #' For models fit using MCMC or one of the variational approximations, there are
@@ -83,6 +26,7 @@
 #' @export
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
+#' @template args-pars
 #' @template args-regex-pars
 #' @param plotfun A character string naming the plotting function to apply to 
 #'   the stanreg object. See \code{\link{plots}} for the names and descriptions.
@@ -93,7 +37,6 @@
 #'   the coefficients. Note: \code{plotfun} should not be specified for models
 #'   fit using \code{algorithm="optimizing"} as there is currently only one
 #'   plotting function for these models.
-#' @param pars An optional character vector of parameter names.
 #' @param ... Additional arguments to pass to \code{plotfun} (see
 #'   \code{\link{plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
@@ -153,9 +96,69 @@
 #' 
 plot.stanreg <- function(x, plotfun = NULL, pars = NULL, 
                          regex_pars = NULL, ...) {
-  args <- .set_plotting_args(x, pars, regex_pars, ...)
-  fun <- .set_plotting_fun(x, plotfun)
+  args <- set_plotting_args(x, pars, regex_pars, ...)
+  fun <- set_plotting_fun(x, plotfun)
   do.call(fun, args)
+}
+
+
+# Check for valid parameters
+# @param x stanreg object
+# @param pars user specified character vector
+check_plotting_pars <- function(x, pars) {
+  if (used.optimizing(x)) {
+    allpars <- c("alpha", "beta", rownames(x$stan_summary))
+  } else {
+    sim <- x$stanfit@sim
+    allpars <- c(sim$pars_oi, sim$fnames_oi)
+  }
+  m <- which(match(pars, allpars, nomatch = 0) == 0)
+  if (length(m) > 0) 
+    stop("No parameter ", paste(pars[m], collapse = ', '), 
+         call. = FALSE) 
+  return(unique(pars))
+}
+
+# Prepare argument list to pass to plotting function
+# @param x stanreg object
+# @param pars, regex_pars user specified pars and regex_pars arguments (can be
+#   missing)
+set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
+  args <- list(x, ...)
+  pars <- collect_pars(x, pars, regex_pars)
+  if (!is.null(pars)) 
+    args$pars <- check_plotting_pars(x, pars)
+  return(args)
+}
+
+# Select the correct plotting function
+# @param x stanreg object
+# @param plotfun user specified plotfun argument (can be missing)
+set_plotting_fun <- function(x, plotfun = NULL) {
+  .plotters <- function(x) paste0("stan_", x)
+  
+  if (used.optimizing(x)) {
+    if (!is.null(plotfun)) {
+      stop("'plotfun' should not be specified for models fit using ",
+           "algorithm='optimizing'.", call. = FALSE)
+    } else {
+      return("stan_plot_opt")
+    }
+  } else if (is.null(plotfun)) {
+    plotfun <- "stan_plot"
+  }
+  
+  samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
+  plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
+  funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
+  if (used.variational(x) && funname %in% .plotters(samp_only))
+    STOP_sampling_only(funname)
+  fun <- try(getExportedValue("rstan", funname), silent = TRUE)
+  if (inherits(fun, "try-error")) 
+    stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+         call. = FALSE)
+  
+  return(fun)
 }
 
 # function calling arm::coefplot (only used for models fit using optimization)
@@ -169,14 +172,16 @@ stan_plot_opt <- function(x, pars = NULL, varnames = NULL, ...) {
   nms <- varnames %ORifNULL% names(x$coefficients)
   if (!is.null(pars)) {
     mark <- NA
-    if ("alpha" %in% pars) mark <- c(mark, "(Intercept)")
+    if ("alpha" %in% pars) 
+      mark <- c(mark, "(Intercept)")
     if ("beta" %in% pars) 
       mark <- c(mark, setdiff(names(x$coefficients), "(Intercept)"))
     mark <- c(mark, setdiff(pars, c("alpha", "beta")))
     mark <- mark[!is.na(mark)] 
     coefs <- coefs[mark]
     sds <- sds[mark]
-    if (is.null(varnames)) nms <- nms[nms %in% mark]
+    if (is.null(varnames)) 
+      nms <- nms[nms %in% mark]
   }
   arm::coefplot.default(coefs = coefs, sds = sds, varnames = nms, ...)
 }
@@ -195,7 +200,8 @@ stan_plot_opt <- function(x, pars = NULL, varnames = NULL, ...) {
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
 pairs.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) STOP_sampling_only("pairs")
+  if (!used.sampling(x)) 
+    STOP_sampling_only("pairs")
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
   pairs(x$stanfit, ...)

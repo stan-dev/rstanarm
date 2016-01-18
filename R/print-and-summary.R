@@ -80,7 +80,8 @@ print.stanreg <- function(x, digits = 1, ...) {
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
-    if (mer) nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
+    if (mer) 
+      nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     if (ord) {
       cut_nms <- grep("|", nms, fixed = TRUE, value = TRUE)
       nms <- setdiff(nms, cut_nms)
@@ -107,18 +108,19 @@ print.stanreg <- function(x, digits = 1, ...) {
     }
     cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
     .printfr(ppd_estimates, digits, ...)
-  }
-  else { # used optimizing
+    
+  } else { 
+    # used optimization
     nms <- names(x$coefficients)
-    if (ord) 
-      nms <- c(nms, grep("|", rownames(x$stan_summary), 
-                         fixed = TRUE, value = TRUE))
-    else {
-      famname <- x$family$family
-      if (is.gaussian(famname)) nms <- c(nms, "sigma")
-      else if (is.gamma(famname)) nms <- c(nms, "shape")
-      else if (is.ig(famname)) nms <- c(nms, "lambda")
-      else if (is.nb(famname)) nms <- c(nms, "overdispersion")
+    famname <- family(x)$family
+    if (is.gaussian(famname)) {
+      nms <- c(nms, "sigma")
+    } else if (is.gamma(famname)) {
+      nms <- c(nms, "shape")
+    } else if (is.ig(famname)) {
+      nms <- c(nms, "lambda")
+    } else if (is.nb(famname)) {
+      nms <- c(nms, "overdispersion")
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
@@ -136,7 +138,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     effects_dim <- dim(x$effects)
     effects <- x$effects^2
     effects <- sapply(groups, FUN = function(i) {
-      apply(effects[,, i, drop = FALSE], 1:2, mean)
+      apply(effects[, , i, drop = FALSE], 1:2, mean)
     })
     dim(effects) <- c(effects_dim[-3], ncol(effects))
     dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
@@ -145,7 +147,8 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  return(invisible(x))
+  
+  invisible(x)
 }
 
 
@@ -203,59 +206,69 @@ print.stanreg <- function(x, digits = 1, ...) {
 summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
                             probs = NULL, ..., digits = 1) {
   mer <- is.mer(object)
-  pars <- .collect_pars(object, pars, regex_pars)
+  pars <- collect_pars(object, pars, regex_pars)
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
-    if (!is.null(probs)) args$probs <- probs
+    if (!is.null(probs)) 
+      args$probs <- probs
     out <- do.call("summary", args)$summary
-    if (is.null(pars)) {
-      if (used.variational(object))
-        out <- out[!rownames(out) %in% "log-posterior",, drop = FALSE]
-    }
+    
+    if (is.null(pars) && used.variational(object))
+      out <- out[!rownames(out) %in% "log-posterior", , drop = FALSE]
     if (!is.null(pars)) {
       pars2 <- NA
-      if ("alpha" %in% pars) pars2 <- c(pars2, "(Intercept)")
+      if ("alpha" %in% pars) 
+        pars2 <- c(pars2, "(Intercept)")
       if ("beta" %in% pars) {
-        beta_nms <- if (mer) names(fixef(object)) else names(object$coefficients)
+        beta_nms <- if (mer) 
+          names(fixef(object)) else names(object$coefficients)
         pars2 <- c(pars2, setdiff(beta_nms, "(Intercept)"))
       }
       if ("b" %in% pars) {
-        if (mer) pars2 <- c(pars2, .bnames(rownames(object$stan_summary), value = TRUE))
-        else warning("No group-specific parameters. 'varying' ignored.", 
-                     call. = FALSE)
+        if (mer) {
+          pars2 <- c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+        } else {
+          warning("No group-specific parameters. 'varying' ignored.", 
+                  call. = FALSE) 
+        }
       }
       pars2 <- c(pars2, setdiff(pars, c("alpha", "beta", "varying")))
       pars <- pars2[!is.na(pars2)]
-      out <- out[rownames(out) %in% pars,, drop = FALSE]
+      out <- out[rownames(out) %in% pars, , drop = FALSE]
     }
-    out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE),, drop = FALSE]
+    out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE), , drop = FALSE]
     stats <- colnames(out)
     if ("n_eff" %in% stats)
       out[, "n_eff"] <- round(out[, "n_eff"])
     if ("se_mean" %in% stats) # So people don't confuse se_mean and sd
       colnames(out)[stats %in% "se_mean"] <- "mcse"
-  }
-  else {
+    
+  } else { # used optimization
     if (!is.null(probs)) 
-      warning("'probs' ignored if object$algorithm='optimizing'.")
+      warning("'probs' ignored if for models fit using optimization.",
+              call. = FALSE)
     if (is.null(pars)) {
+      famname <- family(object)$family
       mark <- names(object$coefficients)
-      if (is.gaussian(object$family$family)) mark <- c(mark, "sigma")
-      else if (is.nb(object$family$family)) mark <- c(mark, "overdispersion") 
+      if (is.gaussian(famname)) 
+        mark <- c(mark, "sigma")
+      if (is.nb(famname)) 
+        mark <- c(mark, "overdispersion") 
     } else {
       mark <- NA
-      if ("alpha" %in% pars) mark <- c(mark, "(Intercept)")
+      if ("alpha" %in% pars) 
+        mark <- c(mark, "(Intercept)")
       if ("beta" %in% pars) 
         mark <- c(mark, setdiff(names(object$coefficients), "(Intercept)"))
       mark <- c(mark, setdiff(pars, c("alpha", "beta")))
       mark <- mark[!is.na(mark)]
     }
-    out <- object$stan_summary[mark,, drop=FALSE]
+    out <- object$stan_summary[mark, , drop=FALSE]
   }
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
-            posterior_sample_size = .posterior_sample_size(object),
+            posterior_sample_size = posterior_sample_size(object),
             nobs = nobs(object),
             ngrps = if (mer) ngrps(object) else NULL,
             print.digits = digits, 
@@ -267,9 +280,9 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
 #' @method print summary.stanreg
 #'
 #' @param x An object of class \code{"summary.stanreg"}.
-print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), ...) {
+print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), 
+                                  ...) {
   atts <- attributes(x)
-  # digits <- dots$digits %ORifNULL% atts$print.digits
   print(atts$call)
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")

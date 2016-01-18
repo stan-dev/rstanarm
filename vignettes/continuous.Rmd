@@ -296,7 +296,7 @@ y_hs <- posterior_predict(post4, newdata = data.frame(mom_hs = 1, mom_iq = IQ_SE
 
 We now have two matrices, `y_nohs` and `y_hs`. Each matrix has 
 `r length(IQ_SEQ)` columns (one for each value of `IQ_SEQ`) and 
-`r rstanarm:::.posterior_sample_size(post4)` rows (the size of the posterior
+`r rstanarm:::posterior_sample_size(post4)` rows (the size of the posterior
 sample). One way to show the predictors is to plot the predictions for 
 the two groups of kids side by side:
 
