@@ -8,6 +8,12 @@
     eta0 <- rep_vector(0.0, N[1]);
     eta1 <- rep_vector(0.0, N[2]);
   }
+  if (has_intercept == 0) {
+    real tmp;
+    tmp <- dot_product(xbar, beta);
+    eta0 <- eta0 + tmp;
+    eta1 <- eta1 + tmp;
+  }
   if (has_offset == 1) {
     eta0 <- eta0 + offset0;
     eta1 <- eta1 + offset1;

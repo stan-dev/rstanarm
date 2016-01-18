@@ -110,6 +110,7 @@ model {
     if (link != 4) eta <- eta + gamma[1];
     else eta <- gamma[1] + eta - max(eta);
   }
+  #include "eta_no_intercept.txt"
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods

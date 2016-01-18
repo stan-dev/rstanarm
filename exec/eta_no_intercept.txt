@@ -1,0 +1,3 @@
+  # correction to eta if model has no intercept (because X is centered)
+  if (has_intercept == 0) 
+    eta <- eta + dot_product(xbar, beta); 

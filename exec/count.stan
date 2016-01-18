@@ -94,6 +94,8 @@ model {
     if (link == 1) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
+  #include "eta_no_intercept.txt"
+  
   if (family == 3) {
     if      (link == 1) eta <- eta + log(dispersion[1]) + log(noise[1]);
     else if (link == 2) eta <- eta * dispersion[1] .* noise[1];
