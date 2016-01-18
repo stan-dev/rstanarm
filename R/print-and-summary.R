@@ -109,22 +109,18 @@ print.stanreg <- function(x, digits = 1, ...) {
     cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
     .printfr(ppd_estimates, digits, ...)
     
-  } else { # used optimization
+  } else { 
+    # used optimization
     nms <- names(x$coefficients)
-    if (ord) {
-      nms <- c(nms, grep("|", rownames(x$stan_summary), 
-                         fixed = TRUE, value = TRUE))
-    } else {
-      famname <- x$family$family
-      if (is.gaussian(famname)) {
-        nms <- c(nms, "sigma")
-      } else if (is.gamma(famname)) {
-        nms <- c(nms, "shape")
-      } else if (is.ig(famname)) {
-        nms <- c(nms, "lambda")
-      } else if (is.nb(famname)) {
-        nms <- c(nms, "overdispersion")
-      }
+    famname <- family(x)$family
+    if (is.gaussian(famname)) {
+      nms <- c(nms, "sigma")
+    } else if (is.gamma(famname)) {
+      nms <- c(nms, "shape")
+    } else if (is.ig(famname)) {
+      nms <- c(nms, "lambda")
+    } else if (is.nb(famname)) {
+      nms <- c(nms, "overdispersion")
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
