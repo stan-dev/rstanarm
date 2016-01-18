@@ -22,6 +22,36 @@ library(rstanarm)
 SEED <- 12345
 set.seed(SEED)
 
+context("stan_glm (errors, warnings, messages)")
+test_that("stan_glm throws appropriate errors, warnings, and messages", {
+  counts <- c(18,17,15,20,10,20,25,13,12)
+  outcome <- gl(3,1,9)
+  treatment <- gl(3,3)
+  f <- as.formula(counts ~ outcome + treatment)
+  
+  # error: empty model
+  expect_error(stan_glm(counts ~ 0), 
+               regexp = "No intercept or predictors specified")
+  
+  # error: stan_glm.nb with family argument
+  expect_error(stan_glm.nb(f, family = "neg_binomial_2"), 
+               regexp = "'family' should not be specified.")
+  
+  # error: prior and prior_intercept not lists
+  expect_error(stan_glm(f, family = "poisson", prior = normal), 
+               regexp = "'prior' should be a named list")
+  expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
+               regexp = "'prior_intercept' should be a named list")
+  
+  # error: QR only with more than 1 predictor
+  expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
+               regexp = "'QR' can only be specified when there are multiple predictors")
+  
+  # message: recommend QR if using meanfield vb
+  expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
+               regexp = "Setting 'QR' to TRUE can often be helpful")
+})
+
 context("stan_glm (gaussian)")
 test_that("gaussian returns expected result for trees example", {
   # example using trees dataset

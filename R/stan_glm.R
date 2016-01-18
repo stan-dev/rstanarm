@@ -124,12 +124,9 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   Y <- array1D_check(model.response(mf, type = "any"))
-  if (!is.empty.model(mt)) {
-    X <- model.matrix(mt, mf, contrasts)
-  } else {
-    X <- matrix(NA_real_, NROW(Y), 0L)
-  }
-  
+  if (is.empty.model(mt))
+    stop("No intercept or predictors specified.", call. = FALSE)
+  X <- model.matrix(mt, mf, contrasts)
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (binom_y_prop(Y, family, weights)) {

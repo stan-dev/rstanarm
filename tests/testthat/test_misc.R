@@ -359,6 +359,8 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
   expect_identical(linkinv.stanreg(fit), gaussian()$linkinv)
+  expect_error(rstanarm:::polr_linkinv(example_model), 
+               regexp = "should be a stanreg object created by stan_polr")
 })
 
 test_that("collect_pars and grep_for_pars work", {
