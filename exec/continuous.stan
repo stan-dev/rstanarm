@@ -298,6 +298,8 @@ generated quantities {
         eta <- eta - min_eta + gamma[1];
       }
     }
+    #include "eta_no_intercept.txt"
+    
     if (family == 1) {
       if (link > 1) eta <- linkinv_gauss(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + normal_rng(eta[n], dispersion);

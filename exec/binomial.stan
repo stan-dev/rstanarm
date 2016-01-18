@@ -143,6 +143,8 @@ generated quantities {
         alpha[1] <- alpha[1] - shift;
       }
     }
+    #include "eta_no_intercept.txt"
+    
     pi <- linkinv_binom(eta, link);
     for (n in 1:N) mean_PPD <- mean_PPD + binomial_rng(trials[n], pi[n]);
     mean_PPD <- mean_PPD / N;
