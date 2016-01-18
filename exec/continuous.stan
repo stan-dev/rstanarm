@@ -248,7 +248,9 @@ model {
     if (family == 1 || link == 2) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
-  #include "eta_no_intercept.txt"
+  else {
+    #include "eta_no_intercept.txt"
+  }
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
@@ -298,7 +300,9 @@ generated quantities {
         eta <- eta - min_eta + gamma[1];
       }
     }
-    #include "eta_no_intercept.txt"
+    else {
+      #include "eta_no_intercept.txt"
+    }
     
     if (family == 1) {
       if (link > 1) eta <- linkinv_gauss(eta, link);
