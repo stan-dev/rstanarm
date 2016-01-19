@@ -336,12 +336,12 @@ sigma.stanreg <- function(object, ...) {
 }
 
 #' @rdname stanreg-methods
-#' @param sigma,rdig Ignored (included for compatibility with
+#' @param sigma Ignored (included for compatibility with
 #'   \code{\link[lme4]{VarCorr}}).
 #' @export
 #' @export VarCorr
 #' @importFrom lme4 VarCorr mkVarCorr
-VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
+VarCorr.stanreg <- function(x, sigma = 1, ...) {
   cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
   means <- means[, ncol(means)]
