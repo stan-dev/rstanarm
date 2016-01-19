@@ -202,6 +202,6 @@ test_that("stan_glm returns expected result for binomial example", {
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val2 <- coef(fit2)
     if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.005, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
   }
 })
