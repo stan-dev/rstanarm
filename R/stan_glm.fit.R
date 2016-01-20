@@ -39,7 +39,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "neg_binomial_2")
+                          "poisson", "neg_binomial_2", "t_family")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
@@ -47,6 +47,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   supported_links <- switch(
     supported_families[fam],
     binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
+    t_family = , # intentional
     gaussian = c("identity", "log", "inverse"),
     Gamma = c("identity", "log", "inverse"),
     inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
@@ -158,14 +159,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
   is_nb <- is.nb(famname)
   is_gaussian <- is.gaussian(famname)
+  is_t <- is.t(famname)
   is_gamma <- is.gamma(famname)
   is_ig <- is.ig(famname)
-  is_continuous <- is_gaussian || is_gamma || is_ig
+  is_continuous <- is_gaussian || is_t || is_gamma || is_ig
   
   # require intercept for certain family and link combinations
   if (!has_intercept) {
     linkname <- supported_links[link]
-    needs_intercept <- !is_gaussian && linkname == "identity" ||
+    needs_intercept <- !(is_gaussian || is_t) && linkname == "identity" ||
       is_gamma && linkname == "inverse" ||
       is.binomial(famname) && linkname == "log"
     if (needs_intercept)
@@ -174,7 +176,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   if (scaled && prior_dist > 0L) {
-    if (is_gaussian) {
+    if (is_gaussian || is_t) {
       ss <- 2 * sd(y)
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
@@ -307,7 +309,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
-                              3L)
+                              inverse.gaussian = 3L, 
+                              t_family = 4L)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_dispersion <- 
@@ -367,6 +370,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
             "beta", 
             if (length(group)) "b",
             if (is_continuous | is_nb) "dispersion", 
+            if (is_t) "nu",
             "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -380,10 +384,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
-      if (is_gaussian) "sigma" else
+      if (is_gaussian || is_t) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
             if (is_nb) "overdispersion" else NA
+    new_names[grepl("nu(\\[1\\])?$", new_names)] <- "df"
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
@@ -421,10 +426,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_nms, "]")),
-                   if (is_gaussian) "sigma", 
+                   if (is_gaussian || is_t) "sigma", 
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
+                   if (is_t) "df",
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
