@@ -15,11 +15,29 @@ functions {
     if (link < 1 || link > 3) reject("Invalid link");
     if (link < 3)  # link = identity or log 
       return(eta); # return eta for log link too bc will use lognormal
-        else {# link = inverse
-          vector[rows(eta)] mu;
-          for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
-          return mu;
-        }
+    else {# link = inverse
+      vector[rows(eta)] mu;
+      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      return mu;
+    }
+  }
+  
+  /** 
+   * Apply inverse link function to linear predictor
+   *
+   * @param eta Linear predictor vector
+   * @param link An integer indicating the link function
+   * @return A vector, i.e. inverse-link(eta)
+   */
+  vector linkinv_t(vector eta, int link) {
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1) return eta; # link = identity
+    else if (link == 2) return exp(eta); # link = log
+    else {# link = inverse
+      vector[rows(eta)] mu;
+      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      return mu;
+    }
   }
   
   /** 
@@ -62,7 +80,9 @@ functions {
   /** 
   * Pointwise (pw) log-likelihood vector
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y The vector corresponding to the outcome variable.
+  * @param eta Linear predictor vector
+  * @param sigma Dispersion parameter
   * @param link An integer indicating the link function
   * @return A vector
   */
@@ -71,11 +91,30 @@ functions {
     if (link < 1 || link > 3) reject("Invalid link");
     if (link == 2) # link = log
       for (n in 1:rows(eta)) ll[n] <- lognormal_log(y[n], eta[n], sigma);
-    else { # link = idenity or inverse
+    else { # link = identity or inverse
       vector[rows(eta)] mu;
       mu <- linkinv_gauss(eta, link);
       for (n in 1:rows(eta)) ll[n] <- normal_log(y[n], mu[n], sigma);
     }
+    return ll;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector
+  *
+  * @param y The vector corresponding to the outcome variable.
+  * @param nu Degrees of freedom parameter
+  * @param eta Linear predictor vector
+  * @param sigma Dispersion parameter
+  * @param link An integer indicating the link function
+  * @return A vector
+  */
+  vector pw_t(vector y, real nu, vector eta, real sigma, int link) {
+    vector[rows(eta)] ll;
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 3) reject("Invalid link");
+    mu <- linkinv_t(eta, link);
+    for (n in 1:rows(eta)) ll[n] <- student_t_log(y[n], nu, mu[n], sigma);
     return ll;
   }
   
@@ -97,7 +136,9 @@ functions {
   /** 
   * Pointwise (pw) log-likelihood vector
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y The vector corresponding to the outcome variable.
+  * @param eta Linear predictor vector
+  * @param shape Shape parameter
   * @param link An integer indicating the link function
   * @return A vector
   */
@@ -215,7 +256,7 @@ transformed data {
   vector[N * (family == 3)] log_y;
   real sum_log_y;
   #include "tdata_glm.txt"
-  if      (family == 1) sum_log_y <- not_a_number();
+  if (family == 1 || family == 4) sum_log_y <- not_a_number();
   else if (family == 2) sum_log_y <- sum(log(y));
   else {
     for (n in 1:N) sqrt_y[n] <- sqrt(y[n]);
@@ -224,7 +265,8 @@ transformed data {
   }
 }
 parameters {
-  real<lower=if_else(family == 1 || link == 2, 
+  real<lower=0> nu[family == 4]; # df parameter for student_t likelihood
+  real<lower=if_else(family == 1 || family == 4 || link == 2, 
                      negative_infinity(), 0)> gamma[has_intercept];
   #include "parameters_glm.txt"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
@@ -245,7 +287,7 @@ model {
   #include "make_eta.txt"
   if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
-    if (family == 1 || link == 2) eta <- eta + gamma[1];
+    if (family == 1 || family == 4 || link == 2) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
   else {
@@ -263,19 +305,25 @@ model {
     else if (family == 2) {
       y ~ GammaReg(eta, dispersion, link, sum_log_y);
     }
-    else {
+    else if (family == 3) {
       y ~ inv_gaussian(linkinv_inv_gaussian(eta, link), 
                        dispersion, sum_log_y, sqrt_y);
+    }
+    else { # family == 4
+      y ~ student_t(nu[1], linkinv_t(eta, link), dispersion);
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands <- pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands <- pw_gamma(y, eta, dispersion, link);
-    else summands <- pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
+    else if (family == 3) summands <- pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
+    else summands <- pw_t(y, nu[1], eta, dispersion, link);
     increment_log_prob(dot_product(weights, summands));
   }
 
+  // Log-prior for df if family == 4 (student t)
+  if (family == 4) nu ~ gamma(2, 0.1);
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
   #include "priors_glm.txt"
@@ -292,7 +340,7 @@ generated quantities {
     #include "make_eta.txt"
     if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
-      if (family == 1 || link == 2) eta <- eta + gamma[1];
+      if (family == 1 || family == 4 || link == 2) eta <- eta + gamma[1];
       else {
         real min_eta;
         min_eta <- min(eta);
@@ -315,6 +363,10 @@ generated quantities {
     else if (family == 3) {
       if (link > 1) eta <- linkinv_inv_gaussian(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + inv_gaussian_rng(eta[n], dispersion);
+    }
+    else { # family == 4 (student t)
+      if (link > 1) eta <- linkinv_t(eta, link);
+      for (n in 1:N) mean_PPD <- mean_PPD + student_t_rng(nu[1], eta[n], dispersion);
     }
     mean_PPD <- mean_PPD / N;
   }
