@@ -26,6 +26,7 @@
 #' \code{\link{stan_glmer.nb}} wrapper functions may be used, which call 
 #' \code{neg_binomial_2} internally.
 #' 
+#' @name neg_binomial_2
 #' @export
 #' @param link The same as for \code{\link{poisson}}, typically a character
 #'   vector of length one among \code{"log"}, \code{"identity"}, and
@@ -42,6 +43,28 @@ neg_binomial_2 <- function(link = "log") {
   out <- poisson(link)
   out$family <- "neg_binomial_2"
   out$variance <- function(mu, theta) mu + mu^2 / theta
+  out$dev.resids <- function(y, mu, wt)
+    stop("'dev.resids' function should not be called")
+  out$aic <- function(y, n, mu, wt, dev)
+    stop("'aic' function should not have been called")
+  out$simulate <- function(object, nsim)
+    stop("'simulate' function should not have been called")
+  return(out)
+}
+
+
+#' Family function for Student t GLMs
+#' 
+#' @name t_family
+#' @export
+#' @param link The same as for \code{\link{gaussian}}.
+#' @return An object of class \code{\link[stats]{family}} very similar to
+#'   that of \code{\link[stats]{gaussian}} but with a different family name.
+#'
+t_family <- function(link = "identity") {
+  out <- gaussian(link)
+  out$family <- "t_family"
+  out$variance <- NULL
   out$dev.resids <- function(y, mu, wt)
     stop("'dev.resids' function should not be called")
   out$aic <- function(y, n, mu, wt, dev)
