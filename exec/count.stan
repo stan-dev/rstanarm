@@ -7,11 +7,11 @@ functions {
   vector linkinv_count(vector eta, int link) {
     vector[rows(eta)] phi;
     if (link < 1 || link > 3) reject("Invalid link");
-    if      (link == 1) return(exp(eta));
-    else if (link == 2) return(eta); # link = identity
-      else  # link = sqrt
-        for(n in 1:rows(eta)) phi[n] <- square(eta[n]); 
-      return phi;
+    if (link == 1) return exp(eta);
+    else if (link == 2) return eta; # link = identity
+    else  # link = sqrt
+      for (n in 1:rows(eta)) phi[n] <- square(eta[n]); 
+    return phi;
   }
   
   /** 

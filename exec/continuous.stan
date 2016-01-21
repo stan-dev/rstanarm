@@ -14,7 +14,7 @@ functions {
   vector linkinv_gauss(vector eta, int link) {
     if (link < 1 || link > 3) reject("Invalid link");
     if (link < 3)  # link = identity or log 
-      return(eta); # return eta for log link too bc will use lognormal
+      return eta; # return eta for log link too bc will use lognormal
     else {# link = inverse
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
