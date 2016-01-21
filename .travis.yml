@@ -19,12 +19,12 @@ r_binary_packages:
   - Rcpp
   - coda
   - BH
-  - RcppEigen
   - RInside
   - ggplot2
   - gridExtra
   - rstan
   - shinystan
+#  - RcppEigen
 
 env:
   matrix: 
