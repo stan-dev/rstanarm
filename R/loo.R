@@ -144,6 +144,10 @@ ll_args <- function(object) {
     draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
     if (is.gaussian(fname)) 
       draws$sigma <- stanmat[, "sigma"]
+    if (is.t(fname)) {
+      draws$scale <- stanmat[, "sigma"]
+      draws$df <- stanmat[, "df"]
+    }
     if (is.gamma(fname)) 
       draws$shape <- stanmat[, "shape"]
     if (is.ig(fname)) 
@@ -200,6 +204,11 @@ ll_args <- function(object) {
 # log-likelihood functions
 .ll_gaussian_i <- function(i, data, draws) {
   val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_t_family_i <- function(i, data, draws) {
+  x <- (data$y - .mu(data, draws)) / draws$scale
+  val <- dt(x, df = draws$df, log = TRUE) - log(abs(draws$scale))
   .weighted(val, data$weights)
 }
 .ll_binomial_i <- function(i, data, draws) {
