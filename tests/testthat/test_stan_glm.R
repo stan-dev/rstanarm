@@ -205,3 +205,13 @@ test_that("stan_glm returns expected result for binomial example", {
     else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
   }
 })
+
+context("stan_glm (student t)")
+test_that("stan_glm returns expected result for student t", {
+  x <- rnorm(1000)
+  alpha <- 2; beta <- 0.5; df <- 4
+  y <- alpha + beta * x + rt(1000, df)
+  fit <- stan_glm(y ~ x, family = t_family(), seed = SEED, iter = 100, cores = 1)
+  expect_equal(round(unname(coef(fit)), 1), c(alpha, beta), tol = 0.05)
+  expect_equal(rstanarm::sigma(fit), 1, tol = 0.05)
+})

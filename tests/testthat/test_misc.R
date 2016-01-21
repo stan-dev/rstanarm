@@ -131,6 +131,9 @@ test_that("validate_offset works", {
 
 test_that("validate_family works", {
   validate_family <- rstanarm:::validate_family
+  expect_equal(validate_family("t_family"), t_family())
+  expect_equal(validate_family(t_family), t_family())
+  expect_equal(validate_family(t_family()), t_family())
   expect_equal(validate_family("gaussian"), gaussian())
   expect_equal(validate_family(gaussian), gaussian())
   expect_equal(validate_family(gaussian()), gaussian())

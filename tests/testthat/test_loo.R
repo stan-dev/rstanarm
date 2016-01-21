@@ -59,6 +59,10 @@ test_that("loo/waic for stan_glm works", {
                         seed = SEED, refresh = REFRESH)
   expect_identical_loo(fit_gaus)
   
+  # t
+  fit_t <- update(fit_gaus, family = t_family())
+  expect_identical_loo(fit_t)
+  
   # binomial
   dat <- data.frame(ldose = rep(0:5, 2), sex = factor(rep(c("M", "F"), c(6, 6))))
   numdead <- c(1, 4, 9, 13, 18, 20, 0, 2, 6, 10, 12, 16)
