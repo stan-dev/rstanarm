@@ -8,8 +8,12 @@
 #' @templateVar fun stan_glmer, stan_lmer, stan_glmer.nb
 #' @templateVar pkg lme4
 #' @templateVar pkgfun glmer
+#' @templateVar sameargs formula,data
+#' @templateVar rareargs na.action,contrasts
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-same-as
+#' @template args-same-as-rarely
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
@@ -17,10 +21,11 @@
 #' @template args-QR
 #' @template reference-gelman-hill
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
+#' @param family Same as \code{\link[lme4]{glmer}}, except several additional 
+#'   families can be specified. The additional families include 
+#'   \code{\link{neg_binomial_2}} (negative binomial) and \code{\link{t_family}} 
+#'   (Student t).
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
-#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
-#'   specified.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
 #'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
 #'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 

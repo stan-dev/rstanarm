@@ -43,8 +43,10 @@
 #' @template args-QR
 #' @template reference-gelman-hill
 #' 
-#' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
-#'   are also possible using the \code{\link{neg_binomial_2}} family object.
+#' @param family Same as \code{\link[stats]{glm}}, except several additional 
+#'   families can be specified. The additional families include 
+#'   \code{\link{neg_binomial_2}} for negative binomial GLMs, and
+#'   \code{\link{t_family}} for GLMs with t-distributed errors.
 #' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
