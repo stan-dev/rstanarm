@@ -55,12 +55,31 @@ neg_binomial_2 <- function(link = "log") {
 
 #' Family function for Student t GLMs
 #' 
+#' Estimates of regression coefficients are less sensitive to outliers if the
+#' Student t distribution is used in place of the normal distribution in
+#' settings where some errors may be large. These models are sometimes referred
+#' to as \emph{robust regression models}. To estimate such a model, a call to
+#' \code{t_family} can be passed to the \code{family} argument of 
+#' \code{\link{stan_glm}} or \code{\link{stan_glmer}} instead of a call to 
+#' \code{\link{gaussian}}.
+#' 
 #' @name t_family
 #' @export
-#' @param link The same as for \code{\link{gaussian}}.
+#' @templateVar armRef (Ch. 6)
+#' @template reference-gelman-hill
+#' @param link The same as for \code{\link[stats]{gaussian}}.
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{gaussian}} but with a different family name.
-#'
+#' @examples 
+#' \dontrun{
+#' SEED <- 1234
+#' set.seed(SEED)
+#' x <- rnorm(1000)
+#' alpha <- 2; beta <- 0.5; df <- 4
+#' y <- alpha + beta * x + rt(1000, df)
+#' (fit <- stan_glm(y ~ x, family = t_family(), seed = SEED, cores = 4))
+#' }
+#' 
 t_family <- function(link = "identity") {
   out <- gaussian(link)
   out$family <- "t_family"

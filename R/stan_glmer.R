@@ -23,8 +23,9 @@
 #' 
 #' @param family Same as \code{\link[lme4]{glmer}}, except several additional 
 #'   families can be specified. The additional families include 
-#'   \code{\link{neg_binomial_2}} (negative binomial) and \code{\link{t_family}} 
-#'   (Student t).
+#'   \code{\link{neg_binomial_2}} for negative binomial models, and 
+#'   \code{\link{t_family}} for so-called \emph{robust} regression models with
+#'   t-distributed errors.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
 #'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
