@@ -120,6 +120,11 @@ pp_fun <- function(object) {
     rnorm(ncol(mu), mu[s,], sigma[s])
   }))
 }
+.pp_t_family <- function(mu, scale, df) {
+  t(sapply(1:nrow(mu), function(s) {
+    rt(ncol(mu), df = df[s]) * scale[s] + mu[s, ]
+  }))
+}
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
@@ -194,9 +199,7 @@ pp_args <- function(object, data) {
   
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
-  if (is.gaussian(famname)) {
-    args$sigma <- stanmat[, "sigma"]
-  } else if (is.binomial(famname)) {
+  if (is.binomial(famname)) {
     y <- get_y(object)
     if (NCOL(y) == 2L) {
       args$trials <- rowSums(y)
@@ -205,6 +208,12 @@ pp_args <- function(object, data) {
     } else {
       args$trials <- rep(1, NROW(y))
     }
+  } 
+  else if (is.gaussian(famname)) {
+    args$sigma <- stanmat[, "sigma"]
+  } else if (is.t(famname)) {
+    args$scale <- stanmat[, "sigma"]
+    args$df <- stanmat[, "df"]
   } else if (is.gamma(famname)) {
     args$shape <- stanmat[, "shape"]
   } else if (is.ig(famname)) {
