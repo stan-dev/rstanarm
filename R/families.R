@@ -71,14 +71,13 @@ neg_binomial_2 <- function(link = "log") {
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{gaussian}} but with a different family name.
 #' @examples 
-#' \dontrun{
 #' SEED <- 1234
 #' set.seed(SEED)
-#' x <- rnorm(1000)
-#' alpha <- 2; beta <- 0.5; df <- 4
-#' y <- alpha + beta * x + rt(1000, df)
-#' (fit <- stan_glm(y ~ x, family = t_family(), seed = SEED, cores = 4))
-#' }
+#' x <- matrix(rnorm(2000), ncol = 2)
+#' alpha <- 2; beta <- c(-0.5, 0.5); df <- 4
+#' y <- alpha + x %*% beta + rt(1000, df)
+#' stan_glm(y ~ x, family = t_family(), seed = SEED, 
+#'          algorithm = "fullrank") # for speed only
 #' 
 t_family <- function(link = "identity") {
   out <- gaussian(link)
