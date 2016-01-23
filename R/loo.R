@@ -208,7 +208,7 @@ ll_args <- function(object) {
 }
 .ll_t_family_i <- function(i, data, draws) {
   x <- (data$y - .mu(data, draws)) / draws$scale
-  val <- dt(x, df = draws$df, log = TRUE) - log(abs(draws$scale))
+  val <- dt(x, df = draws$df, log = TRUE) - log(draws$scale)
   .weighted(val, data$weights)
 }
 .ll_binomial_i <- function(i, data, draws) {
