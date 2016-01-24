@@ -323,7 +323,7 @@ model {
   }
 
   // Log-prior for df if family == 4 (student t)
-  if (family == 4) nu ~ gamma(2, 0.1);
+  if (family == 4) nu ~ gamma(prior_shape_for_df, prior_rate_for_df);
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
   #include "priors_glm.txt"

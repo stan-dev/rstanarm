@@ -179,7 +179,7 @@
 #'   hyperparameter equal to half the number of predictors and second shape 
 #'   hyperparameter free. By specifying the prior mode (the default), mean, 
 #'   median, or expected log of \eqn{R^2}, the second shape parameter for this 
-#'   Beta distribution is determined internally. If \code{what = 'log'}, 
+#'   Beta distribution is determined internally. If \code{what='log'}, 
 #'   location should be a negative scalar; otherwise it should be a scalar on 
 #'   the \eqn{(0,1)} interval.
 #'   
@@ -325,22 +325,33 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
 
 #' @rdname priors
 #' @export 
-#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
+#' @param prior_scale_for_dispersion A positive scalar interpreted as the prior
+#'   scale for the standard error of the regression in Gaussian models, which is
+#'   given a half-Cauchy prior truncated at zero.
 #' @param min_prior_scale Minimum prior scale for the intercept and 
 #'   coefficients.
 #' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
 #'   \code{prior_scale} is further scaled by the range of the predictor if the 
 #'   predictor has exactly two unique values and scaled by twice the standard
 #'   deviation of the predictor if it has more than two unique values.
+#' @param prior_shape_for_df A positive scalar interpreted as the shape 
+#'   parameter of a gamma prior on the degress of freedom in Student t models. 
+#'   \code{prior_shape_for_df} is ignored unless \code{family=t_family()} for 
+#'   \code{stan_glm} or \code{stan_glmer}.
+#' @param prior_rate_for_df Same as \code{prior_shape_for_df}, but a value for 
+#'   the rate rather than shape parameter of the gamma distribution.
 #'
 prior_options <- function(prior_scale_for_dispersion = 5, 
                           min_prior_scale = 1e-12, 
-                          scaled = TRUE) {
+                          scaled = TRUE, 
+                          prior_shape_for_df = 2, 
+                          prior_rate_for_df = 0.1) {
   validate_parameter_value(prior_scale_for_dispersion)
   validate_parameter_value(min_prior_scale)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
+  validate_parameter_value(prior_shape_for_df)
+  validate_parameter_value(prior_rate_for_df)
+  nlist(scaled, min_prior_scale, prior_scale_for_dispersion, 
+        prior_shape_for_df, prior_rate_for_df)
 }
 
 

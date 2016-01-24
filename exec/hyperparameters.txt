@@ -6,3 +6,5 @@
   vector<lower=0>[K] prior_df;
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_scale_for_dispersion;
+  real<lower=0> prior_shape_for_df; # used if family=4 (Student t)
+  real<lower=0> prior_rate_for_df; # used if family=4 (Student t)
