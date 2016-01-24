@@ -55,13 +55,17 @@ neg_binomial_2 <- function(link = "log") {
 
 #' Family function for Student t GLMs
 #' 
-#' Estimates of regression coefficients are less sensitive to outliers if the
-#' Student t distribution is used in place of the normal distribution in
-#' settings where some errors may be large. These models are sometimes referred
-#' to as \emph{robust regression models}. To estimate such a model, a call to
-#' \code{t_family} can be passed to the \code{family} argument of 
-#' \code{\link{stan_glm}} or \code{\link{stan_glmer}} instead of a call to 
-#' \code{\link{gaussian}}.
+#' Estimates of regression coefficients are less sensitive to outliers if the 
+#' Student t distribution is used in place of the normal distribution in 
+#' settings where some errors may be large. These models are sometimes referred 
+#' to as \emph{robust regression models}, however that name is also used in 
+#' other contexts. In the case of \pkg{rstanarm}, if a call to \code{t_family}
+#' is passed to the \code{family} argument of \code{\link{stan_glm}} or
+#' \code{\link{stan_glmer}} then the resulting model is a linear model where the
+#' errors are believed to be distributed Student t conditional on the
+#' predictors. This is equivalent to believing that the errors are Gaussian but
+#' with \emph{different} standard deviations, each of which has the scaled
+#' inverse chi-squared distribution.
 #' 
 #' @name t_family
 #' @export

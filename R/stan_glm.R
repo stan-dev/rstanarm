@@ -46,8 +46,7 @@
 #' @param family Same as \code{\link[stats]{glm}}, except several additional 
 #'   families can be specified. The additional families include 
 #'   \code{\link{neg_binomial_2}} for negative binomial GLMs, and 
-#'   \code{\link{t_family}} for so-called \emph{robust} regression models with
-#'   t-distributed errors.
+#'   \code{\link{t_family}} for linear models with t-distributed errors.
 #' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
