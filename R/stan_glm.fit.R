@@ -219,8 +219,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_mean_for_intercept = prior_mean_for_intercept,
     prior_df_for_intercept = prior_df_for_intercept,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD), 
-    prior_shape_for_df = prior_ops$prior_shape_for_df, # these are only used if family=t_family but always passed to Stan
-    prior_rate_for_df = prior_ops$prior_rate_for_df)
+    # these are only used if family=t_family but always passed to Stan:
+    prior_shape_for_df = prior_ops$prior_shape_for_df %ORifNULL% 0, 
+    prior_rate_for_df = prior_ops$prior_rate_for_df %ORifNULL% 0)
   
   if (length(group)) {
     decov <- group$decov

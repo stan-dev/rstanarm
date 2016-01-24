@@ -297,7 +297,7 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if (family == 1) {
-      if (link == 1)      y ~ normal(eta, dispersion);
+      if (link == 1) y ~ normal(eta, dispersion);
       else if (link == 2) y ~ lognormal(eta, dispersion);
       else y ~ normal(divide_real_by_vector(1, eta), dispersion);
       // divide_real_by_vector() is defined in common_functions.txt
@@ -323,12 +323,15 @@ model {
   }
 
   // Log-prior for df if family == 4 (student t)
-  if (family == 4) nu ~ gamma(prior_shape_for_df, prior_rate_for_df);
+  if (family == 4 && prior_shape_for_df > 0 && prior_rate_for_df > 0) 
+    nu ~ gamma(prior_shape_for_df, prior_rate_for_df);
   // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
+  if (prior_scale_for_dispersion > 0) 
+    dispersion_unscaled ~ cauchy(0, 1);
   #include "priors_glm.txt"
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) 
+    decov_lp(z_b, z_T, rho, zeta, tau, 
+             regularization, delta, shape, t, p);
 }
 generated quantities {
   real alpha[has_intercept];
