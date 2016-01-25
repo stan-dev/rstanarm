@@ -29,7 +29,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
-                         prior_ops = prior_options(),
                          group = list(),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
@@ -37,7 +36,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          adapt_delta = NULL, QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
-  family <- validate_family(family)
+  if (is.rstanarm_family(family)) {
+    prior_params <- family$params
+    family <- validate_family(family)
+  } else {
+    family <- validate_family(family)
+    prior_params <- default_prior_params(family)
+  }
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2", "t_family")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
@@ -95,9 +100,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   nvars <- ncol(xtemp)
   
-  scaled <- prior_ops$scaled
-  min_prior_scale <- prior_ops$min_prior_scale
-  prior_scale_for_dispersion <- prior_ops$prior_scale_for_dispersion
+  scaled <- prior_params$scaled
+  min_prior_scale <- prior_params$min_prior_scale
+  prior_scale_for_dispersion <- prior_params$prior_scale_for_dispersion
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
@@ -220,8 +225,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_df_for_intercept = prior_df_for_intercept,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD), 
     # these are only used if family=t_family but always passed to Stan:
-    prior_shape_for_df = prior_ops$prior_shape_for_df %ORifNULL% 0, 
-    prior_rate_for_df = prior_ops$prior_rate_for_df %ORifNULL% 0)
+    prior_shape_for_df = prior_params$prior_shape_for_df, 
+    prior_rate_for_df = prior_params$prior_rate_for_df)
   
   if (length(group)) {
     decov <- group$decov

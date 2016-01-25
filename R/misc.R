@@ -192,7 +192,11 @@ array1D_check <- function(y) {
 # Check for a binomial model with Y given as proportion of successes and weights 
 # given as total number of trials
 # 
+# @param y Response variable
+# @param family Either a family object or an rstanarm_family object.
+# @param weights User-specified weights
 binom_y_prop <- function(y, family, weights) {
+  family <- validate_family(family)
   if (!is.binomial(family$family)) 
     return(FALSE)
 
@@ -265,6 +269,8 @@ validate_offset <- function(o, y) {
 #   already a family) or the family object created from \code{f} is returned (if
 #   \code{f} is a string or function).
 validate_family <- function(f) {
+  if (is.rstanarm_family(f))
+    f <- f$family
   if (is.character(f)) 
     f <- get(f, mode = "function", envir = parent.frame(2))
   if (is.function(f)) 

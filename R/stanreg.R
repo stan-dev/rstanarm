@@ -25,6 +25,8 @@ stanreg <- function(object) {
   mer <- !is.null(object$glmod) # used stan_(g)lmer
   stanfit <- object$stanfit
   family <- object$family
+  if (is.rstanarm_family(family))
+    family <- family$family
   y <- object$y
   x <- object$x
   nvars <- ncol(x)

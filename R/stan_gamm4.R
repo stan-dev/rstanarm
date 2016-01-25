@@ -26,13 +26,14 @@
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-family
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-QR
 #' 
-#' @param formula,random,family,data,knots,drop.unused.levels Same as for 
+#' @param formula,random,data,knots,drop.unused.levels Same as for 
 #'   \code{\link[gamm4]{gamm4}}.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
@@ -63,19 +64,21 @@
 #' @examples
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
 #' 
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
+stan_gamm4 <- function(formula, random = NULL, 
+                       family = rstanarm_family("gaussian"), 
+                       data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
 
+  algorithm <- match.arg(algorithm)
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
-  family <- validate_family(family)
   mc[[1]] <- quote(gamm4::gamm4)
+  mc$family <- validate_family(family)
   mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- 
     mc$prior_covariance <- mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
   result <- suppressWarnings(eval(mc, parent.frame(1L)))
@@ -97,28 +100,24 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   group$decov <- prior_covariance
-  algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
   
   Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
+  fit <- nlist(stanfit, family = validate_family(family), 
+               formula, offset, weights, x = cbind(X, Z), 
                prior.info = get_prior_info(call, formals()), 
                y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)
   # FIXME: replace guts of gam with point estimates from stanfit
   out$gam <- result$gam
-  class(out) <- c(class(out), "lmerMod")
-  
-  return(out)
+  structure(out, class = c(class(out), "lmerMod"))
 }

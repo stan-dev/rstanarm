@@ -12,6 +12,7 @@
 #' @templateVar rareargs na.action,contrasts
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-family
 #' @template args-same-as
 #' @template args-same-as-rarely
 #' @template args-priors
@@ -21,10 +22,6 @@
 #' @template args-QR
 #' @template reference-gelman-hill
 #' 
-#' @param family Same as \code{\link[lme4]{glmer}}, except several additional 
-#'   families can be specified. The additional families include 
-#'   \code{\link{neg_binomial_2}} for negative binomial models, and 
-#'   \code{\link{t_family}} for linear models with t-distributed errors.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
 #'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
@@ -58,20 +55,21 @@
 #' 
 #' @importFrom lme4 glFormula glmerControl
 #' 
-stan_glmer <- function(formula, data = NULL, family = gaussian, 
+stan_glmer <- function(formula, data = NULL, 
+                       family = rstanarm_family("gaussian"), 
                        subset, weights, 
                        na.action = getOption("na.action", "na.omit"), 
                        offset, contrasts = NULL, ...,
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE) {
   
+  algorithm <- match.arg(algorithm)
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
-  family <- validate_family(family)
-  mc[[1]] <- quote(lme4::glFormula)
+  mc[[1L]] <- quote(lme4::glFormula)
+  mc$family <- validate_family(family)
   mc$control <- glmerControl(check.nlev.gtreq.5 = "ignore",
                              check.nlev.gtr.1 = "stop",
                              check.nobs.vs.rankZ = "ignore",
@@ -90,36 +88,33 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   group <- glmod$reTrms
   group$decov <- prior_covariance
-  algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 
   Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
+  fit <- nlist(stanfit, family = validate_family(family),
+               formula, offset, weights, x = cbind(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
   out <- stanreg(fit)
-  class(out) <- c(class(out), "lmerMod")
-  
-  return(out)
+  structure(out, class = c(class(out), "lmerMod"))
 }
 
 #' @rdname stan_glmer
 #' @export
 stan_lmer <- function(...) {
   if ("family" %in% names(list(...))) 
-    stop("'family' should not be specified.")
+    stop("'family' should not be specified for stan_lmer. ", 
+         "Use stan_glmer instead.")
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call)) 
     names(call)[2L] <- "formula"
@@ -140,11 +135,12 @@ stan_lmer <- function(...) {
 #' 
 stan_glmer.nb <- function(..., link = "log") {
   if ("family" %in% names(list(...))) 
-    stop("'family' should not be specified.")
+    stop("'family' should not be specified for stan_glmer.nb. ", 
+         "Use stan_glmer instead.")
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call)) 
     names(call)[2L] <- "formula"
-  mc[[1]] <- quote(stan_glmer)
+  mc[[1L]] <- quote(stan_glmer)
   mc$REML <- mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())

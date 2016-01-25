@@ -31,6 +31,7 @@
 #' @template return-stanreg-object
 #' @template return-stanfit-object
 #' @template see-also
+#' @template args-family
 #' @template args-formula-data-subset
 #' @template args-same-as
 #' @template args-same-as-rarely
@@ -42,11 +43,6 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' @template reference-gelman-hill
-#' 
-#' @param family Same as \code{\link[stats]{glm}}, except several additional 
-#'   families can be specified. The additional families include 
-#'   \code{\link{neg_binomial_2}} for negative binomial GLMs, and 
-#'   \code{\link{t_family}} for linear models with t-distributed errors.
 #' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
@@ -66,6 +62,11 @@
 #'                 algorithm = "fullrank") # for speed only
 #' plot(fit, ci_level = 0.5)
 #' plot(fit, ci_level = 0.5, pars = "beta")
+#' 
+#' # To change the scale for the half-Cauchy prior on sigma, the standard error of 
+#' # the regression, we can use rstanarm_family:
+#' fam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2) # default is 5
+#' update(fit, family = fam)
 #' 
 #' ### Logistic regression
 #' data(lalonde, package = "arm")
@@ -102,17 +103,17 @@
 #' fit5 <- update(fit4, formula = lot2 ~ log_u)
 #' }
 #'
-stan_glm <- function(formula, family = gaussian(), data, weights, subset,
-                    na.action = NULL, offset = NULL, model = TRUE, 
-                    x = FALSE, y = TRUE, contrasts = NULL, ..., 
-                    prior = normal(), prior_intercept = normal(),
-                    prior_ops = prior_options(), prior_PD = FALSE, 
-                    algorithm = c("sampling", "optimizing", 
-                                  "meanfield", "fullrank"),
-                    adapt_delta = NULL, QR = FALSE) {
+stan_glm <- function(formula, family = rstanarm_family("gaussian"), 
+                     data, weights, subset,
+                     na.action = NULL, offset = NULL, model = TRUE, 
+                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
+                     prior = normal(), prior_intercept = normal(), 
+                     prior_PD = FALSE, 
+                     algorithm = c("sampling", "optimizing", 
+                                   "meanfield", "fullrank"),
+                     adapt_delta = NULL, QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
-  family <- validate_family(family)
   if (missing(data)) 
     data <- environment(formula)
   call <- match.call(expand.dots = TRUE)
@@ -136,16 +137,15 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     Y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-
+  
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, ...)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
+fit <- nlist(stanfit, family = validate_family(family), 
+               formula, offset, weights, x = X, y = Y, 
                data, prior.info = get_prior_info(call, formals()), 
                call = call, terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 

@@ -211,10 +211,11 @@
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, prior_PD = TRUE,
+#' fam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2)
+#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, 
+#'                            family = fam, prior_PD = TRUE,
 #'                            prior = student_t(df = 4, 0, 2.5), 
-#'                            prior_intercept = cauchy(0,10), 
-#'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#'                            prior_intercept = cauchy(0,10))
 #' 
 #' \dontrun{
 #' # Can assign priors to names
@@ -322,38 +323,6 @@ dirichlet <- function(concentration = 1) {
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
-
-#' @rdname priors
-#' @export 
-#' @param prior_scale_for_dispersion A positive scalar interpreted as the prior
-#'   scale for the standard error of the regression in Gaussian models, which is
-#'   given a half-Cauchy prior truncated at zero.
-#' @param min_prior_scale Minimum prior scale for the intercept and 
-#'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scaled by twice the standard
-#'   deviation of the predictor if it has more than two unique values.
-#' @param prior_shape_for_df A positive scalar interpreted as the shape 
-#'   parameter of a gamma prior on the degress of freedom in Student t models. 
-#'   \code{prior_shape_for_df} is ignored unless \code{family=t_family()} for 
-#'   \code{stan_glm} or \code{stan_glmer}.
-#' @param prior_rate_for_df Same as \code{prior_shape_for_df}, but a value for 
-#'   the rate rather than shape parameter of the gamma distribution.
-#'
-prior_options <- function(prior_scale_for_dispersion = 5, 
-                          min_prior_scale = 1e-12, 
-                          scaled = TRUE, 
-                          prior_shape_for_df = 2, 
-                          prior_rate_for_df = 0.1) {
-  validate_parameter_value(prior_scale_for_dispersion)
-  validate_parameter_value(min_prior_scale)
-  validate_parameter_value(prior_shape_for_df)
-  validate_parameter_value(prior_rate_for_df)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion, 
-        prior_shape_for_df, prior_rate_for_df)
-}
-
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) 
