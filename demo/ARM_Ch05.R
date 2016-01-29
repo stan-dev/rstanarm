@@ -17,17 +17,18 @@ t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 
 # Logistic regression with one predictor
 vote_fit <- stan_glm(vote ~ income, data = nes1992, family=binomial(link="logit"),
-                  prior = t_prior, prior_intercept = t_prior, seed = SEED)
+                  prior = t_prior, prior_intercept = t_prior, 
+                  seed = SEED, refresh = REFRESH)
 print(vote_fit, digits = 2)
 b <- coef(vote_fit)
 plot(vote_fit, pars = names(b))
 
 # Probability of Bush vote at various values of income
-pr_bush <- function(x) invlogit(b[[1]] + b[[2]] * x)
+pr_bush <- function(x, coefs) invlogit(coefs[[1]] + coefs[[2]] * x)
 income_vals <- with(nes1992, c(min(income), median(income), max(income)))
-pr_bush(income_vals)
+pr_bush(income_vals, b)
 #  How the probability differs with a unit difference in x near the central value
-pr_bush(3) - pr_bush(2)
+pr_bush(3, b) - pr_bush(2, b)
 
 
 # Wells in Bangladesh
@@ -35,18 +36,16 @@ source(paste0(ROOT, "ARM/Ch.5/wells.data.R"), local = DATA_ENV, verbose = FALSE)
 wells <- with(DATA_ENV, data.frame(switch = switched, dist100 = dist/100, arsenic))
 
 # Only use distance (in 100m) as predictor
-post1 <- stan_glm(switch ~ dist100, data = wells, 
-                  family = binomial(link = "logit"), 
+post1 <- stan_glm(switch ~ dist100, data = wells, family = "binomial", 
                   prior = t_prior, prior_intercept = t_prior, 
-                  seed = SEED)
+                  seed = SEED, refresh = REFRESH)
 
 # Add arsenic as predictor
 post2 <- update(post1, formula = switch ~ dist100 + arsenic)
 
 # Add interaction of dist100 and arsenic
 post3 <- update(post2, formula = .~. + dist100:arsenic)
-plot(post3, pars = names(coef(post3)), show_density = TRUE, 
-            ci_level = 0.95, outer_level = 0.99)
+plot(post3, show_density = TRUE, ci_level = 0.95, outer_level = 1)
 
 # Compare them with loo
 loo1 <- loo(post1)
@@ -67,23 +66,21 @@ b3 <- coef(post3)
 
 # As function of dist100 
 with(wells, plot(dist100, jitter.binary(switch), 
-                 xlim=c(0,max(dist100))), ylab = "Prob")
+                 xlim=c(0, max(dist100)), ylab = "Prob"))
 # Model with two predictors in red
-curve(invlogit(cbind(1, x, .5) %*% b2), add=TRUE, col = "red", lty = 2) 
-curve(invlogit(cbind(1, x, 1) %*% b2), add=TRUE, col = "red", lty = 2)
+curve(invlogit(cbind(1, x, .5) %*% b2), add = TRUE, col = "red", lty = 2) 
+curve(invlogit(cbind(1, x, 1) %*% b2), add = TRUE, col = "red", lty = 2)
 # Model with interaction in blue
-curve(invlogit(cbind(1, x, .5, .5 * x) %*% b3), add=TRUE, col = "blue") 
-curve(invlogit(cbind(1, x, 1, 1 * x) %*% b3), add=TRUE, col = "blue")
+curve(invlogit(cbind(1, x, .5, .5 * x) %*% b3), add = TRUE, col = "blue") 
+curve(invlogit(cbind(1, x, 1, 1 * x) %*% b3), add = TRUE, col = "blue")
 
 # As function of arsenic 
 with(wells, plot(arsenic, jitter.binary(switch), 
-                 xlim=c(0,max(arsenic))), ylab = "Prob")
-# Model with two predictors in red
-curve(invlogit(cbind (1, 0, x) %*% b2), add=TRUE, col = "red", lty = 2) 
-curve(invlogit(cbind (1,.5, x) %*% b2), add=TRUE, col = "red", lty = 2)
-# Model with interaction in blue
-curve(invlogit(cbind(1, 0, x, 0 * x) %*% b3), add=TRUE, col = "blue") 
-curve(invlogit(cbind(1, .5, x, .5 * x) %*% b3), add=TRUE, col = "blue")
+                 xlim=c(0, max(arsenic)), ylab = "Prob"))
+curve(invlogit(cbind (1, 0, x) %*% b2), add = TRUE, col = "red", lty = 2) 
+curve(invlogit(cbind (1,.5, x) %*% b2), add = TRUE, col = "red", lty = 2)
+curve(invlogit(cbind(1, 0, x, 0 * x) %*% b3), add = TRUE, col = "blue") 
+curve(invlogit(cbind(1, .5, x, .5 * x) %*% b3), add = TRUE, col = "blue")
 par(mfrow = op)
 
 
