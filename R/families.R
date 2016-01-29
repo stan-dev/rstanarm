@@ -25,79 +25,112 @@
 #' default values for various family-specific parameters.
 #' 
 #' @export
-#' @param name The name of the family object to use. Can be any of the 
-#'   traditional \code{\link[stats]{family}} objects, plus 
-#'   \code{\link{neg_binomial_2}} and \code{\link{t_family}}.
-#' @param link The name of the link function. If missing, the default link for
-#'   the specified family is used.
+#' @param family A string naming the family object to use. Can be any of the 
+#'   traditional \code{\link[stats]{family}} objects (not the "quasi" families),
+#'   plus \code{\link{neg_binomial_2}} and \code{\link{t_family}}.
+#' @param link A string naming the desired link function. If missing, the
+#'   default link for the specified family is used.
 #' @param ... Family-specific arguments related to prior distributions. The 
 #'   possible arguments and their defaults are described below in Details.
 #' 
 #' @return A family object for use by \pkg{rstanarm} modeling functions.
 #' 
 #' @details
-#' For all values of \code{name} (i.e., for all families), the following two 
-#' parameters can be specified in \code{...}:
+#' For all families the following two parameters can be specified in \code{...}:
 #' 
 #' \describe{
-#'    \item{\code{min_prior_scale}}{
+#'    \item{\code{min_prior_scale} (default: \code{1e-12})}{
 #'      Minimum prior scale for the intercept and coefficients. The 
-#'      default of \code{1e-12} is nearly always fine.
+#'      default is nearly always fine.
 #'    }
-#'    \item{\code{scaled}}{
-#'      A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the prior 
-#'      scale is further scaled by the range of the predictor if the predictor
-#'      has exactly two unique values and scaled by twice the standard deviation
-#'      of the predictor if it has more than two unique values.
+#'    \item{\code{scaled} (default: \code{TRUE})}{
+#'      A logical scalar. If \code{TRUE} the prior scale is further scaled by
+#'      the range of the predictor if the predictor has exactly two unique
+#'      values and scaled by twice the standard deviation of the predictor if it
+#'      has more than two unique values.
 #'    }
 #' }
 #' 
-#' Most families also have additional parameters that can be specified in
-#' \code{...}, which are described below.
+#' All families except for binomial and poisson also have additional parameters
+#' that can be specified in \code{...}, which are described below.
 #' 
-#' \subsection{gaussian}{
+#' \subsection{Gaussian (family = "gaussian")}{
 #'   \describe{
-#'     \item{\code{prior_scale_for_dispersion}}{
+#'     \item{\code{prior_scale_for_dispersion} (default: \code{5})}{
 #'       A positive scalar interpreted as the prior scale for the standard error
 #'       of the regression, which is given a half-Cauchy prior truncated at
-#'       zero. The default is \code{5}.
+#'       zero.
+#'       
+#'       This prior (and the half-Cauchy priors described for other families
+#'       below) can be visualized by calling:
+#'       
+#'       \code{curve(2 * dcauchy(x, 0, scale = 5), from=0, to=50)}.
 #'    }
 #'   }
 #' }
-#' \subsection{neg_binomial_2}{
+#' \subsection{Gamma (family = "Gamma")}{
 #'   \describe{
-#'     \item{\code{prior_scale_for_dispersion}}{
+#'     \item{\code{prior_scale_for_shape} (default: \code{5})}{
+#'       A positive scalar interpreted as the prior scale for the shape
+#'       parameter, which is given a half-Cauchy prior truncated at zero.
+#'    }
+#'   }
+#' }
+#' \subsection{Inverse Gaussian (family = "inverse.gaussian")}{
+#'   \describe{
+#'     \item{\code{prior_scale_for_shape} (default: \code{5})}{
+#'       A positive scalar interpreted as the prior scale for the shape
+#'       parameter, which is given a half-Cauchy prior truncated at zero.
+#'    }
+#'   }
+#' }
+#' \subsection{Negative Binomial (family = "neg_binomial_2")}{
+#'   \describe{
+#'     \item{\code{prior_scale_for_dispersion} (default: \code{5})}{
 #'       A positive scalar interpreted as the prior scale for the overdispersion
-#'       parameter, which is given a half-Cauchy prior truncated at zero. The
-#'       default is \code{5}.
+#'       parameter, which is given a half-Cauchy prior truncated at zero.
 #'    }
 #'   }
 #' }
-#' \subsection{t_family}{
+#' \subsection{Student t (family = "t_family")}{
 #'   \describe{
-#'     \item{\code{prior_scale_for_dispersion}}{
+#'     \item{\code{prior_scale_for_dispersion} (default: \code{5})}{
 #'       A positive scalar interpreted as the prior scale for the standard error
 #'       of the regression, which is given a half-Cauchy prior truncated at
 #'       zero. The default is \code{5}.
 #'    }
-#'     \item{\code{prior_shape_for_df}}{
+#'     \item{\code{prior_shape_for_df} (default: \code{2})}{
 #'       A positive scalar interpreted as the shape parameter of a gamma prior
-#'       on the degress of freedom in Student t models. The default is 2.
+#'       on the degress of freedom in Student t models.
 #'    }
-#'    \item{\code{prior_rate_for_df}}{
+#'    \item{\code{prior_rate_for_df} (default: \code{0.1})}{
 #'      A positive scalar interpreted as the rate parameter of a gamma prior
-#'      on the degress of freedom in Student t models. The default is 0.1.
+#'      on the degress of freedom in Student t models.
 #'    }
 #'   }
-#'   The default \code{gamma(2,0.1)} places the bulk of the prior below 30, but
-#'   decays rather slowly. See the plot generated by running 
+#'   The default prior on the degrees of freedom is therefore \code{gamma(2, 
+#'   0.1)}. This prior places the bulk of the prior below 30, but decays rather 
+#'   slowly, as can be seen in the plot generated by 
+#'   
 #'   \code{curve(dgamma(x, shape = 2, rate = 0.1), from = 0, to = 100)}.
 #' }
 #' 
-rstanarm_family <- function(name, link, ...) {
+#' @seealso 
+#' \code{\link{neg_binomial_2}}, \code{\link{t_family}}
+#' 
+#' \code{\link{priors}} for specifying prior distributions for the intercept,
+#' regression coefficients, covariance matrices, etc.
+#' 
+rstanarm_family <- function(family, link, ...) {
   family <- if (missing(link)) 
-    match.fun(name)() else match.fun(name)(link = link)
+    match.fun(family)() else match.fun(family)(link = link)
   params <- list(...)
+  if (length(params)) {
+    # change name of any "prior_scale_for_shape" to "prior_scale_for_dispersion"
+    # because that's what stan_glm.fit is expecting
+    sel <- names(params) %in% "prior_scale_for_shape"
+    names(params)[sel] <- "prior_scale_for_dispersion"
+  }
   defaults <- default_prior_params(family)
   pars <- setdiff(names(defaults), names(params))
   if (length(pars)) {
@@ -111,6 +144,8 @@ is.rstanarm_family <- function(x) {
   inherits(x, "rstanarm_family")
 }
 default_prior_params <- function(family) {
+  # here family should be a family object (not just the name)
+  stopifnot(is(family, "family"))
   defaults <- list(scaled = TRUE, 
                    prior_scale_for_dispersion = 5, 
                    min_prior_scale = 1e-12)
@@ -147,10 +182,14 @@ default_prior_params <- function(family) {
 #'   hyperparameter of a half-Cauchy prior on the overdispersion parameter.
 #'   
 #' @examples
-#' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
-#'          family = neg_binomial_2, QR = TRUE, algorithm = "fullrank") 
-#'                 
+#' fit <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
+#'                 family = neg_binomial_2, QR = TRUE, 
+#'                 algorithm = "fullrank") # for speed only
 #' # or, equivalently, call stan_glm.nb() without specifying the family
+#' 
+#' # using rstanarm_family() to set prior scale for overdispersion parameter
+#' nbfam <- rstanarm_family("neg_binomial_2", prior_scale_for_dispersion = 2)
+#' update(fit, family = nbfam)
 #'
 neg_binomial_2 <- function(link = "log") {
   out <- poisson(link)
@@ -204,8 +243,14 @@ neg_binomial_2 <- function(link = "log") {
 #' x <- matrix(rnorm(2000), ncol = 2)
 #' alpha <- 2; beta <- c(-0.5, 0.5); df <- 4
 #' y <- alpha + x %*% beta + rt(1000, df)
-#' stan_glm(y ~ x, family = t_family(), seed = SEED, 
-#'          algorithm = "fullrank") # for speed only
+#' fit <- stan_glm(y ~ x, family = t_family(), seed = SEED, 
+#'                 algorithm = "fullrank") # for speed only
+#'                 
+#' # using rstanarm_family() to set hyperparameters of gamma prior 
+#' # on the degrees of freedom parameter
+#' tfam <- rstanarm_family("t_family", prior_shape_for_df = 5, 
+#'                         prior_rate_for_df = 0.5)
+#' update(fit, family = tfam)
 #' 
 t_family <- function(link = "identity") {
   out <- gaussian(link)

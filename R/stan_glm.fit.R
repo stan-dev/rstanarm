@@ -100,13 +100,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   nvars <- ncol(xtemp)
   
+  # hyperparameters and other prior-related stuff
   scaled <- prior_params$scaled
   min_prior_scale <- prior_params$min_prior_scale
   prior_scale_for_dispersion <- prior_params$prior_scale_for_dispersion
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
-  ok_intercept_dists <- ok_dists[1:3]
   
   # prior distributions
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  ok_intercept_dists <- ok_dists[1:3]
   if (is.null(prior)) {
     prior_dist <- 0L
     prior_mean <- as.array(rep(0, nvars))

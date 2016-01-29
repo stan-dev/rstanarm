@@ -15,12 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Prior distributions and options
+#' Prior distributions
 #' 
-#' These functions are used to specify the prior-related arguments of various
+#' These functions are used to specify the prior distributions for various
 #' modeling functions in the \pkg{rstanarm} package.
 #' 
-#' @export 
 #' @name priors
 #' @param location Prior location. For \code{normal} and \code{student_t} 
 #'   (provided that \code{df > 1}) this is the prior mean. For \code{cauchy} 
@@ -199,9 +198,14 @@
 #' }
 #' @return A named list to be used internally by the \pkg{rstanarm} model
 #'   fitting functions.
-#' @seealso The various vignettes for the \pkg{rstanarm} package also discuss 
-#'   and demonstrate the use of some of the supported prior distributions.
+#'   
+#' @seealso 
+#' \code{\link{rstanarm_family}}, which allows the user to set the values of
+#' \code{\link{family}}-specific hyperparameters.
 #' 
+#' The various vignettes for the \pkg{rstanarm} package also discuss 
+#' and demonstrate the use of some of the supported prior distributions.
+#'   
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-bda
 #' @template reference-piironen-vehtari
@@ -256,6 +260,10 @@
 #' # actually saying that coefficient a value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
+NULL
+
+#' @rdname priors
+#' @export
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)
   nlist(dist = "normal", df = NA, location, scale)
