@@ -103,7 +103,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   # hyperparameters and other prior-related stuff
   scaled <- prior_params$scaled
   min_prior_scale <- prior_params$min_prior_scale
-  prior_scale_for_dispersion <- prior_params$prior_scale_for_dispersion
+  prior_scale_for_dispersion <- prior_params$prior_scale_for_dispersion %ORifNULL% 0
+  prior_shape_for_df <- prior_params$prior_shape_for_df %ORifNULL% 0
+  prior_rate_for_df <- prior_params$prior_rate_for_df %ORifNULL% 0
   
   # prior distributions
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
@@ -226,8 +228,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_df_for_intercept = prior_df_for_intercept,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD), 
     # these are only used if family=t_family but always passed to Stan:
-    prior_shape_for_df = prior_params$prior_shape_for_df, 
-    prior_rate_for_df = prior_params$prior_rate_for_df)
+    prior_shape_for_df = prior_shape_for_df, 
+    prior_rate_for_df = prior_rate_for_df)
   
   if (length(group)) {
     decov <- group$decov
