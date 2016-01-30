@@ -1,14 +1,14 @@
   // Log-priors for coefficients
-  if      (prior_dist == 1) z_beta ~ normal(0, 1);
+  if (prior_dist == 1) z_beta ~ normal(0, 1);
   else if (prior_dist == 2) z_beta ~ student_t(prior_df, 0, 1);
-  else if (prior_dist == 3) { # hs
+  else if (prior_dist == 3) { // hs
     z_beta ~ normal(0,1);
     local[1] ~ normal(0,1);
     local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);
     global[1] ~ normal(0,1);
     global[2] ~ inv_gamma(0.5, 0.5);
   }
-  else if (prior_dist == 4) { # hs+
+  else if (prior_dist == 4) { // hs+
     z_beta ~ normal(0,1);
     local[1] ~ normal(0,1);
     local[2] ~ inv_gamma(0.5 * prior_df, 0.5 * prior_df);
@@ -22,9 +22,9 @@
   
   // Log-prior for intercept  
   if (has_intercept == 1) {
-    if (prior_dist_for_intercept == 1) # normal
+    if (prior_dist_for_intercept == 1)  // normal
       gamma ~ normal(prior_mean_for_intercept, prior_scale_for_intercept);
-    else if (prior_dist_for_intercept == 2) # student_t
+    else if (prior_dist_for_intercept == 2)  // student_t
       gamma ~ student_t(prior_df_for_intercept, prior_mean_for_intercept, 
                         prior_scale_for_intercept);
     /* else prior_dist is 0 and nothing is added */
