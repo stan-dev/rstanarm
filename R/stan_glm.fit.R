@@ -37,11 +37,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   algorithm <- match.arg(algorithm)
   if (is.rstanarm_family(family)) {
-    prior_params <- family$params
+    hyperparams <- family$hyperparams
     family <- validate_family(family)
   } else {
     family <- validate_family(family)
-    prior_params <- default_prior_params(family)
+    hyperparams <- default_hyperparams(family)
   }
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2", "t_family")
@@ -101,11 +101,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   nvars <- ncol(xtemp)
   
   # hyperparameters and other prior-related stuff
-  scaled <- prior_params$scaled
-  min_prior_scale <- prior_params$min_prior_scale
-  prior_scale_for_dispersion <- prior_params$prior_scale_for_dispersion %ORifNULL% 0
-  prior_shape_for_df <- prior_params$prior_shape_for_df %ORifNULL% 0
-  prior_rate_for_df <- prior_params$prior_rate_for_df %ORifNULL% 0
+  scaled <- hyperparams$scaled
+  min_prior_scale <- hyperparams$min_prior_scale
+  prior_scale_for_dispersion <- hyperparams$prior_scale_for_dispersion %ORifNULL% 0
+  prior_shape_for_df <- hyperparams$prior_shape_for_df %ORifNULL% 0
+  prior_rate_for_df <- hyperparams$prior_rate_for_df %ORifNULL% 0
   
   # prior distributions
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")

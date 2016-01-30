@@ -137,29 +137,29 @@ rstanarm_family <- function(family, link, ...) {
   if (!missing(link)) 
     args$link <- link
   family <- do.call(match.fun(family), args)
-  params <- list(...)
-  if (length(params)) {
+  hyperparams <- list(...)
+  if (length(hyperparams)) {
     # change name of any "prior_scale_for_shape" to "prior_scale_for_dispersion"
     # because that's what stan_glm.fit is expecting
-    sel <- names(params) %in% "prior_scale_for_shape"
-    names(params)[sel] <- "prior_scale_for_dispersion"
+    sel <- names(hyperparams) %in% "prior_scale_for_shape"
+    names(hyperparams)[sel] <- "prior_scale_for_dispersion"
   }
-  defaults <- default_prior_params(family)
-  pars <- setdiff(names(defaults), names(params))
+  defaults <- default_hyperparams(family)
+  pars <- setdiff(names(defaults), names(hyperparams))
   if (length(pars)) {
     for (par in pars)
-      params[[par]] <- defaults[[par]] 
+      hyperparams[[par]] <- defaults[[par]] 
   }
-  if (length(params))
-    lapply(params[!names(params) == "scaled"], validate_parameter_value)
+  if (length(hyperparams))
+    lapply(hyperparams[!names(hyperparams) == "scaled"], validate_parameter_value)
   
-  structure(nlist(family, params), class = "rstanarm_family")
+  structure(nlist(family, hyperparams), class = "rstanarm_family")
 }
 
 is.rstanarm_family <- function(x) {
   inherits(x, "rstanarm_family")
 }
-default_prior_params <- function(family) {
+default_hyperparams <- function(family) {
   if (!is(family, "family"))
     stop("'family' should be a family object.")
   defaults <- list(scaled = TRUE, 
