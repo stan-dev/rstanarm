@@ -1,6 +1,6 @@
 #include "license.txt"
 
-# GLM for a Gaussian, Gamma, or inverse Gaussian outcome
+// GLM for a Gaussian, Student t, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.txt"
 
@@ -12,12 +12,14 @@ functions {
    * @return A vector, i.e. inverse-link(eta)
    */
   vector linkinv_gauss(vector eta, int link) {
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link < 3)  # link = identity or log 
-      return eta; # return eta for log link too bc will use lognormal
-    else {# link = inverse
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link < 3)  // link = identity or log 
+      return eta;  // return eta for log link too bc will use lognormal
+    else {  // link = inverse
       vector[rows(eta)] mu;
-      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      for (n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
       return mu;
     }
   }
@@ -30,12 +32,14 @@ functions {
    * @return A vector, i.e. inverse-link(eta)
    */
   vector linkinv_t(vector eta, int link) {
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1) return eta; # link = identity
-    else if (link == 2) return exp(eta); # link = log
-    else {# link = inverse
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 1) return eta;  // identity
+    else if (link == 2) return exp(eta);  // log
+    else {  // link = inverse
       vector[rows(eta)] mu;
-      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      for (n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
       return mu;
     }
   }
@@ -48,12 +52,14 @@ functions {
   * @return A vector, i.e. inverse-link(eta)
   */
   vector linkinv_gamma(vector eta, int link) {
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1)  return eta;
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 1) return eta;
     else if (link == 2) return exp(eta);
     else {
       vector[rows(eta)] mu;
-      for(n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
+      for (n in 1:rows(eta)) mu[n] <- inv(eta[n]); 
       return mu;
     }
   }
@@ -66,8 +72,10 @@ functions {
   * @return A vector, i.e. inverse-link(eta)
   */
   vector linkinv_inv_gaussian(vector eta, int link) {
-    if (link < 1 || link > 4) reject("Invalid link");
-    if (link == 1)  return eta;
+    if (link < 1 || link > 4) 
+      reject("Invalid link");
+      
+    if (link == 1) return eta;
     else if (link == 2) return exp(eta);
     else {
       vector[rows(eta)] mu;
@@ -88,10 +96,12 @@ functions {
   */
   vector pw_gauss(vector y, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 2) # link = log
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 2)  // log
       for (n in 1:rows(eta)) ll[n] <- lognormal_log(y[n], eta[n], sigma);
-    else { # link = identity or inverse
+    else {  // link = identity or inverse
       vector[rows(eta)] mu;
       mu <- linkinv_gauss(eta, link);
       for (n in 1:rows(eta)) ll[n] <- normal_log(y[n], mu[n], sigma);
@@ -112,7 +122,9 @@ functions {
   vector pw_t(vector y, real nu, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
     vector[rows(eta)] mu;
-    if (link < 1 || link > 3) reject("Invalid link");
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
     mu <- linkinv_t(eta, link);
     for (n in 1:rows(eta)) ll[n] <- student_t_log(y[n], nu, mu[n], sigma);
     return ll;
@@ -121,14 +133,17 @@ functions {
   real GammaReg_log(vector y, vector eta, real shape, 
                     int link, real sum_log_y) {
     real ret;
-    if (link < 1 || link > 3) reject("Invalid link");
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
     ret <- rows(y) * (shape * log(shape) - lgamma(shape)) +
       (shape - 1) * sum_log_y;
-    if (link == 2)      # link is log
+      
+    if (link == 2)  // log
       ret <- ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
-    else if (link == 1) # link is identity
+    else if (link == 1)  // identity
       ret <- ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                # link is inverse
+    else  // link = inverse
       ret <- ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
     return ret;
   }
@@ -144,18 +159,20 @@ functions {
   */
   vector pw_gamma(vector y, vector eta, real shape, int link) {
     vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 3) { # link = inverse
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 3) {  // inverse
       for (n in 1:rows(eta)) {
         ll[n] <- gamma_log(y[n], shape, shape * eta[n]);
       }
     }
-    else if (link == 2) { # link = log
+    else if (link == 2) {  // log
       for (n in 1:rows(eta)) {
         ll[n] <- gamma_log(y[n], shape, shape / exp(eta[n]));
       }
     }
-    else { # link = identity
+    else {  // link = identity
       for (n in 1:rows(eta)) {
         ll[n] <- gamma_log(y[n], shape, shape / eta[n]);
       }
@@ -194,7 +211,9 @@ functions {
                          int link, vector log_y, vector sqrt_y) {
     vector[rows(y)] ll;
     vector[rows(y)] mu;
-    if (link < 1 || link > 4) reject("Invalid link");
+    if (link < 1 || link > 4) 
+      reject("Invalid link");
+      
     mu <- linkinv_inv_gaussian(eta, link);
     for (n in 1:rows(y))
       ll[n] <- -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
@@ -244,7 +263,7 @@ functions {
 }
 data {
   #include "NKX.txt"
-  vector[N] y; // continuous outcome
+  vector[N] y;  // continuous outcome
   #include "data_glm.txt"
   #include "weights_offset.txt"
   #include "hyperparameters.txt"
@@ -265,17 +284,17 @@ transformed data {
   }
 }
 parameters {
-  real<lower=0> nu[family == 4]; # df parameter for student_t likelihood
+  real<lower=0> nu[family == 4];  // df parameter for student_t likelihood
   real<lower=if_else(family == 1 || family == 4 || link == 2, 
                      negative_infinity(), 0)> gamma[has_intercept];
   #include "parameters_glm.txt"
-  real<lower=0> dispersion_unscaled; # interpretation depends on family!
+  real<lower=0> dispersion_unscaled;  // interpretation depends on family!
 }
 transformed parameters {
   real dispersion;
   #include "tparameters_glm.txt"
   if (prior_scale_for_dispersion > 0)
-    dispersion <-  prior_scale_for_dispersion * dispersion_unscaled;
+    dispersion <- prior_scale_for_dispersion * dispersion_unscaled;
   else dispersion <- dispersion_unscaled;
   if (t > 0) {
     theta_L <- make_theta_L(len_theta_L, p, 
@@ -295,7 +314,7 @@ model {
   }
   
   // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if (family == 1) {
       if (link == 1) y ~ normal(eta, dispersion);
       else if (link == 2) y ~ lognormal(eta, dispersion);
@@ -309,11 +328,11 @@ model {
       y ~ inv_gaussian(linkinv_inv_gaussian(eta, link), 
                        dispersion, sum_log_y, sqrt_y);
     }
-    else { # family == 4
+    else {  // family == 4
       y ~ student_t(nu[1], linkinv_t(eta, link), dispersion);
     }
   }
-  else if (prior_PD == 0) { # weighted log-likelihoods
+  else if (prior_PD == 0) {  // weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands <- pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands <- pw_gamma(y, eta, dispersion, link);
@@ -325,10 +344,13 @@ model {
   // Log-prior for df if family == 4 (student t)
   if (family == 4 && prior_shape_for_df > 0 && prior_rate_for_df > 0) 
     nu ~ gamma(prior_shape_for_df, prior_rate_for_df);
+  
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) 
     dispersion_unscaled ~ cauchy(0, 1);
+  
   #include "priors_glm.txt"
+  
   if (t > 0) 
     decov_lp(z_b, z_T, rho, zeta, tau, 
              regularization, delta, shape, t, p);
@@ -367,7 +389,7 @@ generated quantities {
       if (link > 1) eta <- linkinv_inv_gaussian(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + inv_gaussian_rng(eta[n], dispersion);
     }
-    else { # family == 4 (student t)
+    else { // family == 4 (student t)
       if (link > 1) eta <- linkinv_t(eta, link);
       for (n in 1:N) mean_PPD <- mean_PPD + student_t_rng(nu[1], eta[n], dispersion);
     }
