@@ -4,7 +4,7 @@
   int<lower=0> len_rho;
   real<lower=0> delta[len_concentration];
   int<lower=1> pos;
-  if      (prior_dist <= 2) hs <- 0;
+  if (prior_dist <= 2) hs <- 0;
   else if (prior_dist == 3) hs <- 2;
   else if (prior_dist == 4) hs <- 4;
   len_z_T <- 0;

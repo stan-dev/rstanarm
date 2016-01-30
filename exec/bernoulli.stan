@@ -1,6 +1,6 @@
-# include "license.txt"
+#include "license.txt"
 
-# GLM for a Bernoulli outcome
+// GLM for a Bernoulli outcome
 functions {
   #include "common_functions.txt"
   
@@ -14,16 +14,18 @@ functions {
    */
   vector linkinv_bern(vector eta, int link) {
     vector[rows(eta)] pi;
-    if (link < 1 || link > 5) reject("Invalid link");
-    if      (link == 1)
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
+      
+    if (link == 1)  // logit
       for(n in 1:rows(eta)) pi[n] <- inv_logit(eta[n]);
-    else if (link == 2)
+    else if (link == 2)  // probit
       for(n in 1:rows(eta)) pi[n] <- Phi(eta[n]);
-    else if (link == 3) 
+    else if (link == 3)  // cauchit
       for(n in 1:rows(eta)) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
-    else if (link == 4) 
+    else if (link == 4)  // log
       for(n in 1:rows(eta)) pi[n] <- exp(eta[n]);
-    else if (link == 5) 
+    else if (link == 5)  // cloglog
       for(n in 1:rows(eta)) pi[n] <- inv_cloglog(eta[n]);
     return pi;
   }
@@ -38,28 +40,30 @@ functions {
    * @return lp__
    */
   real ll_bern_lp(vector eta0, vector eta1, int link, int[] N) {
-    if (link < 1 || link > 5) reject("Invalid link");
-    if (link == 1) { // logit link
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
+      
+    if (link == 1) { // logit
 //      0 ~ bernoulli_logit(eta0);
 //      1 ~ bernoulli_logit(eta1);
       increment_log_prob(logistic_ccdf_log(eta0, 0, 1));
       increment_log_prob(logistic_cdf_log(eta1, 0, 1));
     }
-    else if (link == 2) { // probit link
+    else if (link == 2) {  // probit
       increment_log_prob(normal_ccdf_log(eta0, 0, 1));
       increment_log_prob(normal_cdf_log(eta1, 0, 1));
     }
-    else if (link == 3) { // cauchit link
+    else if (link == 3) {  // cauchit
       increment_log_prob(cauchy_ccdf_log(eta0, 0, 1));
       increment_log_prob(cauchy_cdf_log(eta1, 0, 1));
     }
-    else if(link == 4) { // log link
+    else if(link == 4) {  // log
       vector[N[1]]       log_pi0;
       for (n in 1:N[1])  log_pi0[n] <- log1m_exp(eta0[n]);
       increment_log_prob(log_pi0);
-      increment_log_prob(eta1); # already in log form
+      increment_log_prob(eta1);  // already in log form
     }
-    else if(link == 5) { // cloglog link
+    else if(link == 5) {  // cloglog
       vector[N[2]]       log_pi1;
       for (n in 1:N[2])  log_pi1[n] <- log1m_exp(-exp(eta1[n]));
       increment_log_prob(log_pi1);
@@ -81,11 +85,12 @@ functions {
     vector[rows(eta)] ll;
     if (link < 1 || link > 5) 
       reject("Invalid link");
-    if (link == 1) { # link = logit
+      
+    if (link == 1) {  // logit
       for (n in 1:rows(eta)) ll[n] <- bernoulli_logit_log(y, eta[n]);
     }
-    else { # link = probit, cauchit, log, or cloglog 
-           # Note: this may not be numerically stable
+    else {  // link = probit, cauchit, log, or cloglog 
+            // Note: this may not be numerically stable
       vector[rows(eta)] pi;
       pi <- linkinv_bern(eta, link);
       for (n in 1:rows(eta)) ll[n] <- bernoulli_log(y, pi[n]) ;
@@ -94,35 +99,35 @@ functions {
   }
 }
 data {
-  # dimensions
-  int<lower=0> K;                # number of predictors
-  int<lower=1> N[2];             # number of observations where y = 0 and y = 1 respectively
-  vector[K] xbar;                # vector of column-means of rbind(X0, X1)
-  matrix[N[1],K] X0;             # centered (by xbar) predictor matrix | y = 0
-  matrix[N[2],K] X1;             # centered (by xbar) predictor matrix | y = 1
+  // dimensions
+  int<lower=0> K;     // number of predictors
+  int<lower=1> N[2];  // number of observations where y = 0 and y = 1 respectively
+  vector[K] xbar;     // vector of column-means of rbind(X0, X1)
+  matrix[N[1],K] X0;  // centered (by xbar) predictor matrix | y = 0
+  matrix[N[2],K] X1;  // centered (by xbar) predictor matrix | y = 1
   #include "data_glm.txt"
 
-  # weights
-  int<lower=0,upper=1> has_weights; # 0 = No, 1 = Yes
+  // weights
+  int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
   vector[N[1] * has_weights] weights0;
   vector[N[2] * has_weights] weights1;
   
-  # offset
-  int<lower=0,upper=1> has_offset;  # 0 = No, 1 = Yes
+  // offset
+  int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
   vector[N[1] * has_offset] offset0;
   vector[N[2] * has_offset] offset1;
   
   #include "hyperparameters.txt"
   #include "glmer_stuff.txt"
 
-  # more glmer stuff
-  int<lower=0> num_non_zero[2];     # number of non-zero elements in the Z matrices
-  vector[num_non_zero[1]] w0;       # non-zero elements in the implicit Z0 matrix
-  vector[num_non_zero[2]] w1;       # non-zero elements in the implicit Z1 matrix
-  int<lower=0> v0[num_non_zero[1]]; # column indices for w0
-  int<lower=0> v1[num_non_zero[2]]; # column indices for w1
-  int<lower=0> u0[(N[1]+1)*(t>0)];  # where the non-zeros start in each row of Z0
-  int<lower=0> u1[(N[2]+1)*(t>0)];  # where the non-zeros start in each row of Z1
+  // more glmer stuff
+  int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
+  vector[num_non_zero[1]] w0;       // non-zero elements in the implicit Z0 matrix
+  vector[num_non_zero[2]] w1;       // non-zero elements in the implicit Z1 matrix
+  int<lower=0> v0[num_non_zero[1]]; // column indices for w0
+  int<lower=0> v1[num_non_zero[2]]; // column indices for w1
+  int<lower=0> u0[(N[1]+1)*(t>0)];  // where the non-zeros start in each row of Z0
+  int<lower=0> u1[(N[2]+1)*(t>0)];  // where the non-zeros start in each row of Z1
 }
 transformed data {
   int NN;
@@ -156,11 +161,11 @@ model {
     }
   }
   // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
-    real dummy; # irrelevant but useful for testing
+  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
+    real dummy;  // irrelevant but useful for testing
     dummy <- ll_bern_lp(eta0, eta1, link, N);
   }
-  else if (prior_PD == 0) { # weighted log-likelihoods
+  else if (prior_PD == 0) {  // weighted log-likelihoods
     increment_log_prob(dot_product(weights0, pw_bern(0, eta0, link)));
     increment_log_prob(dot_product(weights1, pw_bern(1, eta1, link)));
   }
