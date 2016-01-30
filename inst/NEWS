@@ -2,6 +2,10 @@ The Future (2.9.0-x)
 1. Bug fixes
   * Vignettes now view correctly on the CRAN webiste thanks to Yihui Xie
   * Fix problem with models without intercepts thanks to Paul-Christian Buerkner
+2. Changes
+  * Introduces rstanarm_family() as an additional way of specifying the 
+  family argument, allowing the user to set family-specific hyperparameters.
+  Replaces prior_options().
 
 Sat Jan 09 2016 (2.9.0-1)
   Initial CRAN release
