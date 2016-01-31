@@ -43,3 +43,6 @@ before_install:
 
 after_success:
   - Rscript -e 'covr::codecov()'
+
+after_failure:
+  - cat rstanarm.Rcheck/00*
