@@ -25,6 +25,8 @@ stanmodels <- sapply(stan_files, function(f) {
   isystem <- system.file("chunks", package = "rstanarm")
   if (!file.exists(file.path(isystem, "common_functions.stan")))
     isystem <- file.path("inst", "chunks")
+  if (!file.exists(file.path(isystem, "common_functions.stan")))
+    isystem <- file.path("..", "inst", "chunks")
   stanfit <- rstan::stanc_builder(f, isystem)
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
