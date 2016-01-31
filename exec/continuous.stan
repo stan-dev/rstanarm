@@ -1,8 +1,8 @@
-#include "license.txt"
+#include "license.stan"
 
 # GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
-  #include "common_functions.txt"
+  #include "common_functions.stan"
 
   /** 
    * Apply inverse link function to linear predictor
@@ -202,19 +202,19 @@ functions {
   
 }
 data {
-  #include "NKX.txt"
+  #include "NKX.stan"
   vector[N] y; // continuous outcome
-  #include "data_glm.txt"
-  #include "weights_offset.txt"
-  #include "hyperparameters.txt"
-  #include "glmer_stuff.txt"
-  #include "glmer_stuff2.txt"
+  #include "data_glm.stan"
+  #include "weights_offset.stan"
+  #include "hyperparameters.stan"
+  #include "glmer_stuff.stan"
+  #include "glmer_stuff2.stan"
 }
 transformed data {
   vector[N * (family == 3)] sqrt_y;
   vector[N * (family == 3)] log_y;
   real sum_log_y;
-  #include "tdata_glm.txt"
+  #include "tdata_glm.stan"
   if      (family == 1) sum_log_y <- not_a_number();
   else if (family == 2) sum_log_y <- sum(log(y));
   else {
@@ -226,12 +226,12 @@ transformed data {
 parameters {
   real<lower=if_else(family == 1 || link == 2, 
                      negative_infinity(), 0)> gamma[has_intercept];
-  #include "parameters_glm.txt"
+  #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
 }
 transformed parameters {
   real dispersion;
-  #include "tparameters_glm.txt"
+  #include "tparameters_glm.stan"
   if (prior_scale_for_dispersion > 0)
     dispersion <-  prior_scale_for_dispersion * dispersion_unscaled;
   else dispersion <- dispersion_unscaled;
@@ -242,14 +242,14 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.txt"
+  #include "make_eta.stan"
   if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
     if (family == 1 || link == 2) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.txt"
+    #include "eta_no_intercept.stan"
   }
   
   // Log-likelihood 
@@ -258,7 +258,7 @@ model {
       if (link == 1)      y ~ normal(eta, dispersion);
       else if (link == 2) y ~ lognormal(eta, dispersion);
       else y ~ normal(divide_real_by_vector(1, eta), dispersion);
-      // divide_real_by_vector() is defined in common_functions.txt
+      // divide_real_by_vector() is defined in common_functions.stan
     }
     else if (family == 2) {
       y ~ GammaReg(eta, dispersion, link, sum_log_y);
@@ -278,7 +278,7 @@ model {
 
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
-  #include "priors_glm.txt"
+  #include "priors_glm.stan"
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -289,7 +289,7 @@ generated quantities {
   if (has_intercept == 1)
     alpha[1] <- gamma[1] - dot_product(xbar, beta);
   {
-    #include "make_eta.txt"
+    #include "make_eta.stan"
     if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (family == 1 || link == 2) eta <- eta + gamma[1];
@@ -301,7 +301,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.txt"
+      #include "eta_no_intercept.stan"
     }
     
     if (family == 1) {
