@@ -27,7 +27,7 @@ REFRESH <- ITER
 context("family stuff")
 
 test_that("default_prior_params works", {
-  defs <- rstanarm:::default_prior_params
+  defs <- rstanarm:::default_hyperparams
   expect_error(defs("gaussian"), regexp = "'family' should be a family object")
   
   ans <- list(scaled = TRUE, 
