@@ -1,4 +1,4 @@
-#include "license.txt"
+#include "license.stan"
 
 // GLM for an ordinal outcome with coherent priors
 functions {
@@ -134,11 +134,11 @@ functions {
   }
 }
 data {
-  #include "NKX.txt"
+  #include "NKX.stan"
   int<lower=2> J;  // number of outcome categories, which typically is > 2
   int<lower=1,upper=J> y[N];  // ordinal outcome
-  #include "data_glm.txt"
-  #include "weights_offset.txt"
+  #include "data_glm.stan"
+  #include "weights_offset.stan"
 
   # hyperparameter values
   real<lower=0> regularization;
@@ -176,7 +176,7 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.txt"
+  #include "make_eta.stan"
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if (is_skewed == 0)
       increment_log_prob(pw_polr(y, eta, cutpoints, link, 1.0));
@@ -203,7 +203,7 @@ generated quantities {
   if (J == 2) zeta <- -zeta;
   mean_PPD <- rep_vector(0,rows(mean_PPD));
   {
-    #include "make_eta.txt"
+    #include "make_eta.stan"
     for (n in 1:N) {
       vector[J] theta;
       int y_tilde;

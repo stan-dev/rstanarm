@@ -18,6 +18,8 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
+set.seed(12345)
+
 MODELS_HOME <- "exec"
 fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) {
@@ -34,10 +36,13 @@ if (!file.exists(MODELS_HOME)) {
 context("setup")
 test_that("Stan programs are available", {
   message(MODELS_HOME)
-  expect_true(file.exists(MODELS_HOME))  
+  expect_true(file.exists(MODELS_HOME))
+  expect_true(file.exists(file.path(system.file("chunks", package = "rstanarm"), 
+                                    "common_functions.stan")))
+  
 })
   
-stopifnot(require(rstan))
+library(rstan)
 Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
@@ -50,8 +55,9 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(readLines(file.path(MODELS_HOME, "common_functions.txt")), 
-               unlist(functions))
+print(MODELS_HOME)
+functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
+                                   "common_functions.stan")), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
