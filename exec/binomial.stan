@@ -1,8 +1,8 @@
-#include "license.txt"
+#include "license.stan"
 
 // GLM for a binomial outcome
 functions {
-  #include "common_functions.txt"
+  #include "common_functions.stan"
   
   /** 
    * Apply inverse link function to linear predictor
@@ -83,24 +83,24 @@ functions {
   }
 }
 data {
-  #include "NKX.txt"
+  #include "NKX.stan"
   int<lower=0> y[N];       // outcome: number of successes
   int<lower=0> trials[N];  // number of trials
-  #include "data_glm.txt"
-  #include "weights_offset.txt"
-  #include "hyperparameters.txt"
-  #include "glmer_stuff.txt"
-  #include "glmer_stuff2.txt"
+  #include "data_glm.stan"
+  #include "weights_offset.stan"
+  #include "hyperparameters.stan"
+  #include "glmer_stuff.stan"
+  #include "glmer_stuff2.stan"
 }
 transformed data {
-  #include "tdata_glm.txt"
+  #include "tdata_glm.stan"
 }
 parameters {
   real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.txt"
+  #include "parameters_glm.stan"
 }
 transformed parameters {
-  #include "tparameters_glm.txt"
+  #include "tparameters_glm.stan"
   if (t > 0) {
     theta_L <- make_theta_L(len_theta_L, p, 
                             1.0, tau, scale, zeta, rho, z_T);
@@ -108,14 +108,14 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.txt"
+  #include "make_eta.stan"
   if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
     if (link != 4) eta <- eta + gamma[1];
     else eta <- gamma[1] + eta - max(eta);
   }
   else {
-    #include "eta_no_intercept.txt"
+    #include "eta_no_intercept.stan"
   }
   
   // Log-likelihood 
@@ -126,7 +126,7 @@ model {
   else if (prior_PD == 0) 
     increment_log_prob(dot_product(weights, pw_binom(y, trials, eta, link)));
   
-  #include "priors_glm.txt"
+  #include "priors_glm.stan"
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -138,7 +138,7 @@ generated quantities {
   mean_PPD <- 0;
   {
     vector[N] pi;
-    #include "make_eta.txt"
+    #include "make_eta.stan"
     if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (link != 4) eta <- eta + gamma[1];
@@ -150,7 +150,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.txt"
+      #include "eta_no_intercept.stan"
     }
     
     pi <- linkinv_binom(eta, link);

@@ -1,4 +1,4 @@
-#include "license.txt"
+#include "license.stan"
 
 // GLM for a Gaussian outcome with no link function
 functions {
