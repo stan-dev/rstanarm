@@ -1,7 +1,7 @@
 language: r
 sudo: required
 
-warnings_are_errors: TRUE
+warnings_are_errors: FALSE
 
 os:
   - osx
@@ -41,7 +41,7 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
-before_script:
+after_script:
   - tar -ztvf rstanarm_*.tar.gz
 
 after_success:
