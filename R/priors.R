@@ -252,7 +252,7 @@
 #' compare_priors(scale = 5, xlim = c(-20,20)) 
 #' 
 #' # If you use a prior like normal(0, 1000) to be "non-informative" you are 
-#' # actually saying that coefficient a value of e.g. -500 is quite plausible
+#' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
 normal <- function(location = 0, scale = NULL) {
@@ -359,10 +359,10 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (what == "mode") {
     stopifnot(location > 0, location <= 1)
     if (K <= 2)
-      stop(paste0("From R2 prior", 
-                  "\nThe mode of the beta distribution does not exist ",
-                  "with fewer than three predictors.", 
-                  "\nSpecify 'what' as 'mean', 'median', or 'log' instead."),
+      stop(paste("R2 prior error.", 
+                 "The mode of the beta distribution does not exist",
+                 "with fewer than three predictors.", 
+                 "Specify 'what' as 'mean', 'median', or 'log' instead."),
            call. = FALSE)
     eta <- (half_K - 1  - location * half_K + location * 2) / location
   } else if (what == "mean") {

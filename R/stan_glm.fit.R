@@ -340,11 +340,6 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stanfit <- stanmodels$bernoulli
     } else {
       standata$trials <- trials
-      if (length(weights) & !all(weights == 1)) {
-        standata$y <- round(y * trials)
-        standata$weights <- double(0)
-        standata$has_weights <- 0L
-      }
       stanfit <- stanmodels$binomial
     }
   } else if (is.poisson(famname)) {
