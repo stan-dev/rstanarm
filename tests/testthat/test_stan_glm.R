@@ -37,7 +37,11 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm.nb(f, family = "neg_binomial_2"), 
                regexp = "'family' should not be specified.")
   
-  # error: prior and prior_intercept not lists
+  # error: prior and prior_intercept
+  expect_error(stan_glm(f, family = "poisson", prior = R2(0.5)), 
+               regexp = "should be one of")
+  expect_error(stan_glm(f, family = "poisson", prior_intercept = R2(0.5)), 
+               regexp = "should be one of")
   expect_error(stan_glm(f, family = "poisson", prior = normal), 
                regexp = "'prior' should be a named list")
   expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
@@ -76,14 +80,6 @@ test_that("gaussian returns expected result for trees example", {
                family = gaussian(link = links[i]))
     expect_equal(coef(fit), coef(ans), tol = 0.021)
   }
-  expect_error(update(fit, prior = dnorm), 
-               regexp = "should be a named list")
-  expect_error(update(fit, prior_intercept = dnorm), 
-               regexp = "should be a named list")
-  expect_error(update(fit, prior = R2(0.5)), 
-               regexp = "should be one of")
-  expect_error(update(fit, prior_intercept = R2(0.5)), 
-               regexp = "should be one of")
 })
 
 context("stan_glm (poisson)")
@@ -214,11 +210,36 @@ test_that("stan_glm returns expected result for binomial example", {
 })
 
 context("stan_glm (student t)")
-test_that("stan_glm returns expected result for student t", {
-  x <- rnorm(1000)
-  alpha <- 2; beta <- 0.5; df <- 4
-  y <- alpha + beta * x + rt(1000, df)
-  fit <- stan_glm(y ~ x, family = t_family(), seed = SEED, iter = 300, cores = 1)
-  expect_equal(round(unname(coef(fit)), 1), c(alpha, beta), tol = 0.2)
-  expect_equal(rstanarm::sigma(fit), 1, tol = 0.2)
+test_that("stan_glm returns expected result for t_family", {
+  N <- 1000
+  alpha <- 2 
+  beta <- seq(-1, 1, length.out = 5); 
+  scale = 2
+  df <- 4
+  X <- cbind(matrix(rnorm(N * 2), ncol = 2), 
+             matrix(rbinom(N * 2, 1, 0.5), ncol = 2), 
+             gl(n = 4, k = 1, length = 1000))
+  y <- alpha + X %*% beta + scale * rt(N, df)
+  par <- c(alpha, beta, scale, df)
+  lb <- c(rep(-Inf, length(par) - 2), rep(0, 2))
+  opt <- optim(method = "L-BFGS", lower = lb, upper = Inf,
+               par = par, X = X, y = y, 
+               fn = function(par, X, y) {
+                 L <- length(par)
+                 alpha <- par[1]
+                 beta <- par[2:(L-2)]
+                 scale <- par[L-1]
+                 df <- par[L]
+                 mu <- alpha + X %*% beta
+                 lls <- dt((y - mu) / scale, df = df, log = TRUE) - log(scale)
+                 return(-sum(lls))
+               })
+  ans <- opt$par
+  
+  fit <- stan_glm(y ~ X, family = t_family(), seed  = SEED,
+                  prior = NULL, prior_intercept = NULL,
+                  tol_rel_obj = .Machine$double.eps, 
+                  algorithm = "optimizing")
+  val <- unname(c(coef(fit), fit$stan_summary[c("sigma", "df"), "Median"]))
+  expect_equal(val, ans, tol = 0.021)
 })
