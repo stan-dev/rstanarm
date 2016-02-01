@@ -215,9 +215,9 @@
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' fam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2)
+#' gfam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2)
 #' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, 
-#'                            family = fam, prior_PD = TRUE,
+#'                            family = gfam, prior_PD = TRUE,
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10))
 #' 
@@ -262,11 +262,19 @@
 #' 
 NULL
 
+as.rstanarm_prior <- function(x) {
+  structure(x, class = c(class(x), "rstanarm_prior"))
+}
+is.rstanarm_prior <- function(x) {
+  inherits(x, "rstanarm_prior")
+}
+
 #' @rdname priors
 #' @export
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)
-  nlist(dist = "normal", df = NA, location, scale)
+  prior <- nlist(dist = "normal", df = NA, location, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -274,20 +282,23 @@ normal <- function(location = 0, scale = NULL) {
 student_t <- function(df = 1, location = 0, scale = NULL) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
-  nlist(dist = "t", df, location, scale)
+  prior <- nlist(dist = "t", df, location, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 cauchy <- function(location = 0, scale = NULL) {
-  student_t(df = 1, location = location, scale = scale)
+  prior <- student_t(df = 1, location = location, scale = scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 hs <- function(df = 3) {
   validate_parameter_value(df)
-  nlist(dist = "hs", df, location = 0, scale = 1)
+  prior <- nlist(dist = "hs", df, location = 0, scale = 1)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -296,7 +307,8 @@ hs_plus <- function(df1 = 3, df2 = 3) {
   validate_parameter_value(df1)
   validate_parameter_value(df2)
   # scale gets used as a second df hyperparameter
-  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+  prior <- nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -316,20 +328,23 @@ decov <- function(regularization = 1, concentration = 1,
   validate_parameter_value(concentration)
   validate_parameter_value(shape)
   validate_parameter_value(scale)
-  nlist(dist = "decov", regularization, concentration, shape, scale)
+  prior <- nlist(dist = "decov", regularization, concentration, shape, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 dirichlet <- function(concentration = 1) {
   validate_parameter_value(concentration)
-  nlist(dist = "dirichlet", concentration)
+  prior <- nlist(dist = "dirichlet", concentration)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
-  list(dist = "R2", location = location, what = what, df = 0, scale = 0)
+  prior <- nlist(dist = "R2", location, what, df = 0, scale = 0)
+  as.rstanarm_prior(prior)
 }
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
