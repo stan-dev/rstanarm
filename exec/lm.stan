@@ -116,7 +116,9 @@ generated quantities {
   real mean_PPD[J];
   vector[K] beta[J];
   for (j in 1:J) {
-    mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j]);
+    if (has_intercept == 1)
+      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j]);
+    else mean_PPD[j] <- normal_rng(shift[j], sigma[j]);
     beta[j] <- R_inv[j] * theta[j];
   }
 }

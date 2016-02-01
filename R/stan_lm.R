@@ -121,25 +121,24 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
     mf$adapt_delta <- NULL
+  mf$method <- "model.frame"
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
-  mt <- modelframe$terms
-  Y <- modelframe$y
-  X <- modelframe$x
-  if (!singular.ok) 
-    X <- X[, !is.na(modelframe$coefficients), drop = FALSE]
-  w <- modelframe$weights
-  offset <- model.offset(mf)
-  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
+  mt <- attr(modelframe, "terms")
+  Y <- model.response(modelframe, "numeric")
+  X <- model.matrix(mt, modelframe, contrasts)
+  w <- as.vector(model.weights(modelframe))
+  offset <- as.vector(model.offset(modelframe))
+  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = singular.ok,
                           prior = prior, prior_intercept = prior_intercept, 
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
-  fit <- nlist(stanfit, family = gaussian(), formula, offset, 
-               weights = w, x = X, y = Y, 
-               data = if (missing("data")) environment(formula) else data,
+  fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
+               x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
+               y = Y, data = if (missing("data")) environment(formula) else data,
                prior.info = prior, 
                algorithm, call, terms = mt,
-               model = if (model) model.frame(modelframe) else NULL,
+               model = if (model) modelframe else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
