@@ -20,13 +20,16 @@
 
 library(rstanarm)
 SEED <- 123
+set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
-REFRESH <- ITER
+REFRESH <- 0
+
+SW <- suppressWarnings
 
 fit <- example_model
-fit2 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, refresh = REFRESH,
-                                  chains = CHAINS,  seed = SEED))
+fit2 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, chains = CHAINS,
+                    seed = SEED, refresh = REFRESH))
 
 context("deprecated ppcheck")
 test_that("ppcheck issues deprecation warning", {
@@ -57,7 +60,7 @@ test_that("pp_check doesn't throw bad errors", {
 })
 
 test_that("pp_check ok for vb", {
-  fit3 <- update(fit2, algorithm = "meanfield", iter = 10000)
+  fit3 <- SW(update(fit2, algorithm = "meanfield", iter = 10000))
   expect_silent(p <- pp_check(fit3))
   expect_silent(p <- pp_check(fit3, check = "resid"))
   expect_silent(p <- pp_check(fit3, check = "scat"))
@@ -70,7 +73,7 @@ test_that("pp_check throws appropriate errors", {
   expect_error(p <- pp_check(fit, check = "test", test = c("mean", "sd", "var")), 
                regexp = "length 1 or 2")
   
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
   expect_error(pp_check(fito), regexp = "algorithm")
   expect_error(pp_check(rnorm(10)), regexp = "not a stanreg object")
 })
@@ -83,8 +86,8 @@ test_that("pp_check throws appropriate warnings", {
 test_that("pp_check binned residual plot ok for factors", {
   ir2 <- iris[-c(1:50), ]
   ir2$Species <- factor(ir2$Species)
-  fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
-                   data=ir2, family = "binomial", iter = ITER, refresh = REFRESH,
-                  chains = CHAINS,  seed = SEED)
+  fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
+                   data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
+                   seed = SEED, refresh = REFRESH))
   expect_silent(p <- pp_check(fit3, check = "resid"))
 })
