@@ -70,7 +70,7 @@ test_that("gaussian returns expected result for trees example", {
   links <- c("identity", "log", "inverse")
   for (i in 1:length(links)) {
     if (links[i] == "inverse") next # unreliable
-    fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
+    fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees,
                     family = rstanarm_family("gaussian", link = links[i], 
                                              prior_scale_for_dispersion = NULL),
                     prior = NULL, prior_intercept = NULL,
@@ -112,11 +112,11 @@ test_that("stan_glm returns something for glm negative binomial example", {
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
-                     seed  = SEED, chains = 1, iter = 100,
+                     seed = SEED, chains = 1, iter = 100,
                      prior_PD = TRUE, QR = TRUE, refresh = 100)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
-                        seed  = SEED, chains = 1, iter = 100,
+                        seed = SEED, chains = 1, iter = 100,
                         prior_PD = TRUE, QR = TRUE, refresh = 100)
     expect_is(fit1, "stanreg")
     expect_is(fit2, "stanreg")
