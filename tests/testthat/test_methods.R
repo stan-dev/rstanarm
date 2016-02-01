@@ -22,31 +22,29 @@ SEED <- 12345
 set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
-REFRESH <- ITER
+REFRESH <- 0
 
-stan_glm1 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                                 chains = CHAINS,  seed = SEED, 
-                                 refresh = REFRESH))
-stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
-stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000, 
-                       seed = SEED)
+SW <- suppressWarnings
+
+stan_glm1 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                         chains = CHAINS, seed = SEED, refresh = REFRESH))
+stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                          seed = SEED)
+stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000)
 glm1 <- glm(mpg ~ wt, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
-stan_lmer1 <- suppressWarnings(stan_lmer(diameter ~ (1|plate) + (1|sample), 
-                                        data = Penicillin, iter = ITER, 
-                                        chains = CHAINS, 
-                                        seed = SEED, refresh = REFRESH))
+stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, 
+                           iter = ITER, chains = CHAINS, seed = SEED, 
+                           refresh = REFRESH))
 lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
-stan_lmer2 <- suppressWarnings(stan_lmer(Reaction ~ Days + (Days | Subject), 
-                                        data = sleepstudy, iter = ITER, 
-                                        chains = CHAINS, 
-                                        seed = SEED, refresh = REFRESH))
+stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy, 
+                           iter = ITER, chains = CHAINS, seed = SEED, 
+                           refresh = REFRESH))
 
-stan_polr1 <- suppressWarnings(stan_polr(tobgp ~ agegp, data = esoph,
-                                       prior = R2(0.2, "mean"), init_r = 0.1, 
-                                       iter = ITER, chains = CHAINS, 
-                                        seed = SEED, refresh = REFRESH))
+stan_polr1 <- SW(stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"), 
+                           init_r = 0.1, iter = ITER, chains = CHAINS, 
+                           seed = SEED, refresh = REFRESH))
 polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
 
 att_names <- function(object) {
@@ -437,10 +435,10 @@ test_that("formula works properly", {
 test_that("update works properly", {
   pss <- rstanarm:::posterior_sample_size
   
-  fit <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS)
+  fit <- SW(update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS))
   expect_equal(pss(fit), 4 * pss(stan_lmer2))
   
-  fit <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS)
+  fit <- SW(update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS))
   expect_equal(pss(fit), 4 * pss(stan_glm1))
   
   call_only <- update(fit, evaluate = FALSE)
