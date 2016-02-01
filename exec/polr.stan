@@ -1,6 +1,6 @@
-#include "license.txt"
+#include "license.stan"
 
-# GLM for an ordinal outcome with coherent priors
+// GLM for an ordinal outcome with coherent priors
 functions {
   
   /** 
@@ -12,14 +12,16 @@ functions {
   */
   real CDF_polr(real x, int link) {
     // links in MASS::polr() are in a different order than binomial() 
-    // "logistic", "probit", "loglog", "cloglog", "cauchit"
+    // logistic, probit, loglog, cloglog, cauchit
     real p;
-    if (link < 1 || link > 5) reject("Invalid link");
-    if      (link == 1) p <- inv_logit(x);
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
+      
+    if (link == 1) p <- inv_logit(x);
     else if (link == 2) p <- Phi(x);
     else if (link == 3) p <- gumbel_cdf(x, 0, 1);
     else if (link == 4) p <- inv_cloglog(x);
-    else                p <- cauchy_cdf(x, 0, 1);
+    else p <- cauchy_cdf(x, 0, 1);
     return p;
   }
   
@@ -39,15 +41,17 @@ functions {
     int J;
     N <- rows(eta);
     J <- rows(cutpoints) + 1;
-    if (link < 1 || link > 5) reject("Invalid link");
+    if (link < 1 || link > 5) 
+      reject("Invalid link");
+      
     if (alpha == 1) for (n in 1:N) {
-           if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
+      if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link);
       else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
       else ll[n] <- CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
                     CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
     }
     else for (n in 1:N) {
-           if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link) ^ alpha;
+      if (y[n] == 1) ll[n] <- CDF_polr(cutpoints[1] - eta[n], link) ^ alpha;
       else if (y[n] == J) ll[n] <- 1 - CDF_polr(cutpoints[J - 1] - eta[n], link) ^ alpha;
       else reject("alpha not allowed with more than 2 outcome categories")
     }
@@ -66,8 +70,10 @@ functions {
     vector[rows(probabilities) - 1] cutpoints;
     real running_sum;
     // links in MASS::polr() are in a different order than binomial() 
-    // "logistic", "probit", "loglog", "cloglog", "cauchit"
-    if (link < 1 || link > 5) reject("invalid link");
+    // logistic, probit, loglog, cloglog, cauchit
+    if (link < 1 || link > 5) 
+      reject("invalid link");
+      
     running_sum <- 0;
     if (link == 1) for(c in 1:(rows(cutpoints))) {
       running_sum  <- running_sum + probabilities[c];
@@ -101,17 +107,20 @@ functions {
    * @param link An integer indicating the link function
    * @return A scalar from the appropriate conditional distribution
    */
-  
   real draw_ystar_rng(real lower, real upper, real eta, int link) {
     int iter;
     real ystar;
     iter <- 0;
     ystar <- not_a_number();
-    if (lower >= upper) reject("lower must be less than upper");
+    if (lower >= upper) 
+      reject("lower must be less than upper");
+    
     // links in MASS::polr() are in a different order than binomial() 
-    // "logistic", "probit", "loglog", "cloglog", "cauchit"
-    if (link < 1 || link > 5) reject("invalid link");
-    if      (link == 1) while(!(ystar > lower && ystar < upper))
+    // logistic, probit, loglog, cloglog, cauchit
+    if (link < 1 || link > 5) 
+      reject("invalid link");
+      
+    if (link == 1) while(!(ystar > lower && ystar < upper))
       ystar <- logistic_rng(eta, 1);
     else if (link == 2) while(!(ystar > lower && ystar < upper))
       ystar <- normal_rng(eta, 1);
@@ -125,11 +134,11 @@ functions {
   }
 }
 data {
-  #include "NKX.txt"
-  int<lower=2> J;                # number of outcome categories, which typically is > 2
-  int<lower=1,upper=J> y[N];     # ordinal outcome
-  #include "data_glm.txt"
-  #include "weights_offset.txt"
+  #include "NKX.stan"
+  int<lower=2> J;  // number of outcome categories, which typically is > 2
+  int<lower=1,upper=J> y[N];  // ordinal outcome
+  #include "data_glm.stan"
+  #include "weights_offset.stan"
 
   # hyperparameter values
   real<lower=0> regularization;
@@ -151,7 +160,7 @@ transformed data {
 parameters {
   simplex[J] pi;
   vector[K] z_beta;
-  real<lower=0,upper=1>  R2;
+  real<lower=0,upper=1> R2;
   real<lower=0> alpha[is_skewed];
 }
 transformed parameters {
@@ -167,13 +176,13 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.txt"
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+  #include "make_eta.stan"
+  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if (is_skewed == 0)
       increment_log_prob(pw_polr(y, eta, cutpoints, link, 1.0));
     else increment_log_prob(pw_polr(y, eta, cutpoints, link, alpha[1]));
   }
-  else if (prior_PD == 0) { # weighted log-likelihoods
+  else if (prior_PD == 0) {  // weighted log-likelihoods
     if (is_skewed == 0)
       increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0)));
     else increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1])));
@@ -189,12 +198,12 @@ generated quantities {
   vector[(J > 2) * (J - 1) + 1] mean_PPD;
   vector[N * do_residuals] residuals;
   
-  # xbar is actually post multiplied by R^-1
+  // xbar is actually post multiplied by R^-1
   zeta <- cutpoints + dot_product(xbar, beta);
   if (J == 2) zeta <- -zeta;
   mean_PPD <- rep_vector(0,rows(mean_PPD));
   {
-    #include "make_eta.txt"
+    #include "make_eta.stan"
     for (n in 1:N) {
       vector[J] theta;
       int y_tilde;
@@ -212,7 +221,7 @@ generated quantities {
       if (is_skewed == 0) theta[J] <- 1 - previous;
       else theta[J] <- 1 - previous ^ alpha[1];
       if (previous <= 0 || previous >= 1) {
-        # do nothing
+        // do nothing
       }
       else if (J == 2) {
         mean_PPD[1] <- mean_PPD[1] + bernoulli_rng(theta[J]);

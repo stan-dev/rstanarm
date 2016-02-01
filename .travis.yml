@@ -25,6 +25,7 @@ r_binary_packages:
   - gridExtra
   - rstan
   - shinystan
+  - roxygen2
 
 env:
   matrix: 
@@ -40,5 +41,11 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
+after_script:
+  - tar -ztvf rstanarm_*.tar.gz
+
 after_success:
   - Rscript -e 'covr::codecov()'
+
+after_failure:
+  - cat rstanarm.Rcheck/00*

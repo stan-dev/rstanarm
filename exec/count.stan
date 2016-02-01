@@ -1,15 +1,17 @@
-#include "license.txt"
+#include "license.stan"
 
-# GLM for a count outcome
+// GLM for a count outcome
 functions {
-  #include "common_functions.txt"
+  #include "common_functions.stan"
 
   vector linkinv_count(vector eta, int link) {
     vector[rows(eta)] phi;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1) return exp(eta);
-    else if (link == 2) return eta; # link = identity
-    else  # link = sqrt
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 1) return exp(eta);  // log
+    else if (link == 2) return eta;  // identity
+    else  // link = sqrt
       for (n in 1:rows(eta)) phi[n] <- square(eta[n]); 
     return phi;
   }
@@ -23,10 +25,12 @@ functions {
   */
   vector pw_pois(int[] y, vector eta, int link) {
     vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1) # link = log
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
+    if (link == 1)  // log
       for (n in 1:rows(eta)) ll[n] <- poisson_log_log(y[n], eta[n]);
-    else { # link = identity or sqrt
+    else {  // link = identity or sqrt
       vector[rows(eta)] phi;
       phi <- linkinv_count(eta, link);
       for (n in 1:rows(eta)) ll[n] <- poisson_log(y[n], phi[n]) ;
@@ -44,36 +48,37 @@ functions {
   vector pw_nb(int[] y, vector eta, real theta, int link) {
     vector[rows(eta)] ll;
     vector[rows(eta)] rho;
-    if (link < 1 || link > 3) reject("Invalid link");
+    if (link < 1 || link > 3) 
+      reject("Invalid link");
+      
     rho <- linkinv_count(eta, link);
     for (n in 1:rows(eta)) ll[n] <- neg_binomial_2_log(y[n], rho[n], theta);
     return ll;
   }
 }
 data {
-  #include "NKX.txt"
-  int<lower=0> y[N]; // count outcome
-  #include "data_glm.txt"
-  #include "weights_offset.txt"
-  #include "hyperparameters.txt"
-  #include "glmer_stuff.txt"
-  #include "glmer_stuff2.txt"
+  #include "NKX.stan"
+  int<lower=0> y[N];  // count outcome
+  #include "data_glm.stan"
+  #include "weights_offset.stan"
+  #include "hyperparameters.stan"
+  #include "glmer_stuff.stan"
+  #include "glmer_stuff2.stan"
 }
 transformed data{
   real poisson_max;
-  #include "tdata_glm.txt"
+  #include "tdata_glm.stan"
   poisson_max <- pow(2.0, 30.0);
 }
 parameters {
   real<lower=if_else(link == 1, negative_infinity(), 0)> gamma[has_intercept];
-  #include "parameters_glm.txt"
+  #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
-  
 }
 transformed parameters {
   real dispersion[family > 1];
-  #include "tparameters_glm.txt"
+  #include "tparameters_glm.stan"
   if (family > 1 && prior_scale_for_dispersion > 0) 
     dispersion[1] <- prior_scale_for_dispersion * dispersion_unscaled[1];
   else if (family > 1) dispersion[1] <- dispersion_unscaled[1];
@@ -88,14 +93,14 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.txt"
+  #include "make_eta.stan"
   if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);  
   if (has_intercept == 1) {
     if (link == 1) eta <- eta + gamma[1];
     else eta <- eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.txt"
+    #include "eta_no_intercept.stan"
   }
   
   if (family == 3) {
@@ -105,7 +110,7 @@ model {
   }
   
   // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if(family != 2) {
       if (link == 1) y ~ poisson_log(eta);
       else y ~ poisson(linkinv_count(eta, link));
@@ -123,7 +128,9 @@ model {
   // Log-prior for dispersion
   if (family > 1 && prior_scale_for_dispersion > 0) 
     dispersion_unscaled ~ cauchy(0, 1);
-  #include "priors_glm.txt"
+  
+  #include "priors_glm.stan"
+  
   // Log-prior for noise
   if (family == 3) noise[1] ~ gamma(dispersion[1], 1);
   
@@ -137,7 +144,7 @@ generated quantities {
   mean_PPD <- 0;
   {
     vector[N] nu;
-    #include "make_eta.txt"
+    #include "make_eta.stan"
     if (t > 0) eta <- eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (link == 1) eta <- eta + gamma[1];
@@ -149,7 +156,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.txt"
+      #include "eta_no_intercept.stan"
     }
     
     if (family == 3) {

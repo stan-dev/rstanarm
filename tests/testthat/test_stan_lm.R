@@ -46,10 +46,12 @@ test_that("stan_lm returns expected result for trees example", {
 
 test_that("stan_lm doesn't break with less common priors", {
   # prior = NULL
-  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, prior = NULL,
+  expect_output(fit <- stan_lm(mpg ~ -1 + ., data = mtcars, prior = NULL,
                 iter = 10, chains = 1, seed = SEED), regexp = "SAMPLING")
   # prior_intercept = normal()
-  expect_output(update(fit, prior_intercept = normal()), regexp = "SAMPLING")
+  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
+                               prior = R2(0.75), prior_intercept = normal(),
+                               iter = 10, chains = 1, seed = SEED), regexp = "SAMPLING")
 })
 
 test_that("stan_lm doesn't break with vb algorithms", {
@@ -60,6 +62,12 @@ test_that("stan_lm doesn't break with vb algorithms", {
   expect_output(fit2 <- update(fit, algorithm = "fullrank"), 
                 regexp = "Automatic Differentiation Variational Inference")
 })
+
+test_that("stan_lm doesn't break without intercept", {
+  stan_lm(mpg ~ -1 + ., data = mtcars, prior = R2(location = 0.75), 
+          seed = SEED, chains = 1, iter = 10)
+})
+
 
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {

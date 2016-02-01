@@ -40,10 +40,14 @@ test_that("stan_polr runs for esoph example", {
   fit2 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                    prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+  fit2vb <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
+                      method = "loglog", seed = SEED, algorithm = "fullrank",
+                      prior = NULL, prior_counts = NULL) # test with NULL priors
 
   expect_is(fit1, "stanreg")
   expect_is(fit2, "stanreg")
   expect_is(fit1vb, "stanreg")
+  expect_is(fit2vb, "stanreg")
   
   
   # fit <- stan_polr(f, data = esoph, prior = NULL, 

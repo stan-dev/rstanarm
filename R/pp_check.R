@@ -287,7 +287,6 @@ pp_check_dens <- function(dat, ...) {
 }
 
 #' @importFrom ggplot2 geom_vline annotate
-#' @importFrom utils packageVersion
 pp_check_stat <- function(y, yrep, test = "mean", ...) {
   vline_color <- .PP_FILL
   fill_color <- "black"

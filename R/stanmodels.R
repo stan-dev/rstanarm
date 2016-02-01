@@ -15,18 +15,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+# This file is only intended to be used during the installation process
+# ncov start
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
-make_stanmodel <- function(f) { # nocov start
+stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
+stanmodels <- sapply(stan_files, function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
-  stanfit <- rstan::stanc_builder(f)
+  isystem <- system.file("chunks", package = "rstanarm")
+  if (!file.exists(file.path(isystem, "common_functions.stan")))
+    isystem <- file.path("inst", "chunks")
+  if (!file.exists(file.path(isystem, "common_functions.stan")))
+    isystem <- file.path("..", "inst", "chunks")
+  stanfit <- rstan::stanc_builder(f, isystem)
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
   return(do.call(methods::new, args = c(stanfit[-(1:3)], Class = "stanmodel", 
                  mk_cppmodule = function(x) get(paste0("model_", model_cppname)))))
-} # nocov end
-
-stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
-stanmodels <- sapply(stan_files, make_stanmodel)
+  }
+)
 names(stanmodels) <- sub("\\.stan$", "", basename(names(stanmodels)))
+rm(MODELS_HOME)
+# ncov end

@@ -1,4 +1,4 @@
-  # hyperparameter values are set to 0 if there is no prior
+  // hyperparameter values are set to 0 if there is no prior
   vector<lower=0>[K] prior_scale;
   real<lower=0> prior_scale_for_intercept;
   vector[K] prior_mean;

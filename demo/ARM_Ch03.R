@@ -5,13 +5,14 @@ source(paste0(ROOT, "ARM/Ch.3/kidiq.data.R"), local = DATA_ENV, verbose = FALSE)
 
 # Estimate four contending models
 post1 <- stan_glm(kid_score ~ mom_hs, data = DATA_ENV, 
-                  family = gaussian(link = "identity"), seed = SEED)
-post2 <- stan_glm(kid_score ~ mom_iq, data = DATA_ENV,
-                  family = gaussian(link = "identity"), seed = SEED)
+                  family = gaussian(link = "identity"), 
+                  seed = SEED, refresh = REFRESH)
+post2 <- update(post1, formula = kid_score ~ mom_iq)
 post3 <- stan_lm(kid_score ~ mom_hs + mom_iq, data = DATA_ENV,
-                 prior = R2(location = 0.25, what = "mean"), seed = SEED)
-post4 <- stan_lm(kid_score ~ mom_hs * mom_iq, data = DATA_ENV,
-                 prior = R2(location = 0.30, what = "mean"), seed = SEED)
+                 prior = R2(location = 0.25, what = "mean"), 
+                 seed = SEED, refresh = REFRESH)
+post4 <- update(post3, formula = kid_score ~ mom_hs * mom_iq,
+                 prior = R2(location = 0.30, what = "mean"))
 
 # Compare them with loo
 loo1 <- loo(post1)
@@ -45,7 +46,8 @@ source(paste0(ROOT, "ARM/Ch.3/kids_before1987.data.R"),
 source(paste0(ROOT, "ARM/Ch.3/kids_after1987.data.R"), 
        local = DATA_ENV, verbose = FALSE)
 post5 <- stan_lm(ppvt ~ hs + afqt, data = DATA_ENV,
-                 prior = R2(location = 0.25, what = "mean"), seed = SEED)
+                 prior = R2(location = 0.25, what = "mean"), 
+                 seed = SEED, refresh = REFRESH)
 y_ev <- posterior_predict(post5, newdata = 
                           data.frame(hs = DATA_ENV$hs_ev, afqt = DATA_ENV$afqt_ev))
 par(mfrow = c(1,1))
