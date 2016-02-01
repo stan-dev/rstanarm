@@ -61,6 +61,12 @@ test_that("stan_lm doesn't break with vb algorithms", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
+test_that("stan_lm doesn't break without intercept", {
+  stan_lm(mpg ~ -1 + ., data = mtcars, prior = R2(location = 0.75), 
+          seed = SEED, chains = 1, iter = 10)
+})
+
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
