@@ -100,6 +100,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   log_omega <- array(0, ifelse(prior_PD == 0, J, 0))
   init_fun <- function(chain_id) {
     out <- list(R2 = R2, log_omega = log_omega)
+    if (has_intercept == 0L) out$z_alpha <- double()
     return(out)
   }
   stanfit <- stanmodels$lm
