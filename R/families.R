@@ -188,9 +188,9 @@ default_hyperparams <- function(family) {
 #' 
 #' @name neg_binomial_2
 #' @export
-#' @param link The same as for \code{\link{poisson}}, typically a character
-#'   vector of length one among \code{"log"}, \code{"identity"}, and
-#'   \code{"sqrt"}.
+#' @param link The same as for \code{\link{poisson}}. Typically a character 
+#'   vector of length one among \code{"log"} (the default), \code{"identity"},
+#'   and \code{"sqrt"}.
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{poisson}} but with a different family name.
 #'   
@@ -212,43 +212,50 @@ neg_binomial_2 <- function(link = "log") {
   out$family <- "neg_binomial_2"
   out$variance <- function(mu, theta) mu + mu^2 / theta
   out$dev.resids <- function(y, mu, wt)
-    stop("'dev.resids' function should not be called")
+    stop("The 'dev.resids' function family 'neg_binomial_2' should not be called.", 
+         call. = FALSE)
   out$aic <- function(y, n, mu, wt, dev)
-    stop("'aic' function should not have been called")
+    stop("The 'aic' function for family 'neg_binomial_2' should not be called.", 
+         call. = FALSE)
   out$simulate <- function(object, nsim)
-    stop("'simulate' function should not have been called")
+    stop("The 'simulate' function for family 'neg_binomial_2' should not be called.", 
+         call. = FALSE)
   return(out)
 }
 
 
 #' Family function for Student t GLMs
 #' 
-#' @name t_family
-#' @export
-#' @templateVar armRef (Ch. 6)
-#' @template reference-gelman-hill
-#' @param link The same as for \code{\link[stats]{gaussian}}.
-#' @return An object of class \code{\link[stats]{family}} very similar to
-#'   that of \code{\link[stats]{gaussian}} but with a different family name.
-#'   
-#' @details   
 #' Estimates of regression coefficients are less sensitive to outliers if the 
 #' Student t distribution is used in place of the normal distribution in 
 #' settings where some errors may be large. These models are sometimes referred 
 #' to as \emph{robust regression models}, however that name is also used in 
-#' other contexts. In the case of \pkg{rstanarm}, if a call to \code{t_family}
-#' is passed to the \code{family} argument of \code{\link{stan_glm}} or
+#' other contexts. In the case of \pkg{rstanarm}, if a call to \code{t_family} 
+#' is passed to the \code{family} argument of \code{\link{stan_glm}} or 
 #' \code{\link{stan_glmer}} then the resulting model is a linear model where the
-#' errors are believed to be distributed Student t conditional on the
-#' predictors. This is equivalent to believing that the errors are Gaussian but
-#' with \emph{different} standard deviations, each of which has the scaled
-#' inverse chi-squared distribution.
+#' errors are believed to be distributed Student t conditional on the 
+#' predictors. This is equivalent to believing that the errors are Gaussian but 
+#' with \emph{different} standard deviations, each of which has the scaled 
+#' inverse chi-squared distribution. See Details for some cautionary advice 
+#' about fitting these models.
 #' 
+#' @name t_family
+#' @export
+#' @templateVar armRef (Ch. 6)
+#' @template reference-gelman-hill
+#' @param link The same as for \code{\link[stats]{gaussian}}. Typically a
+#'   character vector of length one among \code{"identity"} (the default),
+#'   \code{"log"}, and \code{"inverse"}.
+#' @return An object of class \code{\link[stats]{family}} very similar to
+#'   that of \code{\link[stats]{gaussian}} but with a different family name.
+#'   
+#' @details 
 #' These models can induce heavy-tailed posteriors which MCMC algorithms can 
-#' have trouble exploring. Therefore, when fitting a model with t-distributed
-#' errors, we recommend running many chains. It is also advisable to simulate
-#' fake data and check that parameter values can be recovered before trusting
-#' estimates when the model is fit to real data.
+#' have trouble exploring. Therefore, when fitting a model with t-distributed 
+#' errors, we recommend running many chains. Before trusting estimates when the 
+#' model is fit to real data, it is also advisable to simulate fake data and 
+#' parameter values and verying that the parameter values can be (approximately)
+#' recovered from fitting the model to the fake data.
 #' 
 #' @seealso \code{\link{rstanarm_family}} for how to set the values of the
 #'   hyperparameters of a gamma prior on the degrees of freedom parameter.
@@ -271,12 +278,14 @@ neg_binomial_2 <- function(link = "log") {
 t_family <- function(link = "identity") {
   out <- gaussian(link)
   out$family <- "t_family"
-  out$variance <- NULL
   out$dev.resids <- function(y, mu, wt)
-    stop("'dev.resids' function should not be called")
+    stop("The 'dev.resids' function for family 't_family' should not be called.", 
+         call. = FALSE)
   out$aic <- function(y, n, mu, wt, dev)
-    stop("'aic' function should not have been called")
+    stop("The 'aic' function for family 't_family' should not be called.", 
+         call. = FALSE)
   out$simulate <- function(object, nsim)
-    stop("'simulate' function should not have been called")
+    stop("The 'simulate' function for family 't_family' should not be called.", 
+         call. = FALSE)
   return(out)
 }
