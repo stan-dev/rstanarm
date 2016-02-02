@@ -225,9 +225,8 @@ When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model:
 
 ```{r, count-roaches-loo}
-loo1 <- loo(stan_glm1)
-loo2 <- loo(stan_glm2)
-compare(loo1, loo2)
+loos <- list(loo(stan_glm1), loo(stan_glm2))
+compare_models(loos)
 ```
 
 The weight of 1 assigned to the negative binomial is not surprising given 

@@ -213,7 +213,7 @@ loo1 <- loo(post1)
 loo2 <- loo(post2)
 loo3 <- loo(post3)
 loo4 <- loo(post4)
-compare(loo1, loo2, loo3, loo4)
+(comp <- compare_models(list(loo1, loo2, loo3, loo4)))
 ```
 
 The `weights` column gives the estimated posterior probability that each model
