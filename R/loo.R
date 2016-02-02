@@ -20,18 +20,18 @@
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
 #' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC) 
 #' using the \pkg{\link[=loo-package]{loo}} package. Compare two or more models 
-#' using the \code{\link[loo]{compare}} function.
+#' using the \code{compare_models} function.
 #' 
-#' @aliases loo waic compare
+#' @aliases loo waic
 #'
 #' @export
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template reference-loo
 #' @inheritParams loo::loo
-#' @return An object of class 'loo'. See the 'Value' section in 
-#'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
-#'   structure of these objects.
+#' @return The \code{loo} and \code{waic} methods return an object of class
+#'   'loo'. See the 'Value' sections in \code{\link[loo]{loo}} and
+#'   \code{\link[loo]{waic}} for details on the structure of these objects.
 #'   
 #' @details 
 #' The LOO Information Criterion (LOOIC) has the same purpose as the Aikaike
@@ -47,8 +47,6 @@
 #' rstanarm Package} vignette has an example of this entire process.
 #'   
 #' @seealso 
-#' \code{\link[loo]{compare}} for comparing two or more models on LOO and WAIC.
-#' 
 #' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
 #' for details on the computations implemented by the \pkg{loo} package and the 
 #' interpretation of the Pareto \eqn{k} estimates displayed when using the 
@@ -63,12 +61,15 @@
 #' fit2 <- update(fit1, formula = . ~ . + cyl)
 #' (loo1 <- loo(fit1))
 #' loo2 <- loo(fit2)
-#' compare(loo1, loo2)
-#' plot(loo2)
+#' compare_models(loos = list(loo1, loo2))
+#' 
+#' fit3 <- update(fit2, formula = . ~ . + am)
+#' (comp <- compare_models(loos = list(loo1, loo2, loo(fit3))))
+#' print(comp, digits = 2)
 #' 
 #' 
-#' # dataset description at help("lalonde", package = "arm")
-#' data(lalonde, package = "arm") 
+#' # Description of lalonde data at help("lalonde", package = "arm")
+#' data(lalonde, package = "arm")
 #' t7 <- student_t(df = 7) # prior for coefficients
 #' 
 #' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
@@ -80,29 +81,33 @@
 #'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
 #' lalonde2 <- update(lalonde1, formula = f2)
 #' 
-#' (loo_lalonde1 <- loo(lalonde1))
-#' (loo_lalonde2 <- loo(lalonde2))
-#' plot(loo_lalonde2, label_points = TRUE)
-#' compare(loo_lalonde1, loo_lalonde2)
+#' loos <- list(loo(lalonde1), loo(lalonde2))
+#' compare_models(loos)
+#' plot(loos[[2]], label_points = TRUE) # see help("plot.loo", package = "loo")
 #' }
-#' 
-#' @importFrom loo loo loo.function compare
 #' 
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  loo.function(ll_fun(x$family), args = ll_args(x), ...)
+  if (!requireNamespace("digest", quietly = TRUE)) 
+    stop("Please install the 'digest' package.")
+  out <- loo.function(ll_fun(x$family), args = ll_args(x), ...)
+  structure(out, family = family(x), name = deparse(substitute(x)),
+            yhash = digest::digest(get_y(x), algo = "md5"))
 }
 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
 #' @note The \code{...} is ignored for \code{waic}.
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  waic.function(ll_fun(x$family), args = ll_args(x))
+  if (!requireNamespace("digest", quietly = TRUE)) 
+    stop("Please install the 'digest' package.")
+  out <- waic.function(ll_fun(x$family), args = ll_args(x))
+  structure(out, family = family(x), name = deparse(substitute(x)), 
+            yhash = digest::digest(get_y(x), algo = "md5"))
 }
 
 # returns log-likelihood function for loo() and waic()
@@ -252,4 +257,58 @@ ll_args <- function(object) {
       }
   }
   .weighted(val, data$weights)
+}
+
+
+# Compare models
+#
+#' @rdname loo.stanreg
+#' @export
+#' @param loos A list of two or more objects of class "loo" returned by the
+#'   \code{\link[=loo.stanreg]{loo}} method for 
+#'   \code{\link[=stanreg-objects]{stanreg}} objects. See Examples.
+#'   
+#' @details 
+#' \code{compare_models} is a wrapper around \code{\link[loo]{compare}} 
+#' (\pkg{loo}) that performs some extra checks to make sure the models are
+#' suitable for comparison.
+#' 
+#' @return \code{compare_models} returns a vector or matrix with class
+#'   'compare.loo'. If \code{loos} contains more than two objects then a matrix
+#'   is returned. This matrix summarizes the objects and also reports model
+#'   weights (the posterior probability that each model has the best expected 
+#'   out-of-sample predictive accuracy). If \code{loos} contains exactly two 
+#'   objects then the difference in expected predictive accuracy and the 
+#'   standard error of the difference are returned in addition to model weights.
+#'   See the Details section in \code{\link[loo]{compare}}.
+#' 
+compare_models <- function(loos) {
+  loos <- validate_loos(loos)
+  comp <- do.call(compare, loos)
+  if (!is.matrix(comp))  # will happen if there are only two models
+    return(comp)
+  
+  stats <- c("looic", "se_looic", "elpd_loo", "se_elpd_loo", 
+             "p_loo", "se_p_loo", "weights")
+  structure(comp, dimnames = list(names(loos), stats))
+}
+
+validate_loos <- function(loos = list()) {
+  if (!is.list(loos))
+    stop("'loos' should be a list.", call. = FALSE)
+  if (length(loos) <= 1)
+    stop("'loos' should contain at least two objects.", call. = FALSE)
+  families <- lapply(loos, attr, which = "family")
+  ys <- lapply(loos, attr, which = "yhash")
+  family_check <- sapply(families, function(x) {
+    isTRUE(all.equal(x, families[[1]]))
+  })
+  ys_check <- sapply(ys, function(x) {
+    isTRUE(all.equal(x, ys[[1]]))
+  })
+  if (!all(family_check))
+    stop("Not all models have the same family/link.", call. = FALSE)
+  if (!all(ys_check))
+    stop("Not all models fit to the same y variable", call. = FALSE)
+  setNames(loos, nm = lapply(loos, attr, which = "name"))
 }
