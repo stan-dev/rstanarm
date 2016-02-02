@@ -450,5 +450,5 @@ test_that("update works properly", {
   expect_identical(fit$algorithm, "optimizing")
   
   fit$call <- NULL
-  expect_error(update(fit), "does not contain a 'call' component")
+  expect_error(update(fit), regexp = "does not contain a 'call' component")
 })
