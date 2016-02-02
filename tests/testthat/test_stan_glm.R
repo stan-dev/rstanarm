@@ -209,6 +209,7 @@ test_that("stan_glm returns expected result for binomial example", {
   }
 })
 
+
 context("stan_glm (student t)")
 test_that("stan_glm returns expected result for t_family", {
   N <- 1000
@@ -242,4 +243,21 @@ test_that("stan_glm returns expected result for t_family", {
                   algorithm = "optimizing")
   val <- unname(c(coef(fit), fit$stan_summary[c("sigma", "df"), "Median"]))
   expect_equal(val, ans, tol = 0.021)
+})
+
+context("stan_glm (other tests)")
+test_that("model with hs prior doesn't error", {
+  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = hs(), 
+                         seed = SEED, algorithm = "meanfield", QR = TRUE), 
+                regexp = "Automatic Differentiation Variational Inference")
+})
+
+test_that("empty interaction levels dropped", {
+  x1 <- gl(3, 5, 100)
+  x2 <- gl(4, 6, 100)
+  x1[x2 == 1] <- 1
+  x1[x2 == 2] <- 1
+  y <- rnorm(100)
+  expect_warning(stan_glm(y ~ x1*x2, chains = 2, iter = 20, refresh = 0), 
+                 regexp = "Dropped empty interaction levels")
 })
