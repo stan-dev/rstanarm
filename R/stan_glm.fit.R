@@ -451,7 +451,7 @@ pad_reTrms <- function(Z, cnms, flist) {
                Z[, (i+1):ncol(Z), drop = FALSE])
     mark <- mark - 1L
   }
-  return(nlist(Z, cnms, flist))
+  nlist(Z, cnms, flist)
 }
 
 # Drop the extra reTrms from a matrix x
@@ -464,9 +464,5 @@ unpad_reTrms <- function(x, columns = TRUE) {
   nms <- if (columns) 
     colnames(x) else rownames(x)
   keep <- !grepl("_NEW_", nms, fixed = TRUE)
-  if (columns) {
-    x[, keep, drop = FALSE] 
-  } else {
-    x[keep, , drop = FALSE]
-  }
+  if (columns) x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
 }

@@ -28,6 +28,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   if (colnames(x)[1L] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[, -1L, drop = FALSE]
+    if (NCOL(x) == 0L)
+      stop("'stan_lm' is not suitable for estimating a mean.",
+           "\nUse 'stan_glm' with 'family = gaussian()' instead.", 
+           call. = FALSE)
   } else {
     has_intercept <- 0L
   }
@@ -53,10 +57,6 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   J <- 1L
   N <- array(nrow(x), c(J))
   K <- ncol(x)
-  if (K == 0) 
-    stop("'stan_lm.fit' is not suitable for estimating a mean.",
-         "\nUse 'stan_glm.fit' with 'family = gaussian()' instead.")
-  
   cn <- colnames(x)
   decomposition <- ols$qr
   Q <- qr.Q(decomposition)

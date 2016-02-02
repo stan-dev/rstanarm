@@ -66,14 +66,14 @@
 #' }
 #' 
 as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
-  NO_DRAWS_msg <- "No draws found."
+  STOP_no_draws <- function() stop("No draws found.", call. = FALSE)
   pars <- collect_pars(x, pars, regex_pars)
   no_user_pars <- is.null(pars)
   
   if (used.optimizing(x)) {
     mat <- x$asymptotic_sampling_dist
     if (is.null(mat)) 
-      stop(NO_DRAWS_msg, call. = FALSE)
+      STOP_no_draws()
     if (is.null(pars)) {
       dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
       pars <- c(names(coef(x)), # return with coefficients first
@@ -82,7 +82,7 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
   } else { 
     # used mcmc or vb
     if (x$stanfit@mode != 0) 
-      stop(NO_DRAWS_msg, call. = FALSE)
+      STOP_no_draws()
     posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
     mat <- apply(posterior, 3L, FUN = function(y) y)
     if (is.null(pars))
@@ -100,7 +100,7 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
   mat <- mat[, pars, drop = FALSE]
   if (is.mer(x))
     mat <- unpad_reTrms(mat, columns = TRUE)
-
+  
   return(mat)
 }
 

@@ -194,21 +194,21 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
       call <- as.call(call)
     }
   }
-  if (!evaluate) {
+  
+  if (!evaluate) 
     return(call)
-  } else {
-    # do this like lme4 update.merMod instead of update.default
-    ff <- environment(formula(object))
-    pf <- parent.frame()
-    sf <- sys.frames()[[1L]]
-    tryCatch(eval(call, envir = ff),
-             error = function(e) {
-               tryCatch(eval(call, envir = sf),
-                        error = function(e) {
-                          eval(call, pf)
-                        })
-             })
-  }
+  
+  # do this like lme4 update.merMod instead of update.default
+  ff <- environment(formula(object))
+  pf <- parent.frame()
+  sf <- sys.frames()[[1L]]
+  tryCatch(eval(call, envir = ff),
+           error = function(e) {
+             tryCatch(eval(call, envir = sf),
+                      error = function(e) {
+                        eval(call, pf)
+                      })
+           })
 }
 
 #' @rdname stanreg-methods
@@ -220,9 +220,10 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
     sel <- seq_along(fixef(object))
     out <- object$covmat[sel, sel, drop=FALSE]
   }
-  if (correlation) 
-    out <- cov2cor(out)
-  return(out)
+  if (!correlation) 
+    return(out)
+  
+  cov2cor(out)
 }
 
 
