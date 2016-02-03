@@ -312,10 +312,14 @@ and contains no interaction terms. Bayesians can avoid this difficulty
 simply by inspecting the posterior predictive distribution at different
 levels of the predictors. For example,
 ```{r, rstanarm-posterior_predict-manipulate}
-y_rep <- posterior_predict(womensrole_bglm_2, newdata = 
-                             data.frame(education = c(12,16),
-                                        gender = factor("Female", levels = 
-                                                       c("Male", "Female"))))
+# note: in newdata we want agree+disgree=1 so implied number of binomial trials
+# is one. the values of agree and disagree don't matter so long as their sum is
+# the desired number of trials. we need to explicitly imply the number of trials
+# like this because our original data are aggregate. if we had bernoulli data
+# then it would be a given we wanted to predict for single individuals.
+newdata <- data.frame(agree = c(0,0), disagree = c(1,1), education = c(12,16),
+                      gender = factor("Female", levels = c("Male", "Female")))
+y_rep <- posterior_predict(womensrole_bglm_2, newdata)
 y_rep <- with(womensrole, sweep(y_rep, 2, FUN = "/", STATS = 
                 total[gender == "Female" & education %in% c(12,16)]))
 summary(apply(y_rep, 1, diff))
