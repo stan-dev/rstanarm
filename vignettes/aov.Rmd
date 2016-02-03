@@ -1,7 +1,7 @@
 ---
 title: "Estimating ANOVA Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "01/12/2016"
 output: 
   html_vignette: 
     toc: yes
