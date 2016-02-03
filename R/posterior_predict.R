@@ -1,108 +1,111 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Draw from posterior predictive distribution
-#' 
-#' The posterior predictive distribution is the distribution of the outcome 
-#' implied by the model after using the observed data to update our beliefs 
+#'
+#' The posterior predictive distribution is the distribution of the outcome
+#' implied by the model after using the observed data to update our beliefs
 #' about the unknown parameters in the model. Simulating data from the posterior
-#' predictive distribution using the observed predictors is useful for checking 
-#' the fit of the model. Drawing from the posterior predictive distribution at 
-#' interesting values of the predictors also lets us visualize how a 
-#' manipulation of a predictor affects (a function of) the outcome(s). With new 
-#' observations of predictor variables we can use posterior predictive 
+#' predictive distribution using the observed predictors is useful for checking
+#' the fit of the model. Drawing from the posterior predictive distribution at
+#' interesting values of the predictors also lets us visualize how a
+#' manipulation of a predictor affects (a function of) the outcome(s). With new
+#' observations of predictor variables we can use posterior predictive
 #' distribution to generate predicted outcomes.
-#' 
+#'
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param newdata Optionally, a data frame in which to look for variables with 
-#'   which to predict. If omitted, the model matrix is used. If \code{newdata} 
-#'   is provided and any variables were transformed (e.g. rescaled) in the data 
-#'   used to fit the model, then these variables must also be transformed in 
-#'   \code{newdata}. This only applies if variables were transformed before 
-#'   passing the data to one of the modeling functions and \emph{not} if 
+#' @param newdata Optionally, a data frame in which to look for variables with
+#'   which to predict. If omitted, the model matrix is used. If \code{newdata}
+#'   is provided and any variables were transformed (e.g. rescaled) in the data
+#'   used to fit the model, then these variables must also be transformed in
+#'   \code{newdata}. This only applies if variables were transformed before
+#'   passing the data to one of the modeling functions and \emph{not} if
 #'   transformations were specified inside the model formula.
 #' @param draws An integer indicating the number of draws to return. The default
 #'   and maximum number of draws is the size of the posterior sample.
 #' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
-#'   parameters, a formula indicating which group-level parameters to 
-#'   condition on when making predictions. \code{re.form} is specified in the 
-#'   same form as for \code{\link[lme4]{predict.merMod}}. The default, 
-#'   \code{NULL}, indicates that all estimated group-level parameters are 
+#'   parameters, a formula indicating which group-level parameters to
+#'   condition on when making predictions. \code{re.form} is specified in the
+#'   same form as for \code{\link[lme4]{predict.merMod}}. The default,
+#'   \code{NULL}, indicates that all estimated group-level parameters are
 #'   conditioned on. To refrain from conditioning on any group-level parameters,
 #'   specify \code{NA} or \code{~0}. The \code{newdata} argument may include new
-#'   \emph{levels} of the grouping factors that were specified when the model 
-#'   was estimated, in which case the resulting posterior predictions 
+#'   \emph{levels} of the grouping factors that were specified when the model
+#'   was estimated, in which case the resulting posterior predictions
 #'   marginalize over the relevant variables.
-#' @param fun An optional function to apply to the results. \code{fun} is found 
+#' @param fun An optional function to apply to the results. \code{fun} is found
 #'   by a call to \code{\link{match.fun}} and so can be specified as a function
 #'   object, a string naming a function, etc.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Currently unused.
-#' 
+#'
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
 #'   vector of predictions generated using a single draw of the model parameters
 #'   from the posterior distribution.
-#' 
+#'
 #' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
 #'   \pkg{rstanarm} vignettes and demos.
-#'   
+#'
 #' @examples
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
-#' 
+#'
 #' \dontrun{
 #' nd <- lme4::cbpp
 #' nd$size <- max(nd$size) + 1L
 #' ppd <- posterior_predict(example_model, newdata = nd)
-#' 
+#'
 #' # Use fun argument to transform predictions
 #' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
 #' ppd <- posterior_predict(fit, fun = exp)
 #' }
-#' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, 
+#'
+posterior_predict <- function(object, newdata = NULL, draws = NULL,
                               re.form = NULL, fun = NULL, seed = NULL, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
-  if (!is.null(seed)) 
+  if (!is.null(seed))
     set.seed(seed)
-  if (!is.null(fun)) 
+  if (!is.null(fun))
     fun <- match.fun(fun)
   if (!is.null(newdata)) {
     if ("gam" %in% names(object))
-      stop("'posterior_predict' with 'newdata' not yet supported ", 
+      stop("'posterior_predict' with 'newdata' not yet supported ",
            "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
-    if (any(is.na(newdata))) 
+    if (any(is.na(newdata)))
       stop("Currently NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object, newdata, re.form, ...)
   ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
+  if (!is(object, "polr") && is.binomial(family(object)$family))
+    ppargs$trials <- pp_binomial_trials(object, newdata)
+
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
-  if (!is.null(newdata) && nrow(newdata) == 1L) 
+  if (!is.null(newdata) && nrow(newdata) == 1L)
     ytilde <- t(ytilde)
-  if (!is.null(fun)) 
+  if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
 
   return(ytilde)
@@ -196,20 +199,10 @@ pp_args <- function(object, data) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  
+
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
-  if (is.binomial(famname)) {
-    y <- get_y(object)
-    if (NCOL(y) == 2L) {
-      args$trials <- rowSums(y)
-    } else if (is.numeric(y) && !all(y %in% c(0, 1))) {
-      args$trials <- object$weights
-    } else {
-      args$trials <- rep(1, NROW(y))
-    }
-  } 
-  else if (is.gaussian(famname)) {
+  if (is.gaussian(famname)) {
     args$sigma <- stanmat[, "sigma"]
   } else if (is.t(famname)) {
     args$scale <- stanmat[, "sigma"]
@@ -225,7 +218,7 @@ pp_args <- function(object, data) {
 }
 
 # create eta and stanmat (matrix of posterior draws)
-# 
+#
 # @param object stanreg object
 # @param data output from pp_data()
 # @param draws number of draws
@@ -233,10 +226,10 @@ pp_args <- function(object, data) {
 pp_eta <- function(object, data, draws = NULL) {
   x <- data$x
   S <- posterior_sample_size(object)
-  if (is.null(draws)) 
+  if (is.null(draws))
     draws <- S
   if (draws > S) {
-    err <- paste0("'draws' should be <= posterior sample size (", 
+    err <- paste0("'draws' should be <= posterior sample size (",
                   S, ").")
     stop(err)
   }
@@ -246,17 +239,17 @@ pp_eta <- function(object, data, draws = NULL) {
   if (is.null(data$Zt)) {
     stanmat <- as.matrix.stanreg(object)
     beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (some_draws) 
+    if (some_draws)
       beta <- beta[samp, , drop = FALSE]
     eta <- linear_predictor(beta, x, data$offset)
   } else {
     stanmat <- as.matrix(object$stanfit)
     beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (some_draws) 
+    if (some_draws)
       beta <- beta[samp, , drop = FALSE]
     eta <- linear_predictor(beta, x, data$offset)
     b <- stanmat[, grepl("^b\\[", colnames(stanmat)), drop = FALSE]
-    if (some_draws) 
+    if (some_draws)
       b <- b[samp, , drop = FALSE]
     if (is.null(data$Z_names)) {
       b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
@@ -264,9 +257,9 @@ pp_eta <- function(object, data, draws = NULL) {
       ord <- sapply(data$Z_names, FUN = function(x) {
         m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
         len <- length(m)
-        if (len == 1) 
+        if (len == 1)
           return(m)
-        if (len > 1) 
+        if (len > 1)
           stop("multiple matches bug")
         x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
         grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
@@ -276,4 +269,13 @@ pp_eta <- function(object, data, draws = NULL) {
     eta <- eta + as.matrix(b %*% data$Zt)
   }
   nlist(eta, stanmat)
+}
+
+# Number of trials for binomial models
+pp_binomial_trials <- function(object, newdata) {
+  y <- if (is.null(newdata))
+    get_y(object) else eval(formula(object)[[2L]], newdata)
+  if (NCOL(y) == 2L)
+    return(rowSums(y))
+  rep(1, NROW(y))
 }
