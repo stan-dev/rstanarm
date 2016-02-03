@@ -32,6 +32,10 @@ SW <- suppressWarnings
 # that result has correct dimensions
 check_for_error <- function(fit) {
   nsims <- nrow(as.data.frame(fit))
+  mf <- model.frame(fit)
+  if (identical(deparse(substitute(fit)), "example_model"))
+    mf <- lme4::cbpp
+  
   
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
@@ -39,16 +43,16 @@ check_for_error <- function(fit) {
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   expect_equal(dim(yrep2), c(1, nobs(fit)))
   
-  expect_silent(yrep3 <- posterior_predict(fit, newdata = model.frame(fit)[1,]))
+  expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,]))
   expect_equal(dim(yrep3), c(nsims, 1))
   
-  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = model.frame(fit)[1,]))
+  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,]))
   expect_equal(dim(yrep4), c(2, 1))
   
-  expect_silent(yrep5 <- posterior_predict(fit, newdata = model.frame(fit)[1:5,]))
+  expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,]))
   expect_equal(dim(yrep5), c(nsims, 5))
   
-  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = model.frame(fit)[1:5,]))
+  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,]))
   expect_equal(dim(yrep6), c(3, 5))
   
   expect_error(posterior_predict(fit, draws = nsims + 1), 
@@ -234,6 +238,7 @@ test_that("lme4 tests work similarly", {
   nd2 <- with(nd, expand.grid(period = unique(period), 
                               herd = unique(herd), 
                               size = 20))
+  nd2$incidence <- 0
   
   p3 <- posterior_predict(sfit, nd2, seed = SEED)
   p4 <- expect_silent(posterior_predict(sfit, nd2, re.form = NA, seed = SEED))
@@ -243,7 +248,7 @@ test_that("lme4 tests work similarly", {
   # new levels
   nd3 <- rbind(nd2, data.frame(period = as.character(1:4), 
                                herd = rep("new",4), 
-                               size = 20))
+                               size = 20, incidence = 0))
 
   p6 <- posterior_predict(sfit, nd3, allow.new.levels = TRUE, seed = SEED)
   expect_equal(colMeans(p3), colMeans(p6[, 1:ncol(p3)]), tol = 0.05)

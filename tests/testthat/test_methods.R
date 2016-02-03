@@ -175,6 +175,24 @@ test_that("vcov returns correct structure", {
   expect_equal(dimnames(vcov(stan_lmer2)), dimnames(vcov(lmer2)))
 })
 
+test_that("sigma method works", {
+  # need to use :: because sigma is masked by lme4's sigma
+  rsigma <- rstanarm::sigma
+  expect_identical(rsigma(stan_polr1), 1)
+  expect_identical(rsigma(example_model), 1)
+  
+  expect_is(sig <- rsigma(stan_lmer1), "numeric")
+  expect_false(identical(sig, 1))
+  expect_is(sig <- rsigma(stan_lmer2), "numeric")
+  expect_false(identical(sig, 1))
+  expect_is(sig <- rsigma(stan_glm1), "numeric")
+  expect_false(identical(sig, 1))
+  expect_is(sig <- rsigma(stan_glm_vb1), "numeric")
+  expect_false(identical(sig, 1))
+  expect_is(sig <- rsigma(stan_glm_opt1), "numeric")
+  expect_false(identical(sig, 1))
+})
+
 test_that("VarCorr returns correct structure", {
   vc_lmer1 <- VarCorr(lmer1); vc_stan1 <- VarCorr(stan_lmer1)
   vc_lmer2 <- VarCorr(lmer2); vc_stan2 <- VarCorr(stan_lmer2)
