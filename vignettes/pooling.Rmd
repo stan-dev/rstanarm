@@ -4,7 +4,7 @@ author: "Bob Carpenter, Jonah Gabry and Ben Goodrich"
 date: "02/03/2016"
 output: 
   html_vignette:
-  toc: yes
+    toc: yes
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -49,7 +49,7 @@ successes out of $K_n$ trials.  For example, the data may consist of
   proceedings; Kaggle competitions)
 
 
-#### Baseball Hits (Efron and Morris 1975)
+### Baseball Hits (Efron and Morris 1975)
 
 As a running example, we include the data from Table 1 of (Efron and
 Morris 1975) as <code>efron-morris-75-bball.csv</code> (it was
@@ -161,9 +161,10 @@ the log-odds were centered at 0.
 
 ```{r, full-pooling, results="hide"}
 library(rstanarm)
+SEED <- 101
 fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, 
-                     prior_intercept = normal(-1, 2.5),
-                     family = binomial("logit"))
+                     family = binomial("logit"), prior_intercept = normal(-1, 2.5), 
+                     seed = SEED)
 ```
 
 We'll create a function we can reuse later for computing some posterior 
@@ -232,8 +233,7 @@ considered a predictor rather than an intercept from R's perspective. Specifying
 (on the logit scale) gets a ${\rm Normal}(-1, 2.5^2)$ prior, independent of the others.
 
 ```{r, no-pooling, results="hide"}
-fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, 
-                     prior = normal(-1, 2.5))
+fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, prior = normal(-1, 2.5))
 nopool <- summary_stats(as.matrix(fit_nopool))
 print(nopool, digits = 2) # in alphabetical order
 ```
@@ -284,9 +284,10 @@ prior on the abilities with parameters that are themselves estimated.
 This model can be estimated using the `stan_glmer` function.
 
 ```{r, partial-pooling, results="hide"}
-fit_partialpool <- stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), 
-                              prior_intercept = normal(-1, 2.5),
-                              data = bball, family = binomial("logit"))
+fit_partialpool <- 
+  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball,
+             family = binomial("logit"), prior_intercept = normal(-1, 2.5), 
+             seed = SEED)
 ```
 
 Because `stan_glmer` (like `glmer`) estimates the varying intercepts for `Player`
@@ -296,9 +297,10 @@ estimates by the intercept.
 
 ```{r, partial-pooling-order}
 # shift each player's estimate by intercept (and then drop intercept)
-draws <- as.matrix(fit_partialpool)
-thetas <- sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], "+")
-
+shift_draws <- function(draws) {
+  sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], "+")
+}
+thetas <- shift_draws(as.matrix(fit_partialpool))
 partialpool <- summary_stats(thetas)
 rownames(partialpool) <- player_AtoZ
 (partialpool <- partialpool[player_order, ]) # put in original order
@@ -317,7 +319,7 @@ intervals for the estimated chance-of-success parameters $\theta_n$ in
 the posterior.  The following R code reproduces a similar plot for our data.
 
 
-```{r, plot-compare-models, fig.width = 8, fig.height = 4}
+```{r, plot-compare-models, fig.width = 8, fig.height = 5}
 library(ggplot2)
 models <- c("complete pooling", "no pooling", "partial pooling")
 estimates <- rbind(pool, nopool, partialpool)
@@ -398,6 +400,39 @@ subtleties of expectations here, the posterior predictive density
 reduces to the expectation of $p(\tilde{y} \, | \, \theta)$
 conditioned on $y$.
 
+### Evaluating Held-Out Data Predictions
+
+Because the posterior predictive density is formulated as an
+expectation over the posterior, it is possible to compute via MCMC.
+With $M$ draws $\theta^{(m)}$ from the posterior $p(\theta \, | \,
+y)$, the posterior predicitve log density for new data
+$y^{\mathrm{new}}$ is given by
+
+\[
+p(y^{\mathrm{new}} \, | \, y)
+\ \approx \
+\log \frac{1}{M} \, \sum_{m=1}^M \ p\left( y^{\mathrm{new}} \, | \, \theta^{(m)} \right).
+\]
+
+In practice, this requires care to prevent underflow in floating point
+calculations; a robust calculation on the log scale is provided below.
+
+### Simulating Replicated Data
+
+It is also straightforward to use forward simulation from the data
+sampling distribution $p(y \, | \, \theta)$ to generate replicated
+data $y^{\mathrm{rep}}$ according to the posterior predictive
+distribution.  (Recall that $p(y \, | \, \theta)$ is called the sampling
+distribution when $\theta$ is fixed and the likelihood when $y$ is fixed.)
+
+With $M$ draws $\theta^{(m)}$ from the posterior $p(\theta \, | \,
+y)$, replicated data can be simulated by drawing a sequence of $M$
+simulations according $y^{\mathrm{rep} \ (m)}$ with each drawn
+according to distribution $p(y \, | \, \theta^{(m)})$.  This latter
+random variate generation can usually be done efficiently (both
+computationally and statistically) by means of forward simulation from
+the sampling distribution; we provide an example below.
+
 
 ## Prediction for New Trials
 
@@ -407,7 +442,7 @@ the player did for the rest of the season.  The question arises as to
 how well these models predict a player's performance for the rest of
 the season based on their initial 45 at bats.  
 
-#### Calibration
+### Calibration
 
 A well calibrated statistical model is one in which the uncertainy in
 the predictions matches the uncertainty in further data.  That is, if
@@ -420,7 +455,7 @@ calibrated.  Given that our models are rarely correct in this deep
 sense, in practice we are concerned with testing their calibration on
 quantities of interest.
 
-#### Sharpness
+### Sharpness
 
 Given two well calibrated models, the one that makes the more precise
 predictions in the sense of having narrower intervals is better
@@ -444,7 +479,7 @@ of
 \]
 
 
-#### Why Evaluate with the Predictive Posterior?
+### Why Evaluate with the Predictive Posterior?
 
 The predictive posterior density directly measures the probability of
 seeing the new data.  The higher the probability assigned to the new
@@ -456,6 +491,189 @@ This notion is related to the notion of sharpness discussed in the
 previous section, because if the new observations have higher
 predictive densities, they're probably within narrower posterior
 intervals (Gneiting et al. 2007).
+
+### Computing the Log Predictive Posterior Density
+
+The log of posterior predicitve density is defined in the obvious way as
+
+\[
+\log p(\tilde{y} \, | \, y)
+= \log \int_{\Theta} p(\tilde{y} \, | \, \theta) 
+                     \ p(\theta \, | \, y)
+                     \ \mathrm{d}\theta.
+\]
+
+This is not a posterior expectation, but rather the log of a posterior
+expectation.  In particular, it should not be confused with the
+posterior expectation of the log predictive density, which is given by
+
+\[
+ \int_{\Theta} \left( \log p(\tilde{y} \, | \, \theta) \right) 
+               \ p(\theta \, | \, y)  
+               \ \mathrm{d}\theta.
+\]
+
+Although this is easy to compute in Stan in a stable fashion, it does
+not produce the same answer (as we show below).
+
+Because $-\log(u)$ is convex, a little wrangling with [Jensen's
+inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality) shows
+that the expectation of the log is less than or equal to the log of
+the expectation,
+
+\[
+\log \int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta
+\ \leq \
+\int_{\Theta} \left( \, \log p(\tilde{y} \, | \, \theta) \, \right) \ p(\theta \, | \, y) \ \mathrm{d}\theta.
+\]
+
+We'll compute both expectations and demonstrate Jensen's inequality in
+our running example.
+
+The variables <code>K_new[n]</code> and <code>y_new[n]</code> hold the number of
+at bats (trials) and the number of hits (successes) for player (item)
+<code>n</code>. With the held out data we can compute the log density of each
+data point using the `log_lik` function, which, like `posterior_predict`,
+accepts a `newdata` argument. The `log_lik` function will return an $M \times N$
+matrix, where $M$ is the size of the posterior sample (the number of draws 
+we obtained from the posterior distribution) and $N$ is the number of data points
+in `newdata`. Taking the row sums of this matrix will 
+
+```{r, log_p_new}
+newdata <- with(bball, data.frame(Hits = y_new, AB = K_new, Player))
+fits <- list(Pooling = fit_pool, NoPooling = fit_nopool, 
+             PartialPooling = fit_partialpool)
+
+# compute log_p_new with each of the models in 'fits'
+log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
+```
+
+We now have the distributions of `log_p_new` in a three-column matrix, one column 
+per model.
+
+The posterior mean for <code>log_p_new</code> will give us
+
+\[
+ \int_{\Theta} \left( \log p(\tilde{y} \, | \, \theta) \right) 
+               \ p(\theta \, | \, y)  
+               \ \mathrm{d}\theta
+\ \approx \
+\frac{1}{M} \, \sum_{m=1}^M \log p(y^{\mathrm{new}} \, | \, \theta^{(m)}).
+\]
+
+To compute this for each of the models we only need to take the mean of the
+corresponding column of `log_p_new`.
+
+```{r, log_p_new-mean}
+mean_log_p_new <- colMeans(log_p_new)
+round(sort(mean_log_p_new, decreasing = TRUE))
+```
+
+From a predictive standpoint, the models are ranked by the amount of
+pooling they do, with complete pooling being the best, and no pooling
+being the worst predictively. All of these models do predictions by
+averaging over their posteriors, with the amount of posterior
+uncertainty also being ranked in reverse order of the amount of
+pooling they do.
+
+### Calculating posterior log density
+
+The straight path to calculate this would be to define a generated
+quantity $p(y^{\mathrm{new}} \, | y)$, look at the posterior mean
+computed by Stan, and takes its log.   That is, 
+
+\[
+\log p(y^{\mathrm{new}} \, | \, y)
+\ \approx \
+\log \frac{1}{M} \, \sum_{m=1}^M p(y^{\mathrm{new}} \, | \, \theta^{(m)}).
+\]
+
+Unfortunately, this won't work in most cases because when we try to
+compute $p(y^{\mathrm{new}} \, | \, \theta^{(m)})$ directly, it is prone
+to underflow.  For example, 2000 outcomes $y^{\mathrm{new}}_n$, each
+with likelihood 0.5 for $\theta^{(m)}$, will underflow, because
+$0.5^{2000}$ is smaller than the smallest positive number that a
+computer can represent using standard [double-precision floating
+point](https://en.wikipedia.org/wiki/IEEE_754-1985) (used by Stan, R,
+etc.).  
+
+In contrast, if we work on the log scale, $\log p(y^{\mathrm{new}} \,
+| \, y)$ will not underflow.  It's a sum of a bunch of terms of order 1.
+But we already saw we can't just average the log to get the log of the
+average.
+
+To avoid underflow, we're going to use the
+[log-sum-of-exponentials](https://en.wikipedia.org/wiki/LogSumExp)
+trick, which begins by noting the obvious,
+
+\[
+\log \frac{1}{M} \, \sum_{m=1}^M \ p(y^{\mathrm{new}} \, | \, \theta^{(m)}).
+\ = \
+\log \frac{1}{M} \, \sum_{m=1}^M
+                     \ \exp \left( \log p(y^{\mathrm{new}} \, | \, \theta^{(m)}) \right).
+\]
+
+We'll then write that last expression as
+
+\[
+-\log M 
++  \mathrm{log\_sum\_exp \, }_{m=1}^M
+        \ \log p(y^{\mathrm{new}} \, | \, \theta^{(m)})
+\]
+
+We can compute $mathrm{log\_sum\_exp}$ stably by subtracting the max value.
+Suppose $u = u_1, \ldots, u_M$, and $\max(u)$ is the largest $u_m$.
+We can calculate
+
+\[
+\mathrm{log\_sum\_exp \, }_{m=1}^M \ u_m
+\ = \
+\log \sum_{m=1}^M \exp(u_m)
+\ = \
+\max(u) + \log \sum_{m=1}^M \exp(u_m - \max(u)).
+\]
+
+Because $u_m - \max(u) \leq 0$, the exponentiations cannot overflow.
+They may underflow to zero, but this will not lose precision because
+of the leading $\max(u)$ term; the only way underflow can arise is if
+$u_m - \max(u)$ is very small, meaning that it won't add significant
+digits to $\max(u)$ if it hadn't underflowed.
+
+We can implement $\mathrm{log\_sum\_exp}$ in R as follows:
+
+```{r, log_sum_exp}
+log_sum_exp <- function(u) {
+  max_u <- max(u)
+  a <- 0
+  for (n in 1:length(u)) {
+    a <- a + exp(u[n] - max_u)
+  }
+  max_u + log(a)
+}
+
+# Or equivalenty using vectorization
+log_sum_exp <- function(u) {
+  max_u <- max(u)
+  max_u + log(sum(exp(u - max_u)))
+}
+```
+
+and then use it to print the log posterior predictive densities for
+our fit.
+
+```{r comment=NA}
+M <- nrow(log_p_new) 
+new_lps <- -log(M) + apply(log_p_new, 2, log_sum_exp)
+round(sort(new_lps, decreasing = TRUE))
+```
+
+Now the ranking is different!  As expected, the values here are lower
+than the expectation of the log density due to Jensen's inequality.
+The partial pooling model appears to be making slightly better
+predictions than the full pooling model, which in turn is making
+slightly better predictions than the no pooling model.
+
+
 
 ## Predicting New Observations
 
@@ -539,10 +757,11 @@ df_ppd <- data.frame(player = rep(1:nrow(newdata), 3),
                      ub = ppd_summaries[, "75%"],
                      model = rep(models, each = nrow(newdata)))
 ```
-```{r, plot-ppd, fig.width = 8, fig.height = 4}
+```{r, plot-ppd, fig.width = 8, fig.height = 5}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
-  geom_point(colour="darkblue", size=1) + 
-  geom_errorbar(width=0.5, colour="gray60") + 
+  geom_point(colour="skyblue3", size=1) + 
+  geom_linerange(color = "gray60", size = 0.75) + 
+  geom_point(size = 2.5, shape = 21, fill = "gray30", color = "white", stroke = 0.2) + 
   facet_grid(. ~ model) +
   labs(x = NULL, y = "batting average") + 
   scale_x_continuous(breaks = NULL) +
@@ -561,7 +780,7 @@ each item had the same number of initial observed trials, this variation is
 primarily due to the uncertainty from the binomial model of outcomes.
 
 
-#### Calibration
+### Calibration
 
 With 50% intervals, we expect half of our estimates to lie outside
 their intervals in a well-calibrated model.  If fewer than the
@@ -583,7 +802,7 @@ be rejected as a possibility with only the amount of data we used
 here).
 
 
-#### Sharpness
+### Sharpness
 
 Consider the width of the posterior predictive intervals for the items
 across the models.  The model with no pooling has the broadest
@@ -602,4 +821,83 @@ the limit, a perfect model would provide a delta function at the true
 answer with a vanishing posterior interval.
 
 
+## Estimating Event Probabilities
+
+The 80% interval in the partial pooling model coincidentally shows us
+that our model estimates a roughly 10% chance of Roberto Clemente
+batting 0.400 or better for the season based on batting 0.400 in his
+first 45 at bats.  Not great, but non-trivial.  Rather than fishing
+for the right quantile and hoping to get lucky, we can write a model
+to directly estimate event probabilities, such as Robert Clemente's
+batting average is 0.400 or better for the season.
+
+Event probabilities are defined as expectations of indicator functions
+over parameters and data. For example, the probability of player $n$'s
+batting average being 0.400 or better conditioned on the data $y$ is
+defined by the conditional event probability
+
+
+\[
+\mathrm{Pr}\left[
+\frac{(y_n + z_n)}{(45 + K^{\mathrm{new}}_n)} \geq 0.400 
+\, \Big| \, 
+y
+\right]
+\ = \
+\int_{\Theta}
+ \mathrm{I}\left[\frac{(y_n + z_n)}{(45 + K^{\mathrm{new}}_n)} \geq 0.400\right]
+       \ p(z_n \, | \, \theta_n, K^{\mathrm{new}}_n)
+       \ p(\theta \, | \, y, K)
+       \ \mathrm{d}\theta.
+\]
+
+The indicator function $\mathrm{I}[c]$ evaluates to 1 if the condition
+$c$ is true and 0 if it is false.  Because it is just another
+expectation with respect to the posterior, we can calculate this event
+probability using MCMC as
+
+\[
+\mathrm{Pr}\left[\frac{(y_n + z_n)}{(45 + K^{\mathrm{new}}_n)} \geq
+0.400 \, \Big| \, y \right]
+\ \approx \
+\frac{1}{M} \, \sum_{m=1}^M \mathrm{I}\left[\frac{(y_n + z_n^{(m)})}{(45 + K^{\mathrm{new}}_n)} \geq 0.400\right].
+\]
+
+This event is about the season batting average being greater than
+0.400.  What if we care about ability (chance of success), not batting
+average (success rate) for the rest of the season?  Then we would ask
+the question of whether $\mathrm{Pr}[\theta_n > 0.4]$.  This is
+defined as a weighted average over the prior and computed via MCMC as
+the previous case.
+
+\[
+\mathrm{Pr}\left[\theta_n \geq 0.400 \, | \, y \right]
+\ = \
+\int_{\Theta}
+ \mathrm{I}\left[\theta_n \geq 0.400\right]
+       \ p(\theta \, | \, y, K)
+       \ \mathrm{d}\theta
+\ \approx \
+\frac{1}{M} \, \sum_{m=1}^M \mathrm{I}[\theta_n^{(m)} \geq 0.400].
+\]
+
+
+```{r, event-probabilities}
+draws_pool <- as.matrix(fit_pool)
+draws_nopool <- as.matrix(fit_nopool)
+draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
+draws <- list(pool = draws_pool, nopool = draws_nopool, partialpool = draws_partialpool)
+
+ability_gt_400 <- function(thetas) plogis(thetas) > 0.4
+some_ability_gt_350 <- function(thetas) {
+  apply(plogis(thetas), 1, function(x) max(x > 0.35))
+}
+
+gt_400 <- lapply(draws, ability_gt_400)
+some_gt_350 <- lapply(draws, some_ability_gt_350)
+
+sapply(gt_400, function(x) apply(x, 2, mean))
+sapply(some_gt_350, mean)
+
+```
 
