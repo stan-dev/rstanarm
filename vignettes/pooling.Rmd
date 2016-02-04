@@ -1,0 +1,605 @@
+---
+title: "Hierarchical Partial Pooling for Repeated Binary Trials"
+author: "Bob Carpenter, Jonah Gabry and Ben Goodrich"
+date: "02/03/2016"
+output: 
+  html_vignette:
+  toc: yes
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{Partial Pooling}
+-->
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+```{r, SETTINGS-knitr, include=FALSE}
+library(knitr)
+opts_chunk$set(
+  comment=NA, message = FALSE, warning = FALSE, fig.align='center'
+)
+```
+
+# Introduction 
+
+This vignette is based on Bob Carpenter's Stan tutorial 
+*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr/pool-repeated-trials)*. Most of the text comes from Bob's original, but here we show how 
+to fit the models and carry out predictions using the **rstanarm** package.
+
+
+
+# Repeated Binary Trials
+
+Suppose that for each of $N$ items $n \in 1{:}N$, we observe $y_n$
+successes out of $K_n$ trials.  For example, the data may consist of
+
+* rat tumor development, with $y_n$ rats developing tumors of $K_n$ total
+  rats in experimental control group $n \in 1{:}N$ (Tarone 1982)
+
+* surgical mortality, with $y_n$ surgical patients dying in $K_n$ surgeries
+  for hospitals $n \in 1{:}N$ (Spiegelhalter et al. 1996)
+
+* baseball batting ability, with $y_n$ hits in $K_n$ at bats for 
+  baseball players $n \in 1{:}N$ (Efron and Morris 1975; Carpenter 2009)
+
+* machine learning system accuracy, with $y_n$ correct classifications
+  out of $K_n$ examples for systems $n \in 1{:}N$ (ML conference
+  proceedings; Kaggle competitions)
+
+
+#### Baseball Hits (Efron and Morris 1975)
+
+As a running example, we include the data from Table 1 of (Efron and
+Morris 1975) as <code>efron-morris-75-bball.csv</code> (it was
+downloaded 24 Dec 2015 from
+[here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
+It is drawn from the 1970 Major League Baseball season from both
+leagues.
+
+```{r, load-data}
+bball <- read.csv(file.path("data", "efron-morris-75-bball.csv"))
+bball <- with(bball, data.frame(Player = LastName, 
+                                Hits, AB = At.Bats, 
+                                RemainingAB = RemainingAt.Bats,
+                                RemainingHits = SeasonHits - Hits))
+print(bball)
+```
+
+```{r comment=NA}
+N <- nrow(bball)
+K <- bball$AB
+y <- bball$Hits
+K_new <- bball$RemainingAB
+y_new <- bball$RemainingHits
+```
+
+The data separates the outcome from the initial 45 at-bats from the
+rest of the season.  After running this code, <code>N</code> is the
+number of items (players).  Then for each item <code>n</code>,
+<code>K[n]</code> is the number of initial trials (at-bats),
+<code>y[n]</code> is the number of initial successes (hits),
+<code>K_new[n]</code> is the remaining number of trials (remaining
+at-bats), and <code>y_new[n]</code> is the number of successes in the
+remaining trials (remaining hits).
+
+The remaining data can be used to evaluate the predictive performance
+of our models conditioned on the observed data.  That is, we will
+"train" on the first 45 at bats and see how well our various models do
+at predicting the rest of the season.
+
+We will only need a few columns of the data; we will be using the
+remaining hits and at bats to evaluate the predictive inferences for
+the various models.
+
+
+# Pooling
+
+With *complete pooling*, each item is assumed to have the same chance
+of success.  With *no pooling*, each item is assumed to have a
+completely unrelated chance of success.  With *partial pooling*, each
+item is assumed to have a different chance of success, but the data
+for all of the observed items informs the estimates for each item.
+
+Partial pooling is typically accomplished through hierarchical models. 
+Hierarchical models directly model the population of items. From a population
+model perspective, no pooling corresponds to infinite population variance,
+whereas complete pooling corresponds to zero population variance.
+
+In the following sections, all three types of pooling models will be fit for the
+baseball data.
+
+
+# Models
+
+First we'll just create some useful objects to use throughout the rest of 
+this vignette.
+
+```{r, create-objects}
+player_order <- as.character(bball$Player) # last names in order of batting avg
+player_AtoZ <- sort(player_order) # last names in alphabetical order
+player_avgs <- with(bball, Hits / AB) # player avgs through 45 AB
+pop_avg <- with(bball, sum(Hits) / sum(AB)) # overall avg through 45 AB
+cat("Population average through 45 at-bats:", round(pop_avg, 3))
+```
+
+
+## Complete Pooling
+
+The complete pooling model assumes a single parameter $\theta$
+representing the chance of success for all items (in this case players).  
+
+Assuming each player's at-bats are independent Bernoulli trials, the
+sampling distribution for each player's number of hits $y_n$ is modeled as
+
+\[
+p(y_n \, | \, \theta) 
+\ = \
+\mathsf{Binomial}(y_n \, | \, K_n, \theta).
+\]
+
+When viewed as a function of $\theta$ for fixed $y_n$, this is called
+the likelihood function.  
+
+Assuming each player is independent leads to the complete data
+likelihood
+
+\[
+p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta).
+\]
+
+Using `family=binomial("logit")`, the `stan_glm` function in **rstanarm** will
+parameterize the model in terms of log-odds of success, 
+$\log \frac{\theta}{1 - \theta}$.
+We will use a Gaussian prior on the log-odds with a mean of -1 and standard 
+deviation 2.5, which is a rather diffuse prior on the log-odds scale, but 
+centered around a plausible value given our knowledge of baseball. The inverse
+log-odds (inverse logit) of -1 is about 0.27, which is more plausible for a 
+batting average than 0.5, which would be the implication if the prior on 
+the log-odds were centered at 0.
+
+```{r, full-pooling, results="hide"}
+library(rstanarm)
+fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, 
+                     prior_intercept = normal(-1, 2.5),
+                     family = binomial("logit"))
+```
+
+We'll create a function we can reuse later for computing some posterior 
+summary statistics. The `summary_stats` function, defined bolow, will
+take a matrix of posterior draws as its input, apply an inverse-logit
+transformation (to convert from log-odds to probabilities) and then 
+compute the median and 80% interval.
+
+```{r, summary-stats-function}
+summary_stats <- function(posterior) {
+  x <- plogis(posterior) # apply inverse-logit transformation
+  t(apply(x, 2, quantile, probs = c(0.1, 0.5, 0.9))) 
+}
+
+# as.matrix extracts the posterior draws from a stanreg object
+pool <- summary_stats(as.matrix(fit_pool))
+print(pool, digits = 2)
+```
+
+```{r, full-pooling-replicate}
+# replicate to give each player the same estimates (we'll use this later)
+(pool <- matrix(pool, nrow(bball), ncol(pool), byrow = TRUE, 
+                dimnames = list(player_order, c("10%", "50%", "90%"))))
+```
+
+The result is a posterior median for $\theta$ of `r round(pool[1,"50%"], 3)` 
+with an 80% central posterior interval of $(`r round(pool[1,"10%"], 3)`, `r round(pool[1,"90%"], 3)`)$.  
+With more data, such as from more players or from the rest of the season, the
+posterior approaches a delta function around the maximum likelihood estimate and
+the posterior interval around the centeral posterior intervals will shrink. 
+Nevertheless, even if we know a player's chance of success exactly, there is a
+large amount of uncertainty in running $K$ binary trials with that chance of
+success; using a binomial model fundamentally bounds our prediction accuracy.
+
+Although this model will be a good baseline for comparison, we have
+good reason to believe from a large amount of prior data (players with
+as many as 10,000 trials) that it is very unlikely that all players
+have the same chance of success. 
+
+## No Pooling
+
+A model with no pooling involves a separate chance-of-success
+parameter $\theta_n \in [0,1]$ for each player $n$, where the 
+$\theta_n$ are assumed to be independent.
+
+The likelihood then uses the chance of success $\theta_n$ for item $n$
+in modeling the number of successes $y_n$ as
+
+\[
+p(y_n \, | \, \theta_n) = \mathsf{Binomial}(y_n \, | \, K_n, \theta_n).
+\]
+
+Assuming the $y_n$ are independent (conditional on $\theta$), this
+leads to the total data likelihood
+
+\[
+p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta_n).
+\]
+
+Fitting this model in **rstanarm** only requires tweaking the model formula to 
+drop the intercept and instead include as the only predictor the factor variable
+`Player`. This is equivalent to estimating a separate intercept on the log-odds 
+scale for each player. We'll also use the `prior` argument since `Player` is 
+considered a predictor rather than an intercept from R's perspective. Specifying
+`prior = normal(-1, 2.5)` means that the each of the \code{Player} parameters 
+(on the logit scale) gets a ${\rm Normal}(-1, 2.5^2)$ prior, independent of the others.
+
+```{r, no-pooling, results="hide"}
+fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, 
+                     prior = normal(-1, 2.5))
+nopool <- summary_stats(as.matrix(fit_nopool))
+print(nopool, digits = 2) # in alphabetical order
+```
+```{r, no-pooling-print, echo=FALSE}
+print(nopool, digits = 2)
+```
+```{r, no-pooling-order}
+rownames(nopool) <- player_AtoZ
+(nopool <- nopool[player_order, ]) # put in order of original data
+```
+
+Each 80% interval is much wider than the estimated interval for the
+population in the complete pooling model; this is to be
+expected---there are only 45 data items for each parameter here as
+opposed to 810 in the complete pooling case.  If the items each had
+different numbers of trials, the intervals would also vary based on
+size.
+
+As the estimated chance of success goes up toward 0.5, the 80%
+intervals gets wider.  This is to be expected for chance of success
+parameters, because the standard deviation of a random variable
+distributed as $\mathsf{Binomial}(K, \theta)$ is $\sqrt{\frac{\theta
+\, (1 - \theta)}{K}}$.
+
+Based on our existing knowledge of baseball, the no-pooling model is
+almost certainly overestimating the high abilities and underestimating
+lower abilities (Ted Williams, 30 years prior to the year this data
+was collected, was the last player with a 40% observed success rate
+over a season, whereas 20% is too low for all but a few rare defensive
+specialists).
+
+## Partial Pooling
+
+Complete pooling provides estimated abilities that are too narrowly
+distributed for the items and removes any chance of modeling
+population variation.  Estimating each chance of success separately
+without any pooling provides estimated abilities that are too broadly
+distributed for the items and hence too variable.  Clearly some amount
+of pooling between these two extremes is called for.  But how much?
+
+A hierarchical model treats the players as belonging to a population
+of players.  The properties of this population will be estimated along
+with player abilities, implicitly controlling the amount of pooling
+that is applied.  The more variable the (estimate of the) population,
+the less pooling is applied. Mathematically, the hierarchical model places a 
+prior on the abilities with parameters that are themselves estimated.
+
+This model can be estimated using the `stan_glmer` function.
+
+```{r, partial-pooling, results="hide"}
+fit_partialpool <- stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), 
+                              prior_intercept = normal(-1, 2.5),
+                              data = bball, family = binomial("logit"))
+```
+
+Because `stan_glmer` (like `glmer`) estimates the varying intercepts for `Player`
+by estimating a single global intercept and shifts away from that intercept for each 
+player, to get the estimates for each player we need to shift each of the 
+estimates by the intercept.
+
+```{r, partial-pooling-order}
+# shift each player's estimate by intercept (and then drop intercept)
+draws <- as.matrix(fit_partialpool)
+thetas <- sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], "+")
+
+partialpool <- summary_stats(thetas)
+rownames(partialpool) <- player_AtoZ
+(partialpool <- partialpool[player_order, ]) # put in original order
+```
+
+It is clear from the wide posteriors for the $\theta_n$ that there is
+considerable uncertainty in the estimates of chance-of-success on an
+item-by-item (player-by-player) basis.
+
+
+## Observed vs. Estimated Chance of Success
+
+Figure 5.4 from (Gelman et al. 2013) plots the observed number of
+successes $y_n$ for the first $K_n$ trials versus the median and 80\%
+intervals for the estimated chance-of-success parameters $\theta_n$ in
+the posterior.  The following R code reproduces a similar plot for our data.
+
+
+```{r, plot-compare-models, fig.width = 8, fig.height = 4}
+library(ggplot2)
+models <- c("complete pooling", "no pooling", "partial pooling")
+estimates <- rbind(pool, nopool, partialpool)
+dimnames(estimates) <- list(NULL,  c("lb", "median", "ub"))
+plotdata <- data.frame(estimates, 
+                        observed = rep(player_avgs, times = length(models)), 
+                        model = rep(models, each = nrow(bball)))
+
+base <- ggplot(plotdata, aes(x = observed, y = median, ymin = lb, ymax = ub))
+base +
+  geom_hline(yintercept = pop_avg, color = "lightpink", size = 0.75) +
+  geom_linerange(color = "gray60", size = 0.75) + 
+  geom_point(size = 2.5, shape = 21, fill = "gray30", color = "white", stroke = 0.2) + 
+  facet_grid(. ~ model) +
+  coord_fixed() +
+  scale_x_continuous(breaks = c(0.2, 0.3, 0.4)) +
+  labs(x = "Observed Hits / AB", y = "Predicted chance of hit") +
+  ggtitle("Posterior Medians and 80% Intervals")
+```
+
+The horizontal axis is the observed rate of success, broken out by
+player (the overplotting is from players with the same number of
+successes---they all had the same number of trials in this data).  The
+dots are the posterior medians with bars extending to cover the
+central 80% posterior interval.  Players with the same observed rates
+are indistinguishable, any differences in estimates are due to MCMC
+error.
+
+The horizontal red line has an intercept equal to the overall success rate,
+
+\[
+\frac{\sum_{n=1}^N y_n}{\sum_{n=1}^N K_n}
+\ = \
+\frac{215}{810}
+\ = \ 
+0.266.
+\]
+
+The overall success rate is also the posterior mode (i.e., maximum
+likelihood estimate) for the complete pooling model.
+
+
+## Posterior Predictive Distribution
+
+After we have fit a model using some "training" data, we are usually
+interested in the predictions of the fitted model for new data, which
+we can use to
+
+* make predictions for new data points; e.g., predict how
+many hits will Roberto Clemente get in the rest of the season,
+
+* evaluate predictions against observed future data; e.g., how well
+did we predict how many hits Roberto Clement actually got in the rest
+of the season, and
+
+* generate new simulated data to validate our model fits.
+
+With full Bayesian inference, we do not make a point estimate of
+parameters and use those prediction---we instead use an average 
+of predictions weighted by the posterior.
+
+Given data $y$ and a model with parameters $\theta$, the posterior
+predictive distribution for new data $\tilde{y}$ is defined by
+
+\[
+p(\tilde{y} \, | \, y)
+\ = \
+\int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta,
+\]
+
+where $\Theta$ is the support of the parameters $\theta$.  What an
+integral of this form says is that $p(\tilde{y} \, | \, y)$ is defined
+as a weighted average over the legal parameter values $\theta \in
+\Theta$ of the likelihood function $p(\tilde{y} \, | \, \theta)$, with
+weights given by the posterior, $p(\theta \, | \, y)$.  While we do
+not want to get sidetracked with the notational and mathematical
+subtleties of expectations here, the posterior predictive density
+reduces to the expectation of $p(\tilde{y} \, | \, \theta)$
+conditioned on $y$.
+
+
+## Prediction for New Trials
+
+Efron and Morris's (1975) baseball data includes not only the observed
+hit rate in the initial 45 at bats, but also includes the data for how
+the player did for the rest of the season.  The question arises as to
+how well these models predict a player's performance for the rest of
+the season based on their initial 45 at bats.  
+
+#### Calibration
+
+A well calibrated statistical model is one in which the uncertainy in
+the predictions matches the uncertainty in further data.  That is, if
+we estimate posterior 50% intervals for predictions on new data (here,
+number of hits in the rest of the season for each player), roughly 50%
+of the new data should fall in its predicted 50% interval.  If the
+model is true in the sense of correctly describing the generative
+process of the data, then Bayesian inference is guaranteed to be well
+calibrated.  Given that our models are rarely correct in this deep
+sense, in practice we are concerned with testing their calibration on
+quantities of interest.
+
+#### Sharpness
+
+Given two well calibrated models, the one that makes the more precise
+predictions in the sense of having narrower intervals is better
+predictively (Gneiting et al. 2007).  To see this in an example, we
+would rather have a well-calibrated prediction that there's a 90%
+chance the number of hits for a player in the rest of the season will
+fall in $(120, 130)$ than a 90% prediction that the number of hits
+will fall in $(100, 150)$.  
+
+For the models introduced here, a posterior that is a delta function
+provides the sharpest predictions.  Even so, there is residual
+uncertainty due to the repeated trials; with $K^{\mathrm{new}}$
+further trials and a a fixed $\theta_n$ chance of success, the random
+variable $Y^{\mathrm{new}}_n$ denoting the number of further successes
+for item $n$ has a standard deviation from the repeated binary trials
+of
+
+\[
+\mathrm{sd}[Y^{\mathrm{new}}_n] \ = \ \sqrt{K \
+\theta \, (1 - \theta)}.
+\]
+
+
+#### Why Evaluate with the Predictive Posterior?
+
+The predictive posterior density directly measures the probability of
+seeing the new data.  The higher the probability assigned to the new
+data, the better job the model has done at predicting the outcome.  In
+the limit, an ideal model would perfectly predict the new outcome with
+no uncertainty (probability of 1 for a discrete outcome or a delta
+function at the true value for the density in a continuous outcome).
+This notion is related to the notion of sharpness discussed in the
+previous section, because if the new observations have higher
+predictive densities, they're probably within narrower posterior
+intervals (Gneiting et al. 2007).
+
+## Predicting New Observations
+
+With **rstanarm** it is straightforward to generate draws from the posterior
+predictive distribution using the `posterior_predict` function.  With this
+capability, we can either generate predictions for new data or we can replicate
+the data we already have.
+
+There will be two sources of uncertainty in our predictions, the first being the 
+uncertainty in $\theta$ in the posterior $p(\theta \, | \, y)$ and the second 
+being the uncertainty due to the likelihood $p(\tilde{y} \, | \, \theta)$.
+
+We let $z_n$ be the number of successes for item $n$ in 
+$K^{\mathrm{new}}_n$ further trials. 
+It might seem tempting to eliminate that second source of uncertainty
+and set $z_n^{(m)}$ to its expectation, $\theta_n^{(m)} \,
+K^{\mathrm{new}}$, at each draw $m$ from the posterior rather than simulating a new
+value.  Or it might seem tempting to remove the first source of
+uncertainty and use the posterior mean (or median or mode or ...)
+rather than draws from the posterior. Either way, the resulting values
+would suffice for estimating the posterior mean, but would not capture
+the uncertainty in the prediction for $y^{\mathrm{new}}_n$ and would
+thus not be useful in estimating predictive standard deviations or
+quantiles or as the basis for decision making under uncertainty.  In
+other words, the predictions would not be properly calibrated (in a
+sense we define below).
+
+To predict $z$ for each player we can use the following code:
+
+```{r, ppd}
+newdata <- with(bball, data.frame(Hits = RemainingHits, AB = RemainingAB, Player))
+ppd_pool <- posterior_predict(fit_pool, newdata)
+ppd_nopool <- posterior_predict(fit_nopool, newdata)
+ppd_partialpool <- posterior_predict(fit_partialpool, newdata)
+```
+
+Translating the posterior number of hits into a season batting
+average, $\frac{y_n + z_n}{K_n + K^{\mathrm{new}}_n}$,
+we get an 80% posterior interval of
+
+```{r, clemente}
+z_1 <- ppd_partialpool[, 1]
+(y[1] + quantile(z_1, prob = c(0.1, 0.9))) / (K[1] + K_new[1])
+```
+
+for Roberto Clemente from the partial pooling model.  Part of our
+uncertainty here is due to our uncertainty in Clemente's underlying
+chance of success, and part of our uncertainty is due to there being
+367 remaining trials (at bats) modeled as binomial.  In the remaining
+at bats for the season, Clemente's success rate (batting average) was
+$127/367 = 0.35$.
+
+
+The posterior produced by the model for the number of hits for the
+rest of the season is overdispersed compared to a simple binomial
+model based on a point estimate.  For example, if we take the
+partially pooled posterior median estimate of 
+`r round(partialpool["Clemente", "50%"], 2)` for Roberto
+Clemente's ability (and thus remove the first source of uncertainty,
+the posterior uncertainty in his chance of success), the
+prediction for number of hits based on the point estimate would be
+$\mathrm{Binomial}(K^{\mathrm{new}}_1, `r round(partialpool["Clemente", "50%"], 2)`)$, which we know
+analytically has a standard deviation of $\sqrt{n \, \theta_n \, (1 -
+\theta_n)} = `r round(sqrt(K_new[1] * partialpool["Clemente", "50%"] * (1 - partialpool["Clemente", "50%"])), 1)`$, which is quite a bit lower than the
+standard deviation of `r round(sd(ppd_partialpool[, 1]),1)` for $z_1$ estimated 
+from the draws from the posterior predictive distribution.
+
+For each model, the following plot shows each player's posterior
+predictive 50% interval for predicted batting average (success rate)
+in his remaining at bats (trials); the observed success rate in the
+remainder of the season is shown as a blue dot.
+
+```{r, ppd-stats}
+ppd_intervals <- function(x) t(apply(x, 2, quantile, probs = c(0.25, 0.75)))
+ppd_summaries <- (1 / newdata$AB) * rbind(ppd_intervals(ppd_pool),
+                                          ppd_intervals(ppd_nopool),
+                                          ppd_intervals(ppd_partialpool))
+df_ppd <- data.frame(player = rep(1:nrow(newdata), 3),
+                     y = with(newdata, rep(Hits / AB, 3)),
+                     lb = ppd_summaries[, "25%"],
+                     ub = ppd_summaries[, "75%"],
+                     model = rep(models, each = nrow(newdata)))
+```
+```{r, plot-ppd, fig.width = 8, fig.height = 4}
+ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
+  geom_point(colour="darkblue", size=1) + 
+  geom_errorbar(width=0.5, colour="gray60") + 
+  facet_grid(. ~ model) +
+  labs(x = NULL, y = "batting average") + 
+  scale_x_continuous(breaks = NULL) +
+  ggtitle(expression(
+    atop("Posterior Predictions for Batting Average in Remainder of Season",
+         atop("50% posterior predictive intervals (gray bars); observed (blue dots)", ""))))
+```
+
+We choose to plot 50% posterior intervals as they are a good single point for 
+checking calibration. Rather than plotting the number of hits on the vertical
+axis, we have standardized all the predictions and outcomes to a success rate. 
+Because each item (player) has a different number of subsequent trials (at
+bats), the posterior intervals are relatively wider or narrower within the plots
+for each model (more trials imply narrower intervals for the average).  Because
+each item had the same number of initial observed trials, this variation is
+primarily due to the uncertainty from the binomial model of outcomes.
+
+
+#### Calibration
+
+With 50% intervals, we expect half of our estimates to lie outside
+their intervals in a well-calibrated model.  If fewer than the
+expected number of outcomes lie in their estimated posterior
+intervals, we have reason to believe the model is not well
+calibrated---its posterior intervals are too narrow.  This is also
+true if too many outcomes lie in their estimated posterior
+intervals---in this case the intervals are too broad.  Of course,
+there is variation in the tests as the number of items lying in their
+intervals is itself a random variable (see the exercises), so in
+practice we are only looking for extreme values as indicators of
+miscalibration.
+
+Each of the models other than the complete pooling model appears to be
+reasonably well calibrated, and even the calibration for the complete
+pooling model is not bad (the variation in chance-of-success among
+players has low enough variance that the complete pooling model cannot
+be rejected as a possibility with only the amount of data we used
+here).
+
+
+#### Sharpness
+
+Consider the width of the posterior predictive intervals for the items
+across the models.  The model with no pooling has the broadest
+posterior predictive intervals and the complete pooling model the
+narrowest.  This is to be expected given the number of observations
+used to fit each model; 45 each in the no pooling case and 810 in the
+complete pooling case, and relatively something in between for the
+partial pooling models.  Because the log odds model is doing more
+pooling, its intervals are slightly narrower than that of the direct
+hierarchical model.
+
+For two well calibrated models, the one with the narrower posterior
+intervals is preferable because its predictions are more tighter.  The
+term introduced for this by Gneiting et al. (2007) is "sharpness."  In
+the limit, a perfect model would provide a delta function at the true
+answer with a vanishing posterior interval.
+
+
+
