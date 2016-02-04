@@ -98,6 +98,9 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   }
   dat <- pp_data(object, newdata, re.form, ...)
   ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
+  if (!is(object, "polr") && is.binomial(family(object)$family))
+    ppargs$trials <- pp_binomial_trials(object, newdata)
+  
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
   if (!is.null(newdata) && nrow(newdata) == 1L) 
@@ -196,15 +199,6 @@ pp_args <- function(object, data) {
   famname <- family(object)$family
   if (is.gaussian(famname)) {
     args$sigma <- stanmat[, "sigma"]
-  } else if (is.binomial(famname)) {
-    y <- get_y(object)
-    if (NCOL(y) == 2L) {
-      args$trials <- rowSums(y)
-    } else if (is.numeric(y) && !all(y %in% c(0, 1))) {
-      args$trials <- object$weights
-    } else {
-      args$trials <- rep(1, NROW(y))
-    }
   } else if (is.gamma(famname)) {
     args$shape <- stanmat[, "shape"]
   } else if (is.ig(famname)) {
@@ -267,4 +261,13 @@ pp_eta <- function(object, data, draws = NULL) {
     eta <- eta + as.matrix(b %*% data$Zt)
   }
   nlist(eta, stanmat)
+}
+
+# Number of trials for binomial models
+pp_binomial_trials <- function(object, newdata) {
+  y <- if (is.null(newdata))
+    get_y(object) else eval(formula(object)[[2L]], newdata)
+  if (NCOL(y) == 2L) 
+    return(rowSums(y))
+  rep(1, NROW(y))
 }

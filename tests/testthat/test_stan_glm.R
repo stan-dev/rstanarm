@@ -69,7 +69,7 @@ test_that("gaussian returns expected result for trees example", {
     fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
                     family = gaussian(link = links[i]), algorithm = "optimizing",
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
-                    QR = TRUE, tol_rel_grad = 1e-16, seed  = SEED)
+                    QR = TRUE, tol_rel_grad = 1e-16, seed = SEED)
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
     expect_equal(coef(fit), coef(ans), tol = 0.021)
@@ -94,7 +94,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL, QR = TRUE,
-                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed  = SEED)
+                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
     ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]), start = coef(fit))
     if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
     if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
@@ -114,11 +114,11 @@ test_that("stan_glm returns something for glm negative binomial example", {
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
-                     seed  = SEED, chains = 1, iter = 100,
+                     seed = SEED, chains = 1, iter = 100,
                      prior_PD = TRUE, QR = TRUE, refresh = 100)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
-                        seed  = SEED, chains = 1, iter = 100,
+                        seed = SEED, chains = 1, iter = 100,
                         prior_PD = TRUE, QR = TRUE, refresh = 100)
     expect_is(fit1, "stanreg")
     expect_is(fit2, "stanreg")
@@ -204,4 +204,22 @@ test_that("stan_glm returns expected result for binomial example", {
     if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
     else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
   }
+})
+
+
+context("stan_glm (other tests)")
+test_that("model with hs prior doesn't error", {
+  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = hs(), 
+                         seed = SEED, algorithm = "meanfield", QR = TRUE), 
+                regexp = "Automatic Differentiation Variational Inference")
+})
+
+test_that("empty interaction levels dropped", {
+  x1 <- gl(3, 5, 100)
+  x2 <- gl(4, 6, 100)
+  x1[x2 == 1] <- 1
+  x1[x2 == 2] <- 1
+  y <- rnorm(100)
+  expect_warning(stan_glm(y ~ x1*x2, chains = 2, iter = 20, refresh = 0), 
+                 regexp = "Dropped empty interaction levels")
 })

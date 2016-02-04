@@ -96,10 +96,10 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (!is.mer(object)) 
-    object$coefficients
-  else 
-    coef_mer(object, ...)
+  if (is.mer(object)) 
+    return(coef_mer(object, ...))
+  
+  object$coefficients
 }
 
 #' @rdname stanreg-methods
@@ -194,35 +194,36 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
       call <- as.call(call)
     }
   }
-  if (!evaluate) {
+  
+  if (!evaluate) 
     return(call)
-  } else {
-    # do this like lme4 update.merMod instead of update.default
-    ff <- environment(formula(object))
-    pf <- parent.frame()
-    sf <- sys.frames()[[1L]]
-    tryCatch(eval(call, envir = ff),
-             error = function(e) {
-               tryCatch(eval(call, envir = sf),
-                        error = function(e) {
-                          eval(call, pf)
-                        })
-             })
-  }
+  
+  # do this like lme4 update.merMod instead of update.default
+  ff <- environment(formula(object))
+  pf <- parent.frame()
+  sf <- sys.frames()[[1L]]
+  tryCatch(eval(call, envir = ff),
+           error = function(e) {
+             tryCatch(eval(call, envir = sf),
+                      error = function(e) {
+                        eval(call, pf)
+                      })
+           })
 }
 
 #' @rdname stanreg-methods
 #' @export 
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is.mer(object)) 
+  if (!is.mer(object)) {
     out <- object$covmat
-  else {
+  } else {
     sel <- seq_along(fixef(object))
     out <- object$covmat[sel, sel, drop=FALSE]
   }
-  if (correlation) 
-    out <- cov2cor(out)
-  return(out)
+  if (!correlation) 
+    return(out)
+  
+  cov2cor(out)
 }
 
 
@@ -331,8 +332,8 @@ sigma <- function(object, ...) UseMethod("sigma")
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) 
     return(1)
-  else 
-    object$stan_summary["sigma", select_median(object$algorithm)]
+  
+  object$stan_summary["sigma", select_median(object$algorithm)]
 }
 
 #' @rdname stanreg-methods
@@ -371,17 +372,17 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
-  if (!is.mer(formula))
-    return(NextMethod("model.frame"))
-  
-  fr <- formula$glmod$fr
-  if (fixed.only) {
-    ff <- formula(formula, fixed.only = TRUE)
-    vars <- rownames(attr(terms.formula(ff), "factors"))
-    fr <- fr[vars]
+  if (is.mer(formula)) {
+    fr <- formula$glmod$fr
+    if (fixed.only) {
+      ff <- formula(formula, fixed.only = TRUE)
+      vars <- rownames(attr(terms.formula(ff), "factors"))
+      fr <- fr[vars]
+    }
+    return(fr)
   }
   
-  return(fr)
+  NextMethod("model.frame")
 }
 
 #' model.matrix method for stanreg objects
@@ -391,10 +392,10 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (!is.mer(object)) 
-    NextMethod("model.matrix")
-  else 
-    object$glmod$X
+  if (is.mer(object))
+    return(object$glmod$X)
+  
+  NextMethod("model.matrix")
 }
 
 #' formula method for stanreg objects
@@ -406,10 +407,10 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
-  if (!is.mer(x)) 
-    x$formula
-  else 
-    formula_mer(x, ...)
+  if (is.mer(x)) 
+    return(formula_mer(x, ...))
+  
+  x$formula
 }
 
 justRE <- function(f, response = FALSE) {
