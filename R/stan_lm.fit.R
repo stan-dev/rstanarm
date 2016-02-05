@@ -35,6 +35,10 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   } else {
     has_intercept <- 0L
   }
+  if (nrow(x) < ncol(x))
+    stop("stan_lm requires more data points than predictors.", 
+         call. = FALSE)
+  
   xbar <- colMeans(x)
   x <- sweep(x, 2L, xbar, FUN = "-")
   ybar <- mean(y)
