@@ -19,7 +19,8 @@ output:
 ```{r, SETTINGS-knitr, include=FALSE}
 library(knitr)
 opts_chunk$set(
-  comment=NA, message = FALSE, warning = FALSE, fig.align='center'
+  comment=NA, message = FALSE, warning = FALSE, fig.align='center',
+  fig.width=7,fig.height=5
 )
 ```
 
@@ -320,7 +321,7 @@ intervals for the estimated chance-of-success parameters $\theta_n$ in
 the posterior.  The following R code reproduces a similar plot for our data.
 
 
-```{r, plot-compare-models, fig.width = 8, fig.height = 5}
+```{r, plot-compare-models}
 library(ggplot2)
 models <- c("complete pooling", "no pooling", "partial pooling")
 estimates <- rbind(pool, nopool, partialpool)
@@ -759,7 +760,7 @@ df_ppd <- data.frame(player = rep(1:nrow(newdata), 3),
                      ub = ppd_summaries[, "75%"],
                      model = rep(models, each = nrow(newdata)))
 ```
-```{r, plot-ppd, fig.width = 8, fig.height = 5}
+```{r, plot-ppd}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
   geom_linerange(color = "gray60", size = 2) + 
   # geom_point(colour="darkblue", size=1) + 
@@ -1013,7 +1014,7 @@ mortality, the posterior distribution over ranks was plotted for each
 hospital.  It is now straightforward to reproduce that figure here for
 the baseball data.
 
-```{r, plot-ranks, fig.width = 8, fig.height = 5}
+```{r, plot-ranks}
 player_order_factor <- factor(player_order, player_order)
 df_rank <- data.frame(name = rep(player_order_factor, each = M), 
                       rank = c(t(rank)))
@@ -1055,7 +1056,7 @@ $\mathrm{Pr}[\theta_n = \theta_{n'}] = 0$ for $n \neq n'$, we don't
 have to worry about ties.
 
 
-```{r, fig.width=8, fig.height=5}
+```{r, plot-is-best}
 thetas_nopool <- plogis(as.matrix(fit_nopool))
 colnames(thetas_nopool) <- player_AtoZ
 rank_nopool <- apply(thetas_nopool[, player_order], 1, reverse_rank)
@@ -1094,7 +1095,7 @@ below-average players.
 
 
 
-## Posterior *p*-Values
+## Graphical Posterior Predictive Checks
 
 We can simulate data from the predictive distribution and compare it
 to the original data used for fitting the model.  If they are not
@@ -1109,7 +1110,7 @@ for an application.  That is, it's possible for a model to capture
 some, but not all, aspects of a data set, and still be useful.
 
 
-#### Test Statistics and Bayesian $p$-Values
+### Test Statistics and Bayesian $p$-Values
 
 A test statistic $T$ is a function from data to a real value.
 Following (Gelman et al. 2013), we will concentrate on four specific
@@ -1173,7 +1174,7 @@ test statistic, the observed value as a vertical line, and the p-value for each
 of the tests. First, here is just the plot for the no pooling model using 
 the mean as the test statistic:
 
-```{r, ppc-mean}
+```{r, plot-ppc-stats-mean, fig.width=3, fig.height=2.5}
 pp_check(fit_nopool, check = "test", test = "mean")
 ```
 
@@ -1185,17 +1186,18 @@ To make plots for each of the models for several test statistics we can use the
 following code, which will greate a list of ggplot objects for each model and 
 then arrange everything in a single plot.
 
-```{r, ppc-stats, fig.width = 8, fig.height = 5}
-ppc_plots <- function(model, Tstats) {
-  lapply(Tstats, function(t) {
-    pp_check(model, check = "test", test = t, binwidth = .025) + 
-      xlab(t) + theme(legend.position = "none")
+```{r, plot-ppc-stats}
+tstat_plots <- function(model, stats) {
+  lapply(stats, function(stat) {
+    graph <- pp_check(model, check = "test", test = stat, 
+                      binwidth = .025, seed = SEED) # optional arguments
+    graph + xlab(stat) + theme(legend.position = "none")
   })
 }
 Tstats <- c("mean", "sd", "min", "max")
-ppcs_pool <- ppc_plots(fit_pool, Tstats)
-ppcs_nopool <- ppc_plots(fit_nopool, Tstats)
-ppcs_partialpool <- ppc_plots(fit_partialpool, Tstats)
+ppcs_pool <- tstat_plots(fit_pool, Tstats)
+ppcs_nopool <- tstat_plots(fit_nopool, Tstats)
+ppcs_partialpool <- tstat_plots(fit_partialpool, Tstats)
 
 library(gridExtra)
 grid.arrange(
@@ -1204,3 +1206,151 @@ grid.arrange(
   arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling"))
 ```
 
+The only worrisomely extreme value visible in the plots is the $p$-value for
+standard deviation in the no-pooling model, where the vast majority of the
+simulated data sets under the model had standard deviations 
+greater than the actual data. 
+
+We didn't actually compute this $p$-value because extreme $p$-values are easy to
+detect visually and whether or not the $p-value$ is less than $0.05$ or some
+other arbitrary value is of little use to us beyond what we can already see in
+the plot. However, if we did want to actually compute the $p$-value we can do so
+easily:
+
+```{r, p-value}
+yrep <- posterior_predict(fit_nopool, seed = SEED) # seed is optional
+Ty <- sd(y)
+Tyrep <- apply(yrep, 1, sd)
+
+# tail-area probability
+p <- 1 - mean(Tyrep > Ty)
+print(p)
+```
+
+
+### Comparing Observed Data and Replicated Data
+
+In this section, we will compare the simulated data from the no pooling and
+partial pooling models. Following the advice of Gelman et al. (2013), we will
+take the fitted parameters of the data set and generate replicated data sets, 
+then compare the replicated data sets visually to the actual data set.
+
+Again using **rstanarm**'s `pp_check` function, we can plot some of the 
+simulated data sets along with the original data set to do a visual inspection 
+as suggested by Gelman et al. (2013). This type we set the `check` argument to
+`"distributions"` and we use `nreps` to specify how many replicated sets of data
+to generate from the posterior predictive distribution. Because our models have
+a binomial outcome, instead of plotting the number of successes (hits in this
+case) on the x-axis, `pp_check` will plot the proportion of successes.
+
+```{r, plot-ppc-y-vs-yrep}
+pp_check(fit_nopool, check = "distributions", 
+         nreps = 15, overlay = FALSE, binwidth = 0.05) + # optional arguments
+  ggtitle("Model: No Pooling")
+
+pp_check(fit_partialpool, check = "distributions", nreps = 15, 
+         overlay = FALSE, binwidth = 0.05) + 
+  ggtitle("Model: Partial Pooling")
+```
+
+
+The posterior simulations are not unreasonable for a binomial
+likelihood, but many are more spread out than the actual data.
+This may actually have more to do with how the data were selected out
+of all the major league baseball players than the actual data
+distribution.  Efron and Morris (1975, p 312) write, "This sample was
+chosen because we wanted between 30 and 50 at bats to assure a
+satisfactory approximation of the binomial by the normal distribution
+while leaving the bulk of at bats to be estimated.  We also wanted to
+include an unusually good hitter (Clemente) to test the method with at
+least one extreme parameter, a situation expected to be less favorable
+to Stein's estimator.  Stein's estimator requires equal variances, or
+in this situation, equal at bats, so the remaining 17 players are all
+whom either the April 26 or May 3 *New York Times* reported with 45 at
+bats."
+
+
+## Discussion
+
+A hierarchical model introduces an estimation bias toward the
+population mean and the stronger the bias, the less variance there is
+in the estimates for the items.  Exactly how much bias and variance is
+warranted can be estimated by further calibrating the model and
+testing where its predictions do not bear out.  In this case, both
+models yield similar estimates, with the log-odds model trading a bit
+more bias for variance in its estimates (the models did not have
+matched hyperpriors; see the exercises).  With very little data, there
+is very little we can do to gain sharp inferences other than provide
+more informative priors, which is well worth doing when prior
+information is available.  On the other hand, with more data, the
+models provide similar results (see the exericses), and in the limit,
+they all of the models (other than complete pooling) converge to
+posteriors that are delta functions around the maximum likelihood
+estimate.  It is important to keep in mind that with increasing
+amounts of data, all of the models (aside from complete pooling) will
+converge to posteriors with delta functions at the empirical chance of
+success (i.e., the maximum likelihood estimate).  Meanwhile, 
+Bayesian inference is allowing us to make more accurate predictions
+with the data available before we hit that asymptotic regime.
+
+
+
+## References
+
+* Betancourt, M. and Girolami, M. (2015) Hamiltonian Monte Carlo for
+  hierarchical models. *Current Trends in Bayesian Methodology with
+  Applications* **79**.
+
+* Efron, B. and Morris, C. (1975) Data analysis using Stein's
+  estimator and its generalizations. *Journal of the American
+  Statistical Association* **70**(350), 311--319. [
+  [pdf](http://www.medicine.mcgill.ca/epidemiology/hanley/bios602/MultilevelData/EfronMorrisJASA1975.pdf)
+  ]
+
+* Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A.,
+  and Rubin, D. B. (2013) *Bayesian Data Analysis*, 3rd
+  Edition. Chapman & Hall/CRC Press, London.
+
+* Gelman, A. and Hill, J. (2007) *Data Analysis Using Regression and
+  Multilevel-Hierarchical Models*. Cambridge University Press,
+  Cambridge, United Kingdom.
+
+* Gelman, A., Hill, J., and Yajima, M. (2012) Why we (usually) don't
+  have to worry about multiple comparisons. *Journal of Research on
+  Educational Effectiveness* **5**, 189--211. [
+  [pdf](http://www.stat.columbia.edu/~gelman/research/published/multiple2f.pdf)
+  ]
+
+* Gneiting, T., Balabdaoui, F., and Raftery, A. E. (2007)
+  Probabilistic forecasts, calibration and sharpness. *Journal of the
+  Royal Statistical Society: Series B* (Statistical Methodology),
+  **69**(2), 243--268.
+
+* Lunn, D., Jackson, C., Best, N., Thomas, A., and Spiegelhalter,
+  D. (2013) *The BUGS Book: A Practical Introduction to Bayesian
+  Analysis*.  Chapman & Hall/CRC Press.
+
+* Neal, R. M. (2003) Slice sampling. *Annals of Statistics*
+  **31**(3):705--767.
+
+* Papaspiliopoulos, O., Roberts, G. O., and Skold, M. (2003)
+  Non-centered parameterisations for hierarchical models and data
+  augmentation. In *Bayesian Statistics 7: Proceedings of the Seventh
+  Valencia International Meeting*, edited by Bernardo, J. M., Bayarri,
+  M. J., Berger, J. O., Dawid, A. P., Heckerman, D., Smith, A. F. M.,
+  and West, M. Oxford University Press, Chicago.
+
+* Plummer, M., Best, N., Cowles, K., & Vines, K. (2006). CODA:
+  Convergence diagnosis and output analysis for MCMC. *R News*,
+  **6**(1), 7--11.
+
+* Spiegelhalter, D., Thomas, A., Best, N., & Gilks, W. (1996) BUGS 0.5
+  Examples. MRC Biostatistics Unit, Institute of Public health,
+  Cambridge, UK.
+
+* Stan Development Team (2015) *Stan Modeling Language User's Guide
+  and Reference Manual*.  [ [web page]
+  ](http://mc-stan.org/documentation/)
+
+* Tarone, R. E. (1982) The use of historical control information in
+  testing for a trend in proportions. *Biometrics* **38**(1):215--220.
