@@ -5,6 +5,7 @@ date: "02/03/2016"
 output: 
   html_vignette:
     toc: yes
+    toc_depth: 3
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -362,7 +363,7 @@ The overall success rate is also the posterior mode (i.e., maximum
 likelihood estimate) for the complete pooling model.
 
 
-## Posterior Predictive Distribution
+# Posterior Predictive Distribution
 
 After we have fit a model using some "training" data, we are usually
 interested in the predictions of the fitted model for new data, which
@@ -546,10 +547,11 @@ fits <- list(Pooling = fit_pool, NoPooling = fit_nopool,
 
 # compute log_p_new with each of the models in 'fits'
 log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
+head(log_p_new, 3)
 ```
 
-We now have the distributions of `log_p_new` in a three-column matrix, one column 
-per model.
+We now have the distributions of `log_p_new` in a `r ncol(log_p_new)`-column
+matrix, with a column for each model.
 
 The posterior mean for <code>log_p_new</code> will give us
 
@@ -704,10 +706,12 @@ sense we define below).
 To predict $z$ for each player we can use the following code:
 
 ```{r, ppd}
-newdata <- with(bball, data.frame(Hits = RemainingHits, AB = RemainingAB, Player))
+newdata <- data.frame(Hits = y_new, AB = K_new, Player = player_order)
 ppd_pool <- posterior_predict(fit_pool, newdata)
 ppd_nopool <- posterior_predict(fit_nopool, newdata)
 ppd_partialpool <- posterior_predict(fit_partialpool, newdata)
+colnames(ppd_pool) <- colnames(ppd_nopool) <- colnames(ppd_partialpool) <- player_order
+colMeans(ppd_partialpool)
 ```
 
 Translating the posterior number of hits into a season batting
@@ -719,27 +723,25 @@ z_1 <- ppd_partialpool[, 1]
 (y[1] + quantile(z_1, prob = c(0.1, 0.9))) / (K[1] + K_new[1])
 ```
 
-for Roberto Clemente from the partial pooling model.  Part of our
-uncertainty here is due to our uncertainty in Clemente's underlying
-chance of success, and part of our uncertainty is due to there being
-367 remaining trials (at bats) modeled as binomial.  In the remaining
-at bats for the season, Clemente's success rate (batting average) was
-$127/367 = 0.35$.
+for Roberto Clemente from the partial pooling model.  Part of our uncertainty
+here is due to our uncertainty in Clemente's underlying chance of success, and
+part of our uncertainty is due to there being 367 remaining trials (at bats)
+modeled as binomial.  In the remaining at bats for the season, Clemente's
+success rate (batting average) was $`r y_new[1]`/`r K_new[1]` \approx 0.35$.
 
 
-The posterior produced by the model for the number of hits for the
-rest of the season is overdispersed compared to a simple binomial
-model based on a point estimate.  For example, if we take the
-partially pooled posterior median estimate of 
-`r round(partialpool["Clemente", "50%"], 2)` for Roberto
-Clemente's ability (and thus remove the first source of uncertainty,
-the posterior uncertainty in his chance of success), the
-prediction for number of hits based on the point estimate would be
-$\mathrm{Binomial}(K^{\mathrm{new}}_1, `r round(partialpool["Clemente", "50%"], 2)`)$, which we know
-analytically has a standard deviation of $\sqrt{n \, \theta_n \, (1 -
+The posterior produced by the model for the number of hits for the rest of the
+season is overdispersed compared to a simple binomial model based on a point
+estimate.  For example, if we take the partially pooled posterior median
+estimate of `r round(partialpool["Clemente", "50%"], 2)` for Roberto Clemente's
+ability (and thus remove the first source of uncertainty, the posterior
+uncertainty in his chance of success), the prediction for number of hits based
+on the point estimate would be
+$\mathrm{Binomial}(K^{\mathrm{new}}_1, `r round(partialpool["Clemente", "50%"], 2)`)$, 
+which we know analytically has a standard deviation of $\sqrt{n \, \theta_n \, (1 -
 \theta_n)} = `r round(sqrt(K_new[1] * partialpool["Clemente", "50%"] * (1 - partialpool["Clemente", "50%"])), 1)`$, which is quite a bit lower than the
-standard deviation of `r round(sd(ppd_partialpool[, 1]),1)` for $z_1$ estimated 
-from the draws from the posterior predictive distribution.
+standard deviation of `r round(sd(ppd_partialpool[, "Clemente"]), 1)` 
+for $z_1$ estimated from the draws from the posterior predictive distribution.
 
 For each model, the following plot shows each player's posterior
 predictive 50% interval for predicted batting average (success rate)
@@ -759,9 +761,9 @@ df_ppd <- data.frame(player = rep(1:nrow(newdata), 3),
 ```
 ```{r, plot-ppd, fig.width = 8, fig.height = 5}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
-  geom_point(colour="skyblue3", size=1) + 
-  geom_linerange(color = "gray60", size = 0.75) + 
-  geom_point(size = 2.5, shape = 21, fill = "gray30", color = "white", stroke = 0.2) + 
+  geom_linerange(color = "gray60", size = 2) + 
+  # geom_point(colour="darkblue", size=1) + 
+  geom_point(size = 2.5, shape = 21, fill = "darkblue", color = "white", stroke = 0.2) +
   facet_grid(. ~ model) +
   labs(x = NULL, y = "batting average") + 
   scale_x_continuous(breaks = NULL) +
@@ -883,21 +885,322 @@ the previous case.
 
 
 ```{r, event-probabilities}
-draws_pool <- as.matrix(fit_pool)
-draws_nopool <- as.matrix(fit_nopool)
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
-draws <- list(pool = draws_pool, nopool = draws_nopool, partialpool = draws_partialpool)
+thetas_partialpool <- plogis(draws_partialpool)
+colnames(thetas_partialpool) <- player_AtoZ
+ability_gt_400 <- (thetas_partialpool > 0.4)[, player_order]
+some_gt_350 <- apply(thetas_partialpool, 1, function(x) max(x) > 0.35)
+colMeans(ability_gt_400)[c(1, 5, 10)]
+mean(some_gt_350)
 
-ability_gt_400 <- function(thetas) plogis(thetas) > 0.4
-some_ability_gt_350 <- function(thetas) {
-  apply(plogis(thetas), 1, function(x) max(x > 0.35))
+z <- ppd_partialpool
+mean((y[1] + z[, 1]) / (K[1] + K_new[1]))
+```
+
+<!-- These results show that the probability of batting 0.400 or better for -->
+<!-- the season is a different question than asking if the player's ability -->
+<!-- is 0.400 or better; for example, with respect to the basic partial -->
+<!-- pooling model, there is roughly an estimated 10% chance of Roberto -->
+<!-- Clemente ($n = 1$) batting 0.400 or better for the season, but only an -->
+<!-- estimated 8% chance that he has ability greater than 0.400.  This is -->
+<!-- again due to there being two sources of uncertainty, that from the -->
+<!-- estimate of the chance of success in the posterior and that from the -->
+<!-- remaining binary trials. -->
+
+
+
+## Multiple Comparisons
+
+We snuck in a "multiple comparison" event in the last section, namely
+whether there was some player with an a chance of success for hits of
+.350 or greater.
+
+With traditional significance testing over multiple trials, it is
+common to adjust for falsely rejecting the null hypothesis (a
+so-called <a
+href="https://en.wikipedia.org/wiki/Type_I_and_type_II_errors#Type_I_error">Type
+I error</a>) by inflating the conventional (and arguably far too low)
+5% target for reporting "significance."
+
+For example, suppose we have our 18 players with ability parameters
+$\theta_n$ and we have $N$ null hypotheses of the form $H_0^n:
+\theta_n < 0.350$.  Now suppose we evaluate each of these 18
+hypotheses independently at the conventional $p = 0.05$ significance
+level, giving each a 5% chance of rejecting the null hypothesis in
+error.  When we run all 18 hypothesis tests, the overall chance of
+falsely rejecting at least one of the null hypotheses is a whopping $1
+- (1 - 0.05)^{18} = 0.60$.
+
+The traditional solution to this problem is to apply a <a
+href="https://en.wikipedia.org/wiki/Bonferroni_correction">Bonferroni
+adjustment</a> to control the false rejection rate; the typical
+adjustment is to divide the $p$-value by the number of hypothesis
+tests in the "family" (that is, the collective test being done).  Here
+that sets the rate to $p = 0.05/18$, or approximately $p = 0.003$, and
+results in a slightly less than 5% chance of falsely rejecting a null
+hypothesis in error.
+
+Although the Bonferroni correction does reduce the overall chance of
+falsely rejecting a null hypothesis, it also reduces the statistical
+power of the test to the same degree.  This means that many null
+hypotheses will fail to be rejected in error.
+
+Rather than doing classical multiple comparison adjustments to adjust
+for false-discovery rate, such as a Bonferroni correction, Gelman et
+al. (2012) suggest using a hierarchical model to perform partial
+pooling instead.  As already shown, hierarchical models partially pool
+the data, which pulls estimates toward the population mean with a
+strength determined by the amount of observed variation in the
+population (see also Figure 2 of (Gelman et al. 2012)).  This
+automatically reduces the false-discovery rate, though not in a way
+that is intrinsically calibrated to false discovery, which is good,
+because reducing the overall false discovery rate in and of itself
+reduces the true discovery rate at the same time.
+
+The generated quantity <code>some_ability_gt_350</code> will be set to
+1 if the maximum ability estimate in $\theta$ is greater than 0.35.
+And thus the posterior mean of this generated quantity will be the
+event probability
+
+\[
+\mathrm{Pr}[\mathrm{max}(\theta) > 0.350]
+\ = \ \int_{\Theta} \mathrm{I}[\mathrm{max}(\theta) > 0.35] \ p(\theta \, | \, y, K) \ \mathrm{d}\theta
+\ \approx \ \frac{1}{M} \, \sum_{m=1}^M \ \mathrm{I}[\mathrm{max}(\theta^{(m)}) > 0.35]
+\]
+
+where $\theta^{(m)}$ is the sequence of posterior draws for the
+ability parameter vector.  Stan reports this value as the posterior
+mean of the generated quantity <code>some_ability_gt_350</code>, which
+takes on the value $\mathrm{I}[\mathrm{max}(\theta^{(m)}) > 0.35]$ in
+each iteration.
+
+```{r, echo=FALSE}
+chance_gt_350 <- round(100 * sapply(some_gt_350, mean))
+```
+
+The probability estimate of there being a player with an ability (chance of
+success) greater than 0.350 is roughly `r chance_gt_350[1]`% in the complete 
+pooling model, `r chance_gt_350[3]`% in the partial pooling model, and 
+`r chance_gt_350[2]`% in the no pooling model. The  partially pooled
+estimates would not be considered significant at conventional p=0.05 thresholds. 
+One way to get a handle on what's going on is to inspect the posterior 80%
+intervals for chance-of-success estimates in the first graph above.
+
+
+## Ranking
+
+In addition to multiple comparisons, we can use the simultaneous
+estimation of the ability parameters to rank the items.  In this
+section, we rank ballplayers by (estimated) chance of success (i.e.,
+batting ability).
+
+Of course, ranking players by ability makes no sense for the complete
+pooling model, where every player is assumed to have the same ability.
+
+
+```{r, ranking}
+reverse_rank <- function(x) 1 + length(x) - rank(x) # so lower rank is better
+rank <- apply(thetas_partialpool[, player_order], 1, reverse_rank)
+t(apply(rank, 1, quantile, prob = c(0.1, 0.5, 0.9)))
+```
+
+It is again abundantly clear from the posterior intervals that our
+uncertainty is very great after only 45 at bats.
+
+In the original Volume I BUGS example (see [OpenBUGS: Surgical
+example](http://www.openbugs.net/Examples/Surgical.html)) of surgical
+mortality, the posterior distribution over ranks was plotted for each
+hospital.  It is now straightforward to reproduce that figure here for
+the baseball data.
+
+```{r, plot-ranks, fig.width = 8, fig.height = 5}
+player_order_factor <- factor(player_order, player_order)
+df_rank <- data.frame(name = rep(player_order_factor, each = M), 
+                      rank = c(t(rank)))
+
+ggplot(df_rank, aes(rank)) +
+  stat_count(width = 0.8) +
+  facet_wrap(~ name) +
+  scale_x_discrete(limits = c(1, 5, 10, 15)) +
+  scale_y_discrete(name = "posterior probability", breaks = c(0, 0.1 * M, 0.2 * M),
+                   labels = c("0.0", "0.1", "0.2")) + 
+  ggtitle("Rankings for Partial Pooling Model")
+```
+
+
+#### Who has the Highest Chance of Success?
+
+We can use our ranking statistic to calculate the event probability
+for item $n$ that the item has the highest chance of success using
+MCMC as
+
+\[
+\mathrm{Pr}[\theta_n = \max(\theta)]
+\ = \
+\int_{\Theta} \mathrm{I}[\theta_n = \mathrm{max}(\theta)]
+              \ p(\theta \, | \, y, K)
+              \ \mathrm{d}\theta
+\ \approx \ 
+\frac{1}{M} \, \sum_{m=1}^M \mathrm{I}[\theta^{(m)}_n = \mathrm{max}(\theta^{(m)})].
+\]
+
+Like our other models, the partial pooling mitigates the implicit
+multiple comparisons being done to calculate the probabilities of
+rankings.  Contrast this with an approach that does a pairwise
+significance test and then applies a false-discovery correction.
+
+We can compute this straightforwardly using the rank data we have
+already computed or we could compute it directly as above.  Because
+$\mathrm{Pr}[\theta_n = \theta_{n'}] = 0$ for $n \neq n'$, we don't
+have to worry about ties.
+
+
+```{r, fig.width=8, fig.height=5}
+thetas_nopool <- plogis(as.matrix(fit_nopool))
+colnames(thetas_nopool) <- player_AtoZ
+rank_nopool <- apply(thetas_nopool[, player_order], 1, reverse_rank)
+is_best_nopool <- rowMeans(rank_nopool == 1)
+is_best_partialpool <- rowMeans(rank == 1)
+
+df_is_best <- data.frame(item = rep(player_order_factor, 2), 
+                         is_best = c(is_best_partialpool, 
+                                     is_best_nopool), 
+                         model = rep(c("partial pooling", "no pooling"), each = N))
+
+ggplot(df_is_best, aes(x=item, y=is_best)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ model) +
+  scale_y_continuous(name = "Pr[player is best]") +
+  ggtitle("Who is the Best Player?") + 
+  theme(axis.text.x = element_text(angle = -45, vjust = 1, hjust = 0))
+```
+
+
+This question of which player has the highest chance of success (batting
+ability) doesn't even make sense in the complete pooling model, because the
+chance of success parameters are all the same by definition.  In the other
+ models, the amount of pooling directly determines the probabilities of
+being the best player. For example, Roberto Clemente, the top performing player
+in the first 45 at bats, has an estimated 
+`r round(100*is_best_nopool["Clemente"])`%
+and `r round(100 * is_best_partialpool["Clemente"])`% 
+chance of being the best player according to the no-pooling and partial pooling
+models, respectively. Ron Swaboda, on the other hand, has an estimated
+`r round(100 * is_best_nopool["Swaboda"], 1)`% and 
+`r round(100 * is_best_partialpool["Swaboda"], 1)`% 
+chance according to the same models. That is, the probability of being best goes
+down for high performing players with more pooling, whereas it goes up for
+below-average players.
+
+
+
+## Posterior *p*-Values
+
+We can simulate data from the predictive distribution and compare it
+to the original data used for fitting the model.  If they are not
+consistent, then either our model is not capturing the aspects of the
+data we are probing with test statistics or the measurement we made is
+highly unlikely.  That is, extreme $p$-values lead us to suspect there
+is something wrong with our model that deserves further exploration.
+
+In some cases, we are willing to work with models that are wrong in
+some measurable aspects, but accurately capture quantities of interest
+for an application.  That is, it's possible for a model to capture
+some, but not all, aspects of a data set, and still be useful.
+
+
+#### Test Statistics and Bayesian $p$-Values
+
+A test statistic $T$ is a function from data to a real value.
+Following (Gelman et al. 2013), we will concentrate on four specific
+test statistics for repeated binary trial data (though these choices
+are fairly general): minimum value, maximum value, sample mean, and
+sample standard deviation.
+
+Given a test statistic $T$ and data $y$, the Bayesian $p$-value has a
+direct definition as a probability,
+
+\[
+p_B = \mathrm{Pr}[T(y^{\mathrm{rep}}) \geq T(y) \, | \, y].
+\]
+
+Bayesian $p$-values, like their traditional counterparts, are
+probabilities, but not probabilities that a model is true.  They
+simply measure discrepancies between the observed data and what we
+would expect if the model is true.
+
+Values of Bayesian $p$-values near 0 or 1 indicate that the data $y$
+used to estimate the model is unlikely to have been generated by the
+estimated model.  As with other forms of full Bayesian inference, our
+estimate is the full posterior, not just a point estimate.
+
+As with other Bayesain inferences, we average over the posterior
+rather than working from a point estimate of the parameters.
+Expanding this as an expectation of an indicator function,
+
+\[
+p_B 
+\ = \ 
+  \int_{\Theta, Y^{\mathrm{rep}}} 
+    \mathrm{I}[T(y^{\mathrm{rep}}) \geq T(y)]  
+    \ p(y^{\mathrm{rep}} \, | \, \theta)
+    \ p(\theta \, | \, y)
+    \ \mathrm{d}\theta,
+\]
+
+We treat $y^{\mathrm{rep}}$ as a parameter in parallel with $\theta$,
+integrating over possible values $y^{\mathrm{rep}} \in
+Y^{\mathrm{rep}}$.  As usual, we use the integration sign in a general
+way intended to include summation, as with the discrete variable
+$y^{\mathrm{rep}}$.
+
+The formualation as an expectation leads to the obvious MCMC
+calculation based on posterior draws $y^{\mathrm{rep} (m)}$ for
+$m \in 1{:}M$,
+
+\[
+p_B
+\approx 
+\frac{1}{M}
+\,
+\sum_{m=1}^M
+\mathrm{I}[T(y^{\mathrm{rep} \ (m)}) \geq T(y)].
+\]
+
+Using the `pp_check` in **rstanarm**, we can easily reproduce Figure 6.12 from
+(Gelman et al. 2013), which shows the posterior predictive distribution for the
+test statistic, the observed value as a vertical line, and the p-value for each
+of the tests. First, here is just the plot for the no pooling model using 
+the mean as the test statistic:
+
+```{r, ppc-mean}
+pp_check(fit_nopool, check = "test", test = "mean")
+```
+
+The `test` argument can the be the name of any R function (including your own 
+functions defined in the Global Environment) that takes a vector as an input and
+returns a scalar. 
+
+To make plots for each of the models for several test statistics we can use the
+following code, which will greate a list of ggplot objects for each model and 
+then arrange everything in a single plot.
+
+```{r, ppc-stats, fig.width = 8, fig.height = 5}
+ppc_plots <- function(model, Tstats) {
+  lapply(Tstats, function(t) {
+    pp_check(model, check = "test", test = t, binwidth = .025) + 
+      xlab(t) + theme(legend.position = "none")
+  })
 }
+Tstats <- c("mean", "sd", "min", "max")
+ppcs_pool <- ppc_plots(fit_pool, Tstats)
+ppcs_nopool <- ppc_plots(fit_nopool, Tstats)
+ppcs_partialpool <- ppc_plots(fit_partialpool, Tstats)
 
-gt_400 <- lapply(draws, ability_gt_400)
-some_gt_350 <- lapply(draws, some_ability_gt_350)
-
-sapply(gt_400, function(x) apply(x, 2, mean))
-sapply(some_gt_350, mean)
-
+library(gridExtra)
+grid.arrange(
+  arrangeGrob(grobs = ppcs_pool, nrow = 1, left = "Pooling"), 
+  arrangeGrob(grobs = ppcs_nopool, nrow = 1, left = "No Pooling"),
+  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling"))
 ```
 
