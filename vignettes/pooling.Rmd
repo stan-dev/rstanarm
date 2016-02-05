@@ -27,10 +27,25 @@ opts_chunk$set(
 # Introduction 
 
 This vignette is based on Bob Carpenter's Stan tutorial 
-*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr/pool-repeated-trials)*. Most of the text comes from Bob's original, but here we show how 
-to fit the models and carry out predictions using the **rstanarm** package.
+*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr/pool-repeated-trials)*,
+but here we show how to fit the models and carry out predictions and 
+model checking and comparison using the **rstanarm**.
 
+The text is a combination of Bob's original with some additions and 
+substractions to make the content more applicable to **rstanarm**. The Stan code
+from Bob's original has also been entirely removed, as **rstanarm** will fit all
+of the models in Stan without the user having to write the underlying Stan 
+programs. That said, Bob's Stan code is still a good reference for anyone 
+interested in how these models are estimated "under-the-hood" even though the 
+parameterizations used internally by **rstanarm** differ somewhat from those in
+the original.
 
+***
+**Disclaimer**: Although the baseball example used throughout this vignette
+focuses on a player's batting average, we are **not** suggesting that batting
+average is the most useful metric for evaluating players. It simply happens to
+be nice for illustrating the topics covered here.
+***
 
 # Repeated Binary Trials
 
@@ -54,14 +69,13 @@ successes out of $K_n$ trials.  For example, the data may consist of
 ### Baseball Hits (Efron and Morris 1975)
 
 As a running example, we include the data from Table 1 of (Efron and
-Morris 1975) as <code>efron-morris-75-bball.csv</code> (it was
-downloaded 24 Dec 2015 from
+Morris 1975) as <code>efron-morris-75-bball.csv.xz</code> 
+(it was downloaded 24 Dec 2015 from
 [here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
-It is drawn from the 1970 Major League Baseball season from both
-leagues.
+It is drawn from the 1970 Major League Baseball season from both leagues.
 
 ```{r, load-data}
-bball <- read.csv(file.path("data", "efron-morris-75-bball.csv"))
+bball <- read.csv(file.path("data", "efron-morris-75-bball.csv.xz"))
 bball <- with(bball, data.frame(Player = LastName, 
                                 Hits, AB = At.Bats, 
                                 RemainingAB = RemainingAt.Bats,
@@ -121,8 +135,8 @@ this vignette.
 ```{r, create-objects}
 player_order <- as.character(bball$Player) # last names in order of batting avg
 player_AtoZ <- sort(player_order) # last names in alphabetical order
-player_avgs <- with(bball, Hits / AB) # player avgs through 45 AB
-pop_avg <- with(bball, sum(Hits) / sum(AB)) # overall avg through 45 AB
+player_avgs <- y / K # player avgs through 45 AB
+pop_avg <- sum(y) / sum(K) # overall avg through 45 AB
 cat("Population average through 45 at-bats:", round(pop_avg, 3))
 ```
 
@@ -169,8 +183,10 @@ fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball,
                      seed = SEED)
 ```
 
-We'll create a function we can reuse later for computing some posterior 
-summary statistics. The `summary_stats` function, defined bolow, will
+The `summary` function will compute all sorts of summary statistics from
+the fitted model, but here we'll create a small function that will compute
+a few summary statistics that we'll want for each of the models we estimate. 
+The `summary_stats` function, defined below, will
 take a matrix of posterior draws as its input, apply an inverse-logit
 transformation (to convert from log-odds to probabilities) and then 
 compute the median and 80% interval.
@@ -257,8 +273,8 @@ size.
 As the estimated chance of success goes up toward 0.5, the 80%
 intervals gets wider.  This is to be expected for chance of success
 parameters, because the standard deviation of a random variable
-distributed as $\mathsf{Binomial}(K, \theta)$ is $\sqrt{\frac{\theta
-\, (1 - \theta)}{K}}$.
+distributed as $\mathsf{Binomial}(K, \theta)$ is 
+$\sqrt{\theta\, (1 - \theta) / K}$.
 
 Based on our existing knowledge of baseball, the no-pooling model is
 almost certainly overestimating the high abilities and underestimating
@@ -308,9 +324,10 @@ rownames(partialpool) <- player_AtoZ
 (partialpool <- partialpool[player_order, ]) # put in original order
 ```
 
-It is clear from the wide posteriors for the $\theta_n$ that there is
-considerable uncertainty in the estimates of chance-of-success on an
-item-by-item (player-by-player) basis.
+Here the estimates are less extreme than in the no-pooling case, which we should
+expect due to the partial pooling. It is also clear from the wide posteriors for
+the $\theta_n$ that there is considerable uncertainty in the estimates of
+chance-of-success on an item-by-item (player-by-player) basis.
 
 
 ## Observed vs. Estimated Chance of Success
@@ -494,7 +511,8 @@ previous section, because if the new observations have higher
 predictive densities, they're probably within narrower posterior
 intervals (Gneiting et al. 2007).
 
-### Computing the Log Predictive Posterior Density
+
+### $\log E[p(\tilde{y} \, | \, \theta)]$ vs $E[\log p(\tilde{y} \, | \, \theta)]$
 
 The log of posterior predicitve density is defined in the obvious way as
 
@@ -539,10 +557,11 @@ data point using the `log_lik` function, which, like `posterior_predict`,
 accepts a `newdata` argument. The `log_lik` function will return an $M \times N$
 matrix, where $M$ is the size of the posterior sample (the number of draws 
 we obtained from the posterior distribution) and $N$ is the number of data points
-in `newdata`. Taking the row sums of this matrix will 
+in `newdata`. We can then take the row sums of this matrix to sum over the 
+data points. 
 
 ```{r, log_p_new}
-newdata <- with(bball, data.frame(Hits = y_new, AB = K_new, Player))
+newdata <- data.frame(Hits = y_new, AB = K_new, bball$Player)
 fits <- list(Pooling = fit_pool, NoPooling = fit_nopool, 
              PartialPooling = fit_partialpool)
 
@@ -554,7 +573,7 @@ head(log_p_new, 3)
 We now have the distributions of `log_p_new` in a `r ncol(log_p_new)`-column
 matrix, with a column for each model.
 
-The posterior mean for <code>log_p_new</code> will give us
+For each model, the posterior mean for <code>log_p_new</code> will give us
 
 \[
  \int_{\Theta} \left( \log p(\tilde{y} \, | \, \theta) \right) 
@@ -572,14 +591,16 @@ mean_log_p_new <- colMeans(log_p_new)
 round(sort(mean_log_p_new, decreasing = TRUE))
 ```
 
-From a predictive standpoint, the models are ranked by the amount of
-pooling they do, with complete pooling being the best, and no pooling
-being the worst predictively. All of these models do predictions by
-averaging over their posteriors, with the amount of posterior
-uncertainty also being ranked in reverse order of the amount of
-pooling they do.
+From a predictive standpoint, the models are ranked by the amount of pooling
+they do, with complete pooling being the best, and no pooling being the worst
+predictively. All of these models do predictions by averaging over their
+posteriors, with the amount of posterior uncertainty also being ranked in
+reverse order of the amount of pooling they do.
 
-### Calculating posterior log density
+As we will now see, the ranking of the models can change when we compute
+the posterior expectation of the log predictive density.
+
+#### Posterior expectation of the log predictive density
 
 The straight path to calculate this would be to define a generated
 quantity $p(y^{\mathrm{new}} \, | y)$, look at the posterior mean
@@ -624,7 +645,7 @@ We'll then write that last expression as
         \ \log p(y^{\mathrm{new}} \, | \, \theta^{(m)})
 \]
 
-We can compute $mathrm{log\_sum\_exp}$ stably by subtracting the max value.
+We can compute $\mathrm{log\_sum\_exp}$ stably by subtracting the max value.
 Suppose $u = u_1, \ldots, u_M$, and $\max(u)$ is the largest $u_m$.
 We can calculate
 
@@ -677,6 +698,11 @@ predictions than the full pooling model, which in turn is making
 slightly better predictions than the no pooling model.
 
 
+**Note**: in general, we do not need to go through this process every time we fit
+models using **rstanarm**. The `loo()` function performs similar computations 
+for its approximation to leave-one-out cross-validation (LOO), and we can
+compare models on LOO rather than do all of this work ourselves. See the other
+**rstanarm** vignettes for examples.
 
 ## Predicting New Observations
 
@@ -1228,20 +1254,22 @@ print(p)
 ```
 
 
-### Comparing Observed Data and Replicated Data
+### Comparing Observed and Replicated Data
 
-In this section, we will compare the simulated data from the no pooling and
-partial pooling models. Following the advice of Gelman et al. (2013), we will
-take the fitted parameters of the data set and generate replicated data sets, 
-then compare the replicated data sets visually to the actual data set.
+Following the advice of Gelman et al. (2013), we will take the fitted parameters
+of the data set and generate replicated data sets, then compare the replicated
+data sets visually to the observed data we used to fit the model. In this 
+section we'll create the plots for the model using partial pooling, but the
+same plots can be made for the other models too.
 
 Again using **rstanarm**'s `pp_check` function, we can plot some of the 
 simulated data sets along with the original data set to do a visual inspection 
-as suggested by Gelman et al. (2013). This type we set the `check` argument to
-`"distributions"` and we use `nreps` to specify how many replicated sets of data
-to generate from the posterior predictive distribution. Because our models have
-a binomial outcome, instead of plotting the number of successes (hits in this
-case) on the x-axis, `pp_check` will plot the proportion of successes.
+as suggested by Gelman et al. (2013). For this type of posterior predictive 
+check we set the `check` argument to `"distributions"` and we use `nreps` to
+specify how many replicated sets of data to generate from the posterior
+predictive distribution. Because our models have a binomial outcome, instead of
+plotting the number of successes (hits in this case) on the x-axis, `pp_check`
+will plot the proportion of successes.
 
 ```{r, plot-ppc-y-vs-yrep}
 pp_check(fit_nopool, check = "distributions", 
@@ -1253,12 +1281,12 @@ pp_check(fit_partialpool, check = "distributions", nreps = 15,
   ggtitle("Model: Partial Pooling")
 ```
 
+These simulations are not unreasonable for a binomial likelihood, but they are 
+more spread out than the actual data. In this case, this may actually have more
+to do with how the data were selected out of all the major league baseball
+players than the actual data distribution.  Efron and Morris (1975, p 312) write
 
-The posterior simulations are not unreasonable for a binomial
-likelihood, but many are more spread out than the actual data.
-This may actually have more to do with how the data were selected out
-of all the major league baseball players than the actual data
-distribution.  Efron and Morris (1975, p 312) write, "This sample was
+> This sample was
 chosen because we wanted between 30 and 50 at bats to assure a
 satisfactory approximation of the binomial by the normal distribution
 while leaving the bulk of at bats to be estimated.  We also wanted to
@@ -1267,35 +1295,62 @@ least one extreme parameter, a situation expected to be less favorable
 to Stein's estimator.  Stein's estimator requires equal variances, or
 in this situation, equal at bats, so the remaining 17 players are all
 whom either the April 26 or May 3 *New York Times* reported with 45 at
-bats."
+bats.
 
 
-## Discussion
+# Discussion
 
-A hierarchical model introduces an estimation bias toward the
-population mean and the stronger the bias, the less variance there is
-in the estimates for the items.  Exactly how much bias and variance is
-warranted can be estimated by further calibrating the model and
-testing where its predictions do not bear out.  In this case, both
-models yield similar estimates, with the log-odds model trading a bit
-more bias for variance in its estimates (the models did not have
-matched hyperpriors; see the exercises).  With very little data, there
-is very little we can do to gain sharp inferences other than provide
-more informative priors, which is well worth doing when prior
-information is available.  On the other hand, with more data, the
-models provide similar results (see the exericses), and in the limit,
-they all of the models (other than complete pooling) converge to
-posteriors that are delta functions around the maximum likelihood
-estimate.  It is important to keep in mind that with increasing
-amounts of data, all of the models (aside from complete pooling) will
-converge to posteriors with delta functions at the empirical chance of
-success (i.e., the maximum likelihood estimate).  Meanwhile, 
-Bayesian inference is allowing us to make more accurate predictions
-with the data available before we hit that asymptotic regime.
+A hierarchical model introduces an estimation bias toward the population mean
+and the stronger the bias, the less variance there is in the estimates for the
+items.  Exactly how much bias and variance is warranted can be estimated by
+further calibrating the model and testing where its predictions do not bear out.
+
+With very little data, there is very little we can do to gain sharp inferences 
+other than provide more informative priors, which is well worth doing when prior
+information is available.
+
+On the other hand, with more data, the models provide similar results (see the
+exericses), and in the limit, all of the models (other than complete pooling)
+converge to posteriors that are delta functions around the empirical chance of 
+success (i.e., the maximum likelihood estimate).  Meanwhile, Bayesian inference
+is allowing us to make more accurate predictions with the data available before
+we hit that asymptotic regime.
 
 
+# Exercises
 
-## References
+1.  Generate fake data according to the pooling, no-pooling, and partial
+pooling models.  Fit the model and consider the coverage
+of the posterior 80% intervals.
+
+1.  Try generating data where each player has a different number of at-bats
+(trials) and then fitting the models.  What effect does the number of initial
+trials have on the posterior?  Is there a way to quantify the effect?
+
+1.  How sensitive is the basic no-pooling model to the choice of prior? We used
+a somewhat informative prior due to our knowledge of baseball, but the prior
+could be made more or less informative. How, if at all, does this affect
+posterior inference?
+
+1.  What are some other test statistics that might be used to evaluate our model
+fit to data? Try some out using `pp_check(model, check="test", test = "my_test")`,
+where `my_test` is your function that computes the test statistic. For example,
+to check the 25% quantile you can use 
+
+```{r, eval=FALSE} 
+q25 <- function(x) quantile(x, 0.25)
+pp_check(model, check = "test", test = "q25")
+```
+
+
+1.  Discuss the difference between batting average and on-base percentage as
+random variables.  Consider particularly the denominator (at-bat versus plate
+appearance).  Is the denominator in these kinds of problems always a random
+variable itself?  Why might this be important in inference?
+
+
+
+# References
 
 * Betancourt, M. and Girolami, M. (2015) Hamiltonian Monte Carlo for
   hierarchical models. *Current Trends in Bayesian Methodology with
@@ -1354,3 +1409,51 @@ with the data available before we hit that asymptotic regime.
 
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
+  
+  
+
+# Additional Data Sets
+
+The following additional data sets have a similar structure to the baseball data
+used in this vignette and are included with **rstanarm**. To load one of these
+data sets you can use the following code:
+
+```{r, eval=FALSE}
+path <- system.file("doc", "data", FILENAME, package = "rstanarm")
+dataset <- read.csv(path)
+```
+
+where `FILENAME` should be replaced by the name of the file to load, e.g.
+`"rat-tumors.csv.xz"` for the rat tumors data.
+
+
+#### Rat tumors (N = 71)
+
+Tarone (1982) provides a data set of tumor incidence in historical
+control groups of rats; specifically endometrial stromal polyps in
+female lab rats of type F344.  The data set is taken from the book
+site for (Gelman et al. 2013):
+
+* File name: <tt>rat-tumors.csv.xz</tt>
+* Data source: [http://www.stat.columbia.edu/~gelman/book/data/rats.asc](http://www.stat.columbia.edu/~gelman/book/data/rats.asc)
+
+
+#### Surgical mortality (N = 12)
+
+Spiegelhalter et al. (1996) provide a data set of mortality rates
+in 12 hospitals performing cardiac surgery in babies.  We just
+manually entered the data from the paper; it is also available in
+the Stan example models repository in R format.
+
+* File name: <tt>surgical-mortality.csv.xz</tt>
+* Data source: Unknown
+
+#### Baseball hits 1996 AL (N = 308)
+
+Carpenter (2009) updates Efron and Morris's (1975) data set for the
+entire set of players for the entire 1996 American League season of
+Major League Baseball.  The data was originally downloaded from the
+[baseball1.com](http://www.baseball1.com/).
+
+* File name: <tt>baseball-hits-1996.csv.xz</tt>
+* Data Source: [http://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability](http://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability/)
