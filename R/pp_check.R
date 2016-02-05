@@ -241,8 +241,13 @@ melt_yrep <- function(yrep, n) {
   Nseq <- seq_len(ncol(yrep))
   yrep <- as.data.frame(yrep)
   colnames(yrep) <- paste0("value.", Nseq)
-  reshape(yrep, direction = "long", v.names = "value", 
-          varying = list(Nseq), ids = paste0('yrep_', seq_len(n)))
+  ids <- paste0('yrep_', seq_len(n))
+  out <- reshape(yrep, direction = "long", v.names = "value", 
+                 varying = list(Nseq), ids = ids)
+  
+  # to make sure they get plotted in correct order and not alphabetically
+  out$id <- factor(out$id, levels = c("Observed y", ids))
+  out
 }
 
 pp_check_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
