@@ -36,7 +36,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     has_intercept <- 0L
   }
   if (nrow(x) < ncol(x))
-    stop("stan_lm requires more data points than predictors.", 
+    stop("stan_lm with more data points than predictors is not yet enabled.", 
          call. = FALSE)
   
   xbar <- colMeans(x)
