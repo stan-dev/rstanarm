@@ -90,7 +90,7 @@ Morris 1975) as `efron-morris-75-bball.csv.xz`
 It is drawn from the 1970 Major League Baseball season (from both leagues).
 
 ```{r, load-data}
-bball <- read.csv(file.path("vignettes/data", "efron-morris-75-bball.csv.xz"))
+bball <- read.csv(file.path("data", "efron-morris-75-bball.csv.xz"))
 bball <- with(bball, # we only need a few of the variables
               data.frame(Player = LastName, 
                          Hits, AB = At.Bats, 
@@ -141,14 +141,18 @@ baseball data.
 # Fitting the Models
 
 First we'll just create some useful objects to use throughout the rest of 
-this vignette.
+this vignette. One of them is a function `batting_avg`, which just 
+formats a number to include three decimal places to the right of zero when
+printing, as is customary for batting averages.
 
-```{r, create-objects}
+```{r, create-objects, results="hold"}
+batting_avg <- function(x) print(format(round(x, digits = 3), nsmall = 3), quote = FALSE)
 player_order <- as.character(bball$Player) # last names in order of batting avg
 player_AtoZ <- sort(player_order) # last names in alphabetical order
 player_avgs <- y / K # player avgs through 45 AB
-pop_avg <- sum(y) / sum(K) # overall avg through 45 AB
-cat("Population average through 45 at-bats:", round(pop_avg, 3))
+tot_avg <- sum(y) / sum(K) # overall avg through 45 AB
+cat("Overall average through 45 at-bats:\n")
+batting_avg(tot_avg)
 ```
 
 
@@ -176,15 +180,15 @@ likelihood
 p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta).
 \]
 
-Using `family=binomial("logit")`, the `stan_glm` function in **rstanarm** will
+Using `family=binomial("logit")`, the `stan_glm` function in **rstanarm** will 
 parameterize the model in terms of log-odds of success, 
-$\log \frac{\theta}{1 - \theta}$.
-We will use a Gaussian prior on the log-odds with a mean of -1 and standard 
-deviation 2.5, which is a rather diffuse prior on the log-odds scale, but 
-centered around a plausible value given our knowledge of baseball. The inverse
-log-odds (inverse logit) of -1 is about 0.27, which is more plausible for a 
-batting average than 0.5, which would be the implication if the prior on 
-the log-odds were centered at 0.
+$\log \frac{\theta}{1 -\theta}$. 
+We will use a normal distribution with mean $-1$ and standard 
+deviation $2.5$ as the prior on the log-odds, which is a somewhat diffuse prior
+for the log-odds scale, but centered around a plausible value given our
+knowledge of baseball. The inverse logit of $-1$ is about $0.270$, which is more
+plausible for a batting average than $0.500$, which would be the implication if
+the prior on the log-odds were centered at $0$.
 
 ```{r, full-pooling, results="hide"}
 library(rstanarm)
@@ -194,33 +198,30 @@ fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball,
                      seed = SEED)
 ```
 
-The `summary` function will compute all sorts of summary statistics from
-the fitted model, but here we'll create a small function that will compute
-a few summary statistics that we'll want for each of the models we estimate. 
-The `summary_stats` function, defined below, will
-take a matrix of posterior draws as its input, apply an inverse-logit
-transformation (to convert from log-odds to probabilities) and then 
-compute the median and 80% interval.
+The `summary` function will compute all sorts of summary statistics from the
+fitted model, but here we'll create a small function that will compute a few
+posterior summary statistics that we'll want for each of the models we estimate.
+The `summary_stats` function, defined below, will take a matrix of posterior
+draws as its input, apply an inverse-logit transformation (to convert from
+log-odds to probabilities) and then compute the median and 80% interval.
 
 ```{r, summary-stats-function}
+invlogit <- plogis  # function(x) 1/(1 + exp(-x))
 summary_stats <- function(posterior) {
-  x <- plogis(posterior) # apply inverse-logit transformation
+  x <- invlogit(posterior)  # log-odds -> probabilities
   t(apply(x, 2, quantile, probs = c(0.1, 0.5, 0.9))) 
 }
 
-# as.matrix extracts the posterior draws from a stanreg object
+# replicate to give each player the same estimates
 pool <- summary_stats(as.matrix(fit_pool))
-print(pool, digits = 2)
-```
-
-```{r, full-pooling-replicate}
-# replicate to give each player the same estimates (we'll use this later)
-(pool <- matrix(pool, nrow(bball), ncol(pool), byrow = TRUE, 
-                dimnames = list(player_order, c("10%", "50%", "90%"))))
+pool <- matrix(pool, nrow(bball), ncol(pool), byrow = TRUE, 
+               dimnames = list(player_order, c("10%", "50%", "90%")))
+batting_avg(pool)
 ```
 
 The result is a posterior median for $\theta$ of `r round(pool[1,"50%"], 3)` 
-with an 80% central posterior interval of $(`r round(pool[1,"10%"], 3)`, `r round(pool[1,"90%"], 3)`)$.  
+with an 80% central posterior interval of 
+$(`r round(pool[1,"10%"], 3)`, `r round(pool[1,"90%"], 3)`)$.  
 With more data, such as from more players or from the rest of the season, the
 posterior approaches a delta function around the maximum likelihood estimate and
 the posterior interval around the centeral posterior intervals will shrink. 
@@ -256,36 +257,36 @@ p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta_n)
 Fitting this model in **rstanarm** only requires tweaking the model formula to 
 drop the intercept and instead include as the only predictor the factor variable
 `Player`. This is equivalent to estimating a separate intercept on the log-odds 
-scale for each player. We'll also use the `prior` argument since `Player` is 
-considered a predictor rather than an intercept from R's perspective. Specifying
-`prior = normal(-1, 2.5)` means that the each of the \code{Player} parameters 
-(on the logit scale) gets a ${\rm Normal}(-1, 2.5^2)$ prior, independent of the others.
+scale for each player. We'll also use the `prior` (rather than
+`prior_intercept`) argument since `Player` is considered a predictor rather than
+an intercept from R's perspective. Specifying `prior = normal(-1, 2.5)` means
+that the each of the \code{Player} parameters (on the logit scale) gets a ${\rm
+Normal}(-1, 2.5^2)$ prior, independent of the others.
 
 ```{r, no-pooling, results="hide"}
 fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, prior = normal(-1, 2.5))
 nopool <- summary_stats(as.matrix(fit_nopool))
-print(nopool, digits = 2) # in alphabetical order
+batting_avg(nopool)  # in alphabetical order
 ```
 ```{r, no-pooling-print, echo=FALSE}
-print(nopool, digits = 2)
+batting_avg(nopool)
 ```
 ```{r, no-pooling-order}
 rownames(nopool) <- player_AtoZ
-(nopool <- nopool[player_order, ]) # put in order of original data
+nopool <- nopool[player_order, ]  # put in order of original data
+batting_avg(nopool)
 ```
 
-Each 80% interval is much wider than the estimated interval for the
-population in the complete pooling model; this is to be
-expected---there are only 45 data items for each parameter here as
-opposed to 810 in the complete pooling case.  If the items each had
-different numbers of trials, the intervals would also vary based on
-size.
+Each 80% interval is much wider than the estimated interval for the population
+in the complete pooling model; this is to be expected---there are only `r K[1]`
+data items for each parameter here as opposed to `r sum(K)` in the
+complete pooling case. If the items each had different numbers of trials, the
+intervals would also vary based on size.
 
-As the estimated chance of success goes up toward 0.5, the 80%
-intervals gets wider.  This is to be expected for chance of success
-parameters, because the standard deviation of a random variable
-distributed as $\mathsf{Binomial}(K, \theta)$ is 
-$\sqrt{\theta\, (1 - \theta) / K}$.
+As the estimated chance of success goes up toward 0.5, the 80% intervals gets
+wider.  This is to be expected for chance of success parameters, because the
+standard deviation of a random variable distributed as 
+$\mathsf{Binomial}(K,\theta)$ is $\sqrt{\theta\, (1 - \theta) / K}$.
 
 Based on our existing knowledge of baseball, the no-pooling model is
 almost certainly overestimating the high abilities and underestimating
@@ -328,26 +329,27 @@ We do this for each draw from the posterior distribution.
 ```{r, partial-pooling-order}
 # shift each player's estimate by intercept (and then drop intercept)
 shift_draws <- function(draws) {
-  sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], "+")
+  sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], FUN = "+")
 }
 thetas <- shift_draws(as.matrix(fit_partialpool))
 partialpool <- summary_stats(thetas)
 rownames(partialpool) <- player_AtoZ
-(partialpool <- partialpool[player_order, ]) # put in original order
+partialpool <- partialpool[player_order, ] # put in original order
+batting_avg(partialpool)
 ```
 
 Here the estimates are less extreme than in the no-pooling case, which we should
 expect due to the partial pooling. It is also clear from the wide posteriors for
-the $\theta_n$ that there is considerable uncertainty in the estimates of
+the $\theta_n$ that there is considerable uncertainty in the estimates of 
 chance-of-success on an item-by-item (player-by-player) basis.
 
 
 ## Observed vs. Estimated Chance of Success
 
-Figure 5.4 from (Gelman et al. 2013) plots the observed number of
-successes $y_n$ for the first $K_n$ trials versus the median and 80\%
-intervals for the estimated chance-of-success parameters $\theta_n$ in
-the posterior.  The following R code reproduces a similar plot for our data.
+Figure 5.4 from (Gelman et al. 2013) plots the observed number of successes
+$y_n$ for the first $K_n$ trials versus the median and 80\% intervals for the
+estimated chance-of-success parameters $\theta_n$ in the posterior.  The
+following R code reproduces a similar plot for our data.
 
 
 ```{r, plot-compare-models}
@@ -361,7 +363,8 @@ plotdata <- data.frame(estimates,
 
 base <- ggplot(plotdata, aes(x = observed, y = median, ymin = lb, ymax = ub))
 base +
-  geom_hline(yintercept = pop_avg, color = "lightpink", size = 0.75) +
+  geom_hline(yintercept = tot_avg, color = "lightpink", size = 0.75) +
+  geom_abline(intercept = 0, slope = 1, color = "skyblue") + 
   geom_linerange(color = "gray60", size = 0.75) + 
   geom_point(size = 2.5, shape = 21, fill = "gray30", color = "white", stroke = 0.2) + 
   facet_grid(. ~ model) +
@@ -384,9 +387,9 @@ The horizontal red line has an intercept equal to the overall success rate,
 \[
 \frac{\sum_{n=1}^N y_n}{\sum_{n=1}^N K_n}
 \ = \
-\frac{215}{810}
+\frac{`r sum(y)`}{`r sum(K)`}
 \ = \ 
-0.266.
+`r round(tot_avg, 3)`.
 \]
 
 The overall success rate is also the posterior mode (i.e., maximum
@@ -579,7 +582,7 @@ fits <- list(Pooling = fit_pool, NoPooling = fit_nopool,
 
 # compute log_p_new with each of the models in 'fits'
 log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
-head(log_p_new, 3)
+head(log_p_new)
 ```
 
 We now have the distributions of `log_p_new` in a `r ncol(log_p_new)`-column
@@ -744,7 +747,7 @@ ppd_pool <- posterior_predict(fit_pool, newdata)
 ppd_nopool <- posterior_predict(fit_nopool, newdata)
 ppd_partialpool <- posterior_predict(fit_partialpool, newdata)
 colnames(ppd_pool) <- colnames(ppd_nopool) <- colnames(ppd_partialpool) <- player_order
-colMeans(ppd_partialpool)
+batting_avg(colMeans(ppd_partialpool))
 ```
 
 Translating the posterior number of hits into a season batting
@@ -753,14 +756,16 @@ we get an 80% posterior interval of
 
 ```{r, clemente}
 z_1 <- ppd_partialpool[, 1]
-(y[1] + quantile(z_1, prob = c(0.1, 0.9))) / (K[1] + K_new[1])
+clemente_80pct <- (y[1] + quantile(z_1, prob = c(0.1, 0.9))) / (K[1] + K_new[1])
+batting_avg(clemente_80pct)
 ```
 
 for Roberto Clemente from the partial pooling model.  Part of our uncertainty
 here is due to our uncertainty in Clemente's underlying chance of success, and
 part of our uncertainty is due to there being 367 remaining trials (at bats)
 modeled as binomial.  In the remaining at bats for the season, Clemente's
-success rate (batting average) was $`r y_new[1]`/`r K_new[1]` \approx 0.35$.
+success rate (batting average) was 
+$`r y_new[1]`/`r K_new[1]` = `r round(y_new[1]/K_new[1], 3)`$.
 
 
 The posterior produced by the model for the number of hits for the rest of the
@@ -783,20 +788,19 @@ remainder of the season is shown as a blue dot.
 
 ```{r, ppd-stats}
 ppd_intervals <- function(x) t(apply(x, 2, quantile, probs = c(0.25, 0.75)))
-ppd_summaries <- (1 / newdata$AB) * rbind(ppd_intervals(ppd_pool),
-                                          ppd_intervals(ppd_nopool),
-                                          ppd_intervals(ppd_partialpool))
-df_ppd <- data.frame(player = rep(1:nrow(newdata), 3),
-                     y = with(newdata, rep(Hits / AB, 3)),
+ppd_summaries <- (1 / K_new) * rbind(ppd_intervals(ppd_pool),
+                                     ppd_intervals(ppd_nopool),
+                                     ppd_intervals(ppd_partialpool))
+df_ppd <- data.frame(player = rep(1:length(y_new), 3),
+                     y = rep(y_new / K_new, 3),
                      lb = ppd_summaries[, "25%"],
                      ub = ppd_summaries[, "75%"],
-                     model = rep(models, each = nrow(newdata)))
+                     model = rep(models, each = length(y_new)))
 ```
 ```{r, plot-ppd}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
   geom_linerange(color = "gray60", size = 2) + 
-  # geom_point(colour="darkblue", size=1) + 
-  geom_point(size = 2.5, shape = 21, fill = "darkblue", color = "white", stroke = 0.2) +
+  geom_point(size = 2.5, fill = "skyblue2") +
   facet_grid(. ~ model) +
   labs(x = NULL, y = "batting average") + 
   scale_x_continuous(breaks = NULL) +
@@ -917,17 +921,17 @@ the previous case.
 \]
 
 
-```{r, event-probabilities}
+```{r, event-probabilities, results="hold"}
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
 colnames(thetas_partialpool) <- player_AtoZ
 ability_gt_400 <- (thetas_partialpool > 0.4)[, player_order]
-some_gt_350 <- apply(thetas_partialpool, 1, function(x) max(x) > 0.35)
-colMeans(ability_gt_400)[c(1, 5, 10)]
-mean(some_gt_350)
+cat("Pr(theta_n ≥ 0.400 | y)\n")
+batting_avg(colMeans(ability_gt_400)[c(1, 5, 10)])
 
-z <- ppd_partialpool
-mean((y[1] + z[, 1]) / (K[1] + K_new[1]))
+some_gt_350 <- apply(thetas_partialpool, 1, function(x) max(x) > 0.35)
+cat("Pr(at least one theta_n ≥ 0.350 | y)\n")
+batting_avg(mean(some_gt_350))
 ```
 
 <!-- These results show that the probability of batting 0.400 or better for -->
@@ -1008,7 +1012,7 @@ takes on the value $\mathrm{I}[\mathrm{max}(\theta^{(m)}) > 0.35]$ in
 each iteration.
 
 ```{r, echo=FALSE}
-chance_gt_350 <- round(100 * sapply(some_gt_350, mean))
+chance_gt_350 <- round(100 * mean(some_gt_350))
 ```
 
 The probability estimate of there being a player with an ability (chance of
