@@ -36,7 +36,7 @@ the models using **rstanarm** and plot the results, (ii) estimate event
 probabilities, (iii) evaluate posterior predictive densities to evaluate model 
 predictions on held-out data, (iv) rank items by chance of success, (v) perform
 multiple comparisons in several settings, (vi) replicate new data for posterior
-p-values, and (vii) perform graphical posterior predictive checks.
+$p$-values, and (vii) perform graphical posterior predictive checks.
 
 The content of the vignette is based on Bob Carpenter's Stan tutorial 
 *[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr)*,
@@ -148,8 +148,6 @@ printing, as is customary for batting averages.
 
 ```{r, create-objects, results="hold"}
 batting_avg <- function(x) print(format(round(x, digits = 3), nsmall = 3), quote = FALSE)
-player_order <- as.character(bball$Player) # last names in order of batting avg
-player_AtoZ <- sort(player_order) # last names in alphabetical order
 player_avgs <- y / K # player avgs through 45 AB
 tot_avg <- sum(y) / sum(K) # overall avg through 45 AB
 cat("Overall average through 45 at-bats:\n")
@@ -775,11 +773,11 @@ sense we define below).
 To predict $z$ for each player we can use the following code:
 
 ```{r, ppd}
-newdata <- data.frame(Hits = y_new, AB = K_new, Player = player_order)
+newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
 ppd_pool <- posterior_predict(fit_pool, newdata)
 ppd_nopool <- posterior_predict(fit_nopool, newdata)
 ppd_partialpool <- posterior_predict(fit_partialpool, newdata)
-colnames(ppd_pool) <- colnames(ppd_nopool) <- colnames(ppd_partialpool) <- player_order
+colnames(ppd_pool) <- colnames(ppd_nopool) <- colnames(ppd_partialpool) <- as.character(bball$Player)
 colMeans(ppd_partialpool)
 ```
 
@@ -957,8 +955,8 @@ the previous case.
 ```{r, event-probabilities, results="hold"}
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
-colnames(thetas_partialpool) <- player_AtoZ
-ability_gt_400 <- (thetas_partialpool > 0.4)[, player_order]
+colnames(thetas_partialpool) <- as.character(bball$Player)
+ability_gt_400 <- thetas_partialpool > 0.4
 cat("Pr(theta_n ≥ 0.400 | y)\n")
 colMeans(ability_gt_400)[c(1, 5, 10)]
 
@@ -1045,13 +1043,17 @@ takes on the value $\mathrm{I}[\mathrm{max}(\theta^{(m)}) > 0.35]$ in
 each iteration.
 
 ```{r, echo=FALSE}
-chance_gt_350 <- round(100 * mean(some_gt_350))
+thetas_pool <- plogis(as.matrix(fit_pool))
+thetas_nopool <- plogis(as.matrix(fit_nopool))
+some_gt_350_all <- sapply(list(thetas_pool, thetas_nopool, thetas_partialpool), 
+                          function(x) apply(x, 1, max) > 0.35)
+chance_gt_350 <- round(100 * colMeans(some_gt_350_all))
 ```
 
 The probability estimate of there being a player with an ability (chance of
 success) greater than 0.350 is roughly `r chance_gt_350[1]`% in the complete 
 pooling model, `r chance_gt_350[3]`% in the partial pooling model, and 
-`r chance_gt_350[2]`% in the no pooling model. The  partially pooled
+`r chance_gt_350[2]`% in the no pooling model. The partially pooled
 estimates would not be considered significant at conventional p=0.05 thresholds. 
 One way to get a handle on what's going on is to inspect the posterior 80%
 intervals for chance-of-success estimates in the first graph above.
@@ -1070,7 +1072,7 @@ pooling model, where every player is assumed to have the same ability.
 
 ```{r, ranking}
 reverse_rank <- function(x) 1 + length(x) - rank(x) # so lower rank is better
-rank <- apply(thetas_partialpool[, player_order], 1, reverse_rank)
+rank <- apply(thetas_partialpool, 1, reverse_rank)
 t(apply(rank, 1, quantile, prob = c(0.1, 0.5, 0.9)))
 ```
 
@@ -1084,8 +1086,7 @@ hospital.  It is now straightforward to reproduce that figure here for
 the baseball data.
 
 ```{r, plot-ranks}
-player_order_factor <- factor(player_order, player_order)
-df_rank <- data.frame(name = rep(player_order_factor, each = M), 
+df_rank <- data.frame(name = rep(bball$Player, each = M), 
                       rank = c(t(rank)))
 
 ggplot(df_rank, aes(rank)) +
@@ -1127,12 +1128,12 @@ have to worry about ties.
 
 ```{r, plot-is-best}
 thetas_nopool <- plogis(as.matrix(fit_nopool))
-colnames(thetas_nopool) <- player_AtoZ
-rank_nopool <- apply(thetas_nopool[, player_order], 1, reverse_rank)
+colnames(thetas_nopool) <- as.character(bball$Player)
+rank_nopool <- apply(thetas_nopool, 1, reverse_rank)
 is_best_nopool <- rowMeans(rank_nopool == 1)
 is_best_partialpool <- rowMeans(rank == 1)
 
-df_is_best <- data.frame(item = rep(player_order_factor, 2), 
+df_is_best <- data.frame(item = rep(bball$Player, 2), 
                          is_best = c(is_best_partialpool, 
                                      is_best_nopool), 
                          model = rep(c("partial pooling", "no pooling"), each = N))
@@ -1239,7 +1240,7 @@ p_B
 
 Using the `pp_check` in **rstanarm**, we can easily reproduce Figure 6.12 from
 (Gelman et al. 2013), which shows the posterior predictive distribution for the
-test statistic, the observed value as a vertical line, and the p-value for each
+test statistic, the observed value as a vertical line, and the $p$-value for each
 of the tests. First, here is just the plot for the no pooling model using 
 the mean as the test statistic:
 
@@ -1281,7 +1282,7 @@ simulated data sets under the model had standard deviations
 greater than the actual data. 
 
 We didn't actually compute this $p$-value because extreme $p$-values are easy to
-detect visually and whether or not the $p-value$ is less than $0.05$ or some
+detect visually and whether or not the $p$-value is less than $0.05$ or some
 other arbitrary value is of little use to us beyond what we can already see in
 the plot. However, if we did want to actually compute the $p$-value we can do so
 easily:
@@ -1315,12 +1316,8 @@ plotting the number of successes (hits in this case) on the x-axis, `pp_check`
 will plot the proportion of successes.
 
 ```{r, plot-ppc-y-vs-yrep}
-pp_check(fit_nopool, check = "distributions", 
-         nreps = 15, overlay = FALSE, binwidth = 0.05) + # optional arguments
-  ggtitle("Model: No Pooling")
-
 pp_check(fit_partialpool, check = "distributions", nreps = 15, 
-         overlay = FALSE, binwidth = 0.05) + 
+         overlay = FALSE, binwidth = 0.05) +  # optional arguments
   ggtitle("Model: Partial Pooling")
 ```
 
