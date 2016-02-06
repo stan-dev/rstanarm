@@ -747,7 +747,7 @@ ppd_pool <- posterior_predict(fit_pool, newdata)
 ppd_nopool <- posterior_predict(fit_nopool, newdata)
 ppd_partialpool <- posterior_predict(fit_partialpool, newdata)
 colnames(ppd_pool) <- colnames(ppd_nopool) <- colnames(ppd_partialpool) <- player_order
-batting_avg(colMeans(ppd_partialpool))
+colMeans(ppd_partialpool)
 ```
 
 Translating the posterior number of hits into a season batting
@@ -927,11 +927,11 @@ thetas_partialpool <- plogis(draws_partialpool)
 colnames(thetas_partialpool) <- player_AtoZ
 ability_gt_400 <- (thetas_partialpool > 0.4)[, player_order]
 cat("Pr(theta_n ≥ 0.400 | y)\n")
-batting_avg(colMeans(ability_gt_400)[c(1, 5, 10)])
+colMeans(ability_gt_400)[c(1, 5, 10)]
 
 some_gt_350 <- apply(thetas_partialpool, 1, function(x) max(x) > 0.35)
 cat("Pr(at least one theta_n ≥ 0.350 | y)\n")
-batting_avg(mean(some_gt_350))
+mean(some_gt_350)
 ```
 
 <!-- These results show that the probability of batting 0.400 or better for -->
