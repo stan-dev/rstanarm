@@ -27,14 +27,14 @@ opts_chunk$set(
 # Introduction 
 
 This vignette illustrates the effects on posterior inference of pooling data
-(aka sharing strength) across items for repeated binary trial data.  It provides
+(a.k.a sharing strength) across units for repeated binary trial data.  It provides
 R code to fit and check predictive models for three situations: (a) complete
-pooling, which assumes each item is the same, (b) no pooling, which assumes the
-items are unrelated, and (c) partial pooling, where the similarity among the 
-items is estimated.  The note explains with working examples how to (i) fit
+pooling, which assumes each unit is the same, (b) no pooling, which assumes the
+units are unrelated, and (c) partial pooling, where the similarity among the 
+units is estimated.  The note explains with working examples how to (i) fit
 the models using **rstanarm** and plot the results, (ii) estimate event
 probabilities, (iii) evaluate posterior predictive densities to evaluate model 
-predictions on held-out data, (iv) rank items by chance of success, (v) perform
+predictions on held-out data, (iv) rank units by chance of success, (v) perform
 multiple comparisons in several settings, (vi) replicate new data for posterior
 $p$-values, and (vii) perform graphical posterior predictive checks.
 
@@ -50,16 +50,9 @@ document is a good reference for anyone interested in how these models are
 estimated "under-the-hood", though the parameterizations used internally by
 **rstanarm** differ somewhat from those in the original.
 
-
-> **Disclaimer**: Although the simple baseball example used throughout this
-vignette focuses on a player's batting average, we are **not** suggesting that
-batting average is the best metric for evaluating a player. It happens to be
-useful for illustrating the topics covered here.
-
-
 # Repeated Binary Trials
 
-Suppose that for each of $N$ items $n \in 1{:}N$, we observe $y_n$
+Suppose that for each of $N$ units $n \in 1{:}N$, we observe $y_n$
 successes out of $K_n$ trials.  For example, the data may consist of
 
 * rat tumor development, with $y_n$ rats developing tumors of $K_n$ total
@@ -84,7 +77,7 @@ of Carpenter (2009).
 ### Baseball Hits (Efron and Morris 1975)
 
 As a running example, we will use the data from Table 1 of (Efron and
-Morris 1975), which is included in the file `efron-morris-75-bball.csv.xz` 
+Morris 1975), which is included in the file efron-morris-75-bball.csv.xz
 (it was downloaded 24 Dec 2015 from
 [here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
 It is drawn from the 1970 Major League Baseball season (from both leagues).
@@ -109,8 +102,8 @@ y_new <- bball$RemainingHits
 ```
 
 The data separates the outcome from the initial 45 at-bats from the rest of the
-season.  After running this code, `N` is the number of items
-(players).  Then for each item `n`, `K[n]` is the number
+season.  After running this code, `N` is the number of units
+(players).  Then for each unit `n`, `K[n]` is the number
 of initial trials (at-bats), `y[n]` is the number of initial
 successes (hits), `K_new[n]` is the remaining number of trials
 (remaining at-bats), and `y_new[n]` is the number of successes in the
@@ -124,14 +117,14 @@ season.
 
 # Pooling
 
-With *complete pooling*, each item is assumed to have the same chance of
-success.  With *no pooling*, each item is assumed to have a completely unrelated
-chance of success.  With *partial pooling*, each item is assumed to have a
-different chance of success, but the data for all of the observed items informs
-the estimates for each item.
+With *complete pooling*, each unit is assumed to have the same chance of
+success.  With *no pooling*, each unit is assumed to have a completely unrelated
+chance of success.  With *partial pooling*, each unit is assumed to have a
+different chance of success, but the data for all of the observed units informs
+the estimates for each unit.
 
 Partial pooling is typically accomplished through hierarchical models. 
-Hierarchical models directly model the population of items. From a population 
+Hierarchical models directly model the population of units. From a population 
 model perspective, no pooling corresponds to infinite population variance, 
 whereas complete pooling corresponds to zero population variance.
 
@@ -158,10 +151,10 @@ batting_avg(tot_avg)
 ## Complete Pooling
 
 The complete pooling model assumes a single parameter $\theta$
-representing the chance of success for all items (in this case players).  
+representing the chance of success for all units (in this case players).  
 
 Assuming each player's at-bats are independent Bernoulli trials, the
-sampling distribution for each player's number of hits $y_n$ is modeled as
+probability distribution for each player's number of hits $y_n$ is modeled as
 
 \[
 p(y_n \, | \, \theta) 
@@ -200,7 +193,8 @@ p(y_n \, | \, K_n, \alpha)
 \]
 
 The inverse logit function is the logistic sigmoid from which logistic
-regression gets its name,
+regression gets its name because the inverse logit function is also
+the standard logistic Cumulative Distribution Function (CDF),
 
 \[
 \mathrm{logit}^{-1}(\alpha) = \frac{1}{1 + \exp(-\alpha)} = \theta.
@@ -208,7 +202,7 @@ regression gets its name,
 
 By construction, for any $\alpha \in (-\infty, \infty)$,
 $\mathrm{logit}^{-1}(\alpha) \in (0, 1)$; the sigmoid converts
-arbitrary log odds back to the chance-of-success scale.
+arbitrary log odds back to the probability scale.
 
 We will use a normal distribution with mean $-1$ and standard deviation $1$ as 
 the prior on the log-odds $\alpha$. This is a weakly informative prior that 
@@ -272,7 +266,7 @@ $\theta_n$ are assumed to be independent.
 
 **rstanarm** will again parameterize the model in terms of the log-odds, 
 $\alpha_n = \mathrm{logit}(\theta_n)$, so the likelihood then uses 
-the log-odds of succes $\alpha_n$ for item $n$
+the log-odds of succes $\alpha_n$ for unit $n$
 in modeling the number of successes $y_n$ as
 
 \[
@@ -308,8 +302,8 @@ batting_avg(nopool)
 
 Each 80% interval is much wider than the estimated interval for the population
 in the complete pooling model; this is to be expected---there are only `r K[1]`
-data items for each parameter here as opposed to `r sum(K)` in the
-complete pooling case. If the items each had different numbers of trials, the
+data units for each parameter here as opposed to `r sum(K)` in the
+complete pooling case. If the units each had different numbers of trials, the
 intervals would also vary based on size.
 
 As the estimated chance of success goes up toward 0.5, the 80% intervals gets
@@ -327,10 +321,10 @@ too low for all but a few rare defensive specialists).
 ## Partial Pooling
 
 Complete pooling provides estimated abilities that are too narrowly
-distributed for the items and removes any chance of modeling
+distributed for the units and removes any chance of modeling
 population variation.  Estimating each chance of success separately
 without any pooling provides estimated abilities that are too broadly
-distributed for the items and hence too variable.  Clearly some amount
+distributed for the units and hence too variable.  Clearly some amount
 of pooling between these two extremes is called for.  But how much?
 
 A hierarchical model treats the players as belonging to a population
@@ -352,7 +346,7 @@ fit_partialpool <-
 Because `stan_glmer` (like `glmer`) estimates the varying intercepts for 
 `Player` by estimating a single global intercept $\alpha_0$ and individual 
 deviations from that intercept for each player $\delta_n = \alpha_n - \alpha_0$, 
-to get the posterior distribution for each $\alpha_n$ we need 
+to get the posterior distribution for each $\alpha_n$ we need to
 shift each of the posterior draws by the corresponding draw for the intercept.
 We can do this easily using the `sweep` function.
 
@@ -370,7 +364,7 @@ batting_avg(partialpool)
 Here the estimates are less extreme than in the no-pooling case, which we should
 expect due to the partial pooling. It is also clear from the wide posteriors for
 the $\theta_n$ that there is considerable uncertainty in the estimates of 
-chance-of-success on an item-by-item (player-by-player) basis.
+chance-of-success on an unit-by-unit (player-by-player) basis.
 
 
 ## Observed vs. Estimated Chance of Success
@@ -484,10 +478,10 @@ calculations; a robust calculation on the log scale is provided below.
 
 ### Simulating Replicated Data
 
-It is also straightforward to use forward simulation from the data
-sampling distribution $p(y \, | \, \theta)$ to generate replicated
+It is also straightforward to use forward simulation from the 
+probability distribution of the data $p(y \, | \, \theta)$ to generate replicated
 data $y^{\mathrm{rep}}$ according to the posterior predictive
-distribution.  (Recall that $p(y \, | \, \theta)$ is called the sampling
+distribution.  (Recall that $p(y \, | \, \theta)$ is called the probability
 distribution when $\theta$ is fixed and the likelihood when $y$ is fixed.)
 
 With $M$ draws $\theta^{(m)}$ from the posterior $p(\theta \, | \,
@@ -496,7 +490,7 @@ simulations according $y^{\mathrm{rep} \ (m)}$ with each drawn
 according to distribution $p(y \, | \, \theta^{(m)})$.  This latter
 random variate generation can usually be done efficiently (both
 computationally and statistically) by means of forward simulation from
-the sampling distribution; we provide an example below.
+the probability distribution of the data; we provide an example below.
 
 
 ## Prediction for New Trials
@@ -535,7 +529,7 @@ provides the sharpest predictions.  Even so, there is residual
 uncertainty due to the repeated trials; with $K^{\mathrm{new}}$
 further trials and a a fixed $\theta_n$ chance of success, the random
 variable $Y^{\mathrm{new}}_n$ denoting the number of further successes
-for item $n$ has a standard deviation from the repeated binary trials
+for unit $n$ has a standard deviation from the repeated binary trials
 of
 
 \[
@@ -597,7 +591,7 @@ We'll compute both expectations and demonstrate Jensen's inequality in
 our running example.
 
 The variables `K_new[n]` and `y_new[n]` hold the number of
-at bats (trials) and the number of hits (successes) for player (item)
+at bats (trials) and the number of hits (successes) for player (unit)
 `n`. With the held out data we can compute the log density of each
 data point using the `log_lik` function, which, like `posterior_predict`,
 accepts a `newdata` argument. The `log_lik` function will return an $M \times N$
@@ -634,7 +628,7 @@ corresponding column of `log_p_new`.
 
 ```{r, log_p_new-mean}
 mean_log_p_new <- colMeans(log_p_new)
-round(sort(mean_log_p_new, decreasing = TRUE))
+round(sort(mean_log_p_new, decreasing = TRUE), digits = 1)
 ```
 
 From a predictive standpoint, the models are ranked by the amount of pooling
@@ -687,7 +681,7 @@ We'll then write that last expression as
 
 \[
 -\log M 
-+  \mathrm{log\_sum\_exp \, }_{m=1}^M
++  \mathrm{log\_sum\_exp \, }
         \ \log p(y^{\mathrm{new}} \, | \, \theta^{(m)})
 \]
 
@@ -696,7 +690,7 @@ Suppose $u = u_1, \ldots, u_M$, and $\max(u)$ is the largest $u_m$.
 We can calculate
 
 \[
-\mathrm{log\_sum\_exp \, }_{m=1}^M \ u_m
+\mathrm{log\_sum\_exp \, } \ u_m
 \ = \
 \log \sum_{m=1}^M \exp(u_m)
 \ = \
@@ -707,7 +701,7 @@ Because $u_m - \max(u) \leq 0$, the exponentiations cannot overflow.
 They may underflow to zero, but this will not lose precision because
 of the leading $\max(u)$ term; the only way underflow can arise is if
 $u_m - \max(u)$ is very small, meaning that it won't add significant
-digits to $\max(u)$ if it hadn't underflowed.
+digits to $\max(u)$ if it had not underflowed.
 
 We can implement $\mathrm{log\_sum\_exp}$ in R as follows:
 
@@ -734,7 +728,7 @@ our fit.
 ```{r comment=NA}
 M <- nrow(log_p_new) 
 new_lps <- -log(M) + apply(log_p_new, 2, log_sum_exp)
-round(sort(new_lps, decreasing = TRUE))
+round(sort(new_lps, decreasing = TRUE), digits = 1)
 ```
 
 Now the ranking is different!  As expected, the values here are lower
@@ -748,14 +742,14 @@ slightly better predictions than the no pooling model.
 
 With **rstanarm** it is straightforward to generate draws from the posterior
 predictive distribution using the `posterior_predict` function.  With this
-capability, we can either generate predictions for new data or we can replicate
-the data we already have.
+capability, we can either generate predictions for new data or we can apply
+it to the predictors we already have.
 
 There will be two sources of uncertainty in our predictions, the first being the 
 uncertainty in $\theta$ in the posterior $p(\theta \, | \, y)$ and the second 
 being the uncertainty due to the likelihood $p(\tilde{y} \, | \, \theta)$.
 
-We let $z_n$ be the number of successes for item $n$ in 
+We let $z_n$ be the number of successes for unit $n$ in 
 $K^{\mathrm{new}}_n$ further trials. 
 It might seem tempting to eliminate that second source of uncertainty
 and set $z_n^{(m)}$ to its expectation, $\theta_n^{(m)} \,
@@ -843,10 +837,10 @@ ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) +
 We choose to plot 50% posterior intervals as they are a good single point for 
 checking calibration. Rather than plotting the number of hits on the vertical
 axis, we have standardized all the predictions and outcomes to a success rate. 
-Because each item (player) has a different number of subsequent trials (at
+Because each unit (player) has a different number of subsequent trials (at
 bats), the posterior intervals are relatively wider or narrower within the plots
 for each model (more trials imply narrower intervals for the average).  Because
-each item had the same number of initial observed trials, this variation is
+each unit had the same number of initial observed trials, this variation is
 primarily due to the uncertainty from the binomial model of outcomes.
 
 
@@ -859,7 +853,7 @@ intervals, we have reason to believe the model is not well
 calibrated---its posterior intervals are too narrow.  This is also
 true if too many outcomes lie in their estimated posterior
 intervals---in this case the intervals are too broad.  Of course,
-there is variation in the tests as the number of items lying in their
+there is variation in the tests as the number of units lying in their
 intervals is itself a random variable (see the exercises), so in
 practice we are only looking for extreme values as indicators of
 miscalibration.
@@ -874,7 +868,7 @@ here).
 
 ### Sharpness
 
-Consider the width of the posterior predictive intervals for the items
+Consider the width of the posterior predictive intervals for the units
 across the models.  The model with no pooling has the broadest
 posterior predictive intervals and the complete pooling model the
 narrowest.  This is to be expected given the number of observations
@@ -1062,7 +1056,7 @@ intervals for chance-of-success estimates in the first graph above.
 ## Ranking
 
 In addition to multiple comparisons, we can use the simultaneous
-estimation of the ability parameters to rank the items.  In this
+estimation of the ability parameters to rank the units.  In this
 section, we rank ballplayers by (estimated) chance of success (i.e.,
 batting ability).
 
@@ -1102,7 +1096,7 @@ ggplot(df_rank, aes(rank)) +
 #### Who has the Highest Chance of Success?
 
 We can use our ranking statistic to calculate the event probability
-for item $n$ that the item has the highest chance of success using
+for unit $n$ that the unit has the highest chance of success using
 MCMC as
 
 \[
@@ -1133,12 +1127,12 @@ rank_nopool <- apply(thetas_nopool, 1, reverse_rank)
 is_best_nopool <- rowMeans(rank_nopool == 1)
 is_best_partialpool <- rowMeans(rank == 1)
 
-df_is_best <- data.frame(item = rep(bball$Player, 2), 
+df_is_best <- data.frame(unit = rep(bball$Player, 2), 
                          is_best = c(is_best_partialpool, 
                                      is_best_nopool), 
                          model = rep(c("partial pooling", "no pooling"), each = N))
 
-ggplot(df_is_best, aes(x=item, y=is_best)) +
+ggplot(df_is_best, aes(x=unit, y=is_best)) +
   geom_bar(stat = "identity") +
   facet_wrap(~ model) +
   scale_y_continuous(name = "Pr[player is best]") +
@@ -1342,7 +1336,7 @@ bats.
 
 A hierarchical model introduces an estimation bias toward the population mean
 and the stronger the bias, the less variance there is in the estimates for the
-items.  Exactly how much bias and variance is warranted can be estimated by
+units.  Exactly how much bias and variance is warranted can be estimated by
 further calibrating the model and testing where its predictions do not bear out.
 
 With very little data, there is very little we can do to gain sharp inferences 
