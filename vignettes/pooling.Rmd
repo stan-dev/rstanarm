@@ -40,21 +40,21 @@ p-values, and (vii) perform graphical posterior predictive checks.
 
 The content of the vignette is based on Bob Carpenter's Stan tutorial 
 *[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr)*,
-but here we show how to fit the models and carry out predictions and model
-checking and comparison using **rstanarm**. Most of the text is taken from the
-original, with some additions and substractions to make the content more useful
-for **rstanarm** users. The Stan code from the original tutorial has also been
+but here we show how to fit the models and carry out predictions and model 
+checking and comparison using **rstanarm**. Most of the text is taken from the 
+original, with some additions and substractions to make the content more useful 
+for **rstanarm** users. The Stan code from the original tutorial has also been 
 entirely removed, as **rstanarm** will fit all of the models in Stan without the
-user having to write the underlying Stan programs. The Stan code is a good
-reference for anyone interested in how these models are estimated
-"under-the-hood", though the parameterizations used internally by **rstanarm**
-differ somewhat from those in the original.
+user having to write the underlying Stan programs. The Stan code in the original
+document is a good reference for anyone interested in how these models are
+estimated "under-the-hood", though the parameterizations used internally by
+**rstanarm** differ somewhat from those in the original.
 
 
-> **Disclaimer**: Although the baseball example used throughout this vignette 
-focuses on a player's batting average, we are **not** suggesting that batting 
-average is the best metric for evaluating a player. It happens to be useful for 
-illustrating the topics covered here.
+> **Disclaimer**: Although the simple baseball example used throughout this
+vignette focuses on a player's batting average, we are **not** suggesting that
+batting average is the best metric for evaluating a player. It happens to be
+useful for illustrating the topics covered here.
 
 
 # Repeated Binary Trials
@@ -83,8 +83,8 @@ of Carpenter (2009).
 
 ### Baseball Hits (Efron and Morris 1975)
 
-As a running example, we include the data from Table 1 of (Efron and
-Morris 1975) as `efron-morris-75-bball.csv.xz` 
+As a running example, we will use the data from Table 1 of (Efron and
+Morris 1975), which is included in the file `efron-morris-75-bball.csv.xz` 
 (it was downloaded 24 Dec 2015 from
 [here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
 It is drawn from the 1970 Major League Baseball season (from both leagues).
@@ -92,14 +92,15 @@ It is drawn from the 1970 Major League Baseball season (from both leagues).
 ```{r, load-data}
 bball <- read.csv(file.path("data", "efron-morris-75-bball.csv.xz"))
 bball <- with(bball, # we only need a few of the variables
-              data.frame(Player = LastName, 
-                         Hits, AB = At.Bats, 
+              data.frame(Hits, AB = At.Bats, 
                          RemainingAB = RemainingAt.Bats,
-                         RemainingHits = SeasonHits - Hits))
+                         RemainingHits = SeasonHits - Hits, 
+                         Player = factor(LastName, levels = as.character(LastName))))
 print(bball)
 ```
 
 ```{r, N-K-y}
+# A few quantities we'll use throughout
 N <- nrow(bball)
 K <- bball$AB
 y <- bball$Hits
@@ -140,7 +141,7 @@ baseball data.
 
 # Fitting the Models
 
-First we'll just create some useful objects to use throughout the rest of 
+First we'll create some useful objects to use throughout the rest of 
 this vignette. One of them is a function `batting_avg`, which just 
 formats a number to include three decimal places to the right of zero when
 printing, as is customary for batting averages.
@@ -181,29 +182,60 @@ p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta).
 \]
 
 Using `family=binomial("logit")`, the `stan_glm` function in **rstanarm** will 
-parameterize the model in terms of log-odds of success, 
-$\log \frac{\theta}{1 -\theta}$. 
-We will use a normal distribution with mean $-1$ and standard 
-deviation $2.5$ as the prior on the log-odds, which is a somewhat diffuse prior
-for the log-odds scale, but centered around a plausible value given our
-knowledge of baseball. The inverse logit of $-1$ is about $0.270$, which is more
-plausible for a batting average than $0.500$, which would be the implication if
-the prior on the log-odds were centered at $0$.
+parameterize the model in terms of the log-odds $\alpha$, which are
+defined by the logit transform as
+
+\[
+\alpha 
+= \mathrm{logit}(\theta) 
+= \log \, \frac{\theta}{1 - \theta}.
+\]
+
+For example, $\theta = 0.25$ corresponds to odds of $.25$ to $.75$
+(equivalently, $1$ to $3$), or log-odds of $\log .25 / .75 = -1.1$.
+
+The model is therefore
+
+\[
+p(y_n \, | \, K_n, \alpha) 
+\ = \ \mathsf{Binomial}(y_n \, | \, K_n, \ \mathrm{logit}^{-1}(\alpha))
+\]
+
+The inverse logit function is the logistic sigmoid from which logistic
+regression gets its name,
+
+\[
+\mathrm{logit}^{-1}(\alpha) = \frac{1}{1 + \exp(-\alpha)} = \theta.
+\]
+
+By construction, for any $\alpha \in (-\infty, \infty)$,
+$\mathrm{logit}^{-1}(\alpha) \in (0, 1)$; the sigmoid converts
+arbitrary log odds back to the chance-of-success scale.
+
+We will use a normal distribution with mean $-1$ and standard deviation $1$ as 
+the prior on the log-odds $\alpha$. This is a weakly informative prior that 
+places about 95% of the prior probability in the interval $(-3, 1)$, which 
+inverse-logit transforms to the interval $(0.05, 0.73)$. The prior median $-1$ 
+corresponds to a $0.27$ chance of success. In fact, an even narrower prior is
+actually motivated here from substantial baseball knowledge.
+
 
 ```{r, full-pooling, results="hide"}
 library(rstanarm)
 SEED <- 101
+wi_prior <- normal(-1, 1)  # weakly informative prior on log-odds
 fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, 
-                     family = binomial("logit"), prior_intercept = normal(-1, 2.5), 
+                     family = binomial("logit"), prior_intercept = wi_prior, 
                      seed = SEED)
+print(fit_pool)
 ```
 
-The `summary` function will compute all sorts of summary statistics from the
-fitted model, but here we'll create a small function that will compute a few
-posterior summary statistics that we'll want for each of the models we estimate.
-The `summary_stats` function, defined below, will take a matrix of posterior
-draws as its input, apply an inverse-logit transformation (to convert from
-log-odds to probabilities) and then compute the median and 80% interval.
+The `summary` function will compute all sorts of summary statistics from the 
+fitted model, but here we'll create a small function that will compute just a
+few posterior summary statistics that we'll want for each of the models we
+estimate. The `summary_stats` function, defined below, will take a matrix of
+posterior draws as its input, apply an inverse-logit transformation (to convert
+from log-odds to probabilities) and then compute the median and 80% interval.
 
 ```{r, summary-stats-function}
 invlogit <- plogis  # function(x) 1/(1 + exp(-x))
@@ -212,10 +244,10 @@ summary_stats <- function(posterior) {
   t(apply(x, 2, quantile, probs = c(0.1, 0.5, 0.9))) 
 }
 
-# replicate to give each player the same estimates
-pool <- summary_stats(as.matrix(fit_pool))
-pool <- matrix(pool, nrow(bball), ncol(pool), byrow = TRUE, 
-               dimnames = list(player_order, c("10%", "50%", "90%")))
+pool <- summary_stats(as.matrix(fit_pool))  # as.matrix extracts the posterior draws
+pool <- matrix(pool,  # replicate to give each player the same estimates
+               nrow(bball), ncol(pool), byrow = TRUE, 
+               dimnames = list(bball$Player, c("10%", "50%", "90%")))
 batting_avg(pool)
 ```
 
@@ -231,8 +263,8 @@ success; using a binomial model fundamentally bounds our prediction accuracy.
 
 Although this model will be a good baseline for comparison, we have
 good reason to believe from a large amount of prior data (players with
-as many as 10,000 trials) that it is very unlikely that all players
-have the same chance of success. 
+as many as 10,000 trials) that it is very unlikely that all baseball players
+have the same chance of success.
 
 ## No Pooling
 
@@ -240,40 +272,39 @@ A model with no pooling involves a separate chance-of-success
 parameter $\theta_n \in [0,1]$ for each player $n$, where the 
 $\theta_n$ are assumed to be independent.
 
-The likelihood then uses the chance of success $\theta_n$ for item $n$
+**rstanarm** will again parameterize the model in terms of the log-odds, 
+$\alpha_n = \mathrm{logit}(\theta_n)$, so the likelihood then uses 
+the log-odds of succes $\alpha_n$ for item $n$
 in modeling the number of successes $y_n$ as
 
 \[
-p(y_n \, | \, \theta_n) = \mathsf{Binomial}(y_n \, | \, K_n, \theta_n).
+p(y_n \, | \, \alpha_n) = 
+\mathsf{Binomial}(y_n \, | \, K_n, \mathrm{logit}^{-1}(\alpha_n)).
 \]
 
 Assuming the $y_n$ are independent (conditional on $\theta$), this
 leads to the total data likelihood
 
 \[
-p(y \, | \, \theta) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \theta_n).
+p(y \, | \, \alpha) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \mathrm{logit}^{-1}(\alpha_n)).
 \]
 
-Fitting this model in **rstanarm** only requires tweaking the model formula to 
-drop the intercept and instead include as the only predictor the factor variable
-`Player`. This is equivalent to estimating a separate intercept on the log-odds 
-scale for each player. We'll also use the `prior` (rather than
+To fit the model we need only tweak the model formula used for the full pooling 
+model to drop the intercept and instead include as the only predictor the factor
+variable `Player`. This is equivalent to estimating a separate intercept on the
+log-odds scale for each player. We'll also use the `prior` (rather than 
 `prior_intercept`) argument since `Player` is considered a predictor rather than
-an intercept from R's perspective. Specifying `prior = normal(-1, 2.5)` means
-that the each of the \code{Player} parameters (on the logit scale) gets a ${\rm
-Normal}(-1, 2.5^2)$ prior, independent of the others.
+an intercept from R's perspective. Using the same weakly informative prior now
+means that the each $\alpha_n$ gets a $\mathsf{Normal}(-1, 1)$ prior, 
+independent of the others.
 
 ```{r, no-pooling, results="hide"}
-fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, prior = normal(-1, 2.5))
+fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, prior = wi_prior)
 nopool <- summary_stats(as.matrix(fit_nopool))
-batting_avg(nopool)  # in alphabetical order
-```
-```{r, no-pooling-print, echo=FALSE}
+rownames(nopool) <- as.character(bball$Player)
 batting_avg(nopool)
 ```
-```{r, no-pooling-order}
-rownames(nopool) <- player_AtoZ
-nopool <- nopool[player_order, ]  # put in order of original data
+```{r, no-pooling-print, echo=FALSE}
 batting_avg(nopool)
 ```
 
@@ -288,12 +319,12 @@ wider.  This is to be expected for chance of success parameters, because the
 standard deviation of a random variable distributed as 
 $\mathsf{Binomial}(K,\theta)$ is $\sqrt{\theta\, (1 - \theta) / K}$.
 
-Based on our existing knowledge of baseball, the no-pooling model is
-almost certainly overestimating the high abilities and underestimating
-lower abilities (Ted Williams, 30 years prior to the year this data
-was collected, was the last player with a 40% observed success rate
-over a season, whereas 20% is too low for all but a few rare defensive
-specialists).
+Based on our existing knowledge of baseball, the no-pooling model is almost
+certainly overestimating the high abilities and underestimating lower abilities
+(Ted Williams, 30 years prior to the year this data was collected, was the last
+player with a 40% observed success rate over a season, whereas 20% or less is
+too low for all but a few rare defensive specialists).
+
 
 ## Partial Pooling
 
@@ -316,25 +347,25 @@ This model can be estimated using the `stan_glmer` function.
 ```{r, partial-pooling, results="hide"}
 fit_partialpool <- 
   stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball,
-             family = binomial("logit"), prior_intercept = normal(-1, 2.5), 
+             family = binomial("logit"), prior_intercept = wi_prior, 
              seed = SEED)
 ```
 
 Because `stan_glmer` (like `glmer`) estimates the varying intercepts for 
-`Player` by estimating a single global intercept and individual deviations from
-that intercept for each player, to get the estimates for each player we first
+`Player` by estimating a single global intercept $\alpha_0$ and individual 
+deviations from that intercept for each player $\delta_n = \alpha_n - \alpha_0$, 
+to get the posterior distribution for each $\alpha_n$ we need 
 shift each of the posterior draws by the corresponding draw for the intercept.
-We do this for each draw from the posterior distribution.
+We can do this easily using the `sweep` function.
 
 ```{r, partial-pooling-order}
 # shift each player's estimate by intercept (and then drop intercept)
 shift_draws <- function(draws) {
   sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], FUN = "+")
 }
-thetas <- shift_draws(as.matrix(fit_partialpool))
-partialpool <- summary_stats(thetas)
-rownames(partialpool) <- player_AtoZ
-partialpool <- partialpool[player_order, ] # put in original order
+alphas <- shift_draws(as.matrix(fit_partialpool))
+partialpool <- summary_stats(alphas)
+rownames(partialpool) <- as.character(bball$Player)
 batting_avg(partialpool)
 ```
 
@@ -356,13 +387,13 @@ following R code reproduces a similar plot for our data.
 library(ggplot2)
 models <- c("complete pooling", "no pooling", "partial pooling")
 estimates <- rbind(pool, nopool, partialpool)
-dimnames(estimates) <- list(NULL,  c("lb", "median", "ub"))
+colnames(estimates) <- c("lb", "median", "ub")
 plotdata <- data.frame(estimates, 
-                        observed = rep(player_avgs, times = length(models)), 
-                        model = rep(models, each = nrow(bball)))
+                       observed = rep(player_avgs, times = length(models)), 
+                       model = rep(models, each = N), 
+                       row.names = NULL)
 
-base <- ggplot(plotdata, aes(x = observed, y = median, ymin = lb, ymax = ub))
-base +
+ggplot(plotdata, aes(x = observed, y = median, ymin = lb, ymax = ub)) +
   geom_hline(yintercept = tot_avg, color = "lightpink", size = 0.75) +
   geom_abline(intercept = 0, slope = 1, color = "skyblue") + 
   geom_linerange(color = "gray60", size = 0.75) + 
@@ -392,8 +423,12 @@ The horizontal red line has an intercept equal to the overall success rate,
 `r round(tot_avg, 3)`.
 \]
 
-The overall success rate is also the posterior mode (i.e., maximum
-likelihood estimate) for the complete pooling model.
+The overall success rate is also the posterior mode (i.e., maximum likelihood
+estimate) for the complete pooling model. The diagonal blue line has intercept 0
+and slope 1.  Estimates falling on this line make up the maximum likelihood
+estimates for the no-pooling model. Overall, the plot makes the amount of
+pooling toward the prior evident.
+
 
 
 # Posterior Predictive Distribution
@@ -406,7 +441,7 @@ we can use to
 many hits will Roberto Clemente get in the rest of the season,
 
 * evaluate predictions against observed future data; e.g., how well
-did we predict how many hits Roberto Clement actually got in the rest
+did we predict how many hits Roberto Clemente actually got in the rest
 of the season, and
 
 * generate new simulated data to validate our model fits.
@@ -440,11 +475,9 @@ Because the posterior predictive density is formulated as an
 expectation over the posterior, it is possible to compute via MCMC.
 With $M$ draws $\theta^{(m)}$ from the posterior $p(\theta \, | \,
 y)$, the posterior predicitve log density for new data
-$y^{\mathrm{new}}$ is given by
+$y^{\mathrm{new}}$ is given by the MCMC approximation
 
 \[
-p(y^{\mathrm{new}} \, | \, y)
-\ \approx \
 \log \frac{1}{M} \, \sum_{m=1}^M \ p\left( y^{\mathrm{new}} \, | \, \theta^{(m)} \right).
 \]
 
