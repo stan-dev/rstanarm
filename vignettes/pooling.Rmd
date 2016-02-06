@@ -26,26 +26,36 @@ opts_chunk$set(
 
 # Introduction 
 
-This vignette is based on Bob Carpenter's Stan tutorial 
-*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr/pool-repeated-trials)*,
-but here we show how to fit the models and carry out predictions and 
-model checking and comparison using the **rstanarm**.
+This vignette illustrates the effects on posterior inference of pooling data
+(aka sharing strength) across items for repeated binary trial data.  It provides
+R code to fit and check predictive models for three situations: (a) complete
+pooling, which assumes each item is the same, (b) no pooling, which assumes the
+items are unrelated, and (c) partial pooling, where the similarity among the 
+items is estimated.  The note explains with working examples how to (i) fit
+the models using **rstanarm** and plot the results, (ii) estimate event
+probabilities, (iii) evaluate posterior predictive densities to evaluate model 
+predictions on held-out data, (iv) rank items by chance of success, (v) perform
+multiple comparisons in several settings, (vi) replicate new data for posterior
+p-values, and (vii) perform graphical posterior predictive checks.
 
-The text is a combination of Bob's original with some additions and 
-substractions to make the content more applicable to **rstanarm**. The Stan code
-from Bob's original has also been entirely removed, as **rstanarm** will fit all
-of the models in Stan without the user having to write the underlying Stan 
-programs. That said, Bob's Stan code is still a good reference for anyone 
-interested in how these models are estimated "under-the-hood" even though the 
-parameterizations used internally by **rstanarm** differ somewhat from those in
-the original.
+The content of the vignette is based on Bob Carpenter's Stan tutorial 
+*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr)*,
+but here we show how to fit the models and carry out predictions and model
+checking and comparison using **rstanarm**. Most of the text is taken from the
+original, with some additions and substractions to make the content more useful
+for **rstanarm** users. The Stan code from the original tutorial has also been
+entirely removed, as **rstanarm** will fit all of the models in Stan without the
+user having to write the underlying Stan programs. The Stan code is a good
+reference for anyone interested in how these models are estimated
+"under-the-hood", though the parameterizations used internally by **rstanarm**
+differ somewhat from those in the original.
 
-***
-**Disclaimer**: Although the baseball example used throughout this vignette
-focuses on a player's batting average, we are **not** suggesting that batting
-average is the most useful metric for evaluating players. It simply happens to
-be nice for illustrating the topics covered here.
-***
+
+> **Disclaimer**: Although the baseball example used throughout this vignette 
+focuses on a player's batting average, we are **not** suggesting that batting 
+average is the best metric for evaluating a player. It happens to be useful for 
+illustrating the topics covered here.
+
 
 # Repeated Binary Trials
 
@@ -64,26 +74,32 @@ successes out of $K_n$ trials.  For example, the data may consist of
 * machine learning system accuracy, with $y_n$ correct classifications
   out of $K_n$ examples for systems $n \in 1{:}N$ (ML conference
   proceedings; Kaggle competitions)
+  
+In this vignette we use the small baseball data set of Efron and Morris (1975), 
+but we also provide the rat control data of Tarone (1982), the surgical
+mortality data of Spiegelhalter et al. (1996) and the extended baseball data set
+of Carpenter (2009).
 
 
 ### Baseball Hits (Efron and Morris 1975)
 
 As a running example, we include the data from Table 1 of (Efron and
-Morris 1975) as <code>efron-morris-75-bball.csv.xz</code> 
+Morris 1975) as `efron-morris-75-bball.csv.xz` 
 (it was downloaded 24 Dec 2015 from
 [here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
-It is drawn from the 1970 Major League Baseball season from both leagues.
+It is drawn from the 1970 Major League Baseball season (from both leagues).
 
 ```{r, load-data}
-bball <- read.csv(file.path("data", "efron-morris-75-bball.csv.xz"))
-bball <- with(bball, data.frame(Player = LastName, 
-                                Hits, AB = At.Bats, 
-                                RemainingAB = RemainingAt.Bats,
-                                RemainingHits = SeasonHits - Hits))
+bball <- read.csv(file.path("vignettes/data", "efron-morris-75-bball.csv.xz"))
+bball <- with(bball, # we only need a few of the variables
+              data.frame(Player = LastName, 
+                         Hits, AB = At.Bats, 
+                         RemainingAB = RemainingAt.Bats,
+                         RemainingHits = SeasonHits - Hits))
 print(bball)
 ```
 
-```{r comment=NA}
+```{r, N-K-y}
 N <- nrow(bball)
 K <- bball$AB
 y <- bball$Hits
@@ -91,43 +107,38 @@ K_new <- bball$RemainingAB
 y_new <- bball$RemainingHits
 ```
 
-The data separates the outcome from the initial 45 at-bats from the
-rest of the season.  After running this code, <code>N</code> is the
-number of items (players).  Then for each item <code>n</code>,
-<code>K[n]</code> is the number of initial trials (at-bats),
-<code>y[n]</code> is the number of initial successes (hits),
-<code>K_new[n]</code> is the remaining number of trials (remaining
-at-bats), and <code>y_new[n]</code> is the number of successes in the
+The data separates the outcome from the initial 45 at-bats from the rest of the
+season.  After running this code, `N` is the number of items
+(players).  Then for each item `n`, `K[n]` is the number
+of initial trials (at-bats), `y[n]` is the number of initial
+successes (hits), `K_new[n]` is the remaining number of trials
+(remaining at-bats), and `y_new[n]` is the number of successes in the
 remaining trials (remaining hits).
 
-The remaining data can be used to evaluate the predictive performance
-of our models conditioned on the observed data.  That is, we will
-"train" on the first 45 at bats and see how well our various models do
-at predicting the rest of the season.
-
-We will only need a few columns of the data; we will be using the
-remaining hits and at bats to evaluate the predictive inferences for
-the various models.
+The remaining data can be used to evaluate the predictive performance of our
+models conditioned on the observed data.  That is, we will "train" on the first
+45 at bats and see how well our various models do at predicting the rest of the
+season.
 
 
 # Pooling
 
-With *complete pooling*, each item is assumed to have the same chance
-of success.  With *no pooling*, each item is assumed to have a
-completely unrelated chance of success.  With *partial pooling*, each
-item is assumed to have a different chance of success, but the data
-for all of the observed items informs the estimates for each item.
+With *complete pooling*, each item is assumed to have the same chance of
+success.  With *no pooling*, each item is assumed to have a completely unrelated
+chance of success.  With *partial pooling*, each item is assumed to have a
+different chance of success, but the data for all of the observed items informs
+the estimates for each item.
 
 Partial pooling is typically accomplished through hierarchical models. 
-Hierarchical models directly model the population of items. From a population
-model perspective, no pooling corresponds to infinite population variance,
+Hierarchical models directly model the population of items. From a population 
+model perspective, no pooling corresponds to infinite population variance, 
 whereas complete pooling corresponds to zero population variance.
 
 In the following sections, all three types of pooling models will be fit for the
 baseball data.
 
 
-# Models
+# Fitting the Models
 
 First we'll just create some useful objects to use throughout the rest of 
 this vignette.
@@ -308,10 +319,11 @@ fit_partialpool <-
              seed = SEED)
 ```
 
-Because `stan_glmer` (like `glmer`) estimates the varying intercepts for `Player`
-by estimating a single global intercept and shifts away from that intercept for each 
-player, to get the estimates for each player we need to shift each of the 
-estimates by the intercept.
+Because `stan_glmer` (like `glmer`) estimates the varying intercepts for 
+`Player` by estimating a single global intercept and individual deviations from
+that intercept for each player, to get the estimates for each player we first
+shift each of the posterior draws by the corresponding draw for the intercept.
+We do this for each draw from the posterior distribution.
 
 ```{r, partial-pooling-order}
 # shift each player's estimate by intercept (and then drop intercept)
@@ -550,9 +562,9 @@ the expectation,
 We'll compute both expectations and demonstrate Jensen's inequality in
 our running example.
 
-The variables <code>K_new[n]</code> and <code>y_new[n]</code> hold the number of
+The variables `K_new[n]` and `y_new[n]` hold the number of
 at bats (trials) and the number of hits (successes) for player (item)
-<code>n</code>. With the held out data we can compute the log density of each
+`n`. With the held out data we can compute the log density of each
 data point using the `log_lik` function, which, like `posterior_predict`,
 accepts a `newdata` argument. The `log_lik` function will return an $M \times N$
 matrix, where $M$ is the size of the posterior sample (the number of draws 
@@ -561,7 +573,7 @@ in `newdata`. We can then take the row sums of this matrix to sum over the
 data points. 
 
 ```{r, log_p_new}
-newdata <- data.frame(Hits = y_new, AB = K_new, bball$Player)
+newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
 fits <- list(Pooling = fit_pool, NoPooling = fit_nopool, 
              PartialPooling = fit_partialpool)
 
@@ -573,7 +585,7 @@ head(log_p_new, 3)
 We now have the distributions of `log_p_new` in a `r ncol(log_p_new)`-column
 matrix, with a column for each model.
 
-For each model, the posterior mean for <code>log_p_new</code> will give us
+For each model, the posterior mean for `log_p_new` will give us
 
 \[
  \int_{\Theta} \left( \log p(\tilde{y} \, | \, \theta) \right) 
@@ -697,12 +709,6 @@ The partial pooling model appears to be making slightly better
 predictions than the full pooling model, which in turn is making
 slightly better predictions than the no pooling model.
 
-
-**Note**: in general, we do not need to go through this process every time we fit
-models using **rstanarm**. The `loo()` function performs similar computations 
-for its approximation to leave-one-out cross-validation (LOO), and we can
-compare models on LOO rather than do all of this work ourselves. See the other
-**rstanarm** vignettes for examples.
 
 ## Predicting New Observations
 
@@ -984,7 +990,7 @@ that is intrinsically calibrated to false discovery, which is good,
 because reducing the overall false discovery rate in and of itself
 reduces the true discovery rate at the same time.
 
-The generated quantity <code>some_ability_gt_350</code> will be set to
+The generated quantity `some_ability_gt_350` will be set to
 1 if the maximum ability estimate in $\theta$ is greater than 0.35.
 And thus the posterior mean of this generated quantity will be the
 event probability
@@ -997,7 +1003,7 @@ event probability
 
 where $\theta^{(m)}$ is the sequence of posterior draws for the
 ability parameter vector.  Stan reports this value as the posterior
-mean of the generated quantity <code>some_ability_gt_350</code>, which
+mean of the generated quantity `some_ability_gt_350`, which
 takes on the value $\mathrm{I}[\mathrm{max}(\theta^{(m)}) > 0.35]$ in
 each iteration.
 
@@ -1335,13 +1341,9 @@ posterior inference?
 1.  What are some other test statistics that might be used to evaluate our model
 fit to data? Try some out using `pp_check(model, check="test", test = "my_test")`,
 where `my_test` is your function that computes the test statistic. For example,
-to check the 25% quantile you can use 
-
-```{r, eval=FALSE} 
-q25 <- function(x) quantile(x, 0.25)
-pp_check(model, check = "test", test = "q25")
-```
-
+to check the 25% quantile you could first define a function 
+`q25 <- function(x) quantile(x, 0.25)` and then call
+`pp_check(model, check = "test", test = "q25")`.
 
 1.  Discuss the difference between batting average and on-base percentage as
 random variables.  Consider particularly the denominator (at-bat versus plate
