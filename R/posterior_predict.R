@@ -215,7 +215,7 @@ pp_args <- function(object, data) {
 # @param data output from pp_data()
 # @param draws number of draws
 # @return linear predictor "eta" and matrix of posterior draws stanmat"
-pp_eta <- function(object, data, draws = NULL, return_b = FALSE) {
+pp_eta <- function(object, data, draws = NULL) {
   x <- data$x
   S <- posterior_sample_size(object)
   if (is.null(draws)) 

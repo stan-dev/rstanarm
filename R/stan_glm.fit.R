@@ -233,7 +233,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       if (length(nms_i) == 1) {
         paste0(nms_i, ":", levels(group$flist[[i]]))
       } else {
-        sapply(nms_i, paste0, ":", levels(group$flist[[i]]))
+        t(sapply(nms_i, paste0, ":", levels(group$flist[[i]])))
       }
     }))
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
