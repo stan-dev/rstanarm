@@ -23,7 +23,7 @@ if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
 stanmodels <- sapply(stan_files, function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
-  isystem <- system.file("chunks", package = "rstanarm")
+  isystem <- system.file("chunks", package = methods::getPackageName(environment(), FALSE))
   if (!file.exists(file.path(isystem, "common_functions.stan")))
     isystem <- file.path("inst", "chunks")
   if (!file.exists(file.path(isystem, "common_functions.stan")))
