@@ -118,12 +118,22 @@ ll_fun <- function(f) {
 }
 
 # returns args argument for loo.function() and waic.function()
-ll_args <- function(object) {
+ll_args <- function(object, newdata = NULL) {
   f <- object$family
   draws <- nlist(f)
-  stanmat <- as.matrix.stanreg(object)
-  x <- get_x(object)
-  y <- get_y(object)
+  has_newdata <- !is.null(newdata)
+  if (has_newdata) {
+    ppdat <- pp_data(object, as.data.frame(newdata))
+    tmp <- pp_eta(object, ppdat)
+    eta <- tmp$eta
+    stanmat <- tmp$stanmat
+    x <- ppdat$x
+    y <- eval(formula(object)[[2L]], newdata)
+  } else {
+    stanmat <- as.matrix.stanreg(object)
+    x <- get_x(object)
+    y <- get_y(object)
+  }
 
   if (is(f, "family")) {
     fname <- f$family
@@ -171,8 +181,18 @@ ll_args <- function(object) {
     data$weights <- object$weights
   
   if (is.mer(object)) {
-    z <- get_z(object)
     b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
+    if (has_newdata) {
+      Z_names <- ppdat$Z_names
+      if (is.null(Z_names)) {
+        b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
+      } else {
+        b <- pp_b_ord(b, Z_names)
+      }
+      z <- t(as.matrix(ppdat$Zt))
+    } else {
+      z <- get_z(object)
+    }
     data <- cbind(data, z)
     draws$beta <- cbind(draws$beta, b)
   }
