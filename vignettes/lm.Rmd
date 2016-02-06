@@ -58,7 +58,7 @@ the outcome, $y$. The likelihood of the entire sample is the product of $N$
 individual likelihood contributions.
 
 It is well-known that the likelihood of the sample is maximized when the 
-sum-of-squared residuals is minimized, which occurrs when
+sum-of-squared residuals is minimized, which occurs when
 $$ \widehat{\boldsymbol{\beta}} = \left(\mathbf{X}^\top \mathbf{X}\right)^{-1}
                                    \mathbf{X}^\top \mathbf{y}, $$
 $$ \widehat{\alpha} = \overline{y} - \overline{\mathbf{x}}^\top 
@@ -133,7 +133,7 @@ four ways of choosing $\eta$:
 3. `what = "median"` and `location` is some prior median on the 
   $\left(0,1\right)$ interval. The median of a 
   $\mathrm{Beta}\left(\frac{K}{2},\eta\right)$ distribution is not available
-  in closed form but if $K > 2$ is approximately equal to 
+  in closed form but if $K > 2$ it is approximately equal to 
   $\frac{\frac{K}{2} - \frac{1}{3}}{\frac{K}{2} + \eta - \frac{2}{3}}$. 
   Regardless of whether $K > 2$, the `R2` function can numerically solve for
   the value of $\eta$ that is consistent with a given prior median utilizing
