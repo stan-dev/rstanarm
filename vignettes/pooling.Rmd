@@ -214,6 +214,36 @@ inverse-logit transforms to the interval $(0.05, 0.73)$. The prior median $-1$
 corresponds to a $0.27$ chance of success. In fact, an even narrower prior is
 actually motivated here from substantial baseball knowledge.
 
+The figure below shows both this prior on $\alpha$ as well as the prior it 
+implies on the probability $\theta$.
+
+```{r, fig.width=7, fig.height=3, echo=FALSE}
+par(mfrow = c(1,3))
+p_alpha <- function(alpha) {
+  dnorm(alpha, -1, 1)
+}
+p_theta <- function(theta) {
+  dnorm(log(theta) - log(1-theta), -1, 1) * 1/(theta - theta^2)
+}
+curve2 <- function(expr, limits, xlab, ...) {
+  curve(expr, from = limits[1], to = limits[2], xlab = xlab,
+    lwd = 3, bty = "l", ylab = "", cex.lab = 1.5, ...)
+}
+curve2(p_alpha, c(-3, 1), expression(alpha))
+text(x = 0.25, y = 0.35, labels = expression(p(alpha)), cex = 1.5)
+curve2(p_theta, c(0, 1), expression(theta), col = "red", ylim = c(0, 2.5))
+text(x = 0.575, y = 1.5, labels = expression(p(theta)), cex = 1.5, col = "red")
+curve2(p_alpha, c(-3, 1), expression(paste(alpha,", ", theta)), ylim = c(0, 2.5))
+curve2(p_theta, c(0,1), col = "red", add = TRUE)
+text(x = -1, y = 0.65, labels = expression(p(alpha)), cex = 1.5)
+text(x = -0.5, y = 1.5, labels = expression(p(theta)), cex = 1.5, col = "red")
+```
+
+To fit the model we call `stan_glm` with the formula 
+`cbind(Hits, AB - Hits) ~ 1`. 
+The left-hand side of the formula specifies the binomial outcome by providing 
+the number of successes (hits) and failures (at-bats) for each player, and the
+right-hand side indicates that we want an intercept-only model.
 
 ```{r, full-pooling, results="hide"}
 library(rstanarm)
@@ -1380,6 +1410,13 @@ of the posterior 80% intervals.
 1.  Try generating data where each player has a different number of at-bats
 (trials) and then fitting the models.  What effect does the number of initial
 trials have on the posterior?  Is there a way to quantify the effect?
+
+1.  In the section where we fit the complete pooling model we show a plot of the
+prior distribution on the probability of success $\theta$ implied by the 
+$\mathsf{Normal}(-1,1)$ prior on the log-odds $\alpha$.
+If $\theta = \mathrm{logit}^{-1}(\alpha)$ and 
+$p(\alpha) = \mathsf{Normal}(\alpha \,|\, -1, 1)$, what is $p(\theta)$? For a 
+hint, see [here](https://en.wikipedia.org/wiki/Probability_density_function#Dependent_variables_and_change_of_variables).
 
 1.  How sensitive is the basic no-pooling model to the choice of prior? We used
 a somewhat informative prior due to our knowledge of baseball, but the prior
