@@ -740,6 +740,26 @@ The partial pooling model appears to be making slightly better
 predictions than the full pooling model, which in turn is making
 slightly better predictions than the no pooling model.
 
+#### Approximating the expected log posterior density
+
+Ventari, Gelman, and Gabry (2016) shows that the expected log predictive 
+density can be approximated using the `loo` function for each model and 
+then `compare`d across models:
+```{r, loo}
+compare(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
+```
+The third column is the leave-one-out (loo) approximation to the
+expected log predictive density. This approximation is only 
+asymptotically valid and with only `r nrow(bball)` observations
+in this case, substantially underestimates the expected log
+predictive densities found in the previous subsection. 
+Nevertheless, the relative ranking of the models is essentially
+the same with the pooled and partially pooled models being
+virtually indistinguishable but much better than the no pooling
+model. If we wanted to average some function of the posterior
+predictions (see the next section), we could use the weights in
+the last column, which would effectively average the pooling and
+partially pooling models with equal weight.
 
 ## Predicting New Observations
 
@@ -1440,7 +1460,10 @@ variable itself?  Why might this be important in inference?
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
   
-  
+* Ventari, A, Gelman, A., & Gabry, J. (2016)  Practical Bayesian model 
+  evaluation using leave-one-out cross-validation and WAIC. [
+  [pdf](http://arxiv.org/abs/1507.04544)
+  ]
 
 # Additional Data Sets
 
