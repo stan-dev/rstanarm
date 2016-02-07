@@ -52,7 +52,7 @@
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula glmerControl
-#' 
+#' @importFrom Matrix Matrix t
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
                        subset, weights, 
                        na.action = getOption("na.action", "na.omit"), 
@@ -97,10 +97,10 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 
-  Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
+  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
