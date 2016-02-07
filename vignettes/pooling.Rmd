@@ -19,8 +19,8 @@ output:
 ```{r, SETTINGS-knitr, include=FALSE}
 library(knitr)
 opts_chunk$set(
-  comment=NA, message = FALSE, warning = FALSE, fig.align='center',
-  fig.width=7,fig.height=5
+  comment = NA, message = FALSE, warning = FALSE, 
+  fig.align = 'center', fig.width = 7,fig.height = 5
 )
 ```
 
@@ -195,9 +195,10 @@ p(y_n \, | \, K_n, \alpha)
 \ = \ \mathsf{Binomial}(y_n \, | \, K_n, \ \mathrm{logit}^{-1}(\alpha))
 \]
 
-The inverse logit function is the logistic sigmoid from which logistic
-regression gets its name because the inverse logit function is also
-the standard logistic Cumulative Distribution Function (CDF),
+The inverse logit function is the logistic 
+[sigmoid](https://en.wikipedia.org/wiki/Sigmoid_function) 
+from which logistic regression gets its name because the inverse logit function
+is also the standard logistic Cumulative Distribution Function (CDF),
 
 \[
 \mathrm{logit}^{-1}(\alpha) = \frac{1}{1 + \exp(-\alpha)} = \theta.
