@@ -143,6 +143,9 @@ printing, as is customary for batting averages.
 batting_avg <- function(x) print(format(round(x, digits = 3), nsmall = 3), quote = FALSE)
 player_avgs <- y / K # player avgs through 45 AB
 tot_avg <- sum(y) / sum(K) # overall avg through 45 AB
+
+cat("Player averages through 45 at-bats:\n")
+batting_avg(player_avgs)
 cat("Overall average through 45 at-bats:\n")
 batting_avg(tot_avg)
 ```
@@ -1128,8 +1131,7 @@ is_best_nopool <- rowMeans(rank_nopool == 1)
 is_best_partialpool <- rowMeans(rank == 1)
 
 df_is_best <- data.frame(unit = rep(bball$Player, 2), 
-                         is_best = c(is_best_partialpool, 
-                                     is_best_nopool), 
+                         is_best = c(is_best_partialpool, is_best_nopool), 
                          model = rep(c("partial pooling", "no pooling"), each = N))
 
 ggplot(df_is_best, aes(x=unit, y=is_best)) +
@@ -1320,16 +1322,14 @@ more spread out than the actual data. In this case, this may actually have more
 to do with how the data were selected out of all the major league baseball
 players than the actual data distribution.  Efron and Morris (1975, p 312) write
 
-> This sample was
-chosen because we wanted between 30 and 50 at bats to assure a
-satisfactory approximation of the binomial by the normal distribution
-while leaving the bulk of at bats to be estimated.  We also wanted to
-include an unusually good hitter (Clemente) to test the method with at
-least one extreme parameter, a situation expected to be less favorable
-to Stein's estimator.  Stein's estimator requires equal variances, or
-in this situation, equal at bats, so the remaining 17 players are all
-whom either the April 26 or May 3 *New York Times* reported with 45 at
-bats.
+> This sample was chosen because we wanted between 30 and 50 at bats to assure a
+satisfactory approximation of the binomial by the normal distribution while
+leaving the bulk of at bats to be estimated.  We also wanted to include an
+unusually good hitter (Clemente) to test the method with at least one extreme
+parameter, a situation expected to be less favorable to Stein's estimator. 
+Stein's estimator requires equal variances, or in this situation, equal at bats,
+so the remaining 17 players are all whom either the April 26 or May 3 *New York
+Times* reported with 45 at bats.
 
 
 # Discussion
