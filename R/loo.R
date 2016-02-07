@@ -193,7 +193,7 @@ ll_args <- function(object, newdata = NULL) {
     } else {
       z <- get_z(object)
     }
-    data <- cbind(data, z)
+    data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   }
   
