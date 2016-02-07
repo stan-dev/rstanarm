@@ -220,7 +220,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   if (length(group)) {
     decov <- group$decov
-    Z <- t(as.matrix(group$Zt))
+    Z <- t(group$Zt)
     group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
@@ -442,12 +442,12 @@ pad_reTrms <- function(Z, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
-  Z <- cbind(Z, matrix(0, nrow = n, ncol = p[length(p)], 
+  Z <- cbind(Z, Matrix(0, nrow = n, ncol = p[length(p)], 
              dimnames = list(NULL, rep("_NEW_", p[length(p)]))))
   mark <- length(p) - 1L
   for (i in rev(head(last, -1))) {
     Z <- cbind(Z[, 1:i, drop = FALSE],
-               matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
+               Matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
                Z[, (i+1):ncol(Z), drop = FALSE])
     mark <- mark - 1L
   }

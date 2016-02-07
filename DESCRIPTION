@@ -21,13 +21,14 @@ Description: Estimates pre-compiled regression models using the 'rstan' package,
     customary R syntax with a formula and data.frame plus some additional arguments for priors.
 License: GPL (>=3)
 Depends:
-    R (>= 3.0.2),
+    R (>= 3.2.0),
     Rcpp (>= 0.11.0),
     methods
 Imports:
     ggplot2 (>= 2.0.0),
     lme4 (>= 1.1-8),
     loo (>= 0.1.4),
+    Matrix,
     rstan (>= 2.9.0),
     shinystan (>= 2.1.0),
     stats,

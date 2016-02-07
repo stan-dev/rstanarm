@@ -189,7 +189,7 @@ ll_args <- function(object, newdata = NULL) {
       } else {
         b <- pp_b_ord(b, Z_names)
       }
-      z <- t(as.matrix(ppdat$Zt))
+      z <- t(ppdat$Zt)
     } else {
       z <- get_z(object)
     }
