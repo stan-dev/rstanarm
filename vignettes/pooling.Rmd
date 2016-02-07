@@ -249,10 +249,8 @@ right-hand side indicates that we want an intercept-only model.
 library(rstanarm)
 SEED <- 101
 wi_prior <- normal(-1, 1)  # weakly informative prior on log-odds
-fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, 
-                     family = binomial("logit"), prior_intercept = wi_prior, 
-                     seed = SEED)
-print(fit_pool)
+fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, family = binomial("logit"),
+                     prior_intercept = wi_prior, seed = SEED)
 ```
 
 The `summary` function will compute all sorts of summary statistics from the 
@@ -293,22 +291,21 @@ have the same chance of success.
 
 ## No Pooling
 
-A model with no pooling involves a separate chance-of-success
-parameter $\theta_n \in [0,1]$ for each player $n$, where the 
-$\theta_n$ are assumed to be independent.
+A model with no pooling involves a separate chance-of-success parameter
+$\theta_n \in [0,1]$ for each player $n$, where the $\theta_n$ are assumed to be
+independent.
 
 **rstanarm** will again parameterize the model in terms of the log-odds, 
-$\alpha_n = \mathrm{logit}(\theta_n)$, so the likelihood then uses 
-the log-odds of succes $\alpha_n$ for unit $n$
-in modeling the number of successes $y_n$ as
+$\alpha_n = \mathrm{logit}(\theta_n)$, so the likelihood then uses the log-odds
+of succes $\alpha_n$ for unit $n$ in modeling the number of successes $y_n$ as
 
 \[
 p(y_n \, | \, \alpha_n) = 
 \mathsf{Binomial}(y_n \, | \, K_n, \mathrm{logit}^{-1}(\alpha_n)).
 \]
 
-Assuming the $y_n$ are independent (conditional on $\theta$), this
-leads to the total data likelihood
+Assuming the $y_n$ are independent (conditional on $\theta$), this leads to the
+total data likelihood
 
 \[
 p(y \, | \, \alpha) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \mathrm{logit}^{-1}(\alpha_n)).
@@ -333,21 +330,21 @@ batting_avg(nopool)
 batting_avg(nopool)
 ```
 
-Each 80% interval is much wider than the estimated interval for the population
-in the complete pooling model; this is to be expected---there are only `r K[1]`
-data units for each parameter here as opposed to `r sum(K)` in the
-complete pooling case. If the units each had different numbers of trials, the
-intervals would also vary based on size.
+Each 80% interval is much wider than the estimated interval for the population 
+in the complete pooling model; this is to be expected---there are only `r K[1]` 
+data units for each parameter here as opposed to `r sum(K)` in the complete
+pooling case. If the units each had different numbers of trials, the intervals
+would also vary based on size.
 
-As the estimated chance of success goes up toward 0.5, the 80% intervals gets
-wider.  This is to be expected for chance of success parameters, because the
-standard deviation of a random variable distributed as 
+As the estimated chance of success goes up toward 0.5, the 80% intervals gets 
+wider.  This is to be expected for chance of success parameters, because the 
+standard deviation of a random variable distributed as
 $\mathsf{Binomial}(K,\theta)$ is $\sqrt{\theta\, (1 - \theta) / K}$.
 
-Based on our existing knowledge of baseball, the no-pooling model is almost
-certainly overestimating the high abilities and underestimating lower abilities
-(Ted Williams, 30 years prior to the year this data was collected, was the last
-player with a 40% observed success rate over a season, whereas 20% or less is
+Based on our existing knowledge of baseball, the no-pooling model is almost 
+certainly overestimating the high abilities and underestimating lower abilities 
+(Ted Williams, 30 years prior to the year this data was collected, was the last 
+player with a 40% observed success rate over a season, whereas 20% or less is 
 too low for all but a few rare defensive specialists).
 
 
@@ -371,9 +368,8 @@ This model can be estimated using the `stan_glmer` function.
 
 ```{r, partial-pooling, results="hide"}
 fit_partialpool <- 
-  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball,
-             family = binomial("logit"), prior_intercept = wi_prior, 
-             seed = SEED)
+  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, family = binomial("logit"),
+             prior_intercept = wi_prior, seed = SEED)
 ```
 
 Because `stan_glmer` (like `glmer`) estimates the varying intercepts for 
