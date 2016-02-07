@@ -246,21 +246,25 @@ pp_eta <- function(object, data, draws = NULL) {
     if (is.null(data$Z_names)) {
       b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
     } else {
-      ord <- sapply(data$Z_names, FUN = function(x) {
-        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-        len <- length(m)
-        if (len == 1) 
-          return(m)
-        if (len > 1) 
-          stop("multiple matches bug")
-        x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
-        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-      })
-      b <- b[, ord, drop = FALSE]
+      b <- pp_b_ord(b, data$Z_names)
     }
     eta <- eta + as.matrix(b %*% data$Zt)
   }
   nlist(eta, stanmat)
+}
+
+pp_b_ord <- function(b, Z_names) {
+  ord <- sapply(Z_names, FUN = function(x) {
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1) 
+      return(m)
+    if (len > 1) 
+      stop("multiple matches bug")
+    x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
+    grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+  })
+  b[, ord, drop = FALSE]
 }
 
 # Number of trials for binomial models

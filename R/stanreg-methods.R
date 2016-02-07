@@ -28,13 +28,6 @@
 #' @template args-stanreg-object
 #' @param ... Ignored, except by the \code{update} method. See
 #'   \code{\link{update}}.
-#' @param parm For \code{confint}, an optional character vector of parameter
-#'   names.
-#' @param level For \code{confint}, a scalar between \eqn{0} and \eqn{1}
-#'   indicating the confidence level to use.
-#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
-#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
-#'   returned instead.
 #' 
 #' @details Most of these methods are similar to the methods defined for objects
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
@@ -104,6 +97,11 @@ coef.stanreg <- function(object, ...) {
 
 #' @rdname stanreg-methods
 #' @export
+#' @param parm For \code{confint}, an optional character vector of parameter
+#'   names.
+#' @param level For \code{confint}, a scalar between \eqn{0} and \eqn{1}
+#'   indicating the confidence level to use.
+#'
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (!used.optimizing(object)) {
     stop("For models fit using MCMC or a variational approximation please use ", 
@@ -124,18 +122,23 @@ fitted.stanreg <- function(object, ...)  {
 #' @export
 #' @keywords internal
 #' @param object Fitted model object.
-#' @param ... Arguments to methods.
+#' @param ... Arguments to methods. For example the
+#'   \code{\link[=stanreg-methods]{stanreg}} method accepts the argument
+#'   \code{\link{newdata}}.
 #' @return Pointwise log-likelihood matrix.
 #' @seealso \code{\link{log_lik.stanreg}}
+#' 
 log_lik <- function(object, ...) UseMethod("log_lik")
 
 #' @rdname stanreg-methods
 #' @export
-log_lik.stanreg <- function(object, ...) {
+#' @param newdata For \code{log_lik}, an optional data frame of new data (e.g.
+#'   holdout data). See \code{\link{posterior_predict}}.
+log_lik.stanreg <- function(object, newdata = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  fun <- ll_fun(object$family)
-  args <- ll_args(object)
+  fun <- ll_fun(family(object))
+  args <- ll_args(object, newdata)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
                   draws = args$draws))
@@ -177,7 +180,7 @@ se.stanreg <- function(object, ...) {
 #' @export
 #' @method update stanreg
 #' @param formula.,evaluate See \code{\link[stats]{update}}.
-#' 
+#'
 update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
   call <- getCall(object)
   if (is.null(call)) 
@@ -213,6 +216,10 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
 
 #' @rdname stanreg-methods
 #' @export 
+#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
+#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
+#'   returned instead.
+#'
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
   if (!is.mer(object)) {
     out <- object$covmat

@@ -115,7 +115,7 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
-kid_iq <- read.csv(file.path("data", "kid_iq.csv.xz"))
+kid_iq <- read.csv(file.path("data", "kid-iq.csv.xz"))
 
 post1 <- stan_glm(kid_score ~ mom_hs, data = kid_iq, family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
