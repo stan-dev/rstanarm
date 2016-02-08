@@ -385,3 +385,36 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   
   return(eta)
 }
+# Check and set scale parameters for priors
+#
+# @param scale Value of scale parameter (can be NULL).
+# @param default Default value to use if \code{scale} is NULL.
+# @param link String naming the link function.
+# @return If a probit link is being used, \code{scale} (or \code{default} if
+#   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
+#   either \code{scale} or \code{default} is returned.
+set_prior_scale <- function(scale, default, link) {
+  stopifnot(is.numeric(default), is.character(link))
+  if (is.null(scale)) 
+    scale <- default
+  if (link == "probit")
+    scale <- scale * dnorm(0) / dlogis(0)
+  
+  return(scale)
+}
+
+
+# Check for positive scale or df parameter (NULL ok)
+#
+# @param x The value to check.
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_parameter_value <- function(x) {
+  nm <- deparse(substitute(x))
+  if (!is.null(x)) {
+    if (!is.numeric(x)) 
+      stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) 
+      stop(nm, " should be positive", call. = FALSE)
+  }
+  invisible(TRUE)
+}
