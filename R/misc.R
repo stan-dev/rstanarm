@@ -537,7 +537,7 @@ get_x.lmerMod <- function(object) {
 #' @export
 get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
-  t(as.matrix(Zt))
+  t(Zt)
 }
 
 
