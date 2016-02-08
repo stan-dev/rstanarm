@@ -91,7 +91,7 @@
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  loo.function(ll_fun(x$family), args = ll_args(x), ...)
+  loo.function(ll_fun(family(x)), args = ll_args(x), ...)
 }
 
 #' @rdname loo.stanreg
@@ -102,7 +102,7 @@ loo.stanreg <- function(x, ...) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  waic.function(ll_fun(x$family), args = ll_args(x))
+  waic.function(ll_fun(family(x)), args = ll_args(x))
 }
 
 # returns log-likelihood function for loo() and waic()
@@ -119,7 +119,7 @@ ll_fun <- function(f) {
 
 # returns args argument for loo.function() and waic.function()
 ll_args <- function(object, newdata = NULL) {
-  f <- object$family
+  f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
   if (has_newdata) {

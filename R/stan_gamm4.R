@@ -65,7 +65,7 @@
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
 #'
 stan_gamm4 <- function(formula, random = NULL,
-                       family = rstanarm_family("gaussian"),
+                       family = gaussian(),
                        data = list(),
                        weights = NULL, subset = NULL, na.action, knots = NULL,
                        drop.unused.levels = TRUE, ...,

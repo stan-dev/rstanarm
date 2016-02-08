@@ -63,8 +63,8 @@
 #' plot(fit, ci_level = 0.5)
 #' plot(fit, ci_level = 0.5, pars = "beta")
 #' 
-#' # To change the scale for the half-Cauchy prior on sigma, the standard error of 
-#' # the regression, we can use rstanarm_family():
+#' # To change the scale for the half-Cauchy prior on sigma, the standard error
+#' # of the regression, we can use rstanarm_family():
 #' fam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2) # default is 5
 #' update(fit, family = fam)
 #' 
@@ -103,7 +103,7 @@
 #' fit5 <- update(fit4, formula = lot2 ~ log_u)
 #' }
 #'
-stan_glm <- function(formula, family = rstanarm_family("gaussian"), 
+stan_glm <- function(formula, family = gaussian(), 
                      data, weights, subset,
                      na.action = NULL, offset = NULL, model = TRUE, 
                      x = FALSE, y = TRUE, contrasts = NULL, ..., 
