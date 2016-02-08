@@ -123,15 +123,15 @@ switched, 0 if not). Then we'll expand the model by adding the arsenic level
 of the water in the resident's own well as a predictor and compare this larger
 model to the original.
 
-After reading in the data from the `'wells.csv.xz'` file, we first rescale the
-`dist` variable (measured in meters) so that it is measured in units of 100
-meters. If we leave `dist` in its original units then the corresponding
-regression coefficient will represent the effect of the marginal meter, which is
-too small to have a useful interpretation.
+After loading the `wells` data, we first rescale the `dist` variable (measured
+in meters) so that it is measured in units of 100 meters. If we leave `dist` in
+its original units then the corresponding regression coefficient will represent
+the effect of the marginal meter, which is too small to have a useful
+interpretation.
 
 ```{r binom-arsenic-data}
-# Load data and create dist100 variable 
-wells <- read.csv(file.path("data", "wells.csv.xz"))
+library(rstanarm)
+data(wells)
 wells$dist100 <- wells$dist / 100
 ```
 
@@ -158,7 +158,6 @@ is a reasonable default prior when coefficients should be close to zero but
 have some chance of being large. 
 
 ```{r, binom-arsenic-mcmc, results="hide"}
-library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, 
                  family = binomial(link = "logit"), 
