@@ -338,9 +338,8 @@ pooling case. If the units each had different numbers of trials, the intervals
 would also vary based on size.
 
 As the estimated chance of success goes up toward 0.5, the 80% intervals gets 
-wider.  This is to be expected for chance of success parameters, because the 
-standard deviation of a random variable distributed as
-$\mathsf{Binomial}(K,\theta)$ is $\sqrt{\theta\, (1 - \theta) / K}$.
+wider.  This is to be expected for chance of success parameters, because the
+variance is maximized when $\theta = 0.5$.
 
 Based on our existing knowledge of baseball, the no-pooling model is almost 
 certainly overestimating the high abilities and underestimating lower abilities 
