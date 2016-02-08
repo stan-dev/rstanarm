@@ -263,7 +263,9 @@
 NULL
 
 as.rstanarm_prior <- function(x) {
-  structure(x, class = c(class(x), "rstanarm_prior"))
+  cl <- class(x)
+  cl2 <- if ("rstanarm_prior" %in% cl) cl else c(cl, "rstanarm_prior")
+  structure(x, class = cl2)
 }
 is.rstanarm_prior <- function(x) {
   inherits(x, "rstanarm_prior")
@@ -343,24 +345,22 @@ dirichlet <- function(concentration = 1) {
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
+  what <- match.arg(what)
+  validate_R2_location(location, what)
   prior <- nlist(dist = "R2", location, what, df = 0, scale = 0)
   as.rstanarm_prior(prior)
 }
 
+# Find eta parameter for R2 prior from location, what, and K
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
-  if (is.null(location)) 
-    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
-         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
-         call. = FALSE)
-  stopifnot(length(location) == 1, is.numeric(location))
+  what <- match.arg(what)
+  validate_R2_location(location, what)
   stopifnot(is.numeric(K), K == as.integer(K))
   if (K == 0) 
     stop("R2 prior is not applicable when there are no covariates.", 
          call. = FALSE)
-  what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {
-    stopifnot(location > 0, location <= 1)
     if (K <= 2)
       stop(paste("R2 prior error.", 
                  "The mode of the beta distribution does not exist",
@@ -369,14 +369,11 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
            call. = FALSE)
     eta <- (half_K - 1  - location * half_K + location * 2) / location
   } else if (what == "mean") {
-    stopifnot(location > 0, location < 1)
     eta <- (half_K - location * half_K) / location
   } else if (what == "median") {
-    stopifnot(location > 0, location < 1)
     FUN <- function(eta) qbeta(0.5, half_K, qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1)$root)
   } else { # what == "log"
-    stopifnot(location < 0)
     FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1, 
                         f.lower = -location, 
@@ -385,6 +382,8 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   
   return(eta)
 }
+
+
 # Check and set scale parameters for priors
 #
 # @param scale Value of scale parameter (can be NULL).
@@ -415,6 +414,27 @@ validate_parameter_value <- function(x) {
       stop(nm, " should be NULL or numeric", call. = FALSE)
     if (any(x <= 0)) 
       stop(nm, " should be positive", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Check for valid location value for R2()
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_R2_location <- function(location, what) {
+  if (missing(location) || missing(what))
+    stop("'location' and 'what' must both be specified.", call. = FALSE)
+  if (!is.numeric(location))
+    stop("'location' must be numeric.", call. = FALSE)
+  if (length(location) != 1)
+    stop("For the R2 prior, 'location' must have length 1.", call. = FALSE)
+
+  bad_loc <- if (what == "log") 
+      location >= 0 else (location <= 0 || location > 1)
+  
+  if (bad_loc) {
+    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
+         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
+         call. = FALSE)
   }
   invisible(TRUE)
 }
