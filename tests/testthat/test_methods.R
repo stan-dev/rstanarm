@@ -145,13 +145,21 @@ test_that("log_lik method works", {
   # and compare
   samp <- as.matrix(stan_glm1)
   y <- get_y(stan_glm1)
-  eta <- tcrossprod(get_x(stan_glm1), samp[, 1:2])
+  y_new <- y[1:10] + rnorm(10)
+  x <- get_x(stan_glm1)
+  x_new <- cbind(1, x[1:10, 2] + rnorm(10))
   sigma <- samp[, 3]
+  eta <- tcrossprod(x, samp[, 1:2])
+  eta_new <- tcrossprod(x_new, samp[, 1:2])
   llmat <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta))
+  llmat_new <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta_new))
   for (i in 1:nrow(llmat)) {
     llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
+    llmat_new[i, ] <- dnorm(y_new, mean = eta_new[, i], sd = sigma[i], log = TRUE)
   }
-  expect_equal(llmat, log_lik(stan_glm1))
+  expect_equal(log_lik(stan_glm1), llmat)
+  nd <- data.frame(mpg = y_new, wt = x_new[, 2])
+  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
 })
 
 test_that("ngrps is right", {

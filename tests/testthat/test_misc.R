@@ -282,7 +282,7 @@ test_that("get_x, get_y, get_z work", {
   z_ans2 <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
   expect_equivalent(get_x(fit2), x_ans)
   expect_equivalent(get_y(fit2), y_ans)
-  expect_equivalent(get_z(fit2), z_ans2)
+  expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
   
   fit3 <- SW(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
                         iter = 10, chains = 1, refresh = 5, seed = SEED))
@@ -291,7 +291,7 @@ test_that("get_x, get_y, get_z work", {
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
   expect_equivalent(get_x(fit3), x_ans)
   expect_equivalent(get_y(fit3), y_ans)
-  expect_equivalent(get_z(fit3), z_ans3)
+  expect_equivalent(as.matrix(get_z(fit3)), z_ans3)
 })
 
 test_that("set_sampling_args works", {

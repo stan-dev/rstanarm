@@ -220,7 +220,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   if (length(group)) {
     decov <- group$decov
-    Z <- t(as.matrix(group$Zt))
+    Z <- t(group$Zt)
     group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
@@ -228,12 +228,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       nlevels(group$flist[[i]]))
     t <- length(p)
     group_nms <- names(group$cnms)
-    b_nms <- unlist(lapply(1:t, FUN = function(i) {
-      nms_i <- paste(group$cnms[[i]], group_nms[i])
+    b_nms <- unlist(lapply(group_nms, FUN = function(i) {
+      nms_i <- paste(group$cnms[[i]], i)
       if (length(nms_i) == 1) {
         paste0(nms_i, ":", levels(group$flist[[i]]))
       } else {
-        sapply(nms_i, paste0, ":", levels(group$flist[[i]]))
+        t(sapply(nms_i, paste0, ":", levels(group$flist[[i]])))
       }
     }))
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
@@ -442,12 +442,12 @@ pad_reTrms <- function(Z, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
-  Z <- cbind(Z, matrix(0, nrow = n, ncol = p[length(p)], 
+  Z <- cbind(Z, Matrix(0, nrow = n, ncol = p[length(p)], 
              dimnames = list(NULL, rep("_NEW_", p[length(p)]))))
   mark <- length(p) - 1L
   for (i in rev(head(last, -1))) {
     Z <- cbind(Z[, 1:i, drop = FALSE],
-               matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
+               Matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
                Z[, (i+1):ncol(Z), drop = FALSE])
     mark <- mark - 1L
   }
