@@ -55,6 +55,7 @@
 #'
 #' @importFrom lme4 glFormula glmerControl
 #' @importFrom Matrix Matrix t
+#'
 stan_glmer <- function(formula, data = NULL, family = gaussian(),
                        subset, weights,
                        na.action = getOption("na.action", "na.omit"),
