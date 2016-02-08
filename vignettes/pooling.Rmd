@@ -379,7 +379,7 @@ to get the posterior distribution for each $\alpha_n$ we need to
 shift each of the posterior draws by the corresponding draw for the intercept.
 We can do this easily using the `sweep` function.
 
-```{r, partial-pooling-order}
+```{r, partial-pooling-shift-draws}
 # shift each player's estimate by intercept (and then drop intercept)
 shift_draws <- function(draws) {
   sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], FUN = "+")
@@ -404,7 +404,7 @@ estimated chance-of-success parameters $\theta_n$ in the posterior.  The
 following R code reproduces a similar plot for our data.
 
 
-```{r, plot-compare-models}
+```{r, plot-observed-vs-estimated}
 library(ggplot2)
 models <- c("complete pooling", "no pooling", "partial pooling")
 estimates <- rbind(pool, nopool, partialpool)
@@ -1169,7 +1169,7 @@ $\mathrm{Pr}[\theta_n = \theta_{n'}] = 0$ for $n \neq n'$, we don't
 have to worry about ties.
 
 
-```{r, plot-is-best}
+```{r, plot-best-player}
 thetas_nopool <- plogis(as.matrix(fit_nopool))
 colnames(thetas_nopool) <- as.character(bball$Player)
 rank_nopool <- apply(thetas_nopool, 1, reverse_rank)
