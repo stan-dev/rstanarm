@@ -23,7 +23,7 @@ SEED <- 123
 CHAINS <- 2
 ITER <- 400
 threshold <- 0.21
-REFRESH <- ITER
+REFRESH <- 0
 
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
@@ -63,10 +63,6 @@ test_that("stan_lm doesn't break with vb algorithms", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
-test_that("stan_lm throws error if only intercept", {
-  expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)), 
-               regexp = "not suitable for estimating a mean")
-})
 
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
@@ -77,4 +73,25 @@ test_that("stan_aov returns expected result for npk example", {
   expect_equal(fit_sigma, lm_sigma, tol = threshold)
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
+})
+
+context("stan_lm errors")
+test_that("stan_lm throws error if only intercept", {
+  expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)), 
+               regexp = "not suitable for estimating a mean")
+})
+test_that("stan_lm throws error N < K", {
+  # NOTE: remove this test once N < K is enabled
+  expect_error(stan_lm(mpg ~ ., data = mtcars[1:5, ], prior = R2(0.75)), 
+               regexp = "more data points than predictors is not yet enabled")
+})
+test_that("stan_lm throws R2 prior errors", {
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2()), 
+               regexp = "'location' must be numeric")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(location = c(1,1))), 
+               regexp = "'location' must have length 1")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(0.5, "log")), 
+               regexp = "'location' must be")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(2, "mode")), 
+               regexp = "'location' must be")
 })
