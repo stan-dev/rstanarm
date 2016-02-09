@@ -88,7 +88,7 @@
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
+#'                  prior = normal(0, 1), prior_intercept = normal(0, 5))
 #' plot(fit3, fill_color = "skyblue4", est_color = "maroon")
 #' 
 #' ### Gamma regression (example from help("glm"))

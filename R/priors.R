@@ -88,8 +88,8 @@
 #'   shrinkage priors often require you to increase the 
 #'   \code{\link{adapt_delta}} tuning parameter in order to diminish the number
 #'   of divergent transitions. For more details on tuning parameters and
-#'   divergent transitions see the Troubleshooting section of the "How to Use
-#'   the rstanarm Package" vignette.
+#'   divergent transitions see the Troubleshooting section of the 
+#'   \emph{How to Use the rstanarm Package} vignette.
 #' }
 #' \subsection{Dirichlet family}{
 #'   The Dirichlet distribution is a multivariate generalization of the beta
