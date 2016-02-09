@@ -133,6 +133,8 @@ class(loglog) <- "link-glm"
 #' @references 
 #' Nagler, J., (1994). Scobit: An Alternative Estimator to Logit and Probit.
 #' \emph{American Journal of Political Science}. 230 -- 255.
+#' 
+#' @seealso The vignette for \code{stan_polr}.
 #'
 #' @examples 
 #' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",

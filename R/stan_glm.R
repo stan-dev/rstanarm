@@ -57,6 +57,8 @@
 #'   The \code{stan_glm.nb} function, which takes the extra argument
 #'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =
 #'   \link{neg_binomial_2}(link)}.
+#'   
+#' @seealso The various vignettes for \code{stan_glm}.
 #' 
 #' @examples 
 #' ### Linear regression

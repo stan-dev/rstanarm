@@ -47,6 +47,9 @@
 #'   \code{family = \link{neg_binomial_2}(link)}.
 #'   
 #'   
+#' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
+#'   Partial Pooling} vignette.
+#'    
 #' @examples
 #' # see help(example_model) for details on the model below
 #' print(example_model, digits = 1)
