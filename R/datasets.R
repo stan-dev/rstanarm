@@ -21,7 +21,7 @@
 #'
 #' @name exdata
 #' @keywords internal
-#' @aliases kidiq roaches wells bball1975 bball2006 mortality tumors
+#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -46,7 +46,7 @@
 #' Source: \url{http://www.seanlahman.com/baseball-archive/statistics/}.
 #' 
 #' 302 obs. of 2 variables
-#' \itemize {
+#' \itemize{
 #' \item \code{y} Number of hits
 #' \item \code{K} Number of at-bats
 #' }
