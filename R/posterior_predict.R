@@ -36,7 +36,9 @@
 #'   used to fit the model, then these variables must also be transformed in 
 #'   \code{newdata}. This only applies if variables were transformed before 
 #'   passing the data to one of the modeling functions and \emph{not} if 
-#'   transformations were specified inside the model formula.
+#'   transformations were specified inside the model formula. Also see the Note
+#'   section below for a note about using the \code{newdata} argument with with
+#'   binomial models.
 #' @param draws An integer indicating the number of draws to return. The default
 #'   and maximum number of draws is the size of the posterior sample.
 #' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
@@ -59,6 +61,20 @@
 #'   from the posterior predictive distribution. Each row of the matrix is a
 #'   vector of predictions generated using a single draw of the model parameters
 #'   from the posterior distribution.
+#'   
+#' @note For binomial models with a number of trials greater than one (i.e., not
+#'   Bernoulli models), if \code{newdata} is specified then it must include all 
+#'   variables needed for computing the number of binomial trials to use for the
+#'   predictions. For example if the left-hand side of the model formula is 
+#'   \code{cbind(successes, failures)} then both \code{successes} and 
+#'   \code{failures} must be in \code{newdata}. The particular values of 
+#'   \code{successes} and \code{failures} in \code{newdata} do not matter so 
+#'   long as their sum is the desired number of trials. If the left-hand side of
+#'   the model formula were \code{cbind(successes, trials - successes)} then
+#'   both \code{trials} and \code{successes} would need to be in \code{newdata},
+#'   probably with \code{successes} set to \code{0} and \code{trials} specifying
+#'   the number of trials. See the Examples section below and the 
+#'   \emph{How to Use the rstanarm Package} for examples.
 #' 
 #' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
@@ -69,13 +85,40 @@
 #' table(yrep)
 #' 
 #' \dontrun{
-#' nd <- lme4::cbpp
-#' nd$size <- max(nd$size) + 1L
-#' ppd <- posterior_predict(example_model, newdata = nd)
+#' # Using newdata
+#' counts <- c(18,17,15,20,10,20,25,13,12)
+#' outcome <- gl(3,1,9)
+#' treatment <- gl(3,3)
+#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
+#'                 prior = normal(0, 1), prior_intercept = normal(0, 5))
+#' nd <- data.frame(treatment = factor(rep(1,3)), outcome = factor(1:3))
+#' ytilde <- posterior_predict(fit3, nd, draws = 500)
+#' print(dim(ytilde))  # 500 by 3 matrix (draws by nrow(nd))
+#' ytilde <- data.frame(count = c(ytilde), 
+#'                      outcome = rep(nd$outcome, each = 500))
+#' ggplot(ytilde, aes(x=outcome, y=count)) + 
+#'   geom_boxplot() + 
+#'   ylab("predicted count")
 #' 
-#' # Use fun argument to transform predictions
-#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
-#' ppd <- posterior_predict(fit, fun = exp)
+#' 
+#' # Using newdata with a binomial model
+#' # example_model is binomial so we need to set
+#' # the number of trials to use for prediction.
+#' # This could be a different number for each 
+#' # row of newdata or the same for all rows.
+#' # Here we'll use the same value for all.
+#' nd <- lme4::cbpp
+#' print(formula(example_model))  # cbind(incidence, size - incidence) ~ ...
+#' nd$size <- max(nd$size) + 1L   # number of trials
+#' nd$incidence <- 0  # set to 0 so size - incidence = number of trials
+#' ytilde <- posterior_predict(example_model, newdata = nd)
+#' 
+#' 
+#' # Using fun argument to transform predictions
+#' mtcars2 <- mtcars
+#' mtcars2$log_mpg <- log(mtcars2$mpg)
+#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2)
+#' ytilde <- posterior_predict(fit, fun = exp)
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 

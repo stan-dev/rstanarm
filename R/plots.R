@@ -60,7 +60,7 @@
 #'      ci_level = 0.95, outer_level = 1, show_density = TRUE)
 #' 
 #' # Traceplot
-#' plot(fit, plotfun = "trace", pars = "(Intercept)", inc_warmup = TRUE)
+#' # note: rstanarm doesn't store the warmup draws by default 
 #' (trace <- plot(fit, "trace", pars = "(Intercept)"))
 #' trace + ggplot2::scale_color_discrete()
 #' trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))

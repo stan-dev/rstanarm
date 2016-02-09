@@ -115,9 +115,8 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
-kid_iq <- read.csv(file.path("data", "kid-iq.csv.xz"))
-
-post1 <- stan_glm(kid_score ~ mom_hs, data = kid_iq, family = gaussian(link = "identity"), 
+data(kidiq)
+post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
@@ -132,7 +131,7 @@ Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
 ```{r, continuous-kidiq-plot1a, fig.width = 5}
-base <- ggplot(kid_iq, aes(x = mom_hs, y = kid_score)) + 
+base <- ggplot(kidiq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
   
@@ -162,7 +161,7 @@ the continuous predictor `mom_iq`:
 ```{r, continuous-kidiq-plot2, fig.width = 5}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
-ggplot(kid_iq, aes(x = mom_iq, y = kid_score)) + 
+ggplot(kidiq, aes(x = mom_iq, y = kid_score)) + 
   geom_point(size = 1) +
   geom_abline(data = draws, aes(intercept = a, slope = b), 
               color = "skyblue", size = 0.2, alpha = 0.25) + 
@@ -180,9 +179,9 @@ reg0 <- function(x, ests) cbind(1, 0, x) %*% ests
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
 args <- list(ests = coef(post3))
-kid_iq$clr <- factor(kid_iq$mom_hs, labels = c("No HS", "HS"))
+kidiq$clr <- factor(kidiq$mom_hs, labels = c("No HS", "HS"))
 lgnd <- guide_legend(title = NULL)
-base2 <- ggplot(kid_iq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
+base2 <- ggplot(kidiq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
   geom_point(aes(y = kid_score), shape = 21, stroke = .2, size = 1) + 
   guides(color = lgnd, fill = lgnd) + 
   theme(legend.position = "right")
@@ -314,15 +313,15 @@ axis(1, at = 1:ncol(y_hs), labels = IQ_SEQ, las = 3)
 ```{r, continuous-kidiq-validation, eval=FALSE, include=FALSE}
 # # External Validation
 # source(paste0(ROOT, "ARM/Ch.3/kids_before1987.data.R"), 
-#        local = kid_iq, verbose = FALSE)
+#        local = kidiq, verbose = FALSE)
 # source(paste0(ROOT, "ARM/Ch.3/kids_after1987.data.R"), 
-#        local = kid_iq, verbose = FALSE)
-# post5 <- stan_lm(ppvt ~ hs + afqt, data = kid_iq,
+#        local = kidiq, verbose = FALSE)
+# post5 <- stan_lm(ppvt ~ hs + afqt, data = kidiq,
 #                  prior = R2(location = 0.25, what = "mean"), seed = SEED)
 # y_ev <- posterior_predict(post5, newdata = 
-#                           data.frame(hs = kid_iq$hs_ev, afqt = kid_iq$afqt_ev))
+#                           data.frame(hs = kidiq$hs_ev, afqt = kidiq$afqt_ev))
 # par(mfrow = c(1,1))
-# hist(-sweep(y_ev, 2, STATS = kid_iq$ppvt_ev, FUN = "-"), prob = TRUE,
+# hist(-sweep(y_ev, 2, STATS = kidiq$ppvt_ev, FUN = "-"), prob = TRUE,
 #      xlab = "Predictive Errors in ppvt", main = "", las = 2)
 ```
 
