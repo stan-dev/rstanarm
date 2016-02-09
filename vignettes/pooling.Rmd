@@ -9,7 +9,7 @@ output:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Partial Pooling}
+%\VignetteIndexEntry{Hierarchical Partial Pooling}
 -->
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```

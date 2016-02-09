@@ -25,6 +25,8 @@ This vignette explains how to use the `stan_lmer` and `stan_glmer` functions in
 the __rstanarm__ package to estimate linear and generalized linear models with
 intercepts and slopes that may vary across groups. Before continuing, we
 recommend reading the various vignettes for the `stan_glm` function.
+The _Hierarchical Partial Pooling_ vignette also has examples of both 
+`stan_glm` and `stan_glmer`.
 
 _NOTE: a more thorough vignette for_ `stan_lmer` _and_ `stan_glmer` _with detailed examples is forthcoming._
 
