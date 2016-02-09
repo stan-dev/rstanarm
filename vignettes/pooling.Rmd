@@ -77,14 +77,15 @@ of Carpenter (2009).
 ### Baseball Hits (Efron and Morris 1975)
 
 As a running example, we will use the data from Table 1 of (Efron and
-Morris 1975), which is included in the file efron-morris-75-bball.csv.xz
+Morris 1975), which is included in **rstanarm** under the name `bball1975`
 (it was downloaded 24 Dec 2015 from
 [here](http://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
 It is drawn from the 1970 Major League Baseball season (from both leagues).
 
 ```{r, load-data}
-bball <- read.csv(file.path("data", "efron-morris-75-bball.csv.xz"))
-bball <- with(bball, # we only need a few of the variables
+library(rstanarm)
+data(bball1970)
+bball <- with(bball1970, # we only need a few of the variables
               data.frame(Hits, AB = At.Bats, 
                          RemainingAB = RemainingAt.Bats,
                          RemainingHits = SeasonHits - Hits, 
@@ -247,7 +248,6 @@ the number of successes (hits) and failures (at-bats) for each player, and the
 right-hand side indicates that we want an intercept-only model.
 
 ```{r, full-pooling, results="hide"}
-library(rstanarm)
 SEED <- 101
 wi_prior <- normal(-1, 1)  # weakly informative prior on log-odds
 fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, family = binomial("logit"),
@@ -1501,17 +1501,7 @@ variable itself?  Why might this be important in inference?
 # Additional Data Sets
 
 The following additional data sets have a similar structure to the baseball data
-used in this vignette and are included with **rstanarm**. To load one of these
-data sets you can use the following code:
-
-```{r, eval=FALSE}
-path <- system.file("doc", "data", FILENAME, package = "rstanarm")
-dataset <- read.csv(path)
-```
-
-where `FILENAME` should be replaced by the name of the file to load, e.g.
-`"rat-tumors.csv.xz"` for the rat tumors data.
-
+used in this vignette and are included with **rstanarm**.
 
 #### Rat tumors (N = 71)
 
@@ -1520,7 +1510,7 @@ control groups of rats; specifically endometrial stromal polyps in
 female lab rats of type F344.  The data set is taken from the book
 site for (Gelman et al. 2013):
 
-* File name: <tt>rat-tumors.csv.xz</tt>
+* To load: `data(tumors, package = "rstanarm")`
 * Data source: [http://www.stat.columbia.edu/~gelman/book/data/rats.asc](http://www.stat.columbia.edu/~gelman/book/data/rats.asc)
 
 
@@ -1531,15 +1521,15 @@ in 12 hospitals performing cardiac surgery in babies.  We just
 manually entered the data from the paper; it is also available in
 the Stan example models repository in R format.
 
-* File name: <tt>surgical-mortality.csv.xz</tt>
+* To load: `data(mortality, package = "rstanarm")`
 * Data source: Unknown
 
 #### Baseball hits 1996 AL (N = 308)
 
 Carpenter (2009) updates Efron and Morris's (1975) data set for the
-entire set of players for the entire 1996 American League season of
+entire set of players for the entire 2006 American League season of
 Major League Baseball.  The data was originally downloaded from the
 [baseball1.com](http://www.baseball1.com/).
 
-* File name: <tt>baseball-hits-1996.csv.xz</tt>
+* To load: `data(bball2006, package = "rstanarm")`
 * Data Source: [http://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability](http://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability/)
