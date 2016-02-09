@@ -996,11 +996,11 @@ draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
 colnames(thetas_partialpool) <- as.character(bball$Player)
 ability_gt_400 <- thetas_partialpool > 0.4
-cat("Pr(theta_n ≥ 0.400 | y)\n")
+cat("Pr(theta_n >= 0.400 | y)\n")
 colMeans(ability_gt_400)[c(1, 5, 10)]
 
 some_gt_350 <- apply(thetas_partialpool, 1, function(x) max(x) > 0.35)
-cat("Pr(at least one theta_n ≥ 0.350 | y)\n")
+cat("Pr(at least one theta_n >= 0.350 | y)\n")
 mean(some_gt_350)
 ```
 

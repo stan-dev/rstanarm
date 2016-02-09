@@ -150,7 +150,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun)) 
     ytilde <- do.call(fun, list(ytilde))
-
+  
   return(ytilde)
 }
 
