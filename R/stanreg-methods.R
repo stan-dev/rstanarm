@@ -124,7 +124,7 @@ fitted.stanreg <- function(object, ...)  {
 #' @param object Fitted model object.
 #' @param ... Arguments to methods. For example the
 #'   \code{\link[=stanreg-methods]{stanreg}} method accepts the argument
-#'   \code{\link{newdata}}.
+#'   \code{newdata}.
 #' @return Pointwise log-likelihood matrix.
 #' @seealso \code{\link{log_lik.stanreg}}
 #' 
