@@ -143,4 +143,11 @@
 #' Tarone, R. E. (1982) The use of historical control information in testing for
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
 #' 
+#' @examples 
+#' \dontrun{
+#' data(kidiq)
+#' (kidiq_fit <- stan_glm(kid_score ~ mom_hs * mom_iq, data = kidiq, cores = 4))
+#' pp_check(fit, nreps = 20)
+#' }
+#' 
 NULL
