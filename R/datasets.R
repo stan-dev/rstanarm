@@ -32,8 +32,8 @@
 #' 
 #' 18 obs. of 5 variables
 #' \itemize{
-#' \item \code{Player} Player's last name (\code{\link{factor}}).
-#' \item \code{Hits} Number of hits in the first 45 at-bats of the season.
+#' \item \code{Player} Player's last name
+#' \item \code{Hits} Number of hits in the first 45 at-bats of the season
 #' \item \code{AB} Number of at-bats (45 for all players)
 #' \item \code{RemainingAB} Number of remaining at-bats (different for most players)
 #' \item \code{RemainingHits} Number of remaining hits
