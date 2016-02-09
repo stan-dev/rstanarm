@@ -147,17 +147,10 @@
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
 #' 
 #' @examples 
-#' \dontrun{
-#' data(kidiq)
-#' (fit1 <- stan_glm(kid_score ~ mom_hs * mom_iq, data = kidiq, cores = 4))
-#' pp_check(fit1, nreps = 20)
-#' 
-#' (fit2 <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
-#'                  prior = R2(location = 0.30, what = "mean"), cores = 4))
-#' pp_check(fit2, nreps = 20)
-#' 
-#' # loo has no preference:
-#' compare(loo(fit1), loo(fit2)) 
-#' }
+#' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
+#'                prior = R2(location = 0.30, what = "mean"),
+#'                # the next line is only to make the example go fast enough
+#'                chains = 2, iter = 500, seed = 12345)
+#' pp_check(fit, nreps = 20)
 #' 
 NULL
