@@ -14,24 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#' ppcheck (deprecated)
-#' 
-#' ppcheck is deprecated and will be removed in the near future. Use
-#' \code{\link{pp_check}} instead.
-#' 
-#' @export
-#' @keywords internal
-#' @inheritParams pp_check
-ppcheck <- function(object,
-                    check = "distributions",
-                    nreps = NULL, overlay = TRUE, test = "mean", ...) {
-  .Deprecated("pp_check")
-  mc <- match.call()
-  mc[[1L]] <- as.name("pp_check")
-  eval(mc, parent.frame())
-}
-
+#
 #' Graphical posterior predictive checks
 #' 
 #' Various plots comparing the observed outcome variable \eqn{y} to simulated 
