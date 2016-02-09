@@ -102,20 +102,20 @@ the __Likelihood__ section above in that the rate parameter $\lambda_i =
 exp(\eta_i)$ is multiplied by the exposure $u_i$ giving us 
 $y_i \sim Poisson(u_i \lambda_i)$. This is equivalent to adding $\ln{(u_i)}$ 
 to the linear predictor $\eta_i$ and it can be specified using the `offset` 
-argument to `stan_glm`:
+argument to `stan_glm`.
 
 ```{r, count-roaches-mcmc, results="hide"}
 library(rstanarm)
+data(roaches)
 
-# Load data and rescale
-roaches <- read.csv(file.path("data", "roaches.csv.xz"))
+# Rescale
 roaches$roach1 <- roaches$roach1 / 100
 # Estimate original model
-glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
-            family = poisson, offset = log(exposure2))
+glm1 <- glm(y ~ roach1 + treatment + senior, offset = log(exposure2), 
+            data = roaches, family = poisson)
 # Estimate Bayesian version with stan_glm
-stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
-                      family = poisson, offset = log(exposure2), 
+stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, offset = log(exposure2),
+                      data = roaches, family = poisson, 
                       prior = normal(0,2.5), prior_intercept = normal(0,5),
                       chains = CHAINS, cores = CORES, seed = SEED)
 ```
