@@ -33,6 +33,7 @@ env:
 
 
 before_install:
+  - sudo tlmgr update --self
   - mkdir -p ~/.R/
   - echo "CXX = `R CMD config CXX`" >> ~/.R/Makevars
   - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0" >> ~/.R/Makevars 
