@@ -384,24 +384,6 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
 }
 
 
-# Check and set scale parameters for priors
-#
-# @param scale Value of scale parameter (can be NULL).
-# @param default Default value to use if \code{scale} is NULL.
-# @param link String naming the link function.
-# @return If a probit link is being used, \code{scale} (or \code{default} if
-#   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
-#   either \code{scale} or \code{default} is returned.
-set_prior_scale <- function(scale, default, link) {
-  stopifnot(is.numeric(default), is.character(link))
-  if (is.null(scale)) 
-    scale <- default
-  if (link == "probit")
-    scale <- scale * dnorm(0) / dlogis(0)
-  
-  return(scale)
-}
-
 
 # Check for positive scale or df parameter (NULL ok)
 #
@@ -438,3 +420,112 @@ validate_R2_location <- function(location, what) {
   }
   invisible(TRUE)
 }
+
+
+
+# Check and set scale parameters for priors
+#
+# @param scale Value of scale parameter (can be NULL).
+# @param default Default value to use if \code{scale} is NULL.
+# @param link String naming the link function.
+# @return If a probit link is being used, \code{scale} (or \code{default} if
+#   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
+#   either \code{scale} or \code{default} is returned.
+set_prior_scale <- function(scale, default, link) {
+  stopifnot(is.numeric(default), is.character(link))
+  if (is.null(scale)) 
+    scale <- default
+  if (link == "probit")
+    scale <- scale * dnorm(0) / dlogis(0)
+  
+  return(scale)
+}
+
+
+# Validate user-specified prior and prior_intercept for stan_glm
+# and return in appropriate form to be used in stan_glm.fit
+#
+# @param x User-specified "prior" or "prior_intercept" argument
+# @param prior_for Either "coef" or "intercept"
+# @param family The name of the link function for the model (e.g. "identity",
+#   "logit", etc.)
+# @param ncoef Number of coefficients (if prior_for == "coef")
+#
+# @return A named list with components "dist", "scale", "mean", and "df", which
+#   apply to either the prior on the regression coefficients or intercept, 
+#   depending on "prior_for".
+#
+validate_glm_prior <- function(x, prior_for = c("coef", "intercept"), 
+                               link, ncoef) {
+  if (missing(link))
+    stop("Bug found: 'link' not supplied to validate_glm_prior()", 
+         call. = FALSE)
+  
+  prior_for <- match.arg(prior_for)
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  if (prior_for == "intercept")
+    ok_dists <- ok_dists[1:3]
+  
+  if (prior_for == "coef") { # prior for regression coefficients
+    if (missing(ncoef))
+      stop("Bug found: 'ncoef' not supplied to validate_glm_prior()", 
+           call. = FALSE)
+    
+    if (is.null(x)) { # prior = NULL
+      pdist <- 0L
+      pmean <- as.array(rep(0, ncoef))
+      pscale <- pdf <- as.array(rep(1, ncoef))
+    } else {
+      if (!is.list(x)) 
+        stop("'prior' should be a named list.")
+      pdist <- x$dist
+      pscale <- x$scale
+      pmean <- x$location
+      pdf <- x$df
+      pdf[is.na(pdf)] <- 1
+      
+      if (!pdist %in% unlist(ok_dists)) {
+        stop("The prior distribution for the coefficients should be one of ",
+             paste(names(ok_dists), collapse = ", "))
+      } else if (pdist %in% c("normal", "t")) {
+        pdist <- ifelse(pdist == "normal", 1L, 2L)
+        pscale <- set_prior_scale(pscale, default = 2.5, link = link)
+      } else {
+        pdist <- ifelse(pdist == "hs", 3L, 4L)
+      }
+      
+      # broadcast to appropriate length if necessary
+      pdf <- maybe_broadcast(pdf, ncoef)
+      pdf <- as.array(pmin(.Machine$double.xmax, pdf))
+      pmean <- maybe_broadcast(pmean, ncoef)
+      pmean <- as.array(pmean)
+      pscale <- maybe_broadcast(pscale, ncoef)
+    }
+    
+  } else { # prior_for == "intercept"
+    
+    if (is.null(x)) { # prior_intercept = NULL
+      pdist <- 0L
+      pmean <- 0 
+      pscale <- pdf <- 1
+    } else {
+      if (!is.list(x)) 
+        stop("'prior_intercept' should be a named list.")
+      pdist <- x$dist
+      pscale <- x$scale
+      pmean <- x$location
+      pdf <- x$df 
+      pdf[is.na(pdf)] <- 1
+      
+      if (!pdist %in% unlist(ok_dists))
+        stop("The prior distribution for the intercept should be one of ",
+             paste(names(ok_dists), collapse = ", "))
+      pdist <- ifelse(pdist == "normal", 1L, 2L)
+      pscale <- set_prior_scale(pscale, default = 10, link = link)
+      pdf <- min(.Machine$double.xmax, pdf)
+    }
+  }
+  
+  list(dist = pdist, scale = pscale, mean = pmean, df = pdf)
+}
+

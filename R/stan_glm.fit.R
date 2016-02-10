@@ -107,62 +107,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_shape_for_df <- hyperparams$prior_shape_for_df %ORifNULL% 0
   prior_rate_for_df <- hyperparams$prior_rate_for_df %ORifNULL% 0
   
-  # prior distributions
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
-  ok_intercept_dists <- ok_dists[1:3]
-  if (is.null(prior)) {
-    prior_dist <- 0L
-    prior_mean <- as.array(rep(0, nvars))
-    prior_scale <- prior_df <- as.array(rep(1, nvars))
-  } else {
-    if (!is.list(prior)) 
-      stop("'prior' should be a named list.")
-    prior_dist <- prior$dist
-    prior_scale <- prior$scale
-    prior_mean <- prior$location
-    prior_df <- prior$df
-    prior_df[is.na(prior_df)] <- 1
-    if (!prior_dist %in% unlist(ok_dists)) {
-      stop("The prior distribution for the coefficients should be one of ",
-           paste(names(ok_dists), collapse = ", "))
-    } else if (prior_dist %in% c("normal", "t")) {
-      prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
-      prior_scale <- set_prior_scale(prior_scale, default = 2.5, 
-                                     link = family$link)
-    } else {
-      prior_dist <- ifelse(prior_dist == "hs", 3L, 4L)
-    }
-    
-    prior_df <- maybe_broadcast(prior_df, nvars)
-    prior_df <- as.array(pmin(.Machine$double.xmax, prior_df))
-    prior_mean <- maybe_broadcast(prior_mean, nvars)
-    prior_mean <- as.array(prior_mean)
-    prior_scale <- maybe_broadcast(prior_scale, nvars)
-  }
-  if (is.null(prior_intercept)) {
-    prior_dist_for_intercept <- 0L
-    prior_mean_for_intercept <- 0 
-    prior_scale_for_intercept <- prior_df_for_intercept <- 1
-  } else {
-    if (!is.list(prior_intercept)) 
-      stop("'prior_intercept' should be a named list.")
-    prior_dist_for_intercept <- prior_intercept$dist
-    prior_scale_for_intercept <- prior_intercept$scale
-    prior_mean_for_intercept <- prior_intercept$location
-    prior_df_for_intercept <- prior_intercept$df 
-    prior_df_for_intercept[is.na(prior_df_for_intercept)] <- 1
-    
-    if (!prior_dist_for_intercept %in% unlist(ok_intercept_dists))
-      stop("The prior distribution for the intercept should be one of ",
-           paste(names(ok_intercept_dists), collapse = ", "))
-    prior_dist_for_intercept <- 
-      ifelse(prior_dist_for_intercept == "normal", 1L, 2L)
-    prior_scale_for_intercept <- 
-      set_prior_scale(prior_scale_for_intercept, default = 10, 
-                      link = family$link)
-    prior_df_for_intercept <- min(.Machine$double.xmax, prior_df_for_intercept)
-  }
+  # prior stuff for coefficients and intercept
+  prior_coef <- validate_glm_prior(prior, prior_for = "coef", 
+                                   link = family$link, ncoef = nvars)
+  prior_int <- validate_glm_prior(prior_intercept, prior_for = "intercept", 
+                                  link = family$link)
   
+  # indicators for different families
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
   is_nb <- is.nb(famname)
@@ -183,14 +134,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
            "the model must have an intercept.")
   }
   
-  if (scaled && prior_dist > 0L) {
+  # additional scaling if scaled=TRUE
+  if (scaled && prior_coef$dist > 0L) {
     if (is_gaussian || is_t) {
       ss <- 2 * sd(y)
-      prior_scale <- ss * prior_scale
-      prior_scale_for_intercept <-  ss * prior_scale_for_intercept
+      prior_coef$scale <- ss * prior_coef$scale
+      prior_int$scale <-  ss * prior_int$scale
     }
     if (!QR) 
-      prior_scale <- pmax(min_prior_scale, prior_scale / 
+      prior_coef$scale <- pmax(min_prior_scale, prior_coef$scale / 
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
                x.scale <- 1
@@ -199,10 +151,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                return(x.scale)
              }))
   }
-  prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
-  prior_scale_for_intercept <- 
-    min(.Machine$double.xmax, prior_scale_for_intercept)
+  prior_coef$scale <- as.array(pmin(.Machine$double.xmax, prior_coef$scale))
+  prior_int$scale <- min(.Machine$double.xmax, prior_int$scale)
 
+  
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
@@ -221,11 +173,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
     has_weights = as.integer(length(weights) > 0),
     has_offset = as.integer(length(offset) > 0),
-    prior_dist = prior_dist, prior_mean = prior_mean, prior_scale = prior_scale, 
-    prior_df = prior_df, prior_dist_for_intercept = prior_dist_for_intercept,
-    prior_scale_for_intercept = prior_scale_for_intercept, 
-    prior_mean_for_intercept = prior_mean_for_intercept,
-    prior_df_for_intercept = prior_df_for_intercept,
+    prior_dist = prior_coef$dist, prior_mean = prior_coef$mean, 
+    prior_scale = prior_coef$scale, prior_df = prior_coef$df, 
+    prior_dist_for_intercept = prior_int$dist,
+    prior_scale_for_intercept = prior_int$scale, 
+    prior_mean_for_intercept = prior_int$mean,
+    prior_df_for_intercept = prior_int$df,
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD), 
     # these are only used if family=t_family but always passed to Stan:
     prior_shape_for_df = prior_shape_for_df, 
@@ -483,3 +436,4 @@ unpad_reTrms <- function(x, columns = TRUE) {
   keep <- !grepl("_NEW_", nms, fixed = TRUE)
   if (columns) x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
 }
+
