@@ -19,9 +19,9 @@
 #' 
 #' Datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
-#' @name exdata
+#' @name rstanarm-datasets
 #' @keywords internal
-#' @aliases kidiq roaches wells bball1975 bball2006 mortality tumors
+#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -40,13 +40,13 @@
 #' }
 #' }
 #' \item{\code{bball2006}}{
-#' Hits and at-bats for the entire 2006 American League season of
-#' Major League Baseball. 
+#' Hits and at-bats for the entire 2006 American League season of Major League
+#' Baseball.
 #' 
-#' Source: \url{http://www.seanlahman.com/baseball-archive/statistics/}.
+#' Source: Carpenter (2009)
 #' 
 #' 302 obs. of 2 variables
-#' \itemize {
+#' \itemize{
 #' \item \code{y} Number of hits
 #' \item \code{K} Number of at-bats
 #' }
@@ -129,6 +129,9 @@
 #' }
 #' 
 #' @references 
+#' Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
+#' batting ability. \url{http://lingpipe-blog.com/2009/09/23/}
+#' 
 #' Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 #' generalizations. \emph{Journal of the American Statistical Association}
 #' \strong{70}(350), 311--319.
@@ -142,5 +145,12 @@
 #' 
 #' Tarone, R. E. (1982) The use of historical control information in testing for
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
+#' 
+#' @examples 
+#' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
+#'                prior = R2(location = 0.30, what = "mean"),
+#'                # the next line is only to make the example go fast enough
+#'                chains = 2, iter = 500, seed = 12345)
+#' pp_check(fit, nreps = 20)
 #' 
 NULL

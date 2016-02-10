@@ -38,9 +38,10 @@ stanreg <- function(object) {
     stan_summary <- cbind(Median = apply(stanmat, 2L, median), 
                           MAD_SD = apply(stanmat, 2L, mad),
                           t(apply(stanmat, 2L, quantile, probs)))
-    covmat <- cov(stanmat)
-    coefs <- apply(stanmat[, colnames(x), drop = FALSE], 2L, median)
-    ses <- apply(stanmat[, colnames(x), drop = FALSE], 2L, mad)
+    xnms <- colnames(x)
+    covmat <- cov(stanmat)[xnms, xnms]
+    coefs <- apply(stanmat[, xnms, drop = FALSE], 2L, median)
+    ses <- apply(stanmat[, xnms, drop = FALSE], 2L, mad)
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
   } else {
