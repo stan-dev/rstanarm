@@ -22,7 +22,7 @@
 #' pages.
 #' 
 #' @name stanreg-methods
-#' @aliases VarCorr fixef ranef ngrps
+#' @aliases VarCorr fixef ranef ngrps sigma
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
@@ -325,17 +325,13 @@ ranef.stanreg <- function(object, ...) {
   structure(ans, class = "ranef.mer")
 }
 
-#' Extract residual standard deviation
-#' 
-#' @export
-#' @keywords internal
-#' @param object Fitted model object.
-#' @param ... Arguments to methods.
-sigma <- function(object, ...) UseMethod("sigma")
 
 #' @rdname stanreg-methods
 #' @export
-#' @method sigma stanreg
+#' @export sigma
+#' @rawNamespace if(getRversion()>='3.3.0') importFrom(stats, sigma) else
+#'   importFrom(lme4,sigma)
+#'
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) 
     return(1)
