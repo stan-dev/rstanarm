@@ -31,12 +31,6 @@ fit <- example_model
 fit2 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, chains = CHAINS,
                     seed = SEED, refresh = REFRESH))
 
-context("deprecated ppcheck")
-test_that("ppcheck issues deprecation warning", {
-  expect_warning(p <- ppcheck(fit), regexp = "deprecated")
-  expect_is(p, "ggplot")
-})
-
 context("pp_check")
 test_that("pp_check doesn't throw bad errors", {
   expect_silent(p <- pp_check(fit, check = "dist", overlay = TRUE, size = 2))
