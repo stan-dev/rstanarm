@@ -207,7 +207,7 @@ pairs.stanreg <- function(x, ...) {
   pairs(x$stanfit, ...)
 }
 
-#' Plots
+#' Plots for rstanarm models
 #' 
 #' All \pkg{rstanarm} models fit using \code{algorithm='sampling'},
 #' \code{"meanfield"}, or \code{"fullrank"} are compatible with a variety of

@@ -112,7 +112,7 @@
 #' 
 #' @section Modeling functions: 
 #' The model estimating functions are described in greater detail in their
-#' individual help pages and the vignettes. Here we provide a very brief
+#' individual help pages and vignettes. Here we provide a very brief
 #' overview:
 #' 
 #' \describe{
