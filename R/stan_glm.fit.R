@@ -459,8 +459,14 @@ pad_reTrms <- function(Z, cnms, flist) {
 # @param x A matrix (e.g. the posterior sample or matrix of summary stats)
 # @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
 #   variables?
-unpad_reTrms <- function(x, columns = TRUE) {
-  stopifnot(is.matrix(x))
+unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
+unpad_reTrms.default <- function(x, ...) {
+  if (is.matrix(x))
+    return(unpad_reTrms.matrix(x, ...))
+  keep <- !grepl("_NEW_", names(x), fixed = TRUE)
+  x[keep]
+}
+unpad_reTrms.matrix <- function(x, columns = TRUE, ...) {
   nms <- if (columns) 
     colnames(x) else rownames(x)
   keep <- !grepl("_NEW_", nms, fixed = TRUE)

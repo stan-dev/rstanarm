@@ -167,7 +167,10 @@ se <- function(object, ...) UseMethod("se")
 #' @rdname stanreg-methods
 #' @export
 se.stanreg <- function(object, ...) {
-  object$ses
+  ses <- object$ses
+  if (!is.mer(object))
+    return(ses)
+  unpad_reTrms(ses)
 }
 
 #' @rdname stanreg-methods

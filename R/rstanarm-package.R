@@ -177,6 +177,9 @@
 #'   \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
 #'   
+#'   \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a question 
+#'   about \pkg{rstanarm} on the Stan-users forum.
+#'   
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-lme4
