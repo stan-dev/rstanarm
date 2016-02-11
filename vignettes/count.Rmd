@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Count Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2016"
+date: "02/11/2016"
 output:
   html_vignette:
     toc: yes
@@ -222,7 +222,7 @@ function takes care of this for us, but `yrep` can be used directly to carry out
 other posterior predictive checks that aren't automated by `pp_check`. 
 
 When we comparing the models using the __loo__ package we also see a clear
-preference for the negative binomial model:
+preference for the negative binomial model
 
 ```{r, count-roaches-loo}
 loo1 <- loo(stan_glm1)
@@ -230,8 +230,8 @@ loo2 <- loo(stan_glm2)
 compare(loo1, loo2)
 ```
 
-The weight of 1 assigned to the negative binomial is not surprising given 
-the better fit we've already observed from the posterior predictive checks.
+which is not surprising given the better fit we've already observed from the
+posterior predictive checks.
 
 
 # References
