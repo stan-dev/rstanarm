@@ -126,11 +126,17 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
     nlevels(ReTrms$flist[[i]]))
   t <- length(p)
   group_nms <- names(ReTrms$cnms)
-  Z_names <- unlist(lapply(1:t, FUN = function(i) {
+  Z_names <- character()
+  for (i in seq_along(ReTrms$cnms)) {
+    # if you change this, change it in stan_glm.fit() as well
+    nm <- group_nms[i]
     nms_i <- paste(ReTrms$cnms[[i]], group_nms[i])
-    if (length(nms_i) == 1) paste0(nms_i, ":", levels(ReTrms$flist[[i]]))
-    else sapply(nms_i, paste0, ":", new_levels[[i]])
-  }))
+    if (length(nms_i) == 1) {
+      Z_names <- c(Z_names, paste0(nms_i, ":", levels(ReTrms$flist[[nm]])))
+    } else {
+      Z_names <- c(Z_names, c(t(sapply(nms_i, paste0, ":", new_levels[[nm]]))))
+    }
+  }
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
 }
