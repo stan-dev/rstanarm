@@ -172,7 +172,7 @@
         shape1[j] <- 0.5 * j;
         shape2[j] <- nu;
       }
-      rho[pos_rho:(p[i] - 2)] ~ beta(shape1,shape2);
+      rho[pos_rho:(pos_rho + p[i] - 2)] ~ beta(shape1,shape2);
       pos_rho <- pos_rho + p[i] - 1;
     }
     zeta ~ gamma(delta, 1);
