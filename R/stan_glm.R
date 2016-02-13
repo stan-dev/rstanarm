@@ -60,7 +60,8 @@
 #'   
 #' @seealso The various vignettes for \code{stan_glm}.
 #' 
-#' @examples 
+#' @examples
+#' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
 #'                 algorithm = "fullrank") # for speed only
@@ -83,7 +84,7 @@
 #'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
 #' pp_check(fit2, check = "resid")
 #' pp_check(fit2, check = "test", test = "mean")
-#' 
+#' }
 #' \dontrun{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
