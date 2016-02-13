@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 #  Copyright (C) 1995-2015 The R Core Team
 #  Copyright (C) 1998 B. D. Ripley
 # 

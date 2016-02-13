@@ -1,7 +1,7 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright 1995-2007 R Core Development Team
 # Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
