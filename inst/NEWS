@@ -13,6 +13,7 @@ Sat Feb 13 2016 (2.9.0-3)
 3. Features
   * Group-specific design matrices are kept sparse throughout to reduce memory consumption
   * The log_lik() function now has a newdata argument
+  * New vignette on hierarchical partial pooling
   
 
 Sat Jan 09 2016 (2.9.0-1)
