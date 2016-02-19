@@ -100,7 +100,8 @@ in a linear model where the continuous outcome is observed.
 The other difference is that an ordinal model does not have a global intercept 
 but rather a vector of $J-1$ cutpoints. The implied prior on these cutpoints 
 used by the __rstanarm__ package is somewhat novel. The user instead specifies a
-Dirichlet prior on $\Pr\left(y=j\right)\left.\right|\overline{\mathbf{x}}$,
+Dirichlet prior on 
+$\Pr\left(y=j \, \left.\right| \, \overline{\mathbf{x}} \right)$,
 which is to say the prior probability of the outcome falling in each of the $J$
 categories given that the predictors are at their sample means. The Dirichlet
 prior is for a simplex random variable, whose elements are non-negative and sum
@@ -108,7 +109,7 @@ to $1$. The Dirichlet PDF can be written as
 $$f\left(\boldsymbol{\pi}|\boldsymbol{\alpha}\right) \propto 
 \prod_{j=1}^J{\pi_j^{\alpha_j - 1}}, $$ 
 where $\boldsymbol{\pi}$ is a simplex vector such that 
-$\pi_j = \Pr\left(y=j\right)\left.\right|\overline{\mathbf{x}}$.
+$\pi_j = \Pr\left(y=j \, \left.\right| \, \overline{\mathbf{x}} \right)$.
 
 The Dirichlet prior is one of the easiest to specify because the so-called 
 "concentration" hyperparameters $\boldsymbol{\alpha}$ can be interpreted as
