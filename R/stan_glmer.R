@@ -79,8 +79,10 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- NULL
   glmod <- eval(mc, parent.frame())
-  y <- model.response(glmod$fr, type = "any")
   X <- glmod$X
+  y <- glmod$fr[, as.character(glmod$formula[2L])]
+  if (is.matrix(y) && ncol(y) == 1L)
+    y <- as.vector(y)
 
   offset <- eval(attr(glmod$fr, "offset"), parent.frame()) %ORifNULL% double(0)
   weights <- validate_weights(weights)
