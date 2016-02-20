@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # Copyright 1994-2013 William N. Venables and Brian D. Ripley
 # 
 # This program is free software; you can redistribute it and/or
@@ -136,7 +136,8 @@ class(loglog) <- "link-glm"
 #' 
 #' @seealso The vignette for \code{stan_polr}.
 #'
-#' @examples 
+#' @examples
+#' if (!grepl("^sparc",  R.version$platform))
 #' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only

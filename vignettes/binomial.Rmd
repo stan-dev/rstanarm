@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2016"
+date: "02/11/2016"
 output: 
   html_vignette: 
     toc: yes
@@ -292,10 +292,10 @@ by the `loo` function in the __loo__ package:
 compare(loo1, loo2)
 ```
 
-These results favor `fit2` over `fit1` by a wide margin. The estimated
+These results favor `fit2` over `fit1`, as the estimated
 difference in `elpd` (the expected log pointwise predictive density for a new
-dataset) is so much larger than its standard error that the model weight for
-`fit2` is 1. LOO penalizes models for adding additional predictors (this helps
+dataset) is so much larger than its standard error. 
+LOO penalizes models for adding additional predictors (this helps
 counter overfitting), but in this case `fit2` represents enough of an
 improvement over `fit1` that the penalty for including `arsenic` is negligible
 (as it should be if `arsenic` is an important predictor).

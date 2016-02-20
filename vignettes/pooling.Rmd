@@ -1,7 +1,7 @@
 ---
 title: "Hierarchical Partial Pooling for Repeated Binary Trials"
 author: "Bob Carpenter, Jonah Gabry and Ben Goodrich"
-date: "02/08/2016"
+date: "02/11/2016"
 output: 
   html_vignette:
     toc: yes
@@ -778,10 +778,7 @@ predictive densities found in the previous subsection.
 Nevertheless, the relative ranking of the models is essentially
 the same with the pooled and partially pooled models being
 virtually indistinguishable but much better than the no pooling
-model. If we wanted to average some function of the posterior
-predictions (see the next section), we could use the weights in
-the last column, which would effectively average the pooling and
-partially pooling models with equal weight.
+model.
 
 ## Predicting New Observations
 

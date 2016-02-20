@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -207,7 +207,7 @@ pairs.stanreg <- function(x, ...) {
   pairs(x$stanfit, ...)
 }
 
-#' Plots
+#' Plots for rstanarm models
 #' 
 #' All \pkg{rstanarm} models fit using \code{algorithm='sampling'},
 #' \code{"meanfield"}, or \code{"fullrank"} are compatible with a variety of

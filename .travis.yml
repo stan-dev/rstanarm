@@ -1,36 +1,15 @@
 language: r
-sudo: required
+sudo: false
+r: devel
+cache: packages
 
-warnings_are_errors: TRUE
-
-os:
-  - osx
-  
-r_binary_packages:
+r_packages:
   - covr
-  - loo
-  - lme4
-  - arm
-  - KernSmooth
-  - knitr
-  - testthat
-  - StanHeaders
-  - inline 
-  - Rcpp
-  - coda
-  - BH
-  - RcppEigen
-  - RInside
-  - ggplot2
-  - gridExtra
-  - rstan
-  - shinystan
   - roxygen2
 
 env:
   matrix: 
     - CXX_OLEVEL=2 CXX=clang++
-
 
 before_install:
   - mkdir -p ~/.R/

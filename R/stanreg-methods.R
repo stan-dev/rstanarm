@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -167,7 +167,10 @@ se <- function(object, ...) UseMethod("se")
 #' @rdname stanreg-methods
 #' @export
 se.stanreg <- function(object, ...) {
-  object$ses
+  ses <- object$ses
+  if (!is.mer(object))
+    return(ses)
+  unpad_reTrms(ses)
 }
 
 #' @rdname stanreg-methods

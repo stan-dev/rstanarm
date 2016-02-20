@@ -213,7 +213,7 @@ test_that("posterior_predict close to predict.merMod for binomial", {
                              seed = SEED)
   spred <- sweep(spred, 2, rowSums(get_y(sfit)), "/")
   expect_equal(colMeans(spred), unname(colMeans(lpred)),
-               tol = .05)
+               tol = .1)
 })
 
 test_that("edge cases for posterior_predict work correctly", {

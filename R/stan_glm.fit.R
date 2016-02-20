@@ -194,14 +194,17 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       nlevels(group$flist[[i]]))
     t <- length(p)
     group_nms <- names(group$cnms)
-    b_nms <- unlist(lapply(group_nms, FUN = function(i) {
-      nms_i <- paste(group$cnms[[i]], i)
+    b_nms <- character()
+    for (i in seq_along(group$cnms)) {
+      # if you change this change .pp_data_mer_z() as well
+      nm <- group_nms[i]
+      nms_i <- paste(group$cnms[[i]], nm)
       if (length(nms_i) == 1) {
-        paste0(nms_i, ":", levels(group$flist[[i]]))
+        b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
       } else {
-        t(sapply(nms_i, paste0, ":", levels(group$flist[[i]])))
+        b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
       }
-    }))
+    }
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
@@ -412,12 +415,11 @@ pad_reTrms <- function(Z, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
-  Z <- cbind(Z, Matrix(0, nrow = n, ncol = p[length(p)], 
-             dimnames = list(NULL, rep("_NEW_", p[length(p)]))))
+  Z <- cbind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
   mark <- length(p) - 1L
   for (i in rev(head(last, -1))) {
     Z <- cbind(Z[, 1:i, drop = FALSE],
-               Matrix(0, n, p[mark], dimnames = list(NULL, rep("_NEW_", p[mark]))),
+               Matrix(0, n, p[mark], sparse = TRUE),
                Z[, (i+1):ncol(Z), drop = FALSE])
     mark <- mark - 1L
   }
@@ -429,8 +431,14 @@ pad_reTrms <- function(Z, cnms, flist) {
 # @param x A matrix (e.g. the posterior sample or matrix of summary stats)
 # @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
 #   variables?
-unpad_reTrms <- function(x, columns = TRUE) {
-  stopifnot(is.matrix(x))
+unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
+unpad_reTrms.default <- function(x, ...) {
+  if (is.matrix(x))
+    return(unpad_reTrms.matrix(x, ...))
+  keep <- !grepl("_NEW_", names(x), fixed = TRUE)
+  x[keep]
+}
+unpad_reTrms.matrix <- function(x, columns = TRUE, ...) {
   nms <- if (columns) 
     colnames(x) else rownames(x)
   keep <- !grepl("_NEW_", nms, fixed = TRUE)
