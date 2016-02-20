@@ -16,11 +16,6 @@ Sat Feb 13 2016 (2.9.0-3)
   * New vignette on hierarchical partial pooling
   
 
-2. Changes
-  * Introduces rstanarm_family() as an additional way of specifying the 
-  family argument, allowing the user to set family-specific hyperparameters.
-  Replaces prior_options().
-
 Sat Jan 09 2016 (2.9.0-1)
   Initial CRAN release
 
