@@ -112,7 +112,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind2(X, Z),
+  fit <- nlist(stanfit, family, formula, offset, weights, 
+               x = cbind(as(X, class(Z)), Z),
                prior.info = get_prior_info(call, formals()), 
                y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)

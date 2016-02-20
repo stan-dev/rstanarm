@@ -105,7 +105,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind2(X, Z), 
+  fit <- nlist(stanfit, family, formula, offset, weights, 
+               x = cbind(as(X, class(Z)), Z), 
                y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
