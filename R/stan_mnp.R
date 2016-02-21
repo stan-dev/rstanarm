@@ -19,8 +19,7 @@ stan_mnp.fit <- function(y, X, ...) {
             all(y == as.integer(y)), length(y) == nrow(X))
 }
 
-debug(stan_mnp)
 res1 <- stan_mnp(choice ~ 1, choiceX = list(Surf=SurfPrice, Tide=TidePrice,
                                        Wisk=WiskPrice, EraPlus=EraPlusPrice,
                                        Solo=SoloPrice, All=AllPrice),
-                 data = detergent, cXnames = "price")
+                 data = MNP::detergent, cXnames = "price")
