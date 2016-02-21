@@ -106,8 +106,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") 
-                 Matrix(cbind(X, as.matrix(Z)), sparse = TRUE) else cbind2(X, Z), 
+               x = if (getRversion() < "3.2.0") cbind(X, as.matrix(Z)) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
