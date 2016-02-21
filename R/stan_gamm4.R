@@ -60,7 +60,6 @@
 #'   specicification and \code{\link{priors}} for more information about the
 #'   priors.
 #' @importFrom lme4 getME
-#' @importFrom Matrix cBind
 #' @examples
 #' # see example(gamm4, package = "gamm4") but prefix gamm4() calls with stan_
 #' 
@@ -114,7 +113,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
+               x = if (getRversion() < "3.2.0") 
+                 cbind(Matrix(X, sparse = TRUE), Z) else cbind2(X, Z), 
                prior.info = get_prior_info(call, formals()), 
                y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)
