@@ -1,6 +1,6 @@
 language: r
 sudo: false
-r: develop
+r: devel
 cache: packages
 
 r_packages:
