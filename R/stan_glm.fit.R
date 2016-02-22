@@ -445,13 +445,24 @@ pad_reTrms <- function(Z, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
-  Z <- cbind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
   mark <- length(p) - 1L
-  for (i in rev(head(last, -1))) {
-    Z <- cbind(Z[, 1:i, drop = FALSE],
-               Matrix(0, n, p[mark], sparse = TRUE),
-               Z[, (i+1):ncol(Z), drop = FALSE])
-    mark <- mark - 1L
+  if (getRversion() < "3.2.0") {
+    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    for (i in rev(head(last, -1))) {
+      Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
+                       Matrix(0, n, p[mark], sparse = TRUE)),
+                 Z[, (i+1):ncol(Z), drop = FALSE])
+      mark <- mark - 1L
+    }
+  }
+  else {
+    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    for (i in rev(head(last, -1))) {
+      Z <- cbind(Z[, 1:i, drop = FALSE],
+                 Matrix(0, n, p[mark], sparse = TRUE),
+                 Z[, (i+1):ncol(Z), drop = FALSE])
+      mark <- mark - 1L
+    }
   }
   nlist(Z, cnms, flist)
 }

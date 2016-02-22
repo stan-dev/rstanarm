@@ -1,6 +1,6 @@
 language: r
 sudo: false
-r: devel
+r: oldrel
 cache: packages
 
 r_packages:
