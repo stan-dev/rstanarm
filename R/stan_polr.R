@@ -234,7 +234,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     
     means <- rstan::get_posterior_mean(stanfit)
     residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
-    names(residuals) <- names(eta) <- names(mu) <- rownames(x)
+    if (length(residuals))
+      names(residuals) <- names(eta) <- names(mu) <- rownames(x)
 
     levs <- c(0.5, 0.8, 0.95, 0.99)
     qq <- (1 - levs) / 2

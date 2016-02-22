@@ -31,7 +31,7 @@ context("stan_polr")
 test_that("stan_polr runs for esoph example", {
   library(MASS)
   f <- tobgp ~ agegp + alcgp
-  fit1 <- stan_polr(f, data = esoph, method = "loglog",
+  fit1 <- stan_polr(f, data = esoph, method = "loglog", prior_PD = TRUE,
                     prior = R2(location = 0.4, what = "median"),
                     chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
   fit1vb <- stan_polr(f, data = esoph, method = "loglog",
