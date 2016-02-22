@@ -1,12 +1,10 @@
 language: r
 sudo: false
-r: oldrel
+r: develop
 cache: packages
 
 r_packages:
   - covr
-  - roxygen2
-  - lme4
 
 env:
   matrix: 
