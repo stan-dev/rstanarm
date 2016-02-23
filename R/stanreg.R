@@ -73,13 +73,13 @@ stanreg <- function(object) {
   names(eta) <- names(mu) <- names(residuals) <- ynames
   
   out <- nlist(
-    coefficients = coefs, 
-    ses,
+    coefficients = unpad_reTrms(coefs), 
+    ses = unpad_reTrms(ses),
     fitted.values = mu,
     linear.predictors = eta,
     residuals, 
     df.residual = if (opt) df.residual else NA_integer_, 
-    covmat,
+    covmat = unpad_reTrms(unpad_reTrms(covmat, col = TRUE), col = FALSE),
     y, 
     x, 
     model = object$model, 

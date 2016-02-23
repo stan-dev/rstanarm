@@ -78,11 +78,21 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(se(stan_polr1), stan_polr1$ses)
   
   expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
-  expect_equal(vcov(stan_glm_opt1, correlation = TRUE), cov2cor(stan_glm_opt1$covmat))
+  expect_equal(vcov(stan_glm_opt1, correlation = TRUE), 
+               cov2cor(stan_glm_opt1$covmat))
   expect_equal(resid(stan_glm_opt1), stan_glm_opt1$residuals)
   expect_equal(coef(stan_glm_opt1), stan_glm_opt1$coefficients)
   expect_equal(fitted(stan_glm_opt1), stan_glm_opt1$fitted.values)
   expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
+  
+  expect_equal(resid(stan_lmer1), stan_lmer1$residuals)
+  expect_equal(fitted(stan_lmer1), stan_lmer1$fitted.values)
+  expect_equal(se(stan_lmer1), stan_lmer1$ses)
+  expect_equal(resid(example_model), example_model$residuals)
+  expect_equal(fitted(example_model), example_model$fitted.values)
+  expect_equal(se(example_model), example_model$ses)
+  # coef and vcov are different for stan_(g)lmer models and are tested
+  # separately later in this file
 })
 
 test_that("confint method returns correct structure", {
