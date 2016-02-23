@@ -161,8 +161,8 @@ ll_args <- function(object, newdata = NULL) {
     if (is.nb(fname)) 
       draws$size <- stanmat[,"overdispersion"]
     
-  } else if (is.character(f)) {
-    stopifnot(is(object, "polr"))
+  } else {
+    stopifnot(is.character(f), is(object, "polr"))
     y <- as.integer(y)
     if (has_newdata) 
       x <- .validate_polr_x(object, x)
@@ -173,9 +173,6 @@ ll_args <- function(object, newdata = NULL) {
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) 
       draws$alpha <- stanmat[, "alpha"]
-    
-  } else {
-    stop("'family' must be a family or a character string.", call. = FALSE)
   }
   
   data$offset <- object$offset

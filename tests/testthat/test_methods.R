@@ -245,6 +245,14 @@ test_that("coef returns the right structure", {
   check_sizes(coef_stan2, coef_lmer2)
 })
 
+test_that("coef ok if any 'ranef' missing from 'fixef'", {
+  stan_lmer3 <- SW(update(stan_lmer2, formula = . ~ (Days | Subject)))
+  lmer3 <- update(lmer2, formula = . ~ (Days | Subject))
+  coef_stan3 <- coef(stan_lmer3); coef_lmer3 <- coef(lmer3)
+  check_att_names(coef_stan3, coef_lmer3)
+  check_sizes(coef_stan3, coef_lmer3)
+})
+
 
 test_that("as.matrix and as.data.frame methods work", {
   mat <- as.matrix(stan_glm1)
@@ -400,9 +408,18 @@ test_that("print and summary methods ok for optimization", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
-  f <- counts ~ outcome + treatment
-  fit <- stan_glm.nb(f, algorithm = "optimizing", seed = SEED)
+  fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing", 
+                     seed = SEED)
   expect_output(print(fit), "overdispersion")
+  
+  clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
+                         lot1 = c(118,58,42,35,27,25,21,19,18),
+                         lot2 = c(69,35,26,21,18,16,13,12,12))
+  fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"), 
+                   algorithm = "optimizing", seed = SEED)
+  fit3 <- update(fit2, family = inverse.gaussian(link = "log"))
+  expect_output(print(fit2), "shape")
+  expect_output(print(fit3), "lambda")
 })
 
 

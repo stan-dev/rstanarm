@@ -269,3 +269,19 @@ test_that("lme4 tests work similarly", {
   p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
 })
 
+
+context("posterior_predict helper functions")
+test_that("pp_binomial_trials works", {
+  ppbt <- rstanarm:::pp_binomial_trials
+  
+  # binomial
+  expect_equal(ppbt(example_model), cbpp$size)
+  expect_equal(ppbt(example_model, newdata = cbpp[1:5, ]), cbpp[1:5, "size"])
+  
+  # bernoulli
+  fit <- SW(stan_glm(I(mpg > 25) ~ wt, data = mtcars, family = binomial, 
+                     iter = ITER, refresh = REFRESH, chains = CHAINS, 
+                     seed = SEED))
+  expect_equal(ppbt(fit), rep(1, nrow(mtcars)))
+  expect_equal(ppbt(fit, newdata = mtcars[1:5, ]), rep(1, 5))
+})
