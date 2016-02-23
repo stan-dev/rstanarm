@@ -1,16 +1,14 @@
 #### Summary:
-Please provide a short summary (no more than a sentence or two).
+A short summary (no more than a sentence or two).
 
 #### Description:
-Describe the problem or question as clearly as possible.
+A full description of the problem (or question).
 
 #### Reproducible Steps:
-If applicable, please report steps to reproduce the issue. If you have a
-reproducible example, please include it.
+If applicable, the steps required to reproduce the issue. If you have a reproducible example, please include it.
 
 #### RStanARM Version:
-The version of the rstanarm package you are running
-(e.g., from `packageVersion("rstanarm")`)
+The version of the rstanarm package you are running (e.g., from `packageVersion("rstanarm")`)
 
 #### R Version:
 The version of R you are running (e.g., from `R.version.string`)
