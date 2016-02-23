@@ -164,6 +164,8 @@ ll_args <- function(object, newdata = NULL) {
   } else if (is.character(f)) {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
+    if (has_newdata) 
+      x <- .validate_polr_x(object, x)
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
     zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
@@ -201,6 +203,21 @@ ll_args <- function(object, newdata = NULL) {
 }
 
 
+# Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
+# bernoulli model). If it doesn't have an intercept then the intercept column in
+# x is dropped. This is only necessary if newdata is specified because otherwise
+# the correct x is taken from the fitted model object.
+.validate_polr_x <- function(object, x) {
+  x0 <- get_x(object)
+  has_intercept <- colnames(x0)[1L] == "(Intercept)" 
+  if (!has_intercept && colnames(x)[1L] == "(Intercept)")
+    x <- x[, -1L, drop = FALSE]
+  x
+}
+
+
+
+# log-likelihood function helpers
 .xdata <- function(data) {
   sel <- c("y", "weights","offset", "trials")
   data[, -which(colnames(data) %in% sel)]
