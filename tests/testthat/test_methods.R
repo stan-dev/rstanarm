@@ -160,6 +160,14 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_glm1), llmat)
   nd <- data.frame(mpg = y_new, wt = x_new[, 2])
   expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
+  
+  
+  # make sure log_lik with newdata equals log_lik if newdata is the same as the
+  # data used to fit the model
+  expect_equal(log_lik(example_model), log_lik(example_model, newdata = cbpp))
+  expect_equal(log_lik(stan_lmer2), log_lik(stan_lmer2, newdata = sleepstudy))
+  expect_equal(log_lik(stan_glm1), log_lik(stan_glm1, newdata = mtcars))
+  expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
 })
 
 test_that("ngrps is right", {
