@@ -102,6 +102,15 @@ test_that("compatible with stan_polr", {
   fit <- SW(stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(location = 0.4),
                    iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  
+  fit_2level <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, 
+                             data = esoph, prior = R2(location = 0.4), 
+                             chains = CHAINS, iter = ITER, 
+                             seed = SEED, refresh = REFRESH))
+  check_for_error(fit_2level)
+  
+  fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
+  check_for_error(fit_2level_scobit)
 })
 
 context("posterior_predict (stan_(g)lmer)")
