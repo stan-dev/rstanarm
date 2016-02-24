@@ -568,11 +568,10 @@ polr_linkinv <- function(x) {
   if (method == "logistic") 
     method <- "logit"
   
-  if (method == "loglog") {
-    pgumbel
-  } else {
-    make.link(method)$linkinv
-  } 
+  if (method == "loglog")
+    return(pgumbel)
+  
+  make.link(method)$linkinv
 }
 
 # Wrapper for rstan::summary

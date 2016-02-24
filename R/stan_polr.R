@@ -190,6 +190,11 @@ stan_polr <- function(formula, data, weights, ..., subset,
     out <- stanreg(fit)
     if (!model) 
       out$model <- NULL
+    
+    if (is.null(shape) && is.null(rate)) # not a scobit model
+      return(out)
+    
+    out$method <- method
     return(structure(out, class = c("stanreg", "polr")))
   }
   

@@ -103,7 +103,8 @@ test_that("compatible with stan_polr", {
                    iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
   
-  fit_2level <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, 
+  esoph$tobgp_fac <- factor(esoph$tobgp == "30+")
+  fit_2level <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
                              data = esoph, prior = R2(location = 0.4), 
                              chains = CHAINS, iter = ITER, 
                              seed = SEED, refresh = REFRESH))
