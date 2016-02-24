@@ -328,6 +328,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$Z <- NULL 
       if (length(weights)) { 
         # nocov start
+        # this code is unused because weights are interpreted as number of 
+        # trials for binomial glms
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
         # nocov end
