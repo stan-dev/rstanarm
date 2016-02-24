@@ -357,9 +357,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
-  } else {
+  } else { # nocov start
+    # family already checked above
     stop(paste(famname, "is not supported."))
-  }
+  } # nocov end
   
   pars <- c(if (has_intercept) "alpha", 
             "beta", 

@@ -404,9 +404,10 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
     nbins <- floor(sqrt(ny))
   } else if (ny > 10 && ny < 100) {
     nbins <- 10
-  } else { # if (ny <= 10)
+  } else { # nocov start
+    # if (ny <= 10)
     nbins <- floor(ny / 2) 
-  }
+  } # nocov end
   
   binned <- binner(rep_id = 1, ey = Ey[1L, ], r = resids[1L, ], nbins)
   if (n > 1) {
