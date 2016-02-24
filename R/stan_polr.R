@@ -148,7 +148,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
   } else {
-    warning("An intercept is needed and assumed.")
+    stop("Specifying '~0' or '~-1' in the model formula not allowed.", 
+         call. = FALSE)
   }
   K <- ncol(x)
   wt <- model.weights(m)
