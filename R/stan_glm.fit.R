@@ -326,16 +326,20 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$Z0 <- standata$Z[y0, , drop = FALSE]
       standata$Z1 <- standata$Z[y1, , drop = FALSE]
       standata$Z <- NULL 
-      if (length(weights)) {
+      if (length(weights)) { 
+        # nocov start
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
+        # nocov end
       } else {
         standata$weights0 <- double(0)
         standata$weights1 <- double(0)
       }
       if (length(offset)) {
+        # nocov start
         standata$offset0 <- offset[y0]
         standata$offset1 <- offset[y1]
+        # nocov end
       } else {
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
