@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -49,12 +49,6 @@ test_that("stan_polr runs for esoph example", {
   expect_is(fit2, "stanreg")
   expect_is(fit1vb, "stanreg")
   expect_is(fit2vb, "stanreg")
-  
-  
-  # fit <- stan_polr(f, data = esoph, prior = NULL, 
-  #                  algorithm = "fullrank", seed = SEED)
-  # check <- polr(f, data = esoph)
-  # expect_equal(coef(fit), coef(check), threshold)
 })
 
 test_that("stan_polr throws error if formula excludes intercept", {
