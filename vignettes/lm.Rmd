@@ -332,3 +332,8 @@ We are optimistic that this prior on the $R^2$ will greatly help in accomplishin
 our goal for __rstanarm__ of making Bayesian estimation of regression models 
 routine. The same approach is used to specify a prior in ANOVA models (see 
 `stan_aov`) and proportional-odds models for ordinal outcomes (see `stan_polr`).
+
+# References
+Lewandowski, D., Kurowicka D., and Joe, H. (2009). 
+Generating random correlation matrices based on vines and extended onion method. 
+_Journal of Multivariate Analysis_. __100__(9), 1989--2001.

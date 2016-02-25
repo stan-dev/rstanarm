@@ -88,6 +88,11 @@
 #'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
 #'   variance.
 #'   
+#'   
+#' @references 
+#' Lewandowski, D., Kurowicka D., and Joe, H. (2009). Generating random
+#' correlation matrices based on vines and extended onion method. 
+#' \emph{Journal of Multivariate Analysis}. \strong{100}(9), 1989--2001.
 #' 
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
