@@ -155,7 +155,7 @@ We set $\sigma_y = \omega s_y$ where $s_y$ is the sample standard deviation
 of the outcome and $\omega > 0$ is an unknown scale parameter to be estimated. 
 The only prior for $\omega$ that does not contravene Bayes' theorem in this 
 situation is Jeffreys prior, $f\left(\omega\right) \propto \frac{1}{\omega}$, 
-which is proportional to a Jeffreys prior on the unkown $\sigma_y$, 
+which is proportional to a Jeffreys prior on the unknown $\sigma_y$, 
 $f\left(\sigma_y\right) \propto \frac{1}{\sigma_y} = 
 \frac{1}{\omega \widehat{\sigma}_y} \propto \frac{1}{\omega}$. This
 parameterization and prior makes it easy for Stan to work with any continuous
