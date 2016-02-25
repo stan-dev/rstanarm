@@ -107,6 +107,16 @@ test_that("compatible with stan_polr", {
   fit <- SW(stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(location = 0.4),
                    iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  
+  esoph$tobgp_fac <- factor(esoph$tobgp == "30+")
+  fit_2level <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
+                             data = esoph, prior = R2(location = 0.4), 
+                             chains = CHAINS, iter = ITER, 
+                             seed = SEED, refresh = REFRESH))
+  check_for_error(fit_2level)
+  
+  fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
+  check_for_error(fit_2level_scobit)
 })
 
 context("posterior_predict (stan_(g)lmer)")
@@ -213,7 +223,7 @@ test_that("posterior_predict close to predict.merMod for binomial", {
                              seed = SEED)
   spred <- sweep(spred, 2, rowSums(get_y(sfit)), "/")
   expect_equal(colMeans(spred), unname(colMeans(lpred)),
-               tol = .1)
+               tol = .125)
 })
 
 test_that("edge cases for posterior_predict work correctly", {
@@ -274,3 +284,19 @@ test_that("lme4 tests work similarly", {
   p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
 })
 
+
+context("posterior_predict helper functions")
+test_that("pp_binomial_trials works", {
+  ppbt <- rstanarm:::pp_binomial_trials
+  
+  # binomial
+  expect_equal(ppbt(example_model), cbpp$size)
+  expect_equal(ppbt(example_model, newdata = cbpp[1:5, ]), cbpp[1:5, "size"])
+  
+  # bernoulli
+  fit <- SW(stan_glm(I(mpg > 25) ~ wt, data = mtcars, family = binomial, 
+                     iter = ITER, refresh = REFRESH, chains = CHAINS, 
+                     seed = SEED))
+  expect_equal(ppbt(fit), rep(1, nrow(mtcars)))
+  expect_equal(ppbt(fit, newdata = mtcars[1:5, ]), rep(1, 5))
+})

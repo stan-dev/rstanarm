@@ -56,11 +56,10 @@
 #' print(example_model, digits = 1)
 #'
 #' @importFrom lme4 glFormula glmerControl
-#' @importFrom Matrix Matrix t
-#'
-stan_glmer <- function(formula, data = NULL, family = gaussian(),
-                       subset, weights,
-                       na.action = getOption("na.action", "na.omit"),
+#' @importFrom Matrix Matrix t cBind
+stan_glmer <- function(formula, data = NULL, family = gaussian, 
+                       subset, weights, 
+                       na.action = getOption("na.action", "na.omit"), 
                        offset, contrasts = NULL, ...,
                        prior = normal(), prior_intercept = normal(),
                        prior_covariance = decov(), prior_PD = FALSE,
@@ -104,9 +103,10 @@ stan_glmer <- function(formula, data = NULL, family = gaussian(),
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms,
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family = validate_family(family),
-               formula, offset, weights, x = cbind2(X, Z),
-               y = y, data, call, terms = NULL, model = NULL,
+  fit <- nlist(stanfit, family = validate_family(family), 
+               formula, offset, weights, 
+               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
+               y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
   out <- stanreg(fit)

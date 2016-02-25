@@ -91,12 +91,12 @@ stan_gamm4 <- function(formula, random = NULL,
 
   weights <- validate_weights(weights)
   if (TRUE) {
-    offset <- double(0)
-  } else {
+    offset <- double(0)  
+  } else { # ncov start
     tmp <- eval(attr(glmod$fr, "offset"), parent.frame(1L))
     offset <- tmp %ORifNULL% double(0)
-  }
-  if (is.null(prior))
+  } # ncov end
+  if (is.null(prior)) 
     prior <- list()
   if (is.null(prior_intercept))
     prior_intercept <- list()
@@ -112,9 +112,11 @@ stan_gamm4 <- function(formula, random = NULL,
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms,
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind2(X, Z),
-               prior.info = get_prior_info(call, formals()),
-               y = y, data, call, algorithm, glmod)
+  fit <- nlist(stanfit, family = validate_family(family), 
+               formula, offset, weights, 
+               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
+               prior.info = get_prior_info(call, formals()), 
+               y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)
   # FIXME: replace guts of gam with point estimates from stanfit
   out$gam <- result$gam

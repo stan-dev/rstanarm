@@ -78,11 +78,21 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(se(stan_polr1), stan_polr1$ses)
   
   expect_equal(vcov(stan_glm_opt1), stan_glm_opt1$covmat)
-  expect_equal(vcov(stan_glm_opt1, correlation = TRUE), cov2cor(stan_glm_opt1$covmat))
+  expect_equal(vcov(stan_glm_opt1, correlation = TRUE), 
+               cov2cor(stan_glm_opt1$covmat))
   expect_equal(resid(stan_glm_opt1), stan_glm_opt1$residuals)
   expect_equal(coef(stan_glm_opt1), stan_glm_opt1$coefficients)
   expect_equal(fitted(stan_glm_opt1), stan_glm_opt1$fitted.values)
   expect_equal(se(stan_glm_opt1), stan_glm_opt1$ses)
+  
+  expect_equal(resid(stan_lmer1), stan_lmer1$residuals)
+  expect_equal(fitted(stan_lmer1), stan_lmer1$fitted.values)
+  expect_equal(se(stan_lmer1), stan_lmer1$ses)
+  expect_equal(resid(example_model), example_model$residuals)
+  expect_equal(fitted(example_model), example_model$fitted.values)
+  expect_equal(se(example_model), example_model$ses)
+  # coef and vcov are different for stan_(g)lmer models and are tested
+  # separately later in this file
 })
 
 test_that("confint method returns correct structure", {
@@ -160,6 +170,14 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_glm1), llmat)
   nd <- data.frame(mpg = y_new, wt = x_new[, 2])
   expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
+  
+  
+  # make sure log_lik with newdata equals log_lik if newdata is the same as the
+  # data used to fit the model
+  expect_equal(log_lik(example_model), log_lik(example_model, newdata = cbpp))
+  expect_equal(log_lik(stan_lmer2), log_lik(stan_lmer2, newdata = sleepstudy))
+  expect_equal(log_lik(stan_glm1), log_lik(stan_glm1, newdata = mtcars))
+  expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
 })
 
 test_that("ngrps is right", {
@@ -235,6 +253,14 @@ test_that("coef returns the right structure", {
   check_att_names(coef_stan2, coef_lmer2)
   check_sizes(coef_stan1, coef_lmer1)
   check_sizes(coef_stan2, coef_lmer2)
+})
+
+test_that("coef ok if any 'ranef' missing from 'fixef'", {
+  stan_lmer3 <- SW(update(stan_lmer2, formula = . ~ (Days | Subject)))
+  lmer3 <- update(lmer2, formula = . ~ (Days | Subject))
+  coef_stan3 <- coef(stan_lmer3); coef_lmer3 <- coef(lmer3)
+  check_att_names(coef_stan3, coef_lmer3)
+  check_sizes(coef_stan3, coef_lmer3)
 })
 
 
@@ -392,9 +418,18 @@ test_that("print and summary methods ok for optimization", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
-  f <- counts ~ outcome + treatment
-  fit <- stan_glm.nb(f, algorithm = "optimizing", seed = SEED)
+  fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing", 
+                     seed = SEED)
   expect_output(print(fit), "overdispersion")
+  
+  clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
+                         lot1 = c(118,58,42,35,27,25,21,19,18),
+                         lot2 = c(69,35,26,21,18,16,13,12,12))
+  fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"), 
+                   algorithm = "optimizing", seed = SEED)
+  fit3 <- update(fit2, family = inverse.gaussian(link = "log"))
+  expect_output(print(fit2), "shape")
+  expect_output(print(fit3), "lambda")
 })
 
 

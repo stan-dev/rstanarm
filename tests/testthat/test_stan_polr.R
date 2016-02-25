@@ -23,11 +23,12 @@ SEED <- 123
 ITER <- 100
 CHAINS <- 2
 CORES <- 1
-REFRESH <- ITER
+REFRESH <- 0
 
 threshold <- 0.03
 
 context("stan_polr")
+
 test_that("stan_polr runs for esoph example", {
   library(MASS)
   f <- tobgp ~ agegp + alcgp
@@ -54,6 +55,14 @@ test_that("stan_polr runs for esoph example", {
   #                  algorithm = "fullrank", seed = SEED)
   # check <- polr(f, data = esoph)
   # expect_equal(coef(fit), coef(check), threshold)
+})
+
+test_that("stan_polr throws error if formula excludes intercept", {
+  expect_error(stan_polr(tobgp ~ 0 + agegp + alcgp, data = esoph, 
+                         method = "loglog", prior = R2(0.4, "median"),
+                         chains = CHAINS, iter = ITER, seed = SEED, 
+                         refresh = REFRESH), 
+               regexp = "not allowed")
 })
 
 test_that("gumbel functions ok", {

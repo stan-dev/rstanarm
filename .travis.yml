@@ -5,7 +5,6 @@ cache: packages
 
 r_packages:
   - covr
-  - roxygen2
 
 env:
   matrix: 
