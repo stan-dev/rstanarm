@@ -106,7 +106,7 @@ determination for the linear model.
 
 An uninformative prior on $R^2$ would be standard uniform, which is a special
 case of a Beta distribution with both shape parameters equal to $1$. A 
-non-uniform prior on $R^2$ is somewhat analagous to ridge regression, which is 
+non-uniform prior on $R^2$ is somewhat analogous to ridge regression, which is 
 popular in data mining and produces better out-of-sample predictions than
 least squares because it penalizes $\boldsymbol{\beta}^\top \boldsymbol{\beta}$,
 usually after standardizing the predictors. An informative prior on $R^2$ 
