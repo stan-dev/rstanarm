@@ -110,8 +110,8 @@ test_that("compatible with stan_polr", {
                              seed = SEED, refresh = REFRESH))
   check_for_error(fit_2level)
   
-  fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
-  check_for_error(fit_2level_scobit)
+  # fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
+  # check_for_error(fit_2level_scobit)
 })
 
 context("posterior_predict (stan_(g)lmer)")
