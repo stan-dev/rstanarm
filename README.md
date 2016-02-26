@@ -36,6 +36,11 @@ install_github("stan-dev/rstanarm", args = "--preclean", build_vignettes = TRUE)
 
 Make sure to include the `args = "--preclean"` argument or the development version of package will not install properly. If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
+## Getting help
+
+* [File an issue on GitHub](https://github.com/stan-dev/rstanarm/issues)
+* [Ask a question on the Stan users Google group](https://groups.google.com/forum/#!forum/stan-users)
+
 ## Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development) page of the wiki.
