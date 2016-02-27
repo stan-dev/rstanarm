@@ -43,10 +43,7 @@ stanreg <- function(object) {
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
   } else {
-    levs <- c(0.5, 0.8, 0.95, 0.99)
-    qq <- (1 - levs) / 2
-    probs <- sort(c(0.5, qq, 1 - qq))
-    stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
+    stan_summary <- make_stan_summary(stanfit)
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
@@ -73,13 +70,13 @@ stanreg <- function(object) {
   names(eta) <- names(mu) <- names(residuals) <- ynames
   
   out <- nlist(
-    coefficients = coefs, 
-    ses,
+    coefficients = unpad_reTrms(coefs), 
+    ses = unpad_reTrms(ses),
     fitted.values = mu,
     linear.predictors = eta,
     residuals, 
     df.residual = if (opt) df.residual else NA_integer_, 
-    covmat,
+    covmat = unpad_reTrms(unpad_reTrms(covmat, col = TRUE), col = FALSE),
     y, 
     x, 
     model = object$model, 

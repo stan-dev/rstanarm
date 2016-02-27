@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -326,16 +326,22 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$Z0 <- standata$Z[y0, , drop = FALSE]
       standata$Z1 <- standata$Z[y1, , drop = FALSE]
       standata$Z <- NULL 
-      if (length(weights)) {
+      if (length(weights)) { 
+        # nocov start
+        # this code is unused because weights are interpreted as number of 
+        # trials for binomial glms
         standata$weights0 <- weights[y0]
         standata$weights1 <- weights[y1]
+        # nocov end
       } else {
         standata$weights0 <- double(0)
         standata$weights1 <- double(0)
       }
       if (length(offset)) {
+        # nocov start
         standata$offset0 <- offset[y0]
         standata$offset1 <- offset[y1]
+        # nocov end
       } else {
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
@@ -357,9 +363,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
-  } else {
+  } else { # nocov start
+    # family already checked above
     stop(paste(famname, "is not supported."))
-  }
+  } # nocov end
   
   pars <- c(if (has_intercept) "alpha", 
             "beta", 

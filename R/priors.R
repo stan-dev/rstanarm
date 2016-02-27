@@ -204,6 +204,12 @@
 #' 
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-bda
+#' 
+#' @references
+#' Gelman, A., Jakulin, A., Pittau, M. G., and Su, Y. (2008). A weakly
+#' informative default prior distribution for logistic and other regression
+#' models. \emph{Annals of Applied Statistics}. 2(4), 1360--1383.
+#' 
 #' @template reference-piironen-vehtari
 #' @template reference-stan-manual
 #' 

@@ -2,6 +2,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 man-roxygen/*
+\.github/*
 vignettes/_output.yaml
 README.md
 ^.*\.o$
