@@ -18,7 +18,6 @@ functions {
   * @param beta Matrix of regression coefficients on unit-specific predictors
   * @param gamma Vector of regression coefficients on alternative-specific predictors
   * @param L Cholesky factor of the full error correlation matrix
-  * @param pi Simplex vector representing the proportions of the trace (p)
   * @param z_epsilon Array of vectors of primitives of the p - 1 errors
   * @param pm1 Integer equal to p - 1
   * @param X Array of vectors of centered unit-specific predictors
@@ -30,7 +29,7 @@ functions {
   */
   
   real ll_mnp(vector alpha, matrix beta, vector gamma,
-              matrix L, vector pi, vector z_epsilon,
+              matrix L, vector z_epsilon,
               int pm1, vector[] X, vector[,] Z, int[] y, int[,] include) {
                        
     matrix[pm1,pm1] Lp[pm1 + 1]; // array of Cholesky factors
@@ -45,14 +44,11 @@ functions {
     sqrt_p <- sqrt(p);
     zero[1] <- 0;
     {
-      matrix[p,p] Sigma;         // full covariance matrix among the errors
-      vector[p] sds;
-      for (i in 1:p) sds[i] <- sqrt_p * sqrt(pi[i]);
-      Sigma <- multiply_lower_tri_self_transpose(diag_pre_multiply(sds, L));
-      for (i in 1:pm1) Lp[i] <- cholesky_decompose(Sigma[include[i],include[i]]);
-      Lp[p] <- diag_pre_multiply(head(sds, pm1), L[include[p],include[p]]);
-      diff_sds[1] <- sds[1]; // check these
-      for (i in 2:p) diff_sds[i] <- sqrt(Sigma[i,i] + Sigma[1,1] - 2 * Sigma[i,1]);
+      matrix[p,p] Lambda;         // full covariance matrix among the errors
+      Lambda <- multiply_lower_tri_self_transpose(L);
+      for (i in 1:pm1) Lp[i] <- cholesky_decompose(Lambda[include[i],include[i]]);
+      Lp[p] <- L[include[p],include[p]];
+      for (i in 1:pm1) diff_sds[i] <- sqrt(2 - 2 * Lambda[i+1,1]);
     }
 
     pos <- 1;
@@ -89,7 +85,7 @@ data {
   int<lower=3> sigma_vech_size;
 }
 transformed data {
-  matrix[p,p] Tbc_t;                   // transformation matrix relative to baseline
+  matrix[p,p-1] Tbc_t;                 // transformation matrix relative to baseline
   int<lower=1,upper=p> include[p,p-1];
   int<lower=0,upper=1> flat;
   int<lower=2> pm1;
@@ -111,32 +107,27 @@ parameters {
   vector[q] gamma;                     // coefficients on alternative-specific predictors
   
   cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix
-  simplex[p] pi;                       // proportions of variance under the trace restriction
   vector[pm1 * N] z_epsilon;           // primitives of the errors
 }
 model {
   increment_log_prob(ll_mnp(alpha, beta, gamma, 
-                            L, pi, z_epsilon,
+                            L, z_epsilon,
                             pm1, X, Z, y, include));
   // priors
   // prior on alpha
   // prior on beta
   L ~ lkj_corr_cholesky(eta);
-  if (flat == 0) pi ~ dirichlet(prior_counts);
   z_epsilon ~ normal(0,1);
 }
 generated quantities {
-  matrix[pm1,pm1] Sigma;
+  matrix[pm1,pm1] Lambda;
   vector[p] mean_PPD;                  // average posterior predictive distribution
   mean_PPD <- rep_vector(0, p);
   {
-    vector[p] sds;
     matrix[pm1,pm1] relative_L;
     vector[pm1] zeros;
-    for (i in 1:p) sds[i] <- sqrt_p * sqrt(pi[i]);
-    Sigma <- quad_form(Tbc_t, 
-                       multiply_lower_tri_self_transpose(diag_pre_multiply(sds, L)));
-    relative_L <- cholesky_decompose(Sigma);
+    Lambda <- quad_form(multiply_lower_tri_self_transpose(L), Tbc_t);
+    relative_L <- cholesky_decompose(Lambda);
     zeros <- rep_vector(0, pm1);
     for (i in 1:N) {
       vector[pm1] u;
