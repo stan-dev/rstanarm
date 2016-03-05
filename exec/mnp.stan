@@ -1,144 +1,172 @@
 functions {
-  /** 
-  * log-likelihood vector for a multinomial probit model
+  /**
+  * linear predictor for a multinomial probit model
   *
-  * The basic idea here is to introduce p - 1 unknown multinormal errors
-  * that correspond to all the choices that correspond to all the choices
-  * that unit i did not make. Then we can figure out a lower bound to the
-  * error term that corresponds to the choice that unit i made, and integrate
-  * the univariate normal distribution from that lower bound to infinity to
-  * produce the likelihood of unit i making that choice.
-  *
-  * Everything is relative to the baseline choice to overcome location
-  * shifts but the error correlation matrix is p x p. The error variances
-  * are proportions of p to overcome rescalings. We then have to take
-  * the difference in errors relative to the first.
-  *
-  * @param alpha Vector of intercepts
-  * @param beta Matrix of regression coefficients on unit-specific predictors
-  * @param gamma Vector of regression coefficients on alternative-specific predictors
-  * @param L Cholesky factor of the full error correlation matrix
-  * @param z_epsilon Array of vectors of primitives of the p - 1 errors
-  * @param pm1 Integer equal to p - 1
-  * @param X Array of vectors of centered unit-specific predictors
-  * @param Z Two-dimensional array of vectors of centered alternative-specific 
-  *          predictors
-  * @param y Integer array of observed choices
-  * @param include Two-dimensional integer array of indices
-  * @return A scalar log-likelihood
+  * @param alpha row_vector of intercepts (may be zero)
+  * @param theta matrix of coefficients on centered unit-specific predictors
+  * @param gamma vector of coefficients on centered alternative-specific predictors
+  * @param Q matrix of centered unit-specific predictors
+  * @param Z array of matrices of centered alternative-specific predictors
+  * @return matrix of linear predictors
   */
-  
-  real ll_mnp(vector alpha, matrix beta, vector gamma,
-              matrix L, vector z_epsilon,
-              int pm1, vector[] X, vector[,] Z, int[] y, int[,] include) {
-                       
-    matrix[pm1,pm1] Lp[pm1 + 1]; // array of Cholesky factors
-    vector[size(y)] lowers;      // lower bounds to the normal CCDF
-    vector[size(y)] sigma;       // standard deviations for the normal CCDF
-    int p;                       // number of choices
-    real sqrt_p;
-    vector[1] zero;
-    vector[pm1 + 1] diff_sds;    // standard deviation in utility relative to choice 1
-    int pos;
-    p <- pm1 + 1;
-    sqrt_p <- sqrt(p);
-    zero[1] <- 0;
-    {
-      matrix[p,p] Lambda;         // full covariance matrix among the errors
-      Lambda <- multiply_lower_tri_self_transpose(L);
-      for (i in 1:pm1) Lp[i] <- cholesky_decompose(Lambda[include[i],include[i]]);
-      Lp[p] <- L[include[p],include[p]];
-      for (i in 1:pm1) diff_sds[i] <- sqrt(2 - 2 * Lambda[i+1,1]);
-    }
-
-    pos <- 1;
-    for (i in 1:size(y)) {      // specify the lower bound for each chosen error
-      vector[pm1] v;
-      vector[pm1] epsilon;
-      int y_i;
-      y_i <- y[i];
-      if (rows(alpha) > 0) v <- alpha;
-      else v <- rep_vector(0, pm1);
-      if (rows(beta) > 0) v <- v + beta * X[i];
-      for (j in 1:rows(gamma)) v <- v + gamma[j] * Z[i,j];
-      epsilon <- Lp[y_i] * segment(z_epsilon, pos, pm1);
-      pos <- pos + pm1;
-      if (y_i == 1) lowers[i] <- max(v + epsilon);
-      else lowers[i] <- max(append_row(zero, v[include[y_i]]) + epsilon) + v[y_i];
-      sigma[i] <- diff_sds[y_i];
-    }
-    return normal_ccdf_log(lowers, 0.0, sigma);
+  matrix make_mu(row_vector alpha, matrix theta, vector gamma,
+                 matrix Q, matrix[] Z) {
+    matrix[rows(Q), cols(alpha)] mu;
+    mu <- rep_matrix(alpha, rows(Q));
+    for (j in 1:rows(gamma)) mu <- mu + Z[j] * gamma[j];
+    if (rows(theta) > 0)     mu <- mu + Q * theta;
+    return transpose(mu); // FIXME
   }
   
+  /**
+  * Create matrix of utilities for the first p - 1 choices
+  *
+  * The identifying assumption here is that utility sums to zero; as in
+  * http://www.burgette.org/sMNP-R0-FINAL.pdf
+  *
+  * @param G array of vectors of primitives that imply zero-sum utility
+  * @param y integer array of observed choices
+  * @param matrix of utilities
+  */
+  matrix make_U(vector[] G, int[] y) {
+    matrix[rows(G[1]), size(y)] U;
+    int N;
+    int pm1;
+    int p;
+    int neg_p;
+    
+    N <- size(y);
+    pm1 <- rows(U);
+    p <- pm1 + 1;
+    neg_p <- -p;
+    for (i in 1:N) {
+      int y_i;
+      vector[pm1] G_i;
+      real utility_best;
+      y_i <- y[i];
+      G_i <- G[i];
+      utility_best <- sum(G_i) / neg_p; // G[i] < 0 so utility_best > 0
+      // this enforces the sum-to-zero constraint for p-dimensional utility
+      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best + G_i[j];
+      if (y_i < p)           U[y_i,i] <- utility_best;
+      for (j in (y_i+1):pm1) U[j,i]   <- utility_best + G_i[j-1];
+    }
+    return U;
+  }
+  
+  /** 
+  * log-likelihood for a multinomial probit model
+  *
+  * The outcome data do not identify the location or scale of the utilities.
+  * To pin down the location, we require that utility for each person sums to zero; see
+  * http://www.burgette.org/sMNP-R0-FINAL.pdf
+  * Thus, the utility of the last choice is excluded here to avoid singularities and
+  * these utilities are multivariate normal in a subspace of dimension p - 1.
+  * However, you can still multiply all the utilities by a positive constant, do
+  * the same for the expectations and the zero-sum errors, and not change the
+  * likelihood of the observed choices. Thus, we require that the diagonal of the
+  * variance-covariance matrix of the raw errors be known, which is the same as in
+  * https://scholar.google.com/scholar?cluster=11094876431829517046&hl=en&as_sdt=0,33
+  *
+  * @param U matrix of utilities for the first p - 1 choices
+  * @param mu matrix of linear predictors for the first p - 1 choices
+  * @param Lambda correlation matrix for all p unrestricted errors
+  * @param Ts symmetric matrix that enforces the zero-sum constraint on the errors
+  * @return A scalar log-likelihood
+  */
+  real ll_mnp_lp(matrix U, matrix mu, matrix Lambda, matrix Ts_t) {
+    matrix[rows(U),rows(U)] L;
+    L <- cholesky_decompose(quad_form(Lambda, Ts_t));
+    increment_log_prob(-0.5 * sum(columns_dot_self(mdivide_left_tri_low(L, U - mu))));
+    increment_log_prob(-cols(U) * sum(log(diagonal(L))));
+    return get_lp();
+  }
 }
 data {
   int<lower=1> N;                      // number of observations
   int<lower=0> K;                      // number of unit-specific predictors
-  vector[K] X[N];                      // centered  unit-specific predictors
+  matrix[N,K] Q;                       // centered  unit-specific predictors
   int<lower=3> p;                      // number of choices
   int<lower=1,upper=p> y[N];           // observed choice outcomes
   int<lower=0> q;                      // number of alternative-specific predictors
-  vector[p - 1] Z[N, q];               // centered alternative-specific predictors
-
-  vector<lower=0>[p] prior_counts;     // hyperparameters
+  matrix[N,p-1] Z[q];                  // centered alternative-specific predictors
+  
+  int<lower=0,upper=1> normalization;  // 0 -> topleft = 1, 1 -> trace = p - 1
   real<lower=0> eta;
-  int<lower=3> sigma_vech_size;
+  matrix[p-1,p-1] R_inv;
 }
 transformed data {
-  matrix[p,p-1] Tbc_t;                 // transformation matrix relative to baseline
-  int<lower=1,upper=p> include[p,p-1];
-  int<lower=0,upper=1> flat;
-  int<lower=2> pm1;
-  real<lower=0> sqrt_p;
-  sqrt_p <- sqrt(p);
-  pm1 <- p - 1;
-  flat <- 1;
-  for (i in 1:p) {
-    if (prior_counts[i] != 1) flat <- 0;
-    if (i > 1) for (j in 1:(i-1)) include[i,j] <- j;
-    if (i < p) for (j in (i+1):p) include[i,j-1] <- j;
-  }
+  matrix[p,p] Ts;                      // transformation matrix that enforces the sum-to-zero constraint
+  matrix[p,p-1] Ts_t;                  
+  matrix[p,p-1] Tbc_t;                 // transformation matrix relative to baseline category
+  int pm1;
+  pm1 <- p-1;
+  Ts <- rep_matrix(-1.0 / pm1, p, p);
+  for (j in 1:pm1) Ts[j,j] <- 1;
+  Ts_t <- Ts[,1:pm1];
   Tbc_t <- append_row(rep_row_vector(-1, pm1), 
-                      diag_matrix(rep_vector(1, pm1)));
+                      diag_matrix(rep_vector(1, pm1)));  
 }
 parameters {
-  vector[pm1] alpha;                   // intercepts
-  matrix[pm1,K] beta;                  // coefficients on unit-specific predictors
+  row_vector[pm1] alpha;               // intercepts
+  matrix[pm1,K] theta;                 // coefficients on unit-specific predictors
   vector[q] gamma;                     // coefficients on alternative-specific predictors
   
-  cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix
-  vector[pm1 * N] z_epsilon;           // primitives of the errors
+  cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix; see
+  vector<upper=0>[pm1] G[N];           // utility gap for non-best choices relative to best choice
+}
+transformed parameters {
+  matrix[p,p] Lambda;
+  Lambda <- multiply_lower_tri_self_transpose(L);
+  for (i in 1:p) Lambda[i,i] <- 1; // already 1 to numerical tolerace but reduces the autodiff
 }
 model {
-  increment_log_prob(ll_mnp(alpha, beta, gamma, 
-                            L, z_epsilon,
-                            pm1, X, Z, y, include));
+  real dummy;
+  dummy <- ll_mnp_lp(make_U(G, y), make_mu(alpha, theta, gamma, Q, Z), Lambda, Ts_t);
   // priors
-  // prior on alpha
-  // prior on beta
   L ~ lkj_corr_cholesky(eta);
-  z_epsilon ~ normal(0,1);
 }
 generated quantities {
-  matrix[pm1,pm1] Lambda;
+  row_vector[pm1] alpha_out;
+  matrix[pm1, K] beta_out;
+  matrix[pm1,pm1] Sigma;
   vector[p] mean_PPD;                  // average posterior predictive distribution
+  beta_out <- R_inv * theta;
+  {
+    real scale_factor;
+    vector[K] beta_1;
+    Sigma <- quad_form(Lambda, Tbc_t);
+    if (normalization == 0) scale_factor <- Sigma[1,1];
+    else scale_factor <- pm1 / trace(Sigma);
+    Sigma <- Sigma / scale_factor;
+    scale_factor <- sqrt(scale_factor);
+
+    alpha_out[pm1] <- -sum(alpha) - alpha[1];
+    beta_1 <- beta_out[,1];
+    for (k in 1:K) beta_out[pm1,k] <- -sum(col(beta_out,k)) - beta_1[k];
+    for (j in 2:pm1) {
+      alpha_out[j-1] <- alpha_out[j] - alpha[1];
+      for (k in 1:K) beta_out[k,j-1] <- beta_out[k,j] - beta_1[k];
+    }
+  }
   mean_PPD <- rep_vector(0, p);
   {
-    matrix[pm1,pm1] relative_L;
-    vector[pm1] zeros;
-    Lambda <- quad_form(multiply_lower_tri_self_transpose(L), Tbc_t);
-    relative_L <- cholesky_decompose(Lambda);
-    zeros <- rep_vector(0, pm1);
+    matrix[p,p] TsL;
+    matrix[pm1,N] mu;
+    TsL <- Ts * L;
+    mu <- make_mu(alpha, theta, gamma, Q, Z);
     for (i in 1:N) {
-      vector[pm1] u;
+      vector[p] z;
+      vector[p] w;
+      vector[pm1] mu_i;
+      vector[1] neg_sum_mu_i;
       int biggest;
-      u <- multi_normal_cholesky_rng(zeros, relative_L);
-      if (rows(alpha) > 0)     u <- u + alpha;
-      if (rows(beta) > 0)      u <- u + beta * X[i];
-      for (j in 1:rows(gamma)) u <- u + gamma[j] * Z[i,j];
-      biggest <- sort_indices_desc(u)[1];
-      if (biggest < 0) mean_PPD[1] <- mean_PPD[1] + 1;
-      else mean_PPD[biggest + 1] <- mean_PPD[biggest + 1] + 1;
+      for (j in 1:p) z[j] <- normal_rng(0,1);
+      mu_i <- col(mu, i);
+      neg_sum_mu_i[1] <- -sum(mu_i);
+      w <- append_row(mu_i, neg_sum_mu_i) + TsL * z;
+      biggest <- sort_indices_desc(w)[1];
+      mean_PPD[biggest] <- mean_PPD[biggest] + 1;
     }
     mean_PPD <- mean_PPD / N;
   }
