@@ -1,0 +1,147 @@
+---
+title: "Estimating Multinomial Probit Regression Models with rstanarm"
+author: "Jonah Gabry and Ben Goodrich"
+date: "03/06/2015"
+output: 
+  html_vignette: 
+    toc: yes
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{stan_mnp: Multinomial Probit Models}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+# Introduction
+
+This vignette explains how to estimate models for nominal outcomes using the
+`stan_mnp` function in the __rstanarm__ package.
+
+```{r, child="children/four_steps.txt"}
+```
+
+Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
+__rstanarm__ Package". This vignette focuses on Step 1.
+
+# Likelihood
+
+Nominal outcomes fall in one of $p$ categories that cannot be uniquely ordered. 
+One way to motivate an model for a nominal outcome is to introduce a latent vector, 
+$\mathbf{w}$, that is related to the observed outcome via an observation mechanism:
+$$y = \arg \max_{j \in 1:p}\{\mathbf{w}\}.$$
+Consequently, $w_y$ can be interpreted as the utility of the $y$-th choice, which
+is greater than for any other choice. This setup is consistent with the random
+utilility maximization framework in economics.
+
+One important aspect of this random utility maximumation framework is that 
+$$y = \arg \max_{j \in 1:p}\{\mathbf{w}\} = \arg \max_{j \in 1:p}\{\mathbf{w} + c\}$$
+for any $c$, which implies that the observed outcomes do not pin down the location of
+the latent utilities. To deal with this location non-identifiability, most approaches 
+to multinomial probit models, such as that in Imai and Van Dyck (200?) redefine 
+utility relative to a "baseline" choice. Let
+$\mathbf{T}_{bc} = \left[-\mathbf{1} \ \mathbf{I}_{p-1}\right]$ be a 
+$\left(p - 1\right) \times p$ matrix such that
+$\mathbf{w}^\ast = \mathbf{T}_{bc} \mathbf{w}$ is the vector being modeled where 
+$w_{i}^\ast = w_{i+1} - w_1$ $\forall i < p$.
+
+Burgette and Hahn (2013) notes that which category is somewhat arbitrarily selected
+as the "baseline" choice affects the posterior probabilities of the various choices.
+To avoid this problem, Burgette and Hahn (2013) uses a different mechanism to overcome
+the location non-identifiability, namely to require that $\sum_{j=1}^p{w_j^\ast = 0}$. 
+Let $\mathbf{T}_{s}$ be a symmetric matrix with ones on its diagonal and 
+$\frac{-1}{p-1}$ in all of its off-diagonal elements. Then, 
+$\mathbf{w}^\ast = \mathbf{T}_s \mathbf{w}$ is the vector being modeled. This is also 
+the locational normalization used in **rstanarm**.
+
+The key assumption of the multinomial probit model is that $\mathbf{w}^\ast$ is distributed
+truncated multivariate normal with some mean function and variance-covariance matrix 
+$\boldsymbol{\Sigma}^\ast$. The main conceptual advantage of a multivariate probit model 
+is that $\boldsymbol{\Sigma}^\ast$ is not restricted to be diagonal, which implies that 
+the errors may be correlated across choices. If utility is defined relative to a baseline 
+choice, then it is conceptually valid to define
+$\boldsymbol{\Sigma}^\ast = \mathbf{T}_{bc} \boldsymbol{\Sigma} \mathbf{T}_{bc}^\top$ but
+in practice, the $p \times p$ matrix $\boldsymbol{\Sigma}$ is not part of the model and
+a prior is specified directly on $\boldsymbol{\Sigma}^\ast$.
+
+Burgette and Hahn's (2013) assumption that utility is zero-sum implies that the full
+$N \times p$ matrix, $\mathbf{W}^\ast$ of latent utilities is singular. Thus, to use the
+mutlivariate normal distribution, we only model its first $p - 1$ columns. No information
+is lost by doing so because _each_ element of $\mathbf{w}$ is a function of _all_ $p - 1$ 
+elements of $\mathbf{g}$ while $w_p$ is fully determined by $\mathbf{g}$ and the zero-sum
+constraint. Doing so implies that the variance-covariance matrix for the multivariate 
+normal distribution must be a square block of size $p - 1$ from the top-left corner of a 
+_singular_ variance-covariance matrix, which is constructed as
+$\boldsymbol{\Sigma}^\ast = \left[\mathbf{T}_{s} \boldsymbol{\Sigma} \mathbf{T}_{s}\right]_{-p,-p}$.
+We make $\boldsymbol{\Sigma}$ a primitive parameter and use $\mathbf{T}_{s}$ to construct 
+$\boldsymbol{\Sigma}^\ast$ as an intemediate parameter. Thus, we place a prior on 
+$\boldsymbol{\Sigma}$ rather than $\boldsymbol{\Sigma}^\ast$, which is a strategy alluded
+to, but not taken, in Burgette and Hahn (2013).
+
+Another important aspect of the random utility maximization framework is that
+$$y = \arg \max_{j \in 1:p}\{\mathbf{w}\} = \arg \max_{j \in 1:p}\{\mathbf{w} \times c\}$$
+for any $c > 0$, which implies that the observed outcomes do not pin down the scale of
+the latent utilities even if their location is fixed. Consequently, 
+$\boldsymbol{\Sigma}^\ast$ is not identified by the observed outcomes. To deal with this scale 
+non-identifiability, most approaches to multinomial probit models set $\Sigma_{11}^\ast = 1$
+or set $\mathrm{Tr}\boldsymbol{\Sigma}^\ast = \sum_{j=1}^{p-1}{\Sigma_{jj}^\ast = p - 1}$.
+Once normalized, the observed outcomes are informative about the lower-triangular elements of 
+$\boldsymbol{\Sigma}^\ast$.
+
+However, since $\boldsymbol{\Sigma}^\ast$ is an intermediate parameter in the **rstanarm**
+implementation these normalizations are not sufficient. Even if the observed outcomes identify
+$\boldsymbol{\Sigma}^\ast$, for any $\mathbf{T}_{s} \boldsymbol{\Sigma} \mathbf{T}_{s}$
+there are $p$ different $\boldsymbol{\Sigma}$ matrices that could have generated it. To see
+this, note that the $p$-th eigenvalue of $\mathbf{T}_{s} \boldsymbol{\Sigma} \mathbf{T}_{s}$
+is zero, which, when multiplied by the $p$-th eigenvector, nullifies its $p$ elements. Thus, $p$
+exact restrictions are needed on $\boldsymbol{\Sigma}$ and in Stan it makes the most sense to
+satisfy this requirement by making $\boldsymbol{\Sigma}$ a correlation matrix, which is to say
+that all $p$ of its diagonal elements are $1$.
+
+It remains to specify the mean vector function that serves as the expectation of the first
+$p - 1$ columns of $\mathbf{W}^\ast$. In multinomial probit models, there can be variables
+whose coefficient is specific to the $j$ choice and variables whose coefficient is constrained
+to be equal across the $p$ choices. Let us first consider the case where all the variables
+have choice-specific coefficients. Let $\mathbf{X} \boldsymbol{\beta}$ be a 
+$N \times \left(p - 1\right)$ matrix where $\mathbf{X}$ is a $N \times K$ matrix of _centered_
+covariates and $\boldsymbol{\beta}$ is a $K \times \left(p - 1\right)$ matrix of coefficients.
+
+Every matrix has a QR decomposition where $\mathbf{Q}$ is orthonormal and $\mathbf{R}$ is
+upper-triangular, so we can write $$\mathbf{X} \boldsymbol{\beta} = 
+\mathbf{Q} \mathbf{R} \boldsymbol{\beta} = \mathbf{Q} \boldsymbol{\theta}$$
+where $\boldsymbol{\theta} = \mathbf{R}^{-1} \boldsymbol{\beta}$. In other words, now we are
+considering $\boldsymbol{\theta}$ which is a matrix of regression coefficients when the first
+$p - 1$ columns of $\mathbf{W}^\ast$ are regressed on $\mathbf{Q}$. Since 
+$\mathbf{Q}^\top \mathbf{Q} = \mathbf{I}$, $\theta_{jk}$ can be conceptualized as the standard 
+deviation of the $j$-th column of $\mathbf{W}^\ast$ divided by the standard deviation of the
+$k$-th column of $\mathbf{Q}$ --- which is $\frac{1}{\sqrt{N - 1}}$ $\forall k$ --- multiplied
+by the _correlation_ between the $j$-th column of $\mathbf{W}^\ast$ and the $k$-th column of
+$\mathbf{Q}$. The _marginal_ standard deviations of the columns of $\mathbf{W}^\ast$ are
+endogenous.
+
+# Priors
+
+# Example
+
+# Conclusion
+
+# Internals
+
+Burgette and Hahm's (201?) approach is utilized interally in the Stan program that implements 
+the multinomial probit model. For most models in the **rstanarm** package, it is unnecessary
+for the user to know anything about the internals of the Stan programs. However, in this
+case it is worth laying out the details for people who may be thinking about writing 
+their own Stan programs. The challenge in this case is to construct a $\mathbf{w}$ that
+has both an _exact_ restriction (that its elements sum to zero) and an _inequality_
+restriction (that $w_y$ is greater than any other element). To do so, we define an 
+unknown vector $\mathbf{g}$ of length $p - 1$ whose elements are all restricted to be
+negative and represent the gap in utility between $w_y$ and the other $p - 1$ choices.
+We then define $w_y = -\frac{1}{p - 1}\sum_{j=1}^{p - 1}{g_j}$. Thus, $w_i = w_y + g_i$
+$\forall i < y$ and $w_i = w_y + g_{i-1}$ $\forall i > y$. As a result, $\mathbf{w}$
+satisfies both the exact restriction and the inequality restriction.
