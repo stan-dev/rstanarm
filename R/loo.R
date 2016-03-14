@@ -34,7 +34,7 @@
 #'   structure of these objects.
 #'   
 #' @details 
-#' The LOO Information Criterion (LOOIC) has the same purpose as the Aikaike
+#' The LOO Information Criterion (LOOIC) has the same purpose as the Akaike
 #' Information Criterion (AIC) that is used by frequentists. Both are intended
 #' to estimate the expected log predicted density (ELPD) for a new dataset.
 #' However, the AIC ignores priors and assumes that the posterior distribution
