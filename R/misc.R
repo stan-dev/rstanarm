@@ -565,7 +565,7 @@ polr_linkinv <- function(x) {
     stop("'x' should be a stanreg object created by stan_polr ", 
          "or a single string.")
   }
-  if (method == "logistic") 
+  if (is.null(method) || method == "logistic") 
     method <- "logit"
   
   if (method == "loglog")
@@ -582,4 +582,10 @@ make_stan_summary <- function(stanfit) {
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+}
+
+is_scobit <- function(object) {
+  stopifnot(is.stanreg(object))
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
 }

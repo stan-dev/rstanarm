@@ -140,7 +140,23 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
       stop("Currently NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object, newdata, re.form, ...)
-  ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
+  if (is_scobit(object)) {
+    data <- pp_eta(object, dat, NULL)
+    if (!is.null(draws)) {
+      S <- posterior_sample_size(object)
+      if (draws > S) {
+        err <- paste0("'draws' should be <= posterior sample size (", 
+                      S, ").")
+        stop(err)
+      }
+      samp <- sample(S, draws)
+      data$eta <- data$eta[samp, , drop = FALSE]
+      ppargs <- pp_args(object, data)
+      ppargs$alpha <- ppargs$alpha[samp]
+    }
+    else ppargs <- pp_args(object, data)
+  }
+  else ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
   
@@ -204,13 +220,15 @@ pp_fun <- function(object) {
   n <- ncol(eta)
   q <- ncol(zeta)
   if (!is.null(alpha)) {
-    t(sapply(1:nrow(eta), FUN = function(s) {
-      tmp <- matrix(zeta[s,], n, q, byrow = TRUE) - eta[s, ]
-      pr <- matrix(linkinv(tmp)^alpha, , q)
-      rbinom(ncol(eta), size = 1, prob = pr[s, ])
+    pr <- linkinv(eta)^alpha
+    if (NROW(eta) == 1) {
+      pr <- matrix(pr, nrow = 1)  
+    }
+    t(sapply(1:NROW(eta), FUN = function(s) {
+      rbinom(NCOL(eta), size = 1, prob = pr[s, ])
     }))
   } else {
-    t(sapply(1:nrow(eta), FUN = function(s) {
+    t(sapply(1:NROW(eta), FUN = function(s) {
       tmp <- matrix(zeta[s, ], n, q, byrow = TRUE) - eta[s, ]
       cumpr <- matrix(linkinv(tmp), , q)
       fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
