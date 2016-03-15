@@ -322,8 +322,29 @@ pp_b_ord <- function(b, Z_names) {
       return(m)
     if (len > 1) 
       stop("multiple matches bug")
-    x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
-    grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    m <- grep(paste0("b[", sub(" (.*):.*$", " \\1:_NEW_\\1", x), "]"), 
+              colnames(b), fixed = TRUE)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    x <- strsplit(x, split = ":", fixed = TRUE)[[1]]
+    stem <- strsplit(x[[1]], split = " ", fixed = TRUE)[[1]]
+    x <- paste(x[1], x[2], paste0("_NEW_", stem[2]), x[2], sep = ":")
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    x <- paste(paste(stem[1], stem[2]), paste0("_NEW_", stem[2]), sep = ":")
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    stop("no matches bug")    
   })
   b[, ord, drop = FALSE]
 }
