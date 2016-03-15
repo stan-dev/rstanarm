@@ -381,6 +381,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
+    if (length(dim(br)) < 2L)
+      br <- t(br)
     colnames(br) <- c("xbar", "ybar", "se2")
     data.frame(rep = paste0("yrep_", rep_id), br)
   }
