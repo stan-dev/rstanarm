@@ -29,8 +29,6 @@
 #'   transformations were specified inside the model formula. Also see the Note
 #'   section below for a note about using the \code{newdata} argument with with
 #'   binomial models.
-#' @param draws An integer indicating the number of draws to return. The default
-#'   and maximum number of draws is the size of the posterior sample.
 #' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
 #'   parameters, a formula indicating which group-level parameters to 
 #'   condition on when making predictions. \code{re.form} is specified in the 
@@ -62,6 +60,6 @@ posterior_linpred <- function(object, newdata = NULL, re.form = NULL, ...) {
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dat <- pp_data(object, newdata, re.form, ...)
-  pp_eta(object, dat, draws = NULL)[["eta"]]
+  dat <- pp_data(object, newdata = newdata, re.form = re.form, ...)
+  pp_eta(object, data = dat, draws = NULL)[["eta"]]
 }
