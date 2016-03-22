@@ -101,7 +101,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   if (is.matrix(y) && ncol(y) == 1L)
     y <- as.vector(y)
 
-  offset <- eval(attr(glmod$fr, "offset"), parent.frame()) %ORifNULL% double(0)
+  offset <- model.offset(glmod$fr) %ORifNULL% double(0)
   weights <- validate_weights(weights)
   if (is.null(prior)) 
     prior <- list()
