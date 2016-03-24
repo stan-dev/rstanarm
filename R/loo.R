@@ -117,7 +117,7 @@ ll_fun <- function(x) {
 
 # returns args argument for loo.function() and waic.function()
 ll_args <- function(object, newdata = NULL) {
-  f <- object$family
+  f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
   if (has_newdata) {
@@ -133,7 +133,7 @@ ll_args <- function(object, newdata = NULL) {
     y <- get_y(object)
   }
 
-  if (is(f, "family")) {
+  if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
     if (!is.binomial(fname)) {
       data <- data.frame(y, x)
@@ -160,17 +160,20 @@ ll_args <- function(object, newdata = NULL) {
       draws$size <- stanmat[,"overdispersion"]
     
   } else {
-    stopifnot(is.character(f), is(object, "polr"))
+    stopifnot(is(object, "polr"))
     y <- as.integer(y)
     if (has_newdata) 
       x <- .validate_polr_x(object, x)
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
+    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
+    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) 
+    if ("alpha" %in% colnames(stanmat)) {
       draws$alpha <- stanmat[, "alpha"]
+      draws$f <- object$method
+    }
   }
   
   data$offset <- object$offset
@@ -275,10 +278,10 @@ ll_args <- function(object, newdata = NULL) {
                      linkinv(draws$zeta[, y_i - 1L] - eta))
       }
   } else {
-      if (y_i == 1) {
+      if (y_i == 0) {
         val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == J) {
-        val <- log1p(-linkinv(draws$zeta[, J-1] - eta) ^ draws$alpha)
+      } else if (y_i == 1) {
+        val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
       } else {
         stop("Exponentiation only possible when there are exactly 2 outcomes.")
       }
