@@ -91,7 +91,7 @@
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  loo.function(ll_fun(x$family), args = ll_args(x), ...)
+  loo.function(ll_fun(x), args = ll_args(x), ...)
 }
 
 #' @rdname loo.stanreg
@@ -102,19 +102,17 @@ loo.stanreg <- function(x, ...) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  waic.function(ll_fun(x$family), args = ll_args(x))
+  waic.function(ll_fun(x), args = ll_args(x))
 }
 
 # returns log-likelihood function for loo() and waic()
-ll_fun <- function(f) {
-  if (is(f, "family")) {
-    return(get(paste0(".ll_", f$family, "_i")))
-  } else if (is.character(f)) {
+ll_fun <- function(x) {
+  stopifnot(is.stanreg(x))
+  f <- family(x)
+  if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  } else {
-    stop("'family' must be a family or a character string.", 
-         call. = FALSE)
-  }
+  
+  get(paste0(".ll_", f$family, "_i"))
 }
 
 # returns args argument for loo.function() and waic.function()
