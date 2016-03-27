@@ -113,3 +113,10 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   expect_identical(ngrps(fit), ngrps(ans))
 })
+
+context("stan_lmer")
+test_that("stan_lmer returns an error when multiple group-specific terms are specified", {
+  expect_error(stan_lmer(Reaction / 10 ~ Days + (Days | Subject) + (1|Subject), 
+                         data = sleepstudy, chains = 1))
+})
+  

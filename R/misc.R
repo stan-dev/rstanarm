@@ -589,3 +589,20 @@ is_scobit <- function(object) {
   if (!is(object, "polr")) return(FALSE)
   return("alpha" %in% rownames(object$stan_summary))
 }
+
+check_reTrms <- function(reTrms) {
+  stopifnot(is.list(reTrms))
+  nms <- names(reTrms$cnms)
+  dupes <- duplicated(nms)
+  for (i in which(dupes)) {
+    original <- reTrms$cnms[[nms[i]]]
+    dupe <- reTrms$cnms[[i]]
+    overlap <- dupe %in% original
+    if (any(overlap))
+      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n", 
+           "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
+           dupe[overlap], " is included multiple times.\n", 
+           "Consider using || or -1 in your formulas to prevent this from happening.")
+  }
+  return(invisible(NULL))
+}
