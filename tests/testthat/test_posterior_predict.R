@@ -65,11 +65,19 @@ check_for_error <- function(fit) {
                regexep = "posterior sample size is only")
 }
 
+expect_linpred_equal <- function(object, tol = 0.05) {
+  linpred <- posterior_linpred(object)
+  expect_equal(apply(linpred, 2, median), object$linear.predictors, 
+               tolerance = tol, 
+               check.attributes = FALSE)
+}
+
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
   fit <- SW(stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
                  iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 
 context("posterior_predict (stan_glm)")
