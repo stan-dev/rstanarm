@@ -540,7 +540,7 @@ polr_linkinv <- function(x) {
     stop("'x' should be a stanreg object created by stan_polr ", 
          "or a single string.")
   }
-  if (method == "logistic") 
+  if (is.null(method) || method == "logistic") 
     method <- "logit"
   
   if (method == "loglog")
@@ -557,4 +557,27 @@ make_stan_summary <- function(stanfit) {
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+}
+
+is_scobit <- function(object) {
+  stopifnot(is.stanreg(object))
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
+check_reTrms <- function(reTrms) {
+  stopifnot(is.list(reTrms))
+  nms <- names(reTrms$cnms)
+  dupes <- duplicated(nms)
+  for (i in which(dupes)) {
+    original <- reTrms$cnms[[nms[i]]]
+    dupe <- reTrms$cnms[[i]]
+    overlap <- dupe %in% original
+    if (any(overlap))
+      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n", 
+           "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
+           dupe[overlap], " is included multiple times.\n", 
+           "Consider using || or -1 in your formulas to prevent this from happening.")
+  }
+  return(invisible(NULL))
 }

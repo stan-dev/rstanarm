@@ -1,5 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2005 Samantha Cook
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -381,6 +382,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
+    if (length(dim(br)) < 2L)
+      br <- t(br)
     colnames(br) <- c("xbar", "ybar", "se2")
     data.frame(rep = paste0("yrep_", rep_id), br)
   }
@@ -526,3 +529,115 @@ pp_check_scatter <- function(y, yrep, n = NULL, ...){
 #   
 #   return(graph + thm)
 # } # nocov end
+
+pp_check_validate0 <- function(object, nreps, seed = 12345, ...) {
+  gp <- function(generate.param.inputs) {
+    as.matrix(update(generate.param.inputs, prior_PD = TRUE, 
+              warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed))
+  }
+  gd <- function(theta.true, generate.data.inputs) {
+    posterior_predict(update(generate.data.inputs, prior_PD = TRUE, 
+                      warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed))
+  }
+  ad <- function(data.rep,theta.true, analyze.data.inputs) {
+    mf <- model.frame(analyze.data.inputs)
+    if (NCOL(mf[,1]) == 2) { # binomial models
+      mf[,1] <- c(data.rep)
+      colnames(mf)[1] <- colnames(get_y(analyze.data.inputs))[1]
+    }
+    else mf[,1] <- c(data.rep)
+    as.matrix(update(analyze.data.inputs, data = mf, seed = seed))
+  }
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
+  dims <- dims[!sapply(dims, is.null)]
+  dims <- sapply(dims, prod)
+  dims <- dims[dims > 0]
+  if ("b" %in% names(dims)) {
+    mark <- which(names(dims) == "b")
+    dims <- append(dims, values = sapply(ranef(object), function(x) length(c(x))), 
+                   after = mark)
+    dims <- dims[-mark]
+  }
+  BayesValidate::validate(gp, object, gd, object, ad, object, 
+                          n.rep = nreps, n.batch = dims, params.batch = names(dims))
+}
+
+pp_check_validate <- function(object, n.reps, seed = 12345, ...) {
+  # This basically copies Samantha Cook's BayesValidate::validate
+  quant <- function (draws) {
+    n <- length(draws)
+    rank.theta <- c(1:n)[order(draws)==1] - 1
+    quantile.theta <- (rank.theta +.5) / n
+    return(quantile.theta)
+  }
+  
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
+  dims <- dims[!sapply(dims, is.null)]
+  dims <- sapply(dims, prod)
+  dims <- dims[dims > 0]
+  if ("b" %in% names(dims)) {
+    mark <- which(names(dims) == "b")
+    dims <- append(dims, values = sapply(ranef(object), function(x) length(c(x))), 
+                   after = mark)
+    dims <- dims[-mark]
+  }
+  n.batch <- dims
+  params.batch <- names(dims)
+  num.batches <- length(n.batch)
+  n.param <- sum(dims)
+  batch.ind <- rep(0,(num.batches+1))
+  for(i in 1:num.batches) batch.ind[(i+1)] <- batch.ind[i] + n.batch[i]
+  plot.batch <- rep(1, n.batch[1])
+  for(i in 2:num.batches) plot.batch <- c(plot.batch, rep(i, n.batch[i]))
+  quantile.theta <- matrix(NA_real_, nrow = n.reps, ncol = n.param + num.batches)
+  for (reps in 1:n.reps) {
+    post <- update(object, prior_PD = TRUE, 
+                   warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed)
+    theta.true <- as.matrix(post)
+    data.rep <- posterior_predict(post)
+    mf <- model.frame(object)
+    if (NCOL(mf[,1]) == 2) { # binomial models
+      mf[,1] <- c(data.rep)
+      colnames(mf)[1] <- colnames(get_y(object))[1]
+    }
+    else mf[,1] <- c(data.rep)
+    theta.draws <- as.matrix(update(object, data = mf, seed = seed))
+    if(!is.null(n.batch)){
+      for(i in 1:num.batches) {
+        if(n.batch[i] > 1){
+          theta.draws <- cbind(theta.draws,
+                               apply(theta.draws[,(batch.ind[i]+1):batch.ind[(i+1)]],
+                                     1,mean))
+          theta.true <- c(theta.true,
+                          mean(theta.true[(batch.ind[i]+1):batch.ind[(i+1)]]))
+        } else {
+          theta.draws <- cbind(theta.draws,theta.draws[,(batch.ind[i]+1)])
+          theta.true <- c(theta.true, theta.true[(batch.ind[i]+1)])
+        }
+      }
+    }
+    theta.draws <- rbind(theta.true, theta.draws)
+    quantile.theta[reps, ] <- apply( theta.draws, 2, quant )
+  }
+  quantile.trans <- (apply(quantile.theta, 2, qnorm))^2
+  q.trans <- apply(quantile.trans, 2, sum)
+  p.vals <- pchisq(q.trans, df=n.reps, lower.tail=FALSE)
+  z.stats <- abs(qnorm(p.vals))
+  if (is.null(n.batch)) {
+    adj.min.p <- n.param * min(p.vals)
+  }
+  else {
+    z.batch <- z.stats[(n.param + 1):length(p.vals)]
+    p.batch <- p.vals[(n.param + 1):length(p.vals)]
+    adj.min.p <- num.batches * min(p.batch)
+  }
+  if(is.null(n.batch)){
+    return(list(p.vals = p.vals, adj.min.p = adj.min.p))} else {
+      
+      if(length(z.batch)==n.param)
+        return(list(p.batch = p.batch, adj.min.p = adj.min.p)) else 
+          return(list(p.vals = p.vals[1:n.param], p.batch = p.batch, 
+                      adj.min.p = adj.min.p))
+    }
+}
+  

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,6 +25,7 @@ ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
 SW <- suppressWarnings
+ll_fun <- rstanarm:::ll_fun
 
 # These tests just check that the loo.stanreg method (which calls loo.function 
 # method) results are identical to the loo.matrix results. Since for these tests
@@ -60,6 +61,7 @@ test_that("loo/waic for stan_glm works", {
   fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS, iter = ITER, 
                           seed = SEED, refresh = REFRESH))
   expect_identical_loo(fit_gaus)
+  expect_identical(ll_fun(fit_gaus), rstanarm:::.ll_gaussian_i)
   
   # t
   fit_t <- update(fit_gaus, family = t_family())
@@ -77,6 +79,8 @@ test_that("loo/waic for stan_glm works", {
   fit_binom2 <- SW(update(fit_binom, formula = factor(dead) ~ .))
   expect_identical_loo(fit_binom)
   expect_identical_loo(fit_binom2)
+  expect_identical(ll_fun(fit_binom), rstanarm:::.ll_binomial_i)
+  expect_identical(ll_fun(fit_binom2), rstanarm:::.ll_binomial_i)
   
   # poisson 
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9), 
@@ -85,10 +89,12 @@ test_that("loo/waic for stan_glm works", {
                           family = poisson, chains = CHAINS, iter = ITER, 
                           seed = SEED, refresh = REFRESH))
   expect_identical_loo(fit_pois)
+  expect_identical(ll_fun(fit_pois), rstanarm:::.ll_poisson_i)
   
   # negative binomial
   fit_negbin <- SW(update(fit_pois, family = neg_binomial_2))
   expect_identical_loo(fit_negbin)
+  expect_identical(ll_fun(fit_negbin), rstanarm:::.ll_neg_binomial_2_i)
   
   # gamma
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
@@ -98,24 +104,35 @@ test_that("loo/waic for stan_glm works", {
                            chains = CHAINS, iter = ITER, seed = SEED, 
                            refresh = REFRESH))
   expect_identical_loo(fit_gamma)
+  expect_identical(ll_fun(fit_gamma), rstanarm:::.ll_Gamma_i)
   
   # inverse gaussian
   fit_igaus <- SW(update(fit_gamma, family = inverse.gaussian))
   expect_identical_loo(fit_igaus)
+  expect_identical(ll_fun(fit_igaus), rstanarm:::.ll_inverse.gaussian_i)
 })
 
 test_that("loo/waic for stan_polr works", {
-  fit_logistic <- SW(stan_polr(tobgp ~ agegp, data = esoph, 
+  fit_ord_logistic <- SW(stan_polr(tobgp ~ agegp, data = esoph, 
                                prior = R2(0.2, "mean"), init_r = 0.1, 
                                chains = CHAINS, iter = ITER, seed = SEED, 
                                refresh = REFRESH))
-  expect_identical_loo(fit_logistic)
+  expect_identical_loo(fit_ord_logistic)
+  expect_identical(ll_fun(fit_ord_logistic), rstanarm:::.ll_polr_i)
+  
+  fit_probit <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, 
+                             data = esoph, prior = R2(location = 0.4), 
+                             method = "probit", chains = CHAINS, iter = ITER, 
+                             seed = SEED, refresh = REFRESH))
+  expect_identical_loo(fit_probit)
+  expect_identical(ll_fun(fit_probit), rstanarm:::.ll_binomial_i)
   
   fit_scobit <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, 
                              data = esoph, prior = R2(location = 0.4), 
                              shape = 2, rate = 2, chains = CHAINS, iter = ITER, 
                              seed = SEED, refresh = REFRESH))
   expect_identical_loo(fit_scobit)
+  expect_identical(ll_fun(fit_scobit), rstanarm:::.ll_polr_i)
 })
   
 test_that("loo/waic for stan_lm works", {
@@ -123,6 +140,7 @@ test_that("loo/waic for stan_lm works", {
                        chains = CHAINS, iter = ITER, seed = SEED, 
                        refresh = REFRESH))
   expect_identical_loo(fit_lm)
+  expect_identical(ll_fun(fit_lm), rstanarm:::.ll_gaussian_i)
 })
 
 test_that("loo/waic for stan_glmer works", {
@@ -131,21 +149,16 @@ test_that("loo/waic for stan_glmer works", {
                               chains = CHAINS, iter = ITER, seed = SEED, 
                               refresh = REFRESH))
   expect_identical_loo(fit_glmer1)
+  expect_identical(ll_fun(fit_glmer1), rstanarm:::.ll_gaussian_i)
   
   # binomial
   expect_identical_loo(example_model)
+  expect_identical(ll_fun(example_model), rstanarm:::.ll_binomial_i)
 })
 
 
 context("loo and waic helpers")
-test_that("ll_fun works", {
-  ll_fun <- rstanarm:::ll_fun
-  expect_identical(ll_fun(gaussian(link = "log")), rstanarm:::.ll_gaussian_i)
-  expect_identical(ll_fun(binomial()), rstanarm:::.ll_binomial_i)
-  expect_identical(ll_fun(poisson()), rstanarm:::.ll_poisson_i)
-  expect_identical(ll_fun("logistic"), rstanarm:::.ll_polr_i)
-  expect_error(ll_fun(example_model), "must be a family or a character string")
-})
+
 test_that(".weighted works", {
   f <- rstanarm:::.weighted
   expect_equal(f(2, NULL), 2)

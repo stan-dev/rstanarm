@@ -191,6 +191,17 @@ stan_polr <- function(formula, data, weights, ..., subset,
     if (!model) 
       out$model <- NULL
     
+    means <- rstan::get_posterior_mean(stanfit)
+    residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
+    if (length(residuals))
+      names(residuals) <- names(eta) <- names(mu) <- rownames(x)
+
+    levs <- c(0.5, 0.8, 0.95, 0.99)
+    qq <- (1 - levs) / 2
+    probs <- sort(c(0.5, qq, 1 - qq))
+    stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
+    if (algorithm == "sampling") 
+      check_rhats(stan_summary[, "Rhat"])
     if (is.null(shape) && is.null(rate)) # not a scobit model
       return(out)
     

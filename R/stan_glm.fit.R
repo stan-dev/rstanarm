@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -185,6 +185,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_rate_for_df = prior_rate_for_df)
   
   if (length(group)) {
+    check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
     group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)

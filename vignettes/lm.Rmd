@@ -106,7 +106,7 @@ determination for the linear model.
 
 An uninformative prior on $R^2$ would be standard uniform, which is a special
 case of a Beta distribution with both shape parameters equal to $1$. A 
-non-uniform prior on $R^2$ is somewhat analagous to ridge regression, which is 
+non-uniform prior on $R^2$ is somewhat analogous to ridge regression, which is 
 popular in data mining and produces better out-of-sample predictions than
 least squares because it penalizes $\boldsymbol{\beta}^\top \boldsymbol{\beta}$,
 usually after standardizing the predictors. An informative prior on $R^2$ 
@@ -155,7 +155,7 @@ We set $\sigma_y = \omega s_y$ where $s_y$ is the sample standard deviation
 of the outcome and $\omega > 0$ is an unknown scale parameter to be estimated. 
 The only prior for $\omega$ that does not contravene Bayes' theorem in this 
 situation is Jeffreys prior, $f\left(\omega\right) \propto \frac{1}{\omega}$, 
-which is proportional to a Jeffreys prior on the unkown $\sigma_y$, 
+which is proportional to a Jeffreys prior on the unknown $\sigma_y$, 
 $f\left(\sigma_y\right) \propto \frac{1}{\sigma_y} = 
 \frac{1}{\omega \widehat{\sigma}_y} \propto \frac{1}{\omega}$. This
 parameterization and prior makes it easy for Stan to work with any continuous
@@ -332,3 +332,8 @@ We are optimistic that this prior on the $R^2$ will greatly help in accomplishin
 our goal for __rstanarm__ of making Bayesian estimation of regression models 
 routine. The same approach is used to specify a prior in ANOVA models (see 
 `stan_aov`) and proportional-odds models for ordinal outcomes (see `stan_polr`).
+
+# References
+Lewandowski, D., Kurowicka D., and Joe, H. (2009). 
+Generating random correlation matrices based on vines and extended onion method. 
+_Journal of Multivariate Analysis_. __100__(9), 1989--2001.

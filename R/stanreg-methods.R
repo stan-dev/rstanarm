@@ -131,7 +131,7 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 log_lik.stanreg <- function(object, newdata = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  fun <- ll_fun(family(object))
+  fun <- ll_fun(object)
   args <- ll_args(object, newdata)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 

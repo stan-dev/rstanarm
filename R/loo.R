@@ -32,9 +32,9 @@
 #' @return An object of class 'loo'. See the 'Value' section in
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
 #'   structure of these objects.
-#'
-#' @details
-#' The LOO Information Criterion (LOOIC) has the same purpose as the Aikaike
+#'   
+#' @details 
+#' The LOO Information Criterion (LOOIC) has the same purpose as the Akaike
 #' Information Criterion (AIC) that is used by frequentists. Both are intended
 #' to estimate the expected log predicted density (ELPD) for a new dataset.
 #' However, the AIC ignores priors and assumes that the posterior distribution
@@ -91,7 +91,7 @@
 loo.stanreg <- function(x, ...) {
   if (!used.sampling(x))
     STOP_sampling_only("loo")
-  loo.function(ll_fun(family(x)), args = ll_args(x), ...)
+  loo.function(ll_fun(x), args = ll_args(x), ...)
 }
 
 #' @rdname loo.stanreg
@@ -102,19 +102,17 @@ loo.stanreg <- function(x, ...) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x))
     STOP_sampling_only("waic")
-  waic.function(ll_fun(family(x)), args = ll_args(x))
+  waic.function(ll_fun(x), args = ll_args(x))
 }
 
 # returns log-likelihood function for loo() and waic()
-ll_fun <- function(f) {
-  if (is(f, "family")) {
-    return(get(paste0(".ll_", f$family, "_i")))
-  } else if (is.character(f)) {
+ll_fun <- function(x) {
+  stopifnot(is.stanreg(x))
+  f <- family(x)
+  if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  } else {
-    stop("'family' must be a family or a character string.",
-         call. = FALSE)
-  }
+  
+  get(paste0(".ll_", f$family, "_i"))
 }
 
 # returns args argument for loo.function() and waic.function()
@@ -135,7 +133,7 @@ ll_args <- function(object, newdata = NULL) {
     y <- get_y(object)
   }
 
-  if (is(f, "family")) {
+  if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
     if (!is.binomial(fname)) {
       data <- data.frame(y, x)
@@ -166,17 +164,20 @@ ll_args <- function(object, newdata = NULL) {
       draws$size <- stanmat[,"overdispersion"]
     
   } else {
-    stopifnot(is.character(f), is(object, "polr"))
+    stopifnot(is(object, "polr"))
     y <- as.integer(y)
     if (has_newdata) 
       x <- .validate_polr_x(object, x)
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
+    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
+    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat))
+    if ("alpha" %in% colnames(stanmat)) {
       draws$alpha <- stanmat[, "alpha"]
+      draws$f <- object$method
+    }
   }
 
   data$offset <- object$offset
@@ -286,10 +287,10 @@ ll_args <- function(object, newdata = NULL) {
                      linkinv(draws$zeta[, y_i - 1L] - eta))
       }
   } else {
-      if (y_i == 1) {
+      if (y_i == 0) {
         val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == J) {
-        val <- log1p(-linkinv(draws$zeta[, J-1] - eta) ^ draws$alpha)
+      } else if (y_i == 1) {
+        val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
       } else {
         stop("Exponentiation only possible when there are exactly 2 outcomes.")
       }

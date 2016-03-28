@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -36,7 +36,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     has_intercept <- 0L
   }
   if (nrow(x) < ncol(x))
-    stop("stan_lm with more data points than predictors is not yet enabled.", 
+    stop("stan_lm with more predictors than data points is not yet enabled.", 
          call. = FALSE)
   
   xbar <- colMeans(x)
