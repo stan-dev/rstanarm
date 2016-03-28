@@ -17,49 +17,41 @@
 
 #' Posterior distribution of the linear predictor
 #' 
+#' Extract the posterior draws of the linear predictor, possibly transformed by
+#' the inverse-link function.
+#' 
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param newdata Optionally, a data frame in which to look for variables with 
-#'   which to predict. If omitted, the model matrix is used. If \code{newdata} 
-#'   is provided and any variables were transformed (e.g. rescaled) in the data 
-#'   used to fit the model, then these variables must also be transformed in 
-#'   \code{newdata}. This only applies if variables were transformed before 
-#'   passing the data to one of the modeling functions and \emph{not} if 
-#'   transformations were specified inside the model formula. Also see the Note
-#'   section below for a note about using the \code{newdata} argument with with
-#'   binomial models.
-#' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
-#'   parameters, a formula indicating which group-level parameters to 
-#'   condition on when making predictions. \code{re.form} is specified in the 
-#'   same form as for \code{\link[lme4]{predict.merMod}}. The default, 
-#'   \code{NULL}, indicates that all estimated group-level parameters are 
-#'   conditioned on. To refrain from conditioning on any group-level parameters,
-#'   specify \code{NA} or \code{~0}. The \code{newdata} argument may include new
-#'   \emph{levels} of the grouping factors that were specified when the model 
-#'   was estimated, in which case the resulting posterior predictions 
-#'   marginalize over the relevant variables.
+#' @param transform Should the linear predictor be transformed using the
+#'   inverse-link function? The default is \code{FALSE}, in which case the 
+#'   untransformed linear predictor is returned.
+#' @param newdata,re.form Same as for \code{\link{posterior_predict}}.
 #' @param ... Currently unused.
 #' 
-#' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
-#'   from the posterior distribution of the linear predictor.
+#' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
+#'   posterior distribution of the (possibly transformed) linear predictor.
 #' 
 #' @seealso \code{\link{posterior_predict}} to draw from the posterior 
-#'   predictive distribution of the outcome.
+#'   predictive distribution of the outcome, which is almost always preferable.
 #' 
-posterior_linpred <- function(object, newdata = NULL, re.form = NULL, ...) {
+posterior_linpred <- function(object, transform = FALSE, newdata = NULL, 
+                              re.form = NULL, ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   if (used.optimizing(object))
-    STOP_not_optimizing("posterior_predict")
+    STOP_not_optimizing("posterior_linpred")
   if (!is.null(newdata)) {
     if ("gam" %in% names(object))
-      stop("'posterior_predict' with 'newdata' not yet supported ", 
+      stop("'posterior_linpred' with 'newdata' not yet supported ", 
            "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object, newdata = newdata, re.form = re.form, ...)
-  pp_eta(object, data = dat, draws = NULL)[["eta"]]
+  eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
+  if (!transform)
+    return(eta)
+  linkinv(object)(eta)
 }
