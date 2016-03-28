@@ -38,19 +38,25 @@ check_for_error <- function(fit) {
   
   
   expect_silent(yrep1 <- posterior_predict(fit))
+  expect_silent(lin1 <- posterior_linpred(fit))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
+  expect_equal(dim(lin1), c(nsims, nobs(fit)))
 
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   expect_equal(dim(yrep2), c(1, nobs(fit)))
   
   expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,]))
+  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,]))
   expect_equal(dim(yrep3), c(nsims, 1))
+  expect_equal(dim(lin3), c(nsims, 1))
   
   expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,]))
   expect_equal(dim(yrep4), c(2, 1))
   
   expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,]))
+  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,]))
   expect_equal(dim(yrep5), c(nsims, 5))
+  expect_equal(dim(lin5), c(nsims, 5))
   
   expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,]))
   expect_equal(dim(yrep6), c(3, 5))
@@ -104,14 +110,14 @@ test_that("compatible with stan_polr", {
   check_for_error(fit)
   
   esoph$tobgp_fac <- factor(esoph$tobgp == "30+")
-  fit_2level <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
+  fit_binary <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
                              data = esoph, prior = R2(location = 0.4), 
                              chains = CHAINS, iter = ITER, 
                              seed = SEED, refresh = REFRESH))
-  check_for_error(fit_2level)
+  check_for_error(fit_binary)
   
-  fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
-  check_for_error(fit_2level_scobit)
+  fit_binary_scobit <- SW(update(fit_binary, shape = 2, rate = 2))
+  check_for_error(fit_binary_scobit)
 })
 
 context("posterior_predict (stan_(g)lmer)")
@@ -123,6 +129,8 @@ test_that("compatible with stan_lmer", {
 })
 test_that("compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
+  predprob <- posterior_linpred(example_model, transform = TRUE)
+  expect_true(all(predprob > 0) && all(predprob < 1))
 })
 test_that("compatible with stan_(g)lmer with transformation in formula", {
   d <- mtcars
@@ -137,6 +145,11 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit1, newdata = nd))
   expect_silent(posterior_predict(fit2, newdata = nd))
+  
+  expect_silent(posterior_linpred(fit1))
+  expect_silent(posterior_linpred(fit2))
+  expect_silent(posterior_linpred(fit1, newdata = nd))
+  expect_silent(posterior_linpred(fit2, newdata = nd))
 })
 
 
@@ -149,6 +162,10 @@ test_that("errors for optimizing and silent for vb", {
   expect_error(posterior_predict(fit1), regexp = "optimizing")
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit3))
+  
+  expect_error(posterior_linpred(fit1), regexp = "optimizing")
+  expect_silent(posterior_linpred(fit2))
+  expect_silent(posterior_linpred(fit3))
 })
 
 
@@ -225,10 +242,16 @@ test_that("edge cases for posterior_predict work correctly", {
   dims <- c(nrow(as.matrix(example_model)), nrow(lme4::cbpp))
   expect_identical(posterior_predict(example_model, re.form = NA, seed = SEED),
                    posterior_predict(example_model, re.form = ~0, seed = SEED))
+  expect_identical(posterior_linpred(example_model, re.form = NA),
+                   posterior_linpred(example_model, re.form = ~0))
   expect_identical(posterior_predict(example_model, seed = SEED),
                    posterior_predict(example_model, newdata = lme4::cbpp, seed = SEED))
+  expect_identical(posterior_linpred(example_model),
+                   posterior_linpred(example_model, newdata = lme4::cbpp))
   expect_error(posterior_predict(example_model, re.form = ~1))
   expect_error(posterior_predict(example_model, re.form = ~(1|foo)))
+  expect_error(posterior_linpred(example_model, re.form = ~1))
+  expect_error(posterior_linpred(example_model, re.form = ~(1|foo)))
 })
 
 test_that("lme4 tests work similarly", {
@@ -295,3 +318,4 @@ test_that("pp_binomial_trials works", {
   expect_equal(ppbt(fit), rep(1, nrow(mtcars)))
   expect_equal(ppbt(fit, newdata = mtcars[1:5, ]), rep(1, 5))
 })
+
