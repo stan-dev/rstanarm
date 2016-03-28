@@ -219,6 +219,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
   
   if (length(group)) {
+    check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
     group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)

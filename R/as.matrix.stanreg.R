@@ -85,6 +85,7 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
       STOP_no_draws()
     posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
     mat <- apply(posterior, 3L, FUN = function(y) y)
+    if (length(dim(mat)) < 2L) mat <- t(as.matrix(mat))
     if (!user_pars)
       pars <- grep("mean_PPD|log-posterior", # exclude these by default
                    colnames(mat), invert = TRUE, value = TRUE)
