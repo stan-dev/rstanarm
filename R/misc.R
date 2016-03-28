@@ -491,7 +491,7 @@ linear_predictor.default <- function(beta, x, offset = NULL) {
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (NCOL(beta) == 1L) 
     beta <- as.matrix(beta)
-  eta <- beta %*% t(x)
+  eta <- tcrossprod(beta, x)
   if (length(offset)) 
     eta <- sweep(eta, 2L, offset, `+`)
 
