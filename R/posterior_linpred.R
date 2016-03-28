@@ -35,6 +35,12 @@
 #' @seealso \code{\link{posterior_predict}} to draw from the posterior 
 #'   predictive distribution of the outcome, which is almost always preferable.
 #' 
+#' @examples
+#' # linear predictor on log-odds scale
+#' linpred <- posterior_linpred(example_model)
+#' # probabilities
+#' probs <- posterior_linpred(example_model, transform = TRUE)
+#' 
 posterior_linpred <- function(object, transform = FALSE, newdata = NULL, 
                               re.form = NULL, ...) {
   if (!is.stanreg(object))
