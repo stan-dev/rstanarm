@@ -530,14 +530,14 @@ pp_check_scatter <- function(y, yrep, n = NULL, ...){
 #   return(graph + thm)
 # } # nocov end
 
-pp_check_validate0 <- function(object, nreps, seed = 12345, ...) {
+pp_check_validate0 <- function(object, n.reps, seed = 12345, ...) {
   gp <- function(generate.param.inputs) {
     as.matrix(update(generate.param.inputs, prior_PD = TRUE, 
-              warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed))
+              warmup = 1000, iter = 1000 + 2, chains = 1, seed = seed))[1,,drop=FALSE]
   }
   gd <- function(theta.true, generate.data.inputs) {
     posterior_predict(update(generate.data.inputs, prior_PD = TRUE, 
-                      warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed))
+                      warmup = 1000, iter = 1000 + 1, chains = 2, seed = seed))[1,]
   }
   ad <- function(data.rep,theta.true, analyze.data.inputs) {
     mf <- model.frame(analyze.data.inputs)
@@ -554,12 +554,12 @@ pp_check_validate0 <- function(object, nreps, seed = 12345, ...) {
   dims <- dims[dims > 0]
   if ("b" %in% names(dims)) {
     mark <- which(names(dims) == "b")
-    dims <- append(dims, values = sapply(ranef(object), function(x) length(c(x))), 
+    dims <- append(dims, values = sapply(ranef(object), function(x) length(as.matrix(x))), 
                    after = mark)
     dims <- dims[-mark]
   }
   BayesValidate::validate(gp, object, gd, object, ad, object, 
-                          n.rep = nreps, n.batch = dims, params.batch = names(dims))
+                          n.rep = n.reps, n.batch = dims, params.batch = names(dims))
 }
 
 pp_check_validate <- function(object, n.reps, seed = 12345, ...) {
@@ -577,7 +577,7 @@ pp_check_validate <- function(object, n.reps, seed = 12345, ...) {
   dims <- dims[dims > 0]
   if ("b" %in% names(dims)) {
     mark <- which(names(dims) == "b")
-    dims <- append(dims, values = sapply(ranef(object), function(x) length(c(x))), 
+    dims <- append(dims, values = sapply(ranef(object), function(x) length(as.matrix(x))), 
                    after = mark)
     dims <- dims[-mark]
   }
@@ -592,9 +592,9 @@ pp_check_validate <- function(object, n.reps, seed = 12345, ...) {
   quantile.theta <- matrix(NA_real_, nrow = n.reps, ncol = n.param + num.batches)
   for (reps in 1:n.reps) {
     post <- update(object, prior_PD = TRUE, 
-                   warmup = 1000, iter = 1000 + 1, chains = 1, seed = seed)
-    theta.true <- as.matrix(post)
-    data.rep <- posterior_predict(post)
+                   warmup = 1000, iter = 1000 + 2, chains = 1, seed = seed)
+    theta.true <- as.matrix(post)[1,,drop = FALSE]
+    data.rep <- posterior_predict(post)[1,]
     mf <- model.frame(object)
     if (NCOL(mf[,1]) == 2) { # binomial models
       mf[,1] <- c(data.rep)
