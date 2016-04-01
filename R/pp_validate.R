@@ -20,8 +20,9 @@
 #' from the model and refitting the model to this simulated data. 
 #' For each of the \code{nreps} replications we 
 #' \enumerate{
-#' \item Draw parameter values from the \emph{prior} predictive distribution.
-#' \item Simulate the outcome \eqn{y} using these parameters.
+#' \item Draw parameter values from the \emph{prior}.
+#' \item Simulate the outcome \eqn{y} from the \emph{prior} predictive
+#' distribution.
 #' \item Fit the model to the simulated outcome.
 #' \item Check the posterior quantiles for the parameters in the model fit
 #' to the simulated outcome. 
