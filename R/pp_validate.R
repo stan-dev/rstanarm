@@ -16,23 +16,28 @@
 #'   appearance of the plot.
 #'   
 #' @details 
-#' We repeat \code{nreps} times the process of simulating data and parameteres 
-#' from the model and refitting the model to this simulated data. 
-#' For each of the \code{nreps} replications we 
+#' We repeat \code{nreps} times the process of simulating parameters and data 
+#' from the model and refitting the model to this simulated data. For each of
+#' the \code{nreps} replications we do the following:
 #' \enumerate{
-#' \item Draw parameter values from the \emph{prior}.
-#' \item Simulate the outcome \eqn{y} from the \emph{prior} predictive
-#' distribution.
-#' \item Fit the model to the simulated outcome.
-#' \item Check the posterior quantiles for the parameters in the model fit
-#' to the simulated outcome. 
+#' \item Refit the model but \emph{without} conditioning on the data (setting 
+#' \code{prior_PD=TRUE}), obtaining draws \eqn{\theta^{true}}{\theta_true} 
+#' from the \emph{prior} distribution of the model parameters.
+#' \item Given \eqn{\theta^{true}}{\theta_true}, simulate data \eqn{y^\ast}{y*} 
+#' from the \emph{prior} predictive distribution (calling 
+#' \code{posterior_predict} on the fitted model object obtained in step 1).
+#' \item Fit the model to the simulated outcome \eqn{y^\ast}{y*}, obtaining 
+#' parameters \eqn{\theta^{post}}{\theta_post}.
 #' }
-#' The posterior quantiles for these parameters \emph{should} follow a uniform
-#' distribution, so we look for deviations from uniformity by computing
-#' statistics for a test that the quantiles are uniformly distributed. The
-#' absolute values of the computed z-statistics are plotted for batches of 
-#' parameters (e.g., non-varying slope parameters are grouped into a batch 
-#' called "beta").
+#' For any individual parameter, the quantile of the "true" parameter value with
+#' respect to its posterior distribution \emph{should} be uniformly distributed.
+#' The validation procedure entails looking for deviations from uniformity by 
+#' computing statistics for a test that the quantiles are uniformly distributed.
+#' The absolute values of the computed  test statistics are plotted for batches 
+#' of parameters (e.g., non-varying coefficients are grouped into a batch called
+#' "beta", parameters that vary by group level are in batches named for the 
+#' grouping variable, etc.). See Cook, Gelman, and Rubin (2006) for more details
+#' on the validation procedure.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
