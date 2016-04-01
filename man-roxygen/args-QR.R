@@ -7,5 +7,7 @@
 #'   inverse of \eqn{R^{\ast}}{R*} to obtain coefficients relative to the
 #'   original predictors, \eqn{X}. These transformations do not change the 
 #'   likelihood of the data but are recommended for computational reasons when 
-#'   there are multiple predictors but you do not have an informative prior on
-#'   their coefficients.
+#'   there are multiple predictors. However, because the coefficients relative
+#'   to \eqn{Q^\ast}{Q*} are not very interpretable it is hard to specify an 
+#'   informative prior. Setting \code{QR=TRUE} is therefore only recommended 
+#'   if you do not have an informative prior for the regression coefficients.
