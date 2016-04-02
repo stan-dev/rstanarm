@@ -1,3 +1,21 @@
+# Part of the rstanarm package for estimating model parameters
+# Copyright (C) 2016 Trustees of Columbia University
+# Copyright (C) 2005 Samantha Cook
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
 #' Model validation via simulation
 #' 
 #' The \code{pp_validate} function is based on the methods described in
@@ -52,7 +70,7 @@
 #' pp_validate(example_model, nreps = 5)
 #' }
 #' 
-pp_validate <- function(object, nreps, seed = 12345, ...) {
+pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
   quant <- function(draws) {
     n <- length(draws)
@@ -138,15 +156,4 @@ pp_validate <- function(object, nreps, seed = 12345, ...) {
     labs(y = NULL, x = expression("Absolute " * z[theta] * " Statistics")) + 
     pp_check_theme(no_y = FALSE) + 
     theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
-  
-  
-  # if (is.null(batches)){
-  #   return(list(p_vals = p_vals, adj_min_p = adj_min_p))
-  # } else {
-  #   if (length(z_batch) == num_params)
-  #     return(list(p_batch = p_batch, adj_min_p = adj_min_p)) 
-  #   else 
-  #     return(list(p_vals = p_vals[1:num_params], p_batch = p_batch, 
-  #                 adj_min_p = adj_min_p))
-  # }
 }
