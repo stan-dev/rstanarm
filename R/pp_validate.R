@@ -46,7 +46,7 @@
 #' Cook, S., Gelman, A., and Rubin, D. 
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
-#' 
+#' @importFrom ggplot2 aes
 #' @examples 
 #' \dontrun{
 #' pp_validate(example_model, nreps = 5)
