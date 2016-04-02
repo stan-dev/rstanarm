@@ -33,8 +33,8 @@
 #'   meaningful. Depending on the model and the size of the data, running 
 #'   \code{pp_validate} may be slow.
 #' @param seed A seed passed to Stan to use when refitting the model.
-#' @param ... Arguments passed to \code{\link{geom_point}} to control the
-#'   appearance of the plot.
+#' @param ... Arguments (e.g. \code{size}) passed to
+#'   \code{\link[ggplot2]{geom_point}} to control the appearance of the plot.
 #'   
 #' @details 
 #' We repeat \code{nreps} times the process of simulating parameters and data 
@@ -159,7 +159,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   upper_lim <- max(max(z_stats + 1), 3.5)
   plotdata <- data.frame(x = z_batch, y = params_batch)
   defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
-                   size = 2.5, alpha = 1)
+                   size = 3, alpha = 1)
   geom_args <- set_geom_args(defaults, ...)
   ggplot(plotdata, aes_string(x = "x", y = "y")) + 
     geom_segment(aes_string(x = "0", xend = "x", y = "y", yend = "y")) +
