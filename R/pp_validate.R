@@ -28,7 +28,10 @@
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param nreps The number of replications to be performed.
+#' @param nreps The number of replications to be performed. \code{nreps} must be
+#'   sufficiently large so that the statistics described below in Details are 
+#'   meaningful. Depending on the model and the size of the data, running 
+#'   \code{pp_validate} may be slow.
 #' @param seed A seed passed to Stan to use when refitting the model.
 #' @param ... Arguments passed to \code{\link{geom_point}} to control the
 #'   appearance of the plot.
