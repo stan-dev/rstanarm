@@ -80,7 +80,7 @@
 #' pp_validate(example_model)
 #' }
 #' 
-#' @importFrom ggplot2 geom_segment
+#' @importFrom ggplot2 geom_segment scale_x_continuous
 #' 
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
