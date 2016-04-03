@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
+
 #' Model validation via simulation
 #' 
 #' The \code{pp_validate} function is based on the methods described in
@@ -27,11 +28,13 @@
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param nreps The number of replications to be performed.
-#' @param seed A seed passed to Stan to use when refitting the model to the
-#'   simulated data.
-#' @param ... Arguments passed to \code{\link{geom_point}} to control the
-#'   appearance of the plot.
+#' @param nreps The number of replications to be performed. \code{nreps} must be
+#'   sufficiently large so that the statistics described below in Details are 
+#'   meaningful. Depending on the model and the size of the data, running 
+#'   \code{pp_validate} may be slow.
+#' @param seed A seed passed to Stan to use when refitting the model.
+#' @param ... Arguments (e.g. \code{size}) passed to
+#'   \code{\link[ggplot2]{geom_point}} to control the appearance of the plot.
 #'   
 #' @details 
 #' We repeat \code{nreps} times the process of simulating parameters and data 
@@ -43,7 +46,8 @@
 #' from the \emph{prior} distribution of the model parameters.
 #' \item Given \eqn{\theta^{true}}{\theta_true}, simulate data \eqn{y^\ast}{y*} 
 #' from the \emph{prior} predictive distribution (calling 
-#' \code{posterior_predict} on the fitted model object obtained in step 1).
+#' \code{\link{posterior_predict}} on the fitted model object obtained in step
+#' 1).
 #' \item Fit the model to the simulated outcome \eqn{y^\ast}{y*}, obtaining 
 #' parameters \eqn{\theta^{post}}{\theta_post}.
 #' }
@@ -65,10 +69,19 @@
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
 #' @importFrom ggplot2 aes geom_segment
+#' 
+#' @seealso 
+#' \code{\link{pp_check}} for graphical posterior predictive checks and 
+#' \code{\link{posterior_predict}} to draw from the posterior predictive 
+#' distribution.
+#' 
+#' 
 #' @examples 
 #' \dontrun{
-#' pp_validate(example_model, nreps = 5)
+#' pp_validate(example_model)
 #' }
+#' 
+#' @importFrom ggplot2 geom_segment scale_x_continuous
 #' 
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
@@ -78,6 +91,11 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     quants <- (rank_theta + 0.5) / n
     return(quants)
   }
+  
+  if (!used.sampling(object))
+    STOP_sampling_only("pp_validate")
+  if (nreps < 2)
+    stop("'nreps' must be at least 2.")
   
   dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
   dims <- dims[!sapply(dims, is.null)]
@@ -150,13 +168,13 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   upper_lim <- max(max(z_stats + 1), 3.5)
   plotdata <- data.frame(x = z_batch, y = params_batch)
   defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
-                   size = 2.5, alpha = 1)
+                   size = 3, alpha = 1)
   geom_args <- set_geom_args(defaults, ...)
-  ggplot(plotdata, aes(x, y)) + 
-    geom_segment(aes(x = 0, xend = x, y = y, yend = y)) +
+  ggplot(plotdata, aes_string(x = "x", y = "y")) + 
+    geom_segment(aes_string(x = "0", xend = "x", y = "y", yend = "y")) +
     do.call("geom_point", geom_args) + 
     scale_x_continuous(limits = c(0, upper_lim), expand = c(0, 0)) + 
     labs(y = NULL, x = expression("Absolute " * z[theta] * " Statistics")) + 
     pp_check_theme(no_y = FALSE) + 
     theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
-}
+}  
