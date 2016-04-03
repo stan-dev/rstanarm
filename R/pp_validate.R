@@ -64,7 +64,7 @@
 #' Cook, S., Gelman, A., and Rubin, D. 
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
-#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 aes geom_segment
 #' @examples 
 #' \dontrun{
 #' pp_validate(example_model, nreps = 5)
@@ -78,9 +78,6 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     quants <- (rank_theta + 0.5) / n
     return(quants)
   }
-  
-  if (missing(nreps))
-    stop("'nreps' must be specified")
   
   dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
   dims <- dims[!sapply(dims, is.null)]
@@ -103,11 +100,17 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   for (i in 2:num_batches) 
     plot_batch <- c(plot_batch, rep(i, batches[i]))
   quantile_theta <- matrix(NA_real_, nrow = nreps, ncol = num_params + num_batches)
+  post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed,
+                                  warmup = 1000, iter = 1000 + 1, chains = nreps))
+  post_mat <- as.matrix(post)
+  data_mat <- posterior_predict(post)
+  constant <- apply(data_mat, 1, FUN = function(x) all(duplicated(x)[-1L]))
+  if (any(constant))
+    stop("'pp_validate' cannot proceed because some simulated outcomes are constant. ",
+         "Try again with better priors on the parameters")
   for (reps in 1:nreps) {
-    post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed,
-                                    warmup = 1000, iter = 1000 + 2, chains = 1))
-    theta_true <- as.matrix(post)[1,, drop = FALSE]
-    data_rep <- posterior_predict(post)[1, ]
+    theta_true <- post_mat[reps,]
+    data_rep <- data_mat[reps,]
     mf <- model.frame(object)
     if (NCOL(mf[, 1]) == 2) { # binomial models
       mf[, 1] <- c(data_rep)
