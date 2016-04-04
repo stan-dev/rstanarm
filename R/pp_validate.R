@@ -61,6 +61,10 @@
 #' grouping variable, etc.). See Cook, Gelman, and Rubin (2006) for more details
 #' on the validation procedure.
 #' 
+#' You may have to specify \code{init_r} as some number less than 2 when you 
+#' fit the \emph{original} model in order to make it through \code{nreps}
+#' replications without running into numerical difficulties.
+#' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
 #' 
@@ -97,7 +101,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
   
-  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints")]
   dims <- dims[!sapply(dims, is.null)]
   dims <- sapply(dims, prod)
   dims <- dims[dims > 0]
@@ -126,15 +130,18 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (any(constant))
     stop("'pp_validate' cannot proceed because some simulated outcomes are constant. ",
          "Try again with better priors on the parameters")
+  y <- get_y(object)
   for (reps in 1:nreps) {
     theta_true <- post_mat[reps,]
     data_rep <- data_mat[reps,]
     mf <- model.frame(object)
     if (NCOL(mf[, 1]) == 2) { # binomial models
       mf[, 1] <- c(data_rep)
-      colnames(mf)[1] <- colnames(get_y(object))[1]
+      colnames(mf)[1] <- colnames(y)[1]
     } else {
-      mf[, 1] <- c(data_rep)
+      if (is.factor(y)) 
+        mf[,1] <- factor(data_rep, levels = levels(y), ordered = is.ordered(y))
+      else mf[, 1] <- c(data_rep)
     }
     theta_draws <- as.matrix(update(object, data = mf, seed = seed))
     if (!is.null(batches)){
