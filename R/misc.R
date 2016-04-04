@@ -459,9 +459,10 @@ get_prior_info <- function(user_call, function_formals) {
   priors <- list()
   for (j in 1:(U + D)) {
     if (j <= U) {
-      priors[[user[j]]] <- eval(user_call[[user[j]]])
+      priors[[user[j]]] <- try(eval(user_call[[user[j]]]), silent = TRUE)
     } else {
-      priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+      priors[[default[j-U]]] <- try(eval(function_formals[[default[j-U]]]), 
+                                    silent = TRUE)
     } 
   }
   
