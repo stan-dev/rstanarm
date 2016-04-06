@@ -78,7 +78,8 @@
 #'   scale_x_discrete
 #' 
 posterior_vs_prior <- function(object,
-                               pars = "beta",
+                               pars = NULL,
+                               regex_pars = NULL,
                                color_by = c("parameter", "vs", "none"),
                                group_by_parameter = FALSE,
                                prob = 0.9,
@@ -87,24 +88,37 @@ posterior_vs_prior <- function(object,
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   stopifnot(isTRUE(prob > 0 && prob < 1))
-  group_by <- if (group_by_parameter) "parameter" else "model"
+  
+  # stuff needed for ggplot
   color_by <- switch(match.arg(color_by), 
                      parameter = "parameter", 
                      vs = "model", 
                      none = NA)
-  
-  objects <- list(Posterior = object, Prior = update(object, prior_PD = TRUE))
-  plot_data <- stack_estimates(objects, pars = pars, prob = prob)
+  if (group_by_parameter) {
+    group_by <- "parameter" 
+    xvar <- "model"
+  } else {
+    group_by <- "model"
+    xvar <- "parameter"
+  }
+  aes_args <- list(x = xvar, y = "estimate", ymin = "lb", ymax = "ub")
+  if (!is.na(color_by))
+    aes_args$color <- color_by
   if (!length(facet_args)) {
     facet_args <- list(facets = group_by)
   } else {
     facet_args$facets <- group_by
   }
-  aes_args <- list(y = "estimate", ymin = "lb", ymax = "ub", 
-                   x = if (group_by == "parameter") "model" else "parameter")
-  if (!is.na(color_by))
-    aes_args$color <- color_by
+
+  # draw from prior distribution and prepare plot data
+  message("\nDrawing from prior...")
+  Prior <- suppressWarnings(update(object, prior_PD = TRUE, 
+                                   refresh = -1, chains = 2))
+  objects <- nlist(Prior, Posterior = object)
+  plot_data <- stack_estimates(objects, prob = prob,
+                               pars = pars, regex_pars = regex_pars)
   
+
   graph <- ggplot(plot_data, mapping = do.call("aes_string", aes_args)) + 
     geom_pointrange(...) + 
     do.call("facet_wrap", facet_args) +
@@ -126,7 +140,8 @@ posterior_vs_prior <- function(object,
 }
 
 
-stack_estimates <- function(models = list(), pars = NULL, prob = NULL) {
+stack_estimates <- function(models = list(), pars = NULL, regex_pars = NULL, 
+                            prob = NULL) {
   mnames <- names(models)
   if (is.null(mnames)) {
     mnames <- paste0("model_", seq_along(models))
@@ -140,7 +155,7 @@ stack_estimates <- function(models = list(), pars = NULL, prob = NULL) {
   probs <- sort(c(0.5, alpha, 1 - alpha))
   labs <- c(paste0(100 * probs, "%"))
   ests <- lapply(models, function(x) {
-    s <- summary(x, pars = pars, probs = probs)
+    s <- summary(x, pars = pars, regex_pars = regex_pars, probs = probs)
     if (is.null(pars))
       s <- s[!rownames(s) %in% c("log-posterior", "mean_PPD"), ]
     s[, labs, drop = FALSE]
