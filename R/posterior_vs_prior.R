@@ -48,6 +48,7 @@
 #'  ggplot2::theme(panel.background = element_rect(fill = "gray30"))
 #' 
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
+#'   scale_x_discrete
 #' 
 posterior_vs_prior <- function(object,
                                pars = "beta",
