@@ -171,7 +171,8 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   only the regression coefficients (without the intercept). \code{"alpha"} 
 #'   can also be used as a shortcut for \code{"(Intercept)"}. If the model has 
 #'   varying intercepts and/or slopes they can be selected using \code{pars = 
-#'   "varying"}. See Examples.
+#'   "varying"}. If \code{pars} is \code{NULL} all parameters are selected. See 
+#'   Examples.
 #' @param probs For models fit using MCMC or one of the variational algorithms, 
 #'   an optional numeric vector of probabilities passed to 
 #'   \code{\link[stats]{quantile}}.
