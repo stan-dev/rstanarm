@@ -11,7 +11,13 @@
 #'   (\code{TRUE}) or by posterior and prior (\code{FALSE}, the default)?
 #' @param color_by How should the estimates be colored? Use \code{"parameter"} 
 #'   to color by parameter name, \code{"vs"} to color the prior one color and 
-#'   the posterior another, and \code{"none"} to use no color.
+#'   the posterior another, and \code{"none"} to use no color. Except when 
+#'   \code{color_by="none"}, a variable is mapped to the color 
+#'   \code{\link[ggplot2]{aes}}thetic and it is therefore also possible to
+#'   change the default colors by adding one of the various discrete color
+#'   scales available in \code{ggplot2} 
+#'   (\code{\link[ggplot2]{scale_color_manual}}, 
+#'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
 #' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
 #'   posterior probability mass to include in the (central posterior) interval 
 #'   estimates displayed in the plot.
@@ -24,28 +30,49 @@
 #'   plotted intervals.
 #'   
 #' @return A ggplot object that can be further customized using the 
-#'   \pkg{ggplot2} package. Except when \code{color_by="none"}, a variable is 
-#'   also mapped to the color aesthetic and it is therefore also possible to 
-#'   change the default colors by adding one of the various discrete color 
-#'   scales available in \code{ggplot2}
-#'   (\code{\link[ggplot2]{scale_color_manual}}, 
-#'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
+#'   \pkg{ggplot2} package.
 #'   
 #' @examples 
-#' posterior_vs_prior(example_model)
-#' posterior_vs_prior(example_model, pars = NULL)
-#' posterior_vs_prior(example_model, group_by_parameter = TRUE, 
+#' # display non-varying (i.e. not group-level) coefficients
+#' posterior_vs_prior(example_model, pars = "beta")
+#' 
+#' # show group-level (varying) parameters and group by parameter
+#' posterior_vs_prior(example_model, pars = "varying",
+#'                    group_by_parameter = TRUE, color_by = "vs")
+#' \dontrun{
+#' # group by parameter and allow axis scales to vary across facets
+#' posterior_vs_prior(example_model, regex_pars = "period",
+#'                    group_by_parameter = TRUE, color_by = "none",
 #'                    facet_args = list(scales = "free"))
-#' posterior_vs_prior(example_model, pars = "varying", color_by = "none")
 #' 
 #' # assign to object and customize with functions from ggplot2
-#' (gg <- posterior_vs_prior(example_model, prob = 0.5))
-#' gg + ggplot2::coord_flip()
-#' gg + ggplot2::scale_color_manual(values = c("orange", "purple", "blue", "green"))
-#' gg + ggplot2::scale_color_grey()
+#' (gg <- posterior_vs_prior(example_model, pars = c("beta", "varying"), prob = 0.8))
 #' gg + 
-#'  ggplot2::scale_color_brewer() + 
-#'  ggplot2::theme(panel.background = element_rect(fill = "gray30"))
+#'  ggplot2::geom_hline(yintercept = 0, size = 0.3, linetype = 3) + 
+#'  ggplot2::coord_flip() + 
+#'  ggplot2::ggtitle("Comparing the prior and posterior")
+#' gg + 
+#'  ggplot2::theme(panel.background = element_rect(fill = "gray30"), 
+#'                 axis.text.x = element_blank())
+#'                 
+#'                 
+#' # roaches example, compare very wide and very narrow priors
+#' roaches$roach100 <- roaches$roach1 / 100
+#' N10 <- normal(0, 10)
+#' N01 <- normal(0, 0.1)
+#' fit_pois_wide_prior <- stan_glm(y ~ treatment + roach100 + senior, 
+#'                                 offset = log(exposure2), 
+#'                                 family = "poisson", data = roaches, 
+#'                                 prior = N10)
+#' posterior_vs_prior(fit_pois_wide_prior, pars = "beta", 
+#'                    group_by_parameter = TRUE, color_by = "vs", 
+#'                    facet_args = list(scales = "free"))
+#'                    
+#' fit_pois_narrow_prior <- update(fit_pois_wide_prior, prior = N01)
+#' posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", 
+#'                    group_by_parameter = TRUE, color_by = "vs", 
+#'                    facet_args = list(scales = "free"))
+#' }
 #' 
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
 #'   scale_x_discrete
