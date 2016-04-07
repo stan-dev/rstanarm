@@ -79,7 +79,7 @@
 #' }
 #' 
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
-#'   scale_x_discrete element_line
+#'   scale_x_discrete element_line element_text
 #' 
 posterior_vs_prior <- function(object, 
                                pars = NULL, regex_pars = NULL, prob = 0.9, 
@@ -89,6 +89,8 @@ posterior_vs_prior <- function(object,
                                ...) {
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
+  if (!used.sampling(object))
+    STOP_sampling_only("posterior_vs_prior")
   stopifnot(isTRUE(prob > 0 && prob < 1))
   
   # stuff needed for ggplot
