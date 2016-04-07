@@ -76,6 +76,15 @@
 #' posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", prob = 0.5, 
 #'                    group_by_parameter = TRUE, color_by = "vs", 
 #'                    facet_args = list(scales = "free"))
+#'                    
+#' 
+#' # look at cutpoints for ordinal model
+#' fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+#'                       prior = R2(0.2, "mean"), init_r = 0.1)
+#' (gg_polr <- posterior_vs_prior(fit_polr, regex_pars = "\\|", color_by = "vs",
+#'                                group_by_parameter = TRUE))
+#' # flip the x and y axes
+#' gg_polr + ggplot2::coord_flip()
 #' }
 #' 
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
