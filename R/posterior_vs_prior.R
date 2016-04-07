@@ -11,7 +11,13 @@
 #'   (\code{TRUE}) or by posterior and prior (\code{FALSE}, the default)?
 #' @param color_by How should the estimates be colored? Use \code{"parameter"} 
 #'   to color by parameter name, \code{"vs"} to color the prior one color and 
-#'   the posterior another, and \code{"none"} to use no color.
+#'   the posterior another, and \code{"none"} to use no color. Except when 
+#'   \code{color_by="none"}, a variable is mapped to the color 
+#'   \code{\link[ggplot2]{aes}}thetic and it is therefore also possible to
+#'   change the default colors by adding one of the various discrete color
+#'   scales available in \code{ggplot2} 
+#'   (\code{\link[ggplot2]{scale_color_manual}}, 
+#'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
 #' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
 #'   posterior probability mass to include in the (central posterior) interval 
 #'   estimates displayed in the plot.
@@ -24,33 +30,59 @@
 #'   plotted intervals.
 #'   
 #' @return A ggplot object that can be further customized using the 
-#'   \pkg{ggplot2} package. Except when \code{color_by="none"}, a variable is 
-#'   also mapped to the color aesthetic and it is therefore also possible to 
-#'   change the default colors by adding one of the various discrete color 
-#'   scales available in \code{ggplot2}
-#'   (\code{\link[ggplot2]{scale_color_manual}}, 
-#'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
+#'   \pkg{ggplot2} package.
 #'   
 #' @examples 
-#' posterior_vs_prior(example_model)
-#' posterior_vs_prior(example_model, pars = NULL)
-#' posterior_vs_prior(example_model, group_by_parameter = TRUE, 
+#' # display non-varying (i.e. not group-level) coefficients
+#' posterior_vs_prior(example_model, pars = "beta")
+#' 
+#' # show group-level (varying) parameters and group by parameter
+#' posterior_vs_prior(example_model, pars = "varying",
+#'                    group_by_parameter = TRUE, color_by = "vs")
+#' \dontrun{
+#' # group by parameter and allow axis scales to vary across facets
+#' posterior_vs_prior(example_model, regex_pars = "period",
+#'                    group_by_parameter = TRUE, color_by = "none",
 #'                    facet_args = list(scales = "free"))
-#' posterior_vs_prior(example_model, pars = "varying", color_by = "none")
 #' 
 #' # assign to object and customize with functions from ggplot2
-#' (gg <- posterior_vs_prior(example_model, prob = 0.5))
-#' gg + ggplot2::coord_flip()
-#' gg + ggplot2::scale_color_manual(values = c("orange", "purple", "blue", "green"))
-#' gg + ggplot2::scale_color_grey()
+#' (gg <- posterior_vs_prior(example_model, pars = c("beta", "varying"), prob = 0.8))
 #' gg + 
 #'  ggplot2::scale_color_brewer() + 
 #'  ggplot2::theme(panel.background = ggplot2::element_rect(fill = "gray30"))
 #' 
-#' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs scale_x_discrete
+#'  ggplot2::geom_hline(yintercept = 0, size = 0.3, linetype = 3) + 
+#'  ggplot2::coord_flip() + 
+#'  ggplot2::ggtitle("Comparing the prior and posterior")
+#' gg + 
+#'  ggplot2::theme(panel.background = element_rect(fill = "gray30"), 
+#'                 axis.text.x = element_blank())
+#'                 
+#'                 
+#' # roaches example, compare very wide and very narrow priors
+#' roaches$roach100 <- roaches$roach1 / 100
+#' N10 <- normal(0, 10)
+#' N01 <- normal(0, 0.1)
+#' fit_pois_wide_prior <- stan_glm(y ~ treatment + roach100 + senior, 
+#'                                 offset = log(exposure2), 
+#'                                 family = "poisson", data = roaches, 
+#'                                 prior = N10)
+#' posterior_vs_prior(fit_pois_wide_prior, pars = "beta", 
+#'                    group_by_parameter = TRUE, color_by = "vs", 
+#'                    facet_args = list(scales = "free"))
+#'                    
+#' fit_pois_narrow_prior <- update(fit_pois_wide_prior, prior = N01)
+#' posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", 
+#'                    group_by_parameter = TRUE, color_by = "vs", 
+#'                    facet_args = list(scales = "free"))
+#' }
+#' 
+#' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
+#'   scale_x_discrete
 #' 
 posterior_vs_prior <- function(object,
-                               pars = "beta",
+                               pars = NULL,
+                               regex_pars = NULL,
                                color_by = c("parameter", "vs", "none"),
                                group_by_parameter = FALSE,
                                prob = 0.9,
@@ -59,24 +91,37 @@ posterior_vs_prior <- function(object,
   if (!is.stanreg(object))
     stop(deparse(substitute(object)), " is not a stanreg object.")
   stopifnot(isTRUE(prob > 0 && prob < 1))
-  group_by <- if (group_by_parameter) "parameter" else "model"
+  
+  # stuff needed for ggplot
   color_by <- switch(match.arg(color_by), 
                      parameter = "parameter", 
                      vs = "model", 
                      none = NA)
-  
-  objects <- list(Posterior = object, Prior = update(object, prior_PD = TRUE))
-  plot_data <- stack_estimates(objects, pars = pars, prob = prob)
+  if (group_by_parameter) {
+    group_by <- "parameter" 
+    xvar <- "model"
+  } else {
+    group_by <- "model"
+    xvar <- "parameter"
+  }
+  aes_args <- list(x = xvar, y = "estimate", ymin = "lb", ymax = "ub")
+  if (!is.na(color_by))
+    aes_args$color <- color_by
   if (!length(facet_args)) {
     facet_args <- list(facets = group_by)
   } else {
     facet_args$facets <- group_by
   }
-  aes_args <- list(y = "estimate", ymin = "lb", ymax = "ub", 
-                   x = if (group_by == "parameter") "model" else "parameter")
-  if (!is.na(color_by))
-    aes_args$color <- color_by
+
+  # draw from prior distribution and prepare plot data
+  message("\nDrawing from prior...")
+  Prior <- suppressWarnings(update(object, prior_PD = TRUE, 
+                                   refresh = -1, chains = 2))
+  objects <- nlist(Prior, Posterior = object)
+  plot_data <- stack_estimates(objects, prob = prob,
+                               pars = pars, regex_pars = regex_pars)
   
+
   graph <- ggplot(plot_data, mapping = do.call("aes_string", aes_args)) + 
     geom_pointrange(...) + 
     do.call("facet_wrap", facet_args) +
@@ -98,7 +143,8 @@ posterior_vs_prior <- function(object,
 }
 
 
-stack_estimates <- function(models = list(), pars = NULL, prob = NULL) {
+stack_estimates <- function(models = list(), pars = NULL, regex_pars = NULL, 
+                            prob = NULL) {
   mnames <- names(models)
   if (is.null(mnames)) {
     mnames <- paste0("model_", seq_along(models))
@@ -112,7 +158,7 @@ stack_estimates <- function(models = list(), pars = NULL, prob = NULL) {
   probs <- sort(c(0.5, alpha, 1 - alpha))
   labs <- c(paste0(100 * probs, "%"))
   ests <- lapply(models, function(x) {
-    s <- summary(x, pars = pars, probs = probs)
+    s <- summary(x, pars = pars, regex_pars = regex_pars, probs = probs)
     if (is.null(pars))
       s <- s[!rownames(s) %in% c("log-posterior", "mean_PPD"), ]
     s[, labs, drop = FALSE]
