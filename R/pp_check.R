@@ -77,8 +77,8 @@
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the proportion
-#'   of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
+#'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also

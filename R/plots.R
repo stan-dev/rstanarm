@@ -29,16 +29,16 @@
 #' @template args-pars
 #' @template args-regex-pars
 #' @param plotfun A character string naming the plotting function to apply to 
-#'   the stanreg object. See \code{\link{plots}} for the names and descriptions.
-#'   Also see the Examples section below. \code{plotfun} can be either the full 
-#'   name of the plotting function (e.g. \code{"stan_hist"}) or can be 
-#'   abbreviated to the part of the name following the underscore (e.g. 
+#'   the stanreg object. See \code{\link{rstanarm-plots}} for the names and
+#'   descriptions. Also see the Examples section below. \code{plotfun} can be
+#'   either the full name of the plotting function (e.g. \code{"stan_hist"}) or
+#'   can be abbreviated to the part of the name following the underscore (e.g. 
 #'   \code{"hist"}). The default plot shows intervals and point estimates for 
-#'   the coefficients. Note: \code{plotfun} should not be specified for models
-#'   fit using \code{algorithm="optimizing"} as there is currently only one
+#'   the coefficients. Note: \code{plotfun} should not be specified for models 
+#'   fit using \code{algorithm="optimizing"} as there is currently only one 
 #'   plotting function for these models.
 #' @param ... Additional arguments to pass to \code{plotfun} (see
-#'   \code{\link{plots}}) or, for models fit using
+#'   \code{\link{rstanarm-plots}}) or, for models fit using
 #'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
 #'
 #' @return In most cases, a ggplot object (or several) that can be further 
@@ -46,7 +46,7 @@
 #'   using \code{"optimizing"} as the estimation algorithm, in which case a plot
 #'   is produced but nothing is returned.
 #'
-#' @seealso \code{\link{plots}} for details on the individual plotting
+#' @seealso \code{\link{rstanarm-plots}} for details on the individual plotting
 #'   functions.
 #'   
 #' @examples
@@ -209,16 +209,16 @@ pairs.stanreg <- function(x, ...) {
 
 #' Plots for rstanarm models
 #' 
-#' All \pkg{rstanarm} models fit using \code{algorithm='sampling'},
-#' \code{"meanfield"}, or \code{"fullrank"} are compatible with a variety of
-#' plotting functions from the \pkg{rstan} package. Each function returns at
-#' least one \code{\link[ggplot2]{ggplot}} object that can be customized further
-#' using the \pkg{ggplot2} package. The plotting functions described here can be
-#' called using the \code{\link[=plot.stanreg]{plot method}} for stanreg objects
-#' without loading the \pkg{rstan} package. For example usage see
+#' Models fit using \code{algorithm='sampling'}, \code{"meanfield"}, or
+#' \code{"fullrank"} are compatible with a variety of plotting functions from
+#' the \pkg{rstan} package. Each function returns at least one
+#' \code{\link[ggplot2]{ggplot}} object that can be customized further using the
+#' \pkg{ggplot2} package. The plotting functions described here can be called
+#' using the \code{\link[=plot.stanreg]{plot method}} for stanreg objects 
+#' without loading the \pkg{rstan} package. For example usage see 
 #' \code{\link{plot.stanreg}}.
 #' 
-#' @name plots
+#' @name rstanarm-plots
 #' 
 #' @section Plotting functions:
 #' 
@@ -242,6 +242,7 @@ pairs.stanreg <- function(x, ...) {
 #' @seealso \code{\link{plot.stanreg}} for how to call the \code{plot} method, 
 #'   \code{\link{shinystan}} for interactive model exploration,
 #'   \code{\link{pp_check}} for graphical posterior predicive checking.
+#'
 #' @examples
 #' # See examples at help("plot.stanreg", package = "rstanarm")
 NULL
