@@ -85,7 +85,7 @@
 #' pp_validate(example_model)
 #' }
 #' 
-#' @importFrom ggplot2 geom_segment scale_x_continuous
+#' @importFrom ggplot2 geom_segment scale_x_continuous element_line
 #' 
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
@@ -129,21 +129,28 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   constant <- apply(data_mat, 1, FUN = function(x) all(duplicated(x)[-1L]))
   if (any(constant))
     stop("'pp_validate' cannot proceed because some simulated outcomes are constant. ",
-         "Try again with better priors on the parameters")
+         "Try again with better priors on the parameters.")
   y <- get_y(object)
   for (reps in 1:nreps) {
-    theta_true <- post_mat[reps,]
-    data_rep <- data_mat[reps,]
+    theta_true <- post_mat[reps, ]
+    data_rep <- data_mat[reps, ]
     mf <- model.frame(object)
     if (NCOL(mf[, 1]) == 2) { # binomial models
-      mf[, 1] <- c(data_rep)
-      colnames(mf)[1] <- colnames(y)[1]
+      new_f <- update.formula(formula(object), cbind(ynew_1s, ynew_0s) ~ .)
+      ynew <- c(data_rep)
+      mf2 <- data.frame(mf[, -1], ynew_1s = ynew, ynew_0s = rowSums(y) - ynew)
+      mf <- get_all_vars(new_f, data = mf2)
     } else {
+      new_f <- NULL
       if (is.factor(y)) 
-        mf[,1] <- factor(data_rep, levels = levels(y), ordered = is.ordered(y))
-      else mf[, 1] <- c(data_rep)
+        mf[, 1] <- factor(data_rep, levels = levels(y), ordered = is.ordered(y))
+      else 
+        mf[, 1] <- c(data_rep)
     }
-    theta_draws <- as.matrix(update(object, data = mf, seed = seed))
+    update_args <- nlist(object, data = mf, seed)
+    if (!is.null(new_f))
+      update_args$formula <- new_f
+    theta_draws <- as.matrix(do.call("update", update_args))
     if (!is.null(batches)){
       for (i in 1:num_batches) {
         if (batches[i] > 1) {
