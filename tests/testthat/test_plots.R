@@ -28,6 +28,8 @@ fit <- example_model
 fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield")
 
+
+# plot.stanreg ------------------------------------------------------------
 context("plot.stanreg")
 test_that("plot method doesn't throw bad errors and creates ggplot objects", {
   expect_default_message <- function(fit, message = "default", ...) {
@@ -71,10 +73,46 @@ test_that("plot.stanreg ok for vb", {
   }
 })
 
+
+# pairs.stanreg -----------------------------------------------------------
 context("pairs.stanreg")
 test_that("pairs method ok", {
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
+})
+
+
+
+# posterior_vs_prior ------------------------------------------------------
+context("posterior_vs_prior")
+test_that("posterior_vs_prior ok", {
+  expect_is(class = "ggplot",
+            object = posterior_vs_prior(fit, pars = "beta"))
+  expect_is(class = "ggplot", 
+            object = posterior_vs_prior(fit, pars = "varying", 
+                                        group_by_parameter = TRUE, 
+                                        color_by = "vs"))
+  expect_is(class = "ggplot", 
+            object = posterior_vs_prior(fit, regex_pars = "period",
+                                        group_by_parameter = FALSE, 
+                                        color_by = "none", facet_args = 
+                                          list(scales = "free", nrow = 2)))
+  
+  fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+                        prior = R2(0.2, "mean"), init_r = 0.1, 
+                        seed = SEED, chains = CHAINS, cores = CORES, 
+                        iter = 100, refresh = 0)
+  expect_is(class = "ggplot", object = posterior_vs_prior(fit_polr))
+  expect_is(class = "ggplot", 
+            object = posterior_vs_prior(fit_polr, regex_pars = "\\|",
+                                        group_by_parameter = TRUE, 
+                                        color_by = "vs"))
+})
+
+test_that("posterior_vs_prior throws errors", {
+  lmfit <- lm(mpg ~ wt, data = mtcars)
+  expect_error(posterior_vs_prior(lmfit), "not a stanreg object")
+  expect_error(posterior_vs_prior(fit, prob = 1), "prob < 1")
 })
