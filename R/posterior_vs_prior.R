@@ -20,7 +20,7 @@
 #'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
 #' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
 #'   posterior probability mass to include in the (central posterior) interval 
-#'   estimates displayed in the plot.
+#'   estimates displayed in the plot. The default is \eqn{0.9}.
 #' @param facet_args A named list of arguments passed to
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument),
 #'   e.g., \code{nrow} or \code{ncol} to change the layout, \code{scales} to 
@@ -59,33 +59,32 @@
 #'                 axis.text.x = element_blank())
 #'                 
 #'                 
-#' # roaches example, compare very wide and very narrow priors
+#' # compare very wide and very narrow priors using roaches example
+#' # (see help(roaches, "rstanarm") for info on the dataset)
 #' roaches$roach100 <- roaches$roach1 / 100
-#' N10 <- normal(0, 10)
-#' N01 <- normal(0, 0.1)
+#' wide_prior <- normal(0, 10)
+#' narrow_prior <- normal(0, 0.1)
 #' fit_pois_wide_prior <- stan_glm(y ~ treatment + roach100 + senior, 
 #'                                 offset = log(exposure2), 
 #'                                 family = "poisson", data = roaches, 
-#'                                 prior = N10)
-#' posterior_vs_prior(fit_pois_wide_prior, pars = "beta", 
+#'                                 prior = wide_prior)
+#' posterior_vs_prior(fit_pois_wide_prior, pars = "beta", prob = 0.5, 
 #'                    group_by_parameter = TRUE, color_by = "vs", 
 #'                    facet_args = list(scales = "free"))
 #'                    
-#' fit_pois_narrow_prior <- update(fit_pois_wide_prior, prior = N01)
-#' posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", 
+#' fit_pois_narrow_prior <- update(fit_pois_wide_prior, prior = narrow_prior)
+#' posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", prob = 0.5, 
 #'                    group_by_parameter = TRUE, color_by = "vs", 
 #'                    facet_args = list(scales = "free"))
 #' }
 #' 
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
-#'   scale_x_discrete
+#'   scale_x_discrete element_line
 #' 
-posterior_vs_prior <- function(object,
-                               pars = NULL,
-                               regex_pars = NULL,
+posterior_vs_prior <- function(object, 
+                               pars = NULL, regex_pars = NULL, prob = 0.9, 
                                color_by = c("parameter", "vs", "none"),
                                group_by_parameter = FALSE,
-                               prob = 0.9,
                                facet_args = list(),
                                ...) {
   if (!is.stanreg(object))
