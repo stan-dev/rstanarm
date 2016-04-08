@@ -1,6 +1,14 @@
   // Log-priors for coefficients
   if (prior_dist == 1) z_beta ~ normal(0, 1);
-  else if (prior_dist == 2) z_beta ~ student_t(prior_df, 0, 1);
+  else if (prior_dist == 2) {
+    if (t_all_124) z_beta ~ normal(0,1);
+    else if (t_any_124) for (k in 1:K) {
+      if (prior_df[k] == 1 || prior_df[k] == 2 || prior_df[k] == 4)
+        z_beta[k] ~ normal(0,1);
+      else z_beta[k] ~ student_t(prior_df[k], 0, 1);
+    }
+    else z_beta ~ student_t(prior_df, 0, 1);
+  }
   else if (prior_dist == 3) { // hs
     z_beta ~ normal(0,1);
     local[1] ~ normal(0,1);

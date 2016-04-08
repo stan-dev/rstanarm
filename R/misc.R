@@ -82,7 +82,7 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
