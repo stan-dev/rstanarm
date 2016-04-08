@@ -168,7 +168,7 @@
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
-#'   \code{\link{plots}} for the various plots that can be used
+#'   \code{\link{rstanarm-plots}} for the various plots that can be used
 #'   to explore and check fitted models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used

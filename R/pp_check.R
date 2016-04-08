@@ -77,8 +77,8 @@
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the proportion
-#'   of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
+#'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also
@@ -144,7 +144,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
     nreps <- NULL
   }
 
-  is_binomial <- if (is(object, "polr"))
+  is_binomial <- if (is(object, "polr") && !is_scobit(object))
     FALSE else is.binomial(family(object)$family)
   if (is_binomial && fn == "pp_check_resid") {
     graph <- pp_check_binned_resid(object, n = nreps, ...)
@@ -153,8 +153,10 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   
   y <- get_y(object)
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
-  if (is(object, "polr")) 
+  if (is(object, "polr")) {
     y <- as.integer(y)
+    yrep <- apply(yrep, 2, function(x) as.integer(as.factor(x)))
+  }
   if (is_binomial) {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)

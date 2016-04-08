@@ -166,7 +166,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun)) 
     ytilde <- do.call(fun, list(ytilde))
-  
+  if (is(object, "polr") && !is_scobit(object))
+    ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   return(ytilde)
 }
 

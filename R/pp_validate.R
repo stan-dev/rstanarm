@@ -61,6 +61,10 @@
 #' grouping variable, etc.). See Cook, Gelman, and Rubin (2006) for more details
 #' on the validation procedure.
 #' 
+#' You may have to specify \code{init_r} as some number less than 2 when you 
+#' fit the \emph{original} model in order to make it through \code{nreps}
+#' replications without running into numerical difficulties.
+#' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
 #' 
@@ -68,6 +72,7 @@
 #' Cook, S., Gelman, A., and Rubin, D. 
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
+#' @importFrom ggplot2 aes geom_segment
 #' 
 #' @seealso 
 #' \code{\link{pp_check}} for graphical posterior predictive checks and 
@@ -80,7 +85,7 @@
 #' pp_validate(example_model)
 #' }
 #' 
-#' @importFrom ggplot2 geom_segment scale_x_continuous
+#' @importFrom ggplot2 geom_segment scale_x_continuous element_line
 #' 
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
@@ -96,7 +101,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
   
-  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion")]
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints")]
   dims <- dims[!sapply(dims, is.null)]
   dims <- sapply(dims, prod)
   dims <- dims[dims > 0]
@@ -117,19 +122,35 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   for (i in 2:num_batches) 
     plot_batch <- c(plot_batch, rep(i, batches[i]))
   quantile_theta <- matrix(NA_real_, nrow = nreps, ncol = num_params + num_batches)
+  post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed,
+                                  warmup = 1000, iter = 1000 + 1, chains = nreps))
+  post_mat <- as.matrix(post)
+  data_mat <- posterior_predict(post)
+  constant <- apply(data_mat, 1, FUN = function(x) all(duplicated(x)[-1L]))
+  if (any(constant))
+    stop("'pp_validate' cannot proceed because some simulated outcomes are constant. ",
+         "Try again with better priors on the parameters.")
+  y <- get_y(object)
   for (reps in 1:nreps) {
-    post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed,
-                                    warmup = 1000, iter = 1000 + 2, chains = 1))
-    theta_true <- as.matrix(post)[1,, drop = FALSE]
-    data_rep <- posterior_predict(post)[1, ]
+    theta_true <- post_mat[reps, ]
+    data_rep <- data_mat[reps, ]
     mf <- model.frame(object)
     if (NCOL(mf[, 1]) == 2) { # binomial models
-      mf[, 1] <- c(data_rep)
-      colnames(mf)[1] <- colnames(get_y(object))[1]
+      new_f <- update.formula(formula(object), cbind(ynew_1s, ynew_0s) ~ .)
+      ynew <- c(data_rep)
+      mf2 <- data.frame(mf[, -1], ynew_1s = ynew, ynew_0s = rowSums(y) - ynew)
+      mf <- get_all_vars(new_f, data = mf2)
     } else {
-      mf[, 1] <- c(data_rep)
+      new_f <- NULL
+      if (is.factor(y)) 
+        mf[, 1] <- factor(data_rep, levels = levels(y), ordered = is.ordered(y))
+      else 
+        mf[, 1] <- c(data_rep)
     }
-    theta_draws <- as.matrix(update(object, data = mf, seed = seed))
+    update_args <- nlist(object, data = mf, seed)
+    if (!is.null(new_f))
+      update_args$formula <- new_f
+    theta_draws <- as.matrix(do.call("update", update_args))
     if (!is.null(batches)){
       for (i in 1:num_batches) {
         if (batches[i] > 1) {
@@ -171,15 +192,3 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     pp_check_theme(no_y = FALSE) + 
     theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
 }  
-
-# If we wanted to return the actual pvals: 
-#
-# if (is.null(batches)){
-#   return(list(p_vals = p_vals, adj_min_p = adj_min_p))
-# } else {
-#   if (length(z_batch) == num_params)
-#     return(list(p_batch = p_batch, adj_min_p = adj_min_p)) 
-#   else 
-#     return(list(p_vals = p_vals[1:num_params], p_batch = p_batch, 
-#                 adj_min_p = adj_min_p))
-# }
