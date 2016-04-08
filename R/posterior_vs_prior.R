@@ -126,7 +126,7 @@ posterior_vs_prior <- function(object,
   # draw from prior distribution and prepare plot data
   message("\nDrawing from prior...")
   Prior <- suppressWarnings(update(object, prior_PD = TRUE, 
-                                   refresh = -1, chains = 2))
+                                   refresh = -1, iter = 2000, chains = 2))
   objects <- nlist(Prior, Posterior = object)
   plot_data <- stack_estimates(objects, prob = prob,
                                pars = pars, regex_pars = regex_pars)
