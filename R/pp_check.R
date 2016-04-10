@@ -144,7 +144,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
     nreps <- NULL
   }
 
-  is_binomial <- if (is(object, "polr"))
+  is_binomial <- if (is(object, "polr") && !is_scobit(object))
     FALSE else is.binomial(family(object)$family)
   if (is_binomial && fn == "pp_check_resid") {
     graph <- pp_check_binned_resid(object, n = nreps, ...)
@@ -153,8 +153,10 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   
   y <- get_y(object)
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
-  if (is(object, "polr")) 
+  if (is(object, "polr")) {
     y <- as.integer(y)
+    yrep <- apply(yrep, 2, function(x) as.integer(as.factor(x)))
+  }
   if (is_binomial) {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
