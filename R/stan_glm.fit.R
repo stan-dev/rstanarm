@@ -227,7 +227,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 
       nlevels(group$flist[[i]]))
-    t <- length(p)
+    t <- length(l)
     group_nms <- names(group$cnms)
     b_nms <- character()
     for (i in seq_along(group$cnms)) {
@@ -449,24 +449,29 @@ pad_reTrms <- function(Z, cnms, flist) {
   p <- sapply(cnms, FUN = length)
   last <- cumsum(l * p)
   for (i in attr(flist, "assign")) {
+    if (!grepl("^Xr", names(p)[i])) break
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
-  mark <- length(p) - 1L
+  mark <- i - 1L
   if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
-    for (i in rev(head(last, -1))) {
-      Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
+    if (mark >= 1)
+      Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[mark], sparse = TRUE))
+    mark <- mark - 1L
+    while (mark > 0L) {
+      Z <- cBind(cBind(Z[, 1:last[mark], drop = FALSE],
                        Matrix(0, n, p[mark], sparse = TRUE)),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }
   }
   else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
-    for (i in rev(head(last, -1))) {
-      Z <- cbind(Z[, 1:i, drop = FALSE],
+    if (mark >= 1)
+      Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[mark], sparse = TRUE))
+    mark <- mark - 1L
+    while (mark > 0L) {
+      Z <- cbind(Z[, 1:last[mark], drop = FALSE],
                  Matrix(0, n, p[mark], sparse = TRUE),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
