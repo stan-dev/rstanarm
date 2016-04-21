@@ -19,7 +19,7 @@ functions {
                         real SSR, real sigma, int N) {
     increment_log_prob( -0.5 * (dot_self(theta - b) + 
       N * square(intercept - ybar) + SSR) / 
-      square(sigma) - // 0.91... is log(sqrt(2 * pi()))
+      square(sigma) -// 0.91... is log(sqrt(2 * pi()))
       N * (log(sigma) + 0.91893853320467267) );
     return get_lp();
   }
@@ -117,8 +117,8 @@ generated quantities {
   vector[K] beta[J];
   for (j in 1:J) {
     if (has_intercept == 1)
-      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j]);
-    else mean_PPD[j] <- normal_rng(shift[j], sigma[j]);
+      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j] * sqrt_inv_N[j]);
+    else mean_PPD[j] <- normal_rng(shift[j], sigma[j] * sqrt_inv_N[j]);
     beta[j] <- R_inv[j] * theta[j];
   }
 }

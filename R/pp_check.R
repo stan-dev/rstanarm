@@ -77,8 +77,8 @@
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the proportion
-#'   of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
+#'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also
@@ -144,7 +144,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
     nreps <- NULL
   }
 
-  is_binomial <- if (is(object, "polr"))
+  is_binomial <- if (is(object, "polr") && !is_scobit(object))
     FALSE else is.binomial(family(object)$family)
   if (is_binomial && fn == "pp_check_resid") {
     graph <- pp_check_binned_resid(object, n = nreps, ...)
@@ -153,8 +153,10 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   
   y <- get_y(object)
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
-  if (is(object, "polr")) 
+  if (is(object, "polr")) {
     y <- as.integer(y)
+    yrep <- apply(yrep, 2, function(x) as.integer(as.factor(x)))
+  }
   if (is_binomial) {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
@@ -464,67 +466,3 @@ pp_check_scatter <- function(y, yrep, n = NULL, ...){
   
   graph + pp_check_theme(no_y = FALSE)
 }
-
-
-# pp_check_refit <- function(object, n = 1, ...) { # nocov start
-#   message("Refitting model using y = yrep...\n")
-#   yrep <- as.vector(posterior_predict(object, draws = 1))
-#   mf <- model.frame(object)
-#   if (is(object, "polr")) fam <- "polr"
-#   else fam <- object$family$family
-#   
-#   if (!is.binomial(fam)) {
-#     if (is(object, "polr"))
-#       yrep <- factor(yrep, labels = levels(get_y(object)), ordered = TRUE)
-#     mf[[1]] <- yrep
-#     refit <- update(object, data = mf)
-#   }
-#   else {
-#     y <- get_y(object)
-#     if (NCOL(y) == 2) {
-#       new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
-#       mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1])
-#       refit <- update(object, formula = new_f, 
-#                       data = get_all_vars(new_f, data = mf2))
-#     } 
-#     else {
-#       if (NCOL(y) == 1 && !all(y %in% c(0, 1)))
-#         yrep <- yrep / object$weights
-#       mf[[1]] <- yrep
-#       refit <- update(object, data = mf)
-#     }
-#   }
-#   
-#   pp1 <- posterior_predict(object, draws = n)
-#   pp2 <- posterior_predict(refit, draws = n)
-#   if (is.binomial(fam)) {
-#     if (NCOL(y) == 2) {
-#       trials <- rowSums(y)
-#       pp1 <- sweep(pp1, 2, trials, "/")
-#       pp2 <- sweep(pp2, 2, trials, "/")
-#     }
-#   }
-#   varying <- list(1:ncol(pp1))
-#   pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
-#                  varying = varying)[, c("value", "id")]
-#   pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
-#                  varying = varying)[, c("value", "id")]
-#   dat <- cbind(rbind(pp1, pp2), 
-#                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
-#   
-#   defaults <- list(size = 0.2)
-#   geom_args <- set_geom_args(defaults, ...)
-#   geom_args$mapping <- aes_string(y = "..density..")
-#   clr_vals <- c("black", .PP_FILL)
-#   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
-#   graph <- base +
-#     do.call("geom_histogram", geom_args) + 
-#     scale_fill_manual("", values = clr_vals) +
-#     scale_color_manual("", values = clr_vals) + 
-#     facet_grid(model ~ id, scales = "fixed") + 
-#     xlab("yrep")
-#   thm <- pp_check_theme() %+replace%
-#     theme(strip.text = element_blank(), legend.position = "right")
-#   
-#   return(graph + thm)
-# } # nocov end

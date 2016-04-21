@@ -50,7 +50,7 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
 .pp_data_mer <- function(object, newdata, re.form, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
   z <- .pp_data_mer_z(object, newdata, re.form, ...)
-  offset <- model.offset(model.frame.(object))
+  offset <- model.offset(model.frame(object))
   if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
     offset <- eval(object$call$offset, newdata)
   }

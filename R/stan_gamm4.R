@@ -89,10 +89,10 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   weights <- validate_weights(weights)
   if (TRUE) {
     offset <- double(0)  
-  } else { # ncov start
+  } else { # nocov start
     tmp <- eval(attr(glmod$fr, "offset"), parent.frame(1L))
     offset <- tmp %ORifNULL% double(0)
-  } # ncov end
+  } # nocov end
   if (is.null(prior)) 
     prior <- list()
   if (is.null(prior_intercept)) 

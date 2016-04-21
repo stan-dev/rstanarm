@@ -126,8 +126,9 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 
 #' @rdname stanreg-methods
 #' @export
-#' @param newdata For \code{log_lik}, an optional data frame of new data (e.g.
-#'   holdout data). See \code{\link{posterior_predict}}.
+#' @param newdata For \code{log_lik}, an optional data frame of new data (e.g. 
+#'   holdout data) to use when evaluating the log-likelihood. See the 
+#'   description of \code{newdata} for \code{\link{posterior_predict}}.
 log_lik.stanreg <- function(object, newdata = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")

@@ -449,7 +449,7 @@ pad_reTrms <- function(Z, cnms, flist) {
   p <- sapply(cnms, FUN = length)
   last <- cumsum(l * p)
   for (i in attr(flist, "assign")) {
-    levels(flist[[i]]) <- c(levels(flist[[i]]), 
+    levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
   n <- nrow(Z)
