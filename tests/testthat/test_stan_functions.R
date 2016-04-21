@@ -46,7 +46,6 @@ library(rstan)
 Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
-  # mc <- scan(file = f, what = "character", sep = "\n", quiet = TRUE)
   mc <- readLines(f)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
@@ -55,7 +54,6 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-print(MODELS_HOME)
 functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
                                    "common_functions.stan")), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
@@ -323,7 +321,8 @@ test_that("pw_polr returns expected results", {
                         start = c(beta, zeta), control = list(maxit = 0))
     Pr <- fitted(model)
     Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
-    expect_equal(log(Pr), pw_polr(y, eta, zeta, i, 1), info = links[i])
+    expect_equal(log(Pr), pw_polr(y, eta, zeta, i, 1), info = links[i], 
+                 tolerance = 1e-7)
   }
 })
 rdirichlet <- function(n, alpha) {

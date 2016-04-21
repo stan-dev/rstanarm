@@ -64,6 +64,12 @@ test_that("stan_lm doesn't break with vb algorithms", {
 })
 
 
+test_that("stan_lm throws error if glmer syntax used", {
+  expect_error(stan_lm(mpg ~ wt + (1|cyl), data = mtcars, 
+                       prior = R2(0.5, "mean")), 
+               regexp = "model formula not allowed")
+})
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",

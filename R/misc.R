@@ -82,7 +82,7 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
@@ -281,6 +281,18 @@ validate_family <- function(f) {
   return(f)
 }
 
+
+# Check for glmer syntax in formulas for non-glmer models
+#
+# @param f The model \code{formula}.
+# @return Nothing is returned but an error might be thrown
+validate_glm_formula <- function(f) {
+  if (any(grepl("\\|", f)))
+    stop("Using '|' in model formula not allowed. ",
+         "Maybe you meant to use 'stan_(g)lmer'?", call. = FALSE)
+}
+
+
 # Check if any variables in a model frame are constants
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
@@ -434,9 +446,10 @@ get_prior_info <- function(user_call, function_formals) {
   priors <- list()
   for (j in 1:(U + D)) {
     if (j <= U) {
-      priors[[user[j]]] <- eval(user_call[[user[j]]])
+      priors[[user[j]]] <- try(eval(user_call[[user[j]]]), silent = TRUE)
     } else {
-      priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+      priors[[default[j-U]]] <- try(eval(function_formals[[default[j-U]]]), 
+                                    silent = TRUE)
     } 
   }
   

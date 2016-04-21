@@ -30,9 +30,10 @@ SW <- suppressWarnings
 
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
-check_for_error <- function(fit) {
+check_for_error <- function(fit, data = NULL) {
   nsims <- nrow(as.data.frame(fit))
-  mf <- model.frame(fit)
+  mf <- if (!is.null(data)) 
+    data else model.frame(fit)
   if (identical(deparse(substitute(fit)), "example_model"))
     mf <- lme4::cbpp
   
@@ -71,8 +72,17 @@ test_that("compatible with gaussian glm", {
   fit <- SW(stan_glm(mpg ~ wt, data = mtcars, 
                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
-  fit_off <- SW(update(fit, offset = runif(nrow(mtcars))))
-  check_for_error(fit)
+})
+test_that("compatible with glm with offset", {
+  mtcars2 <- mtcars
+  mtcars2$offs <- runif(nrow(mtcars))
+  fit <- SW(stan_glm(mpg ~ wt, data = mtcars2, offset = offs,
+                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
+                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  
+  check_for_error(fit, data = mtcars2)
+  check_for_error(fit2, data = mtcars2)
 })
 test_that("compatible with student t glm", {
   fit <- SW(stan_glm(mpg ~ wt, data = mtcars, family = t_family(),

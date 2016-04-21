@@ -166,7 +166,8 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
-  
+  if (is(object, "polr") && !is_scobit(object))
+    ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   return(ytilde)
 }
 
@@ -326,9 +327,9 @@ pp_b_ord <- function(b, Z_names) {
   ord <- sapply(Z_names, FUN = function(x) {
     m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
     len <- length(m)
-    if (len == 1)
+    if (len == 1) 
       return(m)
-    if (len > 1)
+    if (len > 1) 
       stop("multiple matches bug")
     m <- grep(paste0("b[", sub(" (.*):.*$", " \\1:_NEW_\\1", x), "]"), 
               colnames(b), fixed = TRUE)

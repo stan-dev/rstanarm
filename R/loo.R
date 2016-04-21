@@ -34,16 +34,16 @@
 #'   structure of these objects.
 #'   
 #' @details 
-#' The LOO Information Criterion (LOOIC) has the same purpose as the Akaike
-#' Information Criterion (AIC) that is used by frequentists. Both are intended
-#' to estimate the expected log predicted density (ELPD) for a new dataset.
-#' However, the AIC ignores priors and assumes that the posterior distribution
-#' is multivariate normal, whereas the functions from the
-#' \pkg{\link[=loo-package]{loo}} package do not make this distributional
-#' assumption and integrate over uncertainty in the parameters. This only
+#' The LOO Information Criterion (LOOIC) has the same purpose as the Akaike 
+#' Information Criterion (AIC) that is used by frequentists. Both are intended 
+#' to estimate the expected log predictive density (ELPD) for a new dataset. 
+#' However, the AIC ignores priors and assumes that the posterior distribution 
+#' is multivariate normal, whereas the functions from the 
+#' \pkg{\link[=loo-package]{loo}} package do not make this distributional 
+#' assumption and integrate over uncertainty in the parameters. This only 
 #' assumes that any one observation can be omitted without having a major effect
-#' on the posterior distribution, which can be judged using the diagnostic plot
-#' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the
+#' on the posterior distribution, which can be judged using the diagnostic plot 
+#' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the 
 #' rstanarm Package} vignette has an example of this entire process.
 #'
 #' @seealso

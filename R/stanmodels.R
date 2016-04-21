@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # This file is only intended to be used during the installation process
-# ncov start
+# nocov start
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
@@ -37,4 +37,4 @@ stanmodels <- sapply(stan_files, function(f) {
 )
 names(stanmodels) <- sub("\\.stan$", "", basename(names(stanmodels)))
 rm(MODELS_HOME)
-# ncov end
+# nocov end

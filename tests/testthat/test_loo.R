@@ -66,6 +66,7 @@ test_that("loo/waic for stan_glm works", {
   # t
   fit_t <- update(fit_gaus, family = t_family())
   expect_identical_loo(fit_t)
+  expect_identical(ll_fun(fit_t), rstanarm:::.ll_t_family_i)
   
   # binomial
   dat <- data.frame(ldose = rep(0:5, 2), 

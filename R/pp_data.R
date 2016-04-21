@@ -36,10 +36,11 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
   offset <- rep(0, nrow(x))
-  if (!is.null(off.num <- attr(tt, "offset"))) 
+  if (!is.null(off.num <- attr(tt, "offset"))) {
     for (i in off.num) {
       offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
     }
+  }
   if (!is.null(object$call$offset)) 
     offset <- offset + eval(object$call$offset, newdata)
   nlist(x, offset)
@@ -49,7 +50,11 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
 .pp_data_mer <- function(object, newdata, re.form, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
   z <- .pp_data_mer_z(object, newdata, re.form, ...)
-  return(nlist(x, offset = object$offset, Zt = z$Zt, Z_names = z$Z_names))
+  offset <- model.offset(model.frame(object))
+  if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
+    offset <- eval(object$call$offset, newdata)
+  }
+  return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
 # the functions below are heavily based on a combination of 

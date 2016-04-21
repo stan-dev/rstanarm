@@ -19,7 +19,7 @@ functions {
                         real SSR, real sigma, int N) {
     increment_log_prob( -0.5 * (dot_self(theta - b) + 
       N * square(intercept - ybar) + SSR) / 
-      square(sigma) - // 0.91... is log(sqrt(2 * pi()))
+      square(sigma) -// 0.91... is log(sqrt(2 * pi()))
       N * (log(sigma) + 0.91893853320467267) );
     return get_lp();
   }
@@ -77,7 +77,7 @@ transformed parameters {
       theta[j] <- z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
                   sqrt_Nm1[j] * Delta_y;
     }
-    else theta[j][1] <-  sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    else theta[j][1] <- z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     
     sigma[j] <- Delta_y * sqrt(1 - R2[j]); # standard deviation of errors
     
@@ -117,8 +117,8 @@ generated quantities {
   vector[K] beta[J];
   for (j in 1:J) {
     if (has_intercept == 1)
-      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j]);
-    else mean_PPD[j] <- normal_rng(shift[j], sigma[j]);
+      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j] * sqrt_inv_N[j]);
+    else mean_PPD[j] <- normal_rng(shift[j], sigma[j] * sqrt_inv_N[j]);
     beta[j] <- R_inv[j] * theta[j];
   }
 }
