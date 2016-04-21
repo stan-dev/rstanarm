@@ -22,7 +22,7 @@ library(rstanarm)
 library(lme4)
 SEED <- 123
 set.seed(SEED)
-ITER <- 10
+ITER <- 100
 CHAINS <- 2
 REFRESH <- 0
 
@@ -86,6 +86,7 @@ test_that("compatible with gaussian glm", {
   fit <- SW(stan_glm(mpg ~ wt, data = mtcars, 
                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 test_that("compatible with glm with offset", {
   mtcars2 <- mtcars
@@ -97,16 +98,21 @@ test_that("compatible with glm with offset", {
   
   check_for_error(fit, data = mtcars2)
   check_for_error(fit2, data = mtcars2)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fit2)
 })
 test_that("compatible with poisson & negbin glm", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
   fit <- SW(stan_glm(counts ~ outcome + treatment, family = poisson(), 
-                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                     iter = ITER, chains = CHAINS, seed = SEED, 
+                     refresh = REFRESH))
   fitnb <- SW(update(fit, family = neg_binomial_2))
   check_for_error(fit)
   check_for_error(fitnb)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fitnb)
 })
 test_that("posterior_predict compatible with gamma & inverse.gaussian glm", {
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
@@ -114,27 +120,28 @@ test_that("posterior_predict compatible with gamma & inverse.gaussian glm", {
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit <- SW(stan_glm(lot1 ~ log_u, data = clotting, family = Gamma, 
                   chains = CHAINS, iter = ITER,  seed = SEED, refresh = REFRESH))
-  check_for_error(fit)
-  
-  # inverse gaussian
   fit_igaus <- SW(update(fit, family = inverse.gaussian))
+  
+  check_for_error(fit)
   check_for_error(fit_igaus)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fit_igaus)
 })
 
 context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
   fit <- SW(stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(location = 0.4),
                    iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
-  check_for_error(fit)
   
   esoph$tobgp_fac <- factor(esoph$tobgp == "30+")
   fit_binary <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
                              data = esoph, prior = R2(location = 0.4), 
                              chains = CHAINS, iter = ITER, 
                              seed = SEED, refresh = REFRESH))
-  check_for_error(fit_binary)
-  
   fit_binary_scobit <- SW(update(fit_binary, shape = 2, rate = 2))
+  
+  check_for_error(fit)
+  check_for_error(fit_binary)
   check_for_error(fit_binary_scobit)
 })
 
@@ -144,9 +151,11 @@ test_that("compatible with stan_lmer", {
                       prior = normal(0,1), iter = ITER, chains = CHAINS,
                       seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
+  expect_linpred_equal(example_model)
   predprob <- posterior_linpred(example_model, transform = TRUE)
   expect_true(all(predprob > 0) && all(predprob < 1))
 })
