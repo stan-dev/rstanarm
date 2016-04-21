@@ -274,6 +274,18 @@ validate_family <- function(f) {
   return(f)
 }
 
+
+# Check for glmer syntax in formulas for non-glmer models
+#
+# @param f The model \code{formula}.
+# @return Nothing is returned but an error might be thrown
+validate_glm_formula <- function(f) {
+  if (any(grepl("\\|", f)))
+    stop("Using '|' in model formula not allowed. ",
+         "Maybe you meant to use 'stan_(g)lmer'?", call. = FALSE)
+}
+
+
 # Check if any variables in a model frame are constants
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error

@@ -119,6 +119,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     adapt_delta = NULL) {
   
   algorithm <- match.arg(algorithm)
+  validate_glm_formula(formula)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")

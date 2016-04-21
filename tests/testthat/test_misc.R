@@ -145,6 +145,14 @@ test_that("validate_family works", {
   expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
 })
 
+test_that("validate_glm_formula works", {
+  validate_glm_formula <- rstanarm:::validate_glm_formula
+  expect_silent(validate_glm_formula(mpg ~ wt + cyl))
+  expect_error(validate_glm_formula(mpg ~ wt + (1|cyl)), "not allowed")
+  expect_error(validate_glm_formula(mpg ~ (1|cyl/gear)), "not allowed")
+})
+
+
 test_that("array1D_check works", {
   array1D_check <- rstanarm:::array1D_check
   y1 <- rnorm(10)

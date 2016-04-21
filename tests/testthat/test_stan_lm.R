@@ -68,6 +68,12 @@ test_that("stan_lm throws error if only intercept", {
                regexp = "not suitable for estimating a mean")
 })
 
+test_that("stan_lm throws error if glmer syntax used", {
+  expect_error(stan_lm(mpg ~ wt + (1|cyl), data = mtcars, 
+                       prior = R2(0.5, "mean")), 
+               regexp = "model formula not allowed")
+})
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
