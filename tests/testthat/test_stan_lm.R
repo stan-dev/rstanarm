@@ -23,7 +23,7 @@ SEED <- 123
 CHAINS <- 2
 ITER <- 400
 threshold <- 0.21
-REFRESH <- ITER
+REFRESH <- 0
 
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
@@ -66,6 +66,12 @@ test_that("stan_lm doesn't break with vb algorithms", {
 test_that("stan_lm throws error if only intercept", {
   expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)), 
                regexp = "not suitable for estimating a mean")
+})
+
+test_that("stan_lm throws error if N < K", {
+  # NOTE: remove this test once N < K is enabled
+  expect_error(stan_lm(mpg ~ ., data = mtcars[1:5, ], prior = R2(0.75)), 
+               regexp = "more predictors than data points is not yet enabled")
 })
 
 test_that("stan_lm throws error if glmer syntax used", {
