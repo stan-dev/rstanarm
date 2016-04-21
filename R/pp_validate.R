@@ -61,9 +61,12 @@
 #' grouping variable, etc.). See Cook, Gelman, and Rubin (2006) for more details
 #' on the validation procedure.
 #' 
-#' You may have to specify \code{init_r} as some number less than 2 when you 
-#' fit the \emph{original} model in order to make it through \code{nreps}
-#' replications without running into numerical difficulties.
+#' @note In order to make it through \code{nreps} replications without running 
+#'   into numerical difficulties you may have to restrict the range for randomly
+#'   generating initial values for parameters when you fit the \emph{original}
+#'   model. With any of \pkg{rstanarm}'s modeling functions this can be done by
+#'   specifying the optional argument \code{init_r} as some number less than the
+#'   default of \eqn{2}.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -72,13 +75,11 @@
 #' Cook, S., Gelman, A., and Rubin, D. 
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
-#' @importFrom ggplot2 aes geom_segment
 #' 
 #' @seealso 
 #' \code{\link{pp_check}} for graphical posterior predictive checks and 
 #' \code{\link{posterior_predict}} to draw from the posterior predictive 
 #' distribution.
-#' 
 #' 
 #' @examples 
 #' \dontrun{

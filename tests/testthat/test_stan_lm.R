@@ -64,6 +64,12 @@ test_that("stan_lm doesn't break with vb algorithms", {
 })
 
 
+test_that("stan_lm throws error if N < K", {
+  # NOTE: remove this test once N < K is enabled
+  expect_error(stan_lm(mpg ~ ., data = mtcars[1:5, ], prior = R2(0.75)), 
+               regexp = "more predictors than data points is not yet enabled")
+})
+
 test_that("stan_lm throws error if glmer syntax used", {
   expect_error(stan_lm(mpg ~ wt + (1|cyl), data = mtcars, 
                        prior = R2(0.5, "mean")), 
