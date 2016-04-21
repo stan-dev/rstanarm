@@ -29,6 +29,10 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   treatment <- gl(3,3)
   f <- as.formula(counts ~ outcome + treatment)
   
+  # error: glmer syntax
+  expect_error(stan_glm(counts ~ treatment + (1|outcome)), 
+               regexp = "model formula not allowed")
+  
   # error: empty model
   expect_error(stan_glm(counts ~ 0), 
                regexp = "No intercept or predictors specified")
