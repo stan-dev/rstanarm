@@ -77,7 +77,7 @@ transformed parameters {
       theta[j] <- z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
                   sqrt_Nm1[j] * Delta_y;
     }
-    else theta[j][1] <-  sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    else theta[j][1] <- z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     
     sigma[j] <- Delta_y * sqrt(1 - R2[j]); # standard deviation of errors
     
