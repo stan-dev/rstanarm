@@ -152,6 +152,20 @@ test_that("compatible with stan_polr", {
   check_for_error(fit_2level_scobit)
 })
 
+context("posterior_predict (stan_gamm4)")
+test_that("stan_gamm4 returns expected result for sleepstudy example", {
+  fit <- SW(stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy,
+                       random = ~(1|Subject), chains = CHAINS, iter = ITER, 
+                       seed = SEED, refresh = REFRESH))
+  expect_silent(yrep1 <- posterior_predict(fit))
+  expect_equal(dim(yrep1), c(nrow(as.data.frame(fit)), nobs(fit)))
+  expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
+  expect_equal(dim(yrep2), c(1, nobs(fit)))
+  expect_error(posterior_predict(fit, newdata = model.frame(fit$gam)), 
+               "not yet supported for models estimated via 'stan_gamm4'")
+})
+
+
 context("posterior_predict (stan_(g)lmer)")
 test_that("compatible with stan_lmer", {
   fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 

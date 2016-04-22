@@ -119,7 +119,5 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   out <- stanreg(fit)
   # FIXME: replace guts of gam with point estimates from stanfit
   out$gam <- result$gam
-  class(out) <- c(class(out), "lmerMod")
-  
-  return(out)
+  structure(out, class = c(class(out), "lmerMod"))
 }
