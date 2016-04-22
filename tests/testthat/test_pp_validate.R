@@ -19,7 +19,6 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
-REFRESH <- 0
 SEED <- 1234
 set.seed(SEED)
 
@@ -33,7 +32,7 @@ test_that("pp_validate throws correct errors", {
 })
 
 test_that("pp_validate runs for very quick example", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED, refresh = REFRESH, 
+  fit <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED, refresh = 0, 
                   init_r = 0.1, iter = 500)
   expect_output(gg <- pp_validate(fit, nreps = 2, seed = SEED), "Elapsed Time")
 })
