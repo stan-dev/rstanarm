@@ -143,8 +143,6 @@ log_lik.stanreg <- function(object, newdata = NULL, ...) {
 #' @rdname stanreg-methods
 #' @export 
 nobs.stanreg <- function(object, ...) {
-  if ("gam" %in% names(object))
-    object <- object[["gam"]]
   nrow(model.frame(object))
 }
 
