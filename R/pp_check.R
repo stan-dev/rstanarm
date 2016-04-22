@@ -125,9 +125,7 @@
 #' 
 pp_check <- function(object, check = "distributions", nreps = NULL, 
                      seed = NULL, overlay = TRUE, test = "mean", ...) {
-  if (!is.stanreg(object)) 
-    stop(deparse(substitute(object)), " is not a stanreg object", 
-         call. = FALSE)
+  validate_stanreg_object(object)
   if (used.optimizing(object)) 
     STOP_not_optimizing("pp_check")
   

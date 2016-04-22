@@ -97,6 +97,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     return(quants)
   }
   
+  validate_stanreg_object(object)
   if (!used.sampling(object))
     STOP_sampling_only("pp_validate")
   if (nreps < 2)

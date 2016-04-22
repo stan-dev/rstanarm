@@ -60,6 +60,34 @@ check_for_error <- function(fit, data = NULL) {
                regexep = "posterior sample size is only")
 }
 
+
+# Error messages ----------------------------------------------------------
+context("posterior_predict (error messages)")
+test_that("posterior_predict errors if not a stanreg object", {
+  expect_error(posterior_predict(example_model$stanfit), "not a stanreg object")
+  expect_error(posterior_predict(summary(example_model)), "not a stanreg object")
+})
+test_that("posterior_predict errors if model fit using optimization", {
+  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
+                   seed = SEED)
+  expect_error(posterior_predict(fit1), regexp = "optimizing")
+})
+
+
+
+# VB ----------------------------------------------------------------------
+context("posterior_predict ok for vb")
+test_that("errors for optimizing and silent for vb", {
+  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
+                   seed = SEED)
+  fit2 <- update(fit1, algorithm = "fullrank")
+  expect_silent(posterior_predict(fit1))
+  expect_silent(posterior_predict(fit2))
+})
+
+
+
+# MCMC --------------------------------------------------------------------
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
   fit <- SW(stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
@@ -150,18 +178,7 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
 })
 
 
-context("posterior_predict (optimizing and vb)")
-test_that("errors for optimizing and silent for vb", {
-  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
-                   seed = SEED)
-  fit2 <- update(fit1, algorithm = "meanfield")
-  fit3 <- update(fit1, algorithm = "fullrank")
-  expect_error(posterior_predict(fit1), regexp = "optimizing")
-  expect_silent(posterior_predict(fit2))
-  expect_silent(posterior_predict(fit3))
-})
-
-
+# compare to lme4 ---------------------------------------------------------
 context("posterior_predict (compare to lme4)")
 test_that("posterior_predict close to predict.merMod for gaussian", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
@@ -290,6 +307,7 @@ test_that("lme4 tests work similarly", {
 })
 
 
+# helper functions --------------------------------------------------------
 context("posterior_predict helper functions")
 test_that("pp_binomial_trials works", {
   ppbt <- rstanarm:::pp_binomial_trials

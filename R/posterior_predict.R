@@ -123,8 +123,7 @@
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
                               re.form = NULL, fun = NULL, seed = NULL, ...) {
-  if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.")
+  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
   if (!is.null(seed)) 

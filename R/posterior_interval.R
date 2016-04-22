@@ -93,9 +93,7 @@
 #' 
 posterior_interval <- function(object, prob = 0.9, type = "central",
                                pars = NULL, regex_pars = NULL, ...) {
-  if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.", 
-         call. = FALSE)
+  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_interval")
   if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
