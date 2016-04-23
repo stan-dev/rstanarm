@@ -42,6 +42,8 @@
 #' @seealso \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' \dontrun{
+#' if (!exists("example_model")) example(example_model)
 #' # Extract posterior sample after MCMC
 #' draws <- as.matrix(example_model)
 #' 
@@ -50,7 +52,6 @@
 #' print(median(draws[, "(Intercept)"]))
 #' print(example_model$coefficients[["(Intercept)"]])
 #' 
-#' \dontrun{
 #' # Extract draws from asymptotic Gaussian sampling distribution 
 #' # after optimization
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")

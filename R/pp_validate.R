@@ -83,6 +83,7 @@
 #' 
 #' @examples 
 #' \dontrun{
+#' if (!exists("example_model")) example(example_model) 
 #' pp_validate(example_model)
 #' }
 #' 

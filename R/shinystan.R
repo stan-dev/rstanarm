@@ -32,6 +32,7 @@
 #'   
 #' @examples
 #' \dontrun{
+#' if (!exists("example_model")) example(example_model) 
 #' # Launch the ShinyStan app (saving resulting shinystan object as sso)
 #' sso <- launch_shinystan(example_model)
 #' }

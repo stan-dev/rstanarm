@@ -81,6 +81,7 @@
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples
+#' if (!exists("example_model")) example(example_model)
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
 #' 
