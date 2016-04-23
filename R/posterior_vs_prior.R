@@ -47,17 +47,15 @@
 #' 
 #' # assign to object and customize with functions from ggplot2
 #' (gg <- posterior_vs_prior(example_model, pars = c("beta", "varying"), prob = 0.8))
-#' gg + 
-#'  ggplot2::scale_color_brewer() + 
-#'  ggplot2::theme(panel.background = ggplot2::element_rect(fill = "gray30"))
 #' 
+#' gg + 
 #'  ggplot2::geom_hline(yintercept = 0, size = 0.3, linetype = 3) + 
 #'  ggplot2::coord_flip() + 
 #'  ggplot2::ggtitle("Comparing the prior and posterior")
+#'  
 #' gg + 
-#'  ggplot2::theme(panel.background = element_rect(fill = "gray30"), 
-#'                 axis.text.x = element_blank())
-#'                 
+#'  ggplot2::scale_color_brewer() + 
+#'  ggplot2::theme(panel.background = ggplot2::element_rect(fill = "gray30"))
 #'                 
 #' # compare very wide and very narrow priors using roaches example
 #' # (see help(roaches, "rstanarm") for info on the dataset)
