@@ -32,7 +32,8 @@
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
 #'   
-#' @examples 
+#' @examples
+#' if (!exists("example_model")) example(example_model)
 #' # display non-varying (i.e. not group-level) coefficients
 #' posterior_vs_prior(example_model, pars = "beta")
 #' 

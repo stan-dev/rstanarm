@@ -51,6 +51,7 @@
 #'   
 #' @examples
 #' # Use rstanarm example model
+#' if (!exists("example_model")) example(example_model)
 #' fit <- example_model
 #' 
 #' # Intervals and point estimates
@@ -196,7 +197,8 @@ stan_plot_opt <- function(x, pars = NULL, varnames = NULL, ...) {
 #' @description See \code{\link[rstan]{pairs.stanfit}} for details.
 #' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
 #' @importFrom graphics pairs
-#' @examples 
+#' @examples
+#' if (!exists("example_model")) example(example_model)
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
 pairs.stanreg <- function(x, ...) {

@@ -192,6 +192,7 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' if (!exists("example_model")) example(example_model) 
 #' summary(example_model, probs = c(0.1, 0.9))
 #' 
 #' # These produce the same output for this example, 

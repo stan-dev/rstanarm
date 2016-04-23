@@ -87,6 +87,7 @@
 #' @template reference-morey
 #' 
 #' @examples 
+#' if (!exists("example_model")) example(example_model)
 #' posterior_interval(example_model)
 #' posterior_interval(example_model, regex_pars = "herd")
 #' posterior_interval(example_model, pars = "period2", prob = 0.5)

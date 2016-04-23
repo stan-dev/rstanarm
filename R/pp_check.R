@@ -85,6 +85,7 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples 
+#' if (!exists("example_model")) example(example_model)
 #' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
