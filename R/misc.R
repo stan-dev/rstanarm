@@ -128,7 +128,7 @@ used.variational <- function(x) {
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
-  check1 <- is(x, "lmerMod")
+  check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
     stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
