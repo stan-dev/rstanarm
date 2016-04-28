@@ -31,7 +31,8 @@
 #' @param nreps The number of replications to be performed. \code{nreps} must be
 #'   sufficiently large so that the statistics described below in Details are 
 #'   meaningful. Depending on the model and the size of the data, running 
-#'   \code{pp_validate} may be slow.
+#'   \code{pp_validate} may be slow. See also the Note section below for advice
+#'   on avoiding numerical issues.
 #' @param seed A seed passed to Stan to use when refitting the model.
 #' @param ... Arguments (e.g. \code{size}) passed to
 #'   \code{\link[ggplot2]{geom_point}} to control the appearance of the plot.

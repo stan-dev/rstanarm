@@ -55,16 +55,16 @@
 #'   \eqn{yrep}, which can be done for many but not all \pkg{rstanarm} models.
 #'   }
 #'   \item{Use a shinystan object:}{
-#'   Even if you don't want to prevent ShinyStan
-#'   from preparing graphical posterior predictive checks, first creating a
-#'   shinystan object using \code{\link[shinystan]{as.shinystan}} can reduce
-#'   \emph{future} launch times. That is, \code{launch_shinystan(sso)} will be
-#'   faster than \code{launch_shinystan(fit)}, where \code{sso} is a shinystan
-#'   object and \code{fit} is a stanreg object. It still may take some time for 
-#'   \code{as.shinystan} to create \code{sso} but each time you subsequently 
-#'   call \code{launch_shinystan(sso)} it will reuse \code{sso} instead of 
-#'   internally creating a shinystan object every time. See the Examples
-#'   section below.}
+#'   Even if you don't want to prevent ShinyStan from preparing graphical
+#'   posterior predictive checks, first creating a shinystan object using
+#'   \code{\link[shinystan]{as.shinystan}} can reduce \emph{future} launch
+#'   times. That is, \code{launch_shinystan(sso)} will be faster than
+#'   \code{launch_shinystan(fit)}, where \code{sso} is a shinystan object and
+#'   \code{fit} is a stanreg object. It still may take some time for 
+#'   \code{as.shinystan} to create \code{sso} initially, but each time you
+#'   subsequently call \code{launch_shinystan(sso)} it will reuse \code{sso}
+#'   instead of internally creating a shinystan object every time. See the
+#'   Examples section below.}
 #' }
 #'   
 #' @examples
