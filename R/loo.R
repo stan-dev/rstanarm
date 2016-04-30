@@ -5,23 +5,23 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Leave-one-out cross-validation (LOO)
-#' 
+#'
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC) 
-#' using the \pkg{\link[=loo-package]{loo}} package. Compare two or more models 
+#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
+#' using the \pkg{\link[=loo-package]{loo}} package. Compare two or more models
 #' using the \code{\link[loo]{compare}} function.
-#' 
+#'
 #' @aliases loo waic compare
 #'
 #' @export
@@ -29,7 +29,7 @@
 #' @template args-stanreg-object
 #' @template reference-loo
 #' @inheritParams loo::loo
-#' @return An object of class 'loo'. See the 'Value' section in 
+#' @return An object of class 'loo'. See the 'Value' section in
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
 #'   structure of these objects.
 #'   
@@ -45,51 +45,51 @@
 #' on the posterior distribution, which can be judged using the diagnostic plot 
 #' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the 
 #' rstanarm Package} vignette has an example of this entire process.
-#'   
-#' @seealso 
+#'
+#' @seealso
 #' \code{\link[loo]{compare}} for comparing two or more models on LOO and WAIC.
-#' 
-#' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
-#' for details on the computations implemented by the \pkg{loo} package and the 
-#' interpretation of the Pareto \eqn{k} estimates displayed when using the 
+#'
+#' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section)
+#' for details on the computations implemented by the \pkg{loo} package and the
+#' interpretation of the Pareto \eqn{k} estimates displayed when using the
 #' \code{\link{plot.loo}} method.
-#'   
-#' @examples 
+#'
+#' @examples
 #' \dontrun{
 #' SEED <- 42024
 #' set.seed(SEED)
-#' 
+#'
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
 #' fit2 <- update(fit1, formula = . ~ . + cyl)
 #' (loo1 <- loo(fit1))
 #' loo2 <- loo(fit2)
 #' compare(loo1, loo2)
 #' plot(loo2)
-#' 
-#' 
+#'
+#'
 #' # dataset description at help("lalonde", package = "arm")
-#' data(lalonde, package = "arm") 
+#' data(lalonde, package = "arm")
 #' t7 <- student_t(df = 7) # prior for coefficients
-#' 
-#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
+#'
+#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married +
 #'    nodegr + u74 + u75
-#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
+#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"),
 #'                      prior = t7, cores = 4, seed = SEED)
-#'                  
-#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
-#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
+#'
+#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp +
+#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75
 #' lalonde2 <- update(lalonde1, formula = f2)
-#' 
+#'
 #' (loo_lalonde1 <- loo(lalonde1))
 #' (loo_lalonde2 <- loo(lalonde2))
 #' plot(loo_lalonde2, label_points = TRUE)
 #' compare(loo_lalonde1, loo_lalonde2)
 #' }
-#' 
+#'
 #' @importFrom loo loo loo.function compare
-#' 
+#'
 loo.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) 
+  if (!used.sampling(x))
     STOP_sampling_only("loo")
   loo.function(ll_fun(x), args = ll_args(x), ...)
 }
@@ -98,9 +98,9 @@ loo.stanreg <- function(x, ...) {
 #' @export
 #' @importFrom loo waic waic.function
 #' @note The \code{...} is ignored for \code{waic}.
-#' 
+#'
 waic.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) 
+  if (!used.sampling(x))
     STOP_sampling_only("waic")
   waic.function(ll_fun(x), args = ll_args(x))
 }
@@ -144,20 +144,24 @@ ll_args <- function(object, newdata = NULL) {
         y <- y[, 1L]
       } else {
         trials <- 1
-        if (is.factor(y)) 
+        if (is.factor(y))
           y <- fac2bin(y)
         stopifnot(all(y %in% c(0, 1)))
       }
       data <- data.frame(y, trials, x)
     }
     draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (is.gaussian(fname)) 
+    if (is.gaussian(fname))
       draws$sigma <- stanmat[, "sigma"]
-    if (is.gamma(fname)) 
+    if (is.t(fname)) {
+      draws$scale <- stanmat[, "sigma"]
+      draws$df <- stanmat[, "df"]
+    }
+    if (is.gamma(fname))
       draws$shape <- stanmat[, "shape"]
-    if (is.ig(fname)) 
+    if (is.ig(fname))
       draws$lambda <- stanmat[, "lambda"]
-    if (is.nb(fname)) 
+    if (is.nb(fname))
       draws$size <- stanmat[,"overdispersion"]
     
   } else {
@@ -176,11 +180,11 @@ ll_args <- function(object, newdata = NULL) {
       draws$f <- object$method
     }
   }
-  
+
   data$offset <- object$offset
-  if (!all(object$weights == 1)) 
+  if (!all(object$weights == 1))
     data$weights <- object$weights
-  
+
   if (is.mer(object)) {
     b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
     if (has_newdata) {
@@ -197,7 +201,7 @@ ll_args <- function(object, newdata = NULL) {
     data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   }
-  
+
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
@@ -230,12 +234,17 @@ ll_args <- function(object, newdata = NULL) {
     val
   } else {
     val * w
-  } 
+  }
 }
 
 # log-likelihood functions
 .ll_gaussian_i <- function(i, data, draws) {
   val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_t_family_i <- function(i, data, draws) {
+  x <- (data$y - .mu(data, draws)) / draws$scale
+  val <- dt(x, df = draws$df, log = TRUE) - log(draws$scale)
   .weighted(val, data$weights)
 }
 .ll_binomial_i <- function(i, data, draws) {
@@ -251,15 +260,15 @@ ll_args <- function(object, newdata = NULL) {
   .weighted(val, data$weights)
 }
 .ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y, shape = draws$shape, 
+  val <- dgamma(data$y, shape = draws$shape,
                 rate = draws$shape / .mu(data,draws), log = TRUE)
   .weighted(val, data$weights)
 }
 .ll_inverse.gaussian_i <- function(i, data, draws) {
   mu <- .mu(data, draws)
-  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
+  val <- 0.5 * log(draws$lambda / (2 * pi)) -
          1.5 * log(data$y) -
-         0.5 * draws$lambda * (data$y - mu)^2 / 
+         0.5 * draws$lambda * (data$y - mu)^2 /
                         (data$y * mu^2)
   .weighted(val, data$weights)
 }
@@ -275,7 +284,7 @@ ll_args <- function(object, newdata = NULL) {
       } else if (y_i == J) {
         val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
       } else {
-        val <- log(linkinv(draws$zeta[, y_i] - eta) - 
+        val <- log(linkinv(draws$zeta[, y_i] - eta) -
                      linkinv(draws$zeta[, y_i - 1L] - eta))
       }
   } else {

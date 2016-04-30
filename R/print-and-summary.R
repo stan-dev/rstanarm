@@ -75,46 +75,13 @@ print.stanreg <- function(x, digits = 1, ...) {
   print(x$call)
   cat("\nEstimates:\n")
   
-  mer <- is.mer(x)
-  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
-  if (!used.optimizing(x)) {
-    mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
-    nms <- setdiff(rownames(x$stan_summary), "log-posterior")
-    if (mer) 
-      nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
-    if (ord) {
-      cut_nms <- grep("|", nms, fixed = TRUE, value = TRUE)
-      nms <- setdiff(nms, cut_nms)
-      cut_mat <- mat[, cut_nms, drop = FALSE]
-      cut_estimates <- .median_and_madsd(cut_mat)
-    }
-    ppd_nms <- grep("^mean_PPD", nms, value = TRUE)
-    nms <- setdiff(nms, ppd_nms)
-    coef_mat <- mat[, nms, drop = FALSE]
-    ppd_mat <- mat[, ppd_nms, drop = FALSE]
-    estimates <- .median_and_madsd(coef_mat)
-    ppd_estimates <- .median_and_madsd(ppd_mat)
-    
-    .printfr(estimates, digits, ...)
-    if (ord) {
-      cat("\nCutpoints:\n")
-      .printfr(cut_estimates, digits, ...)
-    }
-    if (mer) {
-      cat("\nError terms:\n")
-      print(VarCorr(x), digits = digits + 1, ...)
-      cat("Num. levels:", 
-          paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
-    }
-    cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
-    .printfr(ppd_estimates, digits, ...)
-    
-  } else { 
-    # used optimization
+  if (used.optimizing(x)) { 
     nms <- names(x$coefficients)
     famname <- family(x)$family
     if (is.gaussian(famname)) {
       nms <- c(nms, "sigma")
+    } else if (is.t(famname)) {
+      nms <- c(nms, "sigma", "df")
     } else if (is.gamma(famname)) {
       nms <- c(nms, "shape")
     } else if (is.ig(famname)) {
@@ -125,7 +92,41 @@ print.stanreg <- function(x, digits = 1, ...) {
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
     .printfr(estimates, digits, ...)
+    return(invisible(x))
   }
+  
+  mer <- is.mer(x)
+  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
+  mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
+  nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+  if (mer) 
+    nms <- setdiff(nms, b_names(nms, value = TRUE))
+  if (ord) {
+    cut_nms <- grep("|", nms, fixed = TRUE, value = TRUE)
+    nms <- setdiff(nms, cut_nms)
+    cut_mat <- mat[, cut_nms, drop = FALSE]
+    cut_estimates <- .median_and_madsd(cut_mat)
+  }
+  ppd_nms <- grep("^mean_PPD", nms, value = TRUE)
+  nms <- setdiff(nms, ppd_nms)
+  coef_mat <- mat[, nms, drop = FALSE]
+  ppd_mat <- mat[, ppd_nms, drop = FALSE]
+  estimates <- .median_and_madsd(coef_mat)
+  ppd_estimates <- .median_and_madsd(ppd_mat)
+  
+  .printfr(estimates, digits, ...)
+  if (ord) {
+    cat("\nCutpoints:\n")
+    .printfr(cut_estimates, digits, ...)
+  }
+  if (mer) {
+    cat("\nError terms:\n")
+    print(VarCorr(x), digits = digits + 1, ...)
+    cat("Num. levels:", 
+        paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
+  }
+  cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
+  .printfr(ppd_estimates, digits, ...)
   
   if (is(x, "aov")) {
     labels <- attributes(x$terms)$term.labels

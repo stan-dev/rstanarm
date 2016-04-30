@@ -123,13 +123,13 @@
 #'   attributable to the predictors in a linear model.
 #'  }
 #'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{
-#'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
-#'   or hierarhical shrinkage prior distributions for the coefficients and,
-#'   if applicable, a half-Cauchy prior for any nuisance parameter in a 
-#'   Generalized Linear Model (GLM) that is characterized by a 
-#'   \code{\link[stats]{family}} object. It is also possible to estimate a 
-#'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
-#'   function in the \pkg{MASS} package.
+#'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy or
+#'   hierarhical shrinkage prior distributions for the coefficients and, if
+#'   applicable, a half-Cauchy prior for any nuisance parameter in a Generalized
+#'   Linear Model (GLM) that is characterized by a \code{\link[stats]{family}}
+#'   object. It is also possible to estimate a negative bionomial model (in a
+#'   similar way to the \code{\link[MASS]{glm.nb}} function in the \pkg{MASS}
+#'   package) as well as models with t-distributed errors.
 #'  }
 #'  \item{\code{\link{stan_glmer}}, \code{stan_glmer.nb}, \code{stan_lmer}}{
 #'   Similar to the \code{\link[lme4]{glmer}}, \code{\link[lme4]{glmer.nb}} and 
@@ -139,7 +139,8 @@
 #'   a highly-structured but unknown covariance matrix (for which \pkg{rstanarm}
 #'   introduces an innovative prior distribution). MCMC provides more
 #'   appropriate estimates of uncertainty for models that consist of a mix of
-#'   common and group-specific parameters.
+#'   common and group-specific parameters. Like for \code{stan_glm}, it is 
+#'   also possible to specify a t-distribution for the errors.
 #'  }
 #'  \item{\code{\link{stan_gamm4}}}{
 #'   Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package, which 

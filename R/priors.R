@@ -15,12 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Prior distributions and options
+#' Prior distributions
 #' 
 #' These functions are used to specify the prior-related arguments of the
 #' various modeling functions in the \pkg{rstanarm} package.
 #' 
-#' @export 
 #' @name priors
 #' @param location Prior location. For \code{normal} and \code{student_t} 
 #'   (provided that \code{df > 1}) this is the prior mean. For \code{cauchy} 
@@ -227,9 +226,14 @@
 #' }
 #' @return A named list to be used internally by the \pkg{rstanarm} model
 #'   fitting functions.
-#' @seealso The various vignettes for the \pkg{rstanarm} package also discuss 
-#'   and demonstrate the use of some of the supported prior distributions.
+#'   
+#' @seealso 
+#' \code{\link{rstanarm_family}}, which allows the user to set the values of
+#' \code{\link{family}}-specific hyperparameters.
 #' 
+#' The various vignettes for the \pkg{rstanarm} package also discuss 
+#' and demonstrate the use of some of the supported prior distributions.
+#'   
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-bda
 #' 
@@ -245,10 +249,11 @@
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, prior_PD = TRUE,
+#' gfam <- rstanarm_family("gaussian", prior_scale_for_dispersion = 2)
+#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, 
+#'                            family = gfam, prior_PD = TRUE,
 #'                            prior = student_t(df = 4, 0, 2.5), 
-#'                            prior_intercept = cauchy(0,10), 
-#'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#'                            prior_intercept = cauchy(0,10))
 #' 
 #' \dontrun{
 #' # Can assign priors to names
@@ -289,9 +294,23 @@
 #' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
+NULL
+
+as.rstanarm_prior <- function(x) {
+  cl <- class(x)
+  cl2 <- if ("rstanarm_prior" %in% cl) cl else c(cl, "rstanarm_prior")
+  structure(x, class = cl2)
+}
+is.rstanarm_prior <- function(x) {
+  inherits(x, "rstanarm_prior")
+}
+
+#' @rdname priors
+#' @export
 normal <- function(location = 0, scale = NULL) {
   validate_parameter_value(scale)
-  nlist(dist = "normal", df = NA, location, scale)
+  prior <- nlist(dist = "normal", df = NA, location, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -299,20 +318,23 @@ normal <- function(location = 0, scale = NULL) {
 student_t <- function(df = 1, location = 0, scale = NULL) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
-  nlist(dist = "t", df, location, scale)
+  prior <- nlist(dist = "t", df, location, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 cauchy <- function(location = 0, scale = NULL) {
-  student_t(df = 1, location = location, scale = scale)
+  prior <- student_t(df = 1, location = location, scale = scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 hs <- function(df = 3) {
   validate_parameter_value(df)
-  nlist(dist = "hs", df, location = 0, scale = 1)
+  prior <- nlist(dist = "hs", df, location = 0, scale = 1)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -321,7 +343,8 @@ hs_plus <- function(df1 = 3, df2 = 3) {
   validate_parameter_value(df1)
   validate_parameter_value(df2)
   # scale gets used as a second df hyperparameter
-  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+  prior <- nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
@@ -341,57 +364,37 @@ decov <- function(regularization = 1, concentration = 1,
   validate_parameter_value(concentration)
   validate_parameter_value(shape)
   validate_parameter_value(scale)
-  nlist(dist = "decov", regularization, concentration, shape, scale)
+  prior <- nlist(dist = "decov", regularization, concentration, shape, scale)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 dirichlet <- function(concentration = 1) {
   validate_parameter_value(concentration)
-  nlist(dist = "dirichlet", concentration)
+  prior <- nlist(dist = "dirichlet", concentration)
+  as.rstanarm_prior(prior)
 }
 
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
-  list(dist = "R2", location = location, what = what, df = 0, scale = 0)
+  what <- match.arg(what)
+  validate_R2_location(location, what)
+  prior <- nlist(dist = "R2", location, what, df = 0, scale = 0)
+  as.rstanarm_prior(prior)
 }
 
-#' @rdname priors
-#' @export 
-#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
-#' @param min_prior_scale Minimum prior scale for the intercept and 
-#'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scaled by twice the standard
-#'   deviation of the predictor if it has more than two unique values.
-#'
-prior_options <- function(prior_scale_for_dispersion = 5, 
-                          min_prior_scale = 1e-12, 
-                          scaled = TRUE) {
-  validate_parameter_value(prior_scale_for_dispersion)
-  validate_parameter_value(min_prior_scale)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
-}
-
-
+# Find eta parameter for R2 prior from location, what, and K
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
-  if (is.null(location)) 
-    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
-         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
-         call. = FALSE)
-  stopifnot(length(location) == 1, is.numeric(location))
+  what <- match.arg(what)
+  validate_R2_location(location, what)
   stopifnot(is.numeric(K), K == as.integer(K))
   if (K == 0) 
     stop("R2 prior is not applicable when there are no covariates.", 
          call. = FALSE)
-  what <- match.arg(what)
   half_K <- K / 2
   if (what == "mode") {
-    stopifnot(location > 0, location <= 1)
     if (K <= 2)
       stop(paste("R2 prior error.", 
                  "The mode of the beta distribution does not exist",
@@ -400,14 +403,11 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
            call. = FALSE)
     eta <- (half_K - 1  - location * half_K + location * 2) / location
   } else if (what == "mean") {
-    stopifnot(location > 0, location < 1)
     eta <- (half_K - location * half_K) / location
   } else if (what == "median") {
-    stopifnot(location > 0, location < 1)
     FUN <- function(eta) qbeta(0.5, half_K, qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1)$root)
   } else { # what == "log"
-    stopifnot(location < 0)
     FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1, 
                         f.lower = -location, 
@@ -416,3 +416,150 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   
   return(eta)
 }
+
+
+
+# Check for positive scale or df parameter (NULL ok)
+#
+# @param x The value to check.
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_parameter_value <- function(x) {
+  nm <- deparse(substitute(x))
+  if (!is.null(x)) {
+    if (!is.numeric(x)) 
+      stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) 
+      stop(nm, " should be positive", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# Check for valid location value for R2()
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_R2_location <- function(location, what) {
+  if (missing(location) || missing(what))
+    stop("'location' and 'what' must both be specified.", call. = FALSE)
+  if (!is.numeric(location))
+    stop("'location' must be numeric.", call. = FALSE)
+  if (length(location) != 1)
+    stop("For the R2 prior, 'location' must have length 1.", call. = FALSE)
+
+  bad_loc <- if (what == "log") 
+      location >= 0 else (location <= 0 || location > 1)
+  
+  if (bad_loc) {
+    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
+         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+
+
+# Check and set scale parameters for priors
+#
+# @param scale Value of scale parameter (can be NULL).
+# @param default Default value to use if \code{scale} is NULL.
+# @param link String naming the link function.
+# @return If a probit link is being used, \code{scale} (or \code{default} if
+#   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
+#   either \code{scale} or \code{default} is returned.
+set_prior_scale <- function(scale, default, link) {
+  stopifnot(is.numeric(default), is.character(link))
+  if (is.null(scale)) 
+    scale <- default
+  if (link == "probit")
+    scale <- scale * dnorm(0) / dlogis(0)
+  
+  return(scale)
+}
+
+
+# Validate user-specified prior and prior_intercept for stan_glm
+# and return in appropriate form to be used in stan_glm.fit
+#
+# @param x User-specified "prior" or "prior_intercept" argument
+# @param prior_for Either "coef" or "intercept"
+# @param family The name of the link function for the model (e.g. "identity",
+#   "logit", etc.)
+# @param ncoef Number of coefficients (if prior_for == "coef")
+#
+# @return A named list with components "dist", "scale", "mean", and "df", which
+#   apply to either the prior on the regression coefficients or intercept, 
+#   depending on "prior_for".
+#
+validate_glm_prior <- function(x, prior_for = c("coef", "intercept"), 
+                               link, ncoef) {
+  if (missing(link))
+    stop("Bug found: 'link' not supplied to validate_glm_prior()", 
+         call. = FALSE)
+  
+  prior_for <- match.arg(prior_for)
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  if (prior_for == "intercept")
+    ok_dists <- ok_dists[1:3]
+  
+  if (prior_for == "coef") { # prior for regression coefficients
+    if (missing(ncoef))
+      stop("Bug found: 'ncoef' not supplied to validate_glm_prior()", 
+           call. = FALSE)
+    
+    if (is.null(x)) { # prior = NULL
+      pdist <- 0L
+      pmean <- as.array(rep(0, ncoef))
+      pscale <- pdf <- as.array(rep(1, ncoef))
+    } else {
+      if (!is.list(x)) 
+        stop("'prior' should be a named list.")
+      pdist <- x$dist
+      pscale <- x$scale
+      pmean <- x$location
+      pdf <- x$df
+      pdf[is.na(pdf)] <- 1
+      
+      if (!pdist %in% unlist(ok_dists)) {
+        stop("The prior distribution for the coefficients should be one of ",
+             paste(names(ok_dists), collapse = ", "))
+      } else if (pdist %in% c("normal", "t")) {
+        pdist <- ifelse(pdist == "normal", 1L, 2L)
+        pscale <- set_prior_scale(pscale, default = 2.5, link = link)
+      } else {
+        pdist <- ifelse(pdist == "hs", 3L, 4L)
+      }
+      
+      # broadcast to appropriate length if necessary
+      pdf <- maybe_broadcast(pdf, ncoef)
+      pdf <- as.array(pmin(.Machine$double.xmax, pdf))
+      pmean <- maybe_broadcast(pmean, ncoef)
+      pmean <- as.array(pmean)
+      pscale <- maybe_broadcast(pscale, ncoef)
+    }
+    
+  } else { # prior_for == "intercept"
+    
+    if (is.null(x)) { # prior_intercept = NULL
+      pdist <- 0L
+      pmean <- 0 
+      pscale <- pdf <- 1
+    } else {
+      if (!is.list(x)) 
+        stop("'prior_intercept' should be a named list.")
+      pdist <- x$dist
+      pscale <- x$scale
+      pmean <- x$location
+      pdf <- x$df 
+      pdf[is.na(pdf)] <- 1
+      
+      if (!pdist %in% unlist(ok_dists))
+        stop("The prior distribution for the intercept should be one of ",
+             paste(names(ok_dists), collapse = ", "))
+      pdist <- ifelse(pdist == "normal", 1L, 2L)
+      pscale <- set_prior_scale(pscale, default = 10, link = link)
+      pdf <- min(.Machine$double.xmax, pdf)
+    }
+  }
+  
+  list(dist = pdist, scale = pscale, mean = pmean, df = pdf)
+}
+

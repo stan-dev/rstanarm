@@ -63,10 +63,9 @@ test_that("stan_lm doesn't break with vb algorithms", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
-test_that("stan_lm throws error if only intercept", {
-  expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)), 
-               regexp = "not suitable for estimating a mean")
-})
+
+# stan_lm errors ----------------------------------------------------------
+context("stan_lm errors")
 
 test_that("stan_lm throws error if N < K", {
   # NOTE: remove this test once N < K is enabled
@@ -80,13 +79,32 @@ test_that("stan_lm throws error if glmer syntax used", {
                regexp = "model formula not allowed")
 })
 
+test_that("stan_lm throws error if only intercept", {
+  expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)), 
+               regexp = "not suitable for estimating a mean")
+})
+
+test_that("stan_lm throws R2 prior errors", {
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2()), 
+               regexp = "'location' must be numeric")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(location = c(1,1))), 
+               regexp = "'location' must have length 1")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(0.5, "log")), 
+               regexp = "'location' must be")
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(2, "mode")), 
+               regexp = "'location' must be")
+})
+
+
+# stan_aov ----------------------------------------------------------------
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
-           prior = R2(0.5), chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+                  prior = R2(0.5), chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
   fit_sigma <- fit$stan_summary["sigma", "mean"]
   lm_sigma <- summary(lm(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly"))$sigma
   expect_equal(fit_sigma, lm_sigma, tol = threshold)
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
 })
+

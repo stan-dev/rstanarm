@@ -110,6 +110,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
+is.t <- function(x) x == "t_family"
 
 # Test for a given estimation method
 #
@@ -195,7 +196,11 @@ array1D_check <- function(y) {
 # Check for a binomial model with Y given as proportion of successes and weights 
 # given as total number of trials
 # 
+# @param y Response variable
+# @param family Either a family object or an rstanarm_family object.
+# @param weights User-specified weights
 binom_y_prop <- function(y, family, weights) {
+  family <- validate_family(family)
   if (!is.binomial(family$family)) 
     return(FALSE)
 
@@ -268,6 +273,8 @@ validate_offset <- function(o, y) {
 #   already a family) or the family object created from \code{f} is returned (if
 #   \code{f} is a string or function).
 validate_family <- function(f) {
+  if (is.rstanarm_family(f))
+    f <- f$family
   if (is.character(f)) 
     f <- get(f, mode = "function", envir = parent.frame(2))
   if (is.function(f)) 
@@ -428,38 +435,6 @@ nlist <- function(...) {
   return(out)
 }
 
-# Check for positive scale or df parameter (NULL ok)
-#
-# @param x The value to check.
-# @return Either an error is thrown or \code{TRUE} is returned invisibly.
-validate_parameter_value <- function(x) {
-  nm <- deparse(substitute(x))
-  if (!is.null(x)) {
-    if (!is.numeric(x)) 
-      stop(nm, " should be NULL or numeric", call. = FALSE)
-    if (any(x <= 0)) 
-      stop(nm, " should be positive", call. = FALSE)
-  }
-  invisible(TRUE)
-}
-
-# Check and set scale parameters for priors
-#
-# @param scale Value of scale parameter (can be NULL).
-# @param default Default value to use if \code{scale} is NULL.
-# @param link String naming the link function.
-# @return If a probit link is being used, \code{scale} (or \code{default} if
-#   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
-#   either \code{scale} or \code{default} is returned.
-set_prior_scale <- function(scale, default, link) {
-  stopifnot(is.numeric(default), is.character(link))
-  if (is.null(scale)) 
-    scale <- default
-  if (link == "probit")
-    scale <- scale * dnorm(0) / dlogis(0)
-  
-  return(scale)
-}
 
 # Make prior.info list
 # @param user_call The user's call, i.e. match.call(expand.dots = TRUE).

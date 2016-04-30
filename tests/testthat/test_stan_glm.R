@@ -41,7 +41,11 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm.nb(f, family = "neg_binomial_2"), 
                regexp = "'family' should not be specified.")
   
-  # error: prior and prior_intercept not lists
+  # error: prior and prior_intercept
+  expect_error(stan_glm(f, family = "poisson", prior = R2(0.5)), 
+               regexp = "should be one of")
+  expect_error(stan_glm(f, family = "poisson", prior_intercept = R2(0.5)), 
+               regexp = "should be one of")
   expect_error(stan_glm(f, family = "poisson", prior = normal), 
                regexp = "'prior' should be a named list")
   expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
@@ -70,22 +74,16 @@ test_that("gaussian returns expected result for trees example", {
   links <- c("identity", "log", "inverse")
   for (i in 1:length(links)) {
     if (links[i] == "inverse") next # unreliable
-    fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
-                    family = gaussian(link = links[i]), algorithm = "optimizing",
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
-                    QR = TRUE, tol_rel_grad = 1e-16, seed = SEED)
+    fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees,
+                    family = rstanarm_family("gaussian", link = links[i], 
+                                             prior_scale_for_dispersion = NULL),
+                    prior = NULL, prior_intercept = NULL,
+                    algorithm = "optimizing",
+                    QR = TRUE, tol_rel_grad = 1e-16, seed  = SEED)
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
     expect_equal(coef(fit), coef(ans), tol = 0.021)
   }
-  expect_error(update(fit, prior = dnorm), 
-               regexp = "should be a named list")
-  expect_error(update(fit, prior_intercept = dnorm), 
-               regexp = "should be a named list")
-  expect_error(update(fit, prior = R2(0.5)), 
-               regexp = "should be one of")
-  expect_error(update(fit, prior_intercept = R2(0.5)), 
-               regexp = "should be one of")
 })
 
 context("stan_glm (poisson)")
@@ -97,8 +95,8 @@ test_that("stan_glm returns expected result for glm poisson example", {
   treatment <- gl(3,3)
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL, QR = TRUE,
-                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
+                    prior = NULL, prior_intercept = NULL, QR = TRUE,
+                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed  = SEED)
     ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]), start = coef(fit))
     if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
     if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
@@ -135,16 +133,21 @@ context("stan_glm (gaussian)")
 test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
-                  family = gaussian(link = "identity"), seed  = SEED,
-                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
-                  tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
-  ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
+                  family = rstanarm_family("gaussian", link = "identity", 
+                                           prior_scale_for_dispersion = NULL),
+                  prior = NULL, prior_intercept = NULL,
+                  seed = SEED, algorithm = "optimizing",
+                  tol_rel_obj = .Machine$double.eps)
+  ans <- glm(log(dist) ~ log(speed), data = cars, 
+             family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
 test_that("stan_glm returns expected result with no intercept for mtcars example", {
   f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)
   fit <- stan_glm(f, data = mtcars,
-                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                  family = rstanarm_family("gaussian", link = "identity", 
+                                           prior_scale_for_dispersion = NULL),
+                  prior = NULL, prior_intercept = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
                   seed  = SEED)
   ans <- glm(f, data = mtcars, family = gaussian(link = "identity"))
@@ -165,7 +168,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     y <- rbinom(length(theta), size = 1, prob = theta)
   
     fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
     ans <- coef(glm(y ~ x, family = fam, start = val))
@@ -193,7 +196,7 @@ test_that("stan_glm returns expected result for binomial example", {
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
     fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val <- coef(fit)
     ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
@@ -202,7 +205,7 @@ test_that("stan_glm returns expected result for binomial example", {
 
     prop <- yes / trials
     fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
-                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                     prior = NULL, prior_intercept = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     val2 <- coef(fit2)
     if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
@@ -210,6 +213,41 @@ test_that("stan_glm returns expected result for binomial example", {
   }
 })
 
+
+context("stan_glm (student t)")
+test_that("stan_glm returns expected result for t_family", {
+  N <- 1000
+  alpha <- 2 
+  beta <- seq(-1, 1, length.out = 5); 
+  scale = 2
+  df <- 4
+  X <- cbind(matrix(rnorm(N * 2), ncol = 2), 
+             matrix(rbinom(N * 2, 1, 0.5), ncol = 2), 
+             gl(n = 4, k = 1, length = 1000))
+  y <- alpha + X %*% beta + scale * rt(N, df)
+  par <- c(alpha, beta, scale, df)
+  lb <- c(rep(-Inf, length(par) - 2), rep(0, 2))
+  opt <- optim(method = "L-BFGS", lower = lb, upper = Inf,
+               par = par, X = X, y = y, 
+               fn = function(par, X, y) {
+                 L <- length(par)
+                 alpha <- par[1]
+                 beta <- par[2:(L-2)]
+                 scale <- par[L-1]
+                 df <- par[L]
+                 mu <- alpha + X %*% beta
+                 lls <- dt((y - mu) / scale, df = df, log = TRUE) - log(scale)
+                 return(-sum(lls))
+               })
+  ans <- opt$par
+  
+  fit <- stan_glm(y ~ X, family = t_family(), seed  = SEED,
+                  prior = NULL, prior_intercept = NULL,
+                  tol_rel_obj = .Machine$double.eps, 
+                  algorithm = "optimizing")
+  val <- unname(c(coef(fit), fit$stan_summary[c("sigma", "df"), "Median"]))
+  expect_equal(val, ans, tol = 0.021)
+})
 
 context("stan_glm (other tests)")
 test_that("model with hs prior doesn't error", {

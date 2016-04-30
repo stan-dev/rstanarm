@@ -84,27 +84,6 @@ test_that("maybe_broadcast works", {
   }
 })
 
-test_that("set_prior_scale works", {
-  set_prior_scale <- rstanarm:::set_prior_scale
-  expect_error(set_prior_scale("a", "b", "c"))
-  expect_error(set_prior_scale(1, 1, 1))
-  expect_equal(set_prior_scale(NULL, 1, "a"), 1)
-  expect_equal(set_prior_scale(NULL, 1, "probit"), dnorm(0) / dlogis(0))
-  expect_equal(set_prior_scale(2, 1, "a"), 2)
-  expect_equal(set_prior_scale(2, 1, "probit"), 2 * dnorm(0) / dlogis(0))
-})
-
-test_that("validate_parameter_value works", {
-  validate_parameter_value <- rstanarm:::validate_parameter_value
-  expect_error(validate_parameter_value(-1), "should be positive")
-  expect_error(validate_parameter_value(0), "should be positive")
-  expect_error(validate_parameter_value("a"), "should be NULL or numeric")
-  expect_error(validate_parameter_value(NA), "should be NULL or numeric")
-  expect_true(validate_parameter_value(NULL))
-  expect_true(validate_parameter_value(.01))
-  expect_true(validate_parameter_value(.Machine$double.xmax))
-})
-
 test_that("validate_weights works", {
   validate_weights <- rstanarm:::validate_weights
   ff <- function(weights) validate_weights(weights)
@@ -134,6 +113,9 @@ test_that("validate_offset works", {
 
 test_that("validate_family works", {
   validate_family <- rstanarm:::validate_family
+  expect_equal(validate_family("t_family"), t_family())
+  expect_equal(validate_family(t_family), t_family())
+  expect_equal(validate_family(t_family()), t_family())
   expect_equal(validate_family("gaussian"), gaussian())
   expect_equal(validate_family(gaussian), gaussian())
   expect_equal(validate_family(gaussian()), gaussian())

@@ -60,7 +60,8 @@ test_that("stan_glmer returns expected result for cbpp example", {
   # for (i in seq_along(links)) {
   i <- 1L # it seems only logit gives results similar to glmer with same link 
     fmla <- cbind(incidence, size - incidence) ~ period + (1 | herd)
-    fit <- stan_glmer(fmla, data = cbpp, family = binomial(links[i]),
+    fit <- stan_glmer(fmla, data = cbpp, 
+                      family = rstanarm_family("binomial", link = links[i]),
                       chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
     ans <- glmer(fmla, data = cbpp, family = binomial(links[i]))
     expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
@@ -76,7 +77,8 @@ test_that("stan_glmer returns expected result for bernoulli (lalonde)", {
   })
   fmla <- treat ~ (1|black) + re74_1k + re75_1k + educ + hisp +
     married + nodegr + u74 + u75
-  fit <- stan_glmer(fmla, data = dat, family = binomial(link = "logit"),
+  fit <- stan_glmer(fmla, data = dat, 
+                    rstanarm_family("binomial", "logit"),
                     prior = student_t(7), prior_intercept = normal(0, 2.5),
                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)
   ans <- glmer(fmla, data = dat, family = binomial(link = "logit"))

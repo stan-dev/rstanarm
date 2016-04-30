@@ -63,6 +63,11 @@ test_that("loo/waic for stan_glm works", {
   expect_identical_loo(fit_gaus)
   expect_identical(ll_fun(fit_gaus), rstanarm:::.ll_gaussian_i)
   
+  # t
+  fit_t <- update(fit_gaus, family = t_family())
+  expect_identical_loo(fit_t)
+  expect_identical(ll_fun(fit_t), rstanarm:::.ll_t_family_i)
+  
   # binomial
   dat <- data.frame(ldose = rep(0:5, 2), 
                     sex = factor(rep(c("M", "F"), c(6, 6))))

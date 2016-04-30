@@ -121,6 +121,11 @@ test_that("compatible with glm with offset", {
   check_for_error(fit, data = mtcars2)
   check_for_error(fit2, data = mtcars2)
 })
+test_that("compatible with student t glm", {
+  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, family = t_family(),
+                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  check_for_error(fit)
+})
 test_that("compatible with poisson & negbin glm", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
