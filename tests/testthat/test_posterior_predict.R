@@ -40,6 +40,7 @@ check_for_error <- function(fit, data = NULL) {
   
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_silent(lin1 <- posterior_linpred(fit))
+  expect_silent(posterior_linpred(fit, transform = TRUE))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
   expect_equal(dim(lin1), c(nsims, nobs(fit)))
 
@@ -90,6 +91,8 @@ test_that("posterior_predict errors if NAs in newdata", {
   nd$period[1] <- NA
   expect_error(posterior_predict(example_model, newdata = nd), 
                regexp = "NAs are not allowed in 'newdata'")
+  expect_error(posterior_linpred(example_model, newdata = nd), 
+               regexp = "NAs are not allowed in 'newdata'")
 })
 test_that("posterior_predict errors if draws > posterior sample size", {
   expect_error(posterior_predict(example_model, draws = 1e6), 
@@ -105,8 +108,8 @@ test_that("errors for optimizing and silent for vb", {
   fit2 <- update(fit1, algorithm = "fullrank")
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
+  expect_silent(posterior_linpred(fit1))
   expect_silent(posterior_linpred(fit2))
-  expect_silent(posterior_linpred(fit3))
 })
 
 
