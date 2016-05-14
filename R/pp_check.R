@@ -85,6 +85,7 @@
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
 #' @examples 
+#' if (!exists("example_model")) example(example_model)
 #' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
@@ -125,9 +126,7 @@
 #' 
 pp_check <- function(object, check = "distributions", nreps = NULL, 
                      seed = NULL, overlay = TRUE, test = "mean", ...) {
-  if (!is.stanreg(object)) 
-    stop(deparse(substitute(object)), " is not a stanreg object", 
-         call. = FALSE)
+  validate_stanreg_object(object)
   if (used.optimizing(object)) 
     STOP_not_optimizing("pp_check")
   

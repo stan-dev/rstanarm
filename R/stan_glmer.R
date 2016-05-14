@@ -69,6 +69,7 @@
 #'    
 #' @examples
 #' # see help(example_model) for details on the model below
+#' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula glmerControl

@@ -18,4 +18,5 @@
 library(testthat)
 library(rstanarm)
 Sys.unsetenv("R_TESTS")
+example(example_model)
 if (!grepl("^sparc",  R.version$platform)) test_check("rstanarm")

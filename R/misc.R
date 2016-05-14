@@ -93,6 +93,14 @@ default_stan_control <- function(prior, adapt_delta = NULL,
 # @param x The object to test. 
 is.stanreg <- function(x) inherits(x, "stanreg")
 
+# Throw error if object isn't a stanreg object
+# 
+# @param x The object to test.
+validate_stanreg_object <- function(x, call. = FALSE) {
+  if (!is.stanreg(x))
+    stop("Object is not a stanreg object.", call. = call.) 
+}
+
 # Test for a given family
 #
 # @param x A character vector (probably x = family(fit)$family)
@@ -107,15 +115,12 @@ is.poisson <- function(x) x == "poisson"
 #
 # @param x A stanreg object.
 used.optimizing <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "optimizing"
 }
 used.sampling <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "sampling"
 }
 used.variational <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
@@ -123,8 +128,7 @@ used.variational <- function(x) {
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
-  stopifnot(is.stanreg(x))
-  check1 <- is(x, "lmerMod")
+  check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
     stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
@@ -331,6 +335,7 @@ select_median <- function(algorithm) {
 # @param x stanreg object
 # @param regex_pars Character vector of patterns
 grep_for_pars <- function(x, regex_pars) {
+  validate_stanreg_object(x)
   if (used.optimizing(x)) {
     warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
             call. = FALSE)
@@ -366,7 +371,7 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # @param x A stanreg object
 # @return NULL if used.optimizing(x), otherwise the posterior sample size
 posterior_sample_size <- function(x) {
-  stopifnot(is.stanreg(x))
+  validate_stanreg_object(x)
   if (used.optimizing(x)) 
     return(NULL)
   pss <- x$stanfit@sim$n_save
@@ -598,7 +603,7 @@ make_stan_summary <- function(stanfit) {
 }
 
 is_scobit <- function(object) {
-  stopifnot(is.stanreg(object))
+  validate_stanreg_object(object)
   if (!is(object, "polr")) return(FALSE)
   return("alpha" %in% rownames(object$stan_summary))
 }
