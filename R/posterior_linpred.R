@@ -36,10 +36,15 @@
 #'   predictive distribution of the outcome, which is almost always preferable.
 #' 
 #' @examples
+#' if (!exists("example_model")) example(example_model)
+#' 
 #' # linear predictor on log-odds scale
 #' linpred <- posterior_linpred(example_model)
 #' # probabilities
 #' probs <- posterior_linpred(example_model, transform = TRUE)
+#' 
+#' # not conditioning on any group-level parameters
+#' probs2 <- posterior_linpred(example_model, transform = TRUE, re.form = NA)
 #' 
 posterior_linpred <- function(object, transform = FALSE, newdata = NULL, 
                               re.form = NULL, ...) {
