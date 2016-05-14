@@ -17,8 +17,11 @@
 
 #' Posterior distribution of the linear predictor
 #' 
-#' Extract the posterior draws of the linear predictor, possibly transformed by
-#' the inverse-link function.
+#' Extract the posterior draws of the linear predictor, possibly transformed by 
+#' the inverse-link function. This function is occasionally convenient, but it 
+#' should be used sparingly. Inference and model checking should generally be 
+#' carried out using the posterior predictive distribution (see
+#' \code{\link{posterior_predict}}).
 #' 
 #' @export
 #' @templateVar stanregArg object
