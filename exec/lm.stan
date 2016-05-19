@@ -79,7 +79,7 @@ transformed parameters {
     }
     else theta[j][1] <- z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     
-    sigma[j] <- Delta_y * sqrt(1 - R2[j]); # standard deviation of errors
+    sigma[j] <- Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
     
     if (has_intercept == 1) {
       if (prior_dist_for_intercept == 0)       // no information
