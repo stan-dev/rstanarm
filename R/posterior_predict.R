@@ -24,7 +24,7 @@
 #' the fit of the model. Drawing from the posterior predictive distribution at 
 #' interesting values of the predictors also lets us visualize how a 
 #' manipulation of a predictor affects (a function of) the outcome(s). With new 
-#' observations of predictor variables we can use posterior predictive 
+#' observations of predictor variables we can use the posterior predictive 
 #' distribution to generate predicted outcomes.
 #' 
 #' @export
