@@ -24,7 +24,7 @@
 #' the fit of the model. Drawing from the posterior predictive distribution at 
 #' interesting values of the predictors also lets us visualize how a 
 #' manipulation of a predictor affects (a function of) the outcome(s). With new 
-#' observations of predictor variables we can use posterior predictive 
+#' observations of predictor variables we can use the posterior predictive 
 #' distribution to generate predicted outcomes.
 #' 
 #' @export
@@ -81,6 +81,7 @@
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples
+#' if (!exists("example_model")) example(example_model)
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
 #' 
@@ -123,8 +124,7 @@
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
                               re.form = NULL, fun = NULL, seed = NULL, ...) {
-  if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.")
+  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
   if (!is.null(seed)) 

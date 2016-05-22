@@ -107,7 +107,7 @@ waic.stanreg <- function(x, ...) {
 
 # returns log-likelihood function for loo() and waic()
 ll_fun <- function(x) {
-  stopifnot(is.stanreg(x))
+  validate_stanreg_object(x)
   f <- family(x)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
@@ -117,6 +117,7 @@ ll_fun <- function(x) {
 
 # returns args argument for loo.function() and waic.function()
 ll_args <- function(object, newdata = NULL) {
+  validate_stanreg_object(object)
   f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)

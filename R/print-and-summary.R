@@ -184,7 +184,7 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   \code{"summary.stanreg"}, which is a matrix of summary statistics and 
 #'   diagnostics, with attributes storing information for use by the
 #'   \code{print} method. The \code{print} method for \code{summary.stanreg}
-#'   objects is called for its side effect and does not return anything. The 
+#'   objects is called for its side effect and just returns its input. The 
 #'   \code{as.data.frame} method for \code{summary.stanreg} objects converts the
 #'   matrix to a data.frame, preserving row and column names but dropping the 
 #'   \code{print}-related attributes.
@@ -192,6 +192,7 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' if (!exists("example_model")) example(example_model) 
 #' summary(example_model, probs = c(0.1, 0.9))
 #' 
 #' # These produce the same output for this example, 
@@ -201,7 +202,8 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' summary(example_model, pars = c("alpha", "beta"))
 #' 
 #' # Only show parameters varying by group
-#' summary(example_model, pars = "varying") 
+#' summary(example_model, pars = "varying")
+#' as.data.frame(summary(example_model, pars = "varying"))
 #' 
 #' @importMethodsFrom rstan summary
 summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
@@ -266,9 +268,18 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     }
     out <- object$stan_summary[mark, , drop=FALSE]
   }
+  
+  fam <- family(object)
+  if (is.character(fam)) {
+    stopifnot(identical(fam, object$method))
+    fam <- paste0("ordered (", fam, ")")
+  } else {
+    fam <- paste0(fam$family, " (", fam$link, ")") 
+  }
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
+            family = fam,
             posterior_sample_size = posterior_sample_size(object),
             nobs = nobs(object),
             ngrps = if (mer) ngrps(object) else NULL,
@@ -285,6 +296,7 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                   ...) {
   atts <- attributes(x)
   print(atts$call)
+  cat("\nFamily:", atts$family)
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)

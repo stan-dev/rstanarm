@@ -60,6 +60,43 @@ check_for_error <- function(fit, data = NULL) {
                regexep = "posterior sample size is only")
 }
 
+
+# Error messages ----------------------------------------------------------
+context("posterior_predict (error messages)")
+test_that("posterior_predict errors if not a stanreg object", {
+  expect_error(posterior_predict(example_model$stanfit), "not a stanreg object")
+  expect_error(posterior_predict(summary(example_model)), "not a stanreg object")
+})
+test_that("posterior_predict errors if model fit using optimization", {
+  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
+                   seed = SEED)
+  expect_error(posterior_predict(fit1), regexp = "optimizing")
+})
+test_that("posterior_predict errors if NAs in newdata", {
+  nd <- model.frame(example_model)
+  nd$period[1] <- NA
+  expect_error(posterior_predict(example_model, newdata = nd), 
+               regexp = "NAs are not allowed in 'newdata'")
+})
+test_that("posterior_predict errors if draws > posterior sample size", {
+  expect_error(posterior_predict(example_model, draws = 1e6), 
+               regexp = "'draws' should be <= posterior sample size")
+})
+
+
+# VB ----------------------------------------------------------------------
+context("posterior_predict ok for vb")
+test_that("errors for optimizing and silent for vb", {
+  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
+                   seed = SEED)
+  fit2 <- update(fit1, algorithm = "fullrank")
+  expect_silent(posterior_predict(fit1))
+  expect_silent(posterior_predict(fit2))
+})
+
+
+
+# MCMC --------------------------------------------------------------------
 context("posterior_predict (stan_lm)")
 test_that("posterior_predict compatible with stan_lm", {
   fit <- SW(stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
@@ -124,6 +161,20 @@ test_that("compatible with stan_polr", {
   check_for_error(fit_2level_scobit)
 })
 
+context("posterior_predict (stan_gamm4)")
+test_that("stan_gamm4 returns expected result for sleepstudy example", {
+  fit <- SW(stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy,
+                       random = ~(1|Subject), chains = CHAINS, iter = ITER, 
+                       seed = SEED, refresh = REFRESH))
+  expect_silent(yrep1 <- posterior_predict(fit))
+  # expect_equal(dim(yrep1), c(nrow(as.data.frame(fit)), nobs(fit)))
+  expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
+  # expect_equal(dim(yrep2), c(1, nobs(fit)))
+  expect_error(posterior_predict(fit, newdata = model.frame(fit$gam)), 
+               "not yet supported for models estimated via 'stan_gamm4'")
+})
+
+
 context("posterior_predict (stan_(g)lmer)")
 test_that("compatible with stan_lmer", {
   fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
@@ -150,18 +201,7 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
 })
 
 
-context("posterior_predict (optimizing and vb)")
-test_that("errors for optimizing and silent for vb", {
-  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
-                   seed = SEED)
-  fit2 <- update(fit1, algorithm = "meanfield")
-  fit3 <- update(fit1, algorithm = "fullrank")
-  expect_error(posterior_predict(fit1), regexp = "optimizing")
-  expect_silent(posterior_predict(fit2))
-  expect_silent(posterior_predict(fit3))
-})
-
-
+# compare to lme4 ---------------------------------------------------------
 context("posterior_predict (compare to lme4)")
 test_that("posterior_predict close to predict.merMod for gaussian", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
@@ -290,6 +330,7 @@ test_that("lme4 tests work similarly", {
 })
 
 
+# helper functions --------------------------------------------------------
 context("posterior_predict helper functions")
 test_that("pp_binomial_trials works", {
   ppbt <- rstanarm:::pp_binomial_trials

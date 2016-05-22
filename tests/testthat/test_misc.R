@@ -227,13 +227,14 @@ fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
 fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
 
-test_that("is.stanreg works", {
-  is.stanreg <- rstanarm:::is.stanreg
-  expect_true(is.stanreg(fit))
-  expect_true(is.stanreg(fit2))
-  expect_true(is.stanreg(fito))
-  expect_true(is.stanreg(fitvb))
-  expect_false(is.stanreg(fit$stanfit))
+test_that("validate_stanreg_object works", {
+  validate_stanreg_object <- rstanarm:::validate_stanreg_object
+  expect_silent(validate_stanreg_object(fit))
+  expect_silent(validate_stanreg_object(fit2))
+  expect_silent(validate_stanreg_object(fito))
+  expect_silent(validate_stanreg_object(fitvb))
+  expect_error(validate_stanreg_object(fit$stanfit), 
+               "not a stanreg object")
 })
 
 test_that("used.sampling, used.optimizing, and used.variational work", {
