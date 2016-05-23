@@ -27,6 +27,7 @@
 #'   extract_sparse_parts get_posterior_mean stanc
 #' @import stats
 #' @import Rcpp
+#' @import ppcheck
 #' @export loo
 #' @export waic
 #' @export compare
