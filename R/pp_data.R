@@ -50,6 +50,15 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
 .pp_data_mer <- function(object, newdata, re.form, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
   z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  if (is(object, "gamm4")) { # append extra terms
+    newdata[[as.character(object$formula[2])]] <- 1 
+    # need a provisional outcome for the next line
+    glmod <- gamm4_to_glmer(object$formula, re.form, data = newdata, ...)
+    if (getRversion() < "3.2.0") 
+      z <- cBind( z, glmod$Z[,-c(1:ncol(z)), drop = FALSE])
+    else 
+      z <- cbind2(z, glmod$Z[,-c(1:ncol(z)), drop = FALSE]) 
+  }
   offset <- model.offset(model.frame(object))
   if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
     offset <- eval(object$call$offset, newdata)
@@ -95,9 +104,9 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
   } else {
-    if ("gam" %in% names(object))
-      stop("'posterior_predict' with non-NULL 're.form' not yet supported ", 
-           "for models estimated via 'stan_gamm4'")
+    # if ("gam" %in% names(object))
+    #   stop("'posterior_predict' with non-NULL 're.form' not yet supported ", 
+    #        "for models estimated via 'stan_gamm4'")
     mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
                          newdata, na.action = na.action)
     newdata.NA <- newdata
