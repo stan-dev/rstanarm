@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Continuous Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "02/11/2016"
+date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
@@ -32,8 +32,8 @@ binary/binomial and count outcomes.
 
 This vignette primarily focuses on Steps 1 and 2 when the likelihood is the
 product of conditionally independent continuous distributions. Steps 3 and 4 are
-covered in more depth by the vignette entitled "How to Use the __rstanarm__
-Package", although this vignette does also give a few examples of model checking
+covered in more depth by the vignette entitled ["How to Use the __rstanarm__
+Package"](rstanarm.html), although this vignette does also give a few examples of model checking
 and generating predictions.
 
 # Likelihood
@@ -88,7 +88,7 @@ This is posterior distribution that `stan_glm` will draw from when using MCMC.
   
 # Linear Regression Example
 
-The `stan_lm` function (which has its own vignette) fits regularized linear 
+The `stan_lm` function, which has its own [vignette](lm.stan), fits regularized linear 
 models using a novel means of specifying priors for the regression coefficients.
 Here we focus using the `stan_glm` function, which can be used to estimate 
 linear models with independent priors on the regression coefficients.

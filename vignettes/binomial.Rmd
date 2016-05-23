@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "02/11/2016"
+date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
@@ -28,8 +28,8 @@ function in the __rstanarm__ package.
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
 the product of conditionally independent binomial distributions (possibly with
 only one trial per observation).
 
@@ -185,7 +185,7 @@ round(posterior_interval(fit1, prob = 0.5), 2)
 ```
 
 For more on `posterior_interval` and interpreting the parameter estimates from a Bayesian
-model see Step 2 in the "How to Use the __rstanarm__ Package" vignette.
+model see Step 2 in the ["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 
 Using the coefficient estimates we can plot the predicted probability of 
@@ -300,7 +300,7 @@ counter overfitting), but in this case `fit2` represents enough of an
 improvement over `fit1` that the penalty for including `arsenic` is negligible
 (as it should be if `arsenic` is an important predictor).
 
-The vignette for the `stan_lm` function also has an example of using the `loo`
+The [vignette](lm.html) for the `stan_lm` function also has an example of using the `loo`
 function where the results are quite a bit different from what we see here and
 some important additional considerations are discussed.
 
@@ -333,7 +333,7 @@ number of responses is provided using the `weights` argument. In this case we
 would add `weights = n` to the call to `stan_glm`. 
 
 An example of a similar model can also be found in __Step 1__ of the 
-"How to Use the __rstanarm__ Package" vignette.
+["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 # Going Further
 
@@ -341,7 +341,7 @@ In the hypothetical scenario above, if we also have access to the observations
 for each individual in all of the villages (not just the aggregate data), then a
 natural extension would be to consider a multilevel model that takes advantage
 of the inherent multilevel structure of the data (individuals nested within
-villages). The vignette for the `stan_glmer` function discusses these models.
+villages). The [vignette](glmer.html) for the `stan_glmer` function discusses these models.
 
 # References
 

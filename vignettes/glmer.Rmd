@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models with Group-Specific Terms with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2016"
+date: "`r Sys.Date()`"
 output: 
   html_vignette:
     toc: yes
@@ -24,8 +24,8 @@ output:
 This vignette explains how to use the `stan_lmer` and `stan_glmer` functions in 
 the __rstanarm__ package to estimate linear and generalized linear models with
 intercepts and slopes that may vary across groups. Before continuing, we
-recommend reading the various vignettes for the `stan_glm` function.
-The _Hierarchical Partial Pooling_ vignette also has examples of both 
+recommend reading the [vignettes](glm.html) for the `stan_glm` function.
+The _Hierarchical Partial Pooling_ [vignette](pooling.html) also has examples of both 
 `stan_glm` and `stan_glmer`.
 
 _NOTE: a more thorough vignette for_ `stan_lmer` _and_ `stan_glmer` _with detailed examples is forthcoming._
