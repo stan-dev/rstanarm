@@ -83,8 +83,11 @@
 #'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
-#'   predictive distribution. Examples of posterior predictive checks can also
+#'   predictive distribution. Examples of posterior predictive checks can also 
 #'   be found in the \pkg{rstanarm} vignettes and demos.
+#'   
+#'   To change the color scheme of the plots see 
+#'   \code{\link[ppcheck]{set_color_scheme}}.
 #' 
 #' @examples 
 #' if (!exists("example_model")) example(example_model)
@@ -165,7 +168,7 @@ pp_check.stanreg <- function(object, check = "distributions", nreps = NULL,
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
       y <- y[, 1L] / trials
-      if (!binned_resid)
+      if (ppc_fun != "ppc_resid_binned")
         yrep <- sweep(yrep, 2L, trials, "/")
     } else if (is.factor(y))
       y <- fac2bin(y)

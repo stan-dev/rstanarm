@@ -76,9 +76,9 @@
 #'   the number of trials. See the Examples section below and the 
 #'   \emph{How to Use the rstanarm Package} for examples.
 #' 
-#' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
-#'   Examples of posterior predictive checking can also be found in the
-#'   \pkg{rstanarm} vignettes and demos.
+#' @seealso \code{\link[=pp_check.stanreg]{pp_check}} for graphical posterior
+#'   predictive checks. Examples of posterior predictive checking can also be
+#'   found in the \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples
 #' if (!exists("example_model")) example(example_model)

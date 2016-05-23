@@ -78,9 +78,9 @@
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
 #' 
 #' @seealso 
-#' \code{\link{pp_check}} for graphical posterior predictive checks and 
-#' \code{\link{posterior_predict}} to draw from the posterior predictive 
-#' distribution.
+#' \code{\link[=pp_check.stanreg]{pp_check}} for graphical posterior predictive
+#' checks and \code{\link{posterior_predict}} to draw from the posterior
+#' predictive distribution.
 #' 
 #' @examples 
 #' \dontrun{

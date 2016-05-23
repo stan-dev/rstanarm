@@ -39,12 +39,13 @@
 #'   specified using the customary R modeling syntax (e.g., like that of 
 #'   \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
 #'   
-#'   The set of models supported by \pkg{rstanarm} is large (and will continue
-#'   to grow), but also limited enough so that it is possible to integrate them
-#'   tightly with the \code{\link{pp_check}} function for graphical posterior
-#'   predictive checks and the \code{\link{posterior_predict}} function to
-#'   easily estimate the effect of specific manipulations of predictor variables
-#'   or to predict the outcome in a training set. 
+#'   The set of models supported by \pkg{rstanarm} is large (and will continue 
+#'   to grow), but also limited enough so that it is possible to integrate them 
+#'   tightly with the \code{\link[=pp_check.stanreg]{pp_check}} function for
+#'   graphical posterior predictive checks and the
+#'   \code{\link{posterior_predict}} function to easily estimate the effect of
+#'   specific manipulations of predictor variables or to predict the outcome in
+#'   a training set.
 #'   
 #'   The objects returned by the \pkg{rstanarm} modeling functions are called
 #'   \code{\link[=stanreg-objects]{stanreg}} objects. In addition to all of the
