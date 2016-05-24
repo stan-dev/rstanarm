@@ -321,8 +321,11 @@ test_that("pw_polr returns expected results", {
                         start = c(beta, zeta), control = list(maxit = 0))
     Pr <- fitted(model)
     Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
-    expect_equal(log(Pr), pw_polr(y, eta, zeta, i, 1), info = links[i], 
-                 tolerance = 1e-7)
+    log_pr <- pw_polr(y, eta, zeta, i, 1)
+    log_Pr <- log(Pr)
+    good <- is.finite(log_pr) & is.finite(log_Pr) & log_Pr > -30
+    expect_equal(log_Pr[good], log_pr[good], info = links[i], 
+                 tolerance = 1e-6)
   }
 })
 rdirichlet <- function(n, alpha) {
