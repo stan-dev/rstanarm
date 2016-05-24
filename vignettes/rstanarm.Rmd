@@ -1,5 +1,6 @@
 ---
 title: "How to Use the rstanarm Package"
+author: "Jonah Gabry and Ben Goodrich"
 date: "`r Sys.Date()`"
 output: 
   html_vignette: 
