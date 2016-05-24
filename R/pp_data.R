@@ -48,16 +48,21 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
 
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, ...) {
-  x <- .pp_data_mer_x(object, newdata, ...)
-  z <- .pp_data_mer_z(object, newdata, re.form, ...)
   if (is(object, "gamm4")) { # append extra terms
     newdata[[as.character(object$formula[2])]] <- 1 
     # need a provisional outcome for the next line
     glmod <- gamm4_to_glmer(object$formula, re.form, data = newdata, ...)
+    x <- glmod$X
+    z <- .pp_data_mer_z(object, newdata, re.form, ...)
+    
     if (getRversion() < "3.2.0") 
       z <- cBind( z, glmod$Z[,-c(1:ncol(z)), drop = FALSE])
     else 
       z <- cbind2(z, glmod$Z[,-c(1:ncol(z)), drop = FALSE]) 
+  }
+  else {
+    x <- .pp_data_mer_x(object, newdata, ...)
+    z <- .pp_data_mer_z(object, newdata, re.form, ...)
   }
   offset <- model.offset(model.frame(object))
   if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
