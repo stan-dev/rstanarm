@@ -37,10 +37,11 @@
 #' # display non-varying (i.e. not group-level) coefficients
 #' posterior_vs_prior(example_model, pars = "beta")
 #' 
+#' \dontrun{
 #' # show group-level (varying) parameters and group by parameter
 #' posterior_vs_prior(example_model, pars = "varying",
 #'                    group_by_parameter = TRUE, color_by = "vs")
-#' \dontrun{
+#'
 #' # group by parameter and allow axis scales to vary across facets
 #' posterior_vs_prior(example_model, regex_pars = "period",
 #'                    group_by_parameter = TRUE, color_by = "none",
