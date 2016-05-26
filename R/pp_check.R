@@ -17,7 +17,7 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' An interface to the \pkg{\link{ppcheck}} package for \pkg{rstanarm} models, 
+#' Interface to the \pkg{\link{ppcheck}} package for \pkg{rstanarm} models, 
 #' providing various plots comparing the observed outcome variable \eqn{y} to
 #' simulated datasets \eqn{y^{rep}}{yrep} from the posterior predictive
 #' distribution.
@@ -147,9 +147,9 @@ pp_check.stanreg <- function(object, check = "distributions", nreps = NULL,
     'test' = if (length(test) > 1) 
       "ppc_stat_2d" else "ppc_stat",
     'scatter' = if (is.null(nreps))  
-      "ppc_scatter_average" else "ppc_scatter_multiple"
+      "ppc_scatter_avg" else "ppc_scatter"
   )
-  sel <- c("ppc_stat", "ppc_stat_2d", "ppc_scatter_average", "ppc_scatter_multiple")
+  sel <- c("ppc_stat", "ppc_stat_2d", "ppc_scatter_avg", "ppc_scatter")
   if (is.null(nreps) && !ppc_fun %in%  sel)
     nreps <- ifelse(ppc_fun == "ppc_dens_overlay", 50, ifelse(ppc_fun == "ppc_hist", 8, 3))
   if (!is.null(nreps) && check == "test") {
