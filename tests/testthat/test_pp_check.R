@@ -38,7 +38,7 @@ test_that("pp_check doesn't throw bad errors", {
   expect_silent(p <- pp_check(fit2, check = "resid", fill = "red", bins = 15))
   expect_silent(p <- pp_check(fit, check = "scatter"))
   expect_silent(p <- pp_check(fit2, check = "scatter", color = "purple"))
-  expect_is(p, "ggplot")
+  expect_s3_class(p, "ggplot")
   for (j in 1:2) {
     expect_silent(p <- pp_check(fit, check = "dist", overlay = FALSE, nreps = j))
     expect_silent(p <- pp_check(fit, check = "dist", overlay = TRUE, nreps = j))
@@ -50,7 +50,7 @@ test_that("pp_check doesn't throw bad errors", {
   expect_silent(p <- pp_check(fit, check = "test"))
   expect_silent(p <- pp_check(fit, check = "test", test = "sd"))
   expect_silent(p <- pp_check(fit, check = "test", test = c("mean","sd")))
-  expect_is(p, "ggplot")
+  expect_s3_class(p, "ggplot")
 })
 
 test_that("pp_check ok for vb", {
@@ -65,11 +65,10 @@ test_that("pp_check throws appropriate errors", {
   expect_error(p <- pp_check(fit, check = "test", test = "10982pqmeaw"), 
                regexp = "not found")
   expect_error(p <- pp_check(fit, check = "test", test = c("mean", "sd", "var")), 
-               regexp = "length 1 or 2")
+               regexp = "length")
   
   fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
   expect_error(pp_check(fito), regexp = "algorithm")
-  expect_error(pp_check(rnorm(10)), regexp = "not a stanreg object")
 })
 
 test_that("pp_check throws appropriate warnings", {
