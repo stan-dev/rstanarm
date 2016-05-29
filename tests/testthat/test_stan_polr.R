@@ -27,6 +27,8 @@ REFRESH <- 0
 
 threshold <- 0.03
 
+expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+
 context("stan_polr")
 
 test_that("stan_polr runs for esoph example", {
@@ -45,10 +47,10 @@ test_that("stan_polr runs for esoph example", {
                       method = "loglog", seed = SEED, algorithm = "fullrank",
                       prior = NULL, prior_counts = NULL) # test with NULL priors
 
-  expect_is(fit1, "stanreg")
-  expect_is(fit2, "stanreg")
-  expect_is(fit1vb, "stanreg")
-  expect_is(fit2vb, "stanreg")
+  expect_stanreg(fit1)
+  expect_stanreg(fit2)
+  expect_stanreg(fit1vb)
+  expect_stanreg(fit2vb)
 })
 
 test_that("stan_polr throws error if formula excludes intercept", {
