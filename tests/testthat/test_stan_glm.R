@@ -22,6 +22,8 @@ library(rstanarm)
 SEED <- 12345
 set.seed(SEED)
 
+expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+
 context("stan_glm (errors, warnings, messages)")
 test_that("stan_glm throws appropriate errors, warnings, and messages", {
   counts <- c(18,17,15,20,10,20,25,13,12)
@@ -74,10 +76,13 @@ test_that("gaussian returns expected result for trees example", {
                     family = gaussian(link = links[i]), algorithm = "optimizing",
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     QR = TRUE, tol_rel_grad = 1e-16, seed = SEED)
+    expect_stanreg(fit)
+    
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
     expect_equal(coef(fit), coef(ans), tol = 0.021)
   }
+  
   expect_error(update(fit, prior = dnorm), 
                regexp = "should be a named list")
   expect_error(update(fit, prior_intercept = dnorm), 
@@ -99,6 +104,8 @@ test_that("stan_glm returns expected result for glm poisson example", {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL, QR = TRUE,
                     algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
+    expect_stanreg(fit)
+    
     ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]), start = coef(fit))
     if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
     if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
@@ -124,8 +131,8 @@ test_that("stan_glm returns something for glm negative binomial example", {
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
                         prior_PD = TRUE, QR = TRUE, refresh = 100)
-    expect_is(fit1, "stanreg")
-    expect_is(fit2, "stanreg")
+    expect_stanreg(fit1)
+    expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
   }
   # testing results against MASS::glm.nb is unreliable
@@ -138,6 +145,8 @@ test_that("stan_glm returns expected result for cars example", {
                   family = gaussian(link = "identity"), seed  = SEED,
                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+  expect_stanreg(fit)
+  
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
@@ -147,6 +156,8 @@ test_that("stan_glm returns expected result with no intercept for mtcars example
                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
                   seed  = SEED)
+  expect_stanreg(fit)
+  
   ans <- glm(f, data = mtcars, family = gaussian(link = "identity"))
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
@@ -167,6 +178,8 @@ test_that("stan_glm returns expected result for bernoulli", {
     fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    expect_stanreg(fit)
+    
     val <- coef(fit)
     ans <- coef(glm(y ~ x, family = fam, start = val))
     if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
@@ -195,6 +208,8 @@ test_that("stan_glm returns expected result for binomial example", {
     fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    expect_stanreg(fit)
+    
     val <- coef(fit)
     ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
     if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
@@ -204,6 +219,8 @@ test_that("stan_glm returns expected result for binomial example", {
     fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
                      prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    expect_stanreg(fit2)
+    
     val2 <- coef(fit2)
     if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
     else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
