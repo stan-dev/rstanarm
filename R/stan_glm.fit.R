@@ -208,8 +208,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # create entries in the data block of the .stan file
   standata <- list(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
-    has_weights = as.integer(length(weights) > 0),
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), 
+    dense_X = TRUE, nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0),
+    link = link, has_weights = as.integer(length(weights) > 0),
     has_offset = as.integer(length(offset) > 0),
     prior_dist = prior_dist, prior_mean = prior_mean, prior_scale = prior_scale, 
     prior_df = prior_df, prior_dist_for_intercept = prior_dist_for_intercept,
@@ -298,7 +299,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   if (!is_bernoulli) {
-    standata$X <- xtemp
+    standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
     standata$y <- y
     standata$weights <- weights
     standata$offset <- offset
@@ -322,11 +323,19 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       y0 <- y == 0
       y1 <- y == 1
       standata$N <- c(sum(y0), sum(y1))
-      standata$X0 <- xtemp[y0, , drop = FALSE]
-      standata$X1 <- xtemp[y1, , drop = FALSE]
+      standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
+      standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
       standata$Z0 <- standata$Z[y0, , drop = FALSE]
       standata$Z1 <- standata$Z[y1, , drop = FALSE]
-      standata$Z <- NULL 
+      standata$Z <- NULL
+      standata$nnz_X0 = 0L 
+      standata$w_X0 = double(0)
+      standata$v_X0 = integer(0)
+      standata$u_X0 = integer(0)
+      standata$nnz_X1 = 0L 
+      standata$w_X1 = double(0)
+      standata$v_X1 = integer(0)
+      standata$u_X1 = integer(0)
       if (length(weights)) { 
         # nocov start
         # this code is unused because weights are interpreted as number of 

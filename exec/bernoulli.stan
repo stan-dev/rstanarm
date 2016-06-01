@@ -100,11 +100,23 @@ functions {
 }
 data {
   // dimensions
-  int<lower=0> K;     // number of predictors
-  int<lower=1> N[2];  // number of observations where y = 0 and y = 1 respectively
-  vector[K] xbar;     // vector of column-means of rbind(X0, X1)
-  matrix[N[1],K] X0;  // centered (by xbar) predictor matrix | y = 0
-  matrix[N[2],K] X1;  // centered (by xbar) predictor matrix | y = 1
+  int<lower=0> K;        // number of predictors
+  int<lower=1> N[2];     // number of observations where y = 0 and y = 1 respectively
+  vector[K] xbar;        // vector of column-means of rbind(X0, X1)
+  int<lower=0,upper=1> dense_X; // flag for dense vs. sparse
+  matrix[N[1],K] X0[dense_X];   // centered (by xbar) predictor matrix | y = 0
+  matrix[N[2],K] X1[dense_X];   // centered (by xbar) predictor matrix | y = 1
+  
+  // stuff for the sparse case
+  int<lower=0> nnz_X0;                       // number of non-zero elements in the implicit X0 matrix
+  vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
+  int<lower=0> v_X0[nnz_X0];                 // column indices for w_X0
+  int<lower=0> u_X0[(N[1]+1)*(nnz_X0 > 0)];  // where the non-zeros start in each row of X0
+  int<lower=0> nnz_X1;                       // number of non-zero elements in the implicit X1 matrix
+  vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
+  int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
+  int<lower=0> u_X1[(N[2]+1)*(nnz_X1 > 0)];  // where the non-zeros start in each row of X1
+  
   #include "data_glm.stan"
 
   // weights
@@ -178,7 +190,8 @@ generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
   if (has_intercept == 1) {
-    alpha[1] <- gamma[1] - dot_product(xbar, beta);
+    if (dense_X) alpha[1] <- gamma[1] - dot_product(xbar, beta);
+    else alpha[1] <- gamma[1];
   }
   mean_PPD <- 0;
   {

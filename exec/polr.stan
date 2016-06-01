@@ -198,8 +198,8 @@ generated quantities {
   vector[(J > 2) * (J - 1) + 1] mean_PPD;
   vector[N * do_residuals] residuals;
   
-  // xbar is actually post multiplied by R^-1
-  zeta <- cutpoints + dot_product(xbar, beta);
+  if (dense_X) zeta <- cutpoints + dot_product(xbar, beta); // xbar is actually post multiplied by R^-1
+  else zeta <- cutpoints;
   if (J == 2) zeta <- -zeta;
   mean_PPD <- rep_vector(0,rows(mean_PPD));
   {
