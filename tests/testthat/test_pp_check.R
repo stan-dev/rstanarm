@@ -36,10 +36,13 @@ expect_gg <- function(x) expect_s3_class(x, "ggplot")
 context("pp_check")
 test_that("pp_check doesn't throw bad errors", {
   expect_gg(pp_check(fit, check = "dist", overlay = TRUE, size = 2))
+  expect_gg(pp_check(fit2, check = "dist", overlay = FALSE))
+
   expect_gg(pp_check(fit, check = "resid"))
-  expect_gg(pp_check(fit2, check = "resid", fill = "red", bins = 15))
+  expect_gg(pp_check(fit2, check = "resid", binwidth = .5))
+  
   expect_gg(pp_check(fit, check = "scatter"))
-  expect_gg(pp_check(fit2, check = "scatter", color = "purple"))
+  expect_gg(pp_check(fit2, check = "scatter"))
 
   for (j in 1:2) {
     expect_gg(pp_check(fit, check = "dist", overlay = FALSE, nreps = j))
@@ -53,6 +56,12 @@ test_that("pp_check doesn't throw bad errors", {
   expect_gg(pp_check(fit, check = "test"))
   expect_gg(pp_check(fit, check = "test", test = "sd"))
   expect_gg(pp_check(fit, check = "test", test = c("mean","sd")))
+  
+  
+  # by group
+  expect_gg(pp_check(fit, check = "dist", group = "herd"))
+  expect_gg(pp_check(fit, check = "scatter", group = "herd"))
+  expect_gg(pp_check(fit, check = "test", group = "herd"))
 })
 
 test_that("pp_check ok for vb", {
@@ -74,8 +83,17 @@ test_that("pp_check throws appropriate errors", {
 })
 
 test_that("pp_check throws appropriate warnings", {
-  expect_warning(p <- pp_check(fit, check = "test", nreps = 1), 
+  # nreps ignored
+  expect_warning(pp_check(fit, check = "test", nreps = 1), 
                  regexp = "'nreps' is ignored")
+  
+  # group ignored
+  expect_warning(pp_check(fit, check = "test", test = c("mean", "sd"), group = "herd"), 
+                 regexp = "'group' is ignored")
+  expect_warning(pp_check(fit, check = "scatter", nreps = 3, group = "herd"), 
+                 regexp = "'group' is ignored")
+  expect_warning(pp_check(fit, check = "resid", group = "herd"), 
+                 regexp = "'group' is ignored")
 })
 
 test_that("pp_check binned residual plot ok for factors", {
