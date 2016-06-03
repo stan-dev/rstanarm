@@ -5,6 +5,9 @@ cache: packages
 
 r_packages:
   - covr
+  
+r_github_packages:
+  - jgabry/ppcheck
 
 env:
   matrix: 
