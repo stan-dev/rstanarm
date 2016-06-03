@@ -222,15 +222,8 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
 #'   returned instead.
 #'
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is.mer(object)) {
-    out <- object$covmat
-  } else {
-    sel <- seq_along(fixef(object))
-    out <- object$covmat[sel, sel, drop=FALSE]
-  }
-  if (!correlation) 
-    return(out)
-  
+  out <- object$covmat
+  if (!correlation) return(out)
   cov2cor(out)
 }
 

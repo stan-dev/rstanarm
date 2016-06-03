@@ -116,7 +116,7 @@ test_that("validate_weights works", {
   expect_error(validate_weights(c(-1,2,3)), regexp = "negative", ignore.case = TRUE)
   expect_error(stan_glm(mpg ~ wt, data = mtcars, weights = rep(-1, nrow(mtcars))), 
                regexp = "negative", ignore.case = TRUE)
-  expect_is(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
+  expect_s3_class(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
                      weights = rexp(nrow(mtcars))), "stanreg")
 })
 
@@ -187,9 +187,9 @@ test_that("check_constant_vars works", {
   mf2$gear <- 1
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
-  expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
+  expect_s3_class(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
             "stanreg")
-  expect_is(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
+  expect_s3_class(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
                      offset = rep(1, nrow(mf)), algorithm = "optimizing", 
                      seed = SEED), "stanreg")
   

@@ -36,6 +36,8 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   if (!is.null(cl <- attr(Terms, "dataClasses"))) 
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+  if (is(object, "polr") && !is_scobit(object)) 
+    x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
   offset <- rep(0, nrow(x))
   if (!is.null(off.num <- attr(tt, "offset"))) {
     for (i in off.num) {

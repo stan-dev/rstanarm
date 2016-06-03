@@ -47,11 +47,15 @@ stanreg <- function(object) {
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
-    
+
     stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
-    covmat <- cov(stanmat)
-    rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nvars]
     ses <- apply(stanmat, 2L, mad)
+    if (mer) {
+      mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
+      stanmat <- stanmat[,1:mark, drop = FALSE]
+    }
+    covmat <- cov(stanmat)
+    rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
     if (object$algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
   }
@@ -76,7 +80,8 @@ stanreg <- function(object) {
     linear.predictors = eta,
     residuals, 
     df.residual = if (opt) df.residual else NA_integer_, 
-    covmat = unpad_reTrms(unpad_reTrms(covmat, col = TRUE), col = FALSE),
+    # covmat = unpad_reTrms(unpad_reTrms(covmat, col = TRUE), col = FALSE),
+    covmat,
     y, 
     x, 
     model = object$model, 

@@ -37,8 +37,12 @@ ll_fun <- rstanarm:::ll_fun
 context("loo and waic")
 
 expect_identical_loo <- function(fit) {
-  expect_identical(SW(loo(fit)), SW(loo(log_lik(fit))))
-  expect_equal(waic(fit), waic(log_lik(fit)))
+  l <- SW(loo(fit))
+  w <- waic(fit)
+  expect_identical(l, SW(loo(log_lik(fit))))
+  expect_equal(w, waic(log_lik(fit)))
+  expect_s3_class(l, "loo")
+  expect_s3_class(w, "loo")
 }
 mcmc_only_error <- function(fit) {
   msg <- "only available for models fit using MCMC"

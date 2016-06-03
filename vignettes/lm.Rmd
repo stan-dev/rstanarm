@@ -1,7 +1,7 @@
 ---
 title: "Estimating Regularized Linear Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2016"
+date: "`r Sys.Date()`"
 output: 
   html_vignette:
     toc: yes
@@ -27,8 +27,8 @@ function in the __rstanarm__ package.
 ```{r, child = "children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
 the product of independent normal distributions.
 
 The goal of the __rstanarm__ package is to make Bayesian estimation of common
@@ -326,7 +326,7 @@ distributions thoughtfully and take a short-cut by specifying one prior
 distribution that is taken to apply to all the regression coefficients as if
 they were independent of each other (and the intercept and error variance). 
 This short-cut is available in the `stan_glm` function and is described in more
-detail in other __rstanarm__ vignettes for Generalized Linear Models (GLMs).
+detail in other __rstanarm__ [vignette](glm.html) for Generalized Linear Models (GLMs).
 
 We are optimistic that this prior on the $R^2$ will greatly help in accomplishing 
 our goal for __rstanarm__ of making Bayesian estimation of regression models 

@@ -1,7 +1,7 @@
 ---
 title: "Hierarchical Partial Pooling for Repeated Binary Trials"
 author: "Bob Carpenter, Jonah Gabry and Ben Goodrich"
-date: "02/11/2016"
+date: "`r Sys.Date()`"
 output: 
   html_vignette:
     toc: yes
