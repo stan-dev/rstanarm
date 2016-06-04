@@ -33,8 +33,12 @@ fit2 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, chains = CHAINS,
 
 expect_gg <- function(x) expect_s3_class(x, "ggplot")
 
+
 context("pp_check")
-test_that("pp_check doesn't throw bad errors", {
+
+
+# test ggplot object creation -----------------------------------------------
+test_that("pp_check creates ggplot objects when it should", {
   expect_gg(pp_check(fit, check = "dist", overlay = TRUE, size = 2))
   expect_gg(pp_check(fit2, check = "dist", overlay = FALSE))
 
@@ -64,7 +68,7 @@ test_that("pp_check doesn't throw bad errors", {
   expect_gg(pp_check(fit, check = "test", group = "herd"))
 })
 
-test_that("pp_check ok for vb", {
+test_that("pp_check works for vb", {
   fit3 <- SW(update(fit2, algorithm = "meanfield", iter = 10000))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, check = "resid"))
@@ -72,35 +76,42 @@ test_that("pp_check ok for vb", {
   expect_gg(pp_check(fit3, check = "test"))
 })
 
-test_that("pp_check throws appropriate errors", {
-  expect_error(p <- pp_check(fit, check = "test", test = "10982pqmeaw"), 
+test_that("pp_check binned residual plot works for factors", {
+  ir2 <- iris[-c(1:50), ]
+  ir2$Species <- factor(ir2$Species)
+  fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
+                      data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
+                      seed = SEED, refresh = REFRESH))
+  expect_gg(pp_check(fit3, check = "resid"))
+})
+
+
+# test errors --------------------------------------------------------------
+test_that("pp_check throws error if 'test' arg is bad", {
+  expect_error(pp_check(fit, check = "test", test = "10982pqmeaw"), 
                regexp = "not found")
-  expect_error(p <- pp_check(fit, check = "test", test = c("mean", "sd", "var")), 
+  expect_error(pp_check(fit, check = "test", test = c("mean", "sd", "var")), 
                regexp = "length")
-  
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
+})
+test_that("pp_check throws error if 'group' variable not found", {
+  expect_error(pp_check(fit, group = "herd2"), "not found in model frame")
+})
+test_that("pp_check throws error for optimizing", {
+  fito <- SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
 
-test_that("pp_check throws appropriate warnings", {
-  # nreps ignored
+
+# test warnings ----------------------------------------------------------
+test_that("pp_check throws warning if 'nreps' ignored ", {
   expect_warning(pp_check(fit, check = "test", nreps = 1), 
                  regexp = "'nreps' is ignored")
-  
-  # group ignored
+})
+test_that("pp_check throws warning if 'group' ignored", {  
   expect_warning(pp_check(fit, check = "test", test = c("mean", "sd"), group = "herd"), 
                  regexp = "'group' is ignored")
   expect_warning(pp_check(fit, check = "scatter", nreps = 3, group = "herd"), 
                  regexp = "'group' is ignored")
   expect_warning(pp_check(fit, check = "resid", group = "herd"), 
                  regexp = "'group' is ignored")
-})
-
-test_that("pp_check binned residual plot ok for factors", {
-  ir2 <- iris[-c(1:50), ]
-  ir2$Species <- factor(ir2$Species)
-  fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
-                   data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
-                   seed = SEED, refresh = REFRESH))
-  expect_gg(pp_check(fit3, check = "resid"))
 })

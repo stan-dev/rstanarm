@@ -157,8 +157,8 @@ test_that("loo/waic for stan_glmer works", {
 })
 
 
-context("loo and waic helpers")
 
+# helpers -----------------------------------------------------------------
 test_that(".weighted works", {
   f <- rstanarm:::.weighted
   expect_equal(f(2, NULL), 2)
