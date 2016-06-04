@@ -106,7 +106,7 @@
 #' # By level of 'herd' grouping variable
 #' pp_check(example_model, check = "dist", group = "herd")
 #'
-#' # Check residuals
+#' # Check residuals (default is binned residual plot for binomial model)
 #' pp_check(example_model, check = "resid", nreps = 6)
 #'
 #' # Check histograms of test statistics
@@ -151,13 +151,46 @@ pp_check.stanreg <-
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
-
-    ppc_fun <- set_ppc_fun(check, nreps, group, overlay, test, 
-                           binomial = is_binomial_ppc(object))
-    nreps <- set_nreps(ppc_fun, nreps)
     
+    valid_checks <- c("distributions", "residuals", "scatter", "test")
+    plotfun <-
+      ppc_fun(
+        check = match.arg(check, choices = valid_checks),
+        grouped = !is.null(group),
+        nreps = nreps,
+        ntests = length(test),
+        overlay = isTRUE(overlay),
+        binomial_model = is_binomial_ppc(object)
+      )
+    
+    y_yrep <-
+      ppc_y_and_yrep(
+        object,
+        seed = seed,
+        nreps = set_nreps(nreps, fun = plotfun),
+        binned_resid_plot = isTRUE(plotfun == "ppc_resid_binned")
+      )
+    
+    args <-
+      ppc_args(
+        y = y_yrep[["y"]],
+        yrep = y_yrep[["yrep"]],
+        group = set_group(object, group),
+        fun = plotfun,
+        test = test,
+        ...
+      )
+    
+    do.call(plotfun, args)
+  }
+
+ppc_y_and_yrep <-
+  function(object,
+           nreps = NULL,
+           seed = NULL,
+           binned_resid_plot = FALSE) {
     y <- get_y(object)
-    if (ppc_fun == "ppc_resid_binned") {
+    if (binned_resid_plot) {
       yrep <- posterior_linpred(object, transform = TRUE)
       yrep <- yrep[1:nreps, , drop = FALSE]
     } else {
@@ -168,7 +201,7 @@ pp_check.stanreg <-
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L] / trials
-        if (ppc_fun != "ppc_resid_binned")
+        if (!binned_resid_plot)
           yrep <- sweep(yrep, 2L, trials, "/")
       } else if (is.factor(y))
         y <- fac2bin(y)
@@ -179,17 +212,38 @@ pp_check.stanreg <-
         as.integer(as.factor(x)))
     }
     
-    ppc_args <- nlist(y, yrep, ...)
-    if (!is.null(group))
-      ppc_args$group <- model.frame(object)[, group]
-    if (ppc_fun == "ppc_resid_binned")
-      names(ppc_args)[2] <- "Ey"
-    if (ppc_fun %in% c("ppc_stat", "ppc_stat_2d"))
-      ppc_args$stat <- test
-    
-    do.call(ppc_fun, ppc_args)
+    nlist(y, yrep)
   }
 
+ppc_args <-
+  function(y, 
+           yrep,
+           group = NULL,
+           fun = character(),
+           test = NULL,
+           ...) {
+    args <- nlist(y, yrep, ...)
+    if (!is.null(group))
+      args$group <- group
+    if (fun == "ppc_resid_binned")
+      names(args)[names(args) %in% "yrep"] <- "Ey"
+    if (grepl("^ppc_stat", fun))
+      args$stat <- test
+    
+    args
+  }
+
+set_group <- function(object, group = NULL) {
+  if (is.null(group))
+    return(group)
+  
+  mf <- model.frame(object)
+  vars <- colnames(mf)
+  if (group %in% vars)
+    return(mf[, group])
+  
+  stop("Grouping variable '", group, "' not found in model frame. ")
+}
 
 is_binomial_ppc <- function(object) {
   if (is(object, "polr") && !is_scobit(object)) {
@@ -199,17 +253,13 @@ is_binomial_ppc <- function(object) {
   }
 }
 
-set_ppc_fun <-
+ppc_fun <-
   function(check,
+           grouped = FALSE,
            nreps = NULL,
-           group = NULL,
+           ntests = 1,
            overlay = TRUE,
-           test = "mean", 
-           binomial = FALSE) {
-    
-    checks <- c("distributions", "residuals", "scatter", "test")
-    check <- match.arg(check, choices = checks)
-    grouped <- !is.null(group)
+           binomial_model = FALSE) {
     
     if (check == "distributions") {
       if (grouped) 
@@ -223,14 +273,14 @@ set_ppc_fun <-
     if (check == "residuals") {
       if (grouped)
         warning("'group' is ignored for residuals plots.", call. = FALSE)
-      if (binomial) 
+      if (binomial_model) 
         return("ppc_resid_binned")
       else 
         return("ppc_resid")  
     }
     
     if (check == "test") {
-      if (length(test) > 1) {
+      if (ntests > 1) {
         if (grouped)
           warning("'group' is ignored if length(test) > 1.", call. = FALSE)
         return("ppc_stat_2d")
@@ -255,8 +305,8 @@ set_ppc_fun <-
     }
   }
 
-set_nreps <- function(ppc_fun, nreps = NULL) {
-  fun <- sub("ppc_", "", ppc_fun)
+set_nreps <- function(nreps = NULL, fun = character()) {
+  fun <- sub("ppc_", "", fun)
   reps <- switch(
     fun,
     # DISTRIBUTIONS
