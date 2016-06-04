@@ -34,8 +34,7 @@
 #'   \code{pp_validate} may be slow. See also the Note section below for advice
 #'   on avoiding numerical issues.
 #' @param seed A seed passed to Stan to use when refitting the model.
-#' @param ... Arguments (e.g. \code{size}) passed to
-#'   \code{\link[ggplot2]{geom_point}} to control the appearance of the plot.
+#' @param ... Currently ignored.
 #'   
 #' @details 
 #' We repeat \code{nreps} times the process of simulating parameters and data 
@@ -82,10 +81,13 @@
 #' checks and \code{\link{posterior_predict}} to draw from the posterior
 #' predictive distribution.
 #' 
+#' \code{\link[ppcheck]{set_color_scheme}} to change the color scheme of the
+#' plot.
+#' 
 #' @examples 
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model) 
-#' pp_validate(example_model)
+#' pp_validate(example_model, nreps = 2)
 #' }
 #' 
 #' @importFrom ggplot2 geom_segment scale_x_continuous element_line
@@ -185,14 +187,21 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   
   upper_lim <- max(max(z_stats + 1), 3.5)
   plotdata <- data.frame(x = z_batch, y = params_batch)
-  defaults <- list(shape = 21, fill = .PP_FILL, color = "black", 
-                   size = 3, alpha = 1)
-  geom_args <- set_geom_args(defaults, ...)
+  
+  scheme <- ppcheck::get_color_scheme()
   ggplot(plotdata, aes_string(x = "x", y = "y")) + 
-    geom_segment(aes_string(x = "0", xend = "x", y = "y", yend = "y")) +
-    do.call("geom_point", geom_args) + 
+    geom_segment(
+      aes_string(x = "0", xend = "x", y = "y", yend = "y"), 
+      color = scheme[["mid"]]
+    ) +
+    geom_point(
+      size = 3,
+      shape = 21,
+      fill = scheme[["dark"]],
+      color = scheme[["dark_highlight"]]
+    ) +
     scale_x_continuous(limits = c(0, upper_lim), expand = c(0, 0)) + 
-    labs(y = NULL, x = expression("Absolute " * z[theta] * " Statistics")) + 
-    pp_check_theme(no_y = FALSE) + 
+    xlab(expression("Absolute " * z[theta] * " Statistics")) + 
+    theme_ppc(y_lab = FALSE, legend_position = "right") +
     theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
 }  

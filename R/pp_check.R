@@ -91,8 +91,8 @@
 #'   predictive distribution. Examples of posterior predictive checks can also 
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #'   
-#'   To change the color scheme of the plots see 
-#'   \code{\link[ppcheck]{set_color_scheme}}.
+#'   \code{\link[ppcheck]{set_color_scheme}} to change the color scheme of the
+#'   plots.
 #' 
 #' @examples 
 #' if (!exists("example_model")) example(example_model)
@@ -139,7 +139,6 @@
 #' }
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
-#' @importFrom ppcheck pp_check
 #' 
 pp_check.stanreg <-
   function(object,
