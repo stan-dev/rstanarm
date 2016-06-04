@@ -23,6 +23,8 @@
 #' distribution.
 #' 
 #' @export
+#' @export pp_check
+#' @aliases pp_check
 #' @method pp_check stanreg
 #' @templateVar bdaRef (Ch. 6)
 #' @templateVar stanregArg object
@@ -137,6 +139,7 @@
 #' }
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
+#' @importFrom ppcheck pp_check
 #' 
 pp_check.stanreg <-
   function(object,

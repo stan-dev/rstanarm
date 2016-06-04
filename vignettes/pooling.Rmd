@@ -1295,7 +1295,7 @@ then arrange everything in a single plot.
 tstat_plots <- function(model, stats) {
   lapply(stats, function(stat) {
     graph <- pp_check(model, check = "test", test = stat, 
-                      binwidth = .025, seed = SEED) # optional arguments
+                      binwidth = 1/40, seed = SEED) # optional arguments
     graph + xlab(stat) + theme(legend.position = "none")
   })
 }
@@ -1308,7 +1308,8 @@ library(gridExtra)
 grid.arrange(
   arrangeGrob(grobs = ppcs_pool, nrow = 1, left = "Pooling"), 
   arrangeGrob(grobs = ppcs_nopool, nrow = 1, left = "No Pooling"),
-  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling"))
+  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling")
+)
 ```
 
 The only worrisomely extreme value visible in the plots is the $p$-value for

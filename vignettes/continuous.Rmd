@@ -116,7 +116,8 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
 data(kidiq)
-post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, family = gaussian(link = "identity"), 
+post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
+                  family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
@@ -254,8 +255,8 @@ The `pp_check` function generates a variety of plots comparing the observed
 outcome $y$ to simulated datasets $y^{\rm rep}$ from the posterior predictive 
 distribution using the same observations of the predictors $X$ as we used to fit
 the model. He we show a few of the possible displays. The documentation at
-`help("pp_check", package = "rstanarm")` has details on all of the `pp_check`
-options.
+`help("pp_check.stanreg", package = "rstanarm")` has details on all of the
+`pp_check` options.
 
 First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
