@@ -202,6 +202,6 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     ) +
     scale_x_continuous(limits = c(0, upper_lim), expand = c(0, 0)) + 
     xlab(expression("Absolute " * z[theta] * " Statistics")) + 
-    theme_ppc(y_lab = FALSE, legend_position = "right") +
+    ppcheck::theme_ppc(y_lab = FALSE) +
     theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
 }  
