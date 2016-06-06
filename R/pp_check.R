@@ -51,37 +51,45 @@
 #'   2) naming a single function or a pair of functions. The function(s) should 
 #'   take a vector input and return a scalar test statistic. See Details and
 #'   Examples.
-#' @param group For models with parameters that varying by level of grouping 
+#' @param group For models with parameters that vary by level of grouping 
 #'   variables, a string naming a grouping variable by which to stratify. Not 
 #'   available for all plots.
 #' @param ... Passed to the \pkg{\link{ppcheck}} function called.
 #' 
-#' @return A ggplot object that can be further customized using the
+#' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
 #'   
 #' @details Descriptions of the plots corresponding to the different values of 
 #' \code{check}:
 #' \describe{
-#'  \item{\code{distributions}}{The distributions of \eqn{y} and \code{nreps} 
-#'  simulated \eqn{y^{rep}}{yrep} datasets.} 
-#'  \item{\code{residuals}}{The distributions of residuals computed from \eqn{y}
-#'  and each of \code{nreps} simulated datasets. For binomial data, binned 
-#'  residual plots are generated (similar to \code{\link[arm]{binnedplot}}).}
-#'  \item{\code{scatter}}{If \code{nreps} is \code{NULL} then \eqn{y} is plotted
-#'  against the average values of \eqn{y^{rep}}{yrep}, i.e., the points
-#'  \eqn{(y_n, \bar{y}^{rep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n =
-#'  1,...,N}, where each \eqn{y^{rep}_n}{yrep_n} is a vector of length equal to
-#'  the number of posterior draws. If \code{nreps} is a (preferably small)
-#'  integer, then only \code{nreps} \eqn{y^{rep}}{yrep} datasets are simulated
-#'  and they are each plotted separately against \eqn{y}.}
-#'  \item{\code{test}}{The distribution of a single test statistic
-#'  \eqn{{T(y^{rep})}}{T(yrep)} or a pair of test statistics over the
-#'  \code{nreps} simulated datasets. If the \code{test} argument specifies only
-#'  one function then the resulting plot is a histogram of
-#'  \eqn{{T(y^{rep})}}{T(yrep)} and the value of the test statistic in the 
-#'  observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two 
-#'  functions are specified then the plot is a scatterplot and \eqn{T(y)} is 
-#'  shown as a large point.}
+#'  \item{\code{distributions}}{
+#'    The distributions of \eqn{y} and \code{nreps} simulated
+#'    \eqn{y^{rep}}{yrep} datasets.
+#'  } 
+#'  \item{\code{residuals}}{
+#'    The distributions of residuals computed from \eqn{y} and each of
+#'    \code{nreps} simulated datasets. For binomial data, binned residual plots
+#'    are generated (similar to \code{\link[arm]{binnedplot}}).
+#'  }
+#'  \item{\code{scatter}}{
+#'    If \code{nreps} is \code{NULL} then \eqn{y} is plotted against the average
+#'    values of \eqn{y^{rep}}{yrep}, i.e., the points \eqn{(y_n, 
+#'    \bar{y}^{rep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n = 1,...,N}, 
+#'    where each \eqn{y^{rep}_n}{yrep_n} is a vector of length equal to the
+#'    number of posterior draws. If \code{nreps} is a (preferably small)
+#'    integer, then only \code{nreps} \eqn{y^{rep}}{yrep} datasets are simulated
+#'    and they are each plotted separately against \eqn{y}.
+#'  }
+#'  \item{\code{test}}{
+#'    The distribution of a single test statistic
+#'    \eqn{{T(y^{rep})}}{T(yrep)} or a pair of test statistics over the
+#'    \code{nreps} simulated datasets. If the \code{test} argument specifies only
+#'    one function then the resulting plot is a histogram of
+#'    \eqn{{T(y^{rep})}}{T(yrep)} and the value of the test statistic in the 
+#'    observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two 
+#'    functions are specified then the plot is a scatterplot and \eqn{T(y)} is 
+#'    shown as a large point.
+#'  }
 #' }
 #' 
 #' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
@@ -96,6 +104,7 @@
 #' 
 #' @examples 
 #' if (!exists("example_model")) example(example_model)
+#' 
 #' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
@@ -129,8 +138,8 @@
 #' 
 #' # Defining a function to compute test statistic 
 #' roaches$roach100 <- roaches$roach1 / 100
-#' fit_pois <- stan_glm(y ~ treatment + roach100 + senior, offset = log(exposure2), 
-#'                      family = "poisson", data = roaches)
+#' fit_pois <- stan_glm(y ~ treatment + roach100 + senior, data = roaches,
+#'                      offset = log(exposure2), family = "poisson")
 #' fit_nb <- update(fit_pois, family = "neg_binomial_2")
 #' 
 #' prop0 <- function(y) mean(y == 0) # function to compute proportion of zeros
@@ -171,7 +180,7 @@ pp_check.stanreg <-
         binned_resid_plot = isTRUE(plotfun == "ppc_resid_binned")
       )
     
-    args <-
+    plotargs <-
       ppc_args(
         y = y_yrep[["y"]],
         yrep = y_yrep[["yrep"]],
@@ -181,7 +190,7 @@ pp_check.stanreg <-
         ...
       )
     
-    do.call(plotfun, args)
+    do.call(plotfun, plotargs)
   }
 
 ppc_y_and_yrep <-
@@ -208,8 +217,7 @@ ppc_y_and_yrep <-
     }
     if (is(object, "polr")) {
       y <- as.integer(y)
-      yrep <- apply(yrep, 2L, function(x)
-        as.integer(as.factor(x)))
+      yrep <- apply(yrep, 2L, function(x) as.integer(as.factor(x)))
     }
     
     nlist(y, yrep)
@@ -307,8 +315,7 @@ ppc_fun <-
 
 set_nreps <- function(nreps = NULL, fun = character()) {
   fun <- sub("ppc_", "", fun)
-  reps <- switch(
-    fun,
+  switch(fun,
     # DISTRIBUTIONS
     "dens_overlay" = nreps %ORifNULL% 50,
     "hist" = nreps %ORifNULL% 8,
