@@ -1,4 +1,4 @@
-Mon May 22 2016 (2.9.0-4)
+Tue May 24 2016 (2.9.0-4)
 1. Serious bug fixes
   * posterior_predict with newdata was wrong for ordinal models
   * stan_lm() was wrong if there was no intercept

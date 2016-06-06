@@ -28,6 +28,8 @@ fit <- example_model
 fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield")
 
+expect_gg <- function(x) expect_s3_class(x, "ggplot")
+
 
 # plot.stanreg ------------------------------------------------------------
 context("plot.stanreg")
@@ -41,16 +43,13 @@ test_that("plot method doesn't throw bad errors and creates ggplot objects", {
   
   for (j in seq_along(plotters1)) {
     expect_message(p <- plot(fit, plotfun = plotters1[j]), regexp = "default")
-    expect_is(p, "ggplot")
-    expect_is(p <- plot(fit, plotfun = plotters1[j], pars = "beta"), "ggplot")
-    expect_is(p <- plot(fit, plotfun = plotters1[j], pars = "alpha", 
-                        regex_pars = "period"), "ggplot")
-    expect_is(p <- plot(fit, plotfun = plotters1[j], regex_pars = "period"), 
-              "ggplot")
+    expect_gg(p)
+    expect_gg(plot(fit, plotfun = plotters1[j], pars = "beta"))
+    expect_gg(plot(fit, plotfun = plotters1[j], pars = "alpha", regex_pars = "period"))
+    expect_gg(plot(fit, plotfun = plotters1[j], regex_pars = "period"))
   }
   for (j in seq_along(plotters2)) {
-    expect_silent(p <- plot(fit, plotfun = plotters2[j]))
-    expect_is(p, "ggplot")
+    expect_gg(plot(fit, plotfun = plotters2[j]))
   }
 })
 
@@ -64,9 +63,9 @@ test_that("plot.stanreg ok for optimization", {
 })
 
 test_that("plot.stanreg ok for vb", {
-  expect_is(plot(fitvb), "ggplot")
-  expect_is(plot(fitvb, "hist"), "ggplot")
-  expect_is(plot(fitvb, "dens", separate_chains = TRUE), "ggplot")
+  expect_gg(plot(fitvb))
+  expect_gg(plot(fitvb, "hist"))
+  expect_gg(plot(fitvb, "dens", separate_chains = TRUE))
   samp_only <- c("rhat", "ess", "mcse", "par", "diag", "ac")
   for (j in seq_along(samp_only)) {
     expect_error(plot(fitvb, samp_only[j]), regexp = "MCMC") 
@@ -88,27 +87,19 @@ test_that("pairs method ok", {
 # posterior_vs_prior ------------------------------------------------------
 context("posterior_vs_prior")
 test_that("posterior_vs_prior ok", {
-  expect_is(class = "ggplot",
-            object = posterior_vs_prior(fit, pars = "beta"))
-  expect_is(class = "ggplot", 
-            object = posterior_vs_prior(fit, pars = "varying", 
-                                        group_by_parameter = TRUE, 
-                                        color_by = "vs"))
-  expect_is(class = "ggplot", 
-            object = posterior_vs_prior(fit, regex_pars = "period",
-                                        group_by_parameter = FALSE, 
-                                        color_by = "none", facet_args = 
-                                          list(scales = "free", nrow = 2)))
+  expect_gg(posterior_vs_prior(fit, pars = "beta"))
+  expect_gg(posterior_vs_prior(fit, pars = "varying", group_by_parameter = TRUE, 
+                               color_by = "vs"))
+  expect_gg(posterior_vs_prior(fit, regex_pars = "period", group_by_parameter = FALSE, 
+                               color_by = "none", facet_args = list(scales = "free", nrow = 2)))
   
   fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
                         prior = R2(0.2, "mean"), init_r = 0.1, 
                         seed = SEED, chains = CHAINS, cores = CORES, 
                         iter = 100, refresh = 0)
-  expect_is(class = "ggplot", object = posterior_vs_prior(fit_polr))
-  expect_is(class = "ggplot", 
-            object = posterior_vs_prior(fit_polr, regex_pars = "\\|",
-                                        group_by_parameter = TRUE, 
-                                        color_by = "vs"))
+  expect_gg(posterior_vs_prior(fit_polr))
+  expect_gg(posterior_vs_prior(fit_polr, regex_pars = "\\|", group_by_parameter = TRUE, 
+                               color_by = "vs"))
 })
 
 test_that("posterior_vs_prior throws errors", {

@@ -82,8 +82,6 @@
 #' plot(fit, "ess")
 #' 
 #' # Using regex_pars
-#' plot(fit, regex_pars = "period")
-#' plot(fit, regex_pars = "herd:1")
 #' plot(fit, regex_pars = "herd:1\\]")
 #' plot(fit, regex_pars = "herd:[279]")
 #' plot(fit, regex_pars = "herd:[279]|period2")
