@@ -157,7 +157,7 @@ stan_lmer <- function(formula,
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
-  mc[[1L]] <- quote(stan_glmer)
+  mc[[1L]] <- quote(rstanarm::stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
   out <- eval(mc, parent.frame())
@@ -193,7 +193,7 @@ stan_glmer.nb <- function(formula,
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
-  mc[[1]] <- quote(stan_glmer)
+  mc[[1]] <- quote(rstanarm::stan_glmer)
   mc$REML <- mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())

@@ -34,8 +34,30 @@ RANEF_tol <- 0.20
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 
 
-context("stan_lmer")
-test_that("stan_lmer returns expected result for slepstudy example", {
+context("stan_glmer")
+
+test_that("stan_lmer and stan_glmer.nb work without attaching package", {
+  fit <- function(seed) {
+    rstanarm::stan_lmer(disp ~ drat + (1 | cyl), data = datasets::mtcars,
+                        chains = 1, iter = 2, seed = seed)
+    
+    counts <- c(18,17,15,20,10,20,25,13,12)
+    outcome <- gl(3,1,9)
+    treatment <- gl(3,3)
+    rstanarm::stan_glmer.nb(counts ~ outcome + (1|treatment),
+                            chains = 1, iter = 2, seed = seed)
+  }
+  environment(fit) <- baseenv()
+  expect_stanreg(fit(SEED))
+})
+
+
+test_that("stan_lmer returns an error when multiple group-specific terms are specified", {
+  expect_error(stan_lmer(Reaction / 10 ~ Days + (Days | Subject) + (1|Subject), 
+                         data = sleepstudy, chains = 1))
+})
+
+test_that("stan_lmer returns expected result for sleepstudy example", {
   fmla <- Reaction / 10 ~ Days + (Days | Subject)
   fit <- stan_lmer(fmla, data = sleepstudy, refresh = REFRESH,
                    init_r = 0.05, chains = CHAINS, iter = ITER, seed = SEED)
@@ -47,7 +69,6 @@ test_that("stan_lmer returns expected result for slepstudy example", {
   expect_equal(ngrps(fit), ngrps(ans))
 })
 
-context("stan_lmer")
 test_that("stan_lmer returns expected result for Penicillin example", {
   fmla <- as.formula(diameter ~ (1|plate) + (1|sample))
   fit <- stan_lmer(fmla, data = Penicillin, chains = CHAINS, iter = ITER, 
@@ -60,7 +81,6 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   expect_identical(ngrps(fit), ngrps(ans))
 })
 
-context("stan_glmer (binomial)")
 test_that("stan_glmer returns expected result for cbpp example", {
   links <- c("logit", "probit", "cauchit", "log", "cloglog")
   # for (i in seq_along(links)) {
@@ -76,6 +96,7 @@ test_that("stan_glmer returns expected result for cbpp example", {
     expect_equal(ngrps(fit), ngrps(ans))
   # }
 })
+
 test_that("stan_glmer returns expected result for bernoulli (lalonde)", {
   data(lalonde, package = "arm")
   dat <- within(lalonde, {
@@ -95,7 +116,6 @@ test_that("stan_glmer returns expected result for bernoulli (lalonde)", {
   expect_equal(ngrps(fit), ngrps(ans))
 })
 
-context("stan_glmer.nb")
 test_that("stan_glmer.nb ok", {
   dd <- expand.grid(f1 = factor(1:3),
                     f2 = LETTERS[1:2], g=1:9, rep=1:15,
@@ -127,10 +147,3 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   expect_identical(ngrps(fit), ngrps(ans))
 })
-
-context("stan_lmer")
-test_that("stan_lmer returns an error when multiple group-specific terms are specified", {
-  expect_error(stan_lmer(Reaction / 10 ~ Days + (Days | Subject) + (1|Subject), 
-                         data = sleepstudy, chains = 1))
-})
-  

@@ -193,7 +193,7 @@ stan_glm.nb <- function(formula,
   mc <- call <- match.call()
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
-  mc[[1L]] <- quote(stan_glm)
+  mc[[1L]] <- quote(rstanarm::stan_glm)
   mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
