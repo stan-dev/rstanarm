@@ -136,18 +136,32 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function(...) {
-  if ("family" %in% names(list(...))) 
+stan_lmer <- function(formula,
+                      data = NULL,
+                      subset,
+                      weights,
+                      na.action = getOption("na.action", "na.omit"),
+                      offset,
+                      contrasts = NULL,
+                      ...,
+                      prior = normal(),
+                      prior_intercept = normal(),
+                      prior_ops = prior_options(),
+                      prior_covariance = decov(),
+                      prior_PD = FALSE,
+                      algorithm = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta = NULL,
+                      QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }
 
@@ -157,17 +171,32 @@ stan_lmer <- function(...) {
 #' @param link For \code{stan_glmer.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 #' 
-stan_glmer.nb <- function(..., link = "log") {
-  if ("family" %in% names(list(...))) 
+stan_glmer.nb <- function(formula,
+                          data = NULL,
+                          subset,
+                          weights,
+                          na.action = getOption("na.action", "na.omit"),
+                          offset,
+                          contrasts = NULL,
+                          link = "log",
+                          ...,
+                          prior = normal(),
+                          prior_intercept = normal(),
+                          prior_ops = prior_options(),
+                          prior_covariance = decov(),
+                          prior_PD = FALSE,
+                          algorithm = c("sampling", "meanfield", "fullrank"),
+                          adapt_delta = NULL,
+                          QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }
