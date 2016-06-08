@@ -38,17 +38,20 @@ context("stan_glmer")
 
 test_that("stan_lmer and stan_glmer.nb work without attaching package", {
   fit <- function(seed) {
-    rstanarm::stan_lmer(disp ~ drat + (1 | cyl), data = datasets::mtcars,
+    a <- rstanarm::stan_lmer(disp ~ drat + (1 | cyl), data = datasets::mtcars,
                         chains = 1, iter = 2, seed = seed)
     
     counts <- c(18,17,15,20,10,20,25,13,12)
     outcome <- gl(3,1,9)
     treatment <- gl(3,3)
-    rstanarm::stan_glmer.nb(counts ~ outcome + (1|treatment),
+    b <- rstanarm::stan_glmer.nb(counts ~ outcome + (1|treatment),
                             chains = 1, iter = 2, seed = seed)
+    list(a, b)
   }
   environment(fit) <- baseenv()
-  expect_stanreg(fit(SEED))
+  fits <- fit(SEED)
+  expect_stanreg(fits[[1]])
+  expect_stanreg(fits[[2]])
 })
 
 
