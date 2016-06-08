@@ -115,3 +115,22 @@ test_that("pp_check throws warning if 'group' ignored", {
   expect_warning(pp_check(fit, check = "resid", group = "herd"), 
                  regexp = "'group' is ignored")
 })
+
+
+
+# helpers -----------------------------------------------------------------
+test_that("ignore_nreps works", {
+  ignore_nreps <- rstanarm:::ignore_nreps
+  expect_null(ignore_nreps(10, "dist"))
+  expect_silent(ignore_nreps(NULL, "test"))
+  expect_warning(ignore_nreps(10, "test"), "'nreps' is ignored")
+})
+
+test_that("set_group works", {
+  set_group <- rstanarm:::set_group
+  expect_null(set_group(fit, group = NULL))
+  expect_equal(set_group(fit, group = "herd"), model.frame(fit)$herd)
+  expect_error(set_group(fit, group = "banana"), 
+               "variable 'banana' not found in model frame")
+})
+

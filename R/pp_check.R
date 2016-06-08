@@ -161,10 +161,10 @@ pp_check.stanreg <-
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
-    valid_checks <- c("distributions", "residuals", "scatter", "test")
+    valid_ppcs <- c("distributions", "residuals", "scatter", "test")
     plotfun <-
       ppc_fun(
-        check = match.arg(check, choices = valid_checks),
+        check = match.arg(check, choices = valid_ppcs),
         grouped = !is.null(group),
         nreps = nreps,
         ntests = length(test),
