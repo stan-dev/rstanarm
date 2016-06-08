@@ -168,17 +168,35 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 #' @export
 #' @param link For \code{stan_glm.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
-stan_glm.nb <- function(..., link = "log") {
-  if ("family" %in% names(list(...))) 
+#'   
+stan_glm.nb <- function(formula,
+                        data,
+                        weights,
+                        subset,
+                        na.action = NULL,
+                        offset = NULL,
+                        model = TRUE,
+                        x = FALSE,
+                        y = TRUE,
+                        contrasts = NULL,
+                        link = "log",
+                        ...,
+                        prior = normal(),
+                        prior_intercept = normal(),
+                        prior_ops = prior_options(),
+                        prior_PD = FALSE,
+                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                        adapt_delta = NULL,
+                        QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call()
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glm)
   mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }
