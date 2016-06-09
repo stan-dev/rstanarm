@@ -305,17 +305,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (!is_bernoulli) {
     if (sparse) {
       parts <- extract_sparse_parts(xtemp)
-      standata$nnx_X <- length(parts$w)
+      standata$nnz_X <- length(parts$w)
       standata$w_X <- parts$w
       standata$v_X <- parts$v
       standata$u_X <- parts$u
+      standata$X <- array(0, dim = c(0L, dim(xtemp)))
     }
     else {
       standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
-      standata$nnz_X = 0L
-      standata$w_X = double(0)
-      standata$v_X = integer(0)
-      standata$u_X = integer(0)
+      standata$nnz_X <- 0L
+      standata$w_X <- double(0)
+      standata$v_X <- integer(0)
+      standata$u_X <- integer(0)
     }
     standata$y <- y
     standata$weights <- weights
@@ -497,19 +498,19 @@ pad_reTrms <- function(Z, cnms, flist) {
   n <- nrow(Z)
   mark <- length(p) - 1L
   if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = TRUE)),
+                       Matrix(0, n, p[mark], sparse = FALSE)),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }
   }
   else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cbind(Z[, 1:i, drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = TRUE),
+                 Matrix(0, n, p[mark], sparse = FALSE),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }

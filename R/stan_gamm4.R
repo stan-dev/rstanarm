@@ -31,6 +31,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-QR
+#' @template args-sparse
 #' 
 #' @param formula,random,family,data,knots,drop.unused.levels Same as for 
 #'   \code{\link[gamm4]{gamm4}}.
@@ -70,7 +71,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE) {
+                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
 
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)

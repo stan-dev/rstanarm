@@ -8,8 +8,7 @@
   matrix[N,K] X[dense_X];       // centered predictor matrix in the dense case
 
   // stuff for the sparse case
-  int<lower=0> nnz_X;                   // number of non-zero elements in the implicit X matrix
-  vector[nnz_X] w_X;                    // non-zero elements in the implicit X matrix
-  int<lower=0> v_X[nnz_X];              // column indices for w_X
-  int<lower=0> u_X[(N+1)*(nnz_X > 0)];  // where the non-zeros start in each row of X
-  
+  int<lower=0> nnz_X;                    // number of non-zero elements in the implicit X matrix
+  vector[nnz_X] w_X;                     // non-zero elements in the implicit X matrix
+  int<lower=0> v_X[nnz_X];               // column indices for w_X
+  int<lower=0> u_X[(N+1)*(1 - dense_X)]; // where the non-zeros start in each row of X

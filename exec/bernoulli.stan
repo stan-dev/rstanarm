@@ -111,11 +111,11 @@ data {
   int<lower=0> nnz_X0;                       // number of non-zero elements in the implicit X0 matrix
   vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
   int<lower=0> v_X0[nnz_X0];                 // column indices for w_X0
-  int<lower=0> u_X0[(N[1]+1)*(nnz_X0 > 0)];  // where the non-zeros start in each row of X0
+  int<lower=0> u_X0[(N[1]+1)*(1 - dense_X)]; // where the non-zeros start in each row of X0
   int<lower=0> nnz_X1;                       // number of non-zero elements in the implicit X1 matrix
   vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
   int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
-  int<lower=0> u_X1[(N[2]+1)*(nnz_X1 > 0)];  // where the non-zeros start in each row of X1
+  int<lower=0> u_X1[(N[2]+1)*(1 - dense_X)]; // where the non-zeros start in each row of X1
   
   #include "data_glm.stan"
 
