@@ -40,7 +40,6 @@ test_that("pp_check doesn't throw bad errors", {
   expect_gg(pp_check(fit2, check = "resid", fill = "red", bins = 15))
   expect_gg(pp_check(fit, check = "scatter"))
   expect_gg(pp_check(fit2, check = "scatter", color = "purple"))
-  # expect_gg(p)
   for (j in 1:2) {
     expect_gg(pp_check(fit, check = "dist", overlay = FALSE, nreps = j))
     expect_gg(pp_check(fit, check = "dist", overlay = TRUE, nreps = j))
