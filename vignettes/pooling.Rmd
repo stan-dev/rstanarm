@@ -762,7 +762,7 @@ The partial pooling model appears to be making slightly better
 predictions than the full pooling model, which in turn is making
 slightly better predictions than the no pooling model.
 
-#### Approximating the expected log posterior density
+#### Approximating the expected log predictive density
 
 Ventari, Gelman, and Gabry (2016) shows that the expected log predictive 
 density can be approximated using the `loo` function for each model and 
