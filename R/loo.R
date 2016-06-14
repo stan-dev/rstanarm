@@ -133,23 +133,29 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
   loo_x <- loo.function(ll_fun(x), args = ll_args(x), ...)
-  thresh <- k_threshold %ORifNULL% 0.5
-  obs <- loo::pareto_k_ids(loo_x, threshold = thresh)
-  if (!length(obs)) {
-    message("No problematic observations found. Returning loo object.")
+  
+  bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.5))
+  user_threshold <- !is.null(k_threshold)
+  
+  if (!length(bad_obs)) {
+    if (user_threshold)
+      message("No problematic observations found (all pareto_k < ", 
+              k_threshold, "). ", "Returning loo object.")
     return(loo_x)
-  } else {
-    if (!is.null(k_threshold))
-      return(reloo(x, loo_x, obs))
-    
-    warning(length(obs), " observations had a pareto_k > ", thresh, ". ", 
-            "Call loo again with 'k_threshold' set to 0.5 to calculate the ",
-            "ELPD without the assumption that these observations are negligible.", 
-            "This will refit the model ", length(obs), " times to ", 
-            "compute the ELPDs for the problematic observations directly.")
+  }
+  if (!user_threshold) {
+    warning(
+      length(bad_obs), " observations had a pareto_k > 0.5. ",
+      "Call loo again with 'k_threshold' set to 0.5 to calculate the ",
+      "ELPD without the assumption that these observations are negligible. ",
+      "This will refit the model ", length(bad_obs), " times to ",
+      "compute the ELPDs for the problematic observations directly."
+      )
     
     return(suppressWarnings(loo_x))
   }
+  
+  reloo(x, loo_x, obs = bad_obs)
 }
 
 
