@@ -19,7 +19,7 @@
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
 #' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
-#' using the \pkg{\link[=loo-package]{loo}} package. Exact K-fold
+#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
 #' cross-validation is also available. Compare two or more models using the
 #' \code{\link[loo]{compare}} function.
 #' 
@@ -55,33 +55,33 @@
 #' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
 #' Package} vignette for an example of this process).
 #' 
-#' The \code{k_threshold} argument to \code{loo}
-#' provided as a possible remedy when the diagnositcs reveal problems stemming
-#' from the posterior's sensitivity to particular observations. Warnings about
-#' Pareto \eqn{k} estimates indicate observations for which the approximation to
-#' LOO is problematic. The \code{k_threshold} argument can be used to set the
-#' \eqn{k} value above which an observation is flagged. If \code{k_threshold} is
-#' not \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates
-#' above \code{k_threshold} then when \code{loo} is called it will refit the
-#' original model \eqn{J} times, each time leaving out one of the \eqn{J}
-#' problematic observations. The pointwise contributions of these observations
-#' to the total ELPD are then computed directly and subsituted for the previous
-#' estimates from these \eqn{J} observations that are stored in \code{loo_x}
-#' object.
+#' The \code{k_threshold} argument to \code{loo} provided as a possible remedy
+#' when the diagnositcs reveal problems stemming from the posterior's
+#' sensitivity to particular observations. Warnings about Pareto \eqn{k}
+#' estimates indicate observations for which the approximation to LOO is
+#' problematic. The \code{k_threshold} argument can be used to set the \eqn{k}
+#' value above which an observation is flagged. If \code{k_threshold} is not
+#' \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates above
+#' \code{k_threshold} then when \code{loo} is called it will refit the original
+#' model \eqn{J} times, each time leaving out one of the \eqn{J} problematic
+#' observations. The pointwise contributions of these observations to the total
+#' ELPD are then computed directly and subsituted for the previous estimates
+#' from these \eqn{J} observations that are stored in the object created by
+#' \code{loo}.
 #' 
 #' \subsection{K-fold cross-validation}{
-#' The \code{kfold} function performs exact K-fold cross-validation. First the
-#' data are randomly partitioned into \eqn{K} subsets of equal (or as close to
-#' equal as possible) size. Then the model is refit \eqn{K} times, each time
-#' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total
-#' number of observations in the data then K-fold cross-validation is equivalent
-#' to exact leave-one-out cross-validation. The \code{compare} function is also 
-#' compatible with the objects returned by \code{kfold}.
+#' The \code{kfold} function performs exact \eqn{K}-fold cross-validation. First
+#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close
+#' to equal as possible) size. Then the model is refit \eqn{K} times, each time 
+#' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total 
+#' number of observations in the data then \eqn{K}-fold cross-validation is
+#' equivalent to exact leave-one-out cross-validation. The \code{compare}
+#' function is also compatible with the objects returned by \code{kfold}.
 #' }
 #'   
 #' @seealso 
 #' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
-#' K-fold CV.
+#' \eqn{K}-fold CV.
 #' 
 #' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
 #' for details on the computations implemented by the \pkg{loo} package and the 
@@ -162,10 +162,10 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 #' @rdname loo.stanreg
 #' @export
 #' @param K The number of subsets of equal (if possible) size into which the 
-#'   data will be randomly partitioned for performing K-fold cross-validation.
+#'   data will be randomly partitioned for performing \eqn{K}-fold cross-validation.
 #'   The model is refit \code{K} times, each time leaving out one of the
 #'   \code{K} subsets. If \code{K} is equal to the total number of observations
-#'   in the data then K-fold cross-validation is equivalent to exact
+#'   in the data then \eqn{K}-fold cross-validation is equivalent to exact
 #'   leave-one-out cross-validation.
 #'
 kfold <- function(x, K) {
@@ -199,6 +199,12 @@ kfold <- function(x, K) {
   structure(out, class = c("kfold", "loo"), K = K)
 }
 
+#' Print method for kfold
+#' 
+#' @keywords internal
+#' @export
+#' @method print kfold
+#' @param x,digits,... See \code{\link{print}}.
 print.kfold <- function(x, digits = 1, ...) {
   cat("\n", paste0(attr(x, "K"), "-fold"), "cross-validation\n\n")
   out <- data.frame(Estimate = x$elpd_kfold, SE = x$se_elpd_kfold, 
@@ -206,10 +212,18 @@ print.kfold <- function(x, digits = 1, ...) {
   .printfr(out, digits)
   invisible(x)
 }
-log_mean_exp <- function(x) {
-  max_x <- max(x)
-  max_x + log(sum(exp(x - max_x))) - log(length(x))
+
+#' @rdname loo.stanreg
+#' @export
+#' @importFrom loo waic waic.function
+#' @note The \code{...} is ignored for \code{waic}.
+#' 
+waic.stanreg <- function(x, ...) {
+  if (!used.sampling(x)) 
+    STOP_sampling_only("waic")
+  waic.function(ll_fun(x), args = ll_args(x))
 }
+
 
 
 # @param x stanreg object
@@ -253,16 +267,9 @@ reloo <- function(x, loo_x, obs, ...) {
   loo_x
 }
 
-
-#' @rdname loo.stanreg
-#' @export
-#' @importFrom loo waic waic.function
-#' @note The \code{...} is ignored for \code{waic}.
-#' 
-waic.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) 
-    STOP_sampling_only("waic")
-  waic.function(ll_fun(x), args = ll_args(x))
+log_mean_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x))) - log(length(x))
 }
 
 

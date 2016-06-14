@@ -159,6 +159,16 @@ test_that("loo/waic for stan_glmer works", {
 })
 
 
+# loo with refitting ------------------------------------------------------
+context("loo then refitting")
+
+test_that("loo with k_threshold works", {
+  fit <- SW(stan_glm(mpg ~ wt + cyl, prior = normal(0, 1000), data = mtcars, 
+                     seed = SEED, iter = 100, chains = 4, cores = 1, 
+                     refresh = REFRESH))
+  expect_warning(loo(fit), "Call loo again with 'k_threshold'")
+  expect_message(loo(fit, k_threshold = 0.5), "Model will be refit")
+})
 
 
 # kfold -------------------------------------------------------------------
