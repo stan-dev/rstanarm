@@ -15,12 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Leave-one-out cross-validation (LOO)
+#' Leave-one-out (LOO) and K-fold cross-validation
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC) 
-#' using the \pkg{\link[=loo-package]{loo}} package. Compare two or more models 
-#' using the \code{\link[loo]{compare}} function.
+#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
+#' using the \pkg{\link[=loo-package]{loo}} package. Exact K-fold
+#' cross-validation is also available. Compare two or more models using the
+#' \code{\link[loo]{compare}} function.
 #' 
 #' @aliases loo waic compare
 #'
@@ -28,26 +29,40 @@
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template reference-loo
+#' 
 #' @inheritParams loo::loo
+#' 
 #' @return An object of class 'loo'. See the 'Value' section in 
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
-#'   structure of these objects.
+#'   structure of these objects. The object returned by \code{kfold} also 
+#'   has class 'kfold' in addition to 'loo'.
 #'   
-#' @details 
-#' The LOO Information Criterion (LOOIC) has the same purpose as the Akaike 
-#' Information Criterion (AIC) that is used by frequentists. Both are intended 
-#' to estimate the expected log predictive density (ELPD) for a new dataset. 
-#' However, the AIC ignores priors and assumes that the posterior distribution 
-#' is multivariate normal, whereas the functions from the 
-#' \pkg{\link[=loo-package]{loo}} package do not make this distributional 
-#' assumption and integrate over uncertainty in the parameters. This only 
-#' assumes that any one observation can be omitted without having a major effect
-#' on the posterior distribution, which can be judged using the diagnostic plot 
-#' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the 
-#' rstanarm Package} vignette has an example of this entire process.
+#' @details
+#' \subsection{\code{loo}}{
+#' The \code{loo} method for stanreg objects provides an interface to
+#' the \pkg{\link[=loo-package]{loo}} package for approximate leave-one-out 
+#' cross-validation (LOO). The LOO Information Criterion (LOOIC) has the same 
+#' purpose as the Akaike Information Criterion (AIC) that is used by 
+#' frequentists. Both are intended to estimate the expected log predictive 
+#' density (ELPD) for a new dataset. However, the AIC ignores priors and assumes
+#' that the posterior distribution is multivariate normal, whereas the functions
+#' from the \pkg{loo} package do not make this distributional assumption and 
+#' integrate over uncertainty in the parameters. This only assumes that any one 
+#' observation can be omitted without having a major effect on the posterior 
+#' distribution, which can be judged using the diagnostic plot provided by the 
+#' \code{\link[loo]{plot.loo}} method and the warnings provided by the 
+#' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
+#' Package} vignette for an example of this process).
+#' }
+#' \subsection{kfold}{
+#' The \code{kfold} function performs exact K-fold cross-validation. The
+#' \code{compare} function is also compatible with the objects returned by
+#' \code{kfold}.
+#' }
 #'   
 #' @seealso 
-#' \code{\link[loo]{compare}} for comparing two or more models on LOO and WAIC.
+#' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
+#' K-fold CV.
 #' 
 #' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
 #' for details on the computations implemented by the \pkg{loo} package and the 
@@ -61,11 +76,17 @@
 #' 
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
 #' fit2 <- update(fit1, formula = . ~ . + cyl)
+#' 
+#' # compare on LOOIC
 #' (loo1 <- loo(fit1))
 #' loo2 <- loo(fit2)
 #' compare(loo1, loo2)
 #' plot(loo2)
 #' 
+#' # 10-fold cross-validation
+#' (kfold1 <- kfold(fit1, K = 10))
+#' kfold2 <- kfold(fit2, K = 10)
+#' compare(kfold1, kfold2)
 #' 
 #' # dataset description at help("lalonde", package = "arm")
 #' data(lalonde, package = "arm") 
@@ -80,6 +101,7 @@
 #'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
 #' lalonde2 <- update(lalonde1, formula = f2)
 #' 
+#' # compare on LOOIC
 #' (loo_lalonde1 <- loo(lalonde1))
 #' (loo_lalonde2 <- loo(lalonde2))
 #' plot(loo_lalonde2, label_points = TRUE)
@@ -94,6 +116,60 @@ loo.stanreg <- function(x, ...) {
   loo.function(ll_fun(x), args = ll_args(x), ...)
 }
 
+
+#' @rdname loo.stanreg
+#' @export
+#' @param K The number of subsets of equal (if possible) size into which the
+#'   data will be partitioned for K-fold cross-validation. The model is refit
+#'   \code{K} times, each time leaving out one of the \code{K} subsets. If
+#'   \code{K} is equal to the total number of observations in the data then
+#'   K-fold cross-validation is equivalent to exact leave-one-out
+#'   cross-validation.
+#'
+kfold <- function(x, K) {
+  validate_stanreg_object(x)
+  if (!used.sampling(x)) 
+    STOP_sampling_only("kfold")
+  stopifnot(!is.null(x$data), nrow(x$data) >= K)
+  
+  d <- x$data
+  N <- nrow(d)
+  perm <- sample.int(N)
+  idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
+  bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
+  
+  lppds <- list()
+  for (k in 1:K) {
+    message("Fitting model ", k, " out of ", K)
+    omitted <- which(bin == k)
+    fit_k <- update(x, data = d[-omitted, ], refresh = 0)
+    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, ])
+  }
+  elpds <- unlist(lapply(lppds, function(x) {
+    apply(x, 2, log_mean_exp)
+  }))
+  
+  out <- list(
+    elpd_kfold = sum(elpds),
+    se_elpd_kfold = sqrt(N * var(elpds)),
+    pointwise = cbind(elpd_kfold = elpds)
+  )
+  structure(out, class = c("kfold", "loo"), K = K)
+}
+
+print.kfold <- function(x, digits = 1, ...) {
+  cat("\n", paste0(attr(x, "K"), "-fold"), "cross-validation\n\n")
+  out <- data.frame(Estimate = x$elpd_kfold, SE = x$se_elpd_kfold, 
+                    row.names = "elpd_kfold")
+  .printfr(out, digits)
+  invisible(x)
+}
+log_mean_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x))) - log(length(x))
+}
+
+
 #' @rdname loo.stanreg
 #' @export
 #' @importFrom loo waic waic.function
@@ -105,7 +181,10 @@ waic.stanreg <- function(x, ...) {
   waic.function(ll_fun(x), args = ll_args(x))
 }
 
-# returns log-likelihood function for loo() and waic()
+
+
+# function for loo.function -----------------------------------------------
+# returns log-likelihood function for loo.function() and waic.function()
 ll_fun <- function(x) {
   validate_stanreg_object(x)
   f <- family(x)
@@ -115,7 +194,9 @@ ll_fun <- function(x) {
   get(paste0(".ll_", f$family, "_i"))
 }
 
-# returns args argument for loo.function() and waic.function()
+
+# arguments for loo.function ----------------------------------------------
+# returns 'args' argument for loo.function() and waic.function()
 ll_args <- function(object, newdata = NULL) {
   validate_stanreg_object(object)
   f <- family(object)
@@ -133,7 +214,7 @@ ll_args <- function(object, newdata = NULL) {
     x <- get_x(object)
     y <- get_y(object)
   }
-
+  
   if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
     if (!is.binomial(fname)) {
@@ -202,6 +283,7 @@ ll_args <- function(object, newdata = NULL) {
 }
 
 
+# check intercept for polr models -----------------------------------------
 # Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
 # bernoulli model). If it doesn't have an intercept then the intercept column in
 # x is dropped. This is only necessary if newdata is specified because otherwise
@@ -215,8 +297,7 @@ ll_args <- function(object, newdata = NULL) {
 }
 
 
-
-# log-likelihood function helpers
+# log-likelihood function helpers -----------------------------------------
 .xdata <- function(data) {
   sel <- c("y", "weights","offset", "trials")
   data[, -which(colnames(data) %in% sel)]
@@ -233,7 +314,8 @@ ll_args <- function(object, newdata = NULL) {
   } 
 }
 
-# log-likelihood functions
+
+# log-likelihood functions ------------------------------------------------
 .ll_gaussian_i <- function(i, data, draws) {
   val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
   .weighted(val, data$weights)
@@ -270,22 +352,22 @@ ll_args <- function(object, newdata = NULL) {
   y_i <- data$y
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
-      if (y_i == 1) {
-        val <- log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == J) {
-        val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
-      } else {
-        val <- log(linkinv(draws$zeta[, y_i] - eta) - 
-                     linkinv(draws$zeta[, y_i - 1L] - eta))
-      }
+    if (y_i == 1) {
+      val <- log(linkinv(draws$zeta[, 1] - eta))
+    } else if (y_i == J) {
+      val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
+    } else {
+      val <- log(linkinv(draws$zeta[, y_i] - eta) - 
+                   linkinv(draws$zeta[, y_i - 1L] - eta))
+    }
   } else {
-      if (y_i == 0) {
-        val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == 1) {
-        val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
-      } else {
-        stop("Exponentiation only possible when there are exactly 2 outcomes.")
-      }
+    if (y_i == 0) {
+      val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
+    } else if (y_i == 1) {
+      val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
+    } else {
+      stop("Exponentiation only possible when there are exactly 2 outcomes.")
+    }
   }
   .weighted(val, data$weights)
 }
