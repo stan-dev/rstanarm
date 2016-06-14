@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -82,7 +82,7 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
@@ -92,6 +92,14 @@ default_stan_control <- function(prior, adapt_delta = NULL,
 #
 # @param x The object to test. 
 is.stanreg <- function(x) inherits(x, "stanreg")
+
+# Throw error if object isn't a stanreg object
+# 
+# @param x The object to test.
+validate_stanreg_object <- function(x, call. = FALSE) {
+  if (!is.stanreg(x))
+    stop("Object is not a stanreg object.", call. = call.) 
+}
 
 # Test for a given family
 #
@@ -107,15 +115,12 @@ is.poisson <- function(x) x == "poisson"
 #
 # @param x A stanreg object.
 used.optimizing <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "optimizing"
 }
 used.sampling <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "sampling"
 }
 used.variational <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
@@ -123,8 +128,7 @@ used.variational <- function(x) {
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
-  stopifnot(is.stanreg(x))
-  check1 <- is(x, "lmerMod")
+  check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
     stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
@@ -274,6 +278,18 @@ validate_family <- function(f) {
   return(f)
 }
 
+
+# Check for glmer syntax in formulas for non-glmer models
+#
+# @param f The model \code{formula}.
+# @return Nothing is returned but an error might be thrown
+validate_glm_formula <- function(f) {
+  if (any(grepl("\\|", f)))
+    stop("Using '|' in model formula not allowed. ",
+         "Maybe you meant to use 'stan_(g)lmer'?", call. = FALSE)
+}
+
+
 # Check if any variables in a model frame are constants
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
@@ -319,6 +335,7 @@ select_median <- function(algorithm) {
 # @param x stanreg object
 # @param regex_pars Character vector of patterns
 grep_for_pars <- function(x, regex_pars) {
+  validate_stanreg_object(x)
   if (used.optimizing(x)) {
     warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
             call. = FALSE)
@@ -354,7 +371,7 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # @param x A stanreg object
 # @return NULL if used.optimizing(x), otherwise the posterior sample size
 posterior_sample_size <- function(x) {
-  stopifnot(is.stanreg(x))
+  validate_stanreg_object(x)
   if (used.optimizing(x)) 
     return(NULL)
   pss <- x$stanfit@sim$n_save
@@ -459,9 +476,10 @@ get_prior_info <- function(user_call, function_formals) {
   priors <- list()
   for (j in 1:(U + D)) {
     if (j <= U) {
-      priors[[user[j]]] <- eval(user_call[[user[j]]])
+      priors[[user[j]]] <- try(eval(user_call[[user[j]]]), silent = TRUE)
     } else {
-      priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
+      priors[[default[j-U]]] <- try(eval(function_formals[[default[j-U]]]), 
+                                    silent = TRUE)
     } 
   }
   
@@ -530,7 +548,7 @@ get_x.lmerMod <- function(object) {
 #' @export
 get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
-  t(as.matrix(Zt))
+  t(Zt)
 }
 
 
@@ -565,12 +583,44 @@ polr_linkinv <- function(x) {
     stop("'x' should be a stanreg object created by stan_polr ", 
          "or a single string.")
   }
-  if (method == "logistic") 
+  if (is.null(method) || method == "logistic") 
     method <- "logit"
   
-  if (method == "loglog") {
-    pgumbel
-  } else {
-    make.link(method)$linkinv
-  } 
+  if (method == "loglog")
+    return(pgumbel)
+  
+  make.link(method)$linkinv
+}
+
+# Wrapper for rstan::summary
+# @param stanfit A stanfit object created using rstan::sampling or rstan::vb
+# @return A matrix of summary stats
+make_stan_summary <- function(stanfit) {
+  levs <- c(0.5, 0.8, 0.95, 0.99)
+  qq <- (1 - levs) / 2
+  probs <- sort(c(0.5, qq, 1 - qq))
+  rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+}
+
+is_scobit <- function(object) {
+  validate_stanreg_object(object)
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
+check_reTrms <- function(reTrms) {
+  stopifnot(is.list(reTrms))
+  nms <- names(reTrms$cnms)
+  dupes <- duplicated(nms)
+  for (i in which(dupes)) {
+    original <- reTrms$cnms[[nms[i]]]
+    dupe <- reTrms$cnms[[i]]
+    overlap <- dupe %in% original
+    if (any(overlap))
+      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n", 
+           "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
+           dupe[overlap], " is included multiple times.\n", 
+           "Consider using || or -1 in your formulas to prevent this from happening.")
+  }
+  return(invisible(NULL))
 }

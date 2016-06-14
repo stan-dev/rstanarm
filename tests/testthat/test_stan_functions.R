@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,8 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
+set.seed(12345)
+
 MODELS_HOME <- "exec"
 fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) {
@@ -34,14 +36,16 @@ if (!file.exists(MODELS_HOME)) {
 context("setup")
 test_that("Stan programs are available", {
   message(MODELS_HOME)
-  expect_true(file.exists(MODELS_HOME))  
+  expect_true(file.exists(MODELS_HOME))
+  expect_true(file.exists(file.path(system.file("chunks", package = "rstanarm"), 
+                                    "common_functions.stan")))
+  
 })
   
-stopifnot(require(rstan))
+library(rstan)
 Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
-  # mc <- scan(file = f, what = "character", sep = "\n", quiet = TRUE)
   mc <- readLines(f)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
@@ -50,8 +54,8 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(readLines(file.path(MODELS_HOME, "common_functions.txt")), 
-               unlist(functions))
+functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
+                                   "common_functions.stan")), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
@@ -317,7 +321,11 @@ test_that("pw_polr returns expected results", {
                         start = c(beta, zeta), control = list(maxit = 0))
     Pr <- fitted(model)
     Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
-    expect_equal(log(Pr), pw_polr(y, eta, zeta, i, 1), info = links[i])
+    log_pr <- pw_polr(y, eta, zeta, i, 1)
+    log_Pr <- log(Pr)
+    good <- is.finite(log_pr) & is.finite(log_Pr) & log_Pr > -30
+    expect_equal(log_Pr[good], log_pr[good], info = links[i], 
+                 tolerance = 1e-6)
   }
 })
 rdirichlet <- function(n, alpha) {
@@ -359,7 +367,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Lind <- group$Lind
     theta <- group$theta
     
-    group <- rstanarm:::pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+    group <- rstanarm:::pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
@@ -380,7 +388,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     
     z_b <- rnorm(ncol(Z))
     b <- make_b(z_b, theta_L, p, l)
-    mark <- grepl("_NEW_", colnames(Z), fixed = TRUE)
+    mark <- colnames(Z) == ""
     expect_equal(b[!mark], as.vector(Matrix::t(Lambdati) %*% z_b[!mark]), 
                  tol = 1e-14)
     

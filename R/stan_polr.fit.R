@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -110,7 +110,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   } else { 
     pars <- c("zeta", "beta", if (is_skewed) "alpha", "mean_PPD")
   }
-  standata$do_residuals <- isTRUE(J > 2)
+  standata$do_residuals <- isTRUE(J > 2) && !prior_PD
   
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(

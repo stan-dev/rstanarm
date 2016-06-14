@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -112,7 +112,7 @@
 #' 
 #' @section Modeling functions: 
 #' The model estimating functions are described in greater detail in their
-#' individual help pages and the vignettes. Here we provide a very brief
+#' individual help pages and vignettes. Here we provide a very brief
 #' overview:
 #' 
 #' \describe{
@@ -168,7 +168,7 @@
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
-#'   \code{\link{plots}} for the various plots that can be used
+#'   \code{\link{rstanarm-plots}} for the various plots that can be used
 #'   to explore and check fitted models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
@@ -176,6 +176,9 @@
 #'   
 #'   \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
+#'   
+#'   \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a question 
+#'   about \pkg{rstanarm} on the Stan-users forum.
 #'   
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}

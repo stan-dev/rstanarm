@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,24 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-#' ppcheck (deprecated)
-#' 
-#' ppcheck is deprecated and will be removed in the near future. Use
-#' \code{\link{pp_check}} instead.
-#' 
-#' @export
-#' @keywords internal
-#' @inheritParams pp_check
-ppcheck <- function(object,
-                    check = "distributions",
-                    nreps = NULL, overlay = TRUE, test = "mean", ...) {
-  .Deprecated("pp_check")
-  mc <- match.call()
-  mc[[1L]] <- as.name("pp_check")
-  eval(mc, parent.frame())
-}
-
+#
 #' Graphical posterior predictive checks
 #' 
 #' Various plots comparing the observed outcome variable \eqn{y} to simulated 
@@ -61,7 +44,8 @@ ppcheck <- function(object,
 #'   default) or as separate histograms (\code{FALSE})?
 #' @param test For \code{check="test"} only, a character vector (of length 1 or 
 #'   2) naming a single function or a pair of functions. The function(s) should 
-#'   take a vector input and return a scalar test statistic. See Details.
+#'   take a vector input and return a scalar test statistic. See Details and
+#'   Examples.
 #' @param ... Optional arguments to geoms to control features of the plots 
 #'   (e.g. \code{binwidth} if the plot is a histogram).
 #' 
@@ -93,23 +77,15 @@ ppcheck <- function(object,
 #'  shown as a large point.}
 #' }
 #' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the proportion
-#'   of 'successes' rather than the raw count.
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
+#'   proportion of 'successes' rather than the raw count.
 #' 
 #' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #' 
-#' @examples
-#' \dontrun{
-#' # Scatterplot of y vs. average yrep
-#' fit <- stan_glm(mpg ~ wt, data = mtcars)
-#' pp_check(fit, check = "scatter")
-#' 
-#' # Separate scatterplots of y vs. a few different yrep datasets 
-#' pp_check(fit, check = "scatter", nreps = 3)
-#' }
-#' 
+#' @examples 
+#' if (!exists("example_model")) example(example_model)
 #' # Compare distribution of y to distributions of yrep
 #' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
 #' pp_dist + 
@@ -128,17 +104,29 @@ ppcheck <- function(object,
 #' # Scatterplot of two test statistics
 #' pp_check(example_model, check = "test", test = c("mean", "sd"))
 #' 
-#' # Define a test function 
-#' prop_zero <- function(y) mean(y == 0)
-#' pp_check(example_model, check = "test", test = "prop_zero", binwidth = 1/20)
+#' \dontrun{
+#' # Scatterplots of y vs. yrep
+#' fit <- stan_glm(mpg ~ wt, data = mtcars)
+#' pp_check(fit, check = "scatter") # y vs. average yrep
+#' pp_check(fit, check = "scatter", nreps = 3) # y vs. a few different yrep datasets 
+#' 
+#' 
+#' # Defining a function to compute test statistic 
+#' roaches$roach100 <- roaches$roach1 / 100
+#' fit_pois <- stan_glm(y ~ treatment + roach100 + senior, offset = log(exposure2), 
+#'                      family = "poisson", data = roaches)
+#' fit_nb <- update(fit_pois, family = "neg_binomial_2")
+#' 
+#' prop0 <- function(y) mean(y == 0) # function to compute proportion of zeros
+#' pp_check(fit_pois, check = "test", test = "prop0") # looks bad 
+#' pp_check(fit_nb, check = "test", test = "prop0")   # much better
+#' }
 #' 
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #' 
 pp_check <- function(object, check = "distributions", nreps = NULL, 
                      seed = NULL, overlay = TRUE, test = "mean", ...) {
-  if (!is.stanreg(object)) 
-    stop(deparse(substitute(object)), " is not a stanreg object", 
-         call. = FALSE)
+  validate_stanreg_object(object)
   if (used.optimizing(object)) 
     STOP_not_optimizing("pp_check")
   
@@ -155,7 +143,7 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
     nreps <- NULL
   }
 
-  is_binomial <- if (is(object, "polr"))
+  is_binomial <- if (is(object, "polr") && !is_scobit(object))
     FALSE else is.binomial(family(object)$family)
   if (is_binomial && fn == "pp_check_resid") {
     graph <- pp_check_binned_resid(object, n = nreps, ...)
@@ -164,8 +152,10 @@ pp_check <- function(object, check = "distributions", nreps = NULL,
   
   y <- get_y(object)
   yrep <- posterior_predict(object, draws = nreps, seed = seed)
-  if (is(object, "polr")) 
+  if (is(object, "polr")) {
     y <- as.integer(y)
+    yrep <- apply(yrep, 2, function(x) as.integer(as.factor(x)))
+  }
   if (is_binomial) {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
@@ -241,8 +231,13 @@ melt_yrep <- function(yrep, n) {
   Nseq <- seq_len(ncol(yrep))
   yrep <- as.data.frame(yrep)
   colnames(yrep) <- paste0("value.", Nseq)
-  reshape(yrep, direction = "long", v.names = "value", 
-          varying = list(Nseq), ids = paste0('yrep_', seq_len(n)))
+  ids <- paste0('yrep_', seq_len(n))
+  out <- reshape(yrep, direction = "long", v.names = "value", 
+                 varying = list(Nseq), ids = ids)
+  
+  # to make sure they get plotted in correct order and not alphabetically
+  out$id <- factor(out$id, levels = c("Observed y", ids))
+  out
 }
 
 pp_check_dist <- function(y, yrep, n = 8, overlay = TRUE, ...) {
@@ -287,7 +282,6 @@ pp_check_dens <- function(dat, ...) {
 }
 
 #' @importFrom ggplot2 geom_vline annotate
-#' @importFrom utils packageVersion
 pp_check_stat <- function(y, yrep, test = "mean", ...) {
   vline_color <- .PP_FILL
   fill_color <- "black"
@@ -388,6 +382,8 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
   
   binner <- function(rep_id, ey, r, nbins) {
     br <- arm::binned.resids(ey, r, nbins)$binned[, c("xbar", "ybar", "2se")]
+    if (length(dim(br)) < 2L)
+      br <- t(br)
     colnames(br) <- c("xbar", "ybar", "se2")
     data.frame(rep = paste0("yrep_", rep_id), br)
   }
@@ -411,9 +407,10 @@ pp_check_binned_resid <- function(object, n = 1, ...) {
     nbins <- floor(sqrt(ny))
   } else if (ny > 10 && ny < 100) {
     nbins <- 10
-  } else { # if (ny <= 10)
+  } else { # nocov start
+    # if (ny <= 10)
     nbins <- floor(ny / 2) 
-  }
+  } # nocov end
   
   binned <- binner(rep_id = 1, ey = Ey[1L, ], r = resids[1L, ], nbins)
   if (n > 1) {
@@ -468,67 +465,3 @@ pp_check_scatter <- function(y, yrep, n = NULL, ...){
   
   graph + pp_check_theme(no_y = FALSE)
 }
-
-
-# pp_check_refit <- function(object, n = 1, ...) { # nocov start
-#   message("Refitting model using y = yrep...\n")
-#   yrep <- as.vector(posterior_predict(object, draws = 1))
-#   mf <- model.frame(object)
-#   if (is(object, "polr")) fam <- "polr"
-#   else fam <- object$family$family
-#   
-#   if (!is.binomial(fam)) {
-#     if (is(object, "polr"))
-#       yrep <- factor(yrep, labels = levels(get_y(object)), ordered = TRUE)
-#     mf[[1]] <- yrep
-#     refit <- update(object, data = mf)
-#   }
-#   else {
-#     y <- get_y(object)
-#     if (NCOL(y) == 2) {
-#       new_f <- update.formula(formula(object), cbind(yrep_1s, yrep_0s) ~ .)
-#       mf2 <- data.frame(yrep_1s = yrep, yrep_0s = rowSums(y) - yrep, mf[, -1])
-#       refit <- update(object, formula = new_f, 
-#                       data = get_all_vars(new_f, data = mf2))
-#     } 
-#     else {
-#       if (NCOL(y) == 1 && !all(y %in% c(0, 1)))
-#         yrep <- yrep / object$weights
-#       mf[[1]] <- yrep
-#       refit <- update(object, data = mf)
-#     }
-#   }
-#   
-#   pp1 <- posterior_predict(object, draws = n)
-#   pp2 <- posterior_predict(refit, draws = n)
-#   if (is.binomial(fam)) {
-#     if (NCOL(y) == 2) {
-#       trials <- rowSums(y)
-#       pp1 <- sweep(pp1, 2, trials, "/")
-#       pp2 <- sweep(pp2, 2, trials, "/")
-#     }
-#   }
-#   varying <- list(1:ncol(pp1))
-#   pp1 <- reshape(as.data.frame(pp1), direction = "long", v.names = "value", 
-#                  varying = varying)[, c("value", "id")]
-#   pp2 <- reshape(as.data.frame(pp2), direction = "long", v.names = "value", 
-#                  varying = varying)[, c("value", "id")]
-#   dat <- cbind(rbind(pp1, pp2), 
-#                model = rep(c("Model", "Checking model"), each = nrow(pp1)))
-#   
-#   defaults <- list(size = 0.2)
-#   geom_args <- set_geom_args(defaults, ...)
-#   geom_args$mapping <- aes_string(y = "..density..")
-#   clr_vals <- c("black", .PP_FILL)
-#   base <- ggplot(dat, aes_string(x = 'value', fill = "model", color = "model"))
-#   graph <- base +
-#     do.call("geom_histogram", geom_args) + 
-#     scale_fill_manual("", values = clr_vals) +
-#     scale_color_manual("", values = clr_vals) + 
-#     facet_grid(model ~ id, scales = "fixed") + 
-#     xlab("yrep")
-#   thm <- pp_check_theme() %+replace%
-#     theme(strip.text = element_blank(), legend.position = "right")
-#   
-#   return(graph + thm)
-# } # nocov end

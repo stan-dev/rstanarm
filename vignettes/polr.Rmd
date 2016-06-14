@@ -1,7 +1,7 @@
 ---
 title: "Estimating Ordinal Regression Models with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
@@ -27,8 +27,8 @@ This vignette explains how to estimate models for ordinal outcomes using the
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1.
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1.
 
 One of the strengths of doing MCMC with Stan --- as opposed to a Gibbs sampler 
 --- is that reparameterizations are essentially costless, which allows the user
@@ -71,10 +71,10 @@ $\boldsymbol{\zeta}$.
 # Priors
 
 If $y^\ast$ were observed we would simply have a linear regression model
-for it, and the description of the priors in the vignette entitled "Estimating
-Linear Models with the __rstanarm__ Package" would apply directly. Another way
+for it, and the description of the priors in the vignette entitled ["Estimating
+Linear Models with the __rstanarm__ Package"](lm.html) would apply directly. Another way
 to say the same thing is _conditional_ on a realization of $y^\ast$, we have a
-linear regression model and the description of the priors in the other vignette
+linear regression model and the description of the priors in the other [vignette](lm.html)
 does apply (and should be read before continuing with this subsection).
 
 The `stan_lm` function essentially specifies a prior on 
@@ -100,7 +100,8 @@ in a linear model where the continuous outcome is observed.
 The other difference is that an ordinal model does not have a global intercept 
 but rather a vector of $J-1$ cutpoints. The implied prior on these cutpoints 
 used by the __rstanarm__ package is somewhat novel. The user instead specifies a
-Dirichlet prior on $\Pr\left(y=j\right)\left.\right|\overline{\mathbf{x}}$,
+Dirichlet prior on 
+$\Pr\left(y=j \, \left.\right| \, \overline{\mathbf{x}} \right)$,
 which is to say the prior probability of the outcome falling in each of the $J$
 categories given that the predictors are at their sample means. The Dirichlet
 prior is for a simplex random variable, whose elements are non-negative and sum
@@ -108,7 +109,7 @@ to $1$. The Dirichlet PDF can be written as
 $$f\left(\boldsymbol{\pi}|\boldsymbol{\alpha}\right) \propto 
 \prod_{j=1}^J{\pi_j^{\alpha_j - 1}}, $$ 
 where $\boldsymbol{\pi}$ is a simplex vector such that 
-$\pi_j = \Pr\left(y=j\right)\left.\right|\overline{\mathbf{x}}$.
+$\pi_j = \Pr\left(y=j \, \left.\right| \, \overline{\mathbf{x}} \right)$.
 
 The Dirichlet prior is one of the easiest to specify because the so-called 
 "concentration" hyperparameters $\boldsymbol{\alpha}$ can be interpreted as

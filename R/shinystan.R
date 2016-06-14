@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,25 +15,77 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Using the ShinyStan GUI with stanreg objects
-#' 
-#' The \code{\link[shinystan]{launch_shinystan}} function will accept a 
-#' \link[=stanreg-objects]{'stanreg' object} as input. Currently, almost any
-#' model fit using one of \pkg{rstanarm}'s model-fitting functions can be
-#' used with ShinyStan. The only exception is that ShinyStan does not currently
-#' support \pkg{rstanarm} models fit using \code{algorithm='optimizing'}.
-#' 
-#' See the \pkg{\link[=shinystan-package]{shinystan}} package documentation for
-#' more information.
+#' Using the ShinyStan GUI with rstanarm models
 #' 
 #' @name shinystan
 #' @aliases launch_shinystan
 #' @importFrom shinystan launch_shinystan
+#' 
+#' @description The ShinyStan interface provides visual and numerical summaries
+#'   of model parameters and convergence diagnostics.
+#'
+#' @details The \code{\link[shinystan]{launch_shinystan}} function will accept a
+#'   \code{\link[=stanreg-objects]{stanreg}} object as input. Currently, almost
+#'   any model fit using one of \pkg{rstanarm}'s model-fitting functions can be
+#'   used with ShinyStan. The only exception is that ShinyStan does not
+#'   currently support \pkg{rstanarm} models fit using
+#'   \code{algorithm='optimizing'}. See the
+#'   \pkg{\link[=shinystan-package]{shinystan}} package documentation for more
+#'   information.
+#'   
+#' @section Faster launch times:
+#' For some \pkg{rstanarm} models ShinyStan may take a very long time to launch.
+#' If this is the case with one of your models you may be able to speed up
+#' \code{launch_shinystan} in one of several ways:
+#' \describe{
+#'   \item{Prevent ShinyStan from preparing graphical posterior predictive
+#'   checks:}{
+#'   When used with a \code{\link[=stanreg-objects]{stanreg}} object 
+#'   (\pkg{rstanarm} model object) ShinyStan will draw from the posterior 
+#'   predictive distribution and prepare graphical posterior predictive checks 
+#'   before launching. That way when you go to the PPcheck page the plots are 
+#'   immediately available. This can be time consuming for models fit to very
+#'   large datasets and you can prevent this behavior by creating a shinystan
+#'   object before calling \code{launch_shinystan}. To do this use 
+#'   \code{\link[shinystan]{as.shinystan}} with optional argument \code{ppd} set
+#'   to \code{FALSE} (see the Examples section below). When you then launch
+#'   ShinyStan and go to the PPcheck page the plots will no longer be 
+#'   automatically generated and you will be presented with the standard
+#'   interface requiring you to first specify the appropriate \eqn{y} and
+#'   \eqn{yrep}, which can be done for many but not all \pkg{rstanarm} models.
+#'   }
+#'   \item{Use a shinystan object:}{
+#'   Even if you don't want to prevent ShinyStan from preparing graphical
+#'   posterior predictive checks, first creating a shinystan object using
+#'   \code{\link[shinystan]{as.shinystan}} can reduce \emph{future} launch
+#'   times. That is, \code{launch_shinystan(sso)} will be faster than
+#'   \code{launch_shinystan(fit)}, where \code{sso} is a shinystan object and
+#'   \code{fit} is a stanreg object. It still may take some time for 
+#'   \code{as.shinystan} to create \code{sso} initially, but each time you
+#'   subsequently call \code{launch_shinystan(sso)} it will reuse \code{sso}
+#'   instead of internally creating a shinystan object every time. See the
+#'   Examples section below.}
+#' }
 #'   
 #' @examples
 #' \dontrun{
+#' if (!exists("example_model")) example(example_model) 
+#' 
+#' # Launch the ShinyStan app without saving the resulting shinystan object
+#' launch_shinystan(example_model)
+#' 
 #' # Launch the ShinyStan app (saving resulting shinystan object as sso)
 #' sso <- launch_shinystan(example_model)
+#' 
+#' # First create shinystan object then call launch_shinystan
+#' sso <- as.shinystan(example_model)
+#' launch_shinystan(sso)
+#' 
+#' # Prevent ShinyStan from preparing graphical posterior predictive checks that
+#' # can be time consuming. example_model is small enough that it won't matter
+#' # much here but in general this can help speed up launch_shinystan
+#' sso <- as.shinystan(example_model, ppd = FALSE)
+#' launch_shinystan(sso)
 #' }
 #' 
 #' 

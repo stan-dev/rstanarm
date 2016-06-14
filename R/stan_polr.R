@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # Copyright 1994-2013 William N. Venables and Brian D. Ripley
 # 
 # This program is free software; you can redistribute it and/or
@@ -15,32 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
-  q <- (q - loc)/scale
-  p <- exp(-exp(-q))
-  if (!lower.tail) 
-    1 - p
-  else 
-    p
-}
-
-qgumbel <- function(p, loc = 0, scale = 1) {
-  loc - scale * log(-log(p))
-}
-
-dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
-  z <- (x - loc) / scale
-  log_f <- -(z + exp(-z))
-  if (!log) 
-    exp(log_f)
-  else 
-    log_f
-}
-
-loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel, 
-               valideta = function(eta) TRUE, name = "loglog")
-class(loglog) <- "link-glm"
 
 #' Bayesian ordinal regression models via Stan
 #'
@@ -133,8 +107,11 @@ class(loglog) <- "link-glm"
 #' @references 
 #' Nagler, J., (1994). Scobit: An Alternative Estimator to Logit and Probit.
 #' \emph{American Journal of Political Science}. 230 -- 255.
+#' 
+#' @seealso The vignette for \code{stan_polr}.
 #'
-#' @examples 
+#' @examples
+#' if (!grepl("^sparc",  R.version$platform))
 #' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only
@@ -171,7 +148,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
   } else {
-    warning("An intercept is needed and assumed.")
+    stop("Specifying '~0' or '~-1' in the model formula not allowed.", 
+         call. = FALSE)
   }
   K <- ncol(x)
   wt <- model.weights(m)
@@ -182,11 +160,11 @@ stan_polr <- function(formula, data, weights, ..., subset,
     offset <- rep(0, n)
   y <- model.response(m)
   if (!is.factor(y)) 
-    stop("Response variable must be a factor.")
+    stop("Response variable must be a factor.", call. = FALSE)
   lev <- levels(y)
   llev <- length(lev)
   if (llev < 2L) 
-    stop("Response variable must have 2 or more levels.")
+    stop("Response variable must have 2 or more levels.", call. = FALSE)
   # y <- unclass(y)
   q <- llev - 1L
 
@@ -200,14 +178,10 @@ stan_polr <- function(formula, data, weights, ..., subset,
   inverse_link <- linkinv(method)
   
   if (llev == 2L) { # actually a Bernoulli model
-    if (method == "logistic") {
-      family <- binomial(link = "logit")
-    } else if (method == "loglog") {
-      family <- binomial(loglog)
-    } else {
-      family <- binomial(link = method)
-    }
-    
+    family <- switch(method, 
+                     logistic = binomial(link = "logit"), 
+                     loglog = binomial(loglog), 
+                     binomial(link = method))
     fit <- nlist(stanfit, family, formula, offset, weights = wt,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]), 
                  data, prior.info, call, terms = Terms, model = m,
@@ -216,22 +190,11 @@ stan_polr <- function(formula, data, weights, ..., subset,
     out <- stanreg(fit)
     if (!model) 
       out$model <- NULL
-    class(out) <- c("stanreg", "polr")
-    return(out)
-  } else {
-    # more than 2 outcome levels
-    K2 <- K + llev - 1 # number of coefficients + number of cutpoints
-    stanmat <- as.matrix(stanfit)[, 1:K2, drop = FALSE] 
-    covmat <- cov(stanmat)
-    coefs <- apply(stanmat[, 1:K, drop = FALSE], 2, median)
-    ses <- apply(stanmat[, 1:K, drop = FALSE], 2, mad)
-    zeta <- apply(stanmat[, (K+1):K2, drop = FALSE], 2, mad)
-    eta <- linear_predictor(coefs, x, offset)
-    mu <- inverse_link(eta)
     
     means <- rstan::get_posterior_mean(stanfit)
     residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
-    names(residuals) <- names(eta) <- names(mu) <- rownames(x)
+    if (length(residuals))
+      names(residuals) <- names(eta) <- names(mu) <- rownames(x)
 
     levs <- c(0.5, 0.8, 0.95, 0.99)
     qq <- (1 - levs) / 2
@@ -239,16 +202,66 @@ stan_polr <- function(formula, data, weights, ..., subset,
     stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
     if (algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
+    if (is.null(shape) && is.null(rate)) # not a scobit model
+      return(out)
+    
+    out$method <- method
+    return(structure(out, class = c("stanreg", "polr")))
   }
   
-  out <- nlist(coefficients = coefs, ses, zeta, residuals,
-              fitted.values = mu, linear.predictors = eta, covmat,
-              y, x, model = if (model) m, 
-              family = method, data, offset, weights = wt, prior.weights = wt,
-              method, contrasts, na.action,
-              call, formula, terms = Terms, prior.info,
-              algorithm, stan_summary, stanfit)
-  class(out) <- c("stanreg", "polr")
+  # more than 2 outcome levels
+  K2 <- K + llev - 1 # number of coefficients + number of cutpoints
+  stanmat <- as.matrix(stanfit)[, 1:K2, drop = FALSE] 
+  covmat <- cov(stanmat)
+  coefs <- apply(stanmat[, 1:K, drop = FALSE], 2L, median)
+  ses <- apply(stanmat[, 1:K, drop = FALSE], 2L, mad)
+  zeta <- apply(stanmat[, (K+1):K2, drop = FALSE], 2L, mad)
+  eta <- linear_predictor(coefs, x, offset)
+  mu <- inverse_link(eta)
   
-  return(out)
+  means <- rstan::get_posterior_mean(stanfit)
+  residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
+  names(eta) <- names(mu) <- rownames(x)
+  if (!prior_PD) 
+    names(residuals) <- rownames(x)
+  
+  stan_summary <- make_stan_summary(stanfit)
+  if (algorithm == "sampling") 
+    check_rhats(stan_summary[, "Rhat"])
+  
+  out <- nlist(coefficients = coefs, ses, zeta, residuals,
+               fitted.values = mu, linear.predictors = eta, covmat,
+               y, x, model = if (model) m, data,
+               offset, weights = wt, prior.weights = wt,
+               family = method, method, contrasts, na.action,
+               call, formula, terms = Terms, prior.info,
+               algorithm, stan_summary, stanfit)
+  structure(out, class = c("stanreg", "polr"))
 }
+
+
+pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
+  q <- (q - loc)/scale
+  p <- exp(-exp(-q))
+  if (!lower.tail) 
+    1 - p
+  else 
+    p
+}
+
+qgumbel <- function(p, loc = 0, scale = 1) {
+  loc - scale * log(-log(p))
+}
+
+dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
+  z <- (x - loc) / scale
+  log_f <- -(z + exp(-z))
+  if (!log) 
+    exp(log_f)
+  else 
+    log_f
+}
+
+loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel, 
+               valideta = function(eta) TRUE, name = "loglog")
+class(loglog) <- "link-glm"

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,15 +16,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 .onLoad <- function(libname, pkgname) { # nocov start
-  if (!("methods" %in% .packages())) attachNamespace("methods")
-  loadRcppModules()
+  modules <- paste0("stan_fit4", names(stanmodels), "_mod")
+  for (m in modules) loadModule(m, what = TRUE)
 } # nocov end
 
 .onAttach <- function(...) {
   rstanarmLib <- dirname(system.file(package = "rstanarm"))
-  pkgdesc <- utils::packageDescription("rstanarm", lib.loc = rstanarmLib)
-  builddate <- gsub(';.*$', '', pkgdesc$Packaged)
-  packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
+  pkgdesc <- suppressWarnings(utils::packageDescription("rstanarm", lib.loc = rstanarmLib))
+  if (length(pkgdesc) > 1) {
+    builddate <- gsub(';.*$', '', pkgdesc$Packaged)
+    packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
+  }
   packageStartupMessage("- Do not expect the default priors to remain the same in future rstanarm versions.")
   packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults.")
   packageStartupMessage("- For execution on a local, multicore CPU with excess RAM we recommend calling")

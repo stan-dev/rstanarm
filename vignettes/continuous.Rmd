@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Continuous Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
@@ -32,8 +32,8 @@ binary/binomial and count outcomes.
 
 This vignette primarily focuses on Steps 1 and 2 when the likelihood is the
 product of conditionally independent continuous distributions. Steps 3 and 4 are
-covered in more depth by the vignette entitled "How to Use the __rstanarm__
-Package", although this vignette does also give a few examples of model checking
+covered in more depth by the vignette entitled ["How to Use the __rstanarm__
+Package"](rstanarm.html), although this vignette does also give a few examples of model checking
 and generating predictions.
 
 # Likelihood
@@ -88,7 +88,7 @@ This is posterior distribution that `stan_glm` will draw from when using MCMC.
   
 # Linear Regression Example
 
-The `stan_lm` function (which has its own vignette) fits regularized linear 
+The `stan_lm` function, which has its own [vignette](lm.stan), fits regularized linear 
 models using a novel means of specifying priors for the regression coefficients.
 Here we focus using the `stan_glm` function, which can be used to estimate 
 linear models with independent priors on the regression coefficients.
@@ -115,9 +115,8 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
-kid_iq <- read.csv(file.path("data", "kid_iq.csv.xz"))
-
-post1 <- stan_glm(kid_score ~ mom_hs, data = kid_iq, family = gaussian(link = "identity"), 
+data(kidiq)
+post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
@@ -132,7 +131,7 @@ Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
 ```{r, continuous-kidiq-plot1a, fig.width = 5}
-base <- ggplot(kid_iq, aes(x = mom_hs, y = kid_score)) + 
+base <- ggplot(kidiq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
   
@@ -162,7 +161,7 @@ the continuous predictor `mom_iq`:
 ```{r, continuous-kidiq-plot2, fig.width = 5}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
-ggplot(kid_iq, aes(x = mom_iq, y = kid_score)) + 
+ggplot(kidiq, aes(x = mom_iq, y = kid_score)) + 
   geom_point(size = 1) +
   geom_abline(data = draws, aes(intercept = a, slope = b), 
               color = "skyblue", size = 0.2, alpha = 0.25) + 
@@ -180,9 +179,9 @@ reg0 <- function(x, ests) cbind(1, 0, x) %*% ests
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
 args <- list(ests = coef(post3))
-kid_iq$clr <- factor(kid_iq$mom_hs, labels = c("No HS", "HS"))
+kidiq$clr <- factor(kidiq$mom_hs, labels = c("No HS", "HS"))
 lgnd <- guide_legend(title = NULL)
-base2 <- ggplot(kid_iq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
+base2 <- ggplot(kidiq, aes(x = mom_iq, fill = relevel(clr, ref = "HS"))) + 
   geom_point(aes(y = kid_score), shape = 21, stroke = .2, size = 1) + 
   guides(color = lgnd, fill = lgnd) + 
   theme(legend.position = "right")
@@ -216,9 +215,22 @@ loo4 <- loo(post4)
 compare(loo1, loo2, loo3, loo4)
 ```
 
-The `weights` column gives the estimated posterior probability that each model
-has the best expected out-of-sample predictive accuracy. In this case we can 
-see that the fourth model dominates.
+In this case the fourth model is preferred as it has the highest 
+expected log predicted density (`elpd`) or, equivalently, the lowest 
+value of the LOO Information Criterion (`looic`). The fourth model
+is preferred by a lot over the first model
+
+```{r, continuous-kidiq-loo-2}
+compare(loo1, loo4)
+```
+
+because the difference in `elpd` is so much larger than the standard error. 
+However, the preference of the fourth model over the others isn't as strong:
+
+```{r, continuous-kidiq-loo-3}
+compare(loo3, loo4)
+compare(loo2, loo4)
+```
 
 ## The posterior predictive distribution 
 
@@ -314,15 +326,15 @@ axis(1, at = 1:ncol(y_hs), labels = IQ_SEQ, las = 3)
 ```{r, continuous-kidiq-validation, eval=FALSE, include=FALSE}
 # # External Validation
 # source(paste0(ROOT, "ARM/Ch.3/kids_before1987.data.R"), 
-#        local = kid_iq, verbose = FALSE)
+#        local = kidiq, verbose = FALSE)
 # source(paste0(ROOT, "ARM/Ch.3/kids_after1987.data.R"), 
-#        local = kid_iq, verbose = FALSE)
-# post5 <- stan_lm(ppvt ~ hs + afqt, data = kid_iq,
+#        local = kidiq, verbose = FALSE)
+# post5 <- stan_lm(ppvt ~ hs + afqt, data = kidiq,
 #                  prior = R2(location = 0.25, what = "mean"), seed = SEED)
 # y_ev <- posterior_predict(post5, newdata = 
-#                           data.frame(hs = kid_iq$hs_ev, afqt = kid_iq$afqt_ev))
+#                           data.frame(hs = kidiq$hs_ev, afqt = kidiq$afqt_ev))
 # par(mfrow = c(1,1))
-# hist(-sweep(y_ev, 2, STATS = kid_iq$ppvt_ev, FUN = "-"), prob = TRUE,
+# hist(-sweep(y_ev, 2, STATS = kidiq$ppvt_ev, FUN = "-"), prob = TRUE,
 #      xlab = "Predictive Errors in ppvt", main = "", las = 2)
 ```
 

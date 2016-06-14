@@ -1,3 +1,20 @@
+# Part of the rstanarm package for estimating model parameters
+# Copyright (C) 2015, 2016 Trustees of Columbia University
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #' Bayesian generalized linear models with group-specific terms via Stan
 #' 
 #' Bayesian inference for GLMs with group-specific coefficients that have 
@@ -47,12 +64,16 @@
 #'   \code{family = \link{neg_binomial_2}(link)}.
 #'   
 #'   
+#' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
+#'   Partial Pooling} vignette.
+#'    
 #' @examples
 #' # see help(example_model) for details on the model below
+#' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula glmerControl
-#' 
+#' @importFrom Matrix Matrix t cBind
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
                        subset, weights, 
                        na.action = getOption("na.action", "na.omit"), 
@@ -76,10 +97,12 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- NULL
   glmod <- eval(mc, parent.frame())
-  y <- glmod$fr[, as.character(glmod$formula[2L])]
   X <- glmod$X
+  y <- glmod$fr[, as.character(glmod$formula[2L])]
+  if (is.matrix(y) && ncol(y) == 1L)
+    y <- as.vector(y)
 
-  offset <- eval(attr(glmod$fr, "offset"), parent.frame()) %ORifNULL% double(0)
+  offset <- model.offset(glmod$fr) %ORifNULL% double(0)
   weights <- validate_weights(weights)
   if (is.null(prior)) 
     prior <- list()
@@ -97,10 +120,11 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 
-  Z <- pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = cbind(X, Z), 
+  fit <- nlist(stanfit, family, formula, offset, weights, 
+               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
                prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
@@ -112,18 +136,32 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function(...) {
-  if ("family" %in% names(list(...))) 
+stan_lmer <- function(formula,
+                      data = NULL,
+                      subset,
+                      weights,
+                      na.action = getOption("na.action", "na.omit"),
+                      offset,
+                      contrasts = NULL,
+                      ...,
+                      prior = normal(),
+                      prior_intercept = normal(),
+                      prior_ops = prior_options(),
+                      prior_covariance = decov(),
+                      prior_PD = FALSE,
+                      algorithm = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta = NULL,
+                      QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
   mc$family <- gaussian
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }
 
@@ -133,17 +171,32 @@ stan_lmer <- function(...) {
 #' @param link For \code{stan_glmer.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 #' 
-stan_glmer.nb <- function(..., link = "log") {
-  if ("family" %in% names(list(...))) 
+stan_glmer.nb <- function(formula,
+                          data = NULL,
+                          subset,
+                          weights,
+                          na.action = getOption("na.action", "na.omit"),
+                          offset,
+                          contrasts = NULL,
+                          link = "log",
+                          ...,
+                          prior = normal(),
+                          prior_intercept = normal(),
+                          prior_ops = prior_options(),
+                          prior_covariance = decov(),
+                          prior_PD = FALSE,
+                          algorithm = c("sampling", "meanfield", "fullrank"),
+                          adapt_delta = NULL,
+                          QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1]] <- quote(stan_glmer)
   mc$REML <- mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -57,8 +57,11 @@
 #'   The \code{stan_glm.nb} function, which takes the extra argument
 #'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =
 #'   \link{neg_binomial_2}(link)}.
+#'   
+#' @seealso The various vignettes for \code{stan_glm}.
 #' 
-#' @examples 
+#' @examples
+#' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
 #'                 algorithm = "fullrank") # for speed only
@@ -81,14 +84,14 @@
 #'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
 #' pp_check(fit2, check = "resid")
 #' pp_check(fit2, check = "test", test = "mean")
-#' 
+#' }
 #' \dontrun{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 2.5), prior_intercept = normal(0, 10))
+#'                  prior = normal(0, 1), prior_intercept = normal(0, 5))
 #' plot(fit3, fill_color = "skyblue4", est_color = "maroon")
 #' 
 #' ### Gamma regression (example from help("glm"))
@@ -111,6 +114,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
+  validate_glm_formula(formula)
   if (missing(data)) 
     data <- environment(formula)
   call <- match.call(expand.dots = TRUE)
@@ -164,17 +168,35 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 #' @export
 #' @param link For \code{stan_glm.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
-stan_glm.nb <- function(..., link = "log") {
-  if ("family" %in% names(list(...))) 
+#'   
+stan_glm.nb <- function(formula,
+                        data,
+                        weights,
+                        subset,
+                        na.action = NULL,
+                        offset = NULL,
+                        model = TRUE,
+                        x = FALSE,
+                        y = TRUE,
+                        contrasts = NULL,
+                        link = "log",
+                        ...,
+                        prior = normal(),
+                        prior_intercept = normal(),
+                        prior_ops = prior_options(),
+                        prior_PD = FALSE,
+                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                        adapt_delta = NULL,
+                        QR = FALSE) {
+  if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call()
-  if (!"formula" %in% names(call)) 
+  if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glm)
   mc$link <- NULL
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  
   return(out)
 }

@@ -1,8 +1,8 @@
-#include "license.txt"
+#include "license.stan"
 
 // GLM for a Bernoulli outcome
 functions {
-  #include "common_functions.txt"
+  #include "common_functions.stan"
   
   /** 
    * Apply inverse link function to linear predictor
@@ -105,7 +105,7 @@ data {
   vector[K] xbar;     // vector of column-means of rbind(X0, X1)
   matrix[N[1],K] X0;  // centered (by xbar) predictor matrix | y = 0
   matrix[N[2],K] X1;  // centered (by xbar) predictor matrix | y = 1
-  #include "data_glm.txt"
+  #include "data_glm.stan"
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
@@ -117,8 +117,8 @@ data {
   vector[N[1] * has_offset] offset0;
   vector[N[2] * has_offset] offset1;
   
-  #include "hyperparameters.txt"
-  #include "glmer_stuff.txt"
+  #include "hyperparameters.stan"
+  #include "glmer_stuff.stan"
 
   // more glmer stuff
   int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
@@ -131,15 +131,15 @@ data {
 }
 transformed data {
   int NN;
-  #include "tdata_glm.txt"
+  #include "tdata_glm.stan"
   NN <- N[1] + N[2];
 }
 parameters {
   real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.txt"
+  #include "parameters_glm.stan"
 }
 transformed parameters {
-  #include "tparameters_glm.txt"
+  #include "tparameters_glm.stan"
   if (t > 0) {
     theta_L <- make_theta_L(len_theta_L, p, 
                             1.0, tau, scale, zeta, rho, z_T);
@@ -147,7 +147,7 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta_bern.txt"
+  #include "make_eta_bern.stan"
   if (has_intercept == 1) {
     if (link != 4) {
       eta0 <- gamma[1] + eta0;
@@ -170,7 +170,7 @@ model {
     increment_log_prob(dot_product(weights1, pw_bern(1, eta1, link)));
   }
   
-  #include "priors_glm.txt"
+  #include "priors_glm.stan"
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -184,7 +184,7 @@ generated quantities {
   {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
-    #include "make_eta_bern.txt"
+    #include "make_eta_bern.stan"
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 <- gamma[1] + eta0;

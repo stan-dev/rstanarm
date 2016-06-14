@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -42,6 +42,8 @@
 #' @seealso \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' \dontrun{
+#' if (!exists("example_model")) example(example_model)
 #' # Extract posterior sample after MCMC
 #' draws <- as.matrix(example_model)
 #' 
@@ -50,7 +52,6 @@
 #' print(median(draws[, "(Intercept)"]))
 #' print(example_model$coefficients[["(Intercept)"]])
 #' 
-#' \dontrun{
 #' # Extract draws from asymptotic Gaussian sampling distribution 
 #' # after optimization
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
@@ -66,15 +67,15 @@
 #' }
 #' 
 as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
-  NO_DRAWS_msg <- "No draws found."
+  STOP_no_draws <- function() stop("No draws found.", call. = FALSE)
   pars <- collect_pars(x, pars, regex_pars)
-  no_user_pars <- is.null(pars)
+  user_pars <- !is.null(pars)
   
   if (used.optimizing(x)) {
     mat <- x$asymptotic_sampling_dist
     if (is.null(mat)) 
-      stop(NO_DRAWS_msg, call. = FALSE)
-    if (is.null(pars)) {
+      STOP_no_draws()
+    if (!user_pars) {
       dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
       pars <- c(names(coef(x)), # return with coefficients first
                 dispersion[which(dispersion %in% colnames(mat))])
@@ -82,26 +83,26 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
   } else { 
     # used mcmc or vb
     if (x$stanfit@mode != 0) 
-      stop(NO_DRAWS_msg, call. = FALSE)
+      STOP_no_draws()
     posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
     mat <- apply(posterior, 3L, FUN = function(y) y)
-    if (is.null(pars))
-      pars <- grep("mean_PPD|log-posterior", colnames(mat), 
-                   invert = TRUE, value = TRUE)
+    if (length(dim(mat)) < 2L) mat <- t(as.matrix(mat))
+    if (!user_pars)
+      pars <- grep("mean_PPD|log-posterior", # exclude these by default
+                   colnames(mat), invert = TRUE, value = TRUE)
   }
   
-  if (!no_user_pars) {
-    badpars <- which(!pars %in% colnames(mat))
-    if (length(badpars)) 
-      stop("No parameter(s) ", paste(pars[badpars], collapse = ", "), 
+  if (user_pars) {
+    notfound <- which(!pars %in% colnames(mat))
+    if (length(notfound)) 
+      stop("No parameter(s) ", paste(pars[notfound], collapse = ", "), 
            call. = FALSE)
   }
-  
   mat <- mat[, pars, drop = FALSE]
-  if (is.mer(x))
-    mat <- unpad_reTrms(mat, columns = TRUE)
-
-  return(mat)
+  if (!is.mer(x))
+    return(mat)
+  
+  unpad_reTrms(mat)
 }
 
 #' @rdname as.matrix.stanreg

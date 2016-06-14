@@ -1,7 +1,7 @@
 ---
 title: "Estimating Generalized Linear Models for Count Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
@@ -27,8 +27,8 @@ count data using the `stan_glm` function in the __rstanarm__ package.
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1 for Poisson and negative
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 for Poisson and negative
 binomial regression models using the `stan_glm` function.
 
 # Likelihood
@@ -102,20 +102,20 @@ the __Likelihood__ section above in that the rate parameter $\lambda_i =
 exp(\eta_i)$ is multiplied by the exposure $u_i$ giving us 
 $y_i \sim Poisson(u_i \lambda_i)$. This is equivalent to adding $\ln{(u_i)}$ 
 to the linear predictor $\eta_i$ and it can be specified using the `offset` 
-argument to `stan_glm`:
+argument to `stan_glm`.
 
 ```{r, count-roaches-mcmc, results="hide"}
 library(rstanarm)
+data(roaches)
 
-# Load data and rescale
-roaches <- read.csv(file.path("data", "roaches.csv.xz"))
+# Rescale
 roaches$roach1 <- roaches$roach1 / 100
 # Estimate original model
-glm1 <- glm(y ~ roach1 + treatment + senior, data = roaches,
-            family = poisson, offset = log(exposure2))
+glm1 <- glm(y ~ roach1 + treatment + senior, offset = log(exposure2), 
+            data = roaches, family = poisson)
 # Estimate Bayesian version with stan_glm
-stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
-                      family = poisson, offset = log(exposure2), 
+stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, offset = log(exposure2),
+                      data = roaches, family = poisson, 
                       prior = normal(0,2.5), prior_intercept = normal(0,5),
                       chains = CHAINS, cores = CORES, seed = SEED)
 ```
@@ -168,7 +168,7 @@ $S \times N$ matrix, where $S$ is the size of the posterior sample and $N$
 is the number of data points. Each row of `yrep` represents a full dataset
 generated from the posterior predictive distribution. For more about the 
 importance of the `posterior_predict` function, see the 
-"How to Use the __rstanarm__ Package" vignette.
+["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 Gelman and Hill take the simulated datasets and for each of them compute the 
 proportion of zeros and compare to the observed proportion in the original 
@@ -222,7 +222,7 @@ function takes care of this for us, but `yrep` can be used directly to carry out
 other posterior predictive checks that aren't automated by `pp_check`. 
 
 When we comparing the models using the __loo__ package we also see a clear
-preference for the negative binomial model:
+preference for the negative binomial model
 
 ```{r, count-roaches-loo}
 loo1 <- loo(stan_glm1)
@@ -230,8 +230,8 @@ loo2 <- loo(stan_glm2)
 compare(loo1, loo2)
 ```
 
-The weight of 1 assigned to the negative binomial is not surprising given 
-the better fit we've already observed from the posterior predictive checks.
+which is not surprising given the better fit we've already observed from the
+posterior predictive checks.
 
 
 # References

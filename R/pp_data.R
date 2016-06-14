@@ -1,7 +1,7 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright 1995-2007 R Core Development Team
 # Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
+  validate_stanreg_object(object)
   if (is.mer(object)) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
@@ -35,11 +36,14 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   if (!is.null(cl <- attr(Terms, "dataClasses"))) 
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+  if (is(object, "polr") && !is_scobit(object)) 
+    x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
   offset <- rep(0, nrow(x))
-  if (!is.null(off.num <- attr(tt, "offset"))) 
+  if (!is.null(off.num <- attr(tt, "offset"))) {
     for (i in off.num) {
       offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
     }
+  }
   if (!is.null(object$call$offset)) 
     offset <- offset + eval(object$call$offset, newdata)
   nlist(x, offset)
@@ -49,7 +53,11 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
 .pp_data_mer <- function(object, newdata, re.form, ...) {
   x <- .pp_data_mer_x(object, newdata, ...)
   z <- .pp_data_mer_z(object, newdata, re.form, ...)
-  return(nlist(x, offset = object$offset, Zt = z$Zt, Z_names = z$Z_names))
+  offset <- model.offset(model.frame(object))
+  if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
+    offset <- eval(object$call$offset, newdata)
+  }
+  return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
 # the functions below are heavily based on a combination of 
@@ -126,11 +134,17 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
     nlevels(ReTrms$flist[[i]]))
   t <- length(p)
   group_nms <- names(ReTrms$cnms)
-  Z_names <- unlist(lapply(1:t, FUN = function(i) {
+  Z_names <- character()
+  for (i in seq_along(ReTrms$cnms)) {
+    # if you change this, change it in stan_glm.fit() as well
+    nm <- group_nms[i]
     nms_i <- paste(ReTrms$cnms[[i]], group_nms[i])
-    if (length(nms_i) == 1) paste0(nms_i, ":", levels(ReTrms$flist[[i]]))
-    else sapply(nms_i, paste0, ":", new_levels[[i]])
-  }))
+    if (length(nms_i) == 1) {
+      Z_names <- c(Z_names, paste0(nms_i, ":", levels(ReTrms$flist[[nm]])))
+    } else {
+      Z_names <- c(Z_names, c(t(sapply(nms_i, paste0, ":", new_levels[[nm]]))))
+    }
+  }
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
 }

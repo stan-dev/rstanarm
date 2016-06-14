@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #' Example model
 #' 
-#' A pre-fit model for use in \pkg{rstanarm} examples. 
+#' A model for use in \pkg{rstanarm} examples. 
 #' 
 #' @name example_model
 #' @format A \code{\link[=stanreg-objects]{stanreg}} object containing the
@@ -30,12 +30,10 @@
 #' 
 #' @seealso \code{\link[lme4]{cbpp}} for a description of the data.
 #' @examples
-#' \dontrun{
 #' example_model <- 
 #'   stan_glmer(cbind(incidence, size - incidence) ~ size + period + (1|herd),
 #'              data = lme4::cbpp, family = binomial,
 #'              # this next line is only to keep the example small in size!
 #'              chains = 2, cores = 1, seed = 12345, iter = 500)
-#' }
 #' example_model
 NULL

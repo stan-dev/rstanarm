@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -87,15 +87,14 @@
 #' @template reference-morey
 #' 
 #' @examples 
+#' if (!exists("example_model")) example(example_model)
 #' posterior_interval(example_model)
 #' posterior_interval(example_model, regex_pars = "herd")
 #' posterior_interval(example_model, pars = "period2", prob = 0.5)
 #' 
 posterior_interval <- function(object, prob = 0.9, type = "central",
                                pars = NULL, regex_pars = NULL, ...) {
-  if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.", 
-         call. = FALSE)
+  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_interval")
   if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
 #' the fit of the model. Drawing from the posterior predictive distribution at 
 #' interesting values of the predictors also lets us visualize how a 
 #' manipulation of a predictor affects (a function of) the outcome(s). With new 
-#' observations of predictor variables we can use posterior predictive 
+#' observations of predictor variables we can use the posterior predictive 
 #' distribution to generate predicted outcomes.
 #' 
 #' @export
@@ -36,7 +36,9 @@
 #'   used to fit the model, then these variables must also be transformed in 
 #'   \code{newdata}. This only applies if variables were transformed before 
 #'   passing the data to one of the modeling functions and \emph{not} if 
-#'   transformations were specified inside the model formula.
+#'   transformations were specified inside the model formula. Also see the Note
+#'   section below for a note about using the \code{newdata} argument with with
+#'   binomial models.
 #' @param draws An integer indicating the number of draws to return. The default
 #'   and maximum number of draws is the size of the posterior sample.
 #' @param re.form If \code{object} contains \code{\link[=stan_glmer]{group-level}}
@@ -59,29 +61,70 @@
 #'   from the posterior predictive distribution. Each row of the matrix is a
 #'   vector of predictions generated using a single draw of the model parameters
 #'   from the posterior distribution.
+#'   
+#' @note For binomial models with a number of trials greater than one (i.e., not
+#'   Bernoulli models), if \code{newdata} is specified then it must include all 
+#'   variables needed for computing the number of binomial trials to use for the
+#'   predictions. For example if the left-hand side of the model formula is 
+#'   \code{cbind(successes, failures)} then both \code{successes} and 
+#'   \code{failures} must be in \code{newdata}. The particular values of 
+#'   \code{successes} and \code{failures} in \code{newdata} do not matter so 
+#'   long as their sum is the desired number of trials. If the left-hand side of
+#'   the model formula were \code{cbind(successes, trials - successes)} then
+#'   both \code{trials} and \code{successes} would need to be in \code{newdata},
+#'   probably with \code{successes} set to \code{0} and \code{trials} specifying
+#'   the number of trials. See the Examples section below and the 
+#'   \emph{How to Use the rstanarm Package} for examples.
 #' 
 #' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
 #'   \pkg{rstanarm} vignettes and demos.
 #'   
 #' @examples
+#' if (!exists("example_model")) example(example_model)
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
 #' 
 #' \dontrun{
-#' nd <- lme4::cbpp
-#' nd$size <- max(nd$size) + 1L
-#' ppd <- posterior_predict(example_model, newdata = nd)
+#' # Using newdata
+#' counts <- c(18,17,15,20,10,20,25,13,12)
+#' outcome <- gl(3,1,9)
+#' treatment <- gl(3,3)
+#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
+#'                 prior = normal(0, 1), prior_intercept = normal(0, 5))
+#' nd <- data.frame(treatment = factor(rep(1,3)), outcome = factor(1:3))
+#' ytilde <- posterior_predict(fit3, nd, draws = 500)
+#' print(dim(ytilde))  # 500 by 3 matrix (draws by nrow(nd))
+#' ytilde <- data.frame(count = c(ytilde), 
+#'                      outcome = rep(nd$outcome, each = 500))
+#' ggplot(ytilde, aes(x=outcome, y=count)) + 
+#'   geom_boxplot() + 
+#'   ylab("predicted count")
 #' 
-#' # Use fun argument to transform predictions
-#' fit <- stan_glm(I(log(mpg)) ~ wt, data = mtcars)
-#' ppd <- posterior_predict(fit, fun = exp)
+#' 
+#' # Using newdata with a binomial model
+#' # example_model is binomial so we need to set
+#' # the number of trials to use for prediction.
+#' # This could be a different number for each 
+#' # row of newdata or the same for all rows.
+#' # Here we'll use the same value for all.
+#' nd <- lme4::cbpp
+#' print(formula(example_model))  # cbind(incidence, size - incidence) ~ ...
+#' nd$size <- max(nd$size) + 1L   # number of trials
+#' nd$incidence <- 0  # set to 0 so size - incidence = number of trials
+#' ytilde <- posterior_predict(example_model, newdata = nd)
+#' 
+#' 
+#' # Using fun argument to transform predictions
+#' mtcars2 <- mtcars
+#' mtcars2$log_mpg <- log(mtcars2$mpg)
+#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2)
+#' ytilde <- posterior_predict(fit, fun = exp)
 #' }
 #' 
 posterior_predict <- function(object, newdata = NULL, draws = NULL, 
                               re.form = NULL, fun = NULL, seed = NULL, ...) {
-  if (!is.stanreg(object))
-    stop(deparse(substitute(object)), " is not a stanreg object.")
+  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
   if (!is.null(seed)) 
@@ -97,14 +140,34 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
       stop("Currently NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object, newdata, re.form, ...)
-  ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
+  if (is_scobit(object)) {
+    data <- pp_eta(object, dat, NULL)
+    if (!is.null(draws)) {
+      S <- posterior_sample_size(object)
+      if (draws > S) {
+        err <- paste0("'draws' should be <= posterior sample size (", 
+                      S, ").")
+        stop(err)
+      }
+      samp <- sample(S, draws)
+      data$eta <- data$eta[samp, , drop = FALSE]
+      ppargs <- pp_args(object, data)
+      ppargs$alpha <- ppargs$alpha[samp]
+    }
+    else ppargs <- pp_args(object, data)
+  }
+  else ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
+  if (!is(object, "polr") && is.binomial(family(object)$family))
+    ppargs$trials <- pp_binomial_trials(object, newdata)
+  
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
   if (!is.null(newdata) && nrow(newdata) == 1L) 
     ytilde <- t(ytilde)
   if (!is.null(fun)) 
     ytilde <- do.call(fun, list(ytilde))
-
+  if (is(object, "polr") && !is_scobit(object))
+    ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   return(ytilde)
 }
 
@@ -158,13 +221,15 @@ pp_fun <- function(object) {
   n <- ncol(eta)
   q <- ncol(zeta)
   if (!is.null(alpha)) {
-    t(sapply(1:nrow(eta), FUN = function(s) {
-      tmp <- matrix(zeta[s,], n, q, byrow = TRUE) - eta[s, ]
-      pr <- matrix(linkinv(tmp)^alpha, , q)
-      rbinom(ncol(eta), size = 1, prob = pr[s, ])
+    pr <- linkinv(eta)^alpha
+    if (NROW(eta) == 1) {
+      pr <- matrix(pr, nrow = 1)  
+    }
+    t(sapply(1:NROW(eta), FUN = function(s) {
+      rbinom(NCOL(eta), size = 1, prob = pr[s, ])
     }))
   } else {
-    t(sapply(1:nrow(eta), FUN = function(s) {
+    t(sapply(1:NROW(eta), FUN = function(s) {
       tmp <- matrix(zeta[s, ], n, q, byrow = TRUE) - eta[s, ]
       cumpr <- matrix(linkinv(tmp), , q)
       fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
@@ -196,15 +261,6 @@ pp_args <- function(object, data) {
   famname <- family(object)$family
   if (is.gaussian(famname)) {
     args$sigma <- stanmat[, "sigma"]
-  } else if (is.binomial(famname)) {
-    y <- get_y(object)
-    if (NCOL(y) == 2L) {
-      args$trials <- rowSums(y)
-    } else if (is.numeric(y) && !all(y %in% c(0, 1))) {
-      args$trials <- object$weights
-    } else {
-      args$trials <- rep(1, NROW(y))
-    }
   } else if (is.gamma(famname)) {
     args$shape <- stanmat[, "shape"]
   } else if (is.ig(famname)) {
@@ -252,19 +308,53 @@ pp_eta <- function(object, data, draws = NULL) {
     if (is.null(data$Z_names)) {
       b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
     } else {
-      ord <- sapply(data$Z_names, FUN = function(x) {
-        m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-        len <- length(m)
-        if (len == 1) 
-          return(m)
-        if (len > 1) 
-          stop("multiple matches bug")
-        x <- sub(" (.*):.*$", " \\1:_NEW_\\1", x)
-        grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
-      })
-      b <- b[, ord, drop = FALSE]
+      b <- pp_b_ord(b, data$Z_names)
     }
     eta <- eta + as.matrix(b %*% data$Zt)
   }
   nlist(eta, stanmat)
+}
+
+pp_b_ord <- function(b, Z_names) {
+  ord <- sapply(Z_names, FUN = function(x) {
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1) 
+      return(m)
+    if (len > 1) 
+      stop("multiple matches bug")
+    m <- grep(paste0("b[", sub(" (.*):.*$", " \\1:_NEW_\\1", x), "]"), 
+              colnames(b), fixed = TRUE)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    x <- strsplit(x, split = ":", fixed = TRUE)[[1]]
+    stem <- strsplit(x[[1]], split = " ", fixed = TRUE)[[1]]
+    x <- paste(x[1], x[2], paste0("_NEW_", stem[2]), x[2], sep = ":")
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    x <- paste(paste(stem[1], stem[2]), paste0("_NEW_", stem[2]), sep = ":")
+    m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
+    len <- length(m)
+    if (len == 1)
+      return(m)
+    if (len > 1)
+      stop("multiple matches bug")
+    stop("no matches bug")    
+  })
+  b[, ord, drop = FALSE]
+}
+
+# Number of trials for binomial models
+pp_binomial_trials <- function(object, newdata = NULL) {
+  y <- if (is.null(newdata))
+    get_y(object) else eval(formula(object)[[2L]], newdata)
+  if (NCOL(y) == 2L) 
+    return(rowSums(y))
+  rep(1, NROW(y))
 }

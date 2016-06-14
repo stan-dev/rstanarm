@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,8 +20,10 @@
 #' Bayesian inference for linear modeling with regularizing priors on the 
 #' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
 #' proportion of variance in the outcome attributable to the predictors. See 
-#' \code{\link{priors}} for an explanation of this critical point.
-#' 
+#' \code{\link{priors}} for an explanation of this critical point. 
+#' \code{\link{stan_glm}} with \code{family="gaussian"} also estimates a 
+#' linear model with normally-distributed errors and allows for various other 
+#' priors on the coefficients.
 #' 
 #' @export
 #' @templateVar fun stan_lm, stan_aov
@@ -86,6 +88,11 @@
 #'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
 #'   variance.
 #'   
+#'   
+#' @references 
+#' Lewandowski, D., Kurowicka D., and Joe, H. (2009). Generating random
+#' correlation matrices based on vines and extended onion method. 
+#' \emph{Journal of Multivariate Analysis}. \strong{100}(9), 1989--2001.
 #' 
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
@@ -112,6 +119,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     adapt_delta = NULL) {
   
   algorithm <- match.arg(algorithm)
+  validate_glm_formula(formula)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
@@ -119,25 +127,24 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
     mf$adapt_delta <- NULL
+  mf$method <- "model.frame"
   modelframe <- suppressWarnings(eval(mf, parent.frame()))
-  mt <- modelframe$terms
-  Y <- modelframe$y
-  X <- modelframe$x
-  if (!singular.ok) 
-    X <- X[, !is.na(modelframe$coefficients), drop = FALSE]
-  w <- modelframe$weights
-  offset <- model.offset(mf)
-  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = TRUE,
+  mt <- attr(modelframe, "terms")
+  Y <- model.response(modelframe, "numeric")
+  X <- model.matrix(mt, modelframe, contrasts)
+  w <- as.vector(model.weights(modelframe))
+  offset <- as.vector(model.offset(modelframe))
+  stanfit <- stan_lm.wfit(y = Y, x = X, w, offset, singular.ok = singular.ok,
                           prior = prior, prior_intercept = prior_intercept, 
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
-  fit <- nlist(stanfit, family = gaussian(), formula, offset, 
-               weights = w, x = X, y = Y, 
-               data = if (missing("data")) environment(formula) else data,
+  fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
+               x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
+               y = Y, data = if (missing("data")) environment(formula) else data,
                prior.info = prior, 
                algorithm, call, terms = mt,
-               model = if (model) model.frame(modelframe) else NULL,
+               model = if (model) modelframe else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,26 +28,41 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   if (colnames(x)[1L] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[, -1L, drop = FALSE]
+    if (NCOL(x) == 0L)
+      stop("'stan_lm' is not suitable for estimating a mean.",
+           "\nUse 'stan_glm' with 'family = gaussian()' instead.", 
+           call. = FALSE)
   } else {
     has_intercept <- 0L
   }
-  ols <- lsfit(x, y, w, intercept = has_intercept == 1L)
+  if (nrow(x) < ncol(x))
+    stop("stan_lm with more predictors than data points is not yet enabled.", 
+         call. = FALSE)
+  
+  xbar <- colMeans(x)
+  x <- sweep(x, 2L, xbar, FUN = "-")
+  ybar <- mean(y)
+  y <- y - ybar
+  if(length(w) == 0) ols <- lm.fit(x, y)
+  else ols <- lm.wfit(x, y, w)
+  b <- coef(ols)
+  NAs <- is.na(b)
+  if (any(NAs) && !singular.ok) {
+    x <- x[,!NAs, drop = FALSE]
+    xbar <- xbar[!NAs]
+    ols <- lsfit(x, y, w, intercept = FALSE)
+    b <- coef(ols)
+  }
+  else b[NAs] <- 0.0
+  
   if (!is.null(w)) 
     x <- sqrt(w) * x
 
   J <- 1L
   N <- array(nrow(x), c(J))
   K <- ncol(x)
-  if (K == 0) 
-    stop("'stan_lm.fit' is not suitable for estimating a mean.",
-         "\nUse 'stan_glm.fit' with 'family = gaussian()' instead.")
-  
-  xbar <- colMeans(x)
-  x <- sweep(x, 2L, xbar, FUN = "-")
-  b <- coef(ols)
-  b[is.na(b)] <- 0.0
   cn <- colnames(x)
-  decomposition <- qr(x)
+  decomposition <- ols$qr
   Q <- qr.Q(decomposition)
   R <- qr.R(decomposition)
   R_inv <- qr.solve(decomposition, Q)
@@ -55,14 +70,12 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   colnames(x) <- cn
   JK <- c(J, K)
   xbarR_inv <- array(c(xbar %*% R_inv), JK)
-  Rb <- if (has_intercept == 1) 
-    array(R %*% b[-1], JK) else array(R %*% b, JK)
+  Rb <- array(R %*% b, JK)
 
   SSR <- array(crossprod(residuals(ols))[1], J)
   s_Y <- array(sd(y), J)
-  center_y <- if (isTRUE(all.equal(matrix(0, J, K), xbar)))
-    mean(y) else 0
-  ybar <- array(mean(y), J)
+  center_y <- if (isTRUE(all.equal(matrix(0, J, K), xbar))) ybar else 0
+  ybar <- array(ybar, J)
 
   if (!length(prior)) {
     prior_dist <- 0L
@@ -87,10 +100,11 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   dim(R_inv) <- c(J, dim(R_inv))
   
   # initial values
-  R2 <- array(1 - SSR[1] / ((N - 1) * var(y)), J)
+  R2 <- array(1 - SSR[1] / ((N - 1) * s_Y^2), J)
   log_omega <- array(0, ifelse(prior_PD == 0, J, 0))
   init_fun <- function(chain_id) {
     out <- list(R2 = R2, log_omega = log_omega)
+    if (has_intercept == 0L) out$z_alpha <- double()
     return(out)
   }
   stanfit <- stanmodels$lm

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,19 +22,12 @@
 #' pages.
 #' 
 #' @name stanreg-methods
-#' @aliases VarCorr fixef ranef ngrps
+#' @aliases VarCorr fixef ranef ngrps sigma
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
 #' @param ... Ignored, except by the \code{update} method. See
 #'   \code{\link{update}}.
-#' @param parm For \code{confint}, an optional character vector of parameter
-#'   names.
-#' @param level For \code{confint}, a scalar between \eqn{0} and \eqn{1}
-#'   indicating the confidence level to use.
-#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
-#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
-#'   returned instead.
 #' 
 #' @details Most of these methods are similar to the methods defined for objects
 #'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
@@ -75,12 +68,6 @@
 #' }
 #' }
 #' 
-#' @note Because \code{sigma} is not yet included in \pkg{stats}, both 
-#'   \pkg{rstanarm} and \pkg{lme4} export a \code{sigma} generic. If both
-#'   packages are loaded it may be necessary to use \code{rstanarm::sigma} or
-#'   \code{lme4::sigma} (depending on which package is loaded first) in order to
-#'   access the appropriate method.
-#' 
 #' @seealso
 #' Other S3 methods for stanreg objects, which have separate documentation, 
 #' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 
@@ -96,14 +83,19 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (!is.mer(object)) 
-    object$coefficients
-  else 
-    coef_mer(object, ...)
+  if (is.mer(object)) 
+    return(coef_mer(object, ...))
+  
+  object$coefficients
 }
 
 #' @rdname stanreg-methods
 #' @export
+#' @param parm For \code{confint}, an optional character vector of parameter
+#'   names.
+#' @param level For \code{confint}, a scalar between \eqn{0} and \eqn{1}
+#'   indicating the confidence level to use.
+#'
 confint.stanreg <- function(object, parm, level = 0.95, ...) {
   if (!used.optimizing(object)) {
     stop("For models fit using MCMC or a variational approximation please use ", 
@@ -124,18 +116,30 @@ fitted.stanreg <- function(object, ...)  {
 #' @export
 #' @keywords internal
 #' @param object Fitted model object.
-#' @param ... Arguments to methods.
+#' @param ... Arguments to methods. For example the
+#'   \code{\link[=stanreg-methods]{stanreg}} method accepts the argument
+#'   \code{newdata}.
 #' @return Pointwise log-likelihood matrix.
 #' @seealso \code{\link{log_lik.stanreg}}
+#' 
 log_lik <- function(object, ...) UseMethod("log_lik")
 
 #' @rdname stanreg-methods
 #' @export
-log_lik.stanreg <- function(object, ...) {
+#' @param newdata For \code{log_lik}, an optional data frame of new data (e.g. 
+#'   holdout data) to use when evaluating the log-likelihood. See the 
+#'   description of \code{newdata} for \code{\link{posterior_predict}}.
+log_lik.stanreg <- function(object, newdata = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  fun <- ll_fun(object$family)
-  args <- ll_args(object)
+  if (!is.null(newdata)) {
+    if ("gam" %in% names(object))
+      stop("'log_lik' with 'newdata' not yet supported ", 
+           "for models estimated via 'stan_gamm4'.")
+    newdata <- as.data.frame(newdata)
+  }
+  fun <- ll_fun(object)
+  args <- ll_args(object, newdata)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
                   draws = args$draws))
@@ -177,7 +181,7 @@ se.stanreg <- function(object, ...) {
 #' @export
 #' @method update stanreg
 #' @param formula.,evaluate See \code{\link[stats]{update}}.
-#' 
+#'
 update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
   call <- getCall(object)
   if (is.null(call)) 
@@ -194,35 +198,33 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
       call <- as.call(call)
     }
   }
-  if (!evaluate) {
+  
+  if (!evaluate) 
     return(call)
-  } else {
-    # do this like lme4 update.merMod instead of update.default
-    ff <- environment(formula(object))
-    pf <- parent.frame()
-    sf <- sys.frames()[[1L]]
-    tryCatch(eval(call, envir = ff),
-             error = function(e) {
-               tryCatch(eval(call, envir = sf),
-                        error = function(e) {
-                          eval(call, pf)
-                        })
-             })
-  }
+  
+  # do this like lme4 update.merMod instead of update.default
+  ff <- environment(formula(object))
+  pf <- parent.frame()
+  sf <- sys.frames()[[1L]]
+  tryCatch(eval(call, envir = ff),
+           error = function(e) {
+             tryCatch(eval(call, envir = sf),
+                      error = function(e) {
+                        eval(call, pf)
+                      })
+           })
 }
 
 #' @rdname stanreg-methods
 #' @export 
+#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
+#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
+#'   returned instead.
+#'
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is.mer(object)) 
-    out <- object$covmat
-  else {
-    sel <- seq_along(fixef(object))
-    out <- object$covmat[sel, sel, drop=FALSE]
-  }
-  if (correlation) 
-    out <- cov2cor(out)
-  return(out)
+  out <- object$covmat
+  if (!correlation) return(out)
+  cov2cor(out)
 }
 
 
@@ -317,31 +319,28 @@ ranef.stanreg <- function(object, ...) {
   structure(ans, class = "ranef.mer")
 }
 
-#' Extract residual standard deviation
-#' 
-#' @export
-#' @keywords internal
-#' @param object Fitted model object.
-#' @param ... Arguments to methods.
-sigma <- function(object, ...) UseMethod("sigma")
 
 #' @rdname stanreg-methods
 #' @export
-#' @method sigma stanreg
+#' @export sigma
+#' @rawNamespace if(getRversion()>='3.3.0') importFrom(stats, sigma) else
+#'   importFrom(lme4,sigma)
+#'
 sigma.stanreg <- function(object, ...) {
   if (!("sigma" %in% rownames(object$stan_summary))) 
     return(1)
-  else 
-    object$stan_summary["sigma", select_median(object$algorithm)]
+  
+  object$stan_summary["sigma", select_median(object$algorithm)]
 }
 
 #' @rdname stanreg-methods
-#' @param sigma,rdig Ignored (included for compatibility with
-#'   \code{\link[lme4]{VarCorr}}).
+#' @param sigma Ignored (included for compatibility with
+#'   \code{\link[nlme]{VarCorr}}).
 #' @export
 #' @export VarCorr
-#' @importFrom lme4 VarCorr mkVarCorr
-VarCorr.stanreg <- function(x, sigma = 1, rdig = 3) {
+#' @importFrom nlme VarCorr
+#' @importFrom lme4 mkVarCorr
+VarCorr.stanreg <- function(x, sigma = 1, ...) {
   cnms <- .cnms(x)
   means <- get_posterior_mean(x$stanfit)
   means <- means[, ncol(means)]
@@ -371,17 +370,17 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
-  if (!is.mer(formula))
-    return(NextMethod("model.frame"))
-  
-  fr <- formula$glmod$fr
-  if (fixed.only) {
-    ff <- formula(formula, fixed.only = TRUE)
-    vars <- rownames(attr(terms.formula(ff), "factors"))
-    fr <- fr[vars]
+  if (is.mer(formula)) {
+    fr <- formula$glmod$fr
+    if (fixed.only) {
+      ff <- formula(formula, fixed.only = TRUE)
+      vars <- rownames(attr(terms.formula(ff), "factors"))
+      fr <- fr[vars]
+    }
+    return(fr)
   }
   
-  return(fr)
+  NextMethod("model.frame")
 }
 
 #' model.matrix method for stanreg objects
@@ -391,10 +390,10 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (!is.mer(object)) 
-    NextMethod("model.matrix")
-  else 
-    object$glmod$X
+  if (is.mer(object))
+    return(object$glmod$X)
+  
+  NextMethod("model.matrix")
 }
 
 #' formula method for stanreg objects
@@ -406,10 +405,10 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
-  if (!is.mer(x)) 
-    x$formula
-  else 
-    formula_mer(x, ...)
+  if (is.mer(x)) 
+    return(formula_mer(x, ...))
+  
+  x$formula
 }
 
 justRE <- function(f, response = FALSE) {

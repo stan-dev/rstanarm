@@ -1,7 +1,7 @@
 ---
 title: "How to Use the rstanarm Package"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
@@ -312,23 +312,22 @@ and contains no interaction terms. Bayesians can avoid this difficulty
 simply by inspecting the posterior predictive distribution at different
 levels of the predictors. For example,
 ```{r, rstanarm-posterior_predict-manipulate}
-y_rep <- posterior_predict(womensrole_bglm_2, newdata = 
-                             data.frame(education = c(12,16),
-                                        gender = factor("Female", levels = 
-                                                       c("Male", "Female"))))
-y_rep <- with(womensrole, sweep(y_rep, 2, FUN = "/", STATS = 
-                total[gender == "Female" & education %in% c(12,16)]))
+# note: in newdata we want agree and disgree to sum to the number of people we
+# want to predict for. the values of agree and disagree don't matter so long as
+# their sum is the desired number of trials. we need to explicitly imply the
+# number of trials like this because our original data are aggregate. if we had
+# bernoulli data then it would be a given we wanted to predict for single
+# individuals.
+newdata <- data.frame(agree = c(0,0), disagree = c(100,100), education = c(12,16),
+                      gender = factor("Female", levels = c("Male", "Female")))
+y_rep <- posterior_predict(womensrole_bglm_2, newdata)
 summary(apply(y_rep, 1, diff))
 ```
-As can be seen, two women --- one with a high school degree and another
-with a college degree --- are expected to have about the same probability
-of agreeing with the survey question. This is largely due to the fact that
-women with a high school education are already extremely unlikely to agree
-with the survey question and thus increasing their education to a college
-degree cannot have a large negative impact on this probability. Thus, to
-the extent that education makes a difference to the outcome, it is mostly
-that people with very little education have a considerable probability of
-agreeing with the survey question.
+As can be seen, out of $100$ women who have a college degree versus $100$ women 
+with only a high school degree, we would expect about $20$ fewer college-educated
+women to agree with the question. There is an even chance that the difference is 
+between $24$ and $16$, a one-in-four chance that it is greater, and one-in-four 
+chance that it is less.
 
 # Troubleshooting
 
@@ -473,7 +472,7 @@ documentation for the __rstan__ package or http://mc-stan.org for more
 details about this more advanced useage of Stan. However, many relatively
 simple models can be fit using the __rstanarm__ package without writing any
 code in the Stan language, which is illustrated for each estimating function
-in the __rstanarm__ package in the other vignettes.
+in the __rstanarm__ package in the other [vignettes](index.html).
 
 __References__
 

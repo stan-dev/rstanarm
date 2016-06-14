@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{poisson}} but with a different family name.
 #' @examples
+#' if (!grepl("^sparc",  R.version$platform))
 #' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
 #'          family = neg_binomial_2, QR = TRUE, algorithm = "fullrank") 
 #'                 

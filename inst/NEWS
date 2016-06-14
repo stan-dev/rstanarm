@@ -1,7 +1,36 @@
-The Future (2.9.0-x)
-1. Bug fixes
+Tue May 24 2016 (2.9.0-4)
+1. Serious bug fixes
+  * posterior_predict with newdata was wrong for ordinal models
+  * stan_lm() was wrong if there was no intercept
+  * stan_glmer.fit() would permit models with duplicative group-specific terms but these
+    are usually a mistake on the user's part
+2. Bug fixes
+  * posterior_predict with lme4-style models would fail if there were spaces or colons 
+    in the levels of the grouping variables
+  * posterior_predict with ordinal models would output an integer matrix instead of a
+    character matrix
+3. New features
+  * pp_validate() function based on the BayesValidate package by Sam Cook
+  * posterior_vs_prior() function to visualize the effect of conditioning on the data
+  * Works (again) with R versions back to 3.0.2 (untested though)
+
+Sat Feb 13 2016 (2.9.0-3)
+1. Serious bug fixes
+  * Fix problem with models that had group-specific coefficients, which were mislabled.
+    Although the parameters were estimated correctly, users of previous versions of
+    rstanarm should run such models again to obtain correct summaries and posterior
+    predictions. Thanks to someone named Luke for pointing this problem out on stan-users.
+2. Bug fixes
   * Vignettes now view correctly on the CRAN webiste thanks to Yihui Xie
   * Fix problem with models without intercepts thanks to Paul-Christian Buerkner
+  * Fix problem with specifying binomial 'size' for posterior_predict using newdata
+  * Fix problem with lme4-style formulas that use the same grouping factor multiple times
+  * Fix conclusion in rstanarm vignette thanks to someone named Michael
+3. Features
+  * Group-specific design matrices are kept sparse throughout to reduce memory consumption
+  * The log_lik() function now has a newdata argument
+  * New vignette on hierarchical partial pooling
+  
 
 Sat Jan 09 2016 (2.9.0-1)
   Initial CRAN release
