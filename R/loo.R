@@ -133,12 +133,12 @@ loo.stanreg <- function(x, ...) {
 
 #' @rdname loo.stanreg
 #' @export
-#' @param K The number of subsets of equal (if possible) size into which the
-#'   data will be partitioned for K-fold cross-validation. The model is refit
-#'   \code{K} times, each time leaving out one of the \code{K} subsets. If
-#'   \code{K} is equal to the total number of observations in the data then
-#'   K-fold cross-validation is equivalent to exact leave-one-out
-#'   cross-validation.
+#' @param K The number of subsets of equal (if possible) size into which the 
+#'   data will be randomly partitioned for performing K-fold cross-validation.
+#'   The model is refit \code{K} times, each time leaving out one of the
+#'   \code{K} subsets. If \code{K} is equal to the total number of observations
+#'   in the data then K-fold cross-validation is equivalent to exact
+#'   leave-one-out cross-validation.
 #'
 kfold <- function(x, K) {
   validate_stanreg_object(x)

@@ -27,14 +27,16 @@ REFRESH <- 0
 SW <- suppressWarnings
 ll_fun <- rstanarm:::ll_fun
 
+
+# loo and waic ------------------------------------------------------------
+context("loo and waic")
+
 # These tests just check that the loo.stanreg method (which calls loo.function 
 # method) results are identical to the loo.matrix results. Since for these tests
 # the log-likelihood matrix is computed using the log-likelihood function, the 
 # only thing these tests really do is make sure that loo.stanreg and all the 
 # log-likelihood functions don't return any errors and whatnot (it does not
 # check that the results returned by loo are actually correct).
-
-context("loo and waic")
 
 expect_identical_loo <- function(fit) {
   l <- SW(loo(fit))
@@ -157,6 +159,36 @@ test_that("loo/waic for stan_glmer works", {
 })
 
 
+
+
+# kfold -------------------------------------------------------------------
+context("kfold")
+
+test_that("kfold throws error for non mcmc models", {
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                   seed = SEED)
+  expect_error(kfold(fito), "MCMC")
+})
+
+test_that("kfold throws error if K > N", {
+  expect_error(kfold(example_model, K = 1e5), ">= K")
+})
+
+test_that("kfold works on some examples", {
+  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS, iter = ITER, 
+                          seed = SEED, refresh = REFRESH))
+  kf <- SW(kfold(fit_gaus, 4))
+  expect_s3_class(kf, c("kfold", "loo"))
+  expect_identical(print(kf), kf)
+  expect_output(print(kf), "4-fold cross-validation")
+  
+  kf2 <- SW(kfold(example_model, 2))
+  expect_s3_class(kf2, c("kfold", "loo"))
+  expect_identical(print(kf2), kf2)
+  expect_output(print(kf2), "2-fold cross-validation")
+})
+
+# helpers -----------------------------------------------------------------
 context("loo and waic helpers")
 
 test_that(".weighted works", {
