@@ -54,6 +54,20 @@
 #' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
 #' Package} vignette for an example of this process).
 #' }
+#' \subsection{\code{reloo}}{
+#' The \code{reloo} function is provided as a possible remedy when the 
+#' diagnositcs from \pkg{loo} reveal problems stemming from the posterior's 
+#' sensitivity to particular observations. Warnings about Pareto \eqn{k}
+#' estimates indicate observations for which the approximation to LOO is 
+#' problematic. The \code{threshold} argument to \code{reloo} can be used to set
+#' the \eqn{k} value above which an observation is flagged. If there are \eqn{J}
+#' observations with \eqn{k} estimates above \code{threshold} then the
+#' \code{reloo} function will refit the original model \eqn{J} times, each time
+#' leaving out one of the \eqn{J} problematic observations. The pointwise
+#' contributions of these observations to the total ELPD can then be computed
+#' directly and be subsituted for the previous estimates from these \eqn{J}
+#' observations that are stored in \code{loo_x} object.
+#' }
 #' \subsection{kfold}{
 #' The \code{kfold} function performs exact K-fold cross-validation. The
 #' \code{compare} function is also compatible with the objects returned by
@@ -167,6 +181,67 @@ print.kfold <- function(x, digits = 1, ...) {
 log_mean_exp <- function(x) {
   max_x <- max(x)
   max_x + log(sum(exp(x - max_x))) - log(length(x))
+}
+
+
+#' @rdname loo.stanreg
+#' @export 
+#' @param loo_x The object returned by \code{loo} when applied to the stanreg 
+#'   object \code{x}. If \code{loo_x} is missing then \code{reloo} runs 
+#'   \code{loo} internally to create \code{loo_x} before proceeding. See Details
+#'   for more information.
+#' @param threshold Threshold for flagging estimates of the Pareto shape 
+#'   parameters \eqn{k} estimated by \code{loo}. See Details.
+#' 
+reloo <- function(x, loo_x, threshold = 0.5, ...) {
+  validate_stanreg_object(x)
+  stopifnot(!is.null(x$data))
+  
+  if (missing(loo_x)) {
+    loo_x <- loo(x, ...)
+  } else {
+    stopifnot(inherits(loo_x, "loo"))
+    if (is.null(loo_x$pareto_k))
+      stop("No Pareto k estimates found in 'loo' object.")
+  }
+  
+  obs <- loo::pareto_k_ids(loo_x, threshold = threshold)
+  if (!length(obs)) {
+    message("No problematic observations found. Returning loo object.")
+    return(loo_x)
+  } 
+  
+  J <- length(obs)
+  d <- x$data
+  lls <- vector("list", J)
+  
+  message(
+    J, " problematic observation(s) found.", 
+    "\nModel will be refit ", J, " times."
+  )
+  for (j in 1:J) {
+    message(
+      "\nFitting model ", j, " out of ", J,
+      " (leaving out observation ", obs[j], ")"
+    )
+    omitted <- obs[j]
+    fit_j <- update(x, data = d[-omitted, ], refresh = 0)
+    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, ])
+  }
+  
+  # replace parts of loo_x
+  sel <- c("elpd_loo", "looic")
+  elppds <- unlist(lapply(lls, log_mean_exp))
+  loo_x$pointwise[obs, sel] <- cbind(elppds, -2 * elppds)
+  loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
+  loo_x[paste0("se_", sel)] <- with(loo_x, {
+    N <- nrow(pointwise)
+    sqrt(N * apply(pointwise[, sel], 2, var))
+  })
+  
+  # what should we do about pareto k's? for now setting them to 0
+  loo_x$pareto_k[obs] <- 0
+  loo_x
 }
 
 
@@ -340,9 +415,9 @@ ll_args <- function(object, newdata = NULL) {
 .ll_inverse.gaussian_i <- function(i, data, draws) {
   mu <- .mu(data, draws)
   val <- 0.5 * log(draws$lambda / (2 * pi)) - 
-         1.5 * log(data$y) -
-         0.5 * draws$lambda * (data$y - mu)^2 / 
-                        (data$y * mu^2)
+    1.5 * log(data$y) -
+    0.5 * draws$lambda * (data$y - mu)^2 / 
+    (data$y * mu^2)
   .weighted(val, data$weights)
 }
 .ll_polr_i <- function(i, data, draws) {
