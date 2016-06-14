@@ -33,23 +33,21 @@ functions {
     int N;
     int pm1;
     int p;
-    int neg_p;
-    
+
     N <- size(y);
     pm1 <- rows(U);
     p <- pm1 + 1;
-    neg_p <- -p;
     for (i in 1:N) {
       int y_i;
       vector[pm1] G_i;
       real utility_best;
       y_i <- y[i];
       G_i <- G[i];
-      utility_best <- sum(G_i) / neg_p; // G[i] < 0 so utility_best > 0
+      utility_best <- sum(G_i) / p; // G[i] > 0 so utility_best > 0
       // this enforces the sum-to-zero constraint for p-dimensional utility
-      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best + G_i[j];
+      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best - G_i[j];
       if (y_i < p)           U[y_i,i] <- utility_best;
-      for (j in (y_i+1):pm1) U[j,i]   <- utility_best + G_i[j-1];
+      for (j in (y_i+1):pm1) U[j,i]   <- utility_best - G_i[j-1];
     }
     return U;
   }
@@ -113,7 +111,7 @@ parameters {
   vector[q] gamma;                     // coefficients on alternative-specific predictors
   
   cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix; see
-  vector<upper=0>[pm1] G[N];           // utility gap for non-best choices relative to best choice
+  vector<lower=0>[pm1] G[N];           // utility gap for non-best choices relative to best choice
 }
 transformed parameters {
   matrix[p,p] Lambda;
