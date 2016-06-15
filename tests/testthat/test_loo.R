@@ -16,7 +16,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 library(rstanarm)
-library(loo)
 options(loo.cores = 2)
 SEED <- 1234
 set.seed(SEED)
@@ -164,8 +163,8 @@ context("loo then refitting")
 
 test_that("loo with k_threshold works", {
   fit <- SW(stan_glm(mpg ~ wt + cyl, prior = normal(0, 1000), data = mtcars, 
-                     seed = SEED, iter = 100, chains = 4, cores = 1, 
-                     refresh = REFRESH))
+                     seed = 12345, iter = 100, chains = 4, cores = 1, 
+                     refresh = 0))
   expect_warning(loo(fit), "Call loo again with 'k_threshold'")
   expect_message(loo(fit, k_threshold = 0.5), "Model will be refit")
 })
