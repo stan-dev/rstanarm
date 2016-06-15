@@ -32,7 +32,8 @@
 #' 
 #' @inheritParams loo::loo
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape 
-#'   parameters \eqn{k} estimated by \code{loo}. See Details.
+#'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
+#'   when \code{loo} gives warnings} section, below, for details.
 #' 
 #' @return An object of class 'loo'. See the 'Value' section in 
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
@@ -55,9 +56,9 @@
 #' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
 #' Package} vignette for an example of this process).
 #' 
-#' \subsection{How to proceed when \code{loo} gives warnings}{
+#' \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
 #' The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm} 
-#' models is provided as a possible remedy when the diagnositcs reveal problems
+#' models is provided as a possible remedy when the diagnostics reveal problems
 #' stemming from the posterior's sensitivity to particular observations.
 #' Warnings about Pareto \eqn{k} estimates indicate observations for which the
 #' approximation to LOO is problematic (this is described in detail in Vehtari,

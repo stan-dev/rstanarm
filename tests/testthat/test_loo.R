@@ -185,8 +185,7 @@ test_that("kfold throws error if K > N", {
 })
 
 test_that("kfold works on some examples", {
-  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS, iter = ITER, 
-                          seed = SEED, refresh = REFRESH))
+  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, seed = 12345, refresh = 0))
   kf <- SW(kfold(fit_gaus, 4))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(print(kf), kf)
