@@ -39,7 +39,7 @@
 #'   structure of these objects. The object returned by \code{kfold} also 
 #'   has class 'kfold' in addition to 'loo'.
 #'   
-#' @details
+#' @section Approximate LOO CV:
 #' The \code{loo} method for stanreg objects provides an interface to
 #' the \pkg{\link[=loo-package]{loo}} package for approximate leave-one-out 
 #' cross-validation (LOO). The LOO Information Criterion (LOOIC) has the same 
@@ -55,29 +55,33 @@
 #' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
 #' Package} vignette for an example of this process).
 #' 
-#' The \code{k_threshold} argument to \code{loo} provided as a possible remedy
-#' when the diagnositcs reveal problems stemming from the posterior's
-#' sensitivity to particular observations. Warnings about Pareto \eqn{k}
-#' estimates indicate observations for which the approximation to LOO is
-#' problematic. The \code{k_threshold} argument can be used to set the \eqn{k}
-#' value above which an observation is flagged. If \code{k_threshold} is not
-#' \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates above
-#' \code{k_threshold} then when \code{loo} is called it will refit the original
-#' model \eqn{J} times, each time leaving out one of the \eqn{J} problematic
-#' observations. The pointwise contributions of these observations to the total
-#' ELPD are then computed directly and subsituted for the previous estimates
-#' from these \eqn{J} observations that are stored in the object created by
-#' \code{loo}.
+#' \subsection{How to proceed when \code{loo} gives warnings}{
+#' The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm} 
+#' models is provided as a possible remedy when the diagnositcs reveal problems
+#' stemming from the posterior's sensitivity to particular observations.
+#' Warnings about Pareto \eqn{k} estimates indicate observations for which the
+#' approximation to LOO is problematic (this is described in detail in Vehtari,
+#' Gelman, and Gabry (2016) and the \pkg{\link[=loo-package]{loo}} package
+#' documentation). The \code{k_threshold} argument can be used to set the
+#' \eqn{k} value above which an observation is flagged. If \code{k_threshold} is
+#' not \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates
+#' above \code{k_threshold} then when \code{loo} is called it will refit the
+#' original model \eqn{J} times, each time leaving out one of the \eqn{J}
+#' problematic observations. The pointwise contributions of these observations
+#' to the total ELPD are then computed directly and substituted for the previous
+#' estimates from these \eqn{J} observations that are stored in the object
+#' created by \code{loo}.
+#' }
 #' 
-#' \subsection{K-fold cross-validation}{
+#' @section K-fold CV:
 #' The \code{kfold} function performs exact \eqn{K}-fold cross-validation. First
-#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close
+#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close 
 #' to equal as possible) size. Then the model is refit \eqn{K} times, each time 
 #' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total 
-#' number of observations in the data then \eqn{K}-fold cross-validation is
-#' equivalent to exact leave-one-out cross-validation. The \code{compare}
-#' function is also compatible with the objects returned by \code{kfold}.
-#' }
+#' number of observations in the data then \eqn{K}-fold cross-validation is 
+#' equivalent to exact leave-one-out cross-validation (to which \code{loo} is an
+#' efficient approximation). The \code{compare} function is also compatible with
+#' the objects returned by \code{kfold}.
 #'   
 #' @seealso 
 #' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
@@ -132,27 +136,29 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  loo_x <- loo.function(ll_fun(x), args = ll_args(x), ...)
+  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.5))
   user_threshold <- !is.null(k_threshold)
   
   if (!length(bad_obs)) {
     if (user_threshold)
-      message("No problematic observations found (all pareto_k < ", 
-              k_threshold, "). ", "Returning loo object.")
+      message(
+        "All pareto_k estimates below user-specified threshold of ", 
+        k_threshold, ". \nReturning loo object."
+      )
     return(loo_x)
   }
   if (!user_threshold) {
     warning(
-      length(bad_obs), " observations had a pareto_k > 0.5. ",
+      "Found ", length(bad_obs), " observation(s) with a pareto_k > 0.5. ",
       "Call loo again with 'k_threshold' set to 0.5 to calculate the ",
       "ELPD without the assumption that these observations are negligible. ",
       "This will refit the model ", length(bad_obs), " times to ",
       "compute the ELPDs for the problematic observations directly."
       )
     
-    return(suppressWarnings(loo_x))
+    return(loo_x)
   }
   
   reloo(x, loo_x, obs = bad_obs)
