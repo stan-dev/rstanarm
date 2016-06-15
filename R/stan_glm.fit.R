@@ -79,7 +79,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   x <- as.matrix(x)
-  has_intercept <- grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
+  has_intercept <- if (ncol(x) == 0) 
+    FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
+  
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
   if (!sparse) {
     xbar <- colMeans(xtemp)

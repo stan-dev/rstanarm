@@ -133,4 +133,10 @@ test_that("stan_lmer returns an error when multiple group-specific terms are spe
   expect_error(stan_lmer(Reaction / 10 ~ Days + (Days | Subject) + (1|Subject), 
                          data = sleepstudy, chains = 1))
 })
+
+test_that("stan_lmer ok if global intercept forced to 0", {
+  expect_stanreg(stan_lmer(mpg ~ 0 + (1|cyl), data = mtcars, iter = 10, 
+                           seed = SEED))
+})
+
   

@@ -7,6 +7,8 @@
 [![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm) 
 [![Coverage Status](https://codecov.io/github/stan-dev/rstanarm/coverage.svg?branch=master)](https://codecov.io/github/stan-dev/rstanarm?branch=master) 
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
+[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=brightgreen)](http://cran.rstudio.com/package=rstanarm)
+
 
 This is an R package that emulates other R model-fitting functions but uses [Stan](http://mc-stan.org) (via the **rstan** package) 
 for the back-end estimation. The primary target audience is people who would be open to Bayesian inference if using Bayesian 

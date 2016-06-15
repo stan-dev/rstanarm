@@ -3,8 +3,8 @@ sudo: false
 r: devel
 cache: packages
 
-r_packages:
-  - covr
+r_github_packages:
+  - jimhester/covr
 
 env:
   matrix: 
