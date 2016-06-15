@@ -72,6 +72,14 @@
 #' to the total ELPD are then computed directly and substituted for the previous
 #' estimates from these \eqn{J} observations that are stored in the object
 #' created by \code{loo}.
+#' 
+#' \strong{Note}: in the warning messages issued by \code{loo} about large 
+#' Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at least 
+#' \eqn{0.5} for theoretical reasons explained in Vehtari et al. (2016).
+#' However, in practice we have found that the less strict threshold of
+#' \eqn{0.7} tends to work fine and only when \eqn{k > 0.7} do the errors start
+#' to increase. Finally, as is also explained in Vehtari et al. (2016), it is
+#' never recommended to set \code{k_threshold} to a value greater than \eqn{1}.
 #' }
 #' 
 #' @section K-fold CV:
@@ -137,10 +145,15 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
+  if (isTRUE(k_threshold > 1))
+      warning("Setting 'k_threshold' > 1 is not recommended", 
+              "\n(for details see the PSIS-LOO section in ", 
+              "help('loo-package', 'loo').")
+
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.5))
-  user_threshold <- !is.null(k_threshold)
+  user_threshold <- !is.null(k_threshold)  
   
   if (!length(bad_obs)) {
     if (user_threshold)

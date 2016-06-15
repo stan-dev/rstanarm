@@ -161,6 +161,11 @@ test_that("loo/waic for stan_glmer works", {
 # loo with refitting ------------------------------------------------------
 context("loo then refitting")
 
+test_that("loo issues warning if k_threshold > 1", {
+  expect_warning(loo(example_model, k_threshold = 2), 
+                 "Setting 'k_threshold' > 1 is not recommended")
+})
+
 test_that("loo with k_threshold works", {
   fit <- SW(stan_glm(mpg ~ wt + cyl, prior = normal(0, 1000), data = mtcars, 
                      seed = 12345, iter = 100, chains = 4, cores = 1, 
