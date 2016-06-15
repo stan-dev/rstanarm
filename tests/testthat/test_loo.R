@@ -167,11 +167,14 @@ test_that("loo issues warning if k_threshold > 1", {
 })
 
 test_that("loo with k_threshold works", {
-  fit <- SW(stan_glm(mpg ~ wt + cyl, prior = normal(0, 1000), data = mtcars, 
-                     seed = 12345, iter = 100, chains = 4, cores = 1, 
+  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars, 
+                     seed = 12345, iter = 300, chains = 4, cores = 1, 
                      refresh = 0))
-  expect_warning(loo(fit), "Call loo again with 'k_threshold'")
-  expect_message(loo(fit, k_threshold = 0.5), "Model will be refit")
+  expect_warning(loo_x <- loo(fit), "Call loo again setting 'k_threshold = 0.7'")
+  expect_message(reloo(fit, loo_x, obs = 1:10, refit = FALSE), 
+                 "Model will be refit 10 times")
+  expect_output(SW(reloo(fit, loo_x, obs = 1, refit = TRUE)), 
+                "Elapsed Time")
 })
 
 

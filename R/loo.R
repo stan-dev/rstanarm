@@ -75,11 +75,12 @@
 #' 
 #' \strong{Note}: in the warning messages issued by \code{loo} about large 
 #' Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at least 
-#' \eqn{0.5} for theoretical reasons explained in Vehtari et al. (2016).
-#' However, in practice we have found that the less strict threshold of
-#' \eqn{0.7} tends to work fine and only when \eqn{k > 0.7} do the errors start
-#' to increase. Finally, as is also explained in Vehtari et al. (2016), it is
-#' never recommended to set \code{k_threshold} to a value greater than \eqn{1}.
+#' \eqn{0.7}. There is a theoretical reason, explained in Vehtari et al. (2016),
+#' for setting the threshold to the stricter value of \eqn{0.5}, but in
+#' practice we find that errors in the LOO approximation start to increase
+#' non-negligibly when \eqn{k > 0.7}. Finally, as is also explained in Vehtari 
+#' et al. (2016), it is never recommended to set \code{k_threshold} to a value 
+#' greater than \eqn{1}.
 #' }
 #' 
 #' @section K-fold CV:
@@ -152,7 +153,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
-  bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.5))
+  bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.7))
   user_threshold <- !is.null(k_threshold)  
   
   if (!length(bad_obs)) {
@@ -165,8 +166,8 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   }
   if (!user_threshold) {
     warning(
-      "Found ", length(bad_obs), " observation(s) with a pareto_k > 0.5. ",
-      "Call loo again with 'k_threshold' set to 0.5 to calculate the ",
+      "Found ", length(bad_obs), " observation(s) with a pareto_k > 0.7. ",
+      "Call loo again setting 'k_threshold = 0.7' to calculate the ",
       "ELPD without the assumption that these observations are negligible. ",
       "This will refit the model ", length(bad_obs), " times to ",
       "compute the ELPDs for the problematic observations directly."
@@ -249,7 +250,10 @@ waic.stanreg <- function(x, ...) {
 # @param x stanreg object
 # @param loo_x result of loo(x)
 # @param obs vector of observation indexes
-reloo <- function(x, loo_x, obs, ...) {
+# @param ... unused currently
+# @param refit logical, to toggle whether refitting actually happens (only used
+#   to avoid refitting in tests)
+reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   stopifnot(!is.null(x$data), inherits(loo_x, "loo"))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")
@@ -262,6 +266,10 @@ reloo <- function(x, loo_x, obs, ...) {
     J, " problematic observation(s) found.", 
     "\nModel will be refit ", J, " times."
   )
+  
+  if (!refit)
+    return(NULL)
+  
   for (j in 1:J) {
     message(
       "\nFitting model ", j, " out of ", J,
