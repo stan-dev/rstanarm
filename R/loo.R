@@ -189,7 +189,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 #'   in the data then \eqn{K}-fold cross-validation is equivalent to exact
 #'   leave-one-out cross-validation.
 #'
-kfold <- function(x, K) {
+kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
