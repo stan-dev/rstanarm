@@ -16,7 +16,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 library(rstanarm)
-library(loo)
 options(loo.cores = 2)
 SEED <- 1234
 set.seed(SEED)
@@ -27,14 +26,16 @@ REFRESH <- 0
 SW <- suppressWarnings
 ll_fun <- rstanarm:::ll_fun
 
+
+# loo and waic ------------------------------------------------------------
+context("loo and waic")
+
 # These tests just check that the loo.stanreg method (which calls loo.function 
 # method) results are identical to the loo.matrix results. Since for these tests
 # the log-likelihood matrix is computed using the log-likelihood function, the 
 # only thing these tests really do is make sure that loo.stanreg and all the 
 # log-likelihood functions don't return any errors and whatnot (it does not
 # check that the results returned by loo are actually correct).
-
-context("loo and waic")
 
 expect_identical_loo <- function(fit) {
   l <- SW(loo(fit))
@@ -157,6 +158,53 @@ test_that("loo/waic for stan_glmer works", {
 })
 
 
+# loo with refitting ------------------------------------------------------
+context("loo then refitting")
+
+test_that("loo issues warning if k_threshold > 1", {
+  expect_warning(loo(example_model, k_threshold = 2), 
+                 "Setting 'k_threshold' > 1 is not recommended")
+})
+
+test_that("loo with k_threshold works", {
+  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars, 
+                     seed = 12345, iter = 300, chains = 4, cores = 1, 
+                     refresh = 0))
+  expect_warning(loo_x <- loo(fit), "Call loo again setting 'k_threshold = 0.7'")
+  expect_message(reloo(fit, loo_x, obs = 1:10, refit = FALSE), 
+                 "Model will be refit 10 times")
+  expect_output(SW(reloo(fit, loo_x, obs = 1, refit = TRUE)), 
+                "Elapsed Time")
+})
+
+
+# kfold -------------------------------------------------------------------
+context("kfold")
+
+test_that("kfold throws error for non mcmc models", {
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                   seed = SEED)
+  expect_error(kfold(fito), "MCMC")
+})
+
+test_that("kfold throws error if K > N", {
+  expect_error(kfold(example_model, K = 1e5), ">= K")
+})
+
+test_that("kfold works on some examples", {
+  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, seed = 12345, refresh = 0))
+  kf <- SW(kfold(fit_gaus, 4))
+  expect_s3_class(kf, c("kfold", "loo"))
+  expect_identical(print(kf), kf)
+  expect_output(print(kf), "4-fold cross-validation")
+  
+  kf2 <- SW(kfold(example_model, 2))
+  expect_s3_class(kf2, c("kfold", "loo"))
+  expect_identical(print(kf2), kf2)
+  expect_output(print(kf2), "2-fold cross-validation")
+})
+
+# helpers -----------------------------------------------------------------
 context("loo and waic helpers")
 
 test_that(".weighted works", {
