@@ -146,15 +146,17 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  if (isTRUE(k_threshold > 1))
-      warning("Setting 'k_threshold' > 1 is not recommended", 
-              "\n(for details see the PSIS-LOO section in ", 
-              "help('loo-package', 'loo').")
-
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
-  bad_obs <- which(loo_x$pareto_k > (k_threshold %ORifNULL% 0.7))
-  user_threshold <- !is.null(k_threshold)  
+  user_threshold <- !is.null(k_threshold)
+  if (user_threshold) {
+    validate_k_threshold(k_threshold)
+  } else {
+    k_threshold <- 0.7
+  }
+  
+  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
+  n_bad <- length(bad_obs)
   
   if (!length(bad_obs)) {
     if (user_threshold)
@@ -164,31 +166,64 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
       )
     return(loo_x)
   }
+  
   if (!user_threshold) {
-    warning(
-      "Found ", length(bad_obs), " observation(s) with a pareto_k > 0.7. ",
-      "Call loo again setting 'k_threshold = 0.7' to calculate the ",
-      "ELPD without the assumption that these observations are negligible. ",
-      "This will refit the model ", length(bad_obs), " times to ",
-      "compute the ELPDs for the problematic observations directly."
-      )
-    
+    if (n_bad > 10) {
+      recommend_kfold(n_bad)
+    } else {
+      recommend_reloo(n_bad)
+    }
     return(loo_x)
   }
   
   reloo(x, loo_x, obs = bad_obs)
 }
 
+validate_k_threshold <- function(k) {
+  if (!is.numeric(k) || length(k) != 1) {
+    stop("'k_threshold' must be a single numeric value.", 
+         call. = FALSE)
+  } else if (k < 0) {
+    stop("'k_threshold' < 0 not allowed.", 
+         call. = FALSE)
+  } else if (k > 1) {
+    warning(
+      "Setting 'k_threshold' > 1 is not recommended.", 
+      "\nFor details see the PSIS-LOO section in help('loo-package', 'loo').",
+      call. = FALSE
+    )
+  }
+}
+recommend_kfold <- function(n) {
+  warning(
+    "Found ", n, " observations with a pareto_k > 0.7. ",
+    "With this many problematic observations we recommend calling ",
+    "'kfold' with argument 'K=10' to perform 10-fold cross-validation ",
+    "rather than LOO.", 
+    call. = FALSE
+  )
+}
+recommend_reloo <- function(n) {
+  warning(
+    "Found ", n, " observation(s) with a pareto_k > 0.7. ",
+    "We recommend calling 'loo' again with argument 'k_threshold = 0.7' ",
+    "in order to calculate the ELPD without the assumption that ", 
+    "these observations are negligible. ", "This will refit the model ", 
+    n, " times to compute the ELPDs for the problematic observations directly.",
+    call. = FALSE
+  )
+}
+
 
 #' @rdname loo.stanreg
 #' @export
 #' @param K The number of subsets of equal (if possible) size into which the 
-#'   data will be randomly partitioned for performing \eqn{K}-fold cross-validation.
-#'   The model is refit \code{K} times, each time leaving out one of the
-#'   \code{K} subsets. If \code{K} is equal to the total number of observations
-#'   in the data then \eqn{K}-fold cross-validation is equivalent to exact
-#'   leave-one-out cross-validation.
-#'
+#'   data will be randomly partitioned for performing \eqn{K}-fold 
+#'   cross-validation. The model is refit \code{K} times, each time leaving out
+#'   one of the \code{K} subsets. If \code{K} is equal to the total number of
+#'   observations in the data then \eqn{K}-fold cross-validation is equivalent
+#'   to exact leave-one-out cross-validation.
+#'   
 kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
   if (!used.sampling(x)) 
@@ -246,7 +281,8 @@ waic.stanreg <- function(x, ...) {
 }
 
 
-
+# Refit model leaving out specific observations
+#
 # @param x stanreg object
 # @param loo_x result of loo(x)
 # @param obs vector of observation indexes

@@ -161,16 +161,24 @@ test_that("loo/waic for stan_glmer works", {
 # loo with refitting ------------------------------------------------------
 context("loo then refitting")
 
-test_that("loo issues warning if k_threshold > 1", {
+test_that("loo issues errors/warnings", {
   expect_warning(loo(example_model, k_threshold = 2), 
                  "Setting 'k_threshold' > 1 is not recommended")
+  expect_error(loo(example_model, k_threshold = -1), 
+               "'k_threshold' < 0 not allowed.")
+  expect_error(loo(example_model, k_threshold = 1:2), 
+               "'k_threshold' must be a single numeric value")
+  
+  expect_warning(recommend_kfold(5), "Found 5")
+  expect_warning(recommend_kfold(5), "10-fold")
+  expect_warning(recommend_reloo(7), "Found 7")
 })
 
 test_that("loo with k_threshold works", {
   fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars, 
                      seed = 12345, iter = 300, chains = 4, cores = 1, 
                      refresh = 0))
-  expect_warning(loo_x <- loo(fit), "Call loo again setting 'k_threshold = 0.7'")
+  expect_warning(loo_x <- loo(fit), "We recommend calling loo again")
   expect_message(reloo(fit, loo_x, obs = 1:10, refit = FALSE), 
                  "Model will be refit 10 times")
   expect_output(SW(reloo(fit, loo_x, obs = 1, refit = TRUE)), 
