@@ -57,7 +57,7 @@ functions {
         target += (trials[n] - y[n]) * neg_exp_eta;
       }
     }
-    return get_lp();
+    return target();
   }
   
   /** 

@@ -21,7 +21,7 @@ functions {
       N * square(intercept - ybar) + SSR) / 
       square(sigma) -// 0.91... is log(sqrt(2 * pi()))
       N * (log(sigma) + 0.91893853320467267);
-    return get_lp();
+    return target();
   }
 }
 data {

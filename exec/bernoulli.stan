@@ -69,7 +69,7 @@ functions {
       target += log_pi1;
       target += -exp(eta0);
     }
-    return get_lp();
+    return target();
   }
 
   /** 
