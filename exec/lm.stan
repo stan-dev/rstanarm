@@ -50,10 +50,10 @@ transformed data {
   real half_K;
   real sqrt_inv_N[J];
   real sqrt_Nm1[J];
-  half_K <- 0.5 * K;
+  half_K = 0.5 * K;
   for (j in 1:J) {
-    sqrt_inv_N[j] <- sqrt(1.0 / N[j]);
-    sqrt_Nm1[j] <- sqrt(N[j] - 1.0);
+    sqrt_inv_N[j] = sqrt(1.0 / N[j]);
+    sqrt_Nm1[j] = sqrt(N[j] - 1.0);
   }
 }
 parameters { // must not call with init="0"
@@ -69,31 +69,31 @@ transformed parameters {
   real shift[J];                   // shifts to intercepts
   for (j in 1:J) {
     real Delta_y; // marginal standard deviation of outcome for group j
-    if (prior_PD == 0) Delta_y <- s_Y[j] * exp(log_omega[j]);
-    else Delta_y <- 1;
+    if (prior_PD == 0) Delta_y = s_Y[j] * exp(log_omega[j]);
+    else Delta_y = 1;
     
     // coefficients in Q-space
     if (K > 1) {
-      theta[j] <- z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
+      theta[j] = z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
                   sqrt_Nm1[j] * Delta_y;
     }
-    else theta[j][1] <- z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    else theta[j][1] = z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     
-    sigma[j] <- Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
+    sigma[j] = Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
     
     if (has_intercept == 1) {
       if (prior_dist_for_intercept == 0)       // no information
-        alpha[j] <- z_alpha[j];
+        alpha[j] = z_alpha[j];
       else if (prior_scale_for_intercept == 0) // central limit theorem
-        alpha[j] <- z_alpha[j] * Delta_y * sqrt_inv_N[j] + prior_mean_for_intercept;
+        alpha[j] = z_alpha[j] * Delta_y * sqrt_inv_N[j] + prior_mean_for_intercept;
       else                                     // arbitrary informative prior
-         alpha[j] <- z_alpha[j] * prior_scale_for_intercept + 
+         alpha[j] = z_alpha[j] * prior_scale_for_intercept + 
                      prior_mean_for_intercept;
     }
     
     // shifts to align alpha with the mean of the outcome
-    if (center_y == 1) shift[j] <- 0;
-    else               shift[j] <- dot_product(xbarR_inv[j], theta[j]);
+    if (center_y == 1) shift[j] = 0;
+    else               shift[j] = dot_product(xbarR_inv[j], theta[j]);
   }
 }
 model {
@@ -101,9 +101,9 @@ model {
     if (prior_PD == 0) {
       real dummy; // irrelevant but useful for testing user-defined function
       if (has_intercept)
-           dummy <- ll_mvn_ols_qr_lp(theta[j], Rb[j], alpha[j] + shift[j],
+           dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], alpha[j] + shift[j],
                                      ybar[j], SSR[j], sigma[j], N[j]);
-      else dummy <- ll_mvn_ols_qr_lp(theta[j], Rb[j], shift[j],
+      else dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], shift[j],
                                      ybar[j], SSR[j], sigma[j], N[j]);
     }
     z_beta[j] ~ normal(0,1); // implicit: spherical vector is uniform
@@ -117,8 +117,8 @@ generated quantities {
   vector[K] beta[J];
   for (j in 1:J) {
     if (has_intercept == 1)
-      mean_PPD[j] <- normal_rng(alpha[j] + shift[j], sigma[j] * sqrt_inv_N[j]);
-    else mean_PPD[j] <- normal_rng(shift[j], sigma[j] * sqrt_inv_N[j]);
-    beta[j] <- R_inv[j] * theta[j];
+      mean_PPD[j] = normal_rng(alpha[j] + shift[j], sigma[j] * sqrt_inv_N[j]);
+    else mean_PPD[j] = normal_rng(shift[j], sigma[j] * sqrt_inv_N[j]);
+    beta[j] = R_inv[j] * theta[j];
   }
 }

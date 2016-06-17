@@ -18,15 +18,15 @@ functions {
       reject("Invalid link");
       
     if (link == 1)  // logit
-      for(n in 1:rows(eta)) pi[n] <- inv_logit(eta[n]);
+      for(n in 1:rows(eta)) pi[n] = inv_logit(eta[n]);
     else if (link == 2)  // probit
-      for(n in 1:rows(eta)) pi[n] <- Phi(eta[n]);
+      for(n in 1:rows(eta)) pi[n] = Phi(eta[n]);
     else if (link == 3)  // cauchit
-      for(n in 1:rows(eta)) pi[n] <- cauchy_cdf(eta[n], 0.0, 1.0);
+      for(n in 1:rows(eta)) pi[n] = cauchy_cdf(eta[n], 0.0, 1.0);
     else if (link == 4)  // log
-      for(n in 1:rows(eta)) pi[n] <- exp(eta[n]);
+      for(n in 1:rows(eta)) pi[n] = exp(eta[n]);
     else if (link == 5)  // cloglog
-      for(n in 1:rows(eta)) pi[n] <- inv_cloglog(eta[n]);
+      for(n in 1:rows(eta)) pi[n] = inv_cloglog(eta[n]);
     return pi;
   }
 
@@ -59,13 +59,13 @@ functions {
     }
     else if(link == 4) {  // log
       vector[N[1]]       log_pi0;
-      for (n in 1:N[1])  log_pi0[n] <- log1m_exp(eta0[n]);
+      for (n in 1:N[1])  log_pi0[n] = log1m_exp(eta0[n]);
       increment_log_prob(log_pi0);
       increment_log_prob(eta1);  // already in log form
     }
     else if(link == 5) {  // cloglog
       vector[N[2]]       log_pi1;
-      for (n in 1:N[2])  log_pi1[n] <- log1m_exp(-exp(eta1[n]));
+      for (n in 1:N[2])  log_pi1[n] = log1m_exp(-exp(eta1[n]));
       increment_log_prob(log_pi1);
       increment_log_prob(-exp(eta0));
     }
@@ -87,13 +87,13 @@ functions {
       reject("Invalid link");
       
     if (link == 1) {  // logit
-      for (n in 1:rows(eta)) ll[n] <- bernoulli_logit_log(y, eta[n]);
+      for (n in 1:rows(eta)) ll[n] = bernoulli_logit_log(y, eta[n]);
     }
     else {  // link = probit, cauchit, log, or cloglog 
             // Note: this may not be numerically stable
       vector[rows(eta)] pi;
-      pi <- linkinv_bern(eta, link);
-      for (n in 1:rows(eta)) ll[n] <- bernoulli_log(y, pi[n]) ;
+      pi = linkinv_bern(eta, link);
+      for (n in 1:rows(eta)) ll[n] = bernoulli_log(y, pi[n]) ;
     }
     return ll;
   }
@@ -132,7 +132,7 @@ data {
 transformed data {
   int NN;
   #include "tdata_glm.stan"
-  NN <- N[1] + N[2];
+  NN = N[1] + N[2];
 }
 parameters {
   real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
@@ -141,29 +141,29 @@ parameters {
 transformed parameters {
   #include "tparameters_glm.stan"
   if (t > 0) {
-    theta_L <- make_theta_L(len_theta_L, p, 
+    theta_L = make_theta_L(len_theta_L, p, 
                             1.0, tau, scale, zeta, rho, z_T);
-    b <- make_b(z_b, theta_L, p, l);
+    b = make_b(z_b, theta_L, p, l);
   }
 }
 model {
   #include "make_eta_bern.stan"
   if (has_intercept == 1) {
     if (link != 4) {
-      eta0 <- gamma[1] + eta0;
-      eta1 <- gamma[1] + eta1;
+      eta0 = gamma[1] + eta0;
+      eta1 = gamma[1] + eta1;
     }
     else {
       real shift;
-      shift <- fmax(max(eta0), max(eta1));
-      eta0 <- gamma[1] + eta0 - shift;
-      eta1 <- gamma[1] + eta1 - shift;
+      shift = fmax(max(eta0), max(eta1));
+      eta0 = gamma[1] + eta0 - shift;
+      eta1 = gamma[1] + eta1 - shift;
     }
   }
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     real dummy;  // irrelevant but useful for testing
-    dummy <- ll_bern_lp(eta0, eta1, link, N);
+    dummy = ll_bern_lp(eta0, eta1, link, N);
   }
   else if (prior_PD == 0) {  // weighted log-likelihoods
     increment_log_prob(dot_product(weights0, pw_bern(0, eta0, link)));
@@ -178,30 +178,30 @@ generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
   if (has_intercept == 1) {
-    alpha[1] <- gamma[1] - dot_product(xbar, beta);
+    alpha[1] = gamma[1] - dot_product(xbar, beta);
   }
-  mean_PPD <- 0;
+  mean_PPD = 0;
   {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
     #include "make_eta_bern.stan"
     if (has_intercept == 1) {
       if (link != 4) {
-        eta0 <- gamma[1] + eta0;
-        eta1 <- gamma[1] + eta1;
+        eta0 = gamma[1] + eta0;
+        eta1 = gamma[1] + eta1;
       }      
       else {
         real shift;
-        shift <- fmax(max(eta0), max(eta1));
-        eta0 <- gamma[1] + eta0 - shift;
-        eta1 <- gamma[1] + eta1 - shift;
-        alpha[1] <- alpha[1] - shift;
+        shift = fmax(max(eta0), max(eta1));
+        eta0 = gamma[1] + eta0 - shift;
+        eta1 = gamma[1] + eta1 - shift;
+        alpha[1] = alpha[1] - shift;
       }
     }
-    pi0 <- linkinv_bern(eta0, link);
-    pi1 <- linkinv_bern(eta1, link);
-    for (n in 1:N[1]) mean_PPD <- mean_PPD + bernoulli_rng(pi0[n]);
-    for (n in 1:N[2]) mean_PPD <- mean_PPD + bernoulli_rng(pi1[n]);
-    mean_PPD <- mean_PPD / NN;
+    pi0 = linkinv_bern(eta0, link);
+    pi1 = linkinv_bern(eta1, link);
+    for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
+    for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
+    mean_PPD = mean_PPD / NN;
   }
 }
