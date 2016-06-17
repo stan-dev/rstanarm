@@ -17,10 +17,10 @@ functions {
   real ll_mvn_ols_qr_lp(vector theta, vector b,
                         real intercept, real ybar,
                         real SSR, real sigma, int N) {
-    increment_log_prob( -0.5 * (dot_self(theta - b) + 
+    target += -0.5 * (dot_self(theta - b) + 
       N * square(intercept - ybar) + SSR) / 
       square(sigma) -// 0.91... is log(sqrt(2 * pi()))
-      N * (log(sigma) + 0.91893853320467267) );
+      N * (log(sigma) + 0.91893853320467267);
     return get_lp();
   }
 }

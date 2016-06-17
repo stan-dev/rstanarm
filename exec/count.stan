@@ -121,9 +121,9 @@ model {
     }
   }
   else if (family != 1 && prior_PD == 0)
-    increment_log_prob(dot_product(weights, pw_pois(y, eta, link)));
+    target += dot_product(weights, pw_pois(y, eta, link));
   else if (prior_PD == 0)
-    increment_log_prob(dot_product(weights, pw_nb(y, eta, dispersion[1], link)));
+    target += dot_product(weights, pw_nb(y, eta, dispersion[1], link));
   
   // Log-prior for dispersion
   if (family > 1 && prior_scale_for_dispersion > 0) 

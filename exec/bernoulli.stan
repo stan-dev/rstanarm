@@ -46,28 +46,28 @@ functions {
     if (link == 1) { // logit
 //      0 ~ bernoulli_logit(eta0);
 //      1 ~ bernoulli_logit(eta1);
-      increment_log_prob(logistic_ccdf_log(eta0, 0, 1));
-      increment_log_prob(logistic_cdf_log(eta1, 0, 1));
+      target += logistic_ccdf_log(eta0, 0, 1);
+      target += logistic_cdf_log(eta1, 0, 1);
     }
     else if (link == 2) {  // probit
-      increment_log_prob(normal_ccdf_log(eta0, 0, 1));
-      increment_log_prob(normal_cdf_log(eta1, 0, 1));
+      target += normal_ccdf_log(eta0, 0, 1);
+      target += normal_cdf_log(eta1, 0, 1);
     }
     else if (link == 3) {  // cauchit
-      increment_log_prob(cauchy_ccdf_log(eta0, 0, 1));
-      increment_log_prob(cauchy_cdf_log(eta1, 0, 1));
+      target += cauchy_ccdf_log(eta0, 0, 1);
+      target += cauchy_cdf_log(eta1, 0, 1);
     }
     else if(link == 4) {  // log
       vector[N[1]]       log_pi0;
       for (n in 1:N[1])  log_pi0[n] = log1m_exp(eta0[n]);
-      increment_log_prob(log_pi0);
-      increment_log_prob(eta1);  // already in log form
+      target += log_pi0;
+      target += eta1;  // already in log form
     }
     else if(link == 5) {  // cloglog
       vector[N[2]]       log_pi1;
       for (n in 1:N[2])  log_pi1[n] = log1m_exp(-exp(eta1[n]));
-      increment_log_prob(log_pi1);
-      increment_log_prob(-exp(eta0));
+      target += log_pi1;
+      target += -exp(eta0);
     }
     return get_lp();
   }
@@ -166,8 +166,8 @@ model {
     dummy = ll_bern_lp(eta0, eta1, link, N);
   }
   else if (prior_PD == 0) {  // weighted log-likelihoods
-    increment_log_prob(dot_product(weights0, pw_bern(0, eta0, link)));
-    increment_log_prob(dot_product(weights1, pw_bern(1, eta1, link)));
+    target += dot_product(weights0, pw_bern(0, eta0, link));
+    target += dot_product(weights1, pw_bern(1, eta1, link));
   }
   
   #include "priors_glm.stan"

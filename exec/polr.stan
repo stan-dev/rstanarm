@@ -179,13 +179,13 @@ model {
   #include "make_eta.stan"
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if (is_skewed == 0)
-      increment_log_prob(pw_polr(y, eta, cutpoints, link, 1.0));
-    else increment_log_prob(pw_polr(y, eta, cutpoints, link, alpha[1]));
+      target += pw_polr(y, eta, cutpoints, link, 1.0);
+    else target += pw_polr(y, eta, cutpoints, link, alpha[1]);
   }
   else if (prior_PD == 0) {  // weighted log-likelihoods
     if (is_skewed == 0)
-      increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0)));
-    else increment_log_prob(dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1])));
+      target += dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0));
+    else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
   }
 
   if (is_constant == 0) pi ~ dirichlet(prior_counts);

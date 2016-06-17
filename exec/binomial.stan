@@ -45,16 +45,16 @@ functions {
     else if (link <  4) y ~ binomial(trials, linkinv_binom(eta, link));
     else if (link == 4) {  // log
       for (n in 1:num_elements(y)) {
-        increment_log_prob(y[n] * eta[n]);
-        increment_log_prob( (trials[n] - y[n]) * log1m_exp(eta[n]) );
+        target += y[n] * eta[n];
+        target += (trials[n] - y[n]) * log1m_exp(eta[n]);
       }
     }
     else if (link == 5) {  // cloglog
       real neg_exp_eta;
       for (n in 1:num_elements(y)) {
         neg_exp_eta = -exp(eta[n]);
-        increment_log_prob(y[n] * log1m_exp(neg_exp_eta));
-        increment_log_prob( (trials[n] - y[n]) * neg_exp_eta );
+        target += y[n] * log1m_exp(neg_exp_eta);
+        target += (trials[n] - y[n]) * neg_exp_eta;
       }
     }
     return get_lp();
@@ -124,7 +124,7 @@ model {
     dummy = ll_binom_lp(y, trials, eta, link);
   }
   else if (prior_PD == 0) 
-    increment_log_prob(dot_product(weights, pw_binom(y, trials, eta, link)));
+    target += dot_product(weights, pw_binom(y, trials, eta, link));
   
   #include "priors_glm.stan"
   

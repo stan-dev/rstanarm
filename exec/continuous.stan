@@ -273,7 +273,7 @@ model {
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
     else summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
-    increment_log_prob(dot_product(weights, summands));
+    target += dot_product(weights, summands);
   }
 
   // Log-prior for scale
