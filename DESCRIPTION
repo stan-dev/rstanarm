@@ -36,12 +36,12 @@ Imports:
     utils
 Suggests:
     arm,
-    gamm4,
     gridExtra,
     HSAUR3,
     KernSmooth,
     knitr,
     MASS,
+    mgcv,
     rmarkdown,
     roxygen2,
     testthat

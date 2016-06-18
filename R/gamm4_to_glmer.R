@@ -17,11 +17,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' @importFrom lme4 findbars mkReTrms
-#' @importFrom mgcv interpret.gam gamm new.name
 gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = list(), 
                            weights = NULL, subset = NULL, na.action, knots = NULL, 
                            drop.unused.levels = TRUE) {
-  
+
+  if (!requireNamespace("mgcv", quietly = TRUE))
+    stop("the 'mgcv' package is needed by stan_gamm4()")  
   if (!is.null(random)) {
     if (!inherits(random,"formula")) stop("`random' must be a lme4-style formula")
     random.vars <- all.vars(random)

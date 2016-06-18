@@ -228,18 +228,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     l <- sapply(attr(group$flist, "assign"), function(i) 
       nlevels(group$flist[[i]]))
     t <- length(l)
-    group_nms <- names(group$cnms)
-    b_nms <- character()
-    for (i in seq_along(group$cnms)) {
-      # if you change this change .pp_data_mer_z() as well
-      nm <- group_nms[i]
-      nms_i <- paste(group$cnms[[i]], nm)
-      if (length(nms_i) == 1) {
-        b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
-      } else {
-        b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
-      }
-    }
+    b_nms <- make_b_nms(group)
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
@@ -449,7 +438,7 @@ pad_reTrms <- function(Z, cnms, flist) {
   p <- sapply(cnms, FUN = length)
   last <- cumsum(l * p)
   for (i in attr(flist, "assign")) {
-    if (!grepl("^Xr", names(p)[i])) break
+    if (grepl("^Xr", names(p)[i])) break
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
@@ -497,4 +486,19 @@ unpad_reTrms.matrix <- function(x, columns = TRUE, ...) {
     colnames(x) else rownames(x)
   keep <- !grepl("_NEW_", nms, fixed = TRUE)
   if (columns) x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
+}
+
+make_b_nms <- function(group) {
+  group_nms <- names(group$cnms)
+  b_nms <- character()
+  for (i in seq_along(group$cnms)) {
+    nm <- group_nms[i]
+    nms_i <- paste(group$cnms[[i]], nm)
+    if (length(nms_i) == 1) {
+      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+    } else {
+      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+    }
+  }
+  return(b_nms)  
 }
