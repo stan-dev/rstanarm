@@ -24,12 +24,13 @@ functions {
   * The identifying assumption here is that utility sums to zero; as in
   * http://www.burgette.org/sMNP-R0-FINAL.pdf
   *
-  * @param G array of vectors of primitives that imply zero-sum utility
+  * @param pi array of simplexes
+  * @param log_scale vector of scales in log form
   * @param y integer array of observed choices
   * @param matrix of utilities
   */
-  matrix make_U(vector[] G, int[] y) {
-    matrix[rows(G[1]), size(y)] U;
+  matrix make_U(vector[] pi, vector log_scale, int[] y) {
+    matrix[rows(pi[1]), size(y)] U;
     int N;
     int pm1;
     int p;
@@ -39,15 +40,17 @@ functions {
     p <- pm1 + 1;
     for (i in 1:N) {
       int y_i;
-      vector[pm1] G_i;
+      vector pi_i;
+      real scale;
       real utility_best;
       y_i <- y[i];
-      G_i <- G[i];
-      utility_best <- sum(G_i) / p; // G[i] > 0 so utility_best > 0
+      pi_i <- pi[i];
+      scale <- exp(log_scale[i]);
+      utility_best <- scale / p;
       // this enforces the sum-to-zero constraint for p-dimensional utility
-      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best - G_i[j];
+      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best - scale * pi_i[j];
       if (y_i < p)           U[y_i,i] <- utility_best;
-      for (j in (y_i+1):pm1) U[j,i]   <- utility_best - G_i[j-1];
+      for (j in (y_i+1):pm1) U[j,i]   <- utility_best - scale * pi_i[j-1];
     }
     return U;
   }
@@ -111,7 +114,8 @@ parameters {
   vector[q] gamma;                     // coefficients on alternative-specific predictors
   
   cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix; see
-  vector<lower=0>[pm1] G[N];           // utility gap for non-best choices relative to best choice
+  simplex[pm1] pi[N];                  // utility gap for non-best choices relative to best choice
+  vector[N] log_scale;
 }
 transformed parameters {
   matrix[p,p] Lambda;
@@ -120,7 +124,7 @@ transformed parameters {
 }
 model {
   real dummy;
-  dummy <- ll_mnp_lp(make_U(G, y), make_mu(alpha, theta, gamma, Q, Z), Lambda, Ts_t);
+  dummy <- ll_mnp_lp(make_U(pi, log_scale, y), make_mu(alpha, theta, gamma, Q, Z), Lambda, Ts_t);
   // priors
   L ~ lkj_corr_cholesky(eta);
 }
