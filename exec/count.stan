@@ -29,11 +29,11 @@ functions {
       reject("Invalid link");
       
     if (link == 1)  // log
-      for (n in 1:rows(eta)) ll[n] = poisson_log_log(y[n], eta[n]);
+      for (n in 1:rows(eta)) ll[n] = poisson_log_lpmf(y[n] | eta[n]);
     else {  // link = identity or sqrt
       vector[rows(eta)] phi;
       phi = linkinv_count(eta, link);
-      for (n in 1:rows(eta)) ll[n] = poisson_log(y[n], phi[n]) ;
+      for (n in 1:rows(eta)) ll[n] = poisson_lpmf(y[n] | phi[n]) ;
     }
     return ll;
   }
@@ -52,7 +52,7 @@ functions {
       reject("Invalid link");
       
     rho = linkinv_count(eta, link);
-    for (n in 1:rows(eta)) ll[n] = neg_binomial_2_log(y[n], rho[n], theta);
+    for (n in 1:rows(eta)) ll[n] = neg_binomial_2_lpmf(y[n] | rho[n], theta);
     return ll;
   }
 }
@@ -112,12 +112,12 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if(family != 2) {
-      if (link == 1) y ~ poisson_log(eta);
-      else y ~ poisson(linkinv_count(eta, link));
+      if (link == 1) target += poisson_log_lpmf(y | eta);
+      else target += poisson_lpmf(y | linkinv_count(eta, link));
     }
     else {
-      if (link == 1) y ~ neg_binomial_2_log(eta, dispersion[1]);
-      else y ~ neg_binomial_2(linkinv_count(eta, link), dispersion[1]);
+      if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, dispersion[1]);
+      else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), dispersion[1]);
     }
   }
   else if (family != 1 && prior_PD == 0)
@@ -127,12 +127,12 @@ model {
   
   // Log-prior for dispersion
   if (family > 1 && prior_scale_for_dispersion > 0) 
-    dispersion_unscaled ~ cauchy(0, 1);
+    target += cauchy_lpdf(dispersion_unscaled | 0, 1);
   
   #include "priors_glm.stan"
   
   // Log-prior for noise
-  if (family == 3) noise[1] ~ gamma(dispersion[1], 1);
+  if (family == 3) target += gamma_lpdf(noise[1] | dispersion[1], 1);
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);

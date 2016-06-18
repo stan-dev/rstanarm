@@ -188,10 +188,10 @@ model {
     else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
   }
 
-  if (is_constant == 0) pi ~ dirichlet(prior_counts);
-  z_beta ~ normal(0,1);
-  if (prior_dist == 1) R2 ~ beta(half_K, regularization);
-  if (is_skewed == 1) alpha ~ gamma(shape, rate);
+  if (is_constant == 0) target += dirichlet_lpdf(pi | prior_counts);
+  target += normal_lpdf(z_beta | 0, 1);
+  if (prior_dist == 1) target += beta_lpdf(R2 | half_K, regularization);
+  if (is_skewed == 1)  target += gamma_lpdf(alpha | shape, rate);
 }
 generated quantities {
   vector[J-1] zeta;

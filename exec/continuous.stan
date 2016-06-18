@@ -70,17 +70,17 @@ functions {
     vector[rows(eta)] ll;
     if (link < 1 || link > 3) reject("Invalid link");
     if (link == 2) # link = log
-      for (n in 1:rows(eta)) ll[n] = lognormal_log(y[n], eta[n], sigma);
+      for (n in 1:rows(eta)) ll[n] = lognormal_lpdf(y[n] | eta[n], sigma);
     else { # link = idenity or inverse
       vector[rows(eta)] mu;
       mu = linkinv_gauss(eta, link);
-      for (n in 1:rows(eta)) ll[n] = normal_log(y[n], mu[n], sigma);
+      for (n in 1:rows(eta)) ll[n] = normal_lpdf(y[n] | mu[n], sigma);
     }
     return ll;
   }
   
-  real GammaReg_log(vector y, vector eta, real shape, 
-                    int link, real sum_log_y) {
+  real GammaReg(vector y, vector eta, real shape, 
+                int link, real sum_log_y) {
     real ret;
     if (link < 1 || link > 3) reject("Invalid link");
     ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
@@ -106,17 +106,17 @@ functions {
     if (link < 1 || link > 3) reject("Invalid link");
     if (link == 3) { # link = inverse
       for (n in 1:rows(eta)) {
-        ll[n] = gamma_log(y[n], shape, shape * eta[n]);
+        ll[n] = gamma_lpdf(y[n] | shape, shape * eta[n]);
       }
     }
     else if (link == 2) { # link = log
       for (n in 1:rows(eta)) {
-        ll[n] = gamma_log(y[n], shape, shape / exp(eta[n]));
+        ll[n] = gamma_lpdf(y[n] | shape, shape / exp(eta[n]));
       }
     }
     else { # link = identity
       for (n in 1:rows(eta)) {
-        ll[n] = gamma_log(y[n], shape, shape / eta[n]);
+        ll[n] = gamma_lpdf(y[n] | shape, shape / eta[n]);
       }
     }
     return ll;
@@ -131,8 +131,8 @@ functions {
   * @param link An integer indicating the link function
   * @return A scalar
   */
-  real inv_gaussian_log(vector y, vector mu, real lambda, 
-                        real sum_log_y, vector sqrt_y) {
+  real inv_gaussian(vector y, vector mu, real lambda, 
+                    real sum_log_y, vector sqrt_y) {
     return 0.5 * rows(y) * log(lambda / (2 * pi())) - 
       1.5 * sum_log_y - 
       0.5 * lambda * dot_self( (y - mu) ./ (mu .* sqrt_y) );
@@ -255,17 +255,17 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if (family == 1) {
-      if (link == 1)      y ~ normal(eta, dispersion);
-      else if (link == 2) y ~ lognormal(eta, dispersion);
-      else y ~ normal(divide_real_by_vector(1, eta), dispersion);
+      if (link == 1)      target += normal_lpdf(y | eta, dispersion);
+      else if (link == 2) target += lognormal_lpdf(y | eta, dispersion);
+      else target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
       // divide_real_by_vector() is defined in common_functions.stan
     }
     else if (family == 2) {
-      y ~ GammaReg(eta, dispersion, link, sum_log_y);
+      target += GammaReg(y, eta, dispersion, link, sum_log_y);
     }
     else {
-      y ~ inv_gaussian(linkinv_inv_gaussian(eta, link), 
-                       dispersion, sum_log_y, sqrt_y);
+      target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
+                             dispersion, sum_log_y, sqrt_y);
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
@@ -277,7 +277,8 @@ model {
   }
 
   // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) dispersion_unscaled ~ cauchy(0, 1);
+  if (prior_scale_for_dispersion > 0) 
+    target += cauchy_lpdf(dispersion_unscaled | 0, 1);
   #include "priors_glm.stan"
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);

@@ -41,8 +41,8 @@ functions {
     if (link < 1 || link > 5) 
       reject("Invalid link");
       
-    if (link == 1) y ~ binomial_logit(trials, eta);
-    else if (link <  4) y ~ binomial(trials, linkinv_binom(eta, link));
+    if (link == 1) target += binomial_logit_lpmf(y | trials, eta);
+    else if (link <  4) target += binomial_lpmf( y | trials, linkinv_binom(eta, link));
     else if (link == 4) {  // log
       for (n in 1:num_elements(y)) {
         target += y[n] * eta[n];
@@ -72,12 +72,12 @@ functions {
     if (link < 1 || link > 5) reject("Invalid link");
     if (link == 1) {  // logit
       for (n in 1:rows(eta)) 
-        ll[n] = binomial_logit_log(y[n], trials[n], eta[n]);
+        ll[n] = binomial_logit_lpmf(y[n] | trials[n], eta[n]);
     }
     else {  // link = probit, cauchit, log, or cloglog (unstable)
       vector[rows(eta)] pi;
       pi = linkinv_binom(eta, link);
-      for (n in 1:rows(eta)) ll[n] = binomial_log(y[n], trials[n], pi[n]) ;
+      for (n in 1:rows(eta)) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
     }
     return ll;
   }

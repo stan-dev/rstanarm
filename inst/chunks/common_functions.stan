@@ -47,8 +47,8 @@
         
         trace_T_i = square(tau[i] * scale[i] * dispersion) * nc;
         // unlike lme4, T_i includes the dispersion term in it
-        pi = segment(zeta, zeta_mark, nc); // zeta ~ gamma(shape, 1)
-        pi = pi / sum(pi);                 // thus pi ~ dirichlet(shape)
+        pi = segment(zeta, zeta_mark, nc); // gamma(zeta | shape, 1)
+        pi = pi / sum(pi);                 // thus dirichlet(pi | shape)
         zeta_mark = zeta_mark + nc;
         std_dev = sqrt(pi[1] * trace_T_i);
         T_i[1,1] = std_dev;
@@ -155,8 +155,8 @@
                 int t, int[] p) {
     int pos_reg;
     int pos_rho;
-    z_b ~ normal(0,1);
-    z_T ~ normal(0,1);
+    target += normal_lpdf(z_b | 0, 1);
+    target += normal_lpdf(z_T | 0, 1);
     pos_reg = 1;
     pos_rho = 1;
     for (i in 1:t) if (p[i] > 1) {
@@ -172,11 +172,11 @@
         shape1[j] = 0.5 * j;
         shape2[j] = nu;
       }
-      rho[pos_rho:(pos_rho + p[i] - 2)] ~ beta(shape1,shape2);
+      target += beta_lpdf(rho[pos_rho:(pos_rho + p[i] - 2)] | shape1, shape2);
       pos_rho = pos_rho + p[i] - 1;
     }
-    zeta ~ gamma(delta, 1);
-    tau ~ gamma(shape, 1);
+    target += gamma_lpdf(zeta | delta, 1);
+    target += gamma_lpdf(tau  | shape, 1);
   }
   
   /** 

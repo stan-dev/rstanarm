@@ -44,18 +44,16 @@ functions {
       reject("Invalid link");
       
     if (link == 1) { // logit
-//      0 ~ bernoulli_logit(eta0);
-//      1 ~ bernoulli_logit(eta1);
-      target += logistic_ccdf_log(eta0, 0, 1);
-      target += logistic_cdf_log(eta1, 0, 1);
+      target += logistic_lccdf(eta0 | 0, 1);
+      target += logistic_lcdf( eta1 | 0, 1);
     }
     else if (link == 2) {  // probit
-      target += normal_ccdf_log(eta0, 0, 1);
-      target += normal_cdf_log(eta1, 0, 1);
+      target += normal_lccdf(eta0 | 0, 1);
+      target += normal_lcdf( eta1 | 0, 1);
     }
     else if (link == 3) {  // cauchit
-      target += cauchy_ccdf_log(eta0, 0, 1);
-      target += cauchy_cdf_log(eta1, 0, 1);
+      target += cauchy_lccdf(eta0 | 0, 1);
+      target += cauchy_lcdf( eta1 | 0, 1);
     }
     else if(link == 4) {  // log
       vector[N[1]]       log_pi0;
@@ -87,13 +85,13 @@ functions {
       reject("Invalid link");
       
     if (link == 1) {  // logit
-      for (n in 1:rows(eta)) ll[n] = bernoulli_logit_log(y, eta[n]);
+      for (n in 1:rows(eta)) ll[n] = bernoulli_logit_lpmf(y | eta[n]);
     }
     else {  // link = probit, cauchit, log, or cloglog 
             // Note: this may not be numerically stable
       vector[rows(eta)] pi;
       pi = linkinv_bern(eta, link);
-      for (n in 1:rows(eta)) ll[n] = bernoulli_log(y, pi[n]) ;
+      for (n in 1:rows(eta)) ll[n] = bernoulli_lpmf(y | pi[n]);
     }
     return ll;
   }

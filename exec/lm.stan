@@ -5,7 +5,7 @@ functions {
   /**
    * Increments the log-posterior with the logarithm of a multivariate normal 
    * likelihood with a scalar standard deviation for all errors
-   * Equivalent to y ~ normal(intercept + Q * R * beta, sigma) but faster
+   * Equivalent to normal_lpdf(y | intercept + Q * R * beta, sigma) but faster
    * @param theta vector of coefficients (excluding intercept), equal to R * beta
    * @param b precomputed vector of OLS coefficients (excluding intercept) in Q-space
    * @param intercept scalar (assuming columns of Q have mean zero)
@@ -106,10 +106,11 @@ model {
       else dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], shift[j],
                                      ybar[j], SSR[j], sigma[j], N[j]);
     }
-    z_beta[j] ~ normal(0,1); // implicit: spherical vector is uniform
+    target += normal_lpdf(z_beta[j] | 0, 1); // implicit: spherical vector is uniform
   }
-  if (has_intercept == 1 && prior_dist_for_intercept > 0) z_alpha ~ normal(0,1);
-  if (prior_dist == 1) R2 ~ beta(half_K, eta);
+  if (has_intercept == 1 && prior_dist_for_intercept > 0) 
+    target += normal_lpdf(z_alpha | 0, 1);
+  if (prior_dist == 1) target += beta_lpdf(R2 | half_K, eta);
   // implicit: log_omega is uniform over the real line for all j
 }
 generated quantities {
