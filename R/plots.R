@@ -17,10 +17,10 @@
 
 #' Plot method for stanreg objects
 #' 
-#' For models fit using MCMC or one of the variational approximations, there are
-#' a variety of plots that can be generated. For models fit using optimization,
-#' the regression coefficients and standard errors are passed to
-#' \code{\link[arm]{coefplot}} (\pkg{arm}).
+#' Interface to the \pkg{\link{bayesplot}} package. For models fit using MCMC or
+#' one of the variational approximations, there are a variety of plots that can
+#' be generated. For models fit using optimization, only some of the plots
+#' are available.
 #' 
 #' @method plot stanreg
 #' @export
@@ -29,24 +29,22 @@
 #' @template args-pars
 #' @template args-regex-pars
 #' @param plotfun A character string naming the plotting function to apply to 
-#'   the stanreg object. See \code{\link{rstanarm-plots}} for the names and
-#'   descriptions. Also see the Examples section below. \code{plotfun} can be
-#'   either the full name of the plotting function (e.g. \code{"stan_hist"}) or
+#'   the stanreg object. See \link{rstanarm-plots} for the names and 
+#'   descriptions. Also see the Examples section below. \code{plotfun} can be 
+#'   either the full name of the plotting function (e.g. \code{"mcmc_hist"}) or 
 #'   can be abbreviated to the part of the name following the underscore (e.g. 
-#'   \code{"hist"}). The default plot shows intervals and point estimates for 
-#'   the coefficients. Note: \code{plotfun} should not be specified for models 
-#'   fit using \code{algorithm="optimizing"} as there is currently only one 
-#'   plotting function for these models.
-#' @param ... Additional arguments to pass to \code{plotfun} (see
-#'   \code{\link{rstanarm-plots}}) or, for models fit using
-#'   \code{algorithm="optimizing"}, \code{\link[arm]{coefplot}}.
+#'   \code{"hist"}). The default plot is produced by 
+#'   \code{\link[bayesplot]{mcmc_intervals}}, which shows intervals and point
+#'   estimates for the coefficients. Note: \code{fun} should not be specified
+#'   for models fit using \code{algorithm="optimizing"} as there is currently
+#'   only one plotting function for these models.
+#' @param ... Additional arguments to pass to \code{plotfun} (see 
+#'   \code{\link{rstanarm-plots}}).
 #'
 #' @return In most cases, a ggplot object (or several) that can be further 
-#'   customized using the \pkg{ggplot2} package. The exception is for models fit
-#'   using \code{"optimizing"} as the estimation algorithm, in which case a plot
-#'   is produced but nothing is returned.
-#'
-#' @seealso \code{\link{rstanarm-plots}} for details on the individual plotting
+#'   customized using the \pkg{ggplot2} package.
+#'   
+#' @seealso \code{\link{rstanarm-plots}} for details on the individual plotting 
 #'   functions.
 #'   
 #' @examples
@@ -55,22 +53,25 @@
 #' fit <- example_model
 #' 
 #' # Intervals and point estimates
-#' plot(fit) + 
-#' ggplot2::ggtitle("Posterior medians \n with 80% and 95% credible intervals")
-#' plot(fit, pars = "size", regex_pars = "period", 
-#'      ci_level = 0.95, outer_level = 1, show_density = TRUE)
+#' plot(fit) # same as plot(fit, "intervals"), plot(fit, "mcmc_intervals")
+#' p <- plot(fit, pars = "size", regex_pars = "period", 
+#'           prob = 0.5, prob_outer = 0.9) + 
+#' p + ggplot2::ggtitle("Posterior medians \n with 80% and 95% credible intervals")
+#' 
+#' # Shaded areas under densities
+#' plot(fit, "areas", pars = "size", regex_pars = "period", 
+#'      prob = 0.5, prob_outer = 0.9)
 #' 
 #' # Traceplot
 #' # note: rstanarm doesn't store the warmup draws by default 
 #' (trace <- plot(fit, "trace", pars = "(Intercept)"))
-#' trace + ggplot2::scale_color_discrete()
 #' trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))
 #' 
 #' # Distributions 
 #' plot_title <- ggplot2::ggtitle("Posterior Distributions")
-#' plot(fit, "hist", fill = "skyblue", regex_pars = "period") + plot_title
-#' plot(fit, "dens", pars = "(Intercept)", regex_pars = "period", 
-#'      separate_chains = TRUE, alpha = 1/3) + plot_title
+#' plot(fit, "hist", regex_pars = "period") + plot_title
+#' plot(fit, "dens_overlay", pars = "(Intercept)", 
+#'      regex_pars = "period") + plot_title
 #' 
 #' # Scatterplot
 #' plot(fit, plotfun = "scat", pars = paste0("period", 2:3))
@@ -88,23 +89,22 @@
 #' plot(fit, regex_pars = c("herd:[279]", "period2"))
 #' 
 #' # For graphical posterior predictive checks see 
-#' # help("pp_check", package = "rstanarm")
+#' # help("pp_check.stanreg")
 #' 
 #' @importFrom rstan stan_plot stan_trace stan_scat stan_hist stan_dens stan_ac
 #'   stan_diag stan_rhat stan_ess stan_mcse stan_par quietgg
 #' 
-plot.stanreg <- function(x, plotfun = NULL, pars = NULL, 
+plot.stanreg <- function(x, plotfun = "intervals", pars = NULL, 
                          regex_pars = NULL, ...) {
-  args <- set_plotting_args(x, pars, regex_pars, ...)
   fun <- set_plotting_fun(x, plotfun)
+  args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
   do.call(fun, args)
 }
-
 
 # Check for valid parameters
 # @param x stanreg object
 # @param pars user specified character vector
-check_plotting_pars <- function(x, pars) {
+check_plotting_pars <- function(x, pars, plotfun = character()) {
   if (used.optimizing(x)) {
     allpars <- c("alpha", "beta", rownames(x$stan_summary))
   } else {
@@ -122,42 +122,82 @@ check_plotting_pars <- function(x, pars) {
 # @param x stanreg object
 # @param pars, regex_pars user specified pars and regex_pars arguments (can be
 #   missing)
-set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...) {
-  args <- list(x, ...)
-  pars <- collect_pars(x, pars, regex_pars)
-  if (!is.null(pars)) 
-    args$pars <- check_plotting_pars(x, pars)
-  return(args)
+# @param ...  additional arguments to pass to the plotting function
+# @param plotfun User's 'plotfun' argument
+set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ..., 
+                              plotfun = character()) {
+  if (!needs_chains(mcmc_function_name(plotfun))) {
+    if (!is.null(pars)) {
+      pars <- collect_pars(x, pars, regex_pars)
+      pars <- allow_special_parnames(x, pars)
+    }
+    obj <- as.matrix(x, pars = pars, regex_pars = regex_pars)
+    return(list(x = obj, ...))
+  }
+  
+  if (!is.null(pars) || !is.null(regex_pars)) {
+    # args$pars <- check_plotting_pars(x, pars)
+    pars <- collect_pars(x, pars, regex_pars)
+    pars <- check_plotting_pars(x, pars)
+    obj <- as.array(x$stanfit, pars = pars)
+    return(list(x = obj, ...))
+  }
+  
+  list(x = as.array(x$stanfit), ...)
+}
+
+mcmc_function_name <- function(fun) {
+  if (!identical(substr(fun, 1, 5), "mcmc_"))
+    fun <- paste0("mcmc_", fun)
+  fun
+}
+needs_chains <- function(x) {
+  nms <- c("trace",
+           "trace_highlight",
+           "hist_by_chain",
+           "dens_overlay", 
+           "combo")
+  x %in% paste0("mcmc_", nms)
 }
 
 # Select the correct plotting function
 # @param x stanreg object
 # @param plotfun user specified plotfun argument (can be missing)
 set_plotting_fun <- function(x, plotfun = NULL) {
-  .plotters <- function(x) paste0("stan_", x)
+  .plotters <- function(x) paste0("mcmc_", x)
   
   if (used.optimizing(x)) {
     if (!is.null(plotfun)) {
       stop("'plotfun' should not be specified for models fit using ",
            "algorithm='optimizing'.", call. = FALSE)
     } else {
-      return("stan_plot_opt")
+      plotfun <- NULL
     }
-  } else if (is.null(plotfun)) {
-    plotfun <- "stan_plot"
   }
   
-  samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
-  plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
-  funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
-  if (used.variational(x) && funname %in% .plotters(samp_only))
-    STOP_sampling_only(funname)
-  fun <- try(getExportedValue("rstan", funname), silent = TRUE)
-  if (inherits(fun, "try-error")) 
-    stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+  if (is.null(plotfun))
+    return("mcmc_intervals")
+  if (!is.character(plotfun))
+    stop("'plotfun' should be a string.", call. = FALSE)
+  
+  fun <- try(match.fun(mcmc_function_name(plotfun)), silent = TRUE)
+  if (inherits(fun, "try-error"))
+    stop("Plotting function not found. See ?rstanarm::plots for valid names.",
          call. = FALSE)
   
   return(fun)
+  
+  # samp_only <- c("ac", "diag", "rhat", "ess", "mcse", "par")
+  # plotters <- .plotters(c("plot", "trace", "scat", "hist", "dens", samp_only))
+  # funname <- grep(paste0(plotfun, "$"), plotters, value = TRUE)
+  # if (used.variational(x) && funname %in% .plotters(samp_only))
+  #   STOP_sampling_only(funname)
+  # fun <- try(getExportedValue("rstan", funname), silent = TRUE)
+  # if (inherits(fun, "try-error")) 
+  #   stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+  #        call. = FALSE)
+  # 
+  # return(fun)
 }
 
 # function calling arm::coefplot (only used for models fit using optimization)
