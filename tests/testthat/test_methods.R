@@ -508,9 +508,9 @@ test_that("update works properly", {
   expect_is(call_only, "call")
   expect_identical(call_only, getCall(fit))
   
-  expect_warning(fit <- update(fit, algorithm = "optimizing"), 
-                 regexp = "unknown arguments: chains")
-  expect_identical(fit$algorithm, "optimizing")
+  expect_error(fit <- update(fit, algorithm = "optimizing"), 
+               regexp = "unknown arguments: chains")
+  expect_identical(fit$algorithm, "sampling")
   
   fit$call <- NULL
   expect_error(update(fit), regexp = "does not contain a 'call' component")
