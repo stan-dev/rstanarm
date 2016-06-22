@@ -17,10 +17,10 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' Interface to the \pkg{\link{ppcheck}} package for \pkg{rstanarm} models, 
-#' providing various plots comparing the observed outcome variable \eqn{y} to
-#' simulated datasets \eqn{y^{rep}}{yrep} from the posterior predictive
-#' distribution.
+#' Interface to the posterior predictive checking functionality in the 
+#' \pkg{\link{bayesplot}} package, providing various plots comparing the
+#' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep}
+#' from the posterior predictive distribution.
 #' 
 #' @export
 #' @export pp_check
@@ -54,7 +54,7 @@
 #' @param group For models with parameters that vary by level of grouping 
 #'   variables, a string naming a grouping variable by which to stratify. Not 
 #'   available for all plots.
-#' @param ... Passed to the \pkg{\link{ppcheck}} function called.
+#' @param ... Passed to the \pkg{\link{bayesplot}} function called.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -99,7 +99,7 @@
 #'   predictive distribution. Examples of posterior predictive checks can also 
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #'   
-#'   \code{\link[ppcheck]{set_color_scheme}} to change the color scheme of the
+#'   \code{\link[bayesplot]{set_color_scheme}} to change the color scheme of the
 #'   plots.
 #' 
 #' @examples 

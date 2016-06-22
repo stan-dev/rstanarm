@@ -25,12 +25,12 @@ Depends:
     Rcpp (>= 0.11.0),
     methods
 Imports:
+    bayesplot,
     ggplot2 (>= 2.0.0),
     lme4 (>= 1.1-8),
     loo (>= 0.1.4),
     Matrix,
     nlme (>= 3.1-124),
-    ppcheck,
     rstan (>= 2.9.0-3),
     shinystan (>= 2.1.0),
     stats,
