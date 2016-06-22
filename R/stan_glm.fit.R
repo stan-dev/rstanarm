@@ -34,7 +34,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
-                         adapt_delta = NULL, QR = FALSE) {
+                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
@@ -79,10 +79,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   x <- as.matrix(x)
-  has_intercept <- grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
+  has_intercept <- if (ncol(x) == 0) 
+    FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
+  
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
-  xbar <- colMeans(xtemp)
-  xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+  if (!sparse) {
+    xbar <- colMeans(xtemp)
+    xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+  }
+  else xbar <- rep(0, ncol(xtemp))
   
   sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
   if (any(sel)) {
@@ -196,6 +201,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
+    if (sparse)
+      stop("'QR' and 'sparse' cannot both be TRUE")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
     sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
@@ -208,8 +215,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # create entries in the data block of the .stan file
   standata <- list(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
-    has_weights = as.integer(length(weights) > 0),
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
+    link = link, has_weights = as.integer(length(weights) > 0),
     has_offset = as.integer(length(offset) > 0),
     prior_dist = prior_dist, prior_mean = prior_mean, prior_scale = prior_scale, 
     prior_df = prior_df, prior_dist_for_intercept = prior_dist_for_intercept,
@@ -298,7 +305,21 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   if (!is_bernoulli) {
-    standata$X <- xtemp
+    if (sparse) {
+      parts <- extract_sparse_parts(xtemp)
+      standata$nnz_X <- length(parts$w)
+      standata$w_X <- parts$w
+      standata$v_X <- parts$v
+      standata$u_X <- parts$u
+      standata$X <- array(0, dim = c(0L, dim(xtemp)))
+    }
+    else {
+      standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
+      standata$nnz_X <- 0L
+      standata$w_X <- double(0)
+      standata$v_X <- integer(0)
+      standata$u_X <- integer(0)
+    }
     standata$y <- y
     standata$weights <- weights
     standata$offset <- offset
@@ -322,11 +343,35 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       y0 <- y == 0
       y1 <- y == 1
       standata$N <- c(sum(y0), sum(y1))
-      standata$X0 <- xtemp[y0, , drop = FALSE]
-      standata$X1 <- xtemp[y1, , drop = FALSE]
-      standata$Z0 <- standata$Z[y0, , drop = FALSE]
-      standata$Z1 <- standata$Z[y1, , drop = FALSE]
-      standata$Z <- NULL 
+      if (sparse) {
+        standata$X0 <- array(0, dim = c(0L, sum(y0), ncol(xtemp)))
+        standata$X1 <- array(0, dim = c(0L, sum(y1), ncol(xtemp)))
+        parts0 <- extract_sparse_parts(xtemp[y0, , drop = FALSE])
+        standata$nnz_X0 <- length(parts0$w)
+        standata$w_X0 = parts0$w
+        standata$v_X0 = parts0$v
+        standata$u_X0 = parts0$u
+        parts1 <- extract_sparse_parts(xtemp[y1, , drop = FALSE])
+        standata$nnz_X1 <- length(parts1$w)
+        standata$w_X1 = parts1$w
+        standata$v_X1 = parts1$v
+        standata$u_X1 = parts1$u
+      }
+      else {
+        standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
+        standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
+        # standata$Z0 <- standata$Z[y0, , drop = FALSE]
+        # standata$Z1 <- standata$Z[y1, , drop = FALSE]
+        # standata$Z <- NULL
+        standata$nnz_X0 = 0L 
+        standata$w_X0 = double(0)
+        standata$v_X0 = integer(0)
+        standata$u_X0 = integer(0)
+        standata$nnz_X1 = 0L 
+        standata$w_X1 = double(0)
+        standata$v_X1 = integer(0)
+        standata$u_X1 = integer(0)
+      }
       if (length(weights)) { 
         # nocov start
         # this code is unused because weights are interpreted as number of 
@@ -455,19 +500,19 @@ pad_reTrms <- function(Z, cnms, flist) {
   n <- nrow(Z)
   mark <- length(p) - 1L
   if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = TRUE)),
+                       Matrix(0, n, p[mark], sparse = FALSE)),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }
   }
   else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cbind(Z[, 1:i, drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = TRUE),
+                 Matrix(0, n, p[mark], sparse = FALSE),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }

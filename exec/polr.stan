@@ -199,9 +199,10 @@ generated quantities {
   vector[N * do_residuals] residuals;
   
   // xbar is actually post multiplied by R^-1
-  zeta = cutpoints + dot_product(xbar, beta);
+  if (dense_X) zeta = cutpoints + dot_product(xbar, beta); // xbar is actually post multiplied by R^-1
+  else zeta = cutpoints;
   if (J == 2) zeta = -zeta;
-  mean_PPD = rep_vector(0,rows(mean_PPD));
+  mean_PPD = rep_vector(0, rows(mean_PPD));
   {
     #include "make_eta.stan"
     for (n in 1:N) {

@@ -32,6 +32,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-QR
+#' @template args-sparse
 #' @template reference-gelman-hill
 #' 
 #' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
@@ -82,7 +83,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        prior_ops = prior_options(),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE) {
+                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
@@ -95,7 +96,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                              check.nobs.vs.nRE = "ignore")
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_ops <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
-    mc$adapt_delta <- mc$... <- mc$QR <- NULL
+    mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
   y <- glmod$fr[, as.character(glmod$formula[2L])]
@@ -118,7 +119,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = group, QR = QR, ...)
+                          group = group, QR = QR, sparse = sparse, ...)
 
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z

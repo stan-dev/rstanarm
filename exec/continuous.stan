@@ -288,7 +288,8 @@ generated quantities {
   real mean_PPD;
   mean_PPD = 0;
   if (has_intercept == 1)
-    alpha[1] = gamma[1] - dot_product(xbar, beta);
+    if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
+    else alpha[1] = gamma[1];
   {
     #include "make_eta.stan"
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);

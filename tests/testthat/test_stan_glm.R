@@ -53,6 +53,10 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
                regexp = "'QR' can only be specified when there are multiple predictors")
   
+  # error: QR and sparse
+  expect_error(stan_glm(f, family = "poisson", QR = TRUE, sparse = TRUE), 
+               regexp = "'QR' and 'sparse' cannot both be TRUE")
+  
   # message: recommend QR if using meanfield vb
   expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
                regexp = "Setting 'QR' to TRUE can often be helpful")
@@ -141,7 +145,7 @@ test_that("stan_glm returns something for glm negative binomial example", {
 context("stan_glm (gaussian)")
 test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
-  fit <- stan_glm(log(dist) ~ log(speed), data = cars, 
+  fit <- stan_glm(log(dist) ~ log(speed), data = cars, sparse = TRUE,
                   family = gaussian(link = "identity"), seed  = SEED,
                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
@@ -155,7 +159,7 @@ test_that("stan_glm returns expected result with no intercept for mtcars example
   fit <- stan_glm(f, data = mtcars,
                   prior = NULL, prior_intercept = NULL, prior_ops = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
-                  seed  = SEED)
+                  seed  = SEED, sparse = TRUE)
   expect_stanreg(fit)
   
   ans <- glm(f, data = mtcars, family = gaussian(link = "identity"))
