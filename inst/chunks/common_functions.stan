@@ -24,19 +24,19 @@
     int rho_mark;
     int z_T_mark;
     int theta_L_mark;
-    zeta_mark <- 1;
-    rho_mark <- 1;
-    z_T_mark <- 1;
-    theta_L_mark <- 1;
+    zeta_mark = 1;
+    rho_mark = 1;
+    z_T_mark = 1;
+    theta_L_mark = 1;
     
     // each of these is a diagonal block of the implicit Cholesky factor
     for (i in 1:size(p)) { 
       int nc;
-      nc <- p[i];
+      nc = p[i];
       if (nc == 1) { // "block" is just a standard deviation
-        theta_L[theta_L_mark] <- tau[i] * scale[i] * dispersion;
+        theta_L[theta_L_mark] = tau[i] * scale[i] * dispersion;
         // unlike lme4, theta[theta_L_mark] includes the dispersion term in it
-        theta_L_mark <- theta_L_mark + 1;
+        theta_L_mark = theta_L_mark + 1;
       }
       else { // block is lower-triangular               
         matrix[nc,nc] T_i; 
@@ -45,39 +45,39 @@
         real std_dev;
         real T21;
         
-        trace_T_i <- square(tau[i] * scale[i] * dispersion) * nc;
+        trace_T_i = square(tau[i] * scale[i] * dispersion) * nc;
         // unlike lme4, T_i includes the dispersion term in it
-        pi <- segment(zeta, zeta_mark, nc); // zeta ~ gamma(shape, 1)
-        pi <- pi / sum(pi);                 // thus pi ~ dirichlet(shape)
-        zeta_mark <- zeta_mark + nc;
-        std_dev <- sqrt(pi[1] * trace_T_i);
-        T_i[1,1] <- std_dev;
+        pi = segment(zeta, zeta_mark, nc); // gamma(zeta | shape, 1)
+        pi = pi / sum(pi);                 // thus dirichlet(pi | shape)
+        zeta_mark = zeta_mark + nc;
+        std_dev = sqrt(pi[1] * trace_T_i);
+        T_i[1,1] = std_dev;
         
         // Put a correlation into T_i[2,1] and scale by std_dev
-        std_dev <- sqrt(pi[2] * trace_T_i);
-        T21 <- 2.0 * rho[rho_mark] - 1.0;
-        rho_mark <- rho_mark + 1;
-        T_i[2,2] <- std_dev * sqrt(1.0 - square(T21));
-        T_i[2,1] <- std_dev * T21;
+        std_dev = sqrt(pi[2] * trace_T_i);
+        T21 = 2.0 * rho[rho_mark] - 1.0;
+        rho_mark = rho_mark + 1;
+        T_i[2,2] = std_dev * sqrt(1.0 - square(T21));
+        T_i[2,1] = std_dev * T21;
         
         for (r in 2:(nc - 1)) { // scaled onion method to fill T_i
           int rp1;
           vector[r] T_row;
           real scale_factor;
-          T_row <- segment(z_T, z_T_mark, r);
-          z_T_mark <- z_T_mark + r;
-          rp1 <- r + 1;
-          std_dev <- sqrt(pi[rp1] * trace_T_i);
-          scale_factor <- sqrt(rho[rho_mark] / dot_self(T_row)) * std_dev;
-          for(c in 1:r) T_i[rp1,c] <- T_row[c] * scale_factor;
-          T_i[rp1,rp1] <- sqrt(1.0 - rho[rho_mark]) * std_dev;
-          rho_mark <- rho_mark + 1;
+          T_row = segment(z_T, z_T_mark, r);
+          z_T_mark = z_T_mark + r;
+          rp1 = r + 1;
+          std_dev = sqrt(pi[rp1] * trace_T_i);
+          scale_factor = sqrt(rho[rho_mark] / dot_self(T_row)) * std_dev;
+          for(c in 1:r) T_i[rp1,c] = T_row[c] * scale_factor;
+          T_i[rp1,rp1] = sqrt(1.0 - rho[rho_mark]) * std_dev;
+          rho_mark = rho_mark + 1;
         }
         
         // now vech T_i
         for (c in 1:nc) for (r in c:nc) {
-          theta_L[theta_L_mark] <- T_i[r,c];
-          theta_L_mark <- theta_L_mark + 1;
+          theta_L[theta_L_mark] = T_i[r,c];
+          theta_L_mark = theta_L_mark + 1;
         }
       }
     }
@@ -99,36 +99,36 @@
     vector[rows(z_b)] b;
     int b_mark;
     int theta_L_mark;
-    b_mark <- 1;
-    theta_L_mark <- 1;
+    b_mark = 1;
+    theta_L_mark = 1;
     for (i in 1:size(p)) {
       int nc;
-      nc <- p[i];
+      nc = p[i];
       if (nc == 1) {
         real theta_L_start;
-        theta_L_start <- theta_L[theta_L_mark];
+        theta_L_start = theta_L[theta_L_mark];
         for (s in b_mark:(b_mark + l[i] - 1)) 
-          b[s] <- theta_L_start * z_b[s];
-        b_mark <- b_mark + l[i];
-        theta_L_mark <- theta_L_mark + 1;
+          b[s] = theta_L_start * z_b[s];
+        b_mark = b_mark + l[i];
+        theta_L_mark = theta_L_mark + 1;
       }
       else {
         matrix[nc,nc] T_i;
-        T_i <- rep_matrix(0, nc, nc);
+        T_i = rep_matrix(0, nc, nc);
         for (c in 1:nc) {
-          T_i[c,c] <- theta_L[theta_L_mark];
-          theta_L_mark <- theta_L_mark + 1;
+          T_i[c,c] = theta_L[theta_L_mark];
+          theta_L_mark = theta_L_mark + 1;
           for(r in (c+1):nc) {
-            T_i[r,c] <- theta_L[theta_L_mark];
-            theta_L_mark <- theta_L_mark + 1;
+            T_i[r,c] = theta_L[theta_L_mark];
+            theta_L_mark = theta_L_mark + 1;
           }
         }
         for (j in 1:l[i]) {
           vector[nc] temp;
-          temp <- T_i * segment(z_b, b_mark, nc);
-          b_mark <- b_mark - 1;
-          for (s in 1:nc) b[b_mark + s] <- temp[s];
-          b_mark <- b_mark + nc + 1;
+          temp = T_i * segment(z_b, b_mark, nc);
+          b_mark = b_mark - 1;
+          for (s in 1:nc) b[b_mark + s] = temp[s];
+          b_mark = b_mark + nc + 1;
         }
       }
     }
@@ -155,28 +155,28 @@
                 int t, int[] p) {
     int pos_reg;
     int pos_rho;
-    z_b ~ normal(0,1);
-    z_T ~ normal(0,1);
-    pos_reg <- 1;
-    pos_rho <- 1;
+    target += normal_lpdf(z_b | 0, 1);
+    target += normal_lpdf(z_T | 0, 1);
+    pos_reg = 1;
+    pos_rho = 1;
     for (i in 1:t) if (p[i] > 1) {
       vector[p[i] - 1] shape1;
       vector[p[i] - 1] shape2;
       real nu;
-      nu <- regularization[pos_reg] + 0.5 * (p[i] - 2);
-      pos_reg <- pos_reg + 1;
-      shape1[1] <- nu;
-      shape2[1] <- nu;
+      nu = regularization[pos_reg] + 0.5 * (p[i] - 2);
+      pos_reg = pos_reg + 1;
+      shape1[1] = nu;
+      shape2[1] = nu;
       for (j in 2:(p[i]-1)) {
-        nu <- nu - 0.5;
-        shape1[j] <- 0.5 * j;
-        shape2[j] <- nu;
+        nu = nu - 0.5;
+        shape1[j] = 0.5 * j;
+        shape2[j] = nu;
       }
-      rho[pos_rho:(pos_rho + p[i] - 2)] ~ beta(shape1,shape2);
-      pos_rho <- pos_rho + p[i] - 1;
+      target += beta_lpdf(rho[pos_rho:(pos_rho + p[i] - 2)] | shape1, shape2);
+      pos_rho = pos_rho + p[i] - 1;
     }
-    zeta ~ gamma(delta, 1);
-    tau ~ gamma(shape, 1);
+    target += gamma_lpdf(zeta | delta, 1);
+    target += gamma_lpdf(tau  | shape, 1);
   }
   
   /** 
@@ -187,7 +187,7 @@
    */
   vector sqrt_vec(vector y) {
     vector[rows(y)] out;
-    for (i in 1:rows(y)) out[i] <- sqrt(out[i]);
+    for (i in 1:rows(y)) out[i] = sqrt(out[i]);
     return out;
   }
 
@@ -202,8 +202,8 @@
   vector hs_prior(vector z_beta, real[] global, vector[] local) {
     vector[rows(z_beta)] lambda;
     int K;
-    K <- rows(z_beta);
-    for (k in 1:K) lambda[k] <- local[1][k] * sqrt(local[2][k]);
+    K = rows(z_beta);
+    for (k in 1:K) lambda[k] = local[1][k] * sqrt(local[2][k]);
     return z_beta .* lambda * global[1] * sqrt(global[2]);
   }
 
@@ -219,10 +219,10 @@
     vector[rows(z_beta)] lambda;
     vector[rows(z_beta)] lambda_plus;
     int K;
-    K <- rows(z_beta);
+    K = rows(z_beta);
     for (k in 1:K) {
-      lambda[k] <- local[1][k] * sqrt(local[2][k]);
-      lambda_plus[k] <- local[3][k] * sqrt(local[4][k]);
+      lambda[k] = local[1][k] * sqrt(local[2][k]);
+      lambda_plus[k] = local[3][k] * sqrt(local[4][k]);
     }
     return z_beta .* lambda .* lambda_plus * global[1] * sqrt(global[2]);
   }
@@ -236,7 +236,7 @@
    */
   vector divide_real_by_vector(real x, vector y) {
     vector[rows(y)] ret;
-    for (n in 1:rows(y)) ret[n] <- x / y[n];
+    for (n in 1:rows(y)) ret[n] = x / y[n];
     return ret;
   }
 

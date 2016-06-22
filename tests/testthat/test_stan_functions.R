@@ -210,7 +210,7 @@ test_that("GammaReg_log returns the expected results", {
     y <- rgamma(N, shape, rate = 1 / linkinv(eta))
     expect_true(all.equal(sum(dgamma(y, shape = shape, 
                                      rate = shape / linkinv(eta), log = TRUE)),
-                          GammaReg_log(y, eta, shape, i, sum(log(y)))), info = links[i])
+                          GammaReg(y, eta, shape, i, sum(log(y)))), info = links[i])
   }
 })
   
@@ -266,8 +266,8 @@ test_that("inv_gaussian returns expected results", {
     linkinv <- inverse.gaussian(link = links[i])$linkinv
     y <- rinvGauss(N, linkinv(eta), lambda)
     expect_true(all.equal(sum(dinvGauss(y, linkinv(eta), lambda, log = TRUE)),
-                          inv_gaussian_log(y, linkinv_inv_gaussian(eta,i), 
-                                           lambda, sum(log(y)), sqrt(y))), 
+                          inv_gaussian(y, linkinv_inv_gaussian(eta,i), 
+                                       lambda, sum(log(y)), sqrt(y))), 
                 info = links[i])
   }
 })
