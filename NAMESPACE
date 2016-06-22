@@ -84,8 +84,8 @@ if(getRversion()>='3.3.0') importFrom(stats, sigma) else
   importFrom(lme4,sigma)
 
 import(Rcpp)
+import(bayesplot)
 import(methods)
-import(ppcheck)
 import(stats)
 importFrom(Matrix,Matrix)
 importFrom(Matrix,cBind)
