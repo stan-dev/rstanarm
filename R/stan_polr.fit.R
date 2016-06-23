@@ -52,6 +52,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   X <- Q
   colnames(X) <- cn
   xbar <- c(xbar %*% R_inv)
+  if (length(xbar) == 1) dim(xbar) <- 1L
   
   has_weights <- isTRUE(length(wt) > 0 && !all(wt == 1))
   if (!has_weights) 
@@ -131,9 +132,11 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   
   thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, permuted = FALSE)
   betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
-  for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
-    stanfit@sim$samples[[chain]][[(J == 2) + param]] <- 
-      if (ncol(X) > 1) betas[param, , chain] else betas[param, chain]
+  if (K == 1) for (chain in 1:tail(dim(betas), 1)) {
+    stanfit@sim$samples[[chain]][[(J == 2) + 1L]] <- betas[,chain]
+  }
+  else for (chain in 1:tail(dim(betas), 1)) for (param in 1:nrow(betas)) {
+    stanfit@sim$samples[[chain]][[(J == 2) + param]] <- betas[param, , chain]
   }
   
   if (J > 2) {
