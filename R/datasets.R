@@ -21,7 +21,7 @@
 #'
 #' @name rstanarm-datasets
 #' @keywords internal
-#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors
+#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -75,6 +75,20 @@
 #' \itemize{
 #' \item \code{y} Number of deaths
 #' \item \code{K} Number of surgeries
+#' }
+#' }
+#' \item{\code{radon}}{
+#' Data on radon levels in houses in the state of Minnesota. 
+#' 
+#' Source: Gelman and Hill (2007)
+#' 
+#' 919 obs. of 4 variables
+#' \itemize{
+#' \item \code{log_radon} Radon measurement from the house (log scale)
+#' \item \code{log_uranium} Uranium level in the county (log scale)
+#' \item \code{floor} Indicator for radon measurement made on the first floor of
+#' the house (0 = basement, 1 = first floor)
+#' \item \code{county} County name (\code{\link{factor}})
 #' }
 #' }
 #' \item{\code{roaches}}{
