@@ -175,7 +175,7 @@ test_that("loo issues errors/warnings", {
 })
 
 test_that("loo with k_threshold works", {
-  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[15:32,], 
+  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,], 
                      seed = 12345, iter = 300, chains = 4, cores = 1, 
                      refresh = 0))
   expect_warning(loo_x <- loo(fit), "We recommend calling 'loo' again")
