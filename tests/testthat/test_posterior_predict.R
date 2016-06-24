@@ -262,14 +262,6 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   tol <- 0.3
   for (j in 1:4) {
     expect_equal(
-      predict(get(paste0("sfit", j))),
-      unname(predict(get(paste0("lfit", j)))),
-      tol = tol)
-    expect_equal(
-      predict(get(paste0("sfit", j)), newdata = nd),
-      predict(get(paste0("lfit", j)), newdata = nd),
-      tol = tol)
-    expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd, seed = SEED)),
       unname(predict(get(paste0("lfit", j)), newdata = nd)),
       tol = tol)
