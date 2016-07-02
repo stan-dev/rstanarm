@@ -312,7 +312,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-    fit_j <- update(x, data = d[-omitted, ], refresh = 0)
+    fit_j <- suppressWarnings(update(x, data = d[-omitted, ], refresh = 0))
     lls[[j]] <- log_lik(fit_j, newdata = d[omitted, ])
   }
   
