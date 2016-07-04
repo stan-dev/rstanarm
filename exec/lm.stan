@@ -57,7 +57,7 @@ transformed data {
   }
 }
 parameters { // must not call with init="0"
-  vector[K] z_beta[J];                  // primitives for coefficients
+  unit_vector[K] u[J];                  // primitives for coefficients
   real z_alpha[J * has_intercept];      // primitives for intercepts
   real<lower=0,upper=1> R2[J];          // proportions of variance explained
   vector[J * (1 - prior_PD)] log_omega; // under/overfitting factors
@@ -73,11 +73,8 @@ transformed parameters {
     else Delta_y = 1;
     
     // coefficients in Q-space
-    if (K > 1) {
-      theta[j] = z_beta[j] * sqrt(R2[j] / dot_self(z_beta[j])) * 
-                  sqrt_Nm1[j] * Delta_y;
-    }
-    else theta[j][1] = z_beta[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    if (K > 1) theta[j] = u[j] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    else theta[j][1] = u[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     
     sigma[j] = Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
     
@@ -106,7 +103,7 @@ model {
       else dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], shift[j],
                                      ybar[j], SSR[j], sigma[j], N[j]);
     }
-    target += normal_lpdf(z_beta[j] | 0, 1); // implicit: spherical vector is uniform
+    // implicit: u[j] is uniform on the surface of a hypersphere
   }
   if (has_intercept == 1 && prior_dist_for_intercept > 0) 
     target += normal_lpdf(z_alpha | 0, 1);
