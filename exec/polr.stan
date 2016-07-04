@@ -159,7 +159,7 @@ transformed data {
 }
 parameters {
   simplex[J] pi;
-  vector[K] z_beta;
+  unit_vector[K] u;
   real<lower=0,upper=1> R2;
   real<lower=0> alpha[is_skewed];
 }
@@ -170,8 +170,8 @@ transformed parameters {
     real Delta_y;
     Delta_y = inv(sqrt(1 - R2));
     if (K > 1)
-      beta = z_beta * sqrt(R2 / dot_self(z_beta)) * Delta_y * sqrt_Nm1;
-    else beta[1] = sqrt(R2) * Delta_y * sqrt_Nm1;
+      beta = u * sqrt(R2) * Delta_y * sqrt_Nm1;
+    else beta[1] = u[1] * sqrt(R2) * Delta_y * sqrt_Nm1;
     cutpoints = make_cutpoints(pi, Delta_y, link);
   }
 }
@@ -189,7 +189,7 @@ model {
   }
 
   if (is_constant == 0) target += dirichlet_lpdf(pi | prior_counts);
-  target += normal_lpdf(z_beta | 0, 1);
+  // implicit: u is uniform on the surface of a hypersphere
   if (prior_dist == 1) target += beta_lpdf(R2 | half_K, regularization);
   if (is_skewed == 1)  target += gamma_lpdf(alpha | shape, rate);
 }
@@ -199,7 +199,7 @@ generated quantities {
   vector[N * do_residuals] residuals;
   
   // xbar is actually post multiplied by R^-1
-  if (dense_X) zeta = cutpoints + dot_product(xbar, beta); // xbar is actually post multiplied by R^-1
+  if (dense_X) zeta = cutpoints + dot_product(xbar, beta);
   else zeta = cutpoints;
   if (J == 2) zeta = -zeta;
   mean_PPD = rep_vector(0, rows(mean_PPD));
