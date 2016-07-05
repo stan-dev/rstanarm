@@ -5,6 +5,8 @@ date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -161,10 +163,7 @@ zeta_medians <- round(apply(rstan::extract(post0$stanfit, pars = "zeta")[[1]],
 ```
 The point estimates, represented by the posterior medians, are qualitatively
 similar to the maximum-likelihood estimates but are somewhat shrunk toward
-zero due to the regularizing prior on the coefficients. The estimated cutpoints 
-are $\zeta_1 = `r zeta_medians[1]`$, $\zeta_2 = `r zeta_medians[2]`$, 
-and $\zeta_3 = `r zeta_medians[3]`$, which cut 
-at $10$, $20$, and $30$ grams of tobacco consumption per day. Since these 
+zero due to the regularizing prior on the coefficients. Since these 
 cutpoints are actually _known_, it would be more appropriate for the model to 
 take that into account, but `stan_polr` does not currently support that.
 

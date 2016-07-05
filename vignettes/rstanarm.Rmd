@@ -5,6 +5,8 @@ date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -178,7 +180,7 @@ round(ci95, 2)
 Unlike frequentist confidence intervals --- which are _not_ interpretable in 
 terms of post-data probabilities --- the Bayesian uncertainty interval indicates
 we believe after seeing the data that there is a $0.95$ probability that
-$\beta_2$ is between `r round(ci95[1,1],2)` and `r round(ci95[1,2],2)`.
+$\beta_2$ is between `ci95[1,1]` and `ci95[1,2]`.
 Alternatively, we could say that there is essentially zero probability that
 $\beta_2 > 0$, although frequentists cannot make such a claim coherently.
 

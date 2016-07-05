@@ -6,6 +6,8 @@ output:
   html_vignette:
     toc: yes
     toc_depth: 3
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -271,9 +273,6 @@ pool <- matrix(pool,  # replicate to give each player the same estimates
 batting_avg(pool)
 ```
 
-The result is a posterior median for $\theta$ of `r round(pool[1,"50%"], 3)` 
-with an 80% central posterior interval of 
-$(`r round(pool[1,"10%"], 3)`, `r round(pool[1,"90%"], 3)`)$.  
 With more data, such as from more players or from the rest of the season, the
 posterior approaches a delta function around the maximum likelihood estimate and
 the posterior interval around the centeral posterior intervals will shrink. 
@@ -328,8 +327,8 @@ batting_avg(nopool)
 ```
 
 Each 80% interval is much wider than the estimated interval for the population 
-in the complete pooling model; this is to be expected---there are only `r K[1]` 
-data units for each parameter here as opposed to `r sum(K)` in the complete
+in the complete pooling model; this is to be expected---there are only 45 
+data units for each parameter here as opposed to 810 in the complete
 pooling case. If the units each had different numbers of trials, the intervals
 would also vary based on size.
 
@@ -431,15 +430,6 @@ are indistinguishable, any differences in estimates are due to MCMC
 error.
 
 The horizontal red line has an intercept equal to the overall success rate,
-
-\[
-\frac{\sum_{n=1}^N y_n}{\sum_{n=1}^N K_n}
-\ = \
-\frac{`r sum(y)`}{`r sum(K)`}
-\ = \ 
-`r round(tot_avg, 3)`.
-\]
-
 The overall success rate is also the posterior mode (i.e., maximum likelihood
 estimate) for the complete pooling model. The diagonal blue line has intercept 0
 and slope 1.  Estimates falling on this line make up the maximum likelihood
@@ -635,8 +625,7 @@ log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
 head(log_p_new)
 ```
 
-We now have the distributions of `log_p_new` in a `r ncol(log_p_new)`-column
-matrix, with a column for each model.
+We now have the distributions of `log_p_new` in a matrix with a column for each model.
 
 For each model, the posterior mean for `log_p_new` will give us
 
@@ -772,7 +761,7 @@ compare(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
 ```
 The third column is the leave-one-out (loo) approximation to the
 expected log predictive density. This approximation is only 
-asymptotically valid and with only `r nrow(bball)` observations
+asymptotically valid and with only 18 observations
 in this case, substantially underestimates the expected log
 predictive densities found in the previous subsection. 
 Nevertheless, the relative ranking of the models is essentially
@@ -832,21 +821,7 @@ here is due to our uncertainty in Clemente's underlying chance of success, and
 part of our uncertainty is due to there being 367 remaining trials (at bats)
 modeled as binomial.  In the remaining at bats for the season, Clemente's
 success rate (batting average) was 
-$`r y_new[1]`/`r K_new[1]` = `r round(y_new[1]/K_new[1], 3)`$.
-
-
-The posterior produced by the model for the number of hits for the rest of the
-season is overdispersed compared to a simple binomial model based on a point
-estimate.  For example, if we take the partially pooled posterior median
-estimate of `r round(partialpool["Clemente", "50%"], 2)` for Roberto Clemente's
-ability (and thus remove the first source of uncertainty, the posterior
-uncertainty in his chance of success), the prediction for number of hits based
-on the point estimate would be
-$\mathrm{Binomial}(K^{\mathrm{new}}_1, `r round(partialpool["Clemente", "50%"], 2)`)$, 
-which we know analytically has a standard deviation of $\sqrt{n \, \theta_n \, (1 -
-\theta_n)} = `r round(sqrt(K_new[1] * partialpool["Clemente", "50%"] * (1 - partialpool["Clemente", "50%"])), 1)`$, which is quite a bit lower than the
-standard deviation of `r round(sd(ppd_partialpool[, "Clemente"]), 1)` 
-for $z_1$ estimated from the draws from the posterior predictive distribution.
+$127 / 367 = 0.346$.
 
 For each model, the following plot shows each player's posterior
 predictive 50% interval for predicted batting average (success rate)
@@ -1087,9 +1062,8 @@ chance_gt_350 <- round(100 * colMeans(some_gt_350_all))
 ```
 
 The probability estimate of there being a player with an ability (chance of
-success) greater than 0.350 is roughly `r chance_gt_350[1]`% in the complete 
-pooling model, `r chance_gt_350[3]`% in the partial pooling model, and 
-`r chance_gt_350[2]`% in the no pooling model. The partially pooled
+success) greater than 0.350 is essentially zero in the complete and 
+is essentually guaranteed in the no pooling model. The partially pooled
 estimates would not be considered significant at conventional p=0.05 thresholds. 
 One way to get a handle on what's going on is to inspect the posterior 80%
 intervals for chance-of-success estimates in the first graph above.
@@ -1185,16 +1159,8 @@ ggplot(df_is_best, aes(x=unit, y=is_best)) +
 This question of which player has the highest chance of success (batting
 ability) doesn't even make sense in the complete pooling model, because the
 chance of success parameters are all the same by definition.  In the other
- models, the amount of pooling directly determines the probabilities of
-being the best player. For example, Roberto Clemente, the top performing player
-in the first 45 at bats, has an estimated 
-`r round(100*is_best_nopool["Clemente"])`%
-and `r round(100 * is_best_partialpool["Clemente"])`% 
-chance of being the best player according to the no-pooling and partial pooling
-models, respectively. Ron Swaboda, on the other hand, has an estimated
-`r round(100 * is_best_nopool["Swaboda"], 1)`% and 
-`r round(100 * is_best_partialpool["Swaboda"], 1)`% 
-chance according to the same models. That is, the probability of being best goes
+models, the amount of pooling directly determines the probabilities of
+being the best player. That is, the probability of being best goes
 down for high performing players with more pooling, whereas it goes up for
 below-average players.
 
