@@ -71,7 +71,7 @@ transformed data{
   poisson_max = pow(2.0, 30.0);
 }
 parameters {
-  real<lower=if_else(link == 1, negative_infinity(), 0)> gamma[has_intercept];
+  real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
