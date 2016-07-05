@@ -76,7 +76,7 @@ set_sampling_args <- function(object, prior, user_dots = list(),
 default_stan_control <- function(prior, adapt_delta = NULL, 
                                  max_treedepth = 15L) {
   if (is.null(prior)) {
-    adapt_delta <- 0.95
+    if (is.null(adapt_delta)) adapt_delta <- 0.95
   } else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
                           "R2" = 0.99,
