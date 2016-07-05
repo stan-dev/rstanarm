@@ -85,7 +85,7 @@
 #' @examples 
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model) 
-#' pp_validate(example_model)
+#' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
 #' 
 #' @importFrom ggplot2 geom_segment scale_x_continuous element_line

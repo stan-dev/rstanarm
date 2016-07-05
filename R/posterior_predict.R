@@ -97,9 +97,9 @@
 #' print(dim(ytilde))  # 500 by 3 matrix (draws by nrow(nd))
 #' ytilde <- data.frame(count = c(ytilde), 
 #'                      outcome = rep(nd$outcome, each = 500))
-#' ggplot(ytilde, aes(x=outcome, y=count)) + 
-#'   geom_boxplot() + 
-#'   ylab("predicted count")
+#' ggplot2::ggplot(ytilde, ggplot2::aes(x=outcome, y=count)) + 
+#'   ggplot2::geom_boxplot() + 
+#'   ggplot2::ylab("predicted count")
 #' 
 #' 
 #' # Using newdata with a binomial model

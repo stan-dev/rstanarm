@@ -111,8 +111,8 @@
 #' fit2 <- update(fit1, formula = . ~ . + cyl)
 #' 
 #' # compare on LOOIC
-#' (loo1 <- loo(fit1))
-#' loo2 <- loo(fit2)
+#' (loo1 <- loo(fit1, cores = 2))
+#' loo2 <- loo(fit2, cores = 2)
 #' compare(loo1, loo2)
 #' plot(loo2)
 #' 
@@ -128,15 +128,15 @@
 #' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
 #'    nodegr + u74 + u75
 #' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
-#'                      prior = t7, cores = 4, seed = SEED)
+#'                      prior = t7, cores = 2, seed = SEED)
 #'                  
 #' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
 #'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
 #' lalonde2 <- update(lalonde1, formula = f2)
 #' 
 #' # compare on LOOIC
-#' (loo_lalonde1 <- loo(lalonde1))
-#' (loo_lalonde2 <- loo(lalonde2))
+#' (loo_lalonde1 <- loo(lalonde1, cores = 2))
+#' (loo_lalonde2 <- loo(lalonde2, cores = 2))
 #' plot(loo_lalonde2, label_points = TRUE)
 #' compare(loo_lalonde1, loo_lalonde2)
 #' }
