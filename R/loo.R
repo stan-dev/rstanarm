@@ -146,6 +146,8 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
+  if (length(x[["weights"]]))
+    recommend_exact_loo(reason = "model has weights")
   
   user_threshold <- !is.null(k_threshold)
   if (user_threshold) {
@@ -213,6 +215,15 @@ recommend_reloo <- function(n) {
     call. = FALSE
   )
 }
+recommend_exact_loo <- function(reason) {
+  stop(
+    "'loo' is not supported if ", reason, ". ", 
+    "If refitting the model 'nobs(x)' times is feasible, ", 
+    "we recommend calling 'kfold' with K equal to the ", 
+    "total number of observations in the data to perform exact LOO-CV.",
+    call. = FALSE
+  )
+}
 
 
 #' @rdname loo.stanreg
@@ -228,10 +239,11 @@ kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
-  stopifnot(!is.null(x$data), nrow(x$data) >= K)
+  stopifnot(!is.null(x$data), K > 1, nrow(x$data) >= K)
   
   d <- x$data
   N <- nrow(d)
+  wts <- x[["weights"]]
   perm <- sample.int(N)
   idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
   bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
@@ -240,7 +252,12 @@ kfold <- function(x, K = 10) {
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
     omitted <- which(bin == k)
-    fit_k <- update(x, data = d[-omitted, ], refresh = 0)
+    fit_k <- update(
+      object = x,
+      data = d[-omitted,],
+      weights = if (length(wts)) wts[-omitted] else NULL,
+      refresh = 0
+    )
     lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, ])
   }
   elpds <- unlist(lapply(lppds, function(x) {

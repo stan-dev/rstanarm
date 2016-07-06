@@ -61,6 +61,13 @@ test_that("loo & waic throw error for non mcmc models", {
   mcmc_only_error(fitvb2)
 })
 
+test_that("loo errors if model has weights", {
+  fit <- stan_glm(mpg ~ wt, data = mtcars, weights = rep(1, nrow(mtcars)), 
+                  seed = SEED, refresh = REFRESH, iter = 50)
+  expect_error(loo(fit), "not supported")
+  expect_error(loo(fit), "'kfold'")
+})
+
 test_that("loo/waic for stan_glm works", {
   # gaussian
   fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS, iter = ITER, 
