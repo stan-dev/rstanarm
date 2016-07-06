@@ -24,8 +24,6 @@ ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
 SW <- suppressWarnings
-ll_fun <- rstanarm:::ll_fun
-
 
 # loo and waic ------------------------------------------------------------
 context("loo and waic")

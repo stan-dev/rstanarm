@@ -146,7 +146,7 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  if (length(x[["weights"]]))
+  if (length(x[["weights"]]) && !all(x[["weights"]] == 1))
     recommend_exact_loo(reason = "model has weights")
   
   user_threshold <- !is.null(k_threshold)
