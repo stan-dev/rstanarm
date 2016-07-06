@@ -25,8 +25,8 @@
 #' well, but prudent use of more informative priors is encouraged. Uniform prior
 #' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
 #' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
-#' they are not recommended and are \emph{not} non-informative, tending to bias
-#' parameters toward large values.
+#' they are not recommended and are \emph{not} non-informative, giving 
+#' the same probability mass to implausible values as plausible ones.
 #' 
 #' @export 
 #' @name priors
