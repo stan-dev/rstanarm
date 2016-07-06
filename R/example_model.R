@@ -19,15 +19,16 @@
 #' A model for use in \pkg{rstanarm} examples. 
 #' 
 #' @name example_model
-#' @format A \code{\link[=stanreg-objects]{stanreg}} object containing the
-#'   output from fitting the model in the Examples section, below.
-#'   The \code{chains} and \code{iter} arguments are specified to make this example be 
-#'   small in size. In practice, we recommend that they be left unspecified in
-#'   order to use the default values (4 and 2000 respectively) or increased if
-#'   there are convergence problems. The \code{cores} argument is optional and
-#'   on a multicore system, the user may well want to set that equal to the
-#'   number of chains being executed.
-#' 
+#' @format Calling \code{example("example_model")} will run the model in the 
+#'   Examples section, below, and the resulting stanreg object will then be
+#'   available in the global environment. The \code{chains} and \code{iter}
+#'   arguments are specified to make this example be small in size. In practice,
+#'   we recommend that they be left unspecified in order to use the default
+#'   values (4 and 2000 respectively) or increased if there are convergence
+#'   problems. The \code{cores} argument is optional and on a multicore system,
+#'   the user may well want to set that equal to the number of chains being
+#'   executed.
+#'   
 #' @seealso \code{\link[lme4]{cbpp}} for a description of the data.
 #' @examples
 #' example_model <- 
