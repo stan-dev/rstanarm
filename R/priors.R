@@ -17,8 +17,16 @@
 
 #' Prior distributions and options
 #' 
-#' These functions are used to specify the prior-related arguments of the
-#' various modeling functions in the \pkg{rstanarm} package.
+#' These functions are used to specify the prior-related arguments of the 
+#' various modeling functions in the \pkg{rstanarm} package. The default priors 
+#' used in the various \pkg{rstanarm} modeling functions are intended to be 
+#' \emph{weakly informative} in that they provide moderate regularlization and 
+#' help stabilize computation. For many applications the defaults will perform 
+#' well, but prudent use of more informative priors is encouraged. Uniform prior
+#' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
+#' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
+#' they are not recommended and are \emph{not} non-informative, tending to bias
+#' parameters toward large values.
 #' 
 #' @export 
 #' @name priors
