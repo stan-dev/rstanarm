@@ -60,6 +60,31 @@ functions {
   }
   
   /** 
+  * Apply inverse link function to linear predictor
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_beta(vector eta, int link) {
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 6) reject("Invalid link");
+    if (link == 1)  // logit
+      for(n in 1:rows(eta)) mu[n] = inv_logit(eta[n]);
+    else if (link == 2)  // probit
+      for(n in 1:rows(eta)) mu[n] = Phi(eta[n]);
+    else if (link == 3)  // cloglog
+      for(n in 1:rows(eta)) mu[n] = inv_cloglog(eta[n]);
+    else if (link == 4) // cauchy
+      for(n in 1:rows(eta)) mu[n] = cauchy_cdf(eta[n], 0.0, 1.0);
+    else if (link == 5)  // log 
+      for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
+    else if (link == 6) // loglog
+      for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(eta[n])
+    return mu;
+  }
+  
+  /** 
   * Pointwise (pw) log-likelihood vector
   *
   * @param y The integer array corresponding to the outcome variable.
@@ -158,6 +183,21 @@ functions {
     for (n in 1:rows(y))
       ll[n] = -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
     ll = ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * log_y;
+    return ll;
+  }
+  
+  vector pw_beta(vector y, vector eta, real dispersion) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    vector[rows(y)] shape1;
+    vector[rows(y)] shape2;
+    if (link < 1 || link > 6) reject("Invalid link");
+    mu = linkinv_beta(eta, link);
+    shape1 = mu * dispersion;
+    shape2 = (1 - mu) * dispersion;
+    for (n in 1:rows(y)) {
+      ll[n] = beta_lpdf(y[n] | shape1[n], shape2[n]);
+    }
     return ll;
   }
   
@@ -262,16 +302,22 @@ model {
     else if (family == 2) {
       target += GammaReg(y, eta, dispersion, link, sum_log_y);
     }
-    else {
+    else if (family == 3) {
       target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
                              dispersion, sum_log_y, sqrt_y);
+    }
+    else if (family == 4) {
+      vector[N] mu;
+      mu = linkinv_beta(eta, link);
+      target += beta_lpdf(y | mu * dispersion, (1 - mu) * dispersion);
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
-    else summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
+    else if (family == 3) summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
+    else if (family == 4) summands = pw_beta(y, eta, dispersion, link);
     target += dot_product(weights, summands);
   }
 
@@ -316,6 +362,11 @@ generated quantities {
     else if (family == 3) {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
+    }
+    else if (family == 4) {
+      eta = linkinv_beta(eta, link);
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + beta_rng(eta[n] * dispersion, (1 - eta[n]) * dispersion);
     }
     mean_PPD = mean_PPD / N;
   }
