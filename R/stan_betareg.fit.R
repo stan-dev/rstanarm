@@ -8,6 +8,11 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL, lin
   
   # lots of tedious but simple stuff including standata which is a big list to pass to data {}
   # process the prior information like stan_glm.fit() does
+  
+  algorithm <- match.arg(algorithm)
+  
+  supported_links <- c("logit", "probit","cloglog", "cauchit", "log", "loglog")
+  
   stanfit <- stanmodels$continuous
   stanfit <- sampling(stanfit, data = standata, ...)
   return(stanfit)
