@@ -80,7 +80,7 @@ functions {
     else if (link == 5)  // log 
       for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
     else if (link == 6) // loglog
-      for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(eta[n])
+      for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(eta[n]);
     return mu;
   }
   
@@ -186,7 +186,7 @@ functions {
     return ll;
   }
   
-  vector pw_beta(vector y, vector eta, real dispersion) {
+  vector pw_beta(vector y, vector eta, real dispersion, int link) {
     vector[rows(y)] ll;
     vector[rows(y)] mu;
     vector[rows(y)] shape1;

@@ -7,9 +7,8 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
           prior_ops = prior_options(), prior_PD = FALSE, 
           algorithm = c("sampling", "optimizing", 
                         "meanfield", "fullrank"),
-          adapt_delta = NULL, QR = FALSE, sparse = FALSE)
-          )
-  {
+          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+  
   mc <- match.call(expand.dots = FALSE)
   mc$model <- mc$y <- mc$x <- TRUE
   # NULLify any Stan specific arguments in mc now
@@ -19,6 +18,12 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   if (!requireNamespace("betareg")) stop("the betareg package is needed by 'stan_betareg'")
   mc$betareg.control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
   mf <- eval(mc, parent.frame())
+  mf <- check_constant_vars(mf)
+  mt <- attr(mf, "terms")
+  Y <- array1D_check(model.response(mf, type = "any"))
+  if (is.empty.model(mt))
+    stop("No intercept or predictors specified.", call. = FALSE)
+  X <- model.matrix(mt, mf, contrasts)
   
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit()
