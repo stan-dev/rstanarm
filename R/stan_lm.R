@@ -39,6 +39,7 @@
 #' @template args-same-as-rarely-2
 #' @template args-x-y
 #' @template args-dots
+#' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
 #'
@@ -53,11 +54,6 @@
 #'   root of the sample size, which is legitimate because the marginal
 #'   standard deviation of the outcome is a primitive parameter being
 #'   estimated.
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
-#'   merely proportional to the actual distribution because of an improper
-#'   prior on a scale parameter.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
