@@ -109,11 +109,11 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
         ## we want this to label the rows of qtx, not cols of x.
         maxasgn <- length(nmstrata) - 1L
         nobs <- NROW(qty)
-	len <- if(nobs > rank.e) {
-	    asgn.e[(rank.e+1):nobs] <- maxasgn + 1L
-	    nmstrata <- c(nmstrata, "Within")
-	    maxasgn + 2L
-	} else maxasgn + 1L
+	      len <- if(nobs > rank.e) {
+	        asgn.e[(rank.e+1):nobs] <- maxasgn + 1L
+	        nmstrata <- c(nmstrata, "Within")
+	        maxasgn + 2L
+	      } else maxasgn + 1L
         result <- setNames(vector("list", len), nmstrata)
         lmcall$formula <- form <-
             update(formula, paste(". ~ .-", deparse(errorterm, width.cutoff = 500L, backtick = TRUE)))

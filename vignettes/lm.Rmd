@@ -335,6 +335,25 @@ our goal for __rstanarm__ of making Bayesian estimation of regression models
 routine. The same approach is used to specify a prior in ANOVA models (see 
 `stan_aov`) and proportional-odds models for ordinal outcomes (see `stan_polr`).
 
+Finally, the `stan_biglm` function can be used when the design matrix is too
+large for the `qr` function to process. The `stan_biglm` function inputs the
+output of the `biglm` function in the __biglm__ package, which utilizes an
+incremental QR decomposition that does not require the entire dataset to be
+loaded into memory simultaneously. However, the `biglm` function needs to be
+called in a particular way in order to work with `stan_biglm`. In particular,
+the columns of the implicit design matrix need to be centered, as does the
+outcome, in which case the formula must _not_ include an intercept. The means
+of the columns of the design matrix, the sample mean of the outcome, and the
+sample standard deviation of the outocme all need to be passed to the `stan_biglm` 
+function, as well as a flag indicating whether the model really does include an
+intercept. Also, the number of columns of the design matrix currently cannot 
+exceed the number of rows. Although `stan_biglm` should run fairly quickly and
+without much memory, the resulting object is a fairly plain `stanfit` object
+rather than an enhanced `stanreg` object like that produced by `stan_lm`. Many
+of the enhanced capabilities of a `stanreg` object depend on being able to 
+access the full design matrix, so doing posterior predictions, posterior checks, 
+etc. with the output of `stan_biglm` would require some custom R code.
+
 # References
 Lewandowski, D., Kurowicka D., and Joe, H. (2009). 
 Generating random correlation matrices based on vines and extended onion method. 
