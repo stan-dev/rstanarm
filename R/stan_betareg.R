@@ -1,13 +1,12 @@
 args(betareg::betareg)
 
-stan_betareg <- function (formula, data, subset, na.action, weights, offset, 
-          link = c("logit", "probit", "cloglog", "cauchit", "log", 
-                   "loglog"), link.phi = NULL, model = TRUE, y = TRUE, x = FALSE, ...,
-          prior = normal(), prior_intercept = normal(),
-          prior_ops = prior_options(), prior_PD = FALSE, 
-          algorithm = c("sampling", "optimizing", 
-                        "meanfield", "fullrank"),
-          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+stan_betareg <- function (formula, data, subset, na.action, weights, offset,
+                          link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
+                          link.phi = NULL, model = TRUE, y = TRUE, x = FALSE, ...,
+                          prior = normal(), prior_intercept = normal(),
+                          prior_ops = prior_options(), prior_PD = FALSE, 
+                          algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   mc <- match.call(expand.dots = FALSE)
   mc$model <- mc$y <- mc$x <- TRUE
