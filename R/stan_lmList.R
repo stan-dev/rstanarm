@@ -38,7 +38,23 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @details 
+#' The options for the priors are essentially the same as in \code{\link{stan_lm}}.
+#' However, in this case the \code{prior} argument pertains to the unknown expected
+#' \eqn{R^2} across groups where each group is allowed to have its own \eqn{R^2}
+#' along with every other parameter. The coefficients are partially pooled using
+#' a von Mises-Fisher prior on the group-specific unit vectors. The expecation of
+#' this von Mises-Fisher distribution is uniformally distributed on the surface of
+#' a hypersphere, but the concentration parameter, \code{kappa}, has an exponential
+#' prior with mean specified by the \code{kappa_mean} argument. Higher values for
+#' \code{kappa_mean} induce more pooling and lower values induce less pooling.
 #' 
+#' The posterior distribution for each group's \eqn{R^2} is a \emph{within-group}
+#' quantity, i.e. the proportion of variance in that group that is explained by the
+#' predictors. If the posterior distribution of the intercepts differs from group
+#' to group than the proportion of variance in the \emph{entire sample} that is
+#' explained by the model is not estimated but will be larger than the average
+#' \emph{within-group} \eqn{R^2}.
 #' @examples 
 #' \dontrun{
 #' post <- stan_lmList(mpg ~ disp + wt + hp | cyl, data = mtcars, 
