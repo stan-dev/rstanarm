@@ -92,6 +92,11 @@ test_that("stan_lm throws error if glmer syntax used", {
                regexp = "model formula not allowed")
 })
 
+test_that("stan_lmList does not throw an error", {
+  stan_lmList(mpg ~ disp + wt + hp | cyl, data = mtcars, 
+                       prior = R2(0.5, "mean"), chains = 1, iter = 1)
+})
+
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",

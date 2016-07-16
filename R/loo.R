@@ -362,7 +362,7 @@ ll_fun <- function(x) {
   f <- family(x)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  
+  if (is.lmList(x)) return(.ll_gaussian_lmList_i)
   get(paste0(".ll_", f$family, "_i"))
 }
 
@@ -390,7 +390,7 @@ ll_args <- function(object, newdata = NULL) {
   if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
     if (!is.binomial(fname)) {
-      data <- data.frame(y, x)
+      data <- data.frame(y, as.matrix(x))
     } else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
@@ -405,7 +405,9 @@ ll_args <- function(object, newdata = NULL) {
     }
     draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
     if (is.gaussian(fname)) 
-      draws$sigma <- stanmat[, "sigma"]
+      draws$sigma <- stanmat[, grep("^sigma", colnames(stanmat))]
+    if (is.lmList(object))
+      draws$groups <- as.integer(object$groups)
     if (is.gamma(fname)) 
       draws$shape <- stanmat[, "shape"]
     if (is.ig(fname)) 
@@ -491,6 +493,9 @@ ll_args <- function(object, newdata = NULL) {
 .ll_gaussian_i <- function(i, data, draws) {
   val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
   .weighted(val, data$weights)
+}
+.ll_gaussian_lmList_i <- function(i, data, draws) {
+  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma[,draws$group[i]], log = TRUE)
 }
 .ll_binomial_i <- function(i, data, draws) {
   val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)

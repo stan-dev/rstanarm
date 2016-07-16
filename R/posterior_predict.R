@@ -159,6 +159,7 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   else ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
+  if (inherits(object, "lmList")) ppargs$group <- object$group
   
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
@@ -175,12 +176,18 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object) {
   suffix <- if (is(object, "polr")) "polr" else family(object)$family
+  if (inherits(object, "lmList")) suffix <- paste0(suffix, "_grouped")
   get(paste0(".pp_", suffix), mode = "function")
 }
 
 .pp_gaussian <- function(mu, sigma) {
   t(sapply(1:nrow(mu), function(s) {
     rnorm(ncol(mu), mu[s,], sigma[s])
+  }))
+}
+.pp_gaussian_grouped <- function(mu, sigma, group) {
+  t(sapply(1:nrow(mu), function(s) {
+    rnorm(ncol(mu), mu[s,], sigma[s,group])
   }))
 }
 .pp_binomial <- function(mu, trials) {
@@ -260,7 +267,7 @@ pp_args <- function(object, data) {
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
   if (is.gaussian(famname)) {
-    args$sigma <- stanmat[, "sigma"]
+    args$sigma <- stanmat[, grep("^sigma", colnames(stanmat))]
   } else if (is.gamma(famname)) {
     args$shape <- stanmat[, "shape"]
   } else if (is.ig(famname)) {

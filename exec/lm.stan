@@ -23,6 +23,72 @@ functions {
       N * (log(sigma) + 0.91893853320467267);
     return target();
   }
+
+  /**
+   * Modded Bessel function of the first kind in log units 
+   * @param x Real non-negative scalar
+   * @param v Real non-negative order but may be integer
+   */
+  real log_besselI(real x, real v) {
+    real log_half_x;
+    real lfac;
+    real lgam;
+    real lcons;
+    real biggest;
+    real piece;
+    real smallest;
+    real summand;
+    int m;
+    if (x < 0) reject("x is assumed to be non-negative")
+    if (v < 0) reject("v is assumed to be non-negative");
+    log_half_x = log(0.5 * x);
+    lfac = 0;
+    lgam = lgamma(v + 1);
+    lcons = v * log_half_x;
+    biggest = -lgam + lcons;
+    piece = positive_infinity();
+    smallest = -745.13321910194122211; // exp(smallest) > 0 minimally
+    summand = 0.0;
+    m = 1;
+    while (piece > smallest) {
+      lfac = lfac + log(m);
+      lgam = lgam + log(v + m);
+      lcons = lcons + 2 * log_half_x;
+      piece = -lfac - lgam + lcons - biggest;
+      summand = summand + exp(piece);
+      m = m + 1;
+    }
+    return biggest + log1p(summand);
+  }
+
+  /**
+   * von Mises-Fisher distribution in log units 
+   * @param u J-array of unit vectors
+   * @param mu Unit vector that is the expectation for u
+   * @param kappa Non-negative concentration parameter
+   */
+  real VMF(vector[] u, vector mu, real kappa) {
+    int p;
+    real half_p;
+    real half_pm1;
+    int J;
+    real out;
+    p = rows(mu);
+    if (p < 2) reject("p must be >= 2");
+    half_p = 0.5 * p;
+    J = size(u);
+    if (kappa == 0) return -J * half_p * 1.8378770664093453391; 
+    half_pm1 = half_p - 1;
+    out = 0;
+    for (j in 1:J) out = out + dot_product(mu, u[j]);
+    out = out * kappa;
+    if (p == 2) 
+      return J * (-1.8378770664093453391 - log(modified_bessel_first_kind(0, kappa))) + out;
+    if (p == 3) 
+      return J * (log(kappa) - log(12.566370614359172464 * sinh(kappa))) + out;
+    return J * ( half_pm1 * log(kappa) - half_p * 1.8378770664093453391 
+                  - log_besselI(kappa, half_pm1) ) + out;
+  }
 }
 data {
   int<lower=0,upper=1> has_intercept; // 0 = no, 1 = yes
@@ -30,6 +96,7 @@ data {
   real<lower=0> prior_scale_for_intercept;       // 0 = by CLT
   real prior_mean_for_intercept;      // expected value for alpha
   int<lower=0,upper=1> prior_dist;    // 0 = uniform for R^2, 1 = Beta(K/2,eta)
+  real<lower=0> kappa_mean;           // prior expectation of concentration parameter
   int<lower=0,upper=1> prior_PD;      // 0 = no, 1 = yes to drawing from the prior
   real<lower=0> eta;                  // shape hyperparameter
   
@@ -59,6 +126,9 @@ parameters { // must not call with init="0"
   unit_vector[K] u[J];                  // primitives for coefficients
   real z_alpha[J * has_intercept];      // primitives for intercepts
   real<lower=0,upper=1> R2[J];          // proportions of variance explained
+  real<lower=0,upper=1> SMC[J > 1];     // proportion  of variance explained overall
+  unit_vector[K] mu[J > 1];             // global location parameter
+  real<lower=0> kappa[J > 1];           // unscaled concentration parameter
   vector[J * (1 - prior_PD)] log_omega; // under/overfitting factors
 }
 transformed parameters {
@@ -97,12 +167,22 @@ model {
                                has_intercept == 1 ? alpha[j] + shift : shift,
                                ybar[j], SSR[j], sigma[j], N[j]);
     }
-    // implicit: u[j] is uniform on the surface of a hypersphere
   }
   if (has_intercept == 1 && prior_dist_for_intercept > 0) 
     target += normal_lpdf(z_alpha | 0, 1);
-  if (prior_dist == 1) target += beta_lpdf(R2 | half_K, eta);
+  if (J == 1) {
+    if (prior_dist == 1) target += beta_lpdf(R2 | half_K, eta);
+    // implicit: u[1] is uniform on the surface of a hypersphere
+  }
+  else {
+    target += beta_lpdf(R2 | half_K, half_K * (inv(SMC[1]) - 1));
+    if (prior_dist == 1) target += beta_lpdf(SMC[1] | half_K, eta);
+    target += VMF(u, mu[1], kappa_mean * kappa[1]);
+    // implicit: mu is uniform on the surface of a hyperspere
+    target += exponential_lpdf(kappa | 1);
+  }
   // implicit: log_omega is uniform over the real line for all j
+  
 }
 generated quantities {
   real mean_PPD[J];

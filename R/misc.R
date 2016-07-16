@@ -138,6 +138,13 @@ is.mer <- function(x) {
   isTRUE(check1 && check2)
 }
 
+# Test if stanreg object used stan_lmList
+#
+# @param x A stanreg object.
+is.lmList <- function(x) {
+  inherits(x, "lmList")
+}
+
 # Consistent error message to use when something is only available for 
 # models fit using MCMC
 #

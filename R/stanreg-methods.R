@@ -85,7 +85,16 @@ NULL
 coef.stanreg <- function(object, ...) {
   if (is.mer(object)) 
     return(coef_mer(object, ...))
-  
+  if (is.lmList(object)) {
+    J <- nlevels(object$groups)
+    beta <- object$coefficients
+    mark <- grep("(Intercept)", names(beta), fixed = TRUE)
+    alpha <- beta[mark]
+    mat <- cbind(alpha, matrix(beta[-mark], nrow = J, byrow = TRUE))
+    rownames(mat) <- levels(object$groups)
+    colnames(mat) <- unique(gsub(":.*$", "", names(beta)))
+    return(mat)
+  }
   object$coefficients
 }
 
@@ -272,8 +281,17 @@ coef_mer <- function(object, ...) {
 #' @export
 #' @export fixef
 #' @importFrom lme4 fixef
-#' 
 fixef.stanreg <- function(object, ...) {
+  if (is.lmList(object)) {
+    means <- get_posterior_mean(object$stanfit)
+    means <- means[,ncol(means)]
+    nms <- names(means)
+    J <- nlevels(object$groups)
+    FE <- colMeans(cbind(means[grep("^alpha", nms)],
+                   matrix(means[grep("^beta", nms)], nrow = J, byrow = TRUE)))
+    names(FE) <- colnames(coef(object))
+    return(FE)
+  }
   coefs <- object$coefficients
   coefs[b_names(names(coefs), invert = TRUE)]
 }
@@ -293,6 +311,20 @@ ngrps.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
+  if (is.lmList(object)) {
+    means <- get_posterior_mean(object$stanfit)
+    means <- means[,ncol(means)]
+    nms <- names(means)
+    J <- nlevels(object$groups)
+    effs <- cbind(means[grep("^alpha", nms)],
+                  matrix(means[grep("^beta", nms)], nrow = J, byrow = TRUE))
+    colnames(effs) <- colnames(coef(object))
+    effs <- as.data.frame(sweep(effs, MARGIN = 2, STATS = colMeans(effs)))
+    attr(effs, "label") <- "Random effects"
+    attr(effs, "standardized") <- FALSE
+    class(effs) <- "ranef.lmList"
+    return(effs)
+  }
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
   sel <- b_names(all_names)
@@ -327,6 +359,11 @@ ranef.stanreg <- function(object, ...) {
 #'   importFrom(lme4,sigma)
 #'
 sigma.stanreg <- function(object, ...) {
+  if (is.lmList(object)) {
+    message("this could take a little while to simulate")
+    return(sqrt(mean( (posterior_predict(object) - 
+                       as.matrix(posterior_linpred(object)))^2 )))
+  }
   if (!("sigma" %in% rownames(object$stan_summary))) 
     return(1)
   

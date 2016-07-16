@@ -116,11 +116,14 @@
 #' overview:
 #' 
 #' \describe{
-#'  \item{\code{\link{stan_lm}}, \code{stan_aov}, \code{stan_biglm}}{
-#'   Similar to \code{\link[stats]{lm}} or \code{\link[stats]{aov}} but with 
-#'   novel regularizing priors on the model parameters that are driven by prior 
-#'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
-#'   attributable to the predictors in a linear model.
+#'  \item{\code{\link{stan_lm}}, \code{stan_aov}, \code{stan_biglm}, \code{stan_lmList}}{
+#'   Similar to \code{\link[stats]{lm}} but with novel regularizing priors on the model 
+#'   parameters that are driven by prior beliefs about \eqn{R^2}, the proportion of 
+#'   variance in the outcome attributable to the predictors in a linear model. The
+#'   \code{stan_aov} variant estimates ANOVA models, the \code{stan_biglm} variant
+#'   estimates linear models when the design matrix is too large to fit into memory, and
+#'   the \code{stan_lmList} variant allows all the parameters to vary by group but utilizes
+#'   hyperpriors to shrink them toward common parameters, much like \code{stan_lmer}.
 #'  }
 #'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{
 #'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
@@ -139,7 +142,9 @@
 #'   a highly-structured but unknown covariance matrix (for which \pkg{rstanarm}
 #'   introduces an innovative prior distribution). MCMC provides more
 #'   appropriate estimates of uncertainty for models that consist of a mix of
-#'   common and group-specific parameters.
+#'   common and group-specific parameters. The same line or argument applies even
+#'   more in the case of \code{stan_lmList} mentioned in the first stanza of this
+#'   section.
 #'  }
 #'  \item{\code{\link{stan_gamm4}}}{
 #'   Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package, which 

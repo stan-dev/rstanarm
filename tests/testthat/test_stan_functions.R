@@ -296,6 +296,49 @@ test_that("ll_mvn_ols_qr_lp returns expected results", {
                                              SSR, sigma, N)))
 })
 
+context("lm")
+test_that("log_besselI returns expected results", {
+  x <- exp(1)
+  v <- 10 * pi
+  expect_equal(log(besselI(x, v)), log_besselI(x, v))
+})
+
+context("lm")
+test_that("VMF returns expected results", {
+  dVMF <- function(u, mu, kappa) {
+    p <- length(mu)
+    if (is.list(u)) J <- length(u)
+    else J <- 1
+    log_C <- (0.5 * p - 1) * log(kappa) - 0.5 * p * log(2 * pi) - log(besselI(kappa, 0.5 * p - 1))
+    if (J > 1) return(log_C * J + kappa * sum(sapply(u, `%*%`, x = mu)))
+    else return(log_C + kappa * c(mu %*% u))
+  }
+  kappa <- rexp(1)
+  mu <- rnorm(4)
+  mu <- mu / sqrt(crossprod(mu)[1])
+  J <- 3
+  u <- lapply(1:J, FUN = function(j) {
+    u <- rnorm(length(mu))
+    u <- u / sqrt(crossprod(u)[1])
+    return(u)
+  })
+  expect_equal(dVMF(u, mu, kappa), VMF(u, mu, kappa))
+  mu <- rnorm(3)
+  mu <- mu / sqrt(crossprod(mu)[1])
+  J <- 4
+  u <- lapply(1:J, FUN = function(j) {
+    u <- rnorm(length(mu))
+    u <- u / sqrt(crossprod(u)[1])
+    return(u)
+  })
+  expect_equal(dVMF(u, mu, kappa), VMF(u, mu, kappa))
+  mu <- rnorm(2)
+  mu <- mu / sqrt(crossprod(mu)[1])
+  u <- rnorm(length(mu))
+  u <- u / sqrt(crossprod(u)[1])
+  expect_equal(dVMF(u, mu, kappa), VMF(list(u), mu, kappa))
+})
+
 # polr
 links <- c("logistic", "probit", "loglog", "cloglog", "cauchit")
 context("polr")

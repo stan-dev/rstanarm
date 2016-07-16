@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # Note to Windows users: This is not actually platform specific.
 mkdir -p src/include

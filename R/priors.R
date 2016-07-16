@@ -400,12 +400,14 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   half_K <- K / 2
   if (what == "mode") {
     stopifnot(location > 0, location <= 1)
-    if (K <= 2)
-      stop(paste("R2 prior error.", 
+    if (K <= 2) {
+      if (location == 0.5 && K == 2) what <- "mean"
+      else stop(paste("R2 prior error.", 
                  "The mode of the beta distribution does not exist",
                  "with fewer than three predictors.", 
                  "Specify 'what' as 'mean', 'median', or 'log' instead."),
            call. = FALSE)
+    }
     eta <- (half_K - 1  - location * half_K + location * 2) / location
   } else if (what == "mean") {
     stopifnot(location > 0, location < 1)
