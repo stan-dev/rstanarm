@@ -257,11 +257,15 @@ transformed data {
   #include "tdata_glm.stan"
   if      (family == 1) sum_log_y = not_a_number();
   else if (family == 2) sum_log_y = sum(log(y));
-  else {
+  else if (family == 3) {
     for (n in 1:N) sqrt_y[n] = sqrt(y[n]);
     log_y = log(y);
     sum_log_y = sum(log_y);
   }
+  else if (family == 4) {
+    // do nothing
+  }
+  else reject("unknown family");
 }
 parameters {
   real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0)> gamma[has_intercept];

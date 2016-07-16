@@ -15,9 +15,9 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
     mc$adapt_delta <- mc$QR <- mc$sparse <- NULL
   mc[[1L]] <- quote(betareg::betareg)
   if (!requireNamespace("betareg")) stop("the betareg package is needed by 'stan_betareg'")
-  mc$betareg.control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
-  mf <- eval(mc, parent.frame())
-  mf <- check_constant_vars(mf)
+  mc$control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
+  br <- suppressWarnings(eval(mc, parent.frame()))
+  mf <- check_constant_vars(br$model)
   mt <- attr(mf, "terms")
   Y <- array1D_check(model.response(mf, type = "any"))
   if (is.empty.model(mt))
@@ -25,10 +25,19 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   X <- model.matrix(mt, mf, contrasts)
   
   # pass the prior information to stan_betareg.fit()
-  stanfit <- stan_betareg.fit()
-  fit <- nlist(stanfit, family = "beta", formula, offset, weights, x = X, y = Y, 
+  stanfit <- stan_betareg.fit(x = X, y = Y, z = NULL, weights = NULL, offset = NULL, 
+                              link = link, link.phi = link.phi, ..., prior = prior, 
+                              prior_intercept = prior_intercept, prior_ops = prior_ops,
+                              prior_PD = prior_PD, algorithm = algorithm, 
+                              adapt_delta = adapt_delta, QR = QR, sparse = FALSE)
+  algorithm <- match.arg(algorithm)
+  link <- match.arg(link)
+  fam <- binomial(link = link)
+  fam$family <- "beta"
+  fit <- nlist(stanfit, family = fam, formula, offset = NULL, 
+               weights = NULL, x = X, y = Y, 
                data, prior.info = get_prior_info(call, formals()), 
-               call = call, terms = mt, model = mf, 
+               call = match.call(), terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
