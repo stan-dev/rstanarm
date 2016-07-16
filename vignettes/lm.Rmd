@@ -384,9 +384,10 @@ compare(loo_post, loo_simple, loo(grouped))
 ```
 As can be seen, the model estimated by `stan_lmList` has fewer effective
 parameters than the model estimated by `stan_glm` but more effective
-parameters than the model estimated by `stan_lm`. However, the fit to the
-data is worse with `stan_lmList` in this case so there is no reason to 
-prefer it over `stan_lm`.
+parameters than the model estimated by `stan_lm` due to the need to
+estimate $\mathbf{\mu}$ and $\kappa$ plus additional $R^2$ parameters. 
+However, the fit to the data is worse with `stan_lmList` in this case so 
+there is no reason to prefer it over `stan_lm`.
 
 # Conclusion
 
