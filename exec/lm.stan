@@ -25,7 +25,65 @@ functions {
   }
 
   /**
-   * Modded Bessel function of the first kind in log units 
+   * Approximation of lgamma(z); see
+   *
+   * https://en.wikipedia.org/wiki/Stirling%27s_approximation#Versions_suitable_for_calculators
+   *
+   * @param z Positive scalar
+   */
+  real Nemes(real z)
+    return 0.5 * log(6.283185307179586232 / z) + z * (log(z + 1 / (12 * z - 0.1 / z)) - 1);
+      
+  int signum(real x)
+    return x < 0 ? -1 : x > 0;
+
+  /**
+   * Customized version of the bisection method to find when log-sum-exp can terminate; see
+   *
+   * https://en.wikipedia.org/wiki/Bisection_method#Algorithm
+   *
+   * This is only called from the log_besselI() function below
+   *
+   * @param v Order for log_besselI() function
+   * @param biggest Pivot in the log-sum-exp
+   * @param biggest_m Integer indicating what iteration reaches the pivot
+   * @param log_half_x Real number equal to log(0.5 * x)
+   */
+  int bisection(real v, real biggest, int biggest_m, real log_half_x) {
+    int c;
+    int a;
+    int b;
+    int N;
+    real smallest;
+    real val_a;
+    a = biggest_m;
+    b = 2147483647; // maximum integer
+    N = 1;
+    smallest = -745.13321910194122211;
+    val_a = -smallest;
+    while (N <= 100) {
+      real val;
+      c = a / 2 + b / 2;
+      if (a == (b - 1)) return c;
+      else {
+        val = -2 * Nemes(c) + (2 * c + v) * log_half_x - biggest - smallest;
+        if (round(val) == 0) return c;
+        else if (signum(val) == signum(val_a)) {
+          a = c;
+          val_a = val;
+        }
+        else b = c;
+        N = N + 1;
+      }
+    }
+    return c;
+  }
+  
+  /**
+   * Modded Bessel function of the first kind in log units
+   *
+   * This implementation is designed to not overflow or eat too much RAM
+   *
    * @param x Real non-negative scalar
    * @param v Real non-negative order but may be integer
    */
@@ -40,11 +98,11 @@ functions {
     real biggest;
     real piece;
     real smallest;
-    real summand;
     int m;
-    int biggest_m;
+    int cutoff;
     if (x < 0) reject("x is assumed to be non-negative")
     if (v < 0) reject("v is assumed to be non-negative");
+    if (x > 700) return x - 0.5 * log(2 * pi() * x);
     log_half_x = log(0.5 * x);
     lfac_0 = 0;
     lfac = lfac_0;
@@ -55,9 +113,8 @@ functions {
     biggest = -lgam + lcons;
     piece = biggest;
     smallest = -745.13321910194122211; // exp(smallest) > 0 minimally
-    summand = 0.0;
     m = 1;
-    while (piece >= biggest) { // find maximum for log-sum-exp
+    while (piece >= biggest) { // find pivot for log-sum-exp
       biggest = piece;
       lfac = lfac + log(m);
       lgam = lgam + log(v + m);
@@ -65,41 +122,30 @@ functions {
       piece = -lfac - lgam + lcons;
       m = m + 1;
     }
-    if (m == 2) summand = exp(piece - biggest);
-    else if (m > 1000) return x - 0.5 * log(2 * pi() * x);
-    else { // start over with interior biggest
+    // find next m such that exp(...) = 0
+    cutoff = bisection(v, biggest, m - 1, log_half_x);
+    { // start over from m = 0 and fill up summands
+      vector[cutoff + 1] summands;
       lfac = lfac_0;
       lgam = lgam_0;
       lcons = lcons_0;
       piece = -lgam + lcons - biggest;
-      summand = exp(piece);
-      biggest_m = m - 2;
+      summands[1] = exp(piece);
       m = 1;
-      while (m < biggest_m) {
+      while (m <= cutoff) {
         lfac = lfac + log(m);
         lgam = lgam + log(v + m);
         lcons = lcons + 2 * log_half_x;
         piece = -lfac - lgam + lcons - biggest;
-        if (piece > smallest) summand = summand + exp(piece);
         m = m + 1;
+        summands[m] = exp(piece);
       }
-      // skip over biggest
-      lfac = lfac + log(m);
-      lgam = lgam + log(v + m);
-      lcons = lcons + 2 * log_half_x;
-      m = m + 1;
+      return biggest + log(sum(summands));
     }
-    while (piece > smallest) {
-      lfac = lfac + log(m);
-      lgam = lgam + log(v + m);
-      lcons = lcons + 2 * log_half_x;
-      piece = -lfac - lgam + lcons - biggest;
-      summand = summand + exp(piece);
-      m = m + 1;
-    }
-    return biggest + log1p(summand);
+    reject ("should never reach here");
+    return negative_infinity();
   }
-
+  
   /**
    * von Mises-Fisher distribution in log units 
    * @param u J-array of unit vectors
