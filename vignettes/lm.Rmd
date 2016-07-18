@@ -368,7 +368,7 @@ would look like
 grouped <- stan_lmList(rainfall ~ sne + cloudcover + prewetness + echomotion
                        + time | seeding, data = clouds, 
                        prior = R2(location = 0.2),
-                       chains = CHAINS, cores = CORES, seed = SEED)
+                       chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 grouped
 ```
 ```{r, print-lm-clouds-grouped, echo = FALSE}

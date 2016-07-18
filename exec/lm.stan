@@ -31,25 +31,64 @@ functions {
    */
   real log_besselI(real x, real v) {
     real log_half_x;
+    real lfac_0;
     real lfac;
     real lgam;
+    real lgam_0;
     real lcons;
+    real lcons_0;
     real biggest;
     real piece;
     real smallest;
     real summand;
     int m;
+    int biggest_m;
     if (x < 0) reject("x is assumed to be non-negative")
     if (v < 0) reject("v is assumed to be non-negative");
     log_half_x = log(0.5 * x);
-    lfac = 0;
-    lgam = lgamma(v + 1);
-    lcons = v * log_half_x;
+    lfac_0 = 0;
+    lfac = lfac_0;
+    lgam_0 = lgamma(v + 1);
+    lgam = lgam_0;
+    lcons_0 = v * log_half_x;
+    lcons = lcons_0;
     biggest = -lgam + lcons;
-    piece = positive_infinity();
+    piece = biggest;
     smallest = -745.13321910194122211; // exp(smallest) > 0 minimally
     summand = 0.0;
     m = 1;
+    while (piece >= biggest) { // find maximum for log-sum-exp
+      biggest = piece;
+      lfac = lfac + log(m);
+      lgam = lgam + log(v + m);
+      lcons = lcons + 2 * log_half_x;
+      piece = -lfac - lgam + lcons;
+      m = m + 1;
+    }
+    if (m == 2) summand = exp(piece - biggest);
+    else if (m > 1000) return x - 0.5 * log(2 * pi() * x);
+    else { // start over with interior biggest
+      lfac = lfac_0;
+      lgam = lgam_0;
+      lcons = lcons_0;
+      piece = -lgam + lcons - biggest;
+      summand = exp(piece);
+      biggest_m = m - 2;
+      m = 1;
+      while (m < biggest_m) {
+        lfac = lfac + log(m);
+        lgam = lgam + log(v + m);
+        lcons = lcons + 2 * log_half_x;
+        piece = -lfac - lgam + lcons - biggest;
+        if (piece > smallest) summand = summand + exp(piece);
+        m = m + 1;
+      }
+      // skip over biggest
+      lfac = lfac + log(m);
+      lgam = lgam + log(v + m);
+      lcons = lcons + 2 * log_half_x;
+      m = m + 1;
+    }
     while (piece > smallest) {
       lfac = lfac + log(m);
       lgam = lgam + log(v + m);
