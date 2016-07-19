@@ -22,7 +22,7 @@ library(rstanarm)
 library(lme4)
 SEED <- 123
 set.seed(SEED)
-ITER <- 10
+ITER <- 100
 CHAINS <- 2
 REFRESH <- 0
 
@@ -39,19 +39,26 @@ check_for_error <- function(fit, data = NULL) {
   
   
   expect_silent(yrep1 <- posterior_predict(fit))
+  expect_silent(lin1 <- posterior_linpred(fit))
+  expect_silent(posterior_linpred(fit, transform = TRUE))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
+  expect_equal(dim(lin1), c(nsims, nobs(fit)))
 
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   expect_equal(dim(yrep2), c(1, nobs(fit)))
   
   expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,]))
+  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,]))
   expect_equal(dim(yrep3), c(nsims, 1))
+  expect_equal(dim(lin3), c(nsims, 1))
   
   expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,]))
   expect_equal(dim(yrep4), c(2, 1))
   
   expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,]))
+  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,]))
   expect_equal(dim(yrep5), c(nsims, 5))
+  expect_equal(dim(lin5), c(nsims, 5))
   
   expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,]))
   expect_equal(dim(yrep6), c(3, 5))
@@ -60,6 +67,12 @@ check_for_error <- function(fit, data = NULL) {
                regexep = "posterior sample size is only")
 }
 
+expect_linpred_equal <- function(object, tol = 0.05) {
+  linpred <- posterior_linpred(object)
+  expect_equal(apply(linpred, 2, median), object$linear.predictors, 
+               tolerance = tol, 
+               check.attributes = FALSE)
+}
 
 # Error messages ----------------------------------------------------------
 context("posterior_predict (error messages)")
@@ -71,11 +84,14 @@ test_that("posterior_predict errors if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
                    seed = SEED)
   expect_error(posterior_predict(fit1), regexp = "optimizing")
+  expect_error(posterior_linpred(fit1), regexp = "optimizing")
 })
 test_that("posterior_predict errors if NAs in newdata", {
   nd <- model.frame(example_model)
   nd$period[1] <- NA
   expect_error(posterior_predict(example_model, newdata = nd), 
+               regexp = "NAs are not allowed in 'newdata'")
+  expect_error(posterior_linpred(example_model, newdata = nd), 
                regexp = "NAs are not allowed in 'newdata'")
 })
 test_that("posterior_predict errors if draws > posterior sample size", {
@@ -92,8 +108,9 @@ test_that("errors for optimizing and silent for vb", {
   fit2 <- update(fit1, algorithm = "fullrank")
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
+  expect_silent(posterior_linpred(fit1))
+  expect_silent(posterior_linpred(fit2))
 })
-
 
 
 # MCMC --------------------------------------------------------------------
@@ -102,6 +119,7 @@ test_that("posterior_predict compatible with stan_lm", {
   fit <- SW(stan_lm(mpg ~ wt + cyl + am, data = mtcars, prior = R2(log(0.5), what = "log"),
                  iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 
 context("posterior_predict (stan_glm)")
@@ -109,6 +127,7 @@ test_that("compatible with gaussian glm", {
   fit <- SW(stan_glm(mpg ~ wt, data = mtcars, 
                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 test_that("compatible with glm with offset", {
   mtcars2 <- mtcars
@@ -120,16 +139,21 @@ test_that("compatible with glm with offset", {
   
   check_for_error(fit, data = mtcars2)
   check_for_error(fit2, data = mtcars2)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fit2)
 })
 test_that("compatible with poisson & negbin glm", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
   fit <- SW(stan_glm(counts ~ outcome + treatment, family = poisson(), 
-                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                     iter = ITER, chains = CHAINS, seed = SEED, 
+                     refresh = REFRESH))
   fitnb <- SW(update(fit, family = neg_binomial_2))
   check_for_error(fit)
   check_for_error(fitnb)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fitnb)
 })
 test_that("posterior_predict compatible with gamma & inverse.gaussian glm", {
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
@@ -137,28 +161,29 @@ test_that("posterior_predict compatible with gamma & inverse.gaussian glm", {
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   fit <- SW(stan_glm(lot1 ~ log_u, data = clotting, family = Gamma, 
                   chains = CHAINS, iter = ITER,  seed = SEED, refresh = REFRESH))
-  check_for_error(fit)
-  
-  # inverse gaussian
   fit_igaus <- SW(update(fit, family = inverse.gaussian))
+  
+  check_for_error(fit)
   check_for_error(fit_igaus)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fit_igaus)
 })
 
 context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
   fit <- SW(stan_polr(tobgp ~ agegp + alcgp, data = esoph, prior = R2(location = 0.4),
                    iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
-  check_for_error(fit)
   
   esoph$tobgp_fac <- factor(esoph$tobgp == "30+")
-  fit_2level <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
+  fit_binary <- SW(stan_polr(tobgp_fac ~ agegp + alcgp, 
                              data = esoph, prior = R2(location = 0.4), 
                              chains = CHAINS, iter = ITER, 
                              seed = SEED, refresh = REFRESH))
-  check_for_error(fit_2level)
+  fit_binary_scobit <- SW(update(fit_binary, shape = 2, rate = 2))
   
-  fit_2level_scobit <- SW(update(fit_2level, shape = 2, rate = 2))
-  check_for_error(fit_2level_scobit)
+  check_for_error(fit)
+  check_for_error(fit_binary)
+  check_for_error(fit_binary_scobit)
 })
 
 context("posterior_predict (stan_gamm4)")
@@ -181,9 +206,13 @@ test_that("compatible with stan_lmer", {
                       prior = normal(0,1), iter = ITER, chains = CHAINS,
                       seed = SEED, refresh = REFRESH))
   check_for_error(fit)
+  expect_linpred_equal(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
   check_for_error(example_model)
+  expect_linpred_equal(example_model)
+  predprob <- posterior_linpred(example_model, transform = TRUE)
+  expect_true(all(predprob > 0) && all(predprob < 1))
 })
 test_that("compatible with stan_(g)lmer with transformation in formula", {
   d <- mtcars
@@ -198,6 +227,11 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_predict(fit1, newdata = nd))
   expect_silent(posterior_predict(fit2, newdata = nd))
+  
+  expect_silent(posterior_linpred(fit1))
+  expect_silent(posterior_linpred(fit2))
+  expect_silent(posterior_linpred(fit1, newdata = nd))
+  expect_silent(posterior_linpred(fit2, newdata = nd))
 })
 
 
@@ -227,14 +261,6 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   
   tol <- 0.3
   for (j in 1:4) {
-    expect_equal(
-      predict(get(paste0("sfit", j))),
-      unname(predict(get(paste0("lfit", j)))),
-      tol = tol)
-    expect_equal(
-      predict(get(paste0("sfit", j)), newdata = nd),
-      predict(get(paste0("lfit", j)), newdata = nd),
-      tol = tol)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd, seed = SEED)),
       unname(predict(get(paste0("lfit", j)), newdata = nd)),
@@ -275,10 +301,16 @@ test_that("edge cases for posterior_predict work correctly", {
   dims <- c(nrow(as.matrix(example_model)), nrow(lme4::cbpp))
   expect_identical(posterior_predict(example_model, re.form = NA, seed = SEED),
                    posterior_predict(example_model, re.form = ~0, seed = SEED))
+  expect_identical(posterior_linpred(example_model, re.form = NA),
+                   posterior_linpred(example_model, re.form = ~0))
   expect_identical(posterior_predict(example_model, seed = SEED),
                    posterior_predict(example_model, newdata = lme4::cbpp, seed = SEED))
+  expect_identical(posterior_linpred(example_model),
+                   posterior_linpred(example_model, newdata = lme4::cbpp))
   expect_error(posterior_predict(example_model, re.form = ~1))
   expect_error(posterior_predict(example_model, re.form = ~(1|foo)))
+  expect_error(posterior_linpred(example_model, re.form = ~1))
+  expect_error(posterior_linpred(example_model, re.form = ~(1|foo)))
 })
 
 test_that("lme4 tests work similarly", {
@@ -346,3 +378,4 @@ test_that("pp_binomial_trials works", {
   expect_equal(ppbt(fit), rep(1, nrow(mtcars)))
   expect_equal(ppbt(fit, newdata = mtcars[1:5, ]), rep(1, 5))
 })
+

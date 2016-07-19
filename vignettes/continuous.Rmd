@@ -5,6 +5,8 @@ date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -304,13 +306,13 @@ range of different values of `mom_iq` and for both subpopulations defined by
 IQ_SEQ <- seq(from = 75, to = 135, by = 5)
 y_nohs <- posterior_predict(post4, newdata = data.frame(mom_hs = 0, mom_iq = IQ_SEQ))
 y_hs <- posterior_predict(post4, newdata = data.frame(mom_hs = 1, mom_iq = IQ_SEQ))
+dim(y_hs)
 ```
 
 We now have two matrices, `y_nohs` and `y_hs`. Each matrix has 
-`r length(IQ_SEQ)` columns (one for each value of `IQ_SEQ`) and 
-`r rstanarm:::posterior_sample_size(post4)` rows (the size of the posterior
-sample). One way to show the predictors is to plot the predictions for 
-the two groups of kids side by side:
+as many columns as there are values of `IQ_SEQ` and as many rows as
+the size of the posterior sample. One way to show the predictors is to plot the predictions 
+for the two groups of kids side by side:
 
 ```{r, continuous-kidiq-plot-predict, fig.width=9}
 par(mfrow = c(1:2), mar = c(5,4,2,1))

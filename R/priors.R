@@ -17,8 +17,16 @@
 
 #' Prior distributions and options
 #' 
-#' These functions are used to specify the prior-related arguments of the
-#' various modeling functions in the \pkg{rstanarm} package.
+#' These functions are used to specify the prior-related arguments of the 
+#' various modeling functions in the \pkg{rstanarm} package. The default priors 
+#' used in the various \pkg{rstanarm} modeling functions are intended to be 
+#' \emph{weakly informative} in that they provide moderate regularlization and 
+#' help stabilize computation. For many applications the defaults will perform 
+#' well, but prudent use of more informative priors is encouraged. Uniform prior
+#' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
+#' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
+#' they are not recommended and are \emph{not} non-informative, giving 
+#' the same probability mass to implausible values as plausible ones.
 #' 
 #' @export 
 #' @name priors
@@ -250,30 +258,29 @@
 #'                            prior_intercept = cauchy(0,10), 
 #'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
 #' 
-#' \dontrun{
+#' \donttest{
 #' # Can assign priors to names
 #' N05 <- normal(0, 5)
 #' fit <- stan_glm(fmla, data = mtcars, prior = N05, prior_intercept = N05)
 #' }
 #' 
 #' # Visually compare normal, student_t, and cauchy
-#' library(ggplot2)
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
 #'     # t distribution with location & scale parameters
 #'     1 / scale * dt((x - location) / scale, df)  
 #'   }
-#'   ggplot(data.frame(x = xlim), aes(x)) + 
-#'     stat_function(fun = dnorm, 
+#'   ggplot2::ggplot(data.frame(x = xlim), ggplot2::aes(x)) + 
+#'     ggplot2::stat_function(fun = dnorm, 
 #'                   args = list(mean = 0, sd = scale), 
 #'                   color = "purple", size = .75) +
-#'     stat_function(fun = dt_loc_scale, 
+#'     ggplot2::stat_function(fun = dt_loc_scale, 
 #'                   args = list(df = df_t, location = 0, scale = scale), 
 #'                   color = "orange", size = .75) +
-#'     stat_function(fun = dcauchy, 
+#'     ggplot2::stat_function(fun = dcauchy, 
 #'                   args = list(location = 0, scale = scale), 
 #'                   color = "skyblue", size = .75, linetype = 2) + 
-#'     ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
+#'     ggplot2::ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
 #' }
 #' # Cauchy has fattest tails, then student_t, then normal
 #' compare_priors()

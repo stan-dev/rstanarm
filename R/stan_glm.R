@@ -41,6 +41,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-QR
+#' @template args-sparse
 #' @template reference-gelman-hill
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
@@ -85,7 +86,7 @@
 #' pp_check(fit2, check = "resid")
 #' pp_check(fit2, check = "test", test = "mean")
 #' }
-#' \dontrun{
+#' \donttest{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
@@ -110,7 +111,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     prior_ops = prior_options(), prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
-                    adapt_delta = NULL, QR = FALSE) {
+                    adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
@@ -146,7 +147,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
-                          QR = QR, ...)
+                          QR = QR, sparse = sparse, ...)
   fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
                data, prior.info = get_prior_info(call, formals()), 
                call = call, terms = mt, model = mf, 

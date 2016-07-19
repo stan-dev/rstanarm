@@ -34,7 +34,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
-                         adapt_delta = NULL, QR = FALSE) {
+                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
@@ -77,82 +77,33 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       y <- as.integer(y[, 1L])
     }
   }
+
+  # useless assignments to pass R CMD check
+  has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
+    prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
+    prior_scale_for_dispersion <- scaled <- NULL
   
-  x <- as.matrix(x)
-  has_intercept <- grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
-  xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
-  xbar <- colMeans(xtemp)
-  xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
-  
-  sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
-  if (any(sel)) {
-    # drop any column of x with < 2 unique values (empty interaction levels)
-    warning("Dropped empty interaction levels: ",
-            paste(colnames(xtemp)[sel], collapse = ", "))
-    xtemp <- xtemp[, !sel, drop = FALSE]
-    xbar <- xbar[!sel]
-  }
+  x_stuff <- center_x(x, sparse)
+  for (i in names(x_stuff)) # xtemp, xbar, has_intercept
+    assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
   
-  scaled <- prior_ops$scaled
-  min_prior_scale <- prior_ops$min_prior_scale
-  prior_scale_for_dispersion <- prior_ops$prior_scale_for_dispersion
+  for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
+    assign(i, prior_ops[[i]])
+  
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
   # prior distributions
-  if (is.null(prior)) {
-    prior_dist <- 0L
-    prior_mean <- as.array(rep(0, nvars))
-    prior_scale <- prior_df <- as.array(rep(1, nvars))
-  } else {
-    if (!is.list(prior)) 
-      stop("'prior' should be a named list.")
-    prior_dist <- prior$dist
-    prior_scale <- prior$scale
-    prior_mean <- prior$location
-    prior_df <- prior$df
-    prior_df[is.na(prior_df)] <- 1
-    if (!prior_dist %in% unlist(ok_dists)) {
-      stop("The prior distribution for the coefficients should be one of ",
-           paste(names(ok_dists), collapse = ", "))
-    } else if (prior_dist %in% c("normal", "t")) {
-      prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
-      prior_scale <- set_prior_scale(prior_scale, default = 2.5, 
-                                     link = family$link)
-    } else {
-      prior_dist <- ifelse(prior_dist == "hs", 3L, 4L)
-    }
-    
-    prior_df <- maybe_broadcast(prior_df, nvars)
-    prior_df <- as.array(pmin(.Machine$double.xmax, prior_df))
-    prior_mean <- maybe_broadcast(prior_mean, nvars)
-    prior_mean <- as.array(prior_mean)
-    prior_scale <- maybe_broadcast(prior_scale, nvars)
-  }
-  if (is.null(prior_intercept)) {
-    prior_dist_for_intercept <- 0L
-    prior_mean_for_intercept <- 0 
-    prior_scale_for_intercept <- prior_df_for_intercept <- 1
-  } else {
-    if (!is.list(prior_intercept)) 
-      stop("'prior_intercept' should be a named list.")
-    prior_dist_for_intercept <- prior_intercept$dist
-    prior_scale_for_intercept <- prior_intercept$scale
-    prior_mean_for_intercept <- prior_intercept$location
-    prior_df_for_intercept <- prior_intercept$df 
-    prior_df_for_intercept[is.na(prior_df_for_intercept)] <- 1
-    
-    if (!prior_dist_for_intercept %in% unlist(ok_intercept_dists))
-      stop("The prior distribution for the intercept should be one of ",
-           paste(names(ok_intercept_dists), collapse = ", "))
-    prior_dist_for_intercept <- 
-      ifelse(prior_dist_for_intercept == "normal", 1L, 2L)
-    prior_scale_for_intercept <- 
-      set_prior_scale(prior_scale_for_intercept, default = 10, 
-                      link = family$link)
-    prior_df_for_intercept <- min(.Machine$double.xmax, prior_df_for_intercept)
-  }
+  prior_stuff <- handle_glm_prior(prior, nvars, family$link, default_scale = 2.5)
+  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
+    assign(i, prior_stuff[[i]])
+  prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, default_scale = 10,
+                                            family$link, ok_dists = 
+                                            nlist("normal", student_t = "t", "cauchy"))
+  names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
+  for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df}_for_intercept
+    assign(i, prior_intercept_stuff[[i]])
   
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
@@ -196,6 +147,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
+    if (sparse)
+      stop("'QR' and 'sparse' cannot both be TRUE")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
     sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
@@ -207,17 +160,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   # create entries in the data block of the .stan file
-  standata <- list(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), link = link,
-    has_weights = as.integer(length(weights) > 0),
-    has_offset = as.integer(length(offset) > 0),
-    prior_dist = prior_dist, prior_mean = prior_mean, prior_scale = prior_scale, 
-    prior_df = prior_df, prior_dist_for_intercept = prior_dist_for_intercept,
-    prior_scale_for_intercept = prior_scale_for_intercept, 
-    prior_mean_for_intercept = prior_mean_for_intercept,
-    prior_df_for_intercept = prior_df_for_intercept,
-    has_intercept = as.integer(has_intercept), prior_PD = as.integer(prior_PD))
-  
+  standata <- nlist(
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
+    link, has_weights = length(weights) > 0, has_offset = length(offset) > 0,
+    prior_dist, prior_mean, prior_scale, prior_df, 
+    prior_dist_for_intercept, prior_scale_for_intercept = c(prior_scale_for_intercept), 
+    prior_mean_for_intercept = c(prior_mean_for_intercept),
+    prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD)
+
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
@@ -298,7 +248,21 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
   
   if (!is_bernoulli) {
-    standata$X <- xtemp
+    if (sparse) {
+      parts <- extract_sparse_parts(xtemp)
+      standata$nnz_X <- length(parts$w)
+      standata$w_X <- parts$w
+      standata$v_X <- parts$v
+      standata$u_X <- parts$u
+      standata$X <- array(0, dim = c(0L, dim(xtemp)))
+    }
+    else {
+      standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
+      standata$nnz_X <- 0L
+      standata$w_X <- double(0)
+      standata$v_X <- integer(0)
+      standata$u_X <- integer(0)
+    }
     standata$y <- y
     standata$weights <- weights
     standata$offset <- offset
@@ -322,11 +286,32 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       y0 <- y == 0
       y1 <- y == 1
       standata$N <- c(sum(y0), sum(y1))
-      standata$X0 <- xtemp[y0, , drop = FALSE]
-      standata$X1 <- xtemp[y1, , drop = FALSE]
-      standata$Z0 <- standata$Z[y0, , drop = FALSE]
-      standata$Z1 <- standata$Z[y1, , drop = FALSE]
-      standata$Z <- NULL 
+      if (sparse) {
+        standata$X0 <- array(0, dim = c(0L, sum(y0), ncol(xtemp)))
+        standata$X1 <- array(0, dim = c(0L, sum(y1), ncol(xtemp)))
+        parts0 <- extract_sparse_parts(xtemp[y0, , drop = FALSE])
+        standata$nnz_X0 <- length(parts0$w)
+        standata$w_X0 = parts0$w
+        standata$v_X0 = parts0$v
+        standata$u_X0 = parts0$u
+        parts1 <- extract_sparse_parts(xtemp[y1, , drop = FALSE])
+        standata$nnz_X1 <- length(parts1$w)
+        standata$w_X1 = parts1$w
+        standata$v_X1 = parts1$v
+        standata$u_X1 = parts1$u
+      }
+      else {
+        standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
+        standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
+        standata$nnz_X0 = 0L 
+        standata$w_X0 = double(0)
+        standata$v_X0 = integer(0)
+        standata$u_X0 = integer(0)
+        standata$nnz_X1 = 0L 
+        standata$w_X1 = double(0)
+        standata$v_X1 = integer(0)
+        standata$u_X1 = integer(0)
+      }
       if (length(weights)) { 
         # nocov start
         # this code is unused because weights are interpreted as number of 
@@ -455,19 +440,19 @@ pad_reTrms <- function(Z, cnms, flist) {
   n <- nrow(Z)
   mark <- length(p) - 1L
   if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = TRUE)),
+                       Matrix(0, n, p[mark], sparse = FALSE)),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }
   }
   else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = TRUE))
+    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
     for (i in rev(head(last, -1))) {
       Z <- cbind(Z[, 1:i, drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = TRUE),
+                 Matrix(0, n, p[mark], sparse = FALSE),
                  Z[, (i+1):ncol(Z), drop = FALSE])
       mark <- mark - 1L
     }

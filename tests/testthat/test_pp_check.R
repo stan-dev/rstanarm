@@ -54,7 +54,8 @@ test_that("pp_check doesn't throw bad errors", {
 })
 
 test_that("pp_check ok for vb", {
-  fit3 <- SW(update(fit2, algorithm = "meanfield", iter = 10000))
+  fit3 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER,
+                      seed = SEED, algorithm = "meanfield", iter = 10000))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, check = "resid"))
   expect_gg(pp_check(fit3, check = "scat"))

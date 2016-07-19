@@ -42,7 +42,7 @@
 #' @seealso \code{\link{stanreg-methods}}
 #' 
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' if (!exists("example_model")) example(example_model)
 #' # Extract posterior sample after MCMC
 #' draws <- as.matrix(example_model)

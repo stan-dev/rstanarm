@@ -72,20 +72,20 @@
 #' if (!exists("example_model")) example(example_model) 
 #' 
 #' # Launch the ShinyStan app without saving the resulting shinystan object
-#' launch_shinystan(example_model)
+#' if (interactive()) launch_shinystan(example_model)
 #' 
 #' # Launch the ShinyStan app (saving resulting shinystan object as sso)
-#' sso <- launch_shinystan(example_model)
+#' if (interactive()) sso <- launch_shinystan(example_model)
 #' 
 #' # First create shinystan object then call launch_shinystan
-#' sso <- as.shinystan(example_model)
-#' launch_shinystan(sso)
+#' sso <- shinystan::as.shinystan(example_model)
+#' if (interactive()) launch_shinystan(sso)
 #' 
 #' # Prevent ShinyStan from preparing graphical posterior predictive checks that
 #' # can be time consuming. example_model is small enough that it won't matter
 #' # much here but in general this can help speed up launch_shinystan
-#' sso <- as.shinystan(example_model, ppd = FALSE)
-#' launch_shinystan(sso)
+#' sso <- shinystan::as.shinystan(example_model, ppd = FALSE)
+#' if (interactive()) launch_shinystan(sso)
 #' }
 #' 
 #' 
