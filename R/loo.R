@@ -103,7 +103,7 @@
 #' \code{\link{plot.loo}} method.
 #'   
 #' @examples 
-#' \dontrun{
+#' \donttest{
 #' SEED <- 42024
 #' set.seed(SEED)
 #' 

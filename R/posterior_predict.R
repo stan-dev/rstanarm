@@ -85,7 +85,7 @@
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
 #' 
-#' \dontrun{
+#' \donttest{
 #' # Using newdata
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
