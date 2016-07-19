@@ -28,9 +28,9 @@ stanmodels <- sapply(stan_files, function(f) {
     isystem <- file.path("inst", "chunks")
   if (!file.exists(file.path(isystem, "common_functions.stan")))
     isystem <- file.path("..", "inst", "chunks")
-  sink(tempfile())
-  stanfit <- rstan::stanc_builder(f, isystem)
-  sink(NULL)
+  tf <- tempfile()
+  capture.output(stanfit <- rstan::stanc_builder(f, isystem), 
+                 file = tf, type = "message")
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
   return(do.call(methods::new, args = c(stanfit[-(1:3)], Class = "stanmodel", 

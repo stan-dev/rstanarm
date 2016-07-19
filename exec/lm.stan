@@ -25,7 +25,7 @@ functions {
   }
 
   /**
-   * Approximation of lgamma(z); see
+   * Approximation of lgamma(z) for not-too-small z; see
    *
    * https://en.wikipedia.org/wiki/Stirling%27s_approximation#Versions_suitable_for_calculators
    *
@@ -59,7 +59,7 @@ functions {
     a = biggest_m;
     b = 2147483647; // maximum integer
     N = 1;
-    smallest = -745.13321910194122211;
+    smallest = -745.13321910194122211; // exp(smallest) > 0 minimally
     val_a = -smallest;
     while (N <= 100) {
       real val;
@@ -97,7 +97,6 @@ functions {
     real lcons_0;
     real biggest;
     real piece;
-    real smallest;
     int m;
     int cutoff;
     if (x < 0) reject("x is assumed to be non-negative")
@@ -112,7 +111,6 @@ functions {
     lcons = lcons_0;
     biggest = -lgam + lcons;
     piece = biggest;
-    smallest = -745.13321910194122211; // exp(smallest) > 0 minimally
     m = 1;
     while (piece >= biggest) { // find pivot for log-sum-exp
       biggest = piece;
