@@ -12,9 +12,9 @@ functions {
   matrix make_mu(row_vector alpha, matrix theta, vector gamma,
                  matrix Q, matrix[] Z) {
     matrix[rows(Q), cols(alpha)] mu;
-    mu <- rep_matrix(alpha, rows(Q));
-    for (j in 1:rows(gamma)) mu <- mu + Z[j] * gamma[j];
-    if (rows(theta) > 0)     mu <- mu + Q * theta;
+    mu = rep_matrix(alpha, rows(Q));
+    for (j in 1:rows(gamma)) mu = mu + Z[j] * gamma[j];
+    if (rows(theta) > 0)     mu = mu + Q * theta;
     return transpose(mu); // FIXME
   }
   
@@ -25,32 +25,32 @@ functions {
   * http://www.burgette.org/sMNP-R0-FINAL.pdf
   *
   * @param pi array of simplexes
-  * @param log_scale vector of scales in log form
+  * @param log_best vector of maximal utility log form
   * @param y integer array of observed choices
   * @param matrix of utilities
   */
-  matrix make_U(vector[] pi, vector log_scale, int[] y) {
+  matrix make_U(vector[] pi, vector log_best, int[] y) {
     matrix[rows(pi[1]), size(y)] U;
     int N;
     int pm1;
     int p;
 
-    N <- size(y);
-    pm1 <- rows(U);
-    p <- pm1 + 1;
+    N = size(y);
+    pm1 = rows(U);
+    p = pm1 + 1;
     for (i in 1:N) {
       int y_i;
       vector pi_i;
       real scale;
       real utility_best;
-      y_i <- y[i];
-      pi_i <- pi[i];
-      scale <- exp(log_scale[i]);
-      utility_best <- scale / p;
+      y_i = y[i];
+      pi_i = pi[i];
+      utility_best = exp(log_best[i]);
+      scale = utility_best * p;
       // this enforces the sum-to-zero constraint for p-dimensional utility
-      for (j in 1:(y_i - 1)) U[j,i]   <- utility_best - scale * pi_i[j];
-      if (y_i < p)           U[y_i,i] <- utility_best;
-      for (j in (y_i+1):pm1) U[j,i]   <- utility_best - scale * pi_i[j-1];
+      for (j in 1:(y_i - 1)) U[j,i]   = utility_best - scale * pi_i[j];
+      if (y_i < p)           U[y_i,i] = utility_best;
+      for (j in (y_i+1):pm1) U[j,i]   = utility_best - scale * pi_i[j-1];
     }
     return U;
   }
@@ -77,10 +77,10 @@ functions {
   */
   real ll_mnp_lp(matrix U, matrix mu, matrix Lambda, matrix Ts_t) {
     matrix[rows(U),rows(U)] L;
-    L <- cholesky_decompose(quad_form(Lambda, Ts_t));
-    increment_log_prob(-0.5 * sum(columns_dot_self(mdivide_left_tri_low(L, U - mu))));
-    increment_log_prob(-cols(U) * sum(log(diagonal(L))));
-    return get_lp();
+    L = cholesky_decompose(quad_form(Lambda, Ts_t));
+    target += -0.5 * sum(columns_dot_self(mdivide_left_tri_low(L, U - mu)));
+    target += -cols(U) * sum(log(diagonal(L)));
+    return target();
   }
 }
 data {
@@ -101,12 +101,12 @@ transformed data {
   matrix[p,p-1] Ts_t;                  
   matrix[p,p-1] Tbc_t;                 // transformation matrix relative to baseline category
   int pm1;
-  pm1 <- p-1;
-  Ts <- rep_matrix(-1.0 / pm1, p, p);
-  for (j in 1:pm1) Ts[j,j] <- 1;
-  Ts_t <- Ts[,1:pm1];
-  Tbc_t <- append_row(rep_row_vector(-1, pm1), 
-                      diag_matrix(rep_vector(1, pm1)));  
+  pm1 = p-1;
+  Ts = rep_matrix(-1.0 / pm1, p, p);
+  for (j in 1:pm1) Ts[j,j] = 1;
+  Ts_t = Ts[,1:pm1];
+  Tbc_t = append_row(rep_row_vector(-1, pm1), 
+                     diag_matrix(rep_vector(1, pm1)));  
 }
 parameters {
   row_vector[pm1] alpha;               // intercepts
@@ -115,16 +115,16 @@ parameters {
   
   cholesky_factor_corr[p] L;           // Cholesky factor of full error correlation matrix; see
   simplex[pm1] pi[N];                  // utility gap for non-best choices relative to best choice
-  vector[N] log_scale;
+  vector[N] log_best;
 }
 transformed parameters {
   matrix[p,p] Lambda;
-  Lambda <- multiply_lower_tri_self_transpose(L);
-  for (i in 1:p) Lambda[i,i] <- 1; // already 1 to numerical tolerace but reduces the autodiff
+  Lambda = multiply_lower_tri_self_transpose(L);
+  for (i in 1:p) Lambda[i,i] = 1; // already 1 to numerical tolerace but reduces the autodiff
 }
 model {
   real dummy;
-  dummy <- ll_mnp_lp(make_U(pi, log_scale, y), make_mu(alpha, theta, gamma, Q, Z), Lambda, Ts_t);
+  dummy = ll_mnp_lp(make_U(pi, log_scale, y), make_mu(alpha, theta, gamma, Q, Z), Lambda, Ts_t);
   // priors
   L ~ lkj_corr_cholesky(eta);
 }
@@ -133,43 +133,43 @@ generated quantities {
   matrix[pm1, K] beta_out;
   matrix[pm1,pm1] Sigma;
   vector[p] mean_PPD;                  // average posterior predictive distribution
-  beta_out <- R_inv * theta;
+  beta_out = R_inv * theta;
   {
     real scale_factor;
     vector[K] beta_1;
-    Sigma <- quad_form(Lambda, Tbc_t);
-    if (normalization == 0) scale_factor <- Sigma[1,1];
-    else scale_factor <- pm1 / trace(Sigma);
-    Sigma <- Sigma / scale_factor;
-    scale_factor <- sqrt(scale_factor);
+    Sigma = quad_form(Lambda, Tbc_t);
+    if (normalization == 0) scale_factor = Sigma[1,1];
+    else scale_factor = pm1 / trace(Sigma);
+    Sigma = Sigma / scale_factor;
+    scale_factor = sqrt(scale_factor);
 
-    alpha_out[pm1] <- -sum(alpha) - alpha[1];
-    beta_1 <- beta_out[,1];
-    for (k in 1:K) beta_out[pm1,k] <- -sum(col(beta_out,k)) - beta_1[k];
+    alpha_out[pm1] = -sum(alpha) - alpha[1];
+    beta_1 = beta_out[,1];
+    for (k in 1:K) beta_out[pm1,k] = -sum(col(beta_out,k)) - beta_1[k];
     for (j in 2:pm1) {
-      alpha_out[j-1] <- alpha_out[j] - alpha[1];
-      for (k in 1:K) beta_out[k,j-1] <- beta_out[k,j] - beta_1[k];
+      alpha_out[j-1] = alpha_out[j] - alpha[1];
+      for (k in 1:K) beta_out[k,j-1] = beta_out[k,j] - beta_1[k];
     }
   }
-  mean_PPD <- rep_vector(0, p);
+  mean_PPD = rep_vector(0, p);
   {
     matrix[p,p] TsL;
     matrix[pm1,N] mu;
-    TsL <- Ts * L;
-    mu <- make_mu(alpha, theta, gamma, Q, Z);
+    TsL = Ts * L;
+    mu = make_mu(alpha, theta, gamma, Q, Z);
     for (i in 1:N) {
       vector[p] z;
       vector[p] w;
       vector[pm1] mu_i;
       vector[1] neg_sum_mu_i;
       int biggest;
-      for (j in 1:p) z[j] <- normal_rng(0,1);
-      mu_i <- col(mu, i);
-      neg_sum_mu_i[1] <- -sum(mu_i);
-      w <- append_row(mu_i, neg_sum_mu_i) + TsL * z;
-      biggest <- sort_indices_desc(w)[1];
-      mean_PPD[biggest] <- mean_PPD[biggest] + 1;
+      for (j in 1:p) z[j] = normal_rng(0,1);
+      mu_i = col(mu, i);
+      neg_sum_mu_i[1] = -sum(mu_i);
+      w = append_row(mu_i, neg_sum_mu_i) + TsL * z;
+      biggest = sort_indices_desc(w)[1];
+      mean_PPD[biggest] = mean_PPD[biggest] + 1;
     }
-    mean_PPD <- mean_PPD / N;
+    mean_PPD = mean_PPD / N;
   }
 }
