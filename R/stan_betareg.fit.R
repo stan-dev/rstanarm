@@ -1,5 +1,5 @@
-stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
-                              link = c("logit", "probit","cloglog", "cauchit", "log", "loglog"), 
+stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
+                              link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
                               link.phi = "log", ...,
                               prior = normal(), prior_intercept = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
@@ -14,7 +14,7 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
   # no family argument
   
   link <- match.arg(link)
-  supported_links <- c("logit", "probit","cloglog", "cauchit", "log", "loglog")
+  supported_links <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
   link_num <- which(supported_links == link)
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
@@ -29,6 +29,12 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
   
+  for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
+    assign(i, prior_ops[[i]])
+  
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  ok_intercept_dists <- ok_dists[1:3]
+  
   # prior distributions (handle_glm_prior() from data_block.R)
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5)
   for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
@@ -42,22 +48,32 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
   
   # create entries in the data block of the .stan file
   standata <- nlist(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = TRUE, #!sparse
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse, # TRUE, sparse = FALSE,
     X = array(xtemp, dim = c(1L, dim(xtemp))),
-    nnz_X = 0L, w_X = double(), v_X = integer(), u_X = integer(), 
-    y, prior_PD, has_intercept, family = 4L, link = link_num, 
-    prior_dist, prior_mean, 
-    prior_scale = as.array(pmin(.Machine$double.xmax, prior_scale)), prior_df,
+    nnz_X = 0L, 
+    w_X = double(), 
+    v_X = integer(), 
+    u_X = integer(), 
+    y = y, 
+    prior_PD, has_intercept, family = 4L, link = link_num, 
+    prior_dist, prior_mean, prior_scale = as.array(pmin(.Machine$double.xmax, prior_scale)), prior_df,
     prior_dist_for_intercept, prior_mean_for_intercept = c(prior_mean_for_intercept), 
     prior_scale_for_intercept = min(.Machine$double.xmax, prior_scale_for_intercept), 
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_scale_for_dispersion = 1, # fixme
+    prior_scale_for_dispersion = prior_scale_for_dispersion %ORifINF% 0,
     has_weights = length(weights) > 0, weights = double(),
     has_offset = length(offset) > 0, offset = double(),
-    t = 0L, p = integer(), l = integer(), q = 0L, len_theta_L = 0L,
-    shape = double(), scale = double(), len_concentration = 0L,
-    concentration = double(), len_regularization = 0L, regularization = double(),
-    num_non_zero = 0L, w = double(), v = integer(), u = integer()
+    t = 0L, 
+    p = integer(), 
+    l = integer(), 
+    q = 0L, 
+    len_theta_L = 0L, shape = double(), scale = double(), 
+    len_concentration = 0L, concentration = double(),
+    len_regularization = 0L, regularization = double(),
+    num_non_zero = 0L, 
+    w = double(), 
+    v = integer(), 
+    u = integer()
     )
   
   # call stan() to draw from posterior distribution
@@ -65,6 +81,7 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
   pars <- c(if (has_intercept) "alpha", "beta", 
             # if (length(group)) "b",
             "dispersion", "mean_PPD")
+  
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(
       object = stanfit, 
@@ -76,11 +93,11 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = NULL, offset = NULL,
       show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
-  else stop("implement optimizing and meanfield / fullrank")
+  else stop("implement optimizing and meanfield / fullrank") # vb?
   new_names <- c(if (has_intercept) "(Intercept)", 
                  colnames(xtemp), 
                  # if (length(group)) c(paste0("b[", b_nms, "]")),
-                 "dispersion",  "mean_PPD", "log-posterior")
+                 "(phi)",  "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
 }

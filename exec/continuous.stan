@@ -200,6 +200,9 @@ functions {
     }
     return ll;
   }
+
+  
+  //vector pw_beta_Z(vector y, vector eta, vector dispersion, int link) {}  
   
   /** 
   * PRNG for the inverse Gaussian distribution
@@ -268,16 +271,18 @@ transformed data {
   else reject("unknown family");
 }
 parameters {
-  real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0)> gamma[has_intercept];
+  real<lower=((family == 1 || link == 2) || (family) ? negative_infinity() : 0.0),
+       upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
+  // include dispersion_unscaled[no_Z]
 }
 transformed parameters {
-  real dispersion;
+  real dispersion; // dispersion[no_Z] ?
   #include "tparameters_glm.stan"
   if (prior_scale_for_dispersion > 0)
-    dispersion =  prior_scale_for_dispersion * dispersion_unscaled;
-  else dispersion = dispersion_unscaled;
+    dispersion =  prior_scale_for_dispersion * dispersion_unscaled; // include dispersion_unscaled[no_Z]
+  else dispersion = dispersion_unscaled; // include dispersion_unscaled[no_Z]
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             dispersion, tau, scale, zeta, rho, z_T);
@@ -288,7 +293,8 @@ model {
   #include "make_eta.stan"
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
-    if (family == 1 || link == 2) eta = eta + gamma[1];
+    if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
+    else if (family == 4 && link == 5) eta = eta - max(eta) + gamma[1];
     else eta = eta - min(eta) + gamma[1];
   }
   else {
@@ -343,7 +349,13 @@ generated quantities {
     #include "make_eta.stan"
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
-      if (family == 1 || link == 2) eta = eta + gamma[1];
+      if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
+      else if (family == 4 && link == 5) {
+        real max_eta;
+        max_eta = max(eta);
+        alpha[1] = alpha[1] + max_eta;
+        eta = eta - max_eta + gamma[1];
+      }
       else {
         real min_eta;
         min_eta = min(eta);

@@ -416,3 +416,26 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
   test_lme4(glFormula(angle ~ recipe + temp + (1|recipe:replicate), data = cake)$reTrms)
 })
 
+# beta
+links <- c("logit", "probit", "cloglog", "cauchit", "log")
+
+context("Beta")
+test_that("linkinv_bern returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    linkinv <- binomial(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), 
+                          linkinv_beta(eta, i)), info = links[i])
+  }
+})
+context("Beta")
+test_that("pw_beta and ll_beta_lp return expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    mu <- linkinv_beta(eta, i)
+    dispersion <- 4/3
+    linkinv <- binomial(link = links[i])$linkinv
+    ll <- dbeta(1/3, mu*dispersion, (1-mu)*dispersion, log = TRUE)
+    expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
+  }
+})

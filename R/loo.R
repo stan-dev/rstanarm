@@ -412,7 +412,8 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
       draws$size <- stanmat[,"overdispersion"]
-    
+    if (is.beta(fname))
+      draws$phi <- stanmat[,"(phi)"]
   } else {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
@@ -541,5 +542,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       stop("Exponentiation only possible when there are exactly 2 outcomes.")
     }
   }
+  .weighted(val, data$weights)
+}
+
+.ll_beta_i <- function(i, data, draws) {
+  mu <- .mu(data, draws)
+  val <- dbeta(data$y, mu * draws$phi, (1 - mu) * draws$phi, log = TRUE)
   .weighted(val, data$weights)
 }

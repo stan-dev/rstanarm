@@ -197,6 +197,13 @@ pp_fun <- function(object) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
   }))
 }
+
+.pp_beta <- function(mu, phi) {
+  t(sapply(1:nrow(mu), function(s) {
+    rbeta(ncol(mu), mu[s,] * phi[s], (1 - mu[s, ]) * phi[s])
+  }))
+}
+
 .pp_poisson <- function(mu) {
   t(sapply(1:nrow(mu), function(s) {
     rpois(ncol(mu), mu[s, ])
@@ -276,7 +283,10 @@ pp_args <- function(object, data) {
     args$lambda <- stanmat[, "lambda"]
   } else if (is.nb(famname)) {
     args$size <- stanmat[, "overdispersion"]
+  } else if (is.beta(famname)) {
+    args$phi <- stanmat[,"(phi)"]
   }
+  
   args
 }
 

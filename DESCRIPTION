@@ -36,6 +36,7 @@ Imports:
     utils
 Suggests:
     arm,
+    betareg,
     gamm4,
     gridExtra,
     HSAUR3,
