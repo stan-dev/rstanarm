@@ -315,6 +315,14 @@ b_names <- function(x, ...) {
   grep("^b\\[", x, ...)
 }
 
+# Return names of the last dimension in a matrix/array (e.g. colnames if matrix)
+#
+# @param x A matrix or array
+last_dimnames <- function(x) {
+  ndim <- length(dim(x))
+  dimnames(x)[[ndim]]
+}
+
 # Get the correct column name to use for selecting the median
 #
 # @param algorithm String naming the estimation algorithm (probably
