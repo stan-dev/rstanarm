@@ -24,8 +24,6 @@ ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
 SW <- suppressWarnings
-ll_fun <- rstanarm:::ll_fun
-
 
 # loo and waic ------------------------------------------------------------
 context("loo and waic")
@@ -59,6 +57,13 @@ test_that("loo & waic throw error for non mcmc models", {
   mcmc_only_error(fito)
   mcmc_only_error(fitvb1)
   mcmc_only_error(fitvb2)
+})
+
+test_that("loo errors if model has weights", {
+  fit <- stan_glm(mpg ~ wt, data = mtcars, weights = rep(1, nrow(mtcars)),
+                  seed = SEED, refresh = REFRESH, iter = 50)
+  expect_error(loo(fit), "not supported")
+  expect_error(loo(fit), "'kfold'")
 })
 
 test_that("loo/waic for stan_glm works", {
@@ -175,7 +180,7 @@ test_that("loo issues errors/warnings", {
 })
 
 test_that("loo with k_threshold works", {
-  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars,
+  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
                      seed = 12345, iter = 300, chains = 4, cores = 1,
                      refresh = 0))
   expect_warning(loo_x <- loo(fit), "We recommend calling 'loo' again")

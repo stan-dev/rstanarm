@@ -22,6 +22,7 @@ before_install:
 
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
+  - echo ${NOT_CRAN}
 
 after_success:
   - Rscript -e 'covr::codecov()'

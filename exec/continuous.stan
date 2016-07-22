@@ -224,8 +224,7 @@ transformed data {
   }
 }
 parameters {
-  real<lower=if_else(family == 1 || link == 2, 
-                     negative_infinity(), 0)> gamma[has_intercept];
+  real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0)> gamma[has_intercept];
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
 }

@@ -33,6 +33,12 @@ presp <- function(fit, nd = NULL, sef = TRUE)
   predict(fit, newdata = nd, type = "response", se.fit = sef)
 
 context("predict")
+
+test_that("predict recommends posterior_predict for glmer models", {
+  expect_error(predict(example_model), 
+               "Please use the 'posterior_predict' function")
+})
+
 test_that("predict ok for binomial", {
   # example from help(predict.glm)
   ldose <- rep(0:5, 2)

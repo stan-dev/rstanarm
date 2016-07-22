@@ -118,7 +118,7 @@
 #' overview:
 #' 
 #' \describe{
-#'  \item{\code{\link{stan_lm}}, \code{stan_aov}}{
+#'  \item{\code{\link{stan_lm}}, \code{stan_aov}, \code{stan_biglm}}{
 #'   Similar to \code{\link[stats]{lm}} or \code{\link[stats]{aov}} but with 
 #'   novel regularizing priors on the model parameters that are driven by prior 
 #'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
