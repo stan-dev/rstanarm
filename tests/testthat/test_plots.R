@@ -79,6 +79,8 @@ test_that("pairs method ok", {
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
+  expect_error(pairs(fit, pars = "b[(Intercept) herd:15]"), 
+               regexp = "does not yet allow group-level parameters")
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })
 

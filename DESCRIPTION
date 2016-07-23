@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.10.0
-Date: 2016-06-17
+Version: 2.10.1-1
+Date: 2016-07-04
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("R Core", "Deveopment Team", role = "cph", 
@@ -31,8 +31,8 @@ Imports:
     loo (>= 0.1.6),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.10.0),
-    shinystan (>= 2.1.0),
+    rstan (>= 2.10.1),
+    shinystan (>= 2.2.0),
     stats,
     utils
 Suggests:
@@ -46,7 +46,7 @@ Suggests:
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.10.0), rstan (>= 2.10.0), BH (>= 1.58.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.10.0-2), rstan (>= 2.10.1), BH (>= 1.58.0), Rcpp (>=
     0.12.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true

@@ -244,6 +244,17 @@ pairs.stanreg <- function(x, ...) {
     STOP_sampling_only("pairs")
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
+  
+  if (is.mer(x)) {
+    dots <- list(...)
+    if (is.null(dots[["pars"]]))
+      return(pairs(x$stanfit, pars = names(fixef(x)), ...))
+    
+    b <- b_names(rownames(x$stan_summary), value = TRUE)
+    if (any(dots[["pars"]] %in% b))
+      stop("pairs.stanreg does not yet allow group-level parameters in 'pars'.")
+  }
+  
   pairs(x$stanfit, ...)
 }
 

@@ -1,3 +1,10 @@
+Fri June 24 2016 (2.10.1)
+1. Bug fixes
+  * Works with devtools now
+2. New features
+  * k_threshold argument to loo() and kfold() for enhanced model comparison
+  * Ability to use sparse X matrices (slowly) for many models
+
 Tue May 24 2016 (2.9.0-4)
 1. Serious bug fixes
   * posterior_predict with newdata was wrong for ordinal models

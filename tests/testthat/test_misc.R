@@ -418,3 +418,18 @@ test_that("posterior_sample_size works", {
                                     chains = 1, thin = 2))
   expect_equal(pss(fit3), nrow(as.matrix(fit3)))
 })
+
+test_that("last_dimnames works", {
+  a <- array(rnorm(300), dim = c(10, 3, 10), 
+             dimnames = list(A = NULL, B = NULL, C = letters[1:10]))
+  expect_identical(last_dimnames(a), letters[1:10])
+  
+  m <- a[1,,, drop=TRUE]
+  expect_identical(last_dimnames(m), letters[1:10])
+  expect_identical(last_dimnames(m), colnames(m))
+  
+  d <- as.data.frame(m)
+  expect_identical(last_dimnames(d), last_dimnames(m))
+  
+  expect_null(last_dimnames(m[1,]))
+})

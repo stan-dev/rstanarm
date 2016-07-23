@@ -129,7 +129,7 @@
 #' # Scatterplot of two test statistics
 #' pp_check(example_model, check = "test", test = c("mean", "sd"))
 #' 
-#' \dontrun{
+#' \donttest{
 #' # Scatterplots of y vs. yrep
 #' fit <- stan_glm(mpg ~ wt, data = mtcars)
 #' pp_check(fit, check = "scatter") # y vs. average yrep

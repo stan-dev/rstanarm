@@ -145,7 +145,7 @@ transformed data {
   NN = N[1] + N[2];
 }
 parameters {
-  real<upper=if_else(link == 4, 0, positive_infinity())> gamma[has_intercept];
+  real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan"
 }
 transformed parameters {
