@@ -12,6 +12,8 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   algorithm <- match.arg(algorithm)
   
   # no family argument
+  famname <- "beta"
+  is_beta <- is.beta(famname)
   
   link <- match.arg(link)
   supported_links <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
@@ -79,25 +81,45 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
   pars <- c(if (has_intercept) "alpha", "beta", 
-            # if (length(group)) "b",
             "dispersion", "mean_PPD")
   
-  if (algorithm == "sampling") {
-    sampling_args <- set_sampling_args(
-      object = stanfit, 
-      prior = prior, 
-      user_dots = list(...), 
-      user_adapt_delta = adapt_delta, 
-      data = standata, 
-      pars = pars, 
-      show_messages = FALSE)
-    stanfit <- do.call(sampling, sampling_args)
+  if (algorithm == "optimizing") {
+    out <- optimizing(stanfit, data = standata, 
+                      draws = 1000, constrained = TRUE, ...)
+    new_names <- names(out$par)
+    mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    new_names[mark] <- colnames(xtemp)
+    new_names[new_names == "alpha[1]"] <- "(Intercept)"
+    new_names[new_names == "dispersion"] <- "(phi)"
+    names(out$par) <- new_names
+    colnames(out$theta_tilde) <- new_names
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
+    return(out)
   }
-  else stop("implement optimizing and meanfield / fullrank") # vb?
-  new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(xtemp), 
-                 # if (length(group)) c(paste0("b[", b_nms, "]")),
-                 "(phi)",  "mean_PPD", "log-posterior")
-  stanfit@sim$fnames_oi <- new_names
-  return(stanfit)
+  else {
+    if (algorithm == "sampling") {
+      sampling_args <- set_sampling_args(
+        object = stanfit, 
+        prior = prior, 
+        user_dots = list(...), 
+        user_adapt_delta = adapt_delta, 
+        data = standata, 
+        pars = pars, 
+        show_messages = FALSE)
+      stanfit <- do.call(sampling, sampling_args)
+    }
+    else if (algorithm == "meanfield") { # fixme
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                           algorithm = algorithm, init = 0.001, ...)
+    }
+    else if (algorithm == "fullrank") { # fixme
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                           algorithm = algorithm, init = 0.001, ...)
+    }
+    new_names <- c(if (has_intercept) "(Intercept)", 
+                   colnames(xtemp), 
+                   "(phi)",  "mean_PPD", "log-posterior")
+    stanfit@sim$fnames_oi <- new_names
+    return(stanfit)
+  }
 }
