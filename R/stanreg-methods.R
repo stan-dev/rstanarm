@@ -129,7 +129,11 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 #' @param newdata For \code{log_lik}, an optional data frame of new data (e.g. 
 #'   holdout data) to use when evaluating the log-likelihood. See the 
 #'   description of \code{newdata} for \code{\link{posterior_predict}}.
-log_lik.stanreg <- function(object, newdata = NULL, ...) {
+#' @param offset For \code{log_lik}, a vector of offsets. Only required if
+#'   \code{newdata} is specified and an \code{offset} was specified when fitting
+#'   the model.
+#' 
+log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
   if (!is.null(newdata)) {
@@ -139,7 +143,7 @@ log_lik.stanreg <- function(object, newdata = NULL, ...) {
     newdata <- as.data.frame(newdata)
   }
   fun <- ll_fun(object)
-  args <- ll_args(object, newdata)
+  args <- ll_args(object, newdata = newdata, offset = offset)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
                   draws = args$draws))
