@@ -30,18 +30,18 @@
 #' @templateVar stanregArg object
 #' @template reference-bda
 #' @template args-stanreg-object
-#' @param check The type of plot (possibly abbreviated) to show. One of 
-#'   \code{"distributions"}, \code{"residuals"}, \code{"scatter"}, 
-#'   \code{"test"}. See Details for descriptions.
-#' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the
-#'   posterior predictive distribution (\code{\link{posterior_predict}}) and
-#'   show in the plots. The default is \code{nreps=3} for
-#'   \code{check="residuals"} and \code{nreps=8} for
-#'   \code{check="distributions"}. If \code{check="test"}, \code{nreps} is
-#'   ignored and the number of simulated datasets is the number of post-warmup
-#'   draws from the posterior distribution. If \code{check="scatter"},
-#'   \code{nreps} is not ignored but defaults to the number of post-warmup
-#'   draws.
+#' @param check The type of plot to show. One of \code{"distributions"},
+#'   \code{"residuals"}, \code{"scatterplots"}, \code{"test-statistics"},
+#'   \code{"vs_x"} (can be abbreviated). See Details for descriptions.
+#' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the 
+#'   posterior predictive distribution (\code{\link{posterior_predict}}) and 
+#'   show in the plots. The default is \code{nreps=3} for 
+#'   \code{check="residuals"} and \code{nreps=8} for 
+#'   \code{check="distributions"}. If \code{check="test"} or
+#'   \code{check="vs_x"}, \code{nreps} is ignored and the number of simulated
+#'   datasets is the number of post-warmup draws from the posterior
+#'   distribution. If \code{check="scatter"}, \code{nreps} is not ignored but
+#'   defaults to the number of post-warmup draws.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
 #' @param overlay For \code{check="distributions"} only, should distributions be
@@ -51,10 +51,17 @@
 #'   2) naming a single function or a pair of functions. The function(s) should 
 #'   take a vector input and return a scalar test statistic. See Details and
 #'   Examples.
-#' @param group For models with parameters that vary by level of grouping 
-#'   variables, a string naming a grouping variable by which to stratify. Not 
-#'   available for all plots.
-#' @param ... Passed to the \pkg{\link{bayesplot}} function called.
+#' @param group A string naming a grouping variable by which to stratify, or a
+#'   factor providing the values of that variable. Specifying \code{group} via a
+#'   string is only allowed if the variable is in the \code{\link{model.frame}}.
+#'   Not available for all plots.
+#' @param x For \code{check="vs_x"} only, either a string naming the variable to
+#'   use as the \eqn{x}-variable, or a numeric vector providing the values of 
+#'   that variable. Specifying \code{x} via a string is only allowed if
+#'   the variable is in the \code{\link{model.frame}}.
+#' @param ... Optionally, additonal arguments passed to the 
+#'   \pkg{\link{bayesplot}} function called. These are described in the help 
+#'   pages for \pkg{bayesplot}, links to which can be found in Details, below.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -65,13 +72,19 @@
 #'  \item{\code{distributions}}{
 #'    The distributions of \eqn{y} and \code{nreps} simulated
 #'    \eqn{y^{rep}}{yrep} datasets.
+#'    
+#'    \pkg{\link{bayesplot}} reference:
+#'    \code{\link[bayesplot]{PPC-distributions}}
 #'  } 
 #'  \item{\code{residuals}}{
 #'    The distributions of residuals computed from \eqn{y} and each of
 #'    \code{nreps} simulated datasets. For binomial data, binned residual plots
 #'    are generated (similar to \code{\link[arm]{binnedplot}}).
+#'    
+#'    \pkg{\link{bayesplot}} reference:
+#'    \code{\link[bayesplot]{PPC-residuals}}
 #'  }
-#'  \item{\code{scatter}}{
+#'  \item{\code{scatterplots}}{
 #'    If \code{nreps} is \code{NULL} then \eqn{y} is plotted against the average
 #'    values of \eqn{y^{rep}}{yrep}, i.e., the points \eqn{(y_n, 
 #'    \bar{y}^{rep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n = 1,...,N}, 
@@ -79,8 +92,11 @@
 #'    number of posterior draws. If \code{nreps} is a (preferably small)
 #'    integer, then only \code{nreps} \eqn{y^{rep}}{yrep} datasets are simulated
 #'    and they are each plotted separately against \eqn{y}.
+#'    
+#'    \pkg{\link{bayesplot}} reference:
+#'    \code{\link[bayesplot]{PPC-scatterplots}}
 #'  }
-#'  \item{\code{test}}{
+#'  \item{\code{test-statistics}}{
 #'    The distribution of a single test statistic
 #'    \eqn{{T(y^{rep})}}{T(yrep)} or a pair of test statistics over the
 #'    \code{nreps} simulated datasets. If the \code{test} argument specifies only
@@ -89,6 +105,16 @@
 #'    observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two 
 #'    functions are specified then the plot is a scatterplot and \eqn{T(y)} is 
 #'    shown as a large point.
+#'    
+#'    \pkg{\link{bayesplot}} reference:
+#'    \code{\link[bayesplot]{PPC-test-statistics}}
+#'  }
+#'  \item{\code{vs_x}}{
+#'    Medians and central interval estimates of \eqn{y^{rep}}{yrep} by value of 
+#'    an "\eqn{x}" variable, with \eqn{y} overlaid.
+#'    
+#'    \pkg{\link{bayesplot}} reference:
+#'    \code{\link[bayesplot]{PPC-vs-x}}
 #'  }
 #' }
 #' 
@@ -105,25 +131,21 @@
 #' @examples 
 #' if (!exists("example_model")) example(example_model)
 #' 
-#' # Compare distribution of y to distributions of yrep
-#' (pp_dist <- pp_check(example_model, check = "dist", overlay = TRUE))
-#' pp_dist + 
-#'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
-#'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
-#'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
+#' # Compare distribution of y (dark color) to distributions of 
+#' # yrep (light color)
+#' (pp_dist <- pp_check(example_model, check = "dist"))
 #'  
-#' # By level of 'herd' grouping variable
+#' # Violin plot of yrep by level of 'herd' grouping variable with 
+#' # y points overlaid
 #' pp_check(example_model, check = "dist", group = "herd")
 #'
-#' # Check residuals (default is binned residual plot for binomial model)
-#' pp_check(example_model, check = "resid", nreps = 6)
+#' # Check residuals (default is binned residual plot for binomial 
+#' # models, histograms otherwise)
+#' pp_check(example_model, check = "resid", nreps = 4)
 #'
 #' # Check histograms of test statistics
-#' test_mean <- pp_check(example_model, check = "test", test = "mean")
-#' test_sd <- pp_check(example_model, check = "test", test = "sd")
-#' gridExtra::grid.arrange(test_mean, test_sd, ncol = 2)
-#' 
-#' # Histogram of means by level of 'herd' grouping variable
+#' pp_check(example_model, check = "test", test = "mean")
+#' pp_check(example_model, check = "test", test = "sd")
 #' pp_check(example_model, check = "test", test = "mean", group = "herd")
 #' 
 #' # Scatterplot of two test statistics
@@ -135,6 +157,9 @@
 #' pp_check(fit, check = "scatter") # y vs. average yrep
 #' pp_check(fit, check = "scatter", nreps = 3) # y vs. a few different yrep datasets 
 #' 
+#' # yrep "ribbon" vs x (with y points overlaid)
+#' pp_check(fit, check = "vs_x", x = mtcars$disp, y_style = "points")
+#' pp_check(fit, check = "vs_x", x = "wt") + ggplot2::xlab("wt")
 #' 
 #' # Defining a function to compute test statistic 
 #' roaches$roach100 <- roaches$roach1 / 100
@@ -147,8 +172,6 @@
 #' pp_check(fit_nb, check = "test", test = "prop0")   # much better
 #' }
 #' 
-#' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
-#' 
 pp_check.stanreg <-
   function(object,
            check = "distributions",
@@ -157,11 +180,13 @@ pp_check.stanreg <-
            overlay = TRUE,
            test = "mean",
            group = NULL,
+           x = NULL,
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
-    valid_ppcs <- c("distributions", "residuals", "scatter", "test")
+    valid_ppcs <- c("distributions", "residuals", "scatterplots", 
+                    "test-statistics", "vs_x")
     plotfun <-
       ppc_fun(
         check = match.arg(check, choices = valid_ppcs),
@@ -169,7 +194,8 @@ pp_check.stanreg <-
         nreps = nreps,
         ntests = length(test),
         overlay = isTRUE(overlay),
-        binomial_model = is_binomial_ppc(object)
+        binomial_model = is_binomial_ppc(object), 
+        has_x = !is.null(x)
       )
     
     y_yrep <-
@@ -185,6 +211,7 @@ pp_check.stanreg <-
         y = y_yrep[["y"]],
         yrep = y_yrep[["yrep"]],
         group = set_group(object, group),
+        x = set_x(object, x),
         fun = plotfun,
         test = test,
         ...
@@ -229,10 +256,13 @@ ppc_args <-
            group = NULL,
            fun = character(),
            test = NULL,
+           x = NULL,
            ...) {
     args <- nlist(y, yrep, ...)
     if (!is.null(group))
       args$group <- group
+    if (!is.null(x))
+      args$x <- x
     if (fun == "ppc_resid_binned")
       names(args)[names(args) %in% "yrep"] <- "Ey"
     if (grepl("^ppc_stat", fun))
@@ -241,8 +271,8 @@ ppc_args <-
     args
   }
 
-set_group <- function(object, group = NULL) {
-  if (is.null(group))
+set_x <- set_group <- function(object, group = NULL) {
+  if (is.null(group) || !is.character(group))
     return(group)
   
   mf <- model.frame(object)
@@ -250,7 +280,7 @@ set_group <- function(object, group = NULL) {
   if (group %in% vars)
     return(mf[, group])
   
-  stop("Grouping variable '", group, "' not found in model frame. ")
+  stop("Variable '", group, "' not found in model frame. ")
 }
 
 is_binomial_ppc <- function(object) {
@@ -267,7 +297,8 @@ ppc_fun <-
            nreps = NULL,
            ntests = 1,
            overlay = TRUE,
-           binomial_model = FALSE) {
+           binomial_model = FALSE, 
+           has_x = FALSE) {
     
     if (check == "distributions") {
       if (grouped) 
@@ -287,7 +318,7 @@ ppc_fun <-
         return("ppc_resid")  
     }
     
-    if (check == "test") {
+    if (check == "test-statistics") {
       if (ntests > 1) {
         if (grouped)
           warning("'group' is ignored if length(test) > 1.", call. = FALSE)
@@ -299,7 +330,7 @@ ppc_fun <-
         return("ppc_stat")
     }
     
-    if (check == "scatter") {
+    if (check == "scatterplots") {
       if (!is.null(nreps)) {
         if (grouped)
           warning("'group' is ignored for scatterplots unless 'nreps' is NULL.", 
@@ -307,9 +338,18 @@ ppc_fun <-
         return("ppc_scatter" )
       }
       else if (grouped)
-        "ppc_scatter_avg_grouped"
+        return("ppc_scatter_avg_grouped")
       else
-        "ppc_scatter_avg"
+        return("ppc_scatter_avg")
+    }
+    
+    if (check == "vs_x") {
+      if (!has_x)
+        stop("If 'check' is 'vs_x' then the 'x' argument must be specified.")
+      if (grouped) 
+        return("ppc_vs_x_grouped")
+      else 
+        return("ppc_vs_x")
     }
   }
 
@@ -333,7 +373,11 @@ set_nreps <- function(nreps = NULL, fun = character()) {
     # TEST-STATISTICS
     "stat" = ignore_nreps(nreps),
     "stat_2d" = ignore_nreps(nreps),
-    "stat_grouped" = ignore_nreps(nreps)
+    "stat_grouped" = ignore_nreps(nreps),
+    
+    # VS X
+    "vs_x" = ignore_nreps(nreps),
+    "vs_x_grouped" = ignore_nreps(nreps)
   )
 }
 
