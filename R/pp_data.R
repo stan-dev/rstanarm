@@ -169,11 +169,13 @@ pp_data <-
       # with an offset (warning, not error)
       if (!is.null(object$call$offset) || 
           !is.null(object$offset) || 
-          !is.null(model.offset(model.frame(object))))
+          !is.null(model.offset(model.frame(object)))) {
         warning(
           "'offset' argument is NULL but it looks like you estimated ", 
-          "the model using an offset term."
+          "the model using an offset term.", 
+          call. = FALSE
         )
+      }
       offset <- rep(0, nrow(newdata))
     }
   }
