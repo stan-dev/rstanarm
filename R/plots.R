@@ -154,7 +154,7 @@ set_plotting_fun <- function(x, plotfun = NULL) {
     STOP_sampling_only(funname)
   fun <- try(getExportedValue("rstan", funname), silent = TRUE)
   if (inherits(fun, "try-error")) 
-    stop("Plotting function not found. See ?rstanarm::plots for valid names.", 
+    stop("Plotting function not found. See help('rstanarm-plots') for valid names.", 
          call. = FALSE)
   
   return(fun)
