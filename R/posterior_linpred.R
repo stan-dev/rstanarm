@@ -30,7 +30,7 @@
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the 
 #'   untransformed linear predictor is returned.
-#' @param newdata,re.form Same as for \code{\link{posterior_predict}}.
+#' @param newdata,re.form,offset Same as for \code{\link{posterior_predict}}.
 #' @param ... Currently unused.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
@@ -51,7 +51,7 @@
 #' probs2 <- posterior_linpred(example_model, transform = TRUE, re.form = NA)
 #' 
 posterior_linpred <- function(object, transform = FALSE, newdata = NULL, 
-                              re.form = NULL, ...) {
+                              re.form = NULL, offset = NULL, ...) {
   validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_linpred")
@@ -63,7 +63,7 @@ posterior_linpred <- function(object, transform = FALSE, newdata = NULL,
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dat <- pp_data(object, newdata = newdata, re.form = re.form, ...)
+  dat <- pp_data(object, newdata = newdata, re.form = re.form, offset = offset, ...)
   eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
   if (!transform)
     return(eta)
