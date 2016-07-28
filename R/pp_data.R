@@ -156,6 +156,10 @@ pp_data <-
 
 
 # handle offsets ----------------------------------------------------------
+null_or_zero <- function(x) {
+  isTRUE(is.null(x) || all(x == 0))
+}
+
 .pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
   if (is.null(newdata)) {
     # get offset from model object (should be null if no offset)
@@ -168,8 +172,8 @@ pp_data <-
       # if newdata specified but not offset then confirm that model wasn't fit
       # with an offset (warning, not error)
       if (!is.null(object$call$offset) || 
-          !is.null(object$offset) || 
-          !is.null(model.offset(model.frame(object)))) {
+          !null_or_zero(object$offset) || 
+          !null_or_zero(model.offset(model.frame(object)))) {
         warning(
           "'offset' argument is NULL but it looks like you estimated ", 
           "the model using an offset term.", 
