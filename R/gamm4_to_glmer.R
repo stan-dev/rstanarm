@@ -81,10 +81,10 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
   
   offset.name <- attr(mf,"names")[attr(attr(mf,"terms"),"offset")]
   
-  yname <- new.name("y",names(mf))
+  yname <- mgcv::new.name("y",names(mf))
   eval(parse(text=paste("mf$",yname,"<-mf$y",sep="")))
   mf[[yname]] <- mf$y
-  Xname <- new.name("X",names(mf))
+  Xname <- mgcv::new.name("X",names(mf))
   eval(parse(text=paste("mf$",Xname,"<-mf$X",sep="")))
   mf[[Xname]] <- mf$X
   lme4.formula <- paste(yname,"~", Xname, "-1")
@@ -107,11 +107,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
   lme4.formula <- as.formula(lme4.formula)
   
   b <- glFormula(lme4.formula, data = mf, family = family, weights = G$w,
-                 control = glmerControl(check.nlev.gtreq.5 = "ignore",
-                                        check.nlev.gtr.1 = "stop",
-                                        check.nobs.vs.rankZ = "ignore",
-                                        check.nobs.vs.nlev = "ignore",
-                                        check.nobs.vs.nRE = "ignore"))
+                 control = make_glmerControl())
   
   if (n.sr) { ## Fabian Scheipl's trick of overwriting dummy slots revised for new structure
     tn <- names(b$reTrms$cnms) ## names associated with columns of Z (same order as Gp)
@@ -122,6 +118,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
       k <- ind[sn[i] == tn] ## which term should contain G$random[[i]] 
       ii <- (b$reTrms$Gp[k]+1):b$reTrms$Gp[k+1]
       b$reTrms$Zt[ii,] <- as(t(G$random[[i]]),"dgCMatrix")
+      b$reTrms$Ztlist[[i]][ii,] <- as(t(G$random[[i]]),"dgCMatrix") # FIXME: check this
       b$reTrms$cnms[[k]] <- s_labels[[i]]
     }
   }

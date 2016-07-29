@@ -57,7 +57,7 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
       re.form <- as.formula(object$call$random)
     }
     else if (is.na(re.form)) re.form <- NULL
-    if (!is.null(newdata) || !is.null(re.form)) {
+    if (!is.null(newdata)) { # || !is.null(re.form)
       newdata[[as.character(object$formula[2])]] <- 1 
       # need this provisional outcome for the next line
       glmod <- gamm4_to_glmer(object$formula, re.form, data = newdata, ...)
