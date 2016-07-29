@@ -51,6 +51,7 @@
 #'   
 #' @examples
 #' # Use rstanarm example model
+#' if (!exists("example_model")) example(example_model)
 #' fit <- example_model
 #' 
 #' # Intervals and point estimates
@@ -81,8 +82,6 @@
 #' plot(fit, "ess")
 #' 
 #' # Using regex_pars
-#' plot(fit, regex_pars = "period")
-#' plot(fit, regex_pars = "herd:1")
 #' plot(fit, regex_pars = "herd:1\\]")
 #' plot(fit, regex_pars = "herd:[279]")
 #' plot(fit, regex_pars = "herd:[279]|period2")
@@ -196,7 +195,8 @@ stan_plot_opt <- function(x, pars = NULL, varnames = NULL, ...) {
 #' @description See \code{\link[rstan]{pairs.stanfit}} for details.
 #' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
 #' @importFrom graphics pairs
-#' @examples 
+#' @examples
+#' if (!exists("example_model")) example(example_model)
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
 pairs.stanreg <- function(x, ...) {
@@ -204,6 +204,17 @@ pairs.stanreg <- function(x, ...) {
     STOP_sampling_only("pairs")
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
+  
+  if (is.mer(x)) {
+    dots <- list(...)
+    if (is.null(dots[["pars"]]))
+      return(pairs(x$stanfit, pars = names(fixef(x)), ...))
+    
+    b <- b_names(rownames(x$stan_summary), value = TRUE)
+    if (any(dots[["pars"]] %in% b))
+      stop("pairs.stanreg does not yet allow group-level parameters in 'pars'.")
+  }
+  
   pairs(x$stanfit, ...)
 }
 

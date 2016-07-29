@@ -116,7 +116,7 @@ test_that("validate_weights works", {
   expect_error(validate_weights(c(-1,2,3)), regexp = "negative", ignore.case = TRUE)
   expect_error(stan_glm(mpg ~ wt, data = mtcars, weights = rep(-1, nrow(mtcars))), 
                regexp = "negative", ignore.case = TRUE)
-  expect_is(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
+  expect_s3_class(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
                      weights = rexp(nrow(mtcars))), "stanreg")
 })
 
@@ -144,6 +144,14 @@ test_that("validate_family works", {
   expect_error(validate_family(rnorm(10)), "must be a family")
   expect_error(stan_glm(mpg ~ wt, data = mtcars, family = "not a family"))
 })
+
+test_that("validate_glm_formula works", {
+  validate_glm_formula <- rstanarm:::validate_glm_formula
+  expect_silent(validate_glm_formula(mpg ~ wt + cyl))
+  expect_error(validate_glm_formula(mpg ~ wt + (1|cyl)), "not allowed")
+  expect_error(validate_glm_formula(mpg ~ (1|cyl/gear)), "not allowed")
+})
+
 
 test_that("array1D_check works", {
   array1D_check <- rstanarm:::array1D_check
@@ -179,9 +187,9 @@ test_that("check_constant_vars works", {
   mf2$gear <- 1
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
-  expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
+  expect_s3_class(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
             "stanreg")
-  expect_is(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
+  expect_s3_class(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
                      offset = rep(1, nrow(mf)), algorithm = "optimizing", 
                      seed = SEED), "stanreg")
   
@@ -219,13 +227,14 @@ fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
 fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
 fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
 
-test_that("is.stanreg works", {
-  is.stanreg <- rstanarm:::is.stanreg
-  expect_true(is.stanreg(fit))
-  expect_true(is.stanreg(fit2))
-  expect_true(is.stanreg(fito))
-  expect_true(is.stanreg(fitvb))
-  expect_false(is.stanreg(fit$stanfit))
+test_that("validate_stanreg_object works", {
+  validate_stanreg_object <- rstanarm:::validate_stanreg_object
+  expect_silent(validate_stanreg_object(fit))
+  expect_silent(validate_stanreg_object(fit2))
+  expect_silent(validate_stanreg_object(fito))
+  expect_silent(validate_stanreg_object(fitvb))
+  expect_error(validate_stanreg_object(fit$stanfit), 
+               "not a stanreg object")
 })
 
 test_that("used.sampling, used.optimizing, and used.variational work", {

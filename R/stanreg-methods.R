@@ -132,6 +132,12 @@ log_lik <- function(object, ...) UseMethod("log_lik")
 log_lik.stanreg <- function(object, newdata = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")
+  if (!is.null(newdata)) {
+    if ("gam" %in% names(object))
+      stop("'log_lik' with 'newdata' not yet supported ", 
+           "for models estimated via 'stan_gamm4'.")
+    newdata <- as.data.frame(newdata)
+  }
   fun <- ll_fun(object)
   args <- ll_args(object, newdata)
   sapply(seq_len(args$N), function(i) {
@@ -216,15 +222,8 @@ update.stanreg <- function(object, formula., ..., evaluate = TRUE) {
 #'   returned instead.
 #'
 vcov.stanreg <- function(object, correlation = FALSE, ...) {
-  if (!is.mer(object)) {
-    out <- object$covmat
-  } else {
-    sel <- seq_along(fixef(object))
-    out <- object$covmat[sel, sel, drop=FALSE]
-  }
-  if (!correlation) 
-    return(out)
-  
+  out <- object$covmat
+  if (!correlation) return(out)
   cov2cor(out)
 }
 

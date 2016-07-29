@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
+  validate_stanreg_object(object)
   if (is.mer(object)) .pp_data_mer(object, newdata, re.form, ...)
   else .pp_data(object, newdata, ...)
 }
@@ -35,6 +36,8 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   if (!is.null(cl <- attr(Terms, "dataClasses"))) 
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+  if (is(object, "polr") && !is_scobit(object)) 
+    x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
   offset <- rep(0, nrow(x))
   if (!is.null(off.num <- attr(tt, "offset"))) {
     for (i in off.num) {

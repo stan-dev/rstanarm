@@ -1,10 +1,12 @@
 ---
 title: "Estimating Generalized Linear Models for Count Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "02/11/2016"
+date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -27,8 +29,8 @@ count data using the `stan_glm` function in the __rstanarm__ package.
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1 for Poisson and negative
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 for Poisson and negative
 binomial regression models using the `stan_glm` function.
 
 # Likelihood
@@ -168,7 +170,7 @@ $S \times N$ matrix, where $S$ is the size of the posterior sample and $N$
 is the number of data points. Each row of `yrep` represents a full dataset
 generated from the posterior predictive distribution. For more about the 
 importance of the `posterior_predict` function, see the 
-"How to Use the __rstanarm__ Package" vignette.
+["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 Gelman and Hill take the simulated datasets and for each of them compute the 
 proportion of zeros and compare to the observed proportion in the original 

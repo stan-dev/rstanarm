@@ -31,34 +31,35 @@ fit <- example_model
 fit2 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, chains = CHAINS,
                     seed = SEED, refresh = REFRESH))
 
+expect_gg <- function(x) expect_s3_class(x, "ggplot")
+
 context("pp_check")
 test_that("pp_check doesn't throw bad errors", {
-  expect_silent(p <- pp_check(fit, check = "dist", overlay = TRUE, size = 2))
-  expect_silent(p <- pp_check(fit, check = "resid"))
-  expect_silent(p <- pp_check(fit2, check = "resid", fill = "red", bins = 15))
-  expect_silent(p <- pp_check(fit, check = "scatter"))
-  expect_silent(p <- pp_check(fit2, check = "scatter", color = "purple"))
-  expect_is(p, "ggplot")
+  expect_gg(pp_check(fit, check = "dist", overlay = TRUE, size = 2))
+  expect_gg(pp_check(fit, check = "resid"))
+  expect_gg(pp_check(fit2, check = "resid", fill = "red", bins = 15))
+  expect_gg(pp_check(fit, check = "scatter"))
+  expect_gg(pp_check(fit2, check = "scatter", color = "purple"))
   for (j in 1:2) {
-    expect_silent(p <- pp_check(fit, check = "dist", overlay = FALSE, nreps = j))
-    expect_silent(p <- pp_check(fit, check = "dist", overlay = TRUE, nreps = j))
-    expect_silent(p <- pp_check(fit, check = "resid", nreps = j))
-    expect_silent(p <- pp_check(fit2, check = "resid", nreps = j))
-    expect_silent(p <- pp_check(fit, check = "scat", nreps = j))
-    expect_silent(p <- pp_check(fit2, check = "scat", nreps = j))
+    expect_gg(pp_check(fit, check = "dist", overlay = FALSE, nreps = j))
+    expect_gg(pp_check(fit, check = "dist", overlay = TRUE, nreps = j))
+    expect_gg(pp_check(fit, check = "resid", nreps = j))
+    expect_gg(pp_check(fit2, check = "resid", nreps = j))
+    expect_gg(pp_check(fit, check = "scat", nreps = j))
+    expect_gg(pp_check(fit2, check = "scat", nreps = j))
   }
-  expect_silent(p <- pp_check(fit, check = "test"))
-  expect_silent(p <- pp_check(fit, check = "test", test = "sd"))
-  expect_silent(p <- pp_check(fit, check = "test", test = c("mean","sd")))
-  expect_is(p, "ggplot")
+  expect_gg(pp_check(fit, check = "test"))
+  expect_gg(pp_check(fit, check = "test", test = "sd"))
+  expect_gg(pp_check(fit, check = "test", test = c("mean","sd")))
 })
 
 test_that("pp_check ok for vb", {
-  fit3 <- SW(update(fit2, algorithm = "meanfield", iter = 10000))
-  expect_silent(p <- pp_check(fit3))
-  expect_silent(p <- pp_check(fit3, check = "resid"))
-  expect_silent(p <- pp_check(fit3, check = "scat"))
-  expect_silent(p <- pp_check(fit3, check = "test"))
+  fit3 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER,
+                      seed = SEED, algorithm = "meanfield", iter = 10000))
+  expect_gg(pp_check(fit3))
+  expect_gg(pp_check(fit3, check = "resid"))
+  expect_gg(pp_check(fit3, check = "scat"))
+  expect_gg(pp_check(fit3, check = "test"))
 })
 
 test_that("pp_check throws appropriate errors", {
@@ -83,5 +84,5 @@ test_that("pp_check binned residual plot ok for factors", {
   fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width, 
                    data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
                    seed = SEED, refresh = REFRESH))
-  expect_silent(p <- pp_check(fit3, check = "resid"))
+  expect_gg(pp_check(fit3, check = "resid"))
 })

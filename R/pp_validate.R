@@ -31,7 +31,8 @@
 #' @param nreps The number of replications to be performed. \code{nreps} must be
 #'   sufficiently large so that the statistics described below in Details are 
 #'   meaningful. Depending on the model and the size of the data, running 
-#'   \code{pp_validate} may be slow.
+#'   \code{pp_validate} may be slow. See also the Note section below for advice
+#'   on avoiding numerical issues.
 #' @param seed A seed passed to Stan to use when refitting the model.
 #' @param ... Arguments (e.g. \code{size}) passed to
 #'   \code{\link[ggplot2]{geom_point}} to control the appearance of the plot.
@@ -61,9 +62,12 @@
 #' grouping variable, etc.). See Cook, Gelman, and Rubin (2006) for more details
 #' on the validation procedure.
 #' 
-#' You may have to specify \code{init_r} as some number less than 2 when you 
-#' fit the \emph{original} model in order to make it through \code{nreps}
-#' replications without running into numerical difficulties.
+#' @note In order to make it through \code{nreps} replications without running 
+#'   into numerical difficulties you may have to restrict the range for randomly
+#'   generating initial values for parameters when you fit the \emph{original}
+#'   model. With any of \pkg{rstanarm}'s modeling functions this can be done by
+#'   specifying the optional argument \code{init_r} as some number less than the
+#'   default of \eqn{2}.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -72,17 +76,16 @@
 #' Cook, S., Gelman, A., and Rubin, D. 
 #' (2006). Validation of software for Bayesian models using posterior quantiles.
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
-#' @importFrom ggplot2 aes geom_segment
 #' 
 #' @seealso 
 #' \code{\link{pp_check}} for graphical posterior predictive checks and 
 #' \code{\link{posterior_predict}} to draw from the posterior predictive 
 #' distribution.
 #' 
-#' 
 #' @examples 
 #' \dontrun{
-#' pp_validate(example_model)
+#' if (!exists("example_model")) example(example_model) 
+#' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
 #' 
 #' @importFrom ggplot2 geom_segment scale_x_continuous element_line
@@ -96,6 +99,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     return(quants)
   }
   
+  validate_stanreg_object(object)
   if (!used.sampling(object))
     STOP_sampling_only("pp_validate")
   if (nreps < 2)
