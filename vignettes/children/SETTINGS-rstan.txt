@@ -3,4 +3,5 @@ ITER <- 500L
 CHAINS <- 2L
 CORES <- 1L
 SEED <- 12345
+set.seed(SEED)
 ```

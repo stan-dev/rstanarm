@@ -62,6 +62,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                         N = nrow(x), xbar = xbar, ybar = ybar, s_y = sd(y),
                         has_intercept = has_intercept, ...,
                         prior = prior, prior_intercept = prior_intercept,
+                        kappa_mean = 0,
                         prior_PD = prior_PD, algorithm = algorithm, 
                         adapt_delta = adapt_delta))
   

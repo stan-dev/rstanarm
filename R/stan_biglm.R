@@ -27,11 +27,17 @@
 #'   intercept and must utilize \emph{centered} but not \emph{standardized}
 #'   predictors. See the Details section or the Example.
 #' @param xbar A numeric vector of means in the implicit design matrix for
-#'   the observations included in the model
+#'   the observations included in the model or --- in the case of 
+#'   \code{stan_biglm.fit} only --- a list of such vectors with one list element
+#'   for each group
 #' @param ybar A numeric scalar indicating the same mean of the outcome for
-#'   the observations included in the model
+#'   the observations included in the model or --- in the case of 
+#'   \code{stan_biglm.fit} only --- a numeric vector of such means with one
+#'   element for each group
 #' @param s_y A numeric scalar indicating the unbiased sample standard deviation
-#'   of the outcome for the observations included in the model
+#'   of the outcome for the observations included in the model or --- in the case 
+#'   of \code{stan_biglm.fit} only --- a numeric vector of such standard deviations
+#'   with one element for each group
 #' @param has_intercept A logical scalar indicating whether to add an intercept
 #'   to the model when estimating it
 #' @template args-dots
@@ -69,6 +75,14 @@
 #'   The sample mean and sample standard deviation of the outcome must also
 #'   be passed.
 #'   
+#'   The \code{stan_biglm} function calls \code{stan_biglm.fit}, although the
+#'   latter can be called directly. The first seven arguments to the
+#'   \code{stan_biglm.fit} may be lists of the same length where the list length
+#'   is equal to the number of mutually exclusive and exhaustive groups that
+#'   the data have been stratified by. The \code{\link{stan_lmList}} function
+#'   provides a more conventional interface for a stratified linear regression
+#'   model and calls \code{stan_biglm.fit} internally.
+#'   
 #' @return The output of both \code{stan_biglm} and \code{stan_biglm.fit} is an object of
 #'   \code{\link[rstan]{stanfit-class}} rather than \code{\link{stanreg-objects}}, 
 #'   which is more limited and less convenient but necessitated by the fact that 
@@ -98,7 +112,7 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, has_intercept = TRUE, ...,
   R <- sqrt(biglm$qr$D) * R
   return(stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, has_intercept, 
                         ...,
-                        prior = prior, prior_intercept = prior_intercept,
+                        prior = prior, prior_intercept = prior_intercept, kappa_mean = 0,
                         prior_PD = prior_PD, algorithm = algorithm, 
                         adapt_delta = adapt_delta))
 }

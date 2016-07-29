@@ -282,34 +282,112 @@ We can compare the two approaches using an approximation to Leave-One-Out
 __loo__ package.
 
 ```{r lm-clouds-loo, warning=TRUE}
-(loo_post <- loo(post))
-(loo(simple))
+(loo_post <- loo(post, k_threshold = 0.7))
+(loo_simple <- loo(simple, k_threshold = 0.7))
 ```
 
 The results indicate that the first approach is expected to produce better
-out-of-sample predictions but the Warning messages are at least as important. 
-Many of the estimated shape parameters for the Generalized Pareto distribution 
-are above $0.5$ in the model with Cauchy priors, which indicates that these 
+out-of-sample predictions. We specified `k_threshold = 0.7` because $7$ of the
+original estimated shape parameters for the Generalized Pareto distribution 
+were above $0.7$ in the model with Cauchy priors, which indicates that these 
 estimates are only going to converge slowly to the true out-of-sample deviance 
 measures. Thus, with only $24$ observations, they should not be considered 
-reliable. The more complicated prior derived above is stronger --- as 
-evidenced by the fact that the effective number of parameters is about half
-of that in the simpler approach and $12$ for the maximum likelihood estimator 
---- and only has $4$ out of $24$ shape estimates in the "danger zone". We 
-might want to reexamine these observations
+reliable. By specifying `k_threshold = 0.7`, the model is refit $7$ times, 
+leaving out each of the problematic observations in turn, and the prediction
+of the left-out observation is incorporated into the `elpd_loo`, `p_loo`, and
+`looic` estimates.
 
+The more complicated prior derived above is stronger --- as evidenced by the 
+fact that the effective number of parameters is about $6.3$ as compared to
+$10.3$ for the simpler approach and $12$ for the maximum likelihood estimator.
+A plot reveals that there are a couple of observation whose estimated shape
+parameter for the Generalized Pareto distribution but these can be ignored.
 ```{r lm-clouds-plot-loo}
 plot(loo_post, label_points = TRUE)
 ```
-
-because the posterior is sensitive to them but, overall, the results seem 
-tolerable.
 
 In general, we would expect the joint prior derived here to work better 
 when there are many predictors relative to the number of observations.
 Placing independent, heavy-tailed priors on the coefficients neither
 reflects the beliefs of the researcher nor conveys enough information to
 stabilize all the computations.
+
+# Hierarchical Approach
+
+Another approach would be to allow _all_ the parameters to vary by group.
+In this case, the natural grouping is by treatment and control but the
+`stan_lmList` function --- like the `lmList` function in the __lme4__
+package it is based on --- permits any number of levels on a single grouping
+factor. However, `stan_lmList` differs fundamentally from `lmList` because
+the latter estimates Ordinary Least Squares for each stratum of the data
+defined by the levels of the grouping variable whereas `stan_lmList` estimates
+a model with the data from all groups simultaneously but puts a hierarchical
+prior on the group-specific unknowns.
+
+Recall that one of the primitive parameters in `stan_lm` is $\mathbf{u}$, which
+was assumed to be uniformally distributed on the surface of a hypersphere. For
+`stan_lmList`, we index $\mathbf{u}_j$ by group and place a von Mises-Fisher
+prior on it, whose PDF is
+$$f\left(\mathbf{u}_j | \boldsymbol{\mu}, \kappa \right) = 
+\frac{\kappa^{\frac{K}{2} - 1}}{\left(2 \pi\right)^{\frac{K}{2}} I_{\frac{K}{2} - 1}\left(\kappa\right)}
+e^{\kappa \boldsymbol{\mu}^\top \mathbf{u}_j}$$
+where $\mathbf{\mu}$ is the prior mean on the surface of a hypersphere
+$\kappa \geq 0$ is a concentration parameter, and 
+$I_{\frac{K}{2} - 1}\left(\kappa\right)$ is the modified Bessel function of the
+first kind. If $\kappa = 0$, then this density is constant and the greater is
+$\kappa$, the more each $\mathbf{u}_j$ is shrunk toward $\mathbf{\mu}$. Of course,
+$\mathbf{\mu}$ and $\kappa$ are unknown, need to be estimated, and require 
+priors. The prior for $\mathbf{\mu}$ is uniform on the surface of a hypersphere
+and cannot be changed in `stan_lmList`, while the prior for $\kappa$ is 
+exponential whose mean is specified by the `kappa_mean` argument to `stan_lmList`, 
+which by default is $1$.
+
+We also specify a hierarchical prior on $R_j^2$, which is the proportion of 
+variance in the outcome for the $j$-th group that is explained by the model. Recall
+that in the `stan_lm` case, we could calculate the second shape parameter, $\eta$,
+from the user's prior expectation about $R^2$. In the `stan_lmList` case, we
+calculate $\eta$ from $\lambda = \mathbb{E}\left[R_j^2\right]$ and estimate $\lambda$.
+Consequently, in the `stan_lmList` function, the user needs to express prior
+beliefs about the location of $\lambda$, which can be interpreted as the average
+$R^2$ across groups.
+
+Since $R_j^2$, $\ln \omega_j$, and $s_{Y_j}$ all differ by group, $\sigma_j$
+differs by group. Also, the intercept, $\alpha_j$, differs by group. Thus, when
+the user prints the results of a model estimated by `stan_lmList`, all of the
+parameters are suffixed by `:j` where `j` can be an integer or preferably a
+string indicating the group.
+
+The `formula` argument to the `stan_lmList` function is somewhat like that for
+the `stan_lmer` function, which builds off the `lmer` function in the __lme4__
+package and specifies the grouping variable to the right of a `|`. There is
+more information on this syntax in the [vignette](glmer.html) for generalized
+linear models with group-specific terms. However, for `stan_lmList` only one
+grouping term can (and must) be specified. In the cloud-hacking example, it
+would look like
+```{r, lm-clouds-grouped, results="hide"}
+grouped <- stan_lmList(rainfall ~ sne + cloudcover + prewetness + echomotion
+                       + time | seeding, data = clouds, 
+                       prior = R2(location = 0.2),
+                       chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+grouped
+```
+```{r, print-lm-clouds-grouped, echo = FALSE}
+grouped
+```
+Notice now that $\sigma$ for the treated group differs (somewhat) from
+$\sigma$ for the control group (at least at the medians) whereas in the 
+previous two models $\sigma$ was constrained to be equal for both groups.
+We can use the `compare` function to compare these models using the LOO
+criterion
+```{r, loo-3}
+compare(loo_post, loo_simple, loo(grouped))
+```
+As can be seen, the model estimated by `stan_lmList` has fewer effective
+parameters than the model estimated by `stan_glm` but more effective
+parameters than the model estimated by `stan_lm` due to the need to
+estimate $\mathbf{\mu}$ and $\kappa$ plus additional $R^2$ parameters. 
+However, the fit to the data is worse with `stan_lmList` in this case so 
+there is no reason to prefer it over `stan_lm`.
 
 # Conclusion
 

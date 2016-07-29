@@ -31,13 +31,26 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
     return(nlist(x, offset))
   }
   tt <- terms(object)
-  Terms <- delete.response(tt)
-  m <- model.frame(Terms, newdata, xlev = object$xlevels)
-  if (!is.null(cl <- attr(Terms, "dataClasses"))) 
-    .checkMFClasses(cl, m)
-  x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
-  if (is(object, "polr") && !is_scobit(object)) 
-    x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
+  if (inherits(object, "lmList")) {
+    f <- as.character(object$formula)
+    f <- as.formula(paste(f[2], "~", "-1 + (", f[3], ")"))
+    g <- glFormula(f, newdata)
+    modelframe <- g$fr
+    x <- t(g$reTrms$Zt)
+    group_names <- levels(object$groups)
+    K <- NCOL(x) / length(group_names)
+    colnames(x) <- c(sapply(group_names, FUN = function(g) paste0(1:K, ":", g)))
+    x <- x[,sort(colnames(x))]
+  }
+  else {
+    Terms <- delete.response(tt)
+    m <- model.frame(Terms, newdata, xlev = object$xlevels)
+    if (!is.null(cl <- attr(Terms, "dataClasses"))) 
+      .checkMFClasses(cl, m)
+    x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+    if (is(object, "polr") && !is_scobit(object)) 
+      x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
+  }
   offset <- rep(0, nrow(x))
   if (!is.null(off.num <- attr(tt, "offset"))) {
     for (i in off.num) {
