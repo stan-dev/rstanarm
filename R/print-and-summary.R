@@ -121,7 +121,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
       nms <- c(nms, "overdispersion")
-    } else if (is.beta(famname)) {
+    } else if (is.beta(famname)) { # this might be problematic with z variables included
       nms <- c(nms, "(phi)")  # dispersion
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))

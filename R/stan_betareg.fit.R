@@ -1,10 +1,10 @@
-stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
+stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                               link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
                               link.phi = "log", ...,
                               prior = normal(), prior_intercept = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
                               algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                              adapt_delta = NULL, QR = FALSE, sparse = FALSE, Z_true) {
   
   # lots of tedious but simple stuff including standata which is a big list to pass to data {}
   # process the prior information like stan_glm.fit() does
@@ -25,11 +25,16 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
     prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
     prior_scale_for_dispersion <- scaled <- NULL
-  
+
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
+  
+  # z_stuff <- center_x(z, sparse)
+  # ztemp <- z_stuff$xtemp
+  # zbar <- z_stuff$xbar
+  # has_intercept_z <- z_stuff$has_intercept
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
@@ -75,13 +80,21 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
     num_non_zero = 0L, 
     w = double(), 
     v = integer(), 
-    u = integer()
+    u = integer(),
+    no_Z = Z_true,
+    betareg_Z_dim = ncol(z),
+    link_phi = 1L,
+    betareg_Z = z
     )
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
-  pars <- c(if (has_intercept) "alpha", "beta", 
-            "dispersion", "mean_PPD")
+  if (Z_true == 1) {
+    pars <- c(if (has_intercept) "alpha", "beta", "omega", "mean_PPD")
+  }
+  else {
+    pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
+  }
   
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -108,17 +121,24 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
         show_messages = FALSE)
       stanfit <- do.call(sampling, sampling_args)
     }
-    else if (algorithm == "meanfield") { # fixme
+    else if (algorithm == "meanfield") { # FIXME
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }
-    else if (algorithm == "fullrank") { # fixme
+    else if (algorithm == "fullrank") { # FIXME
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }
-    new_names <- c(if (has_intercept) "(Intercept)", 
-                   colnames(xtemp), 
-                   "(phi)",  "mean_PPD", "log-posterior")
+    if (Z_true == 1) {
+      new_names <- c(if (has_intercept) "(Intercept)", 
+                     colnames(xtemp), paste0("(phi)_", colnames(z)),
+                     "mean_PPD", "log-posterior")
+    }
+    else {
+      new_names <- c(if (has_intercept) "(Intercept)", 
+                     colnames(xtemp), 
+                     "(phi)",  "mean_PPD", "log-posterior")
+    }
     stanfit@sim$fnames_oi <- new_names
     return(stanfit)
   }

@@ -84,6 +84,25 @@ functions {
     return mu;
   }
   
+    /** 
+  * Apply inverse link function to linear predictor for dispersion (beta regression)
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_beta_Z(vector eta, int link) {
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 1) reject("Invalid link");
+    if (link == 1)  // log
+      for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
+    // else if (link == 2)  // identity
+    //   for(n in 1:rows(eta)) mu[n] = Phi(eta[n]);
+    // else if (link == 3)  // sqrt
+    //   for(n in 1:rows(eta)) mu[n] = inv_cloglog(eta[n]);
+    return mu;
+  }
+  
   /** 
   * Pointwise (pw) log-likelihood vector
   *
@@ -202,7 +221,19 @@ functions {
   }
 
   
-  //vector pw_beta_Z(vector y, vector eta, vector dispersion, int link) {}  
+  vector pw_beta_Z(vector y, vector eta, vector eta_Z, int link, int link_phi) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    vector[rows(y)] mu_Z;
+    if (link < 1 || link > 6) reject("Invalid link");
+    if (link_phi < 1 || link_phi > 1) reject("Invalid link");
+    mu = linkinv_beta(eta, link);
+    mu_Z = linkinv_beta_Z(eta_Z, link_phi);
+    for (n in 1:rows(y)) {
+      ll[n] = beta_lpdf(y[n] | mu[n] * mu_Z[n], (1-mu[n]) * mu_Z[n]);
+    }
+    return ll;
+  }
   
   /** 
   * PRNG for the inverse Gaussian distribution
@@ -252,6 +283,11 @@ data {
   #include "hyperparameters.stan"
   #include "glmer_stuff.stan"
   #include "glmer_stuff2.stan"
+  // #include the beta reg Z var data below
+  int<lower=0, upper=1> no_Z;         // flag for presence of Z vars
+  int<lower=0> link_phi;              // link transformation for eta_Z
+  int<lower=0> betareg_Z_dim;   // dimensions of Z vars
+  matrix[N,betareg_Z_dim] betareg_Z; // matrix of Z vars
 }
 transformed data {
   vector[N * (family == 3)] sqrt_y;
@@ -275,10 +311,11 @@ parameters {
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
-  // include dispersion_unscaled[no_Z]
+  // #include the beta reg Z pars below
+  vector[betareg_Z_dim * no_Z] omega;
 }
 transformed parameters {
-  real dispersion; // dispersion[no_Z] ?
+  real dispersion;
   #include "tparameters_glm.stan"
   if (prior_scale_for_dispersion > 0)
     dispersion =  prior_scale_for_dispersion * dispersion_unscaled; // include dispersion_unscaled[no_Z]
@@ -290,6 +327,7 @@ transformed parameters {
   }
 }
 model {
+  vector[N] eta_Z; // beta regression dispersion (linear) predictor
   #include "make_eta.stan"
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
@@ -299,6 +337,9 @@ model {
   }
   else {
     #include "eta_no_intercept.stan"
+  }
+  if (family == 4 && no_Z == 1) {
+    eta_Z = betareg_Z * omega; // make eta_Z for beta regression
   }
   
   // Log-likelihood 
@@ -316,10 +357,17 @@ model {
       target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
                              dispersion, sum_log_y, sqrt_y);
     }
-    else if (family == 4) {
+    else if (family == 4 && no_Z == 0) {
       vector[N] mu;
       mu = linkinv_beta(eta, link);
       target += beta_lpdf(y | mu * dispersion, (1 - mu) * dispersion);
+    }
+    else if (family == 4 && no_Z == 1) {
+      vector[N] mu;
+      vector[N] mu_Z;
+      mu = linkinv_beta(eta, link);
+      mu_Z = linkinv_beta_Z(eta_Z, link_phi);
+      target += beta_lpdf(y | rows_dot_product(mu, mu_Z), rows_dot_product((1 - mu) , mu_Z));
     }
   }
   else if (prior_PD == 0) { # weighted log-likelihoods
@@ -327,7 +375,8 @@ model {
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
     else if (family == 3) summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
-    else if (family == 4) summands = pw_beta(y, eta, dispersion, link);
+    else if (family == 4 && no_Z == 0) summands = pw_beta(y, eta, dispersion, link);
+    else if (family == 4 && no_Z == 1) summands = pw_beta_Z(y, eta, eta_Z, link, link_phi);
     target += dot_product(weights, summands);
   }
 
@@ -341,7 +390,11 @@ model {
 generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
+  vector[N] eta_Z;
   mean_PPD = 0;
+  if (family == 4 && no_Z == 1) {
+    eta_Z = betareg_Z * omega; // make eta_Z for beta regression
+  }
   if (has_intercept == 1)
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
@@ -379,10 +432,16 @@ generated quantities {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
     }
-    else if (family == 4) {
+    else if (family == 4 && no_Z == 0) { 
       eta = linkinv_beta(eta, link);
       for (n in 1:N) 
         mean_PPD = mean_PPD + beta_rng(eta[n] * dispersion, (1 - eta[n]) * dispersion);
+    }
+    else if (family == 4 && no_Z == 1) {
+      eta = linkinv_beta(eta, link);
+      eta_Z = linkinv_beta_Z(eta_Z, link_phi);
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + beta_rng(eta[n] * eta_Z[n], (1 - eta[n]) * eta_Z[n]);
     }
     mean_PPD = mean_PPD / N;
   }

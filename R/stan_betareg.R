@@ -26,19 +26,29 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(br)
   Z <- model.matrix(br, model = "precision")
-  if(ncol(Z) == 1 && all(Z == 1)) Z <- NULL
+  #if(ncol(Z) == 1 && all(Z == 1)) Z <- NULL
   
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   
+  # pass existence of declaration of linear predictor of the dispertion parameter
+  Z_true <- all.names(formula)[3]
+  if (Z_true=="|") {
+    Z_true <- 1
+  }
+  else {
+    Z_true <- 0
+  }
+
+  
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = NULL, offset = NULL, 
                               link = link, link.phi = link.phi, ..., prior = prior, 
                               prior_intercept = prior_intercept, prior_ops = prior_ops,
                               prior_PD = prior_PD, algorithm = algorithm, 
-                              adapt_delta = adapt_delta, QR = QR, sparse = FALSE)
+                              adapt_delta = adapt_delta, QR = QR, sparse = FALSE, Z_true = Z_true)
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
   fit <- nlist(stanfit, family = beta_fam(link), formula, offset = NULL, 
