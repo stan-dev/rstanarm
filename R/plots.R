@@ -118,10 +118,13 @@
 #' ############
 #' ### More ###
 #' ############
+#' 
+#' # regex_pars examples
 #' plot(fit, regex_pars = "herd:1\\]")
 #' plot(fit, regex_pars = "herd:[279]")
 #' plot(fit, regex_pars = "herd:[279]|period2")
 #' plot(fit, regex_pars = c("herd:[279]", "period2"))
+#'
 #'
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")
@@ -165,6 +168,14 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
                               plotfun = character()) {
 
   plotfun <- mcmc_function_name(plotfun)
+
+  if (grepl("_nuts", plotfun, fixed = TRUE)) {
+    return(list(
+      x = bayesplot::nuts_params(x), 
+      lp = bayesplot::log_posterior(x), 
+      ...
+    ))
+  }
   if (grepl("_rhat", plotfun, fixed = TRUE)) {
     rhat <- rhat(x, pars = pars, regex_pars = regex_pars)
     return(list(rhat = rhat, ...))
@@ -188,6 +199,13 @@ mcmc_function_name <- function(fun) {
     fun <- "scatter"
   } else if (fun == "ess") {
     fun <- "neff"
+  } else if (fun %in% c("diag", "stan_diag")) {
+    stop(
+      "For NUTS diagnostics, instead of 'stan_diag', ", 
+      "please specify the name of one of the functions listed at ",
+      "help('NUTS', 'bayesplot')",
+      call. = FALSE
+    )
   }
 
   if (identical(substr(fun, 1, 4), "ppc_"))
