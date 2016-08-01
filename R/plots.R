@@ -118,7 +118,7 @@
 #' ############
 #' ### More ###
 #' ############
-#' 
+#'
 #' # regex_pars examples
 #' plot(fit, regex_pars = "herd:1\\]")
 #' plot(fit, regex_pars = "herd:[279]")
@@ -144,19 +144,19 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 # Check for valid parameters
 # @param x stanreg object
 # @param pars user specified character vector
-check_plotting_pars <- function(x, pars, plotfun = character()) {
-  if (used.optimizing(x)) {
-    allpars <- c("alpha", "beta", rownames(x$stan_summary))
-  } else {
-    sim <- x$stanfit@sim
-    allpars <- c(sim$pars_oi, sim$fnames_oi)
-  }
-  m <- which(match(pars, allpars, nomatch = 0) == 0)
-  if (length(m) > 0)
-    stop("No parameter ", paste(pars[m], collapse = ', '),
-         call. = FALSE)
-  return(unique(pars))
-}
+# check_plotting_pars <- function(x, pars, plotfun = character()) {
+#   if (used.optimizing(x)) {
+#     allpars <- c("alpha", "beta", rownames(x$stan_summary))
+#   } else {
+#     sim <- x$stanfit@sim
+#     allpars <- c(sim$pars_oi, sim$fnames_oi)
+#   }
+#   m <- which(match(pars, allpars, nomatch = 0) == 0)
+#   if (length(m) > 0)
+#     stop("No parameter ", paste(pars[m], collapse = ', '),
+#          call. = FALSE)
+#   return(unique(pars))
+# }
 
 # Prepare argument list to pass to plotting function
 # @param x stanreg object
@@ -168,26 +168,35 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
                               plotfun = character()) {
 
   plotfun <- mcmc_function_name(plotfun)
+  if (!used.sampling(x))
+    validate_plotfun_for_opt_or_vb(plotfun)
 
   if (grepl("_nuts", plotfun, fixed = TRUE)) {
     return(list(
-      x = bayesplot::nuts_params(x), 
-      lp = bayesplot::log_posterior(x), 
+      x = bayesplot::nuts_params(x),
+      lp = bayesplot::log_posterior(x),
       ...
     ))
   }
   if (grepl("_rhat", plotfun, fixed = TRUE)) {
-    rhat <- rhat(x, pars = pars, regex_pars = regex_pars)
+    rhat <- bayesplot::rhat(x, pars = pars, regex_pars = regex_pars)
     return(list(rhat = rhat, ...))
   }
   if (grepl("_neff", plotfun, fixed = TRUE)) {
-    ratio <- neff_ratio(x, pars = pars, regex_pars = regex_pars)
+    ratio <- bayesplot::neff_ratio(x, pars = pars, regex_pars = regex_pars)
     return(list(ratio = ratio, ...))
   }
   if (!is.null(pars) || !is.null(regex_pars)) {
     pars <- collect_pars(x, pars, regex_pars)
     pars <- allow_special_parnames(x, pars)
   }
+  
+  if (!used.sampling(x)) {
+    if (!length(pars))
+      pars <- NULL
+    return(list(x = as.matrix(x, pars = pars), ...))
+  }
+  
   if (needs_chains(plotfun))
     list(x = as.array(x, pars = pars, regex_pars = regex_pars), ...)
   else
@@ -201,7 +210,7 @@ mcmc_function_name <- function(fun) {
     fun <- "neff"
   } else if (fun %in% c("diag", "stan_diag")) {
     stop(
-      "For NUTS diagnostics, instead of 'stan_diag', ", 
+      "For NUTS diagnostics, instead of 'stan_diag', ",
       "please specify the name of one of the functions listed at ",
       "help('NUTS', 'bayesplot')",
       call. = FALSE
@@ -223,13 +232,14 @@ mcmc_function_name <- function(fun) {
 
 # check if a plotting function requires multiple chains
 needs_chains <- function(x) {
-  nms <- c("trace",
+  nms <- paste0("mcmc_", c(
+           "trace",
            "trace_highlight",
            "hist_by_chain",
            "dens_overlay",
            "violin",
-           "combo")
-  x %in% paste0("mcmc_", nms)
+           "combo"))
+  mcmc_function_name(x) %in% nms
 }
 
 # Select the correct plotting function
@@ -244,13 +254,20 @@ set_plotting_fun <- function(plotfun = NULL) {
   fun <- try(match.fun(plotfun), silent = TRUE)
   if (!inherits(fun, "try-error"))
     return(fun)
-
+  
   stop(
     "Plotting function ",  plotfun, " not found. ",
     "A valid plotting function is any function from the ",
     "'bayesplot' package beginning with the prefix 'mcmc_'.",
     call. = FALSE
   )
+}
+
+validate_plotfun_for_opt_or_vb <- function(plotfun) {
+  plotfun <- mcmc_function_name(plotfun)
+  if (needs_chains(plotfun) || 
+      grepl("rhat_|neff_|nuts_", plotfun))
+    STOP_sampling_only(plotfun)
 }
 
 # function calling arm::coefplot (only used for models fit using optimization)
