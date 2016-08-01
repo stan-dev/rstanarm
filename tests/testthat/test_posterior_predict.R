@@ -30,7 +30,7 @@ SW <- suppressWarnings
 
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
-check_for_error <- function(fit, data = NULL) {
+check_for_error <- function(fit, data = NULL, offset = NULL) {
   nsims <- nrow(as.data.frame(fit))
   mf <- if (!is.null(data)) 
     data else model.frame(fit)
@@ -47,20 +47,22 @@ check_for_error <- function(fit, data = NULL) {
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   expect_equal(dim(yrep2), c(1, nobs(fit)))
   
-  expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,]))
-  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,]))
+  offs <- if (!is.null(offset)) offset[1] else offset
+  expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,], offset = offs))
+  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,], offset = offs))
   expect_equal(dim(yrep3), c(nsims, 1))
   expect_equal(dim(lin3), c(nsims, 1))
   
-  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,]))
+  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,], offset = offs))
   expect_equal(dim(yrep4), c(2, 1))
   
-  expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,]))
-  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,]))
+  offs <- if (!is.null(offset)) offset[1:5] else offset
+  expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,], offset = offs))
+  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,], offset = offs))
   expect_equal(dim(yrep5), c(nsims, 5))
   expect_equal(dim(lin5), c(nsims, 5))
   
-  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,]))
+  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,], offset = offs))
   expect_equal(dim(yrep6), c(3, 5))
   
   expect_error(posterior_predict(fit, draws = nsims + 1), 
@@ -137,8 +139,10 @@ test_that("compatible with glm with offset", {
   fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
                       iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   
-  check_for_error(fit, data = mtcars2)
-  check_for_error(fit2, data = mtcars2)
+  expect_warning(posterior_predict(fit, newdata = mtcars[1:5, ]), 
+                 "offset")
+  check_for_error(fit, data = mtcars2, offset = mtcars2$offs)
+  check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
   expect_linpred_equal(fit)
   expect_linpred_equal(fit2)
 })
@@ -232,6 +236,17 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   expect_silent(posterior_linpred(fit2))
   expect_silent(posterior_linpred(fit1, newdata = nd))
   expect_silent(posterior_linpred(fit2, newdata = nd))
+})
+
+test_that("compatible with stan_lmer with offset", {
+  offs <- rnorm(nrow(mtcars))
+  fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
+                      prior = normal(0,1), iter = ITER, chains = CHAINS,
+                      seed = SEED, refresh = REFRESH, offset = offs))
+  
+  expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ]), 
+                 "offset")
+  check_for_error(fit, offset = offs)
 })
 
 

@@ -60,7 +60,7 @@ test_that("loo & waic throw error for non mcmc models", {
 })
 
 test_that("loo errors if model has weights", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, weights = rep(1, nrow(mtcars)),
+  fit <- stan_glm(mpg ~ wt, data = mtcars, weights = rep_len(c(1,2), nrow(mtcars)),
                   seed = SEED, refresh = REFRESH, iter = 50)
   expect_error(loo(fit), "not supported")
   expect_error(loo(fit), "'kfold'")

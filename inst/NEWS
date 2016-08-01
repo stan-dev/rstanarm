@@ -1,3 +1,10 @@
+Fri July 29 2016 (2.11.1)
+1. Bug fixes
+  * Requiring manually specifying offsets when model has an offset and newdata is not NULL
+2. New features
+  * stan_biglm function that somewhat supports biglm::biglm
+  * as.array method for stanreg objects
+
 Fri June 24 2016 (2.10.1)
 1. Bug fixes
   * Works with devtools now
