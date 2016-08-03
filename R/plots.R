@@ -33,20 +33,30 @@
 #'   function to apply to the stanreg object. See \link[bayesplot]{MCMC-overview}
 #'   for the available plots. Also see the Examples section below.
 #'
-#'   \code{plotfun} can be either the full name of a plotting function (e.g.
-#'   \code{"mcmc_hist"}) or can be abbreviated to the part of the name following
-#'   the \code{"mcmc_"} prefix (e.g. \code{"hist"}). The default plot is
-#'   \code{\link[bayesplot]{mcmc_intervals}}, which shows intervals and point
-#'   estimates for all model parameters.
+#'   \code{plotfun} can be either the full name of a \pkg{bayesplot} plotting 
+#'   function (e.g. \code{"mcmc_hist"}) or can be abbreviated to the part of the
+#'   name following the \code{"mcmc_"} prefix (e.g. \code{"hist"}). The default 
+#'   plot is \code{\link[bayesplot]{mcmc_intervals}}, which shows intervals and 
+#'   point estimates for all model parameters. (\strong{Note}: to use 
+#'   \pkg{bayesplot} plotting functions starting with the prefix \code{"ppc_"}, 
+#'   which are for posterior predictive checks, see
+#'   \code{\link[=pp_check.stanreg]{pp_check}}.)
 #'
 #' @param ... Additional arguments to pass to \code{plotfun} for customizing the
-#'   plot.
+#'   plot. These are described on the help pages for the individual plotting 
+#'   functions. For example, the arguments accepted for the default
+#'   \code{plotfun="intervals"} can be found at
+#'   \code{\link[bayesplot]{mcmc_intervals}}.
 #'
-#' @return In most cases, a ggplot object (or several) that can be further
-#'   customized using the \pkg{ggplot2} package.
+#' @return Either a ggplot object that can be further customized using the
+#'   \pkg{ggplot2} package, or an object created from multiple ggplot objects
+#'   (e.g. a gtable object created by \code{\link[gridExtra]{arrangeGrob}}).
 #'
 #' @seealso \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for details
 #'   on the individual plotting functions.
+#' 
+#'   \code{\link[bayesplot]{set_color_scheme}} to change the color scheme used for
+#'   plotting.
 #'
 #' @examples
 #' # Use rstanarm example model
@@ -72,25 +82,6 @@
 #' bayesplot::mcmc_areas(x, prob = 0.5, prob_outer = 0.9)
 #'
 #'
-#' ##################
-#' ### Traceplots ###
-#' ##################
-#' # note: rstanarm doesn't store the warmup draws by default
-#' (trace <- plot(fit, "trace", pars = "(Intercept)"))
-#'
-#' # change traceplot colors to ggplot defaults or custom values
-#' trace + ggplot2::scale_color_discrete()
-#' trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))
-#'
-#' # changing facet layout
-#' plot(fit, "trace", pars = c("(Intercept)", "period2"),
-#'      facet_args = list(nrow = 2))
-#'
-#' # same plot by calling bayesplot::mcmc_trace directly
-#' x <- as.array(fit, pars = c("(Intercept)", "period2"))
-#' bayesplot::mcmc_trace(x, facet_args = list(nrow = 2))
-#'
-#'
 #' ##################################
 #' ### Histograms & density plots ###
 #' ##################################
@@ -102,18 +93,51 @@
 #' ####################
 #' ### Scatterplots ###
 #' ####################
+#' bayesplot::set_color_scheme("teal")
 #' plot(fit, "scatter", pars = paste0("period", 2:3))
 #' plot(fit, "scatter", pars = c("(Intercept)", "size"),
-#'      color = "black", size = 3, alpha = 0.5) +
+#'      size = 3, alpha = 0.5) +
 #'      ggplot2::stat_ellipse(level = 0.9)
 #'
-#' ######################################
-#' ### Rhat and effective sample size ###
-#' ######################################
+#'
+#' ####################################################
+#' ### Rhat, effective sample size, autocorrelation ###
+#' ####################################################
+#' bayesplot::set_color_scheme("blue")
+#' 
+#' # rhat
 #' plot(fit, "rhat")
 #' plot(fit, "rhat_hist")
-#' plot(fit, "neff")
+#' 
+#' # ratio of effective sample size to total posterior sample size
+#' plot(fit, "neff") + bayesplot::move_legend("right")
 #' plot(fit, "neff_hist")
+#' 
+#' # autocorrelation by chain
+#' plot(fit, "acf", pars = "(Intercept)", regex_pars = "period")
+#' plot(fit, "acf_bar", pars = "(Intercept)", regex_pars = "period")
+#' 
+#' 
+#' ##################
+#' ### Traceplots ###
+#' ##################
+#' # note: rstanarm doesn't store the warmup draws to save space
+#' # so these are post-warmup draws
+#' bayesplot::set_color_scheme("pink")
+#' (trace <- plot(fit, "trace", pars = "(Intercept)"))
+#'
+#' # change traceplot colors to ggplot defaults or custom values
+#' trace + ggplot2::scale_color_discrete()
+#' trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))
+#'
+#' # changing facet layout 
+#' plot(fit, "trace", pars = c("(Intercept)", "period2"),
+#'      facet_args = list(nrow = 2))
+#'
+#' # same plot by calling bayesplot::mcmc_trace directly
+#' x <- as.array(fit, pars = c("(Intercept)", "period2"))
+#' bayesplot::mcmc_trace(x, facet_args = list(nrow = 2))
+#'
 #'
 #' ############
 #' ### More ###
@@ -208,6 +232,8 @@ mcmc_function_name <- function(fun) {
     fun <- "scatter"
   } else if (fun == "ess") {
     fun <- "neff"
+  } else if (fun == "ac") {
+    fun <- "acf"
   } else if (fun %in% c("diag", "stan_diag")) {
     stop(
       "For NUTS diagnostics, instead of 'stan_diag', ",
@@ -232,13 +258,18 @@ mcmc_function_name <- function(fun) {
 
 # check if a plotting function requires multiple chains
 needs_chains <- function(x) {
-  nms <- paste0("mcmc_", c(
-           "trace",
-           "trace_highlight",
-           "hist_by_chain",
-           "dens_overlay",
-           "violin",
-           "combo"))
+  nms <- paste0("mcmc_",
+    c(
+      "trace",
+      "trace_highlight",
+      "acf",
+      "acf_bar",
+      "hist_by_chain",
+      "dens_overlay",
+      "violin",
+      "combo"
+    )
+  )
   mcmc_function_name(x) %in% nms
 }
 
