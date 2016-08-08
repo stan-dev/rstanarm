@@ -97,13 +97,20 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   }
   
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, 
-                      draws = 1000, constrained = TRUE, ...)
+    out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
+    out$par <- out$par[!grepl("eta_Z", names(out$par))] # kinda sketch - might need fixing
+    out$theta_tilde <- out$theta_tilde[,!grepl("eta_Z", colnames(out$theta_tilde))] # kinda sketch - might need fixing
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    new_names[new_names == "dispersion"] <- "(phi)"
+    if (Z_true == 1) {
+      mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
+      new_names[mark_z] <- paste0("(phi)_", colnames(z))
+    }
+    else {
+      new_names[new_names == "dispersion"] <- "(phi)"
+    }
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
