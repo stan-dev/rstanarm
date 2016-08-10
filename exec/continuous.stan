@@ -93,13 +93,13 @@ functions {
   */
   vector linkinv_beta_Z(vector eta, int link) {
     vector[rows(eta)] mu;
-    if (link < 1 || link > 1) reject("Invalid link");
+    if (link < 1 || link > 3) reject("Invalid link");
     if (link == 1)  // log
       for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
-    // else if (link == 2)  // identity
-    //   for(n in 1:rows(eta)) mu[n] = Phi(eta[n]);
-    // else if (link == 3)  // sqrt
-    //   for(n in 1:rows(eta)) mu[n] = inv_cloglog(eta[n]);
+    else if (link == 2)  // identity
+      for(n in 1:rows(eta)) mu[n] = eta[n];
+    else if (link == 3)  // sqrt
+      for(n in 1:rows(eta)) mu[n] = pow(eta[n],2);
     return mu;
   }
   
@@ -226,7 +226,7 @@ functions {
     vector[rows(y)] mu;
     vector[rows(y)] mu_Z;
     if (link < 1 || link > 6) reject("Invalid link");
-    if (link_phi < 1 || link_phi > 1) reject("Invalid link");
+    if (link_phi < 1 || link_phi > 3) reject("Invalid link");
     mu = linkinv_beta(eta, link);
     mu_Z = linkinv_beta_Z(eta_Z, link_phi);
     for (n in 1:rows(y)) {
@@ -340,6 +340,9 @@ model {
   }
   if (family == 4 && no_Z == 1) {
     eta_Z = betareg_Z * omega; // make eta_Z for beta regression
+  }
+  if (family ==4 && link_phi == 2) {
+    eta_Z = eta_Z - min(eta_Z) + omega[1];
   }
   
   // Log-likelihood 

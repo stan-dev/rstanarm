@@ -1,6 +1,6 @@
 stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                               link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
-                              link.phi = "log", ...,
+                              link.phi = c("log", "identity", "sqrt"), ...,
                               prior = normal(), prior_intercept = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
                               algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
@@ -15,11 +15,19 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   famname <- "beta"
   is_beta <- is.beta(famname)
   
+  # link for X variables
   link <- match.arg(link)
   supported_links <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
   link_num <- which(supported_links == link)
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
+  
+  # link for Z variables
+  link.phi <- match.arg(link.phi)
+  supported_phi_links <- c("log", "identity", "sqrt")
+  link_num_phi <- which(supported_phi_links == link.phi)
+  if (!length(link_num_phi)) 
+    stop("'link' must be one of ", paste(supported_phi_links, collapse = ", "))
   
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
@@ -83,9 +91,12 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     u = integer(),
     no_Z = Z_true,
     betareg_Z_dim = ncol(z),
-    link_phi = 1L,
+    link_phi = link_num_phi,
     betareg_Z = z
     )
+  print("*** LINK PHI ***")
+  print(link.phi)
+  print(link_num_phi)
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
