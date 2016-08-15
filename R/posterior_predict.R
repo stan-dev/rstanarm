@@ -272,7 +272,7 @@ pp_args <- function(object, data) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  
+
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
   if (is.gaussian(famname)) {
@@ -284,7 +284,8 @@ pp_args <- function(object, data) {
   } else if (is.nb(famname)) {
     args$size <- stanmat[, "overdispersion"]
   } else if (is.beta(famname)) {
-    args$phi <- stanmat[,"(phi)"]
+    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+    args$phi <- stanmat[,z_vars]
   }
   
   args
