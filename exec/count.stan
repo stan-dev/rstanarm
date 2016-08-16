@@ -120,7 +120,7 @@ model {
       else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), dispersion[1]);
     }
   }
-  else if (family != 1 && prior_PD == 0)
+  else if (family != 2 && prior_PD == 0)
     target += dot_product(weights, pw_pois(y, eta, link));
   else if (prior_PD == 0)
     target += dot_product(weights, pw_nb(y, eta, dispersion[1], link));
