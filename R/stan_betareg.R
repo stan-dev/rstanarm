@@ -1,4 +1,61 @@
-args(betareg::betareg)
+# Part of the rstanarm package for estimating model parameters
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#' Bayesian beta regression models via Stan
+#'
+#' Beta regression modeling with optional prior distributions for 
+#' the coefficients, intercept, and dispersion parameter.
+#'
+#' @export
+#' @templateVar armRef (Ch. 3-6)
+#' @templateVar pkg stats
+#' @templateVar pkgfun betareg
+#' @templateVar sameargs model,offset,weights 
+#' @templateVar rareargs na.action,contrasts
+#' @templateVar fun stan_betareg
+#' @templateVar fitfun stan_betareg.fit
+#' @template return-stanreg-object
+#' @template return-stanfit-object
+#' @template see-also
+#' @template args-formula-data-subset
+#' @template args-same-as
+#' @template args-same-as-rarely
+#' @template args-x-y
+#' @template args-dots
+#' @template args-priors
+#' @template args-prior_PD
+#' @template args-algorithm
+#' @template args-adapt_delta
+#' @template args-QR
+#' @template args-sparse
+#' @template reference-gelman-hill
+#' 
+#' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
+#'   are also possible using the \code{\link{neg_binomial_2}} family object.
+#' 
+#' @details The \code{stan_betareg} function is similar in syntax to 
+#'   \code{\link[betareg]{betareg}} but rather than performing maximum likelihood 
+#'   estimation of generalized linear models, full Bayesian estimation is 
+#'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
+#'   model adds independent priors on the coefficients of the beta regression model. The 
+#'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit} function, 
+#'   but it is also possible to call the latter directly.
+#'   
+#' @seealso The various vignettes for \code{stan_betareg}.
 
 stan_betareg <- function (formula, data, subset, na.action, weights, offset,
                           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
