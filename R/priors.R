@@ -377,6 +377,28 @@ prior_options <- function(prior_scale_for_dispersion = 5,
   nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
 }
 
+#' @rdname priors
+#' @export 
+#' @param prior_scale_for_weibull Prior scale for the shape parameter of the 
+#'   Weibull distribution for the baseline hazard in \code{\link{stan_glm}}, 
+#'   which is given a half-Cauchy  truncated at zero.
+#'
+priorEvent_options <- function(prior_scale_for_weibull = 5,
+                               min_prior_scale = 1e-12, 
+                               scaled = TRUE) {
+  validate_parameter_value(prior_scale_for_weibull)
+  validate_parameter_value(min_prior_scale)
+  nlist(scaled, min_prior_scale, prior_scale_for_weibull)
+}
+
+#' @rdname priors
+#' @export 
+#'
+priorAssoc_options <- function(min_prior_scale = 1e-12) {
+  validate_parameter_value(min_prior_scale)
+  nlist(min_prior_scale)
+}
+
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) 
