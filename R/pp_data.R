@@ -136,6 +136,12 @@ pp_data <-
   p <- sapply(ReTrms$cnms, FUN = length)
   l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
     nlevels(ReTrms$flist[[i]]))
+  
+  for (i in attr(ReTrms$flist, "assign")) {
+    ReTrms$flist[[i]] <- factor(ReTrms$flist[[i]],
+                                levels = gsub(" ", "_", levels(ReTrms$flist[[i]])))
+  }
+  
   t <- length(p)
   group_nms <- names(ReTrms$cnms)
   Z_names <- character()
