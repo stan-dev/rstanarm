@@ -285,6 +285,7 @@ data {
   #include "glmer_stuff2.stan"
   // #include the beta reg Z var data below
   int<lower=0, upper=1> no_Z;         // flag for presence of Z vars
+  int<lower=0, upper=1> has_intercept_z;
   int<lower=0> link_phi;              // link transformation for eta_Z
   int<lower=0> betareg_Z_dim;   // dimensions of Z vars
   matrix[N,betareg_Z_dim] betareg_Z; // matrix of Z vars
@@ -313,6 +314,7 @@ parameters {
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
   // #include the beta reg Z pars below
   vector[betareg_Z_dim * no_Z] omega;
+  real<lower=((family == 4 && link_phi > 1) ? 0.0 : negative_infinity())> omega_int[has_intercept_z];
 }
 transformed parameters {
   real dispersion;
@@ -338,12 +340,23 @@ model {
   else {
     #include "eta_no_intercept.stan"
   }
-  if (family == 4 && no_Z == 1) {
-    eta_Z = betareg_Z * omega; // make eta_Z for beta regression
+  eta_Z = betareg_Z * omega;
+  if (family == 4 && no_Z == 1 && link_phi == 1) {
+    if (has_intercept_z == 1) {
+      eta_Z = betareg_Z * omega + omega_int[1]; // make eta_Z for beta regression
+    }
+    else {
+      eta_Z = betareg_Z * omega; // make eta_Z for beta regression 
+    }
   }
-  else if (family == 4 && link_phi > 1) {
-    eta_Z = betareg_Z * omega;
-    eta_Z = eta_Z - min(eta_Z) + omega[1]; // > 0
+  else if (family == 4 && no_Z == 1 && link_phi > 1) {
+    if (has_intercept_z == 1) {
+      eta_Z = betareg_Z * omega;
+      eta_Z = eta_Z - min(eta_Z) + omega_int[1]; // > 0
+    }
+    else {
+      eta_Z = eta_Z - min(eta_Z); // > 0
+    }
   }
   
   // Log-likelihood 
@@ -398,6 +411,9 @@ generated quantities {
   mean_PPD = 0;
   if (family == 4 && no_Z == 1) {
     eta_Z = betareg_Z * omega; // make eta_Z for beta regression
+  }
+  else if (family == 4 && no_Z == 1 && has_intercept_z == 1) {
+    eta_Z = betareg_Z * omega + omega_int[1];
   }
   if (has_intercept == 1)
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);

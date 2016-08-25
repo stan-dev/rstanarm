@@ -58,11 +58,11 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
   
-  # z_stuff <- center_x(z, sparse)
-  # ztemp <- z_stuff$xtemp
-  # zbar <- z_stuff$xbar
-  # has_intercept_z <- z_stuff$has_intercept
-  # nvars_z <- ncol(ztemp)
+  z_stuff <- center_x(z, sparse)
+  ztemp <- z_stuff$xtemp
+  zbar <- z_stuff$xbar
+  has_intercept_z <- z_stuff$has_intercept
+  nvars_z <- ncol(ztemp)
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
@@ -110,20 +110,25 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     v = integer(), 
     u = integer(),
     no_Z = Z_true,
-    betareg_Z_dim = ncol(z),
+    betareg_Z_dim = nvars_z, # ncol(z),
     link_phi = link_num_phi,
-    betareg_Z = z
+    betareg_Z = array(ztemp, dim = c(dim(ztemp))), # z,
+    has_intercept_z
     )
   
-  cat("link_num", link_num, "\n")
+  cat("has_intercept", has_intercept, "\n")
+  cat("has_intercept_z", has_intercept_z, "\n")
   cat("Z_true", Z_true, "\n")
-  cat("ncol(z)", ncol(z), "\n")
-  cat("link_num_phi", link_num_phi, "\n")
+  cat("link_phi", link_num_phi, "\n")
+  cat("z", z, "\n")
+  cat("ztemp", ztemp, "\n")
+  cat("zbar", zbar, "\n")
+  cat("nvars_z", nvars_z, "\n")
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
   if (Z_true == 1) {
-    pars <- c(if (has_intercept) "alpha", "beta", "omega", "mean_PPD")
+    pars <- c(if (has_intercept) "alpha", "beta", "omega_int", "omega", "mean_PPD")
   }
   else {
     pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
