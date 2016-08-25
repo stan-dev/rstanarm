@@ -62,6 +62,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   # ztemp <- z_stuff$xtemp
   # zbar <- z_stuff$xbar
   # has_intercept_z <- z_stuff$has_intercept
+  # nvars_z <- ncol(ztemp)
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
@@ -113,6 +114,11 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     link_phi = link_num_phi,
     betareg_Z = z
     )
+  
+  cat("link_num", link_num, "\n")
+  cat("Z_true", Z_true, "\n")
+  cat("ncol(z)", ncol(z), "\n")
+  cat("link_num_phi", link_num_phi, "\n")
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous

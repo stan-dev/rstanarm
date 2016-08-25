@@ -97,9 +97,9 @@ functions {
     if (link == 1)  // log
       for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
     else if (link == 2)  // identity
-      for(n in 1:rows(eta)) mu[n] = eta[n];
+      return eta;
     else if (link == 3)  // sqrt
-      for(n in 1:rows(eta)) mu[n] = pow(eta[n],2);
+      for(n in 1:rows(eta)) mu[n] = square(eta[n]);
     return mu;
   }
   
@@ -341,8 +341,9 @@ model {
   if (family == 4 && no_Z == 1) {
     eta_Z = betareg_Z * omega; // make eta_Z for beta regression
   }
-  if (family ==4 && link_phi == 2) {
-    eta_Z = eta_Z - min(eta_Z) + omega[1];
+  else if (family == 4 && link_phi > 1) {
+    eta_Z = betareg_Z * omega;
+    eta_Z = eta_Z - min(eta_Z) + omega[1]; // > 0
   }
   
   // Log-likelihood 
