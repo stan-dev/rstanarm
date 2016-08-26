@@ -410,11 +410,15 @@ generated quantities {
   real mean_PPD;
   vector[N] eta_Z;
   mean_PPD = 0;
-  if (family == 4 && Z_true == 1) {
-    eta_Z = betareg_Z * omega; // make eta_Z for beta regression
+  if (family == 4 && link_phi > 1) {
+    eta_Z = betareg_Z * omega;
+    eta_Z = eta_Z - min(eta_Z) + omega_int[1];
   }
-  else if (family == 4 && Z_true == 1 && has_intercept_z == 1) {
+  else if (family == 4 && Z_true == 1 && has_intercept_z == 1 && link_phi == 1) {
     eta_Z = betareg_Z * omega + omega_int[1];
+  }
+  else if (family == 4 && Z_true == 1) {
+    eta_Z = betareg_Z * omega;  // make eta_Z for beta regression
   }
   if (has_intercept == 1)
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
