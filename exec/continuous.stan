@@ -284,7 +284,7 @@ data {
   #include "glmer_stuff.stan"
   #include "glmer_stuff2.stan"
   // #include the beta reg Z var data below
-  int<lower=0, upper=1> no_Z;         // flag for presence of Z vars
+  int<lower=0, upper=1> Z_true;         // flag for presence of Z vars
   int<lower=0, upper=1> has_intercept_z;
   int<lower=0> link_phi;              // link transformation for eta_Z
   int<lower=0> betareg_Z_dim;   // dimensions of Z vars
@@ -313,15 +313,15 @@ parameters {
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
   // #include the beta reg Z pars below
-  vector[betareg_Z_dim * no_Z] omega;
-  real<lower=((family == 4 && link_phi > 1) ? 0.0 : negative_infinity())> omega_int[has_intercept_z];
+  vector[betareg_Z_dim * Z_true] omega;
+  real omega_int[has_intercept_z];
 }
 transformed parameters {
   real dispersion;
   #include "tparameters_glm.stan"
   if (prior_scale_for_dispersion > 0)
-    dispersion =  prior_scale_for_dispersion * dispersion_unscaled; // include dispersion_unscaled[no_Z]
-  else dispersion = dispersion_unscaled; // include dispersion_unscaled[no_Z]
+    dispersion =  prior_scale_for_dispersion * dispersion_unscaled; // include dispersion_unscaled[Z_true]
+  else dispersion = dispersion_unscaled; // include dispersion_unscaled[Z_true]
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             dispersion, tau, scale, zeta, rho, z_T);
@@ -340,22 +340,23 @@ model {
   else {
     #include "eta_no_intercept.stan"
   }
-  eta_Z = betareg_Z * omega;
-  if (family == 4 && no_Z == 1 && link_phi == 1) {
-    if (has_intercept_z == 1) {
-      eta_Z = betareg_Z * omega + omega_int[1]; // make eta_Z for beta regression
+  if (family == 4 && Z_true == 1) {
+    if (link_phi == 1) {
+      if (has_intercept_z == 1) {
+        eta_Z = betareg_Z * omega + omega_int[1]; // make eta_Z for beta regression
+      }
+      else {
+        eta_Z = betareg_Z * omega; // make eta_Z for beta regression 
+      }
     }
-    else {
-      eta_Z = betareg_Z * omega; // make eta_Z for beta regression 
-    }
-  }
-  else if (family == 4 && no_Z == 1 && link_phi > 1) {
-    if (has_intercept_z == 1) {
+    else if (link_phi > 1) {
       eta_Z = betareg_Z * omega;
-      eta_Z = eta_Z - min(eta_Z) + omega_int[1]; // > 0
-    }
-    else {
-      eta_Z = eta_Z - min(eta_Z); // > 0
+      if (has_intercept_z  == 1) {
+        eta_Z = eta_Z - min(eta_Z) + omega_int[1]; // > 0
+      }
+      else {
+        eta_Z = eta_Z - min(eta_Z); // > 0
+      }
     }
   }
   
@@ -374,12 +375,12 @@ model {
       target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
                              dispersion, sum_log_y, sqrt_y);
     }
-    else if (family == 4 && no_Z == 0) {
+    else if (family == 4 && Z_true == 0) {
       vector[N] mu;
       mu = linkinv_beta(eta, link);
       target += beta_lpdf(y | mu * dispersion, (1 - mu) * dispersion);
     }
-    else if (family == 4 && no_Z == 1) {
+    else if (family == 4 && Z_true == 1) {
       vector[N] mu;
       vector[N] mu_Z;
       mu = linkinv_beta(eta, link);
@@ -392,8 +393,8 @@ model {
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
     else if (family == 3) summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
-    else if (family == 4 && no_Z == 0) summands = pw_beta(y, eta, dispersion, link);
-    else if (family == 4 && no_Z == 1) summands = pw_beta_Z(y, eta, eta_Z, link, link_phi);
+    else if (family == 4 && Z_true == 0) summands = pw_beta(y, eta, dispersion, link);
+    else if (family == 4 && Z_true == 1) summands = pw_beta_Z(y, eta, eta_Z, link, link_phi);
     target += dot_product(weights, summands);
   }
 
@@ -409,10 +410,10 @@ generated quantities {
   real mean_PPD;
   vector[N] eta_Z;
   mean_PPD = 0;
-  if (family == 4 && no_Z == 1) {
+  if (family == 4 && Z_true == 1) {
     eta_Z = betareg_Z * omega; // make eta_Z for beta regression
   }
-  else if (family == 4 && no_Z == 1 && has_intercept_z == 1) {
+  else if (family == 4 && Z_true == 1 && has_intercept_z == 1) {
     eta_Z = betareg_Z * omega + omega_int[1];
   }
   if (has_intercept == 1)
@@ -452,12 +453,12 @@ generated quantities {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
     }
-    else if (family == 4 && no_Z == 0) { 
+    else if (family == 4 && Z_true == 0) { 
       eta = linkinv_beta(eta, link);
       for (n in 1:N) 
         mean_PPD = mean_PPD + beta_rng(eta[n] * dispersion, (1 - eta[n]) * dispersion);
     }
-    else if (family == 4 && no_Z == 1) {
+    else if (family == 4 && Z_true == 1) {
       eta = linkinv_beta(eta, link);
       eta_Z = linkinv_beta_Z(eta_Z, link_phi);
       for (n in 1:N) 

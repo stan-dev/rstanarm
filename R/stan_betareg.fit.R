@@ -109,13 +109,14 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     w = double(), 
     v = integer(), 
     u = integer(),
-    no_Z = Z_true,
+    Z_true,
     betareg_Z_dim = nvars_z, # ncol(z),
     link_phi = link_num_phi,
     betareg_Z = array(ztemp, dim = c(dim(ztemp))), # z,
     has_intercept_z
     )
   
+  # Print Debugging
   cat("has_intercept", has_intercept, "\n")
   cat("has_intercept_z", has_intercept_z, "\n")
   cat("Z_true", Z_true, "\n")
