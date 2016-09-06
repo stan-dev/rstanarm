@@ -153,7 +153,7 @@ posterior_vs_prior <-
       ggplot(plot_data, mapping = do.call("aes_string", aes_args)) +
       geom_pointrange(...) +
       do.call("facet_wrap", facet_args) +
-      bayesplot::theme_ppc(x_lab = FALSE, y_lab = FALSE) +
+      bayesplot::theme_default(x_lab = FALSE, y_lab = FALSE) +
       theme(panel.grid.major.y = element_line(size = 0.1, color = "gray"))
     
     if (group_by == "parameter")
