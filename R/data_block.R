@@ -51,11 +51,13 @@ center_x <- function(x, sparse) {
 handle_glm_prior <- function(prior, nvars, default_scale, link,
                              ok_dists = nlist("normal", student_t = "t", "cauchy", 
                                               "hs", "hs_plus")) {
-  if (is.null(prior))
+  if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
                 prior_df = as.array(rep(1, nvars))))
-  if (!is.list(prior)) stop(sQuote(deparse(substitute(prior))), " should be a named list")
+  if (!is.list(prior)) 
+    stop(sQuote(deparse(substitute(prior))), " should be a named list")
+  
   prior_dist <- prior$dist
   prior_scale <- prior$scale
   prior_mean <- prior$location
