@@ -17,11 +17,12 @@
 
 #' Plot method for stanreg objects
 #'
-#' The \code{plot} method for \link{stanreg-objects} provides a convenient
-#' interface to the \pkg{bayesplot} package's plotting functionality for MCMC
-#' draws. It is also straightforward to use the functions from the
-#' \pkg{bayesplot} package directly rather than via the \code{plot.stanreg}
-#' method. Examples of both methods of plotting are given below.
+#' The \code{plot} method for \link{stanreg-objects} provides a convenient 
+#' interface to the plotting functionality for MCMC draws in our
+#' \pkg{\link{bayesplot}} package. It is also straightforward to use the
+#' functions from the \pkg{bayesplot} package directly rather than via the
+#' \code{plot.stanreg} method. Examples of both methods of plotting are given
+#' below.
 #'
 #' @method plot stanreg
 #' @export
@@ -54,9 +55,9 @@
 #'
 #' @seealso \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for details
 #'   on the individual plotting functions.
-#' 
-#'   \code{\link[bayesplot]{set_color_scheme}} to change the color scheme used for
-#'   plotting.
+#'   
+#'   \code{\link[bayesplot]{set_color_scheme}} (\pkg{bayesplot}) to change the
+#'   color scheme used for plotting.
 #'
 #' @examples
 #' # Use rstanarm example model
@@ -121,8 +122,10 @@
 #' ##################
 #' ### Traceplots ###
 #' ##################
-#' # note: rstanarm doesn't store the warmup draws to save space
-#' # so these are post-warmup draws
+#' # NOTE: rstanarm doesn't store the warmup draws (to save space because they
+#' # are not so essential for diagnosing the particular models implemented in
+#' # rstanarm) so the iterations in the traceplot are post-warmup iterations
+#' 
 #' bayesplot::set_color_scheme("pink")
 #' (trace <- plot(fit, "trace", pars = "(Intercept)"))
 #'
@@ -158,11 +161,9 @@
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
                          regex_pars = NULL, ...) {
-  do.call(
-    what = set_plotting_fun(plotfun),
-    args = set_plotting_args(x, pars, regex_pars, ...,
-                             plotfun = plotfun)
-  )
+  f <- set_plotting_fun(plotfun)
+  args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
+  do.call(f, args)
 }
 
 # Check for valid parameters
@@ -299,31 +300,6 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
   if (needs_chains(plotfun) || 
       grepl("rhat_|neff_|nuts_", plotfun))
     STOP_sampling_only(plotfun)
-}
-
-# function calling arm::coefplot (only used for models fit using optimization)
-stan_plot_opt <- function(x, pars = NULL, varnames = NULL, ...) {
-  if (!requireNamespace("arm", quietly = TRUE))
-    stop("Please install the 'arm' package to use this feature.",
-         call. = FALSE)
-  stopifnot(used.optimizing(x))
-  coefs <- coef(x)
-  sds <- se(x)
-  nms <- varnames %ORifNULL% names(x$coefficients)
-  if (!is.null(pars)) {
-    mark <- NA
-    if ("alpha" %in% pars)
-      mark <- c(mark, "(Intercept)")
-    if ("beta" %in% pars)
-      mark <- c(mark, setdiff(names(x$coefficients), "(Intercept)"))
-    mark <- c(mark, setdiff(pars, c("alpha", "beta")))
-    mark <- mark[!is.na(mark)]
-    coefs <- coefs[mark]
-    sds <- sds[mark]
-    if (is.null(varnames))
-      nms <- nms[nms %in% mark]
-  }
-  arm::coefplot.default(coefs = coefs, sds = sds, varnames = nms, ...)
 }
 
 #' Pairs method for stanreg objects

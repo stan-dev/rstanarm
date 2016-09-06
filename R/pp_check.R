@@ -79,7 +79,7 @@
 #'  \item{\code{residuals}}{
 #'    The distributions of residuals computed from \eqn{y} and each of
 #'    \code{nreps} simulated datasets. For binomial data, binned residual plots
-#'    are generated (similar to \code{\link[arm]{binnedplot}}).
+#'    are generated (similar to \code{binnedplot} in package \pkg{arm}).
 #'    
 #'    \pkg{\link{bayesplot}} reference:
 #'    \code{\link[bayesplot]{PPC-residuals}}

@@ -36,7 +36,6 @@ Imports:
     stats,
     utils
 Suggests:
-    arm,
     gamm4,
     gridExtra,
     HSAUR3,
