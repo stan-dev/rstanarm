@@ -17,10 +17,13 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' Interface to the posterior predictive checking functionality in the 
-#' \pkg{\link{bayesplot}} package, providing various plots comparing the
-#' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep}
-#' from the posterior predictive distribution.
+#' Interface to the posterior predictive checking functionality in our 
+#' \pkg{\link{bayesplot}} package, providing various plots comparing the 
+#' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep} 
+#' from the posterior predictive distribution. It is also straightforward to use
+#' the functions from the \pkg{bayesplot} package directly rather than via the 
+#' \code{pp_check.stanreg} method. Examples of both methods of plotting are
+#' given below.
 #' 
 #' @export
 #' @export pp_check
@@ -36,12 +39,13 @@
 #' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the 
 #'   posterior predictive distribution (\code{\link{posterior_predict}}) and 
 #'   show in the plots. The default is \code{nreps=3} for 
-#'   \code{check="residuals"} and \code{nreps=8} for 
-#'   \code{check="distributions"}. If \code{check="test"} or
-#'   \code{check="vs_x"}, \code{nreps} is ignored and the number of simulated
-#'   datasets is the number of post-warmup draws from the posterior
-#'   distribution. If \code{check="scatter"}, \code{nreps} is not ignored but
-#'   defaults to the number of post-warmup draws.
+#'   \code{check="residuals"} and for \code{check="distributions"} the default
+#'   is either \code{nreps=50} (if \code{overlay=TRUE}) or \code{nreps=8} (if
+#'   \code{overlay=FALSE}). If \code{check="test"} or \code{check="vs_x"},
+#'   \code{nreps} is ignored and the number of simulated datasets is the number
+#'   of post-warmup draws from the posterior distribution. If
+#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
+#'   number of post-warmup draws.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
 #' @param overlay For \code{check="distributions"} only, should distributions be
@@ -152,10 +156,21 @@
 #' pp_check(example_model, check = "test", test = c("mean", "sd"))
 #' 
 #' \donttest{
-#' # Scatterplots of y vs. yrep
 #' fit <- stan_glm(mpg ~ wt, data = mtcars)
+#' pp_check(fit)
+#' 
+#' # Same plot (up to RNG noise) using bayesplot package directly
+#' y <- fit$y
+#' yrep <- posterior_predict(fit)
+#' bayesplot::ppc_dens_overlay(y, yrep[1:50, ])
+#' 
+#' # Scatterplots of y vs. yrep
 #' pp_check(fit, check = "scatter") # y vs. average yrep
+#' bayesplot::ppc_scatter_avg(y, yrep) # same plot up to RNG noise
+#' 
 #' pp_check(fit, check = "scatter", nreps = 3) # y vs. a few different yrep datasets 
+#' bayesplot::ppc_scatter(y, yrep[1:3, ]) # same plot up to RNG noise
+#' 
 #' 
 #' # yrep "ribbon" vs x (with y points overlaid)
 #' pp_check(fit, check = "vs_x", x = mtcars$disp, y_style = "points")
