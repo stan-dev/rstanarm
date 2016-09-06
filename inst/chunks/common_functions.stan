@@ -197,14 +197,15 @@
    * @param z_beta A vector of primitive coefficients
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
+   * @param global_prior_scale A positive real number
    * @return A vector of coefficientes
    */
-  vector hs_prior(vector z_beta, real[] global, vector[] local) {
+  vector hs_prior(vector z_beta, real[] global, vector[] local, real global_prior_scale) {
     vector[rows(z_beta)] lambda;
     int K;
     K = rows(z_beta);
     for (k in 1:K) lambda[k] = local[1][k] * sqrt(local[2][k]);
-    return z_beta .* lambda * global[1] * sqrt(global[2]);
+    return z_beta .* lambda * global[1] * sqrt(global[2]) * global_prior_scale;
   }
 
   /** 

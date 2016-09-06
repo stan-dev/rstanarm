@@ -22,7 +22,10 @@
       if (P < 0.5) beta[k] = -beta[k];
     }
     else beta[k] = z_beta[k];
+    
     beta[k] = beta[k] * prior_scale[k] + prior_mean[k];
   }
-  else if (prior_dist == 3) beta = hs_prior(z_beta, global, local);
-  else if (prior_dist == 4) beta = hsplus_prior(z_beta, global, local);
+  else if (prior_dist == 3) 
+    beta = hs_prior(z_beta, global, local, global_prior_scale);
+  else if (prior_dist == 4) 
+    beta = hsplus_prior(z_beta, global, local);
