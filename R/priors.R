@@ -44,6 +44,9 @@
 #'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
 #'   freedom parameter(s) default to \eqn{3}.
+#' @param global_df,global_scale Optional arguments for the hierarchical
+#'   shrinkage prior. See the \emph{Hierarchical shrinkage family} section
+#'   below.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
 #'   \code{location} parameter is interpreted in the \code{LKJ} case. If
@@ -81,7 +84,7 @@
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:
 #'   \itemize{
-#'   \item \code{hs(df)}
+#'   \item \code{hs(df, global_df, global_scale)}
 #'   \item \code{hs_plus(df1, df2)}
 #'   }
 #'   
@@ -92,9 +95,14 @@
 #'   also half Cauchy. This is called the "horseshoe prior". The hierarchical 
 #'   shrinkage (\code{hs}) prior in the \pkg{rstanarm} package instead utilizes 
 #'   a half Student t distribution for the standard deviation (with 3 degrees of
-#'   freedom by default), scaled by a half Cauchy parameter, as described by
-#'   Piironen and Vehtari (2015). It is possible to change the \code{df}
-#'   argument, the prior degrees of freedom, to obtain less or more shrinkage.
+#'   freedom by default), as described by Piironen and Vehtari (2015). It is
+#'   possible to change the \code{df} argument, the prior degrees of freedom, to
+#'   obtain less or more shrinkage. Traditionally the standard deviation
+#'   parameter is then scaled by the square root of a \emph{global} half Cauchy 
+#'   parameter, although \pkg{rstanarm} allows setting \code{global_df} and 
+#'   \code{global_scale} arguments, in which case this global parameter is 
+#'   distributed half Student t with degrees of freedom \code{global_df} and 
+#'   scale \code{global_scale}.
 #'   
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
 #'   mean of zero and a standard deviation that is distributed as the product of
@@ -102,7 +110,7 @@
 #'   (\code{df1}, \code{df2}) by default) that are each scaled by the same
 #'   square root of a half Cauchy parameter.
 #'   
-#'   These hierarchical shrinkage priors have very tall modes and very fat 
+#'   The hierarchical shrinkage priors have very tall modes and very fat 
 #'   tails. Consequently, they tend to produce posterior distributions that are
 #'   very concentrated near zero, unless the predictor has a strong influence on
 #'   the outcome, in which case the prior has little influence. Hierarchical
@@ -318,9 +326,11 @@ cauchy <- function(location = 0, scale = NULL) {
 
 #' @rdname priors
 #' @export
-hs <- function(df = 3) {
+hs <- function(df = 3, global_df = 1, global_scale = 1) {
   validate_parameter_value(df)
-  nlist(dist = "hs", df, location = 0, scale = 1)
+  validate_parameter_value(global_df)
+  validate_parameter_value(global_scale)
+  nlist(dist = "hs", df, location = 0, scale = 1, global_df, global_scale)
 }
 
 #' @rdname priors

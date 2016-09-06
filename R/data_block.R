@@ -54,7 +54,8 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
-                prior_df = as.array(rep(1, nvars))))
+                prior_df = as.array(rep(1, nvars)), 
+                global_prior_scale = 0, global_prior_df = 0))
   if (!is.list(prior)) 
     stop(sQuote(deparse(substitute(prior))), " should be a named list")
   
@@ -70,8 +71,12 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
     prior_dist <- ifelse(prior_dist == "normal", 1L, 2L)
     prior_scale <- set_prior_scale(prior_scale, default = default_scale, 
                                    link = link)
+    global_prior_scale <- 0
+    global_prior_df <- 0
   } else {
     prior_dist <- ifelse(prior_dist == "hs", 3L, 4L)
+    global_prior_scale <- prior$global_scale
+    global_prior_df <- prior$global_df
   }
   
   prior_df <- maybe_broadcast(prior_df, nvars)
@@ -79,5 +84,6 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   prior_mean <- maybe_broadcast(prior_mean, nvars)
   prior_mean <- as.array(prior_mean)
   prior_scale <- maybe_broadcast(prior_scale, nvars)
-  return(nlist(prior_dist, prior_mean, prior_scale, prior_df)) 
+  return(nlist(prior_dist, prior_mean, prior_scale, prior_df, 
+               global_prior_scale, global_prior_df)) 
 }
