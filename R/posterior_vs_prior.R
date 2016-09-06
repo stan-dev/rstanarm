@@ -55,10 +55,6 @@
 #'  ggplot2::coord_flip() + 
 #'  ggplot2::ggtitle("Comparing the prior and posterior")
 #'  
-#' gg + 
-#'  ggplot2::scale_color_brewer() + 
-#'  ggplot2::theme(panel.background = ggplot2::element_rect(fill = "gray30"))
-#'                 
 #' # compare very wide and very narrow priors using roaches example
 #' # (see help(roaches, "rstanarm") for info on the dataset)
 #' roaches$roach100 <- roaches$roach1 / 100
@@ -154,7 +150,8 @@ posterior_vs_prior <-
       geom_pointrange(...) +
       do.call("facet_wrap", facet_args) +
       bayesplot::theme_default(x_lab = FALSE, y_lab = FALSE) +
-      theme(panel.grid.major.y = element_line(size = 0.1, color = "gray"))
+      theme(panel.grid.major.y = element_line(size = 0.1, color = "gray")) + 
+      bayesplot::xaxis_ticks()
     
     if (group_by == "parameter")
       return(graph)
