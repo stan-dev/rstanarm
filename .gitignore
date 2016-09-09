@@ -9,3 +9,5 @@ vignettes/*.R
 !vignettes/*.Rmd
 vignettes/*.html
 vignettes/*_files
+
+.DS_Store
