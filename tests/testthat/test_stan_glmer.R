@@ -90,7 +90,7 @@ test_that("stan_glmer returns expected result for bernoulli (lalonde)", {
   expect_stanreg(fit)
   
   ans <- glmer(fmla, data = dat, family = binomial(link = "logit"))
-  expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = 0.1)
+  expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = 0.15)
   expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   expect_equal(ngrps(fit), ngrps(ans))
 })
