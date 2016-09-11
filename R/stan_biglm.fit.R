@@ -29,7 +29,7 @@
 #' R <- qr.R(ols$qr)
 #' SSR <- crossprod(ols$residuals)[1]
 #' N <- length(ols$fitted.values)
-#' xbar <- colMeans(model.matrix(ols))
+#' xbar <- colMeans(mtcars[,c("wt", "qsec", "am")])
 #' y <- mtcars$mpg
 #' ybar <- mean(y)
 #' s_y <- sd(y)
