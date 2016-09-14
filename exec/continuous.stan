@@ -1,6 +1,6 @@
 #include "license.stan" // GPL3+
 
-# GLM for a Gaussian, Gamma, or inverse Gaussian outcome
+// GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.stan"
 
@@ -13,9 +13,9 @@ functions {
    */
   vector linkinv_gauss(vector eta, int link) {
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link < 3)  # link = identity or log 
-      return eta; # return eta for log link too bc will use lognormal
-    else {# link = inverse
+    if (link < 3)  // link = identity or log 
+      return eta;  // return eta for log link too bc will use lognormal
+    else {         // link = inverse
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] = inv(eta[n]); 
       return mu;
@@ -69,9 +69,9 @@ functions {
   vector pw_gauss(vector y, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 2) # link = log
+    if (link == 2) // link = log
       for (n in 1:rows(eta)) ll[n] = lognormal_lpdf(y[n] | eta[n], sigma);
-    else { # link = idenity or inverse
+    else { // link = idenity or inverse
       vector[rows(eta)] mu;
       mu = linkinv_gauss(eta, link);
       for (n in 1:rows(eta)) ll[n] = normal_lpdf(y[n] | mu[n], sigma);
@@ -85,11 +85,11 @@ functions {
     if (link < 1 || link > 3) reject("Invalid link");
     ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
       (shape - 1) * sum_log_y;
-    if (link == 2)      # link is log
+    if (link == 2)      // link is log
       ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
-    else if (link == 1) # link is identity
+    else if (link == 1) // link is identity
       ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                # link is inverse
+    else                // link is inverse
       ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
     return ret;
   }
@@ -104,17 +104,17 @@ functions {
   vector pw_gamma(vector y, vector eta, real shape, int link) {
     vector[rows(eta)] ll;
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 3) { # link = inverse
+    if (link == 3) { // link = inverse
       for (n in 1:rows(eta)) {
         ll[n] = gamma_lpdf(y[n] | shape, shape * eta[n]);
       }
     }
-    else if (link == 2) { # link = log
+    else if (link == 2) { // link = log
       for (n in 1:rows(eta)) {
         ll[n] = gamma_lpdf(y[n] | shape, shape / exp(eta[n]));
       }
     }
-    else { # link = identity
+    else { // link = identity
       for (n in 1:rows(eta)) {
         ll[n] = gamma_lpdf(y[n] | shape, shape / eta[n]);
       }
@@ -203,7 +203,8 @@ functions {
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
-  vector[N] y; // continuous outcome
+  int<lower=0> len_y;      // length of y
+  vector[len_y] y;         // continuous outcome
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
@@ -213,14 +214,14 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  vector[N * (family == 3)] sqrt_y;
-  vector[N * (family == 3)] log_y;
+  vector[len_y * (family == 3)] sqrt_y;
+  vector[len_y * (family == 3)] log_y;
   real sum_log_y;
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
   if      (family == 1) sum_log_y = not_a_number();
   else if (family == 2) sum_log_y = sum(log(y));
   else {
-    for (n in 1:N) sqrt_y[n] = sqrt(y[n]);
+    for (n in 1:len_y) sqrt_y[n] = sqrt(y[n]);
     log_y = log(y);
     sum_log_y = sum(log_y);
   }
@@ -228,7 +229,7 @@ transformed data {
 parameters {
   real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> dispersion_unscaled; # interpretation depends on family!
+  real<lower=0> dispersion_unscaled; // interpretation depends on family!
 }
 transformed parameters {
   real dispersion;
@@ -253,8 +254,10 @@ model {
     #include "eta_no_intercept.stan" // shifts eta
   }
   
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+  if (N > len_y) {
+    // nonlinear
+  }
+  else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
       if (link == 1)      target += normal_lpdf(y | eta, dispersion);
       else if (link == 2) target += lognormal_lpdf(y | eta, dispersion);
@@ -269,7 +272,7 @@ model {
                              dispersion, sum_log_y, sqrt_y);
     }
   }
-  else if (prior_PD == 0) { # weighted log-likelihoods
+  else if (prior_PD == 0) { // weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
@@ -307,7 +310,10 @@ generated quantities {
       #include "eta_no_intercept.stan" // shifts eta
     }
     
-    if (family == 1) {
+    if (N > len_y) {
+      // nonlinear
+    }
+    else if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], dispersion);
     }

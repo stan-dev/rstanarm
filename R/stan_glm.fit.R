@@ -276,6 +276,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                               gaussian = 1L, 
                               Gamma = 2L,
                               3L)
+    standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_dispersion <- 
