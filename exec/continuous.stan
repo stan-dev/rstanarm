@@ -1,6 +1,6 @@
 #include "license.stan" // GPL3+
 
-# GLM for a Gaussian, Gamma, or inverse Gaussian outcome
+// GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.stan"
 
@@ -13,9 +13,11 @@ functions {
    */
   vector linkinv_gauss(vector eta, int link) {
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link < 3)  # link = identity or log 
-      return eta; # return eta for log link too bc will use lognormal
-    else {# link = inverse
+    if (link == 1)  // link = identity 
+      return eta; 
+    else if (link == 2) // link = log
+      return exp(eta); 
+    else { // link = inverse
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] = inv(eta[n]); 
       return mu;
@@ -68,14 +70,13 @@ functions {
   */
   vector pw_gauss(vector y, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 2) # link = log
-      for (n in 1:rows(eta)) ll[n] = lognormal_lpdf(y[n] | eta[n], sigma);
-    else { # link = idenity or inverse
-      vector[rows(eta)] mu;
-      mu = linkinv_gauss(eta, link);
-      for (n in 1:rows(eta)) ll[n] = normal_lpdf(y[n] | mu[n], sigma);
-    }
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 3) 
+      reject("Invalid link"); 
+    
+    mu = linkinv_gauss(eta, link);
+    for (n in 1:rows(eta)) 
+      ll[n] = normal_lpdf(y[n] | mu[n], sigma);
     return ll;
   }
   
@@ -256,9 +257,12 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if (family == 1) {
-      if (link == 1)      target += normal_lpdf(y | eta, dispersion);
-      else if (link == 2) target += lognormal_lpdf(y | eta, dispersion);
-      else target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
+      if (link == 1) 
+        target += normal_lpdf(y | eta, dispersion);
+      else if (link == 2) 
+        target += normal_lpdf(y | exp(eta), dispersion);
+      else 
+        target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
       // divide_real_by_vector() is defined in common_functions.stan
     }
     else if (family == 2) {
