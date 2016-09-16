@@ -3,6 +3,7 @@
 // GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.stan"
+  #include "SSfunctions.stan"
 
   /** 
    * Apply inverse link function to linear predictor
@@ -184,6 +185,19 @@ functions {
     else return mu2 / x;
   }
 
+  matrix reshape(vector x, int Rows, int Cols) {
+    matrix[Rows, Cols] out;
+    int pos;
+    if (rows(x) != Rows * Cols)
+      reject("x is the wrong length");
+    pos = 1;
+    for (r in 1:Rows) for (c in 1:Cols) {
+      out[r,c] = x[pos];
+      pos = pos + 1;
+    }
+    return out;
+  }
+  
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -212,6 +226,9 @@ data {
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include "glmer_stuff.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
+  int<lower=0,upper=10> SSfun; // nonlinear function indicator, 0 for identity
+  vector[SSfun > 0  ? len_y : 0] input;
+  vector[SSfun == 5 ? len_y : 0] Dose;
 }
 transformed data {
   vector[len_y * (family == 3)] sqrt_y;
@@ -254,8 +271,29 @@ model {
     #include "eta_no_intercept.stan" // shifts eta
   }
   
-  if (N > len_y) {
-    // nonlinear
+  if (SSfun > 0) { // nlmer
+    matrix[len_y, K] P;
+    P = reshape(eta, len_y, K);
+    if (SSfun < 5) {
+      if (SSfun <= 2) {
+        if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), dispersion);
+        else target += normal_lpdf(y | SS_asympOff(input, P), dispersion);
+      }
+      else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), dispersion);
+      else target += normal_lpdf(y | SS_biexp(input, P), dispersion);
+    }
+    else {
+      if (SSfun <= 7) {
+        if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), dispersion);
+        else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), dispersion);
+        else target += normal_lpdf(y | SS_gompertz(input, P), dispersion);
+      }
+      else {
+        if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), dispersion);
+        else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), dispersion);
+        else target += normal_lpdf(y | SS_weibull(input, P), dispersion);
+      }
+    }
   }
   else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
@@ -310,8 +348,31 @@ generated quantities {
       #include "eta_no_intercept.stan" // shifts eta
     }
     
-    if (N > len_y) {
-      // nonlinear
+    if (SSfun > 0) { // nlmer
+      vector[len_y] eta_nlmer;
+      matrix[len_y, K] P;      
+      P = reshape(eta, len_y, K);
+      if (SSfun < 5) {
+        if (SSfun <= 2) {
+          if (SSfun == 1) eta_nlmer = SS_asymp(input, P);
+          else eta_nlmer = SS_asympOff(input, P);
+        }
+        else if (SSfun == 3) eta_nlmer = SS_asympOrig(input, P);
+        else eta_nlmer = SS_biexp(input, P);
+      }
+      else {
+        if (SSfun <= 7) {
+          if (SSfun == 5) eta_nlmer = SS_fol(Dose, input, P);
+          else if (SSfun == 6) eta_nlmer = SS_fpl(input, P);
+          else eta_nlmer = SS_gompertz(input, P);
+        }
+        else {
+          if (SSfun == 8) eta_nlmer = SS_logis(input, P);
+          else if (SSfun == 9) eta_nlmer = SS_micmen(input, P);
+          else eta_nlmer = SS_weibull(input, P);
+        }
+      }
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta_nlmer[n], dispersion);
     }
     else if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);

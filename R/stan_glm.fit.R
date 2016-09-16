@@ -171,6 +171,17 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
+    if (is.null(group$SSfun)) {
+      standata$SSfun <- 0L
+      standata$input <- double()
+      standata$Dose <- double()
+    }
+    else {
+      standata$SSfun <- group$SSfun
+      standata$input <- group$input
+      if (group$SSfun == 5) standata$Dose <- group$Dose
+      else standata$Dose <- double()
+    }
     Z <- t(group$Zt)
     group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
