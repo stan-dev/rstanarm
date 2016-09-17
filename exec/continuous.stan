@@ -376,16 +376,16 @@ generated quantities {
     }
     else if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], dispersion);
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta[n], dispersion);
     }
     else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
+      for (n in 1:len_y) mean_PPD = mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
     }
     else if (family == 3) {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
+      for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
     }
-    mean_PPD = mean_PPD / N;
+    mean_PPD = mean_PPD / len_y;
   }
 }

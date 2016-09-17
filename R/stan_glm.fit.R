@@ -81,7 +81,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
     prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
-    prior_scale_for_dispersion <- scaled <- NULL
+    prior_scale_for_dispersion <- NULL
+  scaled <- FALSE
   
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -158,6 +159,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     colnames(xtemp) <- cn
     xbar <- c(xbar %*% R_inv)
   }
+  
+  if (length(weights) > 0 && all(weights == 1)) weights <- double()
+  if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
   
   # create entries in the data block of the .stan file
   standata <- nlist(
