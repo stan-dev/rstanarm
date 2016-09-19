@@ -100,8 +100,6 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   }
   
   validate_stanreg_object(object)
-  if (!used.sampling(object))
-    STOP_sampling_only("pp_validate")
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
   
