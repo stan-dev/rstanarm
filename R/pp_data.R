@@ -23,7 +23,13 @@ pp_data <-
            offset = NULL,
            ...) {
     validate_stanreg_object(object)
-    if (is.mer(object))
+    if (inherits(object, "nlmerMod"))
+      .pp_data_nlmer(object,
+                     newdata = newdata,
+                     re.form = re.form,
+                     offset = offset,
+                    ...)
+    else if (is.mer(object))
       .pp_data_mer(object,
                    newdata = newdata,
                    re.form = re.form,
@@ -63,6 +69,31 @@ pp_data <-
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
+# for models fit using stan_nlmer
+.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, ...) {
+  x <- .pp_data_mer_x(object, newdata, ...) # FIXME
+  z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  offset <- .pp_data_offset(object, newdata, offset)
+
+  inputs <- as.character(object$glmod$respMod$nlmod[2])
+  inputs <- sub("(", ",", inputs, fixed = TRUE)
+  inputs <- sub(")", "", inputs, fixed = TRUE)
+  inputs <- scan(text = inputs, what = character(), sep = ",", 
+                 strip.white = TRUE, quiet = TRUE)
+  if (is.null(newdata)) {
+    arg1 <- arg2 <- NULL
+  }
+  else if (object$family$link == "inv_SSfol") {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- newdata[[inputs[3]]]
+  }
+  else {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- NULL
+  }
+  return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names,
+               arg1, arg2))
+}
 
 # the functions below are heavily based on a combination of 
 # lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 
