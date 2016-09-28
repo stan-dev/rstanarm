@@ -101,6 +101,9 @@
 #' for details on the computations implemented by the \pkg{loo} package and the 
 #' interpretation of the Pareto \eqn{k} estimates displayed when using the 
 #' \code{\link{plot.loo}} method.
+#' 
+#' \code{\link{log_lik.stanreg}} to directly access the pointwise log-likelihood
+#' matrix.
 #'   
 #' @examples 
 #' \donttest{

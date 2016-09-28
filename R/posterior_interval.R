@@ -37,7 +37,8 @@
 #'   \code{"central"} (see Details). A central \eqn{100p}\%
 #'   interval is defined by the \eqn{\alpha/2} and \eqn{1 - \alpha/2} quantiles,
 #'   where \eqn{\alpha = 1 - p}.
-#' @param ... Currently ignored.
+#' @param ... Currently ignored by the method for stanreg objects. The S3
+#'   generic uses \code{...} to pass arguments to any defined methods.
 #' 
 #' @return A matrix with two columns and as many rows as model parameters (or 
 #'   the subset of parameters specified by \code{pars} and/or 
@@ -92,7 +93,13 @@
 #' posterior_interval(example_model, regex_pars = "herd")
 #' posterior_interval(example_model, pars = "period2", prob = 0.5)
 #' 
-posterior_interval <- function(object, prob = 0.9, type = "central",
+posterior_interval <- function(object, ...) {
+  UseMethod("posterior_interval")
+}
+
+#' @rdname posterior_interval
+#' @export
+posterior_interval.stanreg <- function(object, prob = 0.9, type = "central",
                                pars = NULL, regex_pars = NULL, ...) {
   validate_stanreg_object(object)
   if (used.optimizing(object))

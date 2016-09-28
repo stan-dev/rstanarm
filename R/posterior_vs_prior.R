@@ -25,9 +25,10 @@
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument),
 #'   e.g., \code{nrow} or \code{ncol} to change the layout, \code{scales} to 
 #'   allow axis scales to vary across facets, etc. See Examples.
-#' @param ... Arguments (other than \code{color}) passed to 
-#'   \code{\link[ggplot2]{geom_pointrange}} to control the appearance of the 
-#'   plotted intervals.
+#' @param ... The S3 generic uses \code{...} to pass arguments to any defined 
+#'   methods. For the method for stanreg objects, \code{...} is for arguments
+#'   (other than \code{color}) passed to \code{\link[ggplot2]{geom_pointrange}}
+#'   to control the appearance of the plotted intervals.
 #'   
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -90,7 +91,13 @@
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
 #'   scale_x_discrete element_line element_text
 #' 
-posterior_vs_prior <- function(object, 
+posterior_vs_prior <- function(object, ...) {
+  UseMethod("posterior_vs_prior")
+}
+
+#' @rdname posterior_vs_prior
+#' @export 
+posterior_vs_prior.stanreg <- function(object, 
                                pars = NULL, regex_pars = NULL, prob = 0.9, 
                                color_by = c("parameter", "vs", "none"),
                                group_by_parameter = FALSE,
