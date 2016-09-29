@@ -58,7 +58,8 @@
 #' @param offset A vector of offsets. Only required if \code{newdata} is
 #'   specified and an \code{offset} argument was specified when fitting the
 #'   model.
-#' @param ... Currently unused.
+#' @param ... Currently ignored by the method for stanreg objects. The S3
+#'   generic uses \code{...} to pass arguments to any defined methods.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations
 #'   from the posterior predictive distribution. Each row of the matrix is a
@@ -125,9 +126,15 @@
 #' ytilde <- posterior_predict(fit, fun = exp)
 #' }
 #' 
-posterior_predict <- function(object, newdata = NULL, draws = NULL, 
-                              re.form = NULL, fun = NULL, seed = NULL, 
-                              offset = NULL, ...) {
+posterior_predict <- function(object, ...) {
+  UseMethod("posterior_predict")
+}
+
+#' @rdname posterior_predict
+#' @export 
+posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL, 
+                                      re.form = NULL, fun = NULL, seed = NULL, 
+                                      offset = NULL, ...) {
   validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
