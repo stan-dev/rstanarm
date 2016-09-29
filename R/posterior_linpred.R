@@ -30,11 +30,17 @@
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the 
 #'   untransformed linear predictor is returned.
-#' @param newdata,re.form Same as for \code{\link{posterior_predict}}.
+#' @param newdata,re.form,offset Same as for \code{\link{posterior_predict}}.
+#' @param XZ If \code{TRUE} then instead of computing the linear predictor the 
+#'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
+#'   terms) constructed from \code{newdata} is returned. The default is 
+#'   \code{FALSE}.
 #' @param ... Currently unused.
 #' 
-#' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
-#'   posterior distribution of the (possibly transformed) linear predictor.
+#' @return The default is to return a \code{draws} by \code{nrow(newdata)} 
+#'   matrix of simulations from the posterior distribution of the (possibly 
+#'   transformed) linear predictor. The exception is if the argument \code{XZ} 
+#'   is set to \code{TRUE} (see the \code{XZ} argument description above).
 #' 
 #' @seealso \code{\link{posterior_predict}} to draw from the posterior 
 #'   predictive distribution of the outcome, which is almost always preferable.
@@ -51,7 +57,8 @@
 #' probs2 <- posterior_linpred(example_model, transform = TRUE, re.form = NA)
 #' 
 posterior_linpred <- function(object, transform = FALSE, newdata = NULL, 
-                              re.form = NULL, ...) {
+                              re.form = NULL, offset = NULL, XZ = FALSE, 
+                              ...) {
   validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_linpred")
@@ -63,7 +70,17 @@ posterior_linpred <- function(object, transform = FALSE, newdata = NULL,
     if (any(is.na(newdata))) 
       stop("Currently NAs are not allowed in 'newdata'.")
   }
-  dat <- pp_data(object, newdata = newdata, re.form = re.form, ...)
+  dat <- pp_data(object,
+                 newdata = newdata,
+                 re.form = re.form,
+                 offset = offset,
+                 ...)
+  if (XZ) {
+    XZ <- dat[["x"]]
+    if (is.mer(object))
+      XZ <- cbind(XZ, t(dat[["Zt"]]))
+    return(XZ)
+  }
   eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
   if (!transform)
     return(eta)

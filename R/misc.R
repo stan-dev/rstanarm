@@ -75,7 +75,7 @@ set_sampling_args <- function(object, prior, user_dots = list(),
 # @return A list with \code{adapt_delta} and \code{max_treedepth}.
 default_stan_control <- function(prior, adapt_delta = NULL, 
                                  max_treedepth = 15L) {
-  if (is.null(prior)) {
+  if (!length(prior)) {
     if (is.null(adapt_delta)) adapt_delta <- 0.95
   } else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
@@ -314,6 +314,14 @@ check_constant_vars <- function(mf) {
 # @param ... Passed to grep
 b_names <- function(x, ...) {
   grep("^b\\[", x, ...)
+}
+
+# Return names of the last dimension in a matrix/array (e.g. colnames if matrix)
+#
+# @param x A matrix or array
+last_dimnames <- function(x) {
+  ndim <- length(dim(x))
+  dimnames(x)[[ndim]]
 }
 
 # Get the correct column name to use for selecting the median

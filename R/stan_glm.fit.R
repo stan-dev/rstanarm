@@ -456,21 +456,34 @@ pad_reTrms <- function(Z, cnms, flist) {
 
 # Drop the extra reTrms from a matrix x
 #
-# @param x A matrix (e.g. the posterior sample or matrix of summary stats)
-# @param columns Do the columns (TRUE) or rows (FALSE) correspond to the
+# @param x A matrix or array (e.g. the posterior sample or matrix of summary
+#   stats)
+# @param columns Do the columns (TRUE) or rows (FALSE) correspond to the 
 #   variables?
 unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
 unpad_reTrms.default <- function(x, ...) {
-  if (is.matrix(x))
-    return(unpad_reTrms.matrix(x, ...))
+  if (is.matrix(x) || is.array(x))
+    return(unpad_reTrms.array(x, ...))
   keep <- !grepl("_NEW_", names(x), fixed = TRUE)
   x[keep]
 }
-unpad_reTrms.matrix <- function(x, columns = TRUE, ...) {
+
+unpad_reTrms.array <- function(x, columns = TRUE, ...) {
+  ndim <- length(dim(x))
+  if (ndim > 3)
+    stop("'x' should be a matrix or 3-D array")
+  
   nms <- if (columns) 
-    colnames(x) else rownames(x)
+    last_dimnames(x) else rownames(x)
   keep <- !grepl("_NEW_", nms, fixed = TRUE)
-  if (columns) x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
+  if (length(dim(x)) == 2) {
+    x_keep <- if (columns) 
+      x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
+  } else {
+    x_keep <- if (columns) 
+      x[, , keep, drop = FALSE] else x[keep, , , drop = FALSE]
+  }
+  return(x_keep)
 }
 
 make_b_nms <- function(group) {

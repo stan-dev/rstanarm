@@ -369,13 +369,13 @@ ll_fun <- function(x) {
 
 # arguments for loo.function ----------------------------------------------
 # returns 'args' argument for loo.function() and waic.function()
-ll_args <- function(object, newdata = NULL) {
+ll_args <- function(object, newdata = NULL, offset = NULL) {
   validate_stanreg_object(object)
   f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
   if (has_newdata) {
-    ppdat <- pp_data(object, as.data.frame(newdata))
+    ppdat <- pp_data(object, as.data.frame(newdata), offset = offset)
     tmp <- pp_eta(object, ppdat)
     eta <- tmp$eta
     stanmat <- tmp$stanmat

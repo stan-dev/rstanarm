@@ -253,7 +253,8 @@
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, prior_PD = TRUE,
+#' prior_pred_fit <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
+#'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
 #'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))

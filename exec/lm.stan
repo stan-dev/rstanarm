@@ -1,4 +1,4 @@
-#include "license.stan"
+#include "license.stan" // GPL3+
 
 // GLM for a Gaussian outcome with no link function
 functions {
