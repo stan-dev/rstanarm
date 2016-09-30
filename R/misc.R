@@ -633,3 +633,12 @@ check_reTrms <- function(reTrms) {
   }
   return(invisible(NULL))
 }
+
+#' @importFrom lme4 glmerControl
+make_glmerControl <- function(...) {
+  glmerControl(check.nlev.gtreq.5 = "ignore",
+               check.nlev.gtr.1 = "stop",
+               check.nobs.vs.rankZ = "ignore",
+               check.nobs.vs.nlev = "ignore",
+               check.nobs.vs.nRE = "ignore", ...)  
+}

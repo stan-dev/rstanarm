@@ -73,7 +73,7 @@
 #' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
 #' 
-#' @importFrom lme4 glFormula glmerControl
+#' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t cBind
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
                        subset, weights, 
@@ -89,11 +89,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   mc <- match.call(expand.dots = FALSE)
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
-  mc$control <- glmerControl(check.nlev.gtreq.5 = "ignore",
-                             check.nlev.gtr.1 = "stop",
-                             check.nobs.vs.rankZ = "ignore",
-                             check.nobs.vs.nlev = "ignore",
-                             check.nobs.vs.nRE = "ignore")
+  mc$control <- make_glmerControl()
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_ops <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
@@ -121,7 +117,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
 
-  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
+  Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 

@@ -101,7 +101,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
   
-  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
+  Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 

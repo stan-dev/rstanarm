@@ -172,7 +172,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
-    group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
+    group <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 
@@ -415,43 +415,26 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
 # Add extra level _NEW_ to each group
 # 
-# @param Z ranef indicator matrix
+# @param Ztlist ranef indicator matrices
 # @param cnms group$cnms
 # @param flist group$flist
-pad_reTrms <- function(Z, cnms, flist) {
+pad_reTrms <- function(Ztlist, cnms, flist) {
+  stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
   p <- sapply(cnms, FUN = length)
-  last <- cumsum(l * p)
+  n <- ncol(Ztlist[[1]])
   for (i in attr(flist, "assign")) {
-    if (grepl("^Xr", names(p)[i])) break
+    if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
-  }
-  n <- nrow(Z)
-  mark <- i - 1L
-  if (getRversion() < "3.2.0") {
-    if (mark >= 1)
-      Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[mark], sparse = TRUE))
-    mark <- mark - 1L
-    while (mark > 0L) {
-      Z <- cBind(cBind(Z[, 1:last[mark], drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = TRUE)),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
+    Ztlist[[i]] <- if (getRversion() < "3.2.0") {
+      rBind( Ztlist[[i]], Matrix(0, nrow = 1, ncol = n, sparse = TRUE))
+    } else {
+      rbind2(Ztlist[[i]], Matrix(0, nrow = 1, ncol = n, sparse = TRUE))
     }
   }
-  else {
-    if (mark >= 1)
-      Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[mark], sparse = TRUE))
-    mark <- mark - 1L
-    while (mark > 0L) {
-      Z <- cbind(Z[, 1:last[mark], drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = TRUE),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
-    }
-  }
-  nlist(Z, cnms, flist)
+  Z <- t(do.call(rbind, args = Ztlist))
+  return(nlist(Z, cnms, flist))
 }
 
 # Drop the extra reTrms from a matrix x

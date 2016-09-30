@@ -27,7 +27,7 @@ pp_data <-
       .pp_data_mer(object,
                    newdata = newdata,
                    re.form = re.form,
-                   offset = offset,
+                   # offset = offset,
                    ...)
     else
       .pp_data(object, newdata = newdata, offset = offset, ...)
