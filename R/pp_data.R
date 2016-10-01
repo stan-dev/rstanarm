@@ -23,12 +23,12 @@ pp_data <-
            offset = NULL,
            ...) {
     validate_stanreg_object(object)
-    if (is.mer(object))
-      .pp_data_mer(object,
-                   newdata = newdata,
-                   re.form = re.form,
-                   # offset = offset,
-                   ...)
+    if (is.mer(object)) {
+      out <- .pp_data_mer(object, newdata = newdata,
+                          re.form = re.form, ...)
+      if (!is.null(offset)) out$offset <- offset
+      return(out)
+    }
     else
       .pp_data(object, newdata = newdata, offset = offset, ...)
   }
@@ -78,7 +78,8 @@ pp_data <-
   }
   offset <- model.offset(model.frame(object))
   if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
-    offset <- eval(object$call$offset, newdata)
+    offset <- try(eval(object$call$offset, newdata), silent = TRUE)
+    if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }

@@ -199,8 +199,7 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   # expect_equal(dim(yrep1), c(nrow(as.data.frame(fit)), nobs(fit)))
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   # expect_equal(dim(yrep2), c(1, nobs(fit)))
-  expect_error(posterior_predict(fit, newdata = model.frame(fit$gam)), 
-               "not yet supported for models estimated via 'stan_gamm4'")
+  expect_silent(posterior_predict(fit, newdata = sleepstudy))
 })
 
 
@@ -244,8 +243,8 @@ test_that("compatible with stan_lmer with offset", {
                       prior = normal(0,1), iter = ITER, chains = CHAINS,
                       seed = SEED, refresh = REFRESH, offset = offs))
   
-  expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ]), 
-                 "offset")
+  expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
+                 "STATS")
   check_for_error(fit, offset = offs)
 })
 

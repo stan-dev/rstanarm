@@ -413,11 +413,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 }
 
 
-# Add extra level _NEW_ to each group
-# 
-# @param Ztlist ranef indicator matrices
-# @param cnms group$cnms
-# @param flist group$flist
+#' Add extra level _NEW_ to each group
+#' 
+#' @param Ztlist ranef indicator matrices
+#' @param cnms group$cnms
+#' @param flist group$flist
+#' @importFrom Matrix rBind
 pad_reTrms <- function(Ztlist, cnms, flist) {
   stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
@@ -427,10 +428,13 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
     if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
+  }
+  for (i in 1:length(p)) {
+    if (grepl("^Xr", names(p)[i])) next
     Ztlist[[i]] <- if (getRversion() < "3.2.0") {
-      rBind( Ztlist[[i]], Matrix(0, nrow = 1, ncol = n, sparse = TRUE))
+      rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     } else {
-      rbind2(Ztlist[[i]], Matrix(0, nrow = 1, ncol = n, sparse = TRUE))
+      rbind2(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     }
   }
   Z <- t(do.call(rbind, args = Ztlist))
