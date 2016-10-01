@@ -155,8 +155,8 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  
   bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
   n_bad <- length(bad_obs)
   
@@ -362,7 +362,6 @@ ll_fun <- function(x) {
   f <- family(x)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  
   get(paste0(".ll_", f$family, "_i"))
 }
 
@@ -413,7 +412,22 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
     if (is.nb(fname)) 
       draws$size <- stanmat[,"overdispersion"]
     if (is.beta(fname))
-      draws$phi <- stanmat[,"(phi)"]
+      draws$f_phi <- object$family_phi
+      z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+      if(length(z_vars) == 0) {
+        stop("something got messed up")
+      }
+      if (length(z_vars) == 1 && z_vars == "(phi)") {
+        draws$phi <- stanmat[, z_vars]
+      }
+      else {
+        x_dat <- get_x(object)
+        z_dat <- object$z
+        colnames(x_dat) <- paste0("x.", colnames(x_dat))
+        colnames(z_dat) <- paste0("z.", colnames(z_dat))
+        data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat))
+        draws$phi <- stanmat[,z_vars]
+      }
   } else {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
@@ -429,6 +443,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       draws$alpha <- stanmat[, "alpha"]
       draws$f <- object$method
     }
+    
   }
   
   data$offset <- object$offset
@@ -451,7 +466,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
     data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   }
-  
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
@@ -477,6 +491,22 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
 }
 .mu <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  draws$f$linkinv(eta)
+}
+.xdata_beta <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, -c(which(colnames(data) %in% sel), grep("z", colnames(data), fixed = T))]
+}
+.zdata_beta <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, -c(which(colnames(data) %in% sel), grep("x", colnames(data), fixed = T))]
+}
+.phi_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))
+  draws$f_phi$linkinv(eta)
+}
+.mu_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata_beta(data), data$offset))
   draws$f$linkinv(eta)
 }
 .weighted <- function(val, w) {
@@ -546,7 +576,19 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
 }
 
 .ll_beta_i <- function(i, data, draws) {
-  mu <- .mu(data, draws)
-  val <- dbeta(data$y, mu * draws$phi, (1 - mu) * draws$phi, log = TRUE)
+  mu <- .mu_beta(data, draws)
+  phi <- draws$phi
+  if (length(grep("z", colnames(data), fixed = T)) > 0) {
+    phi <- .phi_beta(data, draws)
+  }
+  # if (!(draws$f_phi$link == "log")) {
+  #   z_dat <- data[,grep("z", colnames(data), fixed = T)]
+  #   z_dat <- z_dat[,-grep("Intercept", colnames(z_dat))]
+  #   z_int <- draws$phi[,grep("Intercept", colnames(draws$phi))]
+  #   z_pars <- draws$phi[,-grep("Intercept", colnames(draws$phi))]
+  #   draws$phi <- as.vector(linear_predictor(z_pars, z_dat, data$offset))
+  #   phi <- draws$phi + z_int
+  # }
+  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
 }

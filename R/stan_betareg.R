@@ -59,7 +59,7 @@
 
 stan_betareg <- function (formula, data, subset, na.action, weights, offset,
                           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
-                          link.phi = NULL, model = TRUE, y = TRUE, x = FALSE, ...,
+                          link.phi = c("log", "identity", "sqrt"), model = TRUE, y = TRUE, x = FALSE, ...,
                           prior = normal(), prior_intercept = normal(),
                           prior_ops = prior_options(), prior_PD = FALSE, 
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
@@ -108,8 +108,9 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
                               adapt_delta = adapt_delta, QR = QR, sparse = FALSE, Z_true = Z_true)
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
-  fit <- nlist(stanfit, family = beta_fam(link), formula, offset = NULL, 
-               weights = NULL, x = X, y = Y, 
+  link_phi <- match.arg(link.phi)
+  fit <- nlist(stanfit, family = beta_fam(link), family_phi = beta_phi_fam(link_phi), formula, offset = NULL, 
+               weights = NULL, x = X, y = Y, z = Z, # need Z if it has 2+ columns
                data, prior.info = get_prior_info(call, formals()), 
                call = match.call(), terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
@@ -121,13 +122,13 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
     out$x <- NULL
   if (!y) 
     out$y <- NULL
-  if (!model) 
+  if (!model)
     out$model <- NULL
   
   return(out) 
 }
 
-beta_fam <- function(link = "logit") {
+beta_fam <- function(link = "logit") { # change function name to beta_mu_fam
   stopifnot(is.character(link))
   if (link == "loglog") {
     out <- binomial("cloglog")
@@ -144,4 +145,19 @@ beta_fam <- function(link = "logit") {
   out$simulate <- function(object, nsim)
     stop("'simulate' function should not have been called")
   return(out)
+}
+
+beta_phi_fam <- function(link = "log") {
+  stopifnot(is.character(link))
+  out <- poisson(link)
+  out$family <- "beta_phi"
+  out$variance <- function(mu, phi) mu * (1 - mu) / (phi + 1)
+  out$dev.resids <- function(y, mu, wt)
+    stop("'dev.resids' function should not be called")
+  out$aic <- function(y, n, mu, wt, dev)
+    stop("'aic' function should not have been called")
+  out$simulate <- function(object, nsim)
+    stop("'simulate' function should not have been called")
+  return(out)
+  return(out)  
 }

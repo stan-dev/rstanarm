@@ -168,7 +168,6 @@ posterior_predict <- function(object, newdata = NULL, draws = NULL,
   else ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
-  
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
   if (!is.null(newdata) && nrow(newdata) == 1L) 
@@ -272,7 +271,6 @@ pp_args <- function(object, data) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
   if (is.gaussian(famname)) {
@@ -284,10 +282,18 @@ pp_args <- function(object, data) {
   } else if (is.nb(famname)) {
     args$size <- stanmat[, "overdispersion"]
   } else if (is.beta(famname)) {
+    # create a condition for presence of z vars
     z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
-    args$phi <- stanmat[,z_vars]
+    omega <- stanmat[,z_vars]
+    if (length(z_vars) == 1 && z_vars == "(phi)") {
+      args$phi <- stanmat[, "(phi)"] 
+    }
+    else {
+      inverse_link_phi <- linkinv(object$family_phi)
+      args$phi <- linear_predictor(as.matrix(omega), as.matrix(object$z), data$offset) 
+      args$phi <- inverse_link_phi(args$phi)
+    }
   }
-  
   args
 }
 

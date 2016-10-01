@@ -48,6 +48,10 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   if (!length(link_num_phi)) 
     stop("'link' must be one of ", paste(supported_phi_links, collapse = ", "))
   
+  if (Z_true == 0) {
+    link_num_phi <- 0
+  }
+  
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
     prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
@@ -63,6 +67,13 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   zbar <- z_stuff$xbar
   has_intercept_z <- z_stuff$has_intercept
   nvars_z <- ncol(ztemp)
+  
+  if (Z_true == 0) {
+    has_intercept_z <- FALSE
+  }
+  # if (nvars_z == 0 && has_intercept_z == 1) {
+  #   Z_true <- 0
+  # }
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
@@ -109,22 +120,22 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     w = double(), 
     v = integer(), 
     u = integer(),
-    Z_true,
-    betareg_Z_dim = nvars_z, # ncol(z),
+    z_dim = nvars_z, # ncol(z),
     link_phi = link_num_phi,
-    betareg_Z = array(ztemp, dim = c(dim(ztemp))), # z,
-    has_intercept_z
+    betareg_z = array(ztemp, dim = c(dim(ztemp))),
+    has_intercept_z,
+    zbar = array(zbar)
     )
-  
+
   # Print Debugging
   cat("has_intercept", has_intercept, "\n")
   cat("has_intercept_z", has_intercept_z, "\n")
-  cat("Z_true", Z_true, "\n")
   cat("link_phi", link_num_phi, "\n")
-  cat("z", z, "\n")
-  cat("ztemp", ztemp, "\n")
+  cat("z_dim", nvars_z, "\n")
+  cat("dim(ztemp)", dim(ztemp), "\n")
   cat("zbar", zbar, "\n")
   cat("nvars_z", nvars_z, "\n")
+  cat("xbar", xbar, "\n")
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
@@ -137,17 +148,20 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
-    out$par <- out$par[!grepl("eta_Z", names(out$par))] # kinda sketch - might need fixing
-    out$theta_tilde <- out$theta_tilde[,!grepl("eta_Z", colnames(out$theta_tilde))] # kinda sketch - might need fixing
+    out$par <- out$par[!grepl("eta_z", names(out$par))] # might need fixing
+    out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))] # might need fixing
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     if (Z_true == 1) {
-      mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
-      new_names[mark_z] <- paste0("(phi)_", colnames(z))
+      browser()
+      new_names[new_names == "omega_int[1]"] <- "(phi)_(Intercept)"
+      mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names) # "^omega\\[[[:digit:]]+\\]$"
+      new_names[mark_z] <- paste0("(phi)_", colnames(ztemp))
     }
     else {
+      browser()
       new_names[new_names == "dispersion"] <- "(phi)"
     }
     names(out$par) <- new_names
@@ -176,8 +190,8 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
                            algorithm = algorithm, init = 0.001, ...)
     }
     if (Z_true == 1) {
-      new_names <- c(if (has_intercept) "(Intercept)", 
-                     colnames(xtemp), paste0("(phi)_", colnames(z)),
+      new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp),
+                     if (has_intercept_z) "(phi)_Intercept", paste0("(phi)_", colnames(ztemp)),
                      "mean_PPD", "log-posterior")
     }
     else {
