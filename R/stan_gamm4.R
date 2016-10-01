@@ -76,6 +76,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   glmod <- gamm4_to_glmer(formula, random, family, data, weights, subset, 
                           na.action, knots, drop.unused.levels)
 
+  colnames(glmod$X) <- gsub("^X\\.0", "", colnames(glmod$X))
+  colnames(glmod$X) <- gsub("Fx1$",   "", colnames(glmod$X))
   X <- glmod$X
   y <- glmod$fr[, as.character(glmod$formula[2L])]
   if (is.matrix(y) && ncol(y) == 1L) y <- as.vector(y)

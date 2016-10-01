@@ -118,9 +118,15 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
       k <- ind[sn[i] == tn] ## which term should contain G$random[[i]] 
       ii <- (b$reTrms$Gp[k]+1):b$reTrms$Gp[k+1]
       b$reTrms$Zt[ii,] <- as(t(G$random[[i]]),"dgCMatrix")
-      # b$reTrms$Ztlist[[i]][ii,] <- as(t(G$random[[i]]),"dgCMatrix") # FIXME: check this
       b$reTrms$cnms[[k]] <- s_labels[[i]]
     }
+    start <- 1L
+    for (i in seq_along(b$reTrms$Ztlist)) {
+      end <- start + nrow(b$reTrms$Ztlist[[i]]) - 1L
+      b$reTrms$Ztlist[[i]] <- b$reTrms$Zt[start:end, , drop = FALSE]
+      start <- end + 1L
+    }
+    stopifnot(start == (nrow(b$reTrms$Zt) + 1L))
   }
   return(b) # need to get the Terms right
 }
