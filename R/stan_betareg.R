@@ -61,6 +61,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
                           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
                           link.phi = c("log", "identity", "sqrt"), model = TRUE, y = TRUE, x = FALSE, ...,
                           prior = normal(), prior_intercept = normal(),
+                          prior_z = normal(), prior_intercept_z = normal(),
                           prior_ops = prior_options(), prior_PD = FALSE, 
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                           adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -103,7 +104,9 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = NULL, offset = NULL, 
                               link = link, link.phi = link.phi, ..., prior = prior, 
-                              prior_intercept = prior_intercept, prior_ops = prior_ops,
+                              prior_intercept = prior_intercept, 
+                              prior_z = prior_z, prior_intercept_z = prior_intercept_z,
+                              prior_ops = prior_ops,
                               prior_PD = prior_PD, algorithm = algorithm, 
                               adapt_delta = adapt_delta, QR = QR, sparse = FALSE, Z_true = Z_true)
   algorithm <- match.arg(algorithm)

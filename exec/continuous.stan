@@ -288,6 +288,14 @@ data {
   int<lower=0> z_dim;                     // dimensions of z vars
   matrix[N, z_dim] betareg_z;             // matrix of z vars
   row_vector[z_dim] zbar;                 // mean of predictors
+  int<lower=0,upper=4> prior_dist_z;      // betareg hyperparameters follow
+  int<lower=0,upper=2> prior_dist_for_intercept_z;
+  vector<lower=0>[K] prior_scale_z;
+  real<lower=0> prior_scale_for_intercept_z;
+  vector[K] prior_mean_z;
+  real prior_mean_for_intercept_z;
+  vector<lower=0>[K] prior_df_z;
+  real<lower=0> prior_df_for_intercept_z;
 }
 transformed data {
   vector[N * (family == 3)] sqrt_y;
@@ -312,7 +320,7 @@ parameters {
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
   vector[z_dim] omega;              // betareg parameters
-  real beta_int[has_intercept_z];   // betareg intercept
+  real gamma_z[has_intercept_z];   // betareg intercept
 }
 transformed parameters {
   real dispersion;
@@ -348,10 +356,10 @@ model {
   // adjust eta_z according to links
   if (has_intercept_z == 1) {
     if (link_phi > 1) {
-      eta_z = eta_z - min(eta_z) + beta_int[1];
+      eta_z = eta_z - min(eta_z) + gamma_z[1];
     }
     else {
-      eta_z = eta_z + beta_int[1];
+      eta_z = eta_z + gamma_z[1];
     }
   }
   else { // has_intercept_z == 0
@@ -400,6 +408,22 @@ model {
     else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
     target += dot_product(weights, summands);
   }
+  // priors on omega and gamma_z for betareg
+  if (family == 4 && link_phi > 0) {
+    if (has_intercept_z == 1) {
+      if (prior_dist_for_intercept_z == 1)        // normal
+        target += normal_lpdf(gamma_z[1] | prior_mean_for_intercept_z, prior_scale_for_intercept_z);
+      else if (prior_dist_for_intercept_z == 2)   // student_t (cauchy if prior_df_z = 1)
+        target += student_t_lpdf(gamma_z[1] | prior_df_for_intercept_z, prior_mean_for_intercept_z, 
+                                 prior_scale_for_intercept_z);
+    }
+    if (prior_dist_z == 1) {                    // normal
+      target += normal_lpdf(omega | prior_mean_z, prior_scale_z);
+    }
+    else if (prior_dist_z == 2) {               // student_t (cauchy if prior_df_z = 1)
+      target += student_t_lpdf(omega | prior_df_z, prior_mean_z, prior_scale_z);
+    }
+  }
 
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) 
@@ -416,7 +440,7 @@ generated quantities {
   mean_PPD = 0;
   // adjust betareg intercept 
   if (has_intercept_z == 1) {
-    omega_int[1] = beta_int[1] - dot_product(zbar, omega);
+    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);
   }
   // make eta_z
   if (family == 4 && z_dim > 0 && link_phi > 0) {
@@ -429,10 +453,10 @@ generated quantities {
   if (has_intercept_z == 1) {
     if (link_phi > 1) {
       omega_int[1] = omega_int[1] - min(eta_z);
-      eta_z = eta_z - min(eta_z) + beta_int[1];
+      eta_z = eta_z - min(eta_z) + gamma_z[1];
     }
     else {
-      eta_z = eta_z + beta_int[1];
+      eta_z = eta_z + gamma_z[1];
     }
   }
   else { // has_intercept_z == 0

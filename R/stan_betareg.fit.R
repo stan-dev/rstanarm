@@ -21,6 +21,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
                               link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
                               link.phi = c("log", "identity", "sqrt"), ...,
                               prior = normal(), prior_intercept = normal(),
+                              prior_z = normal(), prior_intercept_z = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
                               algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                               adapt_delta = NULL, QR = FALSE, sparse = FALSE, Z_true) {
@@ -81,6 +82,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
+  
   # prior distributions (handle_glm_prior() from data_block.R)
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5)
   for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
@@ -92,6 +94,17 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
   
+  # prior distributions for parameters on z variables
+  prior_stuff_z <- handle_glm_prior(prior_z, nvars, link = link.phi, default_scale = 2.5)
+  for (i in names(prior_stuff_z))
+    assign(paste0(i,"_z"), prior_stuff_z[[i]])
+  prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, link = link.phi, 
+                                              default_scale = 10,
+                                              ok_dists = nlist("normal", student_t = "t", "cauchy"))
+  names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z),"_for_intercept_z")
+  for (i in names(prior_intercept_stuff_z))
+    assign(paste0(i), prior_intercept_stuff_z[[i]])
+  browser()
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse, # TRUE, sparse = FALSE,
@@ -124,7 +137,11 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     link_phi = link_num_phi,
     betareg_z = array(ztemp, dim = c(dim(ztemp))),
     has_intercept_z,
-    zbar = array(zbar)
+    zbar = array(zbar),
+    prior_dist_z, prior_mean_z, prior_scale_z = as.array(pmin(.Machine$double.xmax, prior_scale_z)), prior_df_z,
+    prior_dist_for_intercept_z, prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
+    prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
+    prior_df_for_intercept_z = c(prior_df_for_intercept_z)
     )
 
   # Print Debugging
@@ -136,6 +153,14 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   cat("zbar", zbar, "\n")
   cat("nvars_z", nvars_z, "\n")
   cat("xbar", xbar, "\n")
+  cat("prior_dist_for_intercept_z", prior_dist_for_intercept_z, "\n")
+  cat("prior_mean_for_intercept_z", prior_mean_for_intercept_z, "\n")
+  cat("prior_scale_for_intercept_z", prior_scale_for_intercept_z, "\n")
+  cat("prior_df_for_intercept_z", prior_df_for_intercept_z, "\n")
+  cat("prior_dist_z", prior_dist_z, "\n")
+  cat("prior_mean_z", prior_mean_z, "\n")
+  cat("prior_scale_z", prior_scale_z, "\n")
+  cat("prior_df_z", prior_df_z, "\n")
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
@@ -155,13 +180,11 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     if (Z_true == 1) {
-      browser()
       new_names[new_names == "omega_int[1]"] <- "(phi)_(Intercept)"
       mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names) # "^omega\\[[[:digit:]]+\\]$"
       new_names[mark_z] <- paste0("(phi)_", colnames(ztemp))
     }
     else {
-      browser()
       new_names[new_names == "dispersion"] <- "(phi)"
     }
     names(out$par) <- new_names

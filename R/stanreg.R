@@ -48,7 +48,6 @@ stanreg <- function(object) {
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
     if (family$family == "beta") {
-      browser()
       if (length(colnames(z)) == 1)
         coefs_z <- apply(stanmat[, grepl("(phi)", colnames(stanmat), fixed = TRUE), drop = FALSE], 2L, median)
       else
