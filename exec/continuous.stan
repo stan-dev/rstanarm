@@ -290,11 +290,11 @@ data {
   row_vector[z_dim] zbar;                 // mean of predictors
   int<lower=0,upper=4> prior_dist_z;      // betareg hyperparameters follow
   int<lower=0,upper=2> prior_dist_for_intercept_z;
-  vector<lower=0>[K] prior_scale_z;
+  vector<lower=0>[z_dim] prior_scale_z;
   real<lower=0> prior_scale_for_intercept_z;
-  vector[K] prior_mean_z;
+  vector[z_dim] prior_mean_z;
   real prior_mean_for_intercept_z;
-  vector<lower=0>[K] prior_df_z;
+  vector<lower=0>[z_dim] prior_df_z;
   real<lower=0> prior_df_for_intercept_z;
 }
 transformed data {

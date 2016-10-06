@@ -167,11 +167,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist_for_intercept, prior_scale_for_intercept = c(prior_scale_for_intercept), 
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD,
-    z_dim = integer(),  # betareg data
-    link_phi = integer(),
-    betareg_z = array(0),
-    has_intercept_z = integer(),
-    zbar = array(0)
+    z_dim = 0,  # betareg data
+    link_phi = 0,
+    betareg_z = array(0, dim = c(nrow(xtemp), 0)),
+    has_intercept_z = 0,
+    zbar = array(0, dim = c(0)),
+    prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(), prior_df_z = integer(),
+    prior_dist_for_intercept_z = 0, prior_mean_for_intercept_z = 0, prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0
     )
 
   if (length(group)) {
