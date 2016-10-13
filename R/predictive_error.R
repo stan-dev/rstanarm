@@ -17,9 +17,9 @@
 
 #' In-sample or out-of-sample predictive errors
 #' 
-#' This is a convenience function for computing \eqn{y - y^{rep}}{y - yrep}
-#' (in-sample) or \eqn{y - \tilde{y}}{y - ytilde} (out-of-sample) for each draw
-#' from the posterior predictive distribution.
+#' This is a convenience function for computing \eqn{y - y^{rep}}{y - yrep} 
+#' (in-sample, for observed \eqn{y}) or \eqn{y - \tilde{y}}{y - ytilde} 
+#' (out-of-sample, for new or held-out \eqn{y}).
 #' 
 #' @export
 #' @templateVar stanregArg object
@@ -31,8 +31,7 @@
 #'   generic uses \code{...} to pass arguments to any defined methods.
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix. If \code{newdata} is 
-#'   not specified then it will be \code{draws} by \code{nobs(object)}. Each row
-#'   of the matrix is a vector of predictive errors.
+#'   not specified then it will be \code{draws} by \code{nobs(object)}.
 #'   
 #' @note The \strong{Note} section in \code{\link{posterior_predict}} about 
 #'   \code{newdata} for binomial models also applies for
@@ -101,6 +100,5 @@ predictive_error.stanreg <- function(object,
     re.form = re.form,
     ...
   )
-  err <- sweep(preds, MARGIN = 2L, STATS = as.array(y), FUN = "-")
-  as.matrix(-1 * err)
+  sweep(-1 * preds, MARGIN = 2, STATS = as.array(y), FUN = "+")
 }
