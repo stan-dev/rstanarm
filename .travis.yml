@@ -20,6 +20,10 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
+script: 
+  - travis_wait 30 R CMD build --no-build-vignettes --no-manual
+  - travis_wait 30 R CMD check "${PKG_FILE_NAME}" --no-build-vignettes --no-manual
+
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
   - echo ${NOT_CRAN}
