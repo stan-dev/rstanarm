@@ -64,6 +64,8 @@ check_sizes <- function(x,y) {
 
 context("methods for stanreg objects")
 
+
+# extractors --------------------------------------------------------------
 test_that("stanreg extractor methods work properly", {
   expect_equal(resid(stan_glm1), stan_glm1$residuals)
   expect_equal(coef(stan_glm1), stan_glm1$coefficients)
@@ -95,6 +97,8 @@ test_that("stanreg extractor methods work properly", {
   # separately later in this file
 })
 
+
+# confint -----------------------------------------------------------------
 test_that("confint method returns correct structure", {
   expect_silent(ci <- confint(stan_glm_opt1))
   expect_silent(ci2 <- confint(stan_glm_opt1, parm = "wt", level = 0.9))
@@ -110,9 +114,9 @@ test_that("confint method returns correct structure", {
   expect_error(confint(stan_lmer2), regexp = "use posterior_interval")
 })
 
+
+# posterior_interval -----------------------------------------------------
 test_that("posterior_interval returns correct structure", {
-  # NOTE: posterior_interval is not an S3 method but is tested here because it's the 
-  # analog of confint but for MCMC and VB
   expect_silent(ci <- posterior_interval(stan_glm1, prob = 0.5))
   expect_silent(ci2 <- posterior_interval(stan_glm_vb1, pars = "wt", prob = 0.95))
   expect_silent(ci3 <- posterior_interval(example_model, prob = 0.95, regex_pars = "herd"))
@@ -142,6 +146,9 @@ test_that("posterior_interval returns correct structure", {
   expect_error(posterior_interval(stan_glm1, prob = 2), regexp = prob_msg)
 })
 
+
+
+# log_lik -----------------------------------------------------------------
 test_that("log_lik method works", {
   expect_error(log_lik(stan_glm_opt1))
   expect_error(log_lik(stan_glm_vb1))
@@ -180,6 +187,8 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
 })
 
+
+# ngrps, nobs -------------------------------------------------------------
 test_that("ngrps is right", {
   expect_equal(ngrps(lmer1), ngrps(stan_lmer1))
   expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
@@ -194,6 +203,8 @@ test_that("nobs is right", {
   expect_equal(nobs(polr1), nobs(stan_polr1))
 })
 
+
+# vcov --------------------------------------------------------------
 test_that("vcov returns correct structure", {
   expect_equal(dimnames(vcov(stan_glm1)), dimnames(vcov(glm1)))
   expect_equal(dimnames(vcov(stan_polr1)), dimnames(vcov(polr1)))
@@ -201,6 +212,7 @@ test_that("vcov returns correct structure", {
   expect_equal(dimnames(vcov(stan_lmer2)), dimnames(vcov(lmer2)))
 })
 
+# sigma --------------------------------------------------------------
 test_that("sigma method works", {
   # need to use :: because sigma is masked by lme4's sigma
   rsigma <- rstanarm::sigma
@@ -221,6 +233,8 @@ test_that("sigma method works", {
   expect_false(identical(sig, 1))
 })
 
+
+# VarCorr -----------------------------------------------------------------
 test_that("VarCorr returns correct structure", {
   vc_lmer1 <- VarCorr(lmer1); vc_stan1 <- VarCorr(stan_lmer1)
   vc_lmer2 <- VarCorr(lmer2); vc_stan2 <- VarCorr(stan_lmer2)
@@ -231,6 +245,8 @@ test_that("VarCorr returns correct structure", {
   expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
 })
 
+
+# ranef,fixef,coef -----------------------------------------------------------
 test_that("ranef returns correct structure", {
   re_stan1 <- ranef(stan_lmer1); re_lmer1 <- ranef(lmer1)
   re_stan2 <- ranef(stan_lmer1); re_lmer2 <- ranef(lmer1)
@@ -242,12 +258,10 @@ test_that("ranef returns correct structure", {
   check_sizes(re_stan2, re_lmer2)
   expect_error(ranef(stan_glm1), "stan_glmer and stan_lmer models only")
 })
-
 test_that("fixef returns the right coefs", {
   expect_identical(names(fixef(stan_lmer1)), names(fixef(lmer1)))
   expect_identical(names(fixef(stan_lmer2)), names(fixef(lmer2)))
 })
-
 test_that("coef returns the right structure", {
   coef_stan1 <- coef(stan_lmer1); coef_lmer1 <- coef(lmer1)
   coef_stan2 <- coef(stan_lmer1); coef_lmer2 <- coef(lmer1)
@@ -256,7 +270,6 @@ test_that("coef returns the right structure", {
   check_sizes(coef_stan1, coef_lmer1)
   check_sizes(coef_stan2, coef_lmer2)
 })
-
 test_that("coef ok if any 'ranef' missing from 'fixef'", {
   stan_lmer3 <- SW(update(stan_lmer2, formula = . ~ (Days | Subject)))
   lmer3 <- update(lmer2, formula = . ~ (Days | Subject))
@@ -266,6 +279,7 @@ test_that("coef ok if any 'ranef' missing from 'fixef'", {
 })
 
 
+# as.matrix,as.data.frame,as.array ----------------------------------------
 test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   # glm
   mat <- as.matrix(stan_glm1)
@@ -447,6 +461,8 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_identical(attr(s, "algorithm"), "meanfield")
 })
 
+
+# print,summary -----------------------------------------------------------
 test_that("print and summary methods ok for optimization", {
   expect_silent(s <- summary(stan_glm_opt1))
   expect_silent(s <- summary(stan_glm_opt1, pars = c("wt", "sigma"), digits = 8))
@@ -477,8 +493,8 @@ test_that("print and summary methods ok for optimization", {
 })
 
 
+# terms,formula,model.frame,model.matrix ----------------------------------
 context("terms, formula, model.frame, and model.matrix methods")
-
 test_that("model.frame works properly", {
   expect_identical(model.frame(stan_glm1), model.frame(glm1))
   expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
@@ -491,7 +507,6 @@ test_that("model.frame works properly", {
   expect_identical(model.frame(stan_lmer2, fixed.only = TRUE), 
                    model.frame(lmer2, fixed.only = TRUE))
 })
-
 test_that("terms works properly", {
   expect_identical(terms(stan_glm1), terms(glm1))
   expect_identical(terms(stan_glm_opt1), terms(glm1))
@@ -510,7 +525,6 @@ test_that("terms works properly", {
   expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
                regexp = "can't both be TRUE")
 })
-
 test_that("formula works properly", {
   expect_identical(formula(stan_glm1), formula(glm1))
   expect_identical(formula(stan_glm_opt1), formula(glm1))
@@ -536,7 +550,6 @@ test_that("formula works properly", {
   tmp$call <- NULL
   expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
 })
-
 test_that("update works properly", {
   pss <- rstanarm:::posterior_sample_size
   
@@ -557,3 +570,57 @@ test_that("update works properly", {
   fit$call <- NULL
   expect_error(update(fit), regexp = "does not contain a 'call' component")
 })
+
+
+# predictive_error,predictive_interval ------------------------------------
+test_that("predictive_error works", {
+  expect_error(predictive_error(stan_glm1, draws = 100), 
+               "'draws' should be <= posterior sample size")
+  expect_error(predictive_error(stan_polr1), 
+               "not currently available for stan_polr")
+  mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1", 
+            "stan_lmer2", "example_model")
+  for (m in seq_along(mods)) {
+    mod <- get(mods[m])
+    err <- predictive_error(mod, draws = 5)
+    expect_equal(dim(err), c(5, nobs(mod)), info = mods[m])
+  }
+  
+  err2 <- predictive_error(stan_glm1, newdata = model.frame(stan_glm1)[1:10, ], 
+                           draws = 7)
+  expect_equal(dim(err2), c(7, 10))
+  
+  err3 <- predictive_error(example_model, draws = 5,
+                           newdata = data.frame(
+                             size = c(10, 20), 
+                             incidence = c(5, 10), 
+                             period = factor(c(1,2)), 
+                             herd = c(1, 15)
+                            ))
+  expect_equal(dim(err3), c(5, 2))
+})
+test_that("predictive_interval works", {
+  expect_error(predictive_interval(stan_glm1, draws = 100), 
+               "'draws' should be <= posterior sample size")
+  expect_error(predictive_interval(stan_glm1, prob = c(0.25, 0.76)), 
+               "'prob' should be a single number greater than 0 and less than 1")
+  expect_error(predictive_interval(stan_polr1), 
+               "not currently available for stan_polr")
+  mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1", 
+            "stan_lmer2", "example_model")
+  for (m in seq_along(mods)) {
+    mod <- get(mods[m])
+    pint1 <- predictive_interval(mod, draws = 5)
+    expect_equal(dim(pint1), c(nobs(mod), 2), info = mods[m])
+    expect_identical(colnames(pint1), c("5%", "95%"), info = mods[m])
+  }
+  
+  pint2 <- predictive_interval(stan_glm1, prob = 0.5, newdata = model.frame(stan_glm1)[1:2, ])
+  expect_equal(dim(pint2), c(2, 2))
+  expect_identical(colnames(pint2), c("25%", "75%"))
+  
+  pint3 <- predictive_interval(example_model, prob = 0.8, newdata = lme4::cbpp[1:10, ])
+  expect_equal(dim(pint3), c(10, 2))
+  expect_identical(colnames(pint3), c("10%", "90%"))
+})
+

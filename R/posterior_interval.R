@@ -29,10 +29,10 @@
 #' @template args-stanreg-object
 #' @template args-pars
 #' @template args-regex-pars
-#' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired
-#'   posterior probability mass to include in the intervals. The default is to
-#'   report \eqn{90}\% intervals (\code{prob=0.9}) rather than the traditionally
-#'   used \eqn{95}\% (see Details).
+#' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
+#'   probability mass to include in the intervals. The default is to report
+#'   \eqn{90}\% intervals (\code{prob=0.9}) rather than the traditionally used
+#'   \eqn{95}\% (see Details).
 #' @param type The type of interval to compute. Currently the only option is 
 #'   \code{"central"} (see Details). A central \eqn{100p}\%
 #'   interval is defined by the \eqn{\alpha/2} and \eqn{1 - \alpha/2} quantiles,
@@ -81,8 +81,11 @@
 #' more models become available.
 #' }
 #' 
-#' @seealso \code{\link{confint.stanreg}}, which, for models fit using 
-#'   optimization, can be used to compute traditional confidence intervals.
+#' @seealso 
+#' \code{\link{confint.stanreg}}, which, for models fit using optimization, can
+#' be used to compute traditional confidence intervals.
+#' 
+#' \code{\link{predictive_interval}} for predictive intervals.
 #'   
 #' @template reference-gelman-carlin
 #' @template reference-morey
@@ -104,17 +107,25 @@ posterior_interval.stanreg <- function(object, prob = 0.9, type = "central",
   validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_interval")
-  if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
-    stop("'prob' should be a single number greater than 0 and less than 1.", 
-         call. = FALSE)
   if (!identical(type, "central"))
     stop("Currently the only option for 'type' is 'central'.", 
          call. = FALSE)
-  
   mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
+  central_intervals(mat, prob)
+}
+
+
+# internal ----------------------------------------------------------------
+# @param x A matrix.
+# @param prob Probability mass to include in intervals.
+central_intervals <- function(x, prob) {
+  if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
+    stop("'prob' should be a single number greater than 0 and less than 1.", 
+         call. = FALSE)
   alpha <- (1 - prob) / 2
   probs <- c(alpha, 1 - alpha)
   labs <- paste0(100 * probs, "%")
-  ci <- t(apply(mat, 2L, quantile, probs = probs))
-  structure(ci, dimnames = list(colnames(mat), labs))
+  out <- t(apply(x, 2L, quantile, probs = probs))
+  structure(out, dimnames = list(colnames(x), labs))
 }
+

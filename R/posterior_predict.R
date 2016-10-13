@@ -80,9 +80,12 @@
 #'   the number of trials. See the Examples section below and the 
 #'   \emph{How to Use the rstanarm Package} for examples.
 #' 
-#' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
-#'   Examples of posterior predictive checking can also be found in the
-#'   \pkg{rstanarm} vignettes and demos.
+#' @seealso 
+#' \code{\link{pp_check}} for graphical posterior predictive checks.
+#' Examples of posterior predictive checking can also be found in the
+#' \pkg{rstanarm} vignettes and demos.
+#' 
+#' \code{\link{predictive_error}} and \code{\link{predictive_interval}}.
 #'   
 #' @examples
 #' if (!exists("example_model")) example(example_model)
@@ -106,7 +109,7 @@
 #'   ggplot2::ylab("predicted count")
 #' 
 #' 
-#' # Using newdata with a binomial model
+#' # Using newdata with a binomial model.
 #' # example_model is binomial so we need to set
 #' # the number of trials to use for prediction.
 #' # This could be a different number for each 
