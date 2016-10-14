@@ -152,7 +152,7 @@ test_that("stan_glm returns expected result for cars example", {
   expect_stanreg(fit)
   
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
-  expect_equal(coef(fit), coef(ans), tol = 0.04)
+  expect_equal(coef(fit), coef(ans), tol = 0.1)
 })
 test_that("stan_glm returns expected result with no intercept for mtcars example", {
   f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)

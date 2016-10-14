@@ -1,4 +1,4 @@
-#include "license.stan"
+#include "license.stan" // GPL3+
 
 // GLM for a Bernoulli outcome
 functions {
@@ -115,7 +115,7 @@ data {
   int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
   int<lower=0> u_X1[(N[2]+1)*(1 - dense_X)]; // where the non-zeros start in each row of X1
   
-  #include "data_glm.stan"
+  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
@@ -127,8 +127,10 @@ data {
   vector[N[1] * has_offset] offset0;
   vector[N[2] * has_offset] offset1;
   
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
   #include "hyperparameters.stan"
-  #include "glmer_stuff.stan"
+  // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
+  #include "glmer_stuff.stan"  
 
   // more glmer stuff
   int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
@@ -141,15 +143,15 @@ data {
 }
 transformed data {
   int NN;
-  #include "tdata_glm.stan"
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
   NN = N[1] + N[2];
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan"
+  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
 }
 transformed parameters {
-  #include "tparameters_glm.stan"
+  #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             1.0, tau, scale, zeta, rho, z_T);
@@ -157,7 +159,7 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta_bern.stan"
+  #include "make_eta_bern.stan" // defines eta0, eta1
   if (has_intercept == 1) {
     if (link != 4) {
       eta0 = gamma[1] + eta0;
@@ -180,7 +182,7 @@ model {
     target += dot_product(weights1, pw_bern(1, eta1, link));
   }
   
-  #include "priors_glm.stan"
+  #include "priors_glm.stan" // increments target()
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -195,7 +197,7 @@ generated quantities {
   {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
-    #include "make_eta_bern.stan"
+    #include "make_eta_bern.stan" // defines eta0, eta1
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 = gamma[1] + eta0;

@@ -1,6 +1,6 @@
-#include "license.stan"
+#include "license.stan" // GPL3+
 
-# GLM for a Gaussian, Gamma, or inverse Gaussian outcome
+// GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.stan"
 
@@ -13,9 +13,11 @@ functions {
    */
   vector linkinv_gauss(vector eta, int link) {
     if (link < 1 || link > 3) reject("Invalid link");
-    if (link < 3)  # link = identity or log 
-      return eta; # return eta for log link too bc will use lognormal
-    else {# link = inverse
+    if (link == 1)  // link = identity 
+      return eta; 
+    else if (link == 2) // link = log
+      return exp(eta); 
+    else { // link = inverse
       vector[rows(eta)] mu;
       for(n in 1:rows(eta)) mu[n] = inv(eta[n]); 
       return mu;
@@ -112,14 +114,13 @@ functions {
   */
   vector pw_gauss(vector y, vector eta, real sigma, int link) {
     vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 2) # link = log
-      for (n in 1:rows(eta)) ll[n] = lognormal_lpdf(y[n] | eta[n], sigma);
-    else { # link = idenity or inverse
-      vector[rows(eta)] mu;
-      mu = linkinv_gauss(eta, link);
-      for (n in 1:rows(eta)) ll[n] = normal_lpdf(y[n] | mu[n], sigma);
-    }
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 3) 
+      reject("Invalid link"); 
+    
+    mu = linkinv_gauss(eta, link);
+    for (n in 1:rows(eta)) 
+      ll[n] = normal_lpdf(y[n] | mu[n], sigma);
     return ll;
   }
   
@@ -276,13 +277,15 @@ functions {
   
 }
 data {
-  #include "NKX.stan"
+  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   vector[N] y; // continuous outcome
-  #include "data_glm.stan"
-  #include "weights_offset.stan"
+  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
   #include "hyperparameters.stan"
-  #include "glmer_stuff.stan"
-  #include "glmer_stuff2.stan"
+  // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
+  #include "glmer_stuff.stan"  
+  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
   #include "data_betareg.stan"
 }
 transformed data {
@@ -292,7 +295,7 @@ transformed data {
   int<lower=0> hs_z;                  // for tdata_betareg.stan
   int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
   int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
-  #include "tdata_glm.stan"
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
   #include "tdata_betareg.stan"
   if      (family == 1) sum_log_y = not_a_number();
   else if (family == 2) sum_log_y = sum(log(y));
@@ -307,9 +310,9 @@ transformed data {
   else reject("unknown family");
 }
 parameters {
-  real<lower=((family == 1 || link == 2) || (family) ? negative_infinity() : 0.0),
+  real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0), 
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan"
+  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
   #include "parameters_betareg.stan"
   // vector[z_dim] omega;               // betareg parameters
@@ -318,7 +321,7 @@ parameters {
 transformed parameters {
   real dispersion;
   vector[z_dim] omega;                  // for tparameters_betareg.stan
-  #include "tparameters_glm.stan"
+  #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (prior_scale_for_dispersion > 0)
     dispersion =  prior_scale_for_dispersion * dispersion_unscaled; 
   else dispersion = dispersion_unscaled; 
@@ -331,7 +334,7 @@ transformed parameters {
 }
 model {
   vector[N] eta_z; // beta regression dispersion (linear) predictor
-  #include "make_eta.stan"
+  #include "make_eta.stan" // defines eta
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
     if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
@@ -339,7 +342,7 @@ model {
     else eta = eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.stan"
+    #include "eta_no_intercept.stan" // shifts eta
   }
   // make eta_z
   if (family == 4 && z_dim > 0 && link_phi > 0) {
@@ -369,9 +372,12 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
     if (family == 1) {
-      if (link == 1)      target += normal_lpdf(y | eta, dispersion);
-      else if (link == 2) target += lognormal_lpdf(y | eta, dispersion);
-      else target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
+      if (link == 1) 
+        target += normal_lpdf(y | eta, dispersion);
+      else if (link == 2) 
+        target += normal_lpdf(y | exp(eta), dispersion);
+      else 
+        target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
       // divide_real_by_vector() is defined in common_functions.stan
     }
     else if (family == 2) {
@@ -407,7 +413,7 @@ model {
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) 
     target += cauchy_lpdf(dispersion_unscaled | 0, 1);
-  #include "priors_glm.stan"
+  #include "priors_glm.stan" // increments target()
   #include "priors_betareg.stan"
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -451,7 +457,7 @@ generated quantities {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   {
-    #include "make_eta.stan"
+    #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
@@ -469,7 +475,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.stan"
+      #include "eta_no_intercept.stan" // shifts eta
     }
     
     if (family == 1) {

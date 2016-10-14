@@ -372,11 +372,18 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
 #'   at zero.
 #' @param min_prior_scale Minimum prior scale for the intercept and 
 #'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scaled by twice the standard
-#'   deviation of the predictor if it has more than two unique values.
-#'
+#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
+#'   then the scales of the priors on the regression coefficients may be 
+#'   additionally modified internally by \pkg{rstanarm} as follows. First, if
+#'   \emph{response} is Gaussian, the prior scales also multiplied by 
+#'   \code{2*sd(y)}. Additionally, if the \code{QR} argument to the model
+#'   fitting function (e.g. \code{stan_glm}) is \code{FALSE} then: for a 
+#'   predictor with only one value nothing is changed; for a predictor \code{x} 
+#'   with exactly two unique values, we take the user-specified (or default) 
+#'   scale(s) for the selected priors and divide by the range of \code{x}; for a
+#'   predictor \code{x} with more than two unique values, we divide the prior 
+#'   scale(s) by \code{2*sd(x)}.
+#'   
 prior_options <- function(prior_scale_for_dispersion = 5, 
                           min_prior_scale = 1e-12, 
                           scaled = TRUE) {

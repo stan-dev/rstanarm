@@ -1,2 +1,2 @@
-#' @param <%= stanregArg %> A fitted model object returned by one of the
-#'   \pkg{rstanarm} modeling functions. See \code{\link{stanreg-objects}}.
+#' @param <%= stanregArg %> A fitted model object. For models fit using 
+#' \pkg{rstanarm} see \code{\link{stanreg-objects}}.
