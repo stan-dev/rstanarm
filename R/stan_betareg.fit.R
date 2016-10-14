@@ -149,24 +149,6 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z)
     )
-
-  # Print Debugging
-  cat("has_intercept", has_intercept, "\n")
-  cat("has_intercept_z", has_intercept_z, "\n")
-  cat("link_phi", link_num_phi, "\n")
-  cat("z_dim", nvars_z, "\n")
-  cat("dim(ztemp)", dim(ztemp), "\n")
-  cat("zbar", zbar, "\n")
-  cat("nvars_z", nvars_z, "\n")
-  cat("xbar", xbar, "\n")
-  cat("prior_dist_for_intercept_z", prior_dist_for_intercept_z, "\n")
-  cat("prior_mean_for_intercept_z", prior_mean_for_intercept_z, "\n")
-  cat("prior_scale_for_intercept_z", prior_scale_for_intercept_z, "\n")
-  cat("prior_df_for_intercept_z", prior_df_for_intercept_z, "\n")
-  cat("prior_dist_z", prior_dist_z, "\n")
-  cat("prior_mean_z", prior_mean_z, "\n")
-  cat("prior_scale_z", prior_scale_z, "\n")
-  cat("prior_df_z", prior_df_z, "\n")
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
