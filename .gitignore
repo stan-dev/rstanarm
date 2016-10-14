@@ -1,8 +1,9 @@
 exec/*.rda
 .Rproj.user
 .Rhistory
-src/
-!src/Makevars
+src/Modules*
+src/rstanarm.so
+src/include
 man/*.Rd
 !man/rstanarm-internal.Rd
 vignettes/*.R

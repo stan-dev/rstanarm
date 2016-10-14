@@ -1,4 +1,4 @@
-#include "license.stan"
+#include "license.stan" // GPL3+
 
 // GLM for a binomial outcome
 functions {
@@ -83,24 +83,26 @@ functions {
   }
 }
 data {
-  #include "NKX.stan"
+  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=0> y[N];       // outcome: number of successes
   int<lower=0> trials[N];  // number of trials
-  #include "data_glm.stan"
-  #include "weights_offset.stan"
+  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
   #include "hyperparameters.stan"
-  #include "glmer_stuff.stan"
-  #include "glmer_stuff2.stan"
+  // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
+  #include "glmer_stuff.stan"  
+  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  #include "tdata_glm.stan"
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan"
+  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
 }
 transformed parameters {
-  #include "tparameters_glm.stan"
+  #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             1.0, tau, scale, zeta, rho, z_T);
@@ -108,14 +110,14 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.stan"
+  #include "make_eta.stan" // defines eta
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
     if (link != 4) eta = eta + gamma[1];
     else eta = gamma[1] + eta - max(eta);
   }
   else {
-    #include "eta_no_intercept.stan"
+    #include "eta_no_intercept.stan" // shifts eta
   }
   
   // Log-likelihood 
@@ -126,7 +128,7 @@ model {
   else if (prior_PD == 0) 
     target += dot_product(weights, pw_binom(y, trials, eta, link));
   
-  #include "priors_glm.stan"
+  #include "priors_glm.stan" // increments target()
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -141,7 +143,7 @@ generated quantities {
   mean_PPD = 0;
   {
     vector[N] pi;
-    #include "make_eta.stan"
+    #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (link != 4) eta = eta + gamma[1];
@@ -153,7 +155,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.stan"
+      #include "eta_no_intercept.stan" // shifts eta
     }
     
     pi = linkinv_binom(eta, link);
