@@ -283,25 +283,17 @@ data {
   #include "hyperparameters.stan"
   #include "glmer_stuff.stan"
   #include "glmer_stuff2.stan"
-  int<lower=0, upper=1> has_intercept_z;  // presence of z intercept
-  int<lower=0> link_phi;                  // link transformation for eta_z (0 => no z in model)
-  int<lower=0> z_dim;                     // dimensions of z vars
-  matrix[N, z_dim] betareg_z;             // matrix of z vars
-  row_vector[z_dim] zbar;                 // mean of predictors
-  int<lower=0,upper=4> prior_dist_z;      // betareg hyperparameters follow
-  int<lower=0,upper=2> prior_dist_for_intercept_z;
-  vector<lower=0>[z_dim] prior_scale_z;
-  real<lower=0> prior_scale_for_intercept_z;
-  vector[z_dim] prior_mean_z;
-  real prior_mean_for_intercept_z;
-  vector<lower=0>[z_dim] prior_df_z;
-  real<lower=0> prior_df_for_intercept_z;
+  #include "data_betareg.stan"
 }
 transformed data {
   vector[N * (family == 3)] sqrt_y;
   vector[N * (family == 3)] log_y;
   real sum_log_y;
+  int<lower=0> hs_z;                  // for tdata_betareg.stan
+  int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
+  int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
   #include "tdata_glm.stan"
+  #include "tdata_betareg.stan"
   if      (family == 1) sum_log_y = not_a_number();
   else if (family == 2) sum_log_y = sum(log(y));
   else if (family == 3) {
@@ -319,11 +311,13 @@ parameters {
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan"
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
-  vector[z_dim] omega;              // betareg parameters
-  real gamma_z[has_intercept_z];   // betareg intercept
+  #include "parameters_betareg.stan"
+  // vector[z_dim] omega;               // betareg parameters
+  // real gamma_z[has_intercept_z];     // betareg intercept
 }
 transformed parameters {
   real dispersion;
+  vector[z_dim] omega;                  // for tparameters_betareg.stan
   #include "tparameters_glm.stan"
   if (prior_scale_for_dispersion > 0)
     dispersion =  prior_scale_for_dispersion * dispersion_unscaled; 
@@ -333,6 +327,7 @@ transformed parameters {
                             dispersion, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
   }
+  #include "tparameters_betareg.stan"
 }
 model {
   vector[N] eta_z; // beta regression dispersion (linear) predictor
@@ -408,27 +403,12 @@ model {
     else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
     target += dot_product(weights, summands);
   }
-  // priors on omega and gamma_z for betareg
-  if (family == 4 && link_phi > 0) {
-    if (has_intercept_z == 1) {
-      if (prior_dist_for_intercept_z == 1)        // normal
-        target += normal_lpdf(gamma_z[1] | prior_mean_for_intercept_z, prior_scale_for_intercept_z);
-      else if (prior_dist_for_intercept_z == 2)   // student_t (cauchy if prior_df_z = 1)
-        target += student_t_lpdf(gamma_z[1] | prior_df_for_intercept_z, prior_mean_for_intercept_z, 
-                                 prior_scale_for_intercept_z);
-    }
-    if (prior_dist_z == 1) {                    // normal
-      target += normal_lpdf(omega | prior_mean_z, prior_scale_z);
-    }
-    else if (prior_dist_z == 2) {               // student_t (cauchy if prior_df_z = 1)
-      target += student_t_lpdf(omega | prior_df_z, prior_mean_z, prior_scale_z);
-    }
-  }
 
   // Log-prior for scale
   if (prior_scale_for_dispersion > 0) 
     target += cauchy_lpdf(dispersion_unscaled | 0, 1);
   #include "priors_glm.stan"
+  #include "priors_betareg.stan"
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }

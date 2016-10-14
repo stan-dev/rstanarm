@@ -95,7 +95,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     assign(i, prior_intercept_stuff[[i]])
   
   # prior distributions for parameters on z variables
-  prior_stuff_z <- handle_glm_prior(prior_z, nvars, link = link.phi, default_scale = 2.5)
+  prior_stuff_z <- handle_glm_prior(prior_z, nvars_z, link = link.phi, default_scale = 2.5)
   for (i in names(prior_stuff_z))
     assign(paste0(i,"_z"), prior_stuff_z[[i]])
   prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, link = link.phi, 
@@ -104,7 +104,13 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z),"_for_intercept_z")
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i), prior_intercept_stuff_z[[i]])
-  browser()
+
+  if (nvars_z == 0) {
+      prior_mean_z <- double()
+      prior_scale_z <- double()
+      prior_df_z <- integer()
+  }
+
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse, # TRUE, sparse = FALSE,
