@@ -597,9 +597,9 @@ that the expectation of the log is less than or equal to the log of
 the expectation,
 
 \[
-\log \int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta
+\int_{\Theta} \left( \, \log p(\tilde{y} \, | \, \theta) \, \right) \ p(\theta \, | \, y) \ \mathrm{d}\theta
 \ \leq \
-\int_{\Theta} \left( \, \log p(\tilde{y} \, | \, \theta) \, \right) \ p(\theta \, | \, y) \ \mathrm{d}\theta.
+\log \int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta
 \]
 
 We'll compute both expectations and demonstrate Jensen's inequality in
@@ -617,11 +617,16 @@ data points.
 
 ```{r, log_p_new}
 newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
-fits <- list(Pooling = fit_pool, NoPooling = fit_nopool, 
+fits <- list(Pooling = fit_pool, 
+             NoPooling = fit_nopool, 
              PartialPooling = fit_partialpool)
 
-# compute log_p_new with each of the models in 'fits'
-log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
+# compute log_p_new matrix with each of the models in 'fits'
+log_p_new_mats <- lapply(fits, log_lik, newdata = newdata)
+
+# for each matrix in the list take the row sums
+log_p_new <- sapply(log_p_new_mats, rowSums)
+M <- nrow(log_p_new)
 head(log_p_new)
 ```
 
@@ -735,17 +740,26 @@ log_sum_exp <- function(u) {
   max_u + log(sum(exp(u - max_u)))
 }
 ```
-
-and then use it to print the log posterior predictive densities for
-our fit.
-
-```{r comment=NA}
-M <- nrow(log_p_new) 
-new_lps <- -log(M) + apply(log_p_new, 2, log_sum_exp)
-round(sort(new_lps, decreasing = TRUE), digits = 1)
+and then include the $-\log M$ term to make it `log_mean_exp`: 
+```{r, log_mean_exp}
+log_mean_exp <- function(u) {
+  M <- length(u)
+  -log(M) + log_sum_exp(u)
+}
 ```
 
-Now the ranking is different!  As expected, the values here are lower
+We can then use it to compute the log posterior predictive densities for 
+each of the models:
+```{r comment=NA}
+new_lps <- lapply(log_p_new_mats, function(x) apply(x, 2, log_mean_exp))
+
+# sum over the data points
+new_lps_sums <- sapply(new_lps, sum)
+
+round(sort(new_lps_sums, decreasing = TRUE), digits = 1)
+```
+
+Now the ranking is different!  As expected, the values here are greater
 than the expectation of the log density due to Jensen's inequality.
 The partial pooling model appears to be making slightly better
 predictions than the full pooling model, which in turn is making
