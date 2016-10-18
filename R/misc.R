@@ -559,7 +559,13 @@ get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(Zt)
 }
-
+#' @export
+get_z.gamm4 <- function(object) {
+  X <- get_x(object)
+  XZ <- object$x
+  Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
+  return(Z)
+}
 
 # Get inverse link function
 #

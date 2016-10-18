@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2016 Trustees of Columbia University
+# Copyright (C) 2000-2015 Simon N. Wood  simon.wood@r-project.org
 # Copyright (C) 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
     random.vars <- all.vars(random)
     random_list <- findbars(random)
     names(random_list) <- names(mkReTrms(random_list, data, drop.unused.levels)$cnms)
-    for (i in seq_along(random_list)) { 
+    for (i in seq_along(random_list)) {
       random_list[[i]] <- as.formula(paste("~", random_list[i]))
     }
   } 
@@ -128,5 +128,53 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
     }
     stopifnot(start == (nrow(b$reTrms$Zt) + 1L))
   }
+  b$smooths <- G$smooth
+  for (i in seq_along(b$smooths)) b$smooths[[i]]$lmer.name <- r.name[i] 
   return(b) # need to get the Terms right
+}
+
+gam_coef <- function(smooth_i, bf, br) {
+  fx <- smooth_i$fixed
+  first <- smooth_i$first.f.para
+  last <- smooth_i$last.f.para
+  if (first <= last) 
+    beta <- bf[first:last]
+  else beta <- array(0, 0)
+  if (fx) 
+    b <- beta
+  else {
+    b <- rep(0, 0)
+    for (k in 1:length(smooth_i$lmer.name))
+      b <- c(b, as.numeric(br[[smooth_i$lmer.name[k]]][[1]]))
+    # b <- b[smooth_i$rind]
+    b <- c(b, beta)
+    b <- smooth_i$trans.D * b
+    if (!is.null(smooth_i$trans.U)) b <- smooth_i$trans.U %*% b
+  }
+  attr(smooth_i, "coefficients") <- b
+  return(smooth_i)
+}
+
+#' @export
+plot.gamm4 <- function(x, ...) {
+  stopifnot(is(x, "stanreg"))
+  stopifnot(is(x, "gamm4"))
+  df <- model.frame(x)
+  term_names <- sapply(x$glmod$smooths, FUN = function(s) s$term)
+  df <- as.data.frame(df$X.0)
+  if (ncol(df) > length(term_names)) df <- df[,-1, drop = FALSE]
+  colnames(df) <- term_names
+  for (i in seq_along(x$glmod$smooths)) {
+    smooth_i <- x$glmod$smooths[[i]]
+    smooth_i <- gam_coef(smooth_i, fixef(x), ranef(x))
+    stuff <- mgcv:::plot.mgcv.smooth(smooth_i, P = NULL, data = df)
+    stuff$fit <- c(stuff$X %*% attr(smooth_i, "coefficients"))
+    if (!is.null(stuff$offset))  stuff$fit + stuff$offset
+    if (!is.null(stuff$exclude)) stuff$fit[stuff$exclude] <- NA
+    stuff$X <- NULL
+    stuff$plot.me <- TRUE
+    mgcv:::plot.mgcv.smooth(smooth_i, P = stuff, data = df, 
+                            scale = 0, ...)
+  }
+  stop("Jonah, write this function to be like mgcv::plot.gam but with ggplot2")
 }
