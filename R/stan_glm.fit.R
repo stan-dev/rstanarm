@@ -172,24 +172,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
-    group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
+    group <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 
       nlevels(group$flist[[i]]))
-    t <- length(p)
-    group_nms <- names(group$cnms)
-    b_nms <- character()
-    for (i in seq_along(group$cnms)) {
-      # if you change this change .pp_data_mer_z() as well
-      nm <- group_nms[i]
-      nms_i <- paste(group$cnms[[i]], nm)
-      if (length(nms_i) == 1) {
-        b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
-      } else {
-        b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
-      }
-    }
+    t <- length(l)
+    b_nms <- make_b_nms(group)
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
@@ -424,40 +413,32 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 }
 
 
-# Add extra level _NEW_ to each group
-# 
-# @param Z ranef indicator matrix
-# @param cnms group$cnms
-# @param flist group$flist
-pad_reTrms <- function(Z, cnms, flist) {
+#' Add extra level _NEW_ to each group
+#' 
+#' @param Ztlist ranef indicator matrices
+#' @param cnms group$cnms
+#' @param flist group$flist
+#' @importFrom Matrix rBind
+pad_reTrms <- function(Ztlist, cnms, flist) {
+  stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
   p <- sapply(cnms, FUN = length)
-  last <- cumsum(l * p)
+  n <- ncol(Ztlist[[1]])
   for (i in attr(flist, "assign")) {
+    if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
-  n <- nrow(Z)
-  mark <- length(p) - 1L
-  if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
-    for (i in rev(head(last, -1))) {
-      Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = FALSE)),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
+  for (i in 1:length(p)) {
+    if (grepl("^Xr", names(p)[i])) next
+    Ztlist[[i]] <- if (getRversion() < "3.2.0") {
+      rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
+    } else {
+      rbind2(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     }
   }
-  else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
-    for (i in rev(head(last, -1))) {
-      Z <- cbind(Z[, 1:i, drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = FALSE),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
-    }
-  }
-  nlist(Z, cnms, flist)
+  Z <- t(do.call(rbind, args = Ztlist))
+  return(nlist(Z, cnms, flist))
 }
 
 # Drop the extra reTrms from a matrix x
@@ -490,4 +471,19 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
       x[, , keep, drop = FALSE] else x[keep, , , drop = FALSE]
   }
   return(x_keep)
+}
+
+make_b_nms <- function(group) {
+  group_nms <- names(group$cnms)
+  b_nms <- character()
+  for (i in seq_along(group$cnms)) {
+    nm <- group_nms[i]
+    nms_i <- paste(group$cnms[[i]], nm)
+    if (length(nms_i) == 1) {
+      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+    } else {
+      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+    }
+  }
+  return(b_nms)  
 }
