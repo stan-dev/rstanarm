@@ -83,6 +83,11 @@ functions {
       for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
     else if (link == 6) // loglog
       for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(eta[n]);
+      
+    for (n in 1:rows(mu)) {
+      if (mu[n] < 0 || mu[n] > 1)
+        reject("'mu' needs to be between 0 and 1")
+    }
     return mu;
   }
   
@@ -310,7 +315,7 @@ transformed data {
   else reject("unknown family");
 }
 parameters {
-  real<lower=(family == 1 || link == 2 ? negative_infinity() : 0.0), 
+  real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> dispersion_unscaled; # interpretation depends on family!
@@ -464,7 +469,7 @@ generated quantities {
       else if (family == 4 && link == 5) {
         real max_eta;
         max_eta = max(eta);
-        alpha[1] = alpha[1] + max_eta;
+        alpha[1] = alpha[1] - max_eta;
         eta = eta - max_eta + gamma[1];
       }
       else {
