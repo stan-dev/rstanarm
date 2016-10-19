@@ -1,4 +1,4 @@
-  if      (prior_dist_z == 0) omega = z_omega;
+  if (prior_dist_z == 0) omega = z_omega;
   else if (prior_dist_z == 1) omega = z_omega .* prior_scale_z + prior_mean_z;
   else if (prior_dist_z == 2) for (k in 1:z_dim) {
     real P_z;
