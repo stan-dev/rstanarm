@@ -22,7 +22,7 @@ before_install:
 
 script: 
   - travis_wait 30 R CMD build --no-build-vignettes --no-manual
-  - travis_wait 30 R CMD check rstanarm_2.12.2.tar.gz --no-build-vignettes --no-manual
+  - travis_wait 30 R CMD check "${PKG_FILE_NAME}" --no-build-vignettes --no-manual
 
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
