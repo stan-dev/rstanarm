@@ -346,7 +346,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   pars <- c(if (has_intercept) "alpha", 
             "beta", 
             if (length(group)) "b",
-            if (is_continuous | is_nb) "dispersion", 
+            if (is_continuous | is_nb) "dispersion",
+            if (standata$len_theta_L) "theta_L",
             "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -405,6 +406,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
+                   if (standata$len_theta_L) paste0("theta[", 1:standata$len_theta_L, "]"),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names

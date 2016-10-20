@@ -295,16 +295,29 @@ sigma.stanreg <- function(object, ...) {
 #' @export VarCorr
 #' @importFrom nlme VarCorr
 #' @importFrom lme4 mkVarCorr
+#' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
   cnms <- .cnms(x)
-  means <- get_posterior_mean(x$stanfit)
-  means <- means[, ncol(means)]
-  theta <- means[grepl("^theta_L", names(means))]
-  sc <- sigma.stanreg(x)
-  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
-                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta / sc, nms = names(cnms))
-  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
+  mat <- as.matrix(x)
+  useSc <- "sigma" %in% colnames(mat)
+  if (useSc) sc <- mat[,"sigma"]
+  else sc <- 1
+  theta <- mat[,grepl("^theta\\[", colnames(mat)), drop = FALSE]
+  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
+  nms <- names(cnms)
+  Sigma_list <- apply(theta, 1, FUN = mkVarCorr, 
+                      sc = 1, cnms = cnms, nc = nc, nms = nms)
+  add <- function(x) Reduce("+", x)
+  Sigma <- sapply(Sigma_list[[1]], simplify = FALSE, FUN = `*`, y = 0)
+  for (i in seq_along(Sigma)) {
+    Sigma[[i]] <- add(lapply(Sigma_list, FUN = function(x) x[[i]])) / length(Sigma_list)
+    attr(Sigma[[i]], "stddev") <- sqrt(diag(Sigma[[i]]))
+    attr(Sigma[[i]], "correlation") <- cov2cor(Sigma[[i]])
+  }
+  # out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
+  #                        nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
+  #                        theta = theta / sc, nms = names(cnms))
+  structure(Sigma, useSc = useSc, sc = mean(sc), class = "VarCorr.merMod")
 }
 
 

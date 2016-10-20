@@ -121,7 +121,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
 
-  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
+  Z <- pad_reTrms(Z = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 
