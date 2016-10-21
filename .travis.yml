@@ -20,9 +20,10 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
   
-script: -|
-  R CMD build .
-  travis_wait 20 R CMD check packageName*tar.gz
+script: 
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check rstanarm*tar.gz
 
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
