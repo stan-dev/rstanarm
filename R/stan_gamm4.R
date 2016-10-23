@@ -113,13 +113,11 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  Sigma <- make_Sigma(as.matrix(stanfit), group$cnms)
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                prior.info = get_prior_info(call, formals()), 
                y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)
-  out$Sigma <- Sigma
   # FIXME: replace guts of gam with point estimates from stanfit
   out$gam <- result$gam
   structure(out, class = c(class(out), "lmerMod"))

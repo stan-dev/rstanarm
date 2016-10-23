@@ -23,7 +23,7 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
-#'   
+#' @importFrom lme4 mkVarCorr
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,
@@ -399,6 +399,27 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
           if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
       }
     }
+    if (standata$len_theta_L) {
+      thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      cnms <- group$cnms
+      nc <- sapply(cnms, FUN = length)
+      nms <- names(cnms)
+      Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+        Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+        unlist(sapply(Sigma, simplify = FALSE, 
+                      FUN = function(x) x[lower.tri(x, TRUE)]))
+      })
+      end <- tail(dim(Sigma), 1L)
+      shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+      for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+        stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+      }
+      Sigma_nms <- unlist(lapply(cnms, FUN = function(grp) {
+        nm <- outer(grp, grp, FUN = paste, sep = ",")
+        nm[lower.tri(nm, diag = TRUE)]
+      }))
+    }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_nms, "]")),
@@ -406,7 +427,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
-                   if (standata$len_theta_L) paste0("theta[", 1:standata$len_theta_L, "]"),
+                   if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names

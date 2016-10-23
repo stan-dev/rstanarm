@@ -95,7 +95,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
     if (mer)
-      estimates <- estimates[!grepl("^theta\\[", rownames(estimates)),]
+      estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),]
     .printfr(estimates, digits, ...)
     if (ord) {
       cat("\nCutpoints:\n")
