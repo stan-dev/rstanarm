@@ -311,7 +311,7 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
     Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
     Sigma <- Sigma + t(Sigma)
     diag(Sigma) <- diag(Sigma) / 2
-    rownames(Sigma) <- cnms[[i]]
+    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
     stddev <- sqrt(diag(Sigma))
     corr <- cov2cor(Sigma)
     structure(Sigma, stddev = stddev, correlation = corr)

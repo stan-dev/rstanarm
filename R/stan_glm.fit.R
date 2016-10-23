@@ -410,10 +410,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         unlist(sapply(Sigma, simplify = FALSE, 
                       FUN = function(x) x[lower.tri(x, TRUE)]))
       })
+      l <- length(dim(Sigma))
       end <- tail(dim(Sigma), 1L)
       shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
-      for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+      if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
         stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+      }
+      else for (chain in 1:end) {
+        stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
       }
       Sigma_nms <- unlist(lapply(cnms, FUN = function(grp) {
         nm <- outer(grp, grp, FUN = paste, sep = ",")
