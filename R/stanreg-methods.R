@@ -317,7 +317,7 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
     structure(Sigma, stddev = stddev, correlation = corr)
   })
   names(ans) <- nms
-  structure(ans, useSc = useSc, sc = mean(sc), class = "VarCorr.merMod")
+  structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }
 
 # Exported but doc kept internal ----------------------------------------------
