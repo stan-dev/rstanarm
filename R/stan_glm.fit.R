@@ -143,7 +143,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 
     min(.Machine$double.xmax, prior_scale_for_intercept)
-
+  
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
@@ -168,6 +168,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD)
 
+  user_covariance <- if (!length(group)) NULL else group
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
@@ -354,6 +355,17 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop(paste(famname, "is not supported."))
   } # nocov end
   
+  prior_summary <- summarize_glm_prior(
+    user_prior = prior_stuff,
+    user_prior_intercept = prior_intercept_stuff,
+    user_prior_covariance = user_covariance[["decov"]],
+    user_prior_ops = prior_ops,
+    has_intercept = has_intercept,
+    has_predictors = nvars > 0,
+    adjusted_prior_scale = prior_scale,
+    adjusted_prior_intercept_scale = prior_scale_for_intercept
+  )
+  
   pars <- c(if (has_intercept) "alpha", 
             "beta", 
             if (length(group)) "b",
@@ -379,7 +391,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(out)
+    return(structure(out, prior.info = prior_summary))
     
   } else {
     if (algorithm == "sampling") {
@@ -419,7 +431,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(stanfit)
+    return(structure(stanfit, prior.info = prior_summary))
   }
 }
 
@@ -491,3 +503,68 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   }
   return(x_keep)
 }
+
+
+
+summarize_glm_prior <-
+  function(user_prior,
+           user_prior_intercept,
+           user_prior_covariance,
+           user_prior_ops,
+           has_intercept, 
+           has_predictors,
+           adjusted_prior_scale,
+           adjusted_prior_intercept_scale) {
+    
+    rescaled <- isTRUE(user_prior_ops$scaled)
+    rescaled_coef <-
+      rescaled && has_predictors &&
+      !is.na(user_prior$prior_dist_name) &&
+      !all(user_prior$prior_scale == adjusted_prior_scale)
+    rescaled_int <-
+      rescaled && has_intercept &&
+      !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+      (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
+    
+    if (has_predictors && user_prior$prior_dist_name %in% "t") {
+      if (all(user_prior$prior_df == 1)) {
+        user_prior$prior_dist_name <- "cauchy"
+      } else {
+        user_prior$prior_dist_name <- "student_t"
+      }
+    }
+    if (has_intercept && user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+      if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
+        user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
+      } else {
+        user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
+      }
+    }
+    list(
+      prior = if (!has_predictors) NULL else with(
+        user_prior,
+        list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coef)
+            adjusted_prior_scale else NULL,
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+            prior_df else NULL
+        )
+      ),
+      prior_intercept = if (!has_intercept) NULL else with(
+        user_prior_intercept,
+        list(
+          dist = prior_dist_name_for_intercept,
+          location = prior_mean_for_intercept,
+          scale = prior_scale_for_intercept,
+          adjusted_scale = if (rescaled_int)
+            adjusted_prior_intercept_scale else NULL,
+          df = if (prior_dist_name_for_intercept %in% "student_t")
+            prior_df_for_intercept else NULL
+        )
+      ),
+      prior_covariance = user_prior_covariance
+    )
+  }

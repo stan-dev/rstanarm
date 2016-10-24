@@ -95,7 +95,7 @@ stanreg <- function(object) {
     call = object$call, 
     formula = object$formula, 
     terms = object$terms,
-    prior.info = object$prior.info,
+    prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit

@@ -109,9 +109,29 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
+  attr(stanfit, "prior.info") <- summarize_lm_prior(prior, prior_intercept)
   new_names <- c(if (has_intercept) "(Intercept)", cn, "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", 
                  "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(stanfit)
+}
+
+
+# internal ----------------------------------------------------------------
+summarize_lm_prior <- function(prior, prior_intercept) {
+  flat <- !length(prior)
+  flat_int <- !length(prior_intercept)
+  list(
+    prior = list(
+      dist = ifelse(flat, NA, "R2"),
+      location = ifelse(flat, NA, prior$location),
+      what = ifelse(flat, NA, prior$what)
+    ), 
+    prior_intercept = list(
+      dist = ifelse(flat_int, NA, "normal"),
+      location = ifelse(flat_int, NA, prior_intercept$location),
+      scale = ifelse(flat_int, NA, prior_intercept$scale)
+    )
+  )
 }

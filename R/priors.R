@@ -147,6 +147,7 @@
 #'   \itemize{
 #'   \item \code{decov(regularization, concentration, shape, scale)}
 #'   }
+#'   (Also see vignette for \code{stan_glmer})
 #'   
 #'   Covariance matrices are decomposed into correlation matrices and 
 #'   variances. The variances are in turn decomposed into the product of a
