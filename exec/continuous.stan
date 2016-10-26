@@ -366,13 +366,8 @@ model {
   else {
     #include "eta_no_intercept.stan" // shifts eta
   }
-  // make eta_z
-  if (family == 4 && z_dim > 0 && link_phi > 0) {
-    eta_z = betareg_z * omega;
-  }
-  else if (family == 4 && z_dim == 0 && has_intercept_z == 1){
-    eta_z = rep_vector(0.0, N); 
-  }
+  
+  #include "make_eta_z.stan"  // linear predictor in stan_betareg 
   // adjust eta_z according to links
   if (has_intercept_z == 1) {
     if (link_phi > 1) {
@@ -383,12 +378,7 @@ model {
     }
   }
   else { // has_intercept_z == 0
-    if (link_phi > 1) {
-      eta_z = eta_z - min(eta_z) + dot_product(zbar, omega);
-    }
-    else {
-      eta_z = eta_z + dot_product(zbar, omega);
-    }
+    #include "eta_z_no_intercept.stan"
   }
 
   // Log-likelihood 
@@ -447,38 +437,14 @@ generated quantities {
   real mean_PPD;
   vector[N] eta_z;
   mean_PPD = 0;
-  // adjust betareg intercept 
-  if (has_intercept_z == 1) {
-    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);
-  }
-  // make eta_z
-  if (family == 4 && z_dim > 0 && link_phi > 0) {
-    eta_z = betareg_z * omega;
-  }
-  else if (family == 4 && z_dim == 0 && has_intercept_z == 1){
-    eta_z = rep_vector(0.0, N); 
-  }
-  // adjust eta_z according to links
-  if (has_intercept_z == 1) {
-    if (link_phi > 1) {
-      omega_int[1] = omega_int[1] - min(eta_z);
-      eta_z = eta_z - min(eta_z) + gamma_z[1];
-    }
-    else {
-      eta_z = eta_z + gamma_z[1];
-    }
-  }
-  else { // has_intercept_z == 0
-    if (link_phi > 1) {
-      eta_z = eta_z - min(eta_z) + dot_product(zbar, omega);
-    }
-    else {
-      eta_z = eta_z + dot_product(zbar, omega);
-    }
-  }
+  
   if (has_intercept == 1)
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
+  if (has_intercept_z == 1) { 
+    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
+  }
+  
   {
     #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
@@ -499,6 +465,21 @@ generated quantities {
     }
     else {
       #include "eta_no_intercept.stan" // shifts eta
+    }
+    
+    #include "make_eta_z.stan"
+    // adjust eta_z according to links
+    if (has_intercept_z == 1) {
+      if (link_phi > 1) {
+        omega_int[1] = omega_int[1] - min(eta_z);
+        eta_z = eta_z - min(eta_z) + gamma_z[1];
+      }
+      else {
+        eta_z = eta_z + gamma_z[1];
+      }
+    }
+    else { // has_intercept_z == 0
+      #include "eta_z_no_intercept.stan"
     }
     
     if (family == 1) {

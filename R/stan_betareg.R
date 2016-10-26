@@ -37,6 +37,10 @@
 #' @template args-x-y
 #' @template args-dots
 #' @template args-priors
+#' 
+#' @param prior_z See \code{prior}.
+#' @param prior_intercept_z See \code{prior_intercept}. 
+#' 
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -44,8 +48,8 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' 
-#' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
-#'   are also possible using the \code{\link{neg_binomial_2}} family object.
+#' @param link Same as \code{\link[betareg]{betareg}}.
+#' @param link.phi Same as \code{\link[betareg]{betareg}}
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
 #'   \code{\link[betareg]{betareg}} but rather than performing maximum likelihood 
@@ -56,6 +60,27 @@
 #'   but it is also possible to call the latter directly.
 #'   
 #' @seealso The various vignettes for \code{stan_betareg}.
+#' 
+#' @examples 
+#' \donttest{
+#' ### Simulated data
+#' fam <- binomial(link = "logit")
+#' dat <- list()
+#' dat$N <- 200
+#' dat$x <- rnorm(dat$N, 2, 1)
+#' dat$z <- rnorm(dat$N, 2, 1)
+#' dat$mu <- fam$linkinv(1 + 0.2*dat$x)
+#' dat$phi <- exp(1.5 + 0.4*dat$z)
+#' dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
+#' hist(dat$y, col = "dark grey", border = F, xlim = c(0,1))
+#' fake_dat <- data.frame(dat$y, dat$x, dat$z)
+#' colnames(fake_dat) <- c("y", "x", "z")
+#' 
+#' fit <- stan_betareg(y ~ x | z, data = fake_dat, link = "logit",
+#'                     link.phi = "log", algorithm = "sampling")
+#' print(fit, digits = 2)
+#' pp_check(fit)
+#' }
 
 stan_betareg <- function (formula, data, subset, na.action, weights, offset,
                           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),

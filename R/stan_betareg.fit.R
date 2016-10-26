@@ -158,7 +158,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   else {
     pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
   }
-  browser()
+
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
     out$par <- out$par[!grepl("eta_z", names(out$par))] # might need fixing
