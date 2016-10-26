@@ -183,7 +183,7 @@ stan_lmer <- function(formula,
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
-  mc$family <- gaussian
+  mc$family <- "gaussian"
   out <- eval(mc, parent.frame())
   out$call <- call
   return(out)
