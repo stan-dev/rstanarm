@@ -1,10 +1,12 @@
 #' Extract and/or print a summary of the priors used for an rstanarm model
+#' 
+#' When printing 
 #'
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
+#' @param digits Number of digits to use for rounding.
 #' 
-#' @details 
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
@@ -23,18 +25,21 @@ prior_summary <- function(object, ...) {
 
 #' @rdname prior_summary
 #' @export
-prior_summary.stanreg <- function(object, ...) {
+prior_summary.stanreg <- function(object, digits = 2,...) {
   x <- object[["prior.info"]]
   if (is.null(x)) {
     message("Priors not found in stanreg object.")
     return(NULL)
   }
   structure(x, class = "prior_summary.stanreg", 
-            model_name = deparse(substitute(object)))
+            model_name = deparse(substitute(object)), 
+            print_digits = digits)
 }
 
 #' @export
-print.prior_summary.stanreg <- function(x, digits = 2, ...) {
+print.prior_summary.stanreg <- function(x, digits, ...) {
+  if (missing(digits))
+    digits <- attr(x, "print_digits") %ORifNULL% 2
   .dig <- digits
   .fr2 <- function(y, .digits = .dig, ...) format(y, digits = .digits, ...)
   .fr3 <- function(y, .nsmall = .dig) .fr2(y, nsmall = .nsmall)
