@@ -48,7 +48,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   link_num_phi <- which(supported_phi_links == link.phi)
   if (!length(link_num_phi)) 
     stop("'link' must be one of ", paste(supported_phi_links, collapse = ", "))
-  
+
   if (Z_true == 0) {
     link_num_phi <- 0
   }
@@ -158,7 +158,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   else {
     pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
   }
-  
+  browser()
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
     out$par <- out$par[!grepl("eta_z", names(out$par))] # might need fixing
@@ -202,7 +202,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     }
     if (Z_true == 1) {
       new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp),
-                     if (has_intercept_z) "(phi)_Intercept", paste0("(phi)_", colnames(ztemp)),
+                     if (has_intercept_z) "(phi)_(Intercept)", paste0("(phi)_", colnames(ztemp)),
                      "mean_PPD", "log-posterior")
     }
     else {
