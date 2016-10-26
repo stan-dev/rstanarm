@@ -170,7 +170,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # make a copy of user specification before modifying 'group' (used for keeping
   # track of priors)
-  user_covariance <- if (!length(group)) NULL else group
+  user_covariance <- if (!length(group)) NULL else group[["decov"]]
   
   if (length(group)) {
     check_reTrms(group)
@@ -361,7 +361,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_summary <- summarize_glm_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,
-    user_prior_covariance = user_covariance[["decov"]],
+    user_prior_covariance = user_covariance,
     user_prior_ops = prior_ops,
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
@@ -518,7 +518,6 @@ summarize_glm_prior <-
            has_predictors,
            adjusted_prior_scale,
            adjusted_prior_intercept_scale) {
-    
     rescaled <- isTRUE(user_prior_ops$scaled)
     rescaled_coef <-
       rescaled && has_predictors &&
@@ -569,7 +568,7 @@ summarize_glm_prior <-
         )
       )
     )
-    if (!length(user_prior_covariance))
+    if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance
     
     return(prior_list)

@@ -191,7 +191,8 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   matrix to a data.frame, preserving row and column names but dropping the 
 #'   \code{print}-related attributes.
 #' 
-#' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
+#' @seealso \code{\link{prior_summary}} to extract or print a summary of the 
+#'   priors used for a particular model.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
