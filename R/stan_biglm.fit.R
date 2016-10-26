@@ -120,6 +120,12 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
 
 
 # internal ----------------------------------------------------------------
+
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param prior, prior_intercept User's prior and prior_intercept specifications
+# @return A named list with elements 'prior' and 'prior_intercept' containing 
+#   the values needed for prior_summary
 summarize_lm_prior <- function(prior, prior_intercept) {
   flat <- !length(prior)
   flat_int <- !length(prior_intercept)

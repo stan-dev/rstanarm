@@ -508,7 +508,17 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
 }
 
 
-
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param user_* The user's prior, prior_intercept, prior_covariance, and 
+#   prior_options specifications. For prior and prior_intercept these should be
+#   passed in after broadcasting the df/location/scale arguments if necessary.
+# @param has_intercept T/F, does model have an intercept?
+# @param has_predictors T/F, does model have predictors?
+# @param adjusted_prior_* adjusted scales computed if prior_ops$scaled is TRUE
+# @return A named list with components 'prior', 'prior_intercept', and possibly 
+#   'prior_covariance', each of which itself is a list containing the needed
+#   values for prior_summary.
 summarize_glm_prior <-
   function(user_prior,
            user_prior_intercept,
@@ -535,7 +545,8 @@ summarize_glm_prior <-
         user_prior$prior_dist_name <- "student_t"
       }
     }
-    if (has_intercept && user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+    if (has_intercept &&
+        user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
       if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
         user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
       } else {
@@ -543,9 +554,8 @@ summarize_glm_prior <-
       }
     }
     prior_list <- list(
-      prior = if (!has_predictors) NULL else with(
-        user_prior,
-        list(
+      prior = 
+        if (!has_predictors) NULL else with(user_prior, list(
           dist = prior_dist_name,
           location = prior_mean,
           scale = prior_scale,
@@ -553,11 +563,9 @@ summarize_glm_prior <-
             adjusted_prior_scale else NULL,
           df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
             prior_df else NULL
-        )
-      ),
-      prior_intercept = if (!has_intercept) NULL else with(
-        user_prior_intercept,
-        list(
+        )),
+      prior_intercept = 
+        if (!has_intercept) NULL else with(user_prior_intercept, list(
           dist = prior_dist_name_for_intercept,
           location = prior_mean_for_intercept,
           scale = prior_scale_for_intercept,
@@ -565,8 +573,7 @@ summarize_glm_prior <-
             adjusted_prior_intercept_scale else NULL,
           df = if (prior_dist_name_for_intercept %in% "student_t")
             prior_df_for_intercept else NULL
-        )
-      )
+        ))
     )
     if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance

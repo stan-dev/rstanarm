@@ -159,6 +159,12 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
 
 
 # internal ----------------------------------------------------------------
+
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param prior, prior_counts User's prior and prior_counts specifications
+# @return A named list with elements 'prior' and 'prior_counts' containing 
+#   the values needed for prior_summary
 summarize_polr_prior <- function(prior, prior_counts, shape = NULL, rate = NULL) {
   flat <- !length(prior)
   list(
@@ -170,7 +176,7 @@ summarize_polr_prior <- function(prior, prior_counts, shape = NULL, rate = NULL)
     prior_counts = list(
       dist = "dirichlet",
       concentration = prior_counts
-    ), 
+    )
   )
 }
 

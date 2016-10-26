@@ -79,6 +79,11 @@
 #'   and 2.5 for the other coefficients, unless the probit link function is
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
+#'   
+#'   If the \code{scaled} argument to \code{prior_options} is \code{TRUE} (the
+#'   default), then the scales will be further adjusted as described above in
+#'   the documentation of the \code{scaled} argument in the \strong{Arguments} 
+#'   section.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:

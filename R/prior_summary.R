@@ -1,12 +1,19 @@
 #' Extract and/or print a summary of the priors used for an rstanarm model
-#' 
-#' When printing 
 #'
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param digits Number of digits to use for rounding.
 #' 
+#' @details For some models you may see "\code{adjusted scale}" in the printed 
+#'   output and adjusted scales included in the object returned by 
+#'   \code{prior_summary}. These adjusted scale values are the prior scales 
+#'   actually used by \pkg{rstanarm} and are computed by adjusting the prior
+#'   scales specified by the user to account for the scales of the predictors
+#'   (as described in the documentation for the \code{scaled} argument to 
+#'   \code{\link{prior_options}}). For models with adjusted prior scales, 
+#'   refitting the model with \code{prior_ops=prior_options(scaled=FALSE)} will
+#'   disable this feature.
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
@@ -18,6 +25,19 @@
 #' names(priors)
 #' priors$prior$scale
 #' priors$prior$adjusted_scale
+#' 
+#' # for a glm with adjusted scales (see Details, above), compare 
+#' # the default (rstanarm adjusting the scales) to setting 
+#' # prior_ops=prior_options(scaled=FALSE)
+#' fit <- stan_glm(mpg ~ wt + am, data = mtcars, 
+#'                 prior = normal(0, c(2.5, 4)), 
+#'                 prior_intercept = normal(0, 5), 
+#'                 iter = 10, chains = 1) # only for demonstration 
+#' prior_summary(fit)
+#' 
+#' fit2 <- update(fit, prior_ops = prior_options(scaled = FALSE))
+#' prior_summary(fit2)
+#' 
 #'   
 prior_summary <- function(object, ...) {
   UseMethod("prior_summary")
@@ -54,7 +74,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   
   if (!is.null(prior_intercept)) {
     int_dist <- prior_intercept$dist
-    cat("\nIntercept:\n ",
+    cat("\nIntercept\n ~",
         if (is.na(int_dist)) {
           "flat"
         } else if (is.null(prior_intercept$df)) {
@@ -68,7 +88,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         }
       )
     if (!is.null(prior_intercept$adjusted_scale))
-      cat("\n   adjusted scale =", .fr3(prior_intercept$adjusted_scale))
+      cat("\n     **adjusted scale =", .fr3(prior_intercept$adjusted_scale))
   }
   
   if (!is.null(prior_coef)) {
@@ -89,7 +109,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         prior_coef$df <- .format_pars(prior_coef$df, .fr2)
       }
     }
-    cat("\nCoefficients:\n ",
+    cat("\nCoefficients\n ~",
         if (is.na(coef_dist)) {
           "flat"
         } else if (coef_dist %in% c("normal", "student_t", "cauchy")) {
@@ -114,19 +134,15 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
     })
     
     if (!is.null(prior_coef$adjusted_scale))
-      cat("\n   adjusted scale =", .fr3(prior_coef$adjusted_scale))
+      cat("\n     **adjusted scale =", .fr3(prior_coef$adjusted_scale))
   }
   
-  
   if (!is.null(prior_covariance)) {
-    j <- length(prior_covariance$regularization)
-    if (j >= 2) {
-      prior_covariance$regularization <- .format_pars(prior_covariance$regularization, .fr2)
-      prior_covariance$concentration <- .format_pars(prior_covariance$concentration, .fr2)
-      prior_covariance$shape <- .format_pars(prior_covariance$shape, .fr2)
-      prior_covariance$scale <- .format_pars(prior_covariance$scale, .fr2)
-    }
-    cat("\n Covariance:\n ",
+    prior_covariance$regularization <- .format_pars(prior_covariance$regularization, .fr2)
+    prior_covariance$concentration <- .format_pars(prior_covariance$concentration, .fr2)
+    prior_covariance$shape <- .format_pars(prior_covariance$shape, .fr2)
+    prior_covariance$scale <- .format_pars(prior_covariance$scale, .fr2)
+    cat("\nCovariance\n ~",
         with(prior_covariance,
           paste0(dist, "(",  "reg = ", .fr2(regularization), 
                  ", conc = ", .fr2(concentration), ", shape = ", .fr2(shape), 
@@ -135,14 +151,11 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       )
   }
   
-  if (!is.null(prior_counts)) {
-    # stan_polr
-    j <- length(prior_counts$concentration)
-    if (j >= 2) {
-      prior_counts$concentration <- .format_pars(prior_counts$concentration, .fr2)
-    }
-    cat("\n Counts:\n ",
-        with(prior_counts, paste0(dist, "(", "conc = ", .fr2(concentration), ")"))
+  if (!is.null(prior_counts)) {# stan_polr
+    prior_counts$concentration <- .format_pars(prior_counts$concentration, .fr2)
+    cat("\nCounts\n ~",
+        with(prior_counts, 
+             paste0(dist, "(", "concentration = ", .fr2(concentration), ")"))
       )
   }
   
@@ -150,10 +163,19 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
 }
 
 
-.format_pars <- function(p, formatter) {
+# internal ----------------------------------------------------------------
+#
+# @param p numeric vector
+# @param formatter a formatting function to apply (see .fr2, .fr3 above)
+# @param N the maximum number of values to include before replacing the rest
+#   with '...'
+.format_pars <- function(p, formatter, N = 3) {
+  P <- length(p)
+  if (P < 2)
+    return(p)
   paste0(
     "[", 
-    paste(c(formatter(p[1:2]), if (length(p) > 2) "..."), 
+    paste(c(formatter(p[1:min(N, P)]), if (N < P) "..."), 
           collapse = ","), 
     "]"
   )
