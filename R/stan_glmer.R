@@ -109,6 +109,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
+  if (is.null(prior_covariance))
+    stop("'prior_covariance' can't be NULL.", call. =FALSE)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   group <- glmod$reTrms
@@ -127,7 +129,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
-               prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
@@ -160,7 +161,7 @@ stan_lmer <- function(formula,
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
-  mc$family <- gaussian
+  mc$family <- "gaussian"
   out <- eval(mc, parent.frame())
   out$call <- call
   return(out)

@@ -109,12 +109,13 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
-  attr(stanfit, "prior.info") <- summarize_lm_prior(prior, prior_intercept)
   new_names <- c(if (has_intercept) "(Intercept)", cn, "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", 
                  "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
-  return(stanfit)
+  
+  prior_summary <- summarize_lm_prior(prior, prior_intercept)
+  structure(stanfit, prior.info = prior_summary)
 }
 
 

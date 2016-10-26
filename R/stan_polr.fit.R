@@ -153,5 +153,24 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   }
   stanfit@sim$fnames_oi <- new_names
   
-  return(stanfit)
+  prior_summary <- summarize_polr_prior(prior, prior_counts, shape, rate)
+  structure(stanfit, prior.info = prior_summary)
 }
+
+
+# internal ----------------------------------------------------------------
+summarize_polr_prior <- function(prior, prior_counts, shape = NULL, rate = NULL) {
+  flat <- !length(prior)
+  list(
+    prior = list(
+      dist = ifelse(flat, NA, "R2"),
+      location = ifelse(flat, NA, prior$location),
+      what = ifelse(flat, NA, prior$what)
+    ), 
+    prior_counts = list(
+      dist = "dirichlet",
+      concentration = prior_counts
+    ), 
+  )
+}
+

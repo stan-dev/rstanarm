@@ -168,7 +168,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD)
 
+  # make a copy of user specification before modifying 'group' (used for keeping
+  # track of priors)
   user_covariance <- if (!length(group)) NULL else group
+  
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
@@ -540,7 +543,7 @@ summarize_glm_prior <-
         user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
       }
     }
-    list(
+    prior_list <- list(
       prior = if (!has_predictors) NULL else with(
         user_prior,
         list(
@@ -564,7 +567,10 @@ summarize_glm_prior <-
           df = if (prior_dist_name_for_intercept %in% "student_t")
             prior_df_for_intercept else NULL
         )
-      ),
-      prior_covariance = user_prior_covariance
+      )
     )
+    if (!length(user_prior_covariance))
+      prior_list$prior_covariance <- user_prior_covariance
+    
+    return(prior_list)
   }

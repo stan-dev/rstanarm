@@ -17,16 +17,18 @@
 
 #' Prior distributions and options
 #' 
-#' These functions are used to specify the prior-related arguments of the 
-#' various modeling functions in the \pkg{rstanarm} package. The default priors 
-#' used in the various \pkg{rstanarm} modeling functions are intended to be 
-#' \emph{weakly informative} in that they provide moderate regularlization and 
-#' help stabilize computation. For many applications the defaults will perform 
-#' well, but prudent use of more informative priors is encouraged. Uniform prior
-#' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
-#' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
-#' they are not recommended and are \emph{not} non-informative, giving 
-#' the same probability mass to implausible values as plausible ones.
+#' The functions described on this page are used to specify the prior-related
+#' arguments of the various modeling functions in the \pkg{rstanarm} package (to
+#' view the priors used for an existing model see \code{\link{prior_summary}}). 
+#' The default priors used in the various \pkg{rstanarm} modeling functions are
+#' intended to be \emph{weakly informative} in that they provide moderate
+#' regularlization and help stabilize computation. For many applications the
+#' defaults will perform well, but prudent use of more informative priors is
+#' encouraged. Uniform prior distributions are possible (e.g. by setting
+#' \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
+#' the data is very strong, they are not recommended and are \emph{not}
+#' non-informative, giving the same probability mass to implausible values as
+#' plausible ones.
 #' 
 #' @export 
 #' @name priors
@@ -337,7 +339,7 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 #'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
 #'   prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
-#'   distribution. The defaults is \eqn{1}, implying a joint uniform prior.
+#'   distribution. The default is \eqn{1}, implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale parameter in the
 #'   \code{decov} prior. If \code{shape} and \code{scale} are both \eqn{1} (the
 #'   default) then the gamma prior simplifies to the unit-exponential
