@@ -1,11 +1,11 @@
 #include "license.stan" // GPL3+
 
-// GLM for a Gaussian, Gamma, or inverse Gaussian outcome
+// GLM for a Gaussian, Gamma, inverse Gaussian, or Beta outcome
 functions {
   #include "common_functions.stan"
 
   /** 
-   * Apply inverse link function to linear predictor
+   * Apply inverse link function to linear predictor for gaussian models
    *
    * @param eta Linear predictor vector
    * @param link An integer indicating the link function
@@ -25,7 +25,7 @@ functions {
   }
   
   /** 
-  * Apply inverse link function to linear predictor
+  * Apply inverse link function to linear predictor for gamma models
   *
   * @param eta Linear predictor vector
   * @param link An integer indicating the link function
@@ -43,7 +43,7 @@ functions {
   }
   
   /** 
-  * Apply inverse link function to linear predictor
+  * Apply inverse link function to linear predictor for inverse-gaussian models
   *
   * @param eta Linear predictor vector
   * @param link An integer indicating the link function
@@ -62,7 +62,7 @@ functions {
   }
   
   /** 
-  * Apply inverse link function to linear predictor
+  * Apply inverse link function to linear predictor for beta models
   *
   * @param eta Linear predictor vector
   * @param link An integer indicating the link function
@@ -84,15 +84,16 @@ functions {
     else if (link == 6) // loglog
       for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(eta[n]);
       
-    for (n in 1:rows(mu)) {
+    for (n in 1:rows(mu)) { 
+      //FIXME: maybe check this in tests but not in released version?
       if (mu[n] < 0 || mu[n] > 1)
-        reject("'mu' needs to be between 0 and 1")
+        reject("mu needs to be between 0 and 1")
     }
     return mu;
   }
   
-    /** 
-  * Apply inverse link function to linear predictor for dispersion (beta regression)
+  /** 
+  * Apply inverse link function to linear predictor for dispersion for beta models
   *
   * @param eta Linear predictor vector
   * @param link An integer indicating the link function
@@ -111,9 +112,9 @@ functions {
   }
   
   /** 
-  * Pointwise (pw) log-likelihood vector
+  * Pointwise (pw) log-likelihood vector for gaussian models
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y A vector of outcomes
   * @param link An integer indicating the link function
   * @return A vector
   */
@@ -135,19 +136,19 @@ functions {
     if (link < 1 || link > 3) reject("Invalid link");
     ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
       (shape - 1) * sum_log_y;
-    if (link == 2)      # link is log
+    if (link == 2)      // link is log
       ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
-    else if (link == 1) # link is identity
+    else if (link == 1) // link is identity
       ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                # link is inverse
+    else                // link is inverse
       ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
     return ret;
   }
   
   /** 
-  * Pointwise (pw) log-likelihood vector
+  * Pointwise (pw) log-likelihood vector for gamma models
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y A vector of outcomes
   * @param link An integer indicating the link function
   * @return A vector
   */
@@ -189,9 +190,9 @@ functions {
   }
   
   /** 
-  * Pointwise (pw) log-likelihood vector
+  * Pointwise (pw) log-likelihood vector for inverse-gaussian models
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y The vector of outcomes
   * @param eta The linear predictors
   * @param lamba A positive scalar nuisance parameter
   * @param link An integer indicating the link function
@@ -211,6 +212,15 @@ functions {
     return ll;
   }
   
+  /** 
+  * Pointwise (pw) log-likelihood vector for beta models
+  *
+  * @param y The vector of outcomes
+  * @param eta The linear predictors
+  * @param dispersion Positive dispersion parameter
+  * @param link An integer indicating the link function
+  * @return A vector of log-likelihoods
+  */
   vector pw_beta(vector y, vector eta, real dispersion, int link) {
     vector[rows(y)] ll;
     vector[rows(y)] mu;
@@ -226,7 +236,16 @@ functions {
     return ll;
   }
 
-  
+  /** 
+  * Pointwise (pw) log-likelihood vector for beta models with z variables
+  *
+  * @param y The vector of outcomes
+  * @param eta The linear predictors (for y)
+  * @param eta_z The linear predictors (for dispersion)
+  * @param link An integer indicating the link function passed to linkinv_beta
+  * @param link_phi An integer indicating the link function passed to linkinv_beta_z
+  * @return A vector of log-likelihoods
+  */
   vector pw_beta_z(vector y, vector eta, vector eta_z, int link, int link_phi) {
     vector[rows(y)] ll;
     vector[rows(y)] mu;
@@ -318,14 +337,12 @@ parameters {
   real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> dispersion_unscaled; # interpretation depends on family!
+  real<lower=0> dispersion_unscaled; // interpretation depends on family!
   #include "parameters_betareg.stan"
-  // vector[z_dim] omega;               // betareg parameters
-  // real gamma_z[has_intercept_z];     // betareg intercept
 }
 transformed parameters {
   real dispersion;
-  vector[z_dim] omega;                  // for tparameters_betareg.stan
+  vector[z_dim] omega; // used in tparameters_betareg.stan
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (prior_scale_for_dispersion > 0)
     dispersion =  prior_scale_for_dispersion * dispersion_unscaled; 
@@ -375,7 +392,7 @@ model {
   }
 
   // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+  if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
       if (link == 1) 
         target += normal_lpdf(y | eta, dispersion);
@@ -402,10 +419,11 @@ model {
       vector[N] mu_z;
       mu = linkinv_beta(eta, link);
       mu_z = linkinv_beta_z(eta_z, link_phi);
-      target += beta_lpdf(y | rows_dot_product(mu, mu_z), rows_dot_product((1 - mu) , mu_z));
+      target += beta_lpdf(y | rows_dot_product(mu, mu_z), 
+                          rows_dot_product((1 - mu) , mu_z));
     }
   }
-  else if (prior_PD == 0) { # weighted log-likelihoods
+  else if (prior_PD == 0) { // weighted log-likelihoods
     vector[N] summands;
     if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
     else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
