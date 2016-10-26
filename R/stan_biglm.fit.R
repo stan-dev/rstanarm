@@ -114,8 +114,8 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                  "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   
-  prior_summary <- summarize_lm_prior(prior, prior_intercept)
-  structure(stanfit, prior.info = prior_summary)
+  prior_info <- summarize_lm_prior(prior, prior_intercept)
+  structure(stanfit, prior.info = prior_info)
 }
 
 

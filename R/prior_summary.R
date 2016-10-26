@@ -159,6 +159,12 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       )
   }
   
+  if (!is.null(x$scobit_exponent))
+    cat("\nScobit Exponent\n ~",
+        with(x$scobit_exponent, 
+             paste0(dist, "(shape = ", .fr2(shape), ", rate = ", .fr2(rate), ")"))
+    )
+  
   invisible(x)
 }
 

@@ -153,8 +153,8 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   }
   stanfit@sim$fnames_oi <- new_names
   
-  prior_summary <- summarize_polr_prior(prior, prior_counts, shape, rate)
-  structure(stanfit, prior.info = prior_summary)
+  prior_info <- summarize_polr_prior(prior, prior_counts, shape, rate)
+  structure(stanfit, prior.info = prior_info)
 }
 
 
@@ -165,9 +165,9 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
 # @param prior, prior_counts User's prior and prior_counts specifications
 # @return A named list with elements 'prior' and 'prior_counts' containing 
 #   the values needed for prior_summary
-summarize_polr_prior <- function(prior, prior_counts, shape = NULL, rate = NULL) {
+summarize_polr_prior <- function(prior, prior_counts, shape=NULL, rate=NULL) {
   flat <- !length(prior)
-  list(
+  prior_list <- list(
     prior = list(
       dist = ifelse(flat, NA, "R2"),
       location = ifelse(flat, NA, prior$location),
@@ -178,5 +178,9 @@ summarize_polr_prior <- function(prior, prior_counts, shape = NULL, rate = NULL)
       concentration = prior_counts
     )
   )
+  if ((!is.null(shape) && shape > 0) && (!is.null(rate) && rate > 0))
+    prior_list$scobit_exponent <- list(dist = "gamma", shape = shape, rate = rate)
+  
+  return(prior_list)
 }
 

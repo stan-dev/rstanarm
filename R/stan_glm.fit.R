@@ -358,7 +358,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop(paste(famname, "is not supported."))
   } # nocov end
   
-  prior_summary <- summarize_glm_prior(
+  prior_info <- summarize_glm_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,
     user_prior_covariance = user_covariance,
@@ -394,7 +394,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(structure(out, prior.info = prior_summary))
+    return(structure(out, prior.info = prior_info))
     
   } else {
     if (algorithm == "sampling") {
@@ -434,7 +434,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(structure(stanfit, prior.info = prior_summary))
+    return(structure(stanfit, prior.info = prior_info))
   }
 }
 
