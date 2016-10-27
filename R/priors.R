@@ -368,6 +368,7 @@ dirichlet <- function(concentration = 1) {
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
+  what <- match.arg(what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 

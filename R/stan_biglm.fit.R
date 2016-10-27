@@ -76,6 +76,9 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
     prior_scale_for_intercept <- prior_intercept$scale
     if (is.null(prior_scale_for_intercept))
       prior_scale_for_intercept <- 0
+    
+    # also add scale back to prior_intercept to pass to summarize_lm_prior later
+    prior_intercept$scale <- prior_scale_for_intercept
   }
   dim(R_inv) <- c(J, dim(R_inv))
   
@@ -113,7 +116,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                  if (prior_PD == 0) "log-fit_ratio", 
                  "R2", "mean_PPD", "log-posterior")
   stanfit@sim$fnames_oi <- new_names
-  
+
   prior_info <- summarize_lm_prior(prior, prior_intercept)
   structure(stanfit, prior.info = prior_info)
 }
@@ -129,6 +132,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
 summarize_lm_prior <- function(prior, prior_intercept) {
   flat <- !length(prior)
   flat_int <- !length(prior_intercept)
+  
   list(
     prior = list(
       dist = ifelse(flat, NA, "R2"),

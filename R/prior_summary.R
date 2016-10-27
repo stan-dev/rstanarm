@@ -58,7 +58,6 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
             print_digits = digits)
 }
 
-#' @rdname prior_summary
 #' @export
 #' @method print prior_summary.stanreg
 print.prior_summary.stanreg <- function(x, digits, ...) {
