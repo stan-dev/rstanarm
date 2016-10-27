@@ -4,6 +4,8 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param digits Number of digits to use for rounding.
+#' @param ... Currently ignored by the method for stanreg objects. The S3
+#'   generic uses \code{...} to pass arguments to any defined methods.
 #' 
 #' @details For some models you may see "\code{adjusted scale}" in the printed 
 #'   output and adjusted scales included in the object returned by 
@@ -56,7 +58,9 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
             print_digits = digits)
 }
 
+#' @rdname prior_summary
 #' @export
+#' @method print prior_summary.stanreg
 print.prior_summary.stanreg <- function(x, digits, ...) {
   if (missing(digits))
     digits <- attr(x, "print_digits") %ORifNULL% 2
@@ -73,97 +77,90 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   cat(msg, "\n------")
   
   if (!is.null(prior_intercept)) {
-    int_dist <- prior_intercept$dist
+    p <- prior_intercept
     cat("\nIntercept\n ~",
-        if (is.na(int_dist)) {
+        if (is.na(p$dist)) {
           "flat"
-        } else if (is.null(prior_intercept$df)) {
-          with(prior_intercept, 
-               paste0(dist,"(location = ", .fr2(location), 
-                      ", scale = ", .fr2(scale),")"))
+        } else if (is.null(p$df)) {
+          paste0(p$dist,"(location = ", .fr2(p$location), 
+                 ", scale = ", .fr2(p$scale),")")
         } else {
-          with(prior_intercept,
-            paste0(dist, "(df = ", .fr2(df), ", location = ", .fr2(location), 
-                   ", scale = ", .fr2(scale), ")"))
+          paste0(p$dist, "(df = ", .fr2(p$df), ", 
+                 location = ", .fr2(p$location), 
+                 ", scale = ", .fr2(p$scale), ")")
         }
       )
-    if (!is.null(prior_intercept$adjusted_scale))
-      cat("\n     **adjusted scale =", .fr3(prior_intercept$adjusted_scale))
+    if (!is.null(p$adjusted_scale))
+      cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
   }
   
   if (!is.null(prior_coef)) {
-    coef_dist <- prior_coef$dist
-    k <- length(prior_coef$location)
-    if (!(coef_dist %in% c("R2", NA)) && k >= 2) {
-      if (coef_dist %in% c("normal", "student_t", "cauchy")) {
-        prior_coef$location <- .format_pars(prior_coef$location, .fr2)
-        prior_coef$scale <- .format_pars(prior_coef$scale, .fr2)
-        if (!is.null(prior_coef$df))
-          prior_coef$df <- .format_pars(prior_coef$df, .fr2)
-        if (!is.null(prior_coef$adjusted_scale))
-          prior_coef$adjusted_scale <- .format_pars(prior_coef$adjusted_scale, .fr2)
-      } else if (coef_dist %in% c("hs_plus")) {
-        prior_coef$df1 <- .format_pars(prior_coef$df, .fr2)
-        prior_coef$df2 <- .format_pars(prior_coef$scale, .fr2)
-      } else if (coef_dist %in% c("hs")) {
-        prior_coef$df <- .format_pars(prior_coef$df, .fr2)
+    p <- prior_coef
+    if (!(p$dist %in% c("R2", NA))) {
+      if (p$dist %in% c("normal", "student_t", "cauchy")) {
+        p$location <- .format_pars(p$location, .fr2)
+        p$scale <- .format_pars(p$scale, .fr2)
+        if (!is.null(p$df))
+          p$df <- .format_pars(p$df, .fr2)
+        if (!is.null(p$adjusted_scale))
+          p$adjusted_scale <- .format_pars(p$adjusted_scale, .fr2)
+      } else if (p$dist %in% c("hs_plus")) {
+        p$df1 <- .format_pars(p$df, .fr2)
+        p$df2 <- .format_pars(p$scale, .fr2)
+      } else if (p$dist %in% c("hs")) {
+        p$df <- .format_pars(p$df, .fr2)
       }
     }
     cat("\nCoefficients\n ~",
-        if (is.na(coef_dist)) {
+        if (is.na(p$dist)) {
           "flat"
-        } else if (coef_dist %in% c("normal", "student_t", "cauchy")) {
-          if (is.null(prior_coef$df)) {
-            with(prior_coef, 
-                 paste0(dist, "(location = ", .fr2(location), 
-                        ", scale = ", .fr2(scale), ")"))
+        } else if (p$dist %in% c("normal", "student_t", "cauchy")) {
+          if (is.null(p$df)) {
+            paste0(p$dist, "(location = ", .fr2(p$location), 
+                   ", scale = ", .fr2(p$scale), ")")
           } else {
-            with(prior_coef, 
-                 paste0(dist, "(df = ", .fr2(df), ", location = ", .fr2(location), 
-                        ", scale = ", .fr2(scale),")"))
+            paste0(p$dist, "(df = ", .fr2(p$df), ", 
+                   location = ", .fr2(p$location), 
+                   ", scale = ", .fr2(p$scale),")")
           }
-        } else if (coef_dist %in% c("hs_plus")) {
-          with(prior_coef, 
-               paste0("hs_plus(df1 = ", .fr2(df1), ", df2 = ", .fr2(df2), ")"))
-        } else if (coef_dist %in% c("hs")) {
-          with(prior_coef, 
-               paste0("hs(df = ", .fr2(df), ")"))
-        } else if (coef_dist %in% c("R2")) {
-          with(prior_coef, 
-               paste0("R2(location = ", .fr2(location), ", what = '", what, "')"))
+        } else if (p$dist %in% c("hs_plus")) {
+          paste0("hs_plus(df1 = ", .fr2(p$df1), ", df2 = ", .fr2(p$df2), ")")
+        } else if (p$dist %in% c("hs")) {
+          paste0("hs(df = ", .fr2(p$df), ")")
+        } else if (p$dist %in% c("R2")) {
+          paste0("R2(location = ", .fr2(p$location), ", what = '", p$what, "')")
     })
     
-    if (!is.null(prior_coef$adjusted_scale))
-      cat("\n     **adjusted scale =", .fr3(prior_coef$adjusted_scale))
+    if (!is.null(p$adjusted_scale))
+      cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
   }
   
   if (!is.null(prior_covariance)) {
-    prior_covariance$regularization <- .format_pars(prior_covariance$regularization, .fr2)
-    prior_covariance$concentration <- .format_pars(prior_covariance$concentration, .fr2)
-    prior_covariance$shape <- .format_pars(prior_covariance$shape, .fr2)
-    prior_covariance$scale <- .format_pars(prior_covariance$scale, .fr2)
+    p <- prior_covariance
+    p$regularization <- .format_pars(p$regularization, .fr2)
+    p$concentration <- .format_pars(p$concentration, .fr2)
+    p$shape <- .format_pars(prior_covariance$shape, .fr2)
+    p$scale <- .format_pars(p$scale, .fr2)
     cat("\nCovariance\n ~",
-        with(prior_covariance,
-          paste0(dist, "(",  "reg = ", .fr2(regularization), 
-                 ", conc = ", .fr2(concentration), ", shape = ", .fr2(shape), 
-                 ", scale = ", .fr2(scale), ")")
-        )
+        paste0(p$dist, "(",  "reg = ", .fr2(p$regularization), 
+               ", conc = ", .fr2(p$concentration), ", shape = ", .fr2(p$shape), 
+               ", scale = ", .fr2(p$scale), ")")
       )
   }
   
   if (!is.null(prior_counts)) {# stan_polr
-    prior_counts$concentration <- .format_pars(prior_counts$concentration, .fr2)
+    p <- prior_counts
+    p$concentration <- .format_pars(p$concentration, .fr2)
     cat("\nCounts\n ~",
-        with(prior_counts, 
-             paste0(dist, "(", "concentration = ", .fr2(concentration), ")"))
-      )
+        paste0(p$dist, "(", "concentration = ", .fr2(p$concentration), ")"))
   }
   
-  if (!is.null(x$scobit_exponent))
+  if (!is.null(x$scobit_exponent)) {
+    p <- x$scobit_exponent
     cat("\nScobit Exponent\n ~",
-        with(x$scobit_exponent, 
-             paste0(dist, "(shape = ", .fr2(shape), ", rate = ", .fr2(rate), ")"))
-    )
+        paste0(p$dist, "(shape = ", .fr2(p$shape), 
+               ", rate = ", .fr2(p$rate), ")"))
+  }
   
   invisible(x)
 }
@@ -171,17 +168,17 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
 
 # internal ----------------------------------------------------------------
 #
-# @param p numeric vector
+# @param x numeric vector
 # @param formatter a formatting function to apply (see .fr2, .fr3 above)
 # @param N the maximum number of values to include before replacing the rest
 #   with '...'
-.format_pars <- function(p, formatter, N = 3) {
-  P <- length(p)
-  if (P < 2)
-    return(p)
+.format_pars <- function(x, formatter, N = 3) {
+  K <- length(x)
+  if (K < 2)
+    return(x)
   paste0(
     "[", 
-    paste(c(formatter(p[1:min(N, P)]), if (N < P) "..."), 
+    paste(c(formatter(x[1:min(N, K)]), if (N < K) "..."), 
           collapse = ","), 
     "]"
   )

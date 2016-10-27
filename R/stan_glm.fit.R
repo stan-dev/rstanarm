@@ -460,7 +460,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 # @param Ztlist ranef indicator matrices
 # @param cnms group$cnms
 # @param flist group$flist
-# @importFrom Matrix rBind
+#' @importFrom Matrix rBind
 pad_reTrms <- function(Ztlist, cnms, flist) {
   stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
@@ -513,6 +513,21 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
       x[, , keep, drop = FALSE] else x[keep, , , drop = FALSE]
   }
   return(x_keep)
+}
+
+make_b_nms <- function(group) {
+  group_nms <- names(group$cnms)
+  b_nms <- character()
+  for (i in seq_along(group$cnms)) {
+    nm <- group_nms[i]
+    nms_i <- paste(group$cnms[[i]], nm)
+    if (length(nms_i) == 1) {
+      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+    } else {
+      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+    }
+  }
+  return(b_nms)  
 }
 
 
@@ -588,18 +603,3 @@ summarize_glm_prior <-
     
     return(prior_list)
   }
-
-make_b_nms <- function(group) {
-  group_nms <- names(group$cnms)
-  b_nms <- character()
-  for (i in seq_along(group$cnms)) {
-    nm <- group_nms[i]
-    nms_i <- paste(group$cnms[[i]], nm)
-    if (length(nms_i) == 1) {
-      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
-    } else {
-      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
-    }
-  }
-  return(b_nms)  
-}
