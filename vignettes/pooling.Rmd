@@ -980,6 +980,7 @@ the previous case.
 ```{r, event-probabilities, results="hold"}
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
+thetas_partialpool <- thetas_partialpool[,-ncol(thetas_partialpool)]
 colnames(thetas_partialpool) <- as.character(bball$Player)
 ability_gt_400 <- thetas_partialpool > 0.4
 cat("Pr(theta_n >= 0.400 | y)\n")

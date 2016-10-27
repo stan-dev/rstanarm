@@ -387,7 +387,8 @@ test_that("collect_pars and grep_for_pars work", {
   expect_identical(grep_for_pars(fit, "(2|3)$"), all_period[1:2])
   expect_identical(grep_for_pars(fit, "herd"), all_varying)
   expect_identical(grep_for_pars(fit, "b\\["), all_varying)
-  expect_identical(grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
+  expect_identical(grep_for_pars(fit, "Intercept"),
+                   c("(Intercept)", all_varying, "Sigma[(Intercept),(Intercept)]"))
   expect_identical(grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
   expect_identical(grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
   expect_error(grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
