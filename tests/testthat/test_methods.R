@@ -628,3 +628,18 @@ test_that("predictive_interval works", {
   expect_identical(colnames(pint3), c("10%", "90%"))
 })
 
+test_that("predictive_error stanreg and matrix methods return the same thing", {
+  preds <- posterior_predict(stan_glm1, seed = 123)
+  expect_equal(
+    predictive_error(stan_glm1, seed = 123),
+    predictive_error(preds, y = stan_glm1$y)
+  )
+})
+test_that("predictive_interval stanreg and matrix methods return the same thing", {
+  preds <- posterior_predict(stan_glm1, seed = 123)
+  expect_equal(
+    predictive_interval(stan_glm1, seed = 123),
+    predictive_interval(preds)
+  )
+})
+

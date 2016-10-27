@@ -19,7 +19,11 @@
 #' 
 #' This is a convenience function for computing \eqn{y - y^{rep}}{y - yrep} 
 #' (in-sample, for observed \eqn{y}) or \eqn{y - \tilde{y}}{y - ytilde} 
-#' (out-of-sample, for new or held-out \eqn{y}).
+#' (out-of-sample, for new or held-out \eqn{y}). 
+#' The method for stanreg objects calls \code{posterior_predict} internally, 
+#' whereas the method for matrices accepts the output from
+#' \code{posterior_predict} as input and can be used to avoid multiple calls to
+#' \code{posterior_predict}.
 #' 
 #' @export
 #' @templateVar stanregArg object
@@ -63,9 +67,14 @@
 #' )
 #' err2 <- predictive_error(example_model, newdata = nd, draws = 10, seed = 1234)
 #' 
-#' 
+#' # stanreg vs matrix methods
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
-#' hist(predictive_error(fit))
+#' preds <- posterior_predict(fit, seed = 123)
+#' all.equal(
+#'   predictive_error(fit, seed = 123),
+#'   predictive_error(preds, y = fit$y)
+#' )
+#' 
 #' 
 predictive_error <- function(object, ...) {
   UseMethod("predictive_error")
@@ -100,5 +109,18 @@ predictive_error.stanreg <- function(object,
     re.form = re.form,
     ...
   )
+  compute_errors(preds, y)
+}
+
+#' @rdname predictive_error
+#' @export
+#' @param y For the matrix method, a vector of \eqn{y} values the same length as
+#'   the number of columns in the matrix used as \code{object}.
+predictive_error.matrix <- function(object, y, ...) {
+  compute_errors(object, y)
+}
+
+compute_errors <- function(preds, y) {
+  if (length(y) != ncol(preds))
   sweep(-1 * preds, MARGIN = 2, STATS = as.array(y), FUN = "+")
 }

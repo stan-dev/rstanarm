@@ -20,6 +20,10 @@
 #' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
 #' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
 #' \code{predictive_interval} function computes Bayesian predictive intervals. 
+#' The method for stanreg objects calls \code{posterior_predict} internally, 
+#' whereas the method for matrices accepts the output from
+#' \code{posterior_predict} as input and can be used to avoid multiple calls to
+#' \code{posterior_predict}.
 #' 
 #' @export
 #' @templateVar stanregArg object
@@ -45,7 +49,15 @@
 #' @examples 
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
 #' predictive_interval(fit)
-#' predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)))
+#' predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)), 
+#'                     prob = 0.5)
+#' 
+#' # stanreg vs matrix methods
+#' preds <- posterior_predict(fit, seed = 123)
+#' all.equal(
+#'   predictive_interval(fit, seed = 123),
+#'   predictive_interval(preds)
+#' )
 #' 
 predictive_interval <- function(object, ...) {
   UseMethod("predictive_interval")
@@ -77,4 +89,10 @@ predictive_interval.stanreg <- function(object,
     ...
   )
   central_intervals(ytilde, prob)
+}
+
+#' @rdname predictive_interval
+#' @export
+predictive_interval.matrix <- function(object, prob = 0.9, ...) {
+  central_intervals(object, prob)
 }
