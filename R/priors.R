@@ -268,20 +268,18 @@
 #' # Visually compare normal, student_t, and cauchy
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
-#'     # t distribution with location & scale parameters
-#'     1 / scale * dt((x - location) / scale, df)  
+#'     1/scale * dt((x - location)/scale, df)  
+#'   }
+#'   stat_dist <- function(dist, ...) {
+#'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
 #'   }
 #'   ggplot2::ggplot(data.frame(x = xlim), ggplot2::aes(x)) + 
-#'     ggplot2::stat_function(fun = dnorm, 
-#'                   args = list(mean = 0, sd = scale), 
-#'                   color = "purple", size = .75) +
-#'     ggplot2::stat_function(fun = dt_loc_scale, 
-#'                   args = list(df = df_t, location = 0, scale = scale), 
-#'                   color = "orange", size = .75) +
-#'     ggplot2::stat_function(fun = dcauchy, 
-#'                   args = list(location = 0, scale = scale), 
-#'                   color = "skyblue", size = .75, linetype = 2) + 
-#'     ggplot2::ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
+#'     stat_dist("normal", size = .75, fun = dnorm, 
+#'               args = list(mean = 0, sd = scale)) +
+#'     stat_dist("student_t", size = .75, fun = dt_loc_scale, 
+#'               args = list(df = df_t, location = 0, scale = scale)) +
+#'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
+#'               args = list(location = 0, scale = scale))
 #' }
 #' # Cauchy has fattest tails, then student_t, then normal
 #' compare_priors()

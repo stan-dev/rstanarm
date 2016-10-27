@@ -75,12 +75,10 @@
 #' 
 #' \strong{Note}: in the warning messages issued by \code{loo} about large 
 #' Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at least 
-#' \eqn{0.7}. There is a theoretical reason, explained in Vehtari et al. (2016),
-#' for setting the threshold to the stricter value of \eqn{0.5}, but in
-#' practice we find that errors in the LOO approximation start to increase
-#' non-negligibly when \eqn{k > 0.7}. Finally, as is also explained in Vehtari 
-#' et al. (2016), it is never recommended to set \code{k_threshold} to a value 
-#' greater than \eqn{1}.
+#' \eqn{0.7}. There is a theoretical reason, explained in Vehtari, Gelman, and 
+#' Gabry (2016), for setting the threshold to the stricter value of \eqn{0.5}, 
+#' but in practice they find that errors in the LOO approximation start to 
+#' increase non-negligibly when \eqn{k > 0.7}.
 #' }
 #' 
 #' @section K-fold CV:
@@ -103,7 +101,7 @@
 #' \code{\link{plot.loo}} method.
 #' 
 #' \code{\link{log_lik.stanreg}} to directly access the pointwise log-likelihood
-#' matrix.
+#' matrix. 
 #'   
 #' @examples 
 #' \donttest{
@@ -366,7 +364,7 @@ ll_fun <- function(x) {
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
   
-  get(paste0(".ll_", f$family, "_i"))
+  get(paste0(".ll_", f$family, "_i"), mode = "function")
 }
 
 

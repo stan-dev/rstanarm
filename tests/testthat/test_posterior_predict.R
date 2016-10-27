@@ -79,8 +79,8 @@ expect_linpred_equal <- function(object, tol = 0.1) {
 # Error messages ----------------------------------------------------------
 context("posterior_predict (error messages)")
 test_that("posterior_predict errors if not a stanreg object", {
-  expect_error(posterior_predict(example_model$stanfit), "not a stanreg object")
-  expect_error(posterior_predict(summary(example_model)), "not a stanreg object")
+  expect_error(posterior_predict(example_model$stanfit), "no applicable method")
+  expect_error(posterior_predict(summary(example_model)), "no applicable method")
 })
 test_that("posterior_predict errors if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 

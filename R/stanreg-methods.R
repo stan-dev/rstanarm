@@ -294,19 +294,31 @@ sigma.stanreg <- function(object, ...) {
 #' @export
 #' @export VarCorr
 #' @importFrom nlme VarCorr
-#' @importFrom lme4 mkVarCorr
+#' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
+  mat <- as.matrix(x)
   cnms <- .cnms(x)
-  means <- get_posterior_mean(x$stanfit)
-  means <- means[, ncol(means)]
-  theta <- means[grepl("^theta_L", names(means))]
-  sc <- sigma.stanreg(x)
-  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
-                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta / sc, nms = names(cnms))
-  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
+  useSc <- "sigma" %in% colnames(mat)
+  if (useSc) sc <- mat[,"sigma"]
+  else sc <- 1
+  Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
+  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
+  nms <- names(cnms)
+  ncseq <- seq_along(nc)
+  spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
+  ans <- lapply(ncseq, function(i) {
+    Sigma <- matrix(0, nc[i], nc[i])
+    Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
+    Sigma <- Sigma + t(Sigma)
+    diag(Sigma) <- diag(Sigma) / 2
+    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
+    stddev <- sqrt(diag(Sigma))
+    corr <- cov2cor(Sigma)
+    structure(Sigma, stddev = stddev, correlation = corr)
+  })
+  names(ans) <- nms
+  structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }
-
 
 # Exported but doc kept internal ----------------------------------------------
 

@@ -106,7 +106,7 @@ test_that("posterior_vs_prior ok", {
 
 test_that("posterior_vs_prior throws errors", {
   lmfit <- lm(mpg ~ wt, data = mtcars)
-  expect_error(posterior_vs_prior(lmfit), "not a stanreg object")
+  expect_error(posterior_vs_prior(lmfit), "no applicable method")
   expect_error(posterior_vs_prior(fit, prob = 1), "prob < 1")
   expect_error(posterior_vs_prior(fito), 
                "only available for models fit using MCMC")
