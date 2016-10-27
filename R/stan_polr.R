@@ -174,7 +174,6 @@ stan_polr <- function(formula, data, weights, ..., subset,
                            prior_PD = prior_PD, algorithm = algorithm, 
                            adapt_delta = adapt_delta, ...)
   
-  prior.info <- get_prior_info(call, formals())
   inverse_link <- linkinv(method)
   
   if (llev == 2L) { # actually a Bernoulli model
@@ -184,7 +183,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                      binomial(link = method))
     fit <- nlist(stanfit, family, formula, offset, weights = wt,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]), 
-                 data, prior.info, call, terms = Terms, model = m,
+                 data, call, terms = Terms, model = m,
                  algorithm, na.action = attr(m, "na.action"), 
                  contrasts = attr(x, "contrasts"))
     out <- stanreg(fit)
@@ -234,7 +233,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                y, x, model = if (model) m, data,
                offset, weights = wt, prior.weights = wt,
                family = method, method, contrasts, na.action,
-               call, formula, terms = Terms, prior.info,
+               call, formula, terms = Terms, 
+               prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit)
   structure(out, class = c("stanreg", "polr"))
 }

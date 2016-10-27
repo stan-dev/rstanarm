@@ -109,7 +109,7 @@
 #' set.seed(SEED)
 #' 
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
-#' fit2 <- update(fit1, formula = . ~ . + cyl)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, seed = SEED)
 #' 
 #' # compare on LOOIC
 #' (loo1 <- loo(fit1, cores = 2))

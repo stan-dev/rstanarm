@@ -391,6 +391,94 @@ test_that("as.matrix and as.array errors & warnings", {
                  regexp = "'regex_pars' ignored")
 })
 
+
+
+
+# terms, formula, model.frame, and model.matrix methods -----------------
+context("terms, formula, model.frame, and model.matrix methods")
+
+test_that("model.frame works properly", {
+  expect_identical(model.frame(stan_glm1), model.frame(glm1))
+  expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
+  expect_identical(model.frame(stan_glm_vb1), model.frame(glm1))
+  expect_identical(model.frame(stan_polr1), model.frame(polr1))
+  expect_identical(model.frame(stan_lmer1), model.frame(lmer1))
+  expect_identical(model.frame(stan_lmer2), model.frame(lmer2))
+  expect_identical(model.frame(stan_lmer1, fixed.only = TRUE), 
+                   model.frame(lmer1, fixed.only = TRUE))
+  expect_identical(model.frame(stan_lmer2, fixed.only = TRUE), 
+                   model.frame(lmer2, fixed.only = TRUE))
+})
+
+test_that("terms works properly", {
+  expect_identical(terms(stan_glm1), terms(glm1))
+  expect_identical(terms(stan_glm_opt1), terms(glm1))
+  expect_identical(terms(stan_glm_vb1), terms(glm1))
+  expect_identical(terms(stan_polr1), terms(polr1))
+  expect_identical(terms(stan_lmer1), terms(lmer1))
+  expect_identical(terms(stan_lmer2), terms(lmer2))
+  expect_identical(terms(stan_lmer1, fixed.only = TRUE), 
+                   terms(lmer1, fixed.only = TRUE))
+  expect_identical(terms(stan_lmer2, fixed.only = TRUE), 
+                   terms(lmer2, fixed.only = TRUE))
+  expect_equal(terms(stan_lmer1, random.only = TRUE), 
+                   terms(lmer1, random.only = TRUE))
+  expect_equal(terms(stan_lmer2, random.only = TRUE), 
+               terms(lmer2, random.only = TRUE))
+  expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
+               regexp = "can't both be TRUE")
+})
+
+test_that("formula works properly", {
+  expect_identical(formula(stan_glm1), formula(glm1))
+  expect_identical(formula(stan_glm_opt1), formula(glm1))
+  expect_identical(formula(stan_glm_vb1), formula(glm1))
+  expect_equal(terms(stan_polr1), formula(polr1))
+  expect_identical(formula(stan_lmer1), formula(lmer1))
+  expect_identical(formula(stan_lmer2), formula(lmer2))
+  expect_identical(formula(stan_lmer1, fixed.only = TRUE), 
+                   formula(lmer1, fixed.only = TRUE))
+  expect_identical(formula(stan_lmer2, fixed.only = TRUE), 
+                   formula(lmer2, fixed.only = TRUE))
+  expect_equal(formula(stan_lmer1, random.only = TRUE), 
+               formula(lmer1, random.only = TRUE))
+  expect_equal(formula(stan_lmer2, random.only = TRUE), 
+               formula(lmer2, random.only = TRUE))
+  expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
+               regexp = "can't both be TRUE")
+  
+  tmp <- stan_lmer1
+  tmp$formula <- NULL
+  attr(tmp$glmod$fr, "formula") <- NULL
+  expect_equal(formula(tmp), formula(lmer1))
+  tmp$call <- NULL
+  expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
+})
+
+test_that("update works properly", {
+  pss <- rstanarm:::posterior_sample_size
+  
+  fit <- SW(update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS))
+  expect_equal(pss(fit), 4 * pss(stan_lmer2))
+  
+  fit <- SW(update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS))
+  expect_equal(pss(fit), 4 * pss(stan_glm1))
+  
+  call_only <- update(fit, evaluate = FALSE)
+  expect_is(call_only, "call")
+  expect_identical(call_only, getCall(fit))
+  
+  expect_error(fit <- update(fit, algorithm = "optimizing"), 
+               regexp = "unknown arguments: chains")
+  expect_identical(fit$algorithm, "sampling")
+  
+  fit$call <- NULL
+  expect_error(update(fit), regexp = "does not contain a 'call' component")
+})
+
+
+
+# print and summary -------------------------------------------------------
 test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(example_model, digits = 2), "stan_glmer")
   expect_output(print(example_model, digits = 2), "Error terms")
@@ -478,83 +566,31 @@ test_that("print and summary methods ok for optimization", {
 })
 
 
-context("terms, formula, model.frame, and model.matrix methods")
-
-test_that("model.frame works properly", {
-  expect_identical(model.frame(stan_glm1), model.frame(glm1))
-  expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
-  expect_identical(model.frame(stan_glm_vb1), model.frame(glm1))
-  expect_identical(model.frame(stan_polr1), model.frame(polr1))
-  expect_identical(model.frame(stan_lmer1), model.frame(lmer1))
-  expect_identical(model.frame(stan_lmer2), model.frame(lmer2))
-  expect_identical(model.frame(stan_lmer1, fixed.only = TRUE), 
-                   model.frame(lmer1, fixed.only = TRUE))
-  expect_identical(model.frame(stan_lmer2, fixed.only = TRUE), 
-                   model.frame(lmer2, fixed.only = TRUE))
+# prior_summary -----------------------------------------------------------
+test_that("prior_summary doesn't error", {
+  expect_output(print(prior_summary(example_model, digits = 2)), 
+                "Priors for model 'example_model'")
+  expect_output(print(prior_summary(stan_lmer1, digits = 2)), 
+                "stan_lmer1")
+  expect_output(print(prior_summary(stan_lmer2)), 
+                "stan_lmer2")
+  expect_output(print(prior_summary(stan_polr1)), 
+                "stan_polr1")
+  expect_output(print(prior_summary(stan_glm_opt1)), 
+                "stan_glm_opt1")
+  expect_output(print(prior_summary(stan_glm_vb1)), 
+                "stan_glm_vb1")
+})
+test_that("prior_summary returns correctly named list", {
+  expect_named(prior_summary(example_model), 
+                c("prior", "prior_intercept", "prior_covariance"))
+  expect_named(prior_summary(stan_lmer1), 
+               c("prior", "prior_intercept", "prior_covariance"))
+  expect_named(prior_summary(stan_lmer2), 
+               c("prior", "prior_intercept", "prior_covariance"))
+  expect_named(prior_summary(stan_polr1), 
+               c("prior", "prior_counts"))
+  expect_named(prior_summary(stan_glm_opt1), 
+               c("prior", "prior_intercept"))
 })
 
-test_that("terms works properly", {
-  expect_identical(terms(stan_glm1), terms(glm1))
-  expect_identical(terms(stan_glm_opt1), terms(glm1))
-  expect_identical(terms(stan_glm_vb1), terms(glm1))
-  expect_identical(terms(stan_polr1), terms(polr1))
-  expect_identical(terms(stan_lmer1), terms(lmer1))
-  expect_identical(terms(stan_lmer2), terms(lmer2))
-  expect_identical(terms(stan_lmer1, fixed.only = TRUE), 
-                   terms(lmer1, fixed.only = TRUE))
-  expect_identical(terms(stan_lmer2, fixed.only = TRUE), 
-                   terms(lmer2, fixed.only = TRUE))
-  expect_equal(terms(stan_lmer1, random.only = TRUE), 
-                   terms(lmer1, random.only = TRUE))
-  expect_equal(terms(stan_lmer2, random.only = TRUE), 
-               terms(lmer2, random.only = TRUE))
-  expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
-               regexp = "can't both be TRUE")
-})
-
-test_that("formula works properly", {
-  expect_identical(formula(stan_glm1), formula(glm1))
-  expect_identical(formula(stan_glm_opt1), formula(glm1))
-  expect_identical(formula(stan_glm_vb1), formula(glm1))
-  expect_equal(terms(stan_polr1), formula(polr1))
-  expect_identical(formula(stan_lmer1), formula(lmer1))
-  expect_identical(formula(stan_lmer2), formula(lmer2))
-  expect_identical(formula(stan_lmer1, fixed.only = TRUE), 
-                   formula(lmer1, fixed.only = TRUE))
-  expect_identical(formula(stan_lmer2, fixed.only = TRUE), 
-                   formula(lmer2, fixed.only = TRUE))
-  expect_equal(formula(stan_lmer1, random.only = TRUE), 
-               formula(lmer1, random.only = TRUE))
-  expect_equal(formula(stan_lmer2, random.only = TRUE), 
-               formula(lmer2, random.only = TRUE))
-  expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE), 
-               regexp = "can't both be TRUE")
-  
-  tmp <- stan_lmer1
-  tmp$formula <- NULL
-  attr(tmp$glmod$fr, "formula") <- NULL
-  expect_equal(formula(tmp), formula(lmer1))
-  tmp$call <- NULL
-  expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
-})
-
-test_that("update works properly", {
-  pss <- rstanarm:::posterior_sample_size
-  
-  fit <- SW(update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS))
-  expect_equal(pss(fit), 4 * pss(stan_lmer2))
-  
-  fit <- SW(update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS))
-  expect_equal(pss(fit), 4 * pss(stan_glm1))
-  
-  call_only <- update(fit, evaluate = FALSE)
-  expect_is(call_only, "call")
-  expect_identical(call_only, getCall(fit))
-  
-  expect_error(fit <- update(fit, algorithm = "optimizing"), 
-               regexp = "unknown arguments: chains")
-  expect_identical(fit$algorithm, "sampling")
-  
-  fit$call <- NULL
-  expect_error(update(fit), regexp = "does not contain a 'call' component")
-})

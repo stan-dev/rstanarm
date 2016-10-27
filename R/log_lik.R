@@ -55,9 +55,9 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     newdata <- as.data.frame(newdata)
   }
   fun <- ll_fun(object)
-  args <- ll_args(object, newdata = newdata, offset = offset)
-  sapply(seq_len(args$N), function(i) {
-    as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
-                  draws = args$draws))
-  })
+  llargs <- ll_args(object, newdata = newdata, offset = offset)
+  vapply(seq_len(llargs[["N"]]), function(i) {
+    as.vector(fun(i = i, data = llargs[["data"]][i, , drop = FALSE],
+                  draws = llargs[["draws"]]))
+  }, FUN.VALUE = numeric(llargs[["S"]]))
 }
