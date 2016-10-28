@@ -235,7 +235,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                offset, weights = wt, prior.weights = wt,
                family = method, method, contrasts, na.action,
                call, formula, terms = Terms, prior.info,
-               algorithm, stan_summary, stanfit)
+               algorithm, stan_summary, stanfit, 
+               num_unconstrained_pars = get_num_upars(stanfit))
   structure(out, class = c("stanreg", "polr"))
 }
 
