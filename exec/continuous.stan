@@ -506,9 +506,9 @@ generated quantities {
       for (n in 1:N) {
         if (link_phi == 3) { // workaround beta_rng underflow issue
           yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
-          while (is_nan(yrep) == 1) {
-            print("warning: beta_rng() generated a value that is NaN.");
-            yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+          if (is_nan(yrep) == 1) {
+            print("Warning: beta_rng() generated a value that is NaN. Generating from bernoulli_rng(0.5) instead.");
+            yrep = bernoulli_rng(0.5);
           }
           mean_PPD = mean_PPD + yrep;
         }
