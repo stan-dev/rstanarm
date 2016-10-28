@@ -52,7 +52,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   if (Z_true == 0) {
     link_num_phi <- 0
   }
-  
+
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
     prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-

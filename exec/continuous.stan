@@ -386,7 +386,7 @@ model {
     if (family == 1) {
       if (link == 1) 
         target += normal_lpdf(y | eta, dispersion);
-      else if (link == 2) 
+      else if (link > 2) 
         target += normal_lpdf(y | exp(eta), dispersion);
       else 
         target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
@@ -446,6 +446,7 @@ generated quantities {
   }
   
   {
+    real yrep; // for the beta_rng underflow issue
     #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
@@ -502,8 +503,19 @@ generated quantities {
     else if (family == 4 && link_phi > 0) {
       eta = linkinv_beta(eta, link);
       eta_z = linkinv_beta_z(eta_z, link_phi);
-      for (n in 1:N) 
-        mean_PPD = mean_PPD + beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+      for (n in 1:N) {
+        if (link_phi == 3) { // workaround beta_rng underflow issue
+          yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+          while (is_nan(yrep) == 1) {
+            print("warning: beta_rng() generated a value that is NaN.");
+            yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+          }
+          mean_PPD = mean_PPD + yrep;
+        }
+        else {
+           mean_PPD = mean_PPD + beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+        }
+      }
     }
     mean_PPD = mean_PPD / N;
   }
