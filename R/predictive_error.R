@@ -120,7 +120,11 @@ predictive_error.matrix <- function(object, y, ...) {
   compute_errors(object, y)
 }
 
-compute_errors <- function(preds, y) {
-  if (length(y) != ncol(preds))
-  sweep(-1 * preds, MARGIN = 2, STATS = as.array(y), FUN = "+")
+
+# internal ----------------------------------------------------------------
+# @param object A matrix
+# @param y A vector the same length as ncol(object)
+compute_errors <- function(object, y) {
+  stopifnot(is.matrix(object), length(y) == ncol(object))
+  sweep(-1 * object, MARGIN = 2, STATS = as.array(y), FUN = "+")
 }
