@@ -26,12 +26,12 @@ REFRESH <- 0
 
 SW <- suppressWarnings
 
-stan_glm1 <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER,
+stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
                          chains = CHAINS, seed = SEED, refresh = REFRESH))
-stan_glm_opt1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
+stan_glm_opt1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
                           seed = SEED)
-stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", iter = 10000)
-glm1 <- glm(mpg ~ wt, data = mtcars)
+stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000)
+glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
@@ -102,9 +102,9 @@ test_that("stanreg extractor methods work properly", {
 test_that("confint method returns correct structure", {
   expect_silent(ci <- confint(stan_glm_opt1))
   expect_silent(ci2 <- confint(stan_glm_opt1, parm = "wt", level = 0.9))
-  expect_equal(rownames(ci), c("(Intercept)", "wt"))
+  expect_equal(rownames(ci), c("(Intercept)", "wt", "cyl"))
   expect_equal(colnames(ci), c("2.5 %", "97.5 %"))
-  expect_equal(rownames(ci2), "wt")
+  expect_equal(rownames(ci2), c("wt"))
   expect_equal(colnames(ci2), c("5 %", "95 %"))
 
   expect_error(confint(stan_glm1), regexp = "use posterior_interval")
@@ -123,7 +123,7 @@ test_that("posterior_interval returns correct structure", {
   expect_silent(ci4 <- posterior_interval(example_model, prob = 0.8, pars = "(Intercept)",
                                regex_pars = "period"))
   expect_silent(ci5 <- posterior_interval(stan_polr1, prob = 0.9))
-  expect_identical(rownames(ci), c("(Intercept)", "wt", "sigma"))
+  expect_identical(rownames(ci), c("(Intercept)", "wt", "cyl", "sigma"))
   expect_identical(rownames(ci2), "wt")
   expect_identical(rownames(ci3), rstanarm:::b_names(rownames(example_model$stan_summary), value = TRUE)[1:15])
   expect_identical(rownames(ci4), c("(Intercept)", paste0("period", 2:4)))
@@ -137,7 +137,7 @@ test_that("posterior_interval returns correct structure", {
                regexp = "only option for 'type' is 'central'")
   expect_error(posterior_interval(stan_glm_opt1), regexp = "not available")
   expect_error(posterior_interval(lm(mpg ~ wt, data = mtcars)),
-               regexp = "no applicable method")
+               regexp = "should be a matrix")
 
   prob_msg <- "'prob' should be a single number greater than 0 and less than 1."
   expect_error(posterior_interval(stan_glm1, prob = c(0.25, 0.75)), regexp = prob_msg)
@@ -164,10 +164,10 @@ test_that("log_lik method works", {
   y <- get_y(stan_glm1)
   y_new <- y[1:10] + rnorm(10)
   x <- get_x(stan_glm1)
-  x_new <- cbind(1, x[1:10, 2] + rnorm(10))
-  sigma <- samp[, 3]
-  eta <- tcrossprod(x, samp[, 1:2])
-  eta_new <- tcrossprod(x_new, samp[, 1:2])
+  x_new <- cbind(1, x[1:10, 2:3] + rnorm(10))
+  sigma <- samp[, 4]
+  eta <- tcrossprod(x, samp[, 1:3])
+  eta_new <- tcrossprod(x_new, samp[, 1:3])
   llmat <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta))
   llmat_new <- matrix(NA, nrow = nrow(samp), ncol = nrow(eta_new))
   for (i in 1:nrow(llmat)) {
@@ -175,7 +175,7 @@ test_that("log_lik method works", {
     llmat_new[i, ] <- dnorm(y_new, mean = eta_new[, i], sd = sigma[i], log = TRUE)
   }
   expect_equal(log_lik(stan_glm1), llmat)
-  nd <- data.frame(mpg = y_new, wt = x_new[, 2])
+  nd <- data.frame(mpg = y_new, wt = x_new[, 2], cyl = x_new[, 3])
   expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
 
 
@@ -282,98 +282,98 @@ test_that("coef ok if any 'ranef' missing from 'fixef'", {
 
 # as.matrix,as.data.frame,as.array ----------------------------------------
 
-# test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
-#   # glm
-#   mat <- as.matrix(stan_glm1)
-#   df <- as.data.frame(stan_glm1)
-#   arr <- as.array(stan_glm1)
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 3L))
-#   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 3L))
-#   expect_identical(last_dimnames(mat), c("(Intercept)", "wt", "sigma"))
-#   expect_identical(last_dimnames(arr), last_dimnames(mat))
-#
-#   # selecting only 1 parameter
-#   mat <- as.matrix(stan_glm1, pars = "wt")
-#   df <- as.data.frame(stan_glm1, pars = "wt")
-#   arr <- as.array(stan_glm1, pars = "wt")
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 1L))
-#   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 1L))
-#   expect_identical(last_dimnames(mat), "wt")
-#   expect_identical(last_dimnames(arr), last_dimnames(mat))
-#
-#   # glmer
-#   mat <- as.matrix(example_model)
-#   df <- as.data.frame(example_model)
-#   arr <- as.array(example_model)
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   nc <- length(c(fixef(example_model), unlist(ranef(example_model)))) + 1L
-#   # nr <- posterior_sample_size(example_model)
-#   nms <- rownames(summary(example_model))[seq_len(nc)]
-#   expect_equal(dim(mat), c(nr, nc))
-#   expect_equal(dim(arr), c(nr / 2, 2, nc))
-#   expect_identical(last_dimnames(mat), nms)
-#   expect_identical(last_dimnames(mat), last_dimnames(arr))
-#
-#   # pars & regex_pars
-#   mat <- as.matrix(example_model, pars = "mean_PPD", regex_pars = "period")
-#   df <- as.data.frame(example_model, pars = "mean_PPD", regex_pars = "period")
-#   arr <- as.array(example_model, pars = "mean_PPD", regex_pars = "period")
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   expect_equal(dim(mat), c(nr, 4L))
-#   expect_equal(dim(arr), c(nr/2, 2, 4L))
-#   expect_identical(last_dimnames(mat), c("mean_PPD", paste0("period", 2:4)))
-#   expect_identical(last_dimnames(mat), last_dimnames(arr))
-#
-#   # lmer
-#   mat <- as.matrix(stan_lmer1)
-#   df <- as.data.frame(stan_lmer1)
-#   arr <- as.array(stan_lmer1)
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   # +1 for "sigma" and +1 for "Sigma"
-#   nc <- length(c(fixef(stan_lmer1), unlist(ranef(stan_lmer1)))) + 2
-#   nms <- rownames(summary(stan_lmer1))[seq_len(nc)]
-#   expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, nc))
-#   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, nc))
-#   expect_identical(last_dimnames(mat), nms)
-#   expect_identical(last_dimnames(mat), last_dimnames(arr))
-#   mat <- as.matrix(stan_lmer1, pars = "(Intercept)", regex_pars = "sample")
-#   df <- as.data.frame(stan_lmer1, pars = "(Intercept)", regex_pars = "sample")
-#   expect_identical(df, as.data.frame(mat))
-#   s <- summary(stan_lmer1, pars = "(Intercept)", regex_pars = "sample")
-#   expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, nrow(s)))
-#   expect_identical(colnames(mat), rownames(s))
-#
-#   # polr
-#   mat <- as.matrix(stan_polr1)
-#   df <- as.data.frame(stan_polr1)
-#   arr <- as.array(stan_polr1)
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-#   nms <- names(c(stan_polr1$coefficients, stan_polr1$zeta))
-#   expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, length(nms)))
-#   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, length(nms)))
-#   expect_identical(last_dimnames(mat), nms)
-#   expect_identical(last_dimnames(mat), last_dimnames(arr))
-#   mat <- as.matrix(stan_polr1, regex_pars = "\\^")
-#   df <- as.data.frame(stan_polr1, regex_pars = "\\^")
-#   expect_identical(df, as.data.frame(mat))
-#   expect_identical(colnames(mat), paste0("agegp^", 4:5))
-# })
+test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
+  # glm
+  mat <- as.matrix(stan_glm1)
+  df <- as.data.frame(stan_glm1)
+  arr <- as.array(stan_glm1)
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 4L))
+  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 4L))
+  expect_identical(last_dimnames(mat), c("(Intercept)", "wt", "cyl", "sigma"))
+  expect_identical(last_dimnames(arr), last_dimnames(mat))
+
+  # selecting only 1 parameter
+  mat <- as.matrix(stan_glm1, pars = "wt")
+  df <- as.data.frame(stan_glm1, pars = "wt")
+  arr <- as.array(stan_glm1, pars = "wt")
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 1L))
+  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 1L))
+  expect_identical(last_dimnames(mat), "wt")
+  expect_identical(last_dimnames(arr), last_dimnames(mat))
+
+  # glmer
+  mat <- as.matrix(example_model)
+  df <- as.data.frame(example_model)
+  arr <- as.array(example_model)
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  nc <- length(c(fixef(example_model), unlist(ranef(example_model)))) + 1L
+  nr <- posterior_sample_size(example_model)
+  nms <- rownames(summary(example_model))[seq_len(nc)]
+  expect_equal(dim(mat), c(nr, nc))
+  expect_equal(dim(arr), c(nr / 2, 2, nc))
+  expect_identical(last_dimnames(mat), nms)
+  expect_identical(last_dimnames(mat), last_dimnames(arr))
+
+  # pars & regex_pars
+  mat <- as.matrix(example_model, pars = "mean_PPD", regex_pars = "period")
+  df <- as.data.frame(example_model, pars = "mean_PPD", regex_pars = "period")
+  arr <- as.array(example_model, pars = "mean_PPD", regex_pars = "period")
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  expect_equal(dim(mat), c(nr, 4L))
+  expect_equal(dim(arr), c(nr/2, 2, 4L))
+  expect_identical(last_dimnames(mat), c("mean_PPD", paste0("period", 2:4)))
+  expect_identical(last_dimnames(mat), last_dimnames(arr))
+
+  # lmer
+  mat <- as.matrix(stan_lmer2)
+  df <- as.data.frame(stan_lmer2)
+  arr <- as.array(stan_lmer2)
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  # +1 for "sigma" and +3 for "Sigma" 
+  nc <- length(c(fixef(stan_lmer2), unlist(ranef(stan_lmer2)))) + 4
+  nms <- rownames(summary(stan_lmer2))[seq_len(nc)]
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, nc))
+  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, nc))
+  expect_identical(last_dimnames(mat), nms)
+  expect_identical(last_dimnames(mat), last_dimnames(arr))
+  mat <- as.matrix(stan_lmer2, pars = "(Intercept)", regex_pars = "b\\[Days Subject")
+  df <- as.data.frame(stan_lmer2, pars = "(Intercept)", regex_pars = "b\\[Days Subject")
+  expect_identical(df, as.data.frame(mat))
+  s <- summary(stan_lmer2, pars = "(Intercept)", regex_pars = "b\\[Days Subject")
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, nrow(s)))
+  expect_identical(colnames(mat), rownames(s))
+
+  # polr
+  mat <- as.matrix(stan_polr1)
+  df <- as.data.frame(stan_polr1)
+  arr <- as.array(stan_polr1)
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
+  nms <- names(c(stan_polr1$coefficients, stan_polr1$zeta))
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, length(nms)))
+  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, length(nms)))
+  expect_identical(last_dimnames(mat), nms)
+  expect_identical(last_dimnames(mat), last_dimnames(arr))
+  mat <- as.matrix(stan_polr1, regex_pars = "\\^")
+  df <- as.data.frame(stan_polr1, regex_pars = "\\^")
+  expect_identical(df, as.data.frame(mat))
+  expect_identical(colnames(mat), paste0("agegp^", 4:5))
+})
 
 test_that("as.matrix and as.data.frame work for optimization and vb", {
   # optimization
   mat <- as.matrix(stan_glm_opt1)
   df <- as.data.frame(stan_glm_opt1)
   expect_identical(df, as.data.frame(mat))
-  expect_equal(dim(mat), c(1000L, 3L))
-  expect_identical(colnames(mat), c("(Intercept)", "wt", "sigma"))
+  expect_equal(dim(mat), c(1000L, 4L))
+  expect_identical(colnames(mat), c("(Intercept)", "wt", "cyl", "sigma"))
   mat <- as.matrix(stan_glm_opt1, pars = "sigma")
   df <- as.data.frame(stan_glm_opt1, pars = "sigma")
   expect_identical(df, as.data.frame(mat))
@@ -384,8 +384,8 @@ test_that("as.matrix and as.data.frame work for optimization and vb", {
   mat <- as.matrix(stan_glm_vb1)
   df <- as.data.frame(stan_glm_vb1)
   expect_identical(df, as.data.frame(mat))
-  expect_equal(dim(mat), c(1000L, 3L))
-  expect_identical(colnames(mat), c("(Intercept)", "wt", "sigma"))
+  expect_equal(dim(mat), c(1000L, 4L))
+  expect_identical(colnames(mat), c("(Intercept)", "wt", "cyl", "sigma"))
   mat <- as.matrix(stan_glm_vb1, pars = c("(Intercept)", "sigma"))
   df <- as.data.frame(stan_glm_vb1, pars = c("(Intercept)", "sigma"))
   expect_identical(df, as.data.frame(mat))
@@ -637,14 +637,14 @@ test_that("predictive_interval works", {
   expect_identical(colnames(pint3), c("10%", "90%"))
 })
 
-test_that("predictive_error stanreg and matrix methods return the same thing", {
+test_that("predictive_error stanreg and ppd methods return the same thing", {
   preds <- posterior_predict(stan_glm1, seed = 123)
   expect_equal(
     predictive_error(stan_glm1, seed = 123),
     predictive_error(preds, y = stan_glm1$y)
   )
 })
-test_that("predictive_interval stanreg and matrix methods return the same thing", {
+test_that("predictive_interval stanreg and ppd methods return the same thing", {
   preds <- posterior_predict(stan_glm1, seed = 123)
   expect_equal(
     predictive_interval(stan_glm1, seed = 123),

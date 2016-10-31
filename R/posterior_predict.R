@@ -184,7 +184,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   if (is(object, "polr") && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   
-  structure(ytilde, class = c(class(ytilde), "ppd"))
+  structure(ytilde, class = c("ppd", class(ytilde)))
 }
 
 
