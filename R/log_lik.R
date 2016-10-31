@@ -17,34 +17,25 @@
 
 #' Pointwise log-likelihood matrix
 #' 
-#' For models fit using MCMC only, the \code{log_lik} function returns the 
+#' For models fit using MCMC only, the \code{log_lik} method returns the 
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
-#' of the posterior sample and \eqn{N} is the number of data points. We define a
-#' new function \code{log_lik} rather than a \code{\link[stats]{logLik}} method
-#' because (in addition to the conceptual difference) the documentation for
-#' \code{logLik} states that the return value will be a single number, whereas
-#' \code{log_lik} returns a matrix.
+#' of the posterior sample and \eqn{N} is the number of data points.
 #' 
+#' @aliases log_lik
 #' @export
-#' @keywords internal
-#' @param object Fitted model object.
+#' 
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' @template args-dots-ignored
 #' @param newdata An optional data frame of new data (e.g. holdout data) to use
 #'   when evaluating the log-likelihood. See the description of \code{newdata}
 #'   for \code{\link{posterior_predict}}.
 #' @param offset A vector of offsets. Only required if \code{newdata} is
 #'   specified and an \code{offset} was specified when fitting the model.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
 #'   
 #' @return An \eqn{S} by \eqn{N} matrix, where \eqn{S} is the size of the
 #'   posterior sample and \eqn{N} is the number of data points.
 #' 
-log_lik <- function(object, ...) {
-  UseMethod("log_lik")
-}
-
-#' @rdname log_lik
-#' @export
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   if (!used.sampling(object)) 
     STOP_sampling_only("Pointwise log-likelihood matrix")

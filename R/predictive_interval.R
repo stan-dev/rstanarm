@@ -21,18 +21,22 @@
 #' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
 #' \code{predictive_interval} function computes Bayesian predictive intervals. 
 #' The method for stanreg objects calls \code{posterior_predict} internally, 
-#' whereas the method for matrices accepts the output from
-#' \code{posterior_predict} as input and can be used to avoid multiple calls to
-#' \code{posterior_predict}.
+#' whereas the method for objects of class \code{"ppd"} accepts the matrix 
+#' returned by \code{posterior_predict} as input and can be used to avoid
+#' multiple calls to \code{posterior_predict}.
 #' 
 #' @export
-#' @templateVar stanregArg object
-#' @template args-stanreg-object
-#' @inheritParams posterior_interval
-#' @param newdata,draws,fun,offset,re.form,seed Passed to
-#'   \code{\link[=posterior_predict.stanreg]{posterior_predict}}.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
+#' @aliases predictive_interval
+#' 
+#' @param object Either a fitted model object returned by one of the 
+#'   \pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg 
+#'   object}) or, for the \code{"ppd"} method, a matrix of draws from the 
+#'   posterior predictive distribution returned by 
+#'   \code{\link{posterior_predict}}.
+#' @template args-dots-ignored
+#' @inheritParams posterior_interval.stanreg
+#' @param newdata,draws,fun,offset,re.form,seed Passed to 
+#'   \code{\link[=posterior_predict]{posterior_predict}}.
 #' 
 #' @return A matrix with two columns and as many rows as are in \code{newdata}. 
 #'   If \code{newdata} is not provided then the matrix will as many rows as in
@@ -52,19 +56,13 @@
 #' predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)), 
 #'                     prob = 0.5)
 #' 
-#' # stanreg vs matrix methods
+#' # stanreg vs ppd methods
 #' preds <- posterior_predict(fit, seed = 123)
 #' all.equal(
 #'   predictive_interval(fit, seed = 123),
 #'   predictive_interval(preds)
 #' )
 #' 
-predictive_interval <- function(object, ...) {
-  UseMethod("predictive_interval")
-}
-
-#' @rdname predictive_interval
-#' @export
 predictive_interval.stanreg <- function(object,
                                         prob = 0.9,
                                         newdata = NULL,
@@ -91,8 +89,8 @@ predictive_interval.stanreg <- function(object,
   central_intervals(ytilde, prob)
 }
 
-#' @rdname predictive_interval
+#' @rdname predictive_interval.stanreg
 #' @export
-predictive_interval.matrix <- function(object, prob = 0.9, ...) {
+predictive_interval.ppd <- function(object, prob = 0.9, ...) {
   central_intervals(object, prob)
 }

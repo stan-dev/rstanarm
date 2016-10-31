@@ -25,14 +25,18 @@
 #' \code{posterior_predict} as input and can be used to avoid multiple calls to
 #' \code{posterior_predict}.
 #' 
+#' @aliases predictive_error
 #' @export
-#' @templateVar stanregArg object
-#' @template args-stanreg-object
+#' 
+#' @param object Either a fitted model object returned by one of the 
+#'   \pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg 
+#'   object}) or, for the \code{"ppd"} method, a matrix of draws from the 
+#'   posterior predictive distribution returned by 
+#'   \code{\link{posterior_predict}}.
 #' @param newdata,draws,seed,offset,re.form Optional arguments passed to 
 #'   \code{\link{posterior_predict}}. For binomial models, please see the
 #'   \strong{Note} section below if \code{newdata} will be specified.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
+#' @template args-dots-ignored
 #' 
 #' @return A \code{draws} by \code{nrow(newdata)} matrix. If \code{newdata} is 
 #'   not specified then it will be \code{draws} by \code{nobs(object)}.
@@ -67,7 +71,7 @@
 #' )
 #' err2 <- predictive_error(example_model, newdata = nd, draws = 10, seed = 1234)
 #' 
-#' # stanreg vs matrix methods
+#' # stanreg vs ppd methods
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
 #' preds <- posterior_predict(fit, seed = 123)
 #' all.equal(
@@ -75,13 +79,6 @@
 #'   predictive_error(preds, y = fit$y)
 #' )
 #' 
-#' 
-predictive_error <- function(object, ...) {
-  UseMethod("predictive_error")
-}
-
-#' @rdname predictive_error
-#' @export 
 predictive_error.stanreg <- function(object, 
                                      newdata = NULL, 
                                      draws = NULL, 
@@ -92,6 +89,8 @@ predictive_error.stanreg <- function(object,
     STOP_not_optimizing("predictive_error")
   if (inherits(object, "polr"))
     stop("'predictive_error' is not currently available for stan_polr.")
+  if ("y" %in% names(list(...)))
+    stop("Argument 'y' should not be specified if 'object' is a stanreg object.")
   
   y <- if (is.null(newdata))
     get_y(object) else eval(formula(object)[[2L]], newdata)
@@ -112,11 +111,12 @@ predictive_error.stanreg <- function(object,
   compute_errors(preds, y)
 }
 
-#' @rdname predictive_error
+#' @rdname predictive_error.stanreg
 #' @export
-#' @param y For the matrix method, a vector of \eqn{y} values the same length as
-#'   the number of columns in the matrix used as \code{object}.
-predictive_error.matrix <- function(object, y, ...) {
+#' @param y For the matrix method only, a vector of \eqn{y} values the same
+#'   length as the number of columns in the matrix used as \code{object}.
+#'   
+predictive_error.ppd <- function(object, y, ...) {
   compute_errors(object, y)
 }
 

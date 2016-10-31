@@ -31,6 +31,7 @@ Imports:
     Matrix,
     nlme (>= 3.1-124),
     rstan (>= 2.12.1),
+    rstantools,
     shinystan (>= 2.2.1),
     stats,
     utils

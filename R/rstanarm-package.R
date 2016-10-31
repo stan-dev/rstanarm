@@ -27,10 +27,11 @@
 #'   extract_sparse_parts get_posterior_mean stanc
 #' @import stats
 #' @import Rcpp
-#' @export loo
-#' @export waic
-#' @export compare
+#' @import rstantools
+#' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
+#' @export loo waic compare
 #' @export launch_shinystan
+#' 
 #' @description An appendage to the \pkg{rstan} package that enables some of the
 #'   most common applied regression models to be estimated using Markov Chain 
 #'   Monte Carlo, variational approximations to the posterior distribution, or 
