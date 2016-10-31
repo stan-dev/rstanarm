@@ -70,7 +70,7 @@
 #' }
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
-#' @importFrom rstan get_num_upars
+#' 
 print.stanreg <- function(x, digits = 1, ...) {
   print(x$call)
   cat("\nEstimates:\n")
@@ -149,7 +149,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     .printfr(anova_table, digits, ...)
   }
   cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", get_num_upars(x$stanfit), 
+      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
       "\n", sep = " ")
   invisible(x)
 }

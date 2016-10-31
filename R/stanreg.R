@@ -20,6 +20,7 @@
 # @param object A list provided by one of the \code{stan_*} modeling functions.
 # @return A stanreg object.
 #
+#' @importFrom rstan get_num_upars
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
@@ -100,6 +101,7 @@ stanreg <- function(object) {
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
+  out$num_unconstrained_pars <- get_num_upars(out$stanfit)
   if (opt) 
     out$asymptotic_sampling_dist <- stanmat
   if (mer) 
