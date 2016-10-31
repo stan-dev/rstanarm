@@ -4,6 +4,7 @@ r: devel
 cache: packages
 
 r_github_packages:
+  - stan-dev/rstantools
   - HenrikBengtsson/matrixStats@develop
   - jimhester/covr
 

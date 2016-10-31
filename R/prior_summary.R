@@ -1,5 +1,6 @@
 #' Extract and/or print a summary of the priors used for an rstanarm model
 #'
+#' @aliases prior_summary
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
@@ -40,13 +41,6 @@
 #' fit2 <- update(fit, prior_ops = prior_options(scaled = FALSE))
 #' prior_summary(fit2)
 #' 
-#'   
-prior_summary <- function(object, ...) {
-  UseMethod("prior_summary")
-}
-
-#' @rdname prior_summary
-#' @export
 prior_summary.stanreg <- function(object, digits = 2,...) {
   x <- object[["prior.info"]]
   if (is.null(x)) {
