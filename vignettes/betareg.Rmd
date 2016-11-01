@@ -1,0 +1,114 @@
+---
+title: "Modeling Rates/Proportions using Beta Regression with rstanarm"
+author: "Imad Ali and ..."
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{stan_glm: GLMs for Binary and Binomial Data}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+# Introduction
+
+This vignette explains how to model continuous outcomes on the open unit interval
+using the `stan_betareg` function in the __rstanarm__ package.
+
+```{r, child="children/four_steps.txt"}
+```
+
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
+the product of conditionally independent binomial distributions (possibly with
+only one trial per observation).
+
+# Likelihood
+
+Beta regression uses the beta distribution as the likelihood for the data,
+$$
+f(y_i | \alpha,\beta) = \frac{x_i^{(\alpha-1)}(1-x_i)^{(\beta-1)}}{B(\alpha,\beta)}
+$$
+The shape parameters for the distribution are $\alpha$ and $\beta$. The shape parameters enter
+into the model according to the following transformations.
+$$
+\alpha = \mu\cdot\phi \\
+\beta = (1-\mu)\cdot\phi
+$$
+
+Where $g_1(\mu) = \mathbf{X}\boldsymbol{\eta}$ where $g_1(\cdot)$ is some link function, $X$ is a matrix of
+predictors, and $\eta$ is a vector of parameters associated with each predictor. 
+
+In the simplest case (with only one set of regressors), $\phi$ is a scalar parameter. It
+is possible to model $\phi$ using a second set of regressors $Z$, in which case 
+$g_2(\phi) = \mathbf{Z}\boldsymbol{\gamma}$, where $g_2(\cdot)$ is some link function and $\boldsymbol{\gamma}$ is the vector
+of parameters associated with each predictor in $Z$. 
+
+# Priors
+
+```{r, child="children/stan_glm_priors.txt"}
+```
+
+# Posterior
+
+When using only a *single set of regressors*, the posterior distribution of $\eta$ and $\phi$ is
+proportional to the product of the likelihood, priors on the $K$ $\eta$ parameters, and $\phi$,
+$$
+f(\boldsymbol{\eta},\phi|\mathbf{y},\mathbf{X}) \propto 
+\prod_{i=1}^n f(y_i | \alpha,\beta) \times 
+\prod_{i=1}^K f(\boldsymbol{\eta}) \times
+f(\phi)
+$$
+
+When using *two sets of regressors*, the posterior distribution of $\eta$ and $\gamma$ is
+proportional to the product of the likelihood, the $K$ priors on the $\eta$ parameters, and the
+$L$ priors on the $\gamma$ parameters,
+
+$$
+f(\boldsymbol{\eta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto 
+\prod_{i=1}^n f(y_i | \alpha,\beta) \times 
+\prod_{k=1}^K f(\boldsymbol{\eta}) \times
+\prod_{l=1}^L f(\boldsymbol{\gamma})
+$$
+
+  
+# An Example Using Real Data
+
+# An Example Using Simulated Data
+
+Here, the outcome variable $\mathbf{y}$ is simulated in a way that warrants the use of beta
+regression. It is worth mentioning that the data generation process is quite convoluted,
+and this can be seen in the manner in which the likelihood identified above. 
+
+The data simulated below uses the logistic link function on the first set of regressors
+and the log link function on the second set of regressors. 
+
+```{r simulated-data}
+code_here
+```
+
+The model can be fit by calling `stan_betareg()`, using the appropriate link functions. 
+```{r simulated-fit}
+code_here
+```
+
+A posterior analysis can be conducted, similar to the real-world example above.
+```{r simulated-analysis}
+code_here
+```
+
+# References
+
+Gelman, A. and Hill, J. (2007). _Data Analysis Using Regression and
+Multilevel/Hierarchical Models._ Cambridge University Press, Cambridge, UK.
