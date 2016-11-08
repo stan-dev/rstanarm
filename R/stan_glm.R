@@ -148,10 +148,9 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
-  fit <- nlist(stanfit, family, formula, offset, weights, x = X, y = Y, 
-               data, prior.info = get_prior_info(call, formals()), 
-               call = call, terms = mt, model = mf, 
-               algorithm, na.action = attr(mf, "na.action"), 
+  fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
+               x = X, y = Y, model = mf,  terms = mt, call, 
+               na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)

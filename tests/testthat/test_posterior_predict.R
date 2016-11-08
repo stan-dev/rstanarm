@@ -69,18 +69,23 @@ check_for_error <- function(fit, data = NULL, offset = NULL) {
                regexep = "posterior sample size is only")
 }
 
-expect_linpred_equal <- function(object, tol = 0.05) {
+expect_linpred_equal <- function(object, tol = 0.1) {
   linpred <- posterior_linpred(object)
   expect_equal(apply(linpred, 2, median), object$linear.predictors, 
                tolerance = tol, 
                check.attributes = FALSE)
 }
 
+test_that("posterior_predict returns object with correct classes", {
+  expect_s3_class(posterior_predict(example_model), 
+                  c("ppd", "matrix"))
+})
+
 # Error messages ----------------------------------------------------------
 context("posterior_predict (error messages)")
 test_that("posterior_predict errors if not a stanreg object", {
-  expect_error(posterior_predict(example_model$stanfit), "not a stanreg object")
-  expect_error(posterior_predict(summary(example_model)), "not a stanreg object")
+  expect_error(posterior_predict(example_model$stanfit), "no applicable method")
+  expect_error(posterior_predict(summary(example_model)), "no applicable method")
 })
 test_that("posterior_predict errors if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
@@ -100,7 +105,6 @@ test_that("posterior_predict errors if draws > posterior sample size", {
   expect_error(posterior_predict(example_model, draws = 1e6), 
                regexp = "'draws' should be <= posterior sample size")
 })
-
 
 # VB ----------------------------------------------------------------------
 context("posterior_predict ok for vb")

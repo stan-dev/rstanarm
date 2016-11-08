@@ -28,7 +28,6 @@ test_that("pp_validate throws correct errors", {
                    seed = SEED)
   expect_error(pp_validate(example_model$stanfit), "not a stanreg object")
   expect_error(pp_validate(example_model, nreps = 1), "at least 2")
-  expect_error(pp_validate(fito), "only available for models fit using MCMC")
 })
 
 test_that("pp_validate runs for very quick example", {

@@ -25,9 +25,10 @@
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument),
 #'   e.g., \code{nrow} or \code{ncol} to change the layout, \code{scales} to 
 #'   allow axis scales to vary across facets, etc. See Examples.
-#' @param ... Arguments (other than \code{color}) passed to 
-#'   \code{\link[ggplot2]{geom_pointrange}} to control the appearance of the 
-#'   plotted intervals.
+#' @param ... The S3 generic uses \code{...} to pass arguments to any defined 
+#'   methods. For the method for stanreg objects, \code{...} is for arguments
+#'   (other than \code{color}) passed to \code{\link[ggplot2]{geom_pointrange}}
+#'   to control the appearance of the plotted intervals.
 #'   
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
@@ -86,7 +87,13 @@
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
 #'   scale_x_discrete element_line element_text
 #' 
-posterior_vs_prior <-
+posterior_vs_prior <- function(object, ...) {
+  UseMethod("posterior_vs_prior")
+}
+
+#' @rdname posterior_vs_prior
+#' @export 
+posterior_vs_prior.stanreg <-
   function(object,
            pars = NULL,
            regex_pars = NULL,
@@ -95,7 +102,6 @@ posterior_vs_prior <-
            group_by_parameter = FALSE,
            facet_args = list(),
            ...) {
-    validate_stanreg_object(object)
     if (!used.sampling(object))
       STOP_sampling_only("posterior_vs_prior")
     stopifnot(isTRUE(prob > 0 && prob < 1))
@@ -149,9 +155,11 @@ posterior_vs_prior <-
       ggplot(plot_data, mapping = do.call("aes_string", aes_args)) +
       geom_pointrange(...) +
       do.call("facet_wrap", facet_args) +
-      bayesplot::theme_default(x_lab = FALSE, y_lab = FALSE) +
+      theme_default() +
+      xaxis_title(FALSE) +
+      yaxis_title(FALSE) +
       theme(panel.grid.major.y = element_line(size = 0.1, color = "gray")) + 
-      bayesplot::xaxis_ticks()
+      xaxis_ticks()
     
     if (group_by == "parameter")
       return(graph)
@@ -167,6 +175,7 @@ posterior_vs_prior <-
   }
 
 
+# internal ----------------------------------------------------------------
 stack_estimates <-
   function(models = list(),
            pars = NULL,

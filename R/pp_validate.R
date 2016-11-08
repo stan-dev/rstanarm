@@ -102,8 +102,6 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   }
 
   validate_stanreg_object(object)
-  if (!used.sampling(object))
-    STOP_sampling_only("pp_validate")
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
 
@@ -128,7 +126,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   for (i in 2:num_batches)
     plot_batch <- c(plot_batch, rep(i, batches[i]))
   quantile_theta <- matrix(NA_real_, nrow = nreps, ncol = num_params + num_batches)
-  post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed,
+  post <- suppressWarnings(update(object, prior_PD = TRUE, seed = seed, algorithm = "sampling",
                                   warmup = 1000, iter = 1000 + 1, chains = nreps))
   post_mat <- as.matrix(post)
   data_mat <- posterior_predict(post)
