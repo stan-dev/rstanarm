@@ -63,10 +63,10 @@
 #'   model.
 #'
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
-#'   posterior predictive distribution. Each row of the matrix is a vector of
-#'   predictions generated using a single draw of the model parameters from the
-#'   posterior distribution. The returned matrix will also have class 
-#'   \code{"ppd"} to indicate it contains draws from the posterior predictive 
+#'   posterior predictive distribution. Each row of the matrix is a vector of 
+#'   predictions generated using a single draw of the model parameters from the 
+#'   posterior distribution. The returned matrix will also have class
+#'   \code{"ppd"} to indicate it contains draws from the posterior predictive
 #'   distribution.
 #'
 #' @note For binomial models with a number of trials greater than one (i.e., not
