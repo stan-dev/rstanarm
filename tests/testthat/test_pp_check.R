@@ -56,13 +56,14 @@ test_that("pp_check with deprecated 'check' arg works", {
 # test new pp_check.stanreg  ----------------------------------------------
 all_ppc_funs <- grep("^ppc_", getNamespaceExports("bayesplot"), value = TRUE)
 ppc_funs_not_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE, invert = TRUE)
+ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
+
 test_that("pp_check.stanreg creates ggplot object", {
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
     expect_gg(SW(pp_check(fit, plotfun = f, nreps = j)), info = f)
   }
 })
 
-ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
   for (f in ppc_funs_grouped) for (j in 1:2) {
     expect_gg(SW(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 

@@ -61,9 +61,6 @@ test_that("plot.stanreg returns correct object", {
   
   # requires exactly 2 parameters
   expect_gg(plot(fit, "scatter", pars = c("period2", "period3")))
-  
-  # ggmatrix objects
-  expect_s3_class(plot(fit, "pairs", regex_pars = "period"), "ggmatrix")
 })
 
 test_that("plot method returns correct object for nuts diagnostic plots", {
