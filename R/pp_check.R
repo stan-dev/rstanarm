@@ -33,99 +33,54 @@
 #' @templateVar stanregArg object
 #' @template reference-bda
 #' @template args-stanreg-object
-#' @param check The type of plot to show. One of \code{"distributions"},
-#'   \code{"residuals"}, \code{"scatterplots"}, \code{"test-statistics"},
-#'   \code{"vs_x"} (can be abbreviated). See Details for descriptions.
+#' @param plotfun A character string naming the \pkg{bayesplot} plotting 
+#'   function to use. See \link[bayesplot]{PPC-overview} for the available 
+#'   plots. Also see the Examples section below for demonstrations of a subset 
+#'   of the plotting functions. The default is to call 
+#'   \code{\link[bayesplot]{ppc_dens_overlay}}.
+#'
+#'   \code{plotfun} can be specified either as the full name of a 
+#'   \pkg{bayesplot} plotting function (e.g. \code{"ppc_hist"}) or can be 
+#'   abbreviated to the part of the name following the \code{"ppc_"} prefix 
+#'   (e.g. \code{"hist"}). (\strong{Note}: to use \pkg{bayesplot} plotting
+#'   functions starting with the prefix \code{"mcmc_"}, see
+#'   \code{\link{plot.stanreg}}.)
+#'   
 #' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the 
-#'   posterior predictive distribution (\code{\link{posterior_predict}}) and 
-#'   show in the plots. The default is \code{nreps=3} for 
-#'   \code{check="residuals"} and for \code{check="distributions"} the default
-#'   is either \code{nreps=50} (if \code{overlay=TRUE}) or \code{nreps=8} (if
-#'   \code{overlay=FALSE}). If \code{check="test"} or \code{check="vs_x"},
-#'   \code{nreps} is ignored and the number of simulated datasets is the number
-#'   of post-warmup draws from the posterior distribution. If
-#'   \code{check="scatter"}, \code{nreps} is not ignored but defaults to the
-#'   number of post-warmup draws.
+#'   \link[=posterior_predict]{posterior predictive distribution} and 
+#'   show in the plots. The default depends on \code{plotfun}. For functions 
+#'   that plot each \code{yrep} dataset separately (e.g. \code{ppc_hist}), 
+#'   \code{nreps} defaults to a small value to make the plots readable. For 
+#'   functions that overlay many \code{yrep} datasets (e.g., 
+#'   \code{ppc_dens_overlay}) a larger number is used by default, and for other 
+#'   functions (e.g. \code{ppc_stat}) the default is to set \code{nreps} equal
+#'   to the posterior sample size.
+#' @param ... Additonal arguments passed to the \pkg{\link{bayesplot}} function 
+#'   called. For many plotting functions \code{...} is optional, however for 
+#'   functions that require a \code{group} or \code{x} argument, these arguments
+#'   should be specified in \code{...}. If specifying \code{group} and/or 
+#'   \code{x}, they can be provided as either strings naming variables (in which
+#'   case they are searched for in the model frame) or as vectors containing the
+#'   actual values of the variables. See the \strong{Examples} section, below.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
-#' @param overlay For \code{check="distributions"} only, should distributions be
-#'   plotted as density estimates overlaid in a single plot (\code{TRUE}, the 
-#'   default) or as separate histograms (\code{FALSE})?
-#' @param test For \code{check="test"} only, a character vector (of length 1 or 
-#'   2) naming a single function or a pair of functions. The function(s) should 
-#'   take a vector input and return a scalar test statistic. See Details and
-#'   Examples.
-#' @param group A string naming a grouping variable by which to stratify, or a
-#'   factor providing the values of that variable. Specifying \code{group} via a
-#'   string is only allowed if the variable is in the \code{\link{model.frame}}.
-#'   Not available for all plots.
-#' @param x For \code{check="vs_x"} only, either a string naming the variable to
-#'   use as the \eqn{x}-variable, or a numeric vector providing the values of 
-#'   that variable. Specifying \code{x} via a string is only allowed if
-#'   the variable is in the \code{\link{model.frame}}.
-#' @param ... Optionally, additonal arguments passed to the 
-#'   \pkg{\link{bayesplot}} function called. These are described in the help 
-#'   pages for \pkg{bayesplot}, links to which can be found in Details, below.
+#' @param check,overlay,test Deprecated arguments to be removed in a future
+#'   release. These arguments are still functional so as to not break backwards
+#'   compatibility, but they are unnecessary now that \code{pp_check} is
+#'   providing an interface to \pkg{bayesplot}.
 #' 
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
+#' 
+#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the 
+#'   proportion of 'successes' rather than the raw count. Also for binomial 
+#'   models see \code{\link[bayesplot]{ppc_error_binned}} for binned residual
+#'   plots.
+#' 
+#' @seealso 
+#'   The vignettes in the \pkg{bayesplot} package for many examples.
 #'   
-#' @details Descriptions of the plots corresponding to the different values of 
-#' \code{check}:
-#' \describe{
-#'  \item{\code{distributions}}{
-#'    The distributions of \eqn{y} and \code{nreps} simulated
-#'    \eqn{y^{rep}}{yrep} datasets.
-#'    
-#'    \pkg{\link{bayesplot}} reference:
-#'    \code{\link[bayesplot]{PPC-distributions}}
-#'  } 
-#'  \item{\code{residuals}}{
-#'    The distributions of residuals computed from \eqn{y} and each of
-#'    \code{nreps} simulated datasets. For binomial data, binned residual plots
-#'    are generated (similar to \code{binnedplot} in package \pkg{arm}).
-#'    
-#'    \pkg{\link{bayesplot}} reference:
-#'    \code{\link[bayesplot]{PPC-residuals}}
-#'  }
-#'  \item{\code{scatterplots}}{
-#'    If \code{nreps} is \code{NULL} then \eqn{y} is plotted against the average
-#'    values of \eqn{y^{rep}}{yrep}, i.e., the points \eqn{(y_n, 
-#'    \bar{y}^{rep}_n),\, n = 1, \dots, N}{(y_n, mean(yrep_n)), n = 1,...,N}, 
-#'    where each \eqn{y^{rep}_n}{yrep_n} is a vector of length equal to the
-#'    number of posterior draws. If \code{nreps} is a (preferably small)
-#'    integer, then only \code{nreps} \eqn{y^{rep}}{yrep} datasets are simulated
-#'    and they are each plotted separately against \eqn{y}.
-#'    
-#'    \pkg{\link{bayesplot}} reference:
-#'    \code{\link[bayesplot]{PPC-scatterplots}}
-#'  }
-#'  \item{\code{test-statistics}}{
-#'    The distribution of a single test statistic
-#'    \eqn{{T(y^{rep})}}{T(yrep)} or a pair of test statistics over the
-#'    \code{nreps} simulated datasets. If the \code{test} argument specifies only
-#'    one function then the resulting plot is a histogram of
-#'    \eqn{{T(y^{rep})}}{T(yrep)} and the value of the test statistic in the 
-#'    observed data, \eqn{T(y)}, is shown in the plot as a vertical line. If two 
-#'    functions are specified then the plot is a scatterplot and \eqn{T(y)} is 
-#'    shown as a large point.
-#'    
-#'    \pkg{\link{bayesplot}} reference:
-#'    \code{\link[bayesplot]{PPC-test-statistics}}
-#'  }
-#'  \item{\code{vs_x}}{
-#'    Medians and central interval estimates of \eqn{y^{rep}}{yrep} by value of 
-#'    an "\eqn{x}" variable, with \eqn{y} overlaid.
-#'    
-#'    \pkg{\link{bayesplot}} reference:
-#'    \code{\link[bayesplot]{PPC-vs-x}}
-#'  }
-#' }
-#' 
-#' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
-#'   proportion of 'successes' rather than the raw count.
-#' 
-#' @seealso \code{\link{posterior_predict}} for drawing from the posterior 
+#'   \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also 
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #'   
@@ -133,109 +88,126 @@
 #'   plots.
 #' 
 #' @examples 
-#' if (!exists("example_model")) example(example_model)
+#' fit <- stan_glmer(mpg ~ wt + am + (1|cyl), data = mtcars, 
+#'                   iter = 400, chains = 2) # just to keep example quick
 #' 
-#' # Compare distribution of y (dark color) to distributions of 
-#' # yrep (light color)
-#' (pp_dist <- pp_check(example_model, check = "dist"))
-#'  
-#' # Violin plot of yrep by level of 'herd' grouping variable with 
-#' # y points overlaid
-#' pp_check(example_model, check = "dist", group = "herd")
-#'
-#' # Check residuals (default is binned residual plot for binomial 
-#' # models, histograms otherwise)
-#' pp_check(example_model, check = "resid", nreps = 4)
-#'
-#' # Check histograms of test statistics
-#' pp_check(example_model, check = "test", test = "mean")
-#' pp_check(example_model, check = "test", test = "sd")
-#' pp_check(example_model, check = "test", test = "mean", group = "herd")
-#' 
-#' # Scatterplot of two test statistics
-#' pp_check(example_model, check = "test", test = c("mean", "sd"))
+#' # Compare distribution of y to distributions of multiple yrep datasets
+#' pp_check(fit)
+#' pp_check(fit, plotfun = "boxplot", nreps = 10, notch = FALSE)
+#' pp_check(fit, plotfun = "hist", nreps = 3)
 #' 
 #' \donttest{
-#' fit <- stan_glm(mpg ~ wt, data = mtcars)
-#' pp_check(fit)
-#' 
 #' # Same plot (up to RNG noise) using bayesplot package directly
-#' y <- fit$y
-#' yrep <- posterior_predict(fit)
-#' bayesplot::ppc_dens_overlay(y, yrep[1:50, ])
-#' 
-#' # Scatterplots of y vs. yrep
-#' pp_check(fit, check = "scatter") # y vs. average yrep
-#' bayesplot::ppc_scatter_avg(y, yrep) # same plot up to RNG noise
-#' 
-#' pp_check(fit, check = "scatter", nreps = 3) # y vs. a few different yrep datasets 
-#' bayesplot::ppc_scatter(y, yrep[1:3, ]) # same plot up to RNG noise
-#' 
-#' 
-#' # yrep "ribbon" vs x (with y points overlaid)
-#' pp_check(fit, check = "vs_x", x = mtcars$disp, y_style = "points")
-#' pp_check(fit, check = "vs_x", x = "wt") + ggplot2::xlab("wt")
-#' 
-#' # Defining a function to compute test statistic 
-#' roaches$roach100 <- roaches$roach1 / 100
-#' fit_pois <- stan_glm(y ~ treatment + roach100 + senior, data = roaches,
-#'                      offset = log(exposure2), family = "poisson")
-#' fit_nb <- update(fit_pois, family = "neg_binomial_2")
-#' 
-#' prop0 <- function(y) mean(y == 0) # function to compute proportion of zeros
-#' pp_check(fit_pois, check = "test", test = "prop0") # looks bad 
-#' pp_check(fit_nb, check = "test", test = "prop0")   # much better
+#' bayesplot::ppc_hist(y = mtcars$mpg, yrep = posterior_predict(fit, draws = 3))
 #' }
+#'
+#' # Check histograms of test statistics by level of grouping variable 'cyl'
+#' pp_check(fit, plotfun = "stat_grouped", stat = "median", group = "cyl")
+#' 
+#' # Defining a custom test statistic
+#' q25 <- function(y) quantile(y, probs = 0.25) 
+#' pp_check(fit, plotfun = "stat_grouped", stat = "q25", group = "cyl")
+#' 
+#' # Scatterplot of two test statistics
+#' pp_check(fit, plotfun = "stat_2d", test = c("mean", "sd"))
+#' 
+#' # Scatterplot of y vs. average yrep
+#' pp_check(fit, plotfun = "scatter_avg") # y vs. average yrep
+#' \donttest{
+#' # Same plot (up to RNG noise) using bayesplot package directly
+#' bayesplot::ppc_scatter_avg(y = mtcars$mpg, yrep = posterior_predict(fit))
+#' }
+#' 
+#' # Scatterplots of y vs. several individual yrep datasets
+#' pp_check(fit, plotfun = "scatter", nreps = 3)
+#' \donttest{
+#' # Same plot (up to RNG noise) using bayesplot package directly
+#' bayesplot::ppc_scatter(y = mtcars$mpg, yrep = posterior_predict(fit, draws = 3))
+#' }
+#' 
+#' # yrep intervals with y points overlaid
+#' # by default 1:length(y) used on x-axis but can also specify an x variable
+#' pp_check(fit, plotfun = "intervals")
+#' pp_check(fit, plotfun = "intervals", x = "wt") + ggplot2::xlab("wt")
+#' \donttest{
+#' # Same plot (up to RNG noise) using bayesplot package directly
+#' bayesplot::ppc_intervals(y = mtcars$mpg, yrep = posterior_predict(fit), 
+#'                          x = mtcars$wt) + ggplot2::xlab("wt")
+#' }
+#' 
+#' # predictive errors
+#' pp_check(fit, plotfun = "error_hist", nreps = 6)
+#' pp_check(fit, plotfun = "error_scatter_avg_vs_x", x = "wt") + 
+#'   ggplot2::xlab("wt")
 #' 
 pp_check.stanreg <-
   function(object,
-           check = "distributions",
+           check = NULL,
+           plotfun = "dens_overlay",
            nreps = NULL,
            seed = NULL,
            overlay = TRUE,
            test = "mean",
-           group = NULL,
-           x = NULL,
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
-    valid_ppcs <- c("distributions", "residuals", "scatterplots", 
-                    "test-statistics", "vs_x")
-    plotfun <-
-      ppc_fun(
-        check = match.arg(check, choices = valid_ppcs),
-        grouped = !is.null(group),
-        nreps = nreps,
-        ntests = length(test),
-        overlay = isTRUE(overlay),
-        binomial_model = is_binomial_ppc(object), 
-        has_x = !is.null(x)
+    if (!is.null(check)) {
+      warning(
+        "Argument 'check' is deprecated. Specify 'plotfun' instead. ", 
+        "In future versions the 'check' argument will be removed."
       )
+      return(
+        pp_check_old(
+          object,
+          check = check,
+          nreps = nreps,
+          seed = seed,
+          overlay = overlay,
+          test = test,
+          ...
+        )
+      )
+    }
     
+    plotfun_name <- .ppc_function_name(plotfun)
+    plotfun <- .ppc_function(plotfun_name)
+    is_binomial_model <- is_binomial_ppc(object)
     y_yrep <-
-      ppc_y_and_yrep(
+      .ppc_y_and_yrep(
         object,
         seed = seed,
-        nreps = set_nreps(nreps, fun = plotfun),
-        binned_resid_plot = isTRUE(plotfun == "ppc_resid_binned")
+        nreps = .set_nreps(nreps, fun = plotfun_name),
+        binned_resid_plot = isTRUE(plotfun_name == "ppc_error_binned")
       )
-    
-    plotargs <-
-      ppc_args(
+    args <-
+      .ppc_args(
+        object,
         y = y_yrep[["y"]],
         yrep = y_yrep[["yrep"]],
-        group = set_group(object, group),
-        x = set_x(object, x),
-        fun = plotfun,
-        test = test,
+        fun = plotfun_name,
         ...
       )
     
-    do.call(plotfun, plotargs)
+    do.call(plotfun, args)
   }
 
-ppc_y_and_yrep <-
+
+
+
+# internal ----------------------------------------------------------------
+
+# check if binomial
+is_binomial_ppc <- function(object) {
+  if (is(object, "polr") && !is_scobit(object)) {
+    FALSE
+  } else {
+    is.binomial(family(object)$family)
+  }
+}
+
+# prepare y and yrep arguments to bayesplot function
+.ppc_y_and_yrep <-
   function(object,
            nreps = NULL,
            seed = NULL,
@@ -265,120 +237,107 @@ ppc_y_and_yrep <-
     nlist(y, yrep)
   }
 
-ppc_args <-
-  function(y, 
-           yrep,
-           group = NULL,
-           fun = character(),
-           test = NULL,
-           x = NULL,
-           ...) {
-    args <- nlist(y, yrep, ...)
-    if (!is.null(group))
-      args$group <- group
-    if (!is.null(x))
-      args$x <- x
-    if (fun == "ppc_resid_binned")
-      names(args)[names(args) %in% "yrep"] <- "Ey"
-    if (grepl("^ppc_stat", fun))
-      args$stat <- test
-    
-    args
-  }
+# prepare 'group' and 'x' variable for certain plots
+.ppc_xvar <- .ppc_groupvar <- function(object, var = NULL) {
+  if (is.null(var) || !is.character(var))
+    return(var)
 
-set_x <- set_group <- function(object, group = NULL) {
-  if (is.null(group) || !is.character(group))
-    return(group)
-  
   mf <- model.frame(object)
   vars <- colnames(mf)
-  if (group %in% vars)
-    return(mf[, group])
+  if (var %in% vars)
+    return(mf[, var])
   
-  stop("Variable '", group, "' not found in model frame. ")
+  stop("Variable '", var, "' not found in model frame. ")
 }
 
-is_binomial_ppc <- function(object) {
-  if (is(object, "polr") && !is_scobit(object)) {
-    FALSE
-  } else {
-    is.binomial(family(object)$family)
-  }
+# @param fun user's plotfun argument
+.ppc_function_name <- function(fun = character()) {
+  if (!length(fun))
+    stop("Plotting function not specified.", call. = FALSE)
+  
+  if (identical(substr(fun, 1, 5), "mcmc_"))
+    stop(
+      "For 'mcmc_' functions use the 'plot' ",
+      "method instead of 'pp_check'.",
+      call. = FALSE
+    )
+  
+  if (!identical(substr(fun, 1, 4), "ppc_"))
+    fun <- paste0("ppc_", fun)
+  
+  return(fun)
 }
 
-ppc_fun <-
-  function(check,
-           grouped = FALSE,
-           nreps = NULL,
-           ntests = 1,
-           overlay = TRUE,
-           binomial_model = FALSE, 
-           has_x = FALSE) {
-    
-    if (check == "distributions") {
-      if (grouped) 
-        return("ppc_violin_grouped")
-      else if (overlay) 
-        return("ppc_dens_overlay")
-      else 
-        return("ppc_hist")
-    }
-    
-    if (check == "residuals") {
-      if (grouped)
-        warning("'group' is ignored for residuals plots.", call. = FALSE)
-      if (binomial_model) 
-        return("ppc_resid_binned")
-      else 
-        return("ppc_resid")  
-    }
-    
-    if (check == "test-statistics") {
-      if (ntests > 1) {
-        if (grouped)
-          warning("'group' is ignored if length(test) > 1.", call. = FALSE)
-        return("ppc_stat_2d")
+# @param fun string returned by .ppc_function_name
+.ppc_function <- function(fun = character()) {
+  fun <- try(match.fun(fun), silent = TRUE)
+  if (!inherits(fun, "try-error"))
+    return(fun)
+  
+  stop(
+    "PPC function ",  fun, " not found. ",
+    "A valid function is any function from the ",
+    "'bayesplot' package beginning with the prefix 'ppc_'.",
+    call. = FALSE
+  )
+}
+
+# prepare all arguments to pass to bayesplot function
+# @param object user's object
+# @param y,yrep returned by .ppc_y_and_yrep
+# @param fun string returned by .ppc_function_name
+# @param ... user's ...
+# @return named list
+#
+.ppc_args <- function(object, y, yrep, fun, ...) {
+  funname <- fun
+  fun <- match.fun(fun)
+  dots <- list(...)
+  dots[["y"]] <- y
+  dots[["yrep"]] <- yrep
+  argnames <- names(formals(fun))
+  
+  if ("group" %in% argnames) {
+    groupvar <- dots[["group"]] %ORifNULL% 
+        stop("This PPC requires the 'group' argument.", call. = FALSE)
+    dots[["group"]] <- .ppc_groupvar(object, groupvar)
+  }
+  if ("x" %in% argnames) {
+    xvar <- dots[["x"]]  
+    if (!is.null(xvar)) {
+      dots[["x"]] <- .ppc_xvar(object, xvar)
+    } else {
+      if (funname %in% c("ppc_intervals", "ppc_ribbon")) {
+        message("'x' not specified in '...'. Using x=1:length(y).")
+        dots[["x"]] <- seq_along(y)
+      } else {
+        stop("This PPC requires the 'x' argument.", call. = FALSE)
       }
-      else if (grouped)
-        return("ppc_stat_grouped")
-      else
-        return("ppc_stat")
-    }
-    
-    if (check == "scatterplots") {
-      if (!is.null(nreps)) {
-        if (grouped)
-          warning("'group' is ignored for scatterplots unless 'nreps' is NULL.", 
-                  call. = FALSE)
-        return("ppc_scatter" )
-      }
-      else if (grouped)
-        return("ppc_scatter_avg_grouped")
-      else
-        return("ppc_scatter_avg")
-    }
-    
-    if (check == "vs_x") {
-      if (!has_x)
-        stop("If 'check' is 'vs_x' then the 'x' argument must be specified.")
-      if (grouped) 
-        return("ppc_vs_x_grouped")
-      else 
-        return("ppc_vs_x")
     }
   }
+  return(dots)
+}
 
-set_nreps <- function(nreps = NULL, fun = character()) {
+# set default nreps value based on plot
+.set_nreps <- function(nreps = NULL, fun = character()) {
   fun <- sub("ppc_", "", fun)
   switch(fun,
     # DISTRIBUTIONS
     "dens_overlay" = nreps %ORifNULL% 50,
+    "ecdf_overlay" = nreps %ORifNULL% 50,
     "hist" = nreps %ORifNULL% 8,
+    "dens" = nreps %ORifNULL% 8,
+    "boxplot" = nreps %ORifNULL% 8,
+    "freqpoly" = nreps %ORifNULL% 8,
+    "freqpoly_grouped" = nreps %ORifNULL% 3,
     "violin_grouped" = nreps, # NULL ok
     
-    # RESIDUALS
-    "resid" = nreps %ORifNULL% 3,
-    "resid_binned" = nreps %ORifNULL% 3,
+    # PREDICTIVE ERRORS
+    "error_binned" = nreps %ORifNULL% 3,
+    "error_hist" = nreps %ORifNULL% 3,
+    "error_scatter" = nreps %ORifNULL% 3,
+    "error_scatter_avg" = nreps, # NULL ok
+    "error_scatter_avg_vs_x" = nreps, # NULL ok
     
     # SCATTERPLOTS
     "scatter" = nreps %ORifNULL% 3, 
@@ -386,18 +345,120 @@ set_nreps <- function(nreps = NULL, fun = character()) {
     "scatter_avg_grouped" = nreps, # NULL ok
     
     # TEST-STATISTICS
-    "stat" = ignore_nreps(nreps),
-    "stat_2d" = ignore_nreps(nreps),
-    "stat_grouped" = ignore_nreps(nreps),
+    "stat" = .ignore_nreps(nreps),
+    "stat_2d" = .ignore_nreps(nreps),
+    "stat_grouped" = .ignore_nreps(nreps),
+    "stat_freqpoly_grouped" = .ignore_nreps(nreps),
     
-    # VS X
-    "vs_x" = ignore_nreps(nreps),
-    "vs_x_grouped" = ignore_nreps(nreps)
+    # INTERVALS
+    "intervals" = .ignore_nreps(nreps),
+    "intervals_grouped" = .ignore_nreps(nreps),
+    "ribbon" = .ignore_nreps(nreps),
+    "ribbon_grouped" = .ignore_nreps(nreps)
   )
 }
-
-ignore_nreps <- function(nreps, check = "test") {
+.ignore_nreps <- function(nreps) {
   if (!is.null(nreps))
-    warning("'nreps' is ignored if check=", check, call. = FALSE)
+    warning("'nreps' is ignored for this PPC", call. = FALSE)
   return(NULL)
 }
+
+
+# deprecated, to be removed -----------------------------------------------
+# these functions are used to maintain backwards compatibility but will be 
+# removed when the 'check' argument is removed in a future release
+pp_check_old <- function(object,
+                         check = "distributions",
+                         nreps = NULL,
+                         seed = NULL,
+                         overlay = TRUE,
+                         test = "mean",
+                         ...) {
+  is_binomial_model <- is_binomial_ppc(object)
+  dots <- list(...)
+  fun <-
+    ppc_fun_old(
+      check = match.arg(
+        check,
+        choices = c(
+          "distributions",
+          "residuals",
+          "scatterplots",
+          "test-statistics"
+        )
+      ),
+      nreps = nreps,
+      ntests = length(test),
+      overlay = isTRUE(overlay),
+      binomial_model = is_binomial_model
+    )
+  
+  y_yrep <-
+    .ppc_y_and_yrep(
+      object,
+      seed = seed,
+      nreps = .set_nreps(nreps, fun = fun),
+      binned_resid_plot = isTRUE(fun == "ppc_error_binned")
+    )
+  
+  args <-
+    ppc_args_old(
+      y = y_yrep[["y"]],
+      yrep = y_yrep[["yrep"]],
+      fun = fun,
+      test = test,
+      ...
+    )
+  
+  do.call(fun, args)
+}
+
+
+ppc_fun_old <-
+  function(check,
+           nreps = NULL,
+           ntests = 1,
+           overlay = TRUE,
+           binomial_model = FALSE) {
+    
+    if (check == "distributions") {
+      if (overlay) 
+        return("ppc_dens_overlay")
+      else 
+        return("ppc_hist")
+    }
+    
+    if (check == "residuals") {
+      if (binomial_model) 
+        return("ppc_error_binned")
+      else 
+        return("ppc_error_hist")  
+    }
+    
+    if (check == "test-statistics") {
+      if (ntests > 1)
+        return("ppc_stat_2d")
+      else
+        return("ppc_stat")
+    }
+    
+    if (check == "scatterplots") {
+      if (!is.null(nreps))
+        return("ppc_scatter" )
+      else
+        return("ppc_scatter_avg")
+    }
+  }
+
+ppc_args_old <-
+  function(y, 
+           yrep,
+           fun = character(),
+           test = NULL,
+           ...) {
+    args <- nlist(y, yrep, ...)
+    if (grepl("^ppc_stat", fun))
+      args$stat <- test
+    
+    args
+  }
