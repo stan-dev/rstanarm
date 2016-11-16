@@ -27,6 +27,7 @@
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
+#' @template args-dots-ignored
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the 
 #'   untransformed linear predictor is returned.
@@ -35,8 +36,6 @@
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
 #'   terms) constructed from \code{newdata} is returned. The default is 
 #'   \code{FALSE}.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
 #' 
 #' @return The default is to return a \code{draws} by \code{nrow(newdata)} 
 #'   matrix of simulations from the posterior distribution of the (possibly 
