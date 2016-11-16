@@ -271,20 +271,6 @@ is_binomial_ppc <- function(object) {
 }
 
 
-# # @param fun string returned by .ppc_function_name
-# .ppc_function <- function(fun = character()) {
-#   fun <- try(match.fun(fun), silent = TRUE)
-#   if (!inherits(fun, "try-error"))
-#     return(fun)
-#   
-#   stop(
-#     "PPC function ",  fun, " not found. ",
-#     "A valid function is any function from the ",
-#     "'bayesplot' package beginning with the prefix 'ppc_'.",
-#     call. = FALSE
-#   )
-# }
-
 # prepare all arguments to pass to bayesplot function
 # @param object user's object
 # @param y,yrep returned by .ppc_y_and_yrep
