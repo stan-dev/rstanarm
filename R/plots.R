@@ -56,7 +56,7 @@
 #' @seealso \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for details
 #'   on the individual plotting functions.
 #'   
-#'   \code{\link[bayesplot]{set_color_scheme}} (\pkg{bayesplot}) to change the
+#'   \code{\link[bayesplot]{color_scheme_set}} (\pkg{bayesplot}) to change the
 #'   color scheme used for plotting.
 #'
 #' @examples
@@ -94,7 +94,7 @@
 #' ####################
 #' ### Scatterplots ###
 #' ####################
-#' bayesplot::set_color_scheme("teal")
+#' bayesplot::color_scheme_set("teal")
 #' plot(fit, "scatter", pars = paste0("period", 2:3))
 #' plot(fit, "scatter", pars = c("(Intercept)", "size"),
 #'      size = 3, alpha = 0.5) +
@@ -104,7 +104,7 @@
 #' ####################################################
 #' ### Rhat, effective sample size, autocorrelation ###
 #' ####################################################
-#' bayesplot::set_color_scheme("blue")
+#' bayesplot::color_scheme_set("blue")
 #' 
 #' # rhat
 #' plot(fit, "rhat")
@@ -126,7 +126,7 @@
 #' # are not so essential for diagnosing the particular models implemented in
 #' # rstanarm) so the iterations in the traceplot are post-warmup iterations
 #' 
-#' bayesplot::set_color_scheme("pink")
+#' bayesplot::color_scheme_set("pink")
 #' (trace <- plot(fit, "trace", pars = "(Intercept)"))
 #'
 #' # change traceplot colors to ggplot defaults or custom values

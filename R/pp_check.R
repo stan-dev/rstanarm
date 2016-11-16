@@ -17,13 +17,15 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' Interface to the posterior predictive checking functionality in our 
+#' Interface to the PPC (posterior predictive checking) module in the 
 #' \pkg{\link{bayesplot}} package, providing various plots comparing the 
 #' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep} 
-#' from the posterior predictive distribution. It is also straightforward to use
-#' the functions from the \pkg{bayesplot} package directly rather than via the 
-#' \code{pp_check.stanreg} method. Examples of both methods of plotting are
-#' given below.
+#' from the posterior predictive distribution. The \code{pp_check} method for 
+#' \link{stanreg-objects} prepares the arguments required for the specified 
+#' \pkg{bayesplot} PPC plotting function and then calls that function. It is
+#' also straightforward to use the functions from the \pkg{bayesplot} package 
+#' directly rather than via the \code{pp_check.stanreg} method. Examples of both
+#' are given below.
 #' 
 #' @export
 #' @export pp_check
@@ -33,28 +35,21 @@
 #' @templateVar stanregArg object
 #' @template reference-bda
 #' @template args-stanreg-object
-#' @param plotfun A character string naming the \pkg{bayesplot} plotting 
-#'   function to use. See \link[bayesplot]{PPC-overview} for the available 
-#'   plots. Also see the Examples section below for demonstrations of a subset 
-#'   of the plotting functions. The default is to call 
-#'   \code{\link[bayesplot]{ppc_dens_overlay}}.
-#'
-#'   \code{plotfun} can be specified either as the full name of a 
-#'   \pkg{bayesplot} plotting function (e.g. \code{"ppc_hist"}) or can be 
-#'   abbreviated to the part of the name following the \code{"ppc_"} prefix 
-#'   (e.g. \code{"hist"}). (\strong{Note}: to use \pkg{bayesplot} plotting
-#'   functions starting with the prefix \code{"mcmc_"}, see
-#'   \code{\link{plot.stanreg}}.)
-#'   
+#' @param plotfun A character string naming the \pkg{bayesplot} 
+#'   \link[bayesplot]{PPC} function to use. The default is to call
+#'   \code{\link[bayesplot]{ppc_dens_overlay}}. \code{plotfun} can be specified
+#'   either as the full name of a \pkg{bayesplot} plotting function (e.g.
+#'   \code{"ppc_hist"}) or can be abbreviated to the part of the name following
+#'   the \code{"ppc_"} prefix (e.g. \code{"hist"}). To get the names of all
+#'   available PPC functions see \code{\link[bayesplot]{available_ppc}}.
 #' @param nreps The number of \eqn{y^{rep}}{yrep} datasets to generate from the 
-#'   \link[=posterior_predict]{posterior predictive distribution} and 
-#'   show in the plots. The default depends on \code{plotfun}. For functions 
-#'   that plot each \code{yrep} dataset separately (e.g. \code{ppc_hist}), 
-#'   \code{nreps} defaults to a small value to make the plots readable. For 
-#'   functions that overlay many \code{yrep} datasets (e.g., 
-#'   \code{ppc_dens_overlay}) a larger number is used by default, and for other 
-#'   functions (e.g. \code{ppc_stat}) the default is to set \code{nreps} equal
-#'   to the posterior sample size.
+#'   \link[=posterior_predict]{posterior predictive distribution} and show in
+#'   the plots. The default depends on \code{plotfun}. For functions that plot
+#'   each \code{yrep} dataset separately (e.g. \code{ppc_hist}), \code{nreps}
+#'   defaults to a small value to make the plots readable. For functions that
+#'   overlay many \code{yrep} datasets (e.g., \code{ppc_dens_overlay}) a larger
+#'   number is used by default, and for other functions (e.g. \code{ppc_stat})
+#'   the default is to set \code{nreps} equal to the posterior sample size.
 #' @param ... Additonal arguments passed to the \pkg{\link{bayesplot}} function 
 #'   called. For many plotting functions \code{...} is optional, however for 
 #'   functions that require a \code{group} or \code{x} argument, these arguments
@@ -64,13 +59,16 @@
 #'   actual values of the variables. See the \strong{Examples} section, below.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
-#' @param check,overlay,test Deprecated arguments to be removed in a future
-#'   release. These arguments are still functional so as to not break backwards
-#'   compatibility, but they are unnecessary now that \code{pp_check} is
+#' @param check,overlay,test Deprecated arguments to be removed in a future 
+#'   release. These arguments are still functional so as to not break backwards 
+#'   compatibility, but they are unnecessary now that \code{pp_check} is 
 #'   providing an interface to \pkg{bayesplot}.
 #' 
-#' @return A ggplot object that can be further customized using the 
-#'   \pkg{ggplot2} package.
+#' @return \code{pp_check} returns a ggplot object that can be further
+#'   customized using the \pkg{ggplot2} package.
+#'   
+#'   \code{available_ppcs} returns a character vector containing the names of
+#'   the currently available PPC functions.
 #' 
 #' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the 
 #'   proportion of 'successes' rather than the raw count. Also for binomial 
@@ -84,7 +82,7 @@
 #'   predictive distribution. Examples of posterior predictive checks can also 
 #'   be found in the \pkg{rstanarm} vignettes and demos.
 #'   
-#'   \code{\link[bayesplot]{set_color_scheme}} to change the color scheme of the
+#'   \code{\link[bayesplot]{color_scheme_set}} to change the color scheme of the
 #'   plots.
 #' 
 #' @examples 
@@ -171,7 +169,7 @@ pp_check.stanreg <-
     }
     
     plotfun_name <- .ppc_function_name(plotfun)
-    plotfun <- .ppc_function(plotfun_name)
+    plotfun <- match.fun(plotfun_name)
     is_binomial_model <- is_binomial_ppc(object)
     y_yrep <-
       .ppc_y_and_yrep(
@@ -250,6 +248,7 @@ is_binomial_ppc <- function(object) {
   stop("Variable '", var, "' not found in model frame. ")
 }
 
+# 
 # @param fun user's plotfun argument
 .ppc_function_name <- function(fun = character()) {
   if (!length(fun))
@@ -265,8 +264,15 @@ is_binomial_ppc <- function(object) {
   if (!identical(substr(fun, 1, 4), "ppc_"))
     fun <- paste0("ppc_", fun)
   
+  if (!fun %in% available_ppcs())
+    stop(
+      fun, "is not a valid PPC function name.",  
+      " Use bayesplot::available_ppcs() for a list of available PPC functions."
+    )
+  
   return(fun)
 }
+
 
 # @param fun string returned by .ppc_function_name
 .ppc_function <- function(fun = character()) {
@@ -413,6 +419,18 @@ pp_check_old <- function(object,
   do.call(fun, args)
 }
 
+ppc_args_old <-
+  function(y, 
+           yrep,
+           fun = character(),
+           test = NULL,
+           ...) {
+    args <- nlist(y, yrep, ...)
+    if (grepl("^ppc_stat", fun))
+      args$stat <- test
+    
+    args
+  }
 
 ppc_fun_old <-
   function(check,
@@ -448,17 +466,4 @@ ppc_fun_old <-
       else
         return("ppc_scatter_avg")
     }
-  }
-
-ppc_args_old <-
-  function(y, 
-           yrep,
-           fun = character(),
-           test = NULL,
-           ...) {
-    args <- nlist(y, yrep, ...)
-    if (grepl("^ppc_stat", fun))
-      args$stat <- test
-    
-    args
   }

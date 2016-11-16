@@ -81,7 +81,7 @@
 #' checks and \code{\link{posterior_predict}} to draw from the posterior
 #' predictive distribution.
 #'
-#' \code{\link[bayesplot]{set_color_scheme}} to change the color scheme of the
+#' \code{\link[bayesplot]{color_scheme_set}} to change the color scheme of the
 #' plot.
 #'
 #' @examples
@@ -90,7 +90,7 @@
 #' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
 #'
-#' @importFrom ggplot2 geom_point geom_segment scale_x_continuous element_line
+#' @importFrom ggplot2 rel geom_point geom_segment scale_x_continuous element_line
 #'
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
@@ -186,20 +186,22 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   upper_lim <- max(max(z_stats + 1), 3.5)
   plotdata <- data.frame(x = z_batch, y = params_batch)
 
-  scheme <- bayesplot::get_color_scheme()
+  scheme <- bayesplot::color_scheme_get()
   ggplot(plotdata, aes_string(x = "x", y = "y")) +
     geom_segment(
       aes_string(x = "0", xend = "x", y = "y", yend = "y"),
-      color = scheme[["mid"]]
+      color = scheme[["mid"]], 
+      size = rel(1)
     ) +
     geom_point(
-      size = 3,
+      size = rel(3),
       shape = 21,
       fill = scheme[["dark"]],
       color = scheme[["dark_highlight"]]
     ) +
     scale_x_continuous(limits = c(0, upper_lim), expand = c(0, 0)) +
     xlab(expression("Absolute " * z[theta] * " Statistics")) +
-    bayesplot::theme_default(y_lab = FALSE) +
-    theme(panel.grid.major.x = element_line(size = 0.1, color = "gray"))
+    theme_default() +
+    yaxis_title(FALSE) + 
+    grid_lines(color = "gray", size = 0.1)
 }

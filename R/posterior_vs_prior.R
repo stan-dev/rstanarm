@@ -158,20 +158,18 @@ posterior_vs_prior.stanreg <-
       theme_default() +
       xaxis_title(FALSE) +
       yaxis_title(FALSE) +
-      theme(panel.grid.major.y = element_line(size = 0.1, color = "gray")) + 
-      xaxis_ticks()
-    
+      xaxis_ticks() +
+      xaxis_text(angle = -30, hjust = 0) + 
+      grid_lines(color = "gray", size = 0.1)
+      
     if (group_by == "parameter")
       return(graph)
     
     # clean up x-axis labels a bit if tick labels are parameter names
     # (user can override this after plot is created if need be,
     # but this makes the default a bit nicer if many parameters)
-    graph +
-      theme(axis.text.x = element_text(angle = -30, hjust = 0)) +
-      scale_x_discrete(labels = abbreviate(plot_data$parameter, 12,
-                                           method = "both.sides",
-                                           dot = TRUE))
+    abbrevs <- abbreviate(plot_data$parameter, 12, method = "both.sides", dot = TRUE)
+    graph + scale_x_discrete(name = "Parameter", labels = abbrevs)
   }
 
 
