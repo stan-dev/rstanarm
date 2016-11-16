@@ -77,9 +77,9 @@
 #' \emph{Journal of Computational and Graphical Statistics}. 15(3), 675--692.
 #'
 #' @seealso
-#' \code{\link[=pp_check.stanreg]{pp_check}} for graphical posterior predictive
-#' checks and \code{\link{posterior_predict}} to draw from the posterior
-#' predictive distribution.
+#' \code{\link{pp_check}} for graphical posterior predictive checks and
+#' \code{\link{posterior_predict}} to draw from the posterior predictive
+#' distribution.
 #'
 #' \code{\link[bayesplot]{color_scheme_set}} to change the color scheme of the
 #' plot.
@@ -105,7 +105,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
 
-  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints")]
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints", "theta_L")]
   dims <- dims[!sapply(dims, is.null)]
   dims <- sapply(dims, prod)
   dims <- dims[dims > 0]
@@ -115,6 +115,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     dims <- append(dims, values = vals, after = mark)
     dims <- dims[-mark]
   }
+  names(dims)[which(names(dims) == "theta_L")] <- "Sigma"
   batches <- dims
   params_batch <- names(dims)
   num_batches <- length(batches)
@@ -190,7 +191,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   ggplot(plotdata, aes_string(x = "x", y = "y")) +
     geom_segment(
       aes_string(x = "0", xend = "x", y = "y", yend = "y"),
-      color = scheme[["mid"]], 
+      color = scheme[["mid"]],
       size = rel(1)
     ) +
     geom_point(
@@ -202,6 +203,6 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     scale_x_continuous(limits = c(0, upper_lim), expand = c(0, 0)) +
     xlab(expression("Absolute " * z[theta] * " Statistics")) +
     theme_default() +
-    yaxis_title(FALSE) + 
+    yaxis_title(FALSE) +
     grid_lines(color = "gray", size = 0.1)
 }
