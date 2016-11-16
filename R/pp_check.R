@@ -66,9 +66,6 @@
 #' 
 #' @return \code{pp_check} returns a ggplot object that can be further
 #'   customized using the \pkg{ggplot2} package.
-#'   
-#'   \code{available_ppcs} returns a character vector containing the names of
-#'   the currently available PPC functions.
 #' 
 #' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the 
 #'   proportion of 'successes' rather than the raw count. Also for binomial 
@@ -169,7 +166,7 @@ pp_check.stanreg <-
     }
     
     plotfun_name <- .ppc_function_name(plotfun)
-    plotfun <- match.fun(plotfun_name)
+    plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), mode = "function")
     is_binomial_model <- is_binomial_ppc(object)
     y_yrep <-
       .ppc_y_and_yrep(
@@ -264,29 +261,29 @@ is_binomial_ppc <- function(object) {
   if (!identical(substr(fun, 1, 4), "ppc_"))
     fun <- paste0("ppc_", fun)
   
-  if (!fun %in% available_ppcs())
+  if (!fun %in% bayesplot::available_ppc())
     stop(
       fun, "is not a valid PPC function name.",  
-      " Use bayesplot::available_ppcs() for a list of available PPC functions."
+      " Use bayesplot::available_ppc() for a list of available PPC functions."
     )
   
   return(fun)
 }
 
 
-# @param fun string returned by .ppc_function_name
-.ppc_function <- function(fun = character()) {
-  fun <- try(match.fun(fun), silent = TRUE)
-  if (!inherits(fun, "try-error"))
-    return(fun)
-  
-  stop(
-    "PPC function ",  fun, " not found. ",
-    "A valid function is any function from the ",
-    "'bayesplot' package beginning with the prefix 'ppc_'.",
-    call. = FALSE
-  )
-}
+# # @param fun string returned by .ppc_function_name
+# .ppc_function <- function(fun = character()) {
+#   fun <- try(match.fun(fun), silent = TRUE)
+#   if (!inherits(fun, "try-error"))
+#     return(fun)
+#   
+#   stop(
+#     "PPC function ",  fun, " not found. ",
+#     "A valid function is any function from the ",
+#     "'bayesplot' package beginning with the prefix 'ppc_'.",
+#     call. = FALSE
+#   )
+# }
 
 # prepare all arguments to pass to bayesplot function
 # @param object user's object
