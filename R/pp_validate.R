@@ -103,7 +103,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
   
-  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints")]
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints", "theta_L")]
   dims <- dims[!sapply(dims, is.null)]
   dims <- sapply(dims, prod)
   dims <- dims[dims > 0]
@@ -113,6 +113,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     dims <- append(dims, values = vals, after = mark)
     dims <- dims[-mark]
   }
+  names(dims)[which(names(dims) == "theta_L")] <- "Sigma"
   batches <- dims
   params_batch <- names(dims)
   num_batches <- length(batches)
