@@ -446,8 +446,10 @@ generated quantities {
   }
   
   {
-    real yrep; // for the beta_rng underflow issue
+    real nan_count; // for the beta_rng underflow issue
+    real yrep; // pick up value to test for the beta_rng underflow issue
     #include "make_eta.stan" // defines eta
+    nan_count = 0;
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
@@ -504,20 +506,24 @@ generated quantities {
       eta = linkinv_beta(eta, link);
       eta_z = linkinv_beta_z(eta_z, link_phi);
       for (n in 1:N) {
-        if (link_phi == 3) { // workaround beta_rng underflow issue
-          yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
+        yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
           if (is_nan(yrep) == 1) {
-            // print("Warning: beta_rng() generated a value that is NaN. Generating from bernoulli_rng(0.5) instead.");
-            // yrep = bernoulli_rng(0.5);
-            reject("beta_rng generated a value that is NaN");
+            mean_PPD = mean_PPD;
+            nan_count = nan_count + 1;
           }
-          mean_PPD = mean_PPD + yrep;
-        }
-        else {
-           mean_PPD = mean_PPD + beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
-        }
+          else if (is_nan(yrep) == 0) {
+            mean_PPD = mean_PPD + yrep; 
+          }
+          else {
+            print("something went wrong");
+          }
       }
     }
-    mean_PPD = mean_PPD / N;
+    if (family == 4 && link_phi > 0) {
+      mean_PPD = mean_PPD / (N - nan_count);
+    }
+    else {
+      mean_PPD = mean_PPD / N;
+    }
   }
 }
