@@ -4,10 +4,10 @@ r: devel
 cache: packages
 
 r_github_packages:
-  - HenrikBengtsson/matrixStats@develop
-  - jimhester/covr
   - stan-dev/rstantools
   - stan-dev/bayesplot
+  - HenrikBengtsson/matrixStats@develop
+  - jimhester/covr
 
 env:
   matrix: 
