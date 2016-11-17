@@ -59,6 +59,9 @@
 #'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit} function, 
 #'   but it is also possible to call the latter directly.
 #'   
+#'   Note that since the \code{sqrt} link function is known to be unstable, it is
+#'   advisable to specify a different link function (or none at all).
+#'   
 #' @seealso The various vignettes for \code{stan_betareg}.
 #' 
 #' @examples 

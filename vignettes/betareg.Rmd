@@ -1,6 +1,6 @@
 ---
 title: "Modeling Rates/Proportions using Beta Regression with rstanarm"
-author: "Imad Ali and ..."
+author: "Imad Ali and ... Friends"
 date: "`r Sys.Date()`"
 output: 
   html_vignette: 
@@ -90,7 +90,7 @@ which is apparent in the identification of the likelihood above.
 The data simulated below uses the logistic link function on the first set of regressors
 and the log link function on the second set of regressors. 
 
-```{r simulated-data, fig.height=5}
+```{r simulated-data, fig.width=6}
 dat <- list()
 dat$eta <- c(1, -0.2)
 dat$gamma <- c(1.8, 0.4)
@@ -106,7 +106,7 @@ hist(dat$y, col = "darkgrey", border = F, main = "Distribution of Outcome Variab
 ```
 
 The model can be fit by calling `stan_betareg`, using the appropriate link functions.
-```{r simulated-fit, results = "hide"}
+```{r simulated-fit, results = "hide", cache=TRUE}
 library(rstanarm)
 fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")
 fit2 <- stan_betareg(y ~ x, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")
@@ -119,7 +119,7 @@ round(coef(fit1), 2)
 round(coef(fit2), 2)
 ```
 
-The ususal posterior analyses are available in **rstanarm**.
+The usual posterior analyses are available in **rstanarm**.
 The plots below illustrate simulated values of the outcome variable. The incorrect
 model noticeably fails to capture the top of the distribution consistently in comparison
 to the true model.
@@ -185,6 +185,9 @@ compare(gas_loo1, gas_loo2)
 
 Additionally, evaluating the expected log predictive distribution using `loo`
 reveals that the second of the two models is preferred.
+
+Note that the `sqrt` link function (applied to the second set of regressors) is known to be unstable, so it
+is advised to specify a different link function or to model the dispersion parameter as a constant. 
 
 # References
 
