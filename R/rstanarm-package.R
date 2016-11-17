@@ -170,8 +170,9 @@
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
-#'   The \code{\link{plot}} and \code{\link{pp_check}} methods for the various
-#'   plots that can be used to explore and check fitted models.
+#'   The custom \code{\link[=plot.stanreg]{plot}} and \code{\link{pp_check}}
+#'   methods for the various plots that can be used to explore and check fitted
+#'   models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
 #'   by \pkg{rstanarm} for model fitting.
