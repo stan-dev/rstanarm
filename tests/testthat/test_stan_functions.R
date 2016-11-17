@@ -156,8 +156,7 @@ test_that("linkinv_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
     linkinv <- gaussian(link = links[i])$linkinv
-    expect_true(all.equal(if (i == 2) eta else linkinv(eta), 
-                          linkinv_gauss(eta, i)), info = links[i])
+    expect_true(all.equal(linkinv(eta), linkinv_gauss(eta, i)), info = links[i])
   }
 })
 context("Gaussian")
@@ -165,12 +164,8 @@ test_that("pw_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
     linkinv <- gaussian(link = links[i])$linkinv
-    if (i == 2)
-      expect_true(all.equal(dnorm(0, mean = eta, log = TRUE),
-                            pw_gauss(rep(1,N), eta, 1, i)), info = links[i])
-    else 
-      expect_true(all.equal(dnorm(0, mean = linkinv(eta), log = TRUE),
-                            pw_gauss(rep(0,N), eta, 1, i)), info = links[i])
+    expect_true(all.equal(dnorm(0, mean = linkinv(eta), log = TRUE),
+                          pw_gauss(rep(0,N), eta, 1, i)), info = links[i])
   }
 })
 
@@ -367,7 +362,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Lind <- group$Lind
     theta <- group$theta
     
-    group <- rstanarm:::pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
+    group <- rstanarm:::pad_reTrms(group$Ztlist, cnms = group$cnms, 
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)

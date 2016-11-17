@@ -7,7 +7,9 @@
 #'   to \code{\link{prior_options}} is left at its default and recommended value
 #'   of \code{TRUE}, then the scale(s) of \code{prior} may be modified
 #'   internally based on the scales of the predictors, as in the \pkg{arm}
-#'   package. See \code{\link{priors}} for details.)
+#'   package. See \code{\link{priors}} for details on the rescaling and 
+#'   \code{\link{prior_summary}} for a summary of the priors used for a
+#'   particular model.)
 #' @param prior_intercept The prior distribution for the intercept. 
 #'   \code{prior_intercept} can be a call to \code{normal}, \code{student_t} or 
 #'   \code{cauchy}. See \code{\link{priors}} for details. To to omit a prior 

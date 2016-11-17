@@ -443,7 +443,7 @@ generated quantities {
   if (has_intercept_z == 1) { 
     omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
   }
-  
+
   {
     real nan_count; // for the beta_rng underflow issue
     real yrep; // pick up value to test for the beta_rng underflow issue

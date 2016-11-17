@@ -80,7 +80,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- 
     mc$prior_covariance <- mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
   result <- suppressWarnings(eval(mc, parent.frame(1L)))
-  group <- getME(result$mer, c("Zt", "cnms", "flist"))
+  group <- getME(result$mer, c("Ztlist", "cnms", "flist", "Zt"))
   glmod <- getME(result$mer, c("X", "y"))               
   X <- glmod$X
   y <- glmod$y
@@ -110,12 +110,10 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
   
-  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
-                  flist = group$flist)$Z
+  Z <- pad_reTrms(group$Ztlist, cnms = group$cnms, flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               prior.info = get_prior_info(call, formals()), 
                y = y, data, call, algorithm, glmod) 
   out <- stanreg(fit)
   # FIXME: replace guts of gam with point estimates from stanfit
