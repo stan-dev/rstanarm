@@ -96,6 +96,12 @@ test_that("pp_check throws error if 'test' arg is bad", {
   expect_error(pp_check(fit, check = "test", test = c("mean", "sd", "var")),
                regexp = "length")
 })
+test_that("pp_check throws error if plotfun not found", {
+  expect_error(pp_check(fit, plotfun = "9999"), 
+               "not a valid PPC function name")
+  expect_error(pp_check(fit, plotfun = "mcmc_hist"), 
+               "use the 'plot' method")
+})
 test_that("pp_check throws error if 'group' variable not found", {
   expect_error(pp_check(fit, plotfun = "stat_grouped", group = "herd2"), 
                "not found in model frame")
@@ -104,7 +110,6 @@ test_that("pp_check throws error for optimizing", {
   fito <- SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
-
 
 # test warnings ----------------------------------------------------------
 test_that("pp_check throws warning if 'nreps' ignored ", {

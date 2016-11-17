@@ -45,6 +45,15 @@ test_that("plot.stanreg errors if chains = 1 but needs multiple", {
   }
 })
 
+test_that("other plot.stanreg errors thrown correctly", {
+  expect_error(plot(fit, plotfun = "9999"), 
+               "not a valid MCMC function name")
+  expect_error(plot(fit, plotfun = "ppc_hist"), 
+               "use the 'pp_check' method")
+  expect_error(plot(fit, plotfun = "stan_diag"), 
+               "help('NUTS', 'bayesplot')", fixed = TRUE)
+})
+
 test_that("plot.stanreg returns correct object", {
   # ggplot objects
   ggplot_object_plots <- c(
@@ -54,12 +63,14 @@ test_that("plot.stanreg returns correct object", {
     "trace", "trace_highlight",
     "violin", 
     "rhat", "rhat_hist", 
-    "neff", "neff_hist"
+    "neff", "neff_hist", "ess",
+    "acf", "acf_bar", "ac"
   )
   for (f in ggplot_object_plots)
     expect_gg(plot(fit, f))
   
   # requires exactly 2 parameters
+  expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
   expect_gg(plot(fit, "scatter", pars = c("period2", "period3")))
 })
 

@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+#
 #' Plot method for stanreg objects
 #'
 #' The \code{plot} method for \link{stanreg-objects} provides a convenient 
-#' interface to the plotting functionality for MCMC draws in our
-#' \pkg{\link{bayesplot}} package. It is also straightforward to use the
-#' functions from the \pkg{bayesplot} package directly rather than via the
-#' \code{plot.stanreg} method. Examples of both methods of plotting are given
+#' interface to the \link[bayesplot]{MCMC} module in the \pkg{\link{bayesplot}} 
+#' package for plotting MCMC draws and diagnostics. It is also straightforward 
+#' to use the functions from the \pkg{bayesplot} package directly rather than 
+#' via the \code{plot} method. Examples of both methods of plotting are given
 #' below.
 #'
 #' @method plot stanreg
@@ -30,18 +30,13 @@
 #' @template args-stanreg-object
 #' @template args-pars
 #' @template args-regex-pars
-#' @param plotfun A character string naming the \pkg{bayesplot} plotting
-#'   function to apply to the stanreg object. See \link[bayesplot]{MCMC-overview}
-#'   for the available plots. Also see the Examples section below.
-#'
-#'   \code{plotfun} can be either the full name of a \pkg{bayesplot} plotting 
-#'   function (e.g. \code{"mcmc_hist"}) or can be abbreviated to the part of the
-#'   name following the \code{"mcmc_"} prefix (e.g. \code{"hist"}). The default 
-#'   plot is \code{\link[bayesplot]{mcmc_intervals}}, which shows intervals and 
-#'   point estimates for all model parameters. (\strong{Note}: to use 
-#'   \pkg{bayesplot} plotting functions starting with the prefix \code{"ppc_"}, 
-#'   which are for posterior predictive checks, see
-#'   \code{\link[=pp_check.stanreg]{pp_check}}.)
+#' @param plotfun A character string naming the \pkg{bayesplot} 
+#'   \link[bayesplot]{MCMC} function to use. The default is to call
+#'   \code{\link[bayesplot]{mcmc_intervals}}. \code{plotfun} can be specified
+#'   either as the full name of a \pkg{bayesplot} plotting function (e.g.
+#'   \code{"mcmc_hist"}) or can be abbreviated to the part of the name following
+#'   the \code{"mcmc_"} prefix (e.g. \code{"hist"}). To get the names of all
+#'   available MCMC functions see \code{\link[bayesplot]{available_mcmc}}.
 #'
 #' @param ... Additional arguments to pass to \code{plotfun} for customizing the
 #'   plot. These are described on the help pages for the individual plotting 
@@ -53,11 +48,16 @@
 #'   \pkg{ggplot2} package, or an object created from multiple ggplot objects
 #'   (e.g. a gtable object created by \code{\link[gridExtra]{arrangeGrob}}).
 #'
-#' @seealso \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for details
-#'   on the individual plotting functions.
+#' @seealso 
+#'   The vignettes in the \pkg{bayesplot} package for many examples.
+#'   
+#'   \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to the 
+#'   documentation for all the available plotting functions.
 #'   
 #'   \code{\link[bayesplot]{color_scheme_set}} (\pkg{bayesplot}) to change the
 #'   color scheme used for plotting.
+#'   
+#'   \code{\link{pp_check}} for graphical posterior predictive checks.
 #'
 #' @examples
 #' # Use rstanarm example model
@@ -74,6 +74,7 @@
 #' p + ggplot2::ggtitle("Posterior medians \n with 50% and 90% intervals")
 #'
 #' # Shaded areas under densities
+#' bayesplot::color_scheme_set("brightblue")
 #' plot(fit, "areas", regex_pars = "period",
 #'      prob = 0.5, prob_outer = 0.9)
 #'
@@ -104,14 +105,14 @@
 #' ####################################################
 #' ### Rhat, effective sample size, autocorrelation ###
 #' ####################################################
-#' bayesplot::color_scheme_set("blue")
+#' bayesplot::color_scheme_set("red")
 #' 
 #' # rhat
 #' plot(fit, "rhat")
 #' plot(fit, "rhat_hist")
 #' 
 #' # ratio of effective sample size to total posterior sample size
-#' plot(fit, "neff") + bayesplot::move_legend("right")
+#' plot(fit, "neff")
 #' plot(fit, "neff_hist")
 #' 
 #' # autocorrelation by chain
@@ -156,32 +157,15 @@
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")
 #'
-#' @importFrom rstan stan_ac stan_diag stan_mcse stan_par quietgg
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
                          regex_pars = NULL, ...) {
-  f <- set_plotting_fun(plotfun)
+  fun <- set_plotting_fun(plotfun)
   args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
-  do.call(f, args)
+  do.call(fun, args)
 }
 
-# Check for valid parameters
-# @param x stanreg object
-# @param pars user specified character vector
-# check_plotting_pars <- function(x, pars, plotfun = character()) {
-#   if (used.optimizing(x)) {
-#     allpars <- c("alpha", "beta", rownames(x$stan_summary))
-#   } else {
-#     sim <- x$stanfit@sim
-#     allpars <- c(sim$pars_oi, sim$fnames_oi)
-#   }
-#   m <- which(match(pars, allpars, nomatch = 0) == 0)
-#   if (length(m) > 0)
-#     stop("No parameter ", paste(pars[m], collapse = ', '),
-#          call. = FALSE)
-#   return(unique(pars))
-# }
 
 # Prepare argument list to pass to plotting function
 # @param x stanreg object
@@ -197,11 +181,10 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
     validate_plotfun_for_opt_or_vb(plotfun)
 
   if (grepl("_nuts", plotfun, fixed = TRUE)) {
-    return(list(
-      x = bayesplot::nuts_params(x),
-      lp = bayesplot::log_posterior(x),
-      ...
-    ))
+    nuts_stuff <- list(x = bayesplot::nuts_params(x), ...)
+    if (!grepl("_energy", plotfun))
+      nuts_stuff[["lp"]] <- bayesplot::log_posterior(x)
+    return(nuts_stuff)
   }
   if (grepl("_rhat", plotfun, fixed = TRUE)) {
     rhat <- bayesplot::rhat(x, pars = pars, regex_pars = regex_pars)
@@ -229,6 +212,7 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
 }
 
 mcmc_function_name <- function(fun) {
+  # to keep backwards compatibility convert old function names
   if (fun == "scat") {
     fun <- "scatter"
   } else if (fun == "ess") {
@@ -253,6 +237,12 @@ mcmc_function_name <- function(fun) {
 
   if (!identical(substr(fun, 1, 5), "mcmc_"))
     fun <- paste0("mcmc_", fun)
+  
+  if (!fun %in% bayesplot::available_mcmc())
+    stop(
+      fun, " is not a valid MCMC function name.",  
+      " Use bayesplot::available_mcmc() for a list of available MCMC functions."
+    )
 
   return(fun)
 }
@@ -283,7 +273,8 @@ set_plotting_fun <- function(plotfun = NULL) {
     stop("'plotfun' should be a string.", call. = FALSE)
 
   plotfun <- mcmc_function_name(plotfun)
-  fun <- try(match.fun(plotfun), silent = TRUE)
+  fun <- try(get(plotfun, pos = asNamespace("bayesplot"), mode = "function"), 
+             silent = TRUE)
   if (!inherits(fun, "try-error"))
     return(fun)
   
@@ -295,12 +286,33 @@ set_plotting_fun <- function(plotfun = NULL) {
   )
 }
 
+# check if plotfun is ok to use with vb or optimization
 validate_plotfun_for_opt_or_vb <- function(plotfun) {
   plotfun <- mcmc_function_name(plotfun)
   if (needs_chains(plotfun) || 
       grepl("rhat_|neff_|nuts_", plotfun))
     STOP_sampling_only(plotfun)
 }
+
+# Check for valid parameters
+# @param x stanreg object
+# @param pars user specified character vector
+# check_plotting_pars <- function(x, pars, plotfun = character()) {
+#   if (used.optimizing(x)) {
+#     allpars <- c("alpha", "beta", rownames(x$stan_summary))
+#   } else {
+#     sim <- x$stanfit@sim
+#     allpars <- c(sim$pars_oi, sim$fnames_oi)
+#   }
+#   m <- which(match(pars, allpars, nomatch = 0) == 0)
+#   if (length(m) > 0)
+#     stop("No parameter ", paste(pars[m], collapse = ', '),
+#          call. = FALSE)
+#   return(unique(pars))
+# }
+
+
+
 
 #' Pairs method for stanreg objects
 #'
@@ -334,43 +346,3 @@ pairs.stanreg <- function(x, ...) {
 
   pairs(x$stanfit, ...)
 }
-
-#' Plots for rstanarm models
-#'
-#' Models fit using \code{algorithm='sampling'}, \code{"meanfield"}, or
-#' \code{"fullrank"} are compatible with a variety of plotting functions from
-#' the \pkg{rstan} package. Each function returns at least one
-#' \code{\link[ggplot2]{ggplot}} object that can be customized further using the
-#' \pkg{ggplot2} package. The plotting functions described here can be called
-#' using the \code{\link[=plot.stanreg]{plot method}} for stanreg objects
-#' without loading the \pkg{rstan} package. For example usage see
-#' \code{\link{plot.stanreg}}.
-#'
-#' @name rstanarm-plots
-#'
-#' @section Plotting functions:
-#'
-#' \describe{
-#' \item{Posterior intervals and point
-#' estimates}{\code{\link[rstan]{stan_plot}}}
-#' \item{Traceplots}{\code{\link[rstan]{stan_trace}}}
-#' \item{Histograms}{\code{\link[rstan]{stan_hist}}}
-#' \item{Kernel density estimates}{\code{\link[rstan]{stan_dens}}}
-#' \item{Scatterplots}{\code{\link[rstan]{stan_scat}}}
-#' \item{Diagnostics for Hamiltonian Monte Carlo and the No-U-Turn
-#' Sampler}{\code{\link[rstan]{stan_diag}}}
-#' \item{Rhat}{\code{\link[rstan]{stan_rhat}}}
-#' \item{Ratio of effective sample size to total posterior sample
-#' size}{\code{\link[rstan]{stan_ess}}}
-#' \item{Ratio of Monte Carlo standard error to posterior standard
-#' deviation}{\code{\link[rstan]{stan_mcse}}}
-#' \item{Autocorrelation}{\code{\link[rstan]{stan_ac}}}
-#' }
-#'
-#' @seealso \code{\link{plot.stanreg}} for how to call the \code{plot} method,
-#'   \code{\link{shinystan}} for interactive model exploration,
-#'   \code{\link{pp_check}} for graphical posterior predicive checking.
-#'
-#' @examples
-#' # See examples at help("plot.stanreg", package = "rstanarm")
-NULL

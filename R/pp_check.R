@@ -17,15 +17,15 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' Interface to the PPC (posterior predictive checking) module in the 
-#' \pkg{\link{bayesplot}} package, providing various plots comparing the 
+#' Interface to the \link[bayesplot]{PPC} (posterior predictive checking) module
+#' in the \pkg{\link{bayesplot}} package, providing various plots comparing the 
 #' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep} 
 #' from the posterior predictive distribution. The \code{pp_check} method for 
 #' \link{stanreg-objects} prepares the arguments required for the specified 
-#' \pkg{bayesplot} PPC plotting function and then calls that function. It is
+#' \pkg{bayesplot} PPC plotting function and then calls that function. It is 
 #' also straightforward to use the functions from the \pkg{bayesplot} package 
-#' directly rather than via the \code{pp_check.stanreg} method. Examples of both
-#' are given below.
+#' directly rather than via the \code{pp_check} method. Examples of both are
+#' given below.
 #' 
 #' @export
 #' @export pp_check
@@ -74,6 +74,9 @@
 #' 
 #' @seealso 
 #'   The vignettes in the \pkg{bayesplot} package for many examples.
+#'   
+#'   \code{\link[bayesplot]{PPC-overview}} (\pkg{bayesplot}) for links to the 
+#'   documentation for all the available plotting functions.
 #'   
 #'   \code{\link{posterior_predict}} for drawing from the posterior 
 #'   predictive distribution. Examples of posterior predictive checks can also 
@@ -263,7 +266,7 @@ is_binomial_ppc <- function(object) {
   
   if (!fun %in% bayesplot::available_ppc())
     stop(
-      fun, "is not a valid PPC function name.",  
+      fun, " is not a valid PPC function name.",  
       " Use bayesplot::available_ppc() for a list of available PPC functions."
     )
   
