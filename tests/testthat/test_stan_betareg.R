@@ -101,43 +101,36 @@ test_that("stan_betareg returns expected result when modeling x and z", {
   }
 })
 
-# need to fix sqrt issues in continuous.stan otherwise tests fail
+# testthat code for sqrt link ... not stable
 # context("stan_betareg (x and z using link.phi = 'sqrt')")
 # test_that("stan_betareg returns expected result when modeling x and z using link.phi = 'sqrt'", {
 #   # for (i in 1:length(link1)) {
-#   for (i in 1:1) {
+#   for (i in 1:length(link1[1])) {  # FIXME!
 #     dat <- list()
-#     dat$N <- 200
+#     dat$N <- 1000
 #     dat$x <- rnorm(dat$N, 2, 1)
-#     dat$z <- rnorm(dat$N, 2, 1)
-#     if (link1[i] == "log") {
-#       dat$mu <- binomial(link = "logit")$linkinv(0.5 + 0.2*dat$x)
-#       dat$phi <- poisson(link = "sqrt")$linkinv(1.5 + 0.4*dat$z)
-#     }
-#     else if (link1[i] == "cloglog") {
-#       dat$mu <- binomial(link = "cloglog")$linkinv(-0.7 - 0.5*dat$x)
-#       dat$phi <- poisson(link = "sqrt")$linkinv(5 + 2*dat$z)
-#     }
-#     else if (link1[i] == "loglog") {
-#       dat$mu <- 1 - binomial(link = "logit")$linkinv(-(-0.7 - 0.5*dat$x))
-#       dat$phi <- poisson(link = "sqrt")$linkinv(5 + 2*dat$z)
-#     }
-#     else {
-#       dat$mu <- binomial(link = link1[i])$linkinv(-0.7 - 0.5*dat$x)
-#       dat$phi <- poisson(link = "sqrt")$linkinv(5 + 2*dat$z)
-#     }
+#     # dat$z <- rnorm(dat$N, 2, 1)
+#     dat$z <- rep(1, dat$N)
+#     dat$mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
+#     dat$phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
 #     dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
 #     dat <- data.frame(dat$y, dat$x, dat$z)
 #     colnames(dat) <- c("y", "x", "z")
 # 
 #     cat("... using link =", link1[i], "and link.phi =", link2[3], "\n")
-#     fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[3], seed = SEED, QR = TRUE,
+#     fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], seed = SEED, QR = TRUE,
 #                         prior = NULL, prior_intercept = NULL,
 #                         prior_z = NULL, prior_intercept_z = NULL,
-#                         data = dat, algorithm = "sampling", iter = 2000, cores = 4)
+#                         data = dat, algorithm = "sampling", iter = 500, cores = 4, seed = SEED)
+#     # fit <- stan_betareg(y ~ x | z, data = dat, link = link1[i], link.phi = "sqrt",
+#     #                                algorithm = "optimizing", iter = 10000,
+#     #                     prior = NULL, prior_intercept = NULL,
+#     #                     prior_z = NULL, prior_intercept_z = NULL)
 #     expect_stanreg(fit)
 #     val <- coef(fit)
-#     ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[3], data = dat))
-#     expect_equal(val, ans, tol = 0.1, info = c(link1[i], link2[3]))
+#     print(val)
+#     ans <- coef(betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], data = dat))
+#     print(ans)
+#     expect_equal(val, ans, tol = 0.5, info = c(link1[i], link2[3]))
 #   }
 # })

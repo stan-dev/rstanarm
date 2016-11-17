@@ -435,7 +435,6 @@ generated quantities {
   real alpha[has_intercept];
   real omega_int[has_intercept_z];
   real mean_PPD;
-  vector[N] eta_z;
   mean_PPD = 0;
   
   if (has_intercept == 1)
@@ -448,6 +447,7 @@ generated quantities {
   {
     real nan_count; // for the beta_rng underflow issue
     real yrep; // pick up value to test for the beta_rng underflow issue
+    vector[N] eta_z;
     #include "make_eta.stan" // defines eta
     nan_count = 0;
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
