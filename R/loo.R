@@ -290,9 +290,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     stop("No Pareto k estimates found in 'loo' object.")
   
   J <- length(obs)
-  d <- x$data
+  d <- model.frame(x)
   lls <- vector("list", J)
-  
   message(
     J, " problematic observation(s) found.", 
     "\nModel will be refit ", J, " times."
@@ -307,8 +306,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-    fit_j <- suppressWarnings(update(x, data = d[-omitted, ], refresh = 0))
-    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, ])
+    fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], refresh = 0))
+    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, , drop=FALSE])
   }
   
   # replace parts of loo_x

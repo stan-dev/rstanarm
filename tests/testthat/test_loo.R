@@ -190,6 +190,18 @@ test_that("loo with k_threshold works", {
                 "Elapsed Time")
 })
 
+test_that("loo with k_threshold works for edge case(s)", {
+  # without 'data' argument
+  y <- mtcars$mpg
+  fit <- SW(stan_glm(y ~ 1, refresh = 0, iter = 200))
+  expect_message(
+    res <- loo(fit, k_threshold = 0.1), # low k_threshold to make sure reloo is triggered
+    "problematic observation\\(s\\) found"
+  )
+  expect_s3_class(res, "loo")
+})
+
+
 
 # kfold -------------------------------------------------------------------
 context("kfold")
