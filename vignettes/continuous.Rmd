@@ -118,7 +118,8 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
 data(kidiq)
-post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, family = gaussian(link = "identity"), 
+post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
+                  family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
@@ -256,15 +257,15 @@ The `pp_check` function generates a variety of plots comparing the observed
 outcome $y$ to simulated datasets $y^{\rm rep}$ from the posterior predictive 
 distribution using the same observations of the predictors $X$ as we used to fit
 the model. He we show a few of the possible displays. The documentation at
-`help("pp_check", package = "rstanarm")` has details on all of the `pp_check`
-options.
+`help("pp_check.stanreg", package = "rstanarm")` has details on all of the
+`pp_check` options.
 
 First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
 ```{r, continuous-kidiq-pp_check1, fig.width=5}
-pp_check(post4, check = "distributions", overlay = FALSE, nreps = 5)
+pp_check(post4, plotfun = "hist", nreps = 5)
 ```
 
 The idea is that if the model is a good fit to the data we should be able to 
@@ -274,7 +275,7 @@ rep}$ we generate should be plausible.
 
 Another useful plot we can make using `pp_check` shows the distribution of a test
 quantity $T(y^{\rm rep})$ compared to $T(y)$, the value of the quantity in the 
-observed data. When the argument `check = "test"` is specified, `pp_check` will 
+observed data. When the argument `plotfun = "stat"` is specified, `pp_check` will 
 simulate $S$ datasets $y_1^{\rm rep}, \dots, y_S^{\rm rep}$, each containing $N$
 observations. Here $S$ is the size of the posterior sample (the number of MCMC 
 draws from the posterior distribution of the model parameters) and $N$ is the 
@@ -284,13 +285,14 @@ we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
 ```{r, continuous-kidiq-pp_check2, fig.height = 3}
-pp_check(post4, check = "test", test = "mean")
+pp_check(post4, plotfun = "stat", stat = "mean")
 ```
 
-We can also specify two test quantities and look at a scatterplot:
+Using `plotfun="stat_2d"` we can also specify two test quantities and look at a
+scatterplot:
 
 ```{r, continuous-kidiq-pp_check3, fig.height=3}
-pp_check(post4, check = "test", test = c("mean", "sd"))
+pp_check(post4, plotfun = "stat_2d", stat = c("mean", "sd"))
 ```
 
 ### Generating predictions

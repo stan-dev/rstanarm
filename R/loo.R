@@ -95,6 +95,8 @@
 #' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
 #' \eqn{K}-fold CV.
 #' 
+#' The various \pkg{rstanarm} vignettes for more examples of using \code{loo}.
+#' 
 #' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
 #' for details on the computations implemented by the \pkg{loo} package and the 
 #' interpretation of the Pareto \eqn{k} estimates displayed when using the 
@@ -105,11 +107,8 @@
 #'   
 #' @examples 
 #' \donttest{
-#' SEED <- 42024
-#' set.seed(SEED)
-#' 
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, seed = SEED)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
 #' # compare on LOOIC
 #' (loo1 <- loo(fit1, cores = 2))
@@ -121,27 +120,7 @@
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare(kfold1, kfold2)
-#' 
-#' # dataset description at help("lalonde", package = "arm")
-#' data(lalonde, package = "arm") 
-#' t7 <- student_t(df = 7) # prior for coefficients
-#' 
-#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
-#'    nodegr + u74 + u75
-#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
-#'                      prior = t7, cores = 2, seed = SEED)
-#'                  
-#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
-#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
-#' lalonde2 <- update(lalonde1, formula = f2)
-#' 
-#' # compare on LOOIC
-#' (loo_lalonde1 <- loo(lalonde1, cores = 2))
-#' (loo_lalonde2 <- loo(lalonde2, cores = 2))
-#' plot(loo_lalonde2, label_points = TRUE)
-#' compare(loo_lalonde1, loo_lalonde2)
 #' }
-#' 
 #' @importFrom loo loo loo.function compare
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
@@ -238,13 +217,15 @@ recommend_exact_loo <- function(reason) {
 #'   
 kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
+  stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
-  stopifnot(!is.null(x$data), K > 1, nrow(x$data) >= K)
+  if (model_has_weights(x))
+    stop("kfold is not currently available for models fit using weights.")
   
-  d <- x$data
+  d <- kfold_and_reloo_data(x)
   N <- nrow(d)
-  wts <- x[["weights"]]
+  
   perm <- sample.int(N)
   idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
   bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
@@ -253,13 +234,13 @@ kfold <- function(x, K = 10) {
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
     omitted <- which(bin == k)
-    fit_k <- update(
+    fit_k <- update.stanreg(
       object = x,
-      data = d[-omitted,],
-      weights = if (length(wts)) wts[-omitted] else NULL,
+      data = d[-omitted,, drop=FALSE],
+      weights = NULL,
       refresh = 0
     )
-    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, ])
+    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, , drop=FALSE])
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -313,9 +294,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     stop("No Pareto k estimates found in 'loo' object.")
   
   J <- length(obs)
-  d <- x$data
+  d <- kfold_and_reloo_data(x)
   lls <- vector("list", J)
-  
   message(
     J, " problematic observation(s) found.", 
     "\nModel will be refit ", J, " times."
@@ -330,8 +310,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-    fit_j <- suppressWarnings(update(x, data = d[-omitted, ], refresh = 0))
-    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, ])
+    fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], refresh = 0))
+    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, , drop=FALSE])
   }
   
   # replace parts of loo_x
@@ -352,6 +332,24 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
 log_mean_exp <- function(x) {
   max_x <- max(x)
   max_x + log(sum(exp(x - max_x))) - log(length(x))
+}
+
+# Get correct data to use for kfold and reloo 
+#
+# If 'data' arg wasn't originally specified then use model.frame,
+# otherwise only keep variables in data that appear in the model formula.
+# (not using model.frame for all models because of binomial models with matrix
+# outcome)
+# 
+# @param x stanreg object
+# @return A data frame
+kfold_and_reloo_data <- function(x) {
+  dat <- x[["data"]]
+  if (is.environment(dat)) 
+    return(model.frame(x))
+  
+  d <- get_all_vars(formula(x), dat)
+  na.omit(d)
 }
 
 
@@ -446,11 +444,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
     }
     
   }
-  
-  data$offset <- object$offset
-  if (!all(object$weights == 1)) 
+
+  data$offset <- if (has_newdata) offset else object$offset
+  if (!all(object$weights == 1))
     data$weights <- object$weights
-  
+
   if (is.mer(object)) {
     b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
     if (has_newdata) {

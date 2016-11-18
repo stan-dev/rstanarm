@@ -27,6 +27,7 @@
 #'   extract_sparse_parts get_posterior_mean stanc
 #' @import stats
 #' @import Rcpp
+#' @import bayesplot
 #' @import rstantools
 #' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
 #' @export loo waic compare
@@ -39,12 +40,12 @@
 #'   specified using the customary R modeling syntax (e.g., like that of 
 #'   \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
 #'   
-#'   The set of models supported by \pkg{rstanarm} is large (and will continue
-#'   to grow), but also limited enough so that it is possible to integrate them
+#'   The set of models supported by \pkg{rstanarm} is large (and will continue 
+#'   to grow), but also limited enough so that it is possible to integrate them 
 #'   tightly with the \code{\link{pp_check}} function for graphical posterior
 #'   predictive checks and the \code{\link{posterior_predict}} function to
 #'   easily estimate the effect of specific manipulations of predictor variables
-#'   or to predict the outcome in a training set. 
+#'   or to predict the outcome in a training set.
 #'   
 #'   The objects returned by the \pkg{rstanarm} modeling functions are called
 #'   \code{\link[=stanreg-objects]{stanreg}} objects. In addition to all of the
@@ -169,8 +170,9 @@
 #' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
 #'   
-#'   \code{\link{rstanarm-plots}} for the various plots that can be used
-#'   to explore and check fitted models.
+#'   The custom \code{\link[=plot.stanreg]{plot}} and \code{\link{pp_check}}
+#'   methods for the various plots that can be used to explore and check fitted
+#'   models.
 #'   
 #'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
 #'   by \pkg{rstanarm} for model fitting.

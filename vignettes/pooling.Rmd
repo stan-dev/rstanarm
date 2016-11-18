@@ -1262,7 +1262,7 @@ of the tests. First, here is just the plot for the no pooling model using
 the mean as the test statistic:
 
 ```{r, plot-ppc-stats-mean, fig.width=3, fig.height=2.5}
-pp_check(fit_nopool, check = "test", test = "mean")
+pp_check(fit_nopool, plotfun = "stat", stat = "mean")
 ```
 
 The `test` argument can the be the name of any R function (including your own 
@@ -1276,8 +1276,8 @@ then arrange everything in a single plot.
 ```{r, plot-ppc-stats}
 tstat_plots <- function(model, stats) {
   lapply(stats, function(stat) {
-    graph <- pp_check(model, check = "test", test = stat, 
-                      binwidth = .025, seed = SEED) # optional arguments
+    graph <- pp_check(model, plotfun = "stat", stat = stat, 
+                      seed = SEED) # optional arguments
     graph + xlab(stat) + theme(legend.position = "none")
   })
 }
@@ -1290,7 +1290,8 @@ library(gridExtra)
 grid.arrange(
   arrangeGrob(grobs = ppcs_pool, nrow = 1, left = "Pooling"), 
   arrangeGrob(grobs = ppcs_nopool, nrow = 1, left = "No Pooling"),
-  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling"))
+  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling")
+)
 ```
 
 The only worrisomely extreme value visible in the plots is the $p$-value for
@@ -1333,8 +1334,7 @@ plotting the number of successes (hits in this case) on the x-axis, `pp_check`
 will plot the proportion of successes.
 
 ```{r, plot-ppc-y-vs-yrep}
-pp_check(fit_partialpool, check = "distributions", nreps = 15, 
-         overlay = FALSE, binwidth = 0.05) +  # optional arguments
+pp_check(fit_partialpool, plotfun = "hist", nreps = 15, binwidth = 0.05) +
   ggtitle("Model: Partial Pooling")
 ```
 
@@ -1395,11 +1395,11 @@ could be made more or less informative. How, if at all, does this affect
 posterior inference?
 
 1.  What are some other test statistics that might be used to evaluate our model
-fit to data? Try some out using `pp_check(model, check="test", test = "my_test")`,
+fit to data? Try some out using `pp_check(model, plotfun="stat", stat = "my_test")`,
 where `my_test` is your function that computes the test statistic. For example,
 to check the 25% quantile you could first define a function 
 `q25 <- function(x) quantile(x, 0.25)` and then call
-`pp_check(model, check = "test", test = "q25")`.
+`pp_check(model, plotfun = "stat", stat = "q25")`.
 
 1.  Discuss the difference between batting average and on-base percentage as
 random variables.  Consider particularly the denominator (at-bat versus plate

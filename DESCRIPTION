@@ -25,7 +25,8 @@ Depends:
     Rcpp (>= 0.12.0),
     methods
 Imports:
-    ggplot2 (>= 2.0.0),
+    bayesplot,
+    ggplot2 (>= 2.2.0),
     lme4 (>= 1.1-8),
     loo (>= 0.1.6),
     Matrix,
@@ -36,7 +37,6 @@ Imports:
     stats,
     utils
 Suggests:
-    arm,
     betareg,
     gamm4,
     gridExtra,
