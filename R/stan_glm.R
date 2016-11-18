@@ -68,7 +68,7 @@
 #'                 algorithm = "fullrank") # for speed only
 #' plot(fit, ci_level = 0.5)
 #' plot(fit, ci_level = 0.5, pars = "beta")
-#' 
+#' }
 #' \donttest{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
