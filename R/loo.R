@@ -407,11 +407,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       draws$f <- object$method
     }
   }
-  
-  data$offset <- object$offset
-  if (!all(object$weights == 1)) 
+
+  data$offset <- if (has_newdata) offset else object$offset
+  if (!all(object$weights == 1))
     data$weights <- object$weights
-  
+
   if (is.mer(object)) {
     b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
     if (has_newdata) {
