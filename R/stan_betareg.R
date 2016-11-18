@@ -48,8 +48,13 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' 
-#' @param link Same as \code{\link[betareg]{betareg}}.
-#' @param link.phi Same as \code{\link[betareg]{betareg}}
+#' @param link character specification of the link function in the mean model (mu).
+#'   Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog" are supported.
+#'
+#' @param link.phi character specification of the link function in the precision model
+#'   (phi). Currently, "identity", "log", and "sqrt" are supported. Note that since the
+#'   "sqrt" link function is known to be unstable, it is advisable to specify a
+#'   different link function (or none at all).
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
 #'   \code{\link[betareg]{betareg}} but rather than performing maximum likelihood 
@@ -58,9 +63,6 @@
 #'   model adds independent priors on the coefficients of the beta regression model. The 
 #'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit} function, 
 #'   but it is also possible to call the latter directly.
-#'   
-#'   Note that since the \code{sqrt} link function is known to be unstable, it is
-#'   advisable to specify a different link function (or none at all).
 #'   
 #' @seealso The various vignettes for \code{stan_betareg}.
 #' 
