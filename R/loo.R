@@ -215,13 +215,15 @@ recommend_exact_loo <- function(reason) {
 #'   
 kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
+  stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
-  stopifnot(!is.null(x$data), K > 1, nrow(x$data) >= K)
+  if (model_has_weights(x))
+    stop("kfold is not currently available for models fit using weights.")
   
-  d <- x$data
+  d <- kfold_and_reloo_data(x)
   N <- nrow(d)
-  wts <- x[["weights"]]
+  
   perm <- sample.int(N)
   idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
   bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
@@ -230,13 +232,13 @@ kfold <- function(x, K = 10) {
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
     omitted <- which(bin == k)
-    fit_k <- update(
+    fit_k <- update.stanreg(
       object = x,
-      data = d[-omitted,],
-      weights = if (length(wts)) wts[-omitted] else NULL,
+      data = d[-omitted,, drop=FALSE],
+      weights = NULL,
       refresh = 0
     )
-    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, ])
+    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, , drop=FALSE])
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -290,7 +292,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     stop("No Pareto k estimates found in 'loo' object.")
   
   J <- length(obs)
-  d <- model.frame(x)
+  d <- kfold_and_reloo_data(x)
   lls <- vector("list", J)
   message(
     J, " problematic observation(s) found.", 
@@ -328,6 +330,24 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
 log_mean_exp <- function(x) {
   max_x <- max(x)
   max_x + log(sum(exp(x - max_x))) - log(length(x))
+}
+
+# Get correct data to use for kfold and reloo 
+#
+# If 'data' arg wasn't originally specified then use model.frame,
+# otherwise only keep variables in data that appear in the model formula.
+# (not using model.frame for all models because of binomial models with matrix
+# outcome)
+# 
+# @param x stanreg object
+# @return A data frame
+kfold_and_reloo_data <- function(x) {
+  dat <- x[["data"]]
+  if (is.environment(dat)) 
+    return(model.frame(x))
+  
+  d <- get_all_vars(formula(x), dat)
+  na.omit(d)
 }
 
 

@@ -188,6 +188,12 @@ test_that("loo with k_threshold works", {
                  "Model will be refit 10 times")
   expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
                 "Elapsed Time")
+  
+  # test that no errors from binomial model because it's trickier to get the
+  # data right internally in reloo (matrix outcome)
+  loo_x <- loo(example_model)
+  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)), 
+                 "Model will be refit 1 times")
 })
 
 test_that("loo with k_threshold works for edge case(s)", {
@@ -212,12 +218,22 @@ test_that("kfold throws error for non mcmc models", {
   expect_error(kfold(fito), "MCMC")
 })
 
-test_that("kfold throws error if K > N", {
-  expect_error(kfold(example_model, K = 1e5), ">= K")
+test_that("kfold throws error if K <= 1 or K > N", {
+  expect_error(kfold(example_model, K = 1), "K > 1", fixed = TRUE)
+  expect_error(kfold(example_model, K = 1e5), "K <= nobs(x)", fixed = TRUE)
+})
+
+test_that("kfold throws error if model has weights", {
+  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, 
+                     iter = ITER, chains = CHAINS, refresh = REFRESH,
+                     weights = runif(nrow(mtcars), 0.5, 1.5)))
+  expect_error(kfold(fit), "not currently available for models fit using weights")
 })
 
 test_that("kfold works on some examples", {
-  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, seed = 12345, refresh = 0))
+  mtcars2 <- mtcars
+  mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
+  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0))
   kf <- SW(kfold(fit_gaus, 4))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(print(kf), kf)
@@ -232,7 +248,21 @@ test_that("kfold works on some examples", {
 # helpers -----------------------------------------------------------------
 context("loo and waic helpers")
 
-# helpers -----------------------------------------------------------------
+test_that("kfold_and_reloo_data works", {
+  f <- rstanarm:::kfold_and_reloo_data
+  d <- f(example_model)
+  mf <- model.frame(example_model)
+  expect_equal(colnames(d), c("incidence", "size", "period", "herd"))
+  expect_equal(colnames(mf), c("cbind(incidence, size - incidence)", "size", "period", "herd"))
+  mf2 <- data.frame(incidence = mf[, 1][, 1], mf[, -1])
+  expect_equal(d, mf2)
+  
+  # should return model frame if 'data' arg not specified 
+  y <- rnorm(40)
+  fit <- SW(stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
+  expect_identical(f(fit), model.frame(fit))
+})
+
 test_that(".weighted works", {
   f <- rstanarm:::.weighted
   expect_equal(f(2, NULL), 2)
