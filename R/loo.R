@@ -95,6 +95,8 @@
 #' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
 #' \eqn{K}-fold CV.
 #' 
+#' The various \pkg{rstanarm} vignettes for more examples of using \code{loo}.
+#' 
 #' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
 #' for details on the computations implemented by the \pkg{loo} package and the 
 #' interpretation of the Pareto \eqn{k} estimates displayed when using the 
