@@ -101,36 +101,27 @@ test_that("stan_betareg returns expected result when modeling x and z", {
   }
 })
 
-# testthat code for sqrt link ... not stable
-# context("stan_betareg (x and z using link.phi = 'sqrt')")
-# test_that("stan_betareg returns expected result when modeling x and z using link.phi = 'sqrt'", {
-#   # for (i in 1:length(link1)) {
-#   for (i in 1:length(link1[1])) {  # FIXME!
-#     dat <- list()
-#     dat$N <- 1000
-#     dat$x <- rnorm(dat$N, 2, 1)
-#     # dat$z <- rnorm(dat$N, 2, 1)
-#     dat$z <- rep(1, dat$N)
-#     dat$mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
-#     dat$phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
-#     dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
-#     dat <- data.frame(dat$y, dat$x, dat$z)
-#     colnames(dat) <- c("y", "x", "z")
-# 
-#     cat("... using link =", link1[i], "and link.phi =", link2[3], "\n")
-#     fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], seed = SEED, QR = TRUE,
-#                         prior = NULL, prior_intercept = NULL,
-#                         prior_z = NULL, prior_intercept_z = NULL,
-#                         data = dat, algorithm = "sampling", iter = 500, cores = 4, seed = SEED)
-#     # fit <- stan_betareg(y ~ x | z, data = dat, link = link1[i], link.phi = "sqrt",
-#     #                                algorithm = "optimizing", iter = 10000,
-#     #                     prior = NULL, prior_intercept = NULL,
-#     #                     prior_z = NULL, prior_intercept_z = NULL)
-#     expect_stanreg(fit)
-#     val <- coef(fit)
-#     print(val)
-#     ans <- coef(betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], data = dat))
-#     print(ans)
-#     expect_equal(val, ans, tol = 0.5, info = c(link1[i], link2[3]))
-#   }
-# })
+# sqrt link is unstable so only testing that the model runs. 
+context("stan_betareg (x and z using link.phi = 'sqrt')")
+test_that("stan_betareg returns expected result when modeling x and z using link.phi = 'sqrt'", {
+  # for (i in 1:length(link1)) {
+  for (i in 1:length(link1)) {  # FIXME!
+    dat <- list()
+    dat$N <- 300
+    dat$x <- rnorm(dat$N, 2, 1)
+    # dat$z <- rnorm(dat$N, 2, 1)
+    dat$z <- rep(1, dat$N)
+    dat$mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
+    dat$phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
+    dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
+    dat <- data.frame(dat$y, dat$x, dat$z)
+    colnames(dat) <- c("y", "x", "z")
+
+    cat("... using link =", link1[i], "and link.phi =", link2[3], "\n")
+    fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], seed = SEED, QR = TRUE,
+                        prior = NULL, prior_intercept = NULL,
+                        prior_z = NULL, prior_intercept_z = NULL,
+                        data = dat, algorithm = "sampling", iter = 100, cores = 4, seed = SEED)
+    expect_stanreg(fit)
+  }
+})
