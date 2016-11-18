@@ -122,16 +122,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   
   # pass existence of declaration of linear predictor of the dispertion parameter
-
   Z_true <- length(grep("\\|", all.names(formula)))
-  # Z_true <- all.names(formula)[3]
-  # if (Z_true=="|") {
-  #   Z_true <- 1
-  # }
-  # else {
-  #   Z_true <- 0
-  # }
-
   
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = NULL, offset = NULL, 

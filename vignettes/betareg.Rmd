@@ -90,7 +90,7 @@ which is apparent in the identification of the likelihood above.
 The data simulated below uses the logistic link function on the first set of regressors
 and the log link function on the second set of regressors. 
 
-```{r simulated-data, fig.width=6}
+```{r simulated-data, fig.height=5}
 dat <- list()
 dat$eta <- c(1, -0.2)
 dat$gamma <- c(1.8, 0.4)
@@ -106,7 +106,7 @@ hist(dat$y, col = "darkgrey", border = F, main = "Distribution of Outcome Variab
 ```
 
 The model can be fit by calling `stan_betareg`, using the appropriate link functions.
-```{r simulated-fit, results = "hide", cache=TRUE}
+```{r simulated-fit, results = "hide"}
 library(rstanarm)
 fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")
 fit2 <- stan_betareg(y ~ x, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")

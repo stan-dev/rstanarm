@@ -28,7 +28,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   
   # lots of tedious but simple stuff including standata which is a big list to pass to data {}
   # process the prior information like stan_glm.fit() does
-  
+
   algorithm <- match.arg(algorithm)
   
   # no family argument
