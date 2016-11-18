@@ -1,6 +1,6 @@
 ---
 title: "Modeling Rates/Proportions using Beta Regression with rstanarm"
-author: "Imad Ali and ... Friends"
+author: "Imad Ali"
 date: "`r Sys.Date()`"
 output: 
   html_vignette: 
