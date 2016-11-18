@@ -69,23 +69,6 @@
 #' plot(fit, ci_level = 0.5)
 #' plot(fit, ci_level = 0.5, pars = "beta")
 #' 
-#' ### Logistic regression
-#' data(lalonde, package = "arm")
-#' dat <- within(lalonde, {
-#'  re74_1k <- re74 / 1000
-#'  re75_1k <- re75 / 1000
-#' })
-#' t7 <- student_t(df = 7)
-#' fmla <- treat ~ re74_1k + re75_1k + educ + black + hisp + 
-#'                married + nodegr + u74 + u75
-#' fit2 <- stan_glm(fmla, data = dat, family = binomial(link="logit"), 
-#'                  prior = t7, prior_intercept = t7, 
-#'                  algorithm = "fullrank") # for speed only
-#' plot(fit2, pars = c("black", "hisp", "nodegr", "u74", "u75"), 
-#'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
-#' pp_check(fit2, check = "resid")
-#' pp_check(fit2, check = "test", test = "mean")
-#' }
 #' \donttest{
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)

@@ -105,11 +105,8 @@
 #'   
 #' @examples 
 #' \donttest{
-#' SEED <- 42024
-#' set.seed(SEED)
-#' 
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, seed = SEED)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
 #' # compare on LOOIC
 #' (loo1 <- loo(fit1, cores = 2))
@@ -121,27 +118,7 @@
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare(kfold1, kfold2)
-#' 
-#' # dataset description at help("lalonde", package = "arm")
-#' data(lalonde, package = "arm") 
-#' t7 <- student_t(df = 7) # prior for coefficients
-#' 
-#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
-#'    nodegr + u74 + u75
-#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
-#'                      prior = t7, cores = 2, seed = SEED)
-#'                  
-#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
-#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
-#' lalonde2 <- update(lalonde1, formula = f2)
-#' 
-#' # compare on LOOIC
-#' (loo_lalonde1 <- loo(lalonde1, cores = 2))
-#' (loo_lalonde2 <- loo(lalonde2, cores = 2))
-#' plot(loo_lalonde2, label_points = TRUE)
-#' compare(loo_lalonde1, loo_lalonde2)
 #' }
-#' 
 #' @importFrom loo loo loo.function compare
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
