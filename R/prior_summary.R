@@ -112,8 +112,8 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
             paste0(p$dist, "(location = ", .fr2(p$location), 
                    ", scale = ", .fr2(p$scale), ")")
           } else {
-            paste0(p$dist, "(df = ", .fr2(p$df), ", 
-                   location = ", .fr2(p$location), 
+            paste0(p$dist, "(df = ", .fr2(p$df), 
+                  ", location = ", .fr2(p$location), 
                    ", scale = ", .fr2(p$scale),")")
           }
         } else if (p$dist %in% c("hs_plus")) {
