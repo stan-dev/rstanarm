@@ -164,6 +164,6 @@ gg_nlf <- function(x, prob = 0.9) {
     ggplot(mapping = aes(x = xz[,1])) + 
       geom_ribbon(aes(ymin = lower, ymax = upper)) + 
       geom_line(aes(y = middle), col = "blue") + 
-      labs(x = NULL, y = i)
+      labs(x = "Deviation from mean in predictor", y = i)
   })
 }
