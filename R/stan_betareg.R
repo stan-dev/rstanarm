@@ -25,7 +25,7 @@
 #' @templateVar pkg betareg
 #' @templateVar pkgfun betareg
 #' @templateVar sameargs model,offset,weights 
-#' @templateVar rareargs na.action,contrasts
+#' @templateVar rareargs na.action
 #' @templateVar fun stan_betareg
 #' @templateVar fitfun stan_betareg.fit
 #' @template return-stanreg-object
