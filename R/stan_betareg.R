@@ -22,7 +22,7 @@
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
-#' @templateVar pkg stats
+#' @templateVar pkg betareg
 #' @templateVar pkgfun betareg
 #' @templateVar sameargs model,offset,weights 
 #' @templateVar rareargs na.action,contrasts
@@ -62,13 +62,13 @@
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
 #'   \code{\link[betareg]{betareg}} but rather than performing maximum likelihood 
-#'   estimation of generalized linear models, full Bayesian estimation is 
+#'   estimation, full Bayesian estimation is 
 #'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
 #'   model adds independent priors on the coefficients of the beta regression model. The 
 #'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit} function, 
 #'   but it is also possible to call the latter directly.
 #'   
-#' @seealso The various vignettes for \code{stan_betareg}.
+#' @seealso The vignette for \code{stan_betareg}.
 #' 
 #' @examples 
 #' \donttest{
