@@ -175,6 +175,48 @@ that does not enter through the data.
 The benefits of full Bayesian inference (via MCMC) come with a cost. Fitting 
 models with (RE)ML will tend to be much faster than fitting a similar model using 
 MCMC. Speed comparable to __lme4__ can be obtained with __rstanarm__ using 
-approximate Bayesian inference via the mean-field and full-rank variational algorithms (see `help("rstanarm-package", "rstanarm")` for details). These 
+approximate Bayesian inference via the mean-field and full-rank variational algorithms 
+(see `help("rstanarm-package", "rstanarm")` for details). These 
 algorithms can be useful to narrow the set of candidate models in large problems, 
 but MCMC should always be used for final statistical inference.
+
+# Relationship to __gamm4__
+
+The __rstanarm__ package includes a `stan_gamm4` function that is similar to the
+`gamm4` function in the __gamm4__ package, which is in turn similar to the `gamm`
+function in the __mgcv__ package. The substring `gamm` stands for Generalized
+Additive Mixed Models, which differ from Generalized Additive Models (GAMs) due
+to the presence of group-specific terms that can be specified with the syntax
+of __lme4__. Both GAMs and GAMMs include nonlinear functions of (non-categorical)
+predictors called "smooths". In the example below, so-called "thin-plate splines"
+are used to model counts of roaches where we might fear that the number of 
+roaches in the current period is an exponentially increasing function of the 
+number of roaches in the previous period. Unlike `stan_glmer`, in `stan_gamm4`
+it is necessary to specify group-specific terms as a (list of) formula(s) that
+is passed to the `random` argument as in the `lme` function in the __nlme__
+package.
+
+```{r, results = "hide"}
+library(rstanarm)
+data(roaches)
+roaches$off <- log(roaches$exposure2)
+roaches$treatment <- as.factor(roaches$treatment)
+post <- stan_gamm4(y ~ s(roach1, by = treatment) + offset(off), 
+                   random = ~(1 | senior),
+                   data = roaches, family = poisson, QR = TRUE,
+                   chains = CHAINS, cores = CORES, seed = SEED)
+```
+```{r}
+do.call(gridExtra::grid.arrange, args = gg_nlf(post))
+```
+
+Here we see that the relationship is not estimated to be particularly
+stable with only $262$ total observations. When treatment is one,
+the non-linear function seems reasonable, staying steady near one
+until a sufficient number of previous roaches becomes sufficiently
+large and then it takes off before perhaps decreasing if the building
+becomes overly saturated with roaches. When treatment is zero, the
+non-linear function has an odd dip between the stable range and the
+increasing range. So, in this case, it would probably be better to
+estimate the model without allowing the non-linear functions to 
+vary by treatment category.
