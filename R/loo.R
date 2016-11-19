@@ -410,7 +410,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
       draws$size <- stanmat[,"overdispersion"]
-    if (is.beta(fname))
+    if (is.beta(fname)) {
       draws$f_phi <- object$family_phi
       z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
       if(length(z_vars) == 0) {
@@ -427,6 +427,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
         data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat))
         draws$phi <- stanmat[,z_vars]
       }
+    }
   } else {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
