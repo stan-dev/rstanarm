@@ -61,168 +61,28 @@
 #'   See \code{\link[gamm4]{gamm4}} for more information about the model
 #'   specicification and \code{\link{priors}} for more information about the
 #'   priors.
+#'   
+#'   The \code{gg_nlf} function creates a list of ggplot objects with one element
+#'   for each smooth function specified in the call to \code{stan_gamm4}, which
+#'   can be plotted to produce something that is conceptually the same as
+#'   \code{\link[mgcv]{plot.gam}} except the outer lines here demark the edges of
+#'   credible intervals rather than confidence intervals.
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian Analysis for 
 #' Penalized Spline Regression Using WinBUGS. 
 #' \emph{Journal of Statistical Software}. \strong{14}(14), 1--22.
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
 #' @examples
-#' # from example(gamm4, package = "gamm4"), prefixing gamm4() calls with stan_
+#' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
 #' dat <- mgcv::gamSim(1,n=400,scale=2) ## simulate 4 term additive truth
 #' ## Now add 20 level random effect `fac'...
 #' dat$fac <- fac <- as.factor(sample(1:20,400,replace=TRUE))
 #' dat$y <- dat$y + model.matrix(~fac-1)%*%rnorm(20)*.5
 #'
-#' br <- stan_gamm4(y~s(x0)+x1+s(x2),data=dat,random=~(1|fac), QR = TRUE)
-#' br
-#'
-#' ##########################
-#' ## Poisson example GAMM...
-#' ##########################
-#' ## simulate data...
-#' x <- runif(100)
-#' fac <- sample(1:20,100,replace=TRUE)
-#' eta <- x^2*3 + fac/20; fac <- as.factor(fac)
-#' y <- rpois(100,exp(eta))
-#'
-#' ## fit model and examine it...
-#' bp <- stan_gamm4(y~s(x), family=poisson, random=~(1|fac),
-#'                  data = data.frame(x, y, fac))
-#' bp
-#'
-#' #################################################################
-#' ## Add a factor to the linear predictor, to be modelled as random
-#' ## and make response Poisson.
-#' #################################################################
-#' g <- as.factor(sample(1:20,400,replace=TRUE))
-#' dat$f <- dat$f + model.matrix(~ g-1)%*%rnorm(20)*2
-#' dat$y <- rpois(400,exp(dat$f/7))
-#' dat$g <- g
-#'
-#' b2 <- stan_gamm4(y~s(x0)+s(x1)+s(x2)+s(x3), family=poisson,
-#'                  data=dat, random=~(1|g), QR = TRUE)
-#' b2
-#'
-#'
-#' ##################################
-#' # Multivariate varying coefficient
-#' ## Start by simulating data...
-#'
-#' f0 <- function(x, z, sx = 0.3, sz = 0.4) {
-#'   (pi^sx * sz) * (1.2 * exp(-(x - 0.2)^2/sx^2 - 
-#'   (z - 0.3)^2/sz^2) + 0.8 * exp(-(x - 0.7)^2/sx^2 - (z - 0.8)^2/sz^2))
-#' }
-#' f1 <- function(x2) 2 * sin(pi * x2)
-#' f2 <- function(x2) exp(2 * x2) - 3.75887
-#' f3 <- function (x2) 
-#'   0.2 * x2^11 * (10 * (1 - x2))^6 + 10 * (10 * x2)^3 * (1 - x2)^10
-#'
-#' n <- 1000
-#'
-#' ## first set up a continuous-within-group effect...
-#'
-#' g <- factor(sample(1:50,n,replace=TRUE)) ## grouping factor
-#' x <- runif(n)                       ## continuous covariate
-#' X <- model.matrix(~g-1)
-#' mu <- X%*%rnorm(50)*.5 + (x*X)%*%rnorm(50)
-#'
-#' ## now add nested factors...
-#' a <- factor(rep(1:20,rep(50,20)))
-#' b <- factor(rep(rep(1:25,rep(2,25)),rep(20,50)))
-#' Xa <- model.matrix(~a-1)
-#' Xb <- model.matrix(~a/b-a-1)
-#' mu <- mu + Xa%*%rnorm(20) + Xb%*%rnorm(500)*.5
-#'
-#' ## finally simulate the smooth terms
-#' v <- runif(n); w <- runif(n); z <- runif(n)
-#' r <- runif(n)
-#' mu <- mu + f0(v,w)*z*10 + f3(r) 
-#'
-#' y <- mu + rnorm(n)*2 ## response data
-#'
-#'
-#' br <- stan_gamm4(y ~ s(v,w,by=z) + s(r,k=20,bs="cr"), random = ~ (1|a/b),
-#'                  data = data.frame(y, v, w, z, r, a, b), QR = TRUE)
-#' br
-#'
-#' ## now fit the full model
-#'
-#' br <- stan_gamm4(y ~ s(v,w,by=z) + s(r,k=20,bs="cr"),
-#'                  random = ~ (x+0|g) + (1|g) + (1|a/b),
-#'                  data = data.frame(y, v, w, z, r, a, b), QR = TRUE)
-#'
-#' br
-#'
-#' ## try a Poisson example, based on the same linear predictor...
-#'
-#' lp <- mu/5
-#' y <- rpois(exp(lp),exp(lp)) ## simulated response
-#'
-#'
-#' br <- stan_gamm4(y ~ s(v,w,by=z) + s(r,k=20,bs="cr"),
-#'                  family=poisson, random = ~ (1|a/b),
-#'                  data = data.frame(y, v, w, z, r, a, b), QR = TRUE)
-#'
-#' ## and now fit full version
-#'
-#' br <- stan_gamm4(y ~ s(v,w,by=z) + s(r,k=20,bs="cr"),
-#'                  family=poisson,random = ~ (x|g) + (1|a/b),
-#'                  data = data.frame(y, v, w, z, r, a, b), QR = TRUE)
-#' br
-#' 
-#'
-#' ####################################
-#' # Different smooths of x2 depending 
-#' # on factor `fac'...
-#' ####################################
-#' dat <- mgcv::gamSim(4)
-#'
-#' br <- stan_gamm4(y ~ fac+s(x2,by=fac)+s(x0), data=dat, QR = TRUE)
-#' summary(br)
-#'
-#' ######################################
-#' ## A "signal" regression example, in
-#' ## which a univariate response depends
-#' ## on functional predictors.
-#' ######################################
-#'
-#' ## simulate data first....
-#'
-#' rf <- function(x=seq(0,1,length=100)) {
-#'  ## generates random functions...
-#'  m <- ceiling(runif(1)*5) ## number of components
-#'  f <- x*0;
-#'  mu <- runif(m,min(x),max(x));sig <- (runif(m)+.5)*(max(x)-min(x))/10
-#'  for (i in 1:m) f <- f+ dnorm(x,mu[i],sig[i])
-#'  f
-#' }
-#'
-#' x <- seq(0,1,length=100) ## evaluation points
-#'
-#'
-#' ## simulate 200 functions and store in rows of L...
-#' L <- matrix(NA,200,100) 
-#' for (i in 1:200) L[i,] <- rf()  ## simulate the functional predictors
-#'
-#' f2 <- function(x) { ## the coefficient function
-#'  (0.2*x^11*(10*(1-x))^6+10*(10*x)^3*(1-x)^10)/10 
-#' }
-#'
-#' f <- f2(x) ## the true coefficient function
-#'
-#' y <- L%*%f + rnorm(200)*20 ## simulated response data
-#'
-#' ## Now fit the model E(y) = L%*%f(x) where f is a smooth function.
-#' ## The summation convention is used to evaluate smooth at each value
-#' ## in matrix X to get matrix F, say. Then rowSum(L*F) gives E(y).
-#'
-#' ## create matrix of eval points for each function. Note that
-#' ## `smoothCon' is smart and will recognize the duplication...
-#' X <- matrix(x,200,100,byrow=TRUE) 
-#'
-#' br <- stan_gamm4(y~s(X,by=L,k=20), QR = TRUE)
-#' br
+#' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~(1|fac), 
+#'                  QR = TRUE)
+#' do.call(gridExtra::grid.arrange, args = gg_nlf(br))
 #' }
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
@@ -279,3 +139,31 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   # TODO: maybe convert back to gam parameterization?
 }
 
+#' @rdname stan_gamm4
+#' @export
+#' @param x An object produced by \code{stan_gamm4}
+#' @param prob A scalar between 0 and 1 governing the width of the credible
+#'   interval
+#' @importFrom ggplot2 aes ggplot geom_line geom_ribbon   
+gg_nlf <- function(x, prob = 0.9) {
+  stopifnot(is(x, "stanreg"))
+  stopifnot(is(x, "gamm4"))
+  XZ <- x$x
+  XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
+  labels <- sapply(x$glmod$smooths, FUN = function(y) y$label)
+  B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
+  sapply(labels, simplify = FALSE, FUN = function(i) {
+    incl <- grepl(i, colnames(B), fixed = TRUE)
+    xz <- XZ[, incl, drop = FALSE]
+    xz <- xz[order(xz[,1]), ]
+    b <- B[, incl, drop = FALSE]
+    f <- linear_predictor.matrix(b, xz)
+    lower <- apply(f, 2, quantile, probs = (1 - prob) / 2)
+    upper <- apply(f, 2, quantile, probs = prob + (1 - prob) / 2)
+    middle <- apply(f, 2, median)
+    ggplot(mapping = aes(x = xz[,1])) + 
+      geom_ribbon(aes(ymin = lower, ymax = upper)) + 
+      geom_line(aes(y = middle), col = "blue") + 
+      labs(x = NULL, y = i)
+  })
+}
