@@ -386,7 +386,7 @@ model {
     if (family == 1) {
       if (link == 1) 
         target += normal_lpdf(y | eta, dispersion);
-      else if (link > 2) 
+      else if (link == 2) 
         target += normal_lpdf(y | exp(eta), dispersion);
       else 
         target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
