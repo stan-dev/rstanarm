@@ -46,7 +46,9 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' @template args-sparse
-#' @template reference-gelman-hill
+#' 
+#' @references Ferrari, SLP and Cribari-Neto, F (2004). "Beta Regression for Modeling Rates
+#'   and Proportions". \emph{Journal of Applied Statistics.} Vol. 31, No. 07, p799-815.
 #' 
 #' @param link character specification of the link function in the mean model (mu).
 #'   Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog" are supported.
@@ -55,6 +57,8 @@
 #'   (phi). Currently, "identity", "log", and "sqrt" are supported. Note that since the
 #'   "sqrt" link function is known to be unstable, it is advisable to specify a
 #'   different link function (or none at all).
+#'
+#' @param z Regressor matrix for the precision model. Defaults to an intercept only.
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
 #'   \code{\link[betareg]{betareg}} but rather than performing maximum likelihood 
