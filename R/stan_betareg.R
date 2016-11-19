@@ -137,7 +137,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   link_phi <- match.arg(link.phi)
   fit <- nlist(stanfit, family = beta_fam(link), family_phi = beta_phi_fam(link_phi), formula, offset = NULL, 
                weights = NULL, x = X, y = Y, z = Z, # need Z if it has 2+ columns
-               data, prior.info = get_prior_info(call, formals()), 
+               data, 
                call = match.call(), terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"))
