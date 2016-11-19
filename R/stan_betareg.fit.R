@@ -57,6 +57,9 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
     prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
     prior_scale_for_dispersion <- scaled <- NULL
+  prior_scale <- prior_scale_for_intercept <- prior_dist_z <- prior_dist_for_intercept_z <-
+    prior_mean_for_intercept_z <- prior_scale_for_intercept_z <- prior_df_for_intercept_z <-
+    xbar <- xtemp <- NULL
 
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
