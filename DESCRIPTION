@@ -37,6 +37,7 @@ Imports:
     stats,
     utils
 Suggests:
+    arm,
     gridExtra,
     HSAUR3,
     KernSmooth,
