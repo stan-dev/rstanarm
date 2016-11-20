@@ -173,13 +173,17 @@ gg_nlf <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
     found <- smooths %in% labels
     if (all(!found)) {
       stop("All specified terms are invalid. Valid terms are: ", 
-              paste(labels, collapse = ", "))
+              paste(grep(",", labels, fixed = TRUE, value = TRUE, invert = TRUE), 
+                    collapse = ", "))
     } else if (any(!found)) {
       warning("The following specified terms were not found and ignored: ", 
               paste(smooths[!found], collapse = ", "))
     }
     labels <- smooths[found]
   }
+  if (any(grepl(",", labels, fixed = TRUE)))
+    stop("Only univariate smooths are currently supported by gg_nlf.")
+  
   B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
   df_list <- lapply(labels, FUN = function(term) {
     incl <- grepl(term, colnames(B), fixed = TRUE)
@@ -202,7 +206,6 @@ gg_nlf <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
     facet_args[["scales"]] <- "free"
   if (is.null(facet_args[["strip.position"]]))
     facet_args[["strip.position"]] <- "left"
-  
   
   ggplot(plot_data, aes_(x = ~ deviation)) + 
     geom_ribbon(aes_(ymin = ~ lower, ymax = ~ upper), 
