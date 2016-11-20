@@ -1,4 +1,4 @@
-#' @param algorithm Character string (possibly abbreviated) indicating the 
+#' @param algorithm A string (possibly abbreviated) indicating the 
 #'   estimation approach to use. Can be \code{"sampling"} for MCMC (the
 #'   default), \code{"optimizing"} for optimization, \code{"meanfield"} for
 #'   variational inference with independent normal distributions, or

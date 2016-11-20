@@ -45,7 +45,7 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
   x <- object[["prior.info"]]
   if (is.null(x)) {
     message("Priors not found in stanreg object.")
-    return(NULL)
+    return(invisible(NULL))
   }
   structure(x, class = "prior_summary.stanreg", 
             model_name = deparse(substitute(object)), 
