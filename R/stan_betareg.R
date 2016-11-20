@@ -123,7 +123,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  browser()
+
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = NULL, offset = NULL, 
                               link = link, link.phi = link.phi, ..., prior = prior, 
