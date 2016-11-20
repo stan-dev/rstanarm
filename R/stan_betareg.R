@@ -123,7 +123,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   # pass the prior information to stan_betareg.fit()
-  stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = NULL, offset = NULL, 
+  stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, weights = weights, offset = offset, 
                               link = link, link.phi = link.phi, ..., prior = prior, 
                               prior_intercept = prior_intercept, 
                               prior_z = prior_z, prior_intercept_z = prior_intercept_z,
