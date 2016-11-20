@@ -23,7 +23,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
 
   if (!requireNamespace("mgcv", quietly = TRUE))
     stop("the 'mgcv' package is needed by stan_gamm4()")  
-  if (!is.null(random)) {
+  if (!is.null(random) && length(random) > 0) {
     if (!inherits(random,"formula")) stop("`random' must be a lme4-style formula")
     random.vars <- all.vars(random)
     random_list <- findbars(random)
@@ -102,7 +102,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
     lme4.formula <- paste(lme4.formula,"+ (1|",r.name[i],")")
   }
   
-  if (!is.null(random)) ## append the regular random effects
+  if (!is.null(random) && length(random) > 0) ## append the regular random effects
     lme4.formula <- paste(lme4.formula, "+" , substring(deparse(random), first = 2))
   
   lme4.formula <- as.formula(lme4.formula)
