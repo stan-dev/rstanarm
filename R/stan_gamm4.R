@@ -91,6 +91,7 @@
 #' gg_nlf(br)
 #' gg_nlf(br, smooths = "s(x0)", alpha = 2/3)
 #' }
+#' @importFrom lme4 getME
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
@@ -104,17 +105,6 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   family <- validate_family(family)
   glmod <- suppressWarnings(gamm4_to_glmer(formula, random, family, data, weights, 
                                            subset, na.action, knots, drop.unused.levels))
-  mc[[1]] <- quote(gamm4::gamm4)
-  mc$... <- mc$prior <- mc$prior_intercept <- mc$prior_ops <- 
-    mc$prior_covariance <- mc$prior_PD <- mc$algorithm <- mc$adapt_delta <- NULL
-  result <- suppressWarnings(eval(mc, parent.frame(1L)))
-  group <- getME(result$mer, c("Ztlist", "cnms", "flist", "Zt"))
-  glmod <- getME(result$mer, c("X", "y"))               
-  X <- glmod$X
-  y <- glmod$y
-  glmod$y <- NULL
-  glmod$reTrms <- group
-
   colnames(glmod$X) <- gsub("^X\\.0", "", colnames(glmod$X))
   colnames(glmod$X) <- gsub("Fx1$",   "", colnames(glmod$X))
   X <- glmod$X
