@@ -62,8 +62,8 @@
 #'   specicification and \code{\link{priors}} for more information about the
 #'   priors.
 #'   
-#'   The \code{gg_nlf} function creates a ggplot object with one facet for each 
-#'   smooth function specified in the call to \code{stan_gamm4}. A subset of the
+#'   The \code{plot_nonlinear} function creates a ggplot object with one facet for
+#'   each smooth function specified in the call to \code{stan_gamm4}. A subset of the
 #'   smooth functions can be specified using the \code{smooths} argument. The 
 #'   plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
 #'   outer lines here demark the edges of posterior uncertainty intervals 
@@ -183,7 +183,7 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
     labels <- smooths[found]
   }
   if (any(grepl(",", labels, fixed = TRUE)))
-    stop("Only univariate smooths are currently supported by gg_nlf.")
+    stop("Only univariate smooths are currently supported by 'plot_nonlinear'.")
   
   B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
   df_list <- lapply(labels, FUN = function(term) {
