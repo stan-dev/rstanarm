@@ -94,7 +94,7 @@ and the log link function on the second set of regressors.
 dat <- list()
 dat$eta <- c(1, -0.2)
 dat$gamma <- c(1.8, 0.4)
-dat$N <- 500
+dat$N <- 200
 dat$x <- rnorm(dat$N, 2, 2)
 dat$z <- rnorm(dat$N, 2, 2)
 dat$mu <- binomial(link = logit)$linkinv(dat$eta[1] + dat$eta[2]*dat$x)
@@ -108,8 +108,8 @@ hist(dat$y, col = "darkgrey", border = F, main = "Distribution of Outcome Variab
 The model can be fit by calling `stan_betareg`, using the appropriate link functions.
 ```{r simulated-fit, results = "hide"}
 library(rstanarm)
-fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")
-fit2 <- stan_betareg(y ~ x, data = dat, link = "logit", link.phi = "log", algorithm = "sampling")
+fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log", iter = 2000, cores = 4, algorithm = "sampling")
+fit2 <- stan_betareg(y ~ -1 + x , data = dat, link = "logit", link.phi = "log", iter = 2000, cores = 4, algorithm = "sampling")
 round(coef(fit1), 2)
 round(coef(fit2), 2)
 ```
@@ -125,8 +125,8 @@ model noticeably fails to capture the top of the distribution consistently in co
 to the true model.
 ```{r simulated-analysis, fig.height=5}
 library(gridExtra)
-plot1 <- pp_check(fit1) + ggtitle("True Model: y ~ x | z")
-plot2 <- pp_check(fit2) + ggtitle("False Model: y ~ x")
+plot1 <- pp_check(fit1) + ggtitle("True Model: y ~ x | z") + xlim(0, 1) + ylim(0, 4)
+plot2 <- pp_check(fit2) + ggtitle("False Model: y ~ x - 1") + xlim(0, 1) + ylim(0, 4)
 grid.arrange(plot1, plot2, ncol = 2)
 ```
 
@@ -153,8 +153,8 @@ pressure, and the batch of conditions.
 ```{r, gas-fit, results="hide"}
 library(rstanarm)
 data("GasolineYield", package = "betareg")
-gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit", algorithm = "sampling")
-gas_fit2 <- stan_betareg(yield ~ temp | pressure, data = GasolineYield, link = "logit", algorithm = "sampling")
+gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit", iter = 1000, cores = 4, algorithm = "sampling")
+gas_fit2 <- stan_betareg(yield ~ temp | pressure, data = GasolineYield, link = "logit", link.phi = "log", iter = 1000, cores = 4, algorithm = "sampling")
 round(coef(gas_fit1), 2)
 round(coef(gas_fit2), 2)
 ```
@@ -172,8 +172,8 @@ as it is centered around 0.50 rather than 0.20.
 
 ```{r gas-analysis, fig.height=5}
 library(gridExtra)
-gas_plot1 <- pp_check(gas_fit1) + ggtitle("gas_fit1")
-gas_plot2 <- pp_check(gas_fit2) + ggtitle("gas_fit2")
+gas_plot1 <- pp_check(gas_fit1) + ggtitle("gas_fit1") + xlim(0, 1)
+gas_plot2 <- pp_check(gas_fit2) + ggtitle("gas_fit2") + xlim(0, 1)
 grid.arrange(gas_plot1, gas_plot2, ncol = 2)
 ```
 ``` {r, gas-loo}
@@ -185,9 +185,6 @@ compare(gas_loo1, gas_loo2)
 
 Additionally, evaluating the expected log predictive distribution using `loo`
 reveals that the second of the two models is preferred.
-
-Note that the `sqrt` link function (applied to the second set of regressors) is known to be unstable, so it
-is advised to specify a different link function or to model the dispersion parameter as a constant. 
 
 # References
 
