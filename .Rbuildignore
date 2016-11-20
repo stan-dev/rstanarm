@@ -5,7 +5,7 @@ man-roxygen/*
 \.github/*
 vignettes/_output.yaml
 README.md
-LICENSE
+LICENSE$
 ^.*\.o$
 ^\cleanup*
 ^inst/doc/[A-Za-z0-9\-_]+[.]svg$
