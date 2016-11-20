@@ -122,7 +122,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
 
   # create entries in the data block of the .stan file
   standata <- nlist(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse, # TRUE, sparse = FALSE,
+    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
     X = array(xtemp, dim = c(1L, dim(xtemp))),
     nnz_X = 0L, 
     w_X = double(), 
@@ -148,7 +148,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     w = double(), 
     v = integer(), 
     u = integer(),
-    z_dim = nvars_z, # ncol(z),
+    z_dim = nvars_z,
     link_phi = link_num_phi,
     betareg_z = array(ztemp, dim = c(dim(ztemp))),
     has_intercept_z,
@@ -170,15 +170,15 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
 
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
-    out$par <- out$par[!grepl("eta_z", names(out$par))] # might need fixing
-    out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))] # might need fixing
+    out$par <- out$par[!grepl("eta_z", names(out$par))]
+    out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))]
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     if (Z_true == 1) {
       new_names[new_names == "omega_int[1]"] <- "(phi)_(Intercept)"
-      mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names) # "^omega\\[[[:digit:]]+\\]$"
+      mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
       new_names[mark_z] <- paste0("(phi)_", colnames(ztemp))
     }
     else {
@@ -201,11 +201,11 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
         show_messages = FALSE)
       stanfit <- do.call(sampling, sampling_args)
     }
-    else if (algorithm == "meanfield") { # FIXME
+    else if (algorithm == "meanfield") {
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }
-    else if (algorithm == "fullrank") { # FIXME
+    else if (algorithm == "fullrank") {
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }

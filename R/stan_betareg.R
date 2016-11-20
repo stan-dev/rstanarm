@@ -108,7 +108,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   mc$drop.unused.levels <- TRUE
   mc[[1L]] <- quote(betareg::betareg)
   
-  if (!requireNamespace("betareg")) stop("the betareg package is needed by 'stan_betareg'")
+  if (!requireNamespace("betareg", quietly = TRUE)) stop("the betareg package is needed by 'stan_betareg'")
   mc$control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
   br <- suppressWarnings(eval(mc, parent.frame()))
   mf <- check_constant_vars(br$model)
@@ -134,7 +134,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   link <- match.arg(link)
   link_phi <- match.arg(link.phi)
   fit <- nlist(stanfit, family = beta_fam(link), family_phi = beta_phi_fam(link_phi), formula, offset = NULL, 
-               weights = NULL, x = X, y = Y, z = Z, # need Z if it has 2+ columns
+               weights = NULL, x = X, y = Y, z = Z,
                data, 
                call = match.call(), terms = mt, model = mf, 
                algorithm, na.action = attr(mf, "na.action"), 
@@ -152,7 +152,7 @@ stan_betareg <- function (formula, data, subset, na.action, weights, offset,
   return(out) 
 }
 
-beta_fam <- function(link = "logit") { # change function name to beta_mu_fam
+beta_fam <- function(link = "logit") {
   stopifnot(is.character(link))
   if (link == "loglog") {
     out <- binomial("cloglog")
@@ -183,5 +183,4 @@ beta_phi_fam <- function(link = "log") {
   out$simulate <- function(object, nsim)
     stop("'simulate' function should not have been called")
   return(out)
-  return(out)  
 }

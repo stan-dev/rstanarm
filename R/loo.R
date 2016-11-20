@@ -413,9 +413,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
     if (is.beta(fname)) {
       draws$f_phi <- object$family_phi
       z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
-      if(length(z_vars) == 0) {
-        stop("something got messed up")
-      }
       if (length(z_vars) == 1 && z_vars == "(phi)") {
         draws$phi <- stanmat[, z_vars]
       }
@@ -581,14 +578,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
   if (length(grep("z", colnames(data), fixed = TRUE)) > 0) {
     phi <- .phi_beta(data, draws)
   }
-  # if (!(draws$f_phi$link == "log")) {
-  #   z_dat <- data[,grep("z", colnames(data), fixed = T)]
-  #   z_dat <- z_dat[,-grep("Intercept", colnames(z_dat))]
-  #   z_int <- draws$phi[,grep("Intercept", colnames(draws$phi))]
-  #   z_pars <- draws$phi[,-grep("Intercept", colnames(draws$phi))]
-  #   draws$phi <- as.vector(linear_predictor(z_pars, z_dat, data$offset))
-  #   phi <- draws$phi + z_int
-  # }
   val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
 }
