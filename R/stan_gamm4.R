@@ -62,11 +62,14 @@
 #'   specicification and \code{\link{priors}} for more information about the
 #'   priors.
 #'   
-#'   The \code{gg_nlf} function creates a list of ggplot objects with one element
-#'   for each smooth function specified in the call to \code{stan_gamm4}, which
-#'   can be plotted to produce something that is conceptually the same as
-#'   \code{\link[mgcv]{plot.gam}} except the outer lines here demark the edges of
-#'   credible intervals rather than confidence intervals.
+#'   The \code{gg_nlf} function creates a ggplot object with one facet for each 
+#'   smooth function specified in the call to \code{stan_gamm4}. A subset of the
+#'   smooth functions can be specified using the \code{smooths} argument. The 
+#'   plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
+#'   outer lines here demark the edges of posterior uncertainty intervals 
+#'   (credible intervals) rather than confidence intervals. To change the colors
+#'   used in the plot see \code{\link[bayesplot]{color_scheme_set}}.
+#'   
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian Analysis for 
 #' Penalized Spline Regression Using WinBUGS. 
@@ -82,7 +85,9 @@
 #'
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~(1|fac), 
 #'                  QR = TRUE)
-#' do.call(gridExtra::grid.arrange, args = gg_nlf(br))
+#' print(br)
+#' gg_nlf(br)
+#' gg_nlf(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
@@ -141,29 +146,71 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
 
 #' @rdname stan_gamm4
 #' @export
-#' @param x An object produced by \code{stan_gamm4}
-#' @param prob A scalar between 0 and 1 governing the width of the credible
-#'   interval
-#' @importFrom ggplot2 aes ggplot geom_line geom_ribbon   
-gg_nlf <- function(x, prob = 0.9) {
-  stopifnot(is(x, "stanreg"))
-  stopifnot(is(x, "gamm4"))
+#' @param x An object produced by \code{stan_gamm4}.
+#' @param smooths An optional character vector specifying a subset of the smooth
+#'   functions specified in the call to \code{stan_gamm4}. The default is
+#'   include all smooth terms.
+#' @param prob A scalar between 0 and 1 governing the width of the uncertainty
+#'   interval.
+#' @param facet_args An optional named list of arguments passed to 
+#'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument).
+#' @param alpha,size Passed to \code{\link[ggplot2]{geom_ribbon}}.
+#'   
+#' @return \code{gg_nlf} returns a ggplot object.
+#' 
+#' @importFrom ggplot2 aes_ facet_wrap ggplot geom_line geom_ribbon labs 
+#' 
+gg_nlf <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
+                   alpha = 1, size = 0.75) {
+  validate_stanreg_object(x)
+  if (!is(x, "gamm4"))
+    stop("Plot only available for models fit using the stan_gamm4 function.")
+  
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
-  labels <- sapply(x$glmod$smooths, FUN = function(y) y$label)
+  labels <- sapply(x$glmod$smooths, "[[", "label")
+  if (!missing(smooths)) {
+    found <- smooths %in% labels
+    if (all(!found)) {
+      stop("All specified terms are invalid. Valid terms are: ", 
+              paste(labels, collapse = ", "))
+    } else if (any(!found)) {
+      warning("The following specified terms were not found and ignored: ", 
+              paste(smooths[!found], collapse = ", "))
+    }
+    labels <- smooths[found]
+  }
   B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
-  sapply(labels, simplify = FALSE, FUN = function(i) {
-    incl <- grepl(i, colnames(B), fixed = TRUE)
+  df_list <- lapply(labels, FUN = function(term) {
+    incl <- grepl(term, colnames(B), fixed = TRUE)
     xz <- XZ[, incl, drop = FALSE]
-    xz <- xz[order(xz[,1]), ]
+    xz <- xz[order(xz[, 1]), , drop=FALSE]
     b <- B[, incl, drop = FALSE]
     f <- linear_predictor.matrix(b, xz)
-    lower <- apply(f, 2, quantile, probs = (1 - prob) / 2)
-    upper <- apply(f, 2, quantile, probs = prob + (1 - prob) / 2)
-    middle <- apply(f, 2, median)
-    ggplot(mapping = aes(x = xz[,1])) + 
-      geom_ribbon(aes(ymin = lower, ymax = upper)) + 
-      geom_line(aes(y = middle), col = "blue") + 
-      labs(x = "Deviation from mean in predictor", y = i)
+    data.frame(
+      deviation = xz[, 1],
+      lower = apply(f, 2, quantile, probs = (1 - prob) / 2),
+      upper = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
+      middle = apply(f, 2, median), 
+      term = term
+    )
   })
+  plot_data <- do.call(rbind, df_list)
+  scheme <- bayesplot::color_scheme_get()
+  facet_args[["facets"]] <- ~ term
+  if (is.null(facet_args[["scales"]]))
+    facet_args[["scales"]] <- "free"
+  if (is.null(facet_args[["strip.position"]]))
+    facet_args[["strip.position"]] <- "left"
+  
+  
+  ggplot(plot_data, aes_(x = ~ deviation)) + 
+    geom_ribbon(aes_(ymin = ~ lower, ymax = ~ upper), 
+                fill = scheme[[1]], color = scheme[[2]],
+                alpha = alpha, size = size) + 
+    geom_line(aes_(y = ~ middle), color = scheme[[5]], 
+              size = 0.75 * size, lineend = "round") + 
+    labs(x = "Deviation from mean in predictor", y = NULL) + 
+    do.call(facet_wrap, facet_args) + 
+    bayesplot::theme_default()
 }
