@@ -46,6 +46,7 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
   mc[[1]] <- quote(mgcv::gamm)
   mc$control <- settings
   mc$random <- random_list
+  mc$family <- gaussian()
   if (is.null(weights)) mc$weights <- NULL
   if (is.null(subset))  mc$subset  <- NULL
   mc$niterPQL <- 0L
