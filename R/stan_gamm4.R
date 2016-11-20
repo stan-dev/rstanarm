@@ -78,13 +78,13 @@
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
-#' dat <- mgcv::gamSim(1,n=400,scale=2) ## simulate 4 term additive truth
+#' dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth
 #' ## Now add 20 level random effect `fac'...
-#' dat$fac <- fac <- as.factor(sample(1:20,400,replace=TRUE))
-#' dat$y <- dat$y + model.matrix(~fac-1)%*%rnorm(20)*.5
+#' dat$fac <- fac <- as.factor(sample(1:20, 400, replace = TRUE))
+#' dat$y <- dat$y + model.matrix(~ fac - 1) %*% rnorm(20) * .5
 #'
-#' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~(1|fac), 
-#'                  QR = TRUE)
+#' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
+#'                  QR = TRUE, chains = 1)
 #' print(br)
 #' gg_nlf(br)
 #' gg_nlf(br, smooths = "s(x0)", alpha = 2/3)
