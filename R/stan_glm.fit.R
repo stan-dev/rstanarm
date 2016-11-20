@@ -455,11 +455,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 }
 
 
-#' Add extra level _NEW_ to each group
-#' 
-#' @param Ztlist ranef indicator matrices
-#' @param cnms group$cnms
-#' @param flist group$flist
+# Add extra level _NEW_ to each group
+# 
+# @param Ztlist ranef indicator matrices
+# @param cnms group$cnms
+# @param flist group$flist
 #' @importFrom Matrix rBind
 pad_reTrms <- function(Ztlist, cnms, flist) {
   stopifnot(is.list(Ztlist))
