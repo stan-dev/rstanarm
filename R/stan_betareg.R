@@ -50,13 +50,13 @@
 #' @references Ferrari, SLP and Cribari-Neto, F (2004). "Beta Regression for Modeling Rates
 #'   and Proportions". \emph{Journal of Applied Statistics.} Vol. 31, No. 07, p799-815.
 #' 
-#' @param link character specification of the link function in the mean model (mu).
+#' @param link Character specification of the link function in the mean model (mu).
 #'   Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog" are supported.
 #'
-#' @param link.phi character specification of the link function in the precision model
+#' @param link.phi Character specification of the link function in the precision model
 #'   (phi). Currently, "identity", "log", and "sqrt" are supported. Note that since the
 #'   "sqrt" link function is known to be unstable, it is advisable to specify a
-#'   different link function (or none at all).
+#'   different link function (or to not specify a regressor matrix for the precision model).
 #'
 #' @param z Regressor matrix for the precision model. Defaults to an intercept only.
 #' 
@@ -73,17 +73,15 @@
 #' @examples 
 #' \donttest{
 #' ### Simulated data
-#' fam <- binomial(link = "logit")
 #' dat <- list()
-#' dat$N <- 200
-#' dat$x <- rnorm(dat$N, 2, 1)
-#' dat$z <- rnorm(dat$N, 2, 1)
-#' dat$mu <- fam$linkinv(1 + 0.2*dat$x)
-#' dat$phi <- exp(1.5 + 0.4*dat$z)
-#' dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
-#' hist(dat$y, col = "dark grey", border = F, xlim = c(0,1))
-#' fake_dat <- data.frame(dat$y, dat$x, dat$z)
-#' colnames(fake_dat) <- c("y", "x", "z")
+#' N <- 200
+#' x <- rnorm(N, 2, 1)
+#' z <- rnorm(N, 2, 1)
+#' mu <- binomial(link = "logit")$linkinv(1 + 0.2*x)
+#' phi <- exp(1.5 + 0.4*z)
+#' y <- rbeta(N, mu * phi, (1 - mu) * phi)
+#' hist(y, col = "dark grey", border = F, xlim = c(0,1))
+#' fake_dat <- data.frame(y, x, z)
 #' 
 #' fit <- stan_betareg(y ~ x | z, data = fake_dat, link = "logit",
 #'                     link.phi = "log", algorithm = "sampling")

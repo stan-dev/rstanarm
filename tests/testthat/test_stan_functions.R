@@ -415,7 +415,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
 links <- c("logit", "probit", "cloglog", "cauchit", "log")
 
 context("Beta")
-test_that("linkinv_bern returns expected results", {
+test_that("linkinv_beta returns expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
     linkinv <- binomial(link = links[i])$linkinv
