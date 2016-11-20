@@ -80,15 +80,14 @@ functions {
     else if (link == 4) // cauchy
       for(n in 1:rows(eta)) mu[n] = cauchy_cdf(eta[n], 0.0, 1.0);
     else if (link == 5)  // log 
-      for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
+      for(n in 1:rows(eta)) {
+          mu[n] = exp(eta[n]);
+          if (mu[n] < 0 || mu[n] > 1)
+            reject("mu needs to be between 0 and 1");
+      }
     else if (link == 6) // loglog
       for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(-eta[n]); 
       
-    for (n in 1:rows(mu)) { 
-      //FIXME: maybe check this in tests but not in released version?
-      if (mu[n] < 0 || mu[n] > 1)
-        reject("mu needs to be between 0 and 1")
-    }
     return mu;
   }
   
