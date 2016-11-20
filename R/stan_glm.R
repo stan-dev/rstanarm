@@ -65,35 +65,41 @@
 #' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
-#'                 algorithm = "fullrank") # for speed only
-#' plot(fit, ci_level = 0.5)
-#' plot(fit, ci_level = 0.5, pars = "beta")
-#' 
-#' ### Logistic regression
-#' data(lalonde, package = "arm")
-#' dat <- within(lalonde, {
-#'  re74_1k <- re74 / 1000
-#'  re75_1k <- re75 / 1000
-#' })
-#' t7 <- student_t(df = 7)
-#' fmla <- treat ~ re74_1k + re75_1k + educ + black + hisp + 
-#'                married + nodegr + u74 + u75
-#' fit2 <- stan_glm(fmla, data = dat, family = binomial(link="logit"), 
-#'                  prior = t7, prior_intercept = t7, 
-#'                  algorithm = "fullrank") # for speed only
-#' plot(fit2, pars = c("black", "hisp", "nodegr", "u74", "u75"), 
-#'      ci_level = 0.67, outer_level = 1, show_density = TRUE)
-#' pp_check(fit2, check = "resid")
-#' pp_check(fit2, check = "test", test = "mean")
+#'                 algorithm = "fullrank") # only to make example fast enoug
+#' plot(fit, prob = 0.5)
+#' plot(fit, prob = 0.5, pars = "beta")
 #' }
 #' \donttest{
+#' ### Logistic regression
+#' head(wells)
+#' wells$dist100 <- wells$dist / 100
+#' fit2 <- stan_glm(
+#'   switch ~ dist100 + arsenic, 
+#'   data = wells, 
+#'   family = binomial(link = "logit"), 
+#'   prior = student_t(df = 7, location = 0, scale = 2.5), 
+#'   prior_intercept = normal(0, 10)
+#' )
+#' print(fit2)
+#' prior_summary(fit2)
+#' 
+#' plot(fit2, plotfun = "areas", prob = 0.9, # ?bayesplot::mcmc_areas
+#'      pars = c("(Intercept)", "arsenic"))
+#' pp_check(fit2, plotfun = "error_binned")  # ?bayesplot::ppc_error_binned
+#' 
+#' 
 #' ### Poisson regression (example from help("glm")) 
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
 #'                  prior = normal(0, 1), prior_intercept = normal(0, 5))
-#' plot(fit3, fill_color = "skyblue4", est_color = "maroon")
+#' print(fit3)
+#' 
+#' bayesplot::color_scheme_set("green")
+#' plot(fit3)
+#' plot(fit3, regex_pars = c("outcome", "treatment"))
+#' plot(fit3, plotfun = "combo", regex_pars = "treatment") # ?bayesplot::mcmc_combo
 #' 
 #' ### Gamma regression (example from help("glm"))
 #' clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
