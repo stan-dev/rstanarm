@@ -126,7 +126,7 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  if (length(x[["weights"]]) && !all(x[["weights"]] == 1))
+  if (model_has_weights(x))
     recommend_exact_loo(reason = "model has weights")
   
   user_threshold <- !is.null(k_threshold)
@@ -447,7 +447,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
   }
 
   data$offset <- if (has_newdata) offset else object$offset
-  if (!all(object$weights == 1))
+  if (model_has_weights(object))
     data$weights <- object$weights
 
   if (is.mer(object)) {
