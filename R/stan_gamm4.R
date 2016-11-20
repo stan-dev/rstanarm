@@ -151,6 +151,8 @@ gg_nlf <- function(x, prob = 0.9) {
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
   labels <- sapply(x$glmod$smooths, FUN = function(y) y$label)
+  if (any(grepl(",", labels, fixed = TRUE)))
+    stop("only univariate smooths are currently supported by gg_nlf")
   B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
   sapply(labels, simplify = FALSE, FUN = function(i) {
     incl <- grepl(i, colnames(B), fixed = TRUE)
