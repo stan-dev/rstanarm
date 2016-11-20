@@ -578,7 +578,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
 .ll_beta_i <- function(i, data, draws) {
   mu <- .mu_beta(data, draws)
   phi <- draws$phi
-  if (length(grep("z", colnames(data), fixed = T)) > 0) {
+  if (length(grep("z", colnames(data), fixed = TRUE)) > 0) {
     phi <- .phi_beta(data, draws)
   }
   # if (!(draws$f_phi$link == "log")) {
