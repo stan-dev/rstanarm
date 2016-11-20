@@ -77,11 +77,13 @@
 #' bayesplot::color_scheme_set("brightblue")
 #' plot(fit, "areas", regex_pars = "period",
 #'      prob = 0.5, prob_outer = 0.9)
-#'
+#' 
+#' \donttest{
 #' # Make the same plot by extracting posterior draws and calling
 #' # bayesplot::mcmc_areas directly
 #' x <- as.array(fit, regex_pars = "period")
 #' bayesplot::mcmc_areas(x, prob = 0.5, prob_outer = 0.9)
+#' }
 #'
 #'
 #' ##################################
@@ -137,10 +139,11 @@
 #' # changing facet layout 
 #' plot(fit, "trace", pars = c("(Intercept)", "period2"),
 #'      facet_args = list(nrow = 2))
-#'
+#' \donttest{
 #' # same plot by calling bayesplot::mcmc_trace directly
 #' x <- as.array(fit, pars = c("(Intercept)", "period2"))
 #' bayesplot::mcmc_trace(x, facet_args = list(nrow = 2))
+#' }
 #'
 #'
 #' ############
