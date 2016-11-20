@@ -22,11 +22,9 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
-install: travis_wait mvn install
-
 script: 
   - |
-    R CMD build .
+    travis_wait R CMD build .
     travis_wait 50 R CMD check rstanarm*tar.gz
 
 after_script:
