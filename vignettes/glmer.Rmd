@@ -192,7 +192,7 @@ predictors called "smooths". In the example below, so-called "thin-plate splines
 are used to model counts of roaches where we might fear that the number of 
 roaches in the current period is an exponentially increasing function of the 
 number of roaches in the previous period. Unlike `stan_glmer`, in `stan_gamm4`
-it is necessary to specify group-specific terms as a (list of) formula(s) that
+it is necessary to specify group-specific terms as a one-sided formula that
 is passed to the `random` argument as in the `lme` function in the __nlme__
 package.
 

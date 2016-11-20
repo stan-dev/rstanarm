@@ -66,9 +66,6 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   if (!is.null(newdata)) {
-    if ("gam" %in% names(object))
-      stop("'log_lik' with 'newdata' not yet supported ",
-           "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
   }
   fun <- ll_fun(object)

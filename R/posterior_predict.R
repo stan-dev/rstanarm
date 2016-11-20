@@ -141,9 +141,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   if (!is.null(fun))
     fun <- match.fun(fun)
   if (!is.null(newdata)) {
-    if ("gam" %in% names(object))
-      stop("'posterior_predict' with 'newdata' not yet supported ",
-           "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
     if (any(is.na(newdata)))
       stop("Currently NAs are not allowed in 'newdata'.")
