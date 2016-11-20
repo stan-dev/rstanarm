@@ -67,8 +67,10 @@
 #'   smooth functions can be specified using the \code{smooths} argument. The 
 #'   plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
 #'   outer lines here demark the edges of posterior uncertainty intervals 
-#'   (credible intervals) rather than confidence intervals. To change the colors
-#'   used in the plot see \code{\link[bayesplot]{color_scheme_set}}.
+#'   (credible intervals) rather than confidence intervals and the inner line
+#'   is the posterior median of the function rather than the function implied
+#'   by a point estimate. To change the colors used in the plot see 
+#'   \code{\link[bayesplot]{color_scheme_set}}.
 #'   
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian Analysis for 
