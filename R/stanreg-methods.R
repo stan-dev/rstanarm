@@ -41,16 +41,6 @@
 #' uncertainty intervals.
 #' }
 #' 
-#' \item{\code{log_lik}}{
-#' For models fit using MCMC only, the \code{log_lik}
-#' function returns the \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
-#' where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
-#' of data points. Note: we use \code{log_lik} rather than defining a
-#' \code{\link[stats]{logLik}} method because (in addition to the conceptual
-#' difference) the documentation for \code{logLik} states that the return value
-#' will be a single number, whereas we return a matrix.
-#' }
-#' 
 #' \item{\code{residuals}}{
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
 #' residuals or any other type). However, in the case of \code{\link{stan_polr}}
@@ -68,11 +58,11 @@
 #' }
 #' }
 #' 
-#' @seealso
+#' @seealso 
 #' Other S3 methods for stanreg objects, which have separate documentation, 
 #' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 
-#' \code{\link{predict.stanreg}}, \code{\link{print.stanreg}}, and
-#' \code{\link{summary.stanreg}}.
+#' \code{\link{predict.stanreg}}, \code{\link{print.stanreg}}, 
+#' \code{\link{summary.stanreg}}, \code{\link{log_lik.stanreg}}, and more.
 #' 
 #' \code{\link{posterior_interval}} and \code{\link{posterior_predict}} for 
 #' alternatives to \code{confint} and \code{predict} for models fit using MCMC 
@@ -109,45 +99,6 @@ confint.stanreg <- function(object, parm, level = 0.95, ...) {
 #' @export
 fitted.stanreg <- function(object, ...)  {
   object$fitted.values
-}
-
-#' Extract pointwise log-likelihood matrix
-#' 
-#' @export
-#' @keywords internal
-#' @param object Fitted model object.
-#' @param ... Arguments to methods. For example the
-#'   \code{\link[=stanreg-methods]{stanreg}} method accepts the argument
-#'   \code{newdata}.
-#' @return Pointwise log-likelihood matrix.
-#' @seealso \code{\link{log_lik.stanreg}}
-#' 
-log_lik <- function(object, ...) UseMethod("log_lik")
-
-#' @rdname stanreg-methods
-#' @export
-#' @param newdata For \code{log_lik}, an optional data frame of new data (e.g. 
-#'   holdout data) to use when evaluating the log-likelihood. See the 
-#'   description of \code{newdata} for \code{\link{posterior_predict}}.
-#' @param offset For \code{log_lik}, a vector of offsets. Only required if
-#'   \code{newdata} is specified and an \code{offset} was specified when fitting
-#'   the model.
-#' 
-log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
-  if (!used.sampling(object)) 
-    STOP_sampling_only("Pointwise log-likelihood matrix")
-  if (!is.null(newdata)) {
-    if ("gam" %in% names(object))
-      stop("'log_lik' with 'newdata' not yet supported ", 
-           "for models estimated via 'stan_gamm4'.")
-    newdata <- as.data.frame(newdata)
-  }
-  fun <- ll_fun(object)
-  args <- ll_args(object, newdata = newdata, offset = offset)
-  sapply(seq_len(args$N), function(i) {
-    as.vector(fun(i = i, data = args$data[i, , drop = FALSE], 
-                  draws = args$draws))
-  })
 }
 
 #' @rdname stanreg-methods
@@ -343,19 +294,31 @@ sigma.stanreg <- function(object, ...) {
 #' @export
 #' @export VarCorr
 #' @importFrom nlme VarCorr
-#' @importFrom lme4 mkVarCorr
+#' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
+  mat <- as.matrix(x)
   cnms <- .cnms(x)
-  means <- get_posterior_mean(x$stanfit)
-  means <- means[, ncol(means)]
-  theta <- means[grepl("^theta_L", names(means))]
-  sc <- sigma.stanreg(x)
-  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
-                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta / sc, nms = names(cnms))
-  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
+  useSc <- "sigma" %in% colnames(mat)
+  if (useSc) sc <- mat[,"sigma"]
+  else sc <- 1
+  Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
+  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
+  nms <- names(cnms)
+  ncseq <- seq_along(nc)
+  spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
+  ans <- lapply(ncseq, function(i) {
+    Sigma <- matrix(0, nc[i], nc[i])
+    Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
+    Sigma <- Sigma + t(Sigma)
+    diag(Sigma) <- diag(Sigma) / 2
+    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
+    stddev <- sqrt(diag(Sigma))
+    corr <- cov2cor(Sigma)
+    structure(Sigma, stddev = stddev, correlation = corr)
+  })
+  names(ans) <- nms
+  structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }
-
 
 # Exported but doc kept internal ----------------------------------------------
 

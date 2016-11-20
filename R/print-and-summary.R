@@ -70,7 +70,7 @@
 #' }
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
-#' @importFrom rstan get_num_upars
+#' 
 print.stanreg <- function(x, digits = 1, ...) {
   print(x$call)
   cat("\nEstimates:\n")
@@ -94,7 +94,8 @@ print.stanreg <- function(x, digits = 1, ...) {
     ppd_mat <- mat[, ppd_nms, drop = FALSE]
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
-    
+    if (mer)
+      estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),]
     .printfr(estimates, digits, ...)
     if (ord) {
       cat("\nCutpoints:\n")
@@ -148,7 +149,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     .printfr(anova_table, digits, ...)
   }
   cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", get_num_upars(x$stanfit), 
+      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
       "\n", sep = " ")
   invisible(x)
 }
@@ -191,7 +192,8 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   matrix to a data.frame, preserving row and column names but dropping the 
 #'   \code{print}-related attributes.
 #' 
-#' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
+#' @seealso \code{\link{prior_summary}} to extract or print a summary of the 
+#'   priors used for a particular model.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
@@ -212,6 +214,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
                             probs = NULL, ..., digits = 1) {
   mer <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
+  
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
     if (!is.null(probs)) 
@@ -286,6 +289,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
             nobs = nobs(object),
             ngrps = if (mer) ngrps(object) else NULL,
             print.digits = digits, 
+            priors = object$prior.info,
             class = "summary.stanreg")
 }
 
@@ -302,6 +306,10 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)
+  # if (!is.null(atts$priors)) {
+  #   cat("\nPriors:")
+  #   cat("\n ", print_prior_summary(atts$priors, digits))
+  # }
   cat("\nObservations:", atts$nobs)
   if (!is.null(atts$ngrps))
     cat("\nGroups:", paste(names(atts$ngrps), unname(atts$ngrps), 

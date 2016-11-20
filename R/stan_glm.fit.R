@@ -23,7 +23,7 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
-#'   
+#' @importFrom lme4 mkVarCorr
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,
@@ -143,7 +143,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 
     min(.Machine$double.xmax, prior_scale_for_intercept)
-
+  
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
@@ -168,6 +168,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD)
 
+  # make a copy of user specification before modifying 'group' (used for keeping
+  # track of priors)
+  user_covariance <- if (!length(group)) NULL else group[["decov"]]
+  
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
@@ -343,10 +347,22 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop(paste(famname, "is not supported."))
   } # nocov end
   
+  prior_info <- summarize_glm_prior(
+    user_prior = prior_stuff,
+    user_prior_intercept = prior_intercept_stuff,
+    user_prior_covariance = user_covariance,
+    user_prior_ops = prior_ops,
+    has_intercept = has_intercept,
+    has_predictors = nvars > 0,
+    adjusted_prior_scale = prior_scale,
+    adjusted_prior_intercept_scale = prior_scale_for_intercept
+  )
+  
   pars <- c(if (has_intercept) "alpha", 
             "beta", 
             if (length(group)) "b",
-            if (is_continuous | is_nb) "dispersion", 
+            if (is_continuous | is_nb) "dispersion",
+            if (standata$len_theta_L) "theta_L",
             "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -368,7 +384,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(out)
+    return(structure(out, prior.info = prior_info))
     
   } else {
     if (algorithm == "sampling") {
@@ -398,6 +414,31 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
           if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
       }
     }
+    if (standata$len_theta_L) {
+      thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      cnms <- group$cnms
+      nc <- sapply(cnms, FUN = length)
+      nms <- names(cnms)
+      Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+        Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+        unlist(sapply(Sigma, simplify = FALSE, 
+                      FUN = function(x) x[lower.tri(x, TRUE)]))
+      })
+      l <- length(dim(Sigma))
+      end <- tail(dim(Sigma), 1L)
+      shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+      if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+        stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+      }
+      else for (chain in 1:end) {
+        stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
+      }
+      Sigma_nms <- unlist(lapply(cnms, FUN = function(grp) {
+        nm <- outer(grp, grp, FUN = paste, sep = ",")
+        nm[lower.tri(nm, diag = TRUE)]
+      }))
+    }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_nms, "]")),
@@ -405,10 +446,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
+                   if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(stanfit)
+    return(structure(stanfit, prior.info = prior_info))
   }
 }
 
@@ -487,3 +529,77 @@ make_b_nms <- function(group) {
   }
   return(b_nms)  
 }
+
+
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param user_* The user's prior, prior_intercept, prior_covariance, and 
+#   prior_options specifications. For prior and prior_intercept these should be
+#   passed in after broadcasting the df/location/scale arguments if necessary.
+# @param has_intercept T/F, does model have an intercept?
+# @param has_predictors T/F, does model have predictors?
+# @param adjusted_prior_* adjusted scales computed if prior_ops$scaled is TRUE
+# @return A named list with components 'prior', 'prior_intercept', and possibly 
+#   'prior_covariance', each of which itself is a list containing the needed
+#   values for prior_summary.
+summarize_glm_prior <-
+  function(user_prior,
+           user_prior_intercept,
+           user_prior_covariance,
+           user_prior_ops,
+           has_intercept, 
+           has_predictors,
+           adjusted_prior_scale,
+           adjusted_prior_intercept_scale) {
+    rescaled <- isTRUE(user_prior_ops$scaled)
+    rescaled_coef <-
+      rescaled && has_predictors &&
+      !is.na(user_prior$prior_dist_name) &&
+      !all(user_prior$prior_scale == adjusted_prior_scale)
+    rescaled_int <-
+      rescaled && has_intercept &&
+      !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+      (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
+    
+    if (has_predictors && user_prior$prior_dist_name %in% "t") {
+      if (all(user_prior$prior_df == 1)) {
+        user_prior$prior_dist_name <- "cauchy"
+      } else {
+        user_prior$prior_dist_name <- "student_t"
+      }
+    }
+    if (has_intercept &&
+        user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+      if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
+        user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
+      } else {
+        user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
+      }
+    }
+    prior_list <- list(
+      prior = 
+        if (!has_predictors) NULL else with(user_prior, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coef)
+            adjusted_prior_scale else NULL,
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+            prior_df else NULL
+        )),
+      prior_intercept = 
+        if (!has_intercept) NULL else with(user_prior_intercept, list(
+          dist = prior_dist_name_for_intercept,
+          location = prior_mean_for_intercept,
+          scale = prior_scale_for_intercept,
+          adjusted_scale = if (rescaled_int)
+            adjusted_prior_intercept_scale else NULL,
+          df = if (prior_dist_name_for_intercept %in% "student_t")
+            prior_df_for_intercept else NULL
+        ))
+    )
+    if (length(user_prior_covariance))
+      prior_list$prior_covariance <- user_prior_covariance
+    
+    return(prior_list)
+  }
