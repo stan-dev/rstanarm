@@ -206,7 +206,7 @@ post <- stan_gamm4(y ~ s(roach1) + treatment + log(roaches$exposure2),
                    chains = CHAINS, cores = CORES, seed = SEED)
 ```
 ```{r}
-gg_nlf(post)
+plot_nonlinear(post)
 ```
 
 Here we see that the relationship between past and present roaches is estimated to 

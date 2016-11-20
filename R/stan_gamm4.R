@@ -88,8 +88,8 @@
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
 #'                  QR = TRUE, chains = 1)
 #' print(br)
-#' gg_nlf(br)
-#' gg_nlf(br, smooths = "s(x0)", alpha = 2/3)
+#' plot_nonlinear(br)
+#' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 #' @importFrom lme4 getME
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
@@ -158,12 +158,12 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument).
 #' @param alpha,size Passed to \code{\link[ggplot2]{geom_ribbon}}.
 #'   
-#' @return \code{gg_nlf} returns a ggplot object.
+#' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
 #' @importFrom ggplot2 aes_ facet_wrap ggplot geom_line geom_ribbon labs 
 #' 
-gg_nlf <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
-                   alpha = 1, size = 0.75) {
+plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
+                           alpha = 1, size = 0.75) {
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
