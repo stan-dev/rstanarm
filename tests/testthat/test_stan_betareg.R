@@ -125,3 +125,25 @@ test_that("stan_betareg returns expected result when modeling x and z using link
     expect_stanreg(fit)
   }
 })
+
+# test weights/offset (make test more comprehensive once the beta_rng() update is in stan math)
+context("stan_betareg (dispersion only) with offset and weights")
+test_that("stan_betareg returns expected result when modeling x and dispersion with offset and weights", {
+  dat <- list()
+  dat$N <- 200
+  weights <- rbeta(dat$N, 2, 2)
+  offset <- rep(0.3, dat$N)
+  dat$x <- rnorm(dat$N, 2, 1)
+  dat$mu <- binomial(link="logit")$linkinv(1+0.2*dat$x)
+  dat$phi <- 20
+  dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
+  dat <- data.frame(dat$y, dat$x)
+  colnames(dat) <- c("y", "x")
+  fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, QR = TRUE,
+                      prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                      data = dat, weights = weights, offset = offset, algorithm = "optimizing", iter = 2000)
+  expect_stanreg(fit)
+  val <- coef(fit)
+  ans <- coef(betareg(y ~ x, link = "logit", weights = weights, offset = offset, data = dat))
+  expect_equal(val, ans, tol = 0.3, info = "logit")
+})
