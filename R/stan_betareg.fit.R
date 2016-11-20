@@ -15,6 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#' @export
 #' @rdname stan_betareg
 
 stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
@@ -24,13 +25,21 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
                               prior_z = normal(), prior_intercept_z = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
                               algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                              adapt_delta = NULL, QR = FALSE, sparse = FALSE, Z_true) {
+                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   # lots of tedious but simple stuff including standata which is a big list to pass to data {}
   # process the prior information like stan_glm.fit() does
-
-  algorithm <- match.arg(algorithm)
   
+  algorithm <- match.arg(algorithm)
+
+  # determine whether the user has passed a matrix for the percision model (z)
+  if (length(link.phi) == 1) {
+    Z_true <- 1
+  }
+  else {
+    Z_true <- 0
+  }
+
   # no family argument
   famname <- "beta"
   is_beta <- is.beta(famname)
@@ -75,9 +84,6 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   if (Z_true == 0) {
     has_intercept_z <- FALSE
   }
-  # if (nvars_z == 0 && has_intercept_z == 1) {
-  #   Z_true <- 0
-  # }
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
