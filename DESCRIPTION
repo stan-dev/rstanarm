@@ -37,12 +37,13 @@ Imports:
     stats,
     utils
 Suggests:
-    gamm4,
+    arm,
     gridExtra,
     HSAUR3,
     KernSmooth,
     knitr,
     MASS,
+    mgcv,
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)

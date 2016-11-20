@@ -20,7 +20,7 @@
 
 library(rstanarm)
 stopifnot(require(lme4))
-stopifnot(require(gamm4))
+# stopifnot(require(gamm4))
 stopifnot(require(HSAUR3))
 ITER <- 400
 CHAINS <- 2
@@ -103,11 +103,11 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
                     seed = SEED, refresh = REFRESH)
   expect_stanreg(fit)
   
-  ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
-               random = ~(1|Subject))$mer
-  expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol)
-  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
-  expect_identical(ngrps(fit), ngrps(ans))
+  # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
+  #              random = ~(1|Subject))$mer
+  # expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol, check.attributes = FALSE)
+  # expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
+  # expect_identical(ngrps(fit), ngrps(ans))
 })
 
 context("stan_lmer")

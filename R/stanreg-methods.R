@@ -386,6 +386,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
+  if (inherits(x, "gamm4")) return(x$formula)
   if (is.mer(x)) 
     return(formula_mer(x, ...))
   

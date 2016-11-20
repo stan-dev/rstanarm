@@ -362,7 +362,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Lind <- group$Lind
     theta <- group$theta
     
-    group <- rstanarm:::pad_reTrms(group$Ztlist, cnms = group$cnms, 
+    group <- rstanarm:::pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)

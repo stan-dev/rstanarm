@@ -42,11 +42,13 @@
 neg_binomial_2 <- function(link = "log") {
   out <- poisson(link)
   out$family <- "neg_binomial_2"
-  out$variance <- function(mu, theta) mu + mu^2 / theta
-  out$dev.resids <- function(y, mu, wt)
+  out$variance <- function(mu, theta = Inf) mu + mu^2 / theta
+  out$dev.resids <- function(y, mu, wt) {
     stop("'dev.resids' function should not be called")
-  out$aic <- function(y, n, mu, wt, dev)
+  }
+  out$aic <- function(y, n, mu, wt, dev) {
     stop("'aic' function should not have been called")
+  }
   out$simulate <- function(object, nsim)
     stop("'simulate' function should not have been called")
   return(out)

@@ -47,6 +47,9 @@ stan_polr1 <- SW(stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
                            seed = SEED, refresh = REFRESH))
 polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
 
+stan_gamm41 <- SW(stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
+                             chains = CHAINS, seed = SEED, refresh = REFRESH))
+
 att_names <- function(object) {
   nms <- names(object)
   att_nms <- names(attributes(object))
@@ -155,6 +158,7 @@ test_that("log_lik method works", {
   expect_silent(log_lik(stan_glm1))
 
   expect_silent(log_lik(stan_polr1))
+  expect_silent(log_lik(stan_gamm41))
   expect_equal(dim(log_lik(stan_polr1)), c(ITER, nobs(stan_polr1)))
   expect_equal(dim(log_lik(stan_lmer1)), c(ITER, nobs(stan_lmer1)))
 
@@ -185,6 +189,7 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_lmer2), log_lik(stan_lmer2, newdata = sleepstudy))
   expect_equal(log_lik(stan_glm1), log_lik(stan_glm1, newdata = mtcars))
   expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
+  expect_equal(log_lik(stan_gamm41), log_lik(stan_gamm41, newdata = mtcars))
 })
 
 
