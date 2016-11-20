@@ -199,24 +199,18 @@ package.
 ```{r, results = "hide"}
 library(rstanarm)
 data(roaches)
-roaches$off <- log(roaches$exposure2)
-roaches$treatment <- as.factor(roaches$treatment)
-post <- stan_gamm4(y ~ s(roach1, by = treatment) + offset(off), 
+roaches$roach1 <- roaches$roach1 / 100
+post <- stan_gamm4(y ~ s(roach1) + treatment + log(roaches$exposure2), 
                    random = ~(1 | senior),
-                   data = roaches, family = poisson, QR = TRUE,
+                   data = roaches, family = neg_binomial_2, QR = TRUE,
                    chains = CHAINS, cores = CORES, seed = SEED)
 ```
 ```{r}
 do.call(gridExtra::grid.arrange, args = gg_nlf(post))
 ```
 
-Here we see that the relationship is not estimated to be particularly
-stable with only $262$ total observations. When treatment is one,
-the non-linear function seems reasonable, staying steady near one
-until a sufficient number of previous roaches becomes sufficiently
-large and then it takes off before perhaps decreasing if the building
-becomes overly saturated with roaches. When treatment is zero, the
-non-linear function has an odd dip between the stable range and the
-increasing range. So, in this case, it would probably be better to
-estimate the model without allowing the non-linear functions to 
-vary by treatment category.
+Here we see that the relationship between past and present roaches is estimated to 
+be nonlinear. For a small number of past roaches, the function is steep and then
+it appears to flatten out, although we become highly uncertain about the function
+in the rare cases where the number of past roaches is large.
+
