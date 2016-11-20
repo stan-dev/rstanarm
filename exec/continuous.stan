@@ -514,9 +514,6 @@ generated quantities {
           else if (is_nan(yrep) == 0) {
             mean_PPD = mean_PPD + yrep; 
           }
-          else {
-            print("something went wrong");
-          }
       }
     }
     if (family == 4 && link_phi > 0) {

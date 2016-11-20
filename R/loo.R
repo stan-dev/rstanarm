@@ -495,11 +495,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
 }
 .xdata_beta <- function(data) {
   sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("z", colnames(data), fixed = T))]
+  data[, -c(which(colnames(data) %in% sel), grep("z", colnames(data), fixed = TRUE))]
 }
 .zdata_beta <- function(data) {
   sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("x", colnames(data), fixed = T))]
+  data[, -c(which(colnames(data) %in% sel), grep("x", colnames(data), fixed = TRUE))]
 }
 .phi_beta <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))

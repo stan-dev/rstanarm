@@ -31,7 +31,9 @@ stanreg <- function(object) {
   nvars <- ncol(x)
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
-  if (family$family == "beta") { 
+  
+  is_betareg <- is.beta(family$family)
+  if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
     z <- object$z        # pull out betareg z vars so that they can be used in posterior_predict/loo
     nvars_z <- ncol(z)   # used so that all coefficients are printed with coef()
@@ -48,7 +50,7 @@ stanreg <- function(object) {
     ses <- apply(stanmat[, xnms, drop = FALSE], 2L, mad)
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
-    if (family$family == "beta") {
+    if (is_betareg) {
       if (length(colnames(z)) == 1)
         coefs_z <- apply(stanmat[, grepl("(phi)", colnames(stanmat), fixed = TRUE), drop = FALSE], 2L, median)
       else
@@ -57,7 +59,7 @@ stanreg <- function(object) {
   } else {
     stan_summary <- make_stan_summary(stanfit)
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
-    if (family$family == "beta") {
+    if (is_betareg) {
       coefs_z <- stan_summary[(nvars + 1):(nvars + nvars_z), select_median(object$algorithm)]
       if (length(coefs_z) == 1L)
         names(coefs_z) <- rownames(stan_summary)[nvars + 1]
@@ -89,7 +91,7 @@ stanreg <- function(object) {
     residuals <- ytmp - mu
   }
   names(eta) <- names(mu) <- names(residuals) <- ynames
-  if (family$family == "beta") {
+  if (is_betareg) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
     # residuals <- ytmp - rbeta(length(eta), mu * phi, (1 - mu) * phi) # this is not what betareg does
@@ -127,7 +129,7 @@ stanreg <- function(object) {
     out$asymptotic_sampling_dist <- stanmat
   if (mer) 
     out$glmod <- object$glmod
-  if (family$family == "beta") {
+  if (is_betareg) {
     out$coefficients <- unpad_reTrms(c(coefs, coefs_z))
     out$z <- z
     out$family_phi <- family_phi
