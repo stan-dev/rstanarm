@@ -18,7 +18,7 @@
 #' @export
 #' @rdname stan_betareg
 
-stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
+stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                               link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
                               link.phi = c("log", "identity", "sqrt"), ...,
                               prior = normal(), prior_intercept = normal(),
@@ -33,17 +33,17 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
   algorithm <- match.arg(algorithm)
 
   # determine whether the user has passed a matrix for the percision model (z)
+  if (length(link.phi) > 1 || is.null(z)) {
+    Z_true <- 0
+    z <- model.matrix(y ~ 1)
+  }
   if (length(link.phi) == 1) {
     Z_true <- 1
-  }
-  else {
-    Z_true <- 0
   }
 
   # no family argument
   famname <- "beta"
-  is_beta <- is.beta(famname)
-  
+
   # link for X variables
   link <- match.arg(link)
   supported_links <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
@@ -135,8 +135,8 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     prior_scale_for_intercept = min(.Machine$double.xmax, prior_scale_for_intercept), 
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_scale_for_dispersion = prior_scale_for_dispersion %ORifINF% 0,
-    has_weights = length(weights), weights = weights,
-    has_offset = length(offset), offset = offset,
+    has_weights = length(weights) > 0, weights = weights,
+    has_offset = length(offset) > 0, offset = offset,
     t = 0L, 
     p = integer(), 
     l = integer(), 
@@ -158,7 +158,7 @@ stan_betareg.fit <- function (x, y, z, weights = rep(1, NROW(x)), offset = rep(0
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z)
     )
-  
+
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
   if (Z_true == 1) {
