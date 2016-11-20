@@ -564,6 +564,7 @@ get_z.gamm4 <- function(object) {
   X <- get_x(object)
   XZ <- object$x
   Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
+  Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
   return(Z)
 }
 
