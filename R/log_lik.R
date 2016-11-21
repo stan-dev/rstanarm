@@ -67,6 +67,8 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     STOP_sampling_only("Pointwise log-likelihood matrix")
   if (!is.null(newdata)) {
     newdata <- as.data.frame(newdata)
+    if (anyNA(newdata))
+      stop("NAs are not allowed in 'newdata'.")
   }
   fun <- ll_fun(object)
   args <- ll_args(object, newdata = newdata, offset = offset)

@@ -73,8 +73,8 @@ posterior_linpred.stanreg <- function(object, transform = FALSE, newdata = NULL,
       stop("'posterior_linpred' with 'newdata' not yet supported ",
            "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
-    if (any(is.na(newdata)))
-      stop("Currently NAs are not allowed in 'newdata'.")
+    if (anyNA(newdata))
+      stop("NAs are not allowed in 'newdata'.")
   }
   dat <- pp_data(object,
                  newdata = newdata,

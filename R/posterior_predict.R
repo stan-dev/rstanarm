@@ -142,8 +142,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     fun <- match.fun(fun)
   if (!is.null(newdata)) {
     newdata <- as.data.frame(newdata)
-    if (any(is.na(newdata)))
-      stop("Currently NAs are not allowed in 'newdata'.")
+    if (anyNA(newdata))
+      stop("NAs are not allowed in 'newdata'.")
   }
   dat <-
     pp_data(object,
