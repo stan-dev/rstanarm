@@ -129,6 +129,7 @@ used.variational <- function(x) {
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
+  stopifnot(is.stanreg(x))
   check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
@@ -534,7 +535,14 @@ get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(Zt)
 }
-
+#' @export
+get_z.gamm4 <- function(object) {
+  X <- get_x(object)
+  XZ <- object$x
+  Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
+  Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
+  return(Z)
+}
 
 # Get inverse link function
 #
@@ -609,6 +617,14 @@ check_reTrms <- function(reTrms) {
   return(invisible(NULL))
 }
 
+#' @importFrom lme4 glmerControl
+make_glmerControl <- function(...) {
+  glmerControl(check.nlev.gtreq.5 = "ignore",
+               check.nlev.gtr.1 = "stop",
+               check.nobs.vs.rankZ = "ignore",
+               check.nobs.vs.nlev = "ignore",
+               check.nobs.vs.nRE = "ignore", ...)  
+}
 
 # Check if a fitted model (stanreg object) has weights
 # 

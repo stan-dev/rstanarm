@@ -23,12 +23,12 @@ pp_data <-
            offset = NULL,
            ...) {
     validate_stanreg_object(object)
-    if (is.mer(object))
-      .pp_data_mer(object,
-                   newdata = newdata,
-                   re.form = re.form,
-                   offset = offset,
-                   ...)
+    if (is.mer(object)) {
+      out <- .pp_data_mer(object, newdata = newdata,
+                          re.form = re.form, ...)
+      if (!is.null(offset)) out$offset <- offset
+      return(out)
+    }
     else
       .pp_data(object, newdata = newdata, offset = offset, ...)
   }
@@ -56,10 +56,31 @@ pp_data <-
 
 
 # for models fit using stan_(g)lmer or stan_gamm4
-.pp_data_mer <- function(object, newdata, re.form, offset = NULL, ...) {
-  x <- .pp_data_mer_x(object, newdata, ...)
-  z <- .pp_data_mer_z(object, newdata, re.form, ...)
-  offset <- .pp_data_offset(object, newdata, offset)
+.pp_data_mer <- function(object, newdata, re.form, ...) {
+  if (is(object, "gamm4")) { # append extra terms
+    if (is.null(re.form)) {
+      if (is.null(newdata)) glmod <- object$glmod
+      re.form <- as.formula(object$call$random)
+    }
+    else if (is.na(re.form)) re.form <- NULL
+    if (!is.null(newdata)) { # || !is.null(re.form)
+      newdata[[as.character(object$formula[2])]] <- 1 
+      # need this provisional outcome for the next line
+      glmod <- gamm4_to_glmer(object$formula, re.form, data = newdata, ...)
+    }
+    x <- glmod$X
+    z <- list(Zt = glmod$reTrms$Zt, Z_names = make_b_nms(glmod$reTrms))
+    # FIXME: might need to reorder the rows of Zt
+  }
+  else {
+    x <- .pp_data_mer_x(object, newdata, ...)
+    z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  }
+  offset <- model.offset(model.frame(object))
+  if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
+    offset <- try(eval(object$call$offset, newdata), silent = TRUE)
+    if (!is.numeric(offset)) offset <- NULL
+  }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
@@ -102,9 +123,6 @@ pp_data <-
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
   } else {
-    if ("gam" %in% names(object))
-      stop("'posterior_predict' with non-NULL 're.form' not yet supported ", 
-           "for models estimated via 'stan_gamm4'")
     mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
                          newdata, na.action = na.action)
     newdata.NA <- newdata
@@ -133,28 +151,7 @@ pp_data <-
     stop("Grouping factors specified in re.form that were not present in original model.")
   new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
   Zt <- ReTrms$Zt
-  p <- sapply(ReTrms$cnms, FUN = length)
-  l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
-    nlevels(ReTrms$flist[[i]]))
-  
-  for (i in attr(ReTrms$flist, "assign")) {
-    ReTrms$flist[[i]] <- factor(ReTrms$flist[[i]],
-                                levels = gsub(" ", "_", levels(ReTrms$flist[[i]])))
-  }
-  
-  t <- length(p)
-  group_nms <- names(ReTrms$cnms)
-  Z_names <- character()
-  for (i in seq_along(ReTrms$cnms)) {
-    # if you change this, change it in stan_glm.fit() as well
-    nm <- group_nms[i]
-    nms_i <- paste(ReTrms$cnms[[i]], group_nms[i])
-    if (length(nms_i) == 1) {
-      Z_names <- c(Z_names, paste0(nms_i, ":", levels(ReTrms$flist[[nm]])))
-    } else {
-      Z_names <- c(Z_names, c(t(sapply(nms_i, paste0, ":", new_levels[[nm]]))))
-    }
-  }
+  Z_names <- make_b_nms(ReTrms)
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
 }

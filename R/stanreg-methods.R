@@ -17,9 +17,10 @@
 
 #' Methods for stanreg objects
 #' 
-#' S3 methods for \link[=stanreg-objects]{stanreg} objects. There are also 
-#' several methods (listed in See Also, below) with their own individual help
-#' pages.
+#' The methods documented on this page are actually some of the least important 
+#' methods defined for \link[=stanreg-objects]{stanreg} objects. The most 
+#' important methods are documented separately, each with its own page. Links to
+#' those pages are provided in the \strong{See Also} section, below.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps sigma
@@ -29,18 +30,11 @@
 #' @param ... Ignored, except by the \code{update} method. See
 #'   \code{\link{update}}.
 #' 
-#' @details Most of these methods are similar to the methods defined for objects
-#'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
+#' @details The methods documented on this page are similar to the methods 
+#'   defined for objects of class 'lm', 'glm', 'glmer', etc. However there are a
+#'   few key differences:
 #'   
 #' \describe{
-#' \item{\code{confint}}{
-#' For models fit using optimization, confidence intervals are returned via a
-#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is
-#' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
-#' \code{\link{posterior_interval}} function should be used to compute Bayesian
-#' uncertainty intervals.
-#' }
-#' 
 #' \item{\code{residuals}}{
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
 #' residuals or any other type). However, in the case of \code{\link{stan_polr}}
@@ -56,17 +50,37 @@
 #' \code{\link{mad}}. See the \emph{Uncertainty estimates} section in
 #' \code{\link{print.stanreg}} for more details.
 #' }
+#' \item{\code{confint}}{
+#' For models fit using optimization, confidence intervals are returned via a 
+#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is 
+#' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
+#' \code{confint} will throw an error because the
+#' \code{\link{posterior_interval}} function should be used to compute Bayesian 
+#' uncertainty intervals.
+#' }
 #' }
 #' 
 #' @seealso 
-#' Other S3 methods for stanreg objects, which have separate documentation, 
-#' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 
-#' \code{\link{predict.stanreg}}, \code{\link{print.stanreg}}, 
-#' \code{\link{summary.stanreg}}, \code{\link{log_lik.stanreg}}, and more.
-#' 
-#' \code{\link{posterior_interval}} and \code{\link{posterior_predict}} for 
-#' alternatives to \code{confint} and \code{predict} for models fit using MCMC 
-#' or variational approximation.
+#' \itemize{
+#'  \item The \code{\link[=print.stanreg]{print}},
+#'    \code{\link[=summary.stanreg]{summary}}, and \code{\link{prior_summary}} 
+#'    methods for stanreg objects for information on the fitted model.
+#'  \item \code{\link{launch_shinystan}} to use the ShinyStan GUI to explore a
+#'    fitted \pkg{rstanarm} model.
+#'  \item The \code{\link[=plot.stanreg]{plot}} method to plot estimates and
+#'    diagnostics.
+#'  \item The \code{\link{pp_check}} method for graphical posterior predictive
+#'    checking.
+#'  \item The \code{\link{posterior_predict}} and \code{\link{predictive_error}}
+#'    methods for predictions and predictive errors.
+#'  \item The \code{\link{posterior_interval}} and \code{\link{predictive_interval}}
+#'    methods for uncertainty intervals for model parameters and predictions.
+#'  \item The \code{\link[=loo.stanreg]{loo}}, \code{\link{kfold}}, and
+#'  \code{\link{log_lik}} methods for leave-one-out or K-fold cross-validation, 
+#'    model comparison, and computing the log-likelihood of (possibly new) data.
+#'  \item The \code{\link[=as.matrix.stanreg]{as.matrix}}, \code{as.data.frame}, 
+#'    and \code{as.array} methods to access posterior draws.
+#' }
 #' 
 NULL
 
@@ -372,6 +386,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
+  if (inherits(x, "gamm4")) return(x$formula)
   if (is.mer(x)) 
     return(formula_mer(x, ...))
   

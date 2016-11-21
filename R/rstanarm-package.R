@@ -173,22 +173,21 @@
 #' examples of using many of the available priors as well as more detailed 
 #' descriptions of some of the novel priors used by \pkg{rstanarm}.
 #'  
-#' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
+#' @seealso 
+#' \itemize{
+#'   \item \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
-#'   
-#'   The custom \code{\link[=plot.stanreg]{plot}} and \code{\link{pp_check}}
-#'   methods for the various plots that can be used to explore and check fitted
-#'   models.
-#'   
-#'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
-#'   by \pkg{rstanarm} for model fitting.
-#'   
-#'   \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
+#'   \item The custom \code{\link[=plot.stanreg]{plot}} and 
+#'   \code{\link{pp_check}} methods for the various plots that can be used to 
+#'   explore and check fitted models.
+#'   \item \url{http://mc-stan.org/} for more information on the Stan C++ 
+#'   package used by \pkg{rstanarm} for model fitting.
+#'   \item \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
-#'   
-#'   \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a question 
-#'   about \pkg{rstanarm} on the Stan-users forum.
-#'   
+#'   \item \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a 
+#'   question about \pkg{rstanarm} on the Stan-users forum.
+#' }
+#'  
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-lme4

@@ -4,9 +4,6 @@ r: devel
 cache: packages
 
 r_github_packages:
-  - stan-dev/rstantools
-  - stan-dev/bayesplot
-  - HenrikBengtsson/matrixStats@develop
   - jimhester/covr
 
 env:
@@ -21,10 +18,10 @@ before_install:
   - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
-  
+
 script: 
   - |
-    R CMD build .
+    travis_wait R CMD build .
     travis_wait 50 R CMD check rstanarm*tar.gz
 
 after_script:

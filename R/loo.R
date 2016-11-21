@@ -92,18 +92,18 @@
 #' the objects returned by \code{kfold}.
 #'   
 #' @seealso 
-#' \code{\link[loo]{compare}} for comparing two or more models on LOO, WAIC, or
-#' \eqn{K}-fold CV.
-#' 
-#' The various \pkg{rstanarm} vignettes for more examples of using \code{loo}.
-#' 
-#' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
-#' for details on the computations implemented by the \pkg{loo} package and the 
-#' interpretation of the Pareto \eqn{k} estimates displayed when using the 
-#' \code{\link{plot.loo}} method.
-#' 
-#' \code{\link{log_lik.stanreg}} to directly access the pointwise log-likelihood
-#' matrix. 
+#' \itemize{
+#'   \item \code{\link[loo]{compare}} for comparing two or more models on 
+#'     LOO, WAIC, or \eqn{K}-fold CV.
+#'   \item The various \pkg{rstanarm} vignettes for more examples of 
+#'     using \code{loo}.
+#'   \item \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} 
+#'     section)  for details on the computations implemented by the \pkg{loo} 
+#'     package and the interpretation of the Pareto \eqn{k} estimates displayed 
+#'     when using the  \code{\link{plot.loo}} method.
+#'   \item \code{\link{log_lik.stanreg}} to directly access the pointwise 
+#'     log-likelihood matrix. 
+#' }
 #'   
 #' @examples 
 #' \donttest{
@@ -159,50 +159,6 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   }
   
   reloo(x, loo_x, obs = bad_obs)
-}
-
-validate_k_threshold <- function(k) {
-  if (!is.numeric(k) || length(k) != 1) {
-    stop("'k_threshold' must be a single numeric value.", 
-         call. = FALSE)
-  } else if (k < 0) {
-    stop("'k_threshold' < 0 not allowed.", 
-         call. = FALSE)
-  } else if (k > 1) {
-    warning(
-      "Setting 'k_threshold' > 1 is not recommended.", 
-      "\nFor details see the PSIS-LOO section in help('loo-package', 'loo').",
-      call. = FALSE
-    )
-  }
-}
-recommend_kfold <- function(n) {
-  warning(
-    "Found ", n, " observations with a pareto_k > 0.7. ",
-    "With this many problematic observations we recommend calling ",
-    "'kfold' with argument 'K=10' to perform 10-fold cross-validation ",
-    "rather than LOO.", 
-    call. = FALSE
-  )
-}
-recommend_reloo <- function(n) {
-  warning(
-    "Found ", n, " observation(s) with a pareto_k > 0.7. ",
-    "We recommend calling 'loo' again with argument 'k_threshold = 0.7' ",
-    "in order to calculate the ELPD without the assumption that ", 
-    "these observations are negligible. ", "This will refit the model ", 
-    n, " times to compute the ELPDs for the problematic observations directly.",
-    call. = FALSE
-  )
-}
-recommend_exact_loo <- function(reason) {
-  stop(
-    "'loo' is not supported if ", reason, ". ", 
-    "If refitting the model 'nobs(x)' times is feasible, ", 
-    "we recommend calling 'kfold' with K equal to the ", 
-    "total number of observations in the data to perform exact LOO-CV.",
-    call. = FALSE
-  )
 }
 
 
@@ -280,6 +236,53 @@ waic.stanreg <- function(x, ...) {
 }
 
 
+
+# internal ----------------------------------------------------------------
+validate_k_threshold <- function(k) {
+  if (!is.numeric(k) || length(k) != 1) {
+    stop("'k_threshold' must be a single numeric value.", 
+         call. = FALSE)
+  } else if (k < 0) {
+    stop("'k_threshold' < 0 not allowed.", 
+         call. = FALSE)
+  } else if (k > 1) {
+    warning(
+      "Setting 'k_threshold' > 1 is not recommended.", 
+      "\nFor details see the PSIS-LOO section in help('loo-package', 'loo').",
+      call. = FALSE
+    )
+  }
+}
+recommend_kfold <- function(n) {
+  warning(
+    "Found ", n, " observations with a pareto_k > 0.7. ",
+    "With this many problematic observations we recommend calling ",
+    "'kfold' with argument 'K=10' to perform 10-fold cross-validation ",
+    "rather than LOO.", 
+    call. = FALSE
+  )
+}
+recommend_reloo <- function(n) {
+  warning(
+    "Found ", n, " observation(s) with a pareto_k > 0.7. ",
+    "We recommend calling 'loo' again with argument 'k_threshold = 0.7' ",
+    "in order to calculate the ELPD without the assumption that ", 
+    "these observations are negligible. ", "This will refit the model ", 
+    n, " times to compute the ELPDs for the problematic observations directly.",
+    call. = FALSE
+  )
+}
+recommend_exact_loo <- function(reason) {
+  stop(
+    "'loo' is not supported if ", reason, ". ", 
+    "If refitting the model 'nobs(x)' times is feasible, ", 
+    "we recommend calling 'kfold' with K equal to the ", 
+    "total number of observations in the data to perform exact LOO-CV.",
+    call. = FALSE
+  )
+}
+
+
 # Refit model leaving out specific observations
 #
 # @param x stanreg object
@@ -350,234 +353,4 @@ kfold_and_reloo_data <- function(x) {
   
   d <- get_all_vars(formula(x), dat)
   na.omit(d)
-}
-
-
-
-# function for loo.function -----------------------------------------------
-# returns log-likelihood function for loo.function() and waic.function()
-ll_fun <- function(x) {
-  validate_stanreg_object(x)
-  f <- family(x)
-  if (!is(f, "family") || is_scobit(x))
-    return(.ll_polr_i)
-  get(paste0(".ll_", f$family, "_i"), mode = "function")
-}
-
-
-# arguments for loo.function ----------------------------------------------
-# returns 'args' argument for loo.function() and waic.function()
-ll_args <- function(object, newdata = NULL, offset = NULL) {
-  validate_stanreg_object(object)
-  f <- family(object)
-  draws <- nlist(f)
-  has_newdata <- !is.null(newdata)
-  if (has_newdata) {
-    ppdat <- pp_data(object, as.data.frame(newdata), offset = offset)
-    tmp <- pp_eta(object, ppdat)
-    eta <- tmp$eta
-    stanmat <- tmp$stanmat
-    x <- ppdat$x
-    y <- eval(formula(object)[[2L]], newdata)
-  } else {
-    stanmat <- as.matrix.stanreg(object)
-    x <- get_x(object)
-    y <- get_y(object)
-  }
-  
-  if (is(f, "family") && !is_scobit(object)) {
-    fname <- f$family
-    if (!is.binomial(fname)) {
-      data <- data.frame(y, x)
-    } else {
-      if (NCOL(y) == 2L) {
-        trials <- rowSums(y)
-        y <- y[, 1L]
-      } else {
-        trials <- 1
-        if (is.factor(y)) 
-          y <- fac2bin(y)
-        stopifnot(all(y %in% c(0, 1)))
-      }
-      data <- data.frame(y, trials, x)
-    }
-    draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (is.gaussian(fname)) 
-      draws$sigma <- stanmat[, "sigma"]
-    if (is.gamma(fname)) 
-      draws$shape <- stanmat[, "shape"]
-    if (is.ig(fname)) 
-      draws$lambda <- stanmat[, "lambda"]
-    if (is.nb(fname)) 
-      draws$size <- stanmat[,"overdispersion"]
-    if (is.beta(fname)) {
-      draws$f_phi <- object$family_phi
-      z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
-      if (length(z_vars) == 1 && z_vars == "(phi)") {
-        draws$phi <- stanmat[, z_vars]
-      }
-      else {
-        x_dat <- get_x(object)
-        z_dat <- object$z
-        colnames(x_dat) <- paste0("x.", colnames(x_dat))
-        colnames(z_dat) <- paste0("z.", colnames(z_dat))
-        data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat))
-        draws$phi <- stanmat[,z_vars]
-      }
-    }
-  } else {
-    stopifnot(is(object, "polr"))
-    y <- as.integer(y)
-    if (has_newdata) 
-      x <- .validate_polr_x(object, x)
-    data <- data.frame(y, x)
-    draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
-    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
-    draws$zeta <- stanmat[, zetas, drop = FALSE]
-    draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) {
-      draws$alpha <- stanmat[, "alpha"]
-      draws$f <- object$method
-    }
-    
-  }
-
-  data$offset <- if (has_newdata) offset else object$offset
-  if (model_has_weights(object))
-    data$weights <- object$weights
-
-  if (is.mer(object)) {
-    b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
-    if (has_newdata) {
-      Z_names <- ppdat$Z_names
-      if (is.null(Z_names)) {
-        b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
-      } else {
-        b <- pp_b_ord(b, Z_names)
-      }
-      z <- t(ppdat$Zt)
-    } else {
-      z <- get_z(object)
-    }
-    data <- cbind(data, as.matrix(z))
-    draws$beta <- cbind(draws$beta, b)
-  }
-  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
-}
-
-
-# check intercept for polr models -----------------------------------------
-# Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
-# bernoulli model). If it doesn't have an intercept then the intercept column in
-# x is dropped. This is only necessary if newdata is specified because otherwise
-# the correct x is taken from the fitted model object.
-.validate_polr_x <- function(object, x) {
-  x0 <- get_x(object)
-  has_intercept <- colnames(x0)[1L] == "(Intercept)" 
-  if (!has_intercept && colnames(x)[1L] == "(Intercept)")
-    x <- x[, -1L, drop = FALSE]
-  x
-}
-
-
-# log-likelihood function helpers -----------------------------------------
-.xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -which(colnames(data) %in% sel)]
-}
-.mu <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
-  draws$f$linkinv(eta)
-}
-.xdata_beta <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("z", colnames(data), fixed = TRUE))]
-}
-.zdata_beta <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("x", colnames(data), fixed = TRUE))]
-}
-.phi_beta <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))
-  draws$f_phi$linkinv(eta)
-}
-.mu_beta <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$beta, .xdata_beta(data), data$offset))
-  draws$f$linkinv(eta)
-}
-.weighted <- function(val, w) {
-  if (is.null(w)) {
-    val
-  } else {
-    val * w
-  } 
-}
-
-
-# log-likelihood functions ------------------------------------------------
-.ll_gaussian_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_binomial_i <- function(i, data, draws) {
-  val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_poisson_i <- function(i, data, draws) {
-  val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_neg_binomial_2_i <- function(i, data, draws) {
-  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y, shape = draws$shape, 
-                rate = draws$shape / .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_inverse.gaussian_i <- function(i, data, draws) {
-  mu <- .mu(data, draws)
-  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
-    1.5 * log(data$y) -
-    0.5 * draws$lambda * (data$y - mu)^2 / 
-    (data$y * mu^2)
-  .weighted(val, data$weights)
-}
-.ll_polr_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
-  f <- draws$f
-  J <- draws$max_y
-  y_i <- data$y
-  linkinv <- polr_linkinv(f)
-  if (is.null(draws$alpha)) {
-    if (y_i == 1) {
-      val <- log(linkinv(draws$zeta[, 1] - eta))
-    } else if (y_i == J) {
-      val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
-    } else {
-      val <- log(linkinv(draws$zeta[, y_i] - eta) - 
-                   linkinv(draws$zeta[, y_i - 1L] - eta))
-    }
-  } else {
-    if (y_i == 0) {
-      val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
-    } else if (y_i == 1) {
-      val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
-    } else {
-      stop("Exponentiation only possible when there are exactly 2 outcomes.")
-    }
-  }
-  .weighted(val, data$weights)
-}
-
-.ll_beta_i <- function(i, data, draws) {
-  mu <- .mu_beta(data, draws)
-  phi <- draws$phi
-  if (length(grep("z", colnames(data), fixed = TRUE)) > 0) {
-    phi <- .phi_beta(data, draws)
-  }
-  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
-  .weighted(val, data$weights)
 }

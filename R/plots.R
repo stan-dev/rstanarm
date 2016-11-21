@@ -48,18 +48,20 @@
 #'   \pkg{ggplot2} package, or an object created from multiple ggplot objects
 #'   (e.g. a gtable object created by \code{\link[gridExtra]{arrangeGrob}}).
 #'
-#' @seealso 
-#'   The vignettes in the \pkg{bayesplot} package for many examples.
-#'   
-#'   \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to the 
-#'   documentation for all the available plotting functions.
-#'   
-#'   \code{\link[bayesplot]{color_scheme_set}} (\pkg{bayesplot}) to change the
-#'   color scheme used for plotting.
-#'   
-#'   \code{\link{pp_check}} for graphical posterior predictive checks.
+#' @seealso
+#' \itemize{ 
+#'   \item The vignettes in the \pkg{bayesplot} package for many examples.
+#'   \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to
+#'   the documentation for all the available plotting functions.
+#'   \item \code{\link[bayesplot]{color_scheme_set}} (\pkg{bayesplot}) to change
+#'   the color scheme used for plotting.
+#'   \item \code{\link{pp_check}} for graphical posterior predictive checks.
+#'   \item \code{\link{plot_nonlinear}} for models with nonlinear smooth 
+#'   functions fit using \code{\link{stan_gamm4}}.
+#' }  
 #'
 #' @examples
+#' \donttest{
 #' # Use rstanarm example model
 #' if (!exists("example_model")) example(example_model)
 #' fit <- example_model
@@ -78,12 +80,10 @@
 #' plot(fit, "areas", regex_pars = "period",
 #'      prob = 0.5, prob_outer = 0.9)
 #' 
-#' \donttest{
 #' # Make the same plot by extracting posterior draws and calling
 #' # bayesplot::mcmc_areas directly
 #' x <- as.array(fit, regex_pars = "period")
 #' bayesplot::mcmc_areas(x, prob = 0.5, prob_outer = 0.9)
-#' }
 #'
 #'
 #' ##################################
@@ -139,11 +139,9 @@
 #' # changing facet layout 
 #' plot(fit, "trace", pars = c("(Intercept)", "period2"),
 #'      facet_args = list(nrow = 2))
-#' \donttest{
 #' # same plot by calling bayesplot::mcmc_trace directly
 #' x <- as.array(fit, pars = c("(Intercept)", "period2"))
 #' bayesplot::mcmc_trace(x, facet_args = list(nrow = 2))
-#' }
 #'
 #'
 #' ############
@@ -155,7 +153,7 @@
 #' plot(fit, regex_pars = "herd:[279]")
 #' plot(fit, regex_pars = "herd:[279]|period2")
 #' plot(fit, regex_pars = c("herd:[279]", "period2"))
-#'
+#' }
 #'
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")

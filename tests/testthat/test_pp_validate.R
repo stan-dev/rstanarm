@@ -24,8 +24,6 @@ set.seed(SEED)
 
 context("pp_validate")
 test_that("pp_validate throws correct errors", {
-  fito <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing", 
-                   seed = SEED)
   expect_error(pp_validate(example_model$stanfit), "not a stanreg object")
   expect_error(pp_validate(example_model, nreps = 1), "at least 2")
 })
