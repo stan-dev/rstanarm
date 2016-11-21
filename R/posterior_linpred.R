@@ -69,9 +69,6 @@ posterior_linpred.stanreg <- function(object, transform = FALSE, newdata = NULL,
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_linpred")
   if (!is.null(newdata)) {
-    if ("gam" %in% names(object))
-      stop("'posterior_linpred' with 'newdata' not yet supported ",
-           "for models estimated via 'stan_gamm4'.")
     newdata <- as.data.frame(newdata)
     if (anyNA(newdata))
       stop("NAs are not allowed in 'newdata'.")
