@@ -18,17 +18,15 @@
 #' @export
 #' @rdname stan_betareg
 
-stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
-                              link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
-                              link.phi = "log", ...,
-                              prior = normal(), prior_intercept = normal(),
-                              prior_z = normal(), prior_intercept_z = normal(),
-                              prior_ops = prior_options(), prior_PD = FALSE, 
-                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-  
-  # lots of tedious but simple stuff including standata which is a big list to pass to data {}
-  # process the prior information like stan_glm.fit() does
+stan_betareg.fit <- function(x, y, z = NULL, 
+                             weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
+                             link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
+                             link.phi = "log", ...,
+                             prior = normal(), prior_intercept = normal(),
+                             prior_z = normal(), prior_intercept_z = normal(),
+                             prior_ops = prior_options(), prior_PD = FALSE, 
+                             algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                             adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
 
@@ -37,13 +35,9 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
     Z_true <- 0
     z <- model.matrix(y ~ 1)
     link.phi <- "log"
-  }
-  else if (length(link.phi) == 1) {
+  } else if (length(link.phi) == 1) {
     Z_true <- 1
   }
-
-  # no family argument
-  famname <- "beta"
 
   # link for X variables
   link <- match.arg(link)
@@ -58,10 +52,8 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   link_num_phi <- which(supported_phi_links == link.phi)
   if (!length(link_num_phi)) 
     stop("'link' must be one of ", paste(supported_phi_links, collapse = ", "))
-
-  if (Z_true == 0) {
+  if (Z_true == 0)
     link_num_phi <- 0
-  }
 
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
@@ -81,10 +73,8 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   zbar <- z_stuff$xbar
   has_intercept_z <- z_stuff$has_intercept
   nvars_z <- ncol(ztemp)
-  
-  if (Z_true == 0) {
+  if (Z_true == 0)
     has_intercept_z <- FALSE
-  }
   
   for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
     assign(i, prior_ops[[i]])
@@ -92,26 +82,29 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
   
-  
   # prior distributions (handle_glm_prior() from data_block.R)
-  prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5)
+  prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
+                                  ok_dists = ok_dists)
   for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
     assign(i, prior_stuff[[i]])
-  prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, default_scale = 10,
-                                            link, ok_dists = 
-                                              nlist("normal", student_t = "t", "cauchy"))
+  
+  prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
+                                            default_scale = 10, link = link,
+                                            ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
   
   # prior distributions for parameters on z variables
-  prior_stuff_z <- handle_glm_prior(prior_z, nvars_z, link = link.phi, default_scale = 2.5)
+  prior_stuff_z <- handle_glm_prior(prior_z, nvars_z, link = link.phi, 
+                                    default_scale = 2.5, ok_dists = ok_dists)
   for (i in names(prior_stuff_z))
     assign(paste0(i,"_z"), prior_stuff_z[[i]])
-  prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, link = link.phi, 
-                                              default_scale = 10,
-                                              ok_dists = nlist("normal", student_t = "t", "cauchy"))
-  names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z),"_for_intercept_z")
+  
+  prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, 
+                                              link = link.phi, default_scale = 10,
+                                              ok_dists = ok_intercept_dists)
+  names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), "_for_intercept_z")
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i), prior_intercept_stuff_z[[i]])
 
@@ -164,8 +157,7 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   stanfit <- stanmodels$continuous
   if (Z_true == 1) {
     pars <- c(if (has_intercept) "alpha", "beta", "omega_int", "omega", "mean_PPD")
-  }
-  else {
+  } else {
     pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
   }
 
@@ -181,16 +173,14 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
       new_names[new_names == "omega_int[1]"] <- "(phi)_(Intercept)"
       mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
       new_names[mark_z] <- paste0("(phi)_", colnames(ztemp))
-    }
-    else {
+    } else {
       new_names[new_names == "dispersion"] <- "(phi)"
     }
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
     return(out)
-  }
-  else {
+  } else {
     if (algorithm == "sampling") {
       sampling_args <- set_sampling_args(
         object = stanfit, 
@@ -201,19 +191,17 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
         pars = pars, 
         show_messages = FALSE)
       stanfit <- do.call(sampling, sampling_args)
-    }
-    else if (algorithm %in% c("meanfield", "fullrank")) {
+    } else { # algorithm either "meanfield" or "fullrank"
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }
     if (Z_true == 1) {
       new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp),
-                     if (has_intercept_z) "(phi)_(Intercept)", paste0("(phi)_", colnames(ztemp)),
+                     if (has_intercept_z) "(phi)_(Intercept)", 
+                     paste0("(phi)_", colnames(ztemp)),
                      "mean_PPD", "log-posterior")
-    }
-    else {
-      new_names <- c(if (has_intercept) "(Intercept)", 
-                     colnames(xtemp), 
+    } else {
+      new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
                      "(phi)",  "mean_PPD", "log-posterior")
     }
     stanfit@sim$fnames_oi <- new_names

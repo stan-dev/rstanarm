@@ -149,8 +149,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
       if (length(z_vars) == 1 && z_vars == "(phi)") {
         draws$phi <- stanmat[, z_vars]
-      }
-      else {
+      } else {
         x_dat <- get_x(object)
         z_dat <- object$z
         colnames(x_dat) <- paste0("x.", colnames(x_dat))

@@ -49,8 +49,8 @@ center_x <- function(x, sparse) {
 # @param nvars An integer indicating the number of variables
 # @param ok_dists A character vector of admissible distributions
 handle_glm_prior <- function(prior, nvars, default_scale, link,
-                             ok_dists = nlist("normal", student_t = "t", "cauchy", 
-                                              "hs", "hs_plus")) {
+                             ok_dists = nlist("normal", student_t = "t", 
+                                              "cauchy", "hs", "hs_plus")) {
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
