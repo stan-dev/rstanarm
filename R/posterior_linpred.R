@@ -65,7 +65,6 @@ posterior_linpred <- function(object, ...) {
 posterior_linpred.stanreg <- function(object, transform = FALSE, newdata = NULL, 
                               re.form = NULL, offset = NULL, XZ = FALSE, 
                               ...) {
-  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_linpred")
   if (!is.null(newdata)) {
