@@ -202,11 +202,7 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
         show_messages = FALSE)
       stanfit <- do.call(sampling, sampling_args)
     }
-    else if (algorithm == "meanfield") {
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
-                           algorithm = algorithm, init = 0.001, ...)
-    }
-    else if (algorithm == "fullrank") {
+    else if (algorithm %in% c("meanfield", "fullrank")) {
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
     }
