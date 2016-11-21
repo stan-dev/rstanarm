@@ -20,7 +20,7 @@
 
 stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                               link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
-                              link.phi = c("log", "identity", "sqrt"), ...,
+                              link.phi = "log", ...,
                               prior = normal(), prior_intercept = normal(),
                               prior_z = normal(), prior_intercept_z = normal(),
                               prior_ops = prior_options(), prior_PD = FALSE, 
@@ -36,8 +36,9 @@ stan_betareg.fit <- function (x, y, z = NULL, weights = rep(1, NROW(x)), offset 
   if (length(link.phi) > 1 || is.null(z)) {
     Z_true <- 0
     z <- model.matrix(y ~ 1)
+    link.phi <- "log"
   }
-  if (length(link.phi) == 1) {
+  else if (length(link.phi) == 1) {
     Z_true <- 1
   }
 
