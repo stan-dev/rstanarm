@@ -4,9 +4,6 @@ r: devel
 cache: packages
 
 r_github_packages:
-  - stan-dev/rstantools
-  - stan-dev/bayesplot
-  - HenrikBengtsson/matrixStats@develop
   - jimhester/covr
 
 env:
