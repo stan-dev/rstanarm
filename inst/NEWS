@@ -1,3 +1,32 @@
+Sun November 20 2016 (2.13.1)
+1. Bug fixes
+  * Fix bug in reloo() if data was not specified
+  * Fix bug in pp_validate() that was only introduced on GitHub
+2. New features
+  * Uses the new bayesplot and rstantools R packages
+  * The new prior_summary() function can be used to figure out what priors were actually used
+  * stan_gamm4() is better implemented, can be followed by plot_nonlinear(), 
+    posterior_predict (with newdata), etc.
+  * Hyperparameters (i.e. covariance matrices in general) for lme4 style models are now
+    returned by as.matrix()
+  * pp_validate() can now be used if optimization or variational Bayesian inference was
+    used to estimate the original model
+
+Fri September 9 2016 (2.12.1)
+1. Bug fixes
+  * Fix for bad bug in posterior_predict() when factor labels have spaces in lme4-style models
+  * Fix when weights are used in Poisson models
+
+2. New features
+  * posterior_linpred() gains an XZ argument to output the design matrix
+
+Fri July 29 2016 (2.11.1)
+1. Bug fixes
+  * Requiring manually specifying offsets when model has an offset and newdata is not NULL
+2. New features
+  * stan_biglm function that somewhat supports biglm::biglm
+  * as.array method for stanreg objects
+
 Fri June 24 2016 (2.10.1)
 1. Bug fixes
   * Works with devtools now

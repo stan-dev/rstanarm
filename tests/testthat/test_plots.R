@@ -33,43 +33,89 @@ expect_gg <- function(x) expect_s3_class(x, "ggplot")
 
 # plot.stanreg ------------------------------------------------------------
 context("plot.stanreg")
-test_that("plot method doesn't throw bad errors and creates ggplot objects", {
-  expect_default_message <- function(fit, message = "default", ...) {
-    expect_message(p <- plot(fit, ...), regexp = message)
-  }
-  
-  plotters1 <- paste0("stan_", c("plot", "trace", "hist", "dens", "ac")) # scat
-  plotters2 <- paste0("stan_", c("rhat", "ess", "mcse")) # diag, par
-  
-  for (j in seq_along(plotters1)) {
-    expect_message(p <- plot(fit, plotfun = plotters1[j]), regexp = "default")
-    expect_gg(p)
-    expect_gg(plot(fit, plotfun = plotters1[j], pars = "beta"))
-    expect_gg(plot(fit, plotfun = plotters1[j], pars = "alpha", regex_pars = "period"))
-    expect_gg(plot(fit, plotfun = plotters1[j], regex_pars = "period"))
-  }
-  for (j in seq_along(plotters2)) {
-    expect_gg(plot(fit, plotfun = plotters2[j]))
+test_that("plot.stanreg errors if chains = 1 but needs multiple", {
+  multiple_chain_plots <- c("trace_highlight",
+                            "hist_by_chain",
+                            "dens_overlay",
+                            "violin")
+  fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100)
+  for (f in multiple_chain_plots) {
+    expect_error(plot(fit_1chain, plotfun = f), info = f, 
+                 regexp = "requires multiple chains")
   }
 })
 
+test_that("other plot.stanreg errors thrown correctly", {
+  expect_error(plot(fit, plotfun = "9999"), 
+               "not a valid MCMC function name")
+  expect_error(plot(fit, plotfun = "ppc_hist"), 
+               "use the 'pp_check' method")
+  expect_error(plot(fit, plotfun = "stan_diag"), 
+               "help('NUTS', 'bayesplot')", fixed = TRUE)
+})
+
+test_that("plot.stanreg returns correct object", {
+  # ggplot objects
+  ggplot_object_plots <- c(
+    "intervals", "areas",
+    "dens", "dens_overlay", 
+    "hist", "hist_by_chain",
+    "trace", "trace_highlight",
+    "violin", 
+    "rhat", "rhat_hist", 
+    "neff", "neff_hist", "ess",
+    "acf", "acf_bar", "ac"
+  )
+  for (f in ggplot_object_plots)
+    expect_gg(plot(fit, f))
+  
+  # requires exactly 2 parameters
+  expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
+  expect_gg(plot(fit, "scatter", pars = c("period2", "period3")))
+})
+
+test_that("plot method returns correct object for nuts diagnostic plots", {
+  # energy plot returns ggplot object
+  expect_gg(plot(fit, "nuts_energy"))
+  
+  # others return gtable objects
+  gtable_object_plots <-
+    paste0("nuts_",
+           c("stepsize", "acceptance", "divergence", "treedepth"))
+  for (f in gtable_object_plots)
+    expect_s3_class(plot(fit, plotfun = f), "gtable")
+})
+
 test_that("plot.stanreg ok for optimization", {
-  expect_silent(plot(fito))
-  expect_silent(plot(fito, pars = "alpha"))
-  expect_silent(plot(fito, pars = "beta"))
-  expect_silent(plot(fito, pars = c("wt", "gear")))
-  expect_warning(plot(fito, regex_pars = "wt"), regexp = "'regex_pars' ignored")
-  expect_error(plot(fito, "trace"), regexp = "'plotfun'")
+  expect_gg(plot(fito))
+  expect_gg(plot(fito, "areas"))
+  expect_gg(plot(fito, "dens"))
+  expect_gg(plot(fito, "scatter", pars = c("wt", "cyl")))
+  expect_gg(plot(fito, pars = c("alpha", "beta")))
+  
+  expect_warning(plot(fito, regex_pars = "wt"), 
+                 regexp = "'regex_pars' ignored")
+  expect_error(plot(fito, "trace"), 
+               regexp = "only available for models fit using MCMC")
+  expect_error(plot(fito, "nuts_acceptance"), 
+               regexp = "only available for models fit using MCMC")
+  expect_error(plot(fito, "rhat_hist"), 
+               regexp = "only available for models fit using MCMC")
 })
 
 test_that("plot.stanreg ok for vb", {
   expect_gg(plot(fitvb))
-  expect_gg(plot(fitvb, "hist"))
-  expect_gg(plot(fitvb, "dens", separate_chains = TRUE))
-  samp_only <- c("rhat", "ess", "mcse", "par", "diag", "ac")
-  for (j in seq_along(samp_only)) {
-    expect_error(plot(fitvb, samp_only[j]), regexp = "MCMC") 
-  }
+  expect_gg(plot(fitvb, "areas"))
+  expect_gg(plot(fitvb, "dens"))
+  expect_gg(plot(fitvb, "scatter", pars = c("wt", "cyl")))
+  expect_gg(plot(fitvb, pars = c("alpha", "beta")))
+  
+  expect_error(plot(fitvb, "trace"), 
+               regexp = "only available for models fit using MCMC")
+  expect_error(plot(fitvb, "nuts_acceptance"), 
+               regexp = "only available for models fit using MCMC")
+  expect_error(plot(fitvb, "rhat_hist"), 
+               regexp = "only available for models fit using MCMC")
 })
 
 
@@ -81,6 +127,7 @@ test_that("pairs method ok", {
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
   expect_error(pairs(fit, pars = "b[(Intercept) herd:15]"), 
                regexp = "does not yet allow group-level parameters")
+  expect_error(pairs(fitvb), regexp = "only available for models fit using MCMC")
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })
 
@@ -106,7 +153,7 @@ test_that("posterior_vs_prior ok", {
 
 test_that("posterior_vs_prior throws errors", {
   lmfit <- lm(mpg ~ wt, data = mtcars)
-  expect_error(posterior_vs_prior(lmfit), "not a stanreg object")
+  expect_error(posterior_vs_prior(lmfit), "no applicable method")
   expect_error(posterior_vs_prior(fit, prob = 1), "prob < 1")
   expect_error(posterior_vs_prior(fito), 
                "only available for models fit using MCMC")

@@ -17,16 +17,18 @@
 
 #' Prior distributions and options
 #' 
-#' These functions are used to specify the prior-related arguments of the 
-#' various modeling functions in the \pkg{rstanarm} package. The default priors 
-#' used in the various \pkg{rstanarm} modeling functions are intended to be 
-#' \emph{weakly informative} in that they provide moderate regularlization and 
-#' help stabilize computation. For many applications the defaults will perform 
-#' well, but prudent use of more informative priors is encouraged. Uniform prior
-#' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
-#' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
-#' they are not recommended and are \emph{not} non-informative, giving 
-#' the same probability mass to implausible values as plausible ones.
+#' The functions described on this page are used to specify the prior-related
+#' arguments of the various modeling functions in the \pkg{rstanarm} package (to
+#' view the priors used for an existing model see \code{\link{prior_summary}}). 
+#' The default priors used in the various \pkg{rstanarm} modeling functions are
+#' intended to be \emph{weakly informative} in that they provide moderate
+#' regularlization and help stabilize computation. For many applications the
+#' defaults will perform well, but prudent use of more informative priors is
+#' encouraged. Uniform prior distributions are possible (e.g. by setting
+#' \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
+#' the data is very strong, they are not recommended and are \emph{not}
+#' non-informative, giving the same probability mass to implausible values as
+#' plausible ones.
 #' 
 #' @export 
 #' @name priors
@@ -77,6 +79,11 @@
 #'   and 2.5 for the other coefficients, unless the probit link function is
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
+#'   
+#'   If the \code{scaled} argument to \code{prior_options} is \code{TRUE} (the
+#'   default), then the scales will be further adjusted as described above in
+#'   the documentation of the \code{scaled} argument in the \strong{Arguments} 
+#'   section.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:
@@ -147,6 +154,7 @@
 #'   \itemize{
 #'   \item \code{decov(regularization, concentration, shape, scale)}
 #'   }
+#'   (Also see vignette for \code{stan_glmer})
 #'   
 #'   Covariance matrices are decomposed into correlation matrices and 
 #'   variances. The variances are in turn decomposed into the product of a
@@ -253,7 +261,8 @@
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
-#' prior_pred_fit <- stan_glm(fmla, data = mtcars, chains = 1, prior_PD = TRUE,
+#' prior_pred_fit <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
+#'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
 #'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
@@ -267,20 +276,18 @@
 #' # Visually compare normal, student_t, and cauchy
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
-#'     # t distribution with location & scale parameters
-#'     1 / scale * dt((x - location) / scale, df)  
+#'     1/scale * dt((x - location)/scale, df)  
+#'   }
+#'   stat_dist <- function(dist, ...) {
+#'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
 #'   }
 #'   ggplot2::ggplot(data.frame(x = xlim), ggplot2::aes(x)) + 
-#'     ggplot2::stat_function(fun = dnorm, 
-#'                   args = list(mean = 0, sd = scale), 
-#'                   color = "purple", size = .75) +
-#'     ggplot2::stat_function(fun = dt_loc_scale, 
-#'                   args = list(df = df_t, location = 0, scale = scale), 
-#'                   color = "orange", size = .75) +
-#'     ggplot2::stat_function(fun = dcauchy, 
-#'                   args = list(location = 0, scale = scale), 
-#'                   color = "skyblue", size = .75, linetype = 2) + 
-#'     ggplot2::ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
+#'     stat_dist("normal", size = .75, fun = dnorm, 
+#'               args = list(mean = 0, sd = scale)) +
+#'     stat_dist("student_t", size = .75, fun = dt_loc_scale, 
+#'               args = list(df = df_t, location = 0, scale = scale)) +
+#'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
+#'               args = list(location = 0, scale = scale))
 #' }
 #' # Cauchy has fattest tails, then student_t, then normal
 #' compare_priors()
@@ -337,7 +344,7 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 #'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
 #'   prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
-#'   distribution. The defaults is \eqn{1}, implying a joint uniform prior.
+#'   distribution. The default is \eqn{1}, implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale parameter in the
 #'   \code{decov} prior. If \code{shape} and \code{scale} are both \eqn{1} (the
 #'   default) then the gamma prior simplifies to the unit-exponential
@@ -361,6 +368,7 @@ dirichlet <- function(concentration = 1) {
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
+  what <- match.arg(what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
@@ -371,11 +379,18 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
 #'   at zero.
 #' @param min_prior_scale Minimum prior scale for the intercept and 
 #'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} the
-#'   \code{prior_scale} is further scaled by the range of the predictor if the 
-#'   predictor has exactly two unique values and scaled by twice the standard
-#'   deviation of the predictor if it has more than two unique values.
-#'
+#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
+#'   then the scales of the priors on the regression coefficients may be 
+#'   additionally modified internally by \pkg{rstanarm} as follows. First, if
+#'   \emph{response} is Gaussian, the prior scales also multiplied by 
+#'   \code{2*sd(y)}. Additionally, if the \code{QR} argument to the model
+#'   fitting function (e.g. \code{stan_glm}) is \code{FALSE} then: for a 
+#'   predictor with only one value nothing is changed; for a predictor \code{x} 
+#'   with exactly two unique values, we take the user-specified (or default) 
+#'   scale(s) for the selected priors and divide by the range of \code{x}; for a
+#'   predictor \code{x} with more than two unique values, we divide the prior 
+#'   scale(s) by \code{2*sd(x)}.
+#'   
 prior_options <- function(prior_scale_for_dispersion = 5, 
                           min_prior_scale = 1e-12, 
                           scaled = TRUE) {

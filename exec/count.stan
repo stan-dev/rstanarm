@@ -1,4 +1,4 @@
-#include "license.stan"
+#include "license.stan" // GPL3+
 
 // GLM for a count outcome
 functions {
@@ -57,28 +57,30 @@ functions {
   }
 }
 data {
-  #include "NKX.stan"
+  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=0> y[N];  // count outcome
-  #include "data_glm.stan"
-  #include "weights_offset.stan"
+  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
   #include "hyperparameters.stan"
-  #include "glmer_stuff.stan"
-  #include "glmer_stuff2.stan"
+  // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
+  #include "glmer_stuff.stan"  
+  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data{
   real poisson_max;
-  #include "tdata_glm.stan"
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
   poisson_max = pow(2.0, 30.0);
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
-  #include "parameters_glm.stan"
+  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> dispersion_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
 transformed parameters {
   real dispersion[family > 1];
-  #include "tparameters_glm.stan"
+  #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (family > 1 && prior_scale_for_dispersion > 0) 
     dispersion[1] = prior_scale_for_dispersion * dispersion_unscaled[1];
   else if (family > 1) dispersion[1] = dispersion_unscaled[1];
@@ -93,14 +95,14 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.stan"
+  #include "make_eta.stan" // defines eta
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);  
   if (has_intercept == 1) {
     if (link == 1) eta = eta + gamma[1];
     else eta = eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.stan"
+    #include "eta_no_intercept.stan" // shifts eta
   }
   
   if (family == 3) {
@@ -120,7 +122,7 @@ model {
       else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), dispersion[1]);
     }
   }
-  else if (family != 1 && prior_PD == 0)
+  else if (family != 2 && prior_PD == 0)
     target += dot_product(weights, pw_pois(y, eta, link));
   else if (prior_PD == 0)
     target += dot_product(weights, pw_nb(y, eta, dispersion[1], link));
@@ -129,7 +131,7 @@ model {
   if (family > 1 && prior_scale_for_dispersion > 0) 
     target += cauchy_lpdf(dispersion_unscaled | 0, 1);
   
-  #include "priors_glm.stan"
+  #include "priors_glm.stan" // increments target()
   
   // Log-prior for noise
   if (family == 3) target += gamma_lpdf(noise[1] | dispersion[1], 1);
@@ -147,7 +149,7 @@ generated quantities {
   mean_PPD = 0;
   {
     vector[N] nu;
-    #include "make_eta.stan"
+    #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
     if (has_intercept == 1) {
       if (link == 1) eta = eta + gamma[1];
@@ -159,7 +161,7 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.stan"
+      #include "eta_no_intercept.stan" // shifts eta
     }
     
     if (family == 3) {

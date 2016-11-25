@@ -30,7 +30,7 @@ SW <- suppressWarnings
 
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
-check_for_error <- function(fit, data = NULL) {
+check_for_error <- function(fit, data = NULL, offset = NULL) {
   nsims <- nrow(as.data.frame(fit))
   mf <- if (!is.null(data)) 
     data else model.frame(fit)
@@ -47,38 +47,45 @@ check_for_error <- function(fit, data = NULL) {
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   expect_equal(dim(yrep2), c(1, nobs(fit)))
   
-  expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,]))
-  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,]))
+  offs <- if (!is.null(offset)) offset[1] else offset
+  expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,], offset = offs))
+  expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,], offset = offs))
   expect_equal(dim(yrep3), c(nsims, 1))
   expect_equal(dim(lin3), c(nsims, 1))
   
-  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,]))
+  expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,], offset = offs))
   expect_equal(dim(yrep4), c(2, 1))
   
-  expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,]))
-  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,]))
+  offs <- if (!is.null(offset)) offset[1:5] else offset
+  expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,], offset = offs))
+  expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,], offset = offs))
   expect_equal(dim(yrep5), c(nsims, 5))
   expect_equal(dim(lin5), c(nsims, 5))
   
-  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,]))
+  expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,], offset = offs))
   expect_equal(dim(yrep6), c(3, 5))
   
   expect_error(posterior_predict(fit, draws = nsims + 1), 
                regexep = "posterior sample size is only")
 }
 
-expect_linpred_equal <- function(object, tol = 0.05) {
+expect_linpred_equal <- function(object, tol = 0.1) {
   linpred <- posterior_linpred(object)
   expect_equal(apply(linpred, 2, median), object$linear.predictors, 
                tolerance = tol, 
                check.attributes = FALSE)
 }
 
+test_that("posterior_predict returns object with correct classes", {
+  expect_s3_class(posterior_predict(example_model), 
+                  c("ppd", "matrix"))
+})
+
 # Error messages ----------------------------------------------------------
 context("posterior_predict (error messages)")
 test_that("posterior_predict errors if not a stanreg object", {
-  expect_error(posterior_predict(example_model$stanfit), "not a stanreg object")
-  expect_error(posterior_predict(summary(example_model)), "not a stanreg object")
+  expect_error(posterior_predict(example_model$stanfit), "no applicable method")
+  expect_error(posterior_predict(summary(example_model)), "no applicable method")
 })
 test_that("posterior_predict errors if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "optimizing", 
@@ -98,7 +105,6 @@ test_that("posterior_predict errors if draws > posterior sample size", {
   expect_error(posterior_predict(example_model, draws = 1e6), 
                regexp = "'draws' should be <= posterior sample size")
 })
-
 
 # VB ----------------------------------------------------------------------
 context("posterior_predict ok for vb")
@@ -137,8 +143,10 @@ test_that("compatible with glm with offset", {
   fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
                       iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   
-  check_for_error(fit, data = mtcars2)
-  check_for_error(fit2, data = mtcars2)
+  expect_warning(posterior_predict(fit, newdata = mtcars[1:5, ]), 
+                 "offset")
+  check_for_error(fit, data = mtcars2, offset = mtcars2$offs)
+  check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
   expect_linpred_equal(fit)
   expect_linpred_equal(fit2)
 })
@@ -195,8 +203,7 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   # expect_equal(dim(yrep1), c(nrow(as.data.frame(fit)), nobs(fit)))
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
   # expect_equal(dim(yrep2), c(1, nobs(fit)))
-  expect_error(posterior_predict(fit, newdata = model.frame(fit$gam)), 
-               "not yet supported for models estimated via 'stan_gamm4'")
+  expect_silent(posterior_predict(fit, newdata = sleepstudy))
 })
 
 
@@ -232,6 +239,17 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   expect_silent(posterior_linpred(fit2))
   expect_silent(posterior_linpred(fit1, newdata = nd))
   expect_silent(posterior_linpred(fit2, newdata = nd))
+})
+
+test_that("compatible with stan_lmer with offset", {
+  offs <- rnorm(nrow(mtcars))
+  fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
+                      prior = normal(0,1), iter = ITER, chains = CHAINS,
+                      seed = SEED, refresh = REFRESH, offset = offs))
+  
+  expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
+                 "STATS")
+  check_for_error(fit, offset = offs)
 })
 
 
