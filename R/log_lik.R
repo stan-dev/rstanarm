@@ -67,6 +67,8 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     STOP_sampling_only("Pointwise log-likelihood matrix")
   if (!is.null(newdata)) {
     newdata <- as.data.frame(newdata)
+    if (anyNA(newdata))
+      stop("NAs are not allowed in 'newdata'.")
   }
   fun <- ll_fun(object)
   args <- ll_args(object, newdata = newdata, offset = offset)
@@ -74,4 +76,202 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
                   draws = args$draws))
   })
+}
+
+
+
+# internal ----------------------------------------------------------------
+
+# get log likelihood function for a particular model
+# @param x stanreg object
+# @return a function
+ll_fun <- function(x) {
+  validate_stanreg_object(x)
+  f <- family(x)
+  if (!is(f, "family") || is_scobit(x))
+    return(.ll_polr_i)
+  
+  get(paste0(".ll_", f$family, "_i"), mode = "function")
+}
+
+# get arguments needed for ll_fun
+# @param object stanreg object
+# @param newdata same as posterior predict
+# @param offset vector of offsets (only required if model has offset term and
+#   newdata is specified)
+# @return a named list with elements data, draws, S (posterior sample size) and
+#   N = number of observations
+ll_args <- function(object, newdata = NULL, offset = NULL) {
+  validate_stanreg_object(object)
+  f <- family(object)
+  draws <- nlist(f)
+  has_newdata <- !is.null(newdata)
+  if (has_newdata) {
+    ppdat <- pp_data(object, as.data.frame(newdata), offset = offset)
+    tmp <- pp_eta(object, ppdat)
+    eta <- tmp$eta
+    stanmat <- tmp$stanmat
+    x <- ppdat$x
+    y <- eval(formula(object)[[2L]], newdata)
+  } else {
+    stanmat <- as.matrix.stanreg(object)
+    x <- get_x(object)
+    y <- get_y(object)
+  }
+  
+  if (is(f, "family") && !is_scobit(object)) {
+    fname <- f$family
+    if (!is.binomial(fname)) {
+      data <- data.frame(y, x)
+    } else {
+      if (NCOL(y) == 2L) {
+        trials <- rowSums(y)
+        y <- y[, 1L]
+      } else {
+        trials <- 1
+        if (is.factor(y)) 
+          y <- fac2bin(y)
+        stopifnot(all(y %in% c(0, 1)))
+      }
+      data <- data.frame(y, trials, x)
+    }
+    draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
+    if (is.gaussian(fname)) 
+      draws$sigma <- stanmat[, "sigma"]
+    if (is.gamma(fname)) 
+      draws$shape <- stanmat[, "shape"]
+    if (is.ig(fname)) 
+      draws$lambda <- stanmat[, "lambda"]
+    if (is.nb(fname)) 
+      draws$size <- stanmat[,"overdispersion"]
+    
+  } else {
+    stopifnot(is(object, "polr"))
+    y <- as.integer(y)
+    if (has_newdata) 
+      x <- .validate_polr_x(object, x)
+    data <- data.frame(y, x)
+    draws$beta <- stanmat[, colnames(x), drop = FALSE]
+    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
+    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
+    draws$zeta <- stanmat[, zetas, drop = FALSE]
+    draws$max_y <- max(y)
+    if ("alpha" %in% colnames(stanmat)) {
+      draws$alpha <- stanmat[, "alpha"]
+      draws$f <- object$method
+    }
+  }
+  
+  data$offset <- if (has_newdata) offset else object$offset
+  if (model_has_weights(object))
+    data$weights <- object$weights
+  
+  if (is.mer(object)) {
+    b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
+    if (has_newdata) {
+      Z_names <- ppdat$Z_names
+      if (is.null(Z_names)) {
+        b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
+      } else {
+        b <- pp_b_ord(b, Z_names)
+      }
+      z <- t(ppdat$Zt)
+    } else {
+      z <- get_z(object)
+    }
+    data <- cbind(data, as.matrix(z))
+    draws$beta <- cbind(draws$beta, b)
+  }
+  
+  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+}
+
+
+# check intercept for polr models -----------------------------------------
+# Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
+# bernoulli model). If it doesn't have an intercept then the intercept column in
+# x is dropped. This is only necessary if newdata is specified because otherwise
+# the correct x is taken from the fitted model object.
+.validate_polr_x <- function(object, x) {
+  x0 <- get_x(object)
+  has_intercept <- colnames(x0)[1L] == "(Intercept)" 
+  if (!has_intercept && colnames(x)[1L] == "(Intercept)")
+    x <- x[, -1L, drop = FALSE]
+  x
+}
+
+
+# log-likelihood function helpers -----------------------------------------
+.xdata <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, -which(colnames(data) %in% sel)]
+}
+.mu <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  draws$f$linkinv(eta)
+}
+.weighted <- function(val, w) {
+  if (is.null(w)) {
+    val
+  } else {
+    val * w
+  } 
+}
+
+
+# log-likelihood functions ------------------------------------------------
+.ll_gaussian_i <- function(i, data, draws) {
+  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_binomial_i <- function(i, data, draws) {
+  val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_poisson_i <- function(i, data, draws) {
+  val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_neg_binomial_2_i <- function(i, data, draws) {
+  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_Gamma_i <- function(i, data, draws) {
+  val <- dgamma(data$y, shape = draws$shape, 
+                rate = draws$shape / .mu(data,draws), log = TRUE)
+  .weighted(val, data$weights)
+}
+.ll_inverse.gaussian_i <- function(i, data, draws) {
+  mu <- .mu(data, draws)
+  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
+    1.5 * log(data$y) -
+    0.5 * draws$lambda * (data$y - mu)^2 / 
+    (data$y * mu^2)
+  .weighted(val, data$weights)
+}
+.ll_polr_i <- function(i, data, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
+  f <- draws$f
+  J <- draws$max_y
+  y_i <- data$y
+  linkinv <- polr_linkinv(f)
+  if (is.null(draws$alpha)) {
+    if (y_i == 1) {
+      val <- log(linkinv(draws$zeta[, 1] - eta))
+    } else if (y_i == J) {
+      val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
+    } else {
+      val <- log(linkinv(draws$zeta[, y_i] - eta) - 
+                   linkinv(draws$zeta[, y_i - 1L] - eta))
+    }
+  } else {
+    if (y_i == 0) {
+      val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
+    } else if (y_i == 1) {
+      val <- log1p(-linkinv(draws$zeta[, 1] - eta) ^ draws$alpha)
+    } else {
+      stop("Exponentiation only possible when there are exactly 2 outcomes.")
+    }
+  }
+  .weighted(val, data$weights)
 }
