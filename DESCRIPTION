@@ -23,6 +23,7 @@ License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
     Rcpp (>= 0.12.0),
+	  survival (>= 2.39.4),
     methods
 Imports:
     bayesplot (>= 1.0.0),
@@ -34,6 +35,7 @@ Imports:
     rstan (>= 2.12.1),
     rstantools (>= 1.0.0),
     shinystan (>= 2.2.1),
+    splines,
     stats,
     utils
 Suggests:
