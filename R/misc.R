@@ -641,3 +641,22 @@ model_has_weights <- function(x) {
     TRUE
   }
 }
+
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+# just that newdata is either NULL or a data frame with no missing values.
+# @param x User's 'newdata' argument
+# @return Either NULL or a data frame
+#
+validate_newdata <- function(x) {
+  if (is.null(x))
+    return(NULL)
+  if (!is.data.frame(x))
+    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
+  if (any(is.na(x)))
+    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
+
+  as.data.frame(x)
+}
