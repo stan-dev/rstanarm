@@ -196,7 +196,10 @@ kfold <- function(x, K = 10) {
       weights = NULL,
       refresh = 0
     )
-    lppds[[k]] <- log_lik(fit_k, newdata = d[omitted, , drop=FALSE])
+    lppds[[k]] <-
+      log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
+                      newx = get_x(x)[omitted, , drop = FALSE],
+                      stanmat = as.matrix.stanreg(x))
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -314,7 +317,10 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     )
     omitted <- obs[j]
     fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], refresh = 0))
-    lls[[j]] <- log_lik(fit_j, newdata = d[omitted, , drop=FALSE])
+    lls[[j]] <-
+      log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
+                      newx = get_x(x)[omitted, , drop = FALSE],
+                      stanmat = as.matrix.stanreg(x))
   }
   
   # replace parts of loo_x
@@ -338,19 +344,10 @@ log_mean_exp <- function(x) {
 }
 
 # Get correct data to use for kfold and reloo 
-#
-# If 'data' arg wasn't originally specified then use model.frame,
-# otherwise only keep variables in data that appear in the model formula.
-# (not using model.frame for all models because of binomial models with matrix
-# outcome)
 # 
 # @param x stanreg object
-# @return A data frame
+# @return data frame
 kfold_and_reloo_data <- function(x) {
-  dat <- x[["data"]]
-  if (is.environment(dat)) 
-    return(model.frame(x))
-  
-  d <- get_all_vars(formula(x), dat)
+  d <- get_all_vars(formula(x), x[["data"]])
   na.omit(d)
 }

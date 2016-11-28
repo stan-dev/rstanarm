@@ -41,7 +41,7 @@ pp_data <-
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
   }
-  
+
   offset <- .pp_data_offset(object, newdata, offset)
   Terms <- delete.response(terms(object))
   m <- model.frame(Terms, newdata, xlev = object$xlevels)
@@ -71,8 +71,7 @@ pp_data <-
     x <- glmod$X
     z <- list(Zt = glmod$reTrms$Zt, Z_names = make_b_nms(glmod$reTrms))
     # FIXME: might need to reorder the rows of Zt
-  }
-  else {
+  } else {
     x <- .pp_data_mer_x(object, newdata, ...)
     z <- .pp_data_mer_z(object, newdata, re.form, ...)
   }

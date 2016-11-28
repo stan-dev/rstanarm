@@ -66,8 +66,11 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   newdata <- validate_newdata(newdata)
+  calling_fun <- as.character(sys.call(-1))[1]
+  args <- ll_args(object, newdata = newdata, offset = offset, 
+                  reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
+                  ...)
   fun <- ll_fun(object)
-  args <- ll_args(object, newdata = newdata, offset = offset)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
                   draws = args$draws))
@@ -95,14 +98,27 @@ ll_fun <- function(x) {
 # @param newdata same as posterior predict
 # @param offset vector of offsets (only required if model has offset term and
 #   newdata is specified)
+# @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
+# @param ... For models without group-specific terms (i.e., not stan_[g]lmer), 
+#   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to 
+#   pass 'newx' and 'stanmat' from reloo or kfold (bypassing pp_data). This is a
+#   workaround in case there are issues with newdata containing factors with
+#   only a single level.
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, newdata = NULL, offset = NULL) {
+ll_args <- function(object, newdata = NULL, offset = NULL, 
+                    reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
   f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
-  if (has_newdata) {
+  
+  if (has_newdata && reloo_or_kfold && !is.mer(object)) {
+    dots <- list(...)
+    x <- dots$newx
+    stanmat <- dots$stanmat
+    y <- eval(formula(object)[[2L]], newdata)
+  } else if (has_newdata) {
     ppdat <- pp_data(object, as.data.frame(newdata), offset = offset)
     tmp <- pp_eta(object, ppdat)
     eta <- tmp$eta
