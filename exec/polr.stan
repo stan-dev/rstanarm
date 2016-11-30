@@ -13,16 +13,13 @@ functions {
   real CDF_polr(real x, int link) {
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
-    real p;
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
-    if (link == 1) p = inv_logit(x);
-    else if (link == 2) p = Phi(x);
-    else if (link == 3) p = gumbel_cdf(x, 0, 1);
-    else if (link == 4) p = inv_cloglog(x);
-    else p = cauchy_cdf(x, 0, 1);
-    return p;
+    if (link == 1) return(inv_logit(x));
+    else if (link == 2) return(Phi(x));
+    else if (link == 3) return(gumbel_cdf(x, 0, 1));
+    else if (link == 4) return(inv_cloglog(x));
+    else if (link == 5) return(cauchy_cdf(x, 0, 1));
+    else reject("Invalid link");
+    return x; // never reached
   }
   
   /** 
@@ -36,11 +33,9 @@ functions {
   */
   vector pw_polr(int[] y, vector eta, vector cutpoints, 
                  int link, real alpha) {
+    int N = rows(eta);
+    int J = rows(cutpoints) + 1;
     vector[rows(eta)] ll;
-    int N;
-    int J;
-    N = rows(eta);
-    J = rows(cutpoints) + 1;
     if (link < 1 || link > 5) 
       reject("Invalid link");
       
@@ -48,7 +43,7 @@ functions {
       if (y[n] == 1) ll[n] = CDF_polr(cutpoints[1] - eta[n], link);
       else if (y[n] == J) ll[n] = 1 - CDF_polr(cutpoints[J - 1] - eta[n], link);
       else ll[n] = CDF_polr(cutpoints[y[n]]     - eta[n], link) - 
-                    CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
+                   CDF_polr(cutpoints[y[n] - 1] - eta[n], link);
     }
     else for (n in 1:N) {
       if (y[n] == 1) ll[n] = CDF_polr(cutpoints[1] - eta[n], link) ^ alpha;
@@ -68,13 +63,12 @@ functions {
   */
   vector make_cutpoints(vector probabilities, real scale, int link) {
     vector[rows(probabilities) - 1] cutpoints;
-    real running_sum;
+    real running_sum = 0;
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
     if (link < 1 || link > 5) 
       reject("invalid link");
       
-    running_sum = 0;
     if (link == 1) for(c in 1:(rows(cutpoints))) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = logit(running_sum);
@@ -108,10 +102,8 @@ functions {
    * @return A scalar from the appropriate conditional distribution
    */
   real draw_ystar_rng(real lower, real upper, real eta, int link) {
-    int iter;
-    real ystar;
-    iter = 0;
-    ystar = not_a_number();
+    int iter = 0;
+    real ystar = not_a_number();
     if (lower >= upper) 
       reject("lower must be less than upper");
     
@@ -149,13 +141,10 @@ data {
   int<lower=0,upper=1> do_residuals;
 }
 transformed data {
-  real<lower=0> half_K;
-  int<lower=0,upper=1> is_constant;
-  real<lower=0> sqrt_Nm1;
-  half_K = 0.5 * K;
-  is_constant = 1;
+  real<lower=0> half_K = 0.5 * K;
+  real<lower=0> sqrt_Nm1 = sqrt(N - 1.0);
+  int<lower=0,upper=1> is_constant = 1;
   for (j in 1:J) if (prior_counts[j] != 1) is_constant = 0;
-  sqrt_Nm1 = sqrt(N - 1.0);
 }
 parameters {
   simplex[J] pi;
@@ -167,8 +156,7 @@ transformed parameters {
   vector[K] beta;
   vector[J-1] cutpoints;
   {
-    real Delta_y;
-    Delta_y = inv(sqrt(1 - R2));
+    real Delta_y = inv(sqrt(1 - R2));
     if (K > 1)
       beta = u * sqrt(R2) * Delta_y * sqrt_Nm1;
     else beta[1] = u[1] * sqrt(R2) * Delta_y * sqrt_Nm1;
@@ -194,25 +182,23 @@ model {
   if (is_skewed == 1)  target += gamma_lpdf(alpha | shape, rate);
 }
 generated quantities {
+  vector[J > 2 ? J : 1] mean_PPD = rep_vector(0, J > 2 ? J : 1);
+  vector[do_residuals ? N : 0] residuals;
   vector[J-1] zeta;
-  vector[(J > 2) * (J - 1) + 1] mean_PPD;
-  vector[N * do_residuals] residuals;
   
   // xbar is actually post multiplied by R^-1
   if (dense_X) zeta = cutpoints + dot_product(xbar, beta);
   else zeta = cutpoints;
   if (J == 2) zeta = -zeta;
-  mean_PPD = rep_vector(0, rows(mean_PPD));
   {
     #include "make_eta.stan" // defines eta
     for (n in 1:N) {
-      vector[J] theta;
       int y_tilde;
+      vector[J] theta;
       real previous;
-      real ystar;
       theta[1] = CDF_polr(cutpoints[1] - eta[n], link);
-      if (is_skewed) theta[1] = theta[1] ^ alpha[1];
       previous = theta[1];
+      if (is_skewed) theta[1] = theta[1] ^ alpha[1];
       for (j in 2:(J-1)) {
         real current;
         current = CDF_polr(cutpoints[j] - eta[n], link);
@@ -233,6 +219,7 @@ generated quantities {
       }
       
       if (do_residuals) {
+        real ystar;
         if (y[n] == 1)
           ystar = draw_ystar_rng(negative_infinity(), cutpoints[1], eta[n], link);
         else if (y[n] == J)

@@ -46,10 +46,9 @@ data {
   matrix[K,K] R_inv[J];               // inverse R matrices
 }
 transformed data {
-  real half_K;
+  real half_K = 0.5 * K;
   real sqrt_inv_N[J];
   real sqrt_Nm1[J];
-  half_K = 0.5 * K;
   for (j in 1:J) {
     sqrt_inv_N[j] = sqrt(1.0 / N[j]);
     sqrt_Nm1[j] = sqrt(N[j] - 1.0);
@@ -66,10 +65,9 @@ transformed parameters {
   vector[K] theta[J];              // coefficients in Q-space
   real<lower=0> sigma[J];          // error standard deviations
   for (j in 1:J) {
-    real Delta_y; // marginal standard deviation of outcome for group j
-    if (prior_PD == 0) Delta_y = s_Y[j] * exp(log_omega[j]);
-    else Delta_y = 1;
-    
+    // marginal standard deviation of outcome for group j
+    real Delta_y = prior_PD == 0 ? s_Y[j] * exp(log_omega[j]) : 1; 
+
     // coefficients in Q-space
     if (K > 1) theta[j] = u[j] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     else theta[j][1] = u[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;

@@ -12,21 +12,13 @@ functions {
    * @return A vector, i.e. inverse-link(eta)
    */
   vector linkinv_binom(vector eta, int link) {
-    vector[rows(eta)] pi;
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
-    if (link == 1)  // logit
-      for(n in 1:rows(eta)) pi[n] = inv_logit(eta[n]);
-    else if (link == 2)  // probit
-      for(n in 1:rows(eta)) pi[n] = Phi(eta[n]);
-    else if (link == 3)  // cauchit
-      for(n in 1:rows(eta)) pi[n] = cauchy_cdf(eta[n], 0.0, 1.0);
-    else if (link == 4)  // log 
-      for(n in 1:rows(eta)) pi[n] = exp(eta[n]);
-    else if (link == 5)  // cloglog
-      for(n in 1:rows(eta)) pi[n] = inv_cloglog(eta[n]);
-    return pi;
+    if (link == 1)      return(inv_logit(eta)); // logit
+    else if (link == 2) return(Phi(eta)); // probit
+    else if (link == 3) return(atan(eta) / pi() + 0.5);  // cauchit
+    else if (link == 4) return(exp(eta)); // log
+    else if (link == 5) return(inv_cloglog(eta)); // cloglog
+    else reject("Invalid link");
+    return eta; // never reached
   }
   
   /**
@@ -68,16 +60,17 @@ functions {
   * @return A vector
   */
   vector pw_binom(int[] y, int[] trials, vector eta, int link) {
+    int N = rows(eta);
     vector[rows(eta)] ll;
     if (link < 1 || link > 5) reject("Invalid link");
     if (link == 1) {  // logit
-      for (n in 1:rows(eta)) 
+      for (n in 1:N) 
         ll[n] = binomial_logit_lpmf(y[n] | trials[n], eta[n]);
     }
-    else {  // link = probit, cauchit, log, or cloglog (unstable)
-      vector[rows(eta)] pi;
+    else {  // link = probit, cauchit, log, or cloglog (may be numerically unstable)
+      vector[N] pi;
       pi = linkinv_binom(eta, link);
-      for (n in 1:rows(eta)) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
+      for (n in 1:N) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
     }
     return ll;
   }
@@ -135,12 +128,11 @@ model {
 }
 generated quantities {
   real alpha[has_intercept];
-  real mean_PPD;
+  real mean_PPD = 0;
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  mean_PPD = 0;
   {
     vector[N] pi;
     #include "make_eta.stan" // defines eta
