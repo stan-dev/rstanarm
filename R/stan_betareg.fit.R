@@ -21,7 +21,7 @@
 stan_betareg.fit <- function(x, y, z = NULL, 
                              weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                              link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
-                             link.phi = "log", ...,
+                             link.phi = NULL, ...,
                              prior = normal(), prior_intercept = normal(),
                              prior_z = normal(), prior_intercept_z = normal(),
                              prior_ops = prior_options(), prior_PD = FALSE, 
@@ -31,11 +31,9 @@ stan_betareg.fit <- function(x, y, z = NULL,
   algorithm <- match.arg(algorithm)
 
   # determine whether the user has passed a matrix for the percision model (z)
-  if (length(link.phi) > 1 || is.null(z)) {
+  if (is.null(link.phi)) {
     Z_true <- 0
-    z <- model.matrix(y ~ 1)
-    link.phi <- "log"
-  } else if (length(link.phi) == 1) {
+  } else {
     Z_true <- 1
   }
 
@@ -47,7 +45,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
   # link for Z variables
-  link.phi <- match.arg(link.phi)
+  link.phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
   supported_phi_links <- c("log", "identity", "sqrt")
   link_num_phi <- which(supported_phi_links == link.phi)
   if (!length(link_num_phi)) 

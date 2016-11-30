@@ -157,7 +157,8 @@ library(rstanarm)
 data("GasolineYield", package = "betareg")
 gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit",
                          iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
-gas_fit2 <- stan_betareg(yield ~ temp | pressure, data = GasolineYield, link = "logit",link.phi = "log",
+gas_fit2 <- stan_betareg(yield ~ temp + batch | pressure,
+                         data = GasolineYield, link = "logit",
                          iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
 round(coef(gas_fit1), 2)
 round(coef(gas_fit2), 2)

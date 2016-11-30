@@ -91,7 +91,8 @@
 #' 
 stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
-                         link.phi = c("log", "identity", "sqrt"), 
+                         # link.phi = c("log", "identity", "sqrt"), 
+                         link.phi = NULL,
                          model = TRUE, y = TRUE, x = FALSE, ...,
                          prior = normal(), prior_intercept = normal(),
                          prior_z = normal(), prior_intercept_z = normal(),
@@ -122,9 +123,9 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (!length(prior_ops)) 
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  
+
   # determine whether user specified regression matrix for precision model
-  if (length(grep("\\|", all.names(formula))) == 1 && length(link.phi) > 1) {
+  if (length(grep("\\|", all.names(formula))) == 1 && is.null(link.phi)) {
     link.phi <- "log"
   }
   
@@ -140,7 +141,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                               QR = QR, sparse = FALSE)
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
-  link_phi <- match.arg(link.phi)
+  link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
   fit <- nlist(stanfit, formula, offset = NULL, weights = NULL, 
                family = beta_fam(link), family_phi = beta_phi_fam(link_phi), 
                data, x = X, y = Y, z = Z, model = mf, terms = mt, 
