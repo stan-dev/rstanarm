@@ -31,8 +31,12 @@ stan_betareg.fit <- function(x, y, z = NULL,
   algorithm <- match.arg(algorithm)
 
   # determine whether the user has passed a matrix for the percision model (z)
-  if (is.null(link.phi)) {
+  if (is.null(link.phi) && is.null(z)) {
     Z_true <- 0
+    z <- model.matrix(y ~ 1)
+  } else if (is.null(link.phi) && !(is.null(z))) {
+    Z_true <- 1
+    link.phi <- "log"
   } else {
     Z_true <- 1
   }

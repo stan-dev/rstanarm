@@ -125,10 +125,10 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
     prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   # determine whether user specified regression matrix for precision model
-  if (length(grep("\\|", all.names(formula))) == 1 && is.null(link.phi)) {
-    link.phi <- "log"
+  if (length(grep("\\|", all.names(formula))) == 0 && is.null(link.phi)) {
+    Z <- NULL
   }
-  
+
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, 
                               weights = weights, offset = offset, 
@@ -142,6 +142,11 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
   link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
+  
+  if (is.null(Z)) {
+    Z <- model.matrix(y ~ 1)
+  }
+  
   fit <- nlist(stanfit, formula, offset = NULL, weights = NULL, 
                family = beta_fam(link), family_phi = beta_phi_fam(link_phi), 
                data, x = X, y = Y, z = Z, model = mf, terms = mt, 
