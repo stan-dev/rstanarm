@@ -1,3 +1,4 @@
+#include "Columbia_copyright.stan"
 #include "license.stan" // GPL3+
 
 // GLM for a Bernoulli outcome
