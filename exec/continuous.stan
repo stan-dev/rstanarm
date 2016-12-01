@@ -3,188 +3,8 @@
 // GLM for a Gaussian, Gamma, or inverse Gaussian outcome
 functions {
   #include "common_functions.stan"
-
-  /** 
-   * Apply inverse link function to linear predictor
-   *
-   * @param eta Linear predictor vector
-   * @param link An integer indicating the link function
-   * @return A vector, i.e. inverse-link(eta)
-   */
-  vector linkinv_gauss(vector eta, int link) {
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1)  // link = identity 
-      return eta; 
-    else if (link == 2) // link = log
-      return exp(eta); 
-    else { // link = inverse
-      vector[rows(eta)] mu;
-      for(n in 1:rows(eta)) mu[n] = inv(eta[n]); 
-      return mu;
-    }
-  }
+  #include "continuous_likelihoods.stan"
   
-  /** 
-  * Apply inverse link function to linear predictor
-  *
-  * @param eta Linear predictor vector
-  * @param link An integer indicating the link function
-  * @return A vector, i.e. inverse-link(eta)
-  */
-  vector linkinv_gamma(vector eta, int link) {
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1)  return eta;
-    else if (link == 2) return exp(eta);
-    else {
-      vector[rows(eta)] mu;
-      for(n in 1:rows(eta)) mu[n] = inv(eta[n]); 
-      return mu;
-    }
-  }
-  
-  /** 
-  * Apply inverse link function to linear predictor
-  *
-  * @param eta Linear predictor vector
-  * @param link An integer indicating the link function
-  * @return A vector, i.e. inverse-link(eta)
-  */
-  vector linkinv_inv_gaussian(vector eta, int link) {
-    if (link < 1 || link > 4) reject("Invalid link");
-    if (link == 1)  return eta;
-    else if (link == 2) return exp(eta);
-    else {
-      vector[rows(eta)] mu;
-      if (link == 3) for( n in 1:rows(eta)) mu[n] = inv(eta[n]);
-      else for (n in 1:rows(eta)) mu[n] = inv_sqrt(eta[n]);      
-      return mu;
-    }
-  }
-  
-  /** 
-  * Pointwise (pw) log-likelihood vector
-  *
-  * @param y The integer array corresponding to the outcome variable.
-  * @param link An integer indicating the link function
-  * @return A vector
-  */
-  vector pw_gauss(vector y, vector eta, real sigma, int link) {
-    vector[rows(eta)] ll;
-    vector[rows(eta)] mu;
-    if (link < 1 || link > 3) 
-      reject("Invalid link"); 
-    
-    mu = linkinv_gauss(eta, link);
-    for (n in 1:rows(eta)) 
-      ll[n] = normal_lpdf(y[n] | mu[n], sigma);
-    return ll;
-  }
-  
-  real GammaReg(vector y, vector eta, real shape, 
-                int link, real sum_log_y) {
-    real ret;
-    if (link < 1 || link > 3) reject("Invalid link");
-    ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
-      (shape - 1) * sum_log_y;
-    if (link == 2)      # link is log
-      ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
-    else if (link == 1) # link is identity
-      ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                # link is inverse
-      ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
-    return ret;
-  }
-  
-  /** 
-  * Pointwise (pw) log-likelihood vector
-  *
-  * @param y The integer array corresponding to the outcome variable.
-  * @param link An integer indicating the link function
-  * @return A vector
-  */
-  vector pw_gamma(vector y, vector eta, real shape, int link) {
-    vector[rows(eta)] ll;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 3) { # link = inverse
-      for (n in 1:rows(eta)) {
-        ll[n] = gamma_lpdf(y[n] | shape, shape * eta[n]);
-      }
-    }
-    else if (link == 2) { # link = log
-      for (n in 1:rows(eta)) {
-        ll[n] = gamma_lpdf(y[n] | shape, shape / exp(eta[n]));
-      }
-    }
-    else { # link = identity
-      for (n in 1:rows(eta)) {
-        ll[n] = gamma_lpdf(y[n] | shape, shape / eta[n]);
-      }
-    }
-    return ll;
-  }
-  
-  /** 
-  * inverse Gaussian log-PDF (for data only, excludes constants)
-  *
-  * @param y The vector of outcomes
-  * @param eta The vector of linear predictors
-  * @param lambda A positive scalar nuisance parameter
-  * @param link An integer indicating the link function
-  * @return A scalar
-  */
-  real inv_gaussian(vector y, vector mu, real lambda, 
-                    real sum_log_y, vector sqrt_y) {
-    return 0.5 * rows(y) * log(lambda / (2 * pi())) - 
-      1.5 * sum_log_y - 
-      0.5 * lambda * dot_self( (y - mu) ./ (mu .* sqrt_y) );
-  }
-  
-  /** 
-  * Pointwise (pw) log-likelihood vector
-  *
-  * @param y The integer array corresponding to the outcome variable.
-  * @param eta The linear predictors
-  * @param lamba A positive scalar nuisance parameter
-  * @param link An integer indicating the link function
-  * @param log_y A precalculated vector of the log of y
-  * @param sqrt_y A precalculated vector of the square root of y
-  * @return A vector of log-likelihoods
-  */
-  vector pw_inv_gaussian(vector y, vector eta, real lambda, 
-                         int link, vector log_y, vector sqrt_y) {
-    vector[rows(y)] ll;
-    vector[rows(y)] mu;
-    if (link < 1 || link > 4) reject("Invalid link");
-    mu = linkinv_inv_gaussian(eta, link);
-    for (n in 1:rows(y))
-      ll[n] = -0.5 * lambda * square( (y[n] - mu[n]) / (mu[n] * sqrt_y[n]) );
-    ll = ll + 0.5 * log(lambda / (2 * pi())) - 1.5 * log_y;
-    return ll;
-  }
-  
-  /** 
-  * PRNG for the inverse Gaussian distribution
-  *
-  * Algorithm from wikipedia 
-  *
-  * @param mu The expectation
-  * @param lambda The dispersion
-  * @return A draw from the inverse Gaussian distribution
-  */
-  real inv_gaussian_rng(real mu, real lambda) {
-    real z;
-    real y;
-    real x;
-    real mu2;
-    mu2 = square(mu);
-    y = square(normal_rng(0,1));
-    z = uniform_rng(0,1);
-    x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
-      / (2 * lambda);
-    if (z <= (mu / (mu + x))) return x;
-    else return mu2 / x;
-  }
-
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -214,16 +34,13 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  vector[N * (family == 3)] sqrt_y;
-  vector[N * (family == 3)] log_y;
-  real sum_log_y;
+  vector[family == 3 ? N : 0] sqrt_y;
+  vector[family == 3 ? N : 0] log_y;
+  real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
-  if      (family == 1) sum_log_y = not_a_number();
-  else if (family == 2) sum_log_y = sum(log(y));
-  else {
-    for (n in 1:N) sqrt_y[n] = sqrt(y[n]);
+  if (family == 3) {
+    sqrt_y = sqrt(y);
     log_y = log(y);
-    sum_log_y = sum(log_y);
   }
 }
 parameters {
@@ -290,8 +107,7 @@ model {
 }
 generated quantities {
   real alpha[has_intercept];
-  real mean_PPD;
-  mean_PPD = 0;
+  real mean_PPD = 0;
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
@@ -302,8 +118,7 @@ generated quantities {
     if (has_intercept == 1) {
       if (family == 1 || link == 2) eta = eta + gamma[1];
       else {
-        real min_eta;
-        min_eta = min(eta);
+        real min_eta = min(eta);
         alpha[1] = alpha[1] - min_eta;
         eta = eta - min_eta + gamma[1];
       }

@@ -54,8 +54,9 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
-                                   "common_functions.stan")), unlist(functions))
+functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm"), 
+                             c("common_functions.stan", "continuous_likelihoods.stan")), 
+                      FUN = readLines)), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
