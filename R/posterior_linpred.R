@@ -65,14 +65,10 @@ posterior_linpred <- function(object, ...) {
 posterior_linpred.stanreg <- function(object, transform = FALSE, newdata = NULL, 
                               re.form = NULL, offset = NULL, XZ = FALSE, 
                               ...) {
-  validate_stanreg_object(object)
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_linpred")
-  if (!is.null(newdata)) {
-    newdata <- as.data.frame(newdata)
-    if (anyNA(newdata))
-      stop("NAs are not allowed in 'newdata'.")
-  }
+  
+  newdata <- validate_newdata(newdata)
   dat <- pp_data(object,
                  newdata = newdata,
                  re.form = re.form,

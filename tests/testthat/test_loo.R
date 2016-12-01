@@ -257,10 +257,10 @@ test_that("kfold_and_reloo_data works", {
   mf2 <- data.frame(incidence = mf[, 1][, 1], mf[, -1])
   expect_equal(d, mf2)
   
-  # should return model frame if 'data' arg not specified 
+  # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
   fit <- SW(stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
-  expect_identical(f(fit), model.frame(fit))
+  expect_equivalent(f(fit), model.frame(fit))
 })
 
 test_that(".weighted works", {
