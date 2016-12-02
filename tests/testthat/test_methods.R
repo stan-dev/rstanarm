@@ -665,6 +665,8 @@ test_that("prior_summary doesn't error", {
                 "stan_lmer1")
   expect_output(print(prior_summary(stan_lmer2)),
                 "stan_lmer2")
+  expect_output(print(prior_summary(stan_gamm41)),
+                "stan_gamm41")
   expect_output(print(prior_summary(stan_polr1)),
                 "stan_polr1")
   expect_output(print(prior_summary(stan_glm_opt1)),
@@ -676,12 +678,12 @@ test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(example_model),
                 c("prior", "prior_intercept", "prior_covariance"))
   expect_named(prior_summary(stan_lmer1),
-               c("prior", "prior_intercept", "prior_covariance"))
+               c("prior", "prior_intercept", "prior_covariance", "prior_dispersion"))
   expect_named(prior_summary(stan_lmer2),
-               c("prior", "prior_intercept", "prior_covariance"))
+               c("prior", "prior_intercept", "prior_covariance", "prior_dispersion"))
   expect_named(prior_summary(stan_polr1),
                c("prior", "prior_counts"))
   expect_named(prior_summary(stan_glm_opt1),
-               c("prior", "prior_intercept"))
+               c("prior", "prior_intercept", "prior_dispersion"))
 })
 
