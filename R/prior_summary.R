@@ -61,78 +61,30 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   .fr2 <- function(y, .digits = .dig, ...) format(y, digits = .digits, ...)
   .fr3 <- function(y, .nsmall = .dig) .fr2(y, nsmall = .nsmall)
   
-  prior_intercept <- x[["prior_intercept"]]
-  prior_coef <- x[["prior"]]
-  prior_covariance <- x[["prior_covariance"]]
-  prior_counts <- x[["prior_counts"]] # for stan_polr
-  
   msg <- paste0("Priors for model '", attr(x, "model_name"), "'")
   cat(msg, "\n------")
   
-  if (!is.null(prior_intercept)) {
-    p <- prior_intercept
-    cat("\nIntercept\n ~",
-        if (is.na(p$dist)) {
-          "flat"
-        } else if (is.null(p$df)) {
-          paste0(p$dist,"(location = ", .fr2(p$location), 
-                 ", scale = ", .fr2(p$scale),")")
-        } else {
-          paste0(p$dist, "(df = ", .fr2(p$df), ", 
-                 location = ", .fr2(p$location), 
-                 ", scale = ", .fr2(p$scale), ")")
-        }
-      )
-    if (!is.null(p$adjusted_scale))
-      cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
-  }
+  if (!is.null(x[["prior_intercept"]]))
+    .print_intercept_prior(x[["prior_intercept"]], txt = "Intercept", 
+                           formatters = list(.fr2,.fr3))
+  if (!is.null(x[["prior"]]))
+    .print_coef_prior(x[["prior"]], txt = "Coefficients", 
+                      formatters = list(.fr2,.fr3))
   
-  if (!is.null(prior_coef)) {
-    p <- prior_coef
-    if (!(p$dist %in% c("R2", NA))) {
-      if (p$dist %in% c("normal", "student_t", "cauchy")) {
-        p$location <- .format_pars(p$location, .fr2)
-        p$scale <- .format_pars(p$scale, .fr2)
-        if (!is.null(p$df))
-          p$df <- .format_pars(p$df, .fr2)
-        if (!is.null(p$adjusted_scale))
-          p$adjusted_scale <- .format_pars(p$adjusted_scale, .fr2)
-      } else if (p$dist %in% c("hs_plus")) {
-        p$df1 <- .format_pars(p$df, .fr2)
-        p$df2 <- .format_pars(p$scale, .fr2)
-      } else if (p$dist %in% c("hs")) {
-        p$df <- .format_pars(p$df, .fr2)
-      }
-    }
-    cat("\nCoefficients\n ~",
-        if (is.na(p$dist)) {
-          "flat"
-        } else if (p$dist %in% c("normal", "student_t", "cauchy")) {
-          if (is.null(p$df)) {
-            paste0(p$dist, "(location = ", .fr2(p$location), 
-                   ", scale = ", .fr2(p$scale), ")")
-          } else {
-            paste0(p$dist, "(df = ", .fr2(p$df), 
-                  ", location = ", .fr2(p$location), 
-                   ", scale = ", .fr2(p$scale),")")
-          }
-        } else if (p$dist %in% c("hs_plus")) {
-          paste0("hs_plus(df1 = ", .fr2(p$df1), ", df2 = ", .fr2(p$df2), ")")
-        } else if (p$dist %in% c("hs")) {
-          paste0("hs(df = ", .fr2(p$df), ")")
-        } else if (p$dist %in% c("R2")) {
-          paste0("R2(location = ", .fr2(p$location), ", what = '", p$what, "')")
-    })
-    
-    if (!is.null(p$adjusted_scale))
-      cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
-  }
+  # unique to stan_betareg
+  if (!is.null(x[["prior_intercept_z"]]))
+    .print_intercept_prior(x[["prior_intercept_z"]], txt = "Intercept_z", 
+                           formatters = list(.fr2,.fr3))
+  if (!is.null(x[["prior_z"]]))
+    .print_coef_prior(x[["prior_z"]], txt = "Coefficients_z", 
+                      formatters = list(.fr2,.fr3))
   
-  if (!is.null(prior_covariance)) {
-    p <- prior_covariance
+  # unique to stan_(g)lmer or stan_gamm4
+  if (!is.null(x[["prior_covariance"]])) {
+    p <- x[["prior_covariance"]]
     p$regularization <- .format_pars(p$regularization, .fr2)
     p$concentration <- .format_pars(p$concentration, .fr2)
-    p$shape <- .format_pars(prior_covariance$shape, .fr2)
+    p$shape <- .format_pars(p$shape, .fr2)
     p$scale <- .format_pars(p$scale, .fr2)
     cat("\nCovariance\n ~",
         paste0(p$dist, "(",  "reg = ", .fr2(p$regularization), 
@@ -141,15 +93,15 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       )
   }
   
-  if (!is.null(prior_counts)) {# stan_polr
-    p <- prior_counts
+  # unique to stan_polr
+  if (!is.null(x[["prior_counts"]])) {
+    p <- x[["prior_counts"]]
     p$concentration <- .format_pars(p$concentration, .fr2)
     cat("\nCounts\n ~",
         paste0(p$dist, "(", "concentration = ", .fr2(p$concentration), ")"))
   }
-  
-  if (!is.null(x$scobit_exponent)) {
-    p <- x$scobit_exponent
+  if (!is.null(x[["scobit_exponent"]])) {
+    p <- x[["scobit_exponent"]]
     cat("\nScobit Exponent\n ~",
         paste0(p$dist, "(shape = ", .fr2(p$shape), 
                ", rate = ", .fr2(p$rate), ")"))
@@ -175,4 +127,78 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
           collapse = ","), 
     "]"
   )
+}
+
+
+# Print priors for intercept/coefs (called internally by print.prior_summary.stanreg)
+#
+# @param prior_* named list of prior_intercept or prior_coef stuff
+# @param txt header to be printed
+# @param formatters a list of formatter functions like .fr2, .fr3 (defined in 
+#   prior_summary.stanreg). This is kind of hacky and should be replaced at some
+#   point.
+# 
+.print_intercept_prior <- function(prior_intercept, txt = "Intercept", formatters = list()) {
+  p <- prior_intercept
+  stopifnot(length(formatters) == 2)
+  .fr2 <- formatters[[1]]
+  .fr3 <- formatters[[2]]
+  cat(paste0("\n", txt, "\n ~"),
+      if (is.na(p$dist)) {
+        "flat"
+      } else if (is.null(p$df)) {
+        paste0(p$dist,"(location = ", .fr2(p$location), 
+               ", scale = ", .fr2(p$scale),")")
+      } else {
+        paste0(p$dist, "(df = ", .fr2(p$df), ", 
+               location = ", .fr2(p$location), 
+               ", scale = ", .fr2(p$scale), ")")
+      }
+  )
+  if (!is.null(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
+}
+.print_coef_prior <- function(prior_coef, txt = "Coefficients", formatters = list()) {
+  p <- prior_coef
+  stopifnot(length(formatters) == 2)
+  .fr2 <- formatters[[1]]
+  .fr3 <- formatters[[2]]
+
+  if (!(p$dist %in% c("R2", NA))) {
+    if (p$dist %in% c("normal", "student_t", "cauchy")) {
+      p$location <- .format_pars(p$location, .fr2)
+      p$scale <- .format_pars(p$scale, .fr2)
+      if (!is.null(p$df))
+        p$df <- .format_pars(p$df, .fr2)
+      if (!is.null(p$adjusted_scale))
+        p$adjusted_scale <- .format_pars(p$adjusted_scale, .fr2)
+    } else if (p$dist %in% c("hs_plus")) {
+      p$df1 <- .format_pars(p$df, .fr2)
+      p$df2 <- .format_pars(p$scale, .fr2)
+    } else if (p$dist %in% c("hs")) {
+      p$df <- .format_pars(p$df, .fr2)
+    }
+  }
+  cat(paste0("\n", txt, "\n ~"),
+      if (is.na(p$dist)) {
+        "flat"
+      } else if (p$dist %in% c("normal", "student_t", "cauchy")) {
+        if (is.null(p$df)) {
+          paste0(p$dist, "(location = ", .fr2(p$location), 
+                 ", scale = ", .fr2(p$scale), ")")
+        } else {
+          paste0(p$dist, "(df = ", .fr2(p$df), 
+                 ", location = ", .fr2(p$location), 
+                 ", scale = ", .fr2(p$scale),")")
+        }
+      } else if (p$dist %in% c("hs_plus")) {
+        paste0("hs_plus(df1 = ", .fr2(p$df1), ", df2 = ", .fr2(p$df2), ")")
+      } else if (p$dist %in% c("hs")) {
+        paste0("hs(df = ", .fr2(p$df), ")")
+      } else if (p$dist %in% c("R2")) {
+        paste0("R2(location = ", .fr2(p$location), ", what = '", p$what, "')")
+      })
+  
+  if (!is.null(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .fr3(p$adjusted_scale))
 }
