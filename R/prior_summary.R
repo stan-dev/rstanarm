@@ -65,19 +65,19 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   cat(msg, "\n------")
   
   if (!is.null(x[["prior_intercept"]]))
-    .print_intercept_prior(x[["prior_intercept"]], txt = "Intercept", formatters)
+    .print_scalar_prior(x[["prior_intercept"]], txt = "Intercept", formatters)
   if (!is.null(x[["prior"]]))
-    .print_coef_prior(x[["prior"]], txt = "Coefficients", formatters)
+    .print_vector_prior(x[["prior"]], txt = "Coefficients", formatters)
   if (!is.null(x[["prior_dispersion"]])) {
     dispersion_name <- x[["prior_dispersion"]][["dispersion_name"]]
-    .print_intercept_prior(x[["prior_dispersion"]], txt = dispersion_name, formatters)
+    .print_scalar_prior(x[["prior_dispersion"]], txt = dispersion_name, formatters)
   }
-    
+  
   # unique to stan_betareg
   if (!is.null(x[["prior_intercept_z"]]))
-    .print_intercept_prior(x[["prior_intercept_z"]], txt = "Intercept_z", formatters)
+    .print_scalar_prior(x[["prior_intercept_z"]], txt = "Intercept_z", formatters)
   if (!is.null(x[["prior_z"]]))
-    .print_coef_prior(x[["prior_z"]], txt = "Coefficients_z", formatters)
+    .print_vector_prior(x[["prior_z"]], txt = "Coefficients_z", formatters)
   
   # unique to stan_(g)lmer or stan_gamm4
   if (!is.null(x[["prior_covariance"]]))
@@ -121,15 +121,14 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
 
 # Print priors for intercept/coefs (called internally by print.prior_summary.stanreg)
 #
-# @param prior_* named list of prior_intercept or prior_coef stuff
+# @param p named list of prior stuff
 # @param txt header to be printed
 # @param formatters a list of two formatter functions like .fr2, .fr3 (defined
 #   in prior_summary.stanreg). The first is used for format all numbers except
 #   for adjusted scales, for which the second function is used. This is kind of
 #   hacky and should be replaced at some point.
 # 
-.print_intercept_prior <- function(prior_intercept, txt = "Intercept", formatters = list()) {
-  p <- prior_intercept
+.print_scalar_prior <- function(p, txt = "Intercept", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
   .f2 <- formatters[[2]]
@@ -147,14 +146,13 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   )
   if (!is.null(p$adjusted_scale))
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
-}
+      }
 
-.print_coef_prior <- function(prior_coef, txt = "Coefficients", formatters = list()) {
-  p <- prior_coef
+.print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
   .f2 <- formatters[[2]]
-
+  
   if (!(p$dist %in% c("R2", NA))) {
     if (p$dist %in% c("normal", "student_t", "cauchy")) {
       p$location <- .format_pars(p$location, .f1)
@@ -193,16 +191,15 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(p$adjusted_scale))
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
 }
-.print_covariance_prior <- function(prior_covariance, txt = "Covariance", formatters = list()) {
-  p <- prior_covariance
+.print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
   .f1 <- formatters[[1]]
   p$regularization <- .format_pars(p$regularization, .f1)
   p$concentration <- .format_pars(p$concentration, .f1)
   p$shape <- .format_pars(p$shape, .f1)
   p$scale <- .format_pars(p$scale, .f1)
-  cat("\nCovariance\n ~",
+  cat(paste0("\n", txt, "\n ~"),
       paste0(p$dist, "(",  "reg = ", .f1(p$regularization),
              ", conc = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
              ", scale = ", .f1(p$scale), ")")
-    )
+  )
 }
