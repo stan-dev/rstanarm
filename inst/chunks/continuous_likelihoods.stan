@@ -74,19 +74,20 @@
   * @return A vector
   */
   vector pw_gamma(vector y, vector eta, real shape, int link) {
-    vector[rows(eta)] ll;
+    int N = rows(eta);
+    vector[N] ll;
     if (link == 3) { // link = inverse
-      for (n in 1:rows(eta)) {
+      for (n in 1:N) {
         ll[n] = gamma_lpdf(y[n] | shape, shape * eta[n]);
       }
     }
     else if (link == 2) { // link = log
-      for (n in 1:rows(eta)) {
+      for (n in 1:N) {
         ll[n] = gamma_lpdf(y[n] | shape, shape / exp(eta[n]));
       }
     }
     else if (link == 1) { // link = identity
-      for (n in 1:rows(eta)) {
+      for (n in 1:N) {
         ll[n] = gamma_lpdf(y[n] | shape, shape / eta[n]);
       }
     }
@@ -157,6 +158,7 @@
   */
   real inv_gaussian_rng(real mu, real lambda) {
     real mu2 = square(mu);
+    // compound declare & define does not work with _rng
     real z;
     real y;
     real x;

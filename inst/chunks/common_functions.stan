@@ -99,8 +99,7 @@
         theta_L_mark = theta_L_mark + 1;
       }
       else {
-        matrix[nc,nc] T_i;
-        T_i = rep_matrix(0, nc, nc);
+        matrix[nc,nc] T_i = rep_matrix(0, nc, nc);
         for (c in 1:nc) {
           T_i[c,c] = theta_L[theta_L_mark];
           theta_L_mark = theta_L_mark + 1;

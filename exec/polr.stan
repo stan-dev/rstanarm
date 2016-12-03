@@ -36,7 +36,7 @@ functions {
                  int link, real alpha) {
     int N = rows(eta);
     int J = rows(cutpoints) + 1;
-    vector[rows(eta)] ll;
+    vector[N] ll;
     if (link < 1 || link > 5) 
       reject("Invalid link");
       
@@ -63,33 +63,32 @@ functions {
   * @return A vector of length J - 1 whose elements are in increasing order
   */
   vector make_cutpoints(vector probabilities, real scale, int link) {
-    vector[rows(probabilities) - 1] cutpoints;
+    int C = rows(probabilities) - 1; 
+    vector[C] cutpoints;
     real running_sum = 0;
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
-    if (link < 1 || link > 5) 
-      reject("invalid link");
-      
-    if (link == 1) for(c in 1:(rows(cutpoints))) {
+    if (link == 1) for(c in 1:C) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = logit(running_sum);
     }
-    else if (link == 2) for(c in 1:(rows(cutpoints))) {
+    else if (link == 2) for(c in 1:C) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = inv_Phi(running_sum);
     }
-    else if (link == 3) for(c in 1:(rows(cutpoints))) {
+    else if (link == 3) for(c in 1:C) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = -log(-log(running_sum));
     }
-    else if (link == 4) for(c in 1:(rows(cutpoints))) {
+    else if (link == 4) for(c in 1:C) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = log(-log1m(running_sum));
     }
-    else for(c in 1:(rows(cutpoints))) {
+    else if (link == 5) for(c in 1:C) {
       running_sum  = running_sum + probabilities[c];
       cutpoints[c] = tan(pi() * (running_sum - 0.5));
     }
+    else reject("invalid link");
     return scale * cutpoints;
   }
   
@@ -110,9 +109,6 @@ functions {
     
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
-    if (link < 1 || link > 5) 
-      reject("invalid link");
-      
     if (link == 1) while(!(ystar > lower && ystar < upper))
       ystar = logistic_rng(eta, 1);
     else if (link == 2) while(!(ystar > lower && ystar < upper))
@@ -123,6 +119,7 @@ functions {
       ystar = log(-log1m(uniform_rng(0,1)));
     else if (link == 5) while(!(ystar > lower && ystar < upper))
       ystar = cauchy_rng(eta, 1);
+    else reject("invalid link");
     return ystar;
   }
 }

@@ -63,7 +63,7 @@
    */
   vector pw_bern(int y, vector eta, int link) {
     int N = rows(eta);
-    vector[rows(eta)] ll;
+    vector[N] ll;
     if (link < 1 || link > 5) 
       reject("Invalid link");
       
