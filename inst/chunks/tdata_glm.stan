@@ -2,8 +2,6 @@
   int<lower=0> len_var_group = sum(p) * (t > 0);
   int<lower=0> len_rho = sum(p) - t;
   int<lower=1> pos = 1;
-  int<lower=0,upper=1> t_any_124 = 0;
-  int<lower=0,upper=1> t_all_124 = 1;
   real<lower=0> delta[len_concentration];
   int<lower=0> hs;
   if (prior_dist <= 2) hs = 0;
@@ -17,11 +15,4 @@
       }
     }
     for (j in 3:p[i]) len_z_T = len_z_T + p[i] - 1;
-  }
-  if (prior_dist == 2) {
-    for (k in 1:K) {
-      if (prior_df[k] == 1 || prior_df[k] == 2 || prior_df[k] == 4)
-        t_any_124 = 1;
-      else t_all_124 = 0;
-    }
   }

@@ -199,3 +199,26 @@
     return ret;
   }
 
+  /** 
+   * Cornish-Fisher expansion for standard normal to Student t
+   *
+   * See result 26.7.5 of
+   * http://people.math.sfu.ca/~cbm/aands/page_949.htm
+   *
+   * @param z A scalar distributed standard normal
+   * @param df A scalar degrees of freedom
+   * @return An (approximate) Student t variate with df degrees of freedom
+   */
+  real CFt(real z, real df) {
+    real z2 = square(z);
+    real z3 = z2 * z;
+    real z5 = z2 * z3;
+    real z7 = z2 * z5;
+    real z9 = z2 * z7;
+    real df2 = square(df);
+    real df3 = df2 * df;
+    real df4 = df2 * df2;
+    return z + (z3 + z) / (4 * df) + (5 * z5 + 16 * z3 + 3 * z) / (96 * df2)
+           + (3 * z7 + 19 * z5 + 17 * z3 - 15 * z) / (384 * df3)
+           + (79 * z9 + 776 * z7 + 1482 * z5 - 1920 * z3 - 945 * z) / (92160 * df4);
+  }
