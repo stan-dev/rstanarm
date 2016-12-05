@@ -676,12 +676,13 @@ test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(example_model),
                 c("prior", "prior_intercept", "prior_covariance"))
   expect_named(prior_summary(stan_lmer1),
-               c("prior", "prior_intercept", "prior_covariance"))
-  expect_named(prior_summary(stan_lmer2),
-               c("prior", "prior_intercept", "prior_covariance"))
+               c("prior", "prior_intercept", "prior_covariance", "prior_dispersion"))
+  expect_named(prior_summary(stan_lmer1),
+               c("prior", "prior_intercept", "prior_covariance", "prior_dispersion"))
   expect_named(prior_summary(stan_polr1),
                c("prior", "prior_counts"))
   expect_named(prior_summary(stan_glm_opt1),
-               c("prior", "prior_intercept"))
+               c("prior", "prior_intercept", "prior_dispersion"))
+  expect_named(prior_summary(stan_glm_vb1),
+               c("prior", "prior_intercept", "prior_dispersion"))
 })
-

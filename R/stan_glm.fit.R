@@ -123,14 +123,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
-  
+
   if (scaled && prior_dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    if (!QR) 
+    if (!QR) {
       prior_scale <- pmax(min_prior_scale, prior_scale / 
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
@@ -139,6 +139,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                else if (num.categories > 2) x.scale <- 2 * sd(x)
                return(x.scale)
              }))
+    }
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 
@@ -355,7 +356,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
     adjusted_prior_scale = prior_scale,
-    adjusted_prior_intercept_scale = prior_scale_for_intercept
+    adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    prior_scale_for_dispersion = prior_scale_for_dispersion,
+    family = family
   )
   
   pars <- c(if (has_intercept) "alpha", 
@@ -550,7 +553,9 @@ summarize_glm_prior <-
            has_intercept, 
            has_predictors,
            adjusted_prior_scale,
-           adjusted_prior_intercept_scale) {
+           adjusted_prior_intercept_scale, 
+           prior_scale_for_dispersion, 
+           family) {
     rescaled <- isTRUE(user_prior_ops$scaled)
     rescaled_coef <-
       rescaled && has_predictors &&
@@ -601,5 +606,22 @@ summarize_glm_prior <-
     if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance
     
+    dispersion_name <- .rename_dispersion(family)
+    if (!is.na(dispersion_name)) {
+      flat <- prior_scale_for_dispersion == 0 || is.infinite(prior_scale_for_dispersion)
+      prior_list$prior_dispersion <- 
+        list(dist = if (flat) NA else "Cauchy", 
+             location = 0, scale = prior_scale_for_dispersion, 
+             dispersion_name = dispersion_name)
+    }
+    
     return(prior_list)
   }
+
+.rename_dispersion <- function(family) {
+  fam <- family$family
+  if (is.gaussian(fam)) "sigma" else
+    if (is.gamma(fam)) "shape" else
+      if (is.ig(fam)) "lambda" else 
+        if (is.nb(fam)) "overdispersion" else NA
+}
