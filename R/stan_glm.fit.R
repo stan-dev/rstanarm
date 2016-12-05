@@ -123,14 +123,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
-  
+
   if (scaled && prior_dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
       prior_scale <- ss * prior_scale
       prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    if (!QR) 
+    if (!QR) {
       prior_scale <- pmax(min_prior_scale, prior_scale / 
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
@@ -139,6 +139,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                else if (num.categories > 2) x.scale <- 2 * sd(x)
                return(x.scale)
              }))
+    }
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 

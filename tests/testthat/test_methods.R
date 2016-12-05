@@ -685,5 +685,6 @@ test_that("prior_summary returns correctly named list", {
                c("prior", "prior_counts"))
   expect_named(prior_summary(stan_glm_opt1),
                c("prior", "prior_intercept", "prior_dispersion"))
+  expect_named(prior_summary(stan_glm_vb1),
+               c("prior", "prior_intercept", "prior_dispersion"))
 })
-
