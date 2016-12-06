@@ -73,6 +73,9 @@ stanreg <- function(object) {
       mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
       stanmat <- stanmat[,1:mark, drop = FALSE]
     }
+    if (is_betareg) {
+      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z))]
+    }
     covmat <- cov(stanmat)
     rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
     if (object$algorithm == "sampling") 
