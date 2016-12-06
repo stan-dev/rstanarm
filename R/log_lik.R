@@ -164,9 +164,9 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       } else {
         x_dat <- get_x(object)
         z_dat <- object$z
-        colnames(x_dat) <- paste0("x.", colnames(x_dat))
-        colnames(z_dat) <- paste0("z.", colnames(z_dat))
-        data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat))
+        colnames(x_dat) <- colnames(x_dat)
+        colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
+        data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
         draws$phi <- stanmat[,z_vars]
       }
     }
@@ -247,11 +247,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 # for stan_betareg only
 .xdata_beta <- function(data) { 
   sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("z", colnames(data), fixed = TRUE))]
+  data[, -c(which(colnames(data) %in% sel), grep("(phi)_", colnames(data), fixed = TRUE))]
 }
 .zdata_beta <- function(data) {
   sel <- c("y", "weights","offset", "trials")
-  data[, -c(which(colnames(data) %in% sel), grep("x", colnames(data), fixed = TRUE))]
+  data[, grep("(phi)_", colnames(data), fixed = TRUE)]
 }
 .mu_beta <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$beta, .xdata_beta(data), data$offset))
@@ -321,7 +321,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 .ll_beta_i <- function(i, data, draws) {
   mu <- .mu_beta(data, draws)
   phi <- draws$phi
-  if (length(grep("z", colnames(data), fixed = TRUE)) > 0) {
+  if (length(grep("(phi)_", colnames(data), fixed = TRUE)) > 0) {
     phi <- .phi_beta(data, draws)
   }
   val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)

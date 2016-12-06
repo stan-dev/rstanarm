@@ -138,7 +138,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                               prior_intercept_z = prior_intercept_z,
                               prior_ops = prior_ops, prior_PD = prior_PD, 
                               algorithm = algorithm, adapt_delta = adapt_delta,
-                              QR = QR, sparse = FALSE)
+                              QR = QR, sparse = sparse)
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
   link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
