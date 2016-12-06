@@ -385,10 +385,10 @@ test_that("collect_pars and grep_for_pars work", {
   expect_identical(grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
   expect_identical(grep_for_pars(fit, "period|size"), c("size", all_period))
   expect_identical(grep_for_pars(fit, "(2|3)$"), all_period[1:2])
-  expect_identical(grep_for_pars(fit, "herd"), all_varying)
   expect_identical(grep_for_pars(fit, "b\\["), all_varying)
+  expect_identical(grep_for_pars(fit, "herd"), c(all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
   expect_identical(grep_for_pars(fit, "Intercept"),
-                   c("(Intercept)", all_varying, "Sigma[(Intercept),(Intercept)]"))
+                   c("(Intercept)", all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
   expect_identical(grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
   expect_identical(grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
   expect_error(grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
@@ -403,7 +403,7 @@ test_that("collect_pars and grep_for_pars work", {
                    c("period2", all_varying[1]))
   expect_identical(collect_pars(fit, pars = "size", regex_pars = "size"), "size")
   expect_identical(collect_pars(fit, regex_pars = c("period", "herd")), 
-                   c(all_period, all_varying))
+                   c(all_period, all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
 })
 
 test_that("posterior_sample_size works", {
