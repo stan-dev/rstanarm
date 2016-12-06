@@ -434,10 +434,14 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       else for (chain in 1:end) {
         stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
       }
-      Sigma_nms <- unlist(lapply(cnms, FUN = function(grp) {
+      Sigma_nms <- lapply(cnms, FUN = function(grp) {
         nm <- outer(grp, grp, FUN = paste, sep = ",")
         nm[lower.tri(nm, diag = TRUE)]
-      }))
+      })
+      for (j in seq_along(Sigma_nms)) {
+        Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+      }
+      Sigma_nms <- unlist(Sigma_nms)
     }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
