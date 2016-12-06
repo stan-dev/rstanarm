@@ -247,6 +247,8 @@ test_that("VarCorr returns correct structure", {
   expect_s3_class(vc_stan2, class(vc_lmer2))
   check_att_names(vc_stan1, vc_lmer1)
   check_att_names(vc_stan2, vc_lmer2)
+  v <- sapply(vc_stan1, "[[", 1)
+  expect_true(length(unique(v)) == length(v))
   expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
 })
 
