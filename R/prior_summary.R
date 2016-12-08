@@ -224,8 +224,8 @@ used.sparse <- function(x) {
         paste0(p$dist,"(location = ", .f1(p$location), 
                ", scale = ", .f1(p$scale),")")
       } else {
-        paste0(p$dist, "(df = ", .f1(p$df), ", 
-               location = ", .f1(p$location), 
+        paste0(p$dist, "(df = ", .f1(p$df), 
+               ", location = ", .f1(p$location), 
                ", scale = ", .f1(p$scale), ")")
       }
   )
