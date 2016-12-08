@@ -19,6 +19,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
+library(betareg)
 SEED <- 123
 set.seed(SEED)
 CHAINS <- 2
@@ -138,4 +139,31 @@ test_that("predict ok for Poisson", {
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.1)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit, newd)[1:2], presp(stanfit_opt, newd), tol = 0.1)
+})
+
+test_that("predict ok for stan_betareg", {
+  dat <- list()
+  dat$N <- 200
+  dat$x <- rnorm(dat$N, 2, 1)
+  dat$z <- rnorm(dat$N, 2, 1)
+  dat$mu <- binomial(link = "logit")$linkinv(0.5 + 0.2*dat$x)
+  dat$phi <- exp(1.5 + 0.4*dat$z)
+  dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
+  dat <- data.frame(dat$y, dat$x, dat$z)
+  colnames(dat) <- c("y", "x", "z")
+  
+  betaregfit <- betareg(y ~ x | z, data = dat)
+  stanfit <- SW(stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
+                         iter = ITER*10, seed = SEED, refresh = REFRESH))
+  
+  pb <- predict(betaregfit, type = "response")
+  ps <- predict(stanfit, type = "response")
+  expect_equal(pb, ps, tol = 0.05)
+  expect_error(presp(stanfit))
+  
+  newd <- data.frame(x = c(300,305))
+  pb <- predict(betaregfit, newdata = newd, type = "link")
+  ps <- predict(stanfit, newdata = newd, type = "link")
+  expect_equal(pb, ps, tol = 0.05)
+
 })
