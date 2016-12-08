@@ -96,7 +96,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
+                       prior_dispersion = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -117,9 +117,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  
+  if (is.null(prior_dispersion)) 
+    prior_dispersion <- list()
 
   group <- glmod$reTrms
   group$decov <- prior_covariance
@@ -128,7 +127,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
   

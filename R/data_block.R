@@ -54,7 +54,8 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
-                prior_df = as.array(rep(1, nvars)), prior_dist_name = NA))
+                prior_df = as.array(rep(1, nvars)), prior_dist_name = NA, 
+                prior_autoscale = FALSE))
   if (!is.list(prior)) 
     stop(sQuote(deparse(substitute(prior))), " should be a named list")
   
@@ -79,5 +80,11 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   prior_mean <- maybe_broadcast(prior_mean, nvars)
   prior_mean <- as.array(prior_mean)
   prior_scale <- maybe_broadcast(prior_scale, nvars)
-  return(nlist(prior_dist, prior_mean, prior_scale, prior_df, prior_dist_name))
+
+  nlist(prior_dist, 
+        prior_mean, 
+        prior_scale, 
+        prior_df, 
+        prior_dist_name, 
+        prior_autoscale = isTRUE(prior$autoscale))
 }

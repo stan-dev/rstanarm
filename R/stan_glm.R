@@ -114,10 +114,14 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_ops = prior_options(), prior_PD = FALSE, 
+                    prior_dispersion = cauchy(0, 5),
+                    prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+  
+  if ("prior_ops" %in% names(list(...)))
+    stop("'prior_ops' argument is deprecated.")
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
@@ -145,13 +149,13 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
     Y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
                           offset = offset, family = family,
-                          prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior = prior, 
+                          prior_intercept = prior_intercept,
+                          prior_dispersion = prior_dispersion,
+                          prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
@@ -189,7 +193,7 @@ stan_glm.nb <- function(formula,
                         ...,
                         prior = normal(),
                         prior_intercept = normal(),
-                        prior_ops = prior_options(),
+                        prior_dispersion = cauchy(0, 5),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL,

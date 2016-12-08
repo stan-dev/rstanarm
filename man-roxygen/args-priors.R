@@ -19,6 +19,11 @@
 #'   \code{sparse} argument is left at its default value of \code{FALSE}--- then
 #'   the prior distribution for the intercept is set so it applies to the value
 #'   when all predictors are centered.)
-#' @param prior_ops Additional options related to prior distributions. Can 
-#'   be \code{NULL} to omit a prior on the dispersion and see 
-#'   \code{\link{prior_options}} otherwise.
+#' @param prior_dispersion The prior distribution for the "dispersion" parameter
+#'   (if applicable). The "dispersion" parameter refers to a different parameter
+#'   depending on the \code{family}. For Gaussian models it is the residual SD 
+#'   sigma, for negative binomial models it is the overdispersion parameter, for
+#'   gamma models it is the shape parameter, and for inverse-Gaussian models it 
+#'   is the lambda parameter. Binomial and Poisson models do not have dispersion
+#'   parameters.
+#' 

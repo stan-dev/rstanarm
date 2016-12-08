@@ -456,15 +456,15 @@ validate_parameter_value <- function(x) {
 #
 # @param scale Value of scale parameter (can be NULL).
 # @param default Default value to use if \code{scale} is NULL.
-# @param link String naming the link function.
+# @param link String naming the link function or NULL.
 # @return If a probit link is being used, \code{scale} (or \code{default} if
 #   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
 #   either \code{scale} or \code{default} is returned.
 set_prior_scale <- function(scale, default, link) {
-  stopifnot(is.numeric(default), is.character(link))
+  stopifnot(is.numeric(default), is.character(link) || is.null(link))
   if (is.null(scale)) 
     scale <- default
-  if (link == "probit")
+  if (isTRUE(link == "probit"))
     scale <- scale * dnorm(0) / dlogis(0)
   
   return(scale)
