@@ -30,16 +30,17 @@
 #'   \code{sparse} argument set to \code{TRUE} (which is only possible with a
 #'   subset of the modeling functions and never the default).
 #'   
-#' @section Adjusted scales: 
-#'   For some models you may see "\code{adjusted scale}" in the printed 
-#'   output and adjusted scales included in the object returned by 
-#'   \code{prior_summary}. These adjusted scale values are the prior scales 
-#'   actually used by \pkg{rstanarm} and are computed by adjusting the prior
-#'   scales specified by the user to account for the scales of the predictors
-#'   (as described in the documentation for the \code{scaled} argument to 
-#'   \code{\link{prior_options}}). For models with adjusted prior scales, 
-#'   refitting the model with \code{prior_ops=prior_options(scaled=FALSE)} will
-#'   disable this feature.
+#' @section Adjusted scales: For some models you may see "\code{adjusted scale}"
+#'   in the printed output and adjusted scales included in the object returned 
+#'   by \code{prior_summary}. These adjusted scale values are the prior scales 
+#'   actually used by \pkg{rstanarm} and are computed by adjusting the prior 
+#'   scales specified by the user to account for the scales of the predictors 
+#'   (as described in the documentation for the \code{\link[=priors]{autoscale}}
+#'   argument). To disable internal prior scale adjustments set the 
+#'   \code{autoscale} argument to \code{FALSE} when setting a prior using the 
+#'   \code{\link{normal}}, \code{\link{student_t}}, or \code{\link{cauchy}} 
+#'   functions. For example, \code{normal(0, 5, autoscale=FALSE)} instead of 
+#'   just \code{normal(0, 5)}.
 #' 
 #' @section Coefficients in Q-space:
 #'   For the models fit with an \pkg{rstanarm} modeling function that supports 
