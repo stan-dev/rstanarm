@@ -235,8 +235,14 @@ transformed parameters {
   real dispersion;
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (prior_scale_for_dispersion > 0)
-    dispersion =  prior_scale_for_dispersion * dispersion_unscaled;
-  else dispersion = dispersion_unscaled;
+    dispersion = prior_scale_for_dispersion * dispersion_unscaled;
+  else 
+    dispersion = dispersion_unscaled;
+    
+  // if prior_dist_for_dispersion in location-scale family add prior_mean
+  if (prior_mean_for_dispersion > 0 && prior_dist_for_dispersion <= 2) 
+    dispersion = dispersion + prior_mean_for_dispersion;
+    
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             dispersion, tau, scale, zeta, rho, z_T);
@@ -282,8 +288,14 @@ model {
   }
 
   // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) 
-    target += cauchy_lpdf(dispersion_unscaled | 0, 1);
+  if (prior_scale_for_dispersion > 0) {
+    if (prior_dist_for_dispersion == 1)
+      target += normal_lpdf(dispersion_unscaled | 0, 1);
+    else 
+      target += student_t_lpdf(dispersion_unscaled | 
+                               prior_df_for_dispersion, 0, 1);
+  }
+    
   #include "priors_glm.stan" // increments target()
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
