@@ -192,12 +192,26 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # create entries in the data block of the .stan file
   standata <- nlist(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
-    link, has_weights = length(weights) > 0, has_offset = length(offset) > 0,
-    prior_dist, prior_mean, prior_scale, prior_df, 
-    prior_dist_for_intercept, prior_scale_for_intercept = c(prior_scale_for_intercept), 
+    N = nrow(xtemp),
+    K = ncol(xtemp),
+    xbar = as.array(xbar),
+    dense_X = !sparse,
+    link,
+    has_weights = length(weights) > 0,
+    has_offset = length(offset) > 0,
+    has_intercept,
+    prior_PD,
+    prior_dist,
+    prior_mean,
+    prior_scale,
+    prior_df,
+    prior_dist_for_intercept,
+    prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
-    prior_df_for_intercept = c(prior_df_for_intercept), has_intercept, prior_PD)
+    prior_df_for_intercept = c(prior_df_for_intercept),
+    prior_dist_for_dispersion = prior_dist_for_dispersion
+    # mean,df,scale for dispersion added below depending on family
+  )
 
   # make a copy of user specification before modifying 'group' (used for keeping
   # track of priors)
@@ -279,8 +293,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v_X <- parts$v
       standata$u_X <- parts$u
       standata$X <- array(0, dim = c(0L, dim(xtemp)))
-    }
-    else {
+    } else {
       standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
       standata$nnz_X <- 0L
       standata$w_X <- double(0)
@@ -294,10 +307,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
-    standata$prior_df_for_dispersion <- prior_df_for_dispersion
-    standata$prior_mean_for_dispersion <- prior_mean_for_dispersion
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
+    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
@@ -327,8 +339,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         standata$w_X1 = parts1$w
         standata$v_X1 = parts1$v
         standata$u_X1 = parts1$u
-      }
-      else {
+      } else {
         standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
         standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
         standata$nnz_X0 = 0L 
@@ -367,17 +378,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
   } else if (is.poisson(famname)) {
     standata$family <- 1L
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     standata$prior_mean_for_dispersion <- 0
     standata$prior_df_for_dispersion <- 0
     stanfit <- stanmodels$count 
   } else if (is_nb) {
     standata$family <- 2L
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
-    standata$prior_df_for_dispersion <- prior_df_for_dispersion
-    standata$prior_mean_for_dispersion <- prior_mean_for_dispersion
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
+    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
