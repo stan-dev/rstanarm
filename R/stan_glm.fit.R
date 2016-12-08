@@ -92,23 +92,43 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
+  ok_dispersion_dists <- ok_dists[1:3]
   
   # prior distributions
-  prior_stuff <- handle_glm_prior(prior, nvars, link = family$link, default_scale = 2.5)
-  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df, dist_name, autoscale}
+  prior_stuff <- handle_glm_prior(
+    prior,
+    nvars,
+    link = family$link,
+    default_scale = 2.5,
+    ok_dists = ok_dists
+  )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}
+  for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
   
-  prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, default_scale = 10,
-                                            link = family$link, ok_dists = 
-                                            nlist("normal", student_t = "t", "cauchy"))
+  prior_intercept_stuff <- handle_glm_prior(
+    prior_intercept,
+    nvars = 1,
+    default_scale = 10,
+    link = family$link,
+    ok_dists = ok_intercept_dists
+  )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
-  for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
+  for (i in names(prior_intercept_stuff))
     assign(i, prior_intercept_stuff[[i]])
   
-  prior_dispersion_stuff <- handle_glm_prior(prior_dispersion, nvars = 1, default_scale = 5,
-                                            link = NULL, ok_dists = nlist(student_t = "t", "cauchy"))
+  prior_dispersion_stuff <-
+    handle_glm_prior(
+      prior_dispersion,
+      nvars = 1,
+      default_scale = 5,
+      link = NULL, # don't need to adjust scale based on logit vs probit
+      ok_dists = ok_dispersion_dists
+    )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
   names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
-  for (i in names(prior_dispersion_stuff)) # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
+  for (i in names(prior_dispersion_stuff)) 
     assign(i, prior_dispersion_stuff[[i]])
   
   famname <- supported_families[fam]
@@ -276,6 +296,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (is_continuous) {
     standata$prior_scale_for_dispersion <- 
       prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- prior_df_for_dispersion
+    standata$prior_mean_for_dispersion <- prior_mean_for_dispersion
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
@@ -285,6 +307,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$prior_scale_for_dispersion <- 
       if (!length(group) || prior_scale_for_dispersion == Inf) 
         0 else prior_scale_for_dispersion
+    standata$prior_mean_for_dispersion <- 0
+    standata$prior_df_for_dispersion <- 0
     standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
@@ -345,11 +369,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$family <- 1L
     standata$prior_scale_for_dispersion <- 
       prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_mean_for_dispersion <- 0
+    standata$prior_df_for_dispersion <- 0
     stanfit <- stanmodels$count 
   } else if (is_nb) {
     standata$family <- 2L
     standata$prior_scale_for_dispersion <- 
       prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- prior_df_for_dispersion
+    standata$prior_mean_for_dispersion <- prior_mean_for_dispersion
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing

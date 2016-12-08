@@ -14,3 +14,5 @@
   int<lower=0,upper=4> prior_dist;
   int<lower=0,upper=2> prior_dist_for_intercept;
   
+  int<lower=0,upper=2> prior_dist_for_dispersion;
+  
