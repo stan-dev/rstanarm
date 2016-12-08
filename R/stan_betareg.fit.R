@@ -115,6 +115,36 @@ stan_betareg.fit <- function(x, y, z = NULL,
       prior_scale_z <- double()
       prior_df_z <- integer()
   }
+  
+  # prior scaling (using sd of predictors)
+  if (scaled && prior_dist > 0L && !QR) {
+    prior_scale <- pmax(min_prior_scale, prior_scale / 
+                          apply(xtemp, 2L, FUN = function(x) {
+                            num.categories <- length(unique(x))
+                            x.scale <- 1
+                            if (num.categories == 2) x.scale <- diff(range(x))
+                            else if (num.categories > 2) x.scale <- 2 * sd(x)
+                            return(x.scale)
+                          }))
+    if (nvars_z != 0) {
+      prior_scale_z <- pmax(min_prior_scale, prior_scale_z / 
+                            apply(ztemp, 2L, FUN = function(z) {
+                              num.categories <- length(unique(z))
+                              z.scale <- 1
+                              if (num.categories == 2) z.scale <- diff(range(z))
+                              else if (num.categories > 2) z.scale <- 2 * sd(z)
+                              return(z.scale)
+                            }))
+    }
+  }
+  prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
+  prior_scale_for_intercept <- 
+    min(.Machine$double.xmax, prior_scale_for_intercept)
+  if(nvars_z != 0) {
+    prior_scale_z <- as.array(pmin(.Machine$double.xmax, prior_scale_z))
+    prior_scale_for_intercept_z <- 
+      min(.Machine$double.xmax, prior_scale_for_intercept_z)
+  }
 
   # create entries in the data block of the .stan file
   standata <- nlist(
