@@ -587,11 +587,12 @@ make_b_nms <- function(group) {
 # Create "prior.info" attribute needed for prior_summary()
 #
 # @param user_* The user's prior, prior_intercept, prior_covariance, and 
-#   prior_options specifications. For prior and prior_intercept these should be
+#   prior_dispersion specifications. For prior and prior_intercept these should be
 #   passed in after broadcasting the df/location/scale arguments if necessary.
 # @param has_intercept T/F, does model have an intercept?
 # @param has_predictors T/F, does model have predictors?
 # @param adjusted_prior_* adjusted scales computed if using autoscaled priors
+# @param family Family object.
 # @return A named list with components 'prior', 'prior_intercept', and possibly 
 #   'prior_covariance' and 'prior_dispersion' each of which itself is a list
 #   containing the needed values for prior_summary.

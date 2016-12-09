@@ -73,7 +73,7 @@
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
-#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{prior_options}}
+#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{priors}}
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
@@ -86,14 +86,15 @@
 #' 
 #' # for a glm with adjusted scales (see Details, above), compare 
 #' # the default (rstanarm adjusting the scales) to setting 
-#' # prior_ops=prior_options(scaled=FALSE)
+#' # autoscale=FALSE for prior on coefficients
 #' fit <- stan_glm(mpg ~ wt + am, data = mtcars, 
 #'                 prior = normal(0, c(2.5, 4)), 
 #'                 prior_intercept = normal(0, 5), 
 #'                 iter = 10, chains = 1) # only for demonstration 
 #' prior_summary(fit)
 #' 
-#' fit2 <- update(fit, prior_ops = prior_options(scaled = FALSE))
+#' fit2 <- update(fit, prior = normal(0, c(2.5, 4), autoscale=FALSE), 
+#'                prior_intercept = normal(0, 5, autoscale=FALSE))
 #' prior_summary(fit2)
 #' 
 prior_summary.stanreg <- function(object, digits = 2,...) {
