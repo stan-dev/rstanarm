@@ -60,7 +60,7 @@
 #'   
 #'   See \code{\link[gamm4]{gamm4}} for more information about the model
 #'   specicification and \code{\link{priors}} for more information about the
-#'   priors.
+#'   priors. The output is a somewhat 
 #'   
 #'   The \code{plot_nonlinear} function creates a ggplot object with one facet for
 #'   each smooth function specified in the call to \code{stan_gamm4}. A subset of the
@@ -131,18 +131,60 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                           prior_ops = prior_ops, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
-  
+
+  if (nrow(glmod$raw_X) < ncol(glmod$raw_X)) {
+    warning("cannot reparameterize output, returning a stanfit object with reduced functionaliy")
+    return(stanfit)
+  }
+  # Convert back to gam parameterization
+  genuine <- lme4::findbars(random)
+  nrows <- sapply(group$Ztlist, FUN = nrow)
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
+  if (length(genuine)) {
+    mark <- grep(" Xr", colnames(Z), fixed = TRUE)
+    Z_nl <- Z[,mark, drop = FALSE]
+  }
+  else Z_nl <- Z
+  XZ <- if (getRversion() < "3.2.0") cBind(X, Z_nl) else cbind2(X, Z_nl)
+  arr <- as.array(stanfit)
+  XtX <- crossprod(glmod$raw_X)
+  for (chain in 1:ncol(stanfit)) {
+    end <- tail(grep("b[", names(stanfit@sim$samples[[chain]]), 
+                     fixed = TRUE, value = FALSE), 1)
+    if (length(genuine)) {
+      start <- end - sum(nrows[-c(1:length(genuine))])
+      while (start > ncol(X)) {
+        stanfit@sim$samples[[chain]][end] <- stanfit@sim$samples[[chain]][start]
+        names(stanfit@sim$samples[[chain]])[end] <-
+        names(stanfit@sim$samples[[chain]])[start]  
+        end <- end - 1L
+        start <- start - 1L
+      }
+    }
+    eta <- linear_predictor(arr[, chain, colnames(XZ)], x = XZ)
+    beta <- qr.solve(XtX, t(glmod$raw_X) %*% t(eta))
+    for (j in 1:nrow(beta)) {
+      stanfit@sim$samples[[chain]][[j]] <- beta[j,]
+      names(stanfit@sim$samples[[chain]])[j] <- rownames(beta)[j]
+    }
+  }
+  X <- glmod$raw_X
+  stanfit@par_dims$beta <- ncol(X) - stanfit@par_dims$alpha
+  if (length(genuine)) {
+    Z <- Z[,-mark,drop = FALSE]
+  }
+  else Z <- Matrix::Matrix(nrow = nrow(Z), ncol = 0, sparse = TRUE)
+  stanfit@par_dims$b <- ncol(Z)
+  XZ <- if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z)
+  stanfit@sim$fnames_oi[1:ncol(XZ)] <- colnames(XZ)
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call = mc, terms = NULL, model = NULL, 
+               x = XZ, y = y, data, call = mc, terms = NULL, model = NULL, 
                algorithm, glmod = glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "gamm4", "lmerMod")
   return(out)
-  # TODO: maybe convert back to gam parameterization?
 }
 
 #' @rdname stan_gamm4
@@ -170,6 +212,8 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
   labels <- sapply(x$glmod$smooths, "[[", "label")
+  xnames <- sapply(x$glmod$smooths, "[[", "vn")
+  names(xnames) <- labels
   if (!missing(smooths)) {
     found <- smooths %in% labels
     if (all(!found)) {
@@ -181,19 +225,22 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
               paste(smooths[!found], collapse = ", "))
     }
     labels <- smooths[found]
+    xnames <- xnames[found]
   }
   if (any(grepl(",", labels, fixed = TRUE)))
     stop("Only univariate smooths are currently supported by 'plot_nonlinear'.")
   
-  B <- as.matrix(x)[, 1:ncol(XZ), drop = FALSE]
+  B <- as.matrix(x)[, colnames(XZ), drop = FALSE]
+  original <- x$glmod$model
   df_list <- lapply(labels, FUN = function(term) {
     incl <- grepl(term, colnames(B), fixed = TRUE)
     xz <- XZ[, incl, drop = FALSE]
-    xz <- xz[order(xz[, 1]), , drop=FALSE]
+    x <- original[,xnames[term]]
+    xz <- xz[order(x), , drop=FALSE]
     b <- B[, incl, drop = FALSE]
     f <- linear_predictor.matrix(b, xz)
     data.frame(
-      deviation = xz[, 1],
+      predictor = sort(x),
       lower = apply(f, 2, quantile, probs = (1 - prob) / 2),
       upper = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
       middle = apply(f, 2, median), 
@@ -208,13 +255,13 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
   if (is.null(facet_args[["strip.position"]]))
     facet_args[["strip.position"]] <- "left"
   
-  ggplot(plot_data, aes_(x = ~ deviation)) + 
+  ggplot(plot_data, aes_(x = ~ predictor)) + 
     geom_ribbon(aes_(ymin = ~ lower, ymax = ~ upper), 
                 fill = scheme[[1]], color = scheme[[2]],
                 alpha = alpha, size = size) + 
     geom_line(aes_(y = ~ middle), color = scheme[[5]], 
               size = 0.75 * size, lineend = "round") + 
-    labs(x = "Deviation from mean in predictor", y = NULL) + 
+    labs(y = NULL) + 
     do.call(facet_wrap, facet_args) + 
     bayesplot::theme_default()
 }
