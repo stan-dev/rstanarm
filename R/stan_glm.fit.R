@@ -92,7 +92,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
-  ok_dispersion_dists <- ok_dists[1:3]
+  ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions
   prior_stuff <- handle_glm_prior(
@@ -667,10 +667,14 @@ summarize_glm_prior <-
     prior_list$prior_dispersion <- if (is.na(dispersion_name)) 
       NULL else with(user_prior_dispersion, list(
         dist = prior_dist_name_for_dispersion,
-        location = prior_mean_for_dispersion,
-        scale = prior_scale_for_dispersion,
+        location = if (prior_dist_name_for_dispersion != "exponential")
+          prior_mean_for_dispersion else NULL,
+        scale = if (prior_dist_name_for_dispersion != "exponential")
+          prior_scale_for_dispersion else NULL,
         df = if (prior_dist_name_for_dispersion %in% "student_t")
           prior_df_for_dispersion else NULL, 
+        rate = if (prior_dist_name_for_dispersion %in% "exponential")
+          1 / prior_scale_for_dispersion else NULL,
         dispersion_name = dispersion_name
       ))
       

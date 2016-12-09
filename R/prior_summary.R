@@ -221,13 +221,17 @@ used.sparse <- function(x) {
   cat(paste0("\n", txt, "\n ~"),
       if (is.na(p$dist)) {
         "flat"
-      } else if (is.null(p$df)) {
-        paste0(p$dist,"(location = ", .f1(p$location), 
-               ", scale = ", .f1(p$scale),")")
-      } else {
-        paste0(p$dist, "(df = ", .f1(p$df), 
-               ", location = ", .f1(p$location), 
-               ", scale = ", .f1(p$scale), ")")
+      } else if (p$dist == "exponential") {
+        paste0(p$dist,"(rate = ", .f1(p$rate), ")")
+      } else { # normal, studen_t, cauchy
+        if (is.null(p$df)) {
+          paste0(p$dist,"(location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale),")")
+        } else {
+          paste0(p$dist, "(df = ", .f1(p$df), 
+                 ", location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale), ")")
+        }
       }
   )
   if (!is.null(p$adjusted_scale))

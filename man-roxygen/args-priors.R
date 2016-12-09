@@ -25,9 +25,10 @@
 #'   sigma, for negative binomial models it is the overdispersion parameter, for
 #'   gamma models it is the shape parameter, and for inverse-Gaussian models it 
 #'   is the lambda parameter. Binomial and Poisson models do not have dispersion
-#'   parameters. \code{prior_dispersion} can be a call to \code{normal},
-#'   \code{student_t} or \code{cauchy}, which results in a half-normal, half-t,
-#'   or half-Cauchy prior. See \code{\link{priors}} for details. To to omit a
-#'   prior ---i.e., to use a flat (improper) uniform prior--- set
+#'   parameters. \code{prior_dispersion} can be a call to \code{exponential} to 
+#'   use an exponential distribution, or \code{normal}, \code{student_t} or 
+#'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
+#'   prior. See \code{\link{priors}} for details on these functions. To to omit 
+#'   a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_dispersion} to \code{NULL}.
 #' 

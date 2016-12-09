@@ -63,6 +63,7 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   prior_scale <- prior$scale
   prior_mean <- prior$location
   prior_df <- prior$df
+  prior_mean[is.na(prior_mean)] <- 0
   prior_df[is.na(prior_df)] <- 1
   if (!prior_dist_name %in% unlist(ok_dists)) {
     stop("The prior distribution should be one of ",
@@ -71,8 +72,10 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
     prior_dist <- ifelse(prior_dist_name == "normal", 1L, 2L)
     prior_scale <- set_prior_scale(prior_scale, default = default_scale, 
                                    link = link)
-  } else {
+  } else if (prior_dist_name %in% c("hs", "hs_plus")) {
     prior_dist <- ifelse(prior_dist_name == "hs", 3L, 4L)
+  } else if (prior_dist_name %in% "exponential") {
+    prior_dist <- 3L
   }
   
   prior_df <- maybe_broadcast(prior_df, nvars)

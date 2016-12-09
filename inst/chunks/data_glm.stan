@@ -14,5 +14,6 @@
   int<lower=0,upper=4> prior_dist;
   int<lower=0,upper=2> prior_dist_for_intercept;
   
-  int<lower=0,upper=2> prior_dist_for_dispersion;
+  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
+  int<lower=0,upper=3> prior_dist_for_dispersion;
   

@@ -352,6 +352,15 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 
 #' @rdname priors
 #' @export
+#' @param rate Prior rate. The default for the exponential distribution is
+#'   \code{1}.
+exponential <- function(rate = 1) {
+  validate_parameter_value(rate)
+  nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
+}
+
+#' @rdname priors
+#' @export
 #' @param regularization Exponent for an LKJ prior on the correlation matrix in
 #'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
 #'   prior.

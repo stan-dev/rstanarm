@@ -234,14 +234,14 @@ parameters {
 transformed parameters {
   real dispersion;
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_scale_for_dispersion > 0)
-    dispersion = prior_scale_for_dispersion * dispersion_unscaled;
-  else 
+  
+  if (prior_dist_for_dispersion == 0 || prior_scale_for_dispersion <= 0)
     dispersion = dispersion_unscaled;
-    
-  // if prior_dist_for_dispersion in location-scale family add prior_mean
-  if (prior_mean_for_dispersion > 0 && prior_dist_for_dispersion <= 2) 
-    dispersion = dispersion + prior_mean_for_dispersion;
+  else {
+    dispersion = prior_scale_for_dispersion * dispersion_unscaled;
+    if (prior_dist_for_dispersion <= 2) // normal or student_t
+      dispersion = dispersion + prior_mean_for_dispersion;
+  }
     
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
@@ -287,13 +287,15 @@ model {
     target += dot_product(weights, summands);
   }
 
-  // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) {
+  // Log-priors
+  if (prior_dist_for_dispersion > 0 && prior_scale_for_dispersion > 0) {
     if (prior_dist_for_dispersion == 1)
       target += normal_lpdf(dispersion_unscaled | 0, 1);
-    else 
+    else if (prior_dist_for_dispersion == 2)
       target += student_t_lpdf(dispersion_unscaled | 
                                prior_df_for_dispersion, 0, 1);
+    else 
+     target += exponential_lpdf(dispersion_unscaled | 1);
   }
     
   #include "priors_glm.stan" // increments target()
