@@ -83,7 +83,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_df <- prior_df_for_intercept <- prior_df_for_dispersion <-
     prior_dist <- prior_dist_for_intercept <- prior_dist_for_dispersion <- 
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_dispersion <- 
-    prior_scale <- prior_scale_for_intercept <- prior_scale_for_dispersion <- NULL
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_dispersion <- 
+    prior_autoscale <- prior_autoscale_for_intercept <- NULL
   
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept

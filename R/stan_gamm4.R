@@ -73,10 +73,11 @@
 #'   \code{\link[bayesplot]{color_scheme_set}}.
 #'   
 #' @references 
-#' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian Analysis for 
-#' Penalized Spline Regression Using WinBUGS. 
-#' \emph{Journal of Statistical Software}. \strong{14}(14), 1--22.
+#' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
+#' penalized spline regression using WinBUGS. \emph{Journal of Statistical
+#' Software}. \strong{14}(14), 1--22. 
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
+#' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
@@ -91,6 +92,7 @@
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
+#' 
 #' @importFrom lme4 getME
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
