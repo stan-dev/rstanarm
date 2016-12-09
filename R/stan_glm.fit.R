@@ -30,11 +30,23 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior = normal(),
                          prior_intercept = normal(),
                          prior_dispersion = cauchy(0, 5),
+                         prior_ops = NULL,
                          group = list(),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+  
+  # prior_ops deprecated but make sure it still works until 
+  # removed in future release
+  if (!is.null(prior_ops)) {
+    tmp <- .support_deprecated_prior_options(prior, prior_intercept, 
+                                             prior_dispersion, prior_ops)
+    prior <- tmp[["prior"]]
+    prior_intercept <- tmp[["prior_intercept"]]
+    prior_dispersion <- tmp[["prior_dispersion"]]
+    prior_ops <- NULL
+  }
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)

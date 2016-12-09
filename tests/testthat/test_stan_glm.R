@@ -239,6 +239,17 @@ test_that("model with hs prior doesn't error", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
+test_that("prior_dispersion argument is detected properly", {
+  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
+                  refresh = -1, prior_dispersion = exponential(5))
+  expect_identical(
+    fit$prior.info$prior_dispersion, 
+    list(dist = "exponential", 
+         location = NULL, scale = NULL, df = NULL, rate = 5, 
+         dispersion_name = "sigma")
+  )
+})
+
 test_that("empty interaction levels dropped", {
   x1 <- gl(3, 5, 100)
   x2 <- gl(4, 6, 100)

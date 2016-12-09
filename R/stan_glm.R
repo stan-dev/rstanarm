@@ -120,9 +120,6 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                                   "meanfield", "fullrank"),
                     adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
-  if ("prior_ops" %in% names(list(...)))
-    stop("'prior_ops' argument is deprecated.")
-  
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   validate_glm_formula(formula)
@@ -195,7 +192,8 @@ stan_glm.nb <- function(formula,
                         prior_intercept = normal(),
                         prior_dispersion = cauchy(0, 5),
                         prior_PD = FALSE,
-                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                        algorithm = c("sampling", "optimizing", 
+                                      "meanfield", "fullrank"),
                         adapt_delta = NULL,
                         QR = FALSE) {
   if ("family" %in% names(list(...)))

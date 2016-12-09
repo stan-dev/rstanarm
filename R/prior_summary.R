@@ -288,8 +288,9 @@ used.sparse <- function(x) {
   p$shape <- .format_pars(p$shape, .f1)
   p$scale <- .format_pars(p$scale, .f1)
   cat(paste0("\n", txt, "\n ~"),
-      paste0(p$dist, "(",  "reg = ", .f1(p$regularization),
-             ", conc = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
+      paste0(p$dist, "(",  
+             "reg. = ", .f1(p$regularization),
+             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
              ", scale = ", .f1(p$scale), ")")
   )
 }

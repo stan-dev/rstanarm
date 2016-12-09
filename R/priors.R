@@ -353,9 +353,12 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 
 #' @rdname priors
 #' @export
-#' @param rate Prior rate. The default for the exponential distribution is
-#'   \code{1}.
+#' @param rate Prior rate for the exponential distribution. Defaults to
+#'   \code{1}. For the exponential distribution, the rate parameter is the
+#'   \emph{reciprocal} of the mean.
+#' 
 exponential <- function(rate = 1) {
+  stopifnot(length(rate) == 1)
   validate_parameter_value(rate)
   nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
 }
