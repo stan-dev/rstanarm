@@ -28,6 +28,6 @@
 #'   parameters. \code{prior_dispersion} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
-#'   prior. See \code{\link{priors}} for details on these functions. To to omit 
+#'   prior. See \code{\link{priors}} for details on these functions. To omit 
 #'   a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_dispersion} to \code{NULL}.
