@@ -60,7 +60,7 @@ pp_data <-
   if (is(object, "gamm4")) {
     if (is.null(newdata)) x <- object$glmod$raw_X
     else {
-      x <- mgcv::predict.gam(G <- mgcv::gam(formula(object), data = object$data), 
+      x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
                              newdata = newdata, type = "lpmatrix")
     }
     if (is.null(re.form)) {
@@ -121,7 +121,10 @@ pp_data <-
     rfd <- mfnew <- model.frame(object)
   } 
   else if (inherits(object, "gamm4")) {
-    rfd <- mfnew <- na.omit(newdata)
+    x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
+                           newdata = newdata, type = "lpmatrix")
+    NAs <- apply(is.na(x), 1, any)
+    rfd <- mfnew <- newdata[!NAs,]
     attr(rfd,"na.action") <- "na.omit"
   } else {
     terms_fixed <- delete.response(terms(object, fixed.only = TRUE))
