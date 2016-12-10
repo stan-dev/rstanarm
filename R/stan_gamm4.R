@@ -197,7 +197,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
 #'   
 #' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
-#' @importFrom ggplot2 aes_ facet_wrap ggplot geom_line geom_ribbon labs 
+#' @importFrom ggplot2 aes aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs 
 #' 
 plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
                            alpha = 1, size = 0.75) {
@@ -221,29 +221,57 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
               paste(smooths[!found], collapse = ", "))
     }
     labels <- smooths[found]
-    xnames <- xnames[found]
+    if (!is.matrix(xnames)) xnames <- xnames[found]
   }
-  if (any(grepl(",", labels, fixed = TRUE)))
-    stop("Only univariate smooths are currently supported by 'plot_nonlinear'.")
   
   B <- as.matrix(x)[, colnames(XZ), drop = FALSE]
   original <- x$glmod$model
+  
+  bivariate <- any(grepl(",", labels, fixed = TRUE))
+  if (bivariate) {
+    if (length(labels) > 1)
+      stop("Multivariate functions can only be plotted one at a time; specify 'smooths'")
+    if (length(xnames) > 2)
+      stop("Only univariate and bivariate functions can be plotted currently")
+    xrange <- range(original[,xnames[1]])
+    yrange <- range(original[,xnames[2]])
+    xz <- expand.grid(seq(from = xrange[1], to = xrange[2], length.out = 100),
+                      seq(from = yrange[1], to = yrange[2], length.out = 100))
+    colnames(xz) <- xnames[1:2]
+    plot_data <- data.frame(x = xz[,1], y = xz[,2])
+    for (i in colnames(original)) {
+      if (i %in% colnames(xz)) next
+      xz[[i]] <- 1
+    }
+    XZ <- mgcv::predict.gam(mgcv::gam(formula(x), data = x$data), 
+                            newdata = xz, type = "lpmatrix")
+    incl <- grepl(labels, colnames(B), fixed = TRUE)
+    b <- B[,incl, drop = FALSE]
+    xz <- XZ[,grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
+    plot_data$z <- apply(linear_predictor.matrix(b, xz), 2, FUN = median)
+    return(ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
+             geom_contour(aes_string(color = "..level..")) + 
+             labs(x = xnames[1], y = xnames[2]) + bayesplot::theme_default())
+  }
+  
   df_list <- lapply(labels, FUN = function(term) {
     incl <- grepl(term, colnames(B), fixed = TRUE)
     xz <- XZ[, incl, drop = FALSE]
+    b <- B[, incl, drop = FALSE]
     x <- original[,xnames[term]]
     xz <- xz[order(x), , drop=FALSE]
-    b <- B[, incl, drop = FALSE]
     f <- linear_predictor.matrix(b, xz)
     data.frame(
       predictor = sort(x),
-      lower = apply(f, 2, quantile, probs = (1 - prob) / 2),
-      upper = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
-      middle = apply(f, 2, median), 
+      lower  = apply(f, 2, quantile, probs = (1 - prob) / 2),
+      upper  = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
+      middle = apply(f, 2, median),
       term = term
     )
   })
+  
   plot_data <- do.call(rbind, df_list)
+
   scheme <- bayesplot::color_scheme_get()
   facet_args[["facets"]] <- ~ term
   if (is.null(facet_args[["scales"]]))
