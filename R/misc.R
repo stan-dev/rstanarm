@@ -526,6 +526,10 @@ get_x.default <- function(object) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
+get_x.gamm4 <- function(object) {
+  object$glmod$raw_X %ORifNULL% stop("X not found")
+}
+#' @export
 get_x.lmerMod <- function(object) {
   object$glmod$X %ORifNULL% stop("X not found")
 }

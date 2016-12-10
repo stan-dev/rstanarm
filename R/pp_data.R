@@ -63,9 +63,11 @@ pp_data <-
       x <- mgcv::predict.gam(G <- mgcv::gam(formula(object), data = object$data), 
                              newdata = newdata, type = "lpmatrix")
     }
-    if (is.null(re.form))
-      z <- .pp_data_mer_z(object, newdata, 
-                          re.form = as.formula(object$call$random), ...)
+    if (is.null(re.form)) {
+      re.form <- as.formula(object$call$random)
+      if (length(re.form) == 0) re.form <- NA
+      z <- .pp_data_mer_z(object, newdata, re.form, ...)
+    }
     else z <- .pp_data_mer_z(object, newdata, re.form, ...)
   } else {
     x <- .pp_data_mer_x(object, newdata, ...)
@@ -117,9 +119,13 @@ pp_data <-
   }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
+  } 
+  else if (inherits(object, "gamm4")) {
+    rfd <- mfnew <- na.omit(newdata)
+    attr(rfd,"na.action") <- "na.omit"
   } else {
-    mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
-                         newdata, na.action = na.action)
+    terms_fixed <- delete.response(terms(object, fixed.only = TRUE))
+    mfnew <- model.frame(terms_fixed, newdata, na.action = na.action)
     newdata.NA <- newdata
     if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
       newdata.NA <- newdata.NA[-fixed.na.action,]

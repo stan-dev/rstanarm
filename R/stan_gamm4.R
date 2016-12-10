@@ -154,13 +154,11 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     end <- tail(grep("b[", names(stanfit@sim$samples[[chain]]), 
                      fixed = TRUE, value = FALSE), 1)
     if (length(genuine)) {
-      start <- end - sum(nrows[-c(1:length(genuine))])
-      while (start > ncol(X)) {
+      for (start in rev(grep(" Xr", colnames(Z), fixed = TRUE, invert = TRUE))) {
         stanfit@sim$samples[[chain]][end] <- stanfit@sim$samples[[chain]][start]
         names(stanfit@sim$samples[[chain]])[end] <-
         names(stanfit@sim$samples[[chain]])[start]  
         end <- end - 1L
-        start <- start - 1L
       }
     }
     eta <- linear_predictor(arr[, chain, colnames(XZ)], x = XZ)
@@ -172,9 +170,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   }
   X <- glmod$raw_X
   stanfit@par_dims$beta <- ncol(X) - stanfit@par_dims$alpha
-  if (length(genuine)) {
-    Z <- Z[,-mark,drop = FALSE]
-  }
+  if (length(genuine)) Z <- Z[,-mark,drop = FALSE]
   else Z <- Matrix::Matrix(nrow = nrow(Z), ncol = 0, sparse = TRUE)
   stanfit@par_dims$b <- ncol(Z)
   XZ <- if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z)
