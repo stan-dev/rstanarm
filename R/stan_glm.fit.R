@@ -17,6 +17,7 @@
 
 #' @rdname stan_glm
 #' @export
+#' @param prior_ops Deprecated. See \link{rstanarm-deprecated} for details.
 #' @param group A list, possibly of length zero (the default), but otherwise
 #'   having the structure of that produced by \code{\link[lme4]{mkReTrms}} to
 #'   indicate the group-specific part of the model. In addition, this list must
