@@ -235,7 +235,7 @@ transformed parameters {
   real dispersion;
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   
-  if (prior_dist_for_dispersion == 0 || prior_scale_for_dispersion <= 0)
+  if (prior_dist_for_dispersion == 0)
     dispersion = dispersion_unscaled;
   else {
     dispersion = prior_scale_for_dispersion * dispersion_unscaled;
