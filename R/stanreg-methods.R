@@ -278,7 +278,7 @@ ranef.stanreg <- function(object, ...) {
   levs <- levs[mark]
   cnms <- cnms[mark]
   nc <- vapply(cnms, length, 1L)
-  nb <- nc * vapply(levs, length, 1L)[asgn]
+  nb <- nc * vapply(levs, length, 1L)
   nbseq <- rep.int(seq_along(nb), nb)
   ml <- split(ans, nbseq)
   for (i in seq_along(ml)) {
@@ -286,7 +286,7 @@ ranef.stanreg <- function(object, ...) {
                       dimnames = list(NULL, cnms[[i]]))
   }
   ans <- lapply(seq_along(fl), function(i) {
-    data.frame(do.call(cbind, ml[asgn == i]), row.names = levs[[i]], 
+    data.frame(do.call(cbind, ml[i]), row.names = levs[[i]], 
                check.names = FALSE)
   })
   names(ans) <- names(fl)
