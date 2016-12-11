@@ -80,7 +80,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        na.action = getOption("na.action", "na.omit"), 
                        offset, contrasts = NULL, ...,
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
+                       prior_dispersion = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -90,7 +90,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- make_glmerControl()
-  mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_ops <-
+  mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_dispersion <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
@@ -105,17 +105,17 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
+  if (is.null(prior_dispersion)) 
+    prior_dispersion <- list()
   if (is.null(prior_covariance))
     stop("'prior_covariance' can't be NULL.", call. = FALSE)
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
   group <- glmod$reTrms
   group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
 
@@ -165,7 +165,7 @@ stan_lmer <- function(formula,
                       ...,
                       prior = normal(),
                       prior_intercept = normal(),
-                      prior_ops = prior_options(),
+                      prior_dispersion = cauchy(0, 5),
                       prior_covariance = decov(),
                       prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
@@ -201,7 +201,7 @@ stan_glmer.nb <- function(formula,
                           ...,
                           prior = normal(),
                           prior_intercept = normal(),
-                          prior_ops = prior_options(),
+                          prior_dispersion = cauchy(0, 5),
                           prior_covariance = decov(),
                           prior_PD = FALSE,
                           algorithm = c("sampling", "meanfield", "fullrank"),
