@@ -62,15 +62,16 @@
 #'   specicification and \code{\link{priors}} for more information about the
 #'   priors. The output is a somewhat 
 #'   
-#'   The \code{plot_nonlinear} function creates a ggplot object with one facet for
-#'   each smooth function specified in the call to \code{stan_gamm4}. A subset of the
-#'   smooth functions can be specified using the \code{smooths} argument. The 
-#'   plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
-#'   outer lines here demark the edges of posterior uncertainty intervals 
-#'   (credible intervals) rather than confidence intervals and the inner line
-#'   is the posterior median of the function rather than the function implied
-#'   by a point estimate. To change the colors used in the plot see 
-#'   \code{\link[bayesplot]{color_scheme_set}}.
+#'   The \code{plot_nonlinear} function creates a ggplot object with one facet 
+#'   for each smooth function specified in the call to \code{stan_gamm4}. A 
+#'   subset of the smooth functions can be specified using the \code{smooths} 
+#'   argument. For univariate smooths, the plot is conceptually similar to
+#'   \code{\link[mgcv]{plot.gam}} except the outer lines here demark the edges
+#'   of posterior uncertainty intervals (credible intervals) rather than
+#'   confidence intervals and the inner line is the posterior median of the
+#'   function rather than the function implied by a point estimate. For
+#'   bivariate smooths, a contour plot is generated. To change the colors used
+#'   in the plot see \code{\link[bayesplot]{color_scheme_set}}.
 #'   
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
@@ -190,21 +191,26 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
 #' @param smooths An optional character vector specifying a subset of the smooth
 #'   functions specified in the call to \code{stan_gamm4}. The default is
 #'   include all smooth terms.
-#' @param prob A scalar between 0 and 1 governing the width of the uncertainty
-#'   interval.
+#' @param prob For univarite smooths, a scalar between 0 and 1 governing the
+#'   width of the uncertainty interval.
 #' @param facet_args An optional named list of arguments passed to 
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument).
-#' @param alpha,size Passed to \code{\link[ggplot2]{geom_ribbon}}.
+#' @param alpha,size For univariate smooths, passed to 
+#'   \code{\link[ggplot2]{geom_ribbon}}. For bivariate smooths, \code{size/2} is
+#'   passed to \code{\link[ggplot2]{geom_contour}}.
 #'   
 #' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
-#' @importFrom ggplot2 aes aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs 
+#' @importFrom ggplot2 aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
 #' 
-plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
+plot_nonlinear <- function(x, smooths, ..., 
+                           prob = 0.9, facet_args = list(), 
                            alpha = 1, size = 0.75) {
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
+  
+  scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
@@ -231,15 +237,15 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
   bivariate <- any(grepl(",", labels, fixed = TRUE))
   if (bivariate) {
     if (length(labels) > 1)
-      stop("Multivariate functions can only be plotted one at a time; specify 'smooths'")
+      stop("Multivariate functions can only be plotted one at a time; specify 'smooths'.")
     if (length(xnames) > 2)
-      stop("Only univariate and bivariate functions can be plotted currently")
-    xrange <- range(original[,xnames[1]])
-    yrange <- range(original[,xnames[2]])
+      stop("Only univariate and bivariate functions can be plotted currently.")
+    xrange <- range(original[, xnames[1]])
+    yrange <- range(original[, xnames[2]])
     xz <- expand.grid(seq(from = xrange[1], to = xrange[2], length.out = 100),
                       seq(from = yrange[1], to = yrange[2], length.out = 100))
     colnames(xz) <- xnames[1:2]
-    plot_data <- data.frame(x = xz[,1], y = xz[,2])
+    plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
     for (i in colnames(original)) {
       if (i %in% colnames(xz)) next
       xz[[i]] <- 1
@@ -247,19 +253,25 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
     XZ <- mgcv::predict.gam(mgcv::gam(formula(x), data = x$data), 
                             newdata = xz, type = "lpmatrix")
     incl <- grepl(labels, colnames(B), fixed = TRUE)
-    b <- B[,incl, drop = FALSE]
-    xz <- XZ[,grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
+    b <- B[, incl, drop = FALSE]
+    xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
     plot_data$z <- apply(linear_predictor.matrix(b, xz), 2, FUN = median)
-    return(ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
-             geom_contour(aes_string(color = "..level..")) + 
-             labs(x = xnames[1], y = xnames[2]) + bayesplot::theme_default())
+    return(
+      ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
+             geom_contour(aes_string(color = "..level.."), size = size/2) + 
+             labs(x = xnames[1], y = xnames[2]) + 
+             scale_color_gradient2(low = scheme[[1]],
+                                   mid = scheme[[3]], 
+                                   high = scheme[[6]]) +
+             bayesplot::theme_default()
+    )
   }
   
   df_list <- lapply(labels, FUN = function(term) {
     incl <- grepl(term, colnames(B), fixed = TRUE)
     xz <- XZ[, incl, drop = FALSE]
     b <- B[, incl, drop = FALSE]
-    x <- original[,xnames[term]]
+    x <- original[, xnames[term]]
     xz <- xz[order(x), , drop=FALSE]
     f <- linear_predictor.matrix(b, xz)
     data.frame(
@@ -270,10 +282,8 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
       term = term
     )
   })
-  
   plot_data <- do.call(rbind, df_list)
-
-  scheme <- bayesplot::color_scheme_get()
+  
   facet_args[["facets"]] <- ~ term
   if (is.null(facet_args[["scales"]]))
     facet_args[["scales"]] <- "free"
