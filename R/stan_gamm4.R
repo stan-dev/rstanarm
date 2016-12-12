@@ -192,7 +192,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   XZ <- if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z)
   stanfit@sim$fnames_oi[1:ncol(XZ)] <- colnames(XZ)
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = XZ, y = y, data, call = mc, terms = NULL, model = NULL, 
+               x = XZ, y = y, data, terms = NULL, model = NULL, 
+               call = match.call(expand.dots = TRUE),
                algorithm, glmod = glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "gamm4", "lmerMod")
