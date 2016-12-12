@@ -60,11 +60,26 @@
 #'   
 #'   See \code{\link[gamm4]{gamm4}} for more information about the model
 #'   specicification and \code{\link{priors}} for more information about the
-#'   priors. The output is a somewhat 
+#'   priors. If \code{random = NULL}, the output is a subset of that produced by
+#'   \code{\link[mgcv]{gam}} in the sense that there are several estimated components
+#'   for each smooth term. However, the parameterization used to estimate the model
+#'   is different and corresponds to the parameterization in 
+#'   \code{\link[gamm4]{gamm4}} where is smooth term is decomposed into a linear
+#'   and a non-linear part. If \code{prior} is not \code{NULL}, then the number 
+#'   of parameters to place priors on is equal to the number of linear terms in
+#'   the \code{formula}. The prior on the non-linear part of each smooth term is
+#'   handled by the \code{\link{decov}} function. If \code{random} is not \code{NULL},
+#'   then there are additional group-specific terms whose priors are also handled
+#'   by the \code{\link{decov}} function and whose posterior medians can be extracted
+#'   by calling \code{\link[lme4]{ranef}}.
 #'   
 #'   The \code{plot_nonlinear} function creates a ggplot object with one facet for
-#'   each smooth function specified in the call to \code{stan_gamm4}. A subset of the
-#'   smooth functions can be specified using the \code{smooths} argument. The 
+#'   each smooth function specified in the call to \code{stan_gamm4} in the case
+#'   where all smooths are univariate. A subset of the smooth functions can be 
+#'   specified using the \code{smooths} argument, which is necessary to plot a
+#'   bivariate smooth or to exclude the bivariate smooth and plot the univariate
+#'   ones. In the bivariate case, a plot is produced using 
+#'   \code{\link[ggplot2]{geom_contour}}. In the univariate case, the resulting
 #'   plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
 #'   outer lines here demark the edges of posterior uncertainty intervals 
 #'   (credible intervals) rather than confidence intervals and the inner line
