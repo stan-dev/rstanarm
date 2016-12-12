@@ -88,10 +88,11 @@
 #'   \code{\link[bayesplot]{color_scheme_set}}.
 #'   
 #' @references 
-#' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian Analysis for 
-#' Penalized Spline Regression Using WinBUGS. 
-#' \emph{Journal of Statistical Software}. \strong{14}(14), 1--22.
+#' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
+#' penalized spline regression using WinBUGS. \emph{Journal of Statistical
+#' Software}. \strong{14}(14), 1--22. 
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
+#' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
@@ -106,12 +107,13 @@
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
+#' 
 #' @importFrom lme4 getME
 stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
+                       prior_dispersion = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -132,9 +134,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
-  
+  if (is.null(prior_dispersion)) 
+    prior_dispersion <- list()
 
   group <- glmod$reTrms
   group$decov <- prior_covariance
@@ -143,7 +144,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 
@@ -204,21 +205,26 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
 #' @param smooths An optional character vector specifying a subset of the smooth
 #'   functions specified in the call to \code{stan_gamm4}. The default is
 #'   include all smooth terms.
-#' @param prob A scalar between 0 and 1 governing the width of the uncertainty
-#'   interval.
+#' @param prob For univarite smooths, a scalar between 0 and 1 governing the
+#'   width of the uncertainty interval.
 #' @param facet_args An optional named list of arguments passed to 
 #'   \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument).
-#' @param alpha,size Passed to \code{\link[ggplot2]{geom_ribbon}}.
+#' @param alpha,size For univariate smooths, passed to 
+#'   \code{\link[ggplot2]{geom_ribbon}}. For bivariate smooths, \code{size/2} is
+#'   passed to \code{\link[ggplot2]{geom_contour}}.
 #'   
 #' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
-#' @importFrom ggplot2 aes aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs 
+#' @importFrom ggplot2 aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
 #' 
-plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ..., 
+plot_nonlinear <- function(x, smooths, ..., 
+                           prob = 0.9, facet_args = list(), 
                            alpha = 1, size = 0.75) {
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
+  
+  scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
@@ -245,15 +251,15 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
   bivariate <- any(grepl(",", labels, fixed = TRUE))
   if (bivariate) {
     if (length(labels) > 1)
-      stop("Multivariate functions can only be plotted one at a time; specify 'smooths'")
+      stop("Multivariate functions can only be plotted one at a time; specify 'smooths'.")
     if (length(xnames) > 2)
-      stop("Only univariate and bivariate functions can be plotted currently")
-    xrange <- range(original[,xnames[1]])
-    yrange <- range(original[,xnames[2]])
+      stop("Only univariate and bivariate functions can be plotted currently.")
+    xrange <- range(original[, xnames[1]])
+    yrange <- range(original[, xnames[2]])
     xz <- expand.grid(seq(from = xrange[1], to = xrange[2], length.out = 100),
                       seq(from = yrange[1], to = yrange[2], length.out = 100))
     colnames(xz) <- xnames[1:2]
-    plot_data <- data.frame(x = xz[,1], y = xz[,2])
+    plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
     for (i in colnames(original)) {
       if (i %in% colnames(xz)) next
       xz[[i]] <- 1
@@ -261,19 +267,25 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
     XZ <- mgcv::predict.gam(mgcv::gam(formula(x), data = x$data), 
                             newdata = xz, type = "lpmatrix")
     incl <- grepl(labels, colnames(B), fixed = TRUE)
-    b <- B[,incl, drop = FALSE]
-    xz <- XZ[,grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
+    b <- B[, incl, drop = FALSE]
+    xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
     plot_data$z <- apply(linear_predictor.matrix(b, xz), 2, FUN = median)
-    return(ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
-             geom_contour(aes_string(color = "..level..")) + 
-             labs(x = xnames[1], y = xnames[2]) + bayesplot::theme_default())
+    return(
+      ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
+             geom_contour(aes_string(color = "..level.."), size = size/2) + 
+             labs(x = xnames[1], y = xnames[2]) + 
+             scale_color_gradient2(low = scheme[[1]],
+                                   mid = scheme[[3]], 
+                                   high = scheme[[6]]) +
+             bayesplot::theme_default()
+    )
   }
   
   df_list <- lapply(labels, FUN = function(term) {
     incl <- grepl(term, colnames(B), fixed = TRUE)
     xz <- XZ[, incl, drop = FALSE]
     b <- B[, incl, drop = FALSE]
-    x <- original[,xnames[term]]
+    x <- original[, xnames[term]]
     xz <- xz[order(x), , drop=FALSE]
     f <- linear_predictor.matrix(b, xz)
     data.frame(
@@ -284,10 +296,8 @@ plot_nonlinear <- function(x, smooths, prob = 0.9, facet_args = list(), ...,
       term = term
     )
   })
-  
   plot_data <- do.call(rbind, df_list)
-
-  scheme <- bayesplot::color_scheme_get()
+  
   facet_args[["facets"]] <- ~ term
   if (is.null(facet_args[["scales"]]))
     facet_args[["scales"]] <- "free"

@@ -35,8 +35,9 @@ glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
-                           iter = ITER, chains = CHAINS, seed = SEED,
-                           refresh = REFRESH))
+                           prior_intercept = normal(0, 50, autoscale = FALSE),
+                           prior_dispersion = normal(0, 10),
+                           iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
 lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
 stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
                            iter = ITER, chains = CHAINS, seed = SEED,
