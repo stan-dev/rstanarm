@@ -187,7 +187,7 @@
    */
   vector sqrt_vec(vector y) {
     vector[rows(y)] out;
-    for (i in 1:rows(y)) out[i] = sqrt(out[i]);
+    for (i in 1:rows(y)) out[i] = sqrt(y[i]);
     return out;
   }
 

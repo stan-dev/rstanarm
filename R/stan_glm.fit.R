@@ -104,7 +104,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
 
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", "laplace")
   ok_intercept_dists <- ok_dists[1:3]
   ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   

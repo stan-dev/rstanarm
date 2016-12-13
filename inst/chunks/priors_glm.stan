@@ -26,6 +26,10 @@
     target += normal_lpdf(global[1] | 0, 1);
     target += inv_gamma_lpdf(global[2] | 0.5, 0.5);
   }
+  else if (prior_dist == 5) { // laplace
+    target += normal_lpdf(z_beta | 0, 1);
+    target += exponential_lpdf(V[1] | 1);
+  }
   /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  

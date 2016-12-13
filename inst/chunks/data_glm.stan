@@ -10,8 +10,8 @@
   // link function from location to linear predictor 
   int<lower=1> link;  // interpretation varies by .stan file
   
-  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus
-  int<lower=0,upper=4> prior_dist;
+  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus, 5 = laplace
+  int<lower=0,upper=5> prior_dist;
   int<lower=0,upper=2> prior_dist_for_intercept;
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential

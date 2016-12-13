@@ -32,11 +32,11 @@
 #' 
 #' @export 
 #' @name priors
-#' @param location Prior location. For \code{normal} and \code{student_t} 
-#'   (provided that \code{df > 1}) this is the prior mean. For \code{cauchy} 
-#'   (which is equivalent to \code{student_t} with \code{df=1}), the mean does 
-#'   not exist and \code{location} is the prior median. The default value is 
-#'   \eqn{0}, except for \code{R2} which has no default value for
+#' @param location Prior location. For \code{normal}, \code{laplace} and 
+#'   \code{student_t} (provided that \code{df > 1}) this is the prior mean. For 
+#'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
+#'   the mean does not exist and \code{location} is the prior median. The default 
+#'   value is \eqn{0}, except for \code{R2} which has no default value for
 #'   \code{location}. For \code{R2}, \code{location} pertains to the prior
 #'   location of the \eqn{R^2} under a Beta distribution, but the interpretation
 #'   of the \code{location} parameter depends on the specified value of the
@@ -130,6 +130,17 @@
 #'   of divergent transitions. For more details on tuning parameters and
 #'   divergent transitions see the Troubleshooting section of the 
 #'   \emph{How to Use the rstanarm Package} vignette.
+#' }
+#' \subsection{Laplace}{
+#'   Family members:
+#'   \itemize{
+#'   \item \code{laplce(location, scale)}
+#'   }
+#'   The Laplace distribution is also known as the double-exponential distribution.
+#'   It is a symmetric distribution with a sharp peak at its mean / median / mode
+#'   and fairly long tails. This distribution can be motivated as a scale mixture
+#'   of a normal distribution and the remarks above about the normal distribution
+#'   apply here as well.
 #' }
 #' \subsection{Dirichlet family}{
 #'   Family members:
@@ -286,10 +297,13 @@
 #' fit <- stan_glm(fmla, data = mtcars, prior = N05, prior_intercept = N05)
 #' }
 #' 
-#' # Visually compare normal, student_t, and cauchy
+#' # Visually compare normal, student_t, cauchy, and laplace
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
 #'     1/scale * dt((x - location)/scale, df)  
+#'   }
+#'   dlaplace <- function(x, location, scale) {
+#'     0.5 / scale * exp(-abs(x - location) / scale)
 #'   }
 #'   stat_dist <- function(dist, ...) {
 #'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
@@ -300,9 +314,11 @@
 #'     stat_dist("student_t", size = .75, fun = dt_loc_scale, 
 #'               args = list(df = df_t, location = 0, scale = scale)) +
 #'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
-#'               args = list(location = 0, scale = scale))
+#'               args = list(location = 0, scale = scale)) + 
+#'     stat_dist("laplace", size = .75, linetype = 2, fun = dlaplace,
+#'               args = list(location = 0, scale = scale))           
 #' }
-#' # Cauchy has fattest tails, then student_t, then normal
+#' # Cauchy has fattest tails, followed by student_t, laplace, and normal
 #' compare_priors()
 #' 
 #' # The student_t with df = 1 is the same as the cauchy
@@ -349,6 +365,12 @@ hs_plus <- function(df1 = 3, df2 = 3) {
   validate_parameter_value(df2)
   # scale gets used as a second df hyperparameter
   nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+}
+
+#' @rdname priors
+#' @export
+laplace <- function(location = 0, scale = NULL, autoscale = TRUE) {
+  nlist(dist = "laplace", df = NA, location, scale, autoscale)
 }
 
 #' @rdname priors
