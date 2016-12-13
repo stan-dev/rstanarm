@@ -1,6 +1,6 @@
 /*
     This file is part of rstanarm.
-    Copyright (C) 2015 Trustees of Columbia University
+    Copyright (C) 2015, 2016 Trustees of Columbia University
     
     rstanarm is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

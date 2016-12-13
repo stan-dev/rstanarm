@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,17 +15,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Extract posterior sample
+#' Extract the posterior sample
 #' 
 #' For models fit using MCMC (\code{algorithm="sampling"}), the posterior sample
-#' is an \eqn{S} by \eqn{P} matrix, where \eqn{S} is the size of the sample --- 
-#' the number of post-warmup draws from the posterior distribution of the model 
-#' parameters --- and \eqn{P} is the number of parameters. If using optimization
-#' (\code{"optimizing"}) or variational inference (\code{"meanfield"} or
-#' \code{"fullrank"}), there is no posterior sample but rather a \eqn{1000} by
-#' \eqn{P} matrix of draws from either the asymptotic multivariate Gaussian
-#' sampling distribution of the parameters or the variational approximation to
-#' the posterior distribution.
+#' ---the post-warmup draws from the posterior distribution--- can be extracted 
+#' from a fitted model object as a matrix, data frame, or array. The 
+#' \code{as.matrix} and \code{as.data.frame} methods merge all chains together, 
+#' whereas the \code{as.array} method keeps the chains separate. For models fit 
+#' using optimization (\code{"optimizing"}) or variational inference 
+#' (\code{"meanfield"} or \code{"fullrank"}), there is no posterior sample but 
+#' rather a matrix (or data frame) of 1000 draws from either the asymptotic
+#' multivariate Gaussian sampling distribution of the parameters or the
+#' variational approximation to the posterior distribution.
 #' 
 #' @method as.matrix stanreg
 #' @export
@@ -35,22 +36,28 @@
 #' @template args-regex-pars
 #' @param ... Ignored.
 #'   
-#' @return A matrix or data frame, the dimensions of which depend on \code{pars}
-#'   and \code{regex_pars} (if specified), as well as the model and estimation
-#'   algorithm (as described above).
+#' @return A matrix, data.frame, or array, the dimensions of which depend on
+#'   \code{pars} and \code{regex_pars}, as well as the model and estimation
+#'   algorithm (see the Description section above).
 #' 
 #' @seealso \code{\link{stanreg-methods}}
 #' 
 #' @examples
+#' \donttest{
+#' if (!exists("example_model")) example(example_model)
 #' # Extract posterior sample after MCMC
 #' draws <- as.matrix(example_model)
+#' print(dim(draws))
 #' 
 #' # For example, we can see that the median of the draws for the intercept 
 #' # is the same as the point estimate rstanarm uses
 #' print(median(draws[, "(Intercept)"]))
 #' print(example_model$coefficients[["(Intercept)"]])
 #' 
-#' \dontrun{
+#' # The as.array method keeps the chains separate
+#' draws_array <- as.array(example_model)
+#' print(dim(draws_array)) # iterations x chains x parameters
+#' 
 #' # Extract draws from asymptotic Gaussian sampling distribution 
 #' # after optimization
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
@@ -66,47 +73,89 @@
 #' }
 #' 
 as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
-  STOP_no_draws <- function() stop("No draws found.", call. = FALSE)
   pars <- collect_pars(x, pars, regex_pars)
-  no_user_pars <- is.null(pars)
+  user_pars <- !is.null(pars)
   
   if (used.optimizing(x)) {
     mat <- x$asymptotic_sampling_dist
     if (is.null(mat)) 
       STOP_no_draws()
-    if (is.null(pars)) {
+    if (!user_pars) {
       dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
       pars <- c(names(coef(x)), # return with coefficients first
                 dispersion[which(dispersion %in% colnames(mat))])
     }
-  } else { 
-    # used mcmc or vb
-    if (x$stanfit@mode != 0) 
-      STOP_no_draws()
-    posterior <- rstan::extract(x$stanfit, permuted = FALSE, inc_warmup = FALSE)
-    mat <- apply(posterior, 3L, FUN = function(y) y)
-    if (is.null(pars))
-      pars <- grep("mean_PPD|log-posterior", colnames(mat), 
-                   invert = TRUE, value = TRUE)
+  } else { # used mcmc or vb
+    mat <- as.matrix(x$stanfit)
+    if (!user_pars)
+      pars <- exclude_lp_and_ppd(colnames(mat))
   }
-  
-  if (!no_user_pars) {
-    badpars <- which(!pars %in% colnames(mat))
-    if (length(badpars)) 
-      stop("No parameter(s) ", paste(pars[badpars], collapse = ", "), 
-           call. = FALSE)
-  }
-  
+  if (user_pars)
+    check_missing_pars(mat, pars)
+
   mat <- mat[, pars, drop = FALSE]
-  if (is.mer(x))
-    mat <- unpad_reTrms(mat, columns = TRUE)
-  
-  return(mat)
+  if (!is.mer(x))
+    return(mat)
+  unpad_reTrms(mat)
 }
 
 #' @rdname as.matrix.stanreg
+#' @method as.array stanreg
+#' @export
+as.array.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
+  pars <- collect_pars(x, pars, regex_pars)
+  if (!used.sampling(x))
+    stop(
+      "For models not fit using MCMC ", 
+      "use 'as.matrix' instead of 'as.array'"
+    )
+
+  arr <- as.array(x$stanfit)
+  if (identical(arr, numeric(0)))
+    STOP_no_draws()
+  
+  if (!is.null(pars)) {
+    check_missing_pars(arr, pars)
+  } else {
+    pars <- exclude_lp_and_ppd(last_dimnames(arr))
+  }
+  arr <- arr[, , pars, drop = FALSE]
+  
+  if (!is.mer(x))
+    return(arr)
+  unpad_reTrms(arr)
+}
+
+
+#' @rdname as.matrix.stanreg
+#' @method as.data.frame stanreg
 #' @export
 as.data.frame.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
   mat <- as.matrix.stanreg(x, pars = pars, regex_pars = regex_pars, ...)
   as.data.frame(mat)
 }
+
+
+
+# internal ----------------------------------------------------------------
+STOP_no_draws <- function() stop("No draws found.", call. = FALSE)
+
+check_missing_pars <- function(x, pars) {
+  notfound <- which(!pars %in% last_dimnames(x))
+  if (length(notfound)) 
+    stop(
+      "No parameter(s) ", 
+      paste(pars[notfound], collapse = ", "), 
+      call. = FALSE
+    )
+}
+
+exclude_lp_and_ppd <- function(pars) {
+  grep(
+    pattern = "mean_PPD|log-posterior", 
+    x = pars, 
+    invert = TRUE, 
+    value = TRUE
+  )
+}
+

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,14 +16,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # This file is only intended to be used during the installation process
-# ncov start
+# nocov start
 MODELS_HOME <- "exec"
 if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
 
 stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
 stanmodels <- sapply(stan_files, function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
-  isystem <- system.file("chunks", package = "rstanarm")
+  isystem <- system.file("chunks", package = methods::getPackageName(environment(), FALSE))
   if (!file.exists(file.path(isystem, "common_functions.stan")))
     isystem <- file.path("inst", "chunks")
   if (!file.exists(file.path(isystem, "common_functions.stan")))
@@ -37,4 +37,4 @@ stanmodels <- sapply(stan_files, function(f) {
 )
 names(stanmodels) <- sub("\\.stan$", "", basename(names(stanmodels)))
 rm(MODELS_HOME)
-# ncov end
+# nocov end

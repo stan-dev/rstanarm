@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -38,8 +38,19 @@
 #'
 #' @seealso \code{\link{posterior_predict}}
 #' 
-predict.stanreg <- function(object, ..., newdata = NULL, 
-                            type = c("link", "response"), se.fit = FALSE) {
+predict.stanreg <- function(object,
+                            ...,
+                            newdata = NULL,
+                            type = c("link", "response"),
+                            se.fit = FALSE) {
+  if (is.mer(object))
+    stop(
+      "'predict' is not available for models fit with ",
+      object$call[[1]],
+      ". Please use the 'posterior_predict' function instead.",
+      call. = FALSE
+    )
+  
   type <- match.arg(type)
   if (!se.fit && is.null(newdata)) {
     preds <- if (type == "link") 
@@ -47,10 +58,12 @@ predict.stanreg <- function(object, ..., newdata = NULL,
     return(preds)
   }
   if (!used.optimizing(object) && type == "response")
-    stop("type='response' should not be used for models estimated by MCMC",
-         "\nor variational approximation. Instead, use posterior_predict() ",
-         "to draw \nfrom the posterior predictive distribution.", 
-         call. = FALSE)
+    stop(
+      "type='response' should not be used for models estimated by MCMC",
+      "\nor variational approximation. Instead, use the 'posterior_predict' ",
+      "function to draw \nfrom the posterior predictive distribution.",
+      call. = FALSE
+    )
   
   dat <- pp_data(object, newdata)
   stanmat <- as.matrix.stanreg(object)
@@ -63,7 +76,7 @@ predict.stanreg <- function(object, ..., newdata = NULL,
       eta <- apply(eta, 1L, FUN = `^`, e2 = stanmat[, "alpha"])
   }
   fit <- colMeans(eta)
-  if (!se.fit) 
+  if (!se.fit)
     return(fit)
   
   se.fit <- apply(eta, 2L, sd)

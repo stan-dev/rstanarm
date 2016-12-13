@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,12 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Leave-one-out cross-validation (LOO)
+#' Leave-one-out (LOO) and K-fold cross-validation
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC) 
-#' using the \pkg{\link[=loo-package]{loo}} package. Compare two or more models 
-#' using the \code{compare_models} function.
+#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
+#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
+#' cross-validation is also available. Compare two or more models using the 
+#' \code{compare_models} function.
 #' 
 #' @aliases loo waic
 #'
@@ -28,235 +29,347 @@
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template reference-loo
+#' 
 #' @inheritParams loo::loo
-#' @return The \code{loo} and \code{waic} methods return an object of class
-#'   'loo'. See the 'Value' sections in \code{\link[loo]{loo}} and
-#'   \code{\link[loo]{waic}} for details on the structure of these objects.
+#' @param k_threshold Threshold for flagging estimates of the Pareto shape 
+#'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
+#'   when \code{loo} gives warnings} section, below, for details.
+#' 
+#' @return An object of class 'loo'. See the 'Value' section in 
+#'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
+#'   structure of these objects. The object returned by \code{kfold} also 
+#'   has class 'kfold' in addition to 'loo'.
 #'   
-#' @details 
-#' The LOO Information Criterion (LOOIC) has the same purpose as the Aikaike
-#' Information Criterion (AIC) that is used by frequentists. Both are intended
-#' to estimate the expected log predicted density (ELPD) for a new dataset.
-#' However, the AIC ignores priors and assumes that the posterior distribution
-#' is multivariate normal, whereas the functions from the 
-#' \pkg{\link[=loo-package]{loo}} package do not make this distributional 
-#' assumption and integrate over uncertainty in the parameters. This only 
-#' assumes that any one observation can be omitted without having a major effect
-#' on the posterior distribution, which can be judged using the diagnostic plot
-#' provided by the \code{\link[loo]{plot.loo}} method. The \emph{How to Use the
-#' rstanarm Package} vignette has an example of this entire process.
-#'   
-#' @seealso 
-#' \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} section) 
-#' for details on the computations implemented by the \pkg{loo} package and the 
-#' interpretation of the Pareto \eqn{k} estimates displayed when using the 
-#' \code{\link{plot.loo}} method.
-#'   
-#' @examples 
-#' \dontrun{
-#' SEED <- 42024
-#' set.seed(SEED)
+#' @section Approximate LOO CV:
+#' The \code{loo} method for stanreg objects provides an interface to
+#' the \pkg{\link[=loo-package]{loo}} package for approximate leave-one-out 
+#' cross-validation (LOO). The LOO Information Criterion (LOOIC) has the same 
+#' purpose as the Akaike Information Criterion (AIC) that is used by 
+#' frequentists. Both are intended to estimate the expected log predictive 
+#' density (ELPD) for a new dataset. However, the AIC ignores priors and assumes
+#' that the posterior distribution is multivariate normal, whereas the functions
+#' from the \pkg{loo} package do not make this distributional assumption and 
+#' integrate over uncertainty in the parameters. This only assumes that any one 
+#' observation can be omitted without having a major effect on the posterior 
+#' distribution, which can be judged using the diagnostic plot provided by the 
+#' \code{\link[loo]{plot.loo}} method and the warnings provided by the 
+#' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
+#' Package} vignette for an example of this process).
 #' 
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED)
-#' fit2 <- update(fit1, formula = . ~ . + cyl)
-#' (loo1 <- loo(fit1))
-#' loo2 <- loo(fit2)
-#' compare_models(loos = list(loo1, loo2))
+#' \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
+#' The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm} 
+#' models is provided as a possible remedy when the diagnostics reveal problems
+#' stemming from the posterior's sensitivity to particular observations.
+#' Warnings about Pareto \eqn{k} estimates indicate observations for which the
+#' approximation to LOO is problematic (this is described in detail in Vehtari,
+#' Gelman, and Gabry (2016) and the \pkg{\link[=loo-package]{loo}} package
+#' documentation). The \code{k_threshold} argument can be used to set the
+#' \eqn{k} value above which an observation is flagged. If \code{k_threshold} is
+#' not \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates
+#' above \code{k_threshold} then when \code{loo} is called it will refit the
+#' original model \eqn{J} times, each time leaving out one of the \eqn{J}
+#' problematic observations. The pointwise contributions of these observations
+#' to the total ELPD are then computed directly and substituted for the previous
+#' estimates from these \eqn{J} observations that are stored in the object
+#' created by \code{loo}.
 #' 
-#' fit3 <- update(fit2, formula = . ~ . + am)
-#' (comp <- compare_models(loos = list(loo1, loo2, loo(fit3))))
-#' print(comp, digits = 2)
-#' 
-#' 
-#' # Description of lalonde data at help("lalonde", package = "arm")
-#' data(lalonde, package = "arm")
-#' t7 <- student_t(df = 7) # prior for coefficients
-#' 
-#' f1 <- treat ~ re74 + re75 + educ + black + hisp + married + 
-#'    nodegr + u74 + u75
-#' lalonde1 <- stan_glm(f1, data = lalonde, family = binomial(link="logit"), 
-#'                      prior = t7, cores = 4, seed = SEED)
-#'                  
-#' f2 <- treat ~ age + I(age^2) + educ + I(educ^2) + black + hisp + 
-#'    married + nodegr + re74  + I(re74^2) + re75 + I(re75^2) + u74 + u75   
-#' lalonde2 <- update(lalonde1, formula = f2)
-#' 
-#' loos <- list(loo(lalonde1), loo(lalonde2))
-#' compare_models(loos)
-#' plot(loos[[2]], label_points = TRUE) # see help("plot.loo", package = "loo")
+#' \strong{Note}: in the warning messages issued by \code{loo} about large 
+#' Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at least 
+#' \eqn{0.7}. There is a theoretical reason, explained in Vehtari, Gelman, and 
+#' Gabry (2016), for setting the threshold to the stricter value of \eqn{0.5}, 
+#' but in practice they find that errors in the LOO approximation start to 
+#' increase non-negligibly when \eqn{k > 0.7}.
 #' }
 #' 
-loo.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) 
-    STOP_sampling_only("loo")
+#' @section K-fold CV:
+#' The \code{kfold} function performs exact \eqn{K}-fold cross-validation. First
+#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close 
+#' to equal as possible) size. Then the model is refit \eqn{K} times, each time 
+#' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total 
+#' number of observations in the data then \eqn{K}-fold cross-validation is 
+#' equivalent to exact leave-one-out cross-validation (to which \code{loo} is an
+#' efficient approximation). The \code{compare} function is also compatible with
+#' the objects returned by \code{kfold}.
+#'   
+#' @seealso 
+#' \itemize{
+#'   \item The various \pkg{rstanarm} vignettes for more examples of 
+#'     using \code{loo}.
+#'   \item \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} 
+#'     section)  for details on the computations implemented by the \pkg{loo} 
+#'     package and the interpretation of the Pareto \eqn{k} estimates displayed 
+#'     when using the  \code{\link{plot.loo}} method.
+#'   \item \code{\link{log_lik.stanreg}} to directly access the pointwise 
+#'     log-likelihood matrix. 
+#' }
+#'   
+#' @examples 
+#' \donttest{
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' 
+#' # compare on LOOIC
+#' (loo1 <- loo(fit1, cores = 2))
+#' loo2 <- loo(fit2, cores = 2)
+#' compare_models(list(loo1, loo2))
+#' plot(loo2)
+#' 
+#' # 10-fold cross-validation
+#' (kfold1 <- kfold(fit1, K = 10))
+#' kfold2 <- kfold(fit2, K = 10)
+#' compare_models(list(kfold1, kfold2))
+#' }
+#' @importFrom loo loo loo.function
+#' 
+loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!requireNamespace("digest", quietly = TRUE)) 
     stop("Please install the 'digest' package.")
-  out <- loo.function(ll_fun(x$family), args = ll_args(x), ...)
-  structure(out, family = family(x), name = deparse(substitute(x)),
+  if (!used.sampling(x)) 
+    STOP_sampling_only("loo")
+  if (model_has_weights(x))
+    recommend_exact_loo(reason = "model has weights")
+  
+  user_threshold <- !is.null(k_threshold)
+  if (user_threshold) {
+    validate_k_threshold(k_threshold)
+  } else {
+    k_threshold <- 0.7
+  }
+  
+  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
+  n_bad <- length(bad_obs)
+  
+  out <- structure(loo_x, 
+                   name = deparse(substitute(x)),
+                   family = family(x), 
+                   yhash = digest::digest(get_y(x), algo = "md5"))
+  
+  if (!length(bad_obs)) {
+    if (user_threshold)
+      message(
+        "All pareto_k estimates below user-specified threshold of ", 
+        k_threshold, ". \nReturning loo object."
+      )
+    
+    return(out)
+  }
+  
+  if (!user_threshold) {
+    if (n_bad > 10) {
+      recommend_kfold(n_bad)
+    } else {
+      recommend_reloo(n_bad)
+    }
+    return(out)
+  }
+  
+  reloo(x, loo_x, obs = bad_obs)
+}
+
+
+#' @rdname loo.stanreg
+#' @export
+#' @param K The number of subsets of equal (if possible) size into which the 
+#'   data will be randomly partitioned for performing \eqn{K}-fold 
+#'   cross-validation. The model is refit \code{K} times, each time leaving out
+#'   one of the \code{K} subsets. If \code{K} is equal to the total number of
+#'   observations in the data then \eqn{K}-fold cross-validation is equivalent
+#'   to exact leave-one-out cross-validation.
+#'   
+kfold <- function(x, K = 10) {
+  validate_stanreg_object(x)
+  stopifnot(K > 1, K <= nobs(x))
+  if (!requireNamespace("digest", quietly = TRUE)) 
+    stop("Please install the 'digest' package.")
+  if (!used.sampling(x)) 
+    STOP_sampling_only("kfold")
+  if (model_has_weights(x))
+    stop("kfold is not currently available for models fit using weights.")
+  
+  d <- kfold_and_reloo_data(x)
+  N <- nrow(d)
+  
+  perm <- sample.int(N)
+  idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
+  bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
+  
+  lppds <- list()
+  for (k in 1:K) {
+    message("Fitting model ", k, " out of ", K)
+    omitted <- which(bin == k)
+    fit_k <- update.stanreg(
+      object = x,
+      data = d[-omitted,, drop=FALSE],
+      weights = NULL,
+      refresh = 0
+    )
+    lppds[[k]] <-
+      log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
+                      newx = get_x(x)[omitted, , drop = FALSE],
+                      stanmat = as.matrix.stanreg(x))
+  }
+  elpds <- unlist(lapply(lppds, function(x) {
+    apply(x, 2, log_mean_exp)
+  }))
+  
+  out <- list(
+    elpd_kfold = sum(elpds),
+    se_elpd_kfold = sqrt(N * var(elpds)),
+    pointwise = cbind(elpd_kfold = elpds)
+  )
+  structure(out, 
+            class = c("kfold", "loo"), 
+            K = K, 
+            name = deparse(substitute(x)),
+            family = family(x), 
             yhash = digest::digest(get_y(x), algo = "md5"))
+}
+
+#' Print method for kfold
+#' 
+#' @keywords internal
+#' @export
+#' @method print kfold
+#' @param x,digits,... See \code{\link{print}}.
+print.kfold <- function(x, digits = 1, ...) {
+  cat("\n", paste0(attr(x, "K"), "-fold"), "cross-validation\n\n")
+  out <- data.frame(Estimate = x$elpd_kfold, SE = x$se_elpd_kfold, 
+                    row.names = "elpd_kfold")
+  .printfr(out, digits)
+  invisible(x)
 }
 
 #' @rdname loo.stanreg
 #' @export
 #' @note The \code{...} is ignored for \code{waic}.
 #' 
+#' @importFrom loo waic waic.function
 waic.stanreg <- function(x, ...) {
-  if (!used.sampling(x)) 
-    STOP_sampling_only("waic")
   if (!requireNamespace("digest", quietly = TRUE)) 
     stop("Please install the 'digest' package.")
-  out <- waic.function(ll_fun(x$family), args = ll_args(x))
-  structure(out, family = family(x), name = deparse(substitute(x)), 
+  if (!used.sampling(x)) 
+    STOP_sampling_only("waic")
+  out <- waic.function(ll_fun(x), args = ll_args(x))
+  structure(out, 
+            class = c("loo", "waic"),
+            family = family(x), 
+            name = deparse(substitute(x)), 
             yhash = digest::digest(get_y(x), algo = "md5"))
 }
 
-# returns log-likelihood function for loo() and waic()
-ll_fun <- function(f) {
-  if (is(f, "family")) {
-    return(get(paste0(".ll_", f$family, "_i")))
-  } else if (is.character(f)) {
-    return(.ll_polr_i)
-  } else {
-    stop("'family' must be a family or a character string.", 
+
+
+# internal ----------------------------------------------------------------
+validate_k_threshold <- function(k) {
+  if (!is.numeric(k) || length(k) != 1) {
+    stop("'k_threshold' must be a single numeric value.", 
          call. = FALSE)
+  } else if (k < 0) {
+    stop("'k_threshold' < 0 not allowed.", 
+         call. = FALSE)
+  } else if (k > 1) {
+    warning(
+      "Setting 'k_threshold' > 1 is not recommended.", 
+      "\nFor details see the PSIS-LOO section in help('loo-package', 'loo').",
+      call. = FALSE
+    )
   }
 }
+recommend_kfold <- function(n) {
+  warning(
+    "Found ", n, " observations with a pareto_k > 0.7. ",
+    "With this many problematic observations we recommend calling ",
+    "'kfold' with argument 'K=10' to perform 10-fold cross-validation ",
+    "rather than LOO.", 
+    call. = FALSE
+  )
+}
+recommend_reloo <- function(n) {
+  warning(
+    "Found ", n, " observation(s) with a pareto_k > 0.7. ",
+    "We recommend calling 'loo' again with argument 'k_threshold = 0.7' ",
+    "in order to calculate the ELPD without the assumption that ", 
+    "these observations are negligible. ", "This will refit the model ", 
+    n, " times to compute the ELPDs for the problematic observations directly.",
+    call. = FALSE
+  )
+}
+recommend_exact_loo <- function(reason) {
+  stop(
+    "'loo' is not supported if ", reason, ". ", 
+    "If refitting the model 'nobs(x)' times is feasible, ", 
+    "we recommend calling 'kfold' with K equal to the ", 
+    "total number of observations in the data to perform exact LOO-CV.",
+    call. = FALSE
+  )
+}
 
-# returns args argument for loo.function() and waic.function()
-ll_args <- function(object) {
-  f <- object$family
-  draws <- nlist(f)
-  stanmat <- as.matrix.stanreg(object)
-  x <- get_x(object)
-  y <- get_y(object)
 
-  if (is(f, "family")) {
-    fname <- f$family
-    if (!is.binomial(fname)) {
-      data <- data.frame(y, x)
-    } else {
-      if (NCOL(y) == 2L) {
-        trials <- rowSums(y)
-        y <- y[, 1L]
-      } else {
-        trials <- 1
-        if (is.factor(y)) 
-          y <- fac2bin(y)
-        stopifnot(all(y %in% c(0, 1)))
-      }
-      data <- data.frame(y, trials, x)
-    }
-    draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (is.gaussian(fname)) 
-      draws$sigma <- stanmat[, "sigma"]
-    if (is.gamma(fname)) 
-      draws$shape <- stanmat[, "shape"]
-    if (is.ig(fname)) 
-      draws$lambda <- stanmat[, "lambda"]
-    if (is.nb(fname)) 
-      draws$size <- stanmat[,"overdispersion"]
-    
-  } else if (is.character(f)) {
-    stopifnot(is(object, "polr"))
-    y <- as.integer(y)
-    data <- data.frame(y, x)
-    draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
-    draws$zeta <- stanmat[, zetas, drop = FALSE]
-    draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) 
-      draws$alpha <- stanmat[, "alpha"]
-    
-  } else {
-    stop("'family' must be a family or a character string.", call. = FALSE)
+# Refit model leaving out specific observations
+#
+# @param x stanreg object
+# @param loo_x result of loo(x)
+# @param obs vector of observation indexes
+# @param ... unused currently
+# @param refit logical, to toggle whether refitting actually happens (only used
+#   to avoid refitting in tests)
+reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
+  stopifnot(!is.null(x$data), inherits(loo_x, "loo"))
+  if (is.null(loo_x$pareto_k))
+    stop("No Pareto k estimates found in 'loo' object.")
+  
+  J <- length(obs)
+  d <- kfold_and_reloo_data(x)
+  lls <- vector("list", J)
+  message(
+    J, " problematic observation(s) found.", 
+    "\nModel will be refit ", J, " times."
+  )
+  
+  if (!refit)
+    return(NULL)
+  
+  for (j in 1:J) {
+    message(
+      "\nFitting model ", j, " out of ", J,
+      " (leaving out observation ", obs[j], ")"
+    )
+    omitted <- obs[j]
+    fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], refresh = 0))
+    lls[[j]] <-
+      log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
+                      newx = get_x(x)[omitted, , drop = FALSE],
+                      stanmat = as.matrix.stanreg(x))
   }
   
-  data$offset <- object$offset
-  if (!all(object$weights == 1)) 
-    data$weights <- object$weights
+  # replace parts of loo_x
+  sel <- c("elpd_loo", "looic")
+  elppds <- unlist(lapply(lls, log_mean_exp))
+  loo_x$pointwise[obs, sel] <- cbind(elppds, -2 * elppds)
+  loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
+  loo_x[paste0("se_", sel)] <- with(loo_x, {
+    N <- nrow(pointwise)
+    sqrt(N * apply(pointwise[, sel], 2, var))
+  })
   
-  if (is.mer(object)) {
-    z <- get_z(object)
-    b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
-    data <- cbind(data, z)
-    draws$beta <- cbind(draws$beta, b)
-  }
-  
-  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+  # what should we do about pareto k's? for now setting them to 0
+  loo_x$pareto_k[obs] <- 0
+  loo_x
 }
 
-
-.xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -which(colnames(data) %in% sel)]
-}
-.mu <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
-  draws$f$linkinv(eta)
-}
-.weighted <- function(val, w) {
-  if (is.null(w)) {
-    val
-  } else {
-    val * w
-  } 
+log_mean_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x))) - log(length(x))
 }
 
-# log-likelihood functions
-.ll_gaussian_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_binomial_i <- function(i, data, draws) {
-  val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_poisson_i <- function(i, data, draws) {
-  val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_neg_binomial_2_i <- function(i, data, draws) {
-  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y, shape = draws$shape, 
-                rate = draws$shape / .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
-}
-.ll_inverse.gaussian_i <- function(i, data, draws) {
-  mu <- .mu(data, draws)
-  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
-         1.5 * log(data$y) -
-         0.5 * draws$lambda * (data$y - mu)^2 / 
-                        (data$y * mu^2)
-  .weighted(val, data$weights)
-}
-.ll_polr_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
-  f <- draws$f
-  J <- draws$max_y
-  y_i <- data$y
-  linkinv <- polr_linkinv(f)
-  if (is.null(draws$alpha)) {
-      if (y_i == 1) {
-        val <- log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == J) {
-        val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
-      } else {
-        val <- log(linkinv(draws$zeta[, y_i] - eta) - 
-                     linkinv(draws$zeta[, y_i - 1L] - eta))
-      }
-  } else {
-      if (y_i == 1) {
-        val <- draws$alpha * log(linkinv(draws$zeta[, 1] - eta))
-      } else if (y_i == J) {
-        val <- log1p(-linkinv(draws$zeta[, J-1] - eta) ^ draws$alpha)
-      } else {
-        stop("Exponentiation only possible when there are exactly 2 outcomes.")
-      }
-  }
-  .weighted(val, data$weights)
+# Get correct data to use for kfold and reloo 
+# 
+# @param x stanreg object
+# @return data frame
+kfold_and_reloo_data <- function(x) {
+  d <- get_all_vars(formula(x), x[["data"]])
+  na.omit(d)
 }
 
 
@@ -282,33 +395,58 @@ ll_args <- function(object) {
 #'   standard error of the difference are returned in addition to model weights.
 #'   See the Details section in \code{\link[loo]{compare}}.
 #' 
+#' @importFrom loo compare
+#' 
 compare_models <- function(loos) {
   loos <- validate_loos(loos)
-  comp <- do.call(compare, loos)
+  comp <- do.call(loo::compare, loos)
   if (!is.matrix(comp))  # will happen if there are only two models
     return(comp)
   
-  stats <- c("looic", "se_looic", "elpd_loo", "se_elpd_loo", 
-             "p_loo", "se_p_loo", "weights")
+  stats <- if (is.kfold(loos[[1]])) {
+    c("elpd_kfold", "se_elpd_kfold")
+  } else if (is.waic(loos[[1]])) {
+    c("waic", "se_waic", "elpd_waic", "se_elpd_waic", "p_waic", "se_p_waic")
+  } else { 
+    c("looic", "se_looic", "elpd_loo", "se_elpd_loo", "p_loo", "se_p_loo")
+  }
+    
   structure(comp, dimnames = list(names(loos), stats))
 }
+
+is.loo <- function(x) inherits(x, "loo")
+is.kfold <- function(x) is.loo(x) && inherits(x, "kfold")
+is.waic <- function(x) is.loo(x) && inherits(x, "waic")
 
 validate_loos <- function(loos = list()) {
   if (!is.list(loos))
     stop("'loos' should be a list.", call. = FALSE)
   if (length(loos) <= 1)
     stop("'loos' should contain at least two objects.", call. = FALSE)
-  families <- lapply(loos, attr, which = "family")
-  ys <- lapply(loos, attr, which = "yhash")
-  family_check <- sapply(families, function(x) {
-    isTRUE(all.equal(x, families[[1]]))
+  
+  is_loo <- sapply(loos, is.loo)
+  is_waic <- sapply(loos, is.waic)
+  is_kfold <- sapply(loos, is.kfold)
+  if (!all(is_loo))
+    stop("All objects in 'loos' must have class 'loo'", call. = FALSE)
+  if ((any(is_waic) && !all(is_waic) || 
+       (any(is_kfold) && !all(is_kfold))))
+    stop("Can't mix objects computed using 'loo', 'waic', and 'kfold'.", 
+         call. = FALSE)
+
+  fam <- lapply(loos, attr, which = "family")
+  yhash <- lapply(loos, attr, which = "yhash")
+  
+  fam_check <- sapply(fam, function(x) {
+    isTRUE(all.equal(x, fam[[1]]))
   })
-  ys_check <- sapply(ys, function(x) {
-    isTRUE(all.equal(x, ys[[1]]))
+  yhash_check <- sapply(yhash, function(x) {
+    isTRUE(all.equal(x, yhash[[1]]))
   })
-  if (!all(family_check))
+  if (!all(fam_check))
     stop("Not all models have the same family/link.", call. = FALSE)
-  if (!all(ys_check))
+  if (!all(yhash_check))
     stop("Not all models fit to the same y variable", call. = FALSE)
+  
   setNames(loos, nm = lapply(loos, attr, which = "name"))
 }

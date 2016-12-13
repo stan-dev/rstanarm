@@ -1,36 +1,14 @@
 language: r
-sudo: required
+sudo: false
+r: devel
+cache: packages
 
-warnings_are_errors: TRUE
-
-os:
-  - osx
-  
-r_binary_packages:
-  - covr
-  - loo
-  - lme4
-  - arm
-  - KernSmooth
-  - knitr
-  - testthat
-  - StanHeaders
-  - inline 
-  - Rcpp
-  - coda
-  - BH
-  - RcppEigen
-  - RInside
-  - ggplot2
-  - gridExtra
-  - rstan
-  - shinystan
-  - roxygen2
+r_github_packages:
+  - jimhester/covr
 
 env:
   matrix: 
     - CXX_OLEVEL=2 CXX=clang++
-
 
 before_install:
   - mkdir -p ~/.R/
@@ -41,10 +19,17 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
+script: 
+  - |
+    travis_wait R CMD build .
+    travis_wait 50 R CMD check rstanarm*tar.gz
+
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
+  - echo ${NOT_CRAN}
 
 after_success:
+  - tar -C .. -xf $PKG_TARBALL
   - Rscript -e 'covr::codecov()'
 
 after_failure:

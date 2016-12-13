@@ -1,0 +1,296 @@
+#' Summarize the priors used for an rstanarm model
+#' 
+#' The \code{prior_summary} method provides a numerical summary of the prior 
+#' distributions used for the parameters in a given model. In some cases the 
+#' user-specified prior does not correspond exactly to the prior used internally
+#' by \pkg{rstanarm} (see the sections below). Especially in these cases, but 
+#' also in general, it can be much more useful to visualize the priors. 
+#' Visualizing the priors can be done using the \code{\link{posterior_vs_prior}}
+#' function, or alternatively by fitting the model with the \code{prior_PD}
+#' argument set to \code{TRUE} (to draw from the prior predictive distribution
+#' instead of conditioning on the outcome) and then plotting the parameters.
+#' 
+#' @aliases prior_summary
+#' @export
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' @param digits Number of digits to use for rounding.
+#' @param ... Currently ignored by the method for stanreg objects. The S3
+#'   generic uses \code{...} to pass arguments to any defined methods.
+#' 
+#' @section Intercept (after predictors centered): 
+#'   For \pkg{rstanarm} modeling functions that accept a \code{prior_intercept} 
+#'   argument, the specified prior for the intercept term applies to the 
+#'   intercept after \pkg{rstanarm} internally centers the predictors so they 
+#'   each have mean zero. The estimate of the intercept returned to the user 
+#'   correspond to the intercept with the predictors as specified by the user 
+#'   (unmodified by \pkg{rstanarm}), but when \emph{specifying} the prior the 
+#'   intercept can be thought of as the expected outcome when the predictors are
+#'   set to their means. The only exception to this is for models fit with the 
+#'   \code{sparse} argument set to \code{TRUE} (which is only possible with a
+#'   subset of the modeling functions and never the default).
+#'   
+#' @section Adjusted scales: For some models you may see "\code{adjusted scale}"
+#'   in the printed output and adjusted scales included in the object returned 
+#'   by \code{prior_summary}. These adjusted scale values are the prior scales 
+#'   actually used by \pkg{rstanarm} and are computed by adjusting the prior 
+#'   scales specified by the user to account for the scales of the predictors 
+#'   (as described in the documentation for the \code{\link[=priors]{autoscale}}
+#'   argument). To disable internal prior scale adjustments set the 
+#'   \code{autoscale} argument to \code{FALSE} when setting a prior using the 
+#'   \code{\link{normal}}, \code{\link{student_t}}, or \code{\link{cauchy}} 
+#'   functions. For example, \code{normal(0, 5, autoscale=FALSE)} instead of 
+#'   just \code{normal(0, 5)}.
+#' 
+#' @section Coefficients in Q-space:
+#'   For the models fit with an \pkg{rstanarm} modeling function that supports 
+#'   the \code{QR} argument (see e.g, \code{\link{stan_glm}}), if \code{QR} is 
+#'   set to \code{TRUE} then the prior distributions for the regression
+#'   coefficients specified using the \code{prior} argument are not relative to
+#'   the original predictor variables \eqn{X} but rather to the variables in the
+#'   matrix \eqn{Q} obtained from the \eqn{QR} decomposition of \eqn{X}. 
+#'   
+#'   In particular, if \code{prior = normal(location,scale)}, then this prior on
+#'   the coefficients in \eqn{Q}-space can be easily translated into a joint 
+#'   multivariate normal (MVN) prior on the coefficients on the original 
+#'   predictors in \eqn{X}. Letting \eqn{\theta} denote the coefficients on
+#'   \eqn{Q} and \eqn{\beta} the coefficients on \eqn{X} then if \eqn{\theta
+#'   \sim N(\mu, \sigma)}{\theta ~ N(\mu, \sigma)} the corresponding prior on
+#'   \eqn{\beta} is \eqn{\beta \sim MVN(R\mu, R'R\sigma^2)}{\beta ~ MVN(R\mu,
+#'   R'R\sigma)}, where \eqn{\mu} and \eqn{\sigma} are vectors of the
+#'   appropriate length. Technically \pkg{rstanarm} uses a scaled \eqn{QR}
+#'   decomposition to ensure that the columns of the predictor matrix used to
+#'   fit the model all have unit scale. The matrices actually used are
+#'   \eqn{Q^\ast = Q \sqrt{n-1}}{Q* = Q (n-1)^0.5} and \eqn{R^\ast =
+#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R} (see the documentation for the
+#'   \code{\link[=stan_glm]{QR}} argument).
+#'   
+#'   If you are interested in the prior on \eqn{\beta} implied by the prior on
+#'   \eqn{\theta}, we recommend visualizing it as described above in the
+#'   \strong{Description} section, which is simpler than working it out
+#'   analytically.
+#'   
+#' @return A list of class "prior_summary.stanreg", which has its own print
+#'   method.
+#'   
+#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{priors}}
+#' 
+#' @examples
+#' if (!exists("example_model")) example(example_model) 
+#' prior_summary(example_model)
+#' 
+#' priors <- prior_summary(example_model)
+#' names(priors)
+#' priors$prior$scale
+#' priors$prior$adjusted_scale
+#' 
+#' # for a glm with adjusted scales (see Details, above), compare 
+#' # the default (rstanarm adjusting the scales) to setting 
+#' # autoscale=FALSE for prior on coefficients
+#' fit <- stan_glm(mpg ~ wt + am, data = mtcars, 
+#'                 prior = normal(0, c(2.5, 4)), 
+#'                 prior_intercept = normal(0, 5), 
+#'                 iter = 10, chains = 1) # only for demonstration 
+#' prior_summary(fit)
+#' 
+#' fit2 <- update(fit, prior = normal(0, c(2.5, 4), autoscale=FALSE), 
+#'                prior_intercept = normal(0, 5, autoscale=FALSE))
+#' prior_summary(fit2)
+#' 
+prior_summary.stanreg <- function(object, digits = 2,...) {
+  x <- object[["prior.info"]]
+  if (is.null(x)) {
+    message("Priors not found in stanreg object.")
+    return(invisible(NULL))
+  }
+  structure(x, class = "prior_summary.stanreg",
+            QR = used.QR(object),
+            sparse = used.sparse(object),
+            model_name = deparse(substitute(object)), 
+            print_digits = digits)
+}
+
+#' @export
+#' @method print prior_summary.stanreg
+print.prior_summary.stanreg <- function(x, digits, ...) {
+  if (missing(digits))
+    digits <- attr(x, "print_digits") %ORifNULL% 2
+  .dig <- digits
+  .fr2 <- function(y, .digits = .dig, ...) format(y, digits = .digits, ...)
+  .fr3 <- function(y, .nsmall = .dig) .fr2(y, nsmall = .nsmall)
+  formatters <- list(.fr2, .fr3)
+  QR <- attr(x, "QR")
+  sparse <- attr(x, "sparse")
+  model_name <- attr(x, "model_name")
+  
+  msg <- paste0("Priors for model '", model_name, "'")
+  cat(msg, "\n------")
+  
+  if (!is.null(x[["prior_intercept"]]))
+    .print_scalar_prior(
+      x[["prior_intercept"]], 
+      txt = paste0("Intercept", if (!sparse) " (after predictors centered)"), 
+      formatters
+    )
+  if (!is.null(x[["prior"]]))
+    .print_vector_prior(
+      x[["prior"]], 
+      txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
+      formatters = formatters
+    )
+  if (!is.null(x[["prior_dispersion"]])) {
+    dispersion_name <- x[["prior_dispersion"]][["dispersion_name"]]
+    .print_scalar_prior(
+      x[["prior_dispersion"]], 
+      txt = paste0("\n", dispersion_name), 
+      formatters
+    )
+  }
+  
+  # unique to stan_betareg
+  if (!is.null(x[["prior_intercept_z"]]))
+    .print_scalar_prior(x[["prior_intercept_z"]], txt = "\nIntercept_z", formatters)
+  if (!is.null(x[["prior_z"]]))
+    .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
+  
+  # unique to stan_(g)lmer or stan_gamm4
+  if (!is.null(x[["prior_covariance"]]))
+    .print_covariance_prior(x[["prior_covariance"]], txt = "\nCovariance", formatters)
+  
+  # unique to stan_polr
+  if (!is.null(x[["prior_counts"]])) {
+    p <- x[["prior_counts"]]
+    p$concentration <- .format_pars(p$concentration, .fr2)
+    cat("\n\nCounts\n ~",
+        paste0(p$dist, "(", "concentration = ", .fr2(p$concentration), ")"))
+  }
+  if (!is.null(x[["scobit_exponent"]])) {
+    p <- x[["scobit_exponent"]]
+    cat("\n\nScobit Exponent\n ~",
+        paste0(p$dist, "(shape = ", .fr2(p$shape), 
+               ", rate = ", .fr2(p$rate), ")"))
+  }
+  
+  cat("\n------\n")
+  cat("See help('prior_summary.stanreg') for more details")
+  invisible(x)
+}
+
+
+# internal ----------------------------------------------------------------
+
+# check if model was fit using QR=TRUE
+used.QR <- function(x) {
+  isTRUE(getCall(x)[["QR"]])
+}
+
+# check if model was fit using sparse=TRUE
+used.sparse <- function(x) {
+  isTRUE(getCall(x)[["sparse"]])
+}
+
+# 
+# @param x numeric vector
+# @param formatter a formatting function to apply (see .fr2, .fr3 above)
+# @param N the maximum number of values to include before replacing the rest
+#   with '...'
+.format_pars <- function(x, formatter, N = 3) {
+  K <- length(x)
+  if (K < 2)
+    return(x)
+  paste0(
+    "[", 
+    paste(c(formatter(x[1:min(N, K)]), if (N < K) "..."), 
+          collapse = ","), 
+    "]"
+  )
+}
+
+# Print priors for intercept/coefs (called internally by print.prior_summary.stanreg)
+#
+# @param p named list of prior stuff
+# @param txt header to be printed
+# @param formatters a list of two formatter functions like .fr2, .fr3 (defined
+#   in prior_summary.stanreg). The first is used for format all numbers except
+#   for adjusted scales, for which the second function is used. This is kind of
+#   hacky and should be replaced at some point.
+# 
+.print_scalar_prior <- function(p, txt = "Intercept", formatters = list()) {
+  stopifnot(length(formatters) == 2)
+  .f1 <- formatters[[1]]
+  .f2 <- formatters[[2]]
+  cat(paste0("\n", txt, "\n ~"),
+      if (is.na(p$dist)) {
+        "flat"
+      } else if (p$dist == "exponential") {
+        paste0(p$dist,"(rate = ", .f1(p$rate), ")")
+      } else { # normal, studen_t, cauchy
+        if (is.null(p$df)) {
+          paste0(p$dist,"(location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale),")")
+        } else {
+          paste0(p$dist, "(df = ", .f1(p$df), 
+                 ", location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale), ")")
+        }
+      }
+  )
+  if (!is.null(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+}
+.print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
+  stopifnot(length(formatters) == 2)
+  .f1 <- formatters[[1]]
+  .f2 <- formatters[[2]]
+  
+  if (!(p$dist %in% c("R2", NA))) {
+    if (p$dist %in% c("normal", "student_t", "cauchy")) {
+      p$location <- .format_pars(p$location, .f1)
+      p$scale <- .format_pars(p$scale, .f1)
+      if (!is.null(p$df))
+        p$df <- .format_pars(p$df, .f1)
+      if (!is.null(p$adjusted_scale))
+        p$adjusted_scale <- .format_pars(p$adjusted_scale, .f1)
+    } else if (p$dist %in% c("hs_plus")) {
+      p$df1 <- .format_pars(p$df, .f1)
+      p$df2 <- .format_pars(p$scale, .f1)
+    } else if (p$dist %in% c("hs")) {
+      p$df <- .format_pars(p$df, .f1)
+    }
+  }
+  cat(paste0("\n", txt, "\n ~"),
+      if (is.na(p$dist)) {
+        "flat"
+      } else if (p$dist %in% c("normal", "student_t", "cauchy")) {
+        if (is.null(p$df)) {
+          paste0(p$dist, "(location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale), ")")
+        } else {
+          paste0(p$dist, "(df = ", .f1(p$df), 
+                 ", location = ", .f1(p$location), 
+                 ", scale = ", .f1(p$scale),")")
+        }
+      } else if (p$dist %in% c("hs_plus")) {
+        paste0("hs_plus(df1 = ", .f1(p$df1), ", df2 = ", .f1(p$df2), ")")
+      } else if (p$dist %in% c("hs")) {
+        paste0("hs(df = ", .f1(p$df), ")")
+      } else if (p$dist %in% c("R2")) {
+        paste0("R2(location = ", .f1(p$location), ", what = '", p$what, "')")
+      })
+  
+  if (!is.null(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+}
+.print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
+  .f1 <- formatters[[1]]
+  p$regularization <- .format_pars(p$regularization, .f1)
+  p$concentration <- .format_pars(p$concentration, .f1)
+  p$shape <- .format_pars(p$shape, .f1)
+  p$scale <- .format_pars(p$scale, .f1)
+  cat(paste0("\n", txt, "\n ~"),
+      paste0(p$dist, "(",  
+             "reg. = ", .f1(p$regularization),
+             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
+             ", scale = ", .f1(p$scale), ")")
+  )
+}

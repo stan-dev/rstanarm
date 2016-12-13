@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@
 #' @return An object of class \code{\link[stats]{family}} very similar to
 #'   that of \code{\link[stats]{poisson}} but with a different family name.
 #' @examples
+#' if (!grepl("^sparc",  R.version$platform))
 #' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
 #'          family = neg_binomial_2, QR = TRUE, algorithm = "fullrank") 
 #'                 
@@ -41,11 +42,13 @@
 neg_binomial_2 <- function(link = "log") {
   out <- poisson(link)
   out$family <- "neg_binomial_2"
-  out$variance <- function(mu, theta) mu + mu^2 / theta
-  out$dev.resids <- function(y, mu, wt)
+  out$variance <- function(mu, theta = Inf) mu + mu^2 / theta
+  out$dev.resids <- function(y, mu, wt) {
     stop("'dev.resids' function should not be called")
-  out$aic <- function(y, n, mu, wt, dev)
+  }
+  out$aic <- function(y, n, mu, wt, dev) {
     stop("'aic' function should not have been called")
+  }
   out$simulate <- function(object, nsim)
     stop("'simulate' function should not have been called")
   return(out)

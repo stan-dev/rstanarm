@@ -1,10 +1,12 @@
 ---
 title: "Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
-date: "01/12/2015"
+date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -28,8 +30,8 @@ function in the __rstanarm__ package.
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled "How to Use the
-__rstanarm__ Package". This vignette focuses on Step 1 when the likelihood is
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
 the product of conditionally independent binomial distributions (possibly with
 only one trial per observation).
 
@@ -123,15 +125,15 @@ switched, 0 if not). Then we'll expand the model by adding the arsenic level
 of the water in the resident's own well as a predictor and compare this larger
 model to the original.
 
-After reading in the data from the `'wells.csv.xz'` file, we first rescale the
-`dist` variable (measured in meters) so that it is measured in units of 100
-meters. If we leave `dist` in its original units then the corresponding
-regression coefficient will represent the effect of the marginal meter, which is
-too small to have a useful interpretation.
+After loading the `wells` data, we first rescale the `dist` variable (measured
+in meters) so that it is measured in units of 100 meters. If we leave `dist` in
+its original units then the corresponding regression coefficient will represent
+the effect of the marginal meter, which is too small to have a useful
+interpretation.
 
 ```{r binom-arsenic-data}
-# Load data and create dist100 variable 
-wells <- read.csv(file.path("data", "wells.csv.xz"))
+library(rstanarm)
+data(wells)
 wells$dist100 <- wells$dist / 100
 ```
 
@@ -145,9 +147,9 @@ ggplot(wells, aes(x = dist100, y = ..density..)) +
 ```
 
 In the plot above the blue bars correspond to the 
-`r sum(wells$switch == 1)` residents who said they switched wells and the bars with
+`r sum(rstanarm::wells$switch == 1)` residents who said they switched wells and the bars with
 the darker outline show the distribution of `dist100` for the 
-`r sum(wells$switch == 0)` residents who didn't switch. As we would expect, for the
+`r sum(rstanarm::wells$switch == 0)` residents who didn't switch. As we would expect, for the
 residents who switched wells, the distribution of `dist100` is more concentrated
 at smaller distances.
 
@@ -158,7 +160,6 @@ is a reasonable default prior when coefficients should be close to zero but
 have some chance of being large. 
 
 ```{r, binom-arsenic-mcmc, results="hide"}
-library(rstanarm)
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, 
                  family = binomial(link = "logit"), 
@@ -186,7 +187,7 @@ round(posterior_interval(fit1, prob = 0.5), 2)
 ```
 
 For more on `posterior_interval` and interpreting the parameter estimates from a Bayesian
-model see Step 2 in the "How to Use the __rstanarm__ Package" vignette.
+model see Step 2 in the ["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 
 Using the coefficient estimates we can plot the predicted probability of 
@@ -227,9 +228,7 @@ fit2 <- update(fit1, formula = switch ~ dist100 + arsenic)
 (coef_fit2 <- round(coef(fit2), 3))
 ```
 
-As expected the coefficient on `arsenic` is positive. Net of distance, an 
-increase of 1 in the concentration of arsenic is associated with an increase 
-of `r coef_fit2[3]` in the log-odds of well-switching. The plot
+As expected the coefficient on `arsenic` is positive. The plot
 below shows distance on the x-axis and arsenic level on the y-axis with the 
 predicted probability of well-switching mapped to the color of the background 
 tiles (the lighter the color the higher the probability). The observed value of
@@ -293,15 +292,15 @@ by the `loo` function in the __loo__ package:
 compare_models(loos = list(loo1, loo2))
 ```
 
-These results favor `fit2` over `fit1` by a wide margin. The estimated
+These results favor `fit2` over `fit1`, as the estimated
 difference in `elpd` (the expected log pointwise predictive density for a new
-dataset) is so much larger than its standard error that the model weight for
-`fit2` is 1. LOO penalizes models for adding additional predictors (this helps
+dataset) is so much larger than its standard error. 
+LOO penalizes models for adding additional predictors (this helps
 counter overfitting), but in this case `fit2` represents enough of an
 improvement over `fit1` that the penalty for including `arsenic` is negligible
 (as it should be if `arsenic` is an important predictor).
 
-The vignette for the `stan_lm` function also has an example of using the `loo`
+The [vignette](lm.html) for the `stan_lm` function also has an example of using the `loo`
 function where the results are quite a bit different from what we see here and
 some important additional considerations are discussed.
 
@@ -334,7 +333,7 @@ number of responses is provided using the `weights` argument. In this case we
 would add `weights = n` to the call to `stan_glm`. 
 
 An example of a similar model can also be found in __Step 1__ of the 
-"How to Use the __rstanarm__ Package" vignette.
+["How to Use the __rstanarm__ Package"](rstanarm.html) vignette.
 
 # Going Further
 
@@ -342,7 +341,7 @@ In the hypothetical scenario above, if we also have access to the observations
 for each individual in all of the villages (not just the aggregate data), then a
 natural extension would be to consider a multilevel model that takes advantage
 of the inherent multilevel structure of the data (individuals nested within
-villages). The vignette for the `stan_glmer` function discusses these models.
+villages). The [vignette](glmer.html) for the `stan_glmer` function discusses these models.
 
 # References
 

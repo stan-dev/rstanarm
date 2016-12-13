@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 #' @template args-same-as-rarely-2
 #' @template args-x-y
 #' @template args-dots
+#' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
 #'
@@ -53,11 +54,6 @@
 #'   root of the sample size, which is legitimate because the marginal
 #'   standard deviation of the outcome is a primitive parameter being
 #'   estimated.
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
-#'   merely proportional to the actual distribution because of an improper
-#'   prior on a scale parameter.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -88,6 +84,11 @@
 #'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
 #'   variance.
 #'   
+#'   
+#' @references 
+#' Lewandowski, D., Kurowicka D., and Joe, H. (2009). Generating random
+#' correlation matrices based on vines and extended onion method. 
+#' \emph{Journal of Multivariate Analysis}. \strong{100}(9), 1989--2001.
 #' 
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
@@ -102,7 +103,9 @@
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
 #'                 chains = 1, iter = 1000, seed = 12345))
-#' plot(fit)
+#' plot(fit, prob = 0.8)
+#' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
+#'      transformations = list(sigma = "log"))
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
@@ -114,6 +117,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     adapt_delta = NULL) {
   
   algorithm <- match.arg(algorithm)
+  validate_glm_formula(formula)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
@@ -142,6 +146,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
+  out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 
     out$x <- NULL
   if (!y) 

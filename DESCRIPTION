@@ -1,12 +1,12 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.9.0-3
-Date: 2016-01-31
+Version: 2.13.1
+Date: 2016-11-20
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("R Core", "Deveopment Team", role = "cph", 
-                     comment = "R/pp_data.R, R/stan_aov.R"),
+                     comment = "R/stan_aov.R"),
              person("Douglas", "Bates", role = "cph", comment = "R/pp_data.R"),
              person("Martin", "Maechler", role = "cph", comment = "R/pp_data.R"),
              person("Ben", "Bolker", role = "cph", comment = "R/pp_data.R"),
@@ -22,34 +22,37 @@ Description: Estimates pre-compiled regression models using the 'rstan' package,
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
-    Rcpp (>= 0.11.0),
+    Rcpp (>= 0.12.0),
     methods
 Imports:
-    ggplot2 (>= 2.0.0),
+    bayesplot (>= 1.0.0),
+    ggplot2 (>= 2.2.0),
     lme4 (>= 1.1-8),
-    loo (>= 0.1.4),
-    rstan (>= 2.9.0),
-    shinystan (>= 2.1.0),
+    loo (>= 0.1.6),
+    Matrix,
+    nlme (>= 3.1-124),
+    rstan (>= 2.12.1),
+    rstantools (>= 1.0.0),
+    shinystan (>= 2.2.1),
     stats,
     utils
 Suggests:
     arm,
     digest,
-    gamm4,
     gridExtra,
     HSAUR3,
     KernSmooth,
     knitr,
     MASS,
+    mgcv,
     rmarkdown,
-    testthat
-LinkingTo: StanHeaders (>= 2.9.0), rstan (>= 2.9.0), BH (>= 1.58.0), Rcpp (>=
-    0.11.0), RcppEigen
+    roxygen2,
+    testthat (>= 1.0.2)
+LinkingTo: StanHeaders (>= 2.12.0), rstan (>= 2.12.1), BH (>= 1.60.0), Rcpp (>=
+    0.12.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RcppModules: stan_fit4bernoulli_mod, stan_fit4binomial_mod,
-    stan_fit4continuous_mod, stan_fit4count_mod, stan_fit4lm_mod, stan_fit4polr_mod
 RoxygenNote: 5.0.1

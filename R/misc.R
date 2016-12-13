@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -75,14 +75,14 @@ set_sampling_args <- function(object, prior, user_dots = list(),
 # @return A list with \code{adapt_delta} and \code{max_treedepth}.
 default_stan_control <- function(prior, adapt_delta = NULL, 
                                  max_treedepth = 15L) {
-  if (is.null(prior)) {
-    adapt_delta <- 0.95
+  if (!length(prior)) {
+    if (is.null(adapt_delta)) adapt_delta <- 0.95
   } else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
@@ -92,6 +92,14 @@ default_stan_control <- function(prior, adapt_delta = NULL,
 #
 # @param x The object to test. 
 is.stanreg <- function(x) inherits(x, "stanreg")
+
+# Throw error if object isn't a stanreg object
+# 
+# @param x The object to test.
+validate_stanreg_object <- function(x, call. = FALSE) {
+  if (!is.stanreg(x))
+    stop("Object is not a stanreg object.", call. = call.) 
+}
 
 # Test for a given family
 #
@@ -107,15 +115,12 @@ is.poisson <- function(x) x == "poisson"
 #
 # @param x A stanreg object.
 used.optimizing <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "optimizing"
 }
 used.sampling <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm == "sampling"
 }
 used.variational <- function(x) {
-  stopifnot(is.stanreg(x))
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
@@ -124,7 +129,7 @@ used.variational <- function(x) {
 # @param x A stanreg object.
 is.mer <- function(x) {
   stopifnot(is.stanreg(x))
-  check1 <- is(x, "lmerMod")
+  check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
     stop("Bug found. 'x' has class 'lmerMod' but no 'glmod' component.")
@@ -274,6 +279,18 @@ validate_family <- function(f) {
   return(f)
 }
 
+
+# Check for glmer syntax in formulas for non-glmer models
+#
+# @param f The model \code{formula}.
+# @return Nothing is returned but an error might be thrown
+validate_glm_formula <- function(f) {
+  if (any(grepl("\\|", f)))
+    stop("Using '|' in model formula not allowed. ",
+         "Maybe you meant to use 'stan_(g)lmer'?", call. = FALSE)
+}
+
+
 # Check if any variables in a model frame are constants
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
@@ -299,6 +316,14 @@ b_names <- function(x, ...) {
   grep("^b\\[", x, ...)
 }
 
+# Return names of the last dimension in a matrix/array (e.g. colnames if matrix)
+#
+# @param x A matrix or array
+last_dimnames <- function(x) {
+  ndim <- length(dim(x))
+  dimnames(x)[[ndim]]
+}
+
 # Get the correct column name to use for selecting the median
 #
 # @param algorithm String naming the estimation algorithm (probably
@@ -319,6 +344,7 @@ select_median <- function(algorithm) {
 # @param x stanreg object
 # @param regex_pars Character vector of patterns
 grep_for_pars <- function(x, regex_pars) {
+  validate_stanreg_object(x)
   if (used.optimizing(x)) {
     warning("'regex_pars' ignored for models fit using algorithm='optimizing'.",
             call. = FALSE)
@@ -354,7 +380,7 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # @param x A stanreg object
 # @return NULL if used.optimizing(x), otherwise the posterior sample size
 posterior_sample_size <- function(x) {
-  stopifnot(is.stanreg(x))
+  validate_stanreg_object(x)
   if (used.optimizing(x)) 
     return(NULL)
   pss <- x$stanfit@sim$n_save
@@ -430,42 +456,18 @@ validate_parameter_value <- function(x) {
 #
 # @param scale Value of scale parameter (can be NULL).
 # @param default Default value to use if \code{scale} is NULL.
-# @param link String naming the link function.
+# @param link String naming the link function or NULL.
 # @return If a probit link is being used, \code{scale} (or \code{default} if
 #   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
 #   either \code{scale} or \code{default} is returned.
 set_prior_scale <- function(scale, default, link) {
-  stopifnot(is.numeric(default), is.character(link))
+  stopifnot(is.numeric(default), is.character(link) || is.null(link))
   if (is.null(scale)) 
     scale <- default
-  if (link == "probit")
+  if (isTRUE(link == "probit"))
     scale <- scale * dnorm(0) / dlogis(0)
   
   return(scale)
-}
-
-# Make prior.info list
-# @param user_call The user's call, i.e. match.call(expand.dots = TRUE).
-# @param function_formals Formal arguments of the stan_* function, i.e.
-#   formals().
-# @return A list containing information about the prior distributions and
-#   options used.
-get_prior_info <- function(user_call, function_formals) {
-  user <- grep("prior", names(user_call), value = TRUE)
-  default <- setdiff(grep("prior", names(function_formals), value = TRUE), 
-                     user)
-  U <- length(user)
-  D <- length(default)
-  priors <- list()
-  for (j in 1:(U + D)) {
-    if (j <= U) {
-      priors[[user[j]]] <- eval(user_call[[user[j]]])
-    } else {
-      priors[[default[j-U]]] <- eval(function_formals[[default[j-U]]])
-    } 
-  }
-  
-  return(priors)
 }
 
 
@@ -524,15 +526,26 @@ get_x.default <- function(object) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
+get_x.gamm4 <- function(object) {
+  object$glmod$raw_X %ORifNULL% stop("X not found")
+}
+#' @export
 get_x.lmerMod <- function(object) {
   object$glmod$X %ORifNULL% stop("X not found")
 }
 #' @export
 get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
-  t(as.matrix(Zt))
+  t(Zt)
 }
-
+#' @export
+get_z.gamm4 <- function(object) {
+  X <- get_x(object)
+  XZ <- object$x
+  Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
+  Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
+  return(Z)
+}
 
 # Get inverse link function
 #
@@ -565,12 +578,89 @@ polr_linkinv <- function(x) {
     stop("'x' should be a stanreg object created by stan_polr ", 
          "or a single string.")
   }
-  if (method == "logistic") 
+  if (is.null(method) || method == "logistic") 
     method <- "logit"
   
-  if (method == "loglog") {
-    pgumbel
+  if (method == "loglog")
+    return(pgumbel)
+  
+  make.link(method)$linkinv
+}
+
+# Wrapper for rstan::summary
+# @param stanfit A stanfit object created using rstan::sampling or rstan::vb
+# @return A matrix of summary stats
+make_stan_summary <- function(stanfit) {
+  levs <- c(0.5, 0.8, 0.95, 0.99)
+  qq <- (1 - levs) / 2
+  probs <- sort(c(0.5, qq, 1 - qq))
+  rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+}
+
+is_scobit <- function(object) {
+  validate_stanreg_object(object)
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
+check_reTrms <- function(reTrms) {
+  stopifnot(is.list(reTrms))
+  nms <- names(reTrms$cnms)
+  dupes <- duplicated(nms)
+  for (i in which(dupes)) {
+    original <- reTrms$cnms[[nms[i]]]
+    dupe <- reTrms$cnms[[i]]
+    overlap <- dupe %in% original
+    if (any(overlap))
+      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n", 
+           "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
+           dupe[overlap], " is included multiple times.\n", 
+           "Consider using || or -1 in your formulas to prevent this from happening.")
+  }
+  return(invisible(NULL))
+}
+
+#' @importFrom lme4 glmerControl
+make_glmerControl <- function(...) {
+  glmerControl(check.nlev.gtreq.5 = "ignore",
+               check.nlev.gtr.1 = "stop",
+               check.nobs.vs.rankZ = "ignore",
+               check.nobs.vs.nlev = "ignore",
+               check.nobs.vs.nRE = "ignore", ...)  
+}
+
+# Check if a fitted model (stanreg object) has weights
+# 
+# @param x stanreg object
+# @return Logical. Only TRUE if x$weights has positive length and the elements
+#   of x$weights are not all the same.
+#
+model_has_weights <- function(x) {
+  wts <- x[["weights"]]
+  if (!length(wts)) {
+    FALSE
+  } else if (all(wts == wts[1])) {
+    FALSE
   } else {
-    make.link(method)$linkinv
-  } 
+    TRUE
+  }
+}
+
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+# just that newdata is either NULL or a data frame with no missing values.
+# @param x User's 'newdata' argument
+# @return Either NULL or a data frame
+#
+validate_newdata <- function(x) {
+  if (is.null(x))
+    return(NULL)
+  if (!is.data.frame(x))
+    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
+  if (any(is.na(x)))
+    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
+
+  as.data.frame(x)
 }

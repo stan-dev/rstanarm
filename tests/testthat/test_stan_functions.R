@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015 Trustees of Columbia University
+# Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -46,7 +46,6 @@ library(rstan)
 Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
-  # mc <- scan(file = f, what = "character", sep = "\n", quiet = TRUE)
   mc <- readLines(f)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
@@ -55,7 +54,6 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-print(MODELS_HOME)
 functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
                                    "common_functions.stan")), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
@@ -158,8 +156,7 @@ test_that("linkinv_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
     linkinv <- gaussian(link = links[i])$linkinv
-    expect_true(all.equal(if (i == 2) eta else linkinv(eta), 
-                          linkinv_gauss(eta, i)), info = links[i])
+    expect_true(all.equal(linkinv(eta), linkinv_gauss(eta, i)), info = links[i])
   }
 })
 context("Gaussian")
@@ -167,12 +164,8 @@ test_that("pw_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
     linkinv <- gaussian(link = links[i])$linkinv
-    if (i == 2)
-      expect_true(all.equal(dnorm(0, mean = eta, log = TRUE),
-                            pw_gauss(rep(1,N), eta, 1, i)), info = links[i])
-    else 
-      expect_true(all.equal(dnorm(0, mean = linkinv(eta), log = TRUE),
-                            pw_gauss(rep(0,N), eta, 1, i)), info = links[i])
+    expect_true(all.equal(dnorm(0, mean = linkinv(eta), log = TRUE),
+                          pw_gauss(rep(0,N), eta, 1, i)), info = links[i])
   }
 })
 
@@ -212,7 +205,7 @@ test_that("GammaReg_log returns the expected results", {
     y <- rgamma(N, shape, rate = 1 / linkinv(eta))
     expect_true(all.equal(sum(dgamma(y, shape = shape, 
                                      rate = shape / linkinv(eta), log = TRUE)),
-                          GammaReg_log(y, eta, shape, i, sum(log(y)))), info = links[i])
+                          GammaReg(y, eta, shape, i, sum(log(y)))), info = links[i])
   }
 })
   
@@ -268,8 +261,8 @@ test_that("inv_gaussian returns expected results", {
     linkinv <- inverse.gaussian(link = links[i])$linkinv
     y <- rinvGauss(N, linkinv(eta), lambda)
     expect_true(all.equal(sum(dinvGauss(y, linkinv(eta), lambda, log = TRUE)),
-                          inv_gaussian_log(y, linkinv_inv_gaussian(eta,i), 
-                                           lambda, sum(log(y)), sqrt(y))), 
+                          inv_gaussian(y, linkinv_inv_gaussian(eta,i), 
+                                       lambda, sum(log(y)), sqrt(y))), 
                 info = links[i])
   }
 })
@@ -323,7 +316,11 @@ test_that("pw_polr returns expected results", {
                         start = c(beta, zeta), control = list(maxit = 0))
     Pr <- fitted(model)
     Pr <- sapply(1:N, FUN = function(i) Pr[i,y[i]])
-    expect_equal(log(Pr), pw_polr(y, eta, zeta, i, 1), info = links[i])
+    log_pr <- pw_polr(y, eta, zeta, i, 1)
+    log_Pr <- log(Pr)
+    good <- is.finite(log_pr) & is.finite(log_Pr) & log_Pr > -30
+    expect_equal(log_Pr[good], log_pr[good], info = links[i], 
+                 tolerance = 1e-6)
   }
 })
 rdirichlet <- function(n, alpha) {
@@ -365,7 +362,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Lind <- group$Lind
     theta <- group$theta
     
-    group <- rstanarm:::pad_reTrms(Z = t(as.matrix(group$Zt)), cnms = group$cnms, 
+    group <- rstanarm:::pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
@@ -386,7 +383,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     
     z_b <- rnorm(ncol(Z))
     b <- make_b(z_b, theta_L, p, l)
-    mark <- grepl("_NEW_", colnames(Z), fixed = TRUE)
+    mark <- colnames(Z) == ""
     expect_equal(b[!mark], as.vector(Matrix::t(Lambdati) %*% z_b[!mark]), 
                  tol = 1e-14)
     
