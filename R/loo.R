@@ -30,71 +30,66 @@
 #' @template args-stanreg-object
 #' @template reference-loo
 #' 
-#' @inheritParams loo::loo
+#' @param ... For the \code{loo} method, \code{...} can be used to pass optional
+#'   arguments (e.g. \code{cores}) to \code{\link[loo]{psislw}}. For 
+#'   \code{compare_models}, \code{...} should contain two or more objects 
+#'   returned by the \code{loo}, \code{kfold}, or \code{waic} method (see the 
+#'   \strong{Examples} section, below).
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape 
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
 #' 
-#' @return An object of class 'loo'. See the 'Value' section in 
-#'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} for details on the
-#'   structure of these objects. The object returned by \code{kfold} also 
-#'   has class 'kfold' in addition to 'loo'.
+#' @return The \code{loo} and \code{waic} methods return an object of class
+#'   'loo'. See the \strong{Value} section in \code{\link[loo]{loo}} and 
+#'   \code{\link[loo]{waic}} (from the \pkg{loo} package) for details on the 
+#'   structure of these objects.
 #'   
-#' @section Approximate LOO CV:
-#' The \code{loo} method for stanreg objects provides an interface to
-#' the \pkg{\link[=loo-package]{loo}} package for approximate leave-one-out 
-#' cross-validation (LOO). The LOO Information Criterion (LOOIC) has the same 
-#' purpose as the Akaike Information Criterion (AIC) that is used by 
-#' frequentists. Both are intended to estimate the expected log predictive 
-#' density (ELPD) for a new dataset. However, the AIC ignores priors and assumes
-#' that the posterior distribution is multivariate normal, whereas the functions
-#' from the \pkg{loo} package do not make this distributional assumption and 
-#' integrate over uncertainty in the parameters. This only assumes that any one 
-#' observation can be omitted without having a major effect on the posterior 
-#' distribution, which can be judged using the diagnostic plot provided by the 
-#' \code{\link[loo]{plot.loo}} method and the warnings provided by the 
-#' \code{\link[loo]{print.loo}} method (see the \emph{How to Use the rstanarm 
-#' Package} vignette for an example of this process).
-#' 
-#' \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
-#' The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm} 
-#' models is provided as a possible remedy when the diagnostics reveal problems
-#' stemming from the posterior's sensitivity to particular observations.
-#' Warnings about Pareto \eqn{k} estimates indicate observations for which the
-#' approximation to LOO is problematic (this is described in detail in Vehtari,
-#' Gelman, and Gabry (2016) and the \pkg{\link[=loo-package]{loo}} package
-#' documentation). The \code{k_threshold} argument can be used to set the
-#' \eqn{k} value above which an observation is flagged. If \code{k_threshold} is
-#' not \code{NULL} and there are \eqn{J} observations with \eqn{k} estimates
-#' above \code{k_threshold} then when \code{loo} is called it will refit the
-#' original model \eqn{J} times, each time leaving out one of the \eqn{J}
-#' problematic observations. The pointwise contributions of these observations
-#' to the total ELPD are then computed directly and substituted for the previous
-#' estimates from these \eqn{J} observations that are stored in the object
-#' created by \code{loo}.
-#' 
-#' \strong{Note}: in the warning messages issued by \code{loo} about large 
-#' Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at least 
-#' \eqn{0.7}. There is a theoretical reason, explained in Vehtari, Gelman, and 
-#' Gabry (2016), for setting the threshold to the stricter value of \eqn{0.5}, 
-#' but in practice they find that errors in the LOO approximation start to 
-#' increase non-negligibly when \eqn{k > 0.7}.
-#' }
-#' 
-#' @section K-fold CV:
-#' The \code{kfold} function performs exact \eqn{K}-fold cross-validation. First
-#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close 
-#' to equal as possible) size. Then the model is refit \eqn{K} times, each time 
-#' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total 
-#' number of observations in the data then \eqn{K}-fold cross-validation is 
-#' equivalent to exact leave-one-out cross-validation (to which \code{loo} is an
-#' efficient approximation). The \code{compare_models} function is also
-#' compatible with the objects returned by \code{kfold}.
+#' @section Approximate LOO CV: The \code{loo} method for stanreg objects
+#'   provides an interface to the \pkg{\link[=loo-package]{loo}} package for
+#'   approximate leave-one-out cross-validation (LOO). The LOO Information
+#'   Criterion (LOOIC) has the same purpose as the Akaike Information Criterion
+#'   (AIC) that is used by frequentists. Both are intended to estimate the
+#'   expected log predictive density (ELPD) for a new dataset. However, the AIC
+#'   ignores priors and assumes that the posterior distribution is multivariate
+#'   normal, whereas the functions from the \pkg{loo} package do not make this
+#'   distributional assumption and integrate over uncertainty in the parameters.
+#'   This only assumes that any one observation can be omitted without having a
+#'   major effect on the posterior distribution, which can be judged using the
+#'   diagnostic plot provided by the \code{\link[loo]{plot.loo}} method and the
+#'   warnings provided by the \code{\link[loo]{print.loo}} method (see the
+#'   \emph{How to Use the rstanarm Package} vignette for an example of this
+#'   process).
+#'   
+#'   \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{ 
+#'   The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm}
+#'   models is provided as a possible remedy when the diagnostics reveal
+#'   problems stemming from the posterior's sensitivity to particular
+#'   observations. Warnings about Pareto \eqn{k} estimates indicate observations
+#'   for which the approximation to LOO is problematic (this is described in
+#'   detail in Vehtari, Gelman, and Gabry (2016) and the
+#'   \pkg{\link[=loo-package]{loo}} package documentation). The
+#'   \code{k_threshold} argument can be used to set the \eqn{k} value above
+#'   which an observation is flagged. If \code{k_threshold} is not \code{NULL}
+#'   and there are \eqn{J} observations with \eqn{k} estimates above
+#'   \code{k_threshold} then when \code{loo} is called it will refit the 
+#'   original model \eqn{J} times, each time leaving out one of the \eqn{J} 
+#'   problematic observations. The pointwise contributions of these observations
+#'   to the total ELPD are then computed directly and substituted for the
+#'   previous estimates from these \eqn{J} observations that are stored in the
+#'   object created by \code{loo}.
+#'   
+#'   \strong{Note}: in the warning messages issued by \code{loo} about large 
+#'   Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at
+#'   least \eqn{0.7}. There is a theoretical reason, explained in Vehtari,
+#'   Gelman, and Gabry (2016), for setting the threshold to the stricter value
+#'   of \eqn{0.5}, but in practice they find that errors in the LOO
+#'   approximation start to increase non-negligibly when \eqn{k > 0.7}. 
+#'   }
 #'   
 #' @seealso 
 #' \itemize{
 #'   \item The various \pkg{rstanarm} vignettes for more examples of 
-#'     using \code{loo}.
+#'     using \code{loo} and \code{compare_models}.
 #'   \item \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} 
 #'     section)  for details on the computations implemented by the \pkg{loo} 
 #'     package and the interpretation of the Pareto \eqn{k} estimates displayed 
@@ -111,19 +106,26 @@
 #' # compare on LOOIC
 #' (loo1 <- loo(fit1, cores = 2))
 #' loo2 <- loo(fit2, cores = 2)
-#' compare_models(loo1, loo2) # or compare_models(loos = list(loo1, loo2))
 #' plot(loo2)
+#' 
+#' # when comparing exactly two models, the reported 'elpd_diff' will be 
+#' # positive if the expected predictive accuracy for the second model is higher
+#' compare_models(loo1, loo2) # or compare_models(loos = list(loo1, loo2))
+#' 
+#' # when comparing three or more models they are ordered by 
+#' fit3 <- update(fit2, prior = student_t(7, 0, 5))
+#' loo3 <- loo(fit3)
+#' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare_models(kfold1, kfold2)
 #' }
+#' 
 #' @importFrom loo loo loo.function
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
-  if (!requireNamespace("digest", quietly = TRUE)) 
-    stop("Please install the 'digest' package.")
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
   if (model_has_weights(x))
@@ -168,20 +170,52 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 }
 
 
+# WAIC
+# 
 #' @rdname loo.stanreg
 #' @export
-#' @param K The number of subsets of equal (if possible) size into which the 
-#'   data will be randomly partitioned for performing \eqn{K}-fold 
-#'   cross-validation. The model is refit \code{K} times, each time leaving out
-#'   one of the \code{K} subsets. If \code{K} is equal to the total number of
-#'   observations in the data then \eqn{K}-fold cross-validation is equivalent
-#'   to exact leave-one-out cross-validation.
+#' @importFrom loo waic waic.function
+#' 
+waic.stanreg <- function(x, ...) {
+  if (!used.sampling(x)) 
+    STOP_sampling_only("waic")
+  out <- waic.function(ll_fun(x), args = ll_args(x))
+  structure(out, 
+            class = c("loo", "waic"),
+            name = deparse(substitute(x)), 
+            family = family(x), 
+            yhash = hash_y(x))
+}
+
+
+# K-fold CV
+#
+#' @rdname loo.stanreg
+#' @export
+#' @param K For \code{kfold}, the number of subsets of equal (if possible) size
+#'   into which the data will be randomly partitioned for performing
+#'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
+#'   leaving out one of the \code{K} subsets. If \code{K} is equal to the total
+#'   number of observations in the data then \eqn{K}-fold cross-validation is
+#'   equivalent to exact leave-one-out cross-validation.
+#'   
+#' @return \code{kfold} returns an object with has classes 'kfold' and 'loo' 
+#'   that has a similar structure as the objects returned by the \code{loo} and
+#'   \code{waic} methods.
+#'    
+#' @section K-fold CV: The \code{kfold} function performs exact \eqn{K}-fold
+#'   cross-validation. First the data are randomly partitioned into \eqn{K}
+#'   subsets of equal (or as close to equal as possible) size. Then the model is
+#'   refit \eqn{K} times, each time leaving out one of the \code{K} subsets. If
+#'   \eqn{K} is equal to the total number of observations in the data then
+#'   \eqn{K}-fold cross-validation is equivalent to exact leave-one-out
+#'   cross-validation (to which \code{loo} is an efficient approximation). The
+#'   \code{compare_models} function is also compatible with the objects returned
+#'   by \code{kfold}.
 #'   
 kfold <- function(x, K = 10) {
   validate_stanreg_object(x)
   stopifnot(K > 1, K <= nobs(x))
-  if (!requireNamespace("digest", quietly = TRUE)) 
-    stop("Please install the 'digest' package.")
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
   if (model_has_weights(x))
@@ -240,24 +274,67 @@ print.kfold <- function(x, digits = 1, ...) {
   invisible(x)
 }
 
+
+# Compare models
+#
 #' @rdname loo.stanreg
 #' @export
-#' @note The \code{...} is ignored for \code{waic}.
+#' @param loos For \code{compare_models}, a list of two or more objects returned
+#'   by the \code{loo}, \code{kfold}, or \code{waic} method. This argument can 
+#'   be used as an alternative to passing these objects via \code{...}.
+#'   
+#' @return \code{compare_models} returns a vector or matrix with class 
+#'   'compare.loo'. See the \strong{Comparing models} section below for more
+#'   details.
+#'   
+#' @section Comparing models: \code{compare_models} is a wrapper around the
+#'   \code{\link[loo]{compare}} function in the \pkg{loo} package. Before
+#'   calling \code{compare}, \code{compare_models} performs some extra checks to
+#'   make sure the \pkg{rstanarm} models are suitable for comparison. These
+#'   extra checks include verifying that all models to be compared were fit
+#'   using the same outcome variable and \code{family} object.
+#'   
+#'   If exactly two models are being compared then \code{compare_models} returns
+#'   a vector containing the difference in expected log predictive density 
+#'   (ELPD) between the models and the standard error of that difference (the 
+#'   documentation for \code{\link[loo]{compare}} has additional details about 
+#'   the calculation of the standard error of the difference). The difference in
+#'   ELPD will be negative if the expected out-of-sample predictive accuracy of
+#'   the first model is higher. If the difference is be positive then the second
+#'   model is preferred.
+#'   
+#'   If more than two models are being compared then \code{compare_models} 
+#'   returns a matrix with one row per model. This matrix summarizes the objects
+#'   and arranges them in descending order according to expected out-of-sample
+#'   predictive accuracy. That is, the first row of the matrix will be 
+#'   for the model with the largest ELPD (smallest LOOIC).
 #' 
-#' @importFrom loo waic waic.function
-waic.stanreg <- function(x, ...) {
-  if (!requireNamespace("digest", quietly = TRUE)) 
-    stop("Please install the 'digest' package.")
-  if (!used.sampling(x)) 
-    STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
-  structure(out, 
-            class = c("loo", "waic"),
-            name = deparse(substitute(x)), 
-            family = family(x), 
-            yhash = hash_y(x))
-}
+#' @importFrom loo compare
+#' 
+compare_models <- function(..., loos = list()) {
+  dots <- list(...)
+  if (length(dots) && length(loos))
+    stop("'...' and 'loos' can't both be specified.", call. = FALSE)
+  if (length(dots))
+    loos <- dots
+  
+  loos <- validate_loos(loos)
+  comp <- do.call(loo::compare, loos)
+  if (!is.matrix(comp))  # will happen if there are only two models
+    return(comp)
+  
+  col_names <- if (is.kfold(loos[[1]])) {
+    c("elpd_kfold", "se_elpd_kfold")
+  } else if (is.waic(loos[[1]])) {
+    c("waic", "se_waic", "elpd_waic", "se_elpd_waic", "p_waic", "se_p_waic")
+  } else { 
+    c("looic", "se_looic", "elpd_loo", "se_elpd_loo", "p_loo", "se_p_loo")
+  }
 
+  elpd <- sapply(loos, function(x) x$elpd) # partial matching elpd_{loo,waic,kfold}
+  row_names <- names(loos)[order(elpd, decreasing = TRUE)]
+  structure(comp, dimnames = list(row_names, col_names))
+}
 
 
 # internal ----------------------------------------------------------------
@@ -358,6 +435,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   loo_x
 }
 
+# log_mean_exp (just log_sum_exp(x) - log(length(x)))
 log_mean_exp <- function(x) {
   max_x <- max(x)
   max_x + log(sum(exp(x - max_x))) - log(length(x))
@@ -377,90 +455,45 @@ kfold_and_reloo_data <- function(x) {
 # @param ... Passed to digest::sha1
 #
 hash_y <- function(x, ...) {
+  if (!requireNamespace("digest", quietly = TRUE)) 
+    stop("Please install the 'digest' package.")
   validate_stanreg_object(x)
   digest::sha1(x = get_y(x), ...)
-}
-
-
-# Compare models
-#
-#' @rdname loo.stanreg
-#' @export
-#' @param loos For \code{compare_models}, a list of two or more objects returned
-#'   by the \code{loo}, \code{kfold}, or \code{waic} method for 
-#'   \code{\link[=stanreg-objects]{stanreg}} objects. Alternatively, these
-#'   objects can be passed in via \code{...}. See Examples.
-#'   
-#' @details 
-#' \code{compare_models} is a wrapper around \code{\link[loo]{compare}} 
-#' (\pkg{loo}) that performs some extra checks to make sure the \pkg{rstanarm} 
-#' models are suitable for comparison.
-#' 
-#' @return \code{compare_models} returns a vector or matrix with class
-#'   'compare.loo'. If \code{loos} contains more than two objects then a matrix
-#'   is returned. This matrix summarizes the objects and also reports model
-#'   weights (the posterior probability that each model has the best expected 
-#'   out-of-sample predictive accuracy). If \code{loos} contains exactly two 
-#'   objects then the difference in expected predictive accuracy and the 
-#'   standard error of the difference are returned in addition to model weights.
-#'   See the Details section in \code{\link[loo]{compare}}.
-#' 
-#' @importFrom loo compare
-#' 
-compare_models <- function(..., loos = list()) {
-  dots <- list(...)
-  if (length(dots) && length(loos))
-    stop("'...' and 'loos' can't both be specified.", call. = FALSE)
-  if (length(dots))
-    loos <- dots
-  
-  loos <- validate_loos(loos)
-  comp <- do.call(loo::compare, loos)
-  if (!is.matrix(comp))  # will happen if there are only two models
-    return(comp)
-  
-  stats <- if (is.kfold(loos[[1]])) {
-    c("elpd_kfold", "se_elpd_kfold")
-  } else if (is.waic(loos[[1]])) {
-    c("waic", "se_waic", "elpd_waic", "se_elpd_waic", "p_waic", "se_p_waic")
-  } else { 
-    c("looic", "se_looic", "elpd_loo", "se_elpd_loo", "p_loo", "se_p_loo")
-  }
-    
-  structure(comp, dimnames = list(names(loos), stats))
 }
 
 is.loo <- function(x) inherits(x, "loo")
 is.kfold <- function(x) is.loo(x) && inherits(x, "kfold")
 is.waic <- function(x) is.loo(x) && inherits(x, "waic")
 
+# validate objects for model comparison
 validate_loos <- function(loos = list()) {
   if (!is.list(loos))
     stop("'loos' should be a list.", call. = FALSE)
   if (length(loos) <= 1)
-    stop("'loos' should contain at least two objects.", call. = FALSE)
+    stop("At least two objects are required for model comparison.", 
+         call. = FALSE)
   
   is_loo <- sapply(loos, is.loo)
   is_waic <- sapply(loos, is.waic)
   is_kfold <- sapply(loos, is.kfold)
   if (!all(is_loo))
-    stop("All objects in 'loos' must have class 'loo'", call. = FALSE)
+    stop("All objects must have class 'loo'", call. = FALSE)
   if ((any(is_waic) && !all(is_waic) || 
        (any(is_kfold) && !all(is_kfold))))
     stop("Can't mix objects computed using 'loo', 'waic', and 'kfold'.", 
          call. = FALSE)
 
   fam <- lapply(loos, attr, which = "family")
-  yhash <- lapply(loos, attr, which = "yhash")
-  
   fam_check <- sapply(fam, function(x) {
     isTRUE(all.equal(x, fam[[1]]))
   })
+  if (!all(fam_check))
+    stop("Not all models have the same family/link.", call. = FALSE)
+  
+  yhash <- lapply(loos, attr, which = "yhash")
   yhash_check <- sapply(yhash, function(x) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
-  if (!all(fam_check))
-    stop("Not all models have the same family/link.", call. = FALSE)
   if (!all(yhash_check))
     stop("Not all models fit to the same y variable", call. = FALSE)
   
