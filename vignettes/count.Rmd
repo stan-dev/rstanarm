@@ -228,7 +228,7 @@ preference for the negative binomial model
 
 ```{r, count-roaches-loo}
 loos <- list(loo(stan_glm1), loo(stan_glm2))
-compare_models(loos)
+compare_models(loos = loos)
 ```
 
 which is not surprising given the better fit we've already observed from the

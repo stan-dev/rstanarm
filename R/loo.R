@@ -88,8 +88,8 @@
 #' leaving out one of the \code{K} subsets. If \eqn{K} is equal to the total 
 #' number of observations in the data then \eqn{K}-fold cross-validation is 
 #' equivalent to exact leave-one-out cross-validation (to which \code{loo} is an
-#' efficient approximation). The \code{compare} function is also compatible with
-#' the objects returned by \code{kfold}.
+#' efficient approximation). The \code{compare_models} function is also
+#' compatible with the objects returned by \code{kfold}.
 #'   
 #' @seealso 
 #' \itemize{
@@ -111,13 +111,13 @@
 #' # compare on LOOIC
 #' (loo1 <- loo(fit1, cores = 2))
 #' loo2 <- loo(fit2, cores = 2)
-#' compare_models(list(loo1, loo2))
+#' compare_models(loo1, loo2) # or compare_models(loos = list(loo1, loo2))
 #' plot(loo2)
 #' 
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
-#' compare_models(list(kfold1, kfold2))
+#' compare_models(kfold1, kfold2)
 #' }
 #' @importFrom loo loo loo.function
 #' 
@@ -386,14 +386,15 @@ hash_y <- function(x, ...) {
 #
 #' @rdname loo.stanreg
 #' @export
-#' @param loos A list of two or more objects of class "loo" returned by the
-#'   \code{\link[=loo.stanreg]{loo}} method for 
-#'   \code{\link[=stanreg-objects]{stanreg}} objects. See Examples.
+#' @param loos For \code{compare_models}, a list of two or more objects returned
+#'   by the \code{loo}, \code{kfold}, or \code{waic} method for 
+#'   \code{\link[=stanreg-objects]{stanreg}} objects. Alternatively, these
+#'   objects can be passed in via \code{...}. See Examples.
 #'   
 #' @details 
 #' \code{compare_models} is a wrapper around \code{\link[loo]{compare}} 
-#' (\pkg{loo}) that performs some extra checks to make sure the models are
-#' suitable for comparison.
+#' (\pkg{loo}) that performs some extra checks to make sure the \pkg{rstanarm} 
+#' models are suitable for comparison.
 #' 
 #' @return \code{compare_models} returns a vector or matrix with class
 #'   'compare.loo'. If \code{loos} contains more than two objects then a matrix
@@ -406,7 +407,13 @@ hash_y <- function(x, ...) {
 #' 
 #' @importFrom loo compare
 #' 
-compare_models <- function(loos) {
+compare_models <- function(..., loos = list()) {
+  dots <- list(...)
+  if (length(dots) && length(loos))
+    stop("'...' and 'loos' can't both be specified.", call. = FALSE)
+  if (length(dots))
+    loos <- dots
+  
   loos <- validate_loos(loos)
   comp <- do.call(loo::compare, loos)
   if (!is.matrix(comp))  # will happen if there are only two models
