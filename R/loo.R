@@ -141,9 +141,9 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   n_bad <- length(bad_obs)
   
   out <- structure(loo_x, 
-                   name = deparse(substitute(x)),
+                   name = deparse(substitute(x)), 
                    family = family(x), 
-                   yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
+                   yhash = hash_y(x))
   
   if (!length(bad_obs)) {
     if (user_threshold)
@@ -221,9 +221,9 @@ kfold <- function(x, K = 10) {
   structure(out, 
             class = c("kfold", "loo"), 
             K = K, 
-            name = deparse(substitute(x)),
+            name = deparse(substitute(x)), 
             family = family(x), 
-            yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
+            yhash = hash_y(x))
 }
 
 #' Print method for kfold
@@ -253,9 +253,9 @@ waic.stanreg <- function(x, ...) {
   out <- waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
-            family = family(x), 
             name = deparse(substitute(x)), 
-            yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
+            family = family(x), 
+            yhash = hash_y(x))
 }
 
 
@@ -370,6 +370,15 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   d <- get_all_vars(formula(x), x[["data"]])
   na.omit(d)
+}
+
+# Calculate a SHA1 hash of y
+# @param x stanreg object
+# @param ... Passed to digest::sha1
+#
+hash_y <- function(x, ...) {
+  validate_stanreg_object(x)
+  digest::sha1(x = get_y(x), ...)
 }
 
 
