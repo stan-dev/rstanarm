@@ -112,8 +112,9 @@
 #' # positive if the expected predictive accuracy for the second model is higher
 #' compare_models(loo1, loo2) # or compare_models(loos = list(loo1, loo2))
 #' 
-#' # when comparing three or more models they are ordered by 
-#' fit3 <- update(fit2, prior = student_t(7, 0, 5))
+#' # when comparing three or more models they are ordered by expected
+#' # predictive accuracy
+#' fit3 <- stan_glm(mpg ~ ., data = mtcars)
 #' loo3 <- loo(fit3)
 #' compare_models(loo1, loo2, loo3)
 #' 
@@ -313,10 +314,13 @@ print.kfold <- function(x, digits = 1, ...) {
 #' 
 compare_models <- function(..., loos = list()) {
   dots <- list(...)
-  if (length(dots) && length(loos))
+  if (length(dots) && length(loos)) {
     stop("'...' and 'loos' can't both be specified.", call. = FALSE)
-  if (length(dots))
+  } else if (length(dots)) {
     loos <- dots
+  } else {
+    stopifnot(is.list(loos))
+  }
   
   loos <- validate_loos(loos)
   comp <- do.call(loo::compare, loos)
@@ -467,8 +471,6 @@ is.waic <- function(x) is.loo(x) && inherits(x, "waic")
 
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
-  if (!is.list(loos))
-    stop("'loos' should be a list.", call. = FALSE)
   if (length(loos) <= 1)
     stop("At least two objects are required for model comparison.", 
          call. = FALSE)
@@ -495,7 +497,7 @@ validate_loos <- function(loos = list()) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
   if (!all(yhash_check))
-    stop("Not all models fit to the same y variable", call. = FALSE)
+    stop("Not all models have the same y variable", call. = FALSE)
   
   setNames(loos, nm = lapply(loos, attr, which = "name"))
 }
