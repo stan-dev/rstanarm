@@ -36,7 +36,7 @@ if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
 }
-install_github("stan-dev/rstanarm", args = "--preclean", local = FALSE, build_vignettes = TRUE)
+install_github("stan-dev/rstanarm", args = "--preclean", local = TRUE, build_vignettes = TRUE)
 ```
 
 Make sure to include the `args = "--preclean"` argument or the development
