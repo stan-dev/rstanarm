@@ -143,7 +143,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   out <- structure(loo_x, 
                    name = deparse(substitute(x)),
                    family = family(x), 
-                   yhash = digest::digest(get_y(x), algo = "md5"))
+                   yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
   
   if (!length(bad_obs)) {
     if (user_threshold)
@@ -223,7 +223,7 @@ kfold <- function(x, K = 10) {
             K = K, 
             name = deparse(substitute(x)),
             family = family(x), 
-            yhash = digest::digest(get_y(x), algo = "md5"))
+            yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
 }
 
 #' Print method for kfold
@@ -255,7 +255,7 @@ waic.stanreg <- function(x, ...) {
             class = c("loo", "waic"),
             family = family(x), 
             name = deparse(substitute(x)), 
-            yhash = digest::digest(get_y(x), algo = "md5"))
+            yhash = digest::sha1(get_y(x), digits = 14, zapsmall = 7))
 }
 
 
