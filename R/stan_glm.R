@@ -55,9 +55,10 @@
 #'   \code{stan_glm} function calls the workhorse \code{stan_glm.fit} function, 
 #'   but it is also possible to call the latter directly.
 #'   
-#'   The \code{stan_glm.nb} function, which takes the extra argument
-#'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =
-#'   \link{neg_binomial_2}(link)}.
+#'   The \code{stan_glm.nb} function, which takes the extra argument 
+#'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family = 
+#'   \link{neg_binomial_2}(link)}. The \code{prior_dispersion} argument can be 
+#'   used to set a prior on the overdispersion parameter.
 #'   
 #' @seealso The various vignettes for \code{stan_glm}.
 #' 
@@ -108,6 +109,24 @@
 #' fit4 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma) 
 #' print(fit4, digits = 2)                 
 #' fit5 <- update(fit4, formula = lot2 ~ log_u)
+#' 
+#' ### Negative binomial regression
+#' fit6 <- stan_glm(
+#'   Days ~ Sex/(Age + Eth*Lrn), 
+#'   data = MASS::quine, 
+#'   QR = TRUE, 
+#'   prior_dispersion = exponential(1/2),
+#'   # could also use stan_glm.nb and drop the family argument
+#'   family = neg_binomial_2(link = "log")
+#' )
+#' 
+#' bayesplot::color_scheme_set("brightblue")
+#' plot(fit6)
+#' pp_check(fit6, plotfun = "hist", nreps = 5)
+#' 
+#' # 80% interval of estimated overdispersion parameter
+#' posterior_interval(fit6, pars = "overdispersion", prob = 0.8)
+#' plot(fit6, "areas", pars = "overdispersion", prob = 0.8)
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
