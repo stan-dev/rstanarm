@@ -13,18 +13,28 @@ params:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Hierarchical Partial Pooling}
 -->
+```{r, knitr-settings}
+stopifnot(require(knitr))
+opts_chunk$set(
+  comment=NA, 
+  message = FALSE, 
+  warning = FALSE, 
+  eval = params$EVAL,
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.618,
+  fig.width = 7,
+  out.width = "70%",
+  fig.align = "center"
+)
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
 ```{r, child="children/SETTINGS-loo.txt"}
 ```
 
-```{r, SETTINGS-knitr, include=FALSE}
-library(knitr)
-opts_chunk$set(
-  comment = NA, message = FALSE, warning = FALSE, 
-  fig.align = 'center', fig.width = 7,fig.height = 5
-)
-```
 
 # Introduction 
 
@@ -217,7 +227,7 @@ actually motivated here from substantial baseball knowledge.
 The figure below shows both this prior on $\alpha$ as well as the prior it 
 implies on the probability $\theta$.
 
-```{r, fig.width=7, fig.height=3, echo=FALSE}
+```{r, echo=FALSE}
 par(mfrow = c(1,3), las = 1)
 p_alpha <- function(alpha) {
   dnorm(alpha, -1, 1)
@@ -857,7 +867,7 @@ df_ppd <- data.frame(player = rep(1:length(y_new), 3),
 ```{r, plot-ppd}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
   geom_linerange(color = "gray60", size = 2) + 
-  geom_point(size = 2.5, fill = "skyblue2") +
+  geom_point(size = 2.5, color = "skyblue4") +
   facet_grid(. ~ model) +
   labs(x = NULL, y = "batting average") + 
   scale_x_continuous(breaks = NULL) +
@@ -1118,8 +1128,8 @@ df_rank <- data.frame(name = rep(bball$Player, each = M),
 ggplot(df_rank, aes(rank)) +
   stat_count(width = 0.8) +
   facet_wrap(~ name) +
-  scale_x_discrete(limits = c(1, 5, 10, 15)) +
-  scale_y_discrete(name = "posterior probability", breaks = c(0, 0.1 * M, 0.2 * M),
+  scale_x_discrete("Rank", limits = c(1, 5, 10, 15)) +
+  scale_y_discrete("Probability", limits = c(0, 0.1 * M, 0.2 * M),
                    labels = c("0.0", "0.1", "0.2")) + 
   ggtitle("Rankings for Partial Pooling Model")
 ```
@@ -1261,11 +1271,11 @@ test statistic, the observed value as a vertical line, and the $p$-value for eac
 of the tests. First, here is just the plot for the no pooling model using 
 the mean as the test statistic:
 
-```{r, plot-ppc-stats-mean, fig.width=3, fig.height=2.5}
+```{r, plot-ppc-stats-mean}
 pp_check(fit_nopool, plotfun = "stat", stat = "mean")
 ```
 
-The `test` argument can the be the name of any R function (including your own 
+The `stat` argument can the be the name of any R function (including your own 
 functions defined in the Global Environment) that takes a vector as an input and
 returns a scalar. 
 
@@ -1334,7 +1344,7 @@ plotting the number of successes (hits in this case) on the x-axis, `pp_check`
 will plot the proportion of successes.
 
 ```{r, plot-ppc-y-vs-yrep}
-pp_check(fit_partialpool, plotfun = "hist", nreps = 15, binwidth = 0.05) +
+pp_check(fit_partialpool, plotfun = "hist", nreps = 15, binwidth = 0.025) +
   ggtitle("Model: Partial Pooling")
 ```
 
