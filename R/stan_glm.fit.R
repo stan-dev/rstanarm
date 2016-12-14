@@ -97,7 +97,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist <- prior_dist_for_intercept <- prior_dist_for_dispersion <- 
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_dispersion <- 
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_dispersion <- 
-    prior_autoscale <- prior_autoscale_for_intercept <- NULL
+    prior_autoscale <- prior_autoscale_for_intercept <-
+    global_prior_scale <- global_prior_df <- NULL
   
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -116,7 +117,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     default_scale = 2.5,
     ok_dists = ok_dists
   )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}
+  # prior_{dist, mean, scale, df, dist_name, autoscale}, global_prior_df, global_prior_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
   
@@ -224,7 +225,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
     global_prior_df, global_prior_scale, # for hs prior
-    has_intercept, prior_PD)
+    has_intercept, prior_PD
     # mean,df,scale for dispersion added below depending on family
   )
 
