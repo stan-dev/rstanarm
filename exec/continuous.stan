@@ -234,9 +234,15 @@ parameters {
 transformed parameters {
   real dispersion;
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_scale_for_dispersion > 0)
-    dispersion =  prior_scale_for_dispersion * dispersion_unscaled;
-  else dispersion = dispersion_unscaled;
+  
+  if (prior_dist_for_dispersion == 0)
+    dispersion = dispersion_unscaled;
+  else {
+    dispersion = prior_scale_for_dispersion * dispersion_unscaled;
+    if (prior_dist_for_dispersion <= 2) // normal or student_t
+      dispersion = dispersion + prior_mean_for_dispersion;
+  }
+    
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
                             dispersion, tau, scale, zeta, rho, z_T);
@@ -281,9 +287,17 @@ model {
     target += dot_product(weights, summands);
   }
 
-  // Log-prior for scale
-  if (prior_scale_for_dispersion > 0) 
-    target += cauchy_lpdf(dispersion_unscaled | 0, 1);
+  // Log-priors
+  if (prior_dist_for_dispersion > 0 && prior_scale_for_dispersion > 0) {
+    if (prior_dist_for_dispersion == 1)
+      target += normal_lpdf(dispersion_unscaled | 0, 1);
+    else if (prior_dist_for_dispersion == 2)
+      target += student_t_lpdf(dispersion_unscaled | 
+                               prior_df_for_dispersion, 0, 1);
+    else 
+     target += exponential_lpdf(dispersion_unscaled | 1);
+  }
+    
   #include "priors_glm.stan" // increments target()
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -292,9 +306,10 @@ generated quantities {
   real alpha[has_intercept];
   real mean_PPD;
   mean_PPD = 0;
-  if (has_intercept == 1)
+  if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
+  }
   {
     #include "make_eta.stan" // defines eta
     if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);

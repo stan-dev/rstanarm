@@ -17,16 +17,18 @@
 
 #' Prior distributions and options
 #' 
-#' These functions are used to specify the prior-related arguments of the 
-#' various modeling functions in the \pkg{rstanarm} package. The default priors 
-#' used in the various \pkg{rstanarm} modeling functions are intended to be 
-#' \emph{weakly informative} in that they provide moderate regularlization and 
-#' help stabilize computation. For many applications the defaults will perform 
-#' well, but prudent use of more informative priors is encouraged. Uniform prior
-#' distributions are possible (e.g. by setting \code{\link{stan_glm}}'s 
-#' \code{prior} argument to \code{NULL}) but, unless the data is very strong,
-#' they are not recommended and are \emph{not} non-informative, giving 
-#' the same probability mass to implausible values as plausible ones.
+#' The functions described on this page are used to specify the prior-related
+#' arguments of the various modeling functions in the \pkg{rstanarm} package (to
+#' view the priors used for an existing model see \code{\link{prior_summary}}). 
+#' The default priors used in the various \pkg{rstanarm} modeling functions are
+#' intended to be \emph{weakly informative} in that they provide moderate
+#' regularlization and help stabilize computation. For many applications the
+#' defaults will perform well, but prudent use of more informative priors is
+#' encouraged. Uniform prior distributions are possible (e.g. by setting
+#' \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
+#' the data is very strong, they are not recommended and are \emph{not}
+#' non-informative, giving the same probability mass to implausible values as
+#' plausible ones.
 #' 
 #' @export 
 #' @name priors
@@ -57,6 +59,18 @@
 #'   or equal to two, the mode of this Beta distribution does not exist
 #'   and an error will prompt the user to specify another choice for
 #'   \code{what}.
+#' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
+#'   then the scales of the priors on the intercept and regression coefficients 
+#'   may be additionally modified internally by \pkg{rstanarm} as follows.
+#'   First, if the \emph{outcome} is Gaussian, the prior scales for the
+#'   intercept and coefficients are multiplied by \code{2*sd(y)}. Additionally,
+#'   if the \code{QR} argument to the model fitting function (e.g.
+#'   \code{stan_glm}) is \code{FALSE} then: for a predictor with only one value
+#'   nothing is changed; for a predictor \code{x} with exactly two unique
+#'   values, we take the user-specified (or default) scale(s) for the selected
+#'   priors and divide by the range of \code{x}; for a predictor \code{x} with
+#'   more than two unique values, we divide the prior scale(s) by
+#'   \code{2*sd(x)}.
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
@@ -66,6 +80,7 @@
 #'   \item \code{student_t(df, location, scale)}
 #'   \item \code{cauchy(location, scale)}
 #'   }
+#'   Each of these functions also takes an argument \code{autoscale}.
 #'   
 #'   For the prior distribution for the intercept, \code{location}, 
 #'   \code{scale}, and \code{df} should be scalars. For the prior for the other
@@ -80,6 +95,10 @@
 #'   and 2.5 for the other coefficients, unless the probit link function is
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
+#'   
+#'   If the \code{autoscale} argument is \code{TRUE} (the default), then the
+#'   scales will be further adjusted as described above in the documentation of
+#'   the \code{autoscale} argument in the \strong{Arguments} section.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:
@@ -155,6 +174,7 @@
 #'   \itemize{
 #'   \item \code{decov(regularization, concentration, shape, scale)}
 #'   }
+#'   (Also see vignette for \code{stan_glmer})
 #'   
 #'   Covariance matrices are decomposed into correlation matrices and 
 #'   variances. The variances are in turn decomposed into the product of a
@@ -265,7 +285,8 @@
 #'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
-#'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#'                            prior_dispersion = exponential(1/2))
+#' plot(prior_pred_fit, "hist")
 #' 
 #' \donttest{
 #' # Can assign priors to names
@@ -276,20 +297,18 @@
 #' # Visually compare normal, student_t, and cauchy
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
-#'     # t distribution with location & scale parameters
-#'     1 / scale * dt((x - location) / scale, df)  
+#'     1/scale * dt((x - location)/scale, df)  
+#'   }
+#'   stat_dist <- function(dist, ...) {
+#'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
 #'   }
 #'   ggplot2::ggplot(data.frame(x = xlim), ggplot2::aes(x)) + 
-#'     ggplot2::stat_function(fun = dnorm, 
-#'                   args = list(mean = 0, sd = scale), 
-#'                   color = "purple", size = .75) +
-#'     ggplot2::stat_function(fun = dt_loc_scale, 
-#'                   args = list(df = df_t, location = 0, scale = scale), 
-#'                   color = "orange", size = .75) +
-#'     ggplot2::stat_function(fun = dcauchy, 
-#'                   args = list(location = 0, scale = scale), 
-#'                   color = "skyblue", size = .75, linetype = 2) + 
-#'     ggplot2::ggtitle("normal (purple) vs student_t (orange) vs cauchy (blue)")
+#'     stat_dist("normal", size = .75, fun = dnorm, 
+#'               args = list(mean = 0, sd = scale)) +
+#'     stat_dist("student_t", size = .75, fun = dt_loc_scale, 
+#'               args = list(df = df_t, location = 0, scale = scale)) +
+#'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
+#'               args = list(location = 0, scale = scale))
 #' }
 #' # Cauchy has fattest tails, then student_t, then normal
 #' compare_priors()
@@ -305,23 +324,23 @@
 #' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
-normal <- function(location = 0, scale = NULL) {
+normal <- function(location = 0, scale = NULL, autoscale = TRUE) {
   validate_parameter_value(scale)
-  nlist(dist = "normal", df = NA, location, scale)
+  nlist(dist = "normal", df = NA, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-student_t <- function(df = 1, location = 0, scale = NULL) {
+student_t <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
-  nlist(dist = "t", df, location, scale)
+  nlist(dist = "t", df, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-cauchy <- function(location = 0, scale = NULL) {
-  student_t(df = 1, location = location, scale = scale)
+cauchy <- function(location = 0, scale = NULL, autoscale = TRUE) {
+  student_t(df = 1, location = location, scale = scale, autoscale)
 }
 
 #' @rdname priors
@@ -344,11 +363,23 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 
 #' @rdname priors
 #' @export
+#' @param rate Prior rate for the exponential distribution. Defaults to
+#'   \code{1}. For the exponential distribution, the rate parameter is the
+#'   \emph{reciprocal} of the mean.
+#' 
+exponential <- function(rate = 1) {
+  stopifnot(length(rate) == 1)
+  validate_parameter_value(rate)
+  nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
+}
+
+#' @rdname priors
+#' @export
 #' @param regularization Exponent for an LKJ prior on the correlation matrix in
 #'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
 #'   prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
-#'   distribution. The defaults is \eqn{1}, implying a joint uniform prior.
+#'   distribution. The default is \eqn{1}, implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale parameter in the
 #'   \code{decov} prior. If \code{shape} and \code{scale} are both \eqn{1} (the
 #'   default) then the gamma prior simplifies to the unit-exponential
@@ -372,34 +403,8 @@ dirichlet <- function(concentration = 1) {
 #' @rdname priors
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
+  what <- match.arg(what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
-}
-
-#' @rdname priors
-#' @export 
-#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
-#' @param min_prior_scale Minimum prior scale for the intercept and 
-#'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
-#'   then the scales of the priors on the regression coefficients may be 
-#'   additionally modified internally by \pkg{rstanarm} as follows. First, if
-#'   \emph{response} is Gaussian, the prior scales also multiplied by 
-#'   \code{2*sd(y)}. Additionally, if the \code{QR} argument to the model
-#'   fitting function (e.g. \code{stan_glm}) is \code{FALSE} then: for a 
-#'   predictor with only one value nothing is changed; for a predictor \code{x} 
-#'   with exactly two unique values, we take the user-specified (or default) 
-#'   scale(s) for the selected priors and divide by the range of \code{x}; for a
-#'   predictor \code{x} with more than two unique values, we divide the prior 
-#'   scale(s) by \code{2*sd(x)}.
-#'   
-prior_options <- function(prior_scale_for_dispersion = 5, 
-                          min_prior_scale = 1e-12, 
-                          scaled = TRUE) {
-  validate_parameter_value(prior_scale_for_dispersion)
-  validate_parameter_value(min_prior_scale)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
 }
 
 

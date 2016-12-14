@@ -17,24 +17,37 @@
 
 #' @rdname stan_glm
 #' @export
+#' @param prior_ops Deprecated. See \link{rstanarm-deprecated} for details.
 #' @param group A list, possibly of length zero (the default), but otherwise
 #'   having the structure of that produced by \code{\link[lme4]{mkReTrms}} to
 #'   indicate the group-specific part of the model. In addition, this list must
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
-#'   
+#' @importFrom lme4 mkVarCorr
 stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
                          offset = rep(0, NROW(x)), family = gaussian(),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
-                         prior_ops = prior_options(),
+                         prior_dispersion = cauchy(0, 5),
+                         prior_ops = NULL,
                          group = list(),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+  
+  # prior_ops deprecated but make sure it still works until 
+  # removed in future release
+  if (!is.null(prior_ops)) {
+    tmp <- .support_deprecated_prior_options(prior, prior_intercept, 
+                                             prior_dispersion, prior_ops)
+    prior <- tmp[["prior"]]
+    prior_intercept <- tmp[["prior_intercept"]]
+    prior_dispersion <- tmp[["prior_dispersion"]]
+    prior_ops <- NULL
+  }
   
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
@@ -79,31 +92,58 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   }
 
   # useless assignments to pass R CMD check
-  has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
-    prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
-    prior_scale_for_dispersion <- scaled <- NULL
+  has_intercept <- 
+    prior_df <- prior_df_for_intercept <- prior_df_for_dispersion <-
+    prior_dist <- prior_dist_for_intercept <- prior_dist_for_dispersion <- 
+    prior_mean <- prior_mean_for_intercept <- prior_mean_for_dispersion <- 
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_dispersion <- 
+    prior_autoscale <- prior_autoscale_for_intercept <- NULL
   
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
-  
-  for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
-    assign(i, prior_ops[[i]])
-  
+
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
+  ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions
-  prior_stuff <- handle_glm_prior(prior, nvars, family$link, default_scale = 2.5)
-  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
+  prior_stuff <- handle_glm_prior(
+    prior,
+    nvars,
+    link = family$link,
+    default_scale = 2.5,
+    ok_dists = ok_dists
+  )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}
+  for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
-  prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, default_scale = 10,
-                                            family$link, ok_dists = 
-                                            nlist("normal", student_t = "t", "cauchy"))
+  
+  prior_intercept_stuff <- handle_glm_prior(
+    prior_intercept,
+    nvars = 1,
+    default_scale = 10,
+    link = family$link,
+    ok_dists = ok_intercept_dists
+  )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
-  for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df}_for_intercept
+  for (i in names(prior_intercept_stuff))
     assign(i, prior_intercept_stuff[[i]])
+  
+  prior_dispersion_stuff <-
+    handle_glm_prior(
+      prior_dispersion,
+      nvars = 1,
+      default_scale = 5,
+      link = NULL, # don't need to adjust scale based on logit vs probit
+      ok_dists = ok_dispersion_dists
+    )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
+  names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
+  for (i in names(prior_dispersion_stuff)) 
+    assign(i, prior_dispersion_stuff[[i]])
   
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
@@ -123,14 +163,17 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
-  
-  if (scaled && prior_dist > 0L) {
+
+  if (prior_dist > 0L) {
     if (is_gaussian) {
       ss <- 2 * sd(y)
-      prior_scale <- ss * prior_scale
-      prior_scale_for_intercept <-  ss * prior_scale_for_intercept
+      if (prior_autoscale) 
+        prior_scale <- ss * prior_scale
+      if (prior_autoscale_for_intercept && prior_dist_for_intercept > 0L) 
+        prior_scale_for_intercept <-  ss * prior_scale_for_intercept
     }
-    if (!QR) 
+    if (!QR && prior_autoscale) {
+      min_prior_scale <- 1e-12 # used to be set in prior_options()
       prior_scale <- pmax(min_prior_scale, prior_scale / 
              apply(xtemp, 2L, FUN = function(x) {
                num.categories <- length(unique(x))
@@ -139,11 +182,13 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                else if (num.categories > 2) x.scale <- 2 * sd(x)
                return(x.scale)
              }))
+    }
   }
-  prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
+  prior_scale <- 
+    as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 
     min(.Machine$double.xmax, prior_scale_for_intercept)
-
+  
   if (QR) {
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
@@ -161,37 +206,43 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   
   # create entries in the data block of the .stan file
   standata <- nlist(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
-    link, has_weights = length(weights) > 0, has_offset = length(offset) > 0,
-    prior_dist, prior_mean, prior_scale, prior_df, 
-    prior_dist_for_intercept, prior_scale_for_intercept = c(prior_scale_for_intercept), 
+    N = nrow(xtemp),
+    K = ncol(xtemp),
+    xbar = as.array(xbar),
+    dense_X = !sparse,
+    link,
+    has_weights = length(weights) > 0,
+    has_offset = length(offset) > 0,
+    has_intercept,
+    prior_PD,
+    prior_dist,
+    prior_mean,
+    prior_scale,
+    prior_df,
+    prior_dist_for_intercept,
+    prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
     global_prior_df, global_prior_scale, # for hs prior
     has_intercept, prior_PD)
+    # mean,df,scale for dispersion added below depending on family
+  )
 
+  # make a copy of user specification before modifying 'group' (used for keeping
+  # track of priors)
+  user_covariance <- if (!length(group)) NULL else group[["decov"]]
+  
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
-    group <- pad_reTrms(Z = Z, cnms = group$cnms, flist = group$flist)
+    group <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 
       nlevels(group$flist[[i]]))
-    t <- length(p)
-    group_nms <- names(group$cnms)
-    b_nms <- character()
-    for (i in seq_along(group$cnms)) {
-      # if you change this change .pp_data_mer_z() as well
-      nm <- group_nms[i]
-      nms_i <- paste(group$cnms[[i]], nm)
-      if (length(nms_i) == 1) {
-        b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
-      } else {
-        b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
-      }
-    }
+    t <- length(l)
+    b_nms <- make_b_nms(group)
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
       paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
     }))
@@ -257,8 +308,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v_X <- parts$v
       standata$u_X <- parts$u
       standata$X <- array(0, dim = c(0L, dim(xtemp)))
-    }
-    else {
+    } else {
       standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
       standata$nnz_X <- 0L
       standata$w_X <- double(0)
@@ -272,8 +322,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
+    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
@@ -283,6 +334,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$prior_scale_for_dispersion <- 
       if (!length(group) || prior_scale_for_dispersion == Inf) 
         0 else prior_scale_for_dispersion
+    standata$prior_mean_for_dispersion <- 0
+    standata$prior_df_for_dispersion <- 0
     standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
@@ -301,8 +354,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
         standata$w_X1 = parts1$w
         standata$v_X1 = parts1$v
         standata$u_X1 = parts1$u
-      }
-      else {
+      } else {
         standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
         standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
         standata$nnz_X0 = 0L 
@@ -341,13 +393,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
   } else if (is.poisson(famname)) {
     standata$family <- 1L
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_mean_for_dispersion <- 0
+    standata$prior_df_for_dispersion <- 0
     stanfit <- stanmodels$count 
   } else if (is_nb) {
     standata$family <- 2L
-    standata$prior_scale_for_dispersion <- 
-      prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
+    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
+    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
@@ -356,10 +410,23 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop(paste(famname, "is not supported."))
   } # nocov end
   
+  prior_info <- summarize_glm_prior(
+    user_prior = prior_stuff,
+    user_prior_intercept = prior_intercept_stuff,
+    user_prior_dispersion = prior_dispersion_stuff,
+    user_prior_covariance = user_covariance,
+    has_intercept = has_intercept,
+    has_predictors = nvars > 0,
+    adjusted_prior_scale = prior_scale,
+    adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    family = family
+  )
+  
   pars <- c(if (has_intercept) "alpha", 
             "beta", 
             if (length(group)) "b",
-            if (is_continuous | is_nb) "dispersion", 
+            if (is_continuous | is_nb) "dispersion",
+            if (standata$len_theta_L) "theta_L",
             "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -381,7 +448,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(out)
+    return(structure(out, prior.info = prior_info))
     
   } else {
     if (algorithm == "sampling") {
@@ -411,6 +478,35 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
           if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
       }
     }
+    if (standata$len_theta_L) {
+      thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      cnms <- group$cnms
+      nc <- sapply(cnms, FUN = length)
+      nms <- names(cnms)
+      Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+        Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+        unlist(sapply(Sigma, simplify = FALSE, 
+                      FUN = function(x) x[lower.tri(x, TRUE)]))
+      })
+      l <- length(dim(Sigma))
+      end <- tail(dim(Sigma), 1L)
+      shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+      if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+        stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+      }
+      else for (chain in 1:end) {
+        stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
+      }
+      Sigma_nms <- lapply(cnms, FUN = function(grp) {
+        nm <- outer(grp, grp, FUN = paste, sep = ",")
+        nm[lower.tri(nm, diag = TRUE)]
+      })
+      for (j in seq_along(Sigma_nms)) {
+        Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+      }
+      Sigma_nms <- unlist(Sigma_nms)
+    }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_nms, "]")),
@@ -418,48 +514,41 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "overdispersion", 
+                   if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(stanfit)
+    return(structure(stanfit, prior.info = prior_info))
   }
 }
 
 
 # Add extra level _NEW_ to each group
 # 
-# @param Z ranef indicator matrix
+# @param Ztlist ranef indicator matrices
 # @param cnms group$cnms
 # @param flist group$flist
-pad_reTrms <- function(Z, cnms, flist) {
+#' @importFrom Matrix rBind
+pad_reTrms <- function(Ztlist, cnms, flist) {
+  stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
   p <- sapply(cnms, FUN = length)
-  last <- cumsum(l * p)
+  n <- ncol(Ztlist[[1]])
   for (i in attr(flist, "assign")) {
+    if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
-  n <- nrow(Z)
-  mark <- length(p) - 1L
-  if (getRversion() < "3.2.0") {
-    Z <- cBind(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
-    for (i in rev(head(last, -1))) {
-      Z <- cBind(cBind(Z[, 1:i, drop = FALSE],
-                       Matrix(0, n, p[mark], sparse = FALSE)),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
+  for (i in 1:length(p)) {
+    if (grepl("^Xr", names(p)[i])) next
+    Ztlist[[i]] <- if (getRversion() < "3.2.0") {
+      rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
+    } else {
+      rbind2(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     }
   }
-  else {
-    Z <- cbind2(Z, Matrix(0, nrow = n, ncol = p[length(p)], sparse = FALSE))
-    for (i in rev(head(last, -1))) {
-      Z <- cbind(Z[, 1:i, drop = FALSE],
-                 Matrix(0, n, p[mark], sparse = FALSE),
-                 Z[, (i+1):ncol(Z), drop = FALSE])
-      mark <- mark - 1L
-    }
-  }
-  nlist(Z, cnms, flist)
+  Z <- t(do.call(rbind, args = Ztlist))
+  return(nlist(Z, cnms, flist))
 }
 
 # Drop the extra reTrms from a matrix x
@@ -492,4 +581,126 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
       x[, , keep, drop = FALSE] else x[keep, , , drop = FALSE]
   }
   return(x_keep)
+}
+
+make_b_nms <- function(group) {
+  group_nms <- names(group$cnms)
+  b_nms <- character()
+  for (i in seq_along(group$cnms)) {
+    nm <- group_nms[i]
+    nms_i <- paste(group$cnms[[i]], nm)
+    if (length(nms_i) == 1) {
+      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+    } else {
+      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+    }
+  }
+  return(b_nms)  
+}
+
+
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param user_* The user's prior, prior_intercept, prior_covariance, and 
+#   prior_dispersion specifications. For prior and prior_intercept these should be
+#   passed in after broadcasting the df/location/scale arguments if necessary.
+# @param has_intercept T/F, does model have an intercept?
+# @param has_predictors T/F, does model have predictors?
+# @param adjusted_prior_* adjusted scales computed if using autoscaled priors
+# @param family Family object.
+# @return A named list with components 'prior', 'prior_intercept', and possibly 
+#   'prior_covariance' and 'prior_dispersion' each of which itself is a list
+#   containing the needed values for prior_summary.
+summarize_glm_prior <-
+  function(user_prior,
+           user_prior_intercept,
+           user_prior_dispersion,
+           user_prior_covariance,
+           has_intercept, 
+           has_predictors,
+           adjusted_prior_scale,
+           adjusted_prior_intercept_scale, 
+           family) {
+    rescaled_coef <-
+      user_prior$prior_autoscale && 
+      has_predictors &&
+      !is.na(user_prior$prior_dist_name) &&
+      !all(user_prior$prior_scale == adjusted_prior_scale)
+    rescaled_int <-
+      user_prior_intercept$prior_autoscale_for_intercept &&
+      has_intercept &&
+      !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+      (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
+    
+    if (has_predictors && user_prior$prior_dist_name %in% "t") {
+      if (all(user_prior$prior_df == 1)) {
+        user_prior$prior_dist_name <- "cauchy"
+      } else {
+        user_prior$prior_dist_name <- "student_t"
+      }
+    }
+    if (has_intercept &&
+        user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+      if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
+        user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
+      } else {
+        user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
+      }
+    }
+    if (user_prior_dispersion$prior_dist_name_for_dispersion %in% "t") {
+      if (all(user_prior_dispersion$prior_df_for_dispersion == 1)) {
+        user_prior_dispersion$prior_dist_name_for_dispersion <- "cauchy"
+      } else {
+        user_prior_dispersion$prior_dist_name_for_dispersion <- "student_t"
+      }
+    }
+    prior_list <- list(
+      prior = 
+        if (!has_predictors) NULL else with(user_prior, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coef)
+            adjusted_prior_scale else NULL,
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+            prior_df else NULL
+        )),
+      prior_intercept = 
+        if (!has_intercept) NULL else with(user_prior_intercept, list(
+          dist = prior_dist_name_for_intercept,
+          location = prior_mean_for_intercept,
+          scale = prior_scale_for_intercept,
+          adjusted_scale = if (rescaled_int)
+            adjusted_prior_intercept_scale else NULL,
+          df = if (prior_dist_name_for_intercept %in% "student_t")
+            prior_df_for_intercept else NULL
+        ))
+    )
+    if (length(user_prior_covariance))
+      prior_list$prior_covariance <- user_prior_covariance
+    
+    dispersion_name <- .rename_dispersion(family)
+    prior_list$prior_dispersion <- if (is.na(dispersion_name)) 
+      NULL else with(user_prior_dispersion, list(
+        dist = prior_dist_name_for_dispersion,
+        location = if (prior_dist_name_for_dispersion != "exponential")
+          prior_mean_for_dispersion else NULL,
+        scale = if (prior_dist_name_for_dispersion != "exponential")
+          prior_scale_for_dispersion else NULL,
+        df = if (prior_dist_name_for_dispersion %in% "student_t")
+          prior_df_for_dispersion else NULL, 
+        rate = if (prior_dist_name_for_dispersion %in% "exponential")
+          1 / prior_scale_for_dispersion else NULL,
+        dispersion_name = dispersion_name
+      ))
+      
+    return(prior_list)
+  }
+
+.rename_dispersion <- function(family) {
+  fam <- family$family
+  if (is.gaussian(fam)) "sigma" else
+    if (is.gamma(fam)) "shape" else
+      if (is.ig(fam)) "lambda" else 
+        if (is.nb(fam)) "overdispersion" else NA
 }

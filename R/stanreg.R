@@ -20,6 +20,7 @@
 # @param object A list provided by one of the \code{stan_*} modeling functions.
 # @return A stanreg object.
 #
+#' @importFrom rstan get_num_upars
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
@@ -49,13 +50,14 @@ stanreg <- function(object) {
       names(coefs) <- rownames(stan_summary)[1L]
 
     stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
+    colnames(stanmat) <- colnames(x)
     ses <- apply(stanmat, 2L, mad)
     if (mer) {
       mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
       stanmat <- stanmat[,1:mark, drop = FALSE]
     }
     covmat <- cov(stanmat)
-    rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
+    # rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
     if (object$algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
   }
@@ -95,11 +97,12 @@ stanreg <- function(object) {
     call = object$call, 
     formula = object$formula, 
     terms = object$terms,
-    prior.info = object$prior.info,
+    prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
+  out$num_unconstrained_pars <- get_num_upars(out$stanfit)
   if (opt) 
     out$asymptotic_sampling_dist <- stanmat
   if (mer) 

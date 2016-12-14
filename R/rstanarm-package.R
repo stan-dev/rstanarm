@@ -27,33 +27,41 @@
 #'   extract_sparse_parts get_posterior_mean stanc
 #' @import stats
 #' @import Rcpp
-#' @export loo
-#' @export waic
-#' @export compare
+#' @import bayesplot
+#' @import rstantools
+#' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
+#' @export loo waic compare
 #' @export launch_shinystan
-#' @description An appendage to the \pkg{rstan} package that enables some of the
-#'   most common applied regression models to be estimated using Markov Chain 
-#'   Monte Carlo, variational approximations to the posterior distribution, or 
-#'   optimization. The \pkg{rstanarm} package allows these models to be 
-#'   specified using the customary R modeling syntax (e.g., like that of 
-#'   \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
-#'   
-#'   The set of models supported by \pkg{rstanarm} is large (and will continue
-#'   to grow), but also limited enough so that it is possible to integrate them
-#'   tightly with the \code{\link{pp_check}} function for graphical posterior
-#'   predictive checks and the \code{\link{posterior_predict}} function to
-#'   easily estimate the effect of specific manipulations of predictor variables
-#'   or to predict the outcome in a training set. 
-#'   
-#'   The objects returned by the \pkg{rstanarm} modeling functions are called
-#'   \code{\link[=stanreg-objects]{stanreg}} objects. In addition to all of the
-#'   typical \code{\link[=stanreg-methods]{methods}} defined for fitted model
-#'   objects, stanreg objects can be passed to the \code{\link[loo]{loo}}
-#'   function in the \pkg{loo} package for model comparison or to the
-#'   \code{\link[shinystan]{launch_shinystan}} function in the \pkg{shinystan}
-#'   package in order to visualize the posterior distribution using the
-#'   ShinyStan graphical user interface. See the \pkg{rstanarm} vignettes for
-#'   more details about the entire process.
+#' 
+#' @description 
+#' \if{html}{
+#'    \figure{stanlogo.png}{options: width="50px" alt="mc-stan.org"}
+#'    \emph{Stan Development Team}
+#' }
+#' 
+#' An appendage to the \pkg{rstan} package that enables some of the most common
+#' applied regression models to be estimated using Markov Chain Monte Carlo,
+#' variational approximations to the posterior distribution, or optimization.
+#' The \pkg{rstanarm} package allows these models to be specified using the
+#' customary R modeling syntax (e.g., like that of \code{\link[stats]{glm}} with
+#' a \code{formula} and a \code{data.frame}).
+#' 
+#' The set of models supported by \pkg{rstanarm} is large (and will continue to
+#' grow), but also limited enough so that it is possible to integrate them 
+#' tightly with the \code{\link{pp_check}} function for graphical posterior 
+#' predictive checks and the \code{\link{posterior_predict}} function to easily
+#' estimate the effect of specific manipulations of predictor variables or to
+#' predict the outcome in a training set.
+#' 
+#' The objects returned by the \pkg{rstanarm} modeling functions are called 
+#' \code{\link[=stanreg-objects]{stanreg}} objects. In addition to all of the 
+#' typical \code{\link[=stanreg-methods]{methods}} defined for fitted model 
+#' objects, stanreg objects can be passed to the \code{\link[loo]{loo}} function
+#' in the \pkg{loo} package for model comparison or to the 
+#' \code{\link[shinystan]{launch_shinystan}} function in the \pkg{shinystan} 
+#' package in order to visualize the posterior distribution using the ShinyStan
+#' graphical user interface. See the \pkg{rstanarm} vignettes for more details
+#' about the entire process.
 #'
 #' @section Estimation algorithms: 
 #' The modeling functions in the \pkg{rstanarm} package take an \code{algorithm}
@@ -165,21 +173,21 @@
 #' examples of using many of the available priors as well as more detailed 
 #' descriptions of some of the novel priors used by \pkg{rstanarm}.
 #'  
-#' @seealso \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
+#' @seealso 
+#' \itemize{
+#'   \item \code{\link{stanreg-objects}} and \code{\link{stanreg-methods}} for 
 #'   details on the fitted model objects returned by the modeling functions.
-#'   
-#'   \code{\link{rstanarm-plots}} for the various plots that can be used
-#'   to explore and check fitted models.
-#'   
-#'   \url{http://mc-stan.org/} for more information on the Stan C++ package used
-#'   by \pkg{rstanarm} for model fitting.
-#'   
-#'   \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
+#'   \item The custom \code{\link[=plot.stanreg]{plot}} and 
+#'   \code{\link{pp_check}} methods for the various plots that can be used to 
+#'   explore and check fitted models.
+#'   \item \url{http://mc-stan.org/} for more information on the Stan C++ 
+#'   package used by \pkg{rstanarm} for model fitting.
+#'   \item \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
-#'   
-#'   \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a question 
-#'   about \pkg{rstanarm} on the Stan-users forum.
-#'   
+#'   \item \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a 
+#'   question about \pkg{rstanarm} on the Stan-users forum.
+#' }
+#'  
 #' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
 #' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
 #' @template reference-lme4

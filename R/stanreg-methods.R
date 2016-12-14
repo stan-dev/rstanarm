@@ -17,9 +17,10 @@
 
 #' Methods for stanreg objects
 #' 
-#' S3 methods for \link[=stanreg-objects]{stanreg} objects. There are also 
-#' several methods (listed in See Also, below) with their own individual help
-#' pages.
+#' The methods documented on this page are actually some of the least important 
+#' methods defined for \link[=stanreg-objects]{stanreg} objects. The most 
+#' important methods are documented separately, each with its own page. Links to
+#' those pages are provided in the \strong{See Also} section, below.
 #' 
 #' @name stanreg-methods
 #' @aliases VarCorr fixef ranef ngrps sigma
@@ -29,18 +30,11 @@
 #' @param ... Ignored, except by the \code{update} method. See
 #'   \code{\link{update}}.
 #' 
-#' @details Most of these methods are similar to the methods defined for objects
-#'   of class 'lm', 'glm', 'glmer', etc. However there are a few exceptions:
+#' @details The methods documented on this page are similar to the methods 
+#'   defined for objects of class 'lm', 'glm', 'glmer', etc. However there are a
+#'   few key differences:
 #'   
 #' \describe{
-#' \item{\code{confint}}{
-#' For models fit using optimization, confidence intervals are returned via a
-#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is
-#' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
-#' \code{\link{posterior_interval}} function should be used to compute Bayesian
-#' uncertainty intervals.
-#' }
-#' 
 #' \item{\code{residuals}}{
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
 #' residuals or any other type). However, in the case of \code{\link{stan_polr}}
@@ -56,17 +50,37 @@
 #' \code{\link{mad}}. See the \emph{Uncertainty estimates} section in
 #' \code{\link{print.stanreg}} for more details.
 #' }
+#' \item{\code{confint}}{
+#' For models fit using optimization, confidence intervals are returned via a 
+#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is 
+#' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
+#' \code{confint} will throw an error because the
+#' \code{\link{posterior_interval}} function should be used to compute Bayesian 
+#' uncertainty intervals.
+#' }
 #' }
 #' 
 #' @seealso 
-#' Other S3 methods for stanreg objects, which have separate documentation, 
-#' including \code{\link{as.matrix.stanreg}}, \code{\link{plot.stanreg}}, 
-#' \code{\link{predict.stanreg}}, \code{\link{print.stanreg}}, 
-#' \code{\link{summary.stanreg}}, \code{\link{log_lik.stanreg}}, and more.
-#' 
-#' \code{\link{posterior_interval}} and \code{\link{posterior_predict}} for 
-#' alternatives to \code{confint} and \code{predict} for models fit using MCMC 
-#' or variational approximation.
+#' \itemize{
+#'  \item The \code{\link[=print.stanreg]{print}},
+#'    \code{\link[=summary.stanreg]{summary}}, and \code{\link{prior_summary}} 
+#'    methods for stanreg objects for information on the fitted model.
+#'  \item \code{\link{launch_shinystan}} to use the ShinyStan GUI to explore a
+#'    fitted \pkg{rstanarm} model.
+#'  \item The \code{\link[=plot.stanreg]{plot}} method to plot estimates and
+#'    diagnostics.
+#'  \item The \code{\link{pp_check}} method for graphical posterior predictive
+#'    checking.
+#'  \item The \code{\link{posterior_predict}} and \code{\link{predictive_error}}
+#'    methods for predictions and predictive errors.
+#'  \item The \code{\link{posterior_interval}} and \code{\link{predictive_interval}}
+#'    methods for uncertainty intervals for model parameters and predictions.
+#'  \item The \code{\link[=loo.stanreg]{loo}}, \code{\link{kfold}}, and
+#'  \code{\link{log_lik}} methods for leave-one-out or K-fold cross-validation, 
+#'    model comparison, and computing the log-likelihood of (possibly new) data.
+#'  \item The \code{\link[=as.matrix.stanreg]{as.matrix}}, \code{as.data.frame}, 
+#'    and \code{as.array} methods to access posterior draws.
+#' }
 #' 
 NULL
 
@@ -258,8 +272,13 @@ ranef.stanreg <- function(object, ...) {
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
   cnms <- .cnms(object)
+  mark <- !grepl("^Xr", names(cnms))
+  fl <- fl[mark]
+  asgn <- asgn[mark]
+  levs <- levs[mark]
+  cnms <- cnms[mark]
   nc <- vapply(cnms, length, 1L)
-  nb <- nc * vapply(levs, length, 1L)[asgn]
+  nb <- nc * vapply(levs, length, 1L)
   nbseq <- rep.int(seq_along(nb), nb)
   ml <- split(ans, nbseq)
   for (i in seq_along(ml)) {
@@ -267,7 +286,7 @@ ranef.stanreg <- function(object, ...) {
                       dimnames = list(NULL, cnms[[i]]))
   }
   ans <- lapply(seq_along(fl), function(i) {
-    data.frame(do.call(cbind, ml[asgn == i]), row.names = levs[[i]], 
+    data.frame(do.call(cbind, ml[i]), row.names = levs[[i]], 
                check.names = FALSE)
   })
   names(ans) <- names(fl)
@@ -294,19 +313,31 @@ sigma.stanreg <- function(object, ...) {
 #' @export
 #' @export VarCorr
 #' @importFrom nlme VarCorr
-#' @importFrom lme4 mkVarCorr
+#' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
+  mat <- as.matrix(x)
   cnms <- .cnms(x)
-  means <- get_posterior_mean(x$stanfit)
-  means <- means[, ncol(means)]
-  theta <- means[grepl("^theta_L", names(means))]
-  sc <- sigma.stanreg(x)
-  out <- lme4::mkVarCorr(sc = sc, cnms = cnms, 
-                         nc = vapply(cnms, FUN = length, FUN.VALUE = 1L),
-                         theta = theta / sc, nms = names(cnms))
-  structure(out, useSc = sc != 1, class = "VarCorr.merMod")
+  useSc <- "sigma" %in% colnames(mat)
+  if (useSc) sc <- mat[,"sigma"]
+  else sc <- 1
+  Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
+  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
+  nms <- names(cnms)
+  ncseq <- seq_along(nc)
+  spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
+  ans <- lapply(ncseq, function(i) {
+    Sigma <- matrix(0, nc[i], nc[i])
+    Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
+    Sigma <- Sigma + t(Sigma)
+    diag(Sigma) <- diag(Sigma) / 2
+    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
+    stddev <- sqrt(diag(Sigma))
+    corr <- cov2cor(Sigma)
+    structure(Sigma, stddev = stddev, correlation = corr)
+  })
+  names(ans) <- nms
+  structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }
-
 
 # Exported but doc kept internal ----------------------------------------------
 
@@ -325,6 +356,7 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (inherits(formula, "gamm4")) return(formula$glmod$model)
   if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
@@ -345,9 +377,9 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (is.mer(object))
-    return(object$glmod$X)
-  
+  if (inherits(object, "gamm4")) return(object$glmod$raw_X)
+  if (is.mer(object)) return(object$glmod$X)
+    
   NextMethod("model.matrix")
 }
 
@@ -360,6 +392,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
+  if (inherits(x, "gamm4")) return(x$formula)
   if (is.mer(x)) 
     return(formula_mer(x, ...))
   
