@@ -131,16 +131,36 @@
 #'   divergent transitions see the Troubleshooting section of the 
 #'   \emph{How to Use the rstanarm Package} vignette.
 #' }
-#' \subsection{Laplace}{
+#' \subsection{Laplace family}{
 #'   Family members:
 #'   \itemize{
 #'   \item \code{laplce(location, scale)}
+#'   \item \code{lasso(df, location, scale)}
 #'   }
 #'   The Laplace distribution is also known as the double-exponential distribution.
 #'   It is a symmetric distribution with a sharp peak at its mean / median / mode
 #'   and fairly long tails. This distribution can be motivated as a scale mixture
 #'   of a normal distribution and the remarks above about the normal distribution
 #'   apply here as well.
+#'   
+#'   The lasso approach to supervised learning can be expressed as finding the
+#'   posterior mode when the likelihood is Gaussian and the priors on the 
+#'   coefficients have independent Laplace distributions. It is commonplace in
+#'   supervised learning to choose the tuning parameter by cross-validation,
+#'   whereas a more Bayesian approach would be to place a prior on \dQuote{it},
+#'   or rather its reciprocal in our case (i.e. \emph{smaller} values correspond
+#'   to more shrinkage toward the prior location vector). We use a chi-square
+#'   prior with degrees of freedom equal to that specified in the call to
+#'   \code{lasso} or, by default, 1. The expectation of a chi-square random
+#'   variable is equal to this degrees of freedom and the mode is equal to the
+#'   degrees of freeom minus 2, if this difference is positive.
+#'   
+#'   It is also common in supervised learning to standardize the predictors 
+#'   before training the model. We do not recommend doing so. Instead, it is
+#'   better to specify \code{scale = 1} and \code{autoscale = TRUE}, which 
+#'   are the defaults and will adjust the scales of the priors according to
+#'   the dispersion in the variables. See \code{\link{prior_summary}} for
+#'   more information about this.
 #' }
 #' \subsection{Dirichlet family}{
 #'   Family members:
@@ -371,6 +391,12 @@ hs_plus <- function(df1 = 3, df2 = 3) {
 #' @export
 laplace <- function(location = 0, scale = NULL, autoscale = TRUE) {
   nlist(dist = "laplace", df = NA, location, scale, autoscale)
+}
+
+#' @rdname priors
+#' @export
+lasso <- function(df = 1, location = 0, scale = 1, autoscale = TRUE) {
+  nlist(dist = "lasso", df, location, scale, autoscale)
 }
 
 #' @rdname priors

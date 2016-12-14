@@ -30,6 +30,11 @@
     target += normal_lpdf(z_beta | 0, 1);
     target += exponential_lpdf(V[1] | 1);
   }
+  else if (prior_dist == 6) { // lasso
+    target += normal_lpdf(z_beta | 0, 1);
+    target += exponential_lpdf(V[1] | 1);
+    target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
+  }
   /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  

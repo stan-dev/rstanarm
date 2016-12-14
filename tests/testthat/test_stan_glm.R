@@ -245,6 +245,12 @@ test_that("model with laplace prior doesn't error", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
+test_that("model with lasso prior doesn't error", {
+  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
+                         seed = SEED, algorithm = "meanfield", QR = FALSE), 
+                regexp = "Automatic Differentiation Variational Inference")
+})
+
 test_that("prior_dispersion argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
                   refresh = -1, prior_dispersion = exponential(5))

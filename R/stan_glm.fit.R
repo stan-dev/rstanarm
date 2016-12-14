@@ -104,7 +104,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
 
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", "laplace")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
+                    "laplace", "lasso")
   ok_intercept_dists <- ok_dists[1:3]
   ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   
@@ -661,7 +662,7 @@ summarize_glm_prior <-
           scale = prior_scale,
           adjusted_scale = if (rescaled_coef)
             adjusted_prior_scale else NULL,
-          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus", "lasso"))
             prior_df else NULL
         )),
       prior_intercept = 

@@ -53,7 +53,7 @@ center_x <- function(x, sparse) {
 handle_glm_prior <- function(prior, nvars, default_scale, link,
                              ok_dists = nlist("normal", student_t = "t", 
                                               "cauchy", "hs", "hs_plus", 
-                                              "laplace")) {
+                                              "laplace", "lasso")) {
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
@@ -71,9 +71,10 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   if (!prior_dist_name %in% unlist(ok_dists)) {
     stop("The prior distribution should be one of ",
          paste(names(ok_dists), collapse = ", "))
-  } else if (prior_dist_name %in% c("normal", "t", "cauchy", "laplace")) {
+  } else if (prior_dist_name %in% c("normal", "t", "cauchy", "laplace", "lasso")) {
     if (prior_dist_name == "normal") prior_dist <- 1L
     else if (prior_dist_name == "laplace") prior_dist <- 5L
+    else if (prior_dist_name == "lasso") prior_dist <- 6L
     else prior_dist <- 2L
     prior_scale <- set_prior_scale(prior_scale, default = default_scale, 
                                    link = link)
