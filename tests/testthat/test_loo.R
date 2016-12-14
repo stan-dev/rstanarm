@@ -280,7 +280,7 @@ test_that("compare_models throws correct errors", {
   expect_error(compare_models(l1, l3), 
                "Not all models have the same y variable")
   expect_error(compare_models(l1, l4), 
-               "Not all models have the same family/link")
+               "Not all models have the same family")
   
   expect_error(compare_models(l1, fit1), 
                "All objects must have class 'loo'")

@@ -145,7 +145,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   
   out <- structure(loo_x, 
                    name = deparse(substitute(x)), 
-                   family = family(x), 
+                   family = family_string(x), 
                    yhash = hash_y(x))
   
   if (!length(bad_obs)) {
@@ -184,7 +184,7 @@ waic.stanreg <- function(x, ...) {
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
-            family = family(x), 
+            family = family_string(x), 
             yhash = hash_y(x))
 }
 
@@ -257,7 +257,7 @@ kfold <- function(x, K = 10) {
             class = c("kfold", "loo"), 
             K = K, 
             name = deparse(substitute(x)), 
-            family = family(x), 
+            family = family_string(x), 
             yhash = hash_y(x))
 }
 
@@ -454,6 +454,14 @@ kfold_and_reloo_data <- function(x) {
   na.omit(d)
 }
 
+
+# @param x stanreg object
+family_string <- function(x) {
+  fam <- family(x)
+  if (is.character(fam)) 
+    fam else fam$family
+}
+
 # Calculate a SHA1 hash of y
 # @param x stanreg object
 # @param ... Passed to digest::sha1
@@ -490,14 +498,14 @@ validate_loos <- function(loos = list()) {
     isTRUE(all.equal(x, fam[[1]]))
   })
   if (!all(fam_check))
-    stop("Not all models have the same family/link.", call. = FALSE)
+    stop("Not all models have the same family.", call. = FALSE)
   
   yhash <- lapply(loos, attr, which = "yhash")
   yhash_check <- sapply(yhash, function(x) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
   if (!all(yhash_check))
-    stop("Not all models have the same y variable", call. = FALSE)
+    stop("Not all models have the same y variable.", call. = FALSE)
   
   setNames(loos, nm = lapply(loos, attr, which = "name"))
 }
