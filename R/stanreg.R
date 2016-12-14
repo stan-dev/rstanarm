@@ -68,6 +68,7 @@ stanreg <- function(object) {
       names(coefs) <- rownames(stan_summary)[1L]
 
     stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
+    colnames(stanmat) <- colnames(x)
     ses <- apply(stanmat, 2L, mad)
     if (mer) {
       mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
@@ -77,7 +78,7 @@ stanreg <- function(object) {
       stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z))]
     }
     covmat <- cov(stanmat)
-    rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
+    # rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
     if (object$algorithm == "sampling") 
       check_rhats(stan_summary[, "Rhat"])
   }

@@ -36,8 +36,9 @@ glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
 
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
-                           iter = ITER, chains = CHAINS, seed = SEED,
-                           refresh = REFRESH))
+                           prior_intercept = normal(0, 50, autoscale = FALSE),
+                           prior_dispersion = normal(0, 10),
+                           iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
 lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
 stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
                            iter = ITER, chains = CHAINS, seed = SEED,
@@ -154,7 +155,8 @@ test_that("posterior_interval returns correct structure", {
   
   expect_identical(rownames(ci), c("(Intercept)", "wt", "cyl", "sigma"))
   expect_identical(rownames(ci2), "wt")
-  expect_identical(rownames(ci3), rstanarm:::b_names(rownames(example_model$stan_summary), value = TRUE)[1:15])
+  expect_identical(rownames(ci3), c(paste0("b[(Intercept) herd:", 1:15, "]"), 
+                                    "Sigma[herd:(Intercept),(Intercept)]"))
   expect_identical(rownames(ci4), c("(Intercept)", paste0("period", 2:4)))
   expect_identical(colnames(ci), c("25%", "75%"))
   expect_identical(colnames(ci2), c("2.5%", "97.5%"))
@@ -281,6 +283,8 @@ test_that("VarCorr returns correct structure", {
   expect_s3_class(vc_stan2, class(vc_lmer2))
   check_att_names(vc_stan1, vc_lmer1)
   check_att_names(vc_stan2, vc_lmer2)
+  v <- sapply(vc_stan1, "[[", 1)
+  expect_true(length(unique(v)) == length(v))
   expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
   expect_error(VarCorr(stan_betareg1), "stan_glmer and stan_lmer models only")
 })
@@ -566,7 +570,7 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(stan_glm_vb1, digits = 5), "stan_glm")
   expect_output(print(stan_betareg1, digits = 2), "stan_betareg")
 
-  expect_silent(s <- summary(stan_lmer1, pars = "varying"))
+  expect_silent(s <- summary(stan_lmer1, pars = "varying", regex_pars = "Sigma"))
   expect_silent(s_alt <- summary(stan_lmer1, regex_pars = c("plate", "sample")))
   expect_identical(s, s_alt)
   expect_silent(s <- summary(stan_lmer1))
@@ -578,7 +582,7 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_identical(rownames(s), rownames(d))
 
   expect_silent(s <- summary(example_model, pars = "beta", regex_pars = "herd"))
-  expect_silent(s_alt <- summary(example_model, pars = c("beta", "varying")))
+  expect_silent(s_alt <- summary(example_model, pars = c("beta", "varying"), regex_pars = "Sigma"))
   expect_identical(s, s_alt)
   expect_silent(d <- as.data.frame(s))
   expect_s3_class(s, "summary.stanreg")

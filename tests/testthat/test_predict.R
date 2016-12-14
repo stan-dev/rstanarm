@@ -51,8 +51,9 @@ test_that("predict ok for binomial", {
   stanfit <- SW(stan_glm(SF ~ sex*ldose, family = binomial, chains = CHAINS, 
                          iter = ITER, seed = SEED, refresh = REFRESH))
   stanfit_opt <- SW(stan_glm(SF ~ sex*ldose, family = binomial, 
-                             prior = NULL, prior_intercept = NULL, prior_ops = prior_options(scaled = FALSE),
-                             iter = ITER, seed = SEED, refresh = REFRESH, algorithm = "optimizing"))
+                             prior = NULL, prior_intercept = NULL, 
+                             iter = ITER, seed = SEED, refresh = REFRESH, 
+                             algorithm = "optimizing"))
   
   
   pg <- plink(glmfit)
@@ -83,8 +84,9 @@ test_that("predict ok for gaussian", {
   stanfit <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS,
                       iter = 2 * ITER, seed = SEED, refresh = REFRESH))
   stanfit_opt <- SW(stan_glm(mpg ~ wt, data = mtcars,
-                             prior = NULL, prior_intercept = NULL, prior_ops = prior_options(scaled = FALSE),
-                             iter = 2 * ITER, seed = SEED, refresh = REFRESH, algorithm = "optimizing"))
+                             prior = NULL, prior_intercept = NULL,
+                             iter = 2 * ITER, seed = SEED, refresh = REFRESH, 
+                             algorithm = "optimizing"))
   
   pg <- plink(glmfit)
   ps <- plink(stanfit)

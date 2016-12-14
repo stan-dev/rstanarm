@@ -57,20 +57,18 @@ pp_data <-
 
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, ...) {
-  if (is(object, "gamm4")) { # append extra terms
+  if (is(object, "gamm4")) {
+    if (is.null(newdata)) x <- object$glmod$raw_X
+    else {
+      x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
+                             newdata = newdata, type = "lpmatrix")
+    }
     if (is.null(re.form)) {
-      if (is.null(newdata)) glmod <- object$glmod
       re.form <- as.formula(object$call$random)
+      if (length(re.form) == 0) re.form <- NA
+      z <- .pp_data_mer_z(object, newdata, re.form, ...)
     }
-    else if (is.na(re.form)) re.form <- NULL
-    if (!is.null(newdata)) { # || !is.null(re.form)
-      newdata[[as.character(object$formula[2])]] <- 1 
-      # need this provisional outcome for the next line
-      glmod <- gamm4_to_glmer(object$formula, re.form, data = newdata, ...)
-    }
-    x <- glmod$X
-    z <- list(Zt = glmod$reTrms$Zt, Z_names = make_b_nms(glmod$reTrms))
-    # FIXME: might need to reorder the rows of Zt
+    else z <- .pp_data_mer_z(object, newdata, re.form, ...)
   } else {
     x <- .pp_data_mer_x(object, newdata, ...)
     z <- .pp_data_mer_z(object, newdata, re.form, ...)
@@ -121,9 +119,16 @@ pp_data <-
   }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
+  } 
+  else if (inherits(object, "gamm4")) {
+    x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
+                           newdata = newdata, type = "lpmatrix")
+    NAs <- apply(is.na(x), 1, any)
+    rfd <- mfnew <- newdata[!NAs,]
+    attr(rfd,"na.action") <- "na.omit"
   } else {
-    mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
-                         newdata, na.action = na.action)
+    terms_fixed <- delete.response(terms(object, fixed.only = TRUE))
+    mfnew <- model.frame(terms_fixed, newdata, na.action = na.action)
     newdata.NA <- newdata
     if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
       newdata.NA <- newdata.NA[-fixed.na.action,]

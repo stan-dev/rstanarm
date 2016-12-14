@@ -56,6 +56,18 @@
 #'   or equal to two, the mode of this Beta distribution does not exist
 #'   and an error will prompt the user to specify another choice for
 #'   \code{what}.
+#' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
+#'   then the scales of the priors on the intercept and regression coefficients 
+#'   may be additionally modified internally by \pkg{rstanarm} as follows.
+#'   First, if the \emph{outcome} is Gaussian, the prior scales for the
+#'   intercept and coefficients are multiplied by \code{2*sd(y)}. Additionally,
+#'   if the \code{QR} argument to the model fitting function (e.g.
+#'   \code{stan_glm}) is \code{FALSE} then: for a predictor with only one value
+#'   nothing is changed; for a predictor \code{x} with exactly two unique
+#'   values, we take the user-specified (or default) scale(s) for the selected
+#'   priors and divide by the range of \code{x}; for a predictor \code{x} with
+#'   more than two unique values, we divide the prior scale(s) by
+#'   \code{2*sd(x)}.
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
@@ -65,6 +77,7 @@
 #'   \item \code{student_t(df, location, scale)}
 #'   \item \code{cauchy(location, scale)}
 #'   }
+#'   Each of these functions also takes an argument \code{autoscale}.
 #'   
 #'   For the prior distribution for the intercept, \code{location}, 
 #'   \code{scale}, and \code{df} should be scalars. For the prior for the other
@@ -80,10 +93,9 @@
 #'   used, in which case these defaults are scaled by a factor of 
 #'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
 #'   
-#'   If the \code{scaled} argument to \code{prior_options} is \code{TRUE} (the
-#'   default), then the scales will be further adjusted as described above in
-#'   the documentation of the \code{scaled} argument in the \strong{Arguments} 
-#'   section.
+#'   If the \code{autoscale} argument is \code{TRUE} (the default), then the
+#'   scales will be further adjusted as described above in the documentation of
+#'   the \code{autoscale} argument in the \strong{Arguments} section.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:
@@ -265,7 +277,8 @@
 #'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
-#'                            prior_ops = prior_options(prior_scale_for_dispersion = 2))
+#'                            prior_dispersion = exponential(1/2))
+#' plot(prior_pred_fit, "hist")
 #' 
 #' \donttest{
 #' # Can assign priors to names
@@ -303,23 +316,23 @@
 #' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
-normal <- function(location = 0, scale = NULL) {
+normal <- function(location = 0, scale = NULL, autoscale = TRUE) {
   validate_parameter_value(scale)
-  nlist(dist = "normal", df = NA, location, scale)
+  nlist(dist = "normal", df = NA, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-student_t <- function(df = 1, location = 0, scale = NULL) {
+student_t <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
-  nlist(dist = "t", df, location, scale)
+  nlist(dist = "t", df, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-cauchy <- function(location = 0, scale = NULL) {
-  student_t(df = 1, location = location, scale = scale)
+cauchy <- function(location = 0, scale = NULL, autoscale = TRUE) {
+  student_t(df = 1, location = location, scale = scale, autoscale)
 }
 
 #' @rdname priors
@@ -336,6 +349,18 @@ hs_plus <- function(df1 = 3, df2 = 3) {
   validate_parameter_value(df2)
   # scale gets used as a second df hyperparameter
   nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+}
+
+#' @rdname priors
+#' @export
+#' @param rate Prior rate for the exponential distribution. Defaults to
+#'   \code{1}. For the exponential distribution, the rate parameter is the
+#'   \emph{reciprocal} of the mean.
+#' 
+exponential <- function(rate = 1) {
+  stopifnot(length(rate) == 1)
+  validate_parameter_value(rate)
+  nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
 }
 
 #' @rdname priors
@@ -370,34 +395,6 @@ dirichlet <- function(concentration = 1) {
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   what <- match.arg(what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
-}
-
-#' @rdname priors
-#' @export 
-#' @param prior_scale_for_dispersion Prior scale for the standard error of the 
-#'   regression in Gaussian models, which is given a half-Cauchy prior truncated
-#'   at zero.
-#' @param min_prior_scale Minimum prior scale for the intercept and 
-#'   coefficients.
-#' @param scaled A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
-#'   then the scales of the priors on the intercept and regression coefficients 
-#'   may be additionally modified internally by \pkg{rstanarm} as follows.
-#'   First, if the \emph{outcome} is Gaussian, the prior scales for the
-#'   intercept and coefficients are multiplied by \code{2*sd(y)}. Additionally,
-#'   if the \code{QR} argument to the model fitting function (e.g.
-#'   \code{stan_glm}) is \code{FALSE} then: for a predictor with only one value
-#'   nothing is changed; for a predictor \code{x} with exactly two unique
-#'   values, we take the user-specified (or default) scale(s) for the selected
-#'   priors and divide by the range of \code{x}; for a predictor \code{x} with
-#'   more than two unique values, we divide the prior scale(s) by
-#'   \code{2*sd(x)}.
-#'   
-prior_options <- function(prior_scale_for_dispersion = 5, 
-                          min_prior_scale = 1e-12, 
-                          scaled = TRUE) {
-  validate_parameter_value(prior_scale_for_dispersion)
-  validate_parameter_value(min_prior_scale)
-  nlist(scaled, min_prior_scale, prior_scale_for_dispersion)
 }
 
 

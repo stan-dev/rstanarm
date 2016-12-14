@@ -130,7 +130,9 @@ gamm4_to_glmer <- function(formula, random = NULL, family = gaussian(), data = l
     stopifnot(start == (nrow(b$reTrms$Zt) + 1L))
   }
   b$smooths <- G$smooth
-  for (i in seq_along(b$smooths)) b$smooths[[i]]$lmer.name <- r.name[i] 
+  for (i in seq_along(b$smooths)) b$smooths[[i]]$lmer.name <- r.name[i]
+  b$raw_X <- model.matrix(G)
+  b$model <- G$model
   return(b) # need to get the Terms right
 }
 

@@ -78,7 +78,7 @@ test_that("gaussian returns expected result for trees example", {
     if (links[i] == "inverse") next # unreliable
     fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
                     family = gaussian(link = links[i]), algorithm = "optimizing",
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior = NULL, prior_intercept = NULL,
                     QR = TRUE, tol_rel_grad = 1e-16, seed = SEED)
     expect_stanreg(fit)
     
@@ -106,7 +106,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   treatment <- gl(3,3)
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL, QR = TRUE,
+                    prior = NULL, prior_intercept = NULL, QR = TRUE,
                     algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
     expect_stanreg(fit)
     
@@ -147,7 +147,7 @@ test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, sparse = TRUE,
                   family = gaussian(link = "identity"), seed  = SEED,
-                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                  prior = NULL, prior_intercept = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
   expect_stanreg(fit)
   
@@ -157,7 +157,7 @@ test_that("stan_glm returns expected result for cars example", {
 test_that("stan_glm returns expected result with no intercept for mtcars example", {
   f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)
   fit <- stan_glm(f, data = mtcars,
-                  prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                  prior = NULL, prior_intercept = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
                   seed  = SEED, sparse = TRUE)
   expect_stanreg(fit)
@@ -180,7 +180,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     y <- rbinom(length(theta), size = 1, prob = theta)
   
     fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     expect_stanreg(fit)
     
@@ -210,7 +210,7 @@ test_that("stan_glm returns expected result for binomial example", {
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
     fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                    prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     expect_stanreg(fit)
     
@@ -221,7 +221,7 @@ test_that("stan_glm returns expected result for binomial example", {
 
     prop <- yes / trials
     fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
-                     prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                     prior = NULL, prior_intercept = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     expect_stanreg(fit2)
     
@@ -237,6 +237,17 @@ test_that("model with hs prior doesn't error", {
   expect_output(stan_glm(mpg ~ ., data = mtcars, prior = hs(), 
                          seed = SEED, algorithm = "meanfield", QR = TRUE), 
                 regexp = "Automatic Differentiation Variational Inference")
+})
+
+test_that("prior_dispersion argument is detected properly", {
+  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
+                  refresh = -1, prior_dispersion = exponential(5))
+  expect_identical(
+    fit$prior.info$prior_dispersion, 
+    list(dist = "exponential", 
+         location = NULL, scale = NULL, df = NULL, rate = 5, 
+         dispersion_name = "sigma")
+  )
 })
 
 test_that("empty interaction levels dropped", {

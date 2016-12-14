@@ -200,7 +200,8 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       } else {
         b <- pp_b_ord(b, Z_names)
       }
-      z <- t(ppdat$Zt)
+      if (is.null(ppdat$Zt)) z <- matrix(NA, nrow = nrow(x), ncol = 0)
+      else z <- t(ppdat$Zt)
     } else {
       z <- get_z(object)
     }
