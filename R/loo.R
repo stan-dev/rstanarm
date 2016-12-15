@@ -293,7 +293,7 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   calling \code{compare}, \code{compare_models} performs some extra checks to
 #'   make sure the \pkg{rstanarm} models are suitable for comparison. These
 #'   extra checks include verifying that all models to be compared were fit
-#'   using the same outcome variable and \code{family} object.
+#'   using the same outcome variable and likelihood family.
 #'   
 #'   If exactly two models are being compared then \code{compare_models} returns
 #'   a vector containing the difference in expected log predictive density 
