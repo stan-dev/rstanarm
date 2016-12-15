@@ -226,7 +226,7 @@ element of this matrix is a predicted number of respondents with that value of
 education and gender who agreed with the survey question and thus should be
 reasonably close to the observed proportion of agreements in the data. We can
 create a plot to check this:
-```{r rstanarm-criticism-plot, fig.width=10, fig.cap="Posterior predictive boxplots vs. observed datapoints"}
+```{r rstanarm-criticism-plot, fig.width=8, out.width="90%", fig.cap="Posterior predictive boxplots vs. observed datapoints"}
 par(mfrow = 1:2, mar = c(5,3.7,1,0) + 0.1, las = 3)
 boxplot(sweep(y_rep[,womensrole$gender == "Male"], 2, STATS = 
                womensrole$total[womensrole$gender == "Male"], FUN = "/"), 
@@ -276,7 +276,7 @@ loo_bglm_2 <- loo(womensrole_bglm_2)
 First, we verify that the posterior is not too sensitive to any particular 
 observation in the dataset.
 
-```{r rstanarm-loo-plot, fig.width=7, fig.height=4}
+```{r rstanarm-loo-plot, fig.width=7, out.width="70%"}
 par(mfrow = 1:2, mar = c(5,3.8,1,0) + 0.1, las = 3)
 plot(loo_bglm_1, label_points = TRUE)
 plot(loo_bglm_2, label_points = TRUE)
