@@ -21,7 +21,7 @@
       beta[k] = 2 * sqrt(q_a - 1);
       if (P < 0.5) beta[k] = -beta[k];
     }
-    else beta[k] = z_beta[k];
+    else beta[k] = CFt(z_beta[k], prior_df[k]);
     beta[k] = beta[k] * prior_scale[k] + prior_mean[k];
   }
   else if (prior_dist == 3) beta = hs_prior(z_beta, global, local);
