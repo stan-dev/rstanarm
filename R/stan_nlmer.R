@@ -68,8 +68,11 @@
 #'   \code{\link[stats]{SSweibull}}.
 #' @examples
 #' \donttest{
+#' data("Orange", package = "datasets")
+#' Orange$circumference <- Orange$circumference / 100
+#' Orange$age <- Orange$age / 100
 #' stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
-#'            data = lme4::Orange)
+#'            data = Orange)
 #' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial
