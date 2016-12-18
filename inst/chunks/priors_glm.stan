@@ -1,14 +1,6 @@
   // Log-priors for coefficients
-  if (prior_dist == 1)  target += normal_lpdf(z_beta | 0, 1);
-  else if (prior_dist == 2) {
-    if (t_all_124) target += normal_lpdf(z_beta | 0, 1);
-    else if (t_any_124) for (k in 1:K) {
-      if (prior_df[k] == 1 || prior_df[k] == 2 || prior_df[k] == 4)
-        target += normal_lpdf(z_beta[k] | 0,1);
-      else target += student_t_lpdf(z_beta[k] | prior_df[k], 0, 1);
-    }
-    else target += student_t_lpdf(z_beta | prior_df, 0, 1);
-  }
+       if (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
+  else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
   else if (prior_dist == 3) { // hs
     target += normal_lpdf(z_beta | 0, 1);
     target += normal_lpdf(local[1] | 0, 1);
