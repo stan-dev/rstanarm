@@ -60,9 +60,10 @@
 #'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
 #'   \code{family = gaussian(link = "identity")}. 
 #'   
-#'   The \code{stan_glmer.nb} function, which takes the extra argument
-#'   \code{link}, is a simple wrapper for \code{stan_glmer} with 
-#'   \code{family = \link{neg_binomial_2}(link)}.
+#'   The \code{stan_glmer.nb} function, which takes the extra argument 
+#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family = 
+#'   \link{neg_binomial_2}(link)}. The \code{prior_dispersion} argument can be
+#'   used to set a prior on the overdispersion parameter.
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
@@ -73,14 +74,14 @@
 #' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
 #' 
-#' @importFrom lme4 glFormula glmerControl
+#' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t cBind
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
                        subset, weights, 
                        na.action = getOption("na.action", "na.omit"), 
                        offset, contrasts = NULL, ...,
                        prior = normal(), prior_intercept = normal(),
-                       prior_ops = prior_options(),
+                       prior_dispersion = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -89,12 +90,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   mc <- match.call(expand.dots = FALSE)
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
-  mc$control <- glmerControl(check.nlev.gtreq.5 = "ignore",
-                             check.nlev.gtr.1 = "stop",
-                             check.nobs.vs.rankZ = "ignore",
-                             check.nobs.vs.nlev = "ignore",
-                             check.nobs.vs.nRE = "ignore")
-  mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_ops <-
+  mc$control <- make_glmerControl()
+  mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_dispersion <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
@@ -109,30 +106,52 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
+  if (is.null(prior_dispersion)) 
+    prior_dispersion <- list()
+  if (is.null(prior_covariance))
+    stop("'prior_covariance' can't be NULL.", call. = FALSE)
   group <- glmod$reTrms
   group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
 
-  Z <- pad_reTrms(Z = t(group$Zt), cnms = group$cnms, 
+  Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
+  
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
-               prior.info = get_prior_info(call, formals()),
                na.action, contrasts, algorithm, glmod)
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   
   return(out)
+}
+
+make_Sigma <- function(mat, cnms) {
+  useSc <- "sigma" %in% colnames(mat)
+  if (useSc) sc <- mat[,"sigma"]
+  else sc <- 1
+  theta <- mat[,grepl("^theta\\[", colnames(mat)), drop = FALSE]
+  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
+  nms <- names(cnms)
+  Sigma_list <- apply(theta, 1, FUN = mkVarCorr, 
+                      sc = 1, cnms = cnms, nc = nc, nms = nms)
+  add <- function(x) Reduce("+", x)
+  Sigma <- sapply(Sigma_list[[1]], simplify = FALSE, FUN = `*`, y = 0)
+  for (i in seq_along(Sigma)) {
+    Sigma[[i]] <- add(lapply(Sigma_list, FUN = function(x) x[[i]])) / length(Sigma_list)
+    attr(Sigma[[i]], "stddev") <- sqrt(diag(Sigma[[i]]))
+    attr(Sigma[[i]], "correlation") <- cov2cor(Sigma[[i]])
+  }
+  Sigma <- structure(Sigma, useSc = useSc, sc = mean(sc), class = "VarCorr.merMod")
+  return(Sigma)
 }
 
 #' @rdname stan_glmer
@@ -147,7 +166,7 @@ stan_lmer <- function(formula,
                       ...,
                       prior = normal(),
                       prior_intercept = normal(),
-                      prior_ops = prior_options(),
+                      prior_dispersion = cauchy(0, 5),
                       prior_covariance = decov(),
                       prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
@@ -160,7 +179,7 @@ stan_lmer <- function(formula,
     names(call)[2L] <- "formula"
   mc[[1L]] <- quote(stan_glmer)
   mc$REML <- NULL
-  mc$family <- gaussian
+  mc$family <- "gaussian"
   out <- eval(mc, parent.frame())
   out$call <- call
   return(out)
@@ -183,7 +202,7 @@ stan_glmer.nb <- function(formula,
                           ...,
                           prior = normal(),
                           prior_intercept = normal(),
-                          prior_ops = prior_options(),
+                          prior_dispersion = cauchy(0, 5),
                           prior_covariance = decov(),
                           prior_PD = FALSE,
                           algorithm = c("sampling", "meanfield", "fullrank"),

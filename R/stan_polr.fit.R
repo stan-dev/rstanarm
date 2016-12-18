@@ -104,11 +104,10 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     prior_dist, regularization, prior_counts,
                     is_skewed, shape, rate,
                     # the rest of these are not actually used
-                    has_intercept = 0L, prior_dist_for_intercept = 0L, 
-                    family = 1L,
+                    family = 1L, has_intercept = 0L, 
+                    prior_dist_for_intercept = 0L, prior_dist_for_dispersion = 0L, 
                     dense_X = TRUE, # sparse is not a viable option
-                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0)
-  )
+                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0))
   stanfit <- stanmodels$polr
   if (J > 2) {
     pars <- c("beta", "zeta", "mean_PPD")
@@ -153,5 +152,34 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   }
   stanfit@sim$fnames_oi <- new_names
   
-  return(stanfit)
+  prior_info <- summarize_polr_prior(prior, prior_counts, shape, rate)
+  structure(stanfit, prior.info = prior_info)
 }
+
+
+# internal ----------------------------------------------------------------
+
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param prior, prior_counts User's prior and prior_counts specifications
+# @return A named list with elements 'prior' and 'prior_counts' containing 
+#   the values needed for prior_summary
+summarize_polr_prior <- function(prior, prior_counts, shape=NULL, rate=NULL) {
+  flat <- !length(prior)
+  prior_list <- list(
+    prior = list(
+      dist = ifelse(flat, NA, "R2"),
+      location = ifelse(flat, NA, prior$location),
+      what = ifelse(flat, NA, prior$what)
+    ), 
+    prior_counts = list(
+      dist = "dirichlet",
+      concentration = prior_counts
+    )
+  )
+  if ((!is.null(shape) && shape > 0) && (!is.null(rate) && rate > 0))
+    prior_list$scobit_exponent <- list(dist = "gamma", shape = shape, rate = rate)
+  
+  return(prior_list)
+}
+

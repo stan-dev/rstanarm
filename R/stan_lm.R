@@ -103,7 +103,9 @@
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
 #'                 chains = 1, iter = 1000, seed = 12345))
-#' plot(fit)
+#' plot(fit, prob = 0.8)
+#' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
+#'      transformations = list(sigma = "log"))
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
@@ -144,6 +146,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
+  out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 
     out$x <- NULL
   if (!y) 

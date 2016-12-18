@@ -118,7 +118,8 @@ available prior distributions see `help("prior", package = "rstanarm")`.
 ```{r, continuous-kidiq-mcmc,results="hide"}
 library(rstanarm)
 data(kidiq)
-post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, family = gaussian(link = "identity"), 
+post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
+                  family = gaussian(link = "identity"), 
                   chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
@@ -132,7 +133,7 @@ print(post4)
 Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
-```{r, continuous-kidiq-plot1a, fig.width = 5}
+```{r, continuous-kidiq-plot1a}
 base <- ggplot(kidiq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
@@ -146,7 +147,7 @@ One way is to also plot the estimated regression line at each draw from the
 posterior distribution. To do this we can extract the posterior draws from the 
 fitted model object using the `as.matrix` or `as.data.frame` methods:
 
-```{r, continuous-kidiq-plot1b, fig.width = 5}
+```{r, continuous-kidiq-plot1b}
 draws <- as.data.frame(post1)
 colnames(draws)[1:2] <- c("a", "b")
 
@@ -160,7 +161,7 @@ base +
 For the second model we can make the same plot but the x-axis will show 
 the continuous predictor `mom_iq`:
 
-```{r, continuous-kidiq-plot2, fig.width = 5}
+```{r, continuous-kidiq-plot2}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
 ggplot(kidiq, aes(x = mom_iq, y = kid_score)) + 
@@ -176,7 +177,7 @@ the continuous `mom_iq` on the x-axis and use color to indicate which
 points correspond to the different subpopulatations defined by `mom_hs`. We also 
 now plot two regression lines, one for each subpopulation:
 
-```{r, continuous-kidiq-plot3, fig.width = 5}
+```{r, continuous-kidiq-plot3}
 reg0 <- function(x, ests) cbind(1, 0, x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
@@ -192,7 +193,7 @@ base2 +
   stat_function(fun = reg1, args = args, aes(color = "HS"), size = 1.5)
 ```
 
-```{r, continuous-kidiq-plot4, fig.width = 5}
+```{r, continuous-kidiq-plot4}
 reg0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
 args <- list(ests = coef(post4))
@@ -256,15 +257,15 @@ The `pp_check` function generates a variety of plots comparing the observed
 outcome $y$ to simulated datasets $y^{\rm rep}$ from the posterior predictive 
 distribution using the same observations of the predictors $X$ as we used to fit
 the model. He we show a few of the possible displays. The documentation at
-`help("pp_check", package = "rstanarm")` has details on all of the `pp_check`
-options.
+`help("pp_check.stanreg", package = "rstanarm")` has details on all of the
+`pp_check` options.
 
 First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
-```{r, continuous-kidiq-pp_check1, fig.width=5}
-pp_check(post4, check = "distributions", overlay = FALSE, nreps = 5)
+```{r, continuous-kidiq-pp_check1}
+pp_check(post4, plotfun = "hist", nreps = 5)
 ```
 
 The idea is that if the model is a good fit to the data we should be able to 
@@ -274,7 +275,7 @@ rep}$ we generate should be plausible.
 
 Another useful plot we can make using `pp_check` shows the distribution of a test
 quantity $T(y^{\rm rep})$ compared to $T(y)$, the value of the quantity in the 
-observed data. When the argument `check = "test"` is specified, `pp_check` will 
+observed data. When the argument `plotfun = "stat"` is specified, `pp_check` will 
 simulate $S$ datasets $y_1^{\rm rep}, \dots, y_S^{\rm rep}$, each containing $N$
 observations. Here $S$ is the size of the posterior sample (the number of MCMC 
 draws from the posterior distribution of the model parameters) and $N$ is the 
@@ -283,14 +284,15 @@ of $\left(T(y_1^{\rm yep}), \dots, T(y_S^{\rm yep})\right)$. In the plot below
 we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
-```{r, continuous-kidiq-pp_check2, fig.height = 3}
-pp_check(post4, check = "test", test = "mean")
+```{r, continuous-kidiq-pp_check2}
+pp_check(post4, plotfun = "stat", stat = "mean")
 ```
 
-We can also specify two test quantities and look at a scatterplot:
+Using `plotfun="stat_2d"` we can also specify two test quantities and look at a
+scatterplot:
 
-```{r, continuous-kidiq-pp_check3, fig.height=3}
-pp_check(post4, check = "test", test = c("mean", "sd"))
+```{r, continuous-kidiq-pp_check3}
+pp_check(post4, plotfun = "stat_2d", stat = c("mean", "sd"))
 ```
 
 ### Generating predictions
@@ -314,7 +316,7 @@ as many columns as there are values of `IQ_SEQ` and as many rows as
 the size of the posterior sample. One way to show the predictors is to plot the predictions 
 for the two groups of kids side by side:
 
-```{r, continuous-kidiq-plot-predict, fig.width=9}
+```{r, continuous-kidiq-plot-predict, fig.width=7}
 par(mfrow = c(1:2), mar = c(5,4,2,1))
 boxplot(y_hs, axes = FALSE, outline = FALSE, ylim = c(10,170),
         xlab = "Mom IQ", ylab = "Predicted Kid IQ", main = "Mom HS")

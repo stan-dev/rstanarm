@@ -17,10 +17,9 @@
 #
 #' Datasets for rstanarm examples
 #' 
-#' Datasets for use in \pkg{rstanarm} examples and vignettes.
+#' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
-#' @keywords internal
 #' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon
 #' @format 
 #' \describe{
@@ -161,10 +160,16 @@
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
 #' 
 #' @examples 
+#' # Using 'kidiq' dataset 
 #' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
 #'                prior = R2(location = 0.30, what = "mean"),
 #'                # the next line is only to make the example go fast enough
 #'                chains = 2, iter = 500, seed = 12345)
 #' pp_check(fit, nreps = 20)
+#' \donttest{
+#' bayesplot::color_scheme_set("brightblue")
+#' pp_check(fit, plotfun = "stat_grouped", stat = "median", 
+#'          group = factor(kidiq$mom_hs, labels = c("No HS", "HS")))
+#' }
 #' 
 NULL

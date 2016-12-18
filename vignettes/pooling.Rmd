@@ -13,18 +13,28 @@ params:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Hierarchical Partial Pooling}
 -->
+```{r, knitr-settings}
+stopifnot(require(knitr))
+opts_chunk$set(
+  comment=NA, 
+  message = FALSE, 
+  warning = FALSE, 
+  eval = params$EVAL,
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.618,
+  fig.width = 7,
+  out.width = "70%",
+  fig.align = "center"
+)
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
 ```{r, child="children/SETTINGS-loo.txt"}
 ```
 
-```{r, SETTINGS-knitr, include=FALSE}
-library(knitr)
-opts_chunk$set(
-  comment = NA, message = FALSE, warning = FALSE, 
-  fig.align = 'center', fig.width = 7,fig.height = 5
-)
-```
 
 # Introduction 
 
@@ -217,7 +227,7 @@ actually motivated here from substantial baseball knowledge.
 The figure below shows both this prior on $\alpha$ as well as the prior it 
 implies on the probability $\theta$.
 
-```{r, fig.width=7, fig.height=3, echo=FALSE}
+```{r, echo=FALSE}
 par(mfrow = c(1,3), las = 1)
 p_alpha <- function(alpha) {
   dnorm(alpha, -1, 1)
@@ -381,6 +391,7 @@ shift_draws <- function(draws) {
 }
 alphas <- shift_draws(as.matrix(fit_partialpool))
 partialpool <- summary_stats(alphas)
+partialpool <- partialpool[-nrow(partialpool),]
 rownames(partialpool) <- as.character(bball$Player)
 batting_avg(partialpool)
 ```
@@ -597,9 +608,9 @@ that the expectation of the log is less than or equal to the log of
 the expectation,
 
 \[
-\log \int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta
+\int_{\Theta} \left( \, \log p(\tilde{y} \, | \, \theta) \, \right) \ p(\theta \, | \, y) \ \mathrm{d}\theta
 \ \leq \
-\int_{\Theta} \left( \, \log p(\tilde{y} \, | \, \theta) \, \right) \ p(\theta \, | \, y) \ \mathrm{d}\theta.
+\log \int_{\Theta} p(\tilde{y} \, | \, \theta) \ p(\theta \, | \, y) \ \mathrm{d}\theta
 \]
 
 We'll compute both expectations and demonstrate Jensen's inequality in
@@ -617,11 +628,16 @@ data points.
 
 ```{r, log_p_new}
 newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
-fits <- list(Pooling = fit_pool, NoPooling = fit_nopool, 
+fits <- list(Pooling = fit_pool, 
+             NoPooling = fit_nopool, 
              PartialPooling = fit_partialpool)
 
-# compute log_p_new with each of the models in 'fits'
-log_p_new <- sapply(fits, function(x) rowSums(log_lik(x, newdata)))
+# compute log_p_new matrix with each of the models in 'fits'
+log_p_new_mats <- lapply(fits, log_lik, newdata = newdata)
+
+# for each matrix in the list take the row sums
+log_p_new <- sapply(log_p_new_mats, rowSums)
+M <- nrow(log_p_new)
 head(log_p_new)
 ```
 
@@ -735,17 +751,26 @@ log_sum_exp <- function(u) {
   max_u + log(sum(exp(u - max_u)))
 }
 ```
-
-and then use it to print the log posterior predictive densities for
-our fit.
-
-```{r comment=NA}
-M <- nrow(log_p_new) 
-new_lps <- -log(M) + apply(log_p_new, 2, log_sum_exp)
-round(sort(new_lps, decreasing = TRUE), digits = 1)
+and then include the $-\log M$ term to make it `log_mean_exp`: 
+```{r, log_mean_exp}
+log_mean_exp <- function(u) {
+  M <- length(u)
+  -log(M) + log_sum_exp(u)
+}
 ```
 
-Now the ranking is different!  As expected, the values here are lower
+We can then use it to compute the log posterior predictive densities for 
+each of the models:
+```{r comment=NA}
+new_lps <- lapply(log_p_new_mats, function(x) apply(x, 2, log_mean_exp))
+
+# sum over the data points
+new_lps_sums <- sapply(new_lps, sum)
+
+round(sort(new_lps_sums, decreasing = TRUE), digits = 1)
+```
+
+Now the ranking is different!  As expected, the values here are greater
 than the expectation of the log density due to Jensen's inequality.
 The partial pooling model appears to be making slightly better
 predictions than the full pooling model, which in turn is making
@@ -842,7 +867,7 @@ df_ppd <- data.frame(player = rep(1:length(y_new), 3),
 ```{r, plot-ppd}
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
   geom_linerange(color = "gray60", size = 2) + 
-  geom_point(size = 2.5, fill = "skyblue2") +
+  geom_point(size = 2.5, color = "skyblue4") +
   facet_grid(. ~ model) +
   labs(x = NULL, y = "batting average") + 
   scale_x_continuous(breaks = NULL) +
@@ -966,6 +991,7 @@ the previous case.
 ```{r, event-probabilities, results="hold"}
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
+thetas_partialpool <- thetas_partialpool[,-ncol(thetas_partialpool)]
 colnames(thetas_partialpool) <- as.character(bball$Player)
 ability_gt_400 <- thetas_partialpool > 0.4
 cat("Pr(theta_n >= 0.400 | y)\n")
@@ -1102,8 +1128,8 @@ df_rank <- data.frame(name = rep(bball$Player, each = M),
 ggplot(df_rank, aes(rank)) +
   stat_count(width = 0.8) +
   facet_wrap(~ name) +
-  scale_x_discrete(limits = c(1, 5, 10, 15)) +
-  scale_y_discrete(name = "posterior probability", breaks = c(0, 0.1 * M, 0.2 * M),
+  scale_x_discrete("Rank", limits = c(1, 5, 10, 15)) +
+  scale_y_discrete("Probability", limits = c(0, 0.1 * M, 0.2 * M),
                    labels = c("0.0", "0.1", "0.2")) + 
   ggtitle("Rankings for Partial Pooling Model")
 ```
@@ -1245,11 +1271,11 @@ test statistic, the observed value as a vertical line, and the $p$-value for eac
 of the tests. First, here is just the plot for the no pooling model using 
 the mean as the test statistic:
 
-```{r, plot-ppc-stats-mean, fig.width=3, fig.height=2.5}
-pp_check(fit_nopool, check = "test", test = "mean")
+```{r, plot-ppc-stats-mean}
+pp_check(fit_nopool, plotfun = "stat", stat = "mean")
 ```
 
-The `test` argument can the be the name of any R function (including your own 
+The `stat` argument can the be the name of any R function (including your own 
 functions defined in the Global Environment) that takes a vector as an input and
 returns a scalar. 
 
@@ -1260,8 +1286,8 @@ then arrange everything in a single plot.
 ```{r, plot-ppc-stats}
 tstat_plots <- function(model, stats) {
   lapply(stats, function(stat) {
-    graph <- pp_check(model, check = "test", test = stat, 
-                      binwidth = .025, seed = SEED) # optional arguments
+    graph <- pp_check(model, plotfun = "stat", stat = stat, 
+                      seed = SEED) # optional arguments
     graph + xlab(stat) + theme(legend.position = "none")
   })
 }
@@ -1274,7 +1300,8 @@ library(gridExtra)
 grid.arrange(
   arrangeGrob(grobs = ppcs_pool, nrow = 1, left = "Pooling"), 
   arrangeGrob(grobs = ppcs_nopool, nrow = 1, left = "No Pooling"),
-  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling"))
+  arrangeGrob(grobs = ppcs_partialpool, nrow = 1, left = "Partial Pooling")
+)
 ```
 
 The only worrisomely extreme value visible in the plots is the $p$-value for
@@ -1317,8 +1344,7 @@ plotting the number of successes (hits in this case) on the x-axis, `pp_check`
 will plot the proportion of successes.
 
 ```{r, plot-ppc-y-vs-yrep}
-pp_check(fit_partialpool, check = "distributions", nreps = 15, 
-         overlay = FALSE, binwidth = 0.05) +  # optional arguments
+pp_check(fit_partialpool, plotfun = "hist", nreps = 15, binwidth = 0.025) +
   ggtitle("Model: Partial Pooling")
 ```
 
@@ -1379,11 +1405,11 @@ could be made more or less informative. How, if at all, does this affect
 posterior inference?
 
 1.  What are some other test statistics that might be used to evaluate our model
-fit to data? Try some out using `pp_check(model, check="test", test = "my_test")`,
+fit to data? Try some out using `pp_check(model, plotfun="stat", stat = "my_test")`,
 where `my_test` is your function that computes the test statistic. For example,
 to check the 25% quantile you could first define a function 
 `q25 <- function(x) quantile(x, 0.25)` and then call
-`pp_check(model, check = "test", test = "q25")`.
+`pp_check(model, plotfun = "stat", stat = "q25")`.
 
 1.  Discuss the difference between batting average and on-base percentage as
 random variables.  Consider particularly the denominator (at-bat versus plate
