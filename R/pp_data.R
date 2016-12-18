@@ -71,8 +71,25 @@ pp_data <-
 
 # for models fit using stan_nlmer
 .pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, ...) {
-  x <- .pp_data_mer_x(object, newdata, ...) # FIXME
-  z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  f <- formula(object)
+  if (!is.null(re.form)) {
+    f <- as.character(f)
+    if (is.na(re.form)) f <- as.formula(f[-3])
+    else {
+      f[3] <- as.character(re.form)
+      f <- as.formula(f)
+    }
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- NULL
+  names(mc)[2] <- "data"
+  mc$formula <- f
+  if (is.null(newdata)) {
+    newdata <- model.frame(object)
+    mc$data <- newdata
+  }
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
   offset <- .pp_data_offset(object, newdata, offset)
 
   inputs <- as.character(object$glmod$respMod$nlmod[2])
@@ -91,8 +108,9 @@ pp_data <-
     arg1 <- newdata[[inputs[2]]]
     arg2 <- NULL
   }
-  return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names,
-               arg1, arg2))
+  group <- with(nlf$reTrms, pad_reTrms(Zt, cnms, flist))
+  return(nlist(x = nlf$X, offset = offset, Z = t(group$Zt),
+               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 # the functions below are heavily based on a combination of 
