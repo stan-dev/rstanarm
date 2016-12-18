@@ -27,7 +27,6 @@
   else if (prior_dist == 3) beta = hs_prior(z_beta, global, local);
   else if (prior_dist == 4) beta = hsplus_prior(z_beta, global, local);
   else if (prior_dist == 5) // laplace
-    beta = prior_mean + prior_scale .* sqrt_vec(2 * V[1]) .* z_beta;
+    beta = prior_mean + prior_scale .* sqrt(2 * V[1]) .* z_beta;
   else if (prior_dist == 6) // lasso
-    beta = prior_mean + one_over_lambda[1] * prior_scale .* 
-           sqrt_vec(2 * V[1]) .* z_beta;
+    beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * V[1]) .* z_beta;
