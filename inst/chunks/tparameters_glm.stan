@@ -1,4 +1,4 @@
-  vector<upper=positive_infinity()>[K] beta;
+  vector[K] beta;
   vector[q] b;
   vector[len_theta_L] theta_L;
   if      (prior_dist == 0) beta = z_beta;
