@@ -418,7 +418,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
 
 context("glmer")
 test_that("the Cornish-Fisher expansion from standard normal to Student t works", {
-  df <- pi
+  df <- exp(1) / pi
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
 })
