@@ -327,6 +327,7 @@ is_binomial_ppc <- function(object) {
     # PREDICTIVE ERRORS
     "error_binned" = nreps %ORifNULL% 3,
     "error_hist" = nreps %ORifNULL% 3,
+    "error_hist_grouped" = nreps %ORifNULL% 3,
     "error_scatter" = nreps %ORifNULL% 3,
     "error_scatter_avg" = nreps, # NULL ok
     "error_scatter_avg_vs_x" = nreps, # NULL ok
@@ -346,7 +347,15 @@ is_binomial_ppc <- function(object) {
     "intervals" = .ignore_nreps(nreps),
     "intervals_grouped" = .ignore_nreps(nreps),
     "ribbon" = .ignore_nreps(nreps),
-    "ribbon_grouped" = .ignore_nreps(nreps)
+    "ribbon_grouped" = .ignore_nreps(nreps), 
+    
+    # otherwise function not found
+    stop(
+      "Plotting function not supported. ",
+      "(If the plotting function is included in the output from ", 
+      "bayesplot::available_ppc() then it should be available via pp_check ",
+      "and this error is probably a bug.)"
+    )
   )
 }
 .ignore_nreps <- function(nreps) {

@@ -180,21 +180,21 @@ test_that("loo issues errors/warnings", {
 })
 
 test_that("loo with k_threshold works", {
-  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
-                     seed = 12345, iter = 300, chains = 4, cores = 1,
-                     refresh = 0))
-  expect_warning(loo_x <- loo(fit, k_threshold = 0.5), 
-                 "We recommend calling 'loo' again")
-  expect_message(rstanarm:::reloo(fit, loo_x, obs = 1:10, refit = FALSE),
-                 "Model will be refit 10 times")
-  expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
-                "Elapsed Time")
+#  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
+#                     seed = 12345, iter = 300, chains = 4, cores = 1,
+#                     refresh = 0))
+#  expect_warning(loo_x <- loo(fit, k_threshold = 0.5), 
+#                 "We recommend calling 'loo' again")
+#  expect_message(rstanarm:::reloo(fit, loo_x, obs = 1:10, refit = FALSE),
+#                 "Model will be refit 10 times")
+#  expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
+#                "Elapsed Time")
   
   # test that no errors from binomial model because it's trickier to get the
   # data right internally in reloo (matrix outcome)
-  loo_x <- loo(example_model)
-  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)), 
-                 "Model will be refit 1 times")
+#  loo_x <- loo(example_model)
+#  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)), 
+#                 "Model will be refit 1 times")
 })
 
 test_that("loo with k_threshold works for edge case(s)", {

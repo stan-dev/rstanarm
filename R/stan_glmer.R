@@ -60,9 +60,10 @@
 #'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
 #'   \code{family = gaussian(link = "identity")}. 
 #'   
-#'   The \code{stan_glmer.nb} function, which takes the extra argument
-#'   \code{link}, is a simple wrapper for \code{stan_glmer} with 
-#'   \code{family = \link{neg_binomial_2}(link)}.
+#'   The \code{stan_glmer.nb} function, which takes the extra argument 
+#'   \code{link}, is a simple wrapper for \code{stan_glmer} with \code{family = 
+#'   \link{neg_binomial_2}(link)}. The \code{prior_dispersion} argument can be
+#'   used to set a prior on the overdispersion parameter.
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
