@@ -152,3 +152,14 @@ vector SS_weibull(vector x, matrix Phi) {
   }
   return out;
 }
+
+matrix reshape(vector x, int Rows, int Cols) {
+  matrix[Rows, Cols] out;
+  int pos = 1;
+  if (rows(x) != Rows * Cols) reject("x is the wrong length");
+  for (c in 1:Cols) for (r in 1:Rows) {
+    out[r,c] = x[pos];
+    pos = pos + 1;
+  }
+  return out;
+}

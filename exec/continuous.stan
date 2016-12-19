@@ -5,6 +5,7 @@
 functions {
   #include "common_functions.stan"
   #include "continuous_likelihoods.stan"
+  #include "SSfunctions.stan"
   
   /** 
   * test function for csr_matrix_times_vector
@@ -39,8 +40,8 @@ data {
   vector[SSfun == 5 ? len_y : 0] Dose;
 }
 transformed data {
-  vector[family == 3 ? N : 0] sqrt_y;
-  vector[family == 3 ? N : 0] log_y;
+  vector[family == 3 ? len_y : 0] sqrt_y;
+  vector[family == 3 ? len_y : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
   if (family == 3) {

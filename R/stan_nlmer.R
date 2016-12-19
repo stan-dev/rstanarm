@@ -31,7 +31,7 @@
 #' @template args-adapt_delta
 #' @template args-sparse
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{nlmer}}.
+#' @param formula,data Same as for \code{\link[lme4]{nlmer}}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
@@ -78,7 +78,7 @@
 #' @importFrom stats getInitial
 stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset, 
                         contrasts = NULL, ..., 
-                        prior = normal(), prior_ops = prior_options(),
+                        prior = normal(), prior_dispersion = cauchy(0, 5),
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
                         adapt_delta = NULL, sparse = FALSE) {
@@ -112,11 +112,11 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
   stanfit <- stan_glm.fit(x = X, y = y, family = g,
                           weights = weights, offset = offset,
                           prior = prior, prior_intercept = NULL,
-                          prior_ops = prior_ops, prior_PD = prior_PD, 
+                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = FALSE, sparse = sparse, ...)
   
-  Z <- pad_reTrms(Z = t(nlf$reTrms$Zt), cnms = nlf$reTrms$cnms, 
+  Z <- pad_reTrms(Ztlist = nlf$reTrms$Ztlist, cnms = nlf$reTrms$cnms, 
                   flist = nlf$reTrms$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   g$link <- paste("inv", SSfunctions[SSfun], sep = "_")
@@ -151,7 +151,6 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
   fit <- nlist(stanfit, family = g, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               prior.info = get_prior_info(call, formals()),
                na.action = na.omit, contrasts, algorithm, glmod = nlf)
   out <- stanreg(fit)
   class(out) <- c(class(out), "nlmerMod", "lmerMod")

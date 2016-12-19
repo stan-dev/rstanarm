@@ -311,6 +311,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L
     standata$len_regularization <- 0L
+    standata$SSfun <- 0L
+    standata$input <- double()
+    standata$Dose <- double()
   }
   
   if (!is_bernoulli) {
