@@ -145,7 +145,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   
   out <- structure(loo_x, 
                    name = deparse(substitute(x)), 
-                   family = family_string(x), 
+                   discrete = is_discrete(x), 
                    yhash = hash_y(x))
   
   if (!length(bad_obs)) {
@@ -184,7 +184,7 @@ waic.stanreg <- function(x, ...) {
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
-            family = family_string(x), 
+            discrete = is_discrete(x), 
             yhash = hash_y(x))
 }
 
@@ -257,7 +257,7 @@ kfold <- function(x, K = 10) {
             class = c("kfold", "loo"), 
             K = K, 
             name = deparse(substitute(x)), 
-            family = family_string(x), 
+            discrete = is_discrete(x), 
             yhash = hash_y(x))
 }
 
@@ -473,6 +473,15 @@ hash_y <- function(x, ...) {
   digest::sha1(x = get_y(x), ...)
 }
 
+# check if discrete or continuous
+# @param object stanreg object
+is_discrete <- function(object) {
+  if (inherits(object, "polr"))
+    return(TRUE)
+  fam <- family(object)$family
+  is.binomial(fam) || is.poisson(fam) || is.nb(fam)
+}
+
 is.loo <- function(x) inherits(x, "loo")
 is.kfold <- function(x) is.loo(x) && inherits(x, "kfold")
 is.waic <- function(x) is.loo(x) && inherits(x, "waic")
@@ -493,19 +502,17 @@ validate_loos <- function(loos = list()) {
     stop("Can't mix objects computed using 'loo', 'waic', and 'kfold'.", 
          call. = FALSE)
 
-  fam <- lapply(loos, attr, which = "family")
-  fam_check <- sapply(fam, function(x) {
-    isTRUE(all.equal(x, fam[[1]]))
-  })
-  if (!all(fam_check))
-    stop("Not all models have the same family.", call. = FALSE)
-  
   yhash <- lapply(loos, attr, which = "yhash")
   yhash_check <- sapply(yhash, function(x) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
   if (!all(yhash_check))
     stop("Not all models have the same y variable.", call. = FALSE)
+  
+  discrete <- sapply(loos, attr, which = "discrete") 
+  if (!all(discrete == discrete[1]))
+    stop("Discrete and continuous observation models can't be compared.",
+         call. = FALSE)
   
   setNames(loos, nm = lapply(loos, attr, which = "name"))
 }

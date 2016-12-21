@@ -42,9 +42,12 @@ expect_equivalent_loo <- function(fit) {
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
   
-  att_names <- c("names", "log_lik_dim", "class", "name", "family", "yhash")
+  att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
   expect_named(attributes(l), att_names)
   expect_named(attributes(w), att_names)
+  
+  discrete <- attr(l, "discrete")
+  expect_true(!is.na(discrete) && is.logical(discrete))
   
   expect_equivalent(l, SW(loo(log_lik(fit))))
   expect_equivalent(w, waic(log_lik(fit)))
@@ -246,7 +249,7 @@ test_that("kfold works on some examples", {
     kf2 <- SW(kfold(example_model, 2))
   })
   
-  expect_named(attributes(kf), c("names", "class", "K", "name", "family", "yhash"))
+  expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(print(kf), kf)
   expect_output(print(kf), "4-fold cross-validation")
@@ -261,10 +264,12 @@ test_that("kfold works on some examples", {
 # compare_models ----------------------------------------------------------
 test_that("compare_models throws correct errors", {
   SW(capture.output({
+    mtcars$mpg <- as.integer(mtcars$mpg)
     fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = -1)
     fit2 <- update(fit1, data = mtcars[-1, ])
     fit3 <- update(fit1, formula. = log(mpg) ~ .)
-    fit4 <- update(fit1, family = Gamma("log"))
+    fit4 <- update(fit1, family = poisson("log"))
+    
     l1 <- loo(fit1)
     l2 <- loo(fit2)
     l3 <- loo(fit3)
@@ -279,8 +284,11 @@ test_that("compare_models throws correct errors", {
                "Not all models have the same y variable")
   expect_error(compare_models(l1, l3), 
                "Not all models have the same y variable")
+  expect_error(compare_models(loos = list(l4, l2, l3)), 
+               "Not all models have the same y variable")
   expect_error(compare_models(l1, l4), 
-               "Not all models have the same family")
+               "Discrete and continuous observation models can't be compared")
+  
   
   expect_error(compare_models(l1, fit1), 
                "All objects must have class 'loo'")
@@ -297,17 +305,29 @@ test_that("compare_models throws correct errors", {
 
 test_that("compare_models works", {
   SW(capture.output({
+    mtcars$mpg <- as.integer(mtcars$mpg)
     fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = -1)
     fit2 <- update(fit1, formula. = . ~ . + cyl)
     fit3 <- update(fit2, formula. = . ~ . + gear)
+    fit4 <- update(fit1, family = "poisson")
+    fit5 <- update(fit1, family = "neg_binomial_2")
     
     l1 <- loo(fit1)
     l2 <- loo(fit2)
     l3 <- loo(fit3)
+    l4 <- loo(fit4)
+    l5 <- loo(fit5)
+    
     k1 <- kfold(fit1, K = 2)
     k2 <- kfold(fit2, K = 2)
     k3 <- kfold(fit3, K = 3)
+    k4 <- kfold(fit4, K = 2)
+    k5 <- kfold(fit5, K = 2)
   }))
+  
+  expect_false(attr(l1, "discrete"))
+  expect_false(attr(l2, "discrete"))
+  expect_false(attr(l3, "discrete"))
   
   comp1 <- compare_models(l1, l2)
   comp2 <- compare_models(l1, l2, l3)
@@ -322,6 +342,16 @@ test_that("compare_models works", {
   comp3 <- compare_models(k1, k2, k3)
   expect_equal(ncol(comp3), 2)
   expect_s3_class(comp3, "compare.loo")
+  
+  expect_true(attr(l4, "discrete"))
+  expect_true(attr(l5, "discrete"))
+  expect_silent(comp4 <- compare_models(l4, l5))
+  expect_silent(compare_models(loos = list(l4, l5)))
+  expect_s3_class(comp4, "compare.loo")
+  
+  expect_true(attr(k4, "discrete"))
+  expect_true(attr(k5, "discrete"))
+  expect_s3_class(compare_models(k4, k5), "compare.loo")
 })
 
 
