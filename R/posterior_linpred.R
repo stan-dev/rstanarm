@@ -81,7 +81,7 @@ posterior_linpred.stanreg <- function(object, transform = FALSE, newdata = NULL,
     return(XZ)
   }
   eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
-  if (!transform)
+  if (!transform || is.nlmer(object))
     return(eta)
   linkinv(object)(eta)
 }

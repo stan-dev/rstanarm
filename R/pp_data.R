@@ -24,8 +24,11 @@ pp_data <-
            ...) {
     validate_stanreg_object(object)
     if (is.mer(object)) {
-      out <- .pp_data_mer(object, newdata = newdata,
-                          re.form = re.form, ...)
+      if (is.nlmer(object))
+        out <- .pp_data_nlmer(object, newdata = newdata, re.form = re.form, ...)
+      else
+        out <- .pp_data_mer(object, newdata = newdata,
+                            re.form = re.form, ...)
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
@@ -120,8 +123,8 @@ pp_data <-
     arg1 <- newdata[[inputs[2]]]
     arg2 <- NULL
   }
-  group <- with(nlf$reTrms, pad_reTrms(Zt, cnms, flist))
-  return(nlist(x = nlf$X, offset = offset, Z = t(group$Zt),
+  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
 }
 

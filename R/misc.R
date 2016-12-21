@@ -139,6 +139,12 @@ is.mer <- function(x) {
   isTRUE(check1 && check2)
 }
 
+# Test if stanreg object used stan_nlmer
+#
+# @param x A stanreg object.
+is.nlmer <- function(x) {
+  is.mer(x) && inherits(x, "nlmerMod")
+}
 # Consistent error message to use when something is only available for 
 # models fit using MCMC
 #

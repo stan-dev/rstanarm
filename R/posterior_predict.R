@@ -258,6 +258,7 @@ pp_args <- function(object, data) {
   eta <- data$eta
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   inverse_link <- linkinv(object)
+  if (is.nlmer(object)) inverse_link <- function(x) return(x)
   if (is(object, "polr")) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     args <- nlist(eta, zeta, linkinv = inverse_link)
@@ -321,6 +322,8 @@ pp_eta <- function(object, data, draws = NULL) {
     }
     eta <- eta + as.matrix(b %*% data$Zt)
   }
+  if (is.nlmer(object))
+    eta <- linkinv(object)(eta, data$arg1, data$arg2)
   nlist(eta, stanmat)
 }
 
