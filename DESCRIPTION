@@ -28,10 +28,10 @@ Imports:
     bayesplot (>= 1.0.0),
     ggplot2 (>= 2.2.0),
     lme4 (>= 1.1-8),
-    loo (>= 0.1.6),
+    loo (>= 1.0.0),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.12.1),
+    rstan (>= 2.13.2),
     rstantools (>= 1.0.0),
     shinystan (>= 2.2.1),
     stats,
@@ -42,13 +42,13 @@ Suggests:
     gridExtra,
     HSAUR3,
     KernSmooth,
-    knitr,
+    knitr (>= 1.15.1),
     MASS,
     mgcv,
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.12.0), rstan (>= 2.12.1), BH (>= 1.60.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.13.1), rstan (>= 2.13.2), BH (>= 1.62.0), Rcpp (>=
     0.12.0), RcppEigen
 VignetteBuilder: knitr
 LazyData: true
