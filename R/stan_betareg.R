@@ -96,7 +96,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          model = TRUE, y = TRUE, x = FALSE, ...,
                          prior = normal(), prior_intercept = normal(),
                          prior_z = normal(), prior_intercept_z = normal(),
-                         prior_ops = prior_options(), prior_PD = FALSE, 
+                         prior_dispersion = cauchy(0, 5), prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -107,7 +107,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   mc$model <- mc$y <- mc$x <- TRUE
   
   # NULLify any Stan specific arguments in mc now
-  mc$prior <- mc$prior_intercept <- mc$prior_ops <- mc$prior_PD <- mc$algorithm <-
+  mc$prior <- mc$prior_intercept <- mc$prior_PD <- mc$algorithm <-
     mc$adapt_delta <- mc$QR <- mc$sparse <- NULL
   
   mc$drop.unused.levels <- TRUE
@@ -121,8 +121,6 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   Z <- model.matrix(br, model = "precision")
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
-  if (!length(prior_ops)) 
-    prior_ops <- list(scaled = FALSE, prior_scale_for_dispersion = Inf)
 
   # determine whether user specified regression matrix for precision model
   if (length(grep("\\|", all.names(formula))) == 0 && is.null(link.phi)) {
@@ -136,7 +134,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                               prior = prior, prior_z = prior_z, 
                               prior_intercept = prior_intercept, 
                               prior_intercept_z = prior_intercept_z,
-                              prior_ops = prior_ops, prior_PD = prior_PD, 
+                              prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
                               algorithm = algorithm, adapt_delta = adapt_delta,
                               QR = QR, sparse = sparse)
   algorithm <- match.arg(algorithm)

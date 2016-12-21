@@ -24,7 +24,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
                              link.phi = NULL, ...,
                              prior = normal(), prior_intercept = normal(),
                              prior_z = normal(), prior_intercept_z = normal(),
-                             prior_ops = prior_options(), prior_PD = FALSE, 
+                             prior_dispersion = cauchy(0, 5),
+                             prior_ops = NULL, prior_PD = FALSE, 
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -78,11 +79,9 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (Z_true == 0)
     has_intercept_z <- FALSE
   
-  for (i in names(prior_ops)) # scaled, min_prior_dispersion, prior_scale_for_dispersion
-    assign(i, prior_ops[[i]])
-  
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
+  ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions (handle_glm_prior() from data_block.R)
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
@@ -110,6 +109,19 @@ stan_betareg.fit <- function(x, y, z = NULL,
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i, "_z"), prior_intercept_stuff_z[[i]])
 
+  prior_dispersion_stuff <-
+    handle_glm_prior(
+      prior_dispersion,
+      nvars = 1,
+      default_scale = 5,
+      link = NULL, # don't need to adjust scale based on logit vs probit
+      ok_dists = ok_dispersion_dists
+    )
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
+  names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
+  for (i in names(prior_dispersion_stuff)) 
+    assign(i, prior_dispersion_stuff[[i]])
+  
   if (nvars_z == 0) {
       prior_mean_z <- double()
       prior_scale_z <- double()
@@ -117,7 +129,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   }
   
   # prior scaling (using sd of predictors)
-  if (scaled && prior_dist > 0L && !QR) {
+  min_prior_scale <- 1e-12 # used to be set in prior_options()
+  if (prior_dist > 0L && !QR) {  # scaled && 
     prior_scale <- pmax(min_prior_scale, prior_scale / 
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
@@ -161,6 +174,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_scale_for_intercept = min(.Machine$double.xmax, prior_scale_for_intercept), 
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_scale_for_dispersion = prior_scale_for_dispersion %ORifINF% 0,
+    prior_df_for_dispersion <- c(prior_df_for_dispersion),
+    prior_mean_for_dispersion <- c(prior_mean_for_dispersion),
     has_weights = length(weights) > 0, weights = weights,
     has_offset = length(offset) > 0, offset = offset,
     t = 0L, 
