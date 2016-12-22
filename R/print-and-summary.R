@@ -151,7 +151,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   cat("\nObservations:", nobs(x), 
       " Number of unconstrained parameters:", x$num_unconstrained_pars, 
       "\n", sep = " ")
-  if(is.beta(x$family$family)) {
+  if(is(x, "betareg")) {
     cat("\nMean linear predictor fit with", x$family$link, "link",
         "\nPrecision linear predictor fit with", x$family_phi$link, "link",
         "\n", sep = " ")
