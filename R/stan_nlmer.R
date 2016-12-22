@@ -84,11 +84,13 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
                         adapt_delta = NULL, sparse = FALSE) {
   f <- as.character(formula[-3])
   SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE)
-  SSfun <- sapply(SSfunctions, grepl, x = f[2])
+  SSfun <- sapply(SSfunctions, function(ss) 
+    grepl(paste0(ss, "("), x = f[2], fixed = TRUE))
   if (any(SSfun)) SSfun <- which(SSfun)
   else stop("'stan_nlmer' requires a named self-starting nonlinear function")
   mc <- match.call(expand.dots = FALSE)
-  mc$start <- getInitial(as.formula(f), data)
+  mc$start <- unlist(getInitial(as.formula(f), data, 
+                                control = list(maxiter = 0, warnOnly = TRUE)))
   nlf <- nlformula(mc)
   y <- nlf$respMod$y
   X <- nlf$X
