@@ -588,6 +588,7 @@ make_b_nms <- function(group) {
   for (i in seq_along(group$cnms)) {
     nm <- group_nms[i]
     nms_i <- paste(group$cnms[[i]], nm)
+    levels(group$flist[[nm]]) <- gsub(" ", "_", levels(group$flist[[nm]]))
     if (length(nms_i) == 1) {
       b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
     } else {
