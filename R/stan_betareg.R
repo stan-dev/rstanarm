@@ -108,8 +108,8 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   
   # NULLify any Stan specific arguments in mc now
   mc$prior <- mc$prior_intercept <- mc$prior_PD <- mc$algorithm <-
-    mc$adapt_delta <- mc$QR <- mc$sparse <- NULL
-  
+    mc$adapt_delta <- mc$QR <- mc$sparse <- mc$prior_dispersion <- NULL
+
   mc$drop.unused.levels <- TRUE
   mc[[1L]] <- quote(betareg::betareg)
   mc$control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)

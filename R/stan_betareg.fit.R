@@ -25,7 +25,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
                              prior = normal(), prior_intercept = normal(),
                              prior_z = normal(), prior_intercept_z = normal(),
                              prior_dispersion = cauchy(0, 5),
-                             prior_ops = NULL, prior_PD = FALSE, 
+                             prior_PD = FALSE, 
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -127,10 +127,10 @@ stan_betareg.fit <- function(x, y, z = NULL,
       prior_scale_z <- double()
       prior_df_z <- integer()
   }
-  
+
   # prior scaling (using sd of predictors)
-  min_prior_scale <- 1e-12 # used to be set in prior_options()
-  if (prior_dist > 0L && !QR) {  # scaled && 
+  min_prior_scale <- 1e-12
+  if (prior_dist > 0L && !QR && prior_autoscale) {
     prior_scale <- pmax(min_prior_scale, prior_scale / 
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
@@ -213,7 +213,6 @@ stan_betareg.fit <- function(x, y, z = NULL,
     user_prior_intercept = prior_intercept_stuff,
     user_prior_z = prior_stuff_z,
     user_prior_intercept_z = prior_intercept_stuff_z,
-    user_prior_ops = prior_ops,
     has_intercept = has_intercept,
     has_intercept_z = has_intercept_z,
     has_predictors = nvars > 0,
@@ -285,12 +284,13 @@ stan_betareg.fit <- function(x, y, z = NULL,
 # @return A named list with components 'prior', 'prior_intercept', and possibly 
 #   'prior_covariance', each of which itself is a list containing the needed
 #   values for prior_summary.
+
 summarize_betareg_prior <-
   function(user_prior,
            user_prior_intercept,
            user_prior_z,
            user_prior_intercept_z,
-           user_prior_ops,
+           # user_prior_ops,
            has_intercept, 
            has_intercept_z, 
            has_predictors,
@@ -299,21 +299,21 @@ summarize_betareg_prior <-
            adjusted_prior_intercept_scale,
            adjusted_prior_scale_z,
            adjusted_prior_intercept_scale_z) {
-    rescaled <- isTRUE(user_prior_ops$scaled)
+    # rescaled <- isTRUE(user_prior_ops$scaled)
     rescaled_coef <-
-      rescaled && has_predictors &&
+      user_prior$prior_autoscale && has_predictors &&
       !is.na(user_prior$prior_dist_name) &&
       !all(user_prior$prior_scale == adjusted_prior_scale)
     rescaled_coef_z <-
-      rescaled && has_predictors_z &&
+      user_prior_z$prior_autoscale && has_predictors_z &&
       !is.na(user_prior_z$prior_dist_name) &&
       !all(user_prior_z$prior_scale == adjusted_prior_scale_z)
     rescaled_int <-
-      rescaled && has_intercept &&
+      user_prior_intercept$prior_autoscale_for_intercept && has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
       (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
     rescaled_int_z <-
-      rescaled && has_intercept_z &&
+      user_prior_intercept_z$prior_autoscale_for_intercept && has_intercept_z &&
       !is.na(user_prior_intercept_z$prior_dist_name_for_intercept) &&
       (user_prior_intercept_z$prior_scale != adjusted_prior_intercept_scale_z)
     
