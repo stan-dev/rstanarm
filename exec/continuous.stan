@@ -51,7 +51,6 @@ transformed data {
   else if (family == 4) {
     // do nothing
   }
-  else reject("unknown family"); // do we want to keep this?
 }
 parameters {
   real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
