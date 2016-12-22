@@ -470,7 +470,9 @@ hash_y <- function(x, ...) {
   if (!requireNamespace("digest", quietly = TRUE)) 
     stop("Please install the 'digest' package.")
   validate_stanreg_object(x)
-  digest::sha1(x = get_y(x), ...)
+  y <- get_y(x)
+  attributes(y) <- NULL
+  digest::sha1(x = y, ...)
 }
 
 # check if discrete or continuous
