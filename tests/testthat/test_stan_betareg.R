@@ -41,7 +41,7 @@ test_that("stan_betareg returns expected result when modeling x and dispersion",
   colnames(dat) <- c("y", "x")
   for (i in 1:length(link1)) {
     fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED, QR = TRUE,
-                        prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                        prior = NULL, prior_intercept = NULL,
                         data = dat, algorithm = "optimizing")
     expect_stanreg(fit)
     val <- coef(fit)
@@ -140,7 +140,7 @@ test_that("stan_betareg returns expected result when modeling x and dispersion w
   dat <- data.frame(dat$y, dat$x)
   colnames(dat) <- c("y", "x")
   fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, QR = TRUE,
-                      prior = NULL, prior_intercept = NULL, prior_ops = NULL,
+                      prior = NULL, prior_intercept = NULL,
                       data = dat, weights = weights, offset = offset, algorithm = "optimizing", iter = 2000)
   expect_stanreg(fit)
   val <- coef(fit)
