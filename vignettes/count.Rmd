@@ -227,8 +227,9 @@ When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model
 
 ```{r, count-roaches-loo}
-loos <- list(loo(stan_glm1), loo(stan_glm2))
-compare_models(loos = loos)
+loo1 <- loo(stan_glm1)
+loo2 <- loo(stan_glm2)
+compare_models(loo1, loo2)
 ```
 
 which is not surprising given the better fit we've already observed from the
