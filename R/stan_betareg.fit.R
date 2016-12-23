@@ -290,7 +290,6 @@ summarize_betareg_prior <-
            user_prior_intercept,
            user_prior_z,
            user_prior_intercept_z,
-           # user_prior_ops,
            has_intercept, 
            has_intercept_z, 
            has_predictors,
@@ -299,7 +298,6 @@ summarize_betareg_prior <-
            adjusted_prior_intercept_scale,
            adjusted_prior_scale_z,
            adjusted_prior_intercept_scale_z) {
-    # rescaled <- isTRUE(user_prior_ops$scaled)
     rescaled_coef <-
       user_prior$prior_autoscale && has_predictors &&
       !is.na(user_prior$prior_dist_name) &&
