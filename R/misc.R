@@ -297,7 +297,7 @@ validate_glm_formula <- function(f) {
 #   is thrown.
 check_constant_vars <- function(mf) {
   # don't check if columns are constant for binomial
-  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1] else mf
+  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
   
   lu <- function(x) length(unique(x))
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
