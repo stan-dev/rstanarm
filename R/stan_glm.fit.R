@@ -312,6 +312,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
+    standata$ub_y <- Inf
+    standata$lb_y <- if (is_gaussian) -Inf else 0
     standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
     standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
