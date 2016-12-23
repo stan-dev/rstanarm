@@ -45,9 +45,9 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # error: prior and prior_intercept not lists
   expect_error(stan_glm(f, family = "poisson", prior = normal), 
-               regexp = "‘prior’ should be a named list")
+               regexp = "should be a named list")
   expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
-               regexp = "‘prior_intercept’ should be a named list")
+               regexp = "should be a named list")
   
   # error: QR only with more than 1 predictor
   expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
