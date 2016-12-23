@@ -566,9 +566,10 @@ validate_glm_outcome_support <- function(y, family) {
       if (!all(y %in% c(0L, 1L))) 
         stop("All outcome values must be 0 or 1 for Bernoulli models.", 
              call. = FALSE)
-    } else if (isTRUE(NCOL(y) == 2L) && !.is_count(y)) {
-      stop("All outcome values must be counts for binomial models.",
-           call. = FALSE)
+    } else if (isTRUE(NCOL(y) == 2L)) {
+      if (!.is_count(y))
+        stop("All outcome values must be counts for binomial models.",
+             call. = FALSE)
     } else {
       stop("For binomial models the outcome should be a vector or ",
            "a matrix with 2 columns.", 

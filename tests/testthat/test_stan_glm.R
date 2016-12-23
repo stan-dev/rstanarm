@@ -58,7 +58,7 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
                regexp = "'QR' and 'sparse' cannot both be TRUE")
   
   # message: recommend QR if using meanfield vb
-  expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
+  expect_message(capture.output(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED)), 
                  regexp = "Setting 'QR' to TRUE can often be helpful")
   
   # require intercept for certain family and link combinations
@@ -197,9 +197,11 @@ test_that("stan_glm returns expected result for bernoulli", {
     theta <- fam$linkinv(-1 + x %*% b)
     y <- rbinom(length(theta), size = 1, prob = theta)
   
-    fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
+    capture.output(
+      fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit)
     
     val <- coef(fit)
@@ -227,9 +229,11 @@ test_that("stan_glm returns expected result for binomial example", {
     else b <- c(0, 0.5, 0.1, -1.0)
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
-    fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
+    capture.output(
+      fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit)
     
     val <- coef(fit)
@@ -238,9 +242,11 @@ test_that("stan_glm returns expected result for binomial example", {
     else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
 
     prop <- yes / trials
-    fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
+    capture.output(
+      fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
                      prior = NULL, prior_intercept = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
