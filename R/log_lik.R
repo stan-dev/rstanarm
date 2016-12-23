@@ -155,7 +155,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     if (is.ig(fname)) 
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
-      draws$size <- stanmat[,"overdispersion"]
+      draws$size <- stanmat[,"reciprocal_dispersion"]
     
   } else {
     stopifnot(is(object, "polr"))

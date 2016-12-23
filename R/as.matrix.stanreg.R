@@ -81,7 +81,7 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
     if (is.null(mat)) 
       STOP_no_draws()
     if (!user_pars) {
-      dispersion <- c("sigma", "scale", "shape", "lambda", "overdispersion")
+      dispersion <- c("sigma", "scale", "shape", "lambda", "reciprocal_dispersion")
       pars <- c(names(coef(x)), # return with coefficients first
                 dispersion[which(dispersion %in% colnames(mat))])
     }

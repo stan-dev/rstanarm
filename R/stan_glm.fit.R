@@ -442,7 +442,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       if (is_gaussian) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
-            if (is_nb) "overdispersion" else NA
+            if (is_nb) "reciprocal_dispersion" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
@@ -512,7 +512,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                    if (is_gaussian) "sigma", 
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
-                   if (is_nb) "overdispersion", 
+                   if (is_nb) "reciprocal_dispersion", 
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    "mean_PPD", 
                    "log-posterior")
@@ -702,5 +702,5 @@ summarize_glm_prior <-
   if (is.gaussian(fam)) "sigma" else
     if (is.gamma(fam)) "shape" else
       if (is.ig(fam)) "lambda" else 
-        if (is.nb(fam)) "overdispersion" else NA
+        if (is.nb(fam)) "reciprocal_dispersion" else NA
 }

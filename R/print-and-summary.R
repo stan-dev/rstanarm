@@ -121,7 +121,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     } else if (is.ig(famname)) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
-      nms <- c(nms, "overdispersion")
+      nms <- c(nms, "reciprocal_dispersion")
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
@@ -245,7 +245,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
       if (is.gaussian(famname)) 
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
-        mark <- c(mark, "overdispersion") 
+        mark <- c(mark, "reciprocal_dispersion") 
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
