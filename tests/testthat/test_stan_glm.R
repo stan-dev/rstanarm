@@ -239,14 +239,14 @@ test_that("model with hs prior doesn't error", {
                 regexp = "Automatic Differentiation Variational Inference")
 })
 
-test_that("prior_dispersion argument is detected properly", {
+test_that("prior_nuisance argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_dispersion = exponential(5))
+                  refresh = -1, prior_nuisance = exponential(5))
   expect_identical(
-    fit$prior.info$prior_dispersion, 
+    fit$prior.info$prior_nuisance, 
     list(dist = "exponential", 
          location = NULL, scale = NULL, df = NULL, rate = 5, 
-         dispersion_name = "sigma")
+         nuisance_name = "sigma")
   )
 })
 

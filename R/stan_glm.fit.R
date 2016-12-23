@@ -30,7 +30,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
-                         prior_dispersion = cauchy(0, 5),
+                         prior_nuisance = cauchy(0, 5),
                          prior_ops = NULL,
                          group = list(),
                          prior_PD = FALSE, 
@@ -42,10 +42,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   # removed in future release
   if (!is.null(prior_ops)) {
     tmp <- .support_deprecated_prior_options(prior, prior_intercept, 
-                                             prior_dispersion, prior_ops)
+                                             prior_nuisance, prior_ops)
     prior <- tmp[["prior"]]
     prior_intercept <- tmp[["prior_intercept"]]
-    prior_dispersion <- tmp[["prior_dispersion"]]
+    prior_nuisance <- tmp[["prior_nuisance"]]
     prior_ops <- NULL
   }
   
@@ -93,10 +93,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # useless assignments to pass R CMD check
   has_intercept <- 
-    prior_df <- prior_df_for_intercept <- prior_df_for_dispersion <-
-    prior_dist <- prior_dist_for_intercept <- prior_dist_for_dispersion <- 
-    prior_mean <- prior_mean_for_intercept <- prior_mean_for_dispersion <- 
-    prior_scale <- prior_scale_for_intercept <- prior_scale_for_dispersion <- 
+    prior_df <- prior_df_for_intercept <- prior_df_for_nuisance <-
+    prior_dist <- prior_dist_for_intercept <- prior_dist_for_nuisance <- 
+    prior_mean <- prior_mean_for_intercept <- prior_mean_for_nuisance <- 
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_nuisance <- 
     prior_autoscale <- prior_autoscale_for_intercept <- NULL
   
   x_stuff <- center_x(x, sparse)
@@ -106,7 +106,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
-  ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_nuisance_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions
   prior_stuff <- handle_glm_prior(
@@ -132,18 +132,18 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   for (i in names(prior_intercept_stuff))
     assign(i, prior_intercept_stuff[[i]])
   
-  prior_dispersion_stuff <-
+  prior_nuisance_stuff <-
     handle_glm_prior(
-      prior_dispersion,
+      prior_nuisance,
       nvars = 1,
       default_scale = 5,
       link = NULL, # don't need to adjust scale based on logit vs probit
-      ok_dists = ok_dispersion_dists
+      ok_dists = ok_nuisance_dists
     )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
-  names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
-  for (i in names(prior_dispersion_stuff)) 
-    assign(i, prior_dispersion_stuff[[i]])
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_nuisance
+  names(prior_nuisance_stuff) <- paste0(names(prior_nuisance_stuff), "_for_nuisance")
+  for (i in names(prior_nuisance_stuff)) 
+    assign(i, prior_nuisance_stuff[[i]])
   
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
@@ -223,8 +223,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_dist_for_dispersion = prior_dist_for_dispersion
-    # mean,df,scale for dispersion added below depending on family
+    prior_dist_for_nuisance = prior_dist_for_nuisance
+    # mean,df,scale for nuisance added below depending on family
   )
 
   # make a copy of user specification before modifying 'group' (used for keeping
@@ -321,20 +321,20 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
-    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
-    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
-    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
+    standata$prior_scale_for_nuisance <- prior_scale_for_nuisance %ORifINF% 0
+    standata$prior_df_for_nuisance <- c(prior_df_for_nuisance)
+    standata$prior_mean_for_nuisance <- c(prior_mean_for_nuisance)
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
                               3L)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
-    standata$prior_scale_for_dispersion <- 
-      if (!length(group) || prior_scale_for_dispersion == Inf) 
-        0 else prior_scale_for_dispersion
-    standata$prior_mean_for_dispersion <- 0
-    standata$prior_df_for_dispersion <- 0
+    standata$prior_scale_for_nuisance <- 
+      if (!length(group) || prior_scale_for_nuisance == Inf) 
+        0 else prior_scale_for_nuisance
+    standata$prior_mean_for_nuisance <- 0
+    standata$prior_df_for_nuisance <- 0
     standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
@@ -392,15 +392,15 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
   } else if (is.poisson(famname)) {
     standata$family <- 1L
-    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
-    standata$prior_mean_for_dispersion <- 0
-    standata$prior_df_for_dispersion <- 0
+    standata$prior_scale_for_nuisance <- prior_scale_for_nuisance %ORifINF% 0
+    standata$prior_mean_for_nuisance <- 0
+    standata$prior_df_for_nuisance <- 0
     stanfit <- stanmodels$count 
   } else if (is_nb) {
     standata$family <- 2L
-    standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
-    standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
-    standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
+    standata$prior_scale_for_nuisance <- prior_scale_for_nuisance %ORifINF% 0
+    standata$prior_df_for_nuisance <- c(prior_df_for_nuisance)
+    standata$prior_mean_for_nuisance <- c(prior_mean_for_nuisance)
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
@@ -412,7 +412,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   prior_info <- summarize_glm_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,
-    user_prior_dispersion = prior_dispersion_stuff,
+    user_prior_nuisance = prior_nuisance_stuff,
     user_prior_covariance = user_covariance,
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
@@ -424,7 +424,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   pars <- c(if (has_intercept) "alpha", 
             "beta", 
             if (length(group)) "b",
-            if (is_continuous | is_nb) "dispersion",
+            if (is_continuous | is_nb) "nuisance",
             if (standata$len_theta_L) "theta_L",
             "mean_PPD")
   if (algorithm == "optimizing") {
@@ -438,7 +438,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     }
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    new_names[grepl("dispersion(\\[1\\])?$", new_names)] <- 
+    new_names[grepl("nuisance(\\[1\\])?$", new_names)] <- 
       if (is_gaussian) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
@@ -602,19 +602,19 @@ make_b_nms <- function(group) {
 # Create "prior.info" attribute needed for prior_summary()
 #
 # @param user_* The user's prior, prior_intercept, prior_covariance, and 
-#   prior_dispersion specifications. For prior and prior_intercept these should be
+#   prior_nuisance specifications. For prior and prior_intercept these should be
 #   passed in after broadcasting the df/location/scale arguments if necessary.
 # @param has_intercept T/F, does model have an intercept?
 # @param has_predictors T/F, does model have predictors?
 # @param adjusted_prior_* adjusted scales computed if using autoscaled priors
 # @param family Family object.
 # @return A named list with components 'prior', 'prior_intercept', and possibly 
-#   'prior_covariance' and 'prior_dispersion' each of which itself is a list
+#   'prior_covariance' and 'prior_nuisance' each of which itself is a list
 #   containing the needed values for prior_summary.
 summarize_glm_prior <-
   function(user_prior,
            user_prior_intercept,
-           user_prior_dispersion,
+           user_prior_nuisance,
            user_prior_covariance,
            has_intercept, 
            has_predictors,
@@ -647,11 +647,11 @@ summarize_glm_prior <-
         user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
       }
     }
-    if (user_prior_dispersion$prior_dist_name_for_dispersion %in% "t") {
-      if (all(user_prior_dispersion$prior_df_for_dispersion == 1)) {
-        user_prior_dispersion$prior_dist_name_for_dispersion <- "cauchy"
+    if (user_prior_nuisance$prior_dist_name_for_nuisance %in% "t") {
+      if (all(user_prior_nuisance$prior_df_for_nuisance == 1)) {
+        user_prior_nuisance$prior_dist_name_for_nuisance <- "cauchy"
       } else {
-        user_prior_dispersion$prior_dist_name_for_dispersion <- "student_t"
+        user_prior_nuisance$prior_dist_name_for_nuisance <- "student_t"
       }
     }
     prior_list <- list(
@@ -679,25 +679,25 @@ summarize_glm_prior <-
     if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance
     
-    dispersion_name <- .rename_dispersion(family)
-    prior_list$prior_dispersion <- if (is.na(dispersion_name)) 
-      NULL else with(user_prior_dispersion, list(
-        dist = prior_dist_name_for_dispersion,
-        location = if (prior_dist_name_for_dispersion != "exponential")
-          prior_mean_for_dispersion else NULL,
-        scale = if (prior_dist_name_for_dispersion != "exponential")
-          prior_scale_for_dispersion else NULL,
-        df = if (prior_dist_name_for_dispersion %in% "student_t")
-          prior_df_for_dispersion else NULL, 
-        rate = if (prior_dist_name_for_dispersion %in% "exponential")
-          1 / prior_scale_for_dispersion else NULL,
-        dispersion_name = dispersion_name
+    nuisance_name <- .rename_nuisance(family)
+    prior_list$prior_nuisance <- if (is.na(nuisance_name)) 
+      NULL else with(user_prior_nuisance, list(
+        dist = prior_dist_name_for_nuisance,
+        location = if (prior_dist_name_for_nuisance != "exponential")
+          prior_mean_for_nuisance else NULL,
+        scale = if (prior_dist_name_for_nuisance != "exponential")
+          prior_scale_for_nuisance else NULL,
+        df = if (prior_dist_name_for_nuisance %in% "student_t")
+          prior_df_for_nuisance else NULL, 
+        rate = if (prior_dist_name_for_nuisance %in% "exponential")
+          1 / prior_scale_for_nuisance else NULL,
+        nuisance_name = nuisance_name
       ))
       
     return(prior_list)
   }
 
-.rename_dispersion <- function(family) {
+.rename_nuisance <- function(family) {
   fam <- family$family
   if (is.gaussian(fam)) "sigma" else
     if (is.gamma(fam)) "shape" else

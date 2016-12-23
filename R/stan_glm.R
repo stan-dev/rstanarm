@@ -57,7 +57,7 @@
 #'   
 #'   The \code{stan_glm.nb} function, which takes the extra argument 
 #'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family = 
-#'   \link{neg_binomial_2}(link)}. The \code{prior_dispersion} argument can be 
+#'   \link{neg_binomial_2}(link)}. The \code{prior_nuisance} argument can be 
 #'   used to set a prior on the overdispersion parameter.
 #'   
 #' @seealso The various vignettes for \code{stan_glm}.
@@ -115,7 +115,7 @@
 #'   Days ~ Sex/(Age + Eth*Lrn), 
 #'   data = MASS::quine, 
 #'   QR = TRUE, 
-#'   prior_dispersion = exponential(1/2),
+#'   prior_nuisance = exponential(1/2),
 #'   # could also use stan_glm.nb and drop the family argument
 #'   family = neg_binomial_2(link = "log")
 #' )
@@ -133,7 +133,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_dispersion = cauchy(0, 5),
+                    prior_nuisance = cauchy(0, 5),
                     prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
@@ -170,7 +170,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           offset = offset, family = family,
                           prior = prior, 
                           prior_intercept = prior_intercept,
-                          prior_dispersion = prior_dispersion,
+                          prior_nuisance = prior_nuisance,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
@@ -209,7 +209,7 @@ stan_glm.nb <- function(formula,
                         ...,
                         prior = normal(),
                         prior_intercept = normal(),
-                        prior_dispersion = cauchy(0, 5),
+                        prior_nuisance = cauchy(0, 5),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

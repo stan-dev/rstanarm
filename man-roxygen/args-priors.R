@@ -19,15 +19,19 @@
 #'   \code{sparse} argument is left at its default value of \code{FALSE}--- then
 #'   the prior distribution for the intercept is set so it applies to the value 
 #'   when all predictors are centered.)
-#' @param prior_dispersion The prior distribution for the "dispersion" parameter
-#'   (if applicable). The "dispersion" parameter refers to a different parameter
-#'   depending on the \code{family}. For Gaussian models it is the residual SD 
-#'   sigma, for negative binomial models it is the overdispersion parameter, for
-#'   gamma models it is the shape parameter, and for inverse-Gaussian models it 
-#'   is the lambda parameter. Binomial and Poisson models do not have dispersion
-#'   parameters. \code{prior_dispersion} can be a call to \code{exponential} to 
+#' @param prior_nuisance The prior distribution for the "nuisance" parameter (if
+#'   applicable). The "nuisance" parameter refers to a different parameter 
+#'   depending on the \code{family}. For Gaussian models it refers to the error 
+#'   standard deviation \code{"sigma"}. For negative binomial models it is the 
+#'   so-called \code{"size"} parameter (see e.g., \code{\link[stats]{rnbinom}}),
+#'   and smaller values of \code{"size"} correspond to greater (over)dispersion.
+#'   For gamma models it is the \code{"shape"} parameter (see e.g., 
+#'   \code{\link[stats]{rgamma}}), and for inverse-Gaussian models it is the 
+#'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
+#'   a scale parameter). Binomial and Poisson models do not have nuisance 
+#'   parameters. \code{prior_nuisance} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
-#'   prior. See \code{\link{priors}} for details on these functions. To omit 
-#'   a prior ---i.e., to use a flat (improper) uniform prior--- set 
-#'   \code{prior_dispersion} to \code{NULL}.
+#'   prior. See \code{\link{priors}} for details on these functions. To omit a 
+#'   prior ---i.e., to use a flat (improper) uniform prior--- set 
+#'   \code{prior_nuisance} to \code{NULL}.
