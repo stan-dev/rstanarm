@@ -45,9 +45,9 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # error: prior and prior_intercept not lists
   expect_error(stan_glm(f, family = "poisson", prior = normal), 
-               regexp = "'prior' should be a named list")
+               regexp = "‘prior’ should be a named list")
   expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
-               regexp = "'prior_intercept' should be a named list")
+               regexp = "‘prior_intercept’ should be a named list")
   
   # error: QR only with more than 1 predictor
   expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
@@ -59,7 +59,7 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # message: recommend QR if using meanfield vb
   expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
-               regexp = "Setting 'QR' to TRUE can often be helpful")
+                 regexp = "Setting 'QR' to TRUE can often be helpful")
   
   # require intercept for certain family and link combinations
   expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
@@ -68,6 +68,22 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm(I(counts > 20) ~ -1 + outcome + treatment, 
                         family = binomial(link="log"), seed = SEED), 
                regexp = "model must have an intercept")
+  
+  # support of outcome variable
+  expect_error(stan_glm(cbind(1:10, runif(10)) ~ 1, family = "binomial"), 
+               "outcome values must be counts")
+  expect_error(stan_glm(c(1,2,1,2) ~ 1, family = "binomial"), 
+               "outcome values must be 0 or 1")
+  expect_error(stan_glm((-1):3 ~ 1, family = "poisson"), 
+               "outcome values must be counts")
+  expect_error(stan_glm.nb(runif(3) ~ 1), 
+               "outcome values must be counts")
+  expect_error(stan_glm(0:3 ~ 1, family = "Gamma"), 
+               "outcome values must be positive")
+  expect_error(stan_glm(runif(3, -2, -1) ~ 1, family = "inverse.gaussian"), 
+               "outcome values must be positive")
+  expect_error(stan_glm(cbind(1:10, 1:10) ~ 1, family = "gaussian"), 
+               "should not have multiple columns")
 })
 
 context("stan_glm (gaussian)")
@@ -104,6 +120,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
+
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, QR = TRUE,
@@ -126,6 +143,7 @@ context("stan_glm (negative binomial)")
 test_that("stan_glm returns something for glm negative binomial example", {
   # example from MASS::glm.nb
   require(MASS)
+
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
