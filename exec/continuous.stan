@@ -25,7 +25,9 @@ functions {
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
-  vector[N] y; // continuous outcome
+  real lb_y; // lower bound on y
+  real<lower=lb_y> ub_y; // upper bound on y
+  vector<lower=lb_y, upper=ub_y>[N] y; // continuous outcome
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for nuisance

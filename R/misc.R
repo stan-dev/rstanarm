@@ -297,12 +297,12 @@ validate_glm_formula <- function(f) {
 #   is thrown.
 check_constant_vars <- function(mf) {
   # don't check if columns are constant for binomial
-  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1] else mf
+  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
   
   lu <- function(x) length(unique(x))
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
-  is_constant <- apply(mf1[, sel, drop = FALSE], 2, lu) == 1
+  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
   if (any(is_constant)) 
     stop("Constant variable(s) found: ", 
          paste(names(is_constant)[is_constant], collapse = ", "), 
