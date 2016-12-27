@@ -108,10 +108,16 @@ test_that("stan_lmer ok if global intercept forced to 0", {
 })
 
 context("stan_gamm4")
+expect_gg <- function(x) {
+  testthat::expect_s3_class(x, "ggplot")
+  invisible(ggplot2::ggplot_build(x))
+}
 test_that("stan_gamm4 returns stanreg object", {
-  fit <- stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, sparse = TRUE,
-                    random = ~(1|Subject), chains = CHAINS, iter = ITER, 
-                    seed = SEED, refresh = REFRESH)
+  capture.output(
+    fit <- stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, sparse = TRUE,
+                      random = ~(1|Subject), chains = CHAINS, iter = ITER, 
+                      seed = SEED, refresh = REFRESH)
+  )
   expect_stanreg(fit)
   # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
   #              random = ~(1|Subject))$mer
@@ -121,7 +127,7 @@ test_that("stan_gamm4 returns stanreg object", {
   
   p1 <- plot_nonlinear(fit)
   p2 <- plot_nonlinear(fit, smooths = "s(Days)")
-  expect_s3_class(p, "ggplot")
-  expect_s3_class(p2, "ggplot")
+  expect_gg(p1)
+  expect_gg(p2)
 })
 
