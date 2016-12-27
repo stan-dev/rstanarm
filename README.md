@@ -4,8 +4,7 @@
 
 # rstanarm
 
-[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm) 
-[![Coverage Status](https://codecov.io/github/stan-dev/rstanarm/coverage.svg?branch=master)](https://codecov.io/github/stan-dev/rstanarm?branch=master) 
+[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)  
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
 [![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=brightgreen)](http://cran.rstudio.com/package=rstanarm)
 
