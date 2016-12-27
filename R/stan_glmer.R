@@ -134,25 +134,6 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   return(out)
 }
 
-# make_Sigma <- function(mat, cnms) {
-#   useSc <- "sigma" %in% colnames(mat)
-#   if (useSc) sc <- mat[,"sigma"]
-#   else sc <- 1
-#   theta <- mat[,grepl("^theta\\[", colnames(mat)), drop = FALSE]
-#   nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
-#   nms <- names(cnms)
-#   Sigma_list <- apply(theta, 1, FUN = mkVarCorr, 
-#                       sc = 1, cnms = cnms, nc = nc, nms = nms)
-#   add <- function(x) Reduce("+", x)
-#   Sigma <- sapply(Sigma_list[[1]], simplify = FALSE, FUN = `*`, y = 0)
-#   for (i in seq_along(Sigma)) {
-#     Sigma[[i]] <- add(lapply(Sigma_list, FUN = function(x) x[[i]])) / length(Sigma_list)
-#     attr(Sigma[[i]], "stddev") <- sqrt(diag(Sigma[[i]]))
-#     attr(Sigma[[i]], "correlation") <- cov2cor(Sigma[[i]])
-#   }
-#   Sigma <- structure(Sigma, useSc = useSc, sc = mean(sc), class = "VarCorr.merMod")
-#   return(Sigma)
-# }
 
 #' @rdname stan_glmer
 #' @export
