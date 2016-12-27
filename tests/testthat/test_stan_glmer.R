@@ -96,20 +96,6 @@ test_that("stan_glmer.nb ok", {
   expect_equal(ngrps(fit), ngrps(ans))
 })
 
-context("stan_gamm4")
-test_that("stan_gamm4 returns expected result for sleepstudy example", {
-  fit <- stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, sparse = TRUE,
-                    random = ~(1|Subject), chains = CHAINS, iter = ITER, 
-                    seed = SEED, refresh = REFRESH)
-  expect_stanreg(fit)
-  
-  # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
-  #              random = ~(1|Subject))$mer
-  # expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol, check.attributes = FALSE)
-  # expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
-  # expect_identical(ngrps(fit), ngrps(ans))
-})
-
 context("stan_lmer")
 test_that("stan_lmer returns an error when multiple group-specific terms are specified", {
   expect_error(stan_lmer(Reaction / 10 ~ Days + (Days | Subject) + (1|Subject), 
@@ -121,4 +107,21 @@ test_that("stan_lmer ok if global intercept forced to 0", {
                            seed = SEED))
 })
 
+context("stan_gamm4")
+test_that("stan_gamm4 returns stanreg object", {
+  fit <- stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, sparse = TRUE,
+                    random = ~(1|Subject), chains = CHAINS, iter = ITER, 
+                    seed = SEED, refresh = REFRESH)
+  expect_stanreg(fit)
+  # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
+  #              random = ~(1|Subject))$mer
+  # expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol, check.attributes = FALSE)
+  # expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
+  # expect_identical(ngrps(fit), ngrps(ans))
   
+  p1 <- plot_nonlinear(fit)
+  p2 <- plot_nonlinear(fit, smooths = "s(Days)")
+  expect_s3_class(p, "ggplot")
+  expect_s3_class(p2, "ggplot")
+})
+
