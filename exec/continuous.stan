@@ -92,7 +92,10 @@ model {
         else target += normal_lpdf(y | SS_asympOff(input, P), dispersion);
       }
       else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), dispersion);
-      else target += normal_lpdf(y | SS_biexp(input, P), dispersion);
+      else {
+        for (i in 1:len_y) P[i,1] = P[i,1] + exp(P[i,3]); // ordering constraint
+        target += normal_lpdf(y | SS_biexp(input, P), dispersion);
+      }
     }
     else {
       if (SSfun <= 7) {
