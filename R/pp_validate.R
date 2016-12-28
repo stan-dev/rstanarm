@@ -105,7 +105,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
 
-  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "dispersion", "cutpoints", "theta_L")]
+  dims <- object$stanfit@par_dims[c("alpha", "beta", "b", "nuisance", "cutpoints", "theta_L")]
   dims <- dims[!sapply(dims, is.null)]
   dims <- sapply(dims, prod)
   dims <- dims[dims > 0]
