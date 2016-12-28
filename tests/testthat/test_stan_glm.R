@@ -45,9 +45,9 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # error: prior and prior_intercept not lists
   expect_error(stan_glm(f, family = "poisson", prior = normal), 
-               regexp = "'prior' should be a named list")
+               regexp = "should be a named list")
   expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
-               regexp = "'prior_intercept' should be a named list")
+               regexp = "should be a named list")
   
   # error: QR only with more than 1 predictor
   expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
@@ -58,8 +58,8 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
                regexp = "'QR' and 'sparse' cannot both be TRUE")
   
   # message: recommend QR if using meanfield vb
-  expect_message(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED), 
-               regexp = "Setting 'QR' to TRUE can often be helpful")
+  expect_message(capture.output(stan_glm(f, family = "poisson", algorithm = "meanfield", seed = SEED)), 
+                 regexp = "Setting 'QR' to TRUE can often be helpful")
   
   # require intercept for certain family and link combinations
   expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
@@ -68,6 +68,22 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm(I(counts > 20) ~ -1 + outcome + treatment, 
                         family = binomial(link="log"), seed = SEED), 
                regexp = "model must have an intercept")
+  
+  # support of outcome variable
+  expect_error(stan_glm(cbind(1:10, runif(10)) ~ 1, family = "binomial"), 
+               "outcome values must be counts")
+  expect_error(stan_glm(c(1,2,1,2) ~ 1, family = "binomial"), 
+               "outcome values must be 0 or 1")
+  expect_error(stan_glm((-1):3 ~ 1, family = "poisson"), 
+               "outcome values must be counts")
+  expect_error(stan_glm.nb(runif(3) ~ 1), 
+               "outcome values must be counts")
+  expect_error(stan_glm(0:3 ~ 1, family = "Gamma"), 
+               "outcome values must be positive")
+  expect_error(stan_glm(runif(3, -2, -1) ~ 1, family = "inverse.gaussian"), 
+               "outcome values must be positive")
+  expect_error(stan_glm(cbind(1:10, 1:10) ~ 1, family = "gaussian"), 
+               "should not have multiple columns")
 })
 
 context("stan_glm (gaussian)")
@@ -104,6 +120,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
+
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, QR = TRUE,
@@ -126,6 +143,7 @@ context("stan_glm (negative binomial)")
 test_that("stan_glm returns something for glm negative binomial example", {
   # example from MASS::glm.nb
   require(MASS)
+
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
@@ -179,9 +197,11 @@ test_that("stan_glm returns expected result for bernoulli", {
     theta <- fam$linkinv(-1 + x %*% b)
     y <- rbinom(length(theta), size = 1, prob = theta)
   
-    fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
+    capture.output(
+      fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit)
     
     val <- coef(fit)
@@ -209,9 +229,11 @@ test_that("stan_glm returns expected result for binomial example", {
     else b <- c(0, 0.5, 0.1, -1.0)
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
-    fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
+    capture.output(
+      fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit)
     
     val <- coef(fit)
@@ -220,9 +242,11 @@ test_that("stan_glm returns expected result for binomial example", {
     else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
 
     prop <- yes / trials
-    fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
+    capture.output(
+      fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
                      prior = NULL, prior_intercept = NULL,
                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+    )
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
@@ -237,17 +261,21 @@ test_that("model with hs prior doesn't error", {
   expect_output(stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
                          seed = SEED, algorithm = "meanfield", QR = TRUE), 
                 regexp = "Automatic Differentiation Variational Inference")
+  expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 })
 
 test_that("prior_dispersion argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_dispersion = exponential(5))
+                  refresh = -1, prior = student_t(), 
+                  prior_dispersion = exponential(5))
   expect_identical(
     fit$prior.info$prior_dispersion, 
     list(dist = "exponential", 
          location = NULL, scale = NULL, df = NULL, rate = 5, 
          dispersion_name = "sigma")
   )
+  expect_output(print(prior_summary(fit)), 
+                "~ exponential(rate = ", fixed = TRUE)
 })
 
 test_that("empty interaction levels dropped", {

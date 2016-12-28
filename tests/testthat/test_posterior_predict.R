@@ -380,6 +380,92 @@ test_that("lme4 tests work similarly", {
 })
 
 
+# spaces in factor levels -------------------------------------------------
+context("posterior_linpred/predict with spaces in factor levels")
+
+test_that("posterior_linpred not sensitive to spaces in factor levels", {
+  df <- data.frame(
+    y = rnorm(10), 
+    fac_nospace = gl(2, 5, labels = c("levelone", "leveltwo")), 
+    char_nospace = rep(c("levelone", "leveltwo"), each = 5),
+    fac_space = gl(2, 5, labels = c("level one", "level two")), 
+    char_space = rep(c("level one", "level two"), each = 5),
+    fac_mix = gl(2, 5, labels = c("level one", "leveltwo")), 
+    char_mix = rep(c("level one", "leveltwo"), each = 5),
+    int = rep(1:2, each = 5)
+  )
+  SW(capture.output(
+    fit1 <- stan_lmer(y ~ (1 | fac_nospace), data = df, seed = 123, chains = 2, iter = 25),
+    fit2 <- update(fit1, formula. = . ~ (1 | char_nospace)),
+    fit3 <- update(fit1, formula. = . ~ (1 | fac_space)),
+    fit4 <- update(fit1, formula. = . ~ (1 | char_space)),
+    fit5 <- update(fit1, formula. = . ~ (1 | fac_mix)),
+    fit6 <- update(fit1, formula. = . ~ (1 | char_mix)),
+    fit7 <- update(fit1, formula. = . ~ (1 | int))
+  ))
+  
+  # not adding a new level
+  nd1 <- df[c(1, 10), ]
+  ans1 <- posterior_linpred(fit1, newdata = nd1)
+  expect_equal(ans1, posterior_linpred(fit2, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit3, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit4, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit5, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit6, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit7, newdata = nd1))
+  
+  # adding new levels
+  nd2 <- data.frame(
+    fac_nospace = gl(4, 1, labels = c("levelone", "leveltwo", "levelthree", "levelfour")),
+    char_nospace = c("levelone", "leveltwo", "levelthree", "levelfour"),
+    fac_space = gl(4, 1, labels = c("level one", "level two", "level three", "level four")),
+    char_space = c("level one", "level two", "level three", "level four"), 
+    fac_mix = gl(4, 1, labels = c("level one", "leveltwo", "level three", "levelfour")),
+    char_mix = c("level one", "leveltwo", "level three", "levelfour"),
+    int = 1:4
+  )
+  ans2 <- posterior_linpred(fit1, newdata = nd2)
+  expect_equal(ans2[, 1:2], ans1) # should be same as ans1 except for cols 3:4 with new levels
+  expect_equal(ans2, posterior_linpred(fit2, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit3, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit4, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit5, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit6, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit7, newdata = nd2))
+})
+
+test_that("posterior_linpred with spaces in factor levels ok with complicated formula", {
+  d <- mtcars
+  d$cyl_fac <- factor(d$cyl, labels = c("cyl 4", "cyl 6", "cyl 8"))
+  d$gear_fac <- factor(d$gear, labels = c("gear 3", "gear 4", "gear 5"))
+  
+  SW(capture.output(
+    fit1 <- stan_lmer(mpg ~ (1 + wt|cyl/gear), data = d,
+                      iter = 50, chains = 1, seed = 123),
+    fit2 <- update(fit1, formula. = . ~ (1 + wt|cyl_fac/gear_fac))
+  ))
+  expect_equal(posterior_linpred(fit1), posterior_linpred(fit2))
+  
+  # no new levels, all orig levels present in newdata
+  nd1 <- data.frame(wt = 2, cyl = d$cyl, gear = d$gear)
+  nd2 <- data.frame(wt = 2, cyl_fac = d$cyl_fac, gear_fac = d$gear_fac)
+  expect_equal(posterior_linpred(fit1, newdata = nd1), 
+               posterior_linpred(fit2, newdata = nd2))
+  
+  # no new levels, subset of orig levels present in newdata
+  nd3 <- data.frame(wt = 2, cyl = 4, gear = 3)
+  nd4 <- data.frame(wt = 2, cyl_fac = "cyl 4", gear_fac = factor(3, labels = "gear 3"))
+  expect_equal(posterior_linpred(fit1, newdata = nd3), 
+               posterior_linpred(fit2, newdata = nd4))
+  
+  # with new levels
+  nd5 <- data.frame(wt = 2, cyl = 98, gear = 99)
+  nd6 <- data.frame(wt = 2, cyl_fac = "new cyl", gear_fac = "new gear")
+  expect_equal(posterior_linpred(fit1, newdata = nd5), 
+               posterior_linpred(fit2, newdata = nd6))
+})
+
+
 # helper functions --------------------------------------------------------
 context("posterior_predict helper functions")
 test_that("pp_binomial_trials works", {

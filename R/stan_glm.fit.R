@@ -75,20 +75,11 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     stop("To specify 'y' as proportion of successes and 'weights' as ",
          "number of trials please use stan_glm rather than calling ",
          "stan_glm.fit directly.")
-  if (is.binomial(family$family)) {
-    if (NCOL(y) == 1L) {
-      if (is.numeric(y) || is.logical(y)) 
-        y <- as.integer(y)
-      if (is.factor(y)) 
-        y <- fac2bin(y)
-      if (!all(y %in% c(0L, 1L))) 
-        stop("y values must be 0 or 1 for bernoulli regression.")
-    } else {
-      if (!isTRUE(NCOL(y) == 2L))
-        stop("y should either be a vector or a matrix 1 or 2 columns.")
-      trials <- as.integer(y[, 1L] + y[, 2L])
-      y <- as.integer(y[, 1L])
-    }
+  
+  y <- validate_glm_outcome_support(y, family)
+  if (is.binomial(family$family) && NCOL(y) == 2L) {
+    trials <- as.integer(y[, 1L] + y[, 2L])
+    y <- as.integer(y[, 1L])
   }
 
   # useless assignments to pass R CMD check
@@ -323,6 +314,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
+    standata$ub_y <- Inf
+    standata$lb_y <- if (is_gaussian) -Inf else 0
     standata$prior_scale_for_dispersion <- prior_scale_for_dispersion %ORifINF% 0
     standata$prior_df_for_dispersion <- c(prior_df_for_dispersion)
     standata$prior_mean_for_dispersion <- c(prior_mean_for_dispersion)
@@ -524,6 +517,75 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 }
 
 
+
+# internal ----------------------------------------------------------------
+
+# Verify that outcome values match support implied by family object
+#
+# @param y outcome variable
+# @param family family object
+# @return y (possibly slightly modified) unless an error is thrown
+#
+validate_glm_outcome_support <- function(y, family) {
+  .is_count <- function(x) {
+    all(x >= 0) && all(abs(x - round(x)) < .Machine$double.eps^0.5)
+  }
+  
+  fam <- family$family
+  
+  if (!is.binomial(fam)) {
+    # make sure y has ok dimensions (matrix only allowed for binomial models)
+    if (length(dim(y)) > 1) {
+      if (NCOL(y) == 1) {
+        y <- y[, 1]
+      } else {
+        stop("Except for binomial models the outcome variable ",
+             "should not have multiple columns.", 
+             call. = FALSE)
+      }
+    }
+    
+    # check that values match support for non-binomial models
+    if (is.gaussian(fam)) {
+      return(y)
+    } else if (is.gamma(fam) && any(y <= 0)) {
+      stop("All outcome values must be positive for gamma models.", 
+           call. = FALSE)
+    } else if (is.ig(fam) && any(y <= 0)) {
+      stop("All outcome values must be positive for inverse-Gaussian models.", 
+           call. = FALSE)
+    } else if (is.poisson(fam) && !.is_count(y)) {
+      stop("All outcome values must be counts for Poisson models",
+           call. = FALSE)
+    } else if (is.nb(fam) && !.is_count(y)) {
+      stop("All outcome values must be counts for negative binomial models",
+           call. = FALSE)
+    }
+  } else { # binomial models
+    if (NCOL(y) == 1L) {
+      if (is.numeric(y) || is.logical(y)) 
+        y <- as.integer(y)
+      if (is.factor(y)) 
+        y <- fac2bin(y)
+      if (!all(y %in% c(0L, 1L))) 
+        stop("All outcome values must be 0 or 1 for Bernoulli models.", 
+             call. = FALSE)
+    } else if (isTRUE(NCOL(y) == 2L)) {
+      if (!.is_count(y))
+        stop("All outcome values must be counts for binomial models.",
+             call. = FALSE)
+    } else {
+      stop("For binomial models the outcome should be a vector or ",
+           "a matrix with 2 columns.", 
+           call. = FALSE)
+    }
+  }
+  
+  return(y)
+}
+
+
+
 # Add extra level _NEW_ to each group
 # 
 # @param Ztlist ranef indicator matrices
@@ -590,6 +652,7 @@ make_b_nms <- function(group) {
   for (i in seq_along(group$cnms)) {
     nm <- group_nms[i]
     nms_i <- paste(group$cnms[[i]], nm)
+    levels(group$flist[[nm]]) <- gsub(" ", "_", levels(group$flist[[nm]]))
     if (length(nms_i) == 1) {
       b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
     } else {
