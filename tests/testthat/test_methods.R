@@ -740,6 +740,12 @@ test_that("predictive_interval stanreg and ppd methods return the same thing", {
 })
 
 # prior_summary -----------------------------------------------------------
+test_that("prior_summary errors if info not found", {
+  tmp <- example_model
+  tmp$prior.info <- NULL
+  expect_message(s <- prior_summary(tmp), "Priors not found in stanreg object")
+  expect_null(s)
+})
 test_that("prior_summary doesn't error", {
   expect_output(print(prior_summary(example_model, digits = 2)),
                 "Priors for model 'example_model'")
