@@ -667,3 +667,14 @@ validate_newdata <- function(x) {
 
   as.data.frame(x)
 }
+
+
+
+# check if a stanreg object is from a binomial model
+is_binomial_model <- function(object) {
+  if (is(object, "polr") && !is_scobit(object)) {
+    FALSE
+  } else {
+    is.binomial(family(object)$family)
+  }
+}

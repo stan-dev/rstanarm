@@ -170,7 +170,7 @@ pp_check.stanreg <-
     
     plotfun_name <- .ppc_function_name(plotfun)
     plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), mode = "function")
-    is_binomial_model <- is_binomial_ppc(object)
+    is_binom <- is_binomial_model(object)
     y_yrep <-
       .ppc_y_and_yrep(
         object,
@@ -195,15 +195,6 @@ pp_check.stanreg <-
 
 # internal ----------------------------------------------------------------
 
-# check if binomial
-is_binomial_ppc <- function(object) {
-  if (is(object, "polr") && !is_scobit(object)) {
-    FALSE
-  } else {
-    is.binomial(family(object)$family)
-  }
-}
-
 # prepare y and yrep arguments to bayesplot function
 .ppc_y_and_yrep <-
   function(object,
@@ -218,7 +209,7 @@ is_binomial_ppc <- function(object) {
       yrep <- posterior_predict(object, draws = nreps, seed = seed)
     }
     
-    if (is_binomial_ppc(object)) {
+    if (is_binomial_model(object)) {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L] / trials
@@ -375,7 +366,7 @@ pp_check_old <- function(object,
                          overlay = TRUE,
                          test = "mean",
                          ...) {
-  is_binomial_model <- is_binomial_ppc(object)
+  is_binom <- is_binomial_model(object)
   dots <- list(...)
   fun <-
     ppc_fun_old(
@@ -391,7 +382,7 @@ pp_check_old <- function(object,
       nreps = nreps,
       ntests = length(test),
       overlay = isTRUE(overlay),
-      binomial_model = is_binomial_model
+      binomial_model = is_binom
     )
   
   y_yrep <-
