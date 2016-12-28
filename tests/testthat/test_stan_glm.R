@@ -257,10 +257,11 @@ test_that("stan_glm returns expected result for binomial example", {
 
 
 context("stan_glm (other tests)")
-test_that("model with hs prior doesn't error", {
-  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = hs(), 
+test_that("model with hs_plus prior doesn't error", {
+  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(), 
                          seed = SEED, algorithm = "meanfield", QR = TRUE), 
                 regexp = "Automatic Differentiation Variational Inference")
+  expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 })
 
 test_that("prior_nuisance argument is detected properly", {
@@ -272,6 +273,8 @@ test_that("prior_nuisance argument is detected properly", {
          location = NULL, scale = NULL, df = NULL, rate = 5, 
          nuisance_name = "sigma")
   )
+  expect_output(print(prior_summary(fit)), 
+                "~ exponential(rate = ", fixed = TRUE)
 })
 
 test_that("empty interaction levels dropped", {
