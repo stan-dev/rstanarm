@@ -87,6 +87,7 @@
 #' print(fit, digits = 2)
 #' plot(fit)
 #' pp_check(fit)
+#' prior_summary(fit)
 #' }
 #' 
 stan_betareg <- function(formula, data, subset, na.action, weights, offset,

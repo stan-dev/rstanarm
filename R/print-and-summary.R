@@ -151,11 +151,6 @@ print.stanreg <- function(x, digits = 1, ...) {
   cat("\nObservations:", nobs(x), 
       " Number of unconstrained parameters:", x$num_unconstrained_pars, 
       "\n", sep = " ")
-  if(is(x, "betareg")) {
-    cat("\nMean linear predictor fit with", x$family$link, "link",
-        "\nPrecision linear predictor fit with", x$family_phi$link, "link",
-        "\n", sep = " ")
-  }
   invisible(x)
 }
 
@@ -267,9 +262,16 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   if (is.character(fam)) {
     stopifnot(identical(fam, object$method))
     fam <- paste0("ordered (", fam, ")")
+  } else if (inherits(object, "betareg")) {
+    fam <- paste0("beta (", 
+                  object$family$link, 
+                  ", link.phi=", 
+                  object$family_phi$link, 
+                  ")")
   } else {
     fam <- paste0(fam$family, " (", fam$link, ")") 
   }
+  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
@@ -295,10 +297,6 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)
-  # if (!is.null(atts$priors)) {
-  #   cat("\nPriors:")
-  #   cat("\n ", print_prior_summary(atts$priors, digits))
-  # }
   cat("\nObservations:", atts$nobs)
   if (!is.null(atts$ngrps))
     cat("\nGroups:", paste(names(atts$ngrps), unname(atts$ngrps), 
