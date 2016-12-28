@@ -138,11 +138,11 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
       formatters = formatters
     )
-  if (!is.null(x[["prior_dispersion"]])) {
-    dispersion_name <- x[["prior_dispersion"]][["dispersion_name"]]
+  if (!is.null(x[["prior_nuisance"]])) {
+    nuisance_name <- x[["prior_nuisance"]][["nuisance_name"]]
     .print_scalar_prior(
-      x[["prior_dispersion"]], 
-      txt = paste0("\n", dispersion_name), 
+      x[["prior_nuisance"]], 
+      txt = paste0("\n", nuisance_name), 
       formatters
     )
   }

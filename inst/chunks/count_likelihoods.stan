@@ -43,7 +43,7 @@
   *
   * @param y The integer array corresponding to the outcome variable.
   * @param eta The vector of linear predictors
-  * @param theta The overdispersion parameter
+  * @param theta The reciprocal_dispersion parameter
   * @param link An integer indicating the link function
   * @return A vector
   */
