@@ -35,7 +35,10 @@
 #' class_accuracy(fit, psis = TRUE) 
 #' class_accuracy(fit, psis = TRUE, balanced = TRUE) 
 #' 
+#' # posterior ROC plot
 #' roc_plot(fit)
+#' 
+#' # compare posterior ROC to PSIS-LOO ROC
 #' roc_plot(fit, psis = TRUE, print_auc = TRUE)
 #' 
 NULL
