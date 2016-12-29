@@ -1,11 +1,16 @@
 #' Predictive performance
 #' 
+#' In-sample predictive performance is an overoptimistic estimate of 
+#' out-of-sample predictive performance. To better estimate the predictive
+#' performance for new (not yet observed) data we can use use
+#' \code{\link[=loo.stanreg]{leave-one-out cross-validation}}.
+#' 
 #' @name predictive-performance
 #' 
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param psis Should PSIS-weighted estimates also be plotted? Defaults to
-#'   \code{TRUE}.
+#' @param psis Should PSIS-weighted estimates also be plotted? May be time
+#'   consuming for very large datasets. Defaults to \code{FALSE}.
 #' @param ... Currently ignored.
 #' 
 #' @examples 
@@ -20,6 +25,9 @@
 #'  prior = student_t(7, 0, 10), 
 #'  prior_intercept = student_t(7, 0, 10)
 #' )
+#' classification_accuracy(fit) # too optimistic 
+#' classification_accuracy(fit, psis = TRUE) # approximate out-of-sample performance
+#' 
 #' roc_plot(fit)
 #' roc_plot(fit, psis = TRUE)
 #' 
@@ -27,55 +35,85 @@ NULL
 
 #' @rdname predictive-performance
 #' @export 
-roc_plot <- function(object, psis = FALSE, ...) {
-  validate_bernoulli_model(object)
-  df <- roc_data(object, psis = psis)
-  roc_curve(df)
-}
+#' @param balanced Should balanced or unbalanced classification error be
+#'   reported? The default is \code{FALSE} (unbalanced).
+#'   
+#' @return \code{classification_error} and \code{classification_accuracy} return
+#'   a scalar between 0 and 1, which has a custom print method.
+#' 
+classification_error <-
+  function(object,
+           balanced = FALSE,
+           psis = FALSE,
+           ...) {
+    validate_bernoulli_model(object)
+    y <- validate_glm_outcome_support(get_y(object), family = binomial())
+    pp <- postpred_probs(object, psis = psis)
+    
+    if (!balanced) {
+      y_pred <- as.integer(pp >= 0.5)
+      err <- mean(xor(y_pred, y))
+    } else {
+      y1 <- y == 1
+      y1_pred <- as.integer(pp[y1] >= 0.5)
+      y0_pred <- as.integer(pp[!y1] >= 0.5)
+      e1 <- mean(xor(y1_pred, y[y1]))
+      e0 <- mean(xor(y0_pred, y[!y1]))
+      err <- (e0 + e1) / 2
+    }
+    structure(
+      err,
+      class = c("classification_performance", class(err)),
+      type = "error",
+      balanced = isTRUE(balanced),
+      psis = isTRUE(psis)
+    )
+  }
 
 #' @rdname predictive-performance
-#' @export 
-#' @param balanced Should balanced or unbalanced classification accuracy be
-#'   reported? The default is \code{FALSE} (unbalanced).
-posterior_classification <- function(object, balanced = FALSE, psis = FALSE, ...) {
-  validate_bernoulli_model(object)
-  pp <- postpred_probs(object, psis = psis)
-  y <- validate_glm_outcome_support(get_y(object), family = binomial())
-  if (!balanced) {
-    p_gt_half <- pp > 0.5
-    m <- mean(xor(p_gt_half, y))
-  } else {
-    y0 <- y == 0
-    y1 <- y == 1
-    p_gt_half_0 <- pp[y0] > 0.5
-    p_gt_half_1 <- pp[y1] > 0.5
-    m0 <- mean(xor(p_gt_half_0, y[y0]))
-    m1 <- mean(xor(p_gt_half_1, y[y1]))
-    m <- (m0 + m1) / 2
+#' @export
+classification_accuracy <-
+  function(object,
+           balanced = FALSE,
+           psis = FALSE,
+           ...) {
+    structure(
+      1 - classification_error(object, balanced, psis, ...), 
+      type = "accuracy"
+    )
   }
-  structure(m, 
-            class = c("class_acc", class(m)), 
-            balanced = isTRUE(balanced), 
-            psis = isTRUE(psis))
-}
 
 #' @export
-print.class_acc <- function(x, digits, ...) {
+print.classification_performance <- function(x, digits = 3, ...) {
   atts <- attributes(x)
   txt <- paste0(if (atts$psis) "PSIS-LOO" else "Posterior", 
                if (atts$balanced) " balanced", 
-               " classification accuracy:\n")
-  x2 <- x
-  if (!missing(digits)) {
-    x2 <- format(round(x2, digits = digits), nsmall = digits)
-  }
+               " classification ", atts$type, ":\n")
+
+  x2 <- format(round(x, digits = digits), nsmall = digits)
   cat(txt, x2)
   invisible(x)
 }
 
 
+#' @rdname predictive-performance
+#' @export 
+#' @param print_auc For \code{roc_plot}, should the area under the curve (AUC)
+#'   be printed on the plot? Defaults to \code{TRUE}.
+#' @param size For \code{roc_plot}, passed to \code{\link[ggplot2]{geom_line}}.
+#' 
+#' @return \code{roc_plot} returns a ggplot object.
+#' 
+roc_plot <- function(object, psis = FALSE, print_auc = TRUE, size = 1, ...) {
+  validate_bernoulli_model(object)
+  df <- roc_data(object, psis = psis)
+  roc_curve(df, print_auc = print_auc, size = size)
+}
+
 
 # internal ----------------------------------------------------------------
+
+# @param x stanreg object
 validate_bernoulli_model <- function(x) {
   validate_stanreg_object(x)
   if (!is_binomial_model(x) || NCOL(get_y(x)) == 2)
@@ -83,7 +121,6 @@ validate_bernoulli_model <- function(x) {
 }
 
 # @param x stanreg object
-# @param psis see above
 postpred_probs <- function(x, psis = FALSE) {
   pps <- posterior_linpred(x, transform = TRUE)
   if (!psis) 
@@ -118,13 +155,13 @@ roc_data <- function(x, psis = TRUE) {
   return(out)
 }
 
-#' @importFrom ggplot2 geom_abline geom_line scale_x_reverse scale_color_manual
-roc_curve <- function(roc_df) {
+#' @importFrom ggplot2 geom_abline geom_line scale_x_reverse scale_color_manual geom_blank
+roc_curve <- function(roc_df, print_auc = TRUE, size = 1) {
   plot_data <- data.frame(
     x = 100 * (1 - roc_df$fpr),
     y = 100 * roc_df$tpr
   )
-  
+
   compare_to_psis <- "tpr_loo" %in% colnames(roc_df)
   if (compare_to_psis) {
     plot_data$x_loo <- 100 * (1 - roc_df$fpr_loo)
@@ -140,24 +177,43 @@ roc_curve <- function(roc_df) {
       linetype = 2,
       color = "gray30"
     ) +
-    geom_line(aes_(x = ~ x, y = ~ y, color = "Posterior ROC"))
+    geom_line(aes_(x = ~ x, y = ~ y, color = "Posterior ROC"), 
+              size = size)
+  
+  caption_txt <- NULL
+  scale_labels <- "Posterior ROC"
+  if (print_auc)
+    scale_labels <- 
+      paste0(scale_labels, 
+             "\n AUC: ", 
+             round(auc_approx(plot_data$x, plot_data$y) / 100, 1),
+             "%\n")
+    
   
   if (compare_to_psis) {
+    scale_labels <- c(scale_labels, "PSIS-LOO ROC")
     graph <- graph + 
-      geom_line(aes_(x = ~ x_loo, y = ~ y_loo, color = "PSIS-LOO ROC"))
+      geom_line(aes_(x = ~ x_loo, y = ~ y_loo, color = "PSIS-LOO ROC"), 
+                size = 0.75 * size)
+    if (print_auc)
+      scale_labels[2] <- 
+        paste0(scale_labels[2], 
+               "\n AUC: ", 
+               round(auc_approx(plot_data$x_loo, plot_data$y_loo) / 100, 1),
+               "%\n")
   }
   
   graph + 
     scale_color_manual(
       name = "", 
+      labels = scale_labels,
       values = c("Posterior ROC" = clrs[[5]], "PSIS-LOO ROC" = clrs[[2]])
     ) + 
-    labs(x = "Specificity (%)", y = "Sensitivity (%)") +
+    labs(x = "Specificity (%)", y = "Sensitivity (%)") + #, caption = caption_txt) +
     scale_x_reverse() +
     bayesplot::theme_default()
 }
 
-
-area_approx <- function(x, y) {
-  0.5 * sum(diff(x) * (head(y, -1) + tail(y, -1)))
+auc_approx <- function(x, y) {
+  -0.5 * sum(diff(x) * (head(y, -1) + tail(y, -1)))
 }
