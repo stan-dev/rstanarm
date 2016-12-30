@@ -142,7 +142,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
     aux_name <- x[["prior_aux"]][["aux_name"]]
     .print_scalar_prior(
       x[["prior_aux"]], 
-      txt = paste0("\n", aux_name), 
+      txt = paste0("\nAuxiliary (", aux_name, ")"), 
       formatters
     )
   }
