@@ -45,8 +45,8 @@ NULL
 
 #' @rdname predictive-performance
 #' @export 
-#' @param balanced Should balanced or unbalanced classification error be
-#'   reported? The default is \code{FALSE} (unbalanced).
+#' @param balanced Should balanced (\code{TRUE}) or unbalanced (\code{FALSE}) 
+#'   classification error be reported? The default is unbalanced (\code{FALSE}).
 #'   
 #' @return \code{class_error} returns a scalar between 0 and 1, which has a
 #'   custom print method. \code{class_accuracy} is a simple wrapper around
