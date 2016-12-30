@@ -37,7 +37,7 @@ data {
   vector[has_offset ? N[1] : 0] offset0;
   vector[has_offset ? N[2] : 0] offset1;
   
-  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for nuisance
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include "glmer_stuff.stan"  

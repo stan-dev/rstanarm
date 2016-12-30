@@ -81,9 +81,9 @@ as.matrix.stanreg <- function(x, ..., pars = NULL, regex_pars = NULL) {
     if (is.null(mat)) 
       STOP_no_draws()
     if (!user_pars) {
-      nuisance <- c("sigma", "scale", "shape", "lambda", "reciprocal_dispersion")
+      aux <- c("sigma", "scale", "shape", "lambda", "reciprocal_dispersion")
       pars <- c(names(coef(x)), # return with coefficients first
-                nuisance[which(nuisance %in% colnames(mat))])
+                aux[which(aux %in% colnames(mat))])
     }
   } else { # used mcmc or vb
     mat <- as.matrix(x$stanfit)

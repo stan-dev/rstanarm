@@ -17,8 +17,8 @@
 
 #' Bayesian generalized linear models via Stan
 #'
-#' Generalized linear modeling with optional prior distributions for 
-#' the coefficients, intercept, and nuisance parameter.
+#' Generalized linear modeling with optional prior distributions for the
+#' coefficients, intercept, and auxiliary parameters.
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -111,7 +111,7 @@
 #' 
 #' ### Negative binomial regression
 #' fit6 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'                     link = "log", prior_nuisance = exponential(1/2),
+#'                     link = "log", prior_aux = exponential(1/2),
 #'                     QR = TRUE)
 #' 
 #' bayesplot::color_scheme_set("brightblue")
@@ -127,7 +127,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_nuisance = cauchy(0, 5),
+                    prior_aux = cauchy(0, 5),
                     prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
@@ -164,7 +164,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           offset = offset, family = family,
                           prior = prior, 
                           prior_intercept = prior_intercept,
-                          prior_nuisance = prior_nuisance,
+                          prior_aux = prior_aux,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
@@ -203,7 +203,7 @@ stan_glm.nb <- function(formula,
                         ...,
                         prior = normal(),
                         prior_intercept = normal(),
-                        prior_nuisance = cauchy(0, 5),
+                        prior_aux = cauchy(0, 5),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

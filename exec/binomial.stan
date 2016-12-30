@@ -12,7 +12,7 @@ data {
   int<lower=0> trials[N];  // number of trials
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
-  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for nuisance
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include "glmer_stuff.stan"  

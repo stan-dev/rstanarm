@@ -36,7 +36,7 @@ glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
 lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
 stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
                            prior_intercept = normal(0, 50, autoscale = FALSE),
-                           prior_nuisance = normal(0, 10),
+                           prior_aux = normal(0, 10),
                            iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
 lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
 stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
@@ -686,13 +686,13 @@ test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(example_model),
                 c("prior", "prior_intercept", "prior_covariance"))
   expect_named(prior_summary(stan_lmer1),
-               c("prior", "prior_intercept", "prior_covariance", "prior_nuisance"))
+               c("prior", "prior_intercept", "prior_covariance", "prior_aux"))
   expect_named(prior_summary(stan_lmer2),
-               c("prior", "prior_intercept", "prior_covariance", "prior_nuisance"))
+               c("prior", "prior_intercept", "prior_covariance", "prior_aux"))
   expect_named(prior_summary(stan_polr1),
                c("prior", "prior_counts"))
   expect_named(prior_summary(stan_glm_opt1),
-               c("prior", "prior_intercept", "prior_nuisance"))
+               c("prior", "prior_intercept", "prior_aux"))
   expect_named(prior_summary(stan_glm_vb1),
-               c("prior", "prior_intercept", "prior_nuisance"))
+               c("prior", "prior_intercept", "prior_aux"))
 })
