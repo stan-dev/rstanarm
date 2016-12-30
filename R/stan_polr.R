@@ -240,6 +240,10 @@ stan_polr <- function(formula, data, weights, ..., subset,
 }
 
 
+
+# internal ----------------------------------------------------------------
+
+# CDF, inverse-CDF and PDF for Gumbel distribution
 pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
   q <- (q - loc)/scale
   p <- exp(-exp(-q))
@@ -248,11 +252,9 @@ pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
   else
     p
 }
-
 qgumbel <- function(p, loc = 0, scale = 1) {
   loc - scale * log(-log(p))
 }
-
 dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
   z <- (x - loc) / scale
   log_f <- -(z + exp(-z))

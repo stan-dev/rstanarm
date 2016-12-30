@@ -326,7 +326,12 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Allow "alpha", "beta", "varying" as shortcuts 
+#
+# @param object stanreg object
 # @param pars result of calling collect_pars(object, pars, regex_pars)
 allow_special_parnames <- function(object, pars) {
   pars[pars == "varying"] <- "b"
