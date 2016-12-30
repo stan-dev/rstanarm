@@ -126,10 +126,11 @@ The plots below illustrate simulated values of the outcome variable. The incorre
 model noticeably fails to capture the top of the distribution consistently in comparison
 to the true model.
 ```{r simulated-analysis, fig.height=5}
-library(gridExtra)
+library(ggplot2)
+library(bayesplot)
 plot1 <- pp_check(fit1) + ggtitle("True Model: y ~ x | z") + xlim(0, 1) + ylim(0, 4)
 plot2 <- pp_check(fit2) + ggtitle("False Model: y ~ x - 1") + xlim(0, 1) + ylim(0, 4)
-grid.arrange(plot1, plot2, ncol = 2)
+bayesplot_grid(plot1, plot2, grid_args = list(ncol = 2))
 ```
 
 We can also compare models by evaluating the expected log pointwise predictive density (`elpd`), which can be calculated
@@ -176,10 +177,10 @@ model does a relatively better job at capturing the shape of the distribution, h
 as it is centered around 0.50 rather than 0.20.
 
 ```{r gas-analysis, fig.height=5}
-library(gridExtra)
+library(ggplot2)
 gas_plot1 <- pp_check(gas_fit1) + ggtitle("gas_fit1") + xlim(0, 1) + ylim(0,5)
 gas_plot2 <- pp_check(gas_fit2) + ggtitle("gas_fit2") + xlim(0, 1) + ylim(0,5)
-grid.arrange(gas_plot1, gas_plot2, ncol = 2)
+bayesplot_grid(gas_plot1, gas_plot2, grid_args = list(ncol = 2))
 ```
 ``` {r, gas-loo}
 library(loo)
