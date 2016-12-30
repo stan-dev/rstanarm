@@ -51,7 +51,7 @@
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
 #'   likelihood estimation of generalized linear models, Bayesian estimation is 
-#'   performed via MCMC. The Bayesian model adds independent priors on the 
+#'   performed via MCMC. The Bayesian model adds priors on the 
 #'   regression coefficients (in the same way as \code{\link{stan_glm}}) and
 #'   priors on the terms of a decomposition of the covariance matrices of the
 #'   group-specific parameters. See \code{\link{priors}} for more information
