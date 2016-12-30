@@ -121,7 +121,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
   names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
   for (i in names(prior_dispersion_stuff)) 
     assign(i, prior_dispersion_stuff[[i]])
-  
+ 
   if (nvars_z == 0) {
       prior_mean_z <- double()
       prior_scale_z <- double()
@@ -213,6 +213,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     user_prior_intercept = prior_intercept_stuff,
     user_prior_z = prior_stuff_z,
     user_prior_intercept_z = prior_intercept_stuff_z,
+    user_prior_dispersion = prior_dispersion_stuff,
+    has_phi = !Z_true,
     has_intercept = has_intercept,
     has_intercept_z = has_intercept_z,
     has_predictors = nvars > 0,
@@ -290,6 +292,8 @@ summarize_betareg_prior <-
            user_prior_intercept,
            user_prior_z,
            user_prior_intercept_z,
+           user_prior_dispersion,
+           has_phi,
            has_intercept, 
            has_intercept_z, 
            has_predictors,
@@ -386,6 +390,19 @@ summarize_betareg_prior <-
             adjusted_prior_intercept_scale_z else NULL,
           df = if (prior_dist_name_for_intercept %in% "student_t")
             prior_df_for_intercept else NULL
+        )),
+      prior_dispersion = 
+      if (!has_phi) NULL else with(user_prior_dispersion, list(
+          dist = prior_dist_name_for_dispersion,
+          location = if (prior_dist_name_for_dispersion != "exponential")
+            prior_mean_for_dispersion else NULL,
+          scale = if (prior_dist_name_for_dispersion != "exponential")
+            prior_scale_for_dispersion else NULL,
+          df = if (prior_dist_name_for_dispersion %in% "student_t")
+            prior_df_for_dispersion else NULL, 
+          rate = if (prior_dist_name_for_dispersion %in% "exponential")
+            1 / prior_scale_for_dispersion else NULL,
+          dispersion_name = "(phi)"
         ))
     )
     return(prior_list)
