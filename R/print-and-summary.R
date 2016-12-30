@@ -148,9 +148,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
-      "\n", sep = " ")
+
   invisible(x)
 }
 
