@@ -47,6 +47,10 @@ NULL
 #' @export 
 #' @param balanced Should balanced (\code{TRUE}) or unbalanced (\code{FALSE}) 
 #'   classification error be reported? The default is unbalanced (\code{FALSE}).
+#'   The unbalanced accuracy is the proportion of correctly classified 
+#'   observations. The balanced accuracy is the average of the proportion of 
+#'   correctly classified \code{0} outcomes and the proportion of correctly 
+#'   classified \code{1} outcomes.
 #'   
 #' @return \code{class_error} returns a scalar between 0 and 1, which has a
 #'   custom print method. \code{class_accuracy} is a simple wrapper around
@@ -165,7 +169,7 @@ roc_data <- function(x, psis = TRUE) {
 
 # @param roc_df Object returned by roc_data
 # @param print_auc,size See above.
-#' @importFrom ggplot2 geom_abline geom_line scale_x_reverse scale_color_manual geom_blank
+#' @importFrom ggplot2 geom_abline geom_line scale_color_manual labs
 roc_curve <- function(roc_df, print_auc = FALSE, size = 1) {
   compare_to_psis <- isTRUE(attr(roc_df, "psis"))
   graph <- ggplot(roc_df) +
@@ -176,7 +180,7 @@ roc_curve <- function(roc_df, print_auc = FALSE, size = 1) {
       linetype = 2,
       color = "gray30"
     ) +
-    ggplot2::geom_line(aes_(x = ~ fpr, y = ~ tpr, color = "Posterior ROC"), 
+    geom_line(aes_(x = ~ fpr, y = ~ tpr, color = "Posterior ROC"), 
               size = size)
   
   scale_labels <- "Posterior ROC"
