@@ -51,7 +51,7 @@
 #'   it internally into the syntax accepted by \code{\link[lme4]{glmer}} in the
 #'   \pkg{lme4} package. But rather than performing (restricted) maximum likelihood 
 #'   estimation, the \code{stan_gamm4} function utilizes MCMC to perform Bayesian 
-#'   estimation. The Bayesian model adds independent priors on the common regression 
+#'   estimation. The Bayesian model adds priors on the common regression 
 #'   coefficients (in the same way as \code{\link{stan_glm}}) and priors on the 
 #'   terms of a decomposition of the covariance matrices of the group-specific 
 #'   parameters, including the smooths. Estimating these models via MCMC avoids

@@ -168,7 +168,11 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Prepare argument list to pass to plotting function
+#
 # @param x stanreg object
 # @param pars, regex_pars user specified pars and regex_pars arguments (can be
 #   missing)
@@ -294,25 +298,6 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
       grepl("rhat_|neff_|nuts_", plotfun))
     STOP_sampling_only(plotfun)
 }
-
-# Check for valid parameters
-# @param x stanreg object
-# @param pars user specified character vector
-# check_plotting_pars <- function(x, pars, plotfun = character()) {
-#   if (used.optimizing(x)) {
-#     allpars <- c("alpha", "beta", rownames(x$stan_summary))
-#   } else {
-#     sim <- x$stanfit@sim
-#     allpars <- c(sim$pars_oi, sim$fnames_oi)
-#   }
-#   m <- which(match(pars, allpars, nomatch = 0) == 0)
-#   if (length(m) > 0)
-#     stop("No parameter ", paste(pars[m], collapse = ', '),
-#          call. = FALSE)
-#   return(unique(pars))
-# }
-
-
 
 
 #' Pairs method for stanreg objects

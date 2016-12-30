@@ -26,6 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
+expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 
 context("helper functions")
 
@@ -116,8 +117,10 @@ test_that("validate_weights works", {
   expect_error(validate_weights(c(-1,2,3)), regexp = "negative", ignore.case = TRUE)
   expect_error(stan_glm(mpg ~ wt, data = mtcars, weights = rep(-1, nrow(mtcars))), 
                regexp = "negative", ignore.case = TRUE)
-  expect_s3_class(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
-                     weights = rexp(nrow(mtcars))), "stanreg")
+  
+  capture.output(fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
+                                 weights = rexp(nrow(mtcars))))
+  expect_stanreg(fit)
 })
 
 test_that("validate_offset works", {
@@ -127,8 +130,10 @@ test_that("validate_offset works", {
   expect_error(validate_offset(rep(1, 10), rnorm(5)))
   expect_error(validate_offset(rep(1, 5), rnorm(10)), 
                regexp = "number of offsets", ignore.case = TRUE)
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
-  fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  capture.output(
+    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
+    fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  )
   expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
 })
 
@@ -187,11 +192,14 @@ test_that("check_constant_vars works", {
   mf2$gear <- 1
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
-  expect_s3_class(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
-            "stanreg")
-  expect_s3_class(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
-                     offset = rep(1, nrow(mf)), algorithm = "optimizing", 
-                     seed = SEED), "stanreg")
+  
+  capture.output(
+    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED),
+    fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing")
+  )
+  expect_stanreg(fit1)
+  expect_stanreg(fit2)
   
   esoph2 <- esoph
   esoph2$agegp[1:nrow(esoph2)] <- "75+"
@@ -219,13 +227,15 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                   chains = CHAINS, seed = SEED, refresh = REFRESH))
-fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
-fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
-fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
-fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
+capture.output(
+  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                     chains = CHAINS, seed = SEED, refresh = REFRESH)),
+  fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                        iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)),
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
+  fitvb <- update(fito, algorithm = "meanfield", seed = SEED),
+  fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
+)
 
 test_that("validate_stanreg_object works", {
   validate_stanreg_object <- rstanarm:::validate_stanreg_object
@@ -293,8 +303,10 @@ test_that("get_x, get_y, get_z work", {
   expect_equivalent(get_y(fit2), y_ans)
   expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
   
-  fit3 <- SW(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
-                        iter = 10, chains = 1, refresh = 5, seed = SEED))
+  SW(capture.output(
+    fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
+                       iter = 10, chains = 1, refresh = 5, seed = SEED)
+  ))
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
@@ -361,10 +373,12 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.family(binomial(link = "probit")), 
                    binomial(link = "probit")$linkinv)
   
-  fit_polr <- SW(stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
+  SW(capture.output(
+    fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
                            prior = R2(0.2, "mean"), init_r = 0.1, 
                            chains = CHAINS, iter = ITER, seed = SEED, 
-                           refresh = REFRESH))
+                           refresh = REFRESH)
+  ))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
@@ -415,8 +429,9 @@ test_that("posterior_sample_size works", {
   expect_equal(pss(fitvb2), 1000)
   expect_null(pss(fito))
   
-  fit3 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 20, 
-                                    chains = 1, thin = 2))
+  SW(capture.output(
+    fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2)
+  ))
   expect_equal(pss(fit3), nrow(as.matrix(fit3)))
 })
 

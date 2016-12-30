@@ -104,3 +104,22 @@ test_that("stan_aov returns expected result for npk example", {
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
 })
+
+context("stan_biglm")
+test_that("stan_biglm returns stanfit (not stanreg) object ", {
+  ols <- lm(mpg ~ wt + qsec + am - 1,
+            data = as.data.frame(scale(mtcars, scale = FALSE)))
+  b <- coef(ols)
+  R <- qr.R(ols$qr)
+  SSR <- crossprod(ols$residuals)[1]
+  N <- length(ols$fitted.values)
+  xbar <- colMeans(mtcars[,c("wt", "qsec", "am")])
+  y <- mtcars$mpg
+  ybar <- mean(y)
+  s_y <- sd(y)
+  capture.output(
+    post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
+                           chains = 1, iter = 10, seed = SEED)
+  )
+  expect_s4_class(post, "stanfit")
+})

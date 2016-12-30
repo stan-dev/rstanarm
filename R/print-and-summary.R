@@ -148,9 +148,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
-      "\n", sep = " ")
+
   invisible(x)
 }
 
@@ -328,7 +326,12 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Allow "alpha", "beta", "varying" as shortcuts 
+#
+# @param object stanreg object
 # @param pars result of calling collect_pars(object, pars, regex_pars)
 allow_special_parnames <- function(object, pars) {
   pars[pars == "varying"] <- "b"
