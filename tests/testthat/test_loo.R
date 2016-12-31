@@ -23,7 +23,7 @@ CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
-SW <- suppressWarnings
+SW <- function(expr) capture.output(suppressWarnings(expr))
 
 # loo and waic ------------------------------------------------------------
 context("loo and waic")
@@ -36,8 +36,8 @@ context("loo and waic")
 # check that the results returned by loo are actually correct).
 
 expect_equivalent_loo <- function(fit) {
-  l <- SW(loo(fit))
-  w <- SW(waic(fit))  
+  l <- suppressWarnings(loo(fit))
+  w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "loo")
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
@@ -49,8 +49,8 @@ expect_equivalent_loo <- function(fit) {
   discrete <- attr(l, "discrete")
   expect_true(!is.na(discrete) && is.logical(discrete))
   
-  expect_equivalent(l, SW(loo(log_lik(fit))))
-  expect_equivalent(w, waic(log_lik(fit)))
+  expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
+  expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
 }
 mcmc_only_error <- function(fit) {
   msg <- "only available for models fit using MCMC"
@@ -59,26 +59,32 @@ mcmc_only_error <- function(fit) {
 }
 
 test_that("loo & waic throw error for non mcmc models", {
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                   seed = SEED)
-  fitvb1 <- update(fito, algorithm = "meanfield")
-  fitvb2 <- update(fito, algorithm = "fullrank")
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
+                     seed = SEED))
+  SW(fitvb1 <- update(fito, algorithm = "meanfield"))
+  SW(fitvb2 <- update(fito, algorithm = "fullrank"))
   mcmc_only_error(fito)
   mcmc_only_error(fitvb1)
   mcmc_only_error(fitvb2)
 })
 
 test_that("loo errors if model has weights", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, weights = rep_len(c(1,2), nrow(mtcars)),
-                  seed = SEED, refresh = REFRESH, iter = 50)
+  SW(
+    fit <- stan_glm(mpg ~ wt, data = mtcars, 
+                    weights = rep_len(c(1,2), nrow(mtcars)),
+                    seed = SEED, refresh = REFRESH, iter = 50)
+  )
   expect_error(loo(fit), "not supported")
   expect_error(loo(fit), "'kfold'")
 })
 
 test_that("loo/waic for stan_glm works", {
   # gaussian
-  fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS, iter = ITER,
-                          seed = SEED, refresh = REFRESH))
+  SW(
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
+                         chains = CHAINS, iter = ITER,
+                         seed = SEED, refresh = REFRESH)
+  )
   expect_equivalent_loo(fit_gaus)
   expect_identical(ll_fun(fit_gaus), rstanarm:::.ll_gaussian_i)
 
@@ -87,11 +93,13 @@ test_that("loo/waic for stan_glm works", {
                     sex = factor(rep(c("M", "F"), c(6, 6))))
   numdead <- c(1, 4, 9, 13, 18, 20, 0, 2, 6, 10, 12, 16)
   SF <- cbind(numdead, numalive = 20-numdead)
-  fit_binom <- SW(stan_glm(SF ~ sex*ldose, data = dat, family = binomial,
-                           chains = CHAINS, iter = ITER, seed = SEED,
-                           refresh = REFRESH))
+  SW(
+    fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial,
+                          chains = CHAINS, iter = ITER, seed = SEED,
+                          refresh = REFRESH)
+  )
   dead <- rbinom(length(numdead), 1, prob = 0.5)
-  fit_binom2 <- SW(update(fit_binom, formula = factor(dead) ~ .))
+  SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
   expect_equivalent_loo(fit_binom)
   expect_equivalent_loo(fit_binom2)
   expect_identical(ll_fun(fit_binom), rstanarm:::.ll_binomial_i)
@@ -100,14 +108,14 @@ test_that("loo/waic for stan_glm works", {
   # poisson
   d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9),
                      counts = c(18,17,15,20,10,20,25,13,12))
-  fit_pois <- SW(stan_glm(counts ~ outcome + treatment, data = d.AD,
+  SW(fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD,
                           family = poisson, chains = CHAINS, iter = ITER,
                           seed = SEED, refresh = REFRESH))
   expect_equivalent_loo(fit_pois)
   expect_identical(ll_fun(fit_pois), rstanarm:::.ll_poisson_i)
 
   # negative binomial
-  fit_negbin <- SW(update(fit_pois, family = neg_binomial_2))
+  SW(fit_negbin <- update(fit_pois, family = neg_binomial_2))
   expect_equivalent_loo(fit_negbin)
   expect_identical(ll_fun(fit_negbin), rstanarm:::.ll_neg_binomial_2_i)
 
@@ -115,34 +123,34 @@ test_that("loo/waic for stan_glm works", {
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
-  fit_gamma <- SW(stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
+  SW(fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
                            chains = CHAINS, iter = ITER, seed = SEED,
                            refresh = REFRESH))
   expect_equivalent_loo(fit_gamma)
   expect_identical(ll_fun(fit_gamma), rstanarm:::.ll_Gamma_i)
 
   # inverse gaussian
-  fit_igaus <- SW(update(fit_gamma, family = inverse.gaussian))
+  SW(fit_igaus <- update(fit_gamma, family = inverse.gaussian))
   expect_equivalent_loo(fit_igaus)
   expect_identical(ll_fun(fit_igaus), rstanarm:::.ll_inverse.gaussian_i)
 })
 
 test_that("loo/waic for stan_polr works", {
-  fit_ord_logistic <- SW(stan_polr(tobgp ~ agegp, data = esoph,
+  SW(fit_ord_logistic <- stan_polr(tobgp ~ agegp, data = esoph,
                                prior = R2(0.2, "mean"), init_r = 0.1,
                                chains = CHAINS, iter = ITER, seed = SEED,
                                refresh = REFRESH))
   expect_equivalent_loo(fit_ord_logistic)
   expect_identical(ll_fun(fit_ord_logistic), rstanarm:::.ll_polr_i)
 
-  fit_probit <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
+  SW(fit_probit <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
                              data = esoph, prior = R2(location = 0.4),
                              method = "probit", chains = CHAINS, iter = ITER,
                              seed = SEED, refresh = REFRESH))
   expect_equivalent_loo(fit_probit)
   expect_identical(ll_fun(fit_probit), rstanarm:::.ll_binomial_i)
 
-  fit_scobit <- SW(stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
+  SW(fit_scobit <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
                              data = esoph, prior = R2(location = 0.4),
                              shape = 2, rate = 2, chains = CHAINS, iter = ITER,
                              seed = SEED, refresh = REFRESH))
@@ -151,7 +159,7 @@ test_that("loo/waic for stan_polr works", {
 })
 
 test_that("loo/waic for stan_lm works", {
-  fit_lm <- SW(stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75),
+  SW(fit_lm <- stan_lm(mpg ~ ., data = mtcars, prior = R2(0.75),
                        chains = CHAINS, iter = ITER, seed = SEED,
                        refresh = REFRESH))
   expect_equivalent_loo(fit_lm)
@@ -160,7 +168,7 @@ test_that("loo/waic for stan_lm works", {
 
 test_that("loo/waic for stan_glmer works", {
   # gaussian
-  fit_glmer1 <- SW(stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
+  SW(fit_glmer1 <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
                               chains = CHAINS, iter = ITER, seed = SEED,
                               refresh = REFRESH))
   expect_equivalent_loo(fit_glmer1)
@@ -209,9 +217,9 @@ test_that("loo with k_threshold works", {
 test_that("loo with k_threshold works for edge case(s)", {
   # without 'data' argument
   y <- mtcars$mpg
-  fit <- SW(stan_glm(y ~ 1, refresh = 0, iter = 200))
+  SW(fit <- stan_glm(y ~ 1, refresh = 0, iter = 200))
   expect_message(
-    res <- loo(fit, k_threshold = 0.1), # low k_threshold to make sure reloo is triggered
+    SW(res <- loo(fit, k_threshold = 0.1)), # low k_threshold to make sure reloo is triggered
     "problematic observation\\(s\\) found"
   )
   expect_s3_class(res, "loo")
@@ -223,8 +231,9 @@ test_that("loo with k_threshold works for edge case(s)", {
 context("kfold")
 
 test_that("kfold throws error for non mcmc models", {
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                   seed = SEED)
+  SW(
+    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",seed = SEED)
+  )
   expect_error(kfold(fito), "MCMC")
 })
 
@@ -234,29 +243,28 @@ test_that("kfold throws error if K <= 1 or K > N", {
 })
 
 test_that("kfold throws error if model has weights", {
-  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, 
-                     iter = ITER, chains = CHAINS, refresh = REFRESH,
-                     weights = runif(nrow(mtcars), 0.5, 1.5)))
+  SW(
+    fit <- stan_glm(mpg ~ wt, data = mtcars, 
+                    iter = ITER, chains = CHAINS, refresh = REFRESH,
+                    weights = runif(nrow(mtcars), 0.5, 1.5))
+  )
   expect_error(kfold(fit), "not currently available for models fit using weights")
 })
 
 test_that("kfold works on some examples", {
   mtcars2 <- mtcars
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
-  
-  capture.output({
-    fit_gaus <- SW(stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0))
-    kf <- SW(kfold(fit_gaus, 4))
-    kf2 <- SW(kfold(example_model, 2))
-  })
+  SW(fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0))
+  SW(kf <- kfold(fit_gaus, 4))
+  SW(kf2 <- kfold(example_model, 2))
   
   expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash"))
   expect_s3_class(kf, c("kfold", "loo"))
-  expect_identical(print(kf), kf)
+  expect_identical(invisible(print(kf)), kf)
   expect_output(print(kf), "4-fold cross-validation")
 
   expect_s3_class(kf2, c("kfold", "loo"))
-  expect_identical(print(kf2), kf2)
+  expect_identical(invisible(print(kf2)), kf2)
   expect_output(print(kf2), "2-fold cross-validation")
 })
 
@@ -370,7 +378,7 @@ test_that("kfold_and_reloo_data works", {
   
   # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
-  fit <- SW(stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
+  SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
   expect_equivalent(f(fit), model.frame(fit))
 })
 

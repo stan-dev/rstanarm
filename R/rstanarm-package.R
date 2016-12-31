@@ -130,14 +130,14 @@
 #'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
 #'   attributable to the predictors in a linear model.
 #'  }
-#'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{
-#'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
-#'   or hierarhical shrinkage prior distributions for the coefficients and,
-#'   if applicable, a half-Cauchy prior for any nuisance parameter in a 
-#'   Generalized Linear Model (GLM) that is characterized by a 
-#'   \code{\link[stats]{family}} object. It is also possible to estimate a 
-#'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
-#'   function in the \pkg{MASS} package.
+#'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{ Similar to
+#'  \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy or hierarhical
+#'  shrinkage prior distributions for the coefficients and, if applicable, a
+#'  prior distribution for any auxiliary parameter in a Generalized Linear Model
+#'  (GLM) that is characterized by a \code{\link[stats]{family}} object (e.g.
+#'  the shape parameter in Gamma models). It is also possible to estimate a
+#'  negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}}
+#'  function in the \pkg{MASS} package.
 #'  }
 #'  \item{\code{\link{stan_glmer}}, \code{stan_glmer.nb}, \code{stan_lmer}}{
 #'   Similar to the \code{\link[lme4]{glmer}}, \code{\link[lme4]{glmer.nb}} and 
