@@ -162,6 +162,22 @@ stan_betareg.fit <- function(x, y, z = NULL,
       min(.Machine$double.xmax, prior_scale_for_intercept_z)
   }
 
+  # QR decomposition
+  if (QR) {
+    if (ncol(xtemp) <= 1)
+      stop("'QR' can only be specified when there are multiple predictors.")
+    if (sparse)
+      stop("'QR' and 'sparse' cannot both be TRUE")
+    cn <- colnames(xtemp)
+    decomposition <- qr(xtemp)
+    sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
+    Q <- qr.Q(decomposition)
+    R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
+    xtemp <- Q * sqrt_nm1
+    colnames(xtemp) <- cn
+    xbar <- c(xbar %*% R_inv)
+  }
+  
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
@@ -237,6 +253,10 @@ stan_betareg.fit <- function(x, y, z = NULL,
     out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))]
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    if (QR) {
+      out$par[mark] <- R_inv %*% out$par[mark]
+      out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
+    }
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     if (Z_true == 1) {
@@ -264,6 +284,16 @@ stan_betareg.fit <- function(x, y, z = NULL,
     } else { # algorithm either "meanfield" or "fullrank"
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
+    }
+    if (QR) {
+      thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+      end <- tail(dim(betas), 1L)
+      for (chain in 1:end) for (param in 1:nrow(betas)) {
+        stanfit@sim$samples[[chain]][[has_intercept + param]] <-
+          if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
+      }
     }
     if (Z_true == 1) {
       new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp),
