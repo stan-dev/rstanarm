@@ -282,7 +282,7 @@ pp_args <- function(object, data) {
   } else if (is.ig(famname)) {
     args$lambda <- stanmat[, "lambda"]
   } else if (is.nb(famname)) {
-    args$size <- stanmat[, "overdispersion"]
+    args$size <- stanmat[, "reciprocal_dispersion"]
   } else if (is.beta(famname)) {
     # create a condition for presence of z vars
     z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]

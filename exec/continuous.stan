@@ -30,7 +30,7 @@ data {
   vector<lower=lb_y, upper=ub_y>[N] y; // continuous outcome
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
-  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include "glmer_stuff.stan"  
@@ -44,8 +44,10 @@ transformed data {
   int<lower=0> hs_z;                  // for tdata_betareg.stan
   int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
   int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
+  is_continuous = 1;
   #include "tdata_betareg.stan"
+
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
@@ -58,23 +60,23 @@ parameters {
   real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
        upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> dispersion_unscaled; // interpretation depends on family!
+  real<lower=0> aux_unscaled; # interpretation depends on family!
   #include "parameters_betareg.stan"
 }
 transformed parameters {
-  real dispersion;
+  real aux;
   vector[z_dim] omega; // used in tparameters_betareg.stan
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_dist_for_dispersion == 0)
-    dispersion = dispersion_unscaled;
+  if (prior_dist_for_aux == 0)
+    aux = aux_unscaled;
   else {
-    dispersion = prior_scale_for_dispersion * dispersion_unscaled;
-    if (prior_dist_for_dispersion <= 2) // normal or student_t
-      dispersion = dispersion + prior_mean_for_dispersion;
+    aux = prior_scale_for_aux * aux_unscaled;
+    if (prior_dist_for_aux <= 2) // normal or student_t
+      aux = aux + prior_mean_for_aux;
   }
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
-                            dispersion, tau, scale, zeta, rho, z_T);
+                            aux, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
   }
   #include "tparameters_betareg.stan"
@@ -110,19 +112,19 @@ model {
   if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
       if (link == 1) 
-        target += normal_lpdf(y | eta, dispersion);
+        target += normal_lpdf(y | eta, aux);
       else if (link == 2) 
-        target += normal_lpdf(y | exp(eta), dispersion);
+        target += normal_lpdf(y | exp(eta), aux);
       else 
-        target += normal_lpdf(y | divide_real_by_vector(1, eta), dispersion);
+        target += normal_lpdf(y | divide_real_by_vector(1, eta), aux);
       // divide_real_by_vector() is defined in common_functions.stan
     }
     else if (family == 2) {
-      target += GammaReg(y, eta, dispersion, link, sum_log_y);
+      target += GammaReg(y, eta, aux, link, sum_log_y);
     }
     else if (family == 3) {
       target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
-                             dispersion, sum_log_y, sqrt_y);
+                             aux, sum_log_y, sqrt_y);
     }
     else if (family == 4 && link_phi == 0) {
       vector[N] mu;
@@ -140,23 +142,23 @@ model {
   }
   else if (prior_PD == 0) { // weighted log-likelihoods
     vector[N] summands;
-    if (family == 1) summands = pw_gauss(y, eta, dispersion, link);
-    else if (family == 2) summands = pw_gamma(y, eta, dispersion, link);
-    else if (family == 3) summands = pw_inv_gaussian(y, eta, dispersion, link, log_y, sqrt_y);
-    else if (family == 4 && link_phi == 0) summands = pw_beta(y, eta, dispersion, link);
+    if (family == 1) summands = pw_gauss(y, eta, aux, link);
+    else if (family == 2) summands = pw_gamma(y, eta, aux, link);
+    else if (family == 3) summands = pw_inv_gaussian(y, eta, aux, link, log_y, sqrt_y);
+    else if (family == 4 && link_phi == 0) summands = pw_beta(y, eta, aux, link);
     else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
     target += dot_product(weights, summands);
   }
 
   // Log-priors
-  if (prior_dist_for_dispersion > 0 && prior_scale_for_dispersion > 0) {
-    if (prior_dist_for_dispersion == 1)
-      target += normal_lpdf(dispersion_unscaled | 0, 1);
-    else if (prior_dist_for_dispersion == 2)
-      target += student_t_lpdf(dispersion_unscaled | 
-                               prior_df_for_dispersion, 0, 1);
+  if (prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
+    if (prior_dist_for_aux == 1)
+      target += normal_lpdf(aux_unscaled | 0, 1);
+    else if (prior_dist_for_aux == 2)
+      target += student_t_lpdf(aux_unscaled | 
+                               prior_df_for_aux, 0, 1);
     else 
-     target += exponential_lpdf(dispersion_unscaled | 1);
+     target += exponential_lpdf(aux_unscaled | 1);
   }
     
   #include "priors_glm.stan" // increments target()
@@ -217,15 +219,15 @@ generated quantities {
     
     if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], dispersion);
+      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
     }
     else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
+      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
     }
     else if (family == 3) {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
+      for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
     }
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
