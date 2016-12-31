@@ -18,7 +18,7 @@
 #' Bayesian beta regression models via Stan
 #'
 #' Beta regression modeling with optional prior distributions for 
-#' the coefficients, intercept, and dispersion parameter.
+#' the coefficients, intercept, and phi (when modeled as a parameter).
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -43,18 +43,21 @@
 #' @template args-QR
 #' @template args-sparse
 #' 
-#' @param link Character specification of the link function in the mean model
-#'   (mu). Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog"
+#' @param link Character specification of the link function used on the
+#'   linear predictor for mu (specified through \code{x}).
+#'   Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog"
 #'   are supported.
-#' @param link.phi Character specification of the link function in the precision
-#'   model (phi). Currently, "identity", "log", and "sqrt" are supported. Since
-#'   the "sqrt" link function is known to be unstable, it is advisable to
-#'   specify a different link function (or to not specify a regressor matrix for
-#'   the precision model).
-#' @param z Regressor matrix for the precision model. Defaults to an intercept
+#' @param link.phi Character specification of the link function used on the
+#'   linear predictor for phi (specified through \code{z}).
+#'   Currently, "identity", "log", and "sqrt" are supported. Since the
+#'   "sqrt" link function is known to be unstable, it is advisable to
+#'   specify a different link function (or to model phi as a parameter instead
+#'   of a linear predictor).
+#' @param z Regressor matrix for phi. Defaults to an intercept
 #'   only.
 #' @param prior_z See \code{prior}.
 #' @param prior_intercept_z See \code{prior_intercept}.
+#' @param prior_phi See \code{prior_dispersion}.
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
 #'   \code{\link[betareg]{betareg}} but rather than performing maximum
@@ -63,6 +66,10 @@
 #'   independent priors on the coefficients of the beta regression model. The 
 #'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit}
 #'   function, but it is also possible to call the latter directly.
+#'   
+#'   Regarding priors, \code{prior_phi} is used when phi is modeled as a
+#'   parameter. If phi is modeled as a linear predictor (by declaring z) then
+#'   \code{prior_intercept_z}/\code{prior_z} is used.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
 #' 
@@ -97,7 +104,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          model = TRUE, y = TRUE, x = FALSE, ...,
                          prior = normal(), prior_intercept = normal(),
                          prior_z = normal(), prior_intercept_z = normal(),
-                         prior_dispersion = cauchy(0, 5), prior_PD = FALSE, 
+                         prior_phi = cauchy(0, 5), prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -127,7 +134,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
   if (length(grep("\\|", all.names(formula))) == 0 && is.null(link.phi)) {
     Z <- NULL
   }
-
+  
   # pass the prior information to stan_betareg.fit()
   stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, 
                               weights = weights, offset = offset, 
@@ -135,7 +142,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                               prior = prior, prior_z = prior_z, 
                               prior_intercept = prior_intercept, 
                               prior_intercept_z = prior_intercept_z,
-                              prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
+                              prior_phi = prior_phi, prior_PD = prior_PD, 
                               algorithm = algorithm, adapt_delta = adapt_delta,
                               QR = QR, sparse = sparse)
   algorithm <- match.arg(algorithm)

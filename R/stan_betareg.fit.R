@@ -24,13 +24,13 @@ stan_betareg.fit <- function(x, y, z = NULL,
                              link.phi = NULL, ...,
                              prior = normal(), prior_intercept = normal(),
                              prior_z = normal(), prior_intercept_z = normal(),
-                             prior_dispersion = cauchy(0, 5),
+                             prior_phi = cauchy(0, 5),
                              prior_PD = FALSE, 
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
-
+  
   # determine whether the user has passed a matrix for the percision model (z)
   if (is.null(link.phi) && is.null(z)) {
     Z_true <- 0
@@ -108,7 +108,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), "_for_intercept")
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i, "_z"), prior_intercept_stuff_z[[i]])
-
+  
+  prior_dispersion <- prior_phi
   prior_dispersion_stuff <-
     handle_glm_prior(
       prior_dispersion,
