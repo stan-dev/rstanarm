@@ -59,12 +59,13 @@ stan_betareg.fit <- function(x, y, z = NULL,
     link_num_phi <- 0
 
   # useless assignments to pass R CMD check
-  has_intercept <- min_prior_scale <- prior_df <- prior_df_for_intercept <-
-    prior_dist <- prior_dist_for_intercept <- prior_mean <- prior_mean_for_intercept <-
-    prior_scale_for_dispersion <- scaled <- NULL
-  prior_scale <- prior_scale_for_intercept <- prior_dist_z <- prior_dist_for_intercept_z <-
-    prior_mean_for_intercept_z <- prior_scale_for_intercept_z <- prior_df_for_intercept_z <-
-    xbar <- xtemp <- NULL
+  has_intercept <- min_prior_scale <- 
+    prior_df <- prior_df_for_intercept <- prior_df_for_intercept_z <- prior_df_z <-
+    prior_dist <- prior_dist_for_intercept <- prior_dist_for_intercept_z <- prior_dist_z <-
+    prior_mean <- prior_mean_for_intercept <- prior_mean_for_intercept_z <- prior_mean_z <-
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_intercept_z <-
+    prior_df_for_aux <- prior_dist_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
+    xbar <- xtemp <- scaled <- NULL
 
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -81,7 +82,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
   
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
   ok_intercept_dists <- ok_dists[1:3]
-  ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions (handle_glm_prior() from data_block.R)
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
@@ -109,19 +110,19 @@ stan_betareg.fit <- function(x, y, z = NULL,
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i, "_z"), prior_intercept_stuff_z[[i]])
   
-  prior_dispersion <- prior_phi
-  prior_dispersion_stuff <-
+  prior_aux <- prior_phi
+  prior_aux_stuff <-
     handle_glm_prior(
-      prior_dispersion,
+      prior_aux,
       nvars = 1,
       default_scale = 5,
       link = NULL, # don't need to adjust scale based on logit vs probit
-      ok_dists = ok_dispersion_dists
+      ok_dists = ok_aux_dists
     )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_dispersion
-  names(prior_dispersion_stuff) <- paste0(names(prior_dispersion_stuff), "_for_dispersion")
-  for (i in names(prior_dispersion_stuff)) 
-    assign(i, prior_dispersion_stuff[[i]])
+  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_aux
+  names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), "_for_aux")
+  for (i in names(prior_aux_stuff)) 
+    assign(i, prior_aux_stuff[[i]])
  
   if (nvars_z == 0) {
       prior_mean_z <- double()
@@ -174,9 +175,10 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_dist_for_intercept, prior_mean_for_intercept = c(prior_mean_for_intercept), 
     prior_scale_for_intercept = min(.Machine$double.xmax, prior_scale_for_intercept), 
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_scale_for_dispersion = prior_scale_for_dispersion %ORifINF% 0,
-    prior_df_for_dispersion <- c(prior_df_for_dispersion),
-    prior_mean_for_dispersion <- c(prior_mean_for_dispersion),
+    prior_dist_for_aux <- prior_dist_for_aux,
+    prior_scale_for_aux = prior_scale_for_aux %ORifINF% 0,
+    prior_df_for_aux <- c(prior_df_for_aux),
+    prior_mean_for_aux <- c(prior_mean_for_aux),
     has_weights = length(weights) > 0, weights = weights,
     has_offset = length(offset) > 0, offset = offset,
     t = 0L, 
@@ -195,7 +197,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     betareg_z = array(ztemp, dim = c(dim(ztemp))),
     has_intercept_z,
     zbar = array(zbar),
-    prior_dist_z, prior_mean_z, prior_scale_z = as.array(pmin(.Machine$double.xmax, prior_scale_z)), prior_df_z,
+    prior_dist_z, prior_mean_z, prior_scale_z = as.array(pmin(.Machine$double.xmax, prior_scale_z)),
+    prior_df_z,
     prior_dist_for_intercept_z, prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z)
@@ -206,7 +209,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (Z_true == 1) {
     pars <- c(if (has_intercept) "alpha", "beta", "omega_int", "omega", "mean_PPD")
   } else {
-    pars <- c(if (has_intercept) "alpha", "beta", "dispersion", "mean_PPD")
+    pars <- c(if (has_intercept) "alpha", "beta", "aux", "mean_PPD")
   }
   
   prior_info <- summarize_betareg_prior(
@@ -214,7 +217,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     user_prior_intercept = prior_intercept_stuff,
     user_prior_z = prior_stuff_z,
     user_prior_intercept_z = prior_intercept_stuff_z,
-    user_prior_dispersion = prior_dispersion_stuff,
+    user_prior_aux = prior_aux_stuff,
     has_phi = !Z_true,
     has_intercept = has_intercept,
     has_intercept_z = has_intercept_z,
@@ -240,7 +243,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
       mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
       new_names[mark_z] <- paste0("(phi)_", colnames(ztemp))
     } else {
-      new_names[new_names == "dispersion"] <- "(phi)"
+      new_names[new_names == "aux"] <- "(phi)"
     }
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
@@ -293,7 +296,7 @@ summarize_betareg_prior <-
            user_prior_intercept,
            user_prior_z,
            user_prior_intercept_z,
-           user_prior_dispersion,
+           user_prior_aux,
            has_phi,
            has_intercept, 
            has_intercept_z, 
@@ -392,18 +395,18 @@ summarize_betareg_prior <-
           df = if (prior_dist_name_for_intercept %in% "student_t")
             prior_df_for_intercept else NULL
         )),
-      prior_dispersion = 
-      if (!has_phi) NULL else with(user_prior_dispersion, list(
-          dist = prior_dist_name_for_dispersion,
-          location = if (prior_dist_name_for_dispersion != "exponential")
-            prior_mean_for_dispersion else NULL,
-          scale = if (prior_dist_name_for_dispersion != "exponential")
-            prior_scale_for_dispersion else NULL,
-          df = if (prior_dist_name_for_dispersion %in% "student_t")
-            prior_df_for_dispersion else NULL, 
-          rate = if (prior_dist_name_for_dispersion %in% "exponential")
-            1 / prior_scale_for_dispersion else NULL,
-          dispersion_name = "(phi)"
+      prior_aux = 
+      if (!has_phi) NULL else with(user_prior_aux, list(
+          dist = prior_dist_name_for_aux,
+          location = if (prior_dist_name_for_aux != "exponential")
+            prior_mean_for_aux else NULL,
+          scale = if (prior_dist_name_for_aux != "exponential")
+            prior_scale_for_aux else NULL,
+          df = if (prior_dist_name_for_aux %in% "student_t")
+            prior_df_for_aux else NULL, 
+          rate = if (prior_dist_name_for_aux %in% "exponential")
+            1 / prior_scale_for_aux else NULL,
+          aux_name = "phi"
         ))
     )
     return(prior_list)

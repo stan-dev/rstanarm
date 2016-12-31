@@ -82,7 +82,7 @@ transformed parameters {
   #include "tparameters_betareg.stan"
 }
 model {
-  vector[N] eta_z; // beta regression dispersion (linear) predictor
+  vector[N] eta_z; // beta regression linear predictor for phi
   #include "make_eta.stan" // defines eta
   if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
   if (has_intercept == 1) {
@@ -129,7 +129,7 @@ model {
     else if (family == 4 && link_phi == 0) {
       vector[N] mu;
       mu = linkinv_beta(eta, link);
-      target += beta_lpdf(y | mu * dispersion, (1 - mu) * dispersion);
+      target += beta_lpdf(y | mu * aux, (1 - mu) * aux);
     }
     else if (family == 4 && link_phi > 0) {
       vector[N] mu;
@@ -232,7 +232,7 @@ generated quantities {
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
       for (n in 1:N) 
-        mean_PPD = mean_PPD + beta_rng(eta[n] * dispersion, (1 - eta[n]) * dispersion);
+        mean_PPD = mean_PPD + beta_rng(eta[n] * aux, (1 - eta[n]) * aux);
     }
     else if (family == 4 && link_phi > 0) {
       eta = linkinv_beta(eta, link);
