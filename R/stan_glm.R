@@ -65,7 +65,7 @@
 #' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
-#'                 algorithm = "fullrank") # only to make example fast enoug
+#'                 algorithm = "fullrank") # only to make example fast enough
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' }
