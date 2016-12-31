@@ -116,7 +116,7 @@
   *
   * @param y The vector of outcomes
   * @param mu The vector of conditional means
-  * @param lambda A positive scalar nuisance parameter
+  * @param lambda A positive scalar dispersion parameter
   * @param sum_log_y A scalar equal to the sum of log(y)
   * @param sqrt_y A vector equal to sqrt(y)
   * @return A scalar
@@ -133,7 +133,7 @@
   *
   * @param y The integer array corresponding to the outcome variable.
   * @param eta The linear predictors
-  * @param lamba A positive scalar nuisance parameter
+  * @param lamba A positive scalar dispersion parameter
   * @param link An integer indicating the link function
   * @param log_y A precalculated vector of the log of y
   * @param sqrt_y A precalculated vector of the square root of y

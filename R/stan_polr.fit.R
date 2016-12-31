@@ -105,7 +105,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     is_skewed, shape, rate,
                     # the rest of these are not actually used
                     family = 1L, has_intercept = 0L, 
-                    prior_dist_for_intercept = 0L, prior_dist_for_dispersion = 0L, 
+                    prior_dist_for_intercept = 0L, prior_dist_for_aux = 0L, 
                     dense_X = TRUE, # sparse is not a viable option
                     nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0))
   stanfit <- stanmodels$polr
