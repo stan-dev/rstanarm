@@ -17,8 +17,8 @@
 
 #' Bayesian beta regression models via Stan
 #'
-#' Beta regression modeling with optional prior distributions for 
-#' the coefficients, intercept, and phi (when modeled as a parameter).
+#' Beta regression modeling with optional prior distributions for the 
+#' coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -43,33 +43,38 @@
 #' @template args-QR
 #' @template args-sparse
 #' 
-#' @param link Character specification of the link function used on the
-#'   linear predictor for mu (specified through \code{x}).
-#'   Currently, "logit", "probit", "cloglog", "cauchit", "log", "loglog"
-#'   are supported.
-#' @param link.phi Character specification of the link function used on the
-#'   linear predictor for phi (specified through \code{z}).
-#'   Currently, "identity", "log", and "sqrt" are supported. Since the
-#'   "sqrt" link function is known to be unstable, it is advisable to
-#'   specify a different link function (or to model phi as a parameter instead
-#'   of a linear predictor).
-#' @param z Regressor matrix for phi. Defaults to an intercept
-#'   only.
-#' @param prior_z See \code{prior}.
-#' @param prior_intercept_z See \code{prior_intercept}.
-#' @param prior_phi See \code{prior_dispersion}.
+#' @param link Character specification of the link function used in the model 
+#'   for mu (specified through \code{x}). Currently, "logit", "probit",
+#'   "cloglog", "cauchit", "log", "loglog" are supported.
+#' @param link.phi If applicable, character specification of the link function 
+#'   used in the model for \code{phi} (specified through \code{z}). Currently, 
+#'   "identity", "log", and "sqrt" are supported. Since the "sqrt" link function
+#'   is known to be unstable, it is advisable to specify a different link 
+#'   function (or to model \code{phi} as a scalar parameter instead of via a
+#'   linear predictor).
+#' @param prior_z Prior distribution for the coefficients in the model for 
+#'   \code{phi} (if applicable). Same options as for \code{prior}.
+#' @param prior_intercept_z Prior distribution for the intercept in the model 
+#'   for \code{phi} (if applicable). Same options as for \code{prior_intercept}.
+#' @param prior_phi The prior distribution for \code{phi} if it is \emph{not} 
+#'   modeled as a function of predictors. If \code{z} variables are specified 
+#'   then \code{prior_phi} is ignored and \code{prior_intercept_z} and 
+#'   \code{prior_z} are used to specify the priors on the intercept and
+#'   coefficients in the model for \code{phi}. When applicable, \code{prior_phi}
+#'   can be a call to \code{exponential} to use an exponential distribution, or
+#'   one of \code{normal}, \code{student_t} or \code{cauchy} to use half-normal,
+#'   half-t, or half-Cauchy prior. See \code{\link{priors}} for details on these
+#'   functions. To omit a prior ---i.e., to use a flat (improper) uniform
+#'   prior--- set \code{prior_phi} to \code{NULL}.
 #' 
 #' @details The \code{stan_betareg} function is similar in syntax to 
-#'   \code{\link[betareg]{betareg}} but rather than performing maximum
-#'   likelihood estimation, full Bayesian estimation is performed (if
-#'   \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian model adds
-#'   independent priors on the coefficients of the beta regression model. The 
-#'   \code{stan_betareg} function calls the workhorse \code{stan_betareg.fit}
-#'   function, but it is also possible to call the latter directly.
-#'   
-#'   Regarding priors, \code{prior_phi} is used when phi is modeled as a
-#'   parameter. If phi is modeled as a linear predictor (by declaring z) then
-#'   \code{prior_intercept_z}/\code{prior_z} is used.
+#'   \code{\link[betareg]{betareg}} but rather than performing maximum 
+#'   likelihood estimation, full Bayesian estimation is performed (if 
+#'   \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian model adds 
+#'   priors (independent by default) on the coefficients of the beta regression
+#'   model. The \code{stan_betareg} function calls the workhorse
+#'   \code{stan_betareg.fit} function, but it is also possible to call the
+#'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
 #' 

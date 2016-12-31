@@ -15,9 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' @export
 #' @rdname stan_betareg
-
+#' @export
+#' @param z For \code{stan_betareg.fit}, a regressor matrix for \code{phi}.
+#'   Defaults to an intercept only.
 stan_betareg.fit <- function(x, y, z = NULL, 
                              weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
                              link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
