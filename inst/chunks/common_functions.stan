@@ -167,14 +167,17 @@
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
    * @param global_prior_scale A positive real number
+   * @param error_scale 1 or sigma in the Gaussian case
    * @return A vector of coefficientes
    */
-  vector hs_prior(vector z_beta, real[] global, vector[] local, real global_prior_scale) {
+  vector hs_prior(vector z_beta, real[] global, vector[] local, 
+                  real global_prior_scale, real error_scale) {
     vector[rows(z_beta)] lambda;
     int K;
     K = rows(z_beta);
     for (k in 1:K) lambda[k] = local[1][k] * sqrt(local[2][k]);
-    return z_beta .* lambda * global[1] * sqrt(global[2]) * global_prior_scale;
+    return z_beta .* lambda * global[1] * sqrt(global[2]) * 
+           global_prior_scale * error_scale;
   }
 
   /** 
@@ -183,11 +186,14 @@
    * @param z_beta A vector of primitive coefficients
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
+   * @param error_scale 1 or sigma in the Gaussian case
    * @return A vector of coefficientes
    */
-  vector hsplus_prior(vector z_beta, real[] global, vector[] local) {
+  vector hsplus_prior(vector z_beta, real[] global, vector[] local, 
+                      real error_scale) {
     return z_beta .* (local[1] .* sqrt(local[2])) .* 
-           (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]);
+           (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]) * 
+           error_scale;
   }
   
   /** 

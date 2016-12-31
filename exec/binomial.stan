@@ -19,7 +19,8 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  real aux = not_a_number();
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];

@@ -53,20 +53,15 @@ parameters {
   real<lower=0> aux_unscaled; # interpretation depends on family!
 }
 transformed parameters {
-  real aux;
+  // aux has to be defined first in the hs case
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+             prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
+             prior_scale_for_aux * aux_unscaled);
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   
-  if (prior_dist_for_aux == 0)
-    aux = aux_unscaled;
-  else {
-    aux = prior_scale_for_aux * aux_unscaled;
-    if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
-  }
-    
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
-                            aux, tau, scale, zeta, rho, z_T);
+                          aux, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
   }
 }
