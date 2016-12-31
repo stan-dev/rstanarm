@@ -220,6 +220,16 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z)
     )
+  
+  # deal with sparse = TRUE
+  if (sparse) {
+    parts <- extract_sparse_parts(xtemp)
+    standata$nnz_X <- length(parts$w)
+    standata$w_X <- parts$w
+    standata$v_X <- parts$v
+    standata$u_X <- parts$u
+    standata$X <- array(0, dim = c(0L, dim(xtemp)))
+  }
 
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
