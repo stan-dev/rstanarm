@@ -40,7 +40,8 @@ transformed data {
   vector[family == 3 ? N : 0] sqrt_y;
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
+  is_continuous = 1;
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
