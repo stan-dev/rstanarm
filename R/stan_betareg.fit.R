@@ -88,14 +88,14 @@ stan_betareg.fit <- function(x, y, z = NULL,
   # prior distributions (handle_glm_prior() from data_block.R)
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
                                   ok_dists = ok_dists)
-  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df}
+  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df, autoscale}
     assign(i, prior_stuff[[i]])
   
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
                                             default_scale = 10, link = link,
                                             ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
-  for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df}_for_intercept
+  for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, autoscale}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
   
   # prior distributions for parameters on z variables
@@ -142,7 +142,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
                             else if (num.categories > 2) x.scale <- 2 * sd(x)
                             return(x.scale)
                           }))
-    if (nvars_z != 0) {
+    if (nvars_z != 0 && prior_autoscale_z) {
       prior_scale_z <- pmax(min_prior_scale, prior_scale_z / 
                             apply(ztemp, 2L, FUN = function(z) {
                               num.categories <- length(unique(z))
@@ -353,6 +353,13 @@ summarize_betareg_prior <-
         user_prior_intercept_z$prior_dist_name_for_intercept <- "cauchy"
       } else {
         user_prior_intercept_z$prior_dist_name_for_intercept <- "student_t"
+      }
+    }
+    if (has_phi && user_prior_aux$prior_dist_name_for_aux %in% "t") {
+      if (all(user_prior_aux$prior_df_for_aux == 1)) {
+        user_prior_aux$prior_dist_name_for_aux <- "cauchy"
+      } else {
+        user_prior_aux$prior_dist_name_for_aux <- "student_t"
       }
     }
     prior_list <- list(
