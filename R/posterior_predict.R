@@ -161,10 +161,12 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
       data$eta <- data$eta[samp, , drop = FALSE]
       ppargs <- pp_args(object, data)
       ppargs$alpha <- ppargs$alpha[samp]
+    } else {
+      ppargs <- pp_args(object, data)
     }
-    else ppargs <- pp_args(object, data)
+  } else {
+    ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   }
-  else ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
 
@@ -195,6 +197,11 @@ pp_fun <- function(object) {
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
+  }))
+}
+.pp_beta <- function(mu, phi) {
+  t(sapply(1:nrow(mu), function(s) {
+    rbeta(ncol(mu), mu[s,] * phi[s], (1 - mu[s, ]) * phi[s])
   }))
 }
 .pp_poisson <- function(mu) {
@@ -276,6 +283,17 @@ pp_args <- function(object, data) {
     args$lambda <- stanmat[, "lambda"]
   } else if (is.nb(famname)) {
     args$size <- stanmat[, "reciprocal_dispersion"]
+  } else if (is.beta(famname)) {
+    # create a condition for presence of z vars
+    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+    omega <- stanmat[,z_vars]
+    if (length(z_vars) == 1 && z_vars == "(phi)") {
+      args$phi <- stanmat[, "(phi)"] 
+    } else {
+      inverse_link_phi <- linkinv(object$family_phi)
+      args$phi <- linear_predictor(as.matrix(omega), as.matrix(object$z), data$offset) 
+      args$phi <- inverse_link_phi(args$phi)
+    }
   }
   args
 }

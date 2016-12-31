@@ -237,7 +237,7 @@ used.sparse <- function(x) {
   )
   if (!is.null(p$adjusted_scale))
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
-}
+      }
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
