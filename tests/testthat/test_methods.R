@@ -700,7 +700,7 @@ test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(stan_glm_vb1),
                c("prior", "prior_intercept", "prior_dispersion"))
   expect_named(prior_summary(stan_betareg1),
-               c("prior", "prior_z", "prior_intercept", "prior_intercept_z"))  
+               c("prior", "prior_z", "prior_intercept", "prior_intercept_z", "prior_dispersion"))  
 })
 
 

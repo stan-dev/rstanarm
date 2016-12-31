@@ -128,9 +128,13 @@ to the true model.
 ```{r simulated-analysis, fig.height=5}
 library(ggplot2)
 library(bayesplot)
-plot1 <- pp_check(fit1) + ggtitle("True Model: y ~ x | z") + xlim(0, 1) + ylim(0, 4)
-plot2 <- pp_check(fit2) + ggtitle("False Model: y ~ x - 1") + xlim(0, 1) + ylim(0, 4)
-bayesplot_grid(plot1, plot2, grid_args = list(ncol = 2))
+bayesplot_grid(
+  pp_check(fit1), pp_check(fit2), 
+  xlim = c(0,1),  
+  ylim = c(0,4), 
+  titles = c("True Model: y ~ x | z", "False Model: y ~ x - 1"),
+  grid_args = list(ncol = 2)
+)
 ```
 
 We can also compare models by evaluating the expected log pointwise predictive density (`elpd`), which can be calculated
@@ -178,9 +182,13 @@ as it is centered around 0.50 rather than 0.20.
 
 ```{r gas-analysis, fig.height=5}
 library(ggplot2)
-gas_plot1 <- pp_check(gas_fit1) + ggtitle("gas_fit1") + xlim(0, 1) + ylim(0,5)
-gas_plot2 <- pp_check(gas_fit2) + ggtitle("gas_fit2") + xlim(0, 1) + ylim(0,5)
-bayesplot_grid(gas_plot1, gas_plot2, grid_args = list(ncol = 2))
+bayesplot_grid(
+  pp_check(gas_fit1), pp_check(gas_fit2), 
+  xlim = c(0,1),  
+  ylim = c(0,5), 
+  titles = c("gas_fit1", "gas_fit2"),
+  grid_args = list(ncol = 2)
+)
 ```
 ``` {r, gas-loo}
 library(loo)
