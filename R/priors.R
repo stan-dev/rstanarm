@@ -285,7 +285,7 @@
 #'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
-#'                            prior_dispersion = exponential(1/2))
+#'                            prior_aux = exponential(1/2))
 #' plot(prior_pred_fit, "hist")
 #' 
 #' \donttest{

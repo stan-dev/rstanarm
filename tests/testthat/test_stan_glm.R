@@ -264,15 +264,14 @@ test_that("model with hs prior doesn't error", {
   expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 })
 
-test_that("prior_dispersion argument is detected properly", {
+test_that("prior_aux argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior = student_t(), 
-                  prior_dispersion = exponential(5))
+                  refresh = -1, prior_aux = exponential(5))
   expect_identical(
-    fit$prior.info$prior_dispersion, 
+    fit$prior.info$prior_aux, 
     list(dist = "exponential", 
          location = NULL, scale = NULL, df = NULL, rate = 5, 
-         dispersion_name = "sigma")
+         aux_name = "sigma")
   )
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)

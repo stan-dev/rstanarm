@@ -5,9 +5,8 @@
 # rstanarm
 
 [![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)  
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
-[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=brightgreen)](http://cran.rstudio.com/package=rstanarm)
-
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
+[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 
 This is an R package that emulates other R model-fitting functions but uses
 [Stan](http://mc-stan.org) (via the **rstan** package) for the back-end
@@ -50,6 +49,5 @@ please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/iss
 ## Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please 
-see the [Contributing to
-development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
+see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
 page of the wiki.

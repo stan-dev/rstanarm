@@ -121,7 +121,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     } else if (is.ig(famname)) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
-      nms <- c(nms, "overdispersion")
+      nms <- c(nms, "reciprocal_dispersion")
     }
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
@@ -148,9 +148,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
-      "\n", sep = " ")
+
   invisible(x)
 }
 
@@ -245,7 +243,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
       if (is.gaussian(famname)) 
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
-        mark <- c(mark, "overdispersion") 
+        mark <- c(mark, "reciprocal_dispersion") 
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
@@ -328,7 +326,12 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Allow "alpha", "beta", "varying" as shortcuts 
+#
+# @param object stanreg object
 # @param pars result of calling collect_pars(object, pars, regex_pars)
 allow_special_parnames <- function(object, pars) {
   pars[pars == "varying"] <- "b"

@@ -168,7 +168,11 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Prepare argument list to pass to plotting function
+#
 # @param x stanreg object
 # @param pars, regex_pars user specified pars and regex_pars arguments (can be
 #   missing)

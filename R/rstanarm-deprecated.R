@@ -17,9 +17,9 @@ NULL
 #'   \describe{
 #'   \item{\code{prior_scale_for_dispersion}}{
 #'    Instead of using the \code{prior_scale_for_dispersion} argument to 
-#'    \code{prior_options}, priors for dispersion parameters can now be 
+#'    \code{prior_options}, priors for these parameters can now be 
 #'    specified directly when calling \code{\link{stan_glm}} (or
-#'    \code{\link{stan_glmer}}, etc.) using the new \code{prior_dispersion}
+#'    \code{\link{stan_glmer}}, etc.) using the new \code{prior_aux}
 #'    argument.
 #'   }
 #'   \item{\code{scaled}}{
@@ -39,8 +39,8 @@ prior_options <- function(prior_scale_for_dispersion = 5,
                           scaled = TRUE) {
   warning(
     "'prior_options' is deprecated and will be removed in a future release.",
-    "\n* Priors for dispersion parameters should now be set using",
-    " the new 'prior_dispersion' argument when calling ",
+    "\n* Priors for auxiliary parameters should now be set using",
+    " the new 'prior_aux' argument when calling ",
     "'stan_glm', 'stan_glmer', etc.",
     "\n* Instead of setting 'prior_options(scaled=FALSE)',", 
     " internal rescaling is now toggled using the", 
@@ -60,7 +60,7 @@ prior_options <- function(prior_scale_for_dispersion = 5,
 .support_deprecated_prior_options <- 
   function(prior, 
            prior_intercept, 
-           prior_dispersion, 
+           prior_aux, 
            prior_ops) {
     if (!isTRUE(attr(prior_ops, "from_prior_options")))
       stop(
@@ -74,14 +74,14 @@ prior_options <- function(prior_scale_for_dispersion = 5,
     po_disp_scale <- prior_ops[["prior_scale_for_dispersion"]]
     po_scaled <- prior_ops[["scaled"]]
     
-    if (!is.null(prior_dispersion) && !is.null(po_disp_scale)) {
-      if (po_disp_scale != prior_dispersion[["scale"]]) {
+    if (!is.null(prior_aux) && !is.null(po_disp_scale)) {
+      if (po_disp_scale != prior_aux[["scale"]]) {
         warning(
-          "Setting prior scale for dispersion to value specified in ",
-          "'prior_options' rather than value specified in 'prior_dispersion'.",
+          "Setting prior scale for aux to value specified in ",
+          "'prior_options' rather than value specified in 'prior_aux'.",
           call. = FALSE
         )
-        prior_dispersion[["scale"]] <- po_disp_scale
+        prior_aux[["scale"]] <- po_disp_scale
       }
     }
     if (!is.null(po_scaled) && identical(po_scaled, FALSE)) {
@@ -91,6 +91,6 @@ prior_options <- function(prior_scale_for_dispersion = 5,
         prior_intercept$autoscale <- FALSE
     }
     
-    nlist(prior, prior_intercept, prior_dispersion)
+    nlist(prior, prior_intercept, prior_aux)
   }
 

@@ -24,9 +24,13 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
+SW <- suppressWarnings
+
 fit <- example_model
-fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED)
-fitvb <- update(fito, algorithm = "meanfield")
+SW(capture.output(
+  fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED),
+  fitvb <- update(fito, algorithm = "meanfield")
+))
 
 expect_gg <- function(x) expect_s3_class(x, "ggplot")
 
@@ -38,7 +42,9 @@ test_that("plot.stanreg errors if chains = 1 but needs multiple", {
                             "hist_by_chain",
                             "dens_overlay",
                             "violin")
-  fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100)
+  SW(capture.output(
+    fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100)
+  ))
   for (f in multiple_chain_plots) {
     expect_error(plot(fit_1chain, plotfun = f), info = f, 
                  regexp = "requires multiple chains")
@@ -142,10 +148,12 @@ test_that("posterior_vs_prior ok", {
   expect_gg(posterior_vs_prior(fit, regex_pars = "period", group_by_parameter = FALSE, 
                                color_by = "none", facet_args = list(scales = "free", nrow = 2)))
   
-  fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
-                        prior = R2(0.2, "mean"), init_r = 0.1, 
-                        seed = SEED, chains = CHAINS, cores = CORES, 
-                        iter = 100, refresh = 0)
+  SW(capture.output(
+    fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+                          prior = R2(0.2, "mean"), init_r = 0.1, 
+                          seed = SEED, chains = CHAINS, cores = CORES, 
+                          iter = 100, refresh = 0)
+  ))
   expect_gg(posterior_vs_prior(fit_polr))
   expect_gg(posterior_vs_prior(fit_polr, regex_pars = "\\|", group_by_parameter = TRUE, 
                                color_by = "vs"))

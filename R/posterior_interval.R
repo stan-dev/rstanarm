@@ -97,29 +97,19 @@
 #' posterior_interval(example_model, regex_pars = "herd")
 #' posterior_interval(example_model, pars = "period2", prob = 0.5)
 #'
-posterior_interval.stanreg <- function(object, prob = 0.9, type = "central",
-                               pars = NULL, regex_pars = NULL, ...) {
-  if (used.optimizing(object))
-    STOP_not_optimizing("posterior_interval")
-  if (!identical(type, "central"))
-    stop("Currently the only option for 'type' is 'central'.",
-         call. = FALSE)
-  mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
-  central_intervals(mat, prob)
-}
-
-
-# internal ----------------------------------------------------------------
-# @param x A matrix.
-# @param prob Probability mass to include in intervals.
-central_intervals <- function(x, prob) {
-  if (!identical(length(prob), 1L) || prob <= 0 || prob >= 1)
-    stop("'prob' should be a single number greater than 0 and less than 1.",
-         call. = FALSE)
-  alpha <- (1 - prob) / 2
-  probs <- c(alpha, 1 - alpha)
-  labs <- paste0(100 * probs, "%")
-  out <- t(apply(x, 2L, quantile, probs = probs))
-  structure(out, dimnames = list(colnames(x), labs))
-}
-
+posterior_interval.stanreg <-
+  function(object,
+           prob = 0.9,
+           type = "central",
+           pars = NULL,
+           regex_pars = NULL,
+           ...) {
+    if (used.optimizing(object))
+      STOP_not_optimizing("posterior_interval")
+    if (!identical(type, "central"))
+      stop("Currently the only option for 'type' is 'central'.",
+           call. = FALSE)
+    
+    mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
+    rstantools::posterior_interval(mat, prob = prob)
+  }
