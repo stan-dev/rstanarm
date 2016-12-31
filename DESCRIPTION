@@ -38,6 +38,7 @@ Imports:
     utils
 Suggests:
     arm,
+    betareg,
     digest,
     gridExtra,
     HSAUR3,

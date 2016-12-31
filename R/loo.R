@@ -138,8 +138,8 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  
   bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
   n_bad <- length(bad_obs)
   
