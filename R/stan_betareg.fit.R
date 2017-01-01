@@ -167,7 +167,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
     if (sparse)
-      stop("'QR' and 'sparse' cannot both be TRUE")
+      stop("'QR' and 'sparse' cannot both be TRUE.")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
     sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
