@@ -63,9 +63,11 @@ y <- rbeta(N, mu * phi, (1 - mu) * phi)
 fake_dat <- data.frame(y, x, z)
 remove(N, x, y, z, mu, phi)
 
-stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
-                             link = "logit", link.phi = "log",
-                             iter = 500, chains = CHAINS, seed = SEED)
+capture.output(
+  stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
+                                link = "logit", link.phi = "log",
+                                iter = ITER, chains = CHAINS, seed = SEED)
+)
 betareg1 <- betareg(y ~ x | z, data = fake_dat, 
                     link = "logit", link.phi = "log")
 
@@ -421,8 +423,8 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   arr <- as.array(stan_betareg1)
   expect_identical(df, as.data.frame(mat))
   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-  expect_equal(dim(mat), c(floor(500/2) * CHAINS, 4L))
-  expect_equal(dim(arr), c(floor(500/2), CHAINS, 4L))
+  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 4L))
+  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 4L))
   expect_identical(last_dimnames(mat), c("(Intercept)", "x", "(phi)_(Intercept)", "(phi)_z"))
   expect_identical(last_dimnames(arr), last_dimnames(mat))
 })
@@ -541,11 +543,11 @@ test_that("update works properly", {
   SW(capture.output(
     fit1 <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS),
     fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS),
-    fit3 <- update(stan_betareg1, iter = 500, chains = 2 * CHAINS)
+    fit3 <- update(stan_betareg1, iter = ITER * 2, chains = 2 * CHAINS)
   ))
   expect_equal(pss(fit1), 4 * pss(stan_lmer2))
   expect_equal(pss(fit2), 4 * pss(stan_glm1))
-  expect_equal(pss(fit3), 2 * pss(stan_betareg1))
+  expect_equal(pss(fit3), 4 * pss(stan_betareg1))
 
   call_only <- update(fit1, evaluate = FALSE)
   expect_is(call_only, "call")
