@@ -23,6 +23,7 @@ library(betareg)
 SEED <- 12345
 set.seed(SEED)
 
+SW <- function(expr) capture.output(suppressWarnings(expr))
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 
 link1 <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
@@ -40,14 +41,14 @@ test_that("stan_betareg returns expected result when modeling x and dispersion",
   dat <- data.frame(dat$y, dat$x)
   colnames(dat) <- c("y", "x")
   for (i in 1:length(link1)) {
-    fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED, QR = TRUE,
-                        prior = NULL, prior_intercept = NULL,
-                        data = dat, algorithm = "optimizing")
+    SW(fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED, #QR = TRUE,
+                           prior = NULL, prior_intercept = NULL,
+                           data = dat, algorithm = "optimizing"))
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x, link = link1[i], data = dat))
     expect_equal(val, ans, tol = 0.1, info = link1[i])
-    cat("... used link = ", link1[i], "\n")
+    # cat("... used link = ", link1[i], "\n")
   }
 })
 
@@ -63,11 +64,12 @@ test_that("stan_betareg returns expected result when modeling x and z", {
   dat <- data.frame(dat$y, dat$x, dat$z)
   colnames(dat) <- c("y", "x", "z")
   for (i in 1:length(link1)) {
-    cat("... using link =", link1[i], "and link.phi =", link2[1], "\n")
-    fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[1], seed = SEED, QR = TRUE,
-                        prior = NULL, prior_intercept = NULL,
-                        prior_z = NULL, prior_intercept_z = NULL,
-                        data = dat, algorithm = "optimizing")
+    # cat("... using link =", link1[i], "and link.phi =", link2[1], "\n")
+    SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[1], 
+                           seed = SEED, # QR = TRUE,
+                           prior = NULL, prior_intercept = NULL,
+                           prior_z = NULL, prior_intercept_z = NULL,
+                           data = dat, algorithm = "optimizing"))
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[1], data = dat))
@@ -89,15 +91,17 @@ test_that("stan_betareg returns expected result when modeling x and z", {
   dat <- data.frame(dat$y, dat$x, dat$z)
   colnames(dat) <- c("y", "x", "z")
   for (i in 1:length(link1)) {
-    cat("... using link =", link1[i], "and link.phi =", link2[2], "\n")
-    fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[2], seed = SEED, QR = TRUE,
-                        prior = NULL, prior_intercept = NULL,
-                        prior_z = NULL, prior_intercept_z = NULL,
-                        data = dat, algorithm = "sampling", iter = 300, cores = 4)
+    # cat("... using link =", link1[i], "and link.phi =", link2[2], "\n")
+    SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[2], 
+                           seed = SEED, # QR = TRUE,
+                           prior = NULL, prior_intercept = NULL,
+                           prior_z = NULL, prior_intercept_z = NULL,
+                           data = dat, algorithm = "sampling", 
+                           chains = 2, iter = 300))
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[2], data = dat))
-    expect_equal(val, ans, tol = 0.1, info = c(link1[i], link2[2]))
+    expect_equal(val, ans, tol = 0.15, info = c(link1[i], link2[2]))
   }
 })
 
@@ -117,11 +121,13 @@ test_that("stan_betareg returns expected result when modeling x and z using link
     dat <- data.frame(dat$y, dat$x, dat$z)
     colnames(dat) <- c("y", "x", "z")
 
-    cat("... using link =", link1[i], "and link.phi =", link2[3], "\n")
-    fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], seed = SEED, QR = TRUE,
+    # cat("... using link =", link1[i], "and link.phi =", link2[3], "\n")
+    SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
+                        seed = SEED, #QR = TRUE,
                         prior = NULL, prior_intercept = NULL,
                         prior_z = NULL, prior_intercept_z = NULL,
-                        data = dat, algorithm = "sampling", iter = 100, cores = 4, seed = SEED)
+                        data = dat, algorithm = "sampling", 
+                        chains = 2, iter = 100))
     expect_stanreg(fit)
   }
 })
@@ -139,9 +145,10 @@ test_that("stan_betareg returns expected result when modeling x and dispersion w
   dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
   dat <- data.frame(dat$y, dat$x)
   colnames(dat) <- c("y", "x")
-  fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, QR = TRUE,
-                      prior = NULL, prior_intercept = NULL,
-                      data = dat, weights = weights, offset = offset, algorithm = "optimizing", iter = 2000)
+  SW(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, # QR = TRUE,
+                         prior = NULL, prior_intercept = NULL,
+                         data = dat, weights = weights, offset = offset, 
+                         algorithm = "optimizing", iter = 2000))
   expect_stanreg(fit)
   val <- coef(fit)
   ans <- coef(betareg(y ~ x, link = "logit", weights = weights, offset = offset, data = dat))
