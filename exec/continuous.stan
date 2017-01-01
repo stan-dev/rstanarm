@@ -62,16 +62,18 @@ transformed parameters {
   real aux;
   vector[z_dim] omega; // used in tparameters_betareg.stan
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_dist_for_aux == 0)
+  if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
-  else {
+  else if (prior_dist_for_aux == 1) // normal
+    aux = prior_scale_for_aux * aux_unscaled + prior_mean_for_aux;
+  else if (prior_dist_for_aux == 2) // student_t
+    aux = prior_scale_for_aux * CFt(aux_unscaled, prior_df_for_aux) + prior_mean_for_aux;
+  else // exponential
     aux = prior_scale_for_aux * aux_unscaled;
-    if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
-  }
+    
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
-                            aux, tau, scale, zeta, rho, z_T);
+                           aux, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
   }
   #include "tparameters_betareg.stan"
@@ -147,11 +149,8 @@ model {
 
   // Log-priors
   if (prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
-    if (prior_dist_for_aux == 1)
+    if (prior_dist_for_aux <= 2)
       target += normal_lpdf(aux_unscaled | 0, 1);
-    else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | 
-                               prior_df_for_aux, 0, 1);
     else 
      target += exponential_lpdf(aux_unscaled | 1);
   }
