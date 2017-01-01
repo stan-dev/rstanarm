@@ -42,18 +42,13 @@ transformed data {
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
-  int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
+  #include "tdata_betareg.stan" // defines hs_z
   is_continuous = 1;
-  #include "tdata_betareg.stan"
 
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
-  }
-  else if (family == 4) {
-    // do nothing
   }
 }
 parameters {
