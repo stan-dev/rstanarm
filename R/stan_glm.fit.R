@@ -184,7 +184,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     if (ncol(xtemp) <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
     if (sparse)
-      stop("'QR' and 'sparse' cannot both be TRUE")
+      stop("'QR' and 'sparse' cannot both be TRUE.")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
     sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
@@ -235,7 +235,10 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     check_reTrms(group)
     decov <- group$decov
     Z <- t(group$Zt)
-    group <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, flist = group$flist)
+    group <-
+      pad_reTrms(Ztlist = group$Ztlist,
+                 cnms = group$cnms,
+                 flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 

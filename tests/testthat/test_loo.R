@@ -192,10 +192,10 @@ test_that("loo/waic for stan_glmer works", {
 
 test_that("loo/waic for stan_betareg works", {
   data("GasolineYield", package = "betareg")
-  fit_logit <- SW(stan_betareg(yield ~ temp, data = GasolineYield,
-                          link = "logit",
-                          chains = CHAINS, iter = ITER*100,
-                          seed = SEED, refresh = REFRESH))
+  SW(fit_logit <- stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
+                               link = "logit",
+                               chains = CHAINS, iter = ITER,
+                               seed = SEED, refresh = REFRESH))
   expect_identical_loo(fit_logit)
   expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
 })
