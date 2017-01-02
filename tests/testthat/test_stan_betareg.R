@@ -30,20 +30,20 @@ link1 <- c("logit", "probit", "cloglog", "cauchit", "log", "loglog")
 link2 <- c("log", "identity", "sqrt")
 
 # sparse currently not used in stan_betareg
-# context("stan_betareg sparse error")
-# test_that("sparse = TRUE errors", {
-#   dat <- list()
-#   dat$N <- 200
-#   dat$x <- rnorm(dat$N, 2, 1)
-#   dat$mu <- binomial(link="logit")$linkinv(1+0.2*dat$x)
-#   dat$phi <- 20
-#   dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
-#   dat <- data.frame(dat$y, dat$x)
-#   colnames(dat) <- c("y", "x")
-#   expect_error(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, sparse = TRUE,
-#                                    prior = NULL, prior_intercept = NULL,
-#                                    data = dat, algorithm = "optimizing"))
-# })
+context("stan_betareg sparse error")
+test_that("sparse = TRUE errors", {
+  dat <- list()
+  dat$N <- 200
+  dat$x <- rnorm(dat$N, 2, 1)
+  dat$mu <- binomial(link="logit")$linkinv(1+0.2*dat$x)
+  dat$phi <- 20
+  dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
+  dat <- data.frame(dat$y, dat$x)
+  colnames(dat) <- c("y", "x")
+  expect_error(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED, sparse = TRUE,
+                                   prior = NULL, prior_intercept = NULL,
+                                   data = dat, algorithm = "optimizing"))
+})
 
 # test QR 
 context("stan_betareg QR error")

@@ -41,7 +41,6 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-QR
-#' @template args-sparse
 #' 
 #' @param link Character specification of the link function used in the model 
 #'   for mu (specified through \code{x}). Currently, "logit", "probit",
@@ -112,7 +111,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          prior_z = normal(), prior_intercept_z = normal(),
                          prior_phi = cauchy(0, 5), prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                         adapt_delta = NULL, QR = FALSE) {
   
   if (!requireNamespace("betareg", quietly = TRUE)) 
     stop("Please install the betareg package before using 'stan_betareg'.")
@@ -150,7 +149,7 @@ stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                               prior_intercept_z = prior_intercept_z,
                               prior_phi = prior_phi, prior_PD = prior_PD, 
                               algorithm = algorithm, adapt_delta = adapt_delta,
-                              QR = QR, sparse = sparse)
+                              QR = QR)
   algorithm <- match.arg(algorithm)
   link <- match.arg(link)
   link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))

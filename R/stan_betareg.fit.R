@@ -28,7 +28,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
                              prior_phi = cauchy(0, 5),
                              prior_PD = FALSE, 
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                             adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                             adapt_delta = NULL, QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   
@@ -68,6 +68,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_df_for_aux <- prior_dist_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
     xbar <- xtemp <- scaled <- NULL
 
+  sparse <- FALSE
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
@@ -166,10 +167,6 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (QR) {
     if ( (ncol(xtemp) <= 1 & ncol(ztemp) <= 1 & Z_true == 1) || (ncol(xtemp) <= 1 & Z_true == 0))
       stop("'QR' can only be specified when there are multiple predictors.")
-    #if (ncol(xtemp) <= 1 & Z_true == 0)
-    #  stop("'QR' can only be specified when there are multiple predictors.")
-    if (sparse)
-      stop("'QR' and 'sparse' cannot both be TRUE")
     if (ncol(xtemp) > 1) {
       cn <- colnames(xtemp)
       decomposition <- qr(xtemp)
@@ -234,16 +231,6 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z)
     )
-  
-  # deal with sparse = TRUE
-  if (sparse) {
-    parts <- extract_sparse_parts(xtemp)
-    standata$nnz_X <- length(parts$w)
-    standata$w_X <- parts$w
-    standata$v_X <- parts$v
-    standata$u_X <- parts$u
-    standata$X <- array(0, dim = c(0L, dim(xtemp)))
-  }
 
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
