@@ -23,15 +23,15 @@ params:
 
 # Introduction
 
-This vignette explains how to model continuous outcomes on the open unit interval
-using the `stan_betareg` function in the __rstanarm__ package.
+This vignette explains how to model continuous outcomes on the open unit
+interval using the `stan_betareg` function in the __rstanarm__ package.
 
 ```{r, child="children/four_steps.txt"}
 ```
 
-Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
-__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
-the product of beta distributions.
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use
+the __rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when
+the likelihood is the product of beta distributions.
 
 # Likelihood
 
@@ -39,20 +39,24 @@ Beta regression uses the beta distribution as the likelihood for the data,
 $$
 f(y_i | \alpha,\beta) = \frac{x_i^{(\alpha-1)}(1-x_i)^{(\beta-1)}}{B(\alpha,\beta)}
 $$
-where $B(\cdot)$ is the beta function. The shape parameters for the distribution are $\alpha$ and $\beta$. The shape parameters enter
-into the model according to the following transformations.
+where $B(\cdot)$ is the beta function. The shape parameters for the distribution
+are $\alpha$ and $\beta$. The shape parameters enter into the model according to
+the following transformations.
 $$
 \alpha = \mu\cdot\phi \\
 \beta = (1-\mu)\cdot\phi
 $$
 
-Where $g_1(\mu) = \mathbf{X}\boldsymbol{\eta}$ where $g_1(\cdot)$ is some link function, $X$ is a $n\times K$ dimensional matrix of
-predictors, and $\eta$ is a $K$ dimensional vector of parameters associated with each predictor. 
+Where $g_1(\mu) = \mathbf{X}\boldsymbol{\eta}$ where $g_1(\cdot)$ is some link
+function, $X$ is a $n\times K$ dimensional matrix of predictors, and $\eta$ is a
+$K$ dimensional vector of parameters associated with each predictor.
 
-In the simplest case (with only one set of regressors), $\phi$ is a scalar parameter. Alternativley, it
-is possible to model $\phi$ using a second set of regressors $Z$, in which case 
-$g_2(\phi) = \mathbf{Z}\boldsymbol{\gamma}$, where $g_2(\cdot)$ is some link function and $\boldsymbol{\gamma}$ is a $L$
-dimensional vector of parameters associated with the $n\times L$ dimensional predictor matrix $Z$. 
+In the simplest case (with only one set of regressors), $\phi$ is a scalar
+parameter. Alternativley, it is possible to model $\phi$ using a second set of
+regressors $Z$, in which case $g_2(\phi) = \mathbf{Z}\boldsymbol{\gamma}$, where
+$g_2(\cdot)$ is some link function and $\boldsymbol{\gamma}$ is a $L$ 
+dimensional vector of parameters associated with the $n\times L$ dimensional
+predictor matrix $Z$.
 
 # Priors
 
@@ -61,8 +65,9 @@ dimensional vector of parameters associated with the $n\times L$ dimensional pre
 
 # Posterior
 
-When using only a *single set of regressors*, the posterior distribution of $\eta$ and $\phi$ is
-proportional to the product of the likelihood contributions, priors on the $K$ $\eta$ parameters, and $\phi$,
+When using only a *single set of regressors*, the posterior distribution of
+$\eta$ and $\phi$ is proportional to the product of the likelihood
+contributions, priors on the $K$ $\eta$ parameters, and $\phi$,
 $$
 f(\boldsymbol{\eta},\phi|\mathbf{y},\mathbf{X}) \propto 
 \prod_{i=1}^n f(y_i | \alpha,\beta) \times 
@@ -70,9 +75,9 @@ f(\boldsymbol{\eta},\phi|\mathbf{y},\mathbf{X}) \propto
 f(\phi)
 $$
 
-When using *two sets of regressors*, the posterior distribution of $\eta$ and $\gamma$ is
-proportional to the product of the likelihood contribution, the $K$ priors on the $\eta$ parameters, and the
-$L$ priors on the $\gamma$ parameters,
+When using *two sets of regressors*, the posterior distribution of $\eta$ and
+$\gamma$ is proportional to the product of the likelihood contribution, the $K$
+priors on the $\eta$ parameters, and the $L$ priors on the $\gamma$ parameters,
 
 $$
 f(\boldsymbol{\eta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto 
@@ -83,12 +88,13 @@ $$
 
 # An Example Using Simulated Data
 
-In this example the outcome variable $\mathbf{y}$ is simulated in a way that warrants the use of beta
-regression. It is worth mentioning that the data generation process is quite convoluted,
-which is apparent in the identification of the likelihood above. 
+In this example the outcome variable $\mathbf{y}$ is simulated in a way that
+warrants the use of beta regression. It is worth mentioning that the data
+generation process is quite convoluted, which is apparent in the identification
+of the likelihood above.
 
-The data simulated below uses the logistic link function on the first set of regressors
-and the log link function on the second set of regressors. 
+The data simulated below uses the logistic link function on the first set of
+regressors and the log link function on the second set of regressors.
 
 ```{r simulated-data, fig.height=5}
 SEED <- 1234
@@ -121,10 +127,10 @@ round(coef(fit1), 2)
 round(coef(fit2), 2)
 ```
 
-The usual posterior analyses are available in **rstanarm**.
-The plots below illustrate simulated values of the outcome variable. The incorrect
-model noticeably fails to capture the top of the distribution consistently in comparison
-to the true model.
+The usual posterior analyses are available in **rstanarm**. The plots below
+illustrate simulated values of the outcome variable. The incorrect model
+noticeably fails to capture the top of the distribution consistently in
+comparison to the true model.
 ```{r simulated-analysis, fig.height=5}
 library(ggplot2)
 library(bayesplot)
@@ -137,8 +143,8 @@ bayesplot_grid(
 )
 ```
 
-We can also compare models by evaluating the expected log pointwise predictive density (`elpd`), which can be calculated
-using the `loo` package.
+We can also compare models by evaluating the expected log pointwise predictive
+density (`elpd`), which can be calculated using the `loo` package.
 
 ``` {r simulated-loo}
 library(loo)
@@ -147,15 +153,17 @@ loo2 <- loo(fit2)
 compare(loo1, loo2)
 ```
 
-The difference in `elpd` is negative indicating that the expected predictive accuracy for
-the first model is higher.
+The difference in `elpd` is negative indicating that the expected predictive
+accuracy for the first model is higher.
 
 # An Example Using Real Data
-In some applied contexts it may be necessary to work with an outcome variable that is a proportion. If the proportion
-is bound on the open unit interval then beta regression can be considered a reasonable estimation method. The
-`betareg` package provides a dataset on the proportion of crude oil converted to gasoline after distillation
-and fractionation. This variable is defined as yield. Below `stan_betareg` is used to model yield as a function of temperature,
-pressure, and the batch of conditions. 
+In some applied contexts it may be necessary to work with an outcome variable
+that is a proportion. If the proportion is bound on the open unit interval then
+beta regression can be considered a reasonable estimation method. The `betareg`
+package provides a dataset on the proportion of crude oil converted to gasoline
+after distillation and fractionation. This variable is defined as yield. Below
+`stan_betareg` is used to model yield as a function of temperature, pressure,
+and the batch of conditions.
 
 ```{r, gas-fit, results="hide"}
 library(rstanarm)
@@ -174,11 +182,12 @@ round(coef(gas_fit1), 2)
 round(coef(gas_fit2), 2)
 ```
 
-The plots below illustrate simulated values of gasoline yield.
-While the first model accounts for variation in batch conditions its predictions
-looks somewhat uniform rather than resembling the peaked and skewed behavior of the true data. The second
-model does a relatively better job at capturing the shape of the distribution, however its location is off
-as it is centered around 0.50 rather than 0.20.
+The plots below illustrate simulated values of gasoline yield. While the first
+model accounts for variation in batch conditions its predictions looks somewhat
+uniform rather than resembling the peaked and skewed behavior of the true data.
+The second model does a relatively better job at capturing the shape of the
+distribution, however its location is off as it is centered around 0.50 rather
+than 0.20.
 
 ```{r gas-analysis, fig.height=5}
 library(ggplot2)
@@ -197,7 +206,7 @@ gas_loo2 <- loo(gas_fit2)
 compare(gas_loo1, gas_loo2)
 ```
 
-Additionally, evaluating the expected log predictive distribution using `loo`
+Additionally, evaluating the expected log predictive distribution using `loo` 
 reveals that the second of the two models is preferred.
 
 # References
