@@ -37,7 +37,6 @@ check_for_error <- function(fit, data = NULL, offset = NULL) {
   if (identical(deparse(substitute(fit)), "example_model"))
     mf <- lme4::cbpp
   
-  
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_silent(lin1 <- posterior_linpred(fit))
   expect_silent(posterior_linpred(fit, transform = TRUE))
@@ -256,7 +255,7 @@ context("posterior_predict (stan_betareg)")
 test_that("compatible with stan_betareg with z", {
   data("GasolineYield", package = "betareg")
   fit <- SW(stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
-                         iter = ITER, chains = CHAINS, seed = SEED, 
+                         iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
                          refresh = REFRESH))
   check_for_error(fit)
   expect_linpred_equal(fit)
@@ -267,7 +266,7 @@ test_that("compatible with stan_betareg without z", {
                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   check_for_error(fit)
   expect_linpred_equal(fit)
-})s
+})
 test_that("compatible with betareg with offset", {
   GasolineYield2 <- GasolineYield
   GasolineYield2$offs <- runif(nrow(GasolineYield2))
