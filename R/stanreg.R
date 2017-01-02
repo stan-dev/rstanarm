@@ -99,7 +99,6 @@ stanreg <- function(object) {
   if (is_betareg) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
-    # residuals <- ytmp - rbeta(length(eta), mu * phi, (1 - mu) * phi) # this is not what betareg does
   }
   
   out <- nlist(
