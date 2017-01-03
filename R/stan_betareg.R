@@ -47,7 +47,7 @@
 #'   "cloglog", "cauchit", "log", and "loglog" are supported.
 #' @param link.phi If applicable, character specification of the link function 
 #'   used in the model for \code{phi} (specified through \code{z}). Currently, 
-#'   "identity", "log", and "sqrt" are supported. Since the "sqrt" link function
+#'   "identity", "log" (default), and "sqrt" are supported. Since the "sqrt" link function
 #'   is known to be unstable, it is advisable to specify a different link 
 #'   function (or to model \code{phi} as a scalar parameter instead of via a 
 #'   linear predictor by excluding \code{z} from the \code{formula} and
