@@ -1,4 +1,4 @@
-  vector[K] z_beta;
+  vector[prior_dist == 7 ? sum(num_normals) : K] z_beta;
   real<lower=0> global[hs];
   vector<lower=0>[K] local[hs];
   vector<lower=0>[K] V[prior_dist == 5 || prior_dist == 6];

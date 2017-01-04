@@ -105,7 +105,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   nvars <- ncol(xtemp)
 
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
-                    "laplace", "lasso")
+                    "laplace", "lasso", "product_normal")
   ok_intercept_dists <- ok_dists[1:3]
   ok_dispersion_dists <- c(ok_dists[1:3], exponential = "exponential")
   
@@ -224,7 +224,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_dist_for_dispersion = prior_dist_for_dispersion
+    prior_dist_for_dispersion = prior_dist_for_dispersion,
+    num_normals = ifelse(prior_dist == 7, sum(as.integer(prior_df)))
     # mean,df,scale for dispersion added below depending on family
   )
 
@@ -662,7 +663,8 @@ summarize_glm_prior <-
           scale = prior_scale,
           adjusted_scale = if (rescaled_coef)
             adjusted_prior_scale else NULL,
-          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus", "lasso"))
+          df = if (prior_dist_name %in% c
+                   ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
             prior_df else NULL
         )),
       prior_intercept = 

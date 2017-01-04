@@ -8,3 +8,4 @@
   vector<lower=0>[K] prior_df;
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_df_for_dispersion;
+  int<lower=2> num_normals[prior_dist == 7 ? K : 0];

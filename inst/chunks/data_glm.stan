@@ -11,8 +11,8 @@
   int<lower=1> link;  // interpretation varies by .stan file
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus, 
-  //   5 = laplace, 6 = lasso
-  int<lower=0,upper=6> prior_dist;
+  //   5 = laplace, 6 = lasso, 7 = product_normal
+  int<lower=0,upper=7> prior_dist;
   int<lower=0,upper=2> prior_dist_for_intercept;
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential

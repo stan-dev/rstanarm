@@ -45,7 +45,9 @@
 #' @param df,df1,df2 Prior degrees of freedom. The default is \eqn{1} for 
 #'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
-#'   freedom parameter(s) default to \eqn{3}.
+#'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} prior,
+#'   the degrees of freedom parameter defauls must be an integer (vector) that
+#'   is at least \eqn{2} (the default).
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
 #'   \code{location} parameter is interpreted in the \code{LKJ} case. If
@@ -161,6 +163,37 @@
 #'   are the defaults and will adjust the scales of the priors according to
 #'   the dispersion in the variables. See \code{\link{prior_summary}} for
 #'   more information about this.
+#' }
+#' \subsection{Product-normal family}{
+#'   Family members:
+#'   \itemize{
+#'   \item \code{product_normal(df, location, scale)}
+#'   }
+#'   The product-normal distribution is the product of at least two independent 
+#'   normal variates each with mean zero, shifted by the \code{location} parameter. It 
+#'   can be shown that the density of a product-normal variate is symmetric and 
+#'   infinite at \code{location}, so this prior resembles a \dQuote{spike-and-slab} 
+#'   prior for sufficiently large values of the \code{scale} parameter. For better 
+#'   or for worse, this prior may be appropriate when it is strongly believed (by 
+#'   someone) that a regression coefficient \dQuote{is} equal to the \code{location}, 
+#'   parameter even though no true Bayesian would specify such a prior.
+#'   
+#'   Each element of \code{df} must be an integer of at least \eqn{2} because these 
+#'   \dQuote{degrees of freedom} are interpreted as the number of normal variates being
+#'   multiplied and then shifted by \code{location} to yield the regression coefficient.
+#'   Higher degrees of freedom produce more a sharper spike at \code{location}. 
+#'   
+#'   Each element of \code{scale} must be a non-negative real number that is interpreted
+#'   as the standard deviation of the normal variates being multiplied to and then shifted
+#'   by \code{location} to yield the regression coefficient. In other words, the elements
+#'   of \code{scale} may differ, but the k-th standard deviation is presumed to
+#'   hold for all the normal deviates that are multiplied together and shifted by the k-th
+#'   element of \code{location} to yield the k-th regression coefficient. The elements of
+#'   \code{scale} are not the prior standard deviations of the regression coefficients. The
+#'   prior variance of the regression coefficients is equal to the scale raised to the power
+#'   of \eqn{2} times the corresponding element of \code{df}. Thus, larger values of 
+#'   \code{scale} put more prior volume on values of the regression coefficient that are far 
+#'   from zero.
 #' }
 #' \subsection{Dirichlet family}{
 #'   Family members:
@@ -317,13 +350,16 @@
 #' fit <- stan_glm(fmla, data = mtcars, prior = N05, prior_intercept = N05)
 #' }
 #' 
-#' # Visually compare normal, student_t, cauchy, and laplace
+#' # Visually compare normal, student_t, cauchy, laplace, and product_normal
 #' compare_priors <- function(scale = 1, df_t = 2, xlim = c(-10, 10)) {
 #'   dt_loc_scale <- function(x, df, location, scale) { 
 #'     1/scale * dt((x - location)/scale, df)  
 #'   }
 #'   dlaplace <- function(x, location, scale) {
 #'     0.5 / scale * exp(-abs(x - location) / scale)
+#'   }
+#'   dproduct_normal <- function(x, scale) {
+#'     besselK(abs(x) / scale ^ 2) / (scale ^ 2 * pi)
 #'   }
 #'   stat_dist <- function(dist, ...) {
 #'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
@@ -336,7 +372,9 @@
 #'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
 #'               args = list(location = 0, scale = scale)) + 
 #'     stat_dist("laplace", size = .75, linetype = 2, fun = dlaplace,
-#'               args = list(location = 0, scale = scale))           
+#'               args = list(location = 0, scale = scale))
+#'     stat_dist("product_normal", size = .75, linetype = 2, fun = dproduct_normal,
+#'               args = list(scale = 1))            
 #' }
 #' # Cauchy has fattest tails, followed by student_t, laplace, and normal
 #' compare_priors()
@@ -397,6 +435,15 @@ laplace <- function(location = 0, scale = NULL, autoscale = TRUE) {
 #' @export
 lasso <- function(df = 1, location = 0, scale = 1, autoscale = TRUE) {
   nlist(dist = "lasso", df, location, scale, autoscale)
+}
+
+#' @rdname priors
+#' @export
+product_normal <- function(df = 2, location = 0, scale = 1) {
+  validate_parameter_value(df)
+  stopifnot(all(df >= 2), all(df == as.integer(df)))
+  validate_parameter_value(scale)
+  nlist(dist = "product_normal", df, location, scale)
 }
 
 #' @rdname priors
