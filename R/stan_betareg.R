@@ -47,11 +47,11 @@
 #'   "cloglog", "cauchit", "log", and "loglog" are supported.
 #' @param link.phi If applicable, character specification of the link function 
 #'   used in the model for \code{phi} (specified through \code{z}). Currently, 
-#'   "identity", "log" (default), and "sqrt" are supported. Since the "sqrt" link function
-#'   is known to be unstable, it is advisable to specify a different link 
-#'   function (or to model \code{phi} as a scalar parameter instead of via a 
-#'   linear predictor by excluding \code{z} from the \code{formula} and
-#'   excluding \code{link.phi}).
+#'   "identity", "log" (default), and "sqrt" are supported. Since the "sqrt"
+#'   link function is known to be unstable, it is advisable to specify a
+#'   different link function (or to model \code{phi} as a scalar parameter
+#'   instead of via a linear predictor by excluding \code{z} from the
+#'   \code{formula} and excluding \code{link.phi}).
 #' @param prior_z Prior distribution for the coefficients in the model for 
 #'   \code{phi} (if applicable). Same options as for \code{prior}.
 #' @param prior_intercept_z Prior distribution for the intercept in the model 
