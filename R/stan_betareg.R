@@ -104,7 +104,6 @@
 #' 
 stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
-                         # link.phi = c("log", "identity", "sqrt"), 
                          link.phi = NULL,
                          model = TRUE, y = TRUE, x = FALSE, ...,
                          prior = normal(), prior_intercept = normal(),
