@@ -54,8 +54,13 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(readLines(file.path(system.file("chunks", package = "rstanarm"), 
-                                   "common_functions.stan")), unlist(functions))
+functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm"), 
+                             c("common_functions.stan",
+                               "bernoulli_likelihoods.stan",
+                               "binomial_likelihoods.stan",
+                               "continuous_likelihoods.stan",
+                               "count_likelihoods.stan")), 
+                      FUN = readLines)), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
@@ -411,3 +416,9 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
   test_lme4(glFormula(angle ~ recipe + temp + (1|recipe:replicate), data = cake)$reTrms)
 })
 
+context("glmer")
+test_that("the Cornish-Fisher expansion from standard normal to Student t works", {
+  df <- exp(1) / pi
+  approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
+  expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
+})

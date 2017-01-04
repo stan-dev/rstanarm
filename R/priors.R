@@ -136,9 +136,11 @@
 #' \subsection{Laplace family}{
 #'   Family members:
 #'   \itemize{
-#'   \item \code{laplce(location, scale)}
+#'   \item \code{laplace(location, scale)}
 #'   \item \code{lasso(df, location, scale)}
 #'   }
+#'   Each of these functions also takes an argument \code{autoscale}.
+#'
 #'   The Laplace distribution is also known as the double-exponential distribution.
 #'   It is a symmetric distribution with a sharp peak at its mean / median / mode
 #'   and fairly long tails. This distribution can be motivated as a scale mixture
@@ -161,8 +163,9 @@
 #'   before training the model. We do not recommend doing so. Instead, it is
 #'   better to specify \code{scale = 1} and \code{autoscale = TRUE}, which 
 #'   are the defaults and will adjust the scales of the priors according to
-#'   the dispersion in the variables. See \code{\link{prior_summary}} for
-#'   more information about this.
+#'   the dispersion in the variables. See the documentation of the 
+#'   \code{autoscale} argument above and also the \code{\link{prior_summary}} 
+#'   page for more information about this.
 #' }
 #' \subsection{Product-normal family}{
 #'   Family members:
@@ -341,7 +344,7 @@
 #'                            chains = 1, seed = 12345, iter = 500, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
-#'                            prior_dispersion = exponential(1/2))
+#'                            prior_aux = exponential(1/2))
 #' plot(prior_pred_fit, "hist")
 #' 
 #' \donttest{

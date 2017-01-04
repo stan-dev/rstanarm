@@ -275,7 +275,7 @@ pp_args <- function(object, data) {
   } else if (is.ig(famname)) {
     args$lambda <- stanmat[, "lambda"]
   } else if (is.nb(famname)) {
-    args$size <- stanmat[, "overdispersion"]
+    args$size <- stanmat[, "reciprocal_dispersion"]
   }
   args
 }
@@ -325,7 +325,7 @@ pp_eta <- function(object, data, draws = NULL) {
 }
 
 pp_b_ord <- function(b, Z_names) {
-  ord <- sapply(Z_names, FUN = function(x) {
+  b_ord <- function(x) {
     m <- grep(paste0("b[", x, "]"), colnames(b), fixed = TRUE)
     len <- length(m)
     if (len == 1)
@@ -355,7 +355,8 @@ pp_b_ord <- function(b, Z_names) {
     if (len > 1)
       stop("multiple matches bug")
     stop("no matches bug")
-  })
+  }
+  ord <- sapply(Z_names, FUN = b_ord)
   b[, ord, drop = FALSE]
 }
 

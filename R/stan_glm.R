@@ -17,8 +17,8 @@
 
 #' Bayesian generalized linear models via Stan
 #'
-#' Generalized linear modeling with optional prior distributions for 
-#' the coefficients, intercept, and nuisance parameter.
+#' Generalized linear modeling with optional prior distributions for the
+#' coefficients, intercept, and auxiliary parameters.
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -51,12 +51,12 @@
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
 #'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
-#'   model adds independent priors on the coefficients of the GLM. The 
-#'   \code{stan_glm} function calls the workhorse \code{stan_glm.fit} function, 
-#'   but it is also possible to call the latter directly.
+#'   model adds priors (independent by default) on the coefficients of the GLM.
+#'   The \code{stan_glm} function calls the workhorse \code{stan_glm.fit}
+#'   function, but it is also possible to call the latter directly.
 #'   
-#'   The \code{stan_glm.nb} function, which takes the extra argument
-#'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family =
+#'   The \code{stan_glm.nb} function, which takes the extra argument 
+#'   \code{link}, is a wrapper for \code{stan_glm} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
 #' @seealso The various vignettes for \code{stan_glm}.
@@ -65,7 +65,7 @@
 #' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
-#'                 algorithm = "fullrank") # only to make example fast enoug
+#'                 algorithm = "fullrank") # only to make example fast enough
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' }
@@ -108,13 +108,26 @@
 #' fit4 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma) 
 #' print(fit4, digits = 2)                 
 #' fit5 <- update(fit4, formula = lot2 ~ log_u)
+#' 
+#' ### Negative binomial regression
+#' fit6 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
+#'                     link = "log", prior_aux = exponential(1/2),
+#'                     QR = TRUE)
+#' 
+#' bayesplot::color_scheme_set("brightblue")
+#' plot(fit6)
+#' pp_check(fit6, plotfun = "hist", nreps = 5)
+#' 
+#' # 80% interval of estimated reciprocal_dispersion parameter
+#' posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
+#' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_dispersion = cauchy(0, 5),
+                    prior_aux = cauchy(0, 5),
                     prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
@@ -151,7 +164,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           offset = offset, family = family,
                           prior = prior, 
                           prior_intercept = prior_intercept,
-                          prior_dispersion = prior_dispersion,
+                          prior_aux = prior_aux,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
@@ -190,7 +203,7 @@ stan_glm.nb <- function(formula,
                         ...,
                         prior = normal(),
                         prior_intercept = normal(),
-                        prior_dispersion = cauchy(0, 5),
+                        prior_aux = cauchy(0, 5),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

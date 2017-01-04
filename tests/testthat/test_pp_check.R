@@ -27,9 +27,11 @@ REFRESH <- 0
 
 SW <- suppressWarnings
 
-fit <- example_model
-fit2 <- SW(stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
-                    seed = SEED, refresh = REFRESH))
+capture.output(
+  fit <- example_model,
+  fit2 <- SW(stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
+                      seed = SEED, refresh = REFRESH))
+)
 
 expect_gg <- function(x, info = NULL, label = NULL) {
   expect_is(x, "ggplot", info = info, label = label)
@@ -73,8 +75,10 @@ test_that("pp_check.stanreg creates ggplot object for grouped functions", {
 
 
 test_that("pp_check ok for vb", {
-  fit3 <- SW(stan_glm(mpg ~ wt, data = mtcars,
-                      seed = SEED, algorithm = "meanfield", iter = 10000))
+  capture.output(
+    fit3 <- SW(stan_glm(mpg ~ wt, data = mtcars,
+                        seed = SEED, algorithm = "meanfield", iter = 10000))
+  )
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, plotfun = "error_hist"))
 })
@@ -82,9 +86,11 @@ test_that("pp_check ok for vb", {
 test_that("pp_check binned residual plot works for factors", {
   ir2 <- iris[-c(1:50), ]
   ir2$Species <- factor(ir2$Species)
-  fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
-                      data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
-                      seed = SEED, refresh = REFRESH))
+  capture.output(
+    fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
+                        data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
+                        seed = SEED, refresh = REFRESH))
+  )
   expect_gg(pp_check(fit3, plotfun = "error_binned"))
 })
 

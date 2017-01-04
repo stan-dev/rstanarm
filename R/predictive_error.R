@@ -19,10 +19,10 @@
 #' 
 #' This is a convenience function for computing \eqn{y - y^{rep}}{y - yrep} 
 #' (in-sample, for observed \eqn{y}) or \eqn{y - \tilde{y}}{y - ytilde} 
-#' (out-of-sample, for new or held-out \eqn{y}). 
-#' The method for stanreg objects calls \code{posterior_predict} internally, 
-#' whereas the method for matrices accepts the output from
-#' \code{posterior_predict} as input and can be used to avoid multiple calls to
+#' (out-of-sample, for new or held-out \eqn{y}). The method for stanreg objects 
+#' calls \code{\link{posterior_predict}} internally, whereas the method for
+#' objects with class \code{"ppd"} accepts the matrix returned by 
+#' \code{posterior_predict} as input and can be used to avoid multiple calls to 
 #' \code{posterior_predict}.
 #' 
 #' @aliases predictive_error
@@ -79,52 +79,47 @@
 #'   predictive_error(preds, y = fit$y)
 #' )
 #' 
-predictive_error.stanreg <- function(object, 
-                                     newdata = NULL, 
-                                     draws = NULL, 
-                                     re.form = NULL, 
-                                     seed = NULL, 
-                                     offset = NULL, ...) {
-  if (used.optimizing(object))
-    STOP_not_optimizing("predictive_error")
-  if (inherits(object, "polr"))
-    stop("'predictive_error' is not currently available for stan_polr.")
-  if ("y" %in% names(list(...)))
-    stop("Argument 'y' should not be specified if 'object' is a stanreg object.")
-  
-  y <- if (is.null(newdata))
-    get_y(object) else eval(formula(object)[[2L]], newdata)
-  
-  fam <- family(object)$family
-  if (is.binomial(fam) && NCOL(y) == 2)
-    y <- y[, 1]
-  
-  preds <- posterior_predict(
-    object,
-    newdata = newdata,
-    draws = draws,
-    offset = offset,
-    seed = seed,
-    re.form = re.form,
-    ...
-  )
-  compute_errors(preds, y)
-}
+predictive_error.stanreg <-
+  function(object,
+           newdata = NULL,
+           draws = NULL,
+           re.form = NULL,
+           seed = NULL,
+           offset = NULL,
+           ...) {
+    if (used.optimizing(object))
+      STOP_not_optimizing("predictive_error")
+    if (inherits(object, "polr"))
+      stop("'predictive_error' is not currently available for stan_polr.")
+    if ("y" %in% names(list(...)))
+      stop("Argument 'y' should not be specified if 'object' is a stanreg object.")
+    
+    y <- if (is.null(newdata))
+      get_y(object) else eval(formula(object)[[2L]], newdata)
+    
+    fam <- family(object)$family
+    if (is.binomial(fam) && NCOL(y) == 2)
+      y <- y[, 1]
+    
+    ytilde <- posterior_predict(
+      object,
+      newdata = newdata,
+      draws = draws,
+      offset = offset,
+      seed = seed,
+      re.form = re.form
+    )
+    predictive_error.ppd(ytilde, y = y)
+  }
 
 #' @rdname predictive_error.stanreg
 #' @export
-#' @param y For the matrix method only, a vector of \eqn{y} values the same
-#'   length as the number of columns in the matrix used as \code{object}.
+#' @param y For the \code{"ppd"} method only, a vector of \eqn{y} values the 
+#'   same length as the number of columns in the matrix used as \code{object}. 
+#'   The method for stanreg objects takes \code{y} directly from the fitted 
+#'   model object.
 #'   
 predictive_error.ppd <- function(object, y, ...) {
-  compute_errors(object, y)
-}
-
-
-# internal ----------------------------------------------------------------
-# @param object A matrix
-# @param y A vector the same length as ncol(object)
-compute_errors <- function(object, y) {
-  stopifnot(is.matrix(object), length(y) == ncol(object))
-  sweep(-1 * object, MARGIN = 2, STATS = as.array(y), FUN = "+")
+  ytilde <- unclass(object)
+  rstantools::predictive_error(ytilde, y = y)
 }

@@ -51,7 +51,7 @@
 #'   it internally into the syntax accepted by \code{\link[lme4]{glmer}} in the
 #'   \pkg{lme4} package. But rather than performing (restricted) maximum likelihood 
 #'   estimation, the \code{stan_gamm4} function utilizes MCMC to perform Bayesian 
-#'   estimation. The Bayesian model adds independent priors on the common regression 
+#'   estimation. The Bayesian model adds priors on the common regression 
 #'   coefficients (in the same way as \code{\link{stan_glm}}) and priors on the 
 #'   terms of a decomposition of the covariance matrices of the group-specific 
 #'   parameters, including the smooths. Estimating these models via MCMC avoids
@@ -113,7 +113,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
-                       prior_dispersion = cauchy(0, 5),
+                       prior_aux = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -134,8 +134,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (is.null(prior_dispersion)) 
-    prior_dispersion <- list()
+  if (is.null(prior_aux)) 
+    prior_aux <- list()
 
   group <- glmod$reTrms
   group$decov <- prior_covariance
@@ -144,7 +144,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
+                          prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 

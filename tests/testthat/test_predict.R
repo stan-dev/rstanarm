@@ -47,12 +47,14 @@ test_that("predict ok for binomial", {
   SF <- cbind(numdead, numalive = 20-numdead)
   
   glmfit <- glm(SF ~ sex*ldose, family = binomial)
-  stanfit <- SW(stan_glm(SF ~ sex*ldose, family = binomial, chains = CHAINS, 
-                         iter = ITER, seed = SEED, refresh = REFRESH))
-  stanfit_opt <- SW(stan_glm(SF ~ sex*ldose, family = binomial, 
-                             prior = NULL, prior_intercept = NULL, 
-                             iter = ITER, seed = SEED, refresh = REFRESH, 
-                             algorithm = "optimizing"))
+  SW(capture.output(
+    stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, chains = CHAINS, 
+                        iter = ITER, seed = SEED, refresh = REFRESH),
+    stanfit_opt <- stan_glm(SF ~ sex*ldose, family = binomial, 
+                            prior = NULL, prior_intercept = NULL, 
+                            iter = ITER, seed = SEED, refresh = REFRESH, 
+                            algorithm = "optimizing")
+  ))
   
   
   pg <- plink(glmfit)
@@ -80,12 +82,14 @@ test_that("predict ok for binomial", {
 
 test_that("predict ok for gaussian", {
   glmfit <- glm(mpg ~ wt, data = mtcars)
-  stanfit <- SW(stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS,
-                      iter = 2 * ITER, seed = SEED, refresh = REFRESH))
-  stanfit_opt <- SW(stan_glm(mpg ~ wt, data = mtcars,
-                             prior = NULL, prior_intercept = NULL,
-                             iter = 2 * ITER, seed = SEED, refresh = REFRESH, 
-                             algorithm = "optimizing"))
+  SW(capture.output(
+    stanfit <- stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS,
+                        iter = 2 * ITER, seed = SEED, refresh = REFRESH),
+    stanfit_opt <- stan_glm(mpg ~ wt, data = mtcars,
+                            prior = NULL, prior_intercept = NULL,
+                            iter = 2 * ITER, seed = SEED, refresh = REFRESH, 
+                            algorithm = "optimizing")
+  ))
   
   pg <- plink(glmfit)
   ps <- plink(stanfit)
@@ -113,11 +117,12 @@ test_that("predict ok for Poisson", {
                     outcome = gl(3,1,9), treatment = gl(3,3))
 
   glmfit <- glm(counts ~ outcome + treatment, data = dat, family = poisson())
-  stanfit <- SW(stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
-                         chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
-  stanfit_opt <- SW(stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
-                             iter = ITER, seed = SEED, refresh = REFRESH, algorithm = "optimizing"))
-
+  SW(capture.output(
+    stanfit <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
+                        chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
+    stanfit_opt <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
+                            iter = ITER, seed = SEED, refresh = REFRESH, algorithm = "optimizing")
+  ))
   pg <- plink(glmfit)
   ps <- plink(stanfit)
   pso <- plink(stanfit_opt)
