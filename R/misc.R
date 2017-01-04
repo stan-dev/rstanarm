@@ -83,6 +83,7 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
                           "lasso" = 0.99,
+                          "product_normal" = 0.99,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)

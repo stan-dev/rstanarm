@@ -215,9 +215,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_dist_for_dispersion = prior_dist_for_dispersion,
     prior_dist_for_aux = prior_dist_for_aux,
-    num_normals = ifelse(prior_dist == 7, sum(as.integer(prior_df)))
+    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0)
     # mean,df,scale for dispersion added below depending on family
   )
 

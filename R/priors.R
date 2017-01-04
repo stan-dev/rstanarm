@@ -362,7 +362,7 @@
 #'     0.5 / scale * exp(-abs(x - location) / scale)
 #'   }
 #'   dproduct_normal <- function(x, scale) {
-#'     besselK(abs(x) / scale ^ 2) / (scale ^ 2 * pi)
+#'     besselK(abs(x) / scale ^ 2, nu = 0) / (scale ^ 2 * pi)
 #'   }
 #'   stat_dist <- function(dist, ...) {
 #'     ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
@@ -375,7 +375,7 @@
 #'     stat_dist("cauchy", size = .75, linetype = 2, fun = dcauchy, 
 #'               args = list(location = 0, scale = scale)) + 
 #'     stat_dist("laplace", size = .75, linetype = 2, fun = dlaplace,
-#'               args = list(location = 0, scale = scale))
+#'               args = list(location = 0, scale = scale)) +
 #'     stat_dist("product_normal", size = .75, linetype = 2, fun = dproduct_normal,
 #'               args = list(scale = 1))            
 #' }

@@ -7,6 +7,5 @@
   real<lower=0> prior_mean_for_aux;
   vector<lower=0>[K] prior_df;
   real<lower=0> prior_df_for_intercept;
-  real<lower=0> prior_df_for_dispersion;
   real<lower=0> prior_df_for_aux;
   int<lower=2> num_normals[prior_dist == 7 ? K : 0];

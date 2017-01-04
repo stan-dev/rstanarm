@@ -28,19 +28,7 @@
     target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
   }
   else if (prior_dist == 7) { // product_normal
-    vector[rows(z_beta)] ord;
-    int z_pos = 1;
-    for (k in 1:K) {
-      ord[z_pos] = z_beta[z_pos];
-      z_pos = z_pos + 1;
-      for (n in 2:num_normals[k]) {
-        real z_inc = z_beta[z_pos];
-        ord[z_pos] = ord[z_pos - 1] + exp(z_inc);
-        target += z_inc;               // Jacobian
-        z_pos = z_pos + 1;
-      }
-    }
-    target += normal_lpdf(ord | 0, 1); // ignore Jacobian warning
+    target += normal_lpdf(z_beta | 0, 1);
   }
   /* else prior_dist is 0 and nothing is added */
   
