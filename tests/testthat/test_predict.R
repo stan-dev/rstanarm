@@ -160,8 +160,10 @@ test_that("predict ok for stan_betareg", {
   colnames(dat) <- c("y", "x", "z")
   
   betaregfit <- betareg(y ~ x | z, data = dat)
-  stanfit <- SW(stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
-                         iter = ITER*10, seed = SEED, refresh = REFRESH))
+  SW(capture.output(
+    stanfit <- stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
+                            iter = ITER, seed = SEED, refresh = REFRESH)
+  ))
   
   pb <- predict(betaregfit, type = "response")
   ps <- predict(stanfit, type = "response")
@@ -172,5 +174,4 @@ test_that("predict ok for stan_betareg", {
   pb <- predict(betaregfit, newdata = newd, type = "link")
   ps <- predict(stanfit, newdata = newd, type = "link")
   expect_equal(pb, ps, tol = 0.05)
-
 })
