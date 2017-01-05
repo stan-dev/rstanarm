@@ -57,16 +57,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
   
-  supported_links <- switch(
-    supported_families[fam],
-    binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
-    gaussian = c("identity", "log", "inverse"),
-    Gamma = c("identity", "log", "inverse"),
-    inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
-    "neg_binomial_2" = , # intentional
-    poisson = c("log", "identity", "sqrt"),
-    stop("unsupported family")
-  )
+  supported_links <- supported_glm_links(supported_families[fam])
   link <- which(supported_links == family$link)
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
@@ -529,6 +520,22 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
 
 
 # internal ----------------------------------------------------------------
+
+# @param famname string naming the family
+# @return character vector of supported link functions for the family
+supported_glm_links <- function(famname) {
+  switch(
+    famname,
+    binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
+    gaussian = c("identity", "log", "inverse"),
+    Gamma = c("identity", "log", "inverse"),
+    inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
+    "neg_binomial_2" = , # intentional
+    poisson = c("log", "identity", "sqrt"),
+    stop("unsupported family")
+  )
+}
+
 
 # Verify that outcome values match support implied by family object
 #
