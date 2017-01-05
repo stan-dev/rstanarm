@@ -70,9 +70,9 @@ test_that("QR works when number of x and/or z predictors is >= 1", {
   expect_stanreg(fit1)
   expect_output(print(prior_summary(fit1)), "Q-space")
   
-  fit2 <- stan_betareg(y ~ x | z, link = "logit", seed = SEED, QR = TRUE,
+  SW(fit2 <- stan_betareg(y ~ x + z | z, link = "logit", seed = SEED, QR = TRUE,
                                    prior = NULL, prior_intercept = NULL,
-                                   data = dat, algorithm = "optimizing")
+                                   data = dat, algorithm = "optimizing"))
   expect_stanreg(fit2)
 })
 
