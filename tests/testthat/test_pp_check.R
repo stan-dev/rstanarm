@@ -25,13 +25,11 @@ ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- suppressWarnings
+SW <- function(expr) capture.output(suppressWarnings(expr))
 
-capture.output(
-  fit <- example_model,
-  fit2 <- SW(stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
-                      seed = SEED, refresh = REFRESH))
-)
+fit <- example_model
+SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
+                    seed = SEED, refresh = REFRESH))
 
 expect_gg <- function(x, info = NULL, label = NULL) {
   expect_is(x, "ggplot", info = info, label = label)
@@ -43,15 +41,19 @@ context("pp_check")
 
 # test deprecated stuff -----------------------------------------------
 test_that("pp_check with deprecated 'check' arg works", {
-  expect_warning(pp_check(fit, check = "dist"), 
+  expect_warning(p1 <- pp_check(fit, check = "dist"), 
                  "Argument 'check' is deprecated")
-  expect_gg(SW(pp_check(fit2, check = "dist", overlay = FALSE)))
-
-  expect_gg(SW(pp_check(fit, check = "resid")))
-  expect_gg(SW(pp_check(fit2, check = "resid", binwidth = .5)))
-
-  expect_gg(SW(pp_check(fit, check = "scatter")))
-  expect_gg(SW(pp_check(fit2, check = "scatter")))
+  expect_warning(p2 <- pp_check(fit2, check = "dist", overlay = FALSE))
+  expect_warning(p3 <- pp_check(fit, check = "resid"))
+  expect_warning(p4 <- pp_check(fit2, check = "resid", binwidth = .5))
+  expect_warning(p5 <- pp_check(fit, check = "scatter"))
+  expect_warning(p6 <- pp_check(fit2, check = "scatter"))
+  expect_gg(p1)
+  expect_gg(p2)
+  expect_gg(p3)
+  expect_gg(p4)
+  expect_gg(p5)
+  expect_gg(p6)
 })
 
 
@@ -62,23 +64,22 @@ ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
 
 test_that("pp_check.stanreg creates ggplot object", {
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
-    expect_gg(SW(pp_check(fit, plotfun = f, nreps = j)), info = f)
+    expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
+              info = f)
   }
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
   for (f in ppc_funs_grouped) for (j in 1:2) {
-    expect_gg(SW(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
+    expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
               info = f)
   }
 })
 
 
 test_that("pp_check ok for vb", {
-  capture.output(
-    fit3 <- SW(stan_glm(mpg ~ wt, data = mtcars,
-                        seed = SEED, algorithm = "meanfield", iter = 10000))
-  )
+  SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield", 
+                      seed = SEED, iter = 10000))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, plotfun = "error_hist"))
 })
@@ -86,21 +87,17 @@ test_that("pp_check ok for vb", {
 test_that("pp_check binned residual plot works for factors", {
   ir2 <- iris[-c(1:50), ]
   ir2$Species <- factor(ir2$Species)
-  capture.output(
-    fit3 <- SW(stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
-                        data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
-                        seed = SEED, refresh = REFRESH))
-  )
+  SW(fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
+                      data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
+                      seed = SEED, refresh = REFRESH))
   expect_gg(pp_check(fit3, plotfun = "error_binned"))
 })
 
 
 # test errors --------------------------------------------------------------
 test_that("pp_check throws error if 'test' arg is bad", {
-  expect_error(pp_check(fit, check = "test", test = "10982pqmeaw"),
+  expect_error(pp_check(fit, plotfun = "stat", stat = "10982pqmeaw"),
                regexp = "not found")
-  expect_error(pp_check(fit, check = "test", test = c("mean", "sd", "var")),
-               regexp = "length")
 })
 test_that("pp_check throws error if plotfun not found", {
   expect_error(pp_check(fit, plotfun = "9999"), 
@@ -113,7 +110,7 @@ test_that("pp_check throws error if 'group' variable not found", {
                "not found in model frame")
 })
 test_that("pp_check throws error for optimizing", {
-  fito <- SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
 
@@ -139,7 +136,7 @@ test_that(".ignore_nreps and .set_nreps work", {
   expect_warning(ignore_nreps(10), "'nreps' is ignored")
   expect_silent(ignore_nreps(NULL))
   
-  expect_warning(set_nreps(10, "ppc_stat"), "'nreps' is ignored")
-  expect_null(set_nreps(10, "ppc_stat"))
+  expect_warning(r <- set_nreps(10, "ppc_stat"), "'nreps' is ignored")
+  expect_null(r)
   expect_equal(set_nreps(10, "ppc_hist"), 10)
 })

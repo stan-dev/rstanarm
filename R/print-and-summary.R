@@ -122,7 +122,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
       nms <- c(nms, "reciprocal_dispersion")
-    }
+    } else if (is.beta(famname)) {}
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
     .printfr(estimates, digits, ...)
@@ -243,7 +243,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
       if (is.gaussian(famname)) 
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
-        mark <- c(mark, "reciprocal_dispersion") 
+        mark <- c(mark, "reciprocal_dispersion")
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
@@ -260,9 +260,16 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   if (is.character(fam)) {
     stopifnot(identical(fam, object$method))
     fam <- paste0("ordered (", fam, ")")
+  } else if (inherits(object, "betareg")) {
+    fam <- paste0("beta (", 
+                  object$family$link, 
+                  ", link.phi=", 
+                  object$family_phi$link, 
+                  ")")
   } else {
     fam <- paste0(fam$family, " (", fam$link, ")") 
   }
+  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
@@ -288,10 +295,6 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)
-  # if (!is.null(atts$priors)) {
-  #   cat("\nPriors:")
-  #   cat("\n ", print_prior_summary(atts$priors, digits))
-  # }
   cat("\nObservations:", atts$nobs)
   if (!is.null(atts$ngrps))
     cat("\nGroups:", paste(names(atts$ngrps), unname(atts$ngrps), 
