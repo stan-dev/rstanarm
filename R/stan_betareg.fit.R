@@ -82,7 +82,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (Z_true == 0)
     has_intercept_z <- FALSE
   
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", "laplace", "lasso")
   ok_intercept_dists <- ok_dists[1:3]
   ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   
