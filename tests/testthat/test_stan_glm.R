@@ -265,15 +265,19 @@ test_that("model with hs_plus prior doesn't error", {
 })
 
 test_that("model with laplace prior doesn't error", {
-  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
+  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
                          seed = SEED, algorithm = "meanfield", QR = FALSE), 
                 regexp = "Automatic Differentiation Variational Inference")
+  expect_output(print(prior_summary(fit)), 
+                "~ laplace(", fixed = TRUE)
 })
 
 test_that("model with lasso prior doesn't error", {
-  expect_output(stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
+  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
                          seed = SEED, algorithm = "meanfield", QR = FALSE), 
                 regexp = "Automatic Differentiation Variational Inference")
+  expect_output(print(prior_summary(fit)), 
+                "~ lasso(", fixed = TRUE)
 })
 
 test_that("prior_aux argument is detected properly", {
