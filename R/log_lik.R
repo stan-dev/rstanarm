@@ -156,7 +156,20 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
       draws$size <- stanmat[,"reciprocal_dispersion"]
-    
+    if (is.beta(fname)) {
+      draws$f_phi <- object$family_phi
+      z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+      if (length(z_vars) == 1 && z_vars == "(phi)") {
+        draws$phi <- stanmat[, z_vars]
+      } else {
+        x_dat <- get_x(object)
+        z_dat <- object$z
+        colnames(x_dat) <- colnames(x_dat)
+        colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
+        data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        draws$phi <- stanmat[,z_vars]
+      }
+    }
   } else {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
@@ -215,14 +228,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 
 
 # log-likelihood function helpers -----------------------------------------
-.xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -which(colnames(data) %in% sel)]
-}
-.mu <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
-  draws$f$linkinv(eta)
-}
 .weighted <- function(val, w) {
   if (is.null(w)) {
     val
@@ -231,6 +236,32 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   } 
 }
 
+.xdata <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, -which(colnames(data) %in% sel)]
+}
+.mu <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  draws$f$linkinv(eta)
+}
+
+# for stan_betareg only
+.xdata_beta <- function(data) { 
+  sel <- c("y", "weights","offset", "trials")
+  data[, -c(which(colnames(data) %in% sel), grep("(phi)_", colnames(data), fixed = TRUE))]
+}
+.zdata_beta <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, grep("(phi)_", colnames(data), fixed = TRUE)]
+}
+.mu_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata_beta(data), data$offset))
+  draws$f$linkinv(eta)
+}
+.phi_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))
+  draws$f_phi$linkinv(eta)
+}
 
 # log-likelihood functions ------------------------------------------------
 .ll_gaussian_i <- function(i, data, draws) {
@@ -286,5 +317,14 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       stop("Exponentiation only possible when there are exactly 2 outcomes.")
     }
   }
+  .weighted(val, data$weights)
+}
+.ll_beta_i <- function(i, data, draws) {
+  mu <- .mu_beta(data, draws)
+  phi <- draws$phi
+  if (length(grep("(phi)_", colnames(data), fixed = TRUE)) > 0) {
+    phi <- .phi_beta(data, draws)
+  }
+  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
 }

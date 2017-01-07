@@ -1,42 +1,39 @@
 #' @param prior The prior distribution for the regression coefficients. 
-#'   \code{prior} can be a call to \code{normal}, \code{student_t}, 
-#'   \code{cauchy}, \code{hs} or \code{hs_plus}. See \code{\link{priors}} for 
-#'   details. To omit a prior ---i.e., to use a flat (improper) uniform prior---
-#'   \code{prior} can be set to \code{NULL}, although this is rarely a good 
-#'   idea. (\strong{Note:} Unless \code{QR=TRUE}, if \code{prior} is specified 
-#'   as \code{normal}, \code{student_t}, or \code{cauchy} with the 
-#'   \code{autoscale} argument left at its default and recommended value of 
-#'   \code{TRUE}, then the scale(s) of \code{prior} may be tuned internally 
-#'   based on the scales of the predictors. See \code{\link{priors}} for details
-#'   on the rescaling and \code{\link{prior_summary}} for a summary of the 
-#'   priors used for a particular model.)
+#'   \code{prior} should be a call to one of the various functions provided by 
+#'   \pkg{rstanarm} for specifying priors. The subset of these functions that 
+#'   can be used for the prior on the coefficients can be grouped into three 
+#'   "families":
+#'   
+#'   \tabular{ll}{
+#'     \strong{Family} \tab \strong{Functions} \cr 
+#'     \emph{Student t family} \tab \code{normal}, \code{student_t}, \code{cauchy} \cr 
+#'     \emph{Hierarchical shrinkage family} \tab \code{hs}, \code{hs_plus} \cr 
+#'     \emph{Laplace family} \tab \code{laplace}, \code{lasso} \cr
+#'   }
+#'   
+#'   See the \link[=priors]{priors help page} for details on the families and 
+#'   how to specify the arguments for all of the functions in the table above.
+#'   To omit a prior ---i.e., to use a flat (improper) uniform prior---
+#'   \code{prior} can be set to \code{NULL}, although this is rarely a good
+#'   idea.
+#'   
+#'   \strong{Note:} Unless \code{QR=TRUE}, if \code{prior} is from the Student t
+#'   family or Laplace family, and if the \code{autoscale} argument to the 
+#'   function used to specify the prior (e.g. \code{\link{normal}}) is left at 
+#'   its default and recommended value of \code{TRUE}, then the default or 
+#'   user-specified prior scale(s) may be tuned internally based on the scales
+#'   of the predictors. See the \link[=priors]{priors help page} for details on
+#'   the rescaling and the \code{\link{prior_summary}} function for a summary of
+#'   the priors used for a particular model.
+#'   
 #' @param prior_intercept The prior distribution for the intercept. 
 #'   \code{prior_intercept} can be a call to \code{normal}, \code{student_t} or 
-#'   \code{cauchy}. See \code{\link{priors}} for details. To to omit a prior 
-#'   ---i.e., to use a flat (improper) uniform prior--- set 
-#'   \code{prior_intercept} to \code{NULL}. (\strong{Note:} if a dense 
-#'   representation of the design matrix is utilized ---i.e., if the 
-#'   \code{sparse} argument is left at its default value of \code{FALSE}--- then
-#'   the prior distribution for the intercept is set so it applies to the value 
-#'   when all predictors are centered.)
-#' @param prior_aux The prior distribution for the "auxiliary" parameter (if
-#'   applicable). The "auxiliary" parameter refers to a different parameter 
-#'   depending on the \code{family}. For Gaussian models \code{prior_aux} 
-#'   controls \code{"sigma"}, the error 
-#'   standard deviation. For negative binomial models \code{prior_aux} controls 
-#'   \code{"reciprocal_dispersion"}, which is similar to the 
-#'   \code{"size"} parameter of \code{\link[stats]{rnbinom}}:
-#'   smaller values of \code{"reciprocal_dispersion"} correspond to 
-#'   greater dispersion. For gamma models \code{prior_aux} sets the prior on 
-#'   to the \code{"shape"} parameter (see e.g., 
-#'   \code{\link[stats]{rgamma}}), and for inverse-Gaussian models it is the 
-#'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
-#'   a scale parameter). Binomial and Poisson models do not have auxiliary 
-#'   parameters. 
+#'   \code{cauchy}. See the \link[=priors]{priors help page} for details on 
+#'   these functions. To omit a prior on the intercept ---i.e., to use a flat
+#'   (improper) uniform prior--- \code{prior_intercept} can be set to
+#'   \code{NULL}.
 #'   
-#'   \code{prior_aux} can be a call to \code{exponential} to 
-#'   use an exponential distribution, or \code{normal}, \code{student_t} or 
-#'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
-#'   prior. See \code{\link{priors}} for details on these functions. To omit a 
-#'   prior ---i.e., to use a flat (improper) uniform prior--- set 
-#'   \code{prior_aux} to \code{NULL}.
+#'   \strong{Note:} If using a dense representation of the design matrix 
+#'   ---i.e., if the \code{sparse} argument is left at its default value of
+#'   \code{FALSE}--- then the prior distribution for the intercept is set so it
+#'   applies to the value when all predictors are centered.

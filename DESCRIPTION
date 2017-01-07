@@ -38,6 +38,7 @@ Imports:
     utils
 Suggests:
     arm,
+    betareg,
     gridExtra,
     HSAUR3,
     KernSmooth,
