@@ -166,13 +166,13 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
+    fit <- 
+      nlist(stanfit, algorithm, data, offset = NULL, weights = NULL,
+            x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
+            family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
+            formula, model = mf, terms = mt, call = match.call(),
+            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"))
     
-    fit <- nlist(stanfit, algorithm, data, offset = NULL, weights = NULL,
-                 x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
-                 family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
-                 formula, model = mf, terms = mt, call = match.call(),
-                 na.action = attr(mf, "na.action"), 
-                 contrasts = attr(X, "contrasts"))
     out <- stanreg(fit) # out$xlevels <- .getXlevels(mt, mf)
     if (!x)
       out$x <- NULL
