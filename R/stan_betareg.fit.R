@@ -229,7 +229,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_df_z,
     prior_dist_for_intercept_z, prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
-    prior_df_for_intercept_z = c(prior_df_for_intercept_z)
+    prior_df_for_intercept_z = c(prior_df_for_intercept_z),
+    num_normals = integer(0)
     )
 
   # call stan() to draw from posterior distribution
