@@ -93,15 +93,13 @@
 #' hist(y, col = "dark grey", border = FALSE, xlim = c(0,1))
 #' fake_dat <- data.frame(y, x, z)
 #' 
-#' \donttest{
 #' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
-#'                     link = "logit", link.phi = "log")
+#'                     link = "logit", link.phi = "log", 
+#'                     chains = 1, iter = 250) # for speed
 #' print(fit, digits = 2)
 #' plot(fit)
 #' pp_check(fit)
 #' prior_summary(fit)
-#' }
-#' 
 stan_betareg <- function(formula, data, subset, na.action, weights, offset,
                          link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
                          link.phi = NULL,
