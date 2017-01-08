@@ -100,80 +100,91 @@
 #' plot(fit)
 #' pp_check(fit)
 #' prior_summary(fit)
-stan_betareg <- function(formula, data, subset, na.action, weights, offset,
-                         link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
-                         link.phi = NULL,
-                         model = TRUE, y = TRUE, x = FALSE, ...,
-                         prior = normal(), prior_intercept = normal(),
-                         prior_z = normal(), prior_intercept_z = normal(),
-                         prior_phi = cauchy(0, 5), prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                         adapt_delta = NULL, QR = FALSE) {
-  
-  if (!requireNamespace("betareg", quietly = TRUE)) 
-    stop("Please install the betareg package before using 'stan_betareg'.")
-  
-  mc <- match.call(expand.dots = FALSE)
-  mc$model <- mc$y <- mc$x <- TRUE
-  
-  # NULLify any Stan specific arguments in mc now
-  mc$prior <- mc$prior_intercept <- mc$prior_PD <- mc$algorithm <-
-    mc$adapt_delta <- mc$QR <- mc$sparse <- mc$prior_dispersion <- NULL
-
-  mc$drop.unused.levels <- TRUE
-  mc[[1L]] <- quote(betareg::betareg)
-  mc$control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
-  br <- suppressWarnings(eval(mc, parent.frame()))
-  mf <- check_constant_vars(br$model)
-  mt <- br$terms
-  Y <- array1D_check(model.response(mf, type = "any"))
-  X <- model.matrix(br)
-  Z <- model.matrix(br, model = "precision")
-  weights <- validate_weights(as.vector(model.weights(mf)))
-  offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
-
-  # determine whether user specified regression matrix for precision model
-  if (length(grep("\\|", all.names(formula))) == 0 && is.null(link.phi)) {
-    Z <- NULL
+#'
+stan_betareg <-
+  function(formula,
+           data,
+           subset,
+           na.action,
+           weights,
+           offset,
+           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"),
+           link.phi = NULL,
+           model = TRUE,
+           y = TRUE,
+           x = FALSE,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_z = normal(),
+           prior_intercept_z = normal(),
+           prior_phi = cauchy(0, 5),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
+    if (!requireNamespace("betareg", quietly = TRUE))
+      stop("Please install the betareg package before using 'stan_betareg'.")
+    
+    mc <- match.call(expand.dots = FALSE)
+    mc$model <- mc$y <- mc$x <- TRUE
+    
+    # NULLify any Stan specific arguments in mc
+    mc$prior <- mc$prior_intercept <- mc$prior_PD <- mc$algorithm <-
+      mc$adapt_delta <- mc$QR <- mc$sparse <- mc$prior_dispersion <- NULL
+    
+    mc$drop.unused.levels <- TRUE
+    mc[[1L]] <- quote(betareg::betareg)
+    mc$control <- betareg::betareg.control(maxit = 0, fsmaxit = 0)
+    br <- suppressWarnings(eval(mc, parent.frame()))
+    mf <- check_constant_vars(br$model)
+    mt <- br$terms
+    Y <- array1D_check(model.response(mf, type = "any"))
+    X <- model.matrix(br)
+    Z <- model.matrix(br, model = "precision")
+    weights <- validate_weights(as.vector(model.weights(mf)))
+    offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
+    
+    # check if user specified matrix for precision model
+    if (length(grep("\\|", all.names(formula))) == 0 && 
+        is.null(link.phi))
+      Z <- NULL
+    
+    algorithm <- match.arg(algorithm)
+    link <- match.arg(link)
+    link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
+    
+    stanfit <- 
+      stan_betareg.fit(x = X, y = Y, z = Z, 
+                       weights = weights, offset = offset,
+                       link = link, link.phi = link.phi,
+                       ...,
+                       prior = prior, prior_z = prior_z,
+                       prior_intercept = prior_intercept, 
+                       prior_intercept_z = prior_intercept_z,
+                       prior_phi = prior_phi, prior_PD = prior_PD,
+                       algorithm = algorithm, adapt_delta = adapt_delta, 
+                       QR = QR)
+    fit <- 
+      nlist(stanfit, algorithm, data, offset = NULL, weights = NULL,
+            x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
+            family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
+            formula, model = mf, terms = mt, call = match.call(),
+            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"))
+    out$xlevels <- .getXlevels(mt, mf)
+    out <- stanreg(fit)
+    if (!x)
+      out$x <- NULL
+    if (!y)
+      out$y <- NULL
+    if (!model)
+      out$model <- NULL
+    
+    structure(out, class = c("stanreg", "betareg"))
   }
-  
-  # pass the prior information to stan_betareg.fit()
-  stanfit <- stan_betareg.fit(x = X, y = Y, z = Z, 
-                              weights = weights, offset = offset, 
-                              link = link, link.phi = link.phi, ..., 
-                              prior = prior, prior_z = prior_z, 
-                              prior_intercept = prior_intercept, 
-                              prior_intercept_z = prior_intercept_z,
-                              prior_phi = prior_phi, prior_PD = prior_PD, 
-                              algorithm = algorithm, adapt_delta = adapt_delta,
-                              QR = QR)
-  algorithm <- match.arg(algorithm)
-  link <- match.arg(link)
-  link_phi <- match.arg(link.phi, c(NULL, "log", "identity", "sqrt"))
-  
-  if (is.null(Z)) {
-    Z <- model.matrix(y ~ 1)
-  }
-  
-  fit <- nlist(stanfit, formula, offset = NULL, weights = NULL, 
-               family = beta_fam(link), family_phi = beta_phi_fam(link_phi), 
-               data, x = X, y = Y, z = Z, model = mf, terms = mt, 
-               algorithm, call = match.call(), 
-               na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"))
-  out <- stanreg(fit)
-  class(out) <- c("stanreg", "betareg")
-  # out$xlevels <- .getXlevels(mt, mf)
-  if (!x) 
-    out$x <- NULL
-  if (!y) 
-    out$y <- NULL
-  if (!model)
-    out$model <- NULL
-  
-  return(out) 
-}
 
+
+# internal ----------------------------------------------------------------
 beta_fam <- function(link = "logit") {
   stopifnot(is.character(link))
   if (link == "loglog") {
