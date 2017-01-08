@@ -31,18 +31,14 @@ transformed parameters {
   real aux[family > 1];
   #include "tparameters_glm.stan" // defines beta, b, theta_L
  
-  if (family > 1) { 
-    if (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0)
-      aux[1] = aux_unscaled[1];
-    else if (prior_dist_for_aux == 1) // normal
-      aux[1] = prior_scale_for_aux * aux_unscaled[1] + prior_mean_for_aux;
-    else if (prior_dist_for_aux == 2) // student t
-      aux[1] = prior_scale_for_aux * CFt(aux_unscaled[1], prior_df_for_aux) + 
-               prior_mean_for_aux;
-    else if (family > 1) // exponential
-      aux[1] = prior_scale_for_aux * aux_unscaled[1];
+  if (family > 1 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
+    aux[1] = aux_unscaled[1];
+  else if (family > 1) {
+    aux[1] = prior_scale_for_aux * aux_unscaled[1];
+    if (prior_dist_for_aux <= 2) // normal or student_t
+      aux[1] = aux[1] + prior_mean_for_aux;
   }
-  
+ 
   if (t > 0) {
     if (family == 1)
       theta_L = make_theta_L(len_theta_L, p, 1.0,
@@ -89,8 +85,10 @@ model {
   // Log-prior for aux
   if (family > 1 && 
       prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
-    if (prior_dist_for_aux <= 2)
+    if (prior_dist_for_aux == 1)
       target += normal_lpdf(aux_unscaled | 0, 1);
+    else if (prior_dist_for_aux == 2)
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
     else 
       target += exponential_lpdf(aux_unscaled | 1);
   }
