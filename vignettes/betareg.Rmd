@@ -149,9 +149,9 @@ The model can be fit by calling `stan_betareg`, using the appropriate link funct
 ```{r simulated-fit, results = "hide"}
 library(rstanarm)
 fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log",
-                     iter = 2000, cores = 4, algorithm = "sampling", seed = SEED)
+                     chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 fit2 <- stan_betareg(y ~ -1 + x , data = dat, link = "logit", link.phi = "log",
-                     iter = 2000, cores = 4, algorithm = "sampling", seed = SEED)
+                     chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 round(coef(fit1), 2)
 round(coef(fit2), 2)
 ```
@@ -210,10 +210,10 @@ and the batch of conditions.
 library(rstanarm)
 data("GasolineYield", package = "betareg")
 gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit",
-                         iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
+                         chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 gas_fit2 <- stan_betareg(yield ~ temp + batch | pressure,
                          data = GasolineYield, link = "logit",
-                         iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
+                         chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 round(coef(gas_fit1), 2)
 round(coef(gas_fit2), 2)
 ```

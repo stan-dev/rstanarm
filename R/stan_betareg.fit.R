@@ -66,7 +66,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_intercept_z <- prior_mean_z <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_intercept_z <-
     prior_df_for_aux <- prior_dist_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
-    xbar <- xtemp <- scaled <- NULL
+    xbar <- xtemp <- prior_autoscale <- prior_autoscale_z <- NULL
 
   sparse <- FALSE
   x_stuff <- center_x(x, sparse)
@@ -95,7 +95,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
                                             default_scale = 10, link = link,
                                             ok_dists = ok_intercept_dists)
-  names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
+  names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), 
+                                         "_for_intercept")
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, autoscale}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
   
@@ -108,7 +109,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, 
                                               link = link.phi, default_scale = 10,
                                               ok_dists = ok_intercept_dists)
-  names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), "_for_intercept")
+  names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), 
+                                           "_for_intercept")
   for (i in names(prior_intercept_stuff_z))
     assign(paste0(i, "_z"), prior_intercept_stuff_z[[i]])
   
