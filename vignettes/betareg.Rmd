@@ -10,7 +10,7 @@ params:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{stan_glm: GLMs for Binary and Binomial Data}
+%\VignetteIndexEntry{stan_betareg: Models for Rate/Proportion Data}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
