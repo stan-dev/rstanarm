@@ -162,7 +162,7 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
 
     SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                           data = dat, algorithm = "optimizing")) 
+                           data = dat, algorithm = "meanfield")) 
     expect_stanreg(fit)
   }
 })
