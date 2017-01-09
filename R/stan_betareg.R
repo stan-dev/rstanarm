@@ -166,7 +166,7 @@ stan_betareg <-
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
     fit <- 
-      nlist(stanfit, algorithm, data, offset = NULL, weights = NULL,
+      nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
             family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
             formula, model = mf, terms = mt, call = match.call(),
