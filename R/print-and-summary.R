@@ -15,13 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-.printfr <- function(x, digits, ...) {
-  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
-}
-.median_and_madsd <- function(x) {
-  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
-}
-
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
@@ -331,6 +324,12 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 
 
 # internal ----------------------------------------------------------------
+.printfr <- function(x, digits, ...) {
+  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
+}
+.median_and_madsd <- function(x) {
+  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
+}
 
 # Allow "alpha", "beta", "varying" as shortcuts 
 #
