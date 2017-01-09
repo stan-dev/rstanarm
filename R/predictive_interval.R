@@ -20,9 +20,9 @@
 #' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
 #' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
 #' \code{predictive_interval} function computes Bayesian predictive intervals. 
-#' The method for stanreg objects calls \code{posterior_predict} internally, 
-#' whereas the method for objects of class \code{"ppd"} accepts the matrix 
-#' returned by \code{posterior_predict} as input and can be used to avoid
+#' The method for stanreg objects calls \code{\link{posterior_predict}}
+#' internally, whereas the method for objects of class \code{"ppd"} accepts the
+#' matrix returned by \code{posterior_predict} as input and can be used to avoid
 #' multiple calls to \code{posterior_predict}.
 #' 
 #' @export
@@ -63,34 +63,36 @@
 #'   predictive_interval(preds)
 #' )
 #' 
-predictive_interval.stanreg <- function(object,
-                                        prob = 0.9,
-                                        newdata = NULL,
-                                        draws = NULL,
-                                        re.form = NULL,
-                                        fun = NULL,
-                                        seed = NULL,
-                                        offset = NULL,
-                                        ...) {
-  if (used.optimizing(object))
-    STOP_not_optimizing("posterior_interval")
-  if (inherits(object, "polr"))
-    stop("'predictive_interval' is not currently available for stan_polr.")
-  ytilde <- posterior_predict(
-    object,
-    newdata = newdata,
-    draws = draws,
-    seed = seed,
-    re.form = re.form,
-    offset = offset,
-    fun = fun,
-    ...
-  )
-  central_intervals(ytilde, prob)
-}
+predictive_interval.stanreg <-
+  function(object,
+           prob = 0.9,
+           newdata = NULL,
+           draws = NULL,
+           re.form = NULL,
+           fun = NULL,
+           seed = NULL,
+           offset = NULL,
+           ...) {
+    if (used.optimizing(object))
+      STOP_not_optimizing("posterior_interval")
+    if (inherits(object, "polr"))
+      stop("'predictive_interval' is not currently available for stan_polr.")
+    
+    ytilde <- posterior_predict(
+      object,
+      newdata = newdata,
+      draws = draws,
+      seed = seed,
+      re.form = re.form,
+      offset = offset,
+      fun = fun
+    )
+    predictive_interval.ppd(ytilde, prob = prob)
+  }
 
 #' @rdname predictive_interval.stanreg
 #' @export
 predictive_interval.ppd <- function(object, prob = 0.9, ...) {
-  central_intervals(object, prob)
+  ytilde <- unclass(object)
+  rstantools::predictive_interval(ytilde, prob = prob)
 }

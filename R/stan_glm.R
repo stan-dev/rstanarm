@@ -17,8 +17,8 @@
 
 #' Bayesian generalized linear models via Stan
 #'
-#' Generalized linear modeling with optional prior distributions for 
-#' the coefficients, intercept, and nuisance parameter.
+#' Generalized linear modeling with optional prior distributions for the
+#' coefficients, intercept, and auxiliary parameters.
 #'
 #' @export
 #' @templateVar armRef (Ch. 3-6)
@@ -37,6 +37,7 @@
 #' @template args-x-y
 #' @template args-dots
 #' @template args-priors
+#' @template args-prior_aux
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -56,9 +57,8 @@
 #'   function, but it is also possible to call the latter directly.
 #'   
 #'   The \code{stan_glm.nb} function, which takes the extra argument 
-#'   \code{link}, is a simple wrapper for \code{stan_glm} with \code{family = 
-#'   \link{neg_binomial_2}(link)}. The \code{prior_dispersion} argument can be 
-#'   used to set a prior on the overdispersion parameter.
+#'   \code{link}, is a wrapper for \code{stan_glm} with \code{family = 
+#'   \link{neg_binomial_2}(link)}.
 #'   
 #' @seealso The various vignettes for \code{stan_glm}.
 #' 
@@ -66,7 +66,7 @@
 #' if (!grepl("^sparc",  R.version$platform)) {
 #' ### Linear regression
 #' fit <- stan_glm(mpg / 10 ~ ., data = mtcars, QR = TRUE,
-#'                 algorithm = "fullrank") # only to make example fast enoug
+#'                 algorithm = "fullrank") # only to make example fast enough
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' }
@@ -79,7 +79,8 @@
 #'   data = wells, 
 #'   family = binomial(link = "logit"), 
 #'   prior = student_t(df = 7, location = 0, scale = 2.5), 
-#'   prior_intercept = normal(0, 10)
+#'   prior_intercept = normal(0, 10),
+#'   chains = 1, iter = 250 # for speed
 #' )
 #' print(fit2)
 #' prior_summary(fit2)
@@ -94,7 +95,8 @@
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
 #' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 1), prior_intercept = normal(0, 5))
+#'                  prior = normal(0, 1), prior_intercept = normal(0, 5),
+#'                  chains = 1, iter = 250) # for speed
 #' print(fit3)
 #' 
 #' bayesplot::color_scheme_set("green")
@@ -106,34 +108,30 @@
 #' clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
 #'                        lot1 = c(118,58,42,35,27,25,21,19,18),
 #'                        lot2 = c(69,35,26,21,18,16,13,12,12))
-#' fit4 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma) 
-#' print(fit4, digits = 2)                 
+#' fit4 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
+#'                  chains = 1, iter = 250) # for speed 
+#' print(fit4, digits = 2)
 #' fit5 <- update(fit4, formula = lot2 ~ log_u)
 #' 
 #' ### Negative binomial regression
-#' fit6 <- stan_glm(
-#'   Days ~ Sex/(Age + Eth*Lrn), 
-#'   data = MASS::quine, 
-#'   QR = TRUE, 
-#'   prior_dispersion = exponential(1/2),
-#'   # could also use stan_glm.nb and drop the family argument
-#'   family = neg_binomial_2(link = "log")
-#' )
+#' fit6 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
+#'                     link = "log", prior_aux = exponential(1/2),
+#'                     QR = TRUE, chains = 1, iter = 250) # for speed
 #' 
 #' bayesplot::color_scheme_set("brightblue")
 #' plot(fit6)
 #' pp_check(fit6, plotfun = "hist", nreps = 5)
 #' 
-#' # 80% interval of estimated overdispersion parameter
-#' posterior_interval(fit6, pars = "overdispersion", prob = 0.8)
-#' plot(fit6, "areas", pars = "overdispersion", prob = 0.8)
+#' # 80% interval of estimated reciprocal_dispersion parameter
+#' posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
+#' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
 #'
 stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                     na.action = NULL, offset = NULL, model = TRUE, 
                     x = FALSE, y = TRUE, contrasts = NULL, ..., 
                     prior = normal(), prior_intercept = normal(),
-                    prior_dispersion = cauchy(0, 5),
+                    prior_aux = cauchy(0, 5),
                     prior_PD = FALSE, 
                     algorithm = c("sampling", "optimizing", 
                                   "meanfield", "fullrank"),
@@ -170,7 +168,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           offset = offset, family = family,
                           prior = prior, 
                           prior_intercept = prior_intercept,
-                          prior_dispersion = prior_dispersion,
+                          prior_aux = prior_aux,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
@@ -209,7 +207,7 @@ stan_glm.nb <- function(formula,
                         ...,
                         prior = normal(),
                         prior_intercept = normal(),
-                        prior_dispersion = cauchy(0, 5),
+                        prior_aux = cauchy(0, 5),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

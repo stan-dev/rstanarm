@@ -358,6 +358,7 @@ test_that("draw_ystar_rng returns expected results", {
   }
 })
 
+# glmer
 context("glmer")
 test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(lme4))
@@ -421,4 +422,28 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
   df <- exp(1) / pi
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
+})
+
+# betareg
+links <- c("logit", "probit", "cloglog", "cauchit", "log")
+
+context("betareg")
+test_that("linkinv_beta returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    linkinv <- binomial(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), 
+                          linkinv_beta(eta, i)), info = links[i])
+  }
+})
+context("betareg")
+test_that("pw_beta and ll_beta_lp return expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    mu <- linkinv_beta(eta, i)
+    dispersion <- 4/3
+    linkinv <- binomial(link = links[i])$linkinv
+    ll <- dbeta(1/3, mu*dispersion, (1-mu)*dispersion, log = TRUE)
+    expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
+  }
 })

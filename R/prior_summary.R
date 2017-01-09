@@ -138,18 +138,22 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
       formatters = formatters
     )
-  if (!is.null(x[["prior_dispersion"]])) {
-    dispersion_name <- x[["prior_dispersion"]][["dispersion_name"]]
+  if (!is.null(x[["prior_aux"]])) {
+    aux_name <- x[["prior_aux"]][["aux_name"]]
     .print_scalar_prior(
-      x[["prior_dispersion"]], 
-      txt = paste0("\n", dispersion_name), 
+      x[["prior_aux"]], 
+      txt = paste0("\nAuxiliary (", aux_name, ")"), 
       formatters
     )
   }
   
   # unique to stan_betareg
   if (!is.null(x[["prior_intercept_z"]]))
-    .print_scalar_prior(x[["prior_intercept_z"]], txt = "\nIntercept_z", formatters)
+    .print_scalar_prior(
+      x[["prior_intercept_z"]], 
+      txt = paste0("\nIntercept_z", if (!sparse) " (after predictors centered)"), 
+      formatters
+    )
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
@@ -237,7 +241,7 @@ used.sparse <- function(x) {
   )
   if (!is.null(p$adjusted_scale))
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
-}
+      }
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]

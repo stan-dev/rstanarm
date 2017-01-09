@@ -111,10 +111,13 @@
 #' @seealso The vignette for \code{stan_polr}.
 #'
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform))
-#' stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+#' if (!grepl("^sparc",  R.version$platform)) {
+#'  fit <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only
+#'  print(fit)
+#'  plot(fit)
+#' }
 #'
 stan_polr <- function(formula, data, weights, ..., subset,
                       na.action = getOption("na.action", "na.omit"),
@@ -148,8 +151,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
   } else {
-    stop("Specifying '~0' or '~-1' in the model formula not allowed.",
-         call. = FALSE)
+    stop("Specifying '~0' or '~-1' in the model formula not allowed",
+         " for stan_polr.", call. = FALSE)
   }
   K <- ncol(x)
   wt <- model.weights(m)
@@ -235,12 +238,15 @@ stan_polr <- function(formula, data, weights, ..., subset,
                family = method, method, contrasts, na.action,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
-               algorithm, stan_summary, stanfit,
-               num_unconstrained_pars = get_num_upars(stanfit))
+               algorithm, stan_summary, stanfit)
   structure(out, class = c("stanreg", "polr"))
 }
 
 
+
+# internal ----------------------------------------------------------------
+
+# CDF, inverse-CDF and PDF for Gumbel distribution
 pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
   q <- (q - loc)/scale
   p <- exp(-exp(-q))
@@ -249,11 +255,9 @@ pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
   else
     p
 }
-
 qgumbel <- function(p, loc = 0, scale = 1) {
   loc - scale * log(-log(p))
 }
-
 dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
   z <- (x - loc) / scale
   log_f <- -(z + exp(-z))

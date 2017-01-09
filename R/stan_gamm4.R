@@ -27,6 +27,7 @@
 #' @template return-stanreg-object
 #' @template see-also
 #' @template args-priors
+#' @template args-prior_aux
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -102,7 +103,7 @@
 #' dat$y <- dat$y + model.matrix(~ fac - 1) %*% rnorm(20) * .5
 #'
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
-#'                  QR = TRUE, chains = 1) # chains = 1 just for example speed
+#'                  QR = TRUE, chains = 1, iter = 200) # for example speed
 #' print(br)
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
@@ -113,7 +114,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
-                       prior_dispersion = cauchy(0, 5),
+                       prior_aux = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
@@ -134,8 +135,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
     prior <- list()
   if (is.null(prior_intercept)) 
     prior_intercept <- list()
-  if (is.null(prior_dispersion)) 
-    prior_dispersion <- list()
+  if (is.null(prior_aux)) 
+    prior_aux <- list()
 
   group <- glmod$reTrms
   group$decov <- prior_covariance
@@ -144,7 +145,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_dispersion = prior_dispersion, prior_PD = prior_PD, 
+                          prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, ...)
 
