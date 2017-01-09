@@ -166,7 +166,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
         z_dat <- object$z
         colnames(x_dat) <- colnames(x_dat)
         colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
-        data <- data.frame("y" = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
         draws$phi <- stanmat[,z_vars]
       }
     }

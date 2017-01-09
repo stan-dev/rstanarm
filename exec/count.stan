@@ -38,7 +38,7 @@ transformed parameters {
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux[1] = aux[1] + prior_mean_for_aux;
   }
-  
+ 
   if (t > 0) {
     if (family == 1)
       theta_L = make_theta_L(len_theta_L, p, 1.0,

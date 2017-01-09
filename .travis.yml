@@ -3,6 +3,9 @@ sudo: false
 r: devel
 cache: packages
 
+r_build_args: --no-build-vignettes
+r_check_args: --no-build-vignettes
+
 r_github_packages:
   - jimhester/covr
 

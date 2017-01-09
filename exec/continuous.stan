@@ -42,18 +42,13 @@ transformed data {
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
-  int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
+  #include "tdata_betareg.stan" // defines hs_z
   is_continuous = 1;
-  #include "tdata_betareg.stan"
 
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
-  }
-  else if (family == 4) {
-    // do nothing
   }
 }
 parameters {
@@ -67,16 +62,17 @@ transformed parameters {
   real aux;
   vector[z_dim] omega; // used in tparameters_betareg.stan
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_dist_for_aux == 0)
+  if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
   else {
     aux = prior_scale_for_aux * aux_unscaled;
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux = aux + prior_mean_for_aux;
   }
+
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 
-                            aux, tau, scale, zeta, rho, z_T);
+                           aux, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
   }
   #include "tparameters_betareg.stan"
@@ -155,8 +151,7 @@ model {
     if (prior_dist_for_aux == 1)
       target += normal_lpdf(aux_unscaled | 0, 1);
     else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | 
-                               prior_df_for_aux, 0, 1);
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
     else 
      target += exponential_lpdf(aux_unscaled | 1);
   }

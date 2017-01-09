@@ -181,10 +181,10 @@ test_that("loo/waic for stan_glmer works", {
 
 test_that("loo/waic for stan_betareg works", {
   data("GasolineYield", package = "betareg")
-  fit_logit <- SW(stan_betareg(yield ~ temp, data = GasolineYield,
-                          link = "logit",
-                          chains = CHAINS, iter = ITER*100,
-                          seed = SEED, refresh = REFRESH))
+  SW(fit_logit <- stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
+                               link = "logit",
+                               chains = CHAINS, iter = ITER,
+                               seed = SEED, refresh = REFRESH))
   expect_identical_loo(fit_logit)
   expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
 })
@@ -264,7 +264,10 @@ test_that("kfold throws error if model has weights", {
 test_that("kfold works on some examples", {
   mtcars2 <- mtcars
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
-  SW(fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0))
+  SW(
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0, 
+                         chains = 1, iter = 100)
+  )
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
   

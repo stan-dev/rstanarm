@@ -66,15 +66,17 @@ stanreg <- function(object) {
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
 
-    stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
-    colnames(stanmat) <- colnames(x)
+    if (is_betareg) {
+      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z))]
+      colnames(stanmat) <- c(names(coefs),names(coefs_z))
+    } else {
+      stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
+      colnames(stanmat) <- colnames(x)
+    }
     ses <- apply(stanmat, 2L, mad)
     if (mer) {
       mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
       stanmat <- stanmat[,1:mark, drop = FALSE]
-    }
-    if (is_betareg) {
-      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z))]
     }
     covmat <- cov(stanmat)
     # rownames(covmat) <- colnames(covmat) <- rownames(stan_summary)[1:nrow(covmat)]
@@ -97,7 +99,6 @@ stanreg <- function(object) {
   if (is_betareg) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
-    # residuals <- ytmp - rbeta(length(eta), mu * phi, (1 - mu) * phi) # this is not what betareg does
   }
   
   out <- nlist(
