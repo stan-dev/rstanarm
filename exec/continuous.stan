@@ -71,16 +71,24 @@ transformed parameters {
   }
 
   if (t > 0) {
-    theta_L = make_theta_L(len_theta_L, p, 
-                           aux, tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case == 1) {
+      theta_L = tau;
+      b = tau[1] * z_b;
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 
+                             aux, tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
   #include "tparameters_betareg.stan"
 }
 model {
   vector[N] eta_z; // beta regression linear predictor for phi
   #include "make_eta.stan" // defines eta
-  if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+  if (t > 0) {
+    #include "eta_add_Zb.stan"    
+  }
   if (has_intercept == 1) {
     if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
     else if (family == 4 && link == 5) eta = eta - max(eta) + gamma[1];
@@ -178,7 +186,9 @@ generated quantities {
     vector[N] eta_z;
     #include "make_eta.stan" // defines eta
     nan_count = 0;
-    if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+    if (t > 0) {
+      #include "eta_add_Zb.stan"
+    }
     if (has_intercept == 1) {
       if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {

@@ -50,6 +50,7 @@ data {
   int<lower=0> v1[num_non_zero[2]]; // column indices for w1
   int<lower=0> u0[t > 0 ? N[1] + 1 : 0];  // where the non-zeros start in each row of Z0
   int<lower=0> u1[t > 0 ? N[2] + 1 : 0];  // where the non-zeros start in each row of Z1
+  int<lower=0, upper=1> special_case;     // whether we only have to deal with (1|group)
 }
 transformed data {
   int NN = N[1] + N[2];
@@ -62,9 +63,15 @@ parameters {
 transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
-    theta_L = make_theta_L(len_theta_L, p, 
-                            1.0, tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case) {
+      theta_L = tau;
+      b = tau[1] * z_b;
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 
+                             1.0, tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {

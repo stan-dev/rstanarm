@@ -254,12 +254,16 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v1 <- parts1$v
       standata$u0 <- parts0$u
       standata$u1 <- parts1$u
+      standata$special_case <- all(parts0$w == 1) && all(parts1$w == 1) &&
+                               all(parts0$u == 1:length(parts0$u)) &&
+                               all(parts1$u == 1:length(parts1$u))
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
       standata$w <- parts$w
       standata$v <- parts$v
       standata$u <- parts$u
+      standata$special_case <- all(parts$w == 1) && all(parts$u == 1:length(parts$u))
     }
     standata$shape <- as.array(maybe_broadcast(decov$shape, t))
     standata$scale <- as.array(maybe_broadcast(decov$scale, t))
@@ -287,6 +291,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v <- integer(0)
       standata$u <- integer(0)
     }
+    standata$special_case <- 0L
     standata$shape <- standata$scale <- standata$concentration <-
       standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L
