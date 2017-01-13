@@ -357,7 +357,8 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' pairs(example_model, regex_pars = "herd:[279]")
 #' }
 #'
-#' @importFrom graphics pairs
+#' @importFrom graphics hist pairs par points rect smoothScatter text
+#' @importFrom rstan get_logposterior
 #' 
 pairs.stanreg <-
   function(x,
