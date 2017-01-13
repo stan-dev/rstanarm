@@ -401,6 +401,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
                         t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
