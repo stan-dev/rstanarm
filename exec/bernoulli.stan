@@ -54,7 +54,9 @@ data {
 }
 transformed data {
   int NN = N[1] + N[2];
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  int<lower=1> V0[t,N[1]] = make_V(N[1], t, v0);
+  int<lower=1> V1[t,N[2]] = make_V(N[2], t, v1);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
@@ -64,8 +66,14 @@ transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
     if (special_case) {
+      int start = 1;
       theta_L = tau;
-      b = tau[1] * z_b;
+      if (t == 1) b = tau[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = tau[i] * z_b[start:end];
+        start = end + 1;
+      }
     }
     else {
       theta_L = make_theta_L(len_theta_L, p, 

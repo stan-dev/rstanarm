@@ -41,6 +41,7 @@ transformed data {
   vector[family == 3 ? N : 0] sqrt_y;
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
+  int<lower=1> V[t, N] = make_V(N, t, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
   #include "tdata_betareg.stan" // defines hs_z
@@ -72,8 +73,14 @@ transformed parameters {
 
   if (t > 0) {
     if (special_case == 1) {
+      int start = 1;
       theta_L = tau;
-      b = tau[1] * z_b;
+      if (t == 1) b = tau[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = tau[i] * z_b[start:end];
+        start = end + 1;
+      }
     }
     else {
       theta_L = make_theta_L(len_theta_L, p, 

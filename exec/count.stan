@@ -19,7 +19,8 @@ data {
 }
 transformed data{
   real poisson_max = pow(2.0, 30.0);
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  int<lower=1> V[t, N] = make_V(N, t, v);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
@@ -41,8 +42,14 @@ transformed parameters {
  
   if (t > 0) {
     if (special_case == 1) {
+      int start = 1;
       theta_L = tau;
-      b = tau[1] * z_b;
+      if (t == 1) b = tau[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = tau[i] * z_b[start:end];
+        start = end + 1;
+      }
     }
     else {
       if (family == 1)

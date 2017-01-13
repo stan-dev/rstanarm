@@ -397,6 +397,11 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
+    if (FALSE && all(Z@x == 1)) { # reenable with new expose_stan_functions
+      V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
+      expect_true(all(V == 
+                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+    }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (Days || Subject), data = sleepstudy)$reTrms)

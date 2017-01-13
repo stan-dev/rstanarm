@@ -19,7 +19,8 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  int<lower=1> V[t, N] = make_V(N, t, v);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
@@ -29,8 +30,14 @@ transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
     if (special_case == 1) {
+      int start = 1;
       theta_L = tau;
-      b = tau[1] * z_b;
+      if (t == 1) b = tau[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = tau[i] * z_b[start:end];
+        start = end + 1;
+      }
     }
     else {
       theta_L = make_theta_L(len_theta_L, p, 

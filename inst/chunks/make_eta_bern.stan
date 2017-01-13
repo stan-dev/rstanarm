@@ -24,9 +24,9 @@
     eta0 = eta0 + offset0;
     eta1 = eta1 + offset1;
   }
-  if (special_case) {
-    eta0 = eta0 + b[v0];
-    eta1 = eta1 + b[v1];
+  if (special_case) for (i in 1:t) {
+    eta0 = eta0 + b[V0[t]];
+    eta1 = eta1 + b[V1[t]];
   }
   else if (t > 0) {
     eta0 = eta0 + csr_matrix_times_vector(N[1], q, w0, v0, u0, b);
