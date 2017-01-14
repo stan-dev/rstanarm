@@ -103,7 +103,7 @@
 #' dat$y <- dat$y + model.matrix(~ fac - 1) %*% rnorm(20) * .5
 #'
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
-#'                  QR = TRUE, chains = 1) # chains = 1 just for example speed
+#'                  QR = TRUE, chains = 1, iter = 200) # for example speed
 #' print(br)
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)

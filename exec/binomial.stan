@@ -19,7 +19,8 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  int<lower=1> V[t, N] = make_V(N, t, v);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
@@ -28,14 +29,28 @@ parameters {
 transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
-    theta_L = make_theta_L(len_theta_L, p, 
-                            1.0, tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = tau;
+      if (t == 1) b = tau[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = tau[i] * z_b[start:end];
+        start = end + 1;
+      }
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 
+                             1.0, tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {
   #include "make_eta.stan" // defines eta
-  if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+  if (t > 0) {
+    #include "eta_add_Zb.stan"
+  }
   if (has_intercept == 1) {
     if (link != 4) eta = eta + gamma[1];
     else eta = gamma[1] + eta - max(eta);
@@ -67,7 +82,9 @@ generated quantities {
   {
     vector[N] pi;
     #include "make_eta.stan" // defines eta
-    if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+    if (t > 0) {
+      #include "eta_add_Zb.stan"
+    }
     if (has_intercept == 1) {
       if (link != 4) eta = eta + gamma[1];
       else {

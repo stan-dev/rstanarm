@@ -65,7 +65,7 @@ test_that("stan_glmer.nb ok", {
   mu <- 5*(-4 + with(dd, as.integer(f1) + 4*as.numeric(f2)))
   dd$y <- rnbinom(nrow(dd), mu = mu, size = 0.5)
   fmla <- as.formula(y ~ f1*f2 + (1|g))
-  SW(fit <- stan_glmer.nb(formula = fmla, data = dd, chains = CHAINS, 
+  SW(fit <- stan_glmer.nb(formula = fmla, data = dd, chains = CHAINS, init_r = 1,
                           iter = ITER, seed = SEED, refresh = REFRESH))
   expect_stanreg(fit)
   

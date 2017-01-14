@@ -26,14 +26,12 @@
 #'   package. The original call to \code{\link[biglm]{biglm}} must not have an 
 #'   intercept and must utilize \emph{centered} but not \emph{standardized} 
 #'   predictors. See the \strong{Details} and \strong{Examples} sections.
-#' @param xbar A numeric vector of means in the implicit design matrix for the
-#'   observations included in the model.
-#' @param ybar A numeric scalar indicating the same mean of the outcome for the
+#' @param xbar A numeric vector of column means in the implicit design matrix 
+#'   excluding the intercept for the observations included in the model.
+#' @param ybar A numeric scalar indicating the mean of the outcome for the
 #'   observations included in the model.
 #' @param s_y A numeric scalar indicating the unbiased sample standard deviation
 #'   of the outcome for the observations included in the model.
-#' @param has_intercept A logical scalar indicating whether to add an intercept 
-#'   to the model when estimating it.
 #' @template args-dots
 #' @param prior Must be a call to \code{\link{R2}} with its \code{location}
 #'   argument specified or \code{NULL}, which would indicate a standard uniform
@@ -53,20 +51,11 @@
 #'   package but with an informative prior on the \eqn{R^2} of the regression. 
 #'   Like \code{\link[biglm]{biglm}}, the memory required to estimate the model 
 #'   depends largely on the number of predictors rather than the number of 
-#'   observations. However, the original call to \code{\link[biglm]{biglm}} must
-#'   be a little unconventional. The original \code{\link[stats]{formula}} must 
-#'   not include an intercept and all the columns of the implicit design matrix 
-#'   must be expressed as deviations from the sample mean. If the design matrix 
-#'   is on the hard disk, the column sums must be accumulated, divided by the 
-#'   sample size to produce the column means, and then the column means must be 
-#'   swept from the design matrix on disk. If any observations have any missing 
-#'   values on any of the predictors or the outcome, such observations do not 
-#'   contribute to the column means, which must be passed as the \code{xbar} 
-#'   argument. If the outcome is also expressed as the deviation from its sample
-#'   mean, then the coefficients produced by \code{\link[biglm]{biglm}} are the
-#'   same as if the raw data were used and an intercept were included. The
-#'   sample mean and sample standard deviation of the outcome must also be
-#'   passed.
+#'   observations. However, \code{stan_biglm} and \code{stan_biglm.fit} have 
+#'   additional required arguments that are not necessary in 
+#'   \code{\link[biglm]{biglm}}, namely \code{xbar}, \code{ybar}, and \code{s_y}.
+#'   If any observations have any missing values on any of the predictors or the 
+#'   outcome, such observations do not contribute to these statistics.
 #'   
 #' @return The output of both \code{stan_biglm} and \code{stan_biglm.fit} is an
 #'   object of \code{\link[rstan]{stanfit-class}} rather than
@@ -78,7 +67,7 @@
 #'   input \code{\link{stanreg-objects}}, such as 
 #'   \code{\link{posterior_predict}} cannot be used.
 #'   
-stan_biglm <- function(biglm, xbar, ybar, s_y, has_intercept = TRUE, ...,
+stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
                        prior = R2(stop("'location' must be specified")), 
                        prior_intercept = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"),
@@ -86,23 +75,20 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, has_intercept = TRUE, ...,
   if (!inherits(biglm, "biglm")    || is.null(biglm$qr) ||
       !inherits(biglm$qr, "bigqr") || is.null(biglm$terms))
     stop("'biglm' must be of S3 class biglm as defined by the biglm package.")
-  if (identical(attr(biglm$terms, "intercept"), 1L))
-    stop(
-      "The original biglm object must not include an intercept. ", 
-      "Rather, the predictors should be centered so that ", 
-      "the intercept is the sample mean of the outcome."
-    )
-  
+
   b <- coef(biglm)
   R <- diag(length(b))
-  pos <- 1L
-  for (i in 1:(ncol(R) - 1L)) for(j in (i+1):ncol(R)) {
-    R[i,j] <- biglm$qr$rbar[pos]
-    pos <- pos + 1L
-  }
+  R[upper.tri(R)] <- biglm$qr$rbar
   R <- sqrt(biglm$qr$D) * R
-  return(stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, has_intercept, 
-                        ...,
+  if (identical(attr(biglm$terms, "intercept"), 1L)) {
+    b <- b[-1]
+    R <- R[-1,-1]
+    has_intercept <- TRUE
+  }
+  else has_intercept <- FALSE
+
+  return(stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, 
+                        has_intercept, ...,
                         prior = prior, prior_intercept = prior_intercept,
                         prior_PD = prior_PD, algorithm = algorithm, 
                         adapt_delta = adapt_delta))

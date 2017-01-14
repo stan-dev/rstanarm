@@ -19,7 +19,8 @@ data {
 }
 transformed data{
   real poisson_max = pow(2.0, 30.0);
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
+  int<lower=1> V[t, N] = make_V(N, t, v);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
@@ -38,20 +39,34 @@ transformed parameters {
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux[1] = aux[1] + prior_mean_for_aux;
   }
-  
+ 
   if (t > 0) {
-    if (family == 1)
-      theta_L = make_theta_L(len_theta_L, p, 1.0,
-                              tau, scale, zeta, rho, z_T);
-    else
-      theta_L = make_theta_L(len_theta_L, p, aux[1],
-                              tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = family == 1 ? tau : tau * aux[1];
+      if (t == 1) b = theta_L[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = theta_L[i] * z_b[start:end];
+        start = end + 1;
+      }
+    }
+    else {
+      if (family == 1)
+        theta_L = make_theta_L(len_theta_L, p, 1.0,
+                               tau, scale, zeta, rho, z_T);
+      else
+        theta_L = make_theta_L(len_theta_L, p, aux[1],
+                               tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {
   #include "make_eta.stan" // defines eta
-  if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);  
+  if (t > 0) {
+    #include "eta_add_Zb.stan"
+  }
   if (has_intercept == 1) {
     if (link == 1) eta = eta + gamma[1];
     else eta = eta - min(eta) + gamma[1];
@@ -111,7 +126,9 @@ generated quantities {
   {
     vector[N] nu;
     #include "make_eta.stan" // defines eta
-    if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+    if (t > 0) {
+      #include "eta_add_Zb.stan"
+    }
     if (has_intercept == 1) {
       if (link == 1) eta = eta + gamma[1];
       else {

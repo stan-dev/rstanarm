@@ -103,8 +103,8 @@ test_that("stan_betareg works with QR = TRUE and algorithm = 'optimizing'", {
 test_that("stan_betareg works with QR = TRUE and algorithm = 'sampling'", {
   dat <- simple_betareg_data(200, draw_z = TRUE)
   SW(fit <- stan_betareg(y ~ x + z, link = "logit", QR = TRUE,
-                         prior = NULL, prior_intercept = NULL, iter = 100, chains = 2,
-                         data = dat))
+                         prior = NULL, prior_intercept = NULL, 
+                         iter = 100, chains = 2, data = dat))
   expect_stanreg(fit)
   val <- coef(fit)
   ans <- coef(betareg(y ~ x + z, link = "logit", data = dat))
@@ -126,7 +126,8 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'log')", {
                            data = dat, algorithm = "optimizing"))
     expect_stanreg(fit)
     val <- coef(fit)
-    ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[1], data = dat))
+    ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[1], 
+                        data = dat))
     expect_equal(val, ans, tol = 0.1, info = c(link1[i], link2[1]))
   }
 })
@@ -161,10 +162,7 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
 
     SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                           prior = NULL, prior_intercept = NULL,
-                           prior_z = NULL, prior_intercept_z = NULL,
-                           data = dat, algorithm = "sampling", 
-                           chains = 2, iter = 100, seed = SEED))
+                           data = dat, algorithm = "meanfield")) 
     expect_stanreg(fit)
   }
 })
