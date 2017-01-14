@@ -358,6 +358,7 @@ test_that("draw_ystar_rng returns expected results", {
   }
 })
 
+# glmer
 context("glmer")
 test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(lme4))
@@ -396,6 +397,12 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
+    if (FALSE && all(Z@x == 1)) { # reenable with new expose_stan_functions
+      V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
+      expect_true(all(V == 
+                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
+    }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (Days || Subject), data = sleepstudy)$reTrms)
@@ -421,4 +428,28 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
   df <- exp(1) / pi
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
+})
+
+# betareg
+links <- c("logit", "probit", "cloglog", "cauchit", "log")
+
+context("betareg")
+test_that("linkinv_beta returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    linkinv <- binomial(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), 
+                          linkinv_beta(eta, i)), info = links[i])
+  }
+})
+context("betareg")
+test_that("pw_beta and ll_beta_lp return expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    mu <- linkinv_beta(eta, i)
+    dispersion <- 4/3
+    linkinv <- binomial(link = links[i])$linkinv
+    ll <- dbeta(1/3, mu*dispersion, (1-mu)*dispersion, log = TRUE)
+    expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
+  }
 })

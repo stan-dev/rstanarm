@@ -169,3 +169,100 @@
     if (z <= (mu / (mu + x))) return x;
     else return mu2 / x;
   }
+  
+  /** 
+  * Apply inverse link function to linear predictor for beta models
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_beta(vector eta, int link) {
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 6) reject("Invalid link");
+    if (link == 1)  // logit
+      for(n in 1:rows(eta)) mu[n] = inv_logit(eta[n]);
+    else if (link == 2)  // probit
+      for(n in 1:rows(eta)) mu[n] = Phi(eta[n]);
+    else if (link == 3)  // cloglog
+      for(n in 1:rows(eta)) mu[n] = inv_cloglog(eta[n]);
+    else if (link == 4) // cauchy
+      for(n in 1:rows(eta)) mu[n] = cauchy_cdf(eta[n], 0.0, 1.0);
+    else if (link == 5)  // log 
+      for(n in 1:rows(eta)) {
+          mu[n] = exp(eta[n]);
+          if (mu[n] < 0 || mu[n] > 1)
+            reject("mu needs to be between 0 and 1");
+      }
+    else if (link == 6) // loglog
+      for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(-eta[n]); 
+      
+    return mu;
+  }
+  
+  /** 
+  * Apply inverse link function to linear predictor for dispersion for beta models
+  *
+  * @param eta Linear predictor vector
+  * @param link An integer indicating the link function
+  * @return A vector, i.e. inverse-link(eta)
+  */
+  vector linkinv_beta_z(vector eta, int link) {
+    vector[rows(eta)] mu;
+    if (link < 1 || link > 3) reject("Invalid link");
+    if (link == 1)        // log
+      for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
+    else if (link == 2)   // identity
+      return eta;
+    else if (link == 3)   // sqrt
+      for(n in 1:rows(eta)) mu[n] = square(eta[n]);
+    return mu;
+  }
+  
+  /** 
+  * Pointwise (pw) log-likelihood vector for beta models
+  *
+  * @param y The vector of outcomes
+  * @param eta The linear predictors
+  * @param dispersion Positive dispersion parameter
+  * @param link An integer indicating the link function
+  * @return A vector of log-likelihoods
+  */
+  vector pw_beta(vector y, vector eta, real dispersion, int link) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    vector[rows(y)] shape1;
+    vector[rows(y)] shape2;
+    if (link < 1 || link > 6) reject("Invalid link");
+    mu = linkinv_beta(eta, link);
+    shape1 = mu * dispersion;
+    shape2 = (1 - mu) * dispersion;
+    for (n in 1:rows(y)) {
+      ll[n] = beta_lpdf(y[n] | shape1[n], shape2[n]);
+    }
+    return ll;
+  }
+
+  /** 
+  * Pointwise (pw) log-likelihood vector for beta models with z variables
+  *
+  * @param y The vector of outcomes
+  * @param eta The linear predictors (for y)
+  * @param eta_z The linear predictors (for dispersion)
+  * @param link An integer indicating the link function passed to linkinv_beta
+  * @param link_phi An integer indicating the link function passed to linkinv_beta_z
+  * @return A vector of log-likelihoods
+  */
+  vector pw_beta_z(vector y, vector eta, vector eta_z, int link, int link_phi) {
+    vector[rows(y)] ll;
+    vector[rows(y)] mu;
+    vector[rows(y)] mu_z;
+    if (link < 1 || link > 6) reject("Invalid link");
+    if (link_phi < 1 || link_phi > 3) reject("Invalid link");
+    mu = linkinv_beta(eta, link);
+    mu_z = linkinv_beta_z(eta_z, link_phi);
+    for (n in 1:rows(y)) {
+      ll[n] = beta_lpdf(y[n] | mu[n] * mu_z[n], (1-mu[n]) * mu_z[n]);
+    }
+    return ll;
+  }

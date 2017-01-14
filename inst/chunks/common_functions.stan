@@ -234,3 +234,21 @@
            + (3 * z7 + 19 * z5 + 17 * z3 - 15 * z) / (384 * df3)
            + (79 * z9 + 776 * z7 + 1482 * z5 - 1920 * z3 - 945 * z) / (92160 * df4);
   }
+
+  /** 
+   * Return two-dimensional array of group membership
+   *
+   * @param N An integer indicating the number of observations
+   * @param t An integer indicating the number of grouping variables
+   * @return An two-dimensional integer array of group membership
+   */
+  int[,] make_V(int N, int t, int[] v) {
+    int V[t,N];
+    int pos = 1;
+    if (t > 0) for (j in 1:N) for (i in 1:t) {
+      V[i,j] = v[pos];
+      pos = pos + 1;
+    }
+    return V;
+  }
+

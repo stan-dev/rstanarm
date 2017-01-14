@@ -24,13 +24,11 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-SW <- suppressWarnings
+SW <- function(expr) capture.output(suppressWarnings(expr))
 
 fit <- example_model
-SW(capture.output(
-  fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED),
-  fitvb <- update(fito, algorithm = "meanfield")
-))
+SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED))
+SW(fitvb <- update(fito, algorithm = "meanfield"))
 
 expect_gg <- function(x) expect_s3_class(x, "ggplot")
 
@@ -42,9 +40,7 @@ test_that("plot.stanreg errors if chains = 1 but needs multiple", {
                             "hist_by_chain",
                             "dens_overlay",
                             "violin")
-  SW(capture.output(
-    fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100)
-  ))
+  SW(fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100))
   for (f in multiple_chain_plots) {
     expect_error(plot(fit_1chain, plotfun = f), info = f, 
                  regexp = "requires multiple chains")
@@ -131,8 +127,9 @@ test_that("pairs method ok", {
   requireNamespace("rstan")
   requireNamespace("KernSmooth")
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
-  expect_error(pairs(fit, pars = "b[(Intercept) herd:15]"), 
-               regexp = "does not yet allow group-level parameters")
+  expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma"))
+  expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma", 
+                      log = TRUE, condition = "lp__"))
   expect_error(pairs(fitvb), regexp = "only available for models fit using MCMC")
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })
@@ -142,21 +139,28 @@ test_that("pairs method ok", {
 # posterior_vs_prior ------------------------------------------------------
 context("posterior_vs_prior")
 test_that("posterior_vs_prior ok", {
-  expect_gg(posterior_vs_prior(fit, pars = "beta"))
-  expect_gg(posterior_vs_prior(fit, pars = "varying", group_by_parameter = TRUE, 
-                               color_by = "vs"))
-  expect_gg(posterior_vs_prior(fit, regex_pars = "period", group_by_parameter = FALSE, 
-                               color_by = "none", facet_args = list(scales = "free", nrow = 2)))
+  SW(p1 <- posterior_vs_prior(fit, pars = "beta"))
+  expect_gg(p1)
   
-  SW(capture.output(
-    fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+  SW(p2 <- posterior_vs_prior(fit, pars = "varying", group_by_parameter = TRUE, 
+                              color_by = "vs"))
+  expect_gg(p2)
+  SW(p3 <- posterior_vs_prior(fit, regex_pars = "period", 
+                              group_by_parameter = FALSE, 
+                              color_by = "none", 
+                              facet_args = list(scales = "free", nrow = 2)))
+  expect_gg(p3)
+  
+  SW(fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
                           prior = R2(0.2, "mean"), init_r = 0.1, 
                           seed = SEED, chains = CHAINS, cores = CORES, 
-                          iter = 100, refresh = 0)
-  ))
-  expect_gg(posterior_vs_prior(fit_polr))
-  expect_gg(posterior_vs_prior(fit_polr, regex_pars = "\\|", group_by_parameter = TRUE, 
-                               color_by = "vs"))
+                          iter = 100, refresh = 0))
+  SW(p4 <- posterior_vs_prior(fit_polr))
+  SW(p5 <- posterior_vs_prior(fit_polr, regex_pars = "\\|", 
+                              group_by_parameter = TRUE, 
+                              color_by = "vs"))
+  expect_gg(p4)
+  expect_gg(p5)
 })
 
 test_that("posterior_vs_prior throws errors", {
