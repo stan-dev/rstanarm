@@ -47,7 +47,7 @@
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
 #'   freedom parameter(s) default to \eqn{3}.
 #' @param global_df,global_scale Optional arguments for the hierarchical
-#'   shrinkage prior. See the \emph{Hierarchical shrinkage family} section
+#'   shrinkage priors. See the \emph{Hierarchical shrinkage family} section
 #'   below.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
@@ -126,8 +126,8 @@
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
 #'   mean of zero and a standard deviation that is distributed as the product of
 #'   two independent half Student t parameters (both with 3 degrees of freedom
-#'   (\code{df1}, \code{df2}) by default) that are each scaled by the same
-#'   square root of a half Cauchy parameter.
+#'   (\code{df1}, \code{df2}) by default) that are each scaled in a similar way
+#'   to the \code{hs} prior.
 #'   
 #'   The hierarchical shrinkage priors have very tall modes and very fat 
 #'   tails. Consequently, they tend to produce posterior distributions that are
