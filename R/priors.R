@@ -161,11 +161,10 @@
 #'   
 #'   It is also common in supervised learning to standardize the predictors 
 #'   before training the model. We do not recommend doing so. Instead, it is
-#'   better to specify \code{scale = 1} and \code{autoscale = TRUE}, which 
-#'   are the defaults and will adjust the scales of the priors according to
-#'   the dispersion in the variables. See the documentation of the 
-#'   \code{autoscale} argument above and also the \code{\link{prior_summary}} 
-#'   page for more information about this.
+#'   better to specify \code{autoscale = TRUE} (the default value), which 
+#'   will adjust the scales of the priors according to the dispersion in the
+#'   variables. See the documentation of the \code{autoscale} argument above 
+#'   and also the \code{\link{prior_summary}} page for more information.
 #' }
 #' \subsection{Product-normal family}{
 #'   Family members:
@@ -187,7 +186,7 @@
 #'   Higher degrees of freedom produce more a sharper spike at \code{location}. 
 #'   
 #'   Each element of \code{scale} must be a non-negative real number that is interpreted
-#'   as the standard deviation of the normal variates being multiplied to and then shifted
+#'   as the standard deviation of the normal variates being multiplied and then shifted
 #'   by \code{location} to yield the regression coefficient. In other words, the elements
 #'   of \code{scale} may differ, but the k-th standard deviation is presumed to
 #'   hold for all the normal deviates that are multiplied together and shifted by the k-th
@@ -436,7 +435,7 @@ laplace <- function(location = 0, scale = NULL, autoscale = TRUE) {
 
 #' @rdname priors
 #' @export
-lasso <- function(df = 1, location = 0, scale = 1, autoscale = TRUE) {
+lasso <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
   nlist(dist = "lasso", df, location, scale, autoscale)
 }
 
