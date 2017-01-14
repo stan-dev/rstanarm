@@ -184,14 +184,15 @@ bayesplot_grid(
 )
 ```
 
-We can also compare models by evaluating the expected log pointwise predictive
-density (`elpd`), which can be calculated using the `loo` package.
+We can also compare models by evaluating the expected log pointwise predictive 
+density (`elpd`), which can be calculated using the `loo` method, which provides
+an interface for __rstanarm__ models to the functionality in the __loo__
+package.
 
 ``` {r simulated-loo}
-library(loo)
 loo1 <- loo(fit1)
 loo2 <- loo(fit2)
-compare(loo1, loo2)
+compare_models(loo1, loo2)
 ```
 
 The difference in `elpd` is negative indicating that the expected predictive
@@ -244,7 +245,7 @@ bayesplot_grid(
 library(loo)
 gas_loo1 <- loo(gas_fit1)
 gas_loo2 <- loo(gas_fit2)
-compare(gas_loo1, gas_loo2)
+compare_models(gas_loo1, gas_loo2)
 ```
 
 Evaluating the expected log predictive distribution using `loo` 

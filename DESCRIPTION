@@ -39,6 +39,7 @@ Imports:
 Suggests:
     arm,
     betareg,
+    digest,
     gridExtra,
     HSAUR3,
     KernSmooth,
