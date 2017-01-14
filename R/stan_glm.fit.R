@@ -215,7 +215,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
-    global_prior_df, global_prior_scale, # for hs prior
+    global_prior_df, global_prior_scale, # for hs priors
     has_intercept, prior_PD
     # mean,df,scale for aux added below depending on family
   )

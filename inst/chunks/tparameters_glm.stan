@@ -13,6 +13,6 @@
   }
   else if (prior_dist == 4) {
     if (is_continuous == 1 && family == 1)
-      beta = hsplus_prior(z_beta, global, local, aux);
-    else beta = hsplus_prior(z_beta, global, local, 1);
+      beta = hsplus_prior(z_beta, global, local, global_prior_scale, aux);
+    else beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1);
   }

@@ -186,14 +186,15 @@
    * @param z_beta A vector of primitive coefficients
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
+   * @param global_prior_scale A positive real number
    * @param error_scale 1 or sigma in the Gaussian case
    * @return A vector of coefficientes
    */
   vector hsplus_prior(vector z_beta, real[] global, vector[] local, 
-                      real error_scale) {
+                      real global_prior_scale, real error_scale) {
     return z_beta .* (local[1] .* sqrt(local[2])) .* 
            (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]) * 
-           error_scale;
+           global_prior_scale * error_scale;
   }
   
   /** 

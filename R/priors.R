@@ -104,7 +104,7 @@
 #'   Family members:
 #'   \itemize{
 #'   \item \code{hs(df, global_df, global_scale)}
-#'   \item \code{hs_plus(df1, df2)}
+#'   \item \code{hs_plus(df1, df2, global_df, global_scale)}
 #'   }
 #'   
 #'   The hierarchical shrinkage priors are normal with a mean of zero and a 
@@ -354,11 +354,13 @@ hs <- function(df = 3, global_df = 1, global_scale = 1) {
 
 #' @rdname priors
 #' @export
-hs_plus <- function(df1 = 3, df2 = 3) {
+hs_plus <- function(df1 = 3, df2 = 3, global_df = 1, global_scale = 1) {
   validate_parameter_value(df1)
   validate_parameter_value(df2)
+  validate_parameter_value(global_df)
+  validate_parameter_value(global_scale)
   # scale gets used as a second df hyperparameter
-  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2)
+  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2, global_df, global_scale)
 }
 
 #' @rdname priors

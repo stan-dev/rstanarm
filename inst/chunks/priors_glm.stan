@@ -16,7 +16,7 @@
     // unorthodox useage of prior_scale as another df hyperparameter
     target += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
     target += normal_lpdf(global[1] | 0, 1);
-    target += inv_gamma_lpdf(global[2] | 0.5, 0.5);
+    target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
   }
   /* else prior_dist is 0 and nothing is added */
   

@@ -8,5 +8,5 @@
   vector<lower=0>[K] prior_df;
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_df_for_aux;  
-  real<lower=0> global_prior_df;    // for hs prior only
-  real<lower=0> global_prior_scale; // for hs prior only
+  real<lower=0> global_prior_df;    // for hs priors only
+  real<lower=0> global_prior_scale; // for hs priors only
