@@ -254,14 +254,12 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v1 <- parts1$v
       standata$u0 <- parts0$u
       standata$u1 <- parts1$u
-      standata$special_case <- all(parts0$w == 1) && all(parts1$w == 1)
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
       standata$w <- parts$w
       standata$v <- parts$v
       standata$u <- parts$u
-      standata$special_case <- all(parts$w == 1)
     }
     standata$shape <- as.array(maybe_broadcast(decov$shape, t))
     standata$scale <- as.array(maybe_broadcast(decov$scale, t))
@@ -271,7 +269,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$len_regularization <- sum(p > 1)
     standata$regularization <- 
       as.array(maybe_broadcast(decov$regularization, sum(p > 1)))
-    
+    standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
+      length(x) == 1 && x == "(Intercept)"
+    }))
   } else { # !length(group)
     standata$t <- 0L
     standata$p <- integer(0)
