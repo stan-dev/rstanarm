@@ -421,6 +421,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
                         (1 + sne + cloudcover + prewetness||echomotion),
                       data=clouds, family = gaussian)$reTrms)
   test_lme4(glFormula(angle ~ recipe + temp + (1|recipe:replicate), data = cake)$reTrms)
+  test_lme4(glFormula(diameter ~ (1|plate) + (1|sample), data = Penicillin)$reTrms)
 })
 
 context("glmer")
