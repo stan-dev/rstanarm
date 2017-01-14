@@ -56,7 +56,7 @@ transformed parameters {
         theta_L = make_theta_L(len_theta_L, p, 1.0,
                                tau, scale, zeta, rho, z_T);
       else
-        theta_L = make_theta_L(len_theta_L, p, aux[1],
+        theta_L = make_theta_L(len_theta_L, p, aux,
                                tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
