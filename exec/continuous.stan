@@ -41,19 +41,15 @@ transformed data {
   vector[family == 3 ? N : 0] sqrt_y;
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
+  int<lower=1> V[t, N] = make_V(N, t, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int<lower=0,upper=1> t_any_124_z;   // for tdata_betareg.stan
-  int<lower=0,upper=1> t_all_124_z;   // for tdata_betareg.stan
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos,
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
+  #include "tdata_betareg.stan" // defines hs_z
   is_continuous = 1;
-  #include "tdata_betareg.stan"
 
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
-  }
-  else if (family == 4) {
-    // do nothing
   }
 }
 parameters {
@@ -64,27 +60,46 @@ parameters {
   #include "parameters_betareg.stan"
 }
 transformed parameters {
-  real aux;
-  vector[z_dim] omega; // used in tparameters_betareg.stan
+  // aux has to be defined first in the hs case
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+             prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
+             prior_scale_for_aux * aux_unscaled);
+  vector[z_dim] omega; // used in tparameters_betareg.stan             
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (prior_dist_for_aux == 0)
+  #include "tparameters_betareg.stan"
+  
+  if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
   else {
     aux = prior_scale_for_aux * aux_unscaled;
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux = aux + prior_mean_for_aux;
   }
+
   if (t > 0) {
-    theta_L = make_theta_L(len_theta_L, p, 
-                            aux, tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = tau * aux;
+      if (t == 1) b = theta_L[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = theta_L[i] * z_b[start:end];
+        start = end + 1;
+      }
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 
+                             aux, tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
-  #include "tparameters_betareg.stan"
 }
 model {
   vector[N] eta_z; // beta regression linear predictor for phi
   #include "make_eta.stan" // defines eta
-  if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+  if (t > 0) {
+    #include "eta_add_Zb.stan"    
+  }
   if (has_intercept == 1) {
     if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
     else if (family == 4 && link == 5) eta = eta - max(eta) + gamma[1];
@@ -155,8 +170,7 @@ model {
     if (prior_dist_for_aux == 1)
       target += normal_lpdf(aux_unscaled | 0, 1);
     else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | 
-                               prior_df_for_aux, 0, 1);
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
     else 
      target += exponential_lpdf(aux_unscaled | 1);
   }
@@ -183,7 +197,9 @@ generated quantities {
     vector[N] eta_z;
     #include "make_eta.stan" // defines eta
     nan_count = 0;
-    if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+    if (t > 0) {
+      #include "eta_add_Zb.stan"
+    }
     if (has_intercept == 1) {
       if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {

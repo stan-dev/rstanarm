@@ -79,7 +79,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- 
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- 
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- 
-    prior_autoscale <- prior_autoscale_for_intercept <- NULL
+    prior_autoscale <- prior_autoscale_for_intercept <- 
+    global_prior_scale <- global_prior_df <- NULL
   
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -99,7 +100,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     default_scale = 2.5,
     ok_dists = ok_dists
   )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}
+  # prior_{dist, mean, scale, df, dist_name, autoscale}, global_prior_df, global_prior_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
   
@@ -205,13 +206,16 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist_for_intercept,
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
+    prior_df_for_intercept = c(prior_df_for_intercept), 
+    global_prior_df, global_prior_scale, # for hs priors
     has_intercept, prior_PD,
     z_dim = 0,  # betareg data
     link_phi = 0,
     betareg_z = array(0, dim = c(nrow(xtemp), 0)),
     has_intercept_z = 0,
     zbar = array(0, dim = c(0)),
-    prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(), prior_df_z = integer(),
+    prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(), 
+    prior_df_z = integer(), global_prior_scale_z = 0,
     prior_dist_for_intercept_z = 0, prior_mean_for_intercept_z = 0,
     prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
     prior_df_for_intercept = c(prior_df_for_intercept),
@@ -271,7 +275,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     standata$len_regularization <- sum(p > 1)
     standata$regularization <- 
       as.array(maybe_broadcast(decov$regularization, sum(p > 1)))
-    
+    standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
+      length(x) == 1 && x == "(Intercept)"
+    }))
   } else { # !length(group)
     standata$t <- 0L
     standata$p <- integer(0)
@@ -289,6 +295,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       standata$v <- integer(0)
       standata$u <- integer(0)
     }
+    standata$special_case <- 0L
     standata$shape <- standata$scale <- standata$concentration <-
       standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L

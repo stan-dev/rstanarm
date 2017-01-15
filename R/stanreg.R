@@ -67,7 +67,7 @@ stanreg <- function(object) {
       names(coefs) <- rownames(stan_summary)[1L]
 
     if (is_betareg) {
-      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z))]
+      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z)), drop = FALSE]
       colnames(stanmat) <- c(names(coefs),names(coefs_z))
     } else {
       stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]

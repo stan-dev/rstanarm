@@ -10,7 +10,7 @@ params:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{stan_glm: GLMs for Binary and Binomial Data}
+%\VignetteIndexEntry{stan_betareg: Models for Rate/Proportion Data}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -149,9 +149,9 @@ The model can be fit by calling `stan_betareg`, using the appropriate link funct
 ```{r simulated-fit, results = "hide"}
 library(rstanarm)
 fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log",
-                     iter = 2000, cores = 4, algorithm = "sampling", seed = SEED)
+                     chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 fit2 <- stan_betareg(y ~ -1 + x , data = dat, link = "logit", link.phi = "log",
-                     iter = 2000, cores = 4, algorithm = "sampling", seed = SEED)
+                     chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 round(coef(fit1), 2)
 round(coef(fit2), 2)
 ```
@@ -184,14 +184,15 @@ bayesplot_grid(
 )
 ```
 
-We can also compare models by evaluating the expected log pointwise predictive
-density (`elpd`), which can be calculated using the `loo` package.
+We can also compare models by evaluating the expected log pointwise predictive 
+density (`elpd`), which can be calculated using the `loo` method, which provides
+an interface for __rstanarm__ models to the functionality in the __loo__
+package.
 
 ``` {r simulated-loo}
-library(loo)
 loo1 <- loo(fit1)
 loo2 <- loo(fit2)
-compare(loo1, loo2)
+compare_models(loo1, loo2)
 ```
 
 The difference in `elpd` is negative indicating that the expected predictive
@@ -210,10 +211,10 @@ and the batch of conditions.
 library(rstanarm)
 data("GasolineYield", package = "betareg")
 gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit",
-                         iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
+                         chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 gas_fit2 <- stan_betareg(yield ~ temp + batch | pressure,
                          data = GasolineYield, link = "logit",
-                         iter = 1000, cores = 4, algorithm = "sampling", seed = SEED)
+                         chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 round(coef(gas_fit1), 2)
 round(coef(gas_fit2), 2)
 ```
@@ -244,7 +245,7 @@ bayesplot_grid(
 library(loo)
 gas_loo1 <- loo(gas_fit1)
 gas_loo2 <- loo(gas_fit2)
-compare(gas_loo1, gas_loo2)
+compare_models(gas_loo1, gas_loo2)
 ```
 
 Evaluating the expected log predictive distribution using `loo` 

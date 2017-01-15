@@ -286,7 +286,7 @@ There are only one or two moderate outliers (whose statistics are greater than
 $0.5$), which should not have too much of an effect on the resulting model 
 comparison:
 ```{r, rstanarm-loo-compare}
-compare(loo_bglm_1, loo_bglm_2)
+compare_models(loo_bglm_1, loo_bglm_2)
 ```
 In this case, there is little difference in the expected log pointwise deviance
 between the two models, so we are essentially indifferent between them after

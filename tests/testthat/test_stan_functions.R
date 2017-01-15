@@ -397,6 +397,14 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
+    if ( FALSE && all(sapply(group$cnms, FUN = function(x) {
+        length(x) == 1 && x == "(Intercept)"
+      })) ) { # reenable with new expose_stan_functions
+      V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
+      expect_true(all(V == 
+                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
+    }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (Days || Subject), data = sleepstudy)$reTrms)
@@ -415,6 +423,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
                         (1 + sne + cloudcover + prewetness||echomotion),
                       data=clouds, family = gaussian)$reTrms)
   test_lme4(glFormula(angle ~ recipe + temp + (1|recipe:replicate), data = cake)$reTrms)
+  test_lme4(glFormula(diameter ~ (1|plate) + (1|sample), data = Penicillin)$reTrms)
 })
 
 context("glmer")

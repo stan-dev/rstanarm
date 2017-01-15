@@ -6,8 +6,15 @@
   else if (prior_dist == 2) for (k in 1:K) {
     beta[k] = CFt(z_beta[k], prior_df[k]) * prior_scale[k] + prior_mean[k];
   }
-  else if (prior_dist == 3) beta = hs_prior(z_beta, global, local);
-  else if (prior_dist == 4) beta = hsplus_prior(z_beta, global, local);
+  else if (prior_dist == 3) {
+    if (is_continuous == 1 && family == 1)
+      beta = hs_prior(z_beta, global, local, global_prior_scale, aux);
+    else beta = hs_prior(z_beta, global, local, global_prior_scale, 1);
+  }
+  else if (prior_dist == 4) {
+    if (is_continuous == 1 && family == 1)
+      beta = hsplus_prior(z_beta, global, local, global_prior_scale, aux);
+    else beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1);
   else if (prior_dist == 5) // laplace
     beta = prior_mean + prior_scale .* sqrt(2 * V[1]) .* z_beta;
   else if (prior_dist == 6) // lasso
@@ -23,5 +30,4 @@
       }
       beta[k] = beta[k] * prior_scale[k] ^ num_normals[k] + prior_mean[k];
     }
-    if (z_pos != (rows(z_beta) + 1)) reject("wrong number of parameters");
   }

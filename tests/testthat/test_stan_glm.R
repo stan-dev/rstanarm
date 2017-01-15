@@ -257,9 +257,17 @@ test_that("stan_glm returns expected result for binomial example", {
 
 
 context("stan_glm (other tests)")
-test_that("model with hs_plus prior doesn't error", {
-  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(), 
+test_that("model with hs prior doesn't error", {
+  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
                          seed = SEED, algorithm = "meanfield", QR = TRUE), 
+                regexp = "Automatic Differentiation Variational Inference")
+  expect_output(print(prior_summary(fit)), "~ hs(df = ", fixed = TRUE)
+})
+
+context("stan_glm (other tests)")
+test_that("model with hs_plus prior doesn't error", {
+  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(4, 1, 2, .5), 
+                                seed = SEED, algorithm = "meanfield", QR = TRUE), 
                 regexp = "Automatic Differentiation Variational Inference")
   expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 })

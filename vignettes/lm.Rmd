@@ -282,7 +282,7 @@ __loo__ package.
 
 ```{r lm-clouds-loo, warning=TRUE}
 (loo_post <- loo(post))
-(loo(simple))
+compare_models(loo_post, loo(simple))
 ```
 
 The results indicate that the first approach is expected to produce better
