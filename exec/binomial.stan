@@ -19,6 +19,7 @@ data {
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
+  real aux = not_a_number();
   int<lower=1> V[t, N] = make_V(N, t, v);
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }

@@ -13,3 +13,4 @@
   real prior_mean_for_intercept_z;
   vector<lower=0>[z_dim] prior_df_z;
   real<lower=0> prior_df_for_intercept_z;
+  real<lower=0> global_prior_scale_z;

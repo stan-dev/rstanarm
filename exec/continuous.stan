@@ -60,9 +60,14 @@ parameters {
   #include "parameters_betareg.stan"
 }
 transformed parameters {
-  real aux;
-  vector[z_dim] omega; // used in tparameters_betareg.stan
+  // aux has to be defined first in the hs case
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+             prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
+             prior_scale_for_aux * aux_unscaled);
+  vector[z_dim] omega; // used in tparameters_betareg.stan             
   #include "tparameters_glm.stan" // defines beta, b, theta_L
+  #include "tparameters_betareg.stan"
+  
   if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
   else {
@@ -88,7 +93,6 @@ transformed parameters {
       b = make_b(z_b, theta_L, p, l);
     }
   }
-  #include "tparameters_betareg.stan"
 }
 model {
   vector[N] eta_z; // beta regression linear predictor for phi
