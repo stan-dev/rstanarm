@@ -30,8 +30,8 @@
 #' non-informative, giving the same probability mass to implausible values as
 #' plausible ones.
 #' 
-#' @export 
 #' @name priors
+#' 
 #' @param location Prior location. For \code{normal} and \code{student_t} 
 #'   (provided that \code{df > 1}) this is the prior mean. For \code{cauchy} 
 #'   (which is equivalent to \code{student_t} with \code{df=1}), the mean does 
@@ -324,6 +324,10 @@
 #' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
 #' 
+NULL
+
+#' @rdname priors
+#' @export
 normal <- function(location = 0, scale = NULL, autoscale = TRUE) {
   validate_parameter_value(scale)
   nlist(dist = "normal", df = NA, location, scale, autoscale)
