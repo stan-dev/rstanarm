@@ -669,9 +669,8 @@ validate_newdata <- function(x) {
   as.data.frame(x)
 }
 
-# Validate newdata argument for posterior_predict, log_lik, etc.
+# Check that a stanfit object (or list returned by rstan::optimizing) is valid
 #
-# Doesn't check if the correct variables are included (that's done in pp_data),
 check_stanfit <- function(x) {
   if (is.list(x)) {
     if (!(c("par", "value") %in% names(x)))
