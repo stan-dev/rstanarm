@@ -264,6 +264,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
 
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
+    check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
     out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))]
     new_names <- names(out$par)
@@ -306,6 +307,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
       if (algorithm == "meanfield" && !QR) 
         msg_meanfieldQR()
     }
+    check_stanfit(stanfit)
     if (QR) {
       if (ncol(xtemp) > 1) {
         thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 

@@ -433,6 +433,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
+    check_stanfit(out)
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     if (QR) {
@@ -470,6 +471,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       if (algorithm == "meanfield" && !QR) 
         msg_meanfieldQR()
     }
+    check_stanfit(stanfit)
     if (QR) {
       thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
                         permuted = FALSE)

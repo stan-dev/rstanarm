@@ -668,3 +668,19 @@ validate_newdata <- function(x) {
 
   as.data.frame(x)
 }
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+check_stanfit <- function(x) {
+  if (is.list(x)) {
+    if (!(c("par", "value") %in% names(x)))
+      stop("Invalid object produced please report bug")
+  }
+  else {
+    stopifnot(is(x, "stanfit"))
+    if (x@mode != 0)
+      stop("Invalid stanfit object produced please report bug")
+  }
+  return(TRUE)
+}
