@@ -30,7 +30,7 @@
 #' @import bayesplot
 #' @import rstantools
 #' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
-#' @export loo waic compare
+#' @export loo waic
 #' @export launch_shinystan
 #' 
 #' @description 

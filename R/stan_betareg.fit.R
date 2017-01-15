@@ -66,7 +66,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_intercept_z <- prior_mean_z <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_intercept_z <-
     prior_df_for_aux <- prior_dist_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
-    xbar <- xtemp <- prior_autoscale <- prior_autoscale_z <- NULL
+    xbar <- xtemp <- prior_autoscale <- prior_autoscale_z <- global_prior_scale_z <- NULL
 
   sparse <- FALSE
   x_stuff <- center_x(x, sparse)
@@ -233,7 +233,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_dist_for_intercept_z, prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z),
-    num_normals = integer(0)
+    global_prior_scale_z, num_normals = integer(0)
     )
 
   # call stan() to draw from posterior distribution

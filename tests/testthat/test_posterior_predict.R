@@ -254,7 +254,7 @@ test_that("compatible with stan_lmer with offset", {
 context("posterior_predict (stan_betareg)")
 test_that("compatible with stan_betareg with z", {
   data("GasolineYield", package = "betareg")
-  fit <- SW(stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
+  fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
                          iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
                          refresh = REFRESH))
   check_for_error(fit)

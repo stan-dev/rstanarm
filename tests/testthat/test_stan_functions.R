@@ -397,7 +397,9 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
-    if (FALSE && all(Z@x == 1)) { # reenable with new expose_stan_functions
+    if ( FALSE && all(sapply(group$cnms, FUN = function(x) {
+        length(x) == 1 && x == "(Intercept)"
+      })) ) { # reenable with new expose_stan_functions
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
                         t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))

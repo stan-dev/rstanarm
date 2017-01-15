@@ -39,7 +39,7 @@
 #'   \code{\link[=posterior_predict]{posterior_predict}}.
 #' 
 #' @return A matrix with two columns and as many rows as are in \code{newdata}. 
-#'   If \code{newdata} is not provided then the matrix will as many rows as in
+#'   If \code{newdata} is not provided then the matrix will have as many rows as
 #'   the data used to fit the model. For a given value of \code{prob}, \eqn{p},
 #'   the columns correspond to the lower and upper \eqn{100p}\% central interval
 #'   limits and have the names \eqn{100\alpha/2}\% and \eqn{100(1 -

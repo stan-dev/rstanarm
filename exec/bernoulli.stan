@@ -54,6 +54,7 @@ data {
 }
 transformed data {
   int NN = N[1] + N[2];
+  real aux = not_a_number();
   int<lower=1> V0[t,N[1]] = make_V(N[1], t, v0);
   int<lower=1> V1[t,N[2]] = make_V(N[2], t, v1);
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
