@@ -185,17 +185,21 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
   if (!used.sampling(x))
     validate_plotfun_for_opt_or_vb(plotfun)
 
-  if (grepl("_nuts", plotfun, fixed = TRUE)) {
+  .plotfun_is_type <- function(patt) {
+    grepl(pattern = paste0("_", patt), x = plotfun, fixed = TRUE)
+  }
+  
+  if (.plotfun_is_type("nuts")) {
     nuts_stuff <- list(x = bayesplot::nuts_params(x), ...)
-    if (!grepl("_energy", plotfun))
+    if (!.plotfun_is_type("energy"))
       nuts_stuff[["lp"]] <- bayesplot::log_posterior(x)
     return(nuts_stuff)
   }
-  if (grepl("_rhat", plotfun, fixed = TRUE)) {
+  if (.plotfun_is_type("rhat")) {
     rhat <- bayesplot::rhat(x, pars = pars, regex_pars = regex_pars)
     return(list(rhat = rhat, ...))
   }
-  if (grepl("_neff", plotfun, fixed = TRUE)) {
+  if (.plotfun_is_type("neff")) {
     ratio <- bayesplot::neff_ratio(x, pars = pars, regex_pars = regex_pars)
     return(list(ratio = ratio, ...))
   }
@@ -295,7 +299,7 @@ set_plotting_fun <- function(plotfun = NULL) {
 validate_plotfun_for_opt_or_vb <- function(plotfun) {
   plotfun <- mcmc_function_name(plotfun)
   if (needs_chains(plotfun) || 
-      grepl("rhat_|neff_|nuts_", plotfun))
+      grepl("_rhat|_neff|_nuts_", plotfun))
     STOP_sampling_only(plotfun)
 }
 
