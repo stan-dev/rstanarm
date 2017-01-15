@@ -285,6 +285,39 @@ test_that("prior_aux argument is detected properly", {
                 "~ exponential(rate = ", fixed = TRUE)
 })
 
+test_that("autoscale works (insofar as it's reported by prior_summary)", {
+  suppressWarnings(capture.output(
+    fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, 
+                    prior = normal(autoscale=FALSE), 
+                    prior_intercept = normal(autoscale=FALSE)), 
+    fit2 <- update(fit, prior = normal())
+  ))
+  
+  out <- capture.output(print(prior_summary(fit)))
+  expect_false(any(grepl("adjusted", out)))
+  
+  expect_output(
+    print(prior_summary(fit2)), 
+    "**adjusted scale", 
+    fixed = TRUE
+  )
+})
+test_that("prior_options is deprecated", {
+  expect_warning(
+    ops <- prior_options(scaled = FALSE, prior_scale_for_dispersion = 3), 
+    "deprecated and will be removed"
+  )
+  expect_warning(
+    capture.output(fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, prior_ops = ops)),
+    "Setting prior scale for aux to value specified in 'prior_options'"
+  )
+  expect_output(
+    print(prior_summary(fit)), 
+    "~ cauchy(location = 0, scale = 3)", 
+    fixed = TRUE
+  )
+})
+
 test_that("empty interaction levels dropped", {
   x1 <- gl(3, 5, 100)
   x2 <- gl(4, 6, 100)
