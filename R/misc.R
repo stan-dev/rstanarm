@@ -674,7 +674,7 @@ validate_newdata <- function(x) {
 #
 check_stanfit <- function(x) {
   if (is.list(x)) {
-    if (!(c("par", "value") %in% names(x)))
+    if (!all(c("par", "value") %in% names(x)))
       stop("Invalid object produced please report bug")
   }
   else {
