@@ -115,7 +115,7 @@
 #' # when comparing three or more models they are ordered by expected
 #' # predictive accuracy
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
-#' loo3 <- loo(fit3)
+#' loo3 <- loo(fit3, cores = 2)
 #' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation
