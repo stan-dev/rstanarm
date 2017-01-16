@@ -160,7 +160,7 @@
     target += gamma_lpdf(tau  | shape, 1);
   }
   
-  /** 
+  /**
    * Hierarchical shrinkage parameterization
    *
    * @param z_beta A vector of primitive coefficients

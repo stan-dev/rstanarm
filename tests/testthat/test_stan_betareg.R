@@ -186,3 +186,16 @@ test_that("stan_betareg ok when modeling x and dispersion with offset and weight
   ans <- coef(betareg(y ~ x, link = "logit", weights = weights, offset = offset, data = dat))
   expect_equal(val, ans, tol = 0.3, info = "logit")
 })
+
+test_that("heavy tailed priors work with stan_betareg", {
+  dat <- simple_betareg_data(100, TRUE)
+  expect_output(stan_betareg(y ~ x | z, data = dat, 
+                             prior = product_normal(), prior_z = product_normal(), 
+                             chains = 1, iter = 1))
+  expect_output(stan_betareg(y ~ x | z, data = dat, 
+                             prior = laplace(), prior_z = laplace(), 
+                             chains = 1, iter = 1))
+  expect_output(stan_betareg(y ~ x | z, data = dat, 
+                             prior = lasso(), prior_z = lasso(), 
+                             chains = 1, iter = 1))
+})

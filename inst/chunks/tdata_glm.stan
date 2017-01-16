@@ -8,6 +8,11 @@
   if (prior_dist <= 2) hs = 0;
   else if (prior_dist == 3) hs = 2;
   else if (prior_dist == 4) hs = 4;
+  else hs = 0;
+  len_z_T = 0;
+  len_var_group = sum(p) * (t > 0);
+  len_rho = sum(p) - t;
+  pos = 1;
   for (i in 1:t) {
     if (p[i] > 1) {
       for (j in 1:p[i]) {

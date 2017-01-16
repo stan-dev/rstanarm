@@ -10,3 +10,4 @@
   real<lower=0> prior_df_for_aux;  
   real<lower=0> global_prior_df;    // for hs priors only
   real<lower=0> global_prior_scale; // for hs priors only
+  int<lower=2> num_normals[prior_dist == 7 ? K : 0];

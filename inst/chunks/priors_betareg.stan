@@ -18,6 +18,18 @@
     target += normal_lpdf(global_z[1] | 0, 1);
     target += inv_gamma_lpdf(global_z[2] | 0.5, 0.5);
   }
+  else if (prior_dist_z == 5) { // laplace
+    target += normal_lpdf(z_omega | 0, 1);
+    target += exponential_lpdf(S_z[1] | 1);
+  }
+  else if (prior_dist_z == 6) { // lasso
+    target += normal_lpdf(z_omega | 0, 1);
+    target += exponential_lpdf(S_z[1] | 1);
+    target += chi_square_lpdf(one_over_lambda_z[1] | prior_df_z[1]);
+  }
+  else if (prior_dist_z == 7) { // product_normal
+    target += normal_lpdf(z_omega | 0, 1);
+  }
   /* else prior_dist is 0 and nothing is added */
   
   // Log-prior for intercept  

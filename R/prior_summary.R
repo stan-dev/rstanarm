@@ -248,7 +248,7 @@ used.sparse <- function(x) {
   .f2 <- formatters[[2]]
   
   if (!(p$dist %in% c("R2", NA))) {
-    if (p$dist %in% c("normal", "student_t", "cauchy")) {
+    if (p$dist %in% c("normal", "student_t", "cauchy", "laplace", "lasso", "product_normal")) {
       p$location <- .format_pars(p$location, .f1)
       p$scale <- .format_pars(p$scale, .f1)
       if (!is.null(p$df))
@@ -260,12 +260,14 @@ used.sparse <- function(x) {
       p$df2 <- .format_pars(p$scale, .f1)
     } else if (p$dist %in% c("hs")) {
       p$df <- .format_pars(p$df, .f1)
-    }
+    } else if (p$dist %in% c("product_normal"))
+      p$df <- .format_pars(p$df, .f1)
   }
   cat(paste0("\n", txt, "\n ~"),
       if (is.na(p$dist)) {
         "flat"
-      } else if (p$dist %in% c("normal", "student_t", "cauchy")) {
+      } else if (p$dist %in% c("normal", "student_t", "cauchy", 
+                               "laplace", "lasso", "product_normal")) {
         if (is.null(p$df)) {
           paste0(p$dist, "(location = ", .f1(p$location), 
                  ", scale = ", .f1(p$scale), ")")
