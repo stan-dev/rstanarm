@@ -118,6 +118,8 @@ test_that("plot.stanreg ok for vb", {
                regexp = "only available for models fit using MCMC")
   expect_error(plot(fitvb, "rhat_hist"), 
                regexp = "only available for models fit using MCMC")
+  expect_error(plot(fitvb, "mcmc_neff"), 
+               regexp = "only available for models fit using MCMC")
 })
 
 
