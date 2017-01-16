@@ -82,7 +82,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (Z_true == 0)
     has_intercept_z <- FALSE
   
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", "laplace", "lasso")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus",
+                    "laplace", "lasso", "product_normal")
   ok_intercept_dists <- ok_dists[1:3]
   ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   
@@ -234,8 +235,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z),
     global_prior_scale_z,
-    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
-    num_normals_z = if(prior_dist_z == 7) as.integer(prior_df_z) else integer(0)
+    num_normals = if(prior_dist == 7) as.array(as.integer(prior_df)) else integer(0),
+    num_normals_z = if(prior_dist_z == 7) as.array(as.integer(prior_df_z)) else integer(0)
     )
 
   # call stan() to draw from posterior distribution
@@ -435,7 +436,8 @@ summarize_betareg_prior <-
           scale = prior_scale,
           adjusted_scale = if (rescaled_coef)
             adjusted_prior_scale else NULL,
-          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus", 
+                                          "lasso", "product_normal"))
             prior_df else NULL
         )),
       prior_z = 
@@ -445,7 +447,8 @@ summarize_betareg_prior <-
           scale = prior_scale,
           adjusted_scale = if (rescaled_coef_z)
             adjusted_prior_scale_z else NULL,
-          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus"))
+          df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus",
+                                          "lasso", "product_normal"))
             prior_df else NULL
         )),
       prior_intercept = 

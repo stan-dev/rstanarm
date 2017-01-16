@@ -5,7 +5,7 @@
   matrix[N, z_dim] betareg_z;             // matrix of z vars
   row_vector[z_dim] zbar;                 // mean of predictors
   // betareg hyperparameters
-  int<lower=0,upper=4> prior_dist_z;
+  int<lower=0,upper=7> prior_dist_z;
   int<lower=0,upper=2> prior_dist_for_intercept_z;
   vector<lower=0>[z_dim] prior_scale_z;
   real<lower=0> prior_scale_for_intercept_z;
