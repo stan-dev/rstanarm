@@ -227,7 +227,7 @@ round(coef(gas_fit2), 2)
 The plots below illustrate simulated values of gasoline yield. While the first
 model accounts for variation in batch conditions its predictions looks somewhat
 uniform rather than resembling the peaked and right-skewed behavior of the true data.
-The second model does a relatively better job at capturing the shape of the
+The second model does a somewhat better job at capturing the shape of the
 distribution, however its location is off as it is centered around 0.50 rather
 than 0.20.
 
@@ -249,7 +249,10 @@ compare_models(gas_loo1, gas_loo2)
 ```
 
 Evaluating the expected log predictive distribution using `loo` 
-reveals that the second of the two models is preferred.
+reveals that the second of the two models is slightly preferred. That
+said, in this case the standard error of the difference in `elpd` 
+is large enough (relative to the difference itself) that we can't say 
+there is a definitive preference for the second model.
 
 # References
 
