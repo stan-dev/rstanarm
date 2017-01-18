@@ -2073,8 +2073,7 @@ stan_jm <- function(formulaLong, dataLong,
                y = y, e_x, eventtime, d, quadpoints = quadpoint, 
                epsilon = if (sum(has_assoc$etaslope, has_assoc$muslope)) eps else NULL,
                standata, dataLong, dataEvent, call, terms = NULL, model = NULL,                          
-               prior.info = get_prior_info(call, formals()),
-               na.action, algorithm = "sampling", init, glmod = y_mod, coxmod = e_mod)
+               na.action, algorithm = algorithm, init, glmod = y_mod, coxmod = e_mod)
   out <- stanjm(fit)
   
   return(out)
