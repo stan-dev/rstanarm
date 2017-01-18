@@ -2622,6 +2622,15 @@ get_num_assoc_pars <- function(has_assoc, which_b_zindex, which_coef_zindex) {
 
 #-------- The following functions could be moved to misc.R
 
+# Test if family object corresponds to a linear mixed model
+#
+# @param x A family object
+is.lmer <- function(x) {
+  if (!is(x, "family"))
+    stop("x should be a family object.", call. = FALSE)
+  isTRUE((x$family == "gaussian") && (x$link == "identity"))
+}
+
 # Remove a specified character string from the names of an
 # object (for example, a matched call)
 #
