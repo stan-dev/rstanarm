@@ -246,8 +246,6 @@
 #'   accurate approximation.
 #'
 #' @return A \link[=stanjm-object]{stanjm} object is returned.
-#'
-#' @template author
 #' 
 #' @template reference-stan-manual
 #' 
@@ -256,8 +254,6 @@
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}.
-#'   
-#' @template see-also-stan-url
 #'    
 #' @examples
 #' \donttest{
