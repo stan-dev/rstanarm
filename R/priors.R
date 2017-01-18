@@ -163,7 +163,7 @@
 #'   prior with degrees of freedom equal to that specified in the call to
 #'   \code{lasso} or, by default, 1. The expectation of a chi-square random
 #'   variable is equal to this degrees of freedom and the mode is equal to the
-#'   degrees of freeom minus 2, if this difference is positive.
+#'   degrees of freedom minus 2, if this difference is positive.
 #'   
 #'   It is also common in supervised learning to standardize the predictors 
 #'   before training the model. We do not recommend doing so. Instead, it is
