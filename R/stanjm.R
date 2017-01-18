@@ -168,11 +168,25 @@ collect_nms <- function(x, M, ...) {
   e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
-  b <- b_names(x, ...)
-  y_b <- lapply(1:M, function(m) b_names(x, m, ...))
+  b <- b_names2(x, ...)
+  y_b <- lapply(1:M, function(m) b_names2(x, m, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta) 
+}
+
+# Grep for "b" parameters (ranef), can optionally be specified
+# for a specific longitudinal submodel
+#
+# @param x Character vector (often rownames(fit$stan_summary))
+# @param submodel Optional integer specifying which long submodel
+# @param ... Passed to grep
+b_names2 <- function(x, submodel = NULL, ...) {
+  if (is.null(submodel)) {
+    grep("^b\\[", x, ...)
+  } else {
+    grep(paste0("^b\\[Long", submodel, "\\|"), x, ...)
+  }
 }
 
 # Converts "Long", "Event" or "Assoc" to the regular expression
