@@ -85,6 +85,10 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
                "outcome values must be positive")
   expect_error(stan_glm(cbind(1:10, 1:10) ~ 1, family = "gaussian"), 
                "should not have multiple columns")
+  
+  # prior_aux can't be NULL if prior_PD is TRUE
+  expect_error(stan_glm(mpg ~ wt, data = mtcars, prior_aux = NULL, prior_PD = TRUE),
+               "'prior_aux' can't be NULL if 'prior_PD' is TRUE")
 })
 
 context("stan_glm (gaussian)")
@@ -308,6 +312,13 @@ test_that("prior_aux argument is detected properly", {
   )
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
+})
+
+test_that("prior_aux can be NULL", {
+  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
+                  refresh = -1, prior_aux = NULL)
+  expect_output(print(prior_summary(fit)), 
+                "~ flat", fixed = TRUE)
 })
 
 test_that("autoscale works (insofar as it's reported by prior_summary)", {
