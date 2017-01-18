@@ -442,30 +442,28 @@ functions {
   /** 
   * Reorder the vector of group-specific coefficients
   *
-  * @param b Vector whose elements are ordered in terms of group-specific 
-  *   parameter within factor level within grouping factor
+  * @param b Vector whose elements are ordered in the following nested way:
+  *   factor level (e.g. "subject ID" or "clinic ID") within grouping 
+  *   factor (e.g. "subjects" or "clinics")
   * @param p An integer array with the number variables on the LHS of each |
   * @param pmat A matrix with the number variables on the LHS of each | in each
   *   longitudinal submodel. The rows correspond to each |, meaning the separate
-  *   equations for each grouping factor, whilst the columns correspond to each
-  *   longitudinal submodel. If subject ID is the only grouping factor then the
+  *   equations for each grouping variable, and the columns correspond to each
+  *   longitudinal submodel. If subject ID is the only grouping variable then the
   *   matrix will have one row. If the joint model only has one longitudinal 
   *   submodel then the matrix will have one column.
-  * @param q1 An integer array with the number of group-specific coefficients 
-  *   for each grouping factor.
-  * @param q1 An integer array with the number of group-specific coefficients 
-  *   for each longitudinal submodel.  
-  * @param qmat A matrix with the number of group-specific coefficients for the 
-  *   LHS of each |. The rows correspond to each |, meaning the separate equations  
-  *   for each grouping factor, and the columns correspond to each longitudinal
+  * @param p An integer array with the number of random coefficients for the 
+  *   LHS of each |
+  * @param qmat A matrix with the number of random coefficients for the LHS of each | 
+  *   The rows correspond to each |, meaning the separate equations for 
+  *   each grouping variable, and the columns correspond to each longitudinal
   *   submodel.
   * @param l An integer array with the number of levels for the factor(s) on 
   *   the RHS of each |
   * @param M An integer specifying the number of longitudinal submodels
-  * @return A vector of group-specific coefficients whose elements are 
-  *   ordered in terms of group-specific parameter within factor level within
-  *   grouping factor within longitudinal submodel (i.e. ordered by longitudinal
-  *   submodel).
+  * @return A vector (containing the group-specific coefficients) whose whose 
+  *   elements are ordered in the following nested way: factor level, within
+  *   grouping factor, within longitudinal submodel
   */ 
   vector reorder_b(vector b, int[] p, int[,] pmat, int[] q1, int[] q2, 
                    int[,] qmat, int[] l, int M) {
@@ -543,29 +541,29 @@ functions {
   * @param p An integer array with the number of variables on the LHS of each |
   * @param pmat A matrix with the number variables on the LHS of each | in each
   *   longitudinal submodel. The rows correspond to each |, meaning the separate
-  *   equations for each grouping factor, and the columns correspond to each
+  *   equations for each grouping variable, and the columns correspond to each
   *   longitudinal submodel. If subject ID is the only grouping variable then the
   *   matrix will have one row. If the joint model only has one longitudinal 
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
-  *   in vector b (not the same as l, since padded _NEW_ is not counted).
-  * @param quadnodes The number of Gauss-Kronrod quadrature nodes
+  *   in vector b
+  * @param quadnodes The number of quadrature nodes
   * @param which_b Integer array specifying the indices
   *   of the random effects to use in the association structure
   * @param sum_size_which_b Integer specifying total number of 
   *   random effects that are to be used in the association structure
-  * @param size_which_b Integer array specifying how many random effects from
-  *   each long submodel are going to be used in forming the association structure
+  * @param size_which_b Integer array specifying number of random effects from
+  *   each long submodel that are to be used in the association structure
   * @param t_i Integer specifying the index of the grouping factor that
-  *   corresponds to the subject / individual
+  *   corresponds to the patient-level
   * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
   *   repeated (quadnodes + 1) times (bounded by rows)
   */  
-  matrix make_x_assoc_shared_b(vector b, int[] l, int[] p, int[,] pmat, int Npat, 
-                               int quadnodes, int[] which_b, int sum_size_which_b, 
-							   int[] size_which_b, int t_i, int M) {
+  matrix make_x_assoc_shared_b(
+    vector b, int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
+    int[] which_b, int sum_size_which_b, int[] size_which_b, int t_i, int M) {
     int prior_shift;    // num. ranefs prior to subject-specific ranefs
     int start_store;
     int end_store;	
@@ -612,41 +610,27 @@ functions {
   * structure in the joint model
   *
   * @param b Vector of group-specific coefficients
-  * @param y_beta Vector of fixed effect regression coefficients for all 
-  *   longitudinal submodels
-  * @param y_K Integer array with the number of fixed effect regression
-  *   coefficients in each longitudinal submodel
-  * @param M An integer specifying the number of longitudinal submodels
-  * @param t_i Integer specifying the index of the grouping factor that
-  *   corresponds to the subject / individual
   * @param l An integer array with the number of levels for the factor(s) on 
   *   the RHS of each |
   * @param p An integer array with the number of variables on the LHS of each |
   * @param pmat A matrix with the number variables on the LHS of each | in each
   *   longitudinal submodel. The rows correspond to each |, meaning the separate
-  *   equations for each grouping factor, and the columns correspond to each
-  *   longitudinal submodel. If subject ID is the only grouping factor then the
+  *   equations for each grouping variable, and the columns correspond to each
+  *   longitudinal submodel. If subject ID is the only grouping variable then the
   *   matrix will have one row. If the joint model only has one longitudinal 
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
-  *   in vector b (not the same as l, since padded _NEW_ is not counted).
-  * @param quadnodes The number of Gauss-Kronrod quadrature nodes
-  * @param sum_size_which_coef Integer specifying total number of 
+  *   in vector b
+  * @param quadnodes The number of quadrature nodes
+  * @param which_b Integer array specifying the indices
+  *   of the random effects to use in the association structure
+  * @param sum_size_which_b Integer specifying total number of 
   *   random effects that are to be used in the association structure
-  * @param size_which_coef Integer array specifying how many random effects from
-  *   each long submodel that are to be used in forming the association structure
-  * @param which_coef_zindex Integer array specifying the indices of the
-  *   random effects that should be used in forming the association structure
-  * @param which_coef_xindex Integer array specifying the indices
-  *   of the corresponding fixed effects that should be used in forming the 
-  *   association structure  
-  * @param y_has_intercept An integer array with indicators for whether
-  *   each longitudinal submodel has an intercept
-  * @param y_has_intercept_ Integer arrays for whether each longitudinal 
-  *   submodel has a specific type of interceot.  
-  * @param y_gamma_unbound,y_gamma_lobound,y_gamma_upbound Real arrays
-  *   containing the unbounded, lower bounded (at zero), or upper bounded
-  *   (at zero) estimated intercepts
+  * @param size_which_b Integer array specifying number of random effects from
+  *   each long submodel that are to be used in the association structure
+  * @param t_i Integer specifying the index of the grouping factor that
+  *   corresponds to the patient-level
+  * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
   *   repeated (quadnodes + 1) times (bounded by rows)
@@ -744,90 +728,108 @@ functions {
 data {
   
   // dimensions
-  int<lower=1> M;                      // num. of long. submodels
-  int<lower=0> Npat;                   // num. individuals (equal to l[1] - 1)
-  int<lower=0> y_N[M];                 // num. of obs. in each long. submodel
-  int<lower=0> sum_y_N;                // total num. of obs. across all long submodels
-  int<lower=0> sum_y_real_N;           // total num. of obs. across all long submodels with real outcomes
-  int<lower=0> sum_y_int_N;            // total num. of obs. across all long submodels with integer outcomes
+  int<lower=1> M;  // num. of long. submodels
+  int<lower=0> Npat;  // num. individuals (equal to l[1] - 1)
+  int<lower=0> y_N[M];  // num. of obs. in each long. submodel
+  int<lower=0> sum_y_N; // total num. of obs. across all long submodels
+  int<lower=0> sum_y_real_N; // total num. of obs. across all long submodels with real outcomes
+  int<lower=0> sum_y_int_N; // total num. of obs. across all long submodels with integer outcomes
   int<lower=0,upper=sum_y_N> y_beg[M]; // index of first obs. for each submodel
   int<lower=0,upper=sum_y_N> y_end[M]; // index of last obs. for each submodel
   int<lower=0,upper=sum_y_real_N> y_real_beg[M]; // index of first obs. for each submodel
   int<lower=0,upper=sum_y_real_N> y_real_end[M]; // index of last obs. for each submodel
-  int<lower=0,upper=sum_y_int_N> y_int_beg[M];   // index of first obs. for each submodel
-  int<lower=0,upper=sum_y_int_N> y_int_end[M];   // index of last obs. for each submodel
-  int<lower=0> y_N01[M,2];             // num. of bernoulli 0/1 observations in each long. submodel
-  int<lower=0> y_K[M];                 // num. of predictors in each long. submodel
-  int<lower=0> sum_y_K;                // total num. of predictors across all long submodels
-  int<lower=0> e_K;                    // num. of predictors in event submodel
-  int<lower=0> a_K;                    // num. of association parameters
-  int<lower=0> quadnodes;              // num. of nodes for Gauss-Kronrod quadrature 
+  int<lower=0,upper=sum_y_int_N> y_int_beg[M]; // index of first obs. for each submodel
+  int<lower=0,upper=sum_y_int_N> y_int_end[M]; // index of last obs. for each submodel
+  int<lower=0> y_N01[M,2];  // num. of bernoulli 0/1 observations in each long. submodel
+  int<lower=0> y_K[M];  // num. of predictors in each long. submodel
+  int<lower=0> sum_y_K; // total num. of predictors across all long submodels
+  int<lower=0> e_K;   // num. of predictors in event submodel
+  int<lower=0> a_K;   // num. of association parameters
+  int<lower=0> quadnodes;  // num. of nodes for Gauss-Kronrod quadrature 
   int<lower=0> Npat_times_quadnodes;
-  int<lower=0,upper=M> sum_y_has_intercept;         // num. submodels w/ intercept
+  int<lower=0,upper=M> sum_y_has_intercept; // num. submodels w/ intercept
   int<lower=0,upper=M> sum_y_has_intercept_unbound; // num. submodels w/ unbounded intercept
   int<lower=0,upper=M> sum_y_has_intercept_lobound; // num. submodels w/ lower bounded intercept
   int<lower=0,upper=M> sum_y_has_intercept_upbound; // num. submodels w/ upper bounded intercept
-  int<lower=0,upper=M> sum_y_has_dispersion;        // num. submodels w/ dispersion term
+  int<lower=0,upper=M> sum_y_has_dispersion; // num. submodels w/ dispersion term
   
   // data for longitudinal submodel(s)
-  int<lower=1> family[M];                   // family (1=gaus,2=gam,3=ig,4=bern,5=bin,6=pois,7=nb,8=pois-gam)
-  int<lower=0,upper=1> any_fam_3;           // any long. submodel with family == 3
-  int<lower=1> link[M];                     // link function, varies by family
-  int<lower=0,upper=1> y_centre;            // 1 = yes for centred predictor matrix
+  int<lower=1> family[M];          // family
+  int<lower=0,upper=1> any_fam_3;  // any long. submodel with family == 3
+  int<lower=1> link[M];            // link function, varies by .stan file
+  int<lower=0,upper=1> y_centre;         // 1 = yes for centred predictor matrix
   int<lower=0,upper=1> y_has_intercept[M];  // 1 = yes
   int<lower=0,upper=1> y_has_intercept_unbound[M];  // intercept unbounded
   int<lower=0,upper=1> y_has_intercept_lobound[M];  // intercept lower bound at 0
   int<lower=0,upper=1> y_has_intercept_upbound[M];  // intercept upper bound at 0
-  int<lower=0,upper=1> has_weights;         // 1 = Yes
-  //int<lower=0,upper=1> y_has_offset;      // 1 = Yes
-  int<lower=0,upper=1> y_has_dispersion[M]; // 1 = Yes
-  vector[sum_y_real_N] y_real;              // outcome vector, reals                
-  int<lower=0> y_int[sum_y_int_N];          // outcome vector, integers                
-  vector[sum_y_K*(y_centre>0)] y_xbar;      // predictor means
-  matrix[sum_y_N,sum_y_K] y_X;              // predictor matrix, possibly centred          
-  vector[sum_y_N] y_weights;                // weights, set to zero if not used
-  int<lower=0> trials[sum_y_N];             // num. binomial trials, set to zero if not used
+  int<lower=0,upper=1> has_weights;    // 1 = Yes
+  //int<lower=0,upper=1> y_has_offset;     // 1 = Yes
+  int<lower=0,upper=1> y_has_dispersion[M];    // 1 = Yes
+  vector[sum_y_real_N] y_real;           // outcome vector, reals                
+  int<lower=0> y_int[sum_y_int_N];        // outcome vector, integers                
+  vector[sum_y_K*(y_centre>0)] y_xbar;  // predictor means
+  matrix[sum_y_N,sum_y_K] y_X;   // predictor matrix, possibly centred          
+  vector[sum_y_N] y_weights;  // weights, set to zero if not used
+  int<lower=0> trials[sum_y_N];  // num. binomial trials, set to zero if not used
   //vector[sum_y_N*y_has_offset] y_offset; 
-  int<lower=0> num_non_zero;                // number of non-zero elements in the Z matrix
-  vector[num_non_zero] w;                   // non-zero elements in the implicit Z matrix
-  int<lower=0> v[num_non_zero];             // column indices for w  
-  int<lower=0> u[(sum_y_N+1)];              // where the non-zeros start in each row 
+  int<lower=0> num_non_zero;   // number of non-zero elements in the Z matrix
+  vector[num_non_zero] w;  // non-zero elements in the implicit Z matrix
+  int<lower=0> v[num_non_zero]; // column indices for w  
+  int<lower=0> u[(sum_y_N+1)];  // where the non-zeros start in each row 
   
   // data for event submodel
-  int<lower=0,upper=1> basehaz_weibull;     // weibull baseline hazard
-  int<lower=0,upper=1> basehaz_piecewise;   // piecewise constant baseline hazard
-  int<lower=0,upper=1> basehaz_bs;          // B-splines baseline hazard
-  int<lower=0> bs_df;                       // df for B-splines baseline hazard
-  int<lower=0> piecewise_df;                // number of segments for piecewise constant baseline hazard
-  int<lower=0,upper=1> e_centre;            // 1 = yes for centred predictor matrix
-  int<lower=0,upper=1> e_has_intercept;     // 1 = yes
-  int<lower=0> nrow_y_Xq;                   // num. rows in long. predictor matrix at quad points
-  int<lower=0> nrow_e_Xq;                   // num. rows in event predictor matrix at quad points
-  matrix[(M*nrow_y_Xq),sum_y_K] y_Xq;       // predictor matrix (long submodel) at quadpoints, possibly centred              
-  matrix[nrow_e_Xq,e_K] e_Xq;               // predictor matrix (event submodel) at quadpoints, possibly centred
-  vector[nrow_e_Xq] e_times;                // event times and unstandardised quadrature points
+  int<lower=0,upper=1> basehaz_weibull;  // weibull baseline hazard
+  int<lower=0,upper=1> basehaz_piecewise;  // piecewise constant baseline hazard
+  int<lower=0,upper=1> basehaz_bs;  // B-splines baseline hazard
+  int<lower=0> bs_df;  // df for B-splines baseline hazard
+  int<lower=0> piecewise_df;  // number of segments for piecewise constant baseline hazard
+  int<lower=0,upper=1> e_centre;  // 1 = yes for centred predictor matrix
+  int<lower=0,upper=1> e_has_intercept;  // 1 = yes
+  int<lower=0> nrow_y_Xq;     // num. rows in long. predictor matrix at quad points
+  int<lower=0> nrow_e_Xq;   // num. rows in event predictor matrix at quad points
+  matrix[(M*nrow_y_Xq),sum_y_K] y_Xq; // predictor matrix (long submodel) at quadpoints, possibly centred              
+  matrix[nrow_e_Xq,e_K] e_Xq;         // predictor matrix (event submodel) at quadpoints, possibly centred
+  vector[nrow_e_Xq] e_times;          // event times and unstandardised quadrature points
   matrix[(nrow_e_Xq*basehaz_bs),bs_df] e_ns_times; // basis for B-splines baseline hazard
   matrix[(nrow_e_Xq*basehaz_piecewise),piecewise_df] e_times_piecedummy; // dummy indicators for piecewise constant baseline hazard
-  vector[nrow_e_Xq] e_d;                    // event indicator, followed by dummy indicator for quadpoints
-  vector[e_K*(e_centre>0)] e_xbar;          // predictor means (event submodel)
-  int<lower=0> num_non_zero_Zq;             // number of non-zero elements in the Z matrix (at quadpoints)
-  vector[num_non_zero_Zq] w_Zq;             // non-zero elements in the implicit Z matrix (at quadpoints)
-  int<lower=0> v_Zq[num_non_zero_Zq];       // column indices for w (at quadpoints)
-  int<lower=0> u_Zq[(M*nrow_y_Xq+1)];       // where the non-zeros start in each row (at quadpoints)
-  vector[Npat] e_weights;                   // weights, set to zero if not used
-  vector[Npat_times_quadnodes] e_weights_rep; // repeated weights, set to zero if not used
-  vector[Npat_times_quadnodes] quadweight_times_half_eventtime;
+  vector[nrow_e_Xq] e_d;              // event indicator, followed by dummy indicator for quadpoints
+  vector[e_K*(e_centre>0)] e_xbar;   // predictor means (event submodel)
+  int<lower=0> num_non_zero_Zq;    // number of non-zero elements in the Z matrix (at quadpoints)
+  vector[num_non_zero_Zq] w_Zq;  // non-zero elements in the implicit Z matrix (at quadpoints)
+  int<lower=0> v_Zq[num_non_zero_Zq]; // column indices for w (at quadpoints)
+  int<lower=0> u_Zq[(M*nrow_y_Xq+1)]; // where the non-zeros start in each row (at quadpoints)
+  vector[Npat] e_weights;           // weights, set to zero if not used
+  vector[Npat_times_quadnodes] e_weights_rep;   // repeated weights, set to zero if not used
+  vector[Npat_times_quadnodes] quadweight;
     
   // data for association structure
   int<lower=0,upper=1> assoc;              // 0 = no jm association structure, 1 = any jm association structure
   int<lower=0,upper=1> has_assoc_ev[M];    // eta value
   int<lower=0,upper=1> has_assoc_es[M];    // eta slope
-  int<lower=0,upper=1> has_assoc_cv[M];    // mu value
-  int<lower=0,upper=1> has_assoc_cs[M];    // mu slope
+  int<lower=0,upper=1> has_assoc_el[M];    // eta lag
+  int<lower=0,upper=1> has_assoc_ea[M];    // eta auc
+  int<lower=0,upper=1> has_assoc_mv[M];    // mu value
+  int<lower=0,upper=1> has_assoc_ms[M];    // mu slope
+  int<lower=0,upper=1> has_assoc_ml[M];    // mu lag
+  int<lower=0,upper=1> has_assoc_ma[M];    // mu auc
+  int<lower=0,upper=1> has_assoc_evi[M];   // eta value interacted with data
+  int<lower=0,upper=1> has_assoc_esi[M];   // eta slope interacted with data
+  int<lower=0,upper=1> has_assoc_mvi[M];   // mu value interacted with data
+  int<lower=0,upper=1> has_assoc_msi[M];   // mu slope interacted with data 
   int<lower=0,upper=M> sum_has_assoc_ev;   // num. long submodels linked via eta value
   int<lower=0,upper=M> sum_has_assoc_es;   // num. long submodels linked via eta slope
-  int<lower=0,upper=M> sum_has_assoc_cv;   // num. long submodels linked via mu value
-  int<lower=0,upper=M> sum_has_assoc_cs;   // num. long submodels linked via mu slope 
+  int<lower=0,upper=M> sum_has_assoc_el;   // num. long submodels linked via eta lag
+  int<lower=0,upper=M> sum_has_assoc_ea;   // num. long submodels linked via eta auc
+  int<lower=0,upper=M> sum_has_assoc_mv;   // num. long submodels linked via mu value
+  int<lower=0,upper=M> sum_has_assoc_ms;   // num. long submodels linked via mu slope 
+  int<lower=0,upper=M> sum_has_assoc_ml;   // num. long submodels linked via mu lag
+  int<lower=0,upper=M> sum_has_assoc_ma;   // num. long submodels linked via mu auc
+  int<lower=0,upper=M> sum_has_assoc_evi;  // num. long submodels linked via eta value interacted with data
+  int<lower=0,upper=M> sum_has_assoc_esi;  // num. long submodels linked via eta slope interacted with data
+  int<lower=0,upper=M> sum_has_assoc_mvi;  // num. long submodels linked via mu value interacted with data
+  int<lower=0,upper=M> sum_has_assoc_msi;  // num. long submodels linked via mu slope interacted with data 
+  int<lower=0,upper=a_K> sum_a_K_int;      // num. of parameters devoted to interaction terms in association structure
+  int<lower=0,upper=sum_a_K_int> a_K_int[4*M]; // num. of parameters devoted to interaction terms in association structure, by submodel and by ev/es/mv/ms interactions
   int<lower=0> sum_size_which_b;           // num. of shared random effects
   int<lower=0> size_which_b[M];            // num. of shared random effects for each long submodel
   int<lower=1> which_b_zindex[sum_size_which_b];  // which random effects are shared for each long submodel
@@ -836,15 +838,39 @@ data {
   int<lower=1> which_coef_zindex[sum_size_which_coef];  // which random effects are shared incl fixed component for each long submodel
   int<lower=1> which_coef_xindex[sum_size_which_coef];  // which fixed effects are shared
 
-  // data for calculating slope of the longitudinal submodel
+  // data for calculating slope
   real<lower=0> eps;  // time shift used for numerically calculating derivative
-  matrix[(M*nrow_y_Xq*((sum_has_assoc_es + sum_has_assoc_cs) > 0)),sum_y_K] 
-    y_Xq_eps;  // predictor matrix (long submodel) at quadpoints plus time shift of epsilon              
-  int<lower=0> num_non_zero_Zq_eps;  // number of non-zero elements in the Zq_eps matrix (at quadpoints plus time shift of epsilon)
-  vector[num_non_zero_Zq_eps] w_Zq_eps;  // non-zero elements in the implicit Zq_eps matrix (at quadpoints plus time shift of epsilon)
-  int<lower=0> v_Zq_eps[num_non_zero_Zq_eps];  // column indices for w (at quadpoints plus time shift of epsilon)
-  int<lower=0> u_Zq_eps[(M*nrow_y_Xq*((sum_has_assoc_es + sum_has_assoc_cs) > 0) + 1)]; 
+  matrix[(M*nrow_y_Xq*((sum_has_assoc_es + sum_has_assoc_ms) > 0)),sum_y_K] 
+    y_Xq_eps; // predictor matrix (long submodel) at quadpoints plus time shift of epsilon              
+  int<lower=0> num_non_zero_Zq_eps;        // number of non-zero elements in the Zq_eps matrix (at quadpoints plus time shift of epsilon)
+  vector[num_non_zero_Zq_eps] w_Zq_eps;    // non-zero elements in the implicit Zq_eps matrix (at quadpoints plus time shift of epsilon)
+  int<lower=0> v_Zq_eps[num_non_zero_Zq_eps]; // column indices for w (at quadpoints plus time shift of epsilon)
+  int<lower=0> u_Zq_eps[(M*nrow_y_Xq*((sum_has_assoc_es + sum_has_assoc_ms) > 0) + 1)]; 
     // where the non-zeros start in each row (at quadpoints plus time shift of epsilon)
+
+  // data for calculating lag
+  matrix[(M*nrow_y_Xq*((sum_has_assoc_el + sum_has_assoc_ml) > 0)),sum_y_K] 
+    y_Xq_lag; // predictor matrix (long submodel) at lagged quadpoints            
+  int<lower=0> num_non_zero_Zq_lag;        // number of non-zero elements in the Zq_lag matrix (at lagged quadpoints)
+  vector[num_non_zero_Zq_lag] w_Zq_lag;    // non-zero elements in the implicit Zq_lag matrix (at lagged quadpointsn)
+  int<lower=0> v_Zq_lag[num_non_zero_Zq_lag]; // column indices for w (at lagged quadpoints)
+  int<lower=0> u_Zq_lag[(M*nrow_y_Xq*((sum_has_assoc_el + sum_has_assoc_ml) > 0) + 1)]; 
+    // where the non-zeros start in each row (at lagged quadpoints)
+
+  // data for calculating auc
+  int<lower=0> nrow_y_Xq_auc;     // num. rows in long. predictor matrix at auc quad points
+  int<lower=0> auc_quadnodes;              // num. of nodes for Gauss-Kronrod quadrature for area under marker trajectory 
+  vector[nrow_y_Xq_auc] auc_quadweight;
+  matrix[(M*nrow_y_Xq_auc*((sum_has_assoc_ea + sum_has_assoc_ma) > 0)),sum_y_K] 
+    y_Xq_auc; // predictor matrix (long submodel) at auc quadpoints            
+  int<lower=0> num_non_zero_Zq_auc;        // number of non-zero elements in the Zq_lag matrix (at auc quadpoints)
+  vector[num_non_zero_Zq_auc] w_Zq_auc;    // non-zero elements in the implicit Zq_lag matrix (at auc quadpointsn)
+  int<lower=0> v_Zq_auc[num_non_zero_Zq_auc]; // column indices for w (at auc quadpoints)
+  int<lower=0> u_Zq_auc[(M*nrow_y_Xq_auc*((sum_has_assoc_ea + sum_has_assoc_ma) > 0) + 1)]; 
+    // where the non-zeros start in each row (at auc quadpoints)
+
+  // data for calculating interactions in association structure
+  vector[nrow_e_Xq] y_Xq_int[sum_a_K_int]; // design matrix for interacting with ev/es/mv/ms at quadpoints            
 
   // data for random effects model
   int<lower=1> t;     	        // num. of grouping factors
@@ -1025,6 +1051,7 @@ parameters {
   real y_gamma_unbound[sum_y_has_intercept_unbound];
   real<lower=0> y_gamma_lobound[sum_y_has_intercept_lobound];  
   real<upper=0> y_gamma_upbound[sum_y_has_intercept_upbound];  
+
   vector[sum_y_K] y_z_beta;                // primative coefs (long submodels)
   vector<lower=0>[sum_y_has_dispersion] y_dispersion_unscaled; # interpretation depends on family!
   #vector<lower=0>[sum_y_noise_N] y_noise; // do not store this
@@ -1033,7 +1060,7 @@ parameters {
   real e_gamma[e_has_intercept];          // intercept (event model)
   vector[e_K] e_z_beta;                   // primative coefs (event submodel)
   real<lower=0> weibull_shape_unscaled[basehaz_weibull];  // unscaled weibull shape parameter 
-  vector[bs_df] bs_coefs_unscaled;        // unscaled coefs for B-splines on the log baseline hazard scale
+  vector[bs_df] bs_coefs_unscaled;       // unscaled coefs for cubic bs on log baseline hazard
   vector[piecewise_df] piecewise_coefs_unscaled;  // unscaled coefs for piecewise constant baseline hazard
  
   // parameters for association structure
@@ -1068,17 +1095,21 @@ transformed parameters {
   
   // parameters for GK quadrature  
   vector[(M*nrow_y_Xq)] y_eta_q;          // linear predictor (all long submodels) evaluated at quadpoints
-  vector[(M*nrow_y_Xq)*((sum_has_assoc_es + sum_has_assoc_cs) > 0)] y_eta_q_eps; 
+  vector[(M*nrow_y_Xq)*((sum_has_assoc_es + sum_has_assoc_ms) > 0)] y_eta_q_eps; 
     // linear predictor (all long submodels) evaluated at quadpoints plus time shift of epsilon
+  vector[(M*nrow_y_Xq)*((sum_has_assoc_el + sum_has_assoc_ml) > 0)] y_eta_q_lag; 
+    // linear predictor (all long submodels) evaluated at lagged quadpoints
+  vector[(M*nrow_y_Xq_auc)*((sum_has_assoc_ea + sum_has_assoc_ma) > 0)] y_eta_q_auc; 
+    // linear predictor (all long submodels) evaluated at lagged quadpoints
   vector[nrow_e_Xq] e_eta_q;      // linear predictor (event submodel) evaluated at quadpoints
-  vector[nrow_e_Xq] log_basehaz;  // baseline hazard evaluated at quadpoints
+  vector[nrow_e_Xq] log_basehaz;      // baseline hazard evaluated at quadpoints
   vector[nrow_e_Xq] ll_haz_q;     // log hazard contribution to the log likelihood for the event model at event time and quad points
   vector[Npat] ll_haz_eventtime;  // log hazard contribution to the log likelihood for the event model AT the event time only
   vector[Npat_times_quadnodes] ll_haz_quadtime;    // log hazard for the event model AT the quadrature points only
   vector[Npat_times_quadnodes] ll_surv_eventtime;  // log survival contribution to the log likelihood for the event model AT the event time
   real sum_ll_haz_eventtime;
   real sum_ll_surv_eventtime;
-  real ll_event;  // log likelihood for the event model    
+  real ll_event;                                   // log likelihood for the event model    
   
   // parameters for association structure  
   vector[a_K] a_beta;           
@@ -1198,7 +1229,7 @@ transformed parameters {
     theta_L = make_theta_L(len_theta_L, p, 1.0, tau, scale, zeta, rho, z_T);
     b = make_b(z_b, theta_L, p, l);
     if (M > 1) b_by_model = reorder_b(b, p, pmat, q1, q2, qmat, l, M);
-	else b_by_model = b;
+	  else b_by_model = b;
   }
   
   //===============
@@ -1208,16 +1239,33 @@ transformed parameters {
   // Longitudinal submodel(s): linear predictor at event and quad times
   if (sum_y_K > 0) y_eta_q = y_Xq * y_beta;
   else y_eta_q = rep_vector(0.0, (M*nrow_y_Xq));
-  //if (y_has_offset == 1) y_eta_q = y_eta_q + y_offset;
+  //if (y_has_offset == 1) y_eta_q = y_eta_q + y_offset; # how to handle offset?
   y_eta_q = y_eta_q + csr_matrix_times_vector((M*nrow_y_Xq), len_b, w_Zq, v_Zq, u_Zq, b_by_model);
 
   // Longitudinal submodel(s): slope of linear predictor at event and quad times
-  if ((sum_has_assoc_es > 0) || (sum_has_assoc_cs > 0)) {
+  if ((sum_has_assoc_es > 0) || (sum_has_assoc_ms > 0)) {
     if (sum_y_K > 0) y_eta_q_eps = y_Xq_eps * y_beta;
     else y_eta_q_eps = rep_vector(0.0, (M*nrow_y_Xq));
-    //if (y_has_offset == 1) y_eta_q_eps = y_eta_q_eps + y_offset; # how to handle offset in derivative?
+    //if (y_has_offset == 1) y_eta_q_eps = y_eta_q_eps + y_offset; # how to handle offset?
     y_eta_q_eps = y_eta_q_eps + csr_matrix_times_vector((M*nrow_y_Xq), len_b, w_Zq_eps, v_Zq_eps, u_Zq_eps, b_by_model);
   }
+
+  // Longitudinal submodel(s): lagged value of linear predictor at event and quad times
+  if ((sum_has_assoc_el > 0) || (sum_has_assoc_ml > 0)) {
+    if (sum_y_K > 0) y_eta_q_lag = y_Xq_lag * y_beta;
+    else y_eta_q_lag = rep_vector(0.0, (M*nrow_y_Xq));
+    //if (y_has_offset == 1) y_eta_q_lag = y_eta_q_lag + y_offset; # how to handle offset?
+    y_eta_q_lag = y_eta_q_lag + csr_matrix_times_vector((M*nrow_y_Xq), len_b, w_Zq_lag, v_Zq_lag, u_Zq_lag, b_by_model);
+  }  
+  
+  // Longitudinal submodel(s): linear predictor at marker auc quadtimes
+  if ((sum_has_assoc_ea > 0) || (sum_has_assoc_ma > 0)) {
+    if (sum_y_K > 0) y_eta_q_auc = y_Xq_auc * y_beta;
+    else y_eta_q_auc = rep_vector(0.0, (M*nrow_y_Xq_auc));
+    //if (y_has_offset == 1) y_eta_q_auc = y_eta_q_auc + y_offset; # how to handle offset?
+    y_eta_q_auc = y_eta_q_auc + csr_matrix_times_vector((M*nrow_y_Xq_auc), len_b, w_Zq_auc, v_Zq_auc, u_Zq_auc, b_by_model);
+  }   
+  
   // Event submodel: linear predictor at event and quad times
   if (e_K > 0) e_eta_q = e_Xq * e_beta;
   else e_eta_q = rep_vector(0.0, nrow_e_Xq);
@@ -1231,12 +1279,18 @@ transformed parameters {
 
   if (assoc == 1) {
     int mark;
+  	int mark2;  // tracks index within a_K_int vector, which is vector specifying the number of columns used for each possible interaction-based association structure
 	  mark = 0;
+	  mark2 = 0;
     for (m in 1:M) {
-      vector[nrow_y_Xq] ysep_eta_q;     // linear predictor for a single long. submodel at event and quad times
-      vector[nrow_y_Xq] ysep_q;         // mu for a single long. submodel at event and quad times
-      vector[nrow_y_Xq] ysep_eta_q_eps; // linear predictor for a single long. submodel at event and quad times, following time shift of epsilon
-      vector[nrow_y_Xq] ysep_q_eps;     // mu for a single long. submodel at event and quad times, following time shift of epsilon
+      vector[nrow_y_Xq] ysep_eta_q;     // linear predictor (each long submodel) evaluated at quadpoints
+      vector[nrow_y_Xq] ysep_q;         // expected long. outcome at event and quad times   
+      vector[nrow_y_Xq] ysep_eta_q_eps;  
+      vector[nrow_y_Xq] ysep_q_eps;     
+      vector[nrow_y_Xq] ysep_eta_q_lag;  
+      vector[nrow_y_Xq] ysep_q_lag;     
+      vector[nrow_y_Xq_auc] ysep_eta_q_auc;  
+      vector[nrow_y_Xq_auc] ysep_q_auc;  
       
       # Prep work for association structures
       
@@ -1249,7 +1303,7 @@ transformed parameters {
         else if (y_has_intercept_lobound[m] == 1)
           ysep_eta_q = ysep_eta_q - min(ysep_eta_q) + 
                              y_gamma_lobound[sum(y_has_intercept_lobound[1:m])];
-  	    else if (y_has_intercept_upbound[m] == 1)
+  	  else if (y_has_intercept_upbound[m] == 1)
           ysep_eta_q = ysep_eta_q - max(ysep_eta_q) + 
                              y_gamma_upbound[sum(y_has_intercept_upbound[1:m])];
       }
@@ -1265,7 +1319,7 @@ transformed parameters {
       }
       
       # Linear predictor at time plus epsilon
-      if ((has_assoc_es[m] == 1) || (has_assoc_cs[m] == 1)) {
+      if ((has_assoc_es[m] == 1) || (has_assoc_esi[m] == 1) || (has_assoc_ms[m] == 1) || (has_assoc_msi[m] == 1)) {
         ysep_eta_q_eps = segment(y_eta_q_eps, ((m-1) * nrow_y_Xq) + 1, nrow_y_Xq);
         if (y_has_intercept[m] == 1) {
           if (y_has_intercept_unbound[m] == 1) 
@@ -1274,7 +1328,7 @@ transformed parameters {
           else if (y_has_intercept_lobound[m] == 1)
             ysep_eta_q_eps = ysep_eta_q_eps - min(ysep_eta_q_eps) + 
                                y_gamma_lobound[sum(y_has_intercept_lobound[1:m])];
-    	  else if (y_has_intercept_upbound[m] == 1)
+    	    else if (y_has_intercept_upbound[m] == 1)
             ysep_eta_q_eps = ysep_eta_q_eps - max(ysep_eta_q_eps) + 
                                y_gamma_upbound[sum(y_has_intercept_upbound[1:m])];
         }
@@ -1289,9 +1343,61 @@ transformed parameters {
                 dot_product(y_xbar[mark_beg:mark_end], y_beta[mark_beg:mark_end]); 
         }
       } 
+
+      # Linear predictor at lagged time
+      if ((has_assoc_el[m] == 1) || (has_assoc_ml[m] == 1)) {
+        ysep_eta_q_lag = segment(y_eta_q_lag, ((m-1) * nrow_y_Xq) + 1, nrow_y_Xq);
+        if (y_has_intercept[m] == 1) {
+          if (y_has_intercept_unbound[m] == 1) 
+            ysep_eta_q_lag = ysep_eta_q_lag +
+                               y_gamma_unbound[sum(y_has_intercept_unbound[1:m])];
+          else if (y_has_intercept_lobound[m] == 1)
+            ysep_eta_q_lag = ysep_eta_q_lag - min(ysep_eta_q_lag) + 
+                               y_gamma_lobound[sum(y_has_intercept_lobound[1:m])];
+    	    else if (y_has_intercept_upbound[m] == 1)
+            ysep_eta_q_lag = ysep_eta_q_lag - max(ysep_eta_q_lag) + 
+                               y_gamma_upbound[sum(y_has_intercept_upbound[1:m])];
+        }
+        else if (y_centre == 1) {
+          int mark_beg;
+          int mark_end;
+          if (m == 1) mark_beg = 1;
+          else mark_beg = sum(y_K[1:(m-1)]) + 1;
+          mark_end = sum(y_K[1:m]);   
+          // correction to eta if model has no intercept (and X is centered)
+          ysep_eta_q_lag = ysep_eta_q_lag + 
+                dot_product(y_xbar[mark_beg:mark_end], y_beta[mark_beg:mark_end]); 
+        }
+      } 
+      
+      # Linear predictor at auc quadpoints
+      if ((has_assoc_ea[m] == 1) || (has_assoc_ma[m] == 1)) {
+        ysep_eta_q_auc = segment(y_eta_q_auc, ((m-1) * nrow_y_Xq_auc) + 1, nrow_y_Xq_auc);
+        if (y_has_intercept[m] == 1) {
+          if (y_has_intercept_unbound[m] == 1) 
+            ysep_eta_q_auc = ysep_eta_q_auc +
+                               y_gamma_unbound[sum(y_has_intercept_unbound[1:m])];
+          else if (y_has_intercept_lobound[m] == 1)
+            ysep_eta_q_auc = ysep_eta_q_auc - min(ysep_eta_q_lag) + 
+                               y_gamma_lobound[sum(y_has_intercept_lobound[1:m])];
+    	    else if (y_has_intercept_upbound[m] == 1)
+            ysep_eta_q_auc = ysep_eta_q_auc - max(ysep_eta_q_lag) + 
+                               y_gamma_upbound[sum(y_has_intercept_upbound[1:m])];
+        }
+        else if (y_centre == 1) {
+          int mark_beg;
+          int mark_end;
+          if (m == 1) mark_beg = 1;
+          else mark_beg = sum(y_K[1:(m-1)]) + 1;
+          mark_end = sum(y_K[1:m]);   
+          // correction to eta if model has no intercept (and X is centered)
+          ysep_eta_q_auc = ysep_eta_q_auc + 
+                dot_product(y_xbar[mark_beg:mark_end], y_beta[mark_beg:mark_end]); 
+        }
+      }      
       
       # Expected value 
-      if ((has_assoc_cv[m] == 1) || (has_assoc_cs[m] == 1)) {
+      if ((has_assoc_mv[m] == 1) || (has_assoc_mvi[m] == 1) || (has_assoc_ms[m] == 1) || (has_assoc_msi[m] == 1)) {
         if (family[m] == 1) 
           ysep_q = linkinv_gauss(ysep_eta_q, link[m]);
         else if (family[m] == 2) 
@@ -1305,7 +1411,7 @@ transformed parameters {
       }	      
       
       # Expected value at time plus epsilon
-       if (has_assoc_cs[m] == 1) {
+       if ((has_assoc_ms[m] == 1) || (has_assoc_msi[m] == 1)) {
         if (family[m] == 1) 
           ysep_q_eps = linkinv_gauss(ysep_eta_q_eps, link[m]);
         else if (family[m] == 2) 
@@ -1315,31 +1421,171 @@ transformed parameters {
         else if (family[m] == 4)
           ysep_q_eps = linkinv_bern(ysep_eta_q_eps, link[m]);	
         else if (family[m] == 5)		  
-		  ysep_q_eps = linkinv_binom(ysep_eta_q_eps, link[m]); 
+		      ysep_q_eps = linkinv_binom(ysep_eta_q_eps, link[m]); 
       }	     
 
+      # Expected value at lagged time
+       if (has_assoc_ml[m] == 1) {
+        if (family[m] == 1) 
+          ysep_q_lag = linkinv_gauss(ysep_eta_q_lag, link[m]);
+        else if (family[m] == 2) 
+          ysep_q_lag = linkinv_gamma(ysep_eta_q_lag, link[m]);
+        else if (family[m] == 3)
+          ysep_q_lag = linkinv_inv_gaussian(ysep_eta_q_lag, link[m]);
+        else if (family[m] == 4)
+          ysep_q_lag = linkinv_bern(ysep_eta_q_lag, link[m]);	
+        else if (family[m] == 5)		  
+		      ysep_q_lag = linkinv_binom(ysep_eta_q_lag, link[m]); 
+      }	 
+
+      # Expected value at auc quadpoints
+       if (has_assoc_ma[m] == 1) {
+        if (family[m] == 1) 
+          ysep_q_auc = linkinv_gauss(ysep_eta_q_auc, link[m]);
+        else if (family[m] == 2) 
+          ysep_q_auc = linkinv_gamma(ysep_eta_q_auc, link[m]);
+        else if (family[m] == 3)
+          ysep_q_auc = linkinv_inv_gaussian(ysep_eta_q_auc, link[m]);
+        else if (family[m] == 4)
+          ysep_q_auc = linkinv_bern(ysep_eta_q_auc, link[m]);	
+        else if (family[m] == 5)		  
+		      ysep_q_auc = linkinv_binom(ysep_eta_q_auc, link[m]); 
+      }
+      
+      
       # Evaluate association structures
+      
+      # etavalue and any interactions
+      mark2 = mark2 + 1;
       if (has_assoc_ev[m] == 1) {
         mark = mark + 1;
-	    e_eta_q = e_eta_q + a_beta[mark] * ysep_eta_q;
+	      e_eta_q = e_eta_q + a_beta[mark] * ysep_eta_q;
       }	
-      if (has_assoc_cv[m] == 1) {
-        mark = mark + 1;
-        e_eta_q = e_eta_q + a_beta[mark] * ysep_q; 
-      }	
-      if (has_assoc_es[m] == 1) {
+      if (has_assoc_evi[m] == 1) {
+  	    int tmp;
+  	    int j_shift;
+  	    if (mark2 == 1) j_shift = 0;
+  	    else j_shift = sum(a_K_int[1:(mark2-1)]);
+  	    tmp = a_K_int[mark2];  
+        for (j in 1:tmp) {
+          int sel;
+          sel = j_shift + j;
+          mark = mark + 1;
+          e_eta_q = e_eta_q + (ysep_eta_q .* y_Xq_int[sel]) * a_beta[mark];
+        }
+      }
+      
+      # etaslope and any interactions
+      mark2 = mark2 + 1;
+      if ((has_assoc_es[m] == 1) || (has_assoc_esi[m] == 1)) {
         vector[nrow_y_Xq] dydt_eta_q;
         dydt_eta_q = (ysep_eta_q_eps - ysep_eta_q) / eps;
-        mark = mark + 1;
-        e_eta_q = e_eta_q + a_beta[mark] * dydt_eta_q;          
+        if (has_assoc_es[m] == 1) {
+          mark = mark + 1;
+          e_eta_q = e_eta_q + a_beta[mark] * dydt_eta_q;
+        }
+        if (has_assoc_esi[m] == 1) {
+    	    int tmp;
+    	    int j_shift;
+    	    if (mark2 == 1) j_shift = 0;
+    	    else j_shift = sum(a_K_int[1:(mark2-1)]);
+    	    tmp = a_K_int[mark2];  
+          for (j in 1:tmp) {
+            int sel;
+            sel = j_shift + j;
+            mark = mark + 1;
+            e_eta_q = e_eta_q + (dydt_eta_q .* y_Xq_int[sel]) * a_beta[mark];
+          }    
+        }         
       }
-      if (has_assoc_cs[m] == 1) {
+      
+      # etalag
+      if (has_assoc_el[m] == 1) {
+        mark = mark + 1;
+        e_eta_q = e_eta_q + a_beta[mark] * ysep_eta_q_lag;          
+      }  
+      
+      # etaauc
+      if (has_assoc_ea[m] == 1) {
+        vector[nrow_y_Xq] ysep_eta_q_auc_tmp;  
+        mark = mark + 1;
+        for (r in 1:nrow_y_Xq) {
+          vector[auc_quadnodes] val_tmp;
+          vector[auc_quadnodes] wgt_tmp;
+          val_tmp = ysep_eta_q_auc[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          wgt_tmp = auc_quadweight[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          ysep_eta_q_auc_tmp[r] = sum(wgt_tmp .* val_tmp);
+        }
+        e_eta_q = e_eta_q + a_beta[mark] * ysep_eta_q_auc_tmp;          
+      }       
+      
+      # muvalue and any interactions
+      mark2 = mark2 + 1;
+      if (has_assoc_mv[m] == 1) {
+        mark = mark + 1;
+        e_eta_q = e_eta_q + a_beta[mark] * ysep_q; 
+      }
+      if (has_assoc_mvi[m] == 1) {
+  	    int tmp;
+  	    int j_shift;
+  	    if (mark2 == 1) j_shift = 0;
+  	    else j_shift = sum(a_K_int[1:(mark2-1)]);
+  	    tmp = a_K_int[mark2];  
+        for (j in 1:tmp) {
+          int sel;
+          sel = j_shift + j;
+          mark = mark + 1;
+          e_eta_q = e_eta_q + (ysep_q .* y_Xq_int[sel]) * a_beta[mark];
+        }      
+      }     
+
+      # muslope and any interactions
+      mark2 = mark2 + 1;
+      if ((has_assoc_es[m] == 1) || (has_assoc_esi[m] == 1)) {
         vector[nrow_y_Xq] dydt_q;
         dydt_q = (ysep_q_eps - ysep_q) / eps;
+        if (has_assoc_ms[m] == 1) {
+          mark = mark + 1;
+          e_eta_q = e_eta_q + a_beta[mark] * dydt_q;          
+        }
+        if (has_assoc_msi[m] == 1) {
+    	    int tmp;
+    	    int j_shift;
+    	    if (mark2 == 1) j_shift = 0;
+    	    else j_shift = sum(a_K_int[1:(mark2-1)]);
+    	    tmp = a_K_int[mark2];  
+          for (j in 1:tmp) {
+            int sel;
+            sel = j_shift + j;
+            mark = mark + 1;
+            e_eta_q = e_eta_q + (dydt_q .* y_Xq_int[sel]) * a_beta[mark];
+          }          
+        } 
+      }
+      
+      # mulag
+      if (has_assoc_ml[m] == 1) {
         mark = mark + 1;
-        e_eta_q = e_eta_q + a_beta[mark] * dydt_q;          
-      }	
+        e_eta_q = e_eta_q + a_beta[mark] * ysep_q_lag;          
+      }
+
+      # muauc
+      if (has_assoc_ma[m] == 1) {
+        vector[nrow_y_Xq] ysep_q_auc_tmp;  
+        mark = mark + 1;
+        for (r in 1:nrow_y_Xq) {
+          vector[auc_quadnodes] val_tmp;
+          vector[auc_quadnodes] wgt_tmp;
+          val_tmp = ysep_q_auc[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          wgt_tmp = auc_quadweight[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          ysep_q_auc_tmp[r] = sum(wgt_tmp .* val_tmp);
+        }
+        e_eta_q = e_eta_q + a_beta[mark] * ysep_q_auc_tmp;          
+      }  
+
     }
+    
+    # shared random effects
   	if (sum_size_which_b > 0) {
   	  int mark_beg;  // used to define segment of a_beta
   	  int mark_end;
@@ -1373,13 +1619,13 @@ transformed parameters {
   // Calculate log hazard at event times and unstandardised quadrature points 
   // NB assumes Weibull baseline hazard
   if (basehaz_weibull == 1) 
-    log_basehaz = log(weibull_shape[1]) + (weibull_shape[1] - 1) * e_log_times;
+	  log_basehaz = log(weibull_shape[1]) + (weibull_shape[1] - 1) * e_log_times;
   // NB assumes B-splines baseline hazard
   else if (basehaz_bs == 1)
-    log_basehaz = e_ns_times * bs_coefs;	
+	  log_basehaz = e_ns_times * bs_coefs;	
   // NB assumes piecewise constant baseline hazard
   else if (basehaz_piecewise == 1)
-    log_basehaz = e_times_piecedummy * piecewise_coefs;		  
+	  log_basehaz = e_times_piecedummy * piecewise_coefs;		  
   ll_haz_q = e_d .* (log_basehaz + e_eta_q);
 					  
   // Partition event times and quad points
@@ -1388,7 +1634,7 @@ transformed parameters {
 
   // Log survival contribution to the likelihood (by summing over the 
   //   quadrature points to get the approximate integral) 
-  ll_surv_eventtime = quadweight_times_half_eventtime .* exp(ll_haz_quadtime);        
+  ll_surv_eventtime = quadweight .* exp(ll_haz_quadtime);        
 
   // Log likelihood for event model
   if (has_weights == 0) {  # unweighted log likelihood
@@ -1402,6 +1648,7 @@ transformed parameters {
   ll_event = sum_ll_haz_eventtime - sum_ll_surv_eventtime;				  
 
 }
+
 model {
   int disp_mark;
   int nois_mark;
@@ -1417,7 +1664,7 @@ model {
   int_markun = 1;
   int_marklo = 1;
   int_markup = 1;
-
+  
   // Longitudinal submodel(s): regression equations
 
   if (sum_y_K > 0) y_eta = y_X * y_beta;
@@ -1469,33 +1716,33 @@ model {
         target += GammaReg(y_real[y_real_beg[m]:y_real_end[m]], y_eta_tmp, y_dispersion[disp_mark], link[m], sum_log_y[m]);
       }
       else if (family[m] == 3) {
-	    vector[y_N[m]] sqrt_y_tmp;
-		sqrt_y_tmp = sqrt_y[y_real_beg[m]:y_real_end[m]]; 
+	      vector[y_N[m]] sqrt_y_tmp;
+		    sqrt_y_tmp = sqrt_y[y_real_beg[m]:y_real_end[m]]; 
         target += inv_gaussian(y_real[y_real_beg[m]:y_real_end[m]], 
                                linkinv_inv_gaussian(y_eta_tmp, link[m]), 
                                y_dispersion[disp_mark], sum_log_y[m], sqrt_y_tmp);
       }
 	    else if (family[m] == 4) {
-		  vector[y_N01[m,1]] y_eta0_tmp;
-		  vector[y_N01[m,2]] y_eta1_tmp;
+		    vector[y_N01[m,1]] y_eta0_tmp;
+		    vector[y_N01[m,2]] y_eta1_tmp;
 	      real dummy;  // irrelevant but useful for testing
-		  y_eta0_tmp = segment(y_eta_tmp, 1, y_N01[m,1]);
-		  y_eta1_tmp = segment(y_eta_tmp, (y_N01[m,1] + 1), y_N01[m,2]);
+		    y_eta0_tmp = segment(y_eta_tmp, 1, y_N01[m,1]);
+		    y_eta1_tmp = segment(y_eta_tmp, (y_N01[m,1] + 1), y_N01[m,2]);
 	      dummy = ll_bern_lp(y_eta0_tmp, y_eta1_tmp, link[m], y_N01[m,]);	  
 	    }
 	    else if (family[m] == 5) {
-		  int trials_tmp[y_N[m]];		
+		    int trials_tmp[y_N[m]];		
 	      real dummy;  // irrelevant but useful for testing
-		  trials_tmp = trials[y_beg[m]:y_end[m]];
-          dummy = ll_binom_lp(y_int[y_int_beg[m]:y_int_end[m]], trials_tmp, y_eta_tmp, link[m]);	  
+		    trials_tmp = trials[y_beg[m]:y_end[m]];
+        dummy = ll_binom_lp(y_int[y_int_beg[m]:y_int_end[m]], trials_tmp, y_eta_tmp, link[m]);	  
 	    }
 	    else if (family[m] == 6 || family[m] == 8) {
-          if (link[m] == 1) target += poisson_log_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | y_eta_tmp);
-          else target += poisson_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | linkinv_count(y_eta_tmp, link[m]));
+        if (link[m] == 1) target += poisson_log_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | y_eta_tmp);
+        else target += poisson_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | linkinv_count(y_eta_tmp, link[m]));
 	    }
 	    else if (family[m] == 7) {
-  	      if (link[m] == 1) target += neg_binomial_2_log_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | y_eta_tmp, y_dispersion[disp_mark]);
-          else target += neg_binomial_2_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | 
+  	    if (link[m] == 1) target += neg_binomial_2_log_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | y_eta_tmp, y_dispersion[disp_mark]);
+        else target += neg_binomial_2_lpmf(y_int[y_int_beg[m]:y_int_end[m]] | 
                                            linkinv_count(y_eta_tmp, link[m]), y_dispersion[disp_mark]);
 	    }	    
     }    
@@ -1514,27 +1761,27 @@ model {
   	  else if (family[m] == 3) {
   	    vector[y_N[m]] log_y_tmp;	  
   	    vector[y_N[m]] sqrt_y_tmp;  	    
-    	log_y_tmp = log_y[y_beg[m]:y_end[m]];
-    	sqrt_y_tmp = sqrt_y[y_beg[m]:y_end[m]];
+    		log_y_tmp = log_y[y_beg[m]:y_end[m]];
+    		sqrt_y_tmp = sqrt_y[y_beg[m]:y_end[m]];
   	    summands = pw_inv_gaussian(y_real[y_real_beg[m]:y_real_end[m]], y_eta_tmp, y_dispersion[disp_mark], 
   		                           link[m], log_y_tmp, sqrt_y_tmp);
   	    target += dot_product(y_weights_tmp, summands);
   	  }
-	  else if (family[m] == 4) {
-    	vector[y_N01[m,1]] y_weights0_tmp;
-    	vector[y_N01[m,2]] y_weights1_tmp;
-    	vector[y_N01[m,1]] y_eta0_tmp;
-    	vector[y_N01[m,2]] y_eta1_tmp;
-    	y_eta0_tmp = segment(y_eta_tmp, 1, y_N01[m,1]);
-    	y_eta1_tmp = segment(y_eta_tmp, (y_N01[m,1] + 1), y_N01[m,2]);
-    	y_weights0_tmp = segment(y_weights_tmp, 1, y_N01[m,1]);
-    	y_weights1_tmp = segment(y_weights_tmp, (y_N01[m,1] + 1), y_N01[m,2]);		
+	    else if (family[m] == 4) {
+    		vector[y_N01[m,1]] y_weights0_tmp;
+    		vector[y_N01[m,2]] y_weights1_tmp;
+    		vector[y_N01[m,1]] y_eta0_tmp;
+    		vector[y_N01[m,2]] y_eta1_tmp;
+    		y_eta0_tmp = segment(y_eta_tmp, 1, y_N01[m,1]);
+    		y_eta1_tmp = segment(y_eta_tmp, (y_N01[m,1] + 1), y_N01[m,2]);
+    		y_weights0_tmp = segment(y_weights_tmp, 1, y_N01[m,1]);
+    		y_weights1_tmp = segment(y_weights_tmp, (y_N01[m,1] + 1), y_N01[m,2]);		
         target += dot_product(y_weights0_tmp, pw_bern(0, y_eta0_tmp, link[m]));
         target += dot_product(y_weights1_tmp, pw_bern(1, y_eta1_tmp, link[m]));
   	  }
   	  else if (family[m] == 5) {
-        int trials_tmp[y_N[m]];		
-    	trials_tmp = trials[y_beg[m]:y_end[m]];
+    		int trials_tmp[y_N[m]];		
+    		trials_tmp = trials[y_beg[m]:y_end[m]];
         target += dot_product(y_weights_tmp, 
   		                      pw_binom(y_int[y_int_beg[m]:y_int_end[m]], trials_tmp, y_eta_tmp, link[m]));
   	  }
@@ -1623,7 +1870,7 @@ model {
     int_mark = int_mark + 1;  
     }
   }
-  
+       
   // Log-priors for coefficients in event submodel
   if (priorEvent_dist == 1) e_z_beta ~ normal(0, 1);
   else if (priorEvent_dist == 2) {
