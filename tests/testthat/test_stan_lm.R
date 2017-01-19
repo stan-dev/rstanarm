@@ -25,13 +25,14 @@ ITER <- 400
 threshold <- 0.21
 REFRESH <- 0
 
+SW <- function(expr) capture.output(suppressWarnings(expr))
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
   # example using mtcars dataset
-  fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
-                 chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+  SW(fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
+                 chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
   expect_stanreg(fit)
   
   fit_sigma <- fit$stan_summary["sigma", "mean"]
@@ -40,9 +41,9 @@ test_that("stan_lm returns expected result for mtcars example", {
 })
 test_that("stan_lm returns expected result for trees example", {
   # example using trees dataset
-  fit <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
+  SW(fit <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
                   prior = R2(location = 0.9, what = "mean"), refresh = REFRESH,
-                  chains = CHAINS, iter = ITER, seed = SEED, adapt_delta = 0.999)
+                  chains = CHAINS, iter = ITER, seed = SEED, adapt_delta = 0.999))
   expect_stanreg(fit)
   
   fit_sigma <- fit$stan_summary["sigma", "mean"]
@@ -94,8 +95,9 @@ test_that("stan_lm throws error if glmer syntax used", {
 
 context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
-  fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
-           prior = R2(0.5), chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+  SW(fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
+                     prior = R2(0.5), chains = CHAINS, iter = ITER, seed = SEED, 
+                     refresh = REFRESH))
   expect_stanreg(fit)
   
   fit_sigma <- fit$stan_summary["sigma", "mean"]
@@ -103,4 +105,21 @@ test_that("stan_aov returns expected result for npk example", {
   expect_equal(fit_sigma, lm_sigma, tol = threshold)
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
+})
+
+context("stan_biglm")
+test_that("stan_biglm returns stanfit (not stanreg) object ", {
+  ols <- lm(mpg ~ wt + qsec + am - 1,
+            data = as.data.frame(scale(mtcars, scale = FALSE)))
+  b <- coef(ols)
+  R <- qr.R(ols$qr)
+  SSR <- crossprod(ols$residuals)[1]
+  N <- length(ols$fitted.values)
+  xbar <- colMeans(mtcars[,c("wt", "qsec", "am")])
+  y <- mtcars$mpg
+  ybar <- mean(y)
+  s_y <- sd(y)
+  SW(post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
+                           chains = 1, iter = 10, seed = SEED))
+  expect_s4_class(post, "stanfit")
 })

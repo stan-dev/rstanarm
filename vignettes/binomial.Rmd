@@ -141,14 +141,13 @@ Before estimating any models we can visualize the distribution of
 `dist100` in the data:
 
 ```{r, binom-arsenic-plot-dist100, fig.height=3}
-ggplot(wells, aes(x = dist100, y = ..density..)) + 
-  geom_histogram(data = subset(wells, switch == 0)) +
-  geom_histogram(data = subset(wells, switch == 1), fill = "skyblue", alpha = 0.3) 
+ggplot(wells, aes(x = dist100, y = ..density.., fill = switch == 1)) +
+  geom_histogram() + 
+  scale_fill_manual(values = c("gray30", "skyblue"))
 ```
 
 In the plot above the blue bars correspond to the 
-`r sum(rstanarm::wells$switch == 1)` residents who said they switched wells and the bars with
-the darker outline show the distribution of `dist100` for the 
+`r sum(rstanarm::wells$switch == 1)` residents who said they switched wells and darker bars show the distribution of `dist100` for the 
 `r sum(rstanarm::wells$switch == 0)` residents who didn't switch. As we would expect, for the
 residents who switched wells, the distribution of `dist100` is more concentrated
 at smaller distances.
@@ -289,7 +288,7 @@ by the `loo` function in the __loo__ package:
 ```{r, binom-arsenic-loo}
 (loo1 <- loo(fit1))
 (loo2 <- loo(fit2))
-compare(loo1, loo2)
+compare_models(loo1, loo2)
 ```
 
 These results favor `fit2` over `fit1`, as the estimated

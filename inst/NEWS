@@ -1,3 +1,29 @@
+Mon January 16 2017 (2.14.1)
+1. Bug fixes
+  * VarCorr() could return duplicates in cases where a stan_{g}lmer model used grouping
+    factors with spaces
+  * The pairs() function now works with group-specific parameters
+  * The stan_gamm4() function works better now
+  * Fix a problem with factor levels after estimating a model via stan_lm
+2. New features
+  * New model-fitting function(s) stan_betareg{.fit} that uses the same likelihoods as
+    those supported by the betareg function in the betareg package
+  * New choices for priors on coefficients: laplace, lasso, product_normal
+  * The hs and hs_plus priors now have new global_df and global_scale arguments
+  * stan_{g}lmer models that only have group-specific intercept shifts are considerably
+    faster now
+  * Models with Student t priors and low degrees of freedom (that are not 1, 2, or
+    4) may work better now due to Cornish-Fisher transformations
+  * Many functions for priors have gained an autoscale argument that defaults to 
+    true and indicates that rstanarm should make internal changes to the prior
+    based on the scales of the variables
+  * The new compare_models function does more extensive checking that the models 
+    being compared are compatible 
+3. Deprecated arguments
+  * The prior_ops argument to various model fitting functions is deprecated and 
+    replaced by a the prior_aux argument for the prior on the auxiliary parameter of
+    various GLM-like models
+
 Sun November 20 2016 (2.13.1)
 1. Bug fixes
   * Fix bug in reloo() if data was not specified

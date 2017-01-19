@@ -177,13 +177,13 @@ proportion of zeros and compare to the observed proportion in the original
 data. We can do this easily using the `pp_check` function, which generates 
 graphical comparisons of the data `y` and replicated datasets `yrep`.
 
-```{r, count-roaches-plot-pp_check1, fig.height=3, fig.width=4}
+```{r, count-roaches-plot-pp_check1}
 prop_zero <- function(y) mean(y == 0)
 (prop_zero_test1 <- pp_check(stan_glm1, plotfun = "stat", stat = "prop_zero"))
 ```
 
 The value of the test statistic (in this case the proportion of zeros) computed 
-from the sample `y` is the vertical blue line. More than 30% of these
+from the sample `y` is the dark blue vertical line. More than 30% of these
 observations are zeros, whereas the replicated datasets all contain less than 1%
 zeros. This is a sign that we should consider a model that more accurately
 accounts for the large proportion of zeros in the data. Gelman and Hill show how
@@ -204,7 +204,7 @@ stan_glm2 <- update(stan_glm1, family = neg_binomial_2)
 We now use `pp_check` again, this time to check the proportion of zeros in the
 replicated datasets under the negative binomial model:
 
-```{r, count-roaches-plot-pp_check2, fig.height=3, fig.width=8}
+```{r, count-roaches-plot-pp_check2, fig.width=7, out.width="80%"}
 library(gridExtra)
 prop_zero_test2 <- pp_check(stan_glm2, plotfun = "stat", stat = "prop_zero")
 # Show graphs for Poisson and negative binomial side by side
@@ -229,7 +229,7 @@ preference for the negative binomial model
 ```{r, count-roaches-loo}
 loo1 <- loo(stan_glm1)
 loo2 <- loo(stan_glm2)
-compare(loo1, loo2)
+compare_models(loo1, loo2)
 ```
 
 which is not surprising given the better fit we've already observed from the

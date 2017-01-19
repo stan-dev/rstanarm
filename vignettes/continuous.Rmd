@@ -133,7 +133,7 @@ print(post4)
 Following Gelman and Hill's example, we make some plots overlaying the
 estimated regression lines on the data.
 
-```{r, continuous-kidiq-plot1a, fig.width = 5}
+```{r, continuous-kidiq-plot1a}
 base <- ggplot(kidiq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
@@ -147,7 +147,7 @@ One way is to also plot the estimated regression line at each draw from the
 posterior distribution. To do this we can extract the posterior draws from the 
 fitted model object using the `as.matrix` or `as.data.frame` methods:
 
-```{r, continuous-kidiq-plot1b, fig.width = 5}
+```{r, continuous-kidiq-plot1b}
 draws <- as.data.frame(post1)
 colnames(draws)[1:2] <- c("a", "b")
 
@@ -161,7 +161,7 @@ base +
 For the second model we can make the same plot but the x-axis will show 
 the continuous predictor `mom_iq`:
 
-```{r, continuous-kidiq-plot2, fig.width = 5}
+```{r, continuous-kidiq-plot2}
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
 ggplot(kidiq, aes(x = mom_iq, y = kid_score)) + 
@@ -177,7 +177,7 @@ the continuous `mom_iq` on the x-axis and use color to indicate which
 points correspond to the different subpopulatations defined by `mom_hs`. We also 
 now plot two regression lines, one for each subpopulation:
 
-```{r, continuous-kidiq-plot3, fig.width = 5}
+```{r, continuous-kidiq-plot3}
 reg0 <- function(x, ests) cbind(1, 0, x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
@@ -193,7 +193,7 @@ base2 +
   stat_function(fun = reg1, args = args, aes(color = "HS"), size = 1.5)
 ```
 
-```{r, continuous-kidiq-plot4, fig.width = 5}
+```{r, continuous-kidiq-plot4}
 reg0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
 args <- list(ests = coef(post4))
@@ -215,7 +215,7 @@ loo1 <- loo(post1)
 loo2 <- loo(post2)
 loo3 <- loo(post3)
 loo4 <- loo(post4)
-compare(loo1, loo2, loo3, loo4)
+(comp <- compare_models(loo1, loo2, loo3, loo4))
 ```
 
 In this case the fourth model is preferred as it has the highest 
@@ -224,15 +224,15 @@ value of the LOO Information Criterion (`looic`). The fourth model
 is preferred by a lot over the first model
 
 ```{r, continuous-kidiq-loo-2}
-compare(loo1, loo4)
+compare_models(loo1, loo4)
 ```
 
 because the difference in `elpd` is so much larger than the standard error. 
 However, the preference of the fourth model over the others isn't as strong:
 
 ```{r, continuous-kidiq-loo-3}
-compare(loo3, loo4)
-compare(loo2, loo4)
+compare_models(loo3, loo4)
+compare_models(loo2, loo4)
 ```
 
 ## The posterior predictive distribution 
@@ -264,7 +264,7 @@ First we'll look at a plot directly comparing the distributions of $y$ and
 $y^{\rm rep}$. The following call to `pp_check` will create a plot juxtaposing
 the histogram of $y$ and histograms of five $y^{\rm rep}$ datasets:
 
-```{r, continuous-kidiq-pp_check1, fig.width=5}
+```{r, continuous-kidiq-pp_check1}
 pp_check(post4, plotfun = "hist", nreps = 5)
 ```
 
@@ -284,14 +284,14 @@ of $\left(T(y_1^{\rm yep}), \dots, T(y_S^{\rm yep})\right)$. In the plot below
 we see that the mean of the observations is plausible when compared to the
 distribution of the means of the $S$ $y^{\rm rep}$ datasets:
 
-```{r, continuous-kidiq-pp_check2, fig.height = 3}
+```{r, continuous-kidiq-pp_check2}
 pp_check(post4, plotfun = "stat", stat = "mean")
 ```
 
 Using `plotfun="stat_2d"` we can also specify two test quantities and look at a
 scatterplot:
 
-```{r, continuous-kidiq-pp_check3, fig.height=3}
+```{r, continuous-kidiq-pp_check3}
 pp_check(post4, plotfun = "stat_2d", stat = c("mean", "sd"))
 ```
 
@@ -316,7 +316,7 @@ as many columns as there are values of `IQ_SEQ` and as many rows as
 the size of the posterior sample. One way to show the predictors is to plot the predictions 
 for the two groups of kids side by side:
 
-```{r, continuous-kidiq-plot-predict, fig.width=9}
+```{r, continuous-kidiq-plot-predict, fig.width=7}
 par(mfrow = c(1:2), mar = c(5,4,2,1))
 boxplot(y_hs, axes = FALSE, outline = FALSE, ylim = c(10,170),
         xlab = "Mom IQ", ylab = "Predicted Kid IQ", main = "Mom HS")

@@ -65,13 +65,12 @@
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  if (!is.null(newdata)) {
-    newdata <- as.data.frame(newdata)
-    if (anyNA(newdata))
-      stop("NAs are not allowed in 'newdata'.")
-  }
+  newdata <- validate_newdata(newdata)
+  calling_fun <- as.character(sys.call(-1))[1]
+  args <- ll_args(object, newdata = newdata, offset = offset, 
+                  reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
+                  ...)
   fun <- ll_fun(object)
-  args <- ll_args(object, newdata = newdata, offset = offset)
   sapply(seq_len(args$N), function(i) {
     as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
                   draws = args$draws))
@@ -99,14 +98,27 @@ ll_fun <- function(x) {
 # @param newdata same as posterior predict
 # @param offset vector of offsets (only required if model has offset term and
 #   newdata is specified)
+# @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
+# @param ... For models without group-specific terms (i.e., not stan_[g]lmer), 
+#   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to 
+#   pass 'newx' and 'stanmat' from reloo or kfold (bypassing pp_data). This is a
+#   workaround in case there are issues with newdata containing factors with
+#   only a single level.
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, newdata = NULL, offset = NULL) {
+ll_args <- function(object, newdata = NULL, offset = NULL, 
+                    reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
   f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
-  if (has_newdata) {
+  
+  if (has_newdata && reloo_or_kfold && !is.mer(object)) {
+    dots <- list(...)
+    x <- dots$newx
+    stanmat <- dots$stanmat
+    y <- eval(formula(object)[[2L]], newdata)
+  } else if (has_newdata) {
     ppdat <- pp_data(object, as.data.frame(newdata), offset = offset)
     tmp <- pp_eta(object, ppdat)
     eta <- tmp$eta
@@ -143,8 +155,21 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
     if (is.ig(fname)) 
       draws$lambda <- stanmat[, "lambda"]
     if (is.nb(fname)) 
-      draws$size <- stanmat[,"overdispersion"]
-    
+      draws$size <- stanmat[,"reciprocal_dispersion"]
+    if (is.beta(fname)) {
+      draws$f_phi <- object$family_phi
+      z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+      if (length(z_vars) == 1 && z_vars == "(phi)") {
+        draws$phi <- stanmat[, z_vars]
+      } else {
+        x_dat <- get_x(object)
+        z_dat <- object$z
+        colnames(x_dat) <- colnames(x_dat)
+        colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
+        data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        draws$phi <- stanmat[,z_vars]
+      }
+    }
   } else {
     stopifnot(is(object, "polr"))
     y <- as.integer(y)
@@ -175,7 +200,8 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       } else {
         b <- pp_b_ord(b, Z_names)
       }
-      z <- t(ppdat$Zt)
+      if (is.null(ppdat$Zt)) z <- matrix(NA, nrow = nrow(x), ncol = 0)
+      else z <- t(ppdat$Zt)
     } else {
       z <- get_z(object)
     }
@@ -202,14 +228,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
 
 
 # log-likelihood function helpers -----------------------------------------
-.xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
-  data[, -which(colnames(data) %in% sel)]
-}
-.mu <- function(data, draws) {
-  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
-  draws$f$linkinv(eta)
-}
 .weighted <- function(val, w) {
   if (is.null(w)) {
     val
@@ -218,6 +236,32 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
   } 
 }
 
+.xdata <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, -which(colnames(data) %in% sel)]
+}
+.mu <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  draws$f$linkinv(eta)
+}
+
+# for stan_betareg only
+.xdata_beta <- function(data) { 
+  sel <- c("y", "weights","offset", "trials")
+  data[, -c(which(colnames(data) %in% sel), grep("(phi)_", colnames(data), fixed = TRUE))]
+}
+.zdata_beta <- function(data) {
+  sel <- c("y", "weights","offset", "trials")
+  data[, grep("(phi)_", colnames(data), fixed = TRUE)]
+}
+.mu_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$beta, .xdata_beta(data), data$offset))
+  draws$f$linkinv(eta)
+}
+.phi_beta <- function(data, draws) {
+  eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))
+  draws$f_phi$linkinv(eta)
+}
 
 # log-likelihood functions ------------------------------------------------
 .ll_gaussian_i <- function(i, data, draws) {
@@ -273,5 +317,14 @@ ll_args <- function(object, newdata = NULL, offset = NULL) {
       stop("Exponentiation only possible when there are exactly 2 outcomes.")
     }
   }
+  .weighted(val, data$weights)
+}
+.ll_beta_i <- function(i, data, draws) {
+  mu <- .mu_beta(data, draws)
+  phi <- draws$phi
+  if (length(grep("(phi)_", colnames(data), fixed = TRUE)) > 0) {
+    phi <- .phi_beta(data, draws)
+  }
+  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
 }

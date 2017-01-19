@@ -47,14 +47,20 @@ center_x <- function(x, sparse) {
 #
 # @param prior A list
 # @param nvars An integer indicating the number of variables
-# @param ok_dists A character vector of admissible distributions
+# @param default_scale Default value to use to scale if not specified by user
+# @param link String naming the link function.
+# @param ok_dists A list of admissible distributions.
 handle_glm_prior <- function(prior, nvars, default_scale, link,
-                             ok_dists = nlist("normal", student_t = "t", "cauchy", 
-                                              "hs", "hs_plus")) {
+                             ok_dists = nlist("normal", student_t = "t", 
+                                              "cauchy", "hs", "hs_plus", 
+                                              "laplace", "lasso", "product_normal")) {
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
-                prior_df = as.array(rep(1, nvars)), prior_dist_name = NA))
+                prior_df = as.array(rep(1, nvars)), prior_dist_name = NA,
+                global_prior_scale = 0, global_prior_df = 0,
+                prior_autoscale = FALSE))
+
   if (!is.list(prior)) 
     stop(sQuote(deparse(substitute(prior))), " should be a named list")
   
@@ -62,16 +68,28 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   prior_scale <- prior$scale
   prior_mean <- prior$location
   prior_df <- prior$df
+  prior_mean[is.na(prior_mean)] <- 0
   prior_df[is.na(prior_df)] <- 1
+  global_prior_scale <- 0
+  global_prior_df <- 0
   if (!prior_dist_name %in% unlist(ok_dists)) {
     stop("The prior distribution should be one of ",
          paste(names(ok_dists), collapse = ", "))
-  } else if (prior_dist_name %in% c("normal", "t", "cauchy")) {
-    prior_dist <- ifelse(prior_dist_name == "normal", 1L, 2L)
+  } else if (prior_dist_name %in% 
+             c("normal", "t", "cauchy", "laplace", "lasso", "product_normal")) {
+    if (prior_dist_name == "normal") prior_dist <- 1L
+    else if (prior_dist_name == "t") prior_dist <- 2L
+    else if (prior_dist_name == "laplace") prior_dist <- 5L
+    else if (prior_dist_name == "lasso") prior_dist <- 6L
+    else if (prior_dist_name == "product_normal") prior_dist <- 7L
     prior_scale <- set_prior_scale(prior_scale, default = default_scale, 
                                    link = link)
-  } else {
+  } else if (prior_dist_name %in% c("hs", "hs_plus")) {
     prior_dist <- ifelse(prior_dist_name == "hs", 3L, 4L)
+    global_prior_scale <- prior$global_scale
+    global_prior_df <- prior$global_df
+  } else if (prior_dist_name %in% "exponential") {
+    prior_dist <- 3L
   }
   
   prior_df <- maybe_broadcast(prior_df, nvars)
@@ -79,5 +97,13 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   prior_mean <- maybe_broadcast(prior_mean, nvars)
   prior_mean <- as.array(prior_mean)
   prior_scale <- maybe_broadcast(prior_scale, nvars)
-  return(nlist(prior_dist, prior_mean, prior_scale, prior_df, prior_dist_name))
+
+  nlist(prior_dist, 
+        prior_mean, 
+        prior_scale, 
+        prior_df, 
+        prior_dist_name, 
+        global_prior_scale,
+        global_prior_df,
+        prior_autoscale = isTRUE(prior$autoscale))
 }

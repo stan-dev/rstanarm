@@ -15,13 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-.printfr <- function(x, digits, ...) {
-  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
-}
-.median_and_madsd <- function(x) {
-  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
-}
-
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
@@ -121,8 +114,8 @@ print.stanreg <- function(x, digits = 1, ...) {
     } else if (is.ig(famname)) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
-      nms <- c(nms, "overdispersion")
-    }
+      nms <- c(nms, "reciprocal_dispersion")
+    } else if (is.beta(famname)) {}
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
     .printfr(estimates, digits, ...)
@@ -148,9 +141,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
-  cat("\nObservations:", nobs(x), 
-      " Number of unconstrained parameters:", x$num_unconstrained_pars, 
-      "\n", sep = " ")
+
   invisible(x)
 }
 
@@ -245,7 +236,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
       if (is.gaussian(famname)) 
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
-        mark <- c(mark, "overdispersion") 
+        mark <- c(mark, "reciprocal_dispersion")
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
@@ -262,9 +253,16 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   if (is.character(fam)) {
     stopifnot(identical(fam, object$method))
     fam <- paste0("ordered (", fam, ")")
+  } else if (inherits(object, "betareg")) {
+    fam <- paste0("beta (", 
+                  object$family$link, 
+                  ", link.phi=", 
+                  object$family_phi$link, 
+                  ")")
   } else {
     fam <- paste0(fam$family, " (", fam$link, ")") 
   }
+  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
@@ -290,10 +288,6 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
   cat("\nAlgorithm:", atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
     cat("\nPosterior sample size:", atts$posterior_sample_size)
-  # if (!is.null(atts$priors)) {
-  #   cat("\nPriors:")
-  #   cat("\n ", print_prior_summary(atts$priors, digits))
-  # }
   cat("\nObservations:", atts$nobs)
   if (!is.null(atts$ngrps))
     cat("\nGroups:", paste(names(atts$ngrps), unname(atts$ngrps), 
@@ -328,7 +322,18 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 }
 
 
+
+# internal ----------------------------------------------------------------
+.printfr <- function(x, digits, ...) {
+  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
+}
+.median_and_madsd <- function(x) {
+  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
+}
+
 # Allow "alpha", "beta", "varying" as shortcuts 
+#
+# @param object stanreg object
 # @param pars result of calling collect_pars(object, pars, regex_pars)
 allow_special_parnames <- function(object, pars) {
   pars[pars == "varying"] <- "b"

@@ -30,7 +30,7 @@
 #' @import bayesplot
 #' @import rstantools
 #' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
-#' @export loo waic compare
+#' @export loo waic
 #' @export launch_shinystan
 #' 
 #' @description 
@@ -130,14 +130,14 @@
 #'   beliefs about \eqn{R^2}, the proportion of variance in the outcome 
 #'   attributable to the predictors in a linear model.
 #'  }
-#'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{
-#'   Similar to \code{\link[stats]{glm}} but with Gaussian, Student t, Cauchy 
-#'   or hierarhical shrinkage prior distributions for the coefficients and,
-#'   if applicable, a half-Cauchy prior for any nuisance parameter in a 
-#'   Generalized Linear Model (GLM) that is characterized by a 
-#'   \code{\link[stats]{family}} object. It is also possible to estimate a 
-#'   negative bionomial model in a similar way to the \code{\link[MASS]{glm.nb}} 
-#'   function in the \pkg{MASS} package.
+#'  \item{\code{\link{stan_glm}}, \code{stan_glm.nb}}{ 
+#'  Similar to \code{\link[stats]{glm}} but with various possible prior 
+#'  distributions for the coefficients and, if applicable, a prior distribution
+#'  for any auxiliary parameter in a Generalized Linear Model (GLM) that is
+#'  characterized by a \code{\link[stats]{family}} object (e.g. the shape
+#'  parameter in Gamma models). It is also possible to estimate a negative
+#'  binomial model in a similar way to the \code{\link[MASS]{glm.nb}} function
+#'  in the \pkg{MASS} package.
 #'  }
 #'  \item{\code{\link{stan_glmer}}, \code{stan_glmer.nb}, \code{stan_lmer}}{
 #'   Similar to the \code{\link[lme4]{glmer}}, \code{\link[lme4]{glmer.nb}} and 
@@ -160,16 +160,23 @@
 #'   parameter estimates.
 #'  }
 #'  \item{\code{\link{stan_polr}}}{
-#'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it
-#'   models an ordinal response but also implies a prior distribution on the 
-#'   unknown cutpoints. Can also be used to model binary outcomes, possibly
-#'   while estimating an unknown exponent governing the probability of success.
+#'   Similar to \code{\link[MASS]{polr}} in the \pkg{MASS} package in that it 
+#'   models an ordinal response, but the Bayesian model also implies a prior 
+#'   distribution on the unknown cutpoints. Can also be used to model binary 
+#'   outcomes, possibly while estimating an unknown exponent governing the 
+#'   probability of success.
+#'  }
+#'  \item{\code{\link{stan_betareg}}}{
+#'   Similar to \code{\link[betareg]{betareg}} in that it models an outcome that
+#'   is a rate (proportion) but, rather than performing maximum likelihood 
+#'   estimation, full Bayesian estimation is performed by default, with 
+#'   customizable prior distributions for all parameters.
 #'  }
 #' }
 #' 
 #' @section Prior distributions:
-#' See \code{\link{priors}} for an overview of the various choices the user can 
-#' make for prior distributions. The package vignettes also provide 
+#' See \link[=priors]{priors help page} for an overview of the various choices
+#' the user can make for prior distributions. The package vignettes also provide
 #' examples of using many of the available priors as well as more detailed 
 #' descriptions of some of the novel priors used by \pkg{rstanarm}.
 #'  

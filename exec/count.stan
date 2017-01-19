@@ -1,102 +1,72 @@
+#include "Columbia_copyright.stan"
 #include "license.stan" // GPL3+
 
 // GLM for a count outcome
 functions {
   #include "common_functions.stan"
-
-  vector linkinv_count(vector eta, int link) {
-    vector[rows(eta)] phi;
-    if (link < 1 || link > 3) 
-      reject("Invalid link");
-      
-    if (link == 1) return exp(eta);  // log
-    else if (link == 2) return eta;  // identity
-    else  // link = sqrt
-      for (n in 1:rows(eta)) phi[n] = square(eta[n]); 
-    return phi;
-  }
-  
-  /** 
-  * Pointwise (pw) log-likelihood vector for the Poisson distribution
-  *
-  * @param y The integer array corresponding to the outcome variable.
-  * @param link An integer indicating the link function
-  * @return A vector
-  */
-  vector pw_pois(int[] y, vector eta, int link) {
-    vector[rows(eta)] ll;
-    if (link < 1 || link > 3) 
-      reject("Invalid link");
-      
-    if (link == 1)  // log
-      for (n in 1:rows(eta)) ll[n] = poisson_log_lpmf(y[n] | eta[n]);
-    else {  // link = identity or sqrt
-      vector[rows(eta)] phi;
-      phi = linkinv_count(eta, link);
-      for (n in 1:rows(eta)) ll[n] = poisson_lpmf(y[n] | phi[n]) ;
-    }
-    return ll;
-  }
-  
-  /** 
-  * Pointwise (pw) log-likelihood vector for the negative binomial  distribution
-  *
-  * @param y The integer array corresponding to the outcome variable.
-  * @param link An integer indicating the link function
-  * @return A vector
-  */
-  vector pw_nb(int[] y, vector eta, real theta, int link) {
-    vector[rows(eta)] ll;
-    vector[rows(eta)] rho;
-    if (link < 1 || link > 3) 
-      reject("Invalid link");
-      
-    rho = linkinv_count(eta, link);
-    for (n in 1:rows(eta)) ll[n] = neg_binomial_2_lpmf(y[n] | rho[n], theta);
-    return ll;
-  }
+  #include "count_likelihoods.stan"
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=0> y[N];  // count outcome
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
-  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_for dispersion
+  // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include "glmer_stuff.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data{
-  real poisson_max;
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos, t_{any, all}_124
-  poisson_max = pow(2.0, 30.0);
+  real poisson_max = pow(2.0, 30.0);
+  int<lower=1> V[t, N] = make_V(N, t, v);
+  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> dispersion_unscaled[family > 1];
+  real<lower=0> aux_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
 transformed parameters {
-  real dispersion[family > 1];
+  real aux = negative_infinity(); // be careful with this in the family = 1 case
   #include "tparameters_glm.stan" // defines beta, b, theta_L
-  if (family > 1 && prior_scale_for_dispersion > 0) 
-    dispersion[1] = prior_scale_for_dispersion * dispersion_unscaled[1];
-  else if (family > 1) dispersion[1] = dispersion_unscaled[1];
+ 
+  if (family > 1 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
+    aux = aux_unscaled[1];
+  else if (family > 1) {
+    aux = prior_scale_for_aux * aux_unscaled[1];
+    if (prior_dist_for_aux <= 2) // normal or student_t
+      aux = aux + prior_mean_for_aux;
+  }
+ 
   if (t > 0) {
-    if (family == 1)
-      theta_L = make_theta_L(len_theta_L, p, 1.0,
-                              tau, scale, zeta, rho, z_T);
-    else
-      theta_L = make_theta_L(len_theta_L, p, dispersion[1],
-                              tau, scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = family == 1 ? tau : tau * aux;
+      if (t == 1) b = theta_L[1] * z_b;
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = theta_L[i] * z_b[start:end];
+        start = end + 1;
+      }
+    }
+    else {
+      if (family == 1)
+        theta_L = make_theta_L(len_theta_L, p, 1.0,
+                               tau, scale, zeta, rho, z_T);
+      else
+        theta_L = make_theta_L(len_theta_L, p, aux,
+                               tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {
   #include "make_eta.stan" // defines eta
-  if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);  
+  if (t > 0) {
+    #include "eta_add_Zb.stan"
+  }
   if (has_intercept == 1) {
     if (link == 1) eta = eta + gamma[1];
     else eta = eta - min(eta) + gamma[1];
@@ -106,9 +76,9 @@ model {
   }
   
   if (family == 3) {
-    if      (link == 1) eta = eta + log(dispersion[1]) + log(noise[1]);
-    else if (link == 2) eta = eta * dispersion[1] .* noise[1];
-    else                eta = eta + sqrt(dispersion[1]) + sqrt_vec(noise[1]);
+    if      (link == 1) eta = eta + log(aux) + log(noise[1]);
+    else if (link == 2) eta = eta * aux .* noise[1];
+    else                eta = eta + sqrt(aux) + sqrt(noise[1]);
   }
   
   // Log-likelihood 
@@ -118,39 +88,47 @@ model {
       else target += poisson_lpmf(y | linkinv_count(eta, link));
     }
     else {
-      if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, dispersion[1]);
-      else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), dispersion[1]);
+      if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, aux);
+      else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
     }
   }
   else if (family != 2 && prior_PD == 0)
     target += dot_product(weights, pw_pois(y, eta, link));
   else if (prior_PD == 0)
-    target += dot_product(weights, pw_nb(y, eta, dispersion[1], link));
+    target += dot_product(weights, pw_nb(y, eta, aux, link));
   
-  // Log-prior for dispersion
-  if (family > 1 && prior_scale_for_dispersion > 0) 
-    target += cauchy_lpdf(dispersion_unscaled | 0, 1);
+  // Log-prior for aux
+  if (family > 1 && 
+      prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
+    if (prior_dist_for_aux == 1)
+      target += normal_lpdf(aux_unscaled | 0, 1);
+    else if (prior_dist_for_aux == 2)
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
+    else 
+      target += exponential_lpdf(aux_unscaled | 1);
+  }
   
   #include "priors_glm.stan" // increments target()
   
   // Log-prior for noise
-  if (family == 3) target += gamma_lpdf(noise[1] | dispersion[1], 1);
+  if (family == 3) target += gamma_lpdf(noise[1] | aux, 1);
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
 generated quantities {
   real alpha[has_intercept];
-  real mean_PPD;
+  real mean_PPD = 0;
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  mean_PPD = 0;
   {
     vector[N] nu;
     #include "make_eta.stan" // defines eta
-    if (t > 0) eta = eta + csr_matrix_times_vector(N, q, w, v, u, b);
+    if (t > 0) {
+      #include "eta_add_Zb.stan"
+    }
     if (has_intercept == 1) {
       if (link == 1) eta = eta + gamma[1];
       else {
@@ -165,9 +143,9 @@ generated quantities {
     }
     
     if (family == 3) {
-      if      (link == 1) eta = eta + log(dispersion[1]) + log(noise[1]);
-      else if (link == 2) eta = eta * dispersion[1] .* noise[1];
-      else                eta = eta + sqrt(dispersion[1]) + sqrt_vec(noise[1]);
+      if      (link == 1) eta = eta + log(aux) + log(noise[1]);
+      else if (link == 2) eta = eta * aux .* noise[1];
+      else                eta = eta + sqrt(aux) + sqrt(noise[1]);
     }
     nu = linkinv_count(eta, link);
     if (family != 2) for (n in 1:N) {
@@ -176,8 +154,8 @@ generated quantities {
     }
     else for (n in 1:N) {
         real gamma_temp;
-        if (is_inf(dispersion[1])) gamma_temp = nu[n];
-        else gamma_temp = gamma_rng(dispersion[1], dispersion[1] / nu[n]);
+        if (is_inf(aux)) gamma_temp = nu[n];
+        else gamma_temp = gamma_rng(aux, aux / nu[n]);
         if (gamma_temp < poisson_max)
           mean_PPD = mean_PPD + poisson_rng(gamma_temp);
         else mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));

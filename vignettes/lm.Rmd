@@ -247,14 +247,13 @@ treatment variable, `seeding`, is interacted with four other correlated
 predictors. However, it is easy to estimate or visualize the average treatment 
 effect (ATE) using __rstanarm__'s `posterior_predict` function.
 
-```{r lm-clouds-ate-plot, fig.height=3}
+```{r lm-clouds-ate-plot}
 clouds_cf <- clouds
 clouds_cf$seeding[] <- "yes"
 y1_rep <- posterior_predict(post, newdata = clouds_cf)
 clouds_cf$seeding[] <- "no"
 y0_rep <- posterior_predict(post, newdata = clouds_cf)
-qplot(x = c(y1_rep - y0_rep), geom = "histogram", 
-      ylab = NULL, xlab = "Estimated ATE")
+qplot(x = c(y1_rep - y0_rep), geom = "histogram", xlab = "Estimated ATE")
 ```
 
 As can be seen, the treatment effect is not estimated precisely and is as
@@ -283,7 +282,7 @@ __loo__ package.
 
 ```{r lm-clouds-loo, warning=TRUE}
 (loo_post <- loo(post))
-(loo(simple))
+compare_models(loo_post, loo(simple))
 ```
 
 The results indicate that the first approach is expected to produce better

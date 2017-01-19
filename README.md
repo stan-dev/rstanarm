@@ -4,11 +4,9 @@
 
 # rstanarm
 
-[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm) 
-[![Coverage Status](https://codecov.io/github/stan-dev/rstanarm/coverage.svg?branch=master)](https://codecov.io/github/stan-dev/rstanarm?branch=master) 
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm)](http://cran.r-project.org/package=rstanarm)
-[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=brightgreen)](http://cran.rstudio.com/package=rstanarm)
-
+[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)  
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
+[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 
 This is an R package that emulates other R model-fitting functions but uses
 [Stan](http://mc-stan.org) (via the **rstan** package) for the back-end
@@ -36,12 +34,12 @@ if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
 }
-install_github("stan-dev/rstanarm", args = "--preclean", local = FALSE, build_vignettes = TRUE)
+install_github("stan-dev/rstanarm", args = "--preclean", build_vignettes = FALSE)
 ```
 
-Make sure to include the `args = "--preclean"` argument or the development
-version of package will not install properly. If installation fails, please let
-us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
+Make sure to include the `args = "--preclean"` and `build_vignettes = FALSE` arguments 
+or the development version of package will not install properly. If installation fails, 
+please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ## Getting help
 
@@ -51,6 +49,5 @@ us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 ## Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please 
-see the [Contributing to
-development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
+see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
 page of the wiki.

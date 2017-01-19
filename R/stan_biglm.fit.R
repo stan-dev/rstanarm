@@ -18,25 +18,29 @@
 #' @rdname stan_biglm
 #' @export
 #' @param b A numeric vector of OLS coefficients, excluding the intercept
-#' @param R A square upper-triangular matrix from the QR decomposition of the design matrix
+#' @param R A square upper-triangular matrix from the QR decomposition of the 
+#'   design matrix, excluding the intercept
 #' @param SSR A numeric scalar indicating the sum-of-squared residuals for OLS
 #' @param N A integer scalar indicating the number of included observations
+#' @param has_intercept A logical scalar indicating whether to add an intercept 
+#'   to the model when estimating it.
 #' @examples
 #' # create inputs
-#' ols <- lm(mpg ~ wt + qsec + am - 1, # next line is critical for centering
-#'           data = as.data.frame(scale(mtcars, scale = FALSE)))
-#' b <- coef(ols)
-#' R <- qr.R(ols$qr)
+#' ols <- lm(mpg ~ wt + qsec + am, data = mtcars, # all row are complete so ...
+#'           na.action = na.exclude)              # not necessary in this case
+#' b <- coef(ols)[-1]
+#' R <- qr.R(ols$qr)[-1,-1]
 #' SSR <- crossprod(ols$residuals)[1]
-#' N <- length(ols$fitted.values)
-#' xbar <- colMeans(mtcars[,c("wt", "qsec", "am")])
-#' y <- mtcars$mpg
+#' not_NA <- !is.na(fitted(ols))
+#' N <- sum(not_NA)
+#' xbar <- colMeans(mtcars[not_NA,c("wt", "qsec", "am")])
+#' y <- mtcars$mpg[not_NA]
 #' ybar <- mean(y)
 #' s_y <- sd(y)
 #' post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
 #'                        # the next line is only to make the example go fast
 #'                        chains = 1, iter = 1000, seed = 12345)
-#' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[14:16]) # shrunk
+#' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_intercept = NULL, prior_PD = FALSE, 
@@ -112,6 +116,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
+  check_stanfit(stanfit)
   new_names <- c(if (has_intercept) "(Intercept)", cn, "sigma", 
                  if (prior_PD == 0) "log-fit_ratio", 
                  "R2", "mean_PPD", "log-posterior")

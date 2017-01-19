@@ -197,46 +197,6 @@ vcov.stanreg <- function(object, correlation = FALSE, ...) {
 }
 
 
-.glmer_check <- function(object) {
-  if (!is.mer(object))
-    stop("This method is for stan_glmer and stan_lmer models only.", 
-         call. = FALSE)
-}
-.cnms <- function(object) {
-  .glmer_check(object)
-  object$glmod$reTrms$cnms
-}
-.flist <- function(object) {
-  .glmer_check(object)
-  as.list(object$glmod$reTrms$flist)
-}
-
-coef_mer <- function(object, ...) {
-  if (length(list(...))) 
-    warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
-            "\" ignored.", call. = FALSE)
-  fef <- data.frame(rbind(fixef(object)), check.names = FALSE)
-  ref <- ranef(object)
-  refnames <- unlist(lapply(ref, colnames))
-  missnames <- setdiff(refnames, names(fef))
-  nmiss <- length(missnames)
-  if (nmiss > 0) {
-    fillvars <- setNames(data.frame(rbind(rep(0, nmiss))), missnames)
-    fef <- cbind(fillvars, fef)
-  }
-  val <- lapply(ref, function(x) fef[rep.int(1L, nrow(x)), , drop = FALSE])
-  for (i in seq(a = val)) {
-    refi <- ref[[i]]
-    row.names(val[[i]]) <- row.names(refi)
-    nmsi <- colnames(refi)
-    if (!all(nmsi %in% names(fef))) 
-      stop("Unable to align random and fixed effects.", call. = FALSE)
-    for (nm in nmsi) 
-      val[[i]][[nm]] <- val[[i]][[nm]] + refi[, nm]
-  }
-  structure(val, class = "coef.mer")
-}
-
 #' @rdname stanreg-methods
 #' @export
 #' @export fixef
@@ -272,8 +232,13 @@ ranef.stanreg <- function(object, ...) {
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
   cnms <- .cnms(object)
+  mark <- !grepl("^Xr", names(cnms))
+  fl <- fl[mark]
+  asgn <- asgn[mark]
+  levs <- levs[mark]
+  cnms <- cnms[mark]
   nc <- vapply(cnms, length, 1L)
-  nb <- nc * vapply(levs, length, 1L)[asgn]
+  nb <- nc * vapply(levs, length, 1L)
   nbseq <- rep.int(seq_along(nb), nb)
   ml <- split(ans, nbseq)
   for (i in seq_along(ml)) {
@@ -281,7 +246,7 @@ ranef.stanreg <- function(object, ...) {
                       dimnames = list(NULL, cnms[[i]]))
   }
   ans <- lapply(seq_along(fl), function(i) {
-    data.frame(do.call(cbind, ml[asgn == i]), row.names = levs[[i]], 
+    data.frame(do.call(cbind, ml[i]), row.names = levs[[i]], 
                check.names = FALSE)
   })
   names(ans) <- names(fl)
@@ -351,6 +316,7 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (inherits(formula, "gamm4")) return(formula$glmod$model)
   if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
@@ -371,9 +337,9 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (is.mer(object))
-    return(object$glmod$X)
-  
+  if (inherits(object, "gamm4")) return(object$glmod$raw_X)
+  if (is.mer(object)) return(object$glmod$X)
+    
   NextMethod("model.matrix")
 }
 
@@ -391,36 +357,6 @@ formula.stanreg <- function(x, ...) {
     return(formula_mer(x, ...))
   
   x$formula
-}
-
-justRE <- function(f, response = FALSE) {
-  response <- if (response && length(f) == 3) f[[2]] else NULL
-  reformulate(paste0("(", vapply(lme4::findbars(f), 
-                                 function(x) paste(deparse(x, 500L), 
-                                                   collapse = " "), 
-                                 ""), ")"), 
-              response = response)
-}
-formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
-  if (missing(fixed.only) && random.only) 
-    fixed.only <- FALSE
-  if (fixed.only && random.only) 
-    stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
-  
-  fr <- x$glmod$fr
-  if (is.null(form <- attr(fr, "formula"))) {
-    if (!grepl("lmer$", deparse(getCall(x)[[1L]]))) 
-      stop("Can't find formula stored in model frame or call.", call. = FALSE)
-    form <- as.formula(formula(getCall(x), ...))
-  }
-  if (fixed.only) {
-    form <- attr(fr, "formula")
-    form[[length(form)]] <- lme4::nobars(form[[length(form)]])
-  }
-  if (random.only)
-    form <- justRE(form, response = TRUE)
-
-  return(form)
 }
 
 #' terms method for stanreg objects
@@ -449,4 +385,77 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   }
   
   return(Terms)
+}
+
+
+
+# internal ----------------------------------------------------------------
+.glmer_check <- function(object) {
+  if (!is.mer(object))
+    stop("This method is for stan_glmer and stan_lmer models only.", 
+         call. = FALSE)
+}
+.cnms <- function(object) {
+  .glmer_check(object)
+  object$glmod$reTrms$cnms
+}
+.flist <- function(object) {
+  .glmer_check(object)
+  as.list(object$glmod$reTrms$flist)
+}
+
+coef_mer <- function(object, ...) {
+  if (length(list(...))) 
+    warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
+            "\" ignored.", call. = FALSE)
+  fef <- data.frame(rbind(fixef(object)), check.names = FALSE)
+  ref <- ranef(object)
+  refnames <- unlist(lapply(ref, colnames))
+  missnames <- setdiff(refnames, names(fef))
+  nmiss <- length(missnames)
+  if (nmiss > 0) {
+    fillvars <- setNames(data.frame(rbind(rep(0, nmiss))), missnames)
+    fef <- cbind(fillvars, fef)
+  }
+  val <- lapply(ref, function(x) fef[rep.int(1L, nrow(x)), , drop = FALSE])
+  for (i in seq(a = val)) {
+    refi <- ref[[i]]
+    row.names(val[[i]]) <- row.names(refi)
+    nmsi <- colnames(refi)
+    if (!all(nmsi %in% names(fef))) 
+      stop("Unable to align random and fixed effects.", call. = FALSE)
+    for (nm in nmsi) 
+      val[[i]][[nm]] <- val[[i]][[nm]] + refi[, nm]
+  }
+  structure(val, class = "coef.mer")
+}
+
+justRE <- function(f, response = FALSE) {
+  response <- if (response && length(f) == 3) f[[2]] else NULL
+  reformulate(paste0("(", vapply(lme4::findbars(f), 
+                                 function(x) paste(deparse(x, 500L), 
+                                                   collapse = " "), 
+                                 ""), ")"), 
+              response = response)
+}
+formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
+  if (missing(fixed.only) && random.only) 
+    fixed.only <- FALSE
+  if (fixed.only && random.only) 
+    stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
+  
+  fr <- x$glmod$fr
+  if (is.null(form <- attr(fr, "formula"))) {
+    if (!grepl("lmer$", deparse(getCall(x)[[1L]]))) 
+      stop("Can't find formula stored in model frame or call.", call. = FALSE)
+    form <- as.formula(formula(getCall(x), ...))
+  }
+  if (fixed.only) {
+    form <- attr(fr, "formula")
+    form[[length(form)]] <- lme4::nobars(form[[length(form)]])
+  }
+  if (random.only)
+    form <- justRE(form, response = TRUE)
+  
+  return(form)
 }
