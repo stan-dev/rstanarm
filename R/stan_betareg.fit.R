@@ -126,6 +126,11 @@ stan_betareg.fit <- function(x, y, z = NULL,
     )
   # prior_{dist, mean, scale, df, dist_name, autoscale}_for_aux
   names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), "_for_aux")
+  if (is.null(prior_aux)) {
+    if (prior_PD)
+      stop("'prior_aux' can't be NULL if 'prior_PD' is TRUE.")
+    prior_aux_stuff$prior_scale_for_aux <- Inf
+  }
   for (i in names(prior_aux_stuff)) 
     assign(i, prior_aux_stuff[[i]])
  
@@ -476,13 +481,17 @@ summarize_betareg_prior <-
       prior_aux = 
       if (!has_phi) NULL else with(user_prior_aux, list(
           dist = prior_dist_name_for_aux,
-          location = if (prior_dist_name_for_aux != "exponential")
+          location = if (!is.na(prior_dist_name_for_aux) && 
+                         prior_dist_name_for_aux != "exponential")
             prior_mean_for_aux else NULL,
-          scale = if (prior_dist_name_for_aux != "exponential")
+          scale = if (!is.na(prior_dist_name_for_aux) && 
+                      prior_dist_name_for_aux != "exponential")
             prior_scale_for_aux else NULL,
-          df = if (prior_dist_name_for_aux %in% "student_t")
+          df = if (!is.na(prior_dist_name_for_aux) && 
+                   prior_dist_name_for_aux %in% "student_t")
             prior_df_for_aux else NULL, 
-          rate = if (prior_dist_name_for_aux %in% "exponential")
+          rate = if (!is.na(prior_dist_name_for_aux) && 
+                     prior_dist_name_for_aux %in% "exponential")
             1 / prior_scale_for_aux else NULL,
           aux_name = "phi"
         ))
