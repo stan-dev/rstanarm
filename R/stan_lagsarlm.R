@@ -15,9 +15,40 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian spatial simultaneous autogregressive lag model estimation
+#' Bayesian spatial simultaneous autoregressive lag model estimation via Stan
+#'
+#' Note this doc is incomplete!
 #'
 #' @export
+#' 
+#' @param listw Spatial weights as a "listw" object. This can be constructed from
+#' a variety of formats using the appropriate functions in the \code{spdep}
+#' package (e.g. \code{mat2listw} transforms a "matrix" class object to a
+#' "listw" class object).
+#' @param  prior_rho Prior on spatial autocorrelation term.
+#' @param prior_intercept Prior on intercept of linear predictor.
+#' 
+#' @examples 
+#' ### Spatial AR Simulation
+#' N <- 10
+#' W_bin <- matrix(rep(0, N * N), nrow = N)
+#' W_bin[lower.tri(W_bin)] <- rbinom(choose(N,2), 1, 0.5)
+#' W_bin <- W_bin + t(W_bin)
+#' W <- apply(W_bin, 2, function(x){x/rowSums(W_bin)})
+#' I <- diag(N)
+#' lambda <- 0.5
+#' sigma <- 0.3
+#' Sigma <- solve((I - lambda * W) %*% (I - lambda * t(W))) * sigma
+#' X <- cbind(rep(1,N),rnorm(N, 0, 1), rnorm(N, 3, 1))
+#' beta <- c(3, 2.5, -1.5)
+#' mu <- solve(I - lambda * W) %*% X %*% beta
+#' y <- c(mvtnorm::rmvnorm(1, mu, Sigma))
+#' lw <- spdep::mat2listw(W)
+#' 
+#' dat <- data.frame(cbind(y, X[,-1]))
+#' names(dat) <- c("y","x1","x2")
+#' 
+#' fit <- stan_lagsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
 
 stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
                           prior_rho = NULL, prior_intercept = NULL,
@@ -50,12 +81,12 @@ stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
   
   
   fit <- nlist(stanfit, algorithm, data, family = gaussian(),
-               x = X, y = Y, formula, call = match.call())
+               x = X, y = Y, formula, call = match.call(), sp_model)
   
   
   out <- stanreg(fit)
 
-  structure(out, class = c("stanreg", "sarlm"))
-
+  class(out) <- c("stanreg", "spatial")
+  
   return(out)
 }
