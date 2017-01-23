@@ -41,7 +41,7 @@ transformed data {
   vector[family == 3 ? N : 0] sqrt_y;
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
-  int<lower=1> V[t, N] = make_V(N, t, v);
+  int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
   #include "tdata_betareg.stan" // defines hs_z
