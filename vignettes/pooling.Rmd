@@ -13,7 +13,7 @@ params:
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Hierarchical Partial Pooling}
 -->
-```{r, knitr-settings}
+```{r, knitr-settings, include=FALSE}
 stopifnot(require(knitr))
 opts_chunk$set(
   comment=NA, 
