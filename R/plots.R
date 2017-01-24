@@ -168,7 +168,11 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 }
 
 
+
+# internal ----------------------------------------------------------------
+
 # Prepare argument list to pass to plotting function
+#
 # @param x stanreg object
 # @param pars, regex_pars user specified pars and regex_pars arguments (can be
 #   missing)
@@ -181,17 +185,21 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
   if (!used.sampling(x))
     validate_plotfun_for_opt_or_vb(plotfun)
 
-  if (grepl("_nuts", plotfun, fixed = TRUE)) {
+  .plotfun_is_type <- function(patt) {
+    grepl(pattern = paste0("_", patt), x = plotfun, fixed = TRUE)
+  }
+  
+  if (.plotfun_is_type("nuts")) {
     nuts_stuff <- list(x = bayesplot::nuts_params(x), ...)
-    if (!grepl("_energy", plotfun))
+    if (!.plotfun_is_type("energy"))
       nuts_stuff[["lp"]] <- bayesplot::log_posterior(x)
     return(nuts_stuff)
   }
-  if (grepl("_rhat", plotfun, fixed = TRUE)) {
+  if (.plotfun_is_type("rhat")) {
     rhat <- bayesplot::rhat(x, pars = pars, regex_pars = regex_pars)
     return(list(rhat = rhat, ...))
   }
-  if (grepl("_neff", plotfun, fixed = TRUE)) {
+  if (.plotfun_is_type("neff")) {
     ratio <- bayesplot::neff_ratio(x, pars = pars, regex_pars = regex_pars)
     return(list(ratio = ratio, ...))
   }
@@ -291,59 +299,301 @@ set_plotting_fun <- function(plotfun = NULL) {
 validate_plotfun_for_opt_or_vb <- function(plotfun) {
   plotfun <- mcmc_function_name(plotfun)
   if (needs_chains(plotfun) || 
-      grepl("rhat_|neff_|nuts_", plotfun))
+      grepl("_rhat|_neff|_nuts_", plotfun))
     STOP_sampling_only(plotfun)
 }
 
-# Check for valid parameters
-# @param x stanreg object
-# @param pars user specified character vector
-# check_plotting_pars <- function(x, pars, plotfun = character()) {
-#   if (used.optimizing(x)) {
-#     allpars <- c("alpha", "beta", rownames(x$stan_summary))
-#   } else {
-#     sim <- x$stanfit@sim
-#     allpars <- c(sim$pars_oi, sim$fnames_oi)
-#   }
-#   m <- which(match(pars, allpars, nomatch = 0) == 0)
-#   if (length(m) > 0)
-#     stop("No parameter ", paste(pars[m], collapse = ', '),
-#          call. = FALSE)
-#   return(unique(pars))
-# }
-
-
-
 
 #' Pairs method for stanreg objects
+#' 
+#' This is essentially the same as \code{\link[rstan]{pairs.stanfit}} but with a
+#' few tweaks for compatibility with \pkg{rstanarm} models. \strong{Be careful
+#' not to specify too many parameters to include or the plot will be both hard
+#' to read and slow to render.}
 #'
 #' @method pairs stanreg
 #' @export
-#' @param x A stanreg object returned by one of the rstanarm modeling functions.
-#' @param ... Arguments to pass to \code{\link[rstan]{pairs.stanfit}}.
-#'
-#' @description See \code{\link[rstan]{pairs.stanfit}} for details.
-#' @details See the Details section in \code{\link[rstan]{pairs.stanfit}}.
-#' @importFrom graphics pairs
+#' @templateVar stanregArg x
+#' @template args-stanreg-object
+#' @template args-regex-pars
+#' @param pars An optional character vetor of parameter names. All parameters 
+#'   are included by default, but for models with more than just a few 
+#'   parameters it may be far too many to visualize on a small computer screen 
+#'   and also may require substantial computing time.
+#' 
+#' @inheritParams rstan::pairs.stanfit
+#' @param ...,labels,panel,lower.panel,upper.panel,diag.panel Same as in 
+#'   \code{\link[graphics]{pairs}} syntactically but see the \strong{Details}
+#'   section for different default arguments.
+#' @param text.panel,label.pos,cex.labels,font.labels,row1attop,gap Same as in 
+#'   \code{\link[graphics]{pairs.default}}.
+#' @param log Same as in \code{\link[graphics]{pairs.default}} (but additionally
+#'   accepts \code{log=TRUE}), which makes it possible to utilize logarithmic
+#'   axes. See the \strong{Details} section.
+#' 
+#' @details This method differs from the default \code{\link{pairs}} method in 
+#'   the following ways. If unspecified, the \code{\link{smoothScatter}} 
+#'   function is used for the off-diagonal plots, rather than 
+#'   \code{\link{points}}, since the former is more appropriate for visualizing 
+#'   thousands of draws from a posterior distribution. Also, if unspecified, 
+#'   histograms of the marginal distribution of each quantity are placed on the 
+#'   diagonal of the plot, after pooling the chains.
+#'   
+#'   The draws from the warmup phase are always discarded before plotting.
+#'   
+#'   By default, the lower (upper) triangle of the plot contains draws with 
+#'   below (above) median acceptance probability. Also, if \code{condition} is 
+#'   not \code{"divergent__"}, red points will be superimposed onto the smoothed
+#'   density plots indicating which (if any) iterations encountered a divergent 
+#'   transition. Otherwise, yellow points indicate a transition that hit the 
+#'   maximum treedepth rather than terminated its evolution normally.
+#'   
+#'   You may very well want to specify the \code{log} argument for non-negative 
+#'   parameters. Of the various allowed specifications of \code{log}, it is 
+#'   probably easiest to specify \code{log = TRUE}, which will utilize 
+#'   logarithmic axes for all non-negative quantities.
+#'   
 #' @examples
 #' if (!exists("example_model")) example(example_model)
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
+#' 
+#' \donttest{
+#' pairs(example_model, regex_pars = "herd:[279]")
+#' }
 #'
-pairs.stanreg <- function(x, ...) {
-  if (!used.sampling(x))
-    STOP_sampling_only("pairs")
-  requireNamespace("rstan")
-  requireNamespace("KernSmooth")
-
-  if (is.mer(x)) {
-    dots <- list(...)
-    if (is.null(dots[["pars"]]))
-      return(pairs(x$stanfit, pars = names(fixef(x)), ...))
-
-    b <- b_names(rownames(x$stan_summary), value = TRUE)
-    if (any(dots[["pars"]] %in% b))
-      stop("pairs.stanreg does not yet allow group-level parameters in 'pars'.")
+#' @importFrom graphics hist pairs par points rect smoothScatter text
+#' @importFrom rstan get_logposterior
+#' 
+pairs.stanreg <-
+  function(x,
+           pars = NULL,
+           regex_pars = NULL,
+           condition = "accept_stat__",
+           ...,
+           labels = NULL,
+           panel = NULL,
+           lower.panel = NULL,
+           upper.panel = NULL,
+           diag.panel = NULL,
+           text.panel = NULL,
+           label.pos = 0.5 + 1 / 3,
+           cex.labels = NULL,
+           font.labels = 1,
+           row1attop = TRUE,
+           gap = 1,
+           log = "") {
+    
+    if (!used.sampling(x))
+      STOP_sampling_only("pairs")
+    
+    requireNamespace("rstan")
+    requireNamespace("KernSmooth")
+    
+    arr <- as.array.stanreg(x, pars = pars, regex_pars = regex_pars)
+    if (is.null(pars) && is.null(regex_pars)) {
+      # include log-posterior by default
+      lp_arr <- as.array.stanreg(x, pars = "log-posterior")
+      dd <- dim(arr)
+      dn <- dimnames(arr)
+      dd[3] <- dd[3] + 1
+      dn$parameters <- c(dn$parameters, "log-posterior")
+      tmp <- array(NA, dim = dd, dimnames = dn)
+      tmp[,, 1:(dd[3] - 1)] <- arr
+      tmp[,, dd[3]] <- lp_arr
+      arr <- tmp
+    }
+    arr <- round(arr, digits = 12)
+    x <- x$stanfit
+    
+    gsp <- rstan::get_sampler_params(x, inc_warmup = FALSE)
+    # if ("energy__" %in% colnames(gsp[[1]])) {
+    #   dims <- dim(arr)
+    #   dims[3] <- dims[3] + 1L
+    #   nms <- dimnames(arr)
+    #   nms$parameters <- c(nms$parameters, "energy__")
+    #   E <- sapply(gsp, FUN = function(y) y[, "energy__"])
+    #   arr <- array(c(c(arr), c(E)), dim = dims, dimnames = nms)
+    # }
+    
+    sims <- nrow(arr)
+    chains <- ncol(arr)
+    varying <- apply(arr, 3, FUN = function(y) length(unique(c(y))) > 1)
+    if (any(!varying)) {
+      message(
+        "The following parameters were dropped because they are constant:\n",
+        paste(names(varying)[!varying], collapse = ", ")
+      )
+      arr <- arr[, , varying, drop = FALSE]
+    }
+    
+    dupes <- duplicated(arr, MARGIN = 3)
+    if (any(dupes)) {
+      message(
+        "The following parameters were dropped because they are duplicative:\n",
+        paste(dimnames(arr)[[3]][dupes], collapse = ", ")
+      )
+      arr <- arr[, , !dupes, drop = FALSE]
+    }
+    
+    tmp <- c(sapply(gsp, FUN = function(y) y[, "divergent__"]))
+    divergent__ <- matrix(tmp, nrow = sims * chains, ncol = dim(arr)[3])
+    
+    max_td <- x@stan_args[[1]]$control
+    if (is.null(max_td)) {
+      max_td <- 10
+    } else {
+      max_td <- max_td$max_treedepth
+      if (is.null(max_td))
+        max_td <- 10
+    }
+    tmp <- c(sapply(gsp, FUN = function(y) y[, "treedepth__"] > max_td))
+    hit <- matrix(tmp, nrow = sims * chains, ncol = dim(arr)[3])
+    
+    if (is.list(condition)) {
+      if (length(condition) != 2)
+        stop("If a list, 'condition' must be of length 2.")
+      arr <- arr[, c(condition[[1]], condition[[2]]), , drop = FALSE]
+      k <- length(condition[[1]])
+      mark <- c(rep(TRUE, sims * k), rep(FALSE, sims * length(condition[[2]])))
+      
+    } else if (is.logical(condition)) {
+      
+      stopifnot(length(condition) == (sims * chains))
+      mark <- !condition
+      
+    } else if (is.character(condition)) {
+      
+      condition <- match.arg(condition, several.ok = FALSE, 
+                             choices = c("accept_stat__", "stepsize__",
+                                         "treedepth__", "n_leapfrog__",
+                                         "divergent__", "energy__", "lp__"))
+      if (condition == "lp__") {
+        mark <- simplify2array(get_logposterior(x, inc_warmup = FALSE))
+      } else {
+        mark <- sapply(gsp, FUN = function(y) y[, condition])
+      }
+      if (condition == "divergent__") {
+        mark <- as.logical(mark)
+      } else {
+        mark <- c(mark) >= median(mark)
+      }
+      if (length(unique(mark)) == 1)
+        stop(condition, " is constant so it cannot be used as a condition.")
+      
+    } else if (!is.null(condition)) {
+      
+      if (all(condition == as.integer(condition))) {
+        arr <- arr[, condition, , drop = FALSE]
+        k <- ncol(arr) %/% 2
+        mark <- c(rep(FALSE, sims * k), rep(TRUE, sims * (chains - k)))
+      } else if (condition > 0 && condition < 1) {
+        mark <- rep(1:sims > (condition * sims), times = chains)
+      } else {
+        stop("If numeric, 'condition' must be an integer (vector) ",
+             "or a number between 0 and 1 (exclusive).")
+      }
+      
+    } else {
+      
+      k <- ncol(arr) %/% 2
+      mark <- c(rep(FALSE, sims * k), rep(TRUE, sims * (chains - k)))
+    }
+    
+    x <- apply(arr, MARGIN = "parameters", FUN = function(y) y)
+    nc <- ncol(x)
+    
+    if (isTRUE(log)) {
+      xl <- apply(x >= 0, 2, FUN = all)
+      if ("log-posterior" %in% names(xl))
+        xl["log-posterior"] <- FALSE
+    } else if (is.numeric(log)) {
+      xl <- log
+    } else {
+      xl <- grepl("x", log)
+    }
+    
+    if (is.numeric(xl) || any(xl)) {
+      x[, xl] <- log(x[, xl])
+      colnames(x)[xl] <- paste("log", colnames(x)[xl], sep = "-")
+    }
+    if (is.null(lower.panel)) {
+      if (!is.null(panel)) {
+        lower.panel <- panel
+      } else {
+        lower.panel <- function(x, y, ...) {
+          dots <- list(...)
+          dots$x <- x[!mark]
+          dots$y <- y[!mark]
+          if (is.null(mc$nrpoints) &&
+              !identical(condition, "divergent__")) {
+            dots$nrpoints <- Inf
+            dots$col <- ifelse(divergent__[!mark] == 1,
+                               "red",
+                               ifelse(hit[!mark] == 1, "yellow", NA_character_))
+          }
+          dots$add <- TRUE
+          do.call(smoothScatter, args = dots)
+        }
+      }
+    }
+    if (is.null(upper.panel)) {
+      if (!is.null(panel)) {
+        upper.panel <- panel
+      } else {
+        upper.panel <- function(x, y, ...) {
+          dots <- list(...)
+          dots$x <- x[mark]
+          dots$y <- y[mark]
+          if (is.null(mc$nrpoints) &&
+              !identical(condition, "divergent__")) {
+            dots$nrpoints <- Inf
+            dots$col <- ifelse(divergent__[mark] == 1,
+                               "red",
+                               ifelse(hit[mark] == 1, "yellow", NA_character_))
+          }
+          dots$add <- TRUE
+          do.call(smoothScatter, args = dots)
+        }
+      }
+    }
+    if (is.null(diag.panel))
+      diag.panel <- function(x, ...) {
+        usr <- par("usr")
+        on.exit(par(usr))
+        par(usr = c(usr[1:2], 0, 1.5))
+        h <- hist(x, plot = FALSE)
+        breaks <- h$breaks
+        y <- h$counts
+        y <- y / max(y)
+        nB <- length(breaks)
+        rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+      }
+    if (is.null(panel))
+      panel <- points
+    
+    if (is.null(text.panel)) {
+      textPanel <- function(x = 0.5, y = 0.5, txt, cex, font) {
+        text(x, y, txt, cex = cex, font = font)
+      }
+    } else {
+      textPanel <- text.panel
+    }
+    if (is.null(labels))
+      labels <- colnames(x)
+    
+    mc <- match.call(expand.dots = FALSE)
+    mc[1] <- call("pairs")
+    mc$x <- x
+    mc$labels <- labels
+    mc$panel <- panel
+    mc$lower.panel <- lower.panel
+    mc$upper.panel <- upper.panel
+    mc$diag.panel <- diag.panel
+    mc$text.panel <- textPanel
+    mc$log <- ""
+    mc$condition <- NULL
+    mc$pars <- NULL
+    mc$regex_pars <- NULL
+    mc$include <- NULL
+    eval(mc)
   }
-
-  pairs(x$stanfit, ...)
-}

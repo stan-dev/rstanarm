@@ -82,7 +82,8 @@ default_stan_control <- function(prior, adapt_delta = NULL,
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          "lasso" = 0.99,
+                          "product_normal" = 0.99,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
@@ -110,6 +111,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
+is.beta <- function(x) x == "beta"
 
 # Test for a given estimation method
 #
@@ -302,10 +304,13 @@ validate_glm_formula <- function(f) {
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
+  # don't check if columns are constant for binomial
+  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
+  
   lu <- function(x) length(unique(x))
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
-  sel <- !colnames(mf) %in% nocheck
-  is_constant <- apply(mf[, sel, drop = FALSE], 2, lu) == 1
+  sel <- !colnames(mf1) %in% nocheck
+  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
   if (any(is_constant)) 
     stop("Constant variable(s) found: ", 
          paste(names(is_constant)[is_constant], collapse = ", "), 
@@ -669,4 +674,19 @@ validate_newdata <- function(x) {
     stop("NAs are not allowed in 'newdata'.", call. = FALSE)
 
   as.data.frame(x)
+}
+
+# Check that a stanfit object (or list returned by rstan::optimizing) is valid
+#
+check_stanfit <- function(x) {
+  if (is.list(x)) {
+    if (!all(c("par", "value") %in% names(x)))
+      stop("Invalid object produced please report bug")
+  }
+  else {
+    stopifnot(is(x, "stanfit"))
+    if (x@mode != 0)
+      stop("Invalid stanfit object produced please report bug")
+  }
+  return(TRUE)
 }

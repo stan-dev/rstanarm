@@ -37,7 +37,6 @@ check_for_error <- function(fit, data = NULL, offset = NULL) {
   if (identical(deparse(substitute(fit)), "example_model"))
     mf <- lme4::cbpp
   
-  
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_silent(lin1 <- posterior_linpred(fit))
   expect_silent(posterior_linpred(fit, transform = TRUE))
@@ -252,6 +251,37 @@ test_that("compatible with stan_lmer with offset", {
   check_for_error(fit, offset = offs)
 })
 
+context("posterior_predict (stan_betareg)")
+test_that("compatible with stan_betareg with z", {
+  data("GasolineYield", package = "betareg")
+  fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
+                         iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
+                         refresh = REFRESH))
+  check_for_error(fit)
+  expect_linpred_equal(fit)
+})
+test_that("compatible with stan_betareg without z", {
+  data("GasolineYield", package = "betareg")
+  fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield, 
+                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  check_for_error(fit)
+  expect_linpred_equal(fit)
+})
+test_that("compatible with betareg with offset", {
+  GasolineYield2 <- GasolineYield
+  GasolineYield2$offs <- runif(nrow(GasolineYield2))
+  fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
+                     iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  fit2 <- SW(stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
+                      iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  
+  expect_warning(posterior_predict(fit, newdata = GasolineYield), 
+                 "offset")
+  check_for_error(fit, data = GasolineYield2, offset = GasolineYield2$offs)
+  check_for_error(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
+  expect_linpred_equal(fit)
+  expect_linpred_equal(fit2)
+})
 
 # compare to lme4 ---------------------------------------------------------
 context("posterior_predict (compare to lme4)")
@@ -377,6 +407,92 @@ test_that("lme4 tests work similarly", {
   p4b <- posterior_predict(sfit, nd, re.form=~(1|sample)+(~1|plate), seed = SEED)
   expect_equal(p2,p4,p4b)
   p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
+})
+
+
+# spaces in factor levels -------------------------------------------------
+context("posterior_linpred/predict with spaces in factor levels")
+
+test_that("posterior_linpred not sensitive to spaces in factor levels", {
+  df <- data.frame(
+    y = rnorm(10), 
+    fac_nospace = gl(2, 5, labels = c("levelone", "leveltwo")), 
+    char_nospace = rep(c("levelone", "leveltwo"), each = 5),
+    fac_space = gl(2, 5, labels = c("level one", "level two")), 
+    char_space = rep(c("level one", "level two"), each = 5),
+    fac_mix = gl(2, 5, labels = c("level one", "leveltwo")), 
+    char_mix = rep(c("level one", "leveltwo"), each = 5),
+    int = rep(1:2, each = 5)
+  )
+  SW(capture.output(
+    fit1 <- stan_lmer(y ~ (1 | fac_nospace), data = df, seed = 123, chains = 2, iter = 25),
+    fit2 <- update(fit1, formula. = . ~ (1 | char_nospace)),
+    fit3 <- update(fit1, formula. = . ~ (1 | fac_space)),
+    fit4 <- update(fit1, formula. = . ~ (1 | char_space)),
+    fit5 <- update(fit1, formula. = . ~ (1 | fac_mix)),
+    fit6 <- update(fit1, formula. = . ~ (1 | char_mix)),
+    fit7 <- update(fit1, formula. = . ~ (1 | int))
+  ))
+  
+  # not adding a new level
+  nd1 <- df[c(1, 10), ]
+  ans1 <- posterior_linpred(fit1, newdata = nd1)
+  expect_equal(ans1, posterior_linpred(fit2, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit3, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit4, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit5, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit6, newdata = nd1))
+  expect_equal(ans1, posterior_linpred(fit7, newdata = nd1))
+  
+  # adding new levels
+  nd2 <- data.frame(
+    fac_nospace = gl(4, 1, labels = c("levelone", "leveltwo", "levelthree", "levelfour")),
+    char_nospace = c("levelone", "leveltwo", "levelthree", "levelfour"),
+    fac_space = gl(4, 1, labels = c("level one", "level two", "level three", "level four")),
+    char_space = c("level one", "level two", "level three", "level four"), 
+    fac_mix = gl(4, 1, labels = c("level one", "leveltwo", "level three", "levelfour")),
+    char_mix = c("level one", "leveltwo", "level three", "levelfour"),
+    int = 1:4
+  )
+  ans2 <- posterior_linpred(fit1, newdata = nd2)
+  expect_equal(ans2[, 1:2], ans1) # should be same as ans1 except for cols 3:4 with new levels
+  expect_equal(ans2, posterior_linpred(fit2, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit3, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit4, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit5, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit6, newdata = nd2))
+  expect_equal(ans2, posterior_linpred(fit7, newdata = nd2))
+})
+
+test_that("posterior_linpred with spaces in factor levels ok with complicated formula", {
+  d <- mtcars
+  d$cyl_fac <- factor(d$cyl, labels = c("cyl 4", "cyl 6", "cyl 8"))
+  d$gear_fac <- factor(d$gear, labels = c("gear 3", "gear 4", "gear 5"))
+  
+  SW(capture.output(
+    fit1 <- stan_lmer(mpg ~ (1 + wt|cyl/gear), data = d,
+                      iter = 50, chains = 1, seed = 123),
+    fit2 <- update(fit1, formula. = . ~ (1 + wt|cyl_fac/gear_fac))
+  ))
+  expect_equal(posterior_linpred(fit1), posterior_linpred(fit2))
+  
+  # no new levels, all orig levels present in newdata
+  nd1 <- data.frame(wt = 2, cyl = d$cyl, gear = d$gear)
+  nd2 <- data.frame(wt = 2, cyl_fac = d$cyl_fac, gear_fac = d$gear_fac)
+  expect_equal(posterior_linpred(fit1, newdata = nd1), 
+               posterior_linpred(fit2, newdata = nd2))
+  
+  # no new levels, subset of orig levels present in newdata
+  nd3 <- data.frame(wt = 2, cyl = 4, gear = 3)
+  nd4 <- data.frame(wt = 2, cyl_fac = "cyl 4", gear_fac = factor(3, labels = "gear 3"))
+  expect_equal(posterior_linpred(fit1, newdata = nd3), 
+               posterior_linpred(fit2, newdata = nd4))
+  
+  # with new levels
+  nd5 <- data.frame(wt = 2, cyl = 98, gear = 99)
+  nd6 <- data.frame(wt = 2, cyl_fac = "new cyl", gear_fac = "new gear")
+  expect_equal(posterior_linpred(fit1, newdata = nd5), 
+               posterior_linpred(fit2, newdata = nd6))
 })
 
 

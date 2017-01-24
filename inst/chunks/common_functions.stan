@@ -160,16 +160,24 @@
     target += gamma_lpdf(tau  | shape, 1);
   }
   
-  /** 
+  /**
    * Hierarchical shrinkage parameterization
    *
    * @param z_beta A vector of primitive coefficients
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
+   * @param global_prior_scale A positive real number
+   * @param error_scale 1 or sigma in the Gaussian case
    * @return A vector of coefficientes
    */
-  vector hs_prior(vector z_beta, real[] global, vector[] local) {
-    return z_beta .* (local[1] .* sqrt(local[2])) * global[1] * sqrt(global[2]);
+  vector hs_prior(vector z_beta, real[] global, vector[] local, 
+                  real global_prior_scale, real error_scale) {
+    vector[rows(z_beta)] lambda;
+    int K;
+    K = rows(z_beta);
+    for (k in 1:K) lambda[k] = local[1][k] * sqrt(local[2][k]);
+    return z_beta .* lambda * global[1] * sqrt(global[2]) * 
+           global_prior_scale * error_scale;
   }
 
   /** 
@@ -178,11 +186,15 @@
    * @param z_beta A vector of primitive coefficients
    * @param global A real array of positive numbers
    * @param local A vector array of positive numbers
+   * @param global_prior_scale A positive real number
+   * @param error_scale 1 or sigma in the Gaussian case
    * @return A vector of coefficientes
    */
-  vector hsplus_prior(vector z_beta, real[] global, vector[] local) {
+  vector hsplus_prior(vector z_beta, real[] global, vector[] local, 
+                      real global_prior_scale, real error_scale) {
     return z_beta .* (local[1] .* sqrt(local[2])) .* 
-           (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]);
+           (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]) * 
+           global_prior_scale * error_scale;
   }
   
   /** 
@@ -222,3 +234,21 @@
            + (3 * z7 + 19 * z5 + 17 * z3 - 15 * z) / (384 * df3)
            + (79 * z9 + 776 * z7 + 1482 * z5 - 1920 * z3 - 945 * z) / (92160 * df4);
   }
+
+  /** 
+   * Return two-dimensional array of group membership
+   *
+   * @param N An integer indicating the number of observations
+   * @param t An integer indicating the number of grouping variables
+   * @return An two-dimensional integer array of group membership
+   */
+  int[,] make_V(int N, int t, int[] v) {
+    int V[t,N];
+    int pos = 1;
+    if (t > 0) for (j in 1:N) for (i in 1:t) {
+      V[i,j] = v[pos];
+      pos = pos + 1;
+    }
+    return V;
+  }
+

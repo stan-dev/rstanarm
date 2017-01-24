@@ -288,7 +288,7 @@ by the `loo` function in the __loo__ package:
 ```{r, binom-arsenic-loo}
 (loo1 <- loo(fit1))
 (loo2 <- loo(fit2))
-compare(loo1, loo2)
+compare_models(loo1, loo2)
 ```
 
 These results favor `fit2` over `fit1`, as the estimated

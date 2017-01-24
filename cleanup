@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # Note to Windows users: This is not actually platform specific.
 mkdir -p src/include
@@ -8,6 +8,3 @@ cat src/*.cc > src/Modules.cpp
 rm src/*.cc
 "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
 exit $?
-
-
-

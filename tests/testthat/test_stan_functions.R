@@ -359,6 +359,7 @@ test_that("draw_ystar_rng returns expected results", {
   }
 })
 
+# glmer
 context("glmer")
 test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(lme4))
@@ -397,6 +398,14 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
+    if ( FALSE && all(sapply(group$cnms, FUN = function(x) {
+        length(x) == 1 && x == "(Intercept)"
+      })) ) { # reenable with new expose_stan_functions
+      V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
+      expect_true(all(V == 
+                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
+    }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
   test_lme4(glFormula(Reaction ~ Days + (Days || Subject), data = sleepstudy)$reTrms)
@@ -415,6 +424,7 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
                         (1 + sne + cloudcover + prewetness||echomotion),
                       data=clouds, family = gaussian)$reTrms)
   test_lme4(glFormula(angle ~ recipe + temp + (1|recipe:replicate), data = cake)$reTrms)
+  test_lme4(glFormula(diameter ~ (1|plate) + (1|sample), data = Penicillin)$reTrms)
 })
 
 context("glmer")
@@ -423,6 +433,7 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
 })
+
 context("nlmer")
 test_that("SSasymp works", {
   example("SSasymp", package = "stats", character.only = TRUE, ask = FALSE)
@@ -532,8 +543,33 @@ test_that("SSweibull works", {
   expect_true(all.equal(SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr) ,
                         SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))
 })
+
 context("nlmer")
 test_that("reshape works", {
   x <- as.double(1:10)
   expect_true(all(matrix(x, 5, 2) == reshape(x, 5L, 2L)))
+})
+
+# betareg
+links <- c("logit", "probit", "cloglog", "cauchit", "log")
+
+context("betareg")
+test_that("linkinv_beta returns expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    linkinv <- binomial(link = links[i])$linkinv
+    expect_true(all.equal(linkinv(eta), 
+                          linkinv_beta(eta, i)), info = links[i])
+  }
+})
+context("betareg")
+test_that("pw_beta and ll_beta_lp return expected results", {
+  for (i in 1:length(links)) {
+    eta <- -abs(rnorm(N))
+    mu <- linkinv_beta(eta, i)
+    dispersion <- 4/3
+    linkinv <- binomial(link = links[i])$linkinv
+    ll <- dbeta(1/3, mu*dispersion, (1-mu)*dispersion, log = TRUE)
+    expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
+  }
 })

@@ -20,7 +20,6 @@
 # @param object A list provided by one of the \code{stan_*} modeling functions.
 # @return A stanreg object.
 #
-#' @importFrom rstan get_num_upars
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
@@ -31,6 +30,13 @@ stanreg <- function(object) {
   nvars <- ncol(x)
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
+  
+  is_betareg <- is.beta(family$family)
+  if (is_betareg) { 
+    family_phi <- object$family_phi  # pull out phi family/link
+    z <- object$z        # pull out betareg z vars so that they can be used in posterior_predict/loo
+    nvars_z <- ncol(z)   # used so that all coefficients are printed with coef()
+  }
   if (opt) {
     stanmat <- stanfit$theta_tilde
     probs <- c(0.025, .975)
@@ -43,14 +49,30 @@ stanreg <- function(object) {
     ses <- apply(stanmat[, xnms, drop = FALSE], 2L, mad)
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
+    if (is_betareg) {
+      if (length(colnames(z)) == 1)
+        coefs_z <- apply(stanmat[, grepl("(phi)", colnames(stanmat), fixed = TRUE), drop = FALSE], 2L, median)
+      else
+        coefs_z <- apply(stanmat[, paste0("(phi)_",colnames(z)), drop = FALSE], 2L, median)
+    }
   } else {
     stan_summary <- make_stan_summary(stanfit)
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
+    if (is_betareg) {
+      coefs_z <- stan_summary[(nvars + 1):(nvars + nvars_z), select_median(object$algorithm)]
+      if (length(coefs_z) == 1L)
+        names(coefs_z) <- rownames(stan_summary)[nvars + 1]
+    }
     if (length(coefs) == 1L) # ensures that if only a single coef it still gets a name
       names(coefs) <- rownames(stan_summary)[1L]
 
-    stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
-    colnames(stanmat) <- colnames(x)
+    if (is_betareg) {
+      stanmat <- as.matrix(stanfit)[,c(names(coefs),names(coefs_z)), drop = FALSE]
+      colnames(stanmat) <- c(names(coefs),names(coefs_z))
+    } else {
+      stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
+      colnames(stanmat) <- colnames(x)
+    }
     ses <- apply(stanmat, 2L, mad)
     if (mer) {
       mark <- sum(sapply(object$stanfit@par_dims[c("alpha", "beta")], prod))
@@ -74,6 +96,10 @@ stanreg <- function(object) {
     residuals <- ytmp - mu
   }
   names(eta) <- names(mu) <- names(residuals) <- ynames
+  if (is_betareg) {
+    eta_z <- linear_predictor(coefs_z, z, object$offset)
+    phi <- family_phi$linkinv(eta_z)
+  }
   
   out <- nlist(
     coefficients = unpad_reTrms(coefs), 
@@ -85,10 +111,10 @@ stanreg <- function(object) {
     # covmat = unpad_reTrms(unpad_reTrms(covmat, col = TRUE), col = FALSE),
     covmat,
     y, 
-    x, 
+    x,
     model = object$model, 
     data = object$data, 
-    family, 
+    family,
     offset = if (any(object$offset != 0)) object$offset else NULL,
     weights = object$weights, 
     prior.weights = object$weights, 
@@ -102,11 +128,18 @@ stanreg <- function(object) {
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit
   )
-  out$num_unconstrained_pars <- get_num_upars(out$stanfit)
+
   if (opt) 
     out$asymptotic_sampling_dist <- stanmat
   if (mer) 
     out$glmod <- object$glmod
+  if (is_betareg) {
+    out$coefficients <- unpad_reTrms(c(coefs, coefs_z))
+    out$z <- z
+    out$family_phi <- family_phi
+    out$eta_z <- eta_z
+    out$phi <- phi
+  }
   
   structure(out, class = c("stanreg", "glm", "lm"))
 }
