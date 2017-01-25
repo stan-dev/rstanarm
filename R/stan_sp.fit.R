@@ -17,7 +17,7 @@
 
 #' @export
 stan_sp.fit <- function(y, x, w, ..., sp_model,
-                        prior_rho = cauchy(0, 2), prior_intercept, 
+                        prior_rho = beta(), prior_intercept, 
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta) {
   
@@ -27,13 +27,15 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
-  
+
   standata <- nlist(N = nrow(X),
                     K = ncol(X),
                     W = W,
                     X = X,
                     y = y,
-                    mod = if(sp_model == "lagsarlm"){1}else{2}
+                    mod = if(sp_model == "lagsarlm"){1}else{2},
+                    shape1 = prior_rho$alpha,
+                    shape2 = prior_rho$beta
                     )
   
   stanfit <- stanmodels$spatial

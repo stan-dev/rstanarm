@@ -51,7 +51,7 @@
 #' fit <- stan_lagsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
 
 stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
-                          prior_rho = NULL, prior_intercept = NULL,
+                          prior_rho = beta(), prior_intercept = NULL,
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                           adapt_delta = NULL) {
   sp_model <- "lagsarlm"

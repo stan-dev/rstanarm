@@ -508,6 +508,11 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
+beta <- function(alpha = 2, beta = 2) {
+  validate_parameter_value(alpha)
+  validate_parameter_value(beta)
+  list(dist = "beta", alpha = alpha, beta = beta)
+}
 
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   if (is.null(location)) 
