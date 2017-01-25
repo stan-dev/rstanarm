@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian spatial simultaneous autoregressive lag model estimation via Stan
+#' Bayesian spatial simultaneous autoregressive error model estimation via Stan
 #'
 #' Note this doc is incomplete!
 #'
@@ -29,7 +29,7 @@
 #' @param prior_intercept Prior on intercept of linear predictor.
 #' 
 #' @examples 
-#' ### Spatial AR lag Simulation
+#' ### Spatial AR error Simulation
 #' N <- 10
 #' W_bin <- matrix(rep(0, N * N), nrow = N)
 #' W_bin[lower.tri(W_bin)] <- rbinom(choose(N,2), 1, 0.5)
@@ -41,26 +41,26 @@
 #' Sigma <- solve((I - lambda * W) %*% (I - lambda * t(W))) * sigma
 #' X <- cbind(rep(1,N),rnorm(N, 0, 1), rnorm(N, 3, 1))
 #' beta <- c(3, 2.5, -1.5)
-#' mu <- solve(I - lambda * W) %*% X %*% beta
+#' mu <- X %*% beta
 #' y <- c(mvtnorm::rmvnorm(1, mu, Sigma))
 #' lw <- spdep::mat2listw(W)
 #' 
 #' dat <- data.frame(cbind(y, X[,-1]))
 #' names(dat) <- c("y","x1","x2")
 #' 
-#' fit <- stan_lagsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
+#' fit <- stan_errorsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
 
-stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
+stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
                           prior_rho = beta(), prior_intercept = NULL,
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                           adapt_delta = NULL) {
-  sp_model <- "lagsarlm"
+  sp_model <- "errorsarlm"
   
   if (!requireNamespace("spdep", quietly = TRUE))
     stop("Please install the spdep package before using 'stan_lagsarlm'.")
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
-
+  
   mc <- match.call(expand.dots = FALSE)
   
   # NULLify any Stan specific arguments in mc
@@ -76,8 +76,8 @@ stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
   W <- spdep::listw2mat(listw)
   
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
-                          prior_rho = prior_rho, prior_intercept = prior_intercept, 
-                          algorithm = algorithm, adapt_delta = adapt_delta)
+                         prior_rho = prior_rho, prior_intercept = prior_intercept, 
+                         algorithm = algorithm, adapt_delta = adapt_delta)
   
   
   fit <- nlist(stanfit, algorithm, data, family = gaussian(),
@@ -85,7 +85,7 @@ stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
   
   
   out <- stanreg(fit)
-
+  
   class(out) <- c("stanreg", "spatial")
   
   return(out)

@@ -33,7 +33,7 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                     W = W,
                     X = X,
                     y = y,
-                    mod = if(sp_model == "lagsarlm"){1}else{2},
+                    mod = if(sp_model == "lagsarlm"){1}else if(sp_model == "errorsarlm"){2},
                     shape1 = prior_rho$alpha,
                     shape2 = prior_rho$beta
                     )
