@@ -26,7 +26,7 @@ Depends:
     methods
 Imports:
     bayesplot (>= 1.1.0),
-    ggplot2 (>= 2.2.0),
+    ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 1.0.0),
     Matrix,
