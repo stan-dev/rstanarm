@@ -140,8 +140,10 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   validate_glm_formula(formula)
-  if (missing(data)) 
+  if (missing(data)) {
+    warn_data_arg_missing("stan_glm")
     data <- environment(formula)
+  }
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 

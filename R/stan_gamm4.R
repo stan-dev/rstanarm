@@ -35,7 +35,7 @@
 #' @template args-sparse
 #' 
 #' @param formula,random,family,data,knots,drop.unused.levels Same as for 
-#'   \code{\link[gamm4]{gamm4}}.
+#'   \code{\link[gamm4]{gamm4}} except \code{data} can't be omitted.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
 #' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
@@ -110,7 +110,7 @@
 #' }
 #' 
 #' @importFrom lme4 getME
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
+stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
@@ -119,6 +119,11 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
 
+  if (missing(data)) {
+    data <- list()
+    warn_data_arg_missing("stan_gamm4")
+  }
+  
   mc <- match.call(expand.dots = FALSE)
   family <- validate_family(family)
   glmod <- suppressWarnings(gamm4_to_glmer(formula, random, family, data, weights, 
