@@ -169,7 +169,7 @@ collect_nms <- function(x, M, ...) {
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
-  y_b <- lapply(1:M, function(m) b_names(x, m, ...))
+  y_b <- lapply(1:M, function(m) b_names_M(x, m, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta) 
@@ -197,4 +197,18 @@ mod2rx <- function(x) {
   } else {
     paste0("^Long", x, "\\|")
   }   
+}
+
+# Grep for "b" parameters (ranef), can optionally be specified
+# for a specific longitudinal submodel
+#
+# @param x Character vector (often rownames(fit$stan_summary))
+# @param submodel Optional integer specifying which long submodel
+# @param ... Passed to grep
+b_names_M <- function(x, submodel = NULL, ...) {
+  if (is.null(submodel)) {
+    grep("^b\\[", x, ...)
+  } else {
+    grep(paste0("^b\\[Long", submodel, "\\|"), x, ...)
+  }
 }
