@@ -142,6 +142,9 @@ print.stanreg <- function(x, digits = 1, ...) {
     .printfr(anova_table, digits, ...)
   }
 
+  cat("\n------\n")
+  cat("For info on the priors used see help('prior_summary.stanreg').")
+  
   invisible(x)
 }
 
