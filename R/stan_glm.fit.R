@@ -25,8 +25,10 @@
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
-stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
-                         offset = rep(0, NROW(x)), family = gaussian(),
+stan_glm.fit <- function(x, y, 
+                         weights = rep(1, NROW(x)), 
+                         offset = rep(0, NROW(x)), 
+                         family = gaussian(),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
@@ -36,7 +38,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
-                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                         adapt_delta = NULL, 
+                         QR = FALSE, 
+                         sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -79,7 +83,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- 
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- 
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- 
-    prior_autoscale <- prior_autoscale_for_intercept <- 
+    prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <- 
     global_prior_scale <- global_prior_df <- NULL
   
   x_stuff <- center_x(x, sparse)
@@ -152,26 +156,29 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
-
-  if (prior_dist > 0L) {
-    if (is_gaussian) {
-      ss <- 2 * sd(y)
-      if (prior_autoscale) 
-        prior_scale <- ss * prior_scale
-      if (prior_autoscale_for_intercept && prior_dist_for_intercept > 0L) 
-        prior_scale_for_intercept <-  ss * prior_scale_for_intercept
-    }
-    if (!QR && prior_autoscale) {
-      min_prior_scale <- 1e-12 # used to be set in prior_options()
-      prior_scale <- pmax(min_prior_scale, prior_scale / 
-             apply(xtemp, 2L, FUN = function(x) {
-               num.categories <- length(unique(x))
-               x.scale <- 1
-               if (num.categories == 2) x.scale <- diff(range(x))
-               else if (num.categories > 2) x.scale <- 2 * sd(x)
-               return(x.scale)
-             }))
-    }
+  
+  if (is_gaussian) {
+    ss <- sd(y)
+    if (prior_dist > 0L && prior_autoscale) 
+      prior_scale <- ss * prior_scale
+    if (prior_dist_for_intercept > 0L && prior_autoscale_for_intercept) 
+      prior_scale_for_intercept <-  ss * prior_scale_for_intercept
+    if (prior_dist_for_aux > 0L && prior_autoscale_for_aux)
+      prior_scale_for_aux <- ss * prior_scale_for_aux
+  }
+  if (!QR && prior_dist > 0L && prior_autoscale) {
+    min_prior_scale <- 1e-12
+    prior_scale <- pmax(min_prior_scale, prior_scale / 
+                          apply(xtemp, 2L, FUN = function(x) {
+                            num.categories <- length(unique(x))
+                            x.scale <- 1
+                            if (num.categories == 2) {
+                              x.scale <- diff(range(x))
+                            } else if (num.categories > 2) {
+                              x.scale <- sd(x)
+                            }
+                            return(x.scale)
+                          }))
   }
   prior_scale <- 
     as.array(pmin(.Machine$double.xmax, prior_scale))
