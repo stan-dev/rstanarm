@@ -64,7 +64,7 @@
 #' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
 #'   then the scales of the priors on the intercept and regression coefficients 
 #'   may be additionally modified internally by \pkg{rstanarm} in the following 
-#'   cases. First, for Gaussian models, the prior scales for the intercept, 
+#'   cases. First, for Gaussian models only, the prior scales for the intercept, 
 #'   coefficients, and the auxiliary parameter \code{sigma} (error standard 
 #'   deviation) are multiplied by \code{sd(y)}. Additionally --- not only for 
 #'   Gaussian models --- if the \code{QR} argument to the model fitting function

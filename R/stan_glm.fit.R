@@ -436,6 +436,7 @@ stan_glm.fit <- function(x, y,
     has_predictors = nvars > 0,
     adjusted_prior_scale = prior_scale,
     adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    adjusted_prior_aux_scale = prior_scale_for_aux,
     family = family
   )
   
@@ -711,7 +712,7 @@ make_b_nms <- function(group) {
 #   passed in after broadcasting the df/location/scale arguments if necessary.
 # @param has_intercept T/F, does model have an intercept?
 # @param has_predictors T/F, does model have predictors?
-# @param adjusted_prior_* adjusted scales computed if using autoscaled priors
+# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
 # @param family Family object.
 # @return A named list with components 'prior', 'prior_intercept', and possibly 
 #   'prior_covariance' and 'prior_aux' each of which itself is a list
@@ -725,6 +726,7 @@ summarize_glm_prior <-
            has_predictors,
            adjusted_prior_scale,
            adjusted_prior_intercept_scale, 
+           adjusted_prior_aux_scale,
            family) {
     rescaled_coef <-
       user_prior$prior_autoscale && 
@@ -736,6 +738,9 @@ summarize_glm_prior <-
       has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
       (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
+    rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
+      !is.na(user_prior_aux$prior_dist_name_for_aux) &&
+      (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
     
     if (has_predictors && user_prior$prior_dist_name %in% "t") {
       if (all(user_prior$prior_df == 1)) {
@@ -795,6 +800,8 @@ summarize_glm_prior <-
         scale = if (!is.na(prior_dist_name_for_aux) && 
                     prior_dist_name_for_aux != "exponential")
           prior_scale_for_aux else NULL,
+        adjusted_scale = if (rescaled_aux)
+          adjusted_prior_aux_scale else NULL,
         df = if (!is.na(prior_dist_name_for_aux) && 
                  prior_dist_name_for_aux %in% "student_t")
           prior_df_for_aux else NULL, 

@@ -95,7 +95,7 @@
 #' 
 #' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
 #'                     link = "logit", link.phi = "log", 
-#'                     chains = 1, iter = 250) # for speed
+#'                     chains = 1, iter = 250) # for speed of example only
 #' print(fit, digits = 2)
 #' plot(fit)
 #' pp_check(fit)
