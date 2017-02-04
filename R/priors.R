@@ -63,16 +63,16 @@
 #'   \code{what}.
 #' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
 #'   then the scales of the priors on the intercept and regression coefficients 
-#'   may be additionally modified internally by \pkg{rstanarm} as follows. 
-#'   First, if the \emph{outcome} is Gaussian, the prior scales for the 
-#'   intercept and coefficients are multiplied by \code{2*sd(y)}. Additionally, 
-#'   if the \code{QR} argument to the model fitting function (e.g. 
-#'   \code{stan_glm}) is \code{FALSE} then: for a predictor with only one value 
-#'   nothing is changed; for a predictor \code{x} with exactly two unique 
+#'   may be additionally modified internally by \pkg{rstanarm} in the following 
+#'   cases. First, for Gaussian models only, the prior scales for the intercept, 
+#'   coefficients, and the auxiliary parameter \code{sigma} (error standard 
+#'   deviation) are multiplied by \code{sd(y)}. Additionally --- not only for 
+#'   Gaussian models --- if the \code{QR} argument to the model fitting function
+#'   (e.g. \code{stan_glm}) is \code{FALSE} then: for a predictor with only one 
+#'   value nothing is changed; for a predictor \code{x} with exactly two unique 
 #'   values, we take the user-specified (or default) scale(s) for the selected 
 #'   priors and divide by the range of \code{x}; for a predictor \code{x} with 
-#'   more than two unique values, we divide the prior scale(s) by 
-#'   \code{2*sd(x)}.
+#'   more than two unique values, we divide the prior scale(s) by \code{sd(x)}.
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
@@ -473,10 +473,12 @@ product_normal <- function(df = 2, location = 0, scale = 1) {
 #'   \code{1}. For the exponential distribution, the rate parameter is the
 #'   \emph{reciprocal} of the mean.
 #' 
-exponential <- function(rate = 1) {
+exponential <- function(rate = 1, autoscale = TRUE) {
   stopifnot(length(rate) == 1)
   validate_parameter_value(rate)
-  nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
+  nlist(dist = "exponential", 
+        df = NA, location = NA, scale = 1/rate, 
+        autoscale)
 }
 
 #' @rdname priors
