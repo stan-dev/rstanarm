@@ -1,0 +1,164 @@
+---
+title: "Specifying Prior Distributions for rstanarm Models"
+author: "Jonah Gabry and Ben Goodrich"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{Prior Distributions}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+# Introduction
+
+This vignette provides an overview of how prior specification works in the 
+__rstanarm__ package. Before reading this vignette it is important to first go 
+over the ["How to Use the __rstanarm__ Package"](rstanarm.html) vignette, which
+provides a general overview of the package.
+
+```{r}
+library("rstanarm")
+```
+
+
+# Default Prior Distributions
+
+With very few exceptions, the default priors in __rstanarm__ are _not_ flat
+priors. Rather, the defaults are designed to be _weakly informative_. That is,
+they are intended to provide moderate regularlization and help stabilize
+computation. For many (if not most) applications the defaults will perform well,
+however this is not guaranteed. It would be impossible to have default priors
+that work well with every possible model specification.
+
+To see the default priors in action let's fit a basic linear regression model: 
+
+```{r, default-prior-1, results="hide"}
+default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars)
+```
+
+The `prior_summary` function provides a concise summary of the priors used: 
+
+```{r, default-prior-summary}
+prior_summary(default_prior_test)
+```
+
+Starting from the bottom up, we can see that `sigma`, the error standard 
+deviation, has a default prior that is $\mathsf{Cauchy}(0, 5)$. Because `sigma` 
+has to be positive this actually amounts to a half-Cauchy distribution. The 
+default priors for the regression coefficients (in this case the coefficients on
+the `wt` and `am` variables) are independent normal distributions with mean 0 
+and scale (standard deviation) 2.5. However, in order for the default to be 
+weakly informative __rstanarm__ will adjust the scales of these priors. As a 
+result, the actual priors used were $\mathsf{Normal}(0, 15)$ and 
+$\mathsf{Normal}(0, 30)$. For the intercept we can see that the default prior is
+normal with mean 0 and standard deviation $10$, but in this case the standard 
+deviation was adjusted to $120.54$. The __Scale Adjustments__ section below goes
+into more detail about how this rescaling works and how to easily disable it if 
+desired.
+
+### Scale Adjustments
+
+For distributions that take an `autoscale` argument (FIXME: list all the 
+function names here or point to doc?), if `autoscale` is left at `TRUE` (the
+default) then the prior scales are adjusted as follows.
+
+* If the __outcome__ $y$ is Gaussian, the prior scales for the intercept and
+coefficients are multiplied by a factor of $2 \cdot \mathrm{sd}(y)$.
+
+Additionally, if the `QR` argument to the model fitting function (e.g.
+`stan_glm`) is `FALSE` (the default) then:
+
+* For a __predictor__ $x$ with only one value nothing is changed.
+* For a __predictor__ $x$ with exactly two unique values, we take the
+user-specified (or default) scale(s) for the selected priors and divide by the
+range of $x$.
+* For a __predictor__ $x$ with more than two unique values, we divide the prior 
+scale(s) by $2\cdot \mathrm{sd}(x)$.
+
+Since the priors are wide, although the scaling is based on the data, 
+the amount of information used is weak and mainly takes into account 
+the order of magnitude of the variables.
+
+> When [the] prior is expressed to depend on data, we think of it as an approx to
+a prior distribution that depends on some unknown parameter that is estimated
+from the data. So the idea is that there is a coherent model that is being
+approximated for convenience.    
+>
+> -- http://andrewgelman.com/2016/03/25/28321/
+
+To disable automatic rescaling, the `autoscale` argument can be set
+to `FALSE`. For example: 
+
+```{r, no-autoscale, results="hide"}
+test_no_autoscale <-
+  update(
+    default_prior_test,
+    prior = normal(0, 5, autoscale = FALSE),
+    prior_intercept = student_t(4, 0, 10, autoscale = FALSE)
+  )
+```
+
+We can verify that the prior scale of $5$ wasn't adjusted with `prior_summary`:
+
+```{r, no-autoscale-prior-summary}
+prior_summary(test_no_autoscale)
+```
+
+# Non-informative Prior Distributions
+
+When the term "non-informative prior" is used it tends to refer either to a flat
+(uniform) prior distribution or a nearly flat distribution (e.g., normal with
+standard deviation $1000$). __rstanarm__ does not prevent you from using flat or
+very diffuse priors but, unless the data is very strong, they are not
+recommended and are _not actually non-informative_: they give the same (or, in
+the diffuse case, nearly the same) probability mass to implausible values as
+plausible ones. Typically there is always _some_ amount of prior information 
+we can bring to a problem, even if in some cases this information is only 
+sufficient to rule out absurd values. In other words, if you know that 
+$1$ billion is an unreasonable value for your coefficients then you _do_
+have prior information.
+
+
+### Specifying Flat Priors
+
+__rstanarm__ will use flat priors if `NULL` is specified rather than a
+distribution. For example, to use a flat prior on regression coefficients you
+would specify `prior=NULL`:
+
+```{r, flat-prior-1, echo=FALSE, results="hide"}
+flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL, iter = 10, chains = 1)
+```
+```{r, flat-prior-2, eval=FALSE}
+flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL)
+```
+
+In this case we've let __rstanarm__ use the default priors for the intercept and
+error standard deviation (we could change that if we wanted), but the 
+coefficient on the `wt` variable will have a flat prior. To double check that
+indeed a flat prior was used for the coefficient on `wt` we can call
+`prior_summary`:
+
+```{r, flat-prior-summary}
+prior_summary(flat_prior_test)
+```
+
+
+# Informative Prior Distributions
+
+Although the default priors tend to work well, prudent use of more informative
+priors is encouraged. 
+
+FIXME: add example
+
