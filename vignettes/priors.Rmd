@@ -1,5 +1,5 @@
 ---
-title: "Specifying Prior Distributions for rstanarm Models"
+title: "Prior Distributions for rstanarm Models"
 author: "Jonah Gabry and Ben Goodrich"
 date: "`r Sys.Date()`"
 output: 
@@ -23,28 +23,62 @@ params:
 
 # Introduction
 
-This vignette provides an overview of how prior specification works in the 
-__rstanarm__ package. Before reading this vignette it is important to first go 
-over the ["How to Use the __rstanarm__ Package"](rstanarm.html) vignette, which
-provides a general overview of the package.
+This vignette provides an overview of how the specification of prior
+distributions works in the __rstanarm__ package. Before reading this vignette it
+is important to first go over the [How to Use the __rstanarm__
+Package](rstanarm.html) vignette, which provides a general overview of the
+package.
 
-```{r}
-library("rstanarm")
-```
+Every modeling function in __rstanarm__ offers a subset of the following
+arguments for specifying priors:
+
+| Argument       | Used in  | Applies to |
+| ------------- | ------------- | ------------- |
+| `prior_intercept` | All modeling functions except `stan_polr`| Model intercept, after centering predictors.|
+| `prior` |  All modeling functions| Regression coefficients. Does _not_ include coefficients that vary by group in a multilevel model (see `prior_covariance`).|
+| `prior_aux` | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`| Auxiliary parameter, e.g. error SD (interpretation depends on the GLM).|
+| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`| Covariance matrices in multilevel models with varying slopes and intercepts.|
+\* `stan_glm` also implies `stan_glm.nb`. `stan_glmer` implies `stan_lmer` and
+`stan_glmer.nb`.
+
+<br> 
+
+The `stan_polr` and `stan_betareg` functions also provide additional arguments 
+specific only to those models:
+
+| Argument       | Used only in  | Applies to |
+| ------------- | ------------- | ------------- |
+| `prior_counts` | `stan_polr` | Prior counts of an _ordinal_ outcome (when predictors at sample means). |
+| `prior_z`  |  `stan_betareg`| Coefficients in the model for `phi`.|
+| `prior_intercept_z` | `stan_betareg`| Intercept in the model for `phi`. |
+| `prior_phi` | `stan_betareg`| `phi`, if not modeled as function of predictors. |
+
+
+<br> 
+The __rstanarm__ documentation and the other [vignettes](index.html) provide 
+many examples of using these arguments to specify priors. The documentation 
+for these arguments on the help pages for the various __rstanarm__ modeling 
+functions also explain which distributions can be used when specifying 
+each of the prior-related arguments.
+
 
 
 # Default Prior Distributions
 
-With very few exceptions, the default priors in __rstanarm__ are _not_ flat
-priors. Rather, the defaults are designed to be _weakly informative_. That is,
-they are intended to provide moderate regularlization and help stabilize
-computation. For many (if not most) applications the defaults will perform well,
-however this is not guaranteed. It would be impossible to have default priors
-that work well with every possible model specification.
+With very few exceptions, the default priors in __rstanarm__ ---the priors used 
+if the arguments in the tables above are untouched--- are _not flat priors_. 
+Rather, the defaults are intended to be _weakly informative_. That is, they are 
+designed to provide moderate regularlization and help stabilize computation. For
+many (if not most) applications the defaults will perform well, however this is 
+not guaranteed. It would be impossible to have default priors that work well 
+with every possible model specification.
 
-To see the default priors in action let's fit a basic linear regression model: 
+To see the default priors in action let's fit a basic linear regression model. 
+The `stan_glm` function accepts the arguments `prior_intercept`, `prior`, 
+and `prior_aux` arguments but here we will leave them at their defaults.
 
 ```{r, default-prior-1, results="hide"}
+library("rstanarm")
 default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars)
 ```
 
@@ -59,7 +93,7 @@ fr2 <- function(x) format(round(x, 2), nsmall = 2)
 ```
 
 Starting from the bottom up, we can see that `sigma`, the error standard 
-deviation, has a default prior that is $\mathsf{half-Cauchy}(0, 5)$. However, in
+deviation, has a default prior that is $\mathsf{halfCauchy}(0, 5)$. However, in
 order for the default to be weakly informative __rstanarm__ will adjust the 
 scales of these priors. As a result, the actual scale used was `r 
 fr2(priors$prior_aux$adjusted_scale)`. The default priors for the regression 
@@ -73,16 +107,16 @@ result, the prior scales actually used were
 For the intercept we can see that the default prior is normal with mean 0 and
 standard deviation $10$, but in this case the standard deviation was adjusted to
 `r fr2(priors$prior_intercept$adjusted_scale[1])`. 
-The __Scale Adjustments__ section below goes into more detail about how this
+The next two subsections go into more detail about how this
 rescaling works and how to easily disable it if desired.
 
-### Scale Adjustments
+### Automatic Prior Scale Adjustments
 
-For distributions that take an `autoscale` argument (FIXME: list all the 
-function names here or point to doc?), if `autoscale` is left at `TRUE` (the
-default) then the prior scales are adjusted as follows.
+For distributions that take an `autoscale` argument (see `help("priors")` for a
+list), if `autoscale` is left at `TRUE` (the default) then, in certain cases,
+the prior scales will be adjusted internally by __rstanarm__.
 
-* If the __outcome__ $y$ is Gaussian, the prior scales for the intercept, 
+First, if the __outcome__ $y$ is Gaussian, the prior scales for the intercept,
 coefficients, and error standard deviation are multiplied by a factor of
 $\mathrm{sd}(y)$.
 
@@ -96,16 +130,14 @@ range of $x$.
 * For a __predictor__ $x$ with more than two unique values, we divide the prior 
 scale(s) by $\mathrm{sd}(x)$.
 
-Since the priors are wide, although the scaling is based on the data, 
-the amount of information used is weak and mainly takes into account 
-the order of magnitude of the variables.
+These are technically data-dependent default priors since the scaling is based 
+on scales of the predictors (and possibly the outcome). However, since these
+priors are quite wide (and in most cases rather conservative), the amount of
+information used is weak and mainly takes into account the order of magnitude of
+the variables. This enables __rstanarm__ to offer defaults that are reasonable
+for most models.
 
-> When [the] prior is expressed to depend on data, we think of it as an approx to
-a prior distribution that depends on some unknown parameter that is estimated
-from the data. So the idea is that there is a coherent model that is being
-approximated for convenience.    
->
-> -- http://andrewgelman.com/2016/03/25/28321/
+### Disabling Prior Scale Adjustments
 
 To disable automatic rescaling, the `autoscale` argument can be set
 to `FALSE`. For example: 
@@ -115,11 +147,12 @@ test_no_autoscale <-
   update(
     default_prior_test,
     prior = normal(0, 5, autoscale = FALSE),
-    prior_intercept = student_t(4, 0, 10, autoscale = FALSE)
+    prior_intercept = student_t(4, 0, 10, autoscale = FALSE),
+    prior_aux = exponential(1/10, autoscale=FALSE)
   )
 ```
 
-We can verify that the prior scale of $5$ wasn't adjusted with `prior_summary`:
+We can verify that the prior scales weren't adjusted by checking `prior_summary`:
 
 ```{r, no-autoscale-prior-summary}
 prior_summary(test_no_autoscale)
