@@ -25,11 +25,11 @@ params:
 
 This vignette provides an overview of how the specification of prior
 distributions works in the __rstanarm__ package. Before reading this vignette it
-is important to first go over the [How to Use the __rstanarm__
-Package](rstanarm.html) vignette, which provides a general overview of the
-package.
+is important to first go over the 
+[How to Use the __rstanarm__Package](rstanarm.html) 
+vignette, which provides a general overview of the package.
 
-Every modeling function in __rstanarm__ offers a subset of the following
+Every modeling function in __rstanarm__ offers a subset of the following 
 arguments for specifying priors:
 
 | Argument       | Used in  | Applies to |
@@ -58,9 +58,8 @@ specific only to those models:
 The __rstanarm__ documentation and the other [vignettes](index.html) provide 
 many examples of using these arguments to specify priors. The documentation 
 for these arguments on the help pages for the various __rstanarm__ modeling 
-functions also explain which distributions can be used when specifying 
+functions also explains which distributions can be used when specifying 
 each of the prior-related arguments.
-
 
 
 # Default Prior Distributions
@@ -73,9 +72,13 @@ many (if not most) applications the defaults will perform well, however this is
 not guaranteed. It would be impossible to have default priors that work well 
 with every possible model specification.
 
-To see the default priors in action let's fit a basic linear regression model. 
-The `stan_glm` function accepts the arguments `prior_intercept`, `prior`, 
-and `prior_aux` arguments but here we will leave them at their defaults.
+The way __rstanarm__ attempts to make priors weakly informative by default is to
+internally adjust the scales of the priors. How this works (and how to turn it
+off) is explained below, but first let's see the default priors in action by
+fitting a basic linear regression model with the `stan_glm` function. The
+`stan_glm` function accepts the arguments `prior_intercept`, `prior`, and
+`prior_aux` arguments. To use the default priors we just leave those arguments
+at their defaults (i.e. we don't specify them):
 
 ```{r, default-prior-1, results="hide"}
 library("rstanarm")
@@ -92,23 +95,26 @@ priors <- prior_summary(default_prior_test)
 fr2 <- function(x) format(round(x, 2), nsmall = 2)
 ```
 
-Starting from the bottom up, we can see that `sigma`, the error standard 
-deviation, has a default prior that is $\mathsf{halfCauchy}(0, 5)$. However, in
-order for the default to be weakly informative __rstanarm__ will adjust the 
-scales of these priors. As a result, the actual scale used was `r 
-fr2(priors$prior_aux$adjusted_scale)`. The default priors for the regression 
-coefficients (in this case the coefficients on the `wt` and `am` variables) are 
-independent normal distributions with mean 0 and scale (standard deviation) 
-$2.5$. Like for `sigma`, in order for the default to be weakly informative 
-__rstanarm__ will adjust the scales of the priors on the coefficients. As a 
+Starting from the bottom up, we can see that:
+
+* `sigma`, the error standard deviation, has a default prior that is
+$\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
+the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
+* By default the regression coefficients (in this case the
+coefficients on the `wt` and `am` variables) are treated as a priori independent 
+with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like for
+`sigma`, in order for the default to be weakly informative __rstanarm__ will
+adjust the scales of the priors on the coefficients. As a
 result, the prior scales actually used were
 `r fr2(priors$prior$adjusted_scale[1])` and 
 `r fr2(priors$prior$adjusted_scale[2])`. 
-For the intercept we can see that the default prior is normal with mean 0 and
-standard deviation $10$, but in this case the standard deviation was adjusted to
-`r fr2(priors$prior_intercept$adjusted_scale[1])`. 
-The next two subsections go into more detail about how this
-rescaling works and how to easily disable it if desired.
+* For the intercept, the default prior is normal with mean $0$ and standard
+deviation $10$, but in this case the standard deviation was adjusted to 
+`r fr2(priors$prior_intercept$adjusted_scale[1])`.
+
+The next two subsections describe how this rescaling works and how to easily
+disable it if desired.
+
 
 ### Automatic Prior Scale Adjustments
 
