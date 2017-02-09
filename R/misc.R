@@ -685,18 +685,14 @@ check_stanfit <- function(x) {
   return(TRUE)
 }
 
-# Throw a deprecation warning if 'data' argument to modeling function is missing
+# Throw a warning if 'data' argument to modeling function is missing
 # @param fun The name of a function
 warn_data_arg_missing <- function(fun) {
-  warning("Omitting the 'data' argument to ", fun, " is deprecated ",
-          "and will not be allowed in the next release of rstanarm.", 
-          call. = FALSE)
-}
-
-# Throw an error if 'data' argument to modeling function is missing
-# @param fun The name of a function
-stop_data_arg_missing <- function(fun) {
-  stop("The 'data' argument is required for ", fun, 
-       call. = FALSE)
+  warning(
+    "Omitting the 'data' argument to ", fun, " is not recommended ",
+    "and may not be allowed in the future versions of rstanarm. ", 
+    "Some post-estimation functions (in particular 'update', 'loo', 'kfold') ", 
+    "are not guaranteed to work properly unless 'data' is specified as a data frame.",
+    call. = FALSE)
 }
 
