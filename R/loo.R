@@ -199,6 +199,10 @@ waic.stanreg <- function(x, ...) {
 #'   leaving out one of the \code{K} subsets. If \code{K} is equal to the total
 #'   number of observations in the data then \eqn{K}-fold cross-validation is
 #'   equivalent to exact leave-one-out cross-validation.
+#' @param save_fits If \code{TRUE}, a component 'fits' with the cross-validated
+#' \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
+#' observations for each fold are added to the resulting object. Defaults to
+#' \code{FALSE}.
 #'   
 #' @return \code{kfold} returns an object with has classes 'kfold' and 'loo' 
 #'   that has a similar structure as the objects returned by the \code{loo} and
@@ -214,7 +218,7 @@ waic.stanreg <- function(x, ...) {
 #'   \code{compare_models} function is also compatible with the objects returned
 #'   by \code{kfold}.
 #'   
-kfold <- function(x, K = 10) {
+kfold <- function(x, K = 10, save_fits = FALSE) {
   validate_stanreg_object(x)
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
@@ -230,6 +234,7 @@ kfold <- function(x, K = 10) {
   bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
   
   lppds <- list()
+  fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
     omitted <- which(bin == k)
@@ -243,6 +248,7 @@ kfold <- function(x, K = 10) {
       log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
                       stanmat = as.matrix.stanreg(x))
+    if (save_fits) fits[k, ] <- list(fit = fit_k, omitted = omitted)
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -253,6 +259,7 @@ kfold <- function(x, K = 10) {
     se_elpd_kfold = sqrt(N * var(elpds)),
     pointwise = cbind(elpd_kfold = elpds)
   )
+  if (save_fits) out$fits <- fits
   structure(out, 
             class = c("kfold", "loo"), 
             K = K, 
