@@ -116,11 +116,9 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL) {
   
-  if (missing(data)) 
-    warn_data_arg_missing("stan_lm")
-  
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
+  validate_data(data)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")

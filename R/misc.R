@@ -685,14 +685,35 @@ check_stanfit <- function(x) {
   return(TRUE)
 }
 
+
+# Validate data argument
+#
+# Make sure that, if specified, data is a data frame.
+# 
+# @param data User's data argument
+# @param if_missing Object to return if data is missing/null
+# @return If no error is thrown, data itself is returned if not missing/null, 
+#   otherwise if_missing is returned.
+# 
+validate_data <- function(data, if_missing = NULL) {
+  if (missing(data) || is.null(data)) {
+    warn_data_arg_missing()
+    return(if_missing)
+  }
+  if (!is.data.frame(data))
+    stop("'data' must be a data frame.", call. = FALSE)
+  
+  return(data)
+}
+
 # Throw a warning if 'data' argument to modeling function is missing
-# @param fun The name of a function
-warn_data_arg_missing <- function(fun) {
+warn_data_arg_missing <- function() {
   warning(
-    "Omitting the 'data' argument to ", fun, " is not recommended ",
-    "and may not be allowed in the future versions of rstanarm. ", 
+    "Omitting the 'data' argument is not recommended ",
+    "and may not be allowed in future versions of rstanarm. ", 
     "Some post-estimation functions (in particular 'update', 'loo', 'kfold') ", 
     "are not guaranteed to work properly unless 'data' is specified as a data frame.",
-    call. = FALSE)
+    call. = FALSE
+  )
 }
 

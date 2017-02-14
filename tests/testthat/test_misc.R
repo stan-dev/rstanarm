@@ -157,6 +157,13 @@ test_that("validate_glm_formula works", {
   expect_error(validate_glm_formula(mpg ~ (1|cyl/gear)), "not allowed")
 })
 
+test_that("validate_data works", {
+  expect_error(validate_data(list(1)), 
+               "'data' must be a data frame")
+  expect_warning(d <- validate_data(if_missing = 3), 
+                 "Omitting the 'data' argument is not recommended")
+  expect_equal(d, 3)
+})
 
 test_that("array1D_check works", {
   array1D_check <- rstanarm:::array1D_check

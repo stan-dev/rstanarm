@@ -124,12 +124,10 @@ stan_betareg <-
            adapt_delta = NULL,
            QR = FALSE) {
     
-    if (missing(data)) 
-      warn_data_arg_missing("stan_betareg")
-    
     if (!requireNamespace("betareg", quietly = TRUE))
       stop("Please install the betareg package before using 'stan_betareg'.")
     
+    data <- validate_data(data, if_missing = environment(formula))
     mc <- match.call(expand.dots = FALSE)
     mc$model <- mc$y <- mc$x <- TRUE
     

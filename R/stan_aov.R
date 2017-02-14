@@ -34,9 +34,7 @@ stan_aov <- function(formula, data, projections = FALSE,
                      prior_PD = FALSE, 
                      algorithm = c("sampling", "meanfield", "fullrank"), 
                      adapt_delta = NULL) {
-    if (missing(data)) 
-      warn_data_arg_missing("stan_aov")
-  
+
     # parse like aov() does
     Terms <- if (missing(data)) 
       terms(formula, "Error") else terms(formula, "Error", data = data)

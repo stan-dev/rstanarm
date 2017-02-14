@@ -130,9 +130,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       algorithm = c("sampling", "meanfield", "fullrank"),
                       adapt_delta = NULL) {
 
-  if (missing(data)) 
-    warn_data_arg_missing("stan_polr")
-  
+  data <- validate_data(data)
   algorithm <- match.arg(algorithm)
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
