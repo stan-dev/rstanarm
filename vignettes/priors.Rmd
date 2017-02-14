@@ -26,7 +26,7 @@ params:
 This vignette provides an overview of how the specification of prior
 distributions works in the __rstanarm__ package. Before reading this vignette it
 is important to first go over the 
-[How to Use the __rstanarm__Package](rstanarm.html) 
+[How to Use the __rstanarm__ Package](rstanarm.html) 
 vignette, which provides a general overview of the package.
 
 Every modeling function in __rstanarm__ offers a subset of the following 
@@ -68,17 +68,17 @@ With very few exceptions, the default priors in __rstanarm__ ---the priors used
 if the arguments in the tables above are untouched--- are _not flat priors_. 
 Rather, the defaults are intended to be _weakly informative_. That is, they are 
 designed to provide moderate regularlization and help stabilize computation. For
-many (if not most) applications the defaults will perform well, however this is 
+many (if not most) applications the defaults will perform well, but this is 
 not guaranteed. It would be impossible to have default priors that work well 
 with every possible model specification.
 
 The way __rstanarm__ attempts to make priors weakly informative by default is to
-internally adjust the scales of the priors. How this works (and how to turn it
-off) is explained below, but first let's see the default priors in action by
-fitting a basic linear regression model with the `stan_glm` function. The
-`stan_glm` function accepts the arguments `prior_intercept`, `prior`, and
-`prior_aux` arguments. To use the default priors we just leave those arguments
-at their defaults (i.e. we don't specify them):
+internally adjust the scales of the priors. How this works (and how to turn it 
+off) is explained below, but first let's see the default priors in action by 
+fitting a basic linear regression model with the `stan_glm` function. The 
+`stan_glm` function accepts the arguments `prior_intercept`, `prior`, and 
+`prior_aux` To use the default priors we just leave those arguments at their
+defaults (i.e., we don't specify them):
 
 ```{r, default-prior-1, results="hide"}
 library("rstanarm")
@@ -97,20 +97,27 @@ fr2 <- function(x) format(round(x, 2), nsmall = 2)
 
 Starting from the bottom up, we can see that:
 
-* `sigma`, the error standard deviation, has a default prior that is
-$\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
+* __Auxiliary__: `sigma`, the error standard deviation, has a default prior that
+is $\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
 the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
-* By default the regression coefficients (in this case the
-coefficients on the `wt` and `am` variables) are treated as a priori independent 
-with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like for
-`sigma`, in order for the default to be weakly informative __rstanarm__ will
-adjust the scales of the priors on the coefficients. As a
-result, the prior scales actually used were
+* __Coefficients__: By default the regression coefficients (in this case the 
+coefficients on the `wt` and `am` variables) are treated as a priori independent
+with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like
+for `sigma`, in order for the default to be weakly informative __rstanarm__ will
+adjust the scales of the priors on the coefficients. As a result, the prior
+scales actually used were
 `r fr2(priors$prior$adjusted_scale[1])` and 
 `r fr2(priors$prior$adjusted_scale[2])`. 
-* For the intercept, the default prior is normal with mean $0$ and standard
-deviation $10$, but in this case the standard deviation was adjusted to 
-`r fr2(priors$prior_intercept$adjusted_scale[1])`.
+* __Intercept__: For the intercept, the default prior is normal with mean $0$ 
+and standard deviation $10$, but in this case the standard deviation was 
+adjusted to `r fr2(priors$prior_intercept$adjusted_scale[1])`. There is also a
+note in parentheses informing you that the prior applies to the intercept after
+all predictors have been centered (a similar note can be found in the
+documentation of the `prior_intercept` argument). In many cases the value of $y$
+when $x=0$ is not meaningful and it is easier to think about the value when $x =
+\bar{x}$. Therefore placing a prior on the intercept after centering the
+predictors typically makes it easier to specify a reasonable prior for the
+intercept. (Note: the user does _not_ need to manually center the predictors.)
 
 The next two subsections describe how this rescaling works and how to easily
 disable it if desired.
@@ -136,17 +143,17 @@ range of $x$.
 * For a __predictor__ $x$ with more than two unique values, we divide the prior 
 scale(s) by $\mathrm{sd}(x)$.
 
-These are technically data-dependent default priors since the scaling is based 
-on scales of the predictors (and possibly the outcome). However, since these
-priors are quite wide (and in most cases rather conservative), the amount of
-information used is weak and mainly takes into account the order of magnitude of
-the variables. This enables __rstanarm__ to offer defaults that are reasonable
-for most models.
+These are technically data-dependent priors since the scaling is based on scales
+of the predictors (and possibly the outcome). However, since these priors are
+quite wide (and in most cases rather conservative), the amount of information
+used is weak and mainly takes into account the order of magnitude of the
+variables. This enables __rstanarm__ to offer defaults that are reasonable for
+many models.
 
 ### Disabling Prior Scale Adjustments
 
 To disable automatic rescaling, the `autoscale` argument can be set
-to `FALSE`. For example: 
+to `FALSE`. For example:
 
 ```{r, no-autoscale, results="hide"}
 test_no_autoscale <-
@@ -158,7 +165,8 @@ test_no_autoscale <-
   )
 ```
 
-We can verify that the prior scales weren't adjusted by checking `prior_summary`:
+We can verify that the prior scales weren't adjusted by checking
+`prior_summary`:
 
 ```{r, no-autoscale-prior-summary}
 prior_summary(test_no_autoscale)
@@ -166,17 +174,19 @@ prior_summary(test_no_autoscale)
 
 # Non-informative Prior Distributions
 
-When the term "non-informative prior" is used it tends to refer either to a flat
-(uniform) prior distribution or a nearly flat distribution (e.g., normal with
-standard deviation $1000$). __rstanarm__ does not prevent you from using flat or
-very diffuse priors but, unless the data is very strong, they are not
-recommended and are _not actually non-informative_: they give the same (or, in
-the diffuse case, nearly the same) probability mass to implausible values as
-plausible ones. Typically there is always _some_ amount of prior information 
-we can bring to a problem, even if in some cases this information is only 
-sufficient to rule out absurd values. In other words, if you know that 
-$1$ billion is an unreasonable value for your coefficients then you _do_
-have prior information.
+When the term "non-informative prior" is used it often refers to a flat 
+(uniform) prior distribution or a nearly flat distribution like a normal 
+distribution with standard deviation $1000$ (sometimes it may also be used to
+refer to the parameterization-invariant Jeffreys prior). __rstanarm__ does not
+_prevent_ you from using flat or very diffuse priors but, unless the data is
+very strong, they are not recommended and are _not actually non-informative_:
+they give the same (or, in the diffuse case, nearly the same) probability mass
+to implausible values as plausible ones. 
+
+Typically there is always _some_ amount of prior information we can bring to a
+problem, even if in some cases this information is only sufficient to rule out
+absurd values. In other words, if you know that $1$ billion is an unreasonable
+value for your coefficients then you _do_ have prior information.
 
 
 ### Specifying Flat Priors
