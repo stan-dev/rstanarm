@@ -199,10 +199,10 @@ waic.stanreg <- function(x, ...) {
 #'   leaving out one of the \code{K} subsets. If \code{K} is equal to the total
 #'   number of observations in the data then \eqn{K}-fold cross-validation is
 #'   equivalent to exact leave-one-out cross-validation.
-#' @param save_fits If \code{TRUE}, a component 'fits' with the cross-validated
-#' \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
-#' observations for each fold are added to the resulting object. Defaults to
-#' \code{FALSE}.
+#' @param save_fits If \code{TRUE}, a component 'fits' is added to the returned
+#'   object to store the cross-validated \link[=stanreg-objects]{stanreg}
+#'   objects and the indices of the omitted observations for each fold. Defaults
+#'   to \code{FALSE}.
 #'   
 #' @return \code{kfold} returns an object with has classes 'kfold' and 'loo' 
 #'   that has a similar structure as the objects returned by the \code{loo} and
