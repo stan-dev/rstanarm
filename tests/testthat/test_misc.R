@@ -106,6 +106,30 @@ test_that("validate_parameter_value works", {
   expect_true(validate_parameter_value(.Machine$double.xmax))
 })
 
+test_that("validate_R2_location works", {
+  validate_R2_location <- rstanarm:::validate_R2_location
+  expect_error(
+    validate_R2_location(-1, what = "mode"), 
+    "location must be in (0,1]", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(.5, what = "log"), 
+    "location must be negative", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(0, what = "mean"), 
+    "location must be in (0,1)", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(c(0.5, 0.25), what = "mode"), 
+    "only accepts a single value for 'location'", 
+    fixed = TRUE
+  )
+})
+
 test_that("validate_weights works", {
   validate_weights <- rstanarm:::validate_weights
   ff <- function(weights) validate_weights(weights)
@@ -375,9 +399,9 @@ test_that("linkinv methods work", {
   
   SW(capture.output(
     fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
-                           prior = R2(0.2, "mean"), init_r = 0.1, 
-                           chains = CHAINS, iter = ITER, seed = SEED, 
-                           refresh = REFRESH)
+                          prior = R2(0.2, "mean"), init_r = 0.1, 
+                          chains = CHAINS, iter = ITER, seed = SEED, 
+                          refresh = REFRESH)
   ))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)

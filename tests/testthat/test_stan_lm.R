@@ -81,6 +81,11 @@ test_that("stan_lm throws error if only intercept", {
                regexp = "not suitable for estimating a mean")
 })
 
+test_that("stan_lm throws error if 'location' is a vector", {
+  expect_error(stan_lm(mpg ~ ., data = mtcars, prior = R2(location = c(0.25, 0.5))), 
+               regexp = "only accepts a single value for 'location'")
+})
+
 test_that("stan_lm throws error if N < K", {
   # NOTE: remove this test once N < K is enabled
   expect_error(stan_lm(mpg ~ ., data = mtcars[1:5, ], prior = R2(0.75)), 

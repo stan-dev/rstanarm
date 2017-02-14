@@ -512,15 +512,72 @@ dirichlet <- function(concentration = 1) {
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   what <- match.arg(what)
+  validate_R2_location(location, what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
 
+
+
+# internal ----------------------------------------------------------------
+
+# Check for positive scale or df parameter (NULL ok)
+#
+# @param x The value to check.
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_parameter_value <- function(x) {
+  nm <- deparse(substitute(x))
+  if (!is.null(x)) {
+    if (!is.numeric(x)) 
+      stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) 
+      stop(nm, " should be positive", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+
+# Throw informative error if 'location' isn't valid for the particular 'what' 
+# specified or isn't the right length.
+#
+# @param location,what User's location and what arguments to R2()
+# @return Either an error is thrown or TRUE is returned invisibly.
+#
+validate_R2_location <- function(location = NULL, what) {
+  stopifnot(is.numeric(location))
+  if (length(location) > 1)
+    stop(
+      "The 'R2' function only accepts a single value for 'location', ",
+      "which applies to the prior R^2. ",
+      "If you are trying to put different priors on different coefficients ", 
+      "rather than specify a joint prior via 'R2', you can use stan_glm ",
+      "which accepts a wider variety of priors, many of which allow ", 
+      "specifying arguments as vectors.", 
+      call. = FALSE
+    )
+  
+  if (what == "log") {
+    if (location >= 0)
+      stop("If 'what' is 'log' then location must be negative.", call. = FALSE)
+  } else if (what == "mode") {
+    if (location <= 0 || location > 1)
+      stop("If 'what' is 'mode', location must be in (0,1].", 
+           call. = FALSE)
+  } else { # "mean", "median"
+    if (location <= 0 || location >= 1)
+      stop("If 'what' is 'mean' or 'median', location must be in (0,1).", 
+           call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# For the R2 prior, calculate LKJ shape eta
+#
+# @param location,what User's R2 prior arguments.
+# @param K number of predictors.
+# @return A positive scalar.
+#
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
-  if (is.null(location)) 
-    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
-         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
-         call. = FALSE)
   stopifnot(length(location) == 1, is.numeric(location))
   stopifnot(is.numeric(K), K == as.integer(K))
   if (K == 0) 
