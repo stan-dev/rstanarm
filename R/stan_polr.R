@@ -238,7 +238,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                family = method, method, contrasts, na.action,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
-               algorithm, stan_summary, stanfit)
+               algorithm, stan_summary, stanfit, 
+               rstan_version = utils::packageVersion("rstan"))
   structure(out, class = c("stanreg", "polr"))
 }
 

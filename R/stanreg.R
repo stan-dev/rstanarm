@@ -126,7 +126,8 @@ stanreg <- function(object) {
     prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
     stan_summary,  
-    stanfit = if (opt) stanfit$stanfit else stanfit
+    stanfit = if (opt) stanfit$stanfit else stanfit,
+    rstan_version = utils::packageVersion("rstan")
   )
 
   if (opt) 

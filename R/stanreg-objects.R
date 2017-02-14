@@ -17,13 +17,13 @@
 
 #' Fitted model objects 
 #' 
+#' The \pkg{rstanarm} model-fitting functions return an object of class 
+#' 'stanreg', which is a list containing at a minimum the components listed 
+#' below. Each stanreg object will also have additional classes (e.g. 'aov', 
+#' 'betareg', 'glm', 'polr', etc.) and several additional components depending
+#' on the model and estimation algorithm.
+#'
 #' @name stanreg-objects 
-#' 
-#' @description The \pkg{rstanarm} model-fitting functions return an object of
-#'   class 'stanreg', which is a list containing at a minimum the components 
-#'   listed below. Each stanreg object will also have additional classes (e.g. 
-#'   'aov', 'glm', 'polr', etc.) and several additional components depending on 
-#'   the model and estimation algorithm.
 #'   
 #' @section stanreg objects:   
 #' \describe{
@@ -76,7 +76,13 @@
 #'   The object of \code{\link[rstan]{stanfit-class}} returned by RStan and a
 #'   matrix of various summary statistics from the stanfit object.
 #'   }
+#'   \item{\code{rstan_version}}{
+#'   The version of the \pkg{rstan} package that was used to fit the model.
+#'   }
 #'}
+#'
+#' @note The \code{\link{stan_biglm}} function is an exception. It returns a 
+#'   \link[rstan]{stanfit} object rather than a stanreg object.
 #'
 #' @seealso \code{\link{stanreg-methods}} 
 #'   
