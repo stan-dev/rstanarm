@@ -100,6 +100,7 @@ Starting from the bottom up, we can see that:
 * __Auxiliary__: `sigma`, the error standard deviation, has a default prior that
 is $\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
 the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
+
 * __Coefficients__: By default the regression coefficients (in this case the 
 coefficients on the `wt` and `am` variables) are treated as a priori independent
 with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like
@@ -108,6 +109,7 @@ adjust the scales of the priors on the coefficients. As a result, the prior
 scales actually used were
 `r fr2(priors$prior$adjusted_scale[1])` and 
 `r fr2(priors$prior$adjusted_scale[2])`. 
+
 * __Intercept__: For the intercept, the default prior is normal with mean $0$ 
 and standard deviation $10$, but in this case the standard deviation was 
 adjusted to `r fr2(priors$prior_intercept$adjusted_scale[1])`. There is also a
@@ -224,7 +226,26 @@ prior_summary(flat_prior_test)
 # Informative Prior Distributions
 
 Although the default priors tend to work well, prudent use of more informative
-priors is encouraged.
+priors is encouraged. For example, suppose we have a linear regression model 
+$$y \sim \mathsf{Normal}\left(\alpha + \beta_1 x_1 + \beta_2 x_2, \, \sigma\right)$$ 
+and we have a strong reason to believe (perhaps from previous research on the
+same topic) that $\beta_1 \in (-15, -5)$ and $\beta_2 \in (-1, 1)$. An example 
+of an informative prior for $\boldsymbol{\beta} = (\beta_1, \beta_2)$ could be 
 
-FIXME: add example
+$$
+\begin{pmatrix} \beta_1 \\ \beta_2 \end{pmatrix}
+\sim \mathsf{Normal} \left( 
+\begin{pmatrix} -10 \\ 0 \end{pmatrix},
+\begin{pmatrix} 5^2 & 0 \\ 0 & 2^2 \end{pmatrix}
+\right),
+$$
+which sets the prior means at the midpoints of the intervals and then allows
+for some wiggle room on either side.
+
+If the variables `y`, `x1`, and `x2` are in the data frame `dat` then this
+model can be specified with __rstanarm__ 
+```{r, eval=FALSE}
+my_prior <- normal(location = c(-10, 0), scale = c(5, 2), autoscale = FALSE)
+stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
+```
 
