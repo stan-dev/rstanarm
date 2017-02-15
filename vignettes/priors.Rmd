@@ -62,7 +62,7 @@ functions also explains which distributions can be used when specifying
 each of the prior-related arguments.
 
 
-# Default Prior Distributions
+# Default (Weakly Informative) Prior Distributions
 
 With very few exceptions, the default priors in __rstanarm__ ---the priors used 
 if the arguments in the tables above are untouched--- are _not flat priors_. 
@@ -172,22 +172,30 @@ We can verify that the prior scales weren't adjusted by checking
 prior_summary(test_no_autoscale)
 ```
 
-# Non-informative Prior Distributions
+# How to Specify Flat Priors (and why you shouldn't)
 
-When the term "non-informative prior" is used it often refers to a flat 
-(uniform) prior distribution or a nearly flat distribution like a normal 
-distribution with standard deviation $1000$ (sometimes it may also be used to
-refer to the parameterization-invariant Jeffreys prior). __rstanarm__ does not
-_prevent_ you from using flat or very diffuse priors but, unless the data is
-very strong, they are not recommended and are _not actually non-informative_:
-they give the same (or, in the diffuse case, nearly the same) probability mass
-to implausible values as plausible ones. 
+### Uninformative is Unrealistic
 
-Typically there is always _some_ amount of prior information we can bring to a
-problem, even if in some cases this information is only sufficient to rule out
-absurd values. In other words, if you know that $1$ billion is an unreasonable
-value for your coefficients then you _do_ have prior information.
+When "noninformative" or "uninformative" is used in the context of prior 
+distributions, it typically refers to a flat (uniform) distribution or a nearly 
+flat distribution. Sometimes it may also be used to refer to the 
+parameterization-invariant Jeffreys prior. Although in most cases __rstanarm__ 
+does not prevent you from using flat (or very diffuse) priors, unless the data 
+is very strong it is wise to avoid them. Rarely is it approrpriate is any 
+applied setting to use a prior that gives the same (or nearly the same) 
+probability mass to values near zero as it gives values bigger than the age of
+the universe in nanoseconds.
 
+Even when you know very little, a flat or very wide prior will almost never be 
+the best approximation to your beliefs about the parameters in your model that 
+you can express using __rstanarm__ (or other software). _Some_ amount of prior 
+information will be available. For example, even if there is nothing to suggest 
+a priori that a particular coefficient will be positive or negative, there is 
+almost always enough information to suggest that $1$ and $4.3\times 10^{26}$ are
+not equally likely. Making use of this information when setting a prior scale 
+parameter is simple ---a useful heuristic is to set the scale an 
+order of magnitude bigger than you suspect it to be--- and has the added 
+benefit of helping to stabilize computations.
 
 ### Specifying Flat Priors
 
@@ -202,7 +210,7 @@ flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL, iter = 10, ch
 flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL)
 ```
 
-In this case we've let __rstanarm__ use the default priors for the intercept and
+In this case we let __rstanarm__ use the default priors for the intercept and
 error standard deviation (we could change that if we wanted), but the 
 coefficient on the `wt` variable will have a flat prior. To double check that
 indeed a flat prior was used for the coefficient on `wt` we can call
@@ -216,7 +224,7 @@ prior_summary(flat_prior_test)
 # Informative Prior Distributions
 
 Although the default priors tend to work well, prudent use of more informative
-priors is encouraged. 
+priors is encouraged.
 
 FIXME: add example
 
