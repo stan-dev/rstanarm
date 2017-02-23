@@ -1,11 +1,13 @@
 exec/*.rda
 .Rproj.user
 .Rhistory
-src/
-!src/Makevars
+src/Modules*
+src/rstanarm.so
+src/include
 man/*.Rd
 !man/rstanarm-internal.Rd
 vignettes/*.R
 !vignettes/*.Rmd
 vignettes/*.html
 vignettes/*_files
+.DS_Store

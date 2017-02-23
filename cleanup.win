@@ -1,13 +1,10 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # Note to Windows users: This is not actually platform specific.
 mkdir -p src/include
 "${R_HOME}/bin/R" --vanilla --slave --file=tools/make_cpp.R
-sed -i.bak '/current_statement_begin__ = [0-9]/d' src/include/models.hpp
+
 cat src/*.cc > src/Modules.cpp
 rm src/*.cc
 "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
 exit $?
-
-
-

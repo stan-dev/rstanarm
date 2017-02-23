@@ -39,6 +39,7 @@
 #' @template args-same-as-rarely-2
 #' @template args-x-y
 #' @template args-dots
+#' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
 #'
@@ -53,11 +54,6 @@
 #'   root of the sample size, which is legitimate because the marginal
 #'   standard deviation of the outcome is a primitive parameter being
 #'   estimated.
-#' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
-#'   whether to draw from the prior predictive distribution instead of
-#'   conditioning on the outcome. Note that if \code{TRUE}, the draws are
-#'   merely proportional to the actual distribution because of an improper
-#'   prior on a scale parameter.
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -107,7 +103,9 @@
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
 #'                 chains = 1, iter = 1000, seed = 12345))
-#' plot(fit)
+#' plot(fit, prob = 0.8)
+#' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
+#'      transformations = list(sigma = "log"))
 #' 
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
@@ -148,6 +146,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"))
   out <- stanreg(fit)
+  out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 
     out$x <- NULL
   if (!y) 

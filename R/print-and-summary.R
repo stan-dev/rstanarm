@@ -15,13 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-.printfr <- function(x, digits, ...) {
-  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
-}
-.median_and_madsd <- function(x) {
-  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
-}
-
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
@@ -94,7 +87,8 @@ print.stanreg <- function(x, digits = 1, ...) {
     ppd_mat <- mat[, ppd_nms, drop = FALSE]
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
-    
+    if (mer)
+      estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),]
     .printfr(estimates, digits, ...)
     if (ord) {
       cat("\nCutpoints:\n")
@@ -120,8 +114,8 @@ print.stanreg <- function(x, digits = 1, ...) {
     } else if (is.ig(famname)) {
       nms <- c(nms, "lambda")
     } else if (is.nb(famname)) {
-      nms <- c(nms, "overdispersion")
-    }
+      nms <- c(nms, "reciprocal_dispersion")
+    } else if (is.beta(famname)) {}
     nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
     estimates <- x$stan_summary[nms,1:2]
     .printfr(estimates, digits, ...)
@@ -147,6 +141,9 @@ print.stanreg <- function(x, digits = 1, ...) {
     anova_table <- .median_and_madsd(effects)
     .printfr(anova_table, digits, ...)
   }
+
+  cat("\n------\n")
+  cat("For info on the priors used see help('prior_summary.stanreg').")
   
   invisible(x)
 }
@@ -189,7 +186,8 @@ print.stanreg <- function(x, digits = 1, ...) {
 #'   matrix to a data.frame, preserving row and column names but dropping the 
 #'   \code{print}-related attributes.
 #' 
-#' @seealso \code{\link{print.stanreg}}, \code{\link{stanreg-methods}}
+#' @seealso \code{\link{prior_summary}} to extract or print a summary of the 
+#'   priors used for a particular model.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
@@ -210,6 +208,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
                             probs = NULL, ..., digits = 1) {
   mer <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
+  
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
     if (!is.null(probs)) 
@@ -219,26 +218,10 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     if (is.null(pars) && used.variational(object))
       out <- out[!rownames(out) %in% "log-posterior", , drop = FALSE]
     if (!is.null(pars)) {
-      pars2 <- NA
-      if ("alpha" %in% pars) 
-        pars2 <- c(pars2, "(Intercept)")
-      if ("beta" %in% pars) {
-        beta_nms <- if (mer) 
-          names(fixef(object)) else names(object$coefficients)
-        pars2 <- c(pars2, setdiff(beta_nms, "(Intercept)"))
-      }
-      if ("b" %in% pars) {
-        if (mer) {
-          pars2 <- c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
-        } else {
-          warning("No group-specific parameters. 'varying' ignored.", 
-                  call. = FALSE) 
-        }
-      }
-      pars2 <- c(pars2, setdiff(pars, c("alpha", "beta", "varying")))
-      pars <- pars2[!is.na(pars2)]
+      pars <- allow_special_parnames(object, pars)
       out <- out[rownames(out) %in% pars, , drop = FALSE]
     }
+    
     out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE), , drop = FALSE]
     stats <- colnames(out)
     if ("n_eff" %in% stats)
@@ -256,7 +239,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
       if (is.gaussian(famname)) 
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
-        mark <- c(mark, "overdispersion") 
+        mark <- c(mark, "reciprocal_dispersion")
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
@@ -273,9 +256,16 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   if (is.character(fam)) {
     stopifnot(identical(fam, object$method))
     fam <- paste0("ordered (", fam, ")")
+  } else if (inherits(object, "betareg")) {
+    fam <- paste0("beta (", 
+                  object$family$link, 
+                  ", link.phi=", 
+                  object$family_phi$link, 
+                  ")")
   } else {
     fam <- paste0(fam$family, " (", fam$link, ")") 
   }
+  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
@@ -284,6 +274,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
             nobs = nobs(object),
             ngrps = if (mer) ngrps(object) else NULL,
             print.digits = digits, 
+            priors = object$prior.info,
             class = "summary.stanreg")
 }
 
@@ -332,3 +323,41 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
 as.data.frame.summary.stanreg <- function(x, ...) {
   as.data.frame(unclass(x), ...)
 }
+
+
+
+# internal ----------------------------------------------------------------
+.printfr <- function(x, digits, ...) {
+  print(format(round(x, digits), nsmall = digits), quote = FALSE, ...)
+}
+.median_and_madsd <- function(x) {
+  cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
+}
+
+# Allow "alpha", "beta", "varying" as shortcuts 
+#
+# @param object stanreg object
+# @param pars result of calling collect_pars(object, pars, regex_pars)
+allow_special_parnames <- function(object, pars) {
+  pars[pars == "varying"] <- "b"
+  pars2 <- NA
+  if ("alpha" %in% pars)
+    pars2 <- c(pars2, "(Intercept)")
+  if ("beta" %in% pars) {
+    beta_nms <- if (is.mer(object))
+      names(fixef(object)) else names(object$coefficients)
+    pars2 <- c(pars2, setdiff(beta_nms, "(Intercept)"))
+  }
+  if ("b" %in% pars) {
+    if (is.mer(object)) {
+      pars2 <-
+        c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+    } else {
+      warning("No group-specific parameters. 'varying' ignored.",
+              call. = FALSE)
+    }
+  }
+  pars2 <- c(pars2, setdiff(pars, c("alpha", "beta", "varying")))
+  pars2[!is.na(pars2)]
+}
+
