@@ -57,6 +57,8 @@ stanreg <- function(object) {
     }
   } else {
     stan_summary <- make_stan_summary(stanfit)
+    if(object$stanfit@model_name == "spatial")
+      nvars <- nvars + 1  # + 1 to pick up the spatial autocorrelation parameter
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
     if (is_betareg) {
       coefs_z <- stan_summary[(nvars + 1):(nvars + nvars_z), select_median(object$algorithm)]
@@ -71,7 +73,10 @@ stanreg <- function(object) {
       colnames(stanmat) <- c(names(coefs),names(coefs_z))
     } else {
       stanmat <- as.matrix(stanfit)[, 1:nvars, drop = FALSE]
-      colnames(stanmat) <- colnames(x)
+      if (object$stanfit@model_name == "spatial")
+        colnames(stanmat) <- c("rho", colnames(x))
+      else
+        colnames(stanmat) <- colnames(x)
     }
     ses <- apply(stanmat, 2L, mad)
     if (mer) {
@@ -85,7 +90,13 @@ stanreg <- function(object) {
   }
   
   # linear predictor, fitted values
-  eta <- linear_predictor(coefs, x, object$offset)
+  if (object$stanfit@model_name == "spatial") {  # this needs to be fixed for SEM (math is different)
+    eta <- linear_predictor(coefs[-which(names(coefs) == "rho")], x, object$offset)
+    eta <- solve(diag(1,N) - lambda * W) %*% eta
+  }
+  else {
+    eta <- linear_predictor(coefs, x, object$offset)
+  }
   mu <- family$linkinv(eta)
 
   if (NCOL(y) == 2L) {
@@ -139,6 +150,9 @@ stanreg <- function(object) {
     out$family_phi <- family_phi
     out$eta_z <- eta_z
     out$phi <- phi
+  }
+  if (object$stanfit@model_name == "spatial") {
+    out$W <- W
   }
   
   structure(out, class = c("stanreg", "glm", "lm"))
