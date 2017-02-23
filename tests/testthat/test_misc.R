@@ -26,6 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
+expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 
 context("helper functions")
 
@@ -105,6 +106,30 @@ test_that("validate_parameter_value works", {
   expect_true(validate_parameter_value(.Machine$double.xmax))
 })
 
+test_that("validate_R2_location works", {
+  validate_R2_location <- rstanarm:::validate_R2_location
+  expect_error(
+    validate_R2_location(-1, what = "mode"), 
+    "location must be in (0,1]", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(.5, what = "log"), 
+    "location must be negative", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(0, what = "mean"), 
+    "location must be in (0,1)", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(c(0.5, 0.25), what = "mode"), 
+    "only accepts a single value for 'location'", 
+    fixed = TRUE
+  )
+})
+
 test_that("validate_weights works", {
   validate_weights <- rstanarm:::validate_weights
   ff <- function(weights) validate_weights(weights)
@@ -116,8 +141,10 @@ test_that("validate_weights works", {
   expect_error(validate_weights(c(-1,2,3)), regexp = "negative", ignore.case = TRUE)
   expect_error(stan_glm(mpg ~ wt, data = mtcars, weights = rep(-1, nrow(mtcars))), 
                regexp = "negative", ignore.case = TRUE)
-  expect_is(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
-                     weights = rexp(nrow(mtcars))), "stanreg")
+  
+  capture.output(fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
+                                 weights = rexp(nrow(mtcars))))
+  expect_stanreg(fit)
 })
 
 test_that("validate_offset works", {
@@ -127,8 +154,10 @@ test_that("validate_offset works", {
   expect_error(validate_offset(rep(1, 10), rnorm(5)))
   expect_error(validate_offset(rep(1, 5), rnorm(10)), 
                regexp = "number of offsets", ignore.case = TRUE)
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
-  fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  capture.output(
+    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
+    fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+  )
   expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
 })
 
@@ -187,11 +216,14 @@ test_that("check_constant_vars works", {
   mf2$gear <- 1
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
-  expect_is(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED), 
-            "stanreg")
-  expect_is(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)),
-                     offset = rep(1, nrow(mf)), algorithm = "optimizing", 
-                     seed = SEED), "stanreg")
+  
+  capture.output(
+    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED),
+    fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing")
+  )
+  expect_stanreg(fit1)
+  expect_stanreg(fit2)
   
   esoph2 <- esoph
   esoph2$agegp[1:nrow(esoph2)] <- "75+"
@@ -219,13 +251,15 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                   chains = CHAINS, seed = SEED, refresh = REFRESH))
-fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
-fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
-fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
-fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
+capture.output(
+  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                     chains = CHAINS, seed = SEED, refresh = REFRESH)),
+  fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                        iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)),
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
+  fitvb <- update(fito, algorithm = "meanfield", seed = SEED),
+  fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
+)
 
 test_that("validate_stanreg_object works", {
   validate_stanreg_object <- rstanarm:::validate_stanreg_object
@@ -293,8 +327,10 @@ test_that("get_x, get_y, get_z work", {
   expect_equivalent(get_y(fit2), y_ans)
   expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
   
-  fit3 <- SW(stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
-                        iter = 10, chains = 1, refresh = 5, seed = SEED))
+  SW(capture.output(
+    fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
+                       iter = 10, chains = 1, refresh = 5, seed = SEED)
+  ))
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
@@ -361,10 +397,12 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.family(binomial(link = "probit")), 
                    binomial(link = "probit")$linkinv)
   
-  fit_polr <- SW(stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
-                           prior = R2(0.2, "mean"), init_r = 0.1, 
-                           chains = CHAINS, iter = ITER, seed = SEED, 
-                           refresh = REFRESH))
+  SW(capture.output(
+    fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
+                          prior = R2(0.2, "mean"), init_r = 0.1, 
+                          chains = CHAINS, iter = ITER, seed = SEED, 
+                          refresh = REFRESH)
+  ))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
@@ -385,9 +423,10 @@ test_that("collect_pars and grep_for_pars work", {
   expect_identical(grep_for_pars(fit, c("period", "size")), c(all_period, "size"))
   expect_identical(grep_for_pars(fit, "period|size"), c("size", all_period))
   expect_identical(grep_for_pars(fit, "(2|3)$"), all_period[1:2])
-  expect_identical(grep_for_pars(fit, "herd"), all_varying)
   expect_identical(grep_for_pars(fit, "b\\["), all_varying)
-  expect_identical(grep_for_pars(fit, "Intercept"), c("(Intercept)", all_varying))
+  expect_identical(grep_for_pars(fit, "herd"), c(all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
+  expect_identical(grep_for_pars(fit, "Intercept"),
+                   c("(Intercept)", all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
   expect_identical(grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
   expect_identical(grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
   expect_error(grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
@@ -402,7 +441,7 @@ test_that("collect_pars and grep_for_pars work", {
                    c("period2", all_varying[1]))
   expect_identical(collect_pars(fit, pars = "size", regex_pars = "size"), "size")
   expect_identical(collect_pars(fit, regex_pars = c("period", "herd")), 
-                   c(all_period, all_varying))
+                   c(all_period, all_varying, "Sigma[herd:(Intercept),(Intercept)]"))
 })
 
 test_that("posterior_sample_size works", {
@@ -414,7 +453,32 @@ test_that("posterior_sample_size works", {
   expect_equal(pss(fitvb2), 1000)
   expect_null(pss(fito))
   
-  fit3 <- suppressWarnings(stan_glm(mpg ~ wt, data = mtcars, iter = 20, 
-                                    chains = 1, thin = 2))
+  SW(capture.output(
+    fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2)
+  ))
   expect_equal(pss(fit3), nrow(as.matrix(fit3)))
+})
+
+test_that("last_dimnames works", {
+  a <- array(rnorm(300), dim = c(10, 3, 10), 
+             dimnames = list(A = NULL, B = NULL, C = letters[1:10]))
+  expect_identical(last_dimnames(a), letters[1:10])
+  
+  m <- a[1,,, drop=TRUE]
+  expect_identical(last_dimnames(m), letters[1:10])
+  expect_identical(last_dimnames(m), colnames(m))
+  
+  d <- as.data.frame(m)
+  expect_identical(last_dimnames(d), last_dimnames(m))
+  
+  expect_null(last_dimnames(m[1,]))
+})
+
+test_that("validate_newdata works", {
+  nd1 <- NULL
+  nd2 <- data.frame(a = 1:4, b = c(NA, 1:3))
+  expect_null(validate_newdata(nd1))
+  expect_identical(validate_newdata(nd2[-1,]), nd2[-1, ])
+  expect_error(validate_newdata(nd2), "NAs are not allowed")
+  expect_error(validate_newdata(1:10, "must be a data frame"))
 })

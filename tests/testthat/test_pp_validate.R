@@ -24,15 +24,15 @@ set.seed(SEED)
 
 context("pp_validate")
 test_that("pp_validate throws correct errors", {
-  fito <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing", 
-                   seed = SEED)
   expect_error(pp_validate(example_model$stanfit), "not a stanreg object")
   expect_error(pp_validate(example_model, nreps = 1), "at least 2")
-  expect_error(pp_validate(fito), "only available for models fit using MCMC")
 })
 
 test_that("pp_validate runs for very quick example", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED, refresh = 0, 
-                  init_r = 0.1, iter = 500)
+  capture.output(
+    fit <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED, refresh = 0, 
+                    init_r = 0.1, iter = 500)
+  )
   expect_output(gg <- pp_validate(fit, nreps = 2, seed = SEED), "Elapsed Time")
+  expect_s3_class(gg, "ggplot")
 })

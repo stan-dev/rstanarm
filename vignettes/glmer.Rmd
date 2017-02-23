@@ -5,6 +5,8 @@ date: "`r Sys.Date()`"
 output: 
   html_vignette:
     toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -173,6 +175,42 @@ that does not enter through the data.
 The benefits of full Bayesian inference (via MCMC) come with a cost. Fitting 
 models with (RE)ML will tend to be much faster than fitting a similar model using 
 MCMC. Speed comparable to __lme4__ can be obtained with __rstanarm__ using 
-approximate Bayesian inference via the mean-field and full-rank variational algorithms (see `help("rstanarm-package", "rstanarm")` for details). These 
+approximate Bayesian inference via the mean-field and full-rank variational algorithms 
+(see `help("rstanarm-package", "rstanarm")` for details). These 
 algorithms can be useful to narrow the set of candidate models in large problems, 
 but MCMC should always be used for final statistical inference.
+
+# Relationship to __gamm4__
+
+The __rstanarm__ package includes a `stan_gamm4` function that is similar to the
+`gamm4` function in the __gamm4__ package, which is in turn similar to the `gamm`
+function in the __mgcv__ package. The substring `gamm` stands for Generalized
+Additive Mixed Models, which differ from Generalized Additive Models (GAMs) due
+to the presence of group-specific terms that can be specified with the syntax
+of __lme4__. Both GAMs and GAMMs include nonlinear functions of (non-categorical)
+predictors called "smooths". In the example below, so-called "thin-plate splines"
+are used to model counts of roaches where we might fear that the number of 
+roaches in the current period is an exponentially increasing function of the 
+number of roaches in the previous period. Unlike `stan_glmer`, in `stan_gamm4`
+it is necessary to specify group-specific terms as a one-sided formula that
+is passed to the `random` argument as in the `lme` function in the __nlme__
+package.
+
+```{r, results = "hide"}
+library(rstanarm)
+data(roaches)
+roaches$roach1 <- roaches$roach1 / 100
+post <- stan_gamm4(y ~ s(roach1) + treatment + log(roaches$exposure2), 
+                   random = ~(1 | senior),
+                   data = roaches, family = neg_binomial_2, QR = TRUE,
+                   chains = CHAINS, cores = CORES, seed = SEED)
+```
+```{r}
+plot_nonlinear(post)
+```
+
+Here we see that the relationship between past and present roaches is estimated to 
+be nonlinear. For a small number of past roaches, the function is steep and then
+it appears to flatten out, although we become highly uncertain about the function
+in the rare cases where the number of past roaches is large.
+

@@ -3,8 +3,11 @@ sudo: false
 r: devel
 cache: packages
 
-r_packages:
-  - covr
+r_build_args: --no-build-vignettes
+r_check_args: --no-build-vignettes
+
+r_github_packages:
+  - jimhester/covr
 
 env:
   matrix: 
@@ -19,11 +22,18 @@ before_install:
   - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
   - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
 
+script: 
+  - |
+    travis_wait R CMD build .
+    travis_wait 60 R CMD check rstanarm*tar.gz
+
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
+  - echo ${NOT_CRAN}
 
 after_success:
-  - Rscript -e 'covr::codecov()'
+  - travis_wait 40 tar -C .. -xf $PKG_TARBALL
+  - travis_wait 40 Rscript -e 'covr::codecov()'
 
 after_failure:
   - cat rstanarm.Rcheck/00*

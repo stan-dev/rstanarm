@@ -19,6 +19,8 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
+library(MASS)
+
 SEED <- 123
 ITER <- 100
 CHAINS <- 2
@@ -27,36 +29,49 @@ REFRESH <- 0
 
 threshold <- 0.03
 
+expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+
 context("stan_polr")
 
-test_that("stan_polr runs for esoph example", {
-  library(MASS)
-  f <- tobgp ~ agegp + alcgp
+
+f <- tobgp ~ agegp + alcgp
+suppressWarnings(capture.output(
   fit1 <- stan_polr(f, data = esoph, method = "loglog", prior_PD = TRUE,
                     prior = R2(location = 0.4, what = "median"),
-                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
   fit1vb <- stan_polr(f, data = esoph, method = "loglog",
                       prior = R2(location = 0.4, what = "median"),
-                      seed = SEED, algorithm = "fullrank")
+                      seed = SEED, algorithm = "fullrank"),
   fit2 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
-                   prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
-                   chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
+                    prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
   fit2vb <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                       method = "loglog", seed = SEED, algorithm = "fullrank",
                       prior = NULL, prior_counts = NULL) # test with NULL priors
+))
 
-  expect_is(fit1, "stanreg")
-  expect_is(fit2, "stanreg")
-  expect_is(fit1vb, "stanreg")
-  expect_is(fit2vb, "stanreg")
+test_that("stan_polr runs for esoph example", {
+  expect_stanreg(fit1)
+  expect_stanreg(fit2)
+  expect_stanreg(fit1vb)
+  expect_stanreg(fit2vb)
 })
 
 test_that("stan_polr throws error if formula excludes intercept", {
   expect_error(stan_polr(tobgp ~ 0 + agegp + alcgp, data = esoph, 
-                         method = "loglog", prior = R2(0.4, "median"),
-                         chains = CHAINS, iter = ITER, seed = SEED, 
-                         refresh = REFRESH), 
-               regexp = "not allowed")
+                         method = "loglog", prior = R2(0.4, "median")), 
+               regexp = "formula not allowed")
+})
+
+test_that("stan_polr throws error if shape,rate specified with >2 outcome levels", {
+  expect_error(
+    stan_polr(f, data = esoph, method = "loglog", prior = R2(0.4, "median"), shape = 2), 
+    "'shape' must be NULL when there are more than 2 outcome categories"
+  )
+  expect_error(
+    stan_polr(f, data = esoph, method = "loglog", prior = R2(0.4, "median"), rate = 2), 
+    "'rate' must be NULL when there are more than 2 outcome categories"
+  )
 })
 
 test_that("gumbel functions ok", {

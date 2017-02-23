@@ -1,5 +1,4 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright 1995-2007 R Core Development Team
 # Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
 # Copyright (C) 2015, 2016 Trustees of Columbia University
 # 
@@ -17,48 +16,71 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
-  validate_stanreg_object(object)
-  if (is.mer(object)) .pp_data_mer(object, newdata, re.form, ...)
-  else .pp_data(object, newdata, ...)
-}
+pp_data <-
+  function(object,
+           newdata = NULL,
+           re.form = NULL,
+           offset = NULL,
+           ...) {
+    validate_stanreg_object(object)
+    if (is.mer(object)) {
+      out <- .pp_data_mer(object, newdata = newdata,
+                          re.form = re.form, ...)
+      if (!is.null(offset)) out$offset <- offset
+      return(out)
+    }
+    else
+      .pp_data(object, newdata = newdata, offset = offset, ...)
+  }
 
 # for models not fit using stan_(g)lmer or stan_gamm4
-.pp_data <- function(object, newdata = NULL, ...) {
+.pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is.null(newdata)) {
     x <- get_x(object)
-    offset <- object$offset %ORifNULL% rep(0, nrow(x))
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
   }
-  tt <- terms(object)
-  Terms <- delete.response(tt)
+
+  offset <- .pp_data_offset(object, newdata, offset)
+  Terms <- delete.response(terms(object))
   m <- model.frame(Terms, newdata, xlev = object$xlevels)
   if (!is.null(cl <- attr(Terms, "dataClasses"))) 
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
   if (is(object, "polr") && !is_scobit(object)) 
     x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
-  offset <- rep(0, nrow(x))
-  if (!is.null(off.num <- attr(tt, "offset"))) {
-    for (i in off.num) {
-      offset <- offset + eval(attr(tt, "variables")[[i + 1]], newdata)
-    }
-  }
-  if (!is.null(object$call$offset)) 
-    offset <- offset + eval(object$call$offset, newdata)
+  
   nlist(x, offset)
 }
 
+
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, ...) {
-  x <- .pp_data_mer_x(object, newdata, ...)
-  z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  if (is(object, "gamm4")) {
+    if (is.null(newdata)) x <- object$glmod$raw_X
+    else {
+      x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
+                             newdata = newdata, type = "lpmatrix")
+    }
+    if (is.null(re.form)) {
+      re.form <- as.formula(object$call$random)
+      if (length(re.form) == 0) re.form <- NA
+      z <- .pp_data_mer_z(object, newdata, re.form, ...)
+    }
+    else z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  } else {
+    x <- .pp_data_mer_x(object, newdata, ...)
+    z <- .pp_data_mer_z(object, newdata, re.form, ...)
+  }
   offset <- model.offset(model.frame(object))
   if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
-    offset <- eval(object$call$offset, newdata)
+    offset <- try(eval(object$call$offset, newdata), silent = TRUE)
+    if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
+
 
 # the functions below are heavily based on a combination of 
 # lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 
@@ -97,12 +119,16 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
   }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object)
+  } 
+  else if (inherits(object, "gamm4")) {
+    x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
+                           newdata = newdata, type = "lpmatrix")
+    NAs <- apply(is.na(x), 1, any)
+    rfd <- mfnew <- newdata[!NAs,]
+    attr(rfd,"na.action") <- "na.omit"
   } else {
-    if ("gam" %in% names(object))
-      stop("'posterior_predict' with non-NULL 're.form' not yet supported ", 
-           "for models estimated via 'stan_gamm4'")
-    mfnew <- model.frame(delete.response(terms(object, fixed.only = TRUE)),
-                         newdata, na.action = na.action)
+    terms_fixed <- delete.response(terms(object, fixed.only = TRUE))
+    mfnew <- model.frame(terms_fixed, newdata, na.action = na.action)
     newdata.NA <- newdata
     if (!is.null(fixed.na.action <- attr(mfnew,"na.action"))) {
       newdata.NA <- newdata.NA[-fixed.na.action,]
@@ -129,22 +155,40 @@ pp_data <- function(object, newdata = NULL, re.form = NULL, ...) {
     stop("Grouping factors specified in re.form that were not present in original model.")
   new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
   Zt <- ReTrms$Zt
-  p <- sapply(ReTrms$cnms, FUN = length)
-  l <- sapply(attr(ReTrms$flist, "assign"), function(i) 
-    nlevels(ReTrms$flist[[i]]))
-  t <- length(p)
-  group_nms <- names(ReTrms$cnms)
-  Z_names <- character()
-  for (i in seq_along(ReTrms$cnms)) {
-    # if you change this, change it in stan_glm.fit() as well
-    nm <- group_nms[i]
-    nms_i <- paste(ReTrms$cnms[[i]], group_nms[i])
-    if (length(nms_i) == 1) {
-      Z_names <- c(Z_names, paste0(nms_i, ":", levels(ReTrms$flist[[nm]])))
-    } else {
-      Z_names <- c(Z_names, c(t(sapply(nms_i, paste0, ":", new_levels[[nm]]))))
-    }
-  }
+  Z_names <- make_b_nms(ReTrms)
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
+}
+
+
+
+# handle offsets ----------------------------------------------------------
+null_or_zero <- function(x) {
+  isTRUE(is.null(x) || all(x == 0))
+}
+
+.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+  if (is.null(newdata)) {
+    # get offset from model object (should be null if no offset)
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+  } else {
+    if (!is.null(offset))
+      stopifnot(length(offset) == nrow(newdata))
+    else {
+      # if newdata specified but not offset then confirm that model wasn't fit
+      # with an offset (warning, not error)
+      if (!is.null(object$call$offset) || 
+          !null_or_zero(object$offset) || 
+          !null_or_zero(model.offset(model.frame(object)))) {
+        warning(
+          "'offset' argument is NULL but it looks like you estimated ", 
+          "the model using an offset term.", 
+          call. = FALSE
+        )
+      }
+      offset <- rep(0, nrow(newdata))
+    }
+  }
+  return(offset)
 }

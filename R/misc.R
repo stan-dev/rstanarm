@@ -75,14 +75,15 @@ set_sampling_args <- function(object, prior, user_dots = list(),
 # @return A list with \code{adapt_delta} and \code{max_treedepth}.
 default_stan_control <- function(prior, adapt_delta = NULL, 
                                  max_treedepth = 15L) {
-  if (is.null(prior)) {
-    adapt_delta <- 0.95
+  if (!length(prior)) {
+    if (is.null(adapt_delta)) adapt_delta <- 0.95
   } else if (is.null(adapt_delta)) {
     adapt_delta <- switch(prior$dist, 
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
-                          # "t" = if (any(prior$df <= 2)) 0.99 else 0.95,
+                          "lasso" = 0.99,
+                          "product_normal" = 0.99,
                           0.95) # default
   }
   nlist(adapt_delta, max_treedepth)
@@ -110,6 +111,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
+is.beta <- function(x) x == "beta"
 
 # Test for a given estimation method
 #
@@ -128,6 +130,7 @@ used.variational <- function(x) {
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
+  stopifnot(is.stanreg(x))
   check1 <- inherits(x, "lmerMod")
   check2 <- !is.null(x$glmod)
   if (check1 && !check2) {
@@ -295,10 +298,13 @@ validate_glm_formula <- function(f) {
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
+  # don't check if columns are constant for binomial
+  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
+  
   lu <- function(x) length(unique(x))
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
-  sel <- !colnames(mf) %in% nocheck
-  is_constant <- apply(mf[, sel, drop = FALSE], 2, lu) == 1
+  sel <- !colnames(mf1) %in% nocheck
+  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
   if (any(is_constant)) 
     stop("Constant variable(s) found: ", 
          paste(names(is_constant)[is_constant], collapse = ", "), 
@@ -313,6 +319,14 @@ check_constant_vars <- function(mf) {
 # @param ... Passed to grep
 b_names <- function(x, ...) {
   grep("^b\\[", x, ...)
+}
+
+# Return names of the last dimension in a matrix/array (e.g. colnames if matrix)
+#
+# @param x A matrix or array
+last_dimnames <- function(x) {
+  ndim <- length(dim(x))
+  dimnames(x)[[ndim]]
 }
 
 # Get the correct column name to use for selecting the median
@@ -428,62 +442,23 @@ nlist <- function(...) {
   return(out)
 }
 
-# Check for positive scale or df parameter (NULL ok)
-#
-# @param x The value to check.
-# @return Either an error is thrown or \code{TRUE} is returned invisibly.
-validate_parameter_value <- function(x) {
-  nm <- deparse(substitute(x))
-  if (!is.null(x)) {
-    if (!is.numeric(x)) 
-      stop(nm, " should be NULL or numeric", call. = FALSE)
-    if (any(x <= 0)) 
-      stop(nm, " should be positive", call. = FALSE)
-  }
-  invisible(TRUE)
-}
 
 # Check and set scale parameters for priors
 #
 # @param scale Value of scale parameter (can be NULL).
 # @param default Default value to use if \code{scale} is NULL.
-# @param link String naming the link function.
+# @param link String naming the link function or NULL.
 # @return If a probit link is being used, \code{scale} (or \code{default} if
 #   \code{scale} is NULL) is scaled by \code{dnorm(0) / dlogis(0)}. Otherwise
 #   either \code{scale} or \code{default} is returned.
 set_prior_scale <- function(scale, default, link) {
-  stopifnot(is.numeric(default), is.character(link))
+  stopifnot(is.numeric(default), is.character(link) || is.null(link))
   if (is.null(scale)) 
     scale <- default
-  if (link == "probit")
+  if (isTRUE(link == "probit"))
     scale <- scale * dnorm(0) / dlogis(0)
   
   return(scale)
-}
-
-# Make prior.info list
-# @param user_call The user's call, i.e. match.call(expand.dots = TRUE).
-# @param function_formals Formal arguments of the stan_* function, i.e.
-#   formals().
-# @return A list containing information about the prior distributions and
-#   options used.
-get_prior_info <- function(user_call, function_formals) {
-  user <- grep("prior", names(user_call), value = TRUE)
-  default <- setdiff(grep("prior", names(function_formals), value = TRUE), 
-                     user)
-  U <- length(user)
-  D <- length(default)
-  priors <- list()
-  for (j in 1:(U + D)) {
-    if (j <= U) {
-      priors[[user[j]]] <- try(eval(user_call[[user[j]]]), silent = TRUE)
-    } else {
-      priors[[default[j-U]]] <- try(eval(function_formals[[default[j-U]]]), 
-                                    silent = TRUE)
-    } 
-  }
-  
-  return(priors)
 }
 
 
@@ -542,6 +517,10 @@ get_x.default <- function(object) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
+get_x.gamm4 <- function(object) {
+  object$glmod$raw_X %ORifNULL% stop("X not found")
+}
+#' @export
 get_x.lmerMod <- function(object) {
   object$glmod$X %ORifNULL% stop("X not found")
 }
@@ -550,7 +529,14 @@ get_z.lmerMod <- function(object) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(Zt)
 }
-
+#' @export
+get_z.gamm4 <- function(object) {
+  X <- get_x(object)
+  XZ <- object$x
+  Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
+  Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
+  return(Z)
+}
 
 # Get inverse link function
 #
@@ -623,4 +609,64 @@ check_reTrms <- function(reTrms) {
            "Consider using || or -1 in your formulas to prevent this from happening.")
   }
   return(invisible(NULL))
+}
+
+#' @importFrom lme4 glmerControl
+make_glmerControl <- function(...) {
+  glmerControl(check.nlev.gtreq.5 = "ignore",
+               check.nlev.gtr.1 = "stop",
+               check.nobs.vs.rankZ = "ignore",
+               check.nobs.vs.nlev = "ignore",
+               check.nobs.vs.nRE = "ignore", ...)  
+}
+
+# Check if a fitted model (stanreg object) has weights
+# 
+# @param x stanreg object
+# @return Logical. Only TRUE if x$weights has positive length and the elements
+#   of x$weights are not all the same.
+#
+model_has_weights <- function(x) {
+  wts <- x[["weights"]]
+  if (!length(wts)) {
+    FALSE
+  } else if (all(wts == wts[1])) {
+    FALSE
+  } else {
+    TRUE
+  }
+}
+
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+# just that newdata is either NULL or a data frame with no missing values.
+# @param x User's 'newdata' argument
+# @return Either NULL or a data frame
+#
+validate_newdata <- function(x) {
+  if (is.null(x))
+    return(NULL)
+  if (!is.data.frame(x))
+    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
+  if (any(is.na(x)))
+    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
+
+  as.data.frame(x)
+}
+
+# Check that a stanfit object (or list returned by rstan::optimizing) is valid
+#
+check_stanfit <- function(x) {
+  if (is.list(x)) {
+    if (!all(c("par", "value") %in% names(x)))
+      stop("Invalid object produced please report bug")
+  }
+  else {
+    stopifnot(is(x, "stanfit"))
+    if (x@mode != 0)
+      stop("Invalid stanfit object produced please report bug")
+  }
+  return(TRUE)
 }

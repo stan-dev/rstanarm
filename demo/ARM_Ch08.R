@@ -8,8 +8,8 @@ source(paste0(ROOT, "ARM/Ch.8/lightspeed.data.R"), local = DATA_ENV, verbose = F
 (post1 <- stan_glm(y ~ 1, data = DATA_ENV, seed = SEED, refresh = REFRESH))
 y_rep <- posterior_predict(post1)
 
-pp_check(post1, check = "test", test = "min") + 
-  xlab("Minimum Predicted Measurement Error")
+pp_check(post1, plotfun = "stat", stat = "min") + 
+  ggtitle("Minimum Predicted Measurement Error")
 
 # make similar plot manually
 hist(apply(y_rep, 1, min), prob = TRUE, main = "", las = 1,
@@ -20,7 +20,7 @@ abline(v = min(DATA_ENV$y), col = "red")
 # distribution
 ttl <- paste("Measurement Error for the Speed of Light", 
              "\nvs Predicted Measurement Error")
-pp_check(post1, overlay = FALSE) + ggtitle(ttl)
+pp_check(post1, plotfun = "hist") + ggtitle(ttl)
 
 # Make similar plot manually but combine all y_rep
 op <- par('mfrow')
@@ -41,11 +41,11 @@ mean(y_rep == 0)
 mean(DATA_ENV$y == 0)
 summary(apply(y_rep == 0, 1, mean))
 prop0 <- function(x) mean(x == 0)
-pp_check(post2, check = "test", test = "prop0") # model doesn't predict enough zeros
+pp_check(post2, plotfun = "stat", stat = "prop0") # model doesn't predict enough zeros
 
 # Negative binomial model does a much better job handling the zeros
 post3 <- update(post2, family = neg_binomial_2())
-pp_check(post3, check = "test", test = "prop0")
+pp_check(post3, plotfun = "stat", stat = "prop0")
 
 
 # rstanarm does not yet support time-series models
