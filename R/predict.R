@@ -64,11 +64,26 @@ predict.stanreg <- function(object,
       "function to draw \nfrom the posterior predictive distribution.",
       call. = FALSE
     )
-  
-  dat <- pp_data(object, newdata)
-  stanmat <- as.matrix.stanreg(object)
-  beta <- stanmat[, seq_len(ncol(dat$x))]
-  eta <- linear_predictor(beta, dat$x, dat$offset)
+  if (is(object, "spatial")) {
+    dat <- list()
+    W <- object$W
+    dat$x <- newdata
+    dat$offset <- NULL
+    stanmat <- as.matrix.stanreg(object)
+    rho <- stanmat[,"rho"]
+    beta <- stanmat[, 2:(ncol(dat$x)+1)]
+    # eta <- linear_predictor(beta, dat$x, dat$offset) 
+    # for (i in 1:nrow(eta)) {
+    #   eta[i,] <- solve(diag(1,N) - rho[i] * W) %*% eta[i,]  # has to be a better way
+    # }
+    eta <- t(sapply(1:length(rho), function(n) {solve(diag(1,N) - rho[n] * W) %*% X %*% beta[n,]}))
+  }
+  else {
+    dat <- pp_data(object, newdata)
+    stanmat <- as.matrix.stanreg(object)
+    beta <- stanmat[, seq_len(ncol(dat$x))]
+    eta <- linear_predictor(beta, dat$x, dat$offset) 
+  }
   if (type == "response") {
     inverse_link <- linkinv(object)
     eta <- inverse_link(eta)

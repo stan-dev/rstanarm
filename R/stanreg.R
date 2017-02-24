@@ -92,7 +92,7 @@ stanreg <- function(object) {
   # linear predictor, fitted values
   if (object$stanfit@model_name == "spatial") {  # this needs to be fixed for SEM (math is different)
     eta <- linear_predictor(coefs[-which(names(coefs) == "rho")], x, object$offset)
-    eta <- solve(diag(1,N) - lambda * W) %*% eta
+    eta <- c(solve(diag(1,N) - coefs["rho"] * W) %*% eta)
   }
   else {
     eta <- linear_predictor(coefs, x, object$offset)
