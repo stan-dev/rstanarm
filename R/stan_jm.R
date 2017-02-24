@@ -22,11 +22,7 @@
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
 #' @export
-#' @templateVar pkg stats
-#' @templateVar pkgfun glm
-#' @templateVar sameargs offset
 #' @templateVar rareargs na.action,contrasts
-#' @template args-same-as
 #' @template args-same-as-rarely
 #' @template args-dots
 #' @template args-prior_covariance
@@ -35,9 +31,6 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' @template args-sparse
-#' @param offset Not currently implemented.
-#' @param QR Not currently implemented.
-#' @param sparse Not currently implemented.
 #' 
 #' @param formulaLong A two-sided linear formula object describing both the 
 #'   fixed-effects and random-effects parts of the longitudinal submodel  
@@ -64,6 +57,7 @@
 #'   to be the individual). If there is more than one grouping factor (i.e.
 #'   clustering beyond the level of the individual) then the \code{id_var}
 #'   argument must be specified.
+#' @param offset Not currently implemented. Same as \code{\link[stats]{glm}}.
 #' @param family The family (and possibly also the link function) for the 
 #'   longitudinal submodel(s). See \code{\link[lme4]{glmer}} for details. 
 #'   If fitting a multivariate joint model, then this can optionally be a
