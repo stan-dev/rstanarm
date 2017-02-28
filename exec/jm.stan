@@ -191,6 +191,10 @@ data {
   
   // flag indicating whether to draw from the prior
   int<lower=0,upper=1> prior_PD;  // 1 = yes
+  
+  // flag indiciating whether to accumulate lp for each submodel
+  int<lower=0,upper=1> long_lp;  // 1 = yes
+  int<lower=0,upper=1> event_lp;  // 1 = yes
 
 }
 transformed data {
@@ -769,7 +773,7 @@ model {
 #    }    
 
     // Log-likelihood for longitudinal submodel(s)
-    if (has_weights == 0 && prior_PD == 0) { # unweighted log-likelihoods
+    if (has_weights == 0 && prior_PD == 0 && long_lp == 1) { # unweighted log-likelihoods
       if (family[m] == 1) {
         if (link[m] == 1)      target += normal_lpdf(y_real[y_real_beg[m]:y_real_end[m]] | y_eta_tmp, y_aux[aux_mark]);
         else if (link[m] == 2) target += lognormal_lpdf(y_real[y_real_beg[m]:y_real_end[m]] | y_eta_tmp, y_aux[aux_mark]);
@@ -809,7 +813,7 @@ model {
                                            linkinv_count(y_eta_tmp, link[m]), y_aux[aux_mark]);
 	    }	    
     }    
-    else if (prior_PD == 0) { # weighted log-likelihoods
+    else if (prior_PD == 0 && long_lp == 1) { # weighted log-likelihoods
   	  vector[y_N[m]] y_weights_tmp;	  
   	  vector[y_N[m]] summands;
       y_weights_tmp = y_weights[y_beg[m]:y_end[m]];	  
@@ -862,7 +866,7 @@ model {
                            
   // Log-likelihood for event submodel  
   // NB weights already incorporated in ll calculation in transformed param block
-  if (prior_PD == 0) target += ll_event;  
+  if (prior_PD == 0 && event_lp == 1) target += ll_event;  
   
   //--------
   // Priors

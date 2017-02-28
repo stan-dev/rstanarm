@@ -424,7 +424,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorAssoc = normal(), prior_covariance = decov(), prior_PD = FALSE, 
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
-                    sparse = FALSE) {
+                    sparse = FALSE, long_lp = TRUE, event_lp = TRUE) {
   
   
   #=============================
@@ -489,6 +489,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     mc$adapt_delta <- mc$max_treedepth <- 
     mc$... <- mc$QR <- NULL
   mc$weights <- NULL 
+  mc$long_lp <- mc$event_lp <- NULL
 
   # Create call for longitudinal submodel  
   y_mc <- mc
@@ -710,11 +711,11 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     
     # data for longitudinal submodel(s)
     link = as.array(link),
-    y_has_intercept         = fetch_array(y_mod_stuff, "has_intercept"),
-    y_has_intercept_unbound = fetch_array(y_mod_stuff, "has_intercept_unbound"),
-    y_has_intercept_lobound = fetch_array(y_mod_stuff, "has_intercept_lobound"),
-    y_has_intercept_upbound = fetch_array(y_mod_stuff, "has_intercept_upbound"),
-    y_has_aux               = fetch_array(y_mod_stuff, "has_aux"),
+    y_has_intercept         = as.array(as.integer(fetch_(y_mod_stuff, "has_intercept"))),
+    y_has_intercept_unbound = as.array(as.integer(fetch_(y_mod_stuff, "has_intercept_unbound"))),
+    y_has_intercept_lobound = as.array(as.integer(fetch_(y_mod_stuff, "has_intercept_lobound"))),
+    y_has_intercept_upbound = as.array(as.integer(fetch_(y_mod_stuff, "has_intercept_upbound"))),
+    y_has_aux               = as.array(as.integer(fetch_(y_mod_stuff, "has_aux"))),
     y_xbar                  = fetch_array(y_mod_stuff, "xbar"),
     trials                  = fetch_array(y_mod_stuff, "trials"),
     y_weights               = as.array(unlist(y_weights)),
@@ -765,7 +766,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     y_global_prior_df = c(unique(fetch_(y_prior_stuff, "global_prior_df"))), 
     e_global_prior_df = e_prior_stuff$global_prior_df,
     a_global_prior_df = a_prior_stuff$global_prior_df,
-    prior_PD = as.integer(prior_PD)
+    prior_PD = as.integer(prior_PD),
+    long_lp = as.integer(long_lp),
+    event_lp = as.integer(event_lp)
   )
   
   # data for association structure
@@ -807,8 +810,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$which_b_zindex    <- as.array(unlist(assoc["which_b_zindex",]))
   standata$which_coef_zindex <- as.array(unlist(assoc["which_coef_zindex",]))
   standata$which_coef_xindex <- as.array(unlist(assoc["which_coef_xindex",]))
-  standata$size_which_b      <- c(sapply(assoc["which_b_zindex",    ], length))
-  standata$size_which_coef   <- c(sapply(assoc["which_coef_zindex", ], length))
+  standata$size_which_b      <- as.array(sapply(assoc["which_b_zindex",    ], length))
+  standata$size_which_coef   <- as.array(sapply(assoc["which_coef_zindex", ], length))
   
   # interactions between association terms
   standata$which_interactions      <- unlist(assoc["which_interactions",])
@@ -1018,8 +1021,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
             if (standata$a_K) "a_beta",
             if (standata$Npat) "b_by_model",
             if (standata$sum_y_has_aux) "y_aux",
-            "e_aux")
-
+            "e_aux",
+            if (standata$len_theta_L) "theta_L")
+            
   cat(paste0(if (M == 1L) "Uni" else "Multi", "variate joint model specified\n"))
   if (algorithm == "sampling") {
     cat("\nPlease note the warmup phase may be much slower than",
@@ -1088,6 +1092,37 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     a_nms <- c(a_nms, paste0("Assoc|", unlist(temp_g_nms)))
   }
   
+  # Sigma names
+  if (standata$len_theta_L) {
+    thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                      permuted = FALSE)
+    nc <- sapply(cnms, FUN = length)
+    nms <- names(cnms)
+    Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+      Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+      unlist(sapply(Sigma, simplify = FALSE, 
+                    FUN = function(x) x[lower.tri(x, TRUE)]))
+    })
+    l <- length(dim(Sigma))
+    end <- tail(dim(Sigma), 1L)
+    shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+    if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+      stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+    }
+    else for (chain in 1:end) {
+      stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
+    }
+    Sigma_nms <- lapply(cnms, FUN = function(grp) {
+      nm <- outer(grp, grp, FUN = paste, sep = ",")
+      nm[lower.tri(nm, diag = TRUE)]
+    })
+    for (j in seq_along(Sigma_nms)) {
+      Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+    }
+    Sigma_nms <- unlist(Sigma_nms)
+  }
+  
+  
   new_names <- c(y_int_nms,
                  y_nms,
                  e_int_nms,
@@ -1096,10 +1131,11 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                  if (length(group)) c(paste0("b[", b_nms, "]")),
                  y_aux_nms,
                  e_aux_nms,
+                 if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   
-  n_grps <- l - 1
+  n_grps <- standata$l - 1
   names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
   names(p) <- cnms_nms       # p is num. of variables within each grouping factor
   
@@ -1174,12 +1210,16 @@ handle_glmod <- function(mc, family, supported_families, supported_links, sparse
     has_intercept_lobound <- 0L
     has_intercept_upbound <- 0L
   } 
+  offset <- lme4::getME(mod, "offset")
   
   # Random effect terms
-  Ztlist <- lme4::getME(mod, "Ztlist")
-  cnms   <- lme4::getME(mod, "cnms")
-  flist  <- lme4::getME(mod, "flist")
-  offset <- lme4::getME(mod, "offset")
+  group_call <- mc
+  group_call[[1]] <- quote(lme4::glFormula)
+  group <- eval(group_call, parent.frame())$reTrms      	
+  
+  Ztlist <- group$Ztlist
+  cnms   <- group$cnms
+  flist  <- group$flist
   
   # Reorder y, X, Z if bernoulli (zeros first)
   if (is.binomial(family$family) && all(y %in% 0:1)) {      
@@ -1187,7 +1227,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links, sparse
     y      <- y     [ord]
     trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
-    Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE])
+    Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
+    flist  <- lapply(flist,  function(x) x[ord]) 
     N01    <- sapply(0:1,    function(x) sum(y == x))
   } else {
     ord    <- NULL
@@ -1382,6 +1423,7 @@ unorder_bernoulli <- function(mod_stuff) {
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])
+    mod_stuff$flist   <- lapply(mod_stuff$flist,  function(x) x[order(mod_stuff$ord)])
   }
   mod_stuff
 }
