@@ -197,7 +197,7 @@ simjm <- function(n = 200, M = 3,
   
   # Final dataset
   ret <- merge(dat, eventdat, by = "id")
-  ret[ret$tij <= ret$eventtime, ]  # only keep rows before event time
+  ret <- ret[ret$tij <= ret$eventtime, ]  # only keep rows before event time
   sel <- grep("^id|^Z|^tij|^Yij|event", colnames(ret))
   ret <- ret[, sel, drop = FALSE]
   
