@@ -107,14 +107,14 @@ collect_nms <- function(x, M, ...) {
     c(grep(paste0("^Long", m, "\\|sigma"), x, ...),
       grep(paste0("^Long", m, "\\|shape"), x, ...),
       grep(paste0("^Long", m, "\\|lambda"), x, ...),
-      grep(paste0("^Long", m, "\\|overdispersion"), x, ...)))             
+      grep(paste0("^Long", m, "\\|reciprocal_dispersion"), x, ...)))             
   y <- lapply(1:M, function(m) setdiff(y[[m]], y_extra[[m]]))
   e <- grep(mod2rx("^Event"), x, ...)     
   e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
-  y_b <- lapply(1:M, function(m) b_names(x, m, ...))
+  y_b <- lapply(1:M, function(m) b_names_M(x, m, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta) 
@@ -126,7 +126,7 @@ collect_nms <- function(x, M, ...) {
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param submodel Optional integer specifying which long submodel
 # @param ... Passed to grep
-b_names <- function(x, submodel = NULL, ...) {
+b_names_M <- function(x, submodel = NULL, ...) {
   if (is.null(submodel)) {
     grep("^b\\[", x, ...)
   } else {
@@ -203,17 +203,6 @@ rm_stub <- function(x) {
   x <- gsub(mod2rx("Event"), "", x)
 }
 
-
-check_submodelopt2 <- function(x) {
-  if (!x %in% c("long", "event"))
-    stop("submodel option must be 'long' or 'event'") 
-}
-
-check_submodelopt3 <- function(x) {
-  if (!x %in% c("long", "event", "both"))
-    stop("submodel option must be 'long', 'event' or 'both'") 
-}
-
 # Removes a specified character string from the names of an
 # object (for example, a matched call)
 #
@@ -224,45 +213,21 @@ strip_nms <- function(x, string) {
   x
 }
 
-
 # Get inverse link function
 #
 # @param x A stanjm object or family object. 
 # @param ... Ignored. 
 # @return The inverse link function associated with x.
-linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanjm <- function(x, ...) {
   lapply(family(x), function(y) y$linkinv)
 }
-linkinv.family <- function(x, ...) {
-  x$linkinv
+
+# Check argument contains one of the allowed options
+check_submodelopt2 <- function(x) {
+  if (!x %in% c("long", "event"))
+    stop("submodel option must be 'long' or 'event'") 
 }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+check_submodelopt3 <- function(x) {
+  if (!x %in% c("long", "event", "both"))
+    stop("submodel option must be 'long', 'event' or 'both'") 
+}
