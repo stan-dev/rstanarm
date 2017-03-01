@@ -79,6 +79,9 @@ simjm <- function(n = 200, M = 3,
   random_trajectory <- match.arg(random_trajectory)
   assoc             <- match.arg(assoc)             # only etavalue currently implemented
   
+  if (random_trajectory == "linear" && fixed_trajectory == "none")
+    stop("Cannot use a linear random slope without a fixed linear slope.")
+  
   betaLong_intercept  <- maybe_broadcast(betaLong_intercept,  M)
   betaLong_binary     <- maybe_broadcast(betaLong_binary,     M)
   betaLong_continuous <- maybe_broadcast(betaLong_continuous, M)
@@ -118,7 +121,7 @@ simjm <- function(n = 200, M = 3,
   tij <- runif(n * max_yobs, 0, max_fuptime)
   
   # Residual error terms
-  eij <- sapply(error_sd, function(x) rnorm(n, 0, x))
+  eij <- sapply(error_sd, function(x) rnorm(n * max_yobs, 0, x))
   colnames(eij) <- paste0("eij_", 1:M)
   
   # Construct data frame
@@ -130,14 +133,17 @@ simjm <- function(n = 200, M = 3,
   # Calculate longitudinal outcomes
   for (m in 1:M) {
     nm_intercept <- paste0("b", (m - 1) * b_dim_perM + 1)
-    nm_slope     <- if (random_trajectory == "linear") paste0("b", (M-1) * b_dim_perM + 2) else NULL
     dat[[paste0("Xij_", m)]] <- 
       betaLong_intercept[m] + 
       betaLong_binary[m]     * dat$Z1 + 
       betaLong_continuous[m] * dat$Z2 +
-      betaLong_slope[m]      * dat$tij +
-      dat[[nm_intercept]] + 
-      dat[[nm_slope]]        * dat$tij 
+      dat[[nm_intercept]]
+    if (fixed_trajectory == "linear")
+      dat[[paste0("Xij_", m)]] <- dat[[paste0("Xij_", m)]] + (betaLong_slope[m] * dat$tij)
+    if (random_trajectory == "linear") {
+      nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+      dat[[paste0("Xij_", m)]] <- dat[[paste0("Xij_", m)]] + (dat[[nm_slope]] * dat$tij) 
+    }  
     dat[[paste0("Yij_", m)]] <- dat[[paste0("Xij_", m)]] + dat[[paste0("eij_", m)]]
   }
   
@@ -154,9 +160,14 @@ simjm <- function(n = 200, M = 3,
   # Sum parameters for time-varying part of each longitudinal submodel 
   # for feeding into the calculation of the cumulative hazard
   time_varying_part <- lapply(1:M, function(m) {
-    nm_slope <- if (random_trajectory == "linear") paste0("b", (m-1) * b_dim_perM + 2) else NULL
-    betaLong_slope[m] + 
-    dat.id[[nm_slope]]
+    val <- 0
+    if (fixed_trajectory == "linear")
+      val <- val + betaLong_slope[m] 
+    if (random_trajectory == "linear") {
+      nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+      val <- val + dat.id[[nm_slope]]
+    }
+    val
   })  
 
   # Random uniform variable used for generating survival time
@@ -191,25 +202,30 @@ simjm <- function(n = 200, M = 3,
   ret <- ret[, sel, drop = FALSE]
   
   # Store 'true' parameter values
-  param_values <- nlist(
+  long_params <- nlist(
     betaLong_intercept, 
     betaLong_binary, 
-    betaLong_continuous, 
-    betaLong_slope, 
+    betaLong_continuous
+  )
+  if (fixed_trajectory == "linear") 
+    long_params$betaLong_slope <- betaLong_slope  
+  event_params <- nlist( 
     betaEvent_intercept,
     betaEvent_binary,
     betaEvent_continuous,
     betaEvent_assoc,
-    b_sd,
-    b_corr = corr_mat,
     weibull_shape
+  )
+  re_params <- nlist(
+    b_sd,
+    b_corr = corr_mat
   )
   
   # Return object
-  structure(ret, params = param_values, n = n, M = M, max_yobs = max_yobs, 
-            max_fuptime = max_fuptime, fixed_trajectory = fixed_trajectory,
-            random_trajectory = random_trajectory, assoc = assoc)
-}  
+  structure(ret, params = c(long_params, event_params, re_params), 
+            n = n, M = M, max_yobs = max_yobs, max_fuptime = max_fuptime, assoc = assoc,
+            fixed_trajectory = fixed_trajectory, random_trajectory = random_trajectory)
+} 
   
   
 #--------------------- internal  
