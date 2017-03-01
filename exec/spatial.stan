@@ -25,16 +25,23 @@ parameters {
 model {
   matrix[N,N] weight_stuff;
   matrix[N,N] Sigma_inv;
+  vector[N] eta;
+  
   weight_stuff = I - rho * W;
   Sigma_inv = tcrossprod(weight_stuff);
   
+  if(has_intercept == 1)
+    eta = X * beta + gamma[1];
+  else
+    eta = X * beta;
+    
   // model
   if(mod == 1) { // SAR
     // target += multi_normal_prec_lpdf(y | inverse(weight_stuff) * X * beta + , Sigma);
-    target += -0.5 * quad_form(Sigma_inv, y - inverse(weight_stuff) * (X * beta + gamma[1]));
+    target += -0.5 * quad_form(Sigma_inv, y - inverse(weight_stuff) * eta);
   }
   if(mod == 2) { // SEM
-    target += multi_normal_prec_lpdf(y | X * beta + gamma[1], Sigma_inv);
+    target += multi_normal_prec_lpdf(y | eta, Sigma_inv);
   }
   // priors
   target += -0.5 * log_determinant(Sigma_inv);
@@ -45,22 +52,28 @@ generated quantities {
   real alpha[has_intercept];
   real mean_PPD = 0;
   // scale intercept if included
-  if (has_intercept == 1)
-    alpha[1] = gamma[1] - dot_product(beta, xbar);
-  else
-    alpha[1] = gamma[1];
-  
+    
   // calculate mean of posterior predictive distribution
   {
     vector[N] yrep;
     vector[N] eta;
+    vector[N] eta2;
     matrix[N,N] Sigma;
-    if(mod == 1)
-      eta = inverse(I - rho * W) * X * beta + alpha[1];
-    else if(mod == 2)
+    // fix intercept if included
+    if (has_intercept == 1) {
+      alpha[1] = gamma[1] - dot_product(beta, xbar);
       eta = X * beta + alpha[1];
+    }
+    else {
+      eta = X * beta;
+    }
+    // define model specific linear predictor
+    if(mod == 1)
+      eta2 = inverse(I - rho * W) * eta;
+    else if(mod == 2)
+      eta2 = eta;
     Sigma = inverse(tcrossprod(I - rho * W));
-    yrep = multi_normal_rng(eta, inverse(Sigma));
+    yrep = multi_normal_rng(eta2, inverse(Sigma));
     mean_PPD = mean(yrep);
   }
 }

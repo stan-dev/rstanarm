@@ -27,10 +27,15 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
-  if(has_intercept == TRUE)
+  if(has_intercept == TRUE) {
     has_intercept <- 1
-  else
+    pars <- c("rho", "alpha", "beta", "mean_PPD")
+  }
+  else {
     has_intercept <- 0
+    pars <- c("rho", "beta", "mean_PPD")
+  }
+  
   # in stan you need to separate the intercept from the rest of the parameters
   # then if intercept == TRUE {intercept = intercept - xbar * beta}
   # if intercept == FALSE {eta = eta + xbar * beta} ??? (not sure)
@@ -48,8 +53,6 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                     )
   
   stanfit <- stanmodels$spatial
-  
-  pars <- c("rho", "beta", "mean_PPD")
   
   if(algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
@@ -70,8 +73,11 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
     stop("meanfield and fullrank algorithm not yet implemented.")
   }
   check_stanfit(stanfit)
-browser()
-  new_names <- c("rho", "(Intercept)", colnames(xtemp), "mean_PPD", "log-posterior")
+  
+  if(has_intercept == 1)
+    new_names <- c("rho", "(Intercept)", colnames(xtemp), "mean_PPD", "log-posterior")
+  else
+    new_names <- c("rho", colnames(xtemp), "mean_PPD", "log-posterior")
 
   stanfit@sim$fnames_oi <- new_names
   return(structure(stanfit))  #  prior.info = prior_info
