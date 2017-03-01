@@ -62,15 +62,15 @@ simjm <- function(n = 200, M = 3,
                   random_trajectory = c("linear", "none"),
                   assoc = c("etavalue"),
                   betaLong_intercept = 90, 
-                  betaLong_binary = -2, 
-                  betaLong_continuous = 4, 
+                  betaLong_binary = -1.5, 
+                  betaLong_continuous = 1, 
                   betaLong_slope = 2.5, 
-                  betaEvent_intercept = -10,
+                  betaEvent_intercept = -11.87,
                   betaEvent_binary = 0.6,
-                  betaEvent_continuous = 0.1,
-                  betaEvent_assoc = 0.2,
+                  betaEvent_continuous = 0.08,
+                  betaEvent_assoc = 0.01,
                   b_sd = c(20,3), b_rho = 0.5,
-                  error_sd = 15,
+                  error_sd = 10,
                   max_yobs = 8, 
                   max_fuptime = 10)
 {
@@ -83,10 +83,9 @@ simjm <- function(n = 200, M = 3,
   betaLong_binary     <- maybe_broadcast(betaLong_binary,     M)
   betaLong_continuous <- maybe_broadcast(betaLong_continuous, M)
   betaLong_slope      <- maybe_broadcast(betaLong_slope,      M)
+  betaEvent_assoc     <- maybe_broadcast(betaEvent_assoc,     M)
   error_sd            <- maybe_broadcast(error_sd,            M)
 
-  
-  
   weibull_shape <- 2  # must be 2, for correct closed-form solution to integral in cumhCox function
     
   # Generate baseline covariates - binary
@@ -155,7 +154,7 @@ simjm <- function(n = 200, M = 3,
   # Sum parameters for time-varying part of each longitudinal submodel 
   # for feeding into the calculation of the cumulative hazard
   time_varying_part <- lapply(1:M, function(m) {
-    nm_slope <- if (random_trajectory == "linear") paste0("b", (M-1) * b_dim_perM + 2) else NULL
+    nm_slope <- if (random_trajectory == "linear") paste0("b", (m-1) * b_dim_perM + 2) else NULL
     betaLong_slope[m] + 
     dat.id[[nm_slope]]
   })  
@@ -166,15 +165,12 @@ simjm <- function(n = 200, M = 3,
   # Time-fixed and time-varying parts used in calculating cumulative hazard
   K1 <- weibull_shape * exp(betaEvent_intercept + 
                             betaEvent_binary     * dat.id$Z1 + 
-                            betaEvent_continuous * dat.id$Z2 + 
-                            if (M > 0) (betaEvent_assoc[1] * time_fixed_part[[1]]) + 
-                            if (M > 1) (betaEvent_assoc[2] * time_fixed_part[[2]]) + 
-                            if (M > 2) (betaEvent_assoc[3] * time_fixed_part[[3]]) + 
-                            if (M > 3) (betaEvent_assoc[4] * time_fixed_part[[4]]))
-  K2 <- if (M > 0) (betaEvent_assoc[1] * time_varying_part[[1]]) + 
-        if (M > 1) (betaEvent_assoc[2] * time_varying_part[[2]]) + 
-        if (M > 2) (betaEvent_assoc[3] * time_varying_part[[3]]) +  
-        if (M > 3) (betaEvent_assoc[4] * time_varying_part[[4]])
+                            betaEvent_continuous * dat.id$Z2)
+  for (i in 1:4)
+    if (M > (i-1)) K1 <- K1 * exp(betaEvent_assoc[i] * time_fixed_part[[i]]) # equivalent to adding terms onto the linear predictor
+  K2 <- if (M > 0) (betaEvent_assoc[1] * time_varying_part[[1]])
+  for (i in 2:4)
+    if (M > (i-1)) K2 <- K2 + (betaEvent_assoc[i] * time_varying_part[[i]])
   parts <- cbind(u, K1, K2)
   
   # Calculate survival time under Weibull model
@@ -184,13 +180,35 @@ simjm <- function(n = 200, M = 3,
   })
   
   # Observed event times and event indicator
-  eventtime <- if (true_eventtime <= max_fuptime) true_eventtime else max_fuptime
   event     <- (true_eventtime <= max_fuptime)
+  eventtime <- (true_eventtime * event) + (max_fuptime * (1 - event))
   eventdat  <- data.frame(id = 1:n, eventtime, event)
   
   # Final dataset
   ret <- merge(dat, eventdat, by = "id")
   ret[ret$tij <= ret$eventtime, ]  # only keep rows before event time
+  sel <- grep("^id|^Z|^tij|^Yij|event", colnames(ret))
+  ret <- ret[, sel, drop = FALSE]
+  
+  # Store 'true' parameter values
+  param_values <- nlist(
+    betaLong_intercept, 
+    betaLong_binary, 
+    betaLong_continuous, 
+    betaLong_slope, 
+    betaEvent_intercept,
+    betaEvent_binary,
+    betaEvent_continuous,
+    betaEvent_assoc,
+    b_sd,
+    b_corr = corr_mat,
+    weibull_shape
+  )
+  
+  # Return object
+  structure(ret, params = param_values, n = n, M = M, max_yobs = max_yobs, 
+            max_fuptime = max_fuptime, fixed_trajectory = fixed_trajectory,
+            random_trajectory = random_trajectory, assoc = assoc)
 }  
   
   
