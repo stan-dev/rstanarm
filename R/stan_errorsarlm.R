@@ -53,7 +53,7 @@
 stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
                           prior_rho = beta(), prior_intercept = NULL,
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
-                          adapt_delta = NULL) {
+                          adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   sp_model <- "errorsarlm"
   
   if (!requireNamespace("spdep", quietly = TRUE))
@@ -64,7 +64,8 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   mc <- match.call(expand.dots = FALSE)
   
   # NULLify any Stan specific arguments in mc
-  mc$prior_rho <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- NULL
+  mc$prior_rho <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- 
+    mc$QR <- mc$sparse <- NULL
   
   # mc$drop.unused.levels <- TRUE  # drop stuff in ... so quote evaluates
   mc[[1L]] <- quote(spdep::lagsarlm)
@@ -77,7 +78,7 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
                          prior_rho = prior_rho, prior_intercept = prior_intercept, 
-                         algorithm = algorithm, adapt_delta = adapt_delta)
+                         algorithm = algorithm, adapt_delta = adapt_delta, QR = QR, sparse = sparse)
   
   
   fit <- nlist(stanfit, algorithm, data, family = gaussian(),

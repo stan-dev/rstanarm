@@ -20,13 +20,13 @@
 #' Note this doc is incomplete!
 #'
 #' @export
-#' 
 #' @param listw Spatial weights as a "listw" object. This can be constructed from
 #' a variety of formats using the appropriate functions in the \code{spdep}
 #' package (e.g. \code{mat2listw} transforms a "matrix" class object to a
 #' "listw" class object).
 #' @param  prior_rho Prior on spatial autocorrelation term.
 #' @param prior_intercept Prior on intercept of linear predictor.
+#' @template args-QR
 #' 
 #' @examples 
 #' ### Spatial AR lag Simulation
@@ -53,31 +53,30 @@
 stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
                           prior_rho = beta(), prior_intercept = NULL,
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
-                          adapt_delta = NULL) {
+                          adapt_delta = NULL, QR = TRUE, sparse = FALSE) {
   sp_model <- "lagsarlm"
-  
+
   if (!requireNamespace("spdep", quietly = TRUE))
     stop("Please install the spdep package before using 'stan_lagsarlm'.")
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
-
   mc <- match.call(expand.dots = FALSE)
-  
   # NULLify any Stan specific arguments in mc
-  mc$prior_rho <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- NULL
+  mc$prior_rho <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- 
+    mc$QR <- mc$sparse <- NULL
   
   # mc$drop.unused.levels <- TRUE  # drop stuff in ... so quote evaluates
   mc[[1L]] <- quote(spdep::lagsarlm)
   mc$... <- NULL
   sp <- suppressWarnings(eval(mc, parent.frame()))
-  
-  Y <- array1D_check(sp$y)
+
+    Y <- array1D_check(sp$y)
   X <- sp$X
   W <- spdep::listw2mat(listw)
-  
+
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
                           prior_rho = prior_rho, prior_intercept = prior_intercept, 
-                          algorithm = algorithm, adapt_delta = adapt_delta)
+                          algorithm = algorithm, adapt_delta = adapt_delta, QR = QR, sparse = sparse)
   
   
   fit <- nlist(stanfit, algorithm, data, family = gaussian(),

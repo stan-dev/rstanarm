@@ -19,7 +19,7 @@
 stan_sp.fit <- function(y, x, w, ..., sp_model,
                         prior_rho = beta(), prior_intercept, 
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                        adapt_delta) {
+                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   algorithm <- match.arg(algorithm)
   
@@ -27,6 +27,7 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
+  
   if(has_intercept == TRUE) {
     has_intercept <- 1
     pars <- c("rho", "alpha", "beta", "mean_PPD")
@@ -34,6 +35,21 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   else {
     has_intercept <- 0
     pars <- c("rho", "beta", "mean_PPD")
+  }
+  
+  if (QR) {
+    if (ncol(xtemp) <= 1)
+      stop("'QR' can only be specified when there are multiple predictors.")
+    if (sparse)
+      stop("'QR' and 'sparse' cannot both be TRUE.")
+    cn <- colnames(xtemp)
+    decomposition <- qr(xtemp)
+    sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
+    Q <- qr.Q(decomposition)
+    R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
+    xtemp <- Q * sqrt_nm1
+    colnames(xtemp) <- cn
+    xbar <- c(xbar %*% R_inv)
   }
   
   # in stan you need to separate the intercept from the rest of the parameters
