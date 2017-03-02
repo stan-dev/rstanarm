@@ -32,7 +32,7 @@ SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
                     seed = SEED, refresh = REFRESH))
 
 expect_gg <- function(x, info = NULL, label = NULL) {
-  expect_is(x, "ggplot", info = info, label = label)
+  testthat::expect_is(x, "ggplot", info = info, label = label)
 }
 
 
@@ -139,4 +139,12 @@ test_that(".ignore_nreps and .set_nreps work", {
   expect_warning(r <- set_nreps(10, "ppc_stat"), "'nreps' is ignored")
   expect_null(r)
   expect_equal(set_nreps(10, "ppc_hist"), 10)
+})
+
+test_that("y coerced to numeric (attributes dropped)", {
+  d <- mtcars
+  attr(d$mpg, "test") <- "something"
+  SW(fit3 <- update(fit2, data = d))
+  expect_equal(attr(get_y(fit3), "test"), "something")
+  expect_gg(pp_check(fit3, nreps = 3))
 })
