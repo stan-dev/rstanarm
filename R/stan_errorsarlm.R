@@ -51,7 +51,7 @@
 #' fit <- stan_errorsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
 
 stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
-                          prior_rho = beta(), prior_intercept = NULL,
+                          prior_rho = beta(), prior_intercept = normal(),
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                           adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   sp_model <- "errorsarlm"

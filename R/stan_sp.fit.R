@@ -17,7 +17,7 @@
 
 #' @export
 stan_sp.fit <- function(y, x, w, ..., sp_model,
-                        prior_rho = beta(), prior_intercept, 
+                        prior_rho = beta(), prior_intercept = normal(), 
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -33,6 +33,18 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
+
+  ok_intercept_dists <- nlist("normal", student_t = "t", "cauchy")
+  prior_intercept_stuff <- handle_glm_prior(
+    prior_intercept,
+    nvars = 1,
+    default_scale = 10,
+    link = gaussian()$link,
+    ok_dists = ok_intercept_dists
+  )
+  names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff),"_for_intercept")
+  for (i in names(prior_intercept_stuff))
+    assign(i, prior_intercept_stuff[[i]])
   
   if(has_intercept == TRUE) {
     has_intercept <- 1
@@ -71,7 +83,11 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                     shape1 = prior_rho$alpha,
                     shape2 = prior_rho$beta,
                     has_intercept = has_intercept,
-                    xbar = xbar
+                    xbar = xbar,
+                    prior_dist_for_intercept = prior_dist_for_intercept,
+                    prior_mean_for_intercept = c(prior_mean_for_intercept),
+                    prior_scale_for_intercept = c(prior_scale_for_intercept),
+                    prior_df_for_intercept = c(prior_df_for_intercept)
                     )
   
   stanfit <- stanmodels$spatial
