@@ -58,6 +58,9 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   
   if (!requireNamespace("spdep", quietly = TRUE))
     stop("Please install the spdep package before using 'stan_lagsarlm'.")
+  if (!("listw" %in% class(listw)))
+    stop("Spatial weights must be a listw object. See the spdep package documentation for details.")
+  
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
   
@@ -75,6 +78,9 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   Y <- array1D_check(sp$y)
   X <- sp$X
   W <- spdep::listw2mat(listw)
+  
+  if (!(all(rowSums(W) == rep(1,nrow(W)))))
+    warning("Spatial weights are not row normalized.", call. = FALSE)
   
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
                          prior_rho = prior_rho, prior_intercept = prior_intercept, 

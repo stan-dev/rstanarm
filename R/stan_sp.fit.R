@@ -21,6 +21,7 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
+  # check prior for spatial correlation parameter
   if(is.null(prior_rho))
     prior_rho = beta(1,1)  # kinda hacky
   else if(prior_rho$dist != "beta")
