@@ -21,6 +21,11 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
+  if(is.null(prior_rho))
+    prior_rho = beta(1,1)  # kinda hacky
+  else if(prior_rho$dist != "beta")
+    stop("'prior_rho' can only be specified with 'beta()'")
+  
   algorithm <- match.arg(algorithm)
   
   x_stuff <- center_x(x, sparse = FALSE)
