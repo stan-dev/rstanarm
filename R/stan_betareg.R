@@ -123,6 +123,10 @@ stan_betareg <-
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
+    
+    if (missing(data)) 
+      warn_data_arg_missing("stan_betareg")
+    
     if (!requireNamespace("betareg", quietly = TRUE))
       stop("Please install the betareg package before using 'stan_betareg'.")
     

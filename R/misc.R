@@ -670,3 +670,15 @@ check_stanfit <- function(x) {
   }
   return(TRUE)
 }
+
+# Throw a warning if 'data' argument to modeling function is missing
+# @param fun The name of a function
+warn_data_arg_missing <- function(fun) {
+  warning(
+    "Omitting the 'data' argument to ", fun, " is not recommended ",
+    "and may not be allowed in the future versions of rstanarm. ", 
+    "Some post-estimation functions (in particular 'update', 'loo', 'kfold') ", 
+    "are not guaranteed to work properly unless 'data' is specified as a data frame.",
+    call. = FALSE)
+}
+

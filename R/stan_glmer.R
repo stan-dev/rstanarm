@@ -86,6 +86,9 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
+  if (missing(data)) 
+    warn_data_arg_missing("stan_glmer")
+  
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
   family <- validate_family(family)
