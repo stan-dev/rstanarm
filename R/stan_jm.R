@@ -481,8 +481,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   mc$time_var <- mc$id_var <- mc$assoc <- 
     mc$basehaz <- mc$basehaz_ops <-
     mc$df <- mc$knots <- mc$quadnodes <- NULL
-  mc$priorLong <- mc$priorLong_intercept <- 
-    mc$priorEvent <- mc$priorEvent_intercept <-
+  mc$priorLong <- mc$priorLong_intercept <- mc$priorLong_aux <-
+    mc$priorEvent <- mc$priorEvent_intercept <- mc$priorEvent_aux <-
     mc$priorAssoc <- mc$prior_covariance <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- 
     mc$concentration <- mc$shape <- mc$init <- 
