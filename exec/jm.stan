@@ -485,7 +485,7 @@ transformed parameters {
       mark2 = mark2 + 1; // count even if assoc type isn't used
       if (has_assoc[1,m] == 1) { # etavalue
         mark = mark + 1;
-	      e_eta_q = e_eta_q + a_beta[mark] * y_eta_qwide[M];
+	      e_eta_q = e_eta_q + a_beta[mark] * y_eta_qwide[m];
       }	
       if (has_assoc[11,m] == 1) { # etavalue*data
   	    int tmp;
