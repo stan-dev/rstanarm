@@ -69,8 +69,10 @@ stan_aov <- function(formula, data = NULL, projections = FALSE,
         if (projections) 
           fit$projections <- proj(fit)
         fit$call <- Call
+        fit$modeling_function <- "stan_aov"
         return(fit)
     } else { # nocov start
+      
         stop("Error terms not supported yet")
         if(pmatch("weights", names(match.call()), 0L))
             stop("weights are not supported in a multistratum aov() fit")

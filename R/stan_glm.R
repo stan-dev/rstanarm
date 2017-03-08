@@ -176,7 +176,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"))
+               contrasts = attr(X, "contrasts"), 
+               modeling_function = "stan_glm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
@@ -224,5 +225,6 @@ stan_glm.nb <- function(formula,
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
+  out$modeling_function <- "stan_glm.nb"
   return(out)
 }
