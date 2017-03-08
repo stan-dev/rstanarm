@@ -172,7 +172,8 @@ stan_betareg <-
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
             family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
             formula, model = mf, terms = mt, call = match.call(),
-            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"))
+            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"), 
+            modeling_function = "stan_betareg")
     out <- stanreg(fit)
     out$xlevels <- lapply(mf[,-1], FUN = function(x) {
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL

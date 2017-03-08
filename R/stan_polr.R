@@ -189,7 +189,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]),
                  data, call, terms = Terms, model = m,
                  algorithm, na.action = attr(m, "na.action"),
-                 contrasts = attr(x, "contrasts"))
+                 contrasts = attr(x, "contrasts"), 
+                 modeling_function = "stan_polr")
     out <- stanreg(fit)
     if (!model)
       out$model <- NULL
@@ -240,7 +241,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
-               rstan_version = utils::packageVersion("rstan"))
+               rstan_version = utils::packageVersion("rstan"), 
+               modeling_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }
 
