@@ -19,9 +19,11 @@
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
 #' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
-#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
+#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
 #' cross-validation is also available. Compare two or more models using the 
-#' \code{compare_models} function.
+#' \code{compare_models} function. \strong{Note:} these functions are not
+#' guaranteed to work properly unless the \code{data} argument was specified 
+#' when the model was fit.
 #' 
 #' @aliases loo waic
 #'

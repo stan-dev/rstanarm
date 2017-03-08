@@ -36,7 +36,11 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}.
+#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \strong{We
+#'   strongly advise against omitting the \code{data} argument}. Unless
+#'   \code{data} is specified (and is a data frame) many post-estimation
+#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not
+#'   guaranteed to work properly.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
@@ -88,6 +92,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
+  data <- validate_data(data) #, if_missing = environment(formula))
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- make_glmerControl()
