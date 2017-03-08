@@ -130,6 +130,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       algorithm = c("sampling", "meanfield", "fullrank"),
                       adapt_delta = NULL) {
 
+  data <- validate_data(data)
   algorithm <- match.arg(algorithm)
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
