@@ -137,6 +137,15 @@
 #' pp_check(fit, plotfun = "error_hist", nreps = 6)
 #' pp_check(fit, plotfun = "error_scatter_avg_vs_x", x = "wt") + 
 #'   ggplot2::xlab("wt")
+#'   
+#' \donttest{
+#' # Example of a PPC for ordinal models (stan_polr)
+#' fit2 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+#'                   prior = R2(0.2, "mean"), init_r = 0.1)
+#' pp_check(fit, plotfun = "bars", nreps = 500, prob = 0.5)
+#' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
+#'          nreps = 500, prob = 0.5)
+#' }
 #' 
 pp_check.stanreg <-
   function(object,
@@ -348,6 +357,13 @@ is_binomial_ppc <- function(object) {
     "intervals_grouped" = .ignore_nreps(nreps),
     "ribbon" = .ignore_nreps(nreps),
     "ribbon_grouped" = .ignore_nreps(nreps), 
+    
+    # ROOTOGRAMS
+    "rootogram" = nreps, # NULL ok
+    
+    # BAR PLOTS
+    "bars" = nreps, # NULL ok
+    "bars_grouped" = nreps, # NULL ok
     
     # otherwise function not found
     stop(
