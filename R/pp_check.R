@@ -285,7 +285,7 @@ is_binomial_ppc <- function(object) {
   funname <- fun
   fun <- match.fun(fun)
   dots <- list(...)
-  dots[["y"]] <- y
+  dots[["y"]] <- as.numeric(y)
   dots[["yrep"]] <- yrep
   argnames <- names(formals(fun))
   
