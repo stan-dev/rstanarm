@@ -76,9 +76,10 @@ stan_lagsarlm <- function(formula, data, listw, type = "lag", ...,
   Y <- array1D_check(sp$y)
   X <- sp$X
   W <- spdep::listw2mat(listw)
-
-  if (!(all(rowSums(W) == rep(1,nrow(W)))))
+  
+  if (!(all(rowSums(W) == rep(1,nrow(W))))) {
     warning("Spatial weights are not row normalized.", call. = FALSE)
+  }
 
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
                           prior_rho = prior_rho, prior_intercept = prior_intercept, 

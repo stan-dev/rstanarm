@@ -26,41 +26,26 @@ parameters {
   real<lower=0,upper=1> rho;          // note the support is (0,1) not (-1,1)
   vector[K] beta;                     // parameter vector
   real gamma[has_intercept];          // intercept (demeaned)
+  real<lower=0> sigma;
 }
 model {
   matrix[N,N] weight_stuff;
-  // matrix[N,N] L_weight_stuff;
-  // matrix[N,N] Sigma_inv;
   vector[N] eta;
-  vector[N] mu;
   vector[N] half;
   
   weight_stuff = I - rho * W;
-  // L_weight_stuff = cholesky_decompose(weight_stuff);
-  // Sigma_inv = crossprod(weight_stuff);
-  
-  
+  // intercept present
   if(has_intercept == 1)
     eta = X * beta + gamma[1];
   else
     eta = X * beta;
-  
-  mu = mdivide_left(weight_stuff, eta);
-  half = weight_stuff * (y - mu);
-  
-  // model
-  if(mod == 1) { // SAR
-     // target += multi_normal_prec_lpdf(y | mu, Sigma_inv);
-     target += -0.5 * dot_self(half) + log_determinant(weight_stuff);
-     
-    // target += -0.5 * quad_form(Sigma_inv, y - inverse(weight_stuff) * eta);
-    // target += -0.5 * log_determinant(Sigma_inv);
-    // target += multi_normal_cholesky_lpdf(y | Sigma_inv * eta, L_weight_stuff);
-  }
-  if(mod == 2) { // SEM
-    // target += multi_normal_prec_lpdf(y | eta, Sigma_inv);
-  }
-  // priors
+  // components of likelihood
+  if(mod == 1)  // SAR
+    half = weight_stuff * (y - mdivide_left(weight_stuff, eta));
+  if(mod == 2)  // SEM
+    half = weight_stuff * (y - eta);
+  // likelihood
+  target += log_determinant(weight_stuff) - N * log(sigma) - 0.5 * dot_self(half);
   // prior on spatial autocorrelation
   target += beta_lpdf(rho | shape1, shape2);
   // prior on intercept
