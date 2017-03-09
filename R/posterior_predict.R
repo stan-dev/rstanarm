@@ -140,7 +140,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     set.seed(seed)
   if (!is.null(fun))
     fun <- match.fun(fun)
-
   newdata <- validate_newdata(newdata)
   dat <-
     pp_data(object,
@@ -185,7 +184,15 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object) {
-  suffix <- if (is(object, "polr")) "polr" else family(object)$family
+  if (is(object, "polr")) {
+    suffix <- "polr"
+  }
+  else if (is(object, "spatial")) {
+    suffix <- "spatial"
+  }
+  else {
+    suffix <- family(object)$family
+  }
   get(paste0(".pp_", suffix), mode = "function")
 }
 
@@ -193,6 +200,29 @@ pp_fun <- function(object) {
   t(sapply(1:nrow(mu), function(s) {
     rnorm(ncol(mu), mu[s,], sigma[s])
   }))
+}
+.pp_spatial <- function(mu, sigma, rho, W, sp_model) {  # for spatial models
+  I <- diag(nrow(W))
+  if (sp_model == "lagsarlm") {
+    t(sapply(1:nrow(mu), function(s) {
+      sigma <- solve(t(I - rho[s] * W) %*% (I - rho[s] * W) * 1/sigma[s])
+      rmultinorm(1, solve(I - rho[s] * W) %*% mu[s,], sigma)
+    }))
+  }
+  else if (sp_model == "errorsarlm") {
+    t(sapply(1:nrow(mu), function(s) {
+      sigma <- solve(t(I - rho[s] * W) %*% (I - rho[s] * W) * 1/sigma[s])
+      rmultinorm(1, mu[s,], sigma)
+    })) 
+  }
+}
+rmultinorm <- function(n, mu, sigma) {
+  x <- matrix(rnorm(n * length(mu)), ncol = length(mu), nrow = n)
+  sigma_decomp <- svd(sigma)
+  u <- sigma_decomp$u
+  d <- diag(sigma_decomp$d,length(sigma_decomp$d))
+  y <- t(mu + u %*% sqrt(d) %*% t(x))
+  return(y)
 }
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
@@ -277,6 +307,11 @@ pp_args <- function(object, data) {
   famname <- family(object)$family
   if (is.gaussian(famname)) {
     args$sigma <- stanmat[, "sigma"]
+    if (is(object, "spatial")) {
+      args$rho <- stanmat[, "rho"]
+      args$W <- object$W
+      args$sp_model <- object$sp_model
+    }
   } else if (is.gamma(famname)) {
     args$shape <- stanmat[, "shape"]
   } else if (is.ig(famname)) {

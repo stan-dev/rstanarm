@@ -45,7 +45,7 @@ model {
   if(mod == 2)  // SEM
     half = weight_stuff * (y - eta);
   // likelihood
-  target += log_determinant(weight_stuff) - N * log(sigma) - 0.5 * dot_self(half);
+  target += 0.5 * log_determinant((weight_stuff' * weight_stuff) * (1/sigma)) - 0.5 * dot_self(half) * (1/sigma);
   // prior on spatial autocorrelation
   target += beta_lpdf(rho | shape1, shape2);
   // prior on intercept

@@ -48,11 +48,11 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   
   if(has_intercept == TRUE) {
     has_intercept <- 1
-    pars <- c("rho", "alpha", "beta", "mean_PPD")
+    pars <- c("alpha", "beta", "rho", "sigma", "mean_PPD")
   }
   else {
     has_intercept <- 0
-    pars <- c("rho", "beta", "mean_PPD")
+    pars <- c("beta", "rho", "sigma", "mean_PPD")
   }
   
   if (QR) {
@@ -95,6 +95,15 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
   if(algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
     check_stanfit(out)
+    new_names <- names(out$par)
+    mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    new_names[mark] <- colnames(xtemp)
+    new_names[new_names == "alpha[1]"] <- "(Intercept)"
+    names(out$par) <- new_names
+    colnames(out$theta_tilde) <- new_names
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
+                                             chains = 0))
+    return(structure(out))
   }
   else if(algorithm == "sampling") {
     sampling_args <- set_sampling_args(
@@ -106,17 +115,16 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
       pars = pars, 
       show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
+    check_stanfit(stanfit)
+    if(has_intercept == 1)
+      new_names <- c("(Intercept)", colnames(xtemp), "rho", "sigma", "mean_PPD", "log-posterior")
+    else
+      new_names <- c(colnames(xtemp), "rho", "sigma", "mean_PPD", "log-posterior")
+    
+    stanfit@sim$fnames_oi <- new_names
+    return(structure(stanfit))  #  prior.info = prior_info
   }
   else {  # algorithm == meanfield or fullrank
     stop("meanfield and fullrank algorithm not yet implemented.")
   }
-  check_stanfit(stanfit)
-  
-  if(has_intercept == 1)
-    new_names <- c("rho", "(Intercept)", colnames(xtemp), "mean_PPD", "log-posterior")
-  else
-    new_names <- c("rho", colnames(xtemp), "mean_PPD", "log-posterior")
-
-  stanfit@sim$fnames_oi <- new_names
-  return(structure(stanfit))  #  prior.info = prior_info
 }

@@ -45,7 +45,10 @@ stanreg <- function(object) {
                           t(apply(stanmat, 2L, quantile, probs)))
     xnms <- colnames(x)
     covmat <- cov(stanmat)[xnms, xnms]
-    coefs <- apply(stanmat[, xnms, drop = FALSE], 2L, median)
+    if (!is.null(object[["sp_model"]]))
+      coefs <- apply(stanmat[, c("rho", xnms), drop = FALSE], 2L, median)
+    else
+      coefs <- apply(stanmat[, xnms, drop = FALSE], 2L, median)
     ses <- apply(stanmat[, xnms, drop = FALSE], 2L, mad)
     rank <- qr(x, tol = .Machine$double.eps, LAPACK = TRUE)$rank
     df.residual <- nobs - sum(object$weights == 0) - rank
@@ -57,7 +60,7 @@ stanreg <- function(object) {
     }
   } else {
     stan_summary <- make_stan_summary(stanfit)
-    if(object$stanfit@model_name == "spatial")
+    if(!is.null(object[["sp_model"]]))
       nvars <- nvars + 1  # + 1 to pick up the spatial autocorrelation parameter
     coefs <- stan_summary[1:nvars, select_median(object$algorithm)]
     if (is_betareg) {
@@ -90,9 +93,11 @@ stanreg <- function(object) {
   }
   
   # linear predictor, fitted values
-  if (object$stanfit@model_name == "spatial") {  # this needs to be fixed for SEM (math is different)
+  if (!is.null(object[["sp_model"]])) {  # this needs to be fixed for SEM (math is different)
     eta <- linear_predictor(coefs[-which(names(coefs) == "rho")], x, object$offset)
-    eta <- c(solve(diag(1,N) - coefs["rho"] * W) %*% eta)
+    if (object$sp_model == "lagsarlm") {
+      eta <- c(solve(diag(1,N) - coefs["rho"] * W) %*% eta)
+    }
   }
   else {
     eta <- linear_predictor(coefs, x, object$offset)
@@ -151,8 +156,9 @@ stanreg <- function(object) {
     out$eta_z <- eta_z
     out$phi <- phi
   }
-  if (object$stanfit@model_name == "spatial") {
+  if (!is.null(object[["sp_model"]])) {
     out$W <- W
+    out$sp_model <- object$sp_model
   }
   
   structure(out, class = c("stanreg", "glm", "lm"))
