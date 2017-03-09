@@ -570,10 +570,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   #================================
   
   # Handle association structure
-  ok_assoc <- c("null", "etavalue", "muvalue", "etaslope", "muslope", 
-                "etalag", "mulag", "etaauc", "muauc", "shared_b", "shared_coef")
-  ok_assoc_data         <- ok_assoc[2:5]
-  ok_assoc_interactions <- ok_assoc[2:3]
+  ok_assoc <- c("null", "etavalue","etaslope", "etalag", "etaauc", "muvalue", 
+                "muslope", "mulag", "muauc", "shared_b", "shared_coef")
+  ok_assoc_data         <- ok_assoc[c(2:3,6:7)]
+  ok_assoc_interactions <- ok_assoc[c(2,6)]
   
   assoc <- mapply(validate_assoc, assoc, y_mod_stuff, 
                   MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
@@ -582,10 +582,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
   colnames(assoc) <- paste0("Long", 1:M)
   
-  # Indicator of each association type, for each longitudinal submodel
-  sel <- grep("which_", rownames(assoc), invert = TRUE)
-  has_assoc <- as.integer(assoc[sel,])  # Integer instead of logical and no which_{*} information
-
   # Time shift used for numerically calculating derivative of linear predictor 
   # or expected value of longitudinal outcome using one-sided difference
   eps <- 1E-5
