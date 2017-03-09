@@ -119,46 +119,42 @@ model {
     P = reshape(eta, len_y, K);
     if (SSfun < 5) {
       if (SSfun <= 2) {
-        if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), dispersion);
-        else target += normal_lpdf(y | SS_asympOff(input, P), dispersion);
+        if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
+        else target += normal_lpdf(y | SS_asympOff(input, P), aux);
       }
-      else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), dispersion);
+      else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), aux);
       else {
         for (i in 1:len_y) P[i,1] = P[i,1] + exp(P[i,3]); // ordering constraint
-        target += normal_lpdf(y | SS_biexp(input, P), dispersion);
+        target += normal_lpdf(y | SS_biexp(input, P), aux);
       }
     }
     else {
       if (SSfun <= 7) {
-        if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), dispersion);
-        else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), dispersion);
-        else target += normal_lpdf(y | SS_gompertz(input, P), dispersion);
+        if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), aux);
+        else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), aux);
+        else target += normal_lpdf(y | SS_gompertz(input, P), aux);
       }
       else {
-        if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), dispersion);
-        else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), dispersion);
-        else target += normal_lpdf(y | SS_weibull(input, P), dispersion);
+        if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), aux);
+        else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), aux);
+        else target += normal_lpdf(y | SS_weibull(input, P), aux);
       }
     }
   }
   else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
-
-  #include "make_eta_z.stan"  // linear predictor in stan_betareg 
-  // adjust eta_z according to links
-  if (has_intercept_z == 1) {
-    if (link_phi > 1) {
-      eta_z = eta_z - min(eta_z) + gamma_z[1];
+    #include "make_eta_z.stan"  // linear predictor in stan_betareg 
+    // adjust eta_z according to links
+    if (has_intercept_z == 1) {
+      if (link_phi > 1) {
+        eta_z = eta_z - min(eta_z) + gamma_z[1];
+      }
+      else {
+        eta_z = eta_z + gamma_z[1];
+      }
     }
-    else {
-      eta_z = eta_z + gamma_z[1];
+    else { // has_intercept_z == 0
+      #include "eta_z_no_intercept.stan"
     }
-  }
-  else { // has_intercept_z == 0
-    #include "eta_z_no_intercept.stan"
-  }
-
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
       if (link == 1) 
         target += normal_lpdf(y | eta, aux);
@@ -291,19 +287,19 @@ generated quantities {
           else eta_nlmer = SS_weibull(input, P);
         }
       }
-      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta_nlmer[n], dispersion);
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta_nlmer[n], aux);
     }
     else if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta[n], dispersion);
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
     }
     else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + gamma_rng(dispersion, dispersion / eta[n]);
+      for (n in 1:len_y) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
     }
     else if (family == 3) {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], dispersion);
+      for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
     }
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
