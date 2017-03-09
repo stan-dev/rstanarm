@@ -254,7 +254,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
       log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
                       stanmat = as.matrix.stanreg(x))
-    if (save_fits) fits[k, ] <- list(fit = fit_k, omitted = omitted)
+    if (save_fits) 
+      fits[k, ] <- list(fit = fit_k, omitted = omitted)
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -265,7 +266,9 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
     se_elpd_kfold = sqrt(N * var(elpds)),
     pointwise = cbind(elpd_kfold = elpds)
   )
-  if (save_fits) out$fits <- fits
+  if (save_fits) 
+    out$fits <- fits
+  
   structure(out, 
             class = c("kfold", "loo"), 
             K = K, 
@@ -403,13 +406,17 @@ recommend_exact_loo <- function(reason) {
 # Refit model leaving out specific observations
 #
 # @param x stanreg object
-# @param loo_x result of loo(x)
-# @param obs vector of observation indexes
+# @param loo_x the result of loo(x)
+# @param obs vector of observation indexes. the model will be refit length(obs)
+#   times, each time leaving out one of the observations specified in 'obs'.
 # @param ... unused currently
 # @param refit logical, to toggle whether refitting actually happens (only used
 #   to avoid refitting in tests)
+#
+# @return A modified version of 'loo_x'. 
+#
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
-  stopifnot(!is.null(x$data), inherits(loo_x, "loo"))
+  stopifnot(!is.null(x$data), is.loo(loo_x))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")
   
@@ -437,19 +444,24 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
                       stanmat = as.matrix.stanreg(fit_j))
   }
   
-  # replace parts of loo_x
-  sel <- c("elpd_loo", "looic")
-  elppds <- unlist(lapply(lls, log_mean_exp))
-  loo_x$pointwise[obs, sel] <- cbind(elppds, -2 * elppds)
+  elpd_loo <- unlist(lapply(lls, log_mean_exp))
+  
+  ll_x <- log_lik(x, newdata = d[obs,, drop=FALSE])
+  hat_lpd <- apply(ll_x, 2, log_mean_exp)
+  
+  p_loo <- hat_lpd - elpd_loo
+
+  sel <- c("elpd_loo", "p_loo", "looic")
+  loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
   loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
   loo_x[paste0("se_", sel)] <- with(loo_x, {
     N <- nrow(pointwise)
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
-  
-  # what should we do about pareto k's? for now setting them to 0
+  # what should we do about pareto k? for now setting them to 0
   loo_x$pareto_k[obs] <- 0
-  loo_x
+  
+  return(loo_x)
 }
 
 # log_mean_exp (just log_sum_exp(x) - log(length(x)))
@@ -467,13 +479,6 @@ kfold_and_reloo_data <- function(x) {
   na.omit(d)
 }
 
-
-# @param x stanreg object
-family_string <- function(x) {
-  fam <- family(x)
-  if (is.character(fam)) 
-    fam else fam$family
-}
 
 # Calculate a SHA1 hash of y
 # @param x stanreg object
