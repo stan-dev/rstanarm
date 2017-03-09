@@ -444,13 +444,18 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
                       stanmat = as.matrix.stanreg(fit_j))
   }
   
+  # compute elpd_{loo,j} for each of the held out observations
   elpd_loo <- unlist(lapply(lls, log_mean_exp))
   
+  # compute \hat{lpd}_j for each of the held out observations (using log-lik
+  # matrix from full posterior, not the leave-one-out posteriors)
   ll_x <- log_lik(x, newdata = d[obs,, drop=FALSE])
   hat_lpd <- apply(ll_x, 2, log_mean_exp)
   
+  # compute effective number of parameters
   p_loo <- hat_lpd - elpd_loo
 
+  # replace parts of the loo object with these computed quantities
   sel <- c("elpd_loo", "p_loo", "looic")
   loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
   loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
