@@ -142,7 +142,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   }
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
-  bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
+  bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
   
   out <- structure(loo_x, 
@@ -169,7 +169,11 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     return(out)
   }
   
-  reloo(x, loo_x, obs = bad_obs)
+  reloo_out <- reloo(x, loo_x, obs = bad_obs)
+  structure(reloo_out, 
+            name = attr(out, "name"), 
+            discrete = attr(out, "discrete"),
+            yhash = attr(out, "yhash"))
 }
 
 
@@ -430,7 +434,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     lls[[j]] <-
       log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
-                      stanmat = as.matrix.stanreg(x))
+                      stanmat = as.matrix.stanreg(fit_j))
   }
   
   # replace parts of loo_x
