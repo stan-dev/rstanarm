@@ -534,7 +534,7 @@ transformed parameters {
           mark = mark + 1;
           e_eta_q = e_eta_q + a_beta[mark] * dydt_eta_q;
         }
-        if (has_assoc[13,m] == 1) { # etaslope*data
+        if (has_assoc[12,m] == 1) { # etaslope*data
     	    int tmp;
     	    int j_shift;
     	    if (mark2 == 1) j_shift = 0;
@@ -575,7 +575,7 @@ transformed parameters {
         mark = mark + 1;
         e_eta_q = e_eta_q + a_beta[mark] * y_qwide[m]; 
       }
-      if (has_assoc[12,m] == 1) { # muvalue*data
+      if (has_assoc[13,m] == 1) { # muvalue*data
   	    int tmp;
   	    int j_shift;
   	    if (mark2 == 1) j_shift = 0;
