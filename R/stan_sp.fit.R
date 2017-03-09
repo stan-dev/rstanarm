@@ -97,6 +97,10 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
     check_stanfit(out)
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    if (QR) {
+      out$par[mark] <- R_inv %*% out$par[mark]
+      out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
+    }
     new_names[mark] <- colnames(xtemp)
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     names(out$par) <- new_names
@@ -105,16 +109,34 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                                              chains = 0))
     return(structure(out))
   }
-  else if(algorithm == "sampling") {
-    sampling_args <- set_sampling_args(
-      object = stanfit, 
-      prior = prior_rho, 
-      user_dots = list(...), 
-      user_adapt_delta = adapt_delta, 
-      data = standata, 
-      pars = pars, 
-      show_messages = FALSE)
-    stanfit <- do.call(sampling, sampling_args)
+  else {
+    if (algorithm == "sampling") {
+      sampling_args <- set_sampling_args(
+        object = stanfit, 
+        prior = prior_rho, 
+        user_dots = list(...), 
+        user_adapt_delta = adapt_delta, 
+        data = standata, 
+        pars = pars, 
+        show_messages = FALSE)
+      stanfit <- do.call(sampling, sampling_args)
+    }
+    else {  # meanfield or fullrank vb
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                           algorithm = algorithm, ...)
+      if (algorithm == "meanfield" && !QR) 
+        msg_meanfieldQR()
+    }
+    if (QR) {
+      thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+      end <- tail(dim(betas), 1L)
+      for (chain in 1:end) for (param in 1:nrow(betas)) {
+        stanfit@sim$samples[[chain]][[has_intercept + param]] <-
+          if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
+      }
+    }
     check_stanfit(stanfit)
     if(has_intercept == 1)
       new_names <- c("(Intercept)", colnames(xtemp), "rho", "sigma", "mean_PPD", "log-posterior")
@@ -123,8 +145,5 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
     
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit))  #  prior.info = prior_info
-  }
-  else {  # algorithm == meanfield or fullrank
-    stop("meanfield and fullrank algorithm not yet implemented.")
   }
 }
