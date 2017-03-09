@@ -39,7 +39,7 @@ Imports:
     rstantools (>= 1.1.0),
     shinystan (>= 2.2.1),
     stats,
-    utils,
+    utils
 Suggests:
     arm,
     betareg,
