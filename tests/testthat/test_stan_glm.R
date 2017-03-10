@@ -57,11 +57,6 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm(f, family = "poisson", QR = TRUE, sparse = TRUE), 
                regexp = "'QR' and 'sparse' cannot both be TRUE")
   
-  # message: recommend QR if using meanfield vb
-  # expect_message(capture.output(stan_glm(f, family = "poisson",
-  #                                        algorithm = "meanfield", seed = SEED)), 
-  #                regexp = "Setting 'QR' to TRUE can often be helpful")
-  
   # require intercept for certain family and link combinations
   expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
                         family = poisson(link="identity"), seed = SEED), 
