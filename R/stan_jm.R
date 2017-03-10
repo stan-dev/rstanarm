@@ -75,12 +75,11 @@
 #'   will fit a joint model with no association structure (equivalent  
 #'   to fitting separate longitudinal and time-to-event models). It is also 
 #'   possible to include interaction terms between the association term 
-#'   ("etavalue", "etaslope", "etalag", "etaauc, "muvalue", "muslope", "mulag",
-#'   or "muauc") with observed data/covariates. It is also possible, when fitting 
-#'   a multivariate joint model, to include interaction terms between the 
-#'   association terms ("etavalue" or "muvalue") corresponding to the different
-#'   longitudinal outcomes. See the \strong{Details} section as well as the
-#'   \strong{Examples} below.
+#'   ("etavalue", "etaslope", "muvalue", "muslope") and observed data/covariates. 
+#'   It is also possible, when fitting a multivariate joint model, to include 
+#'   interaction terms between the association terms ("etavalue" or "muvalue") 
+#'   corresponding to the different longitudinal outcomes. See the 
+#'   \strong{Details} section as well as the \strong{Examples} below.
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a Weibull baseline hazard
 #'   (\code{"weibull"}, the default), a B-splines approximation estimated 
@@ -142,11 +141,9 @@
 #'   are those described for \code{\link[rstan]{stan}}.  
 #' @param priorLong,priorEvent,priorAssoc The prior distributions for the 
 #'   regression coefficients in the longitudinal submodel(s), event submodel,
-#'   and the association parameter(s).
-#'    
-#'   Can be a call to one of the various functions provided by 
-#'   \pkg{rstanarm} for specifying priors. The subset of these functions that 
-#'   can be used for the prior on the coefficients can be grouped into several 
+#'   and the association parameter(s). Can be a call to one of the various functions 
+#'   provided by \pkg{rstanarm} for specifying priors. The subset of these functions 
+#'   that can be used for the prior on the coefficients can be grouped into several 
 #'   "families":
 #'   
 #'   \tabular{ll}{
@@ -217,7 +214,11 @@
 #'   \code{basehaz = "bs"} the auxiliary parameters are the coefficients for the
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
-#'   estimates of the log baseline hazard. 
+#'   estimates of the log baseline hazard.
+#' @param long_lp A logical scalar (defaulting to TRUE) indicating whether to 
+#'   conditioning on the longitudinal outcome(s).    
+#' @param event_lp A logical scalar (defaulting to TRUE) indicating whether to 
+#'   conditioning on the event outcome.
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
@@ -231,7 +232,17 @@
 #'   \cr 
 #'   For the longitudinal submodel a generalised linear mixed model is assumed 
 #'   with any of the \code{\link[stats]{family}} choices allowed by 
-#'   \code{\link[lme4]{glmer}}. \cr
+#'   \code{\link[lme4]{glmer}}. If a multivariate joint model is specified (by
+#'   providing a list of formulas in the \code{formulaLong} argument), then
+#'   the multivariate longitudinal submodel consists of a multivariate generalized  
+#'   linear model (GLM) with group-specific terms that are assumed to be correlated
+#'   across the different GLM submodels. That is, within
+#'   a grouping factor (for example, patient ID) the group-specific terms are
+#'   assumed to be correlated across the different GLM submodels. It is 
+#'   possible to specify a different outcome type (for example a different
+#'   family and/or link function) for each of the GLM submodels, by providing
+#'   a list of \code{\link[stats]{family}} objects in the \code{family} 
+#'   argument. \cr
 #'   \cr
 #'   For the event submodel a parametric
 #'   proportional hazards model is assumed. The baseline hazard can be estimated 
@@ -278,7 +289,28 @@
 #'   By default, \code{"shared_b"} and \code{"shared_coef"} contribute all 
 #'   random effects to the association structure; however, a subset of the random effects can 
 #'   be chosen by specifying their indices between parentheses as a suffix, for 
-#'   example, "shared_b(1)" or "shared_b(1:3)" or "shared_b(1,2,4)", and so on. \cr
+#'   example, "shared_b(1)" or "shared_b(1:3)" or "shared_b(1,2,4)", and so on. 
+#'   In addition, several association terms (\code{"etavalue"}, \code{"etaslope"},
+#'   \code{"muvalue"}, and \code{"muslope"}) can be interacted with observed 
+#'   data/covariates. To do this, use the association terms main handle plus a
+#'   suffix of \code{"_data"} then followed by the model matrix formula in 
+#'   parentheses. For example if we had a variable in our dataset for gender 
+#'   named \code{sex} then we might want to obtain different estimates for the 
+#'   association between the current slope of the marker and the risk of the 
+#'   event for each gender. To do this we would specify 
+#'   \code{assoc = "etaslope_data(~ sex)"}. It is also possible, when fitting 
+#'   a multivariate joint model, to include interaction terms between the 
+#'   association terms themselves ("etavalue" or "muvalue"). For example, if
+#'   we had a joint model with two longitudinal markers, we could specify 
+#'   \code{assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue")}.
+#'   The first element of list says we want to use the value of the linear
+#'   predictor for the first marker, as well as it's interaction with the
+#'   value of the linear predictor for the second marker. The second element of 
+#'   the list says we want to also include the expected value of the second marker 
+#'   (i.e. as a "main effect"). Therefore, the linear predictor for the event 
+#'   submodel would include the "main effects" for each marker as well as their
+#'   interaction. There are additional examples in the \strong{Examples} section 
+#'   below. \cr
 #'   \cr
 #'   Time-varying covariates are allowed in both the 
 #'   longitudinal and event submodels. These should be specified in the data 
@@ -366,9 +398,10 @@
 #' ######
 #' # Multivariate joint model, estimated using multiple MCMC chains 
 #' # run in parallel across all available PC cores
-#' mv2 <- stan_jm(formulaLong = list(
-#'         logBili ~ year + (1 | id), 
-#'         albumin ~ sex + year + (1 +  year | id)),
+#' mv2 <- stan_jm(
+#'         formulaLong = list(
+#'           logBili ~ year + (1 | id), 
+#'           albumin ~ sex + year + (1 + year | id)),
 #'         dataLong = pbcLong_subset,
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv_subset,
@@ -403,10 +436,28 @@
 #'               dataLong = pbcLong_subset,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv_subset,
-#'               time_var = "year",
+#'               time_var = "year", chains = 1,
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"))
 #' summary(f4)  
-#'                     
+#' 
+#' ######
+#' # Here we provide an example of a multivariate joint model, where the
+#' # association structure is formed by including the expected value of 
+#' # each marker (logBili and albumin) in the linear predictor of the event
+#' # submodel, as well as their interaction effect. (Noting that whether an  
+#' # association structure based on a marker by marker interaction term makes 
+#' # sense will depend on the context of your application -- here we just show
+#' # it for demostration purposes).
+#' mv3 <- stan_jm(
+#'         formulaLong = list(
+#'           logBili ~ year + (1 | id), 
+#'           albumin ~ sex + year + (1 + year | id)),
+#'         dataLong = pbcLong_subset,
+#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'         dataEvent = pbcSurv_subset,
+#'         time_var = "year", chains = 1,
+#'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue))
+#'                                                             
 #' }
 #' 
 #' @import data.table
@@ -432,6 +483,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   #=============================  
   
   # Check for arguments not yet implemented
+  if (!missing(dataAssoc))
+    stop("'dataAssoc argument not yet implemented.")
   if (!missing(offset)) 
     stop("Offsets are not yet implemented for stan_jm")
   if (QR)               
@@ -444,7 +497,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
   if (missing(subsetLong))  subsetLong  <- NULL
-  if (missing(dataAssoc))   dataAssoc   <- NULL
+  if (missing(dataAssoc))   dataAssoc   <- NULL 
   
   basehaz   <- match.arg(basehaz)
   algorithm <- match.arg(algorithm)
@@ -570,6 +623,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   #================================
   
   # Handle association structure
+  # !!! NB if ordering is changed here, then must also change standata$has_assoc
   ok_assoc <- c("null", "etavalue","etaslope", "etalag", "etaauc", "muvalue", 
                 "muslope", "mulag", "muauc", "shared_b", "shared_coef")
   ok_assoc_data         <- ok_assoc[c(2:3,6:7)]
@@ -581,7 +635,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                                   id_var = id_var, M = M))
   assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
   colnames(assoc) <- paste0("Long", 1:M)
-  
+
   # Time shift used for numerically calculating derivative of linear predictor 
   # or expected value of longitudinal outcome using one-sided difference
   eps <- 1E-5
@@ -598,11 +652,14 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # at the quadrature points
   a_mod_stuff <- mapply(handle_a_mod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE,
                         MoreArgs = list(e_mod_stuff = e_mod_stuff, assoc = assoc, 
-                                        id_var = id_var, time_var = time_var, eps = eps))
-  
+                                        id_var = id_var, time_var = time_var, 
+                                        eps = eps, dataAssoc = dataAssoc))
+  a_mod_stuff <- structure(a_mod_stuff, auc_quadnodes = auc_quadnodes,
+                           auc_quadweights = auc_quadweights)
+
   # Number of association parameters
   a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
-
+  
   #=====================
   # Prior distributions
   #=====================
@@ -672,7 +729,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     handle_glm_prior(
       priorAssoc,
       nvars = a_K,
-      default_scale = 25,
+      default_scale = 2.5,
       link = NULL,
       ok_dists = ok_dists
     )  
@@ -684,7 +741,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   e_prior_stuff           <- autoscale_prior(e_prior_stuff, e_mod_stuff, QR = QR, use_x = TRUE)
   e_prior_intercept_stuff <- autoscale_prior(e_prior_intercept_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
   e_prior_aux_stuff       <- autoscale_prior(e_prior_aux_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
-  a_prior_stuff           <- autoscale_prior(a_prior_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
+  a_prior_stuff           <- autoscale_prior(a_prior_stuff, a_mod_stuff, QR = QR, use_x = FALSE, assoc = assoc)
     
   #=========================
   # Data for export to Stan
@@ -791,7 +848,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # indexing
   # 1 = ev; 2 = es; 3 = el; 4 = ea; 5 = mv; 6 = ms; 7 = ml; 8 = ma;
   # 9 = shared_b; 10 = shared_coef;
-  # 11 = ev_data; 12 = mv_data; 13 = es_data; 14 = ms_data;
+  # 11 = ev_data; 12 = es_data; 13 = mv_data; 14 = ms_data;
   # 15 = evev; 16 = evmv; 17 = mvev; 18 = mvmv;
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
@@ -999,7 +1056,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Initial values
   #================
   
-  if (init == "model_based")
+  if (is.character(init) && (init == "model_based"))
     init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
 
   #===========
@@ -1040,6 +1097,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                          algorithm = algorithm, ...)    
   }
+  check_stanfit(stanfit)
   
   # Names for pars
   y_nms <- unlist(lapply(1:M, function(m) 
@@ -1148,7 +1206,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                glmod = fetch(y_mod_stuff, "mod"), coxmod = e_mod_stuff$mod,
-               standata = NULL, terms = NULL, prior.info = NULL)  # last line elements not currently used
+               standata = NULL, terms = NULL, 
+               prior.info = nlist(y_prior_stuff, y_prior_intercept_stuff, y_prior_aux_stuff,
+                                  e_prior_stuff, e_prior_intercept_stuff, e_prior_aux_stuff,
+                                  a_prior_stuff, prior_covariance))
   out <- stanjm(fit)
   
   return(out)
@@ -2034,15 +2095,15 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 # @param y_mod_stuff A named list returned by a call to handle_glmod (the
 #   fit for a single longitudinal submodel)
 # @param assoc A named list returned by a call to validate_assoc (details
-#   on the desired association structure for a single longitudinal submodel)
-# @param has_assoc A list with with indicators for the desired association 
-#   structures across all longitudinal submodels 
+#   on the desired association structure for all longitudinal submodels)
 # @param id_var The name on the ID variable
 # @param time_var The name of the time variable
 # @param eps The time shift used for the numerical derivative calculation 
 #   based on a one-sided different
+# @param dataAssoc An optional data frame containing data for interactions within
+#   the association terms
 handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc, 
-                         id_var, time_var, eps) {
+                         id_var, time_var, eps, dataAssoc = NULL) {
   
   e_flist <- e_mod_stuff$flist
   quadtimes <- e_mod_stuff$quadtimes
@@ -2081,7 +2142,8 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
   mod <- handle_glFormula(mc = mc, data = mfq, y_mod_stuff = y_mod_stuff)
   xtemp_eta <- mod$xtemp
   group_eta <- mod$group
-  
+  linpred_eta <- mod$linpred
+ 
   # If association structure is based on slope, then calculate design 
   # matrices under a time shift of epsilon
   sel_slope <- grep("etaslope|muslope", rownames(assoc))
@@ -2091,7 +2153,8 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
     mod_eps <- handle_glFormula(mc = mc, data = mfq_eps, y_mod_stuff = y_mod_stuff)
     xtemp_eps <- mod_eps$xtemp
     group_eps <- mod_eps$group
-  } else xtemp_eps <- group_eps <- NULL 
+    linpred_eps <- mod_eps$linpred
+  } else xtemp_eps <- group_eps <- linpred_eps <- NULL 
   
   # If association structure is based on a time lag, then calculate design 
   # matrices under the specified time lag
@@ -2106,7 +2169,8 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
     mod_lag <- handle_glFormula(mc = mc, data = mfq_lag, y_mod_stuff = y_mod_stuff)
     xtemp_lag <- mod_lag$xtemp
     group_lag <- mod_lag$group
-  } else xtemp_lag <- group_lag <- NULL
+    linpred_lag <- mod_lag$linpred
+  } else xtemp_lag <- group_lag <- linpred_lag <- NULL
   
   # If association structure is based on area under the marker trajectory, then 
   # calculate design matrices at the subquadrature points
@@ -2121,7 +2185,8 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
     mod_auc <- handle_glFormula(mc = mc, data = mfq_auc, y_mod_stuff = y_mod_stuff)
     xtemp_auc <- mod_auc$xtemp
     group_auc <- mod_auc$group
-  } else xtemp_auc <- group_auc <- NULL
+    linpred_auc <- mod_auc$linpred
+  } else xtemp_auc <- group_auc <- linpred_auc <- NULL
   
   # If association structure is based on interactions with data, then calculate 
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
@@ -2151,7 +2216,7 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
                          na.action = naa), envir = environment(y_mod_stuff$mod))
         mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-        mf2q <- get_quadrature_frame(data = mf2, ids = e_flist, times = quadtimes)
+        mf2q <- rolling_merge(data = mf2, ids = e_flist, times = quadtimes)
         xq <- stats::model.matrix(fm, data = mf2q)
         if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
         if (!ncol(xq))
@@ -2163,8 +2228,30 @@ handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
   K_data <- sapply(xq_data, ncol)
   xtemp_data <- do.call(cbind, xq_data)
   
-  nlist(xtemp_eta, group_eta, xtemp_eps, group_eps, xtemp_lag, group_lag,
-        xtemp_auc, group_auc, xq_data, xtemp_data, K_data, fr)  
+  # If association structure is based on shared random effects or shared 
+  # coefficients then construct a matrix with the estimated b parameters
+  # from the separate glmod (for the id_var grouping factor only). Note this
+  # matrix is not passed to standata, but just used for autoscaling the 
+  # priors for association parameters.
+  sel_shared <- grep("^shared", rownames(assoc))
+  if (any(unlist(assoc[sel_shared,]))) {
+    # flist for long submodel
+    flist_tmp <- getME(y_mod_stuff$mod, "flist")
+    # which grouping factor is id_var
+    Gp_sel <- which(names(flist_tmp) == id_var) 
+    # grouping factor indices
+    Gp <- getME(y_mod_stuff$mod, "Gp")  
+    b_beg <- Gp[[Gp_sel]] + 1
+    b_end <- Gp[[Gp_sel + 1]]
+    # b vector for grouping factor = id_var
+    b_vec <- getME(y_mod_stuff$mod, "b")[b_beg:b_end]
+    # convert to Npat * n_re matrix
+    b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp)), byrow = TRUE)
+  } else b_mat <- NULL
+  
+  nlist(xtemp_eta, group_eta, linpred_eta, xtemp_eps, group_eps, linpred_eps,
+        xtemp_lag, group_lag, linpred_lag, xtemp_auc, group_auc, linpred_auc,
+        xq_data, xtemp_data, K_data, b_mat, fr)  
 }
 
 # Carry out a rolling merge
@@ -2193,7 +2280,11 @@ handle_glFormula <- function(mc, data, y_mod_stuff) {
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
   xtemp  <- sweep(xtemp, 2, y_mod_stuff$xbar, FUN = "-")
   group  <- mod$reTrms    
-  nlist(xtemp, group)
+  beta   <- fixef(y_mod_stuff$mod)
+  b      <- getME(y_mod_stuff$mod, "b")
+  linpred <- linear_predictor.default(beta, x) # offset not accomodated here
+  linpred <- linpred + (t(as.matrix(group$Zt)) %*% getME(y_mod_stuff$mod, "b"))
+  nlist(xtemp, group, linpred)
 }   
 
 # Function to calculate the number of association parameters in the model
@@ -2298,11 +2389,17 @@ handle_weights <- function(mod_stuff, weights, id_var) {
 # @param QR A logical specifying whether QR decomposition is used for the x matrix
 # @param use_x A logical specifying whether to autoscale the priors based on
 #   the standard deviations of the predictor variables
+# @param assoc A two dimensional array with information about desired association
+#   structure for the joint model (returned by a call to handle_a_mod). Only needs
+#   to be non-NULL if autoscaling priors for the association parameters.
 # @param min_prior_scale The minimum allowed for prior scales
 # @return A named list of the same structure as returned by handle_glm_prior
-autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, min_prior_scale = 1e-12) {
+autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, 
+                            assoc = NULL, min_prior_scale = 1e-12) {
   
-  is_glmod <- is.null(mod_stuff$eventtime)
+  is_glmod    <- ("y"         %in% names(mod_stuff))
+  is_coxmod   <- ("eventtime" %in% names(mod_stuff))
+  is_assocmod <- (!any(is_glmod, is_coxmod))
   
   if (is_glmod && mod_stuff$is_gaussian) {
     ss <- sd(mod_stuff$y)
@@ -2325,6 +2422,249 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, min_prior
                                         }))
     }      
   }
+  
+  if (is_assocmod) {
+    # Evaluate mean and SD of each of the association terms that will go into
+    # the linear predictor for the event submodel (as implicit "covariates").
+    # (NB the approximate association terms are calculated using coefs
+    # from the separate longitudinal submodels estimated using glmer).
+    # The mean will be used for centering each association term.
+    # The SD will be used for autoscaling the prior for each association parameter.
+    if (is.null(assoc))
+      stop("'assoc' cannot be NULL for autoscaling association parameters.")    
+    a_beta_shift <- c() # mean used to center assoc terms, same ordering as used in jm.stan
+    a_beta_scale <- c() # SD used to scale assoc priors, same ordering as used in jm.stan
+    mark <- 1
+    for (m in 1:length(mod_stuff)) {
+      if (!assoc["null",][[m]]) {
+        
+        # etavalue and any interactions
+        if (assoc["etavalue",][[m]]) { # etavalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          a_beta_shift[mark] <- mean(as.vector(eta_m)) 
+          a_beta_scale[mark] <- sd  (as.vector(eta_m))
+          mark <- mark + 1
+        }
+        if (assoc["etavalue_data",][[m]]) { # etavalue*data
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          dat_m <- mod_stuff[[m]]$xtemp_data
+          cbeg  <- 1
+          cend  <- mod_stuff[[m]]$K_data[[1]]
+          val   <- eta_m * dat_m[, cbeg:cend] 
+          for (j in 1:ncol(val)) {
+            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            mark <- mark + 1
+          }
+        }
+        if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          sel <- assoc["which_interactions",][[m]][["etavalue_etavalue"]]
+          for (j in 1:length(sel)) {
+            eta_j <- mod_stuff[[j]]$linpred_eta
+            val   <- eta_m * eta_j 
+            a_beta_shift[mark] <- mean(as.vector(val)) 
+            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            mark <- mark + 1                   
+          }
+        } 
+        if (assoc["etavalue_muvalue",][[m]]) { # etavalue*muvalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          sel <- assoc["which_interactions",][[m]][["etavalue_muvalue"]]
+          for (j in 1:length(sel)) {
+            eta_j <- mod_stuff[[j]]$linpred_eta
+            invlink_j <- family[[j]]$linkinv
+            val <- eta_m * invlink_j(eta_j) 
+            a_beta_shift[mark] <- mean(as.vector(val)) 
+            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            mark <- mark + 1                   
+          }
+        } 
+        
+        # etaslope and any interactions
+        if (assoc["etaslope",][[m]]) { # etaslope
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          eps_m <- mod_stuff[[m]]$linpred_eps
+          val   <- (eps_m - eta_m) / eps
+          a_beta_shift[mark] <- mean(as.vector(val)) 
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        }
+        if (assoc["etaslope_data",][[m]]) { # etaslope*data
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          eps_m <- mod_stuff[[m]]$linpred_eps
+          dydt_m <- (eps_m - eta_m) / eps
+          dat_m <- mod_stuff[[m]]$xtemp_data
+          cbeg  <- mod_stuff[[m]]$K_data[[1]] + 1
+          cend  <- sum(mod_stuff[[m]]$K_data[1:2])
+          val   <- dydt_m * dat_m[, cbeg:cend] 
+          for (j in 1:ncol(val)) {
+            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            mark <- mark + 1
+          }
+        }
+        
+        # etalag
+        if (assoc["etalag",][[m]]) { # etalag
+          lag_m <- mod_stuff[[m]]$linpred_lag
+          a_beta_shift[mark] <- mean(as.vector(lag_m)) 
+          a_beta_scale[mark] <- sd  (as.vector(lag_m))
+          mark <- mark + 1
+        }     
+        
+        # etaauc
+        if (assoc["etaauc",][[m]]) { # etaauc
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          auc_m <- mod_stuff[[m]]$linpred_auc
+          qwts   <- attr(mod_stuff, "auc_quadweights")
+          qnodes <- attr(mod_stuff, "auc_quadnodes")
+          val   <- c()
+          for (j in 1:length(eta_m)) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- auc_m[((j-1) * qnodes + 1):(j * qnodes)]
+            val[j] <- sum(wgt_j * auc_j)
+          }
+          a_beta_shift[mark] <- mean(as.vector(val))
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        }  
+        
+        # muvalue and any interactions
+        if (assoc["muvalue",][[m]]) { # muvalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          invlink_m <- family[[m]]$linkinv
+          val <- invlink_m(eta_m) 
+          a_beta_shift[mark] <- mean(as.vector(val)) 
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        }
+        if (assoc["muvalue_data",][[m]]) { # muvalue*data
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          invlink_m <- family[[m]]$linkinv
+          dat_m <- mod_stuff[[m]]$xtemp_data
+          cbeg  <- sum(mod_stuff[[m]]$K_data[1:2]) + 1
+          cend  <- sum(mod_stuff[[m]]$K_data[1:3])
+          val   <- invlink_m(eta_m) * dat_m[, cbeg:cend] 
+          for (j in 1:ncol(val)) {
+            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            mark <- mark + 1
+          }
+        }
+        if (assoc["muvalue_etavalue",][[m]]) { # muvalue*etavalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          invlink_m <- family[[m]]$linkinv
+          sel <- assoc["which_interactions",][[m]][["muvalue_etavalue"]]
+          for (j in 1:length(sel)) {
+            eta_j <- mod_stuff[[j]]$linpred_eta
+            val   <- invlink_m(eta_m) * eta_j 
+            a_beta_shift[mark] <- mean(as.vector(val)) 
+            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            mark <- mark + 1                   
+          }
+        } 
+        if (assoc["muvalue_muvalue",][[m]]) { # muvalue*muvalue
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          invlink_m <- family[[m]]$linkinv
+          sel <- assoc["which_interactions",][[m]][["muvalue_muvalue"]]
+          for (j in 1:length(sel)) {
+            eta_j <- mod_stuff[[j]]$linpred_eta
+            invlink_j <- family[[j]]$linkinv
+            val <- invlink_m(eta_m) * invlink_j(eta_j) 
+            a_beta_shift[mark] <- mean(as.vector(val)) 
+            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            mark <- mark + 1                   
+          }
+        }    
+        
+        # muslope and any interactions
+        if (assoc["muslope",][[m]]) { # muslope
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          eps_m <- mod_stuff[[m]]$linpred_eps
+          invlink_m <- family[[m]]$linkinv
+          val   <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
+          a_beta_shift[mark] <- mean(as.vector(val)) 
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        }
+        if (assoc["muslope_data",][[m]]) { # muslope*data
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          eps_m <- mod_stuff[[m]]$linpred_eps
+          invlink_m <- family[[m]]$linkinv
+          dydt_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
+          dat_m <- mod_stuff[[m]]$xtemp_data
+          cbeg  <- mod_stuff[[m]]$K_data[1:3] + 1
+          cend  <- sum(mod_stuff[[m]]$K_data[1:4])
+          val   <- dydt_m * dat_m[, cbeg:cend] 
+          for (j in 1:ncol(val)) {
+            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            mark <- mark + 1
+          }
+        }
+        
+        # mulag
+        if (assoc["mulag",][[m]]) { # mulag
+          lag_m <- mod_stuff[[m]]$linpred_lag
+          invlink_m <- family[[m]]$linkinv
+          val   <- invlink_m(lag_m)
+          a_beta_shift[mark] <- mean(as.vector(val)) 
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        }
+        
+        # muauc
+        if (assoc["etaauc",][[m]]) { # etaauc
+          eta_m <- mod_stuff[[m]]$linpred_eta
+          auc_m <- mod_stuff[[m]]$linpred_auc
+          invlink_m <- family[[m]]$linkinv
+          qwts   <- attr(mod_stuff, "auc_quadweights")
+          qnodes <- attr(mod_stuff, "auc_quadnodes")
+          val   <- c()
+          for (j in 1:length(eta_m)) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])
+            val[j] <- sum(wgt_j * auc_j)
+          }
+          a_beta_shift[mark] <- mean(as.vector(val))
+          a_beta_scale[mark] <- sd  (as.vector(val))
+          mark <- mark + 1
+        } 
+        
+      }    
+    }
+    
+    for (m in 1:length(mod_stuff)) {
+      # shared_b
+      if (assoc["shared_b",][[m]]) { # shared_b
+        sel <- assoc["which_b_zindex",][[m]]
+        val <- mod_stuff[[m]][["b_mat"]][,sel]
+        for (j in 1:ncol(val)) {
+          a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+          a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+          mark <- mark + 1
+        }
+      }
+    }
+    
+    for (m in 1:length(mod_stuff)) {
+      # shared_coef
+      if (assoc["shared_coef",][[m]]) { # shared_coef
+        sel <- assoc["which_coef_zindex",][[m]]
+        val <- mod_stuff[[m]][["b_mat"]][,sel]
+        for (j in 1:ncol(val)) {
+          a_beta_shift[mark] <- mean(as.vector(val[,j])) 
+          a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+          mark <- mark + 1
+        }
+      }
+    }
+    
+    prior_stuff$prior_scale <- 
+      pmax(min_prior_scale, prior_stuff$prior_scale / a_beta_scale) 
+  }
+  
   prior_stuff$prior_scale <- 
     as.array(pmin(.Machine$double.xmax, prior_stuff$prior_scale))
   
@@ -2489,7 +2829,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
          "determining the default adapt_delta")
   
   default_adapt_delta <- if (sum_p > 2) 0.85 else 0.80
-  default_max_treedepth <- 9L
+  default_max_treedepth <- 11L
   
   if (!is.null(user_adapt_delta))
     args$control$adapt_delta <- user_adapt_delta else 
@@ -2502,7 +2842,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
         args$control$max_treedepth <- default_max_treedepth
   
   if (!"iter" %in% unms) args$iter <- 1000
-  if (!"chains" %in% unms) args$chains <- 1
+  if (!"chains" %in% unms) args$chains <- 3
   if (!"refresh" %in% unms) args$refresh <- args$iter / 25
   if (!"save_warmup" %in% unms) args$save_warmup <- TRUE  
   
