@@ -151,7 +151,6 @@
 #'     \emph{Student t family} \tab \code{normal}, \code{student_t}, \code{cauchy} \cr 
 #'     \emph{Hierarchical shrinkage family} \tab \code{hs}, \code{hs_plus} \cr 
 #'     \emph{Laplace family} \tab \code{laplace}, \code{lasso} \cr
-#'     \emph{Product normal family} \tab \code{product_normal} \cr
 #'   }
 #'   
 #'   See the \link[=priors]{priors help page} for details on the families and 
@@ -259,59 +258,6 @@
 #'   \code{knots} is specified, then the default is to set \code{df} equal to 6.
 #'   It is not possible to specify both \code{df} and \code{knots}. \cr
 #'   \cr
-#'   The association structure for the joint model can be based on any of the 
-#'   following parameterisations: current value of the linear predictor in the 
-#'   longitudinal submodel (\code{"etavalue"}); first derivative 
-#'   (slope) of the linear predictor in the longitudinal submodel 
-#'   (\code{"etaslope"}); lagged value of the linear predictor in the 
-#'   longitudinal submodel (\code{"etalag(#)"}, replacing \code{#} with the
-#'   desired lag in units of the time variable); the area under the curve of 
-#'   the linear predictor in the longitudinal submodel (\code{"etaauc"}); 
-#'   current expected value of the 
-#'   longitudinal submodel (\code{"muvalue"}); lagged expected value of the
-#'   longitudinal submodel (\code{"mulag(#)"}, replacing \code{#} with the
-#'   desired lag in units of the time variable); the area under the curve of 
-#'   the expected value from the longitudinal submodel (\code{"muauc"}); 
-#'   shared individual-level random  
-#'   effects (\code{"shared_b"}); shared individual-level random effects which also
-#'   incorporate the corresponding fixed effect as well as any corresponding 
-#'   random effects for clustering levels higher than the individual)
-#'   (\code{"shared_coef"}); or no 
-#'   association structure (equivalent to fitting separate longitudinal 
-#'   and event models) (\code{"null"} or \code{NULL}). 
-#'   More than one association structure can be specified, however,
-#'   not all possible combinations are allowed.   
-#'   Note that for the lagged association structures (\code{"etalag(#)"} and 
-#'   \code{"mulag(#)"}) use baseline values (time = 0) for the instances where the 
-#'   time lag results in a time prior to baseline. When using the 
-#'   \code{"etaauc"} or \code{"muauc"} association structures, the area under
-#'   the curve is evaluated using Gauss-Kronrod quadrature with 15 quadrature nodes. 
-#'   By default, \code{"shared_b"} and \code{"shared_coef"} contribute all 
-#'   random effects to the association structure; however, a subset of the random effects can 
-#'   be chosen by specifying their indices between parentheses as a suffix, for 
-#'   example, "shared_b(1)" or "shared_b(1:3)" or "shared_b(1,2,4)", and so on. 
-#'   In addition, several association terms (\code{"etavalue"}, \code{"etaslope"},
-#'   \code{"muvalue"}, and \code{"muslope"}) can be interacted with observed 
-#'   data/covariates. To do this, use the association terms main handle plus a
-#'   suffix of \code{"_data"} then followed by the model matrix formula in 
-#'   parentheses. For example if we had a variable in our dataset for gender 
-#'   named \code{sex} then we might want to obtain different estimates for the 
-#'   association between the current slope of the marker and the risk of the 
-#'   event for each gender. To do this we would specify 
-#'   \code{assoc = "etaslope_data(~ sex)"}. It is also possible, when fitting 
-#'   a multivariate joint model, to include interaction terms between the 
-#'   association terms themselves ("etavalue" or "muvalue"). For example, if
-#'   we had a joint model with two longitudinal markers, we could specify 
-#'   \code{assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue")}.
-#'   The first element of list says we want to use the value of the linear
-#'   predictor for the first marker, as well as it's interaction with the
-#'   value of the linear predictor for the second marker. The second element of 
-#'   the list says we want to also include the expected value of the second marker 
-#'   (i.e. as a "main effect"). Therefore, the linear predictor for the event 
-#'   submodel would include the "main effects" for each marker as well as their
-#'   interaction. There are additional examples in the \strong{Examples} section 
-#'   below. \cr
-#'   \cr
 #'   Time-varying covariates are allowed in both the 
 #'   longitudinal and event submodels. These should be specified in the data 
 #'   in the same way as they normally would when fitting a separate 
@@ -337,7 +283,82 @@
 #'   number of quadrature nodes, specified through the \code{quadnodes} 
 #'   argument. Using a higher number of quadrature nodes will result in a more 
 #'   accurate approximation.
-#'
+#'   
+#'   \subsection{Association structures}{
+#'   The association structure for the joint model can be based on any of the 
+#'   following parameterisations: 
+#'     \itemize{
+#'       \item current value of the linear predictor in the 
+#'         longitudinal submodel (\code{"etavalue"}) 
+#'       \item first derivative (slope) of the linear predictor in the 
+#'         longitudinal submodel (\code{"etaslope"}) 
+#'       \item lagged value of the linear predictor in the longitudinal 
+#'         submodel (\code{"etalag(#)"}, replacing \code{#} with the desired 
+#'         lag in units of the time variable);
+#'       \item the area under the curve of the linear predictor in the 
+#'         longitudinal submodel (\code{"etaauc"}) 
+#'       \item current expected value of the longitudinal submodel 
+#'         (\code{"muvalue"})
+#'       \item lagged expected value of the longitudinal submodel 
+#'         (\code{"mulag(#)"}, replacing \code{#} with the desired lag in 
+#'         units of the time variable) 
+#'       \item the area under the curve of the expected value from the 
+#'         longitudinal submodel (\code{"muauc"})
+#'       \item shared individual-level random effects (\code{"shared_b"}) 
+#'       \item shared individual-level random effects which also incorporate 
+#'         the corresponding fixed effect as well as any corresponding 
+#'         random effects for clustering levels higher than the individual)
+#'         (\code{"shared_coef"})
+#'       \item interactions between association terms and observed data/covariates
+#'         (\code{"etavalue_data"}, \code{"etaslope_data"}, \code{"muvalue_data"}, 
+#'         \code{"muslope_data"}). These are described further below.
+#'       \item interactions between association terms corresponding to different 
+#'         longitudinal outcomes in a multivariate joint model 
+#'         (\code{"etavalue_etavalue(#)"}, \code{"etavalue_muvalue(#)"},
+#'         \code{"muvalue_etavalue(#)"}, \code{"muvalue_muvalue(#)"}). These
+#'         are described further below.      
+#'       \item no association structure (equivalent to fitting separate 
+#'         longitudinal and event models) (\code{"null"} or \code{NULL}) 
+#'     }
+#'   More than one association structure can be specified, however,
+#'   not all possible combinations are allowed.   
+#'   Note that for the lagged association structures (\code{"etalag(#)"} and 
+#'   \code{"mulag(#)"}) baseline values (time = 0) are used for the instances 
+#'   where the time lag results in a time prior to baseline. When using the 
+#'   \code{"etaauc"} or \code{"muauc"} association structures, the area under
+#'   the curve is evaluated using Gauss-Kronrod quadrature with 15 quadrature 
+#'   nodes. By default, \code{"shared_b"} and \code{"shared_coef"} contribute 
+#'   all random effects to the association structure; however, a subset of the 
+#'   random effects can be chosen by specifying their indices between parentheses 
+#'   as a suffix, for example, \code{"shared_b(1)"} or \code{"shared_b(1:3)"} or 
+#'   \code{"shared_b(1,2,4)"}, and so on. \cr
+#'   \cr 
+#'   In addition, several association terms (\code{"etavalue"}, \code{"etaslope"},
+#'   \code{"muvalue"}, \code{"muslope"}) can be interacted with observed 
+#'   data/covariates. To do this, use the association term's main handle plus a
+#'   suffix of \code{"_data"} then followed by the model matrix formula in 
+#'   parentheses. For example if we had a variable in our dataset for gender 
+#'   named \code{sex} then we might want to obtain different estimates for the 
+#'   association between the current slope of the marker and the risk of the 
+#'   event for each gender. To do this we would specify 
+#'   \code{assoc = "etaslope_data(~ sex)"}. \cr
+#'   \cr
+#'   It is also possible, when fitting  a multivariate joint model, to include 
+#'   interaction terms between the association terms themselves (this only
+#'   applies for interacting \code{"etavalue"} or \code{"muvalue"}). For example, 
+#'   if we had a joint model with two longitudinal markers, we could specify 
+#'   \code{assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue")}.
+#'   The first element of list says we want to use the value of the linear
+#'   predictor for the first marker, as well as it's interaction with the
+#'   value of the linear predictor for the second marker. The second element of 
+#'   the list says we want to also include the expected value of the second marker 
+#'   (i.e. as a "main effect"). Therefore, the linear predictor for the event 
+#'   submodel would include the "main effects" for each marker as well as their
+#'   interaction. \cr
+#'   \cr
+#'   There are additional examples in the \strong{Examples} section below.
+#'   }
+#' 
 #' @return A \link[=stanjm-object]{stanjm} object is returned.
 #' 
 #' @seealso \code{\link{stanjm-object}}, \code{\link{stanjm-methods}}, 
@@ -345,7 +366,7 @@
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}.
-#'    
+#' 
 #' @examples
 #' \donttest{
 #' #####
@@ -438,9 +459,8 @@
 #'               dataEvent = pbcSurv_subset,
 #'               time_var = "year", chains = 1,
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"))
-#' summary(f4)  
 #' 
-#' ######
+#' #####
 #' # Here we provide an example of a multivariate joint model, where the
 #' # association structure is formed by including the expected value of 
 #' # each marker (logBili and albumin) in the linear predictor of the event
@@ -456,8 +476,7 @@
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv_subset,
 #'         time_var = "year", chains = 1,
-#'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue))
-#'                                                             
+#'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"))
 #' }
 #' 
 #' @import data.table
