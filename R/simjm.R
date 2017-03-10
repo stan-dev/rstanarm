@@ -57,6 +57,32 @@
 #'   units are. This time will also be used as the censoring time (i.e. for subjects
 #'   who have a simulated survival time that is after \code{max_fuptime})  
 #' 
+#' @return A data frame in long format. The data frame also has a number of 
+#'   attributes that record the values specified for the arguments in the 
+#'   \code{simjm} call (for example the "true" parameter values, the number
+#'   of individuals, the number of longitudinal markers, and so on).
+#' 
+#' @examples 
+#' #####
+#' # By default simjm will simulate data for three longitudinal biomarkers.
+#' # However, if we only want one longitudinal biomarker then we need to 
+#' # adjust the "true" parameters accordingly so that we still get realistic 
+#' # survival times. If there is only one, or two, longitudinal markers then
+#' # the easiest option is to change the "true" association parameter; some
+#' # suggested values that lead to realistic survival times are given below.
+#' 
+#' # For one longitudinal marker:
+#' simdat1 <- simjm(M = 1, betaEvent_assoc = 0.025)
+#' 
+#' # For two longitudinal markers:
+#' simdat2 <- simjm(M = 1, betaEvent_assoc = 0.015)
+#' 
+#' # As a final example, we will simulate three markers for just 100
+#' # individuals and then return the true parameter values (which are stored
+#' # as an attribute):
+#' simdat3 <- simjm(M = 3, n = 100)
+#' attr(simdat3, "params")
+#' 
 simjm <- function(n = 200, M = 3,
                   fixed_trajectory = c("linear", "none"),
                   random_trajectory = c("linear", "none"),
