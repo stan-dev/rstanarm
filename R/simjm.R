@@ -65,23 +65,26 @@
 #' @examples 
 #' #####
 #' # By default simjm will simulate data for three longitudinal biomarkers.
-#' # However, if we only want one longitudinal biomarker then we need to 
+#' # However, if we only want one or two longitudinal biomarkers then we need to 
 #' # adjust the "true" parameters accordingly so that we still get realistic 
-#' # survival times. If there is only one, or two, longitudinal markers then
-#' # the easiest option is to change the "true" association parameter; some
-#' # suggested values that lead to realistic survival times are given below.
+#' # survival times. The easiest option is to change the "true" association 
+#' # parameter value. Some suggested values that lead to realistic survival 
+#' # times are given below.
 #' 
 #' # For one longitudinal marker:
-#' simdat1 <- simjm(M = 1, betaEvent_assoc = 0.025)
+#' simdat1 <- simjm(M = 1, betaEvent_assoc = 0.03)
 #' 
 #' # For two longitudinal markers:
-#' simdat2 <- simjm(M = 1, betaEvent_assoc = 0.015)
+#' simdat2 <- simjm(M = 2, betaEvent_assoc = 0.015)
 #' 
+#' # For three longitudinal markers, we can just use the defaults:
+#' simdat3 <- simjm()
+#'  
 #' # As a final example, we will simulate three markers for just 100
 #' # individuals and then return the true parameter values (which are stored
 #' # as an attribute):
-#' simdat3 <- simjm(M = 3, n = 100)
-#' attr(simdat3, "params")
+#' simdat4 <- simjm(n = 100)
+#' attr(simdat4, "params")
 #' 
 simjm <- function(n = 200, M = 3,
                   fixed_trajectory = c("linear", "none"),
