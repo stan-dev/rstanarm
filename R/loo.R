@@ -480,7 +480,15 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  d <- get_all_vars(formula(x), x[["data"]])
+  dat <- x[["data"]]
+  sub <- getCall(x)[["subset"]]
+  
+  d <- get_all_vars(formula(x), dat)
+  if (!is.null(sub)) {
+    keep <- eval(substitute(sub), envir = dat)
+    d <- d[keep,, drop=FALSE]
+  }
+  
   na.omit(d)
 }
 
