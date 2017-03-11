@@ -35,7 +35,7 @@
 #' @template args-sparse
 #' 
 #' @param formula,random,family,data,knots,drop.unused.levels Same as for 
-#'   \code{\link[gamm4]{gamm4}}. \strong{We strongly advise against
+#'   \code{\link[gamm4]{gamm4}}. \emph{We strongly advise against
 #'   omitting the \code{data} argument}. Unless \code{data} is specified (and is
 #'   a data frame) many post-estimation functions (including \code{update},
 #'   \code{loo}, \code{kfold}) are not guaranteed to work properly.
