@@ -216,7 +216,7 @@ pp_fun <- function(object) {
     })) 
   }
 }
-rmultinorm <- function(n, mu, sigma) {
+rmultinorm <- function(n, mu, sigma) {  # multinormal rng (used for spatial models)
   x <- matrix(rnorm(n * length(mu)), ncol = length(mu), nrow = n)
   sigma_decomp <- svd(sigma)
   u <- sigma_decomp$u

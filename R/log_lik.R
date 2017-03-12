@@ -89,7 +89,8 @@ ll_fun <- function(x) {
   f <- family(x)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  
+  if (is(x, "spatial"))
+    return(.ll_spatial_i)
   get(paste0(".ll_", f$family, "_i"), mode = "function")
 }
 
@@ -112,7 +113,6 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   f <- family(object)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
-  
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     dots <- list(...)
     x <- dots$newx
@@ -148,8 +148,16 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       data <- data.frame(y, trials, x)
     }
     draws$beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (is.gaussian(fname)) 
+    if (is.gaussian(fname)) {
       draws$sigma <- stanmat[, "sigma"]
+      if(is(object, "spatial")) {
+        data <- stanmat
+        draws$y <- (object$y)
+        draws$W <- object$W
+        draws$X <- object$data[, -which(names(object$data) == "y")]
+        draws$sp_model <- object$sp_model
+      }
+    }
     if (is.gamma(fname)) 
       draws$shape <- stanmat[, "shape"]
     if (is.ig(fname)) 
@@ -187,9 +195,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     }
   }
   
-  data$offset <- if (has_newdata) offset else object$offset
-  if (model_has_weights(object))
-    data$weights <- object$weights
+  if (!is(object, "spatial")) {
+    data$offset <- if (has_newdata) offset else object$offset
+    if (model_has_weights(object))
+      data$weights <- object$weights
+  }
   
   if (is.mer(object)) {
     b <- stanmat[, b_names(colnames(stanmat)), drop = FALSE]
@@ -208,8 +218,10 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   }
-  
-  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+  if(is(object, "spatial"))
+    nlist(data, draws, S = nrow(draws$X), N = NROW(data))
+  else
+    nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
 
@@ -327,4 +339,22 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   }
   val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
+}
+.ll_spatial_i <- function(i, data, draws) {
+  I <- diag(ncol(draws$W))
+  W <- draws$W
+  rho <- data[,"rho"]
+  weight_stuff <- I - rho * W
+  preds <- data[,!(colnames(data) %in% c("(Intercept)","rho","sigma"))]
+  if (draws$sp_model == "lagsarlm") {
+    mu <- solve(weight_stuff) %*% (as.matrix(draws$X) %*% preds) 
+  }
+  else if (draws$sp_model == "errorsarlm") {
+    mu <- as.matrix(draws$X) %*% preds
+  }
+  if ("(Intercept)" %in% colnames(data))
+    mu <- mu + data[,"(Intercept)"]
+  sigma <- solve(t(weight_stuff) %*% (weight_stuff) * 1/data[,"sigma"])
+  val <- dmultinorm(t(draws$y), mu, sigma, log = TRUE)
+  val
 }

@@ -684,3 +684,16 @@ check_stanfit <- function(x) {
   }
   return(TRUE)
 }
+
+# multivariate normal density (in precision form)
+dmultinorm <- function(x, mu, H, log = FALSE) {
+  k <- length(mu)
+  x <- t(x)
+  if (log) {
+    out <- -k * 0.5 * log(2*pi) + 0.5 * log(det(H)) - 0.5 * t(x - mu) %*% H %*% (x - mu)
+  }
+  else {
+    out <- (2*pi)^(-k/2) * sqrt(det(H)) * exp(-0.5 * t(x - mu) %*% H %*% (x - mu)) 
+  }
+  return(diag(out))
+}
