@@ -669,12 +669,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Return design matrices for evaluating longitudinal submodel quantities
   # at the quadrature points
-  a_mod_stuff <- mapply(handle_a_mod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE,
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE,
                         MoreArgs = list(e_mod_stuff = e_mod_stuff, assoc = assoc, 
                                         id_var = id_var, time_var = time_var, 
                                         eps = eps, dataAssoc = dataAssoc))
   a_mod_stuff <- structure(a_mod_stuff, auc_quadnodes = auc_quadnodes,
-                           auc_quadweights = auc_quadweights)
+                           auc_quadweights = auc_quadweights, eps = eps)
 
   # Number of association parameters
   a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
@@ -2121,7 +2121,7 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_a_mod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc, 
+handle_assocmod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc, 
                          id_var, time_var, eps, dataAssoc = NULL) {
   
   e_flist <- e_mod_stuff$flist
@@ -2312,7 +2312,7 @@ handle_glFormula <- function(mc, data, y_mod_stuff) {
 #   type for each submodel, returned by an mapply call to validate_assoc
 # @param a_mod_stuff A list of length M with the design matrices related to
 #   the longitudinal submodels in the GK quadrature, returned by an mapply 
-#   call to handle_a_mod
+#   call to handle_assocmod
 # @return Integer indicating the number of association parameters in the model 
 get_num_assoc_pars <- function(assoc, a_mod_stuff) {
   sel1 <- c("etavalue", "etaslope", "etalag", "etaauc", 
@@ -2403,14 +2403,14 @@ handle_weights <- function(mod_stuff, weights, id_var) {
 # Autoscaling of priors
 #
 # @param prior_stuff A named list returned by a call to handle_glm_prior
-# @param mod_stuff A named list returned by a call to either handle_glmod or
-#   handle_coxmod
+# @param mod_stuff A named list returned by a call to either handle_glmod,
+#   handle_coxmod, or handle_assocmod
 # @param QR A logical specifying whether QR decomposition is used for the x matrix
 # @param use_x A logical specifying whether to autoscale the priors based on
 #   the standard deviations of the predictor variables
 # @param assoc A two dimensional array with information about desired association
-#   structure for the joint model (returned by a call to handle_a_mod). Only needs
-#   to be non-NULL if autoscaling priors for the association parameters.
+#   structure for the joint model (returned by a call to validate_assoc). Cannot
+#   be NULL if autoscaling priors for the association parameters.
 # @param min_prior_scale The minimum allowed for prior scales
 # @return A named list of the same structure as returned by handle_glm_prior
 autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, 
@@ -2504,6 +2504,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["etaslope",][[m]]) { # etaslope
           eta_m <- mod_stuff[[m]]$linpred_eta
           eps_m <- mod_stuff[[m]]$linpred_eps
+          eps   <- attr(mod_stuff, "eps")
           val   <- (eps_m - eta_m) / eps
           a_beta_shift[mark] <- mean(as.vector(val)) 
           a_beta_scale[mark] <- sd  (as.vector(val))
@@ -2512,6 +2513,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["etaslope_data",][[m]]) { # etaslope*data
           eta_m <- mod_stuff[[m]]$linpred_eta
           eps_m <- mod_stuff[[m]]$linpred_eps
+          eps   <- attr(mod_stuff, "eps")
           dydt_m <- (eps_m - eta_m) / eps
           dat_m <- mod_stuff[[m]]$xtemp_data
           cbeg  <- mod_stuff[[m]]$K_data[[1]] + 1
@@ -2601,6 +2603,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["muslope",][[m]]) { # muslope
           eta_m <- mod_stuff[[m]]$linpred_eta
           eps_m <- mod_stuff[[m]]$linpred_eps
+          eps   <- attr(mod_stuff, "eps")
           invlink_m <- family[[m]]$linkinv
           val   <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
           a_beta_shift[mark] <- mean(as.vector(val)) 
@@ -2610,6 +2613,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["muslope_data",][[m]]) { # muslope*data
           eta_m <- mod_stuff[[m]]$linpred_eta
           eps_m <- mod_stuff[[m]]$linpred_eps
+          eps   <- attr(mod_stuff, "eps")
           invlink_m <- family[[m]]$linkinv
           dydt_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
           dat_m <- mod_stuff[[m]]$xtemp_data
