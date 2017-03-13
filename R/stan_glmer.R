@@ -36,10 +36,10 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \strong{We
-#'   strongly advise against omitting the \code{data} argument}. Unless
-#'   \code{data} is specified (and is a data frame) many post-estimation
-#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not
+#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \emph{We
+#'   strongly advise against omitting the \code{data} argument}. Unless 
+#'   \code{data} is specified (and is a data frame) many post-estimation 
+#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
