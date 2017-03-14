@@ -2442,7 +2442,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     }      
   }
   
-  if (is_assocmod) {
+  if (is_assocmod && prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
@@ -2461,7 +2461,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["etavalue",][[m]]) { # etavalue
           eta_m <- mod_stuff[[m]]$linpred_eta
           a_beta_shift[mark] <- mean(as.vector(eta_m)) 
-          a_beta_scale[mark] <- sd  (as.vector(eta_m))
+          a_beta_scale[mark] <- scale_val(as.vector(eta_m))
           mark <- mark + 1
         }
         if (assoc["etavalue_data",][[m]]) { # etavalue*data
@@ -2472,7 +2472,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           val   <- eta_m * dat_m[, cbeg:cend] 
           for (j in 1:ncol(val)) {
             a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
             mark <- mark + 1
           }
         }
@@ -2483,7 +2483,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             eta_j <- mod_stuff[[j]]$linpred_eta
             val   <- eta_m * eta_j 
             a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            a_beta_scale[mark] <- scale_val(as.vector(val)) 
             mark <- mark + 1                   
           }
         } 
@@ -2495,7 +2495,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             invlink_j <- family[[j]]$linkinv
             val <- eta_m * invlink_j(eta_j) 
             a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            a_beta_scale[mark] <- scale_val(as.vector(val)) 
             mark <- mark + 1                   
           }
         } 
@@ -2507,7 +2507,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           eps   <- attr(mod_stuff, "eps")
           val   <- (eps_m - eta_m) / eps
           a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         }
         if (assoc["etaslope_data",][[m]]) { # etaslope*data
@@ -2521,7 +2521,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           val   <- dydt_m * dat_m[, cbeg:cend] 
           for (j in 1:ncol(val)) {
             a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
             mark <- mark + 1
           }
         }
@@ -2530,7 +2530,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         if (assoc["etalag",][[m]]) { # etalag
           lag_m <- mod_stuff[[m]]$linpred_lag
           a_beta_shift[mark] <- mean(as.vector(lag_m)) 
-          a_beta_scale[mark] <- sd  (as.vector(lag_m))
+          a_beta_scale[mark] <- scale_val(as.vector(lag_m))
           mark <- mark + 1
         }     
         
@@ -2547,7 +2547,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             val[j] <- sum(wgt_j * auc_j)
           }
           a_beta_shift[mark] <- mean(as.vector(val))
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         }  
         
@@ -2557,7 +2557,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           invlink_m <- family[[m]]$linkinv
           val <- invlink_m(eta_m) 
           a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         }
         if (assoc["muvalue_data",][[m]]) { # muvalue*data
@@ -2569,7 +2569,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           val   <- invlink_m(eta_m) * dat_m[, cbeg:cend] 
           for (j in 1:ncol(val)) {
             a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
             mark <- mark + 1
           }
         }
@@ -2581,7 +2581,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             eta_j <- mod_stuff[[j]]$linpred_eta
             val   <- invlink_m(eta_m) * eta_j 
             a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            a_beta_scale[mark] <- scale_val(as.vector(val)) 
             mark <- mark + 1                   
           }
         } 
@@ -2594,7 +2594,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             invlink_j <- family[[j]]$linkinv
             val <- invlink_m(eta_m) * invlink_j(eta_j) 
             a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- sd  (as.vector(val)) 
+            a_beta_scale[mark] <- scale_val(as.vector(val)) 
             mark <- mark + 1                   
           }
         }    
@@ -2607,7 +2607,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           invlink_m <- family[[m]]$linkinv
           val   <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
           a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         }
         if (assoc["muslope_data",][[m]]) { # muslope*data
@@ -2622,7 +2622,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           val   <- dydt_m * dat_m[, cbeg:cend] 
           for (j in 1:ncol(val)) {
             a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
             mark <- mark + 1
           }
         }
@@ -2633,7 +2633,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
           invlink_m <- family[[m]]$linkinv
           val   <- invlink_m(lag_m)
           a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         }
         
@@ -2651,7 +2651,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
             val[j] <- sum(wgt_j * auc_j)
           }
           a_beta_shift[mark] <- mean(as.vector(val))
-          a_beta_scale[mark] <- sd  (as.vector(val))
+          a_beta_scale[mark] <- scale_val(as.vector(val))
           mark <- mark + 1
         } 
         
@@ -2665,7 +2665,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         val <- mod_stuff[[m]][["b_mat"]][,sel]
         for (j in 1:ncol(val)) {
           a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-          a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+          a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
           mark <- mark + 1
         }
       }
@@ -2678,7 +2678,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
         val <- mod_stuff[[m]][["b_mat"]][,sel]
         for (j in 1:ncol(val)) {
           a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-          a_beta_scale[mark] <- sd  (as.vector(val[,j])) 
+          a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
           mark <- mark + 1
         }
       }
@@ -2692,6 +2692,21 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     as.array(pmin(.Machine$double.xmax, prior_stuff$prior_scale))
   
   prior_stuff
+}
+
+# Function to return the range or SD of the predictors, used for scaling the priors
+# This is taken from an anonymous function in stan_glm.fit
+#
+# @param x A vector
+scale_val <- function(x) {
+  num.categories <- length(unique(x))
+  x.scale <- 1
+  if (num.categories == 2) {
+    x.scale <- diff(range(x))
+  } else if (num.categories > 2) {
+    x.scale <- sd(x)
+  }
+  return(x.scale)
 }
 
 # Get the required number of (local) horseshoe parameters for a specified prior type
