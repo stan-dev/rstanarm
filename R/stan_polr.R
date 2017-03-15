@@ -55,10 +55,12 @@
 #'   the exponent applied to the probability of success when there are only
 #'   two outcome categories. If \code{NULL}, which is the default, then the
 #'   exponent is taken to be fixed at \eqn{1}.
-#' @param do_residuals A binary variable to specify whether or not to 
+#' @param do_residuals A logical scalar indicating whether or not to 
 #'   automatically calculate fit residuals after sampling completes.  
-#'   Defaults to TRUE if and only if the algorithm used is 'sampling'.
-#'
+#'   Defaults to \code{TRUE} if and only if \code{algorithm="sampling}.
+#'   Setting \code{do_residuals=FALSE} is only useful in the somewhat rare 
+#'   case that \code{stan_polr} appears to finish sampling but hangs instead 
+#'   of returning the fitted model object. 
 #' @details The \code{stan_polr} function is similar in syntax to
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood
 #'   estimation of a proportional odds model, Bayesian estimation is performed
