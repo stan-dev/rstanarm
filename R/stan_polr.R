@@ -55,7 +55,12 @@
 #'   the exponent applied to the probability of success when there are only
 #'   two outcome categories. If \code{NULL}, which is the default, then the
 #'   exponent is taken to be fixed at \eqn{1}.
-#'
+#' @param do_residuals A logical scalar indicating whether or not to 
+#'   automatically calculate fit residuals after sampling completes.  
+#'   Defaults to \code{TRUE} if and only if \code{algorithm="sampling}.
+#'   Setting \code{do_residuals=FALSE} is only useful in the somewhat rare 
+#'   case that \code{stan_polr} appears to finish sampling but hangs instead 
+#'   of returning the fitted model object. 
 #' @details The \code{stan_polr} function is similar in syntax to
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood
 #'   estimation of a proportional odds model, Bayesian estimation is performed
@@ -128,17 +133,21 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       prior_counts = dirichlet(1), shape = NULL, rate = NULL,
                       prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = NULL) {
+                      adapt_delta = NULL,
+                      do_residuals = NULL) {
 
   data <- validate_data(data)
   algorithm <- match.arg(algorithm)
+  if (is.null(do_residuals)) 
+    do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data)))
     m$data <- as.data.frame(data)
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
-    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
+    m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
   m <- check_constant_vars(m)
@@ -176,7 +185,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                            prior = prior, prior_counts = prior_counts,
                            shape = shape, rate = rate,
                            prior_PD = prior_PD, algorithm = algorithm,
-                           adapt_delta = adapt_delta, ...)
+                           adapt_delta = adapt_delta, do_residuals=do_residuals, ...)
 
   inverse_link <- linkinv(method)
 
@@ -197,6 +206,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
 
     means <- rstan::get_posterior_mean(stanfit)
     residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
+
     if (length(residuals))
       names(residuals) <- names(eta) <- names(mu) <- rownames(x)
 
@@ -226,9 +236,12 @@ stan_polr <- function(formula, data, weights, ..., subset,
   means <- rstan::get_posterior_mean(stanfit)
   residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
   names(eta) <- names(mu) <- rownames(x)
-  if (!prior_PD)
+  if (!prior_PD) {
+    if (!do_residuals) {
+      residuals <- rep(NA, times = n)
+    }
     names(residuals) <- rownames(x)
-
+  }
   stan_summary <- make_stan_summary(stanfit)
   if (algorithm == "sampling")
     check_rhats(stan_summary[, "Rhat"])
