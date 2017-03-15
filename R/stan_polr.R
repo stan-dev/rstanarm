@@ -138,15 +138,15 @@ stan_polr <- function(formula, data, weights, ..., subset,
 
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
-    do_residuals = (algorithm == "sampling")
+    do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data)))
     m$data <- as.data.frame(data)
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
-    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- NULL
-  m$do_residuals <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
+    m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
   m <- check_constant_vars(m)
@@ -234,12 +234,12 @@ stan_polr <- function(formula, data, weights, ..., subset,
   means <- rstan::get_posterior_mean(stanfit)
   residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
   names(eta) <- names(mu) <- rownames(x)
-  if (!prior_PD)
-    if (do_residuals == FALSE) {
+  if (!prior_PD) {
+    if (!do_residuals) {
       residuals <- rep(NA, times = n)
     }
     names(residuals) <- rownames(x)
-
+  }
   stan_summary <- make_stan_summary(stanfit)
   if (algorithm == "sampling")
     check_rhats(stan_summary[, "Rhat"])
