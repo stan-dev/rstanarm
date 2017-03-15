@@ -56,11 +56,12 @@
 #'   two outcome categories. If \code{NULL}, which is the default, then the
 #'   exponent is taken to be fixed at \eqn{1}.
 #' @param do_residuals A logical scalar indicating whether or not to 
-#'   automatically calculate fit residuals after sampling completes.  
-#'   Defaults to \code{TRUE} if and only if \code{algorithm="sampling}.
-#'   Setting \code{do_residuals=FALSE} is only useful in the somewhat rare 
-#'   case that \code{stan_polr} appears to finish sampling but hangs instead 
-#'   of returning the fitted model object. 
+#'   automatically calculate fit residuals after sampling completes. Defaults to
+#'   \code{TRUE} if and only if \code{algorithm="sampling"}. Setting
+#'   \code{do_residuals=FALSE} is only useful in the somewhat rare case that
+#'   \code{stan_polr} appears to finish sampling but hangs instead of returning
+#'   the fitted model object.
+#'   
 #' @details The \code{stan_polr} function is similar in syntax to
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood
 #'   estimation of a proportional odds model, Bayesian estimation is performed
@@ -203,19 +204,9 @@ stan_polr <- function(formula, data, weights, ..., subset,
     out <- stanreg(fit)
     if (!model)
       out$model <- NULL
-
-    means <- rstan::get_posterior_mean(stanfit)
-    residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
-
-    if (length(residuals))
-      names(residuals) <- names(eta) <- names(mu) <- rownames(x)
-
-    levs <- c(0.5, 0.8, 0.95, 0.99)
-    qq <- (1 - levs) / 2
-    probs <- sort(c(0.5, qq, 1 - qq))
-    stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
     if (algorithm == "sampling")
-      check_rhats(stan_summary[, "Rhat"])
+      check_rhats(out$stan_summary[, "Rhat"])
+    
     if (is.null(shape) && is.null(rate)) # not a scobit model
       return(out)
 
