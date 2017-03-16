@@ -584,7 +584,7 @@ polr_linkinv <- function(x) {
 # @param stanfit A stanfit object created using rstan::sampling or rstan::vb
 # @return A matrix of summary stats
 make_stan_summary <- function(stanfit) {
-  levs <- c(0.5, 0.8, 0.95, 0.99)
+  levs <- c(0.5, 0.8, 0.95)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
