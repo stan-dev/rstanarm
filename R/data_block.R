@@ -89,7 +89,7 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
     global_prior_scale <- prior$global_scale
     global_prior_df <- prior$global_df
   } else if (prior_dist_name %in% "exponential") {
-    prior_dist <- 3L
+    prior_dist <- 3L # only used for scale parameters so 3 not a conflict with 3 for hs
   }
   
   prior_df <- maybe_broadcast(prior_df, nvars)

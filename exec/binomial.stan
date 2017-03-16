@@ -20,7 +20,7 @@ data {
 }
 transformed data {
   real aux = not_a_number();
-  int<lower=1> V[t, N] = make_V(N, t, v);
+  int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
 }
 parameters {

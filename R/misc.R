@@ -1,21 +1,21 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# Set arguments for sampling 
+# Set arguments for sampling
 #
 # Prepare a list of arguments to use with \code{rstan::sampling} via
 # \code{do.call}.
@@ -28,25 +28,25 @@
 # @param prior Prior distribution list (can be NULL).
 # @param ... Other arguments to \code{\link[rstan]{sampling}} not coming from
 #   \code{user_dots} (e.g. \code{data}, \code{pars}, \code{init}, etc.)
-# @return A list of arguments to use for the \code{args} argument for 
+# @return A list of arguments to use for the \code{args} argument for
 #   \code{do.call(sampling, args)}.
-set_sampling_args <- function(object, prior, user_dots = list(), 
+set_sampling_args <- function(object, prior, user_dots = list(),
                               user_adapt_delta = NULL, ...) {
   args <- list(object = object, ...)
   unms <- names(user_dots)
   for (j in seq_along(user_dots)) {
     args[[unms[j]]] <- user_dots[[j]]
   }
-  defaults <- default_stan_control(prior = prior, 
+  defaults <- default_stan_control(prior = prior,
                                    adapt_delta = user_adapt_delta)
-  
-  if (!"control" %in% unms) { 
+
+  if (!"control" %in% unms) {
     # no user-specified 'control' argument
     args$control <- defaults
-  } else { 
+  } else {
     # user specifies a 'control' argument
-    if (!is.null(user_adapt_delta)) { 
-      # if user specified adapt_delta argument to stan_* then 
+    if (!is.null(user_adapt_delta)) {
+      # if user specified adapt_delta argument to stan_* then
       # set control$adapt_delta to user-specified value
       args$control$adapt_delta <- user_adapt_delta
     } else {
@@ -59,26 +59,26 @@ set_sampling_args <- function(object, prior, user_dots = list(),
     }
   }
   args$save_warmup <- FALSE
-  
+
   return(args)
 }
 
 # Default control arguments for sampling
-# 
+#
 # Called by set_sampling_args to set the default 'control' argument for
 # \code{rstan::sampling} if none specified by user. This allows the value of
 # \code{adapt_delta} to depend on the prior.
-# 
+#
 # @param prior Prior distribution list (can be NULL).
 # @param adapt_delta User's \code{adapt_delta} argument.
 # @param max_treedepth Default for \code{max_treedepth}.
 # @return A list with \code{adapt_delta} and \code{max_treedepth}.
-default_stan_control <- function(prior, adapt_delta = NULL, 
+default_stan_control <- function(prior, adapt_delta = NULL,
                                  max_treedepth = 15L) {
   if (!length(prior)) {
     if (is.null(adapt_delta)) adapt_delta <- 0.95
   } else if (is.null(adapt_delta)) {
-    adapt_delta <- switch(prior$dist, 
+    adapt_delta <- switch(prior$dist,
                           "R2" = 0.99,
                           "hs" = 0.99,
                           "hs_plus" = 0.99,
@@ -91,15 +91,15 @@ default_stan_control <- function(prior, adapt_delta = NULL,
 
 # Test if an object is a stanreg object
 #
-# @param x The object to test. 
+# @param x The object to test.
 is.stanreg <- function(x) inherits(x, "stanreg")
 
 # Throw error if object isn't a stanreg object
-# 
+#
 # @param x The object to test.
 validate_stanreg_object <- function(x, call. = FALSE) {
   if (!is.stanreg(x))
-    stop("Object is not a stanreg object.", call. = call.) 
+    stop("Object is not a stanreg object.", call. = call.)
 }
 
 # Test for a given family
@@ -141,43 +141,45 @@ is.mer <- function(x) {
   isTRUE(check1 && check2)
 }
 
-# Consistent error message to use when something is only available for 
+# Consistent error message to use when something is only available for
 # models fit using MCMC
 #
 # @param what An optional message to prepend to the default message.
 STOP_sampling_only <- function(what) {
   msg <- "only available for models fit using MCMC (algorithm='sampling')."
-  if (!missing(what)) 
+  if (!missing(what))
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
 }
 
 # Consistent error message to use when something is only available for models
 # fit using MCMC or VB but not optimization
-# 
+#
 # @param what An optional message to prepend to the default message.
 STOP_not_optimizing <- function(what) {
   msg <- "not available for models fit using algorithm='optimizing'."
-  if (!missing(what)) 
+  if (!missing(what))
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
 }
 
-# Message to issue when mean-field selected but 'QR=FALSE'. 
-msg_meanfieldQR <- function() {
-  message("Setting 'QR' to TRUE can often be helpful when ", 
-          "using the 'meanfield' algorithm.",
-          "\nSee the documentation for the 'QR' argument.")
+# Message to issue when fitting model with ADVI but 'QR=FALSE'.
+recommend_QR_for_vb <- function() {
+  message(
+    "Setting 'QR' to TRUE can often be helpful when using ",
+    "one of the variational inference algorithms. ",
+    "See the documentation for the 'QR' argument."
+  )
 }
 
 # Issue warning if high rhat values
-# 
+#
 # @param rhats Vector of rhat values.
-# @param threshold Threshold value. If any rhat values are above threshold a 
+# @param threshold Threshold value. If any rhat values are above threshold a
 #   warning is issued.
 check_rhats <- function(rhats, threshold = 1.1) {
-  if (any(rhats > threshold, na.rm = TRUE)) 
-    warning("Markov chains did not converge! Do not analyze results!", 
+  if (any(rhats > threshold, na.rm = TRUE))
+    warning("Markov chains did not converge! Do not analyze results!",
             call. = FALSE, noBreaks. = TRUE)
 }
 
@@ -188,46 +190,46 @@ array1D_check <- function(y) {
   if (length(dim(y)) == 1L) {
     nms <- rownames(y)
     dim(y) <- NULL
-    if (!is.null(nms)) 
+    if (!is.null(nms))
       names(y) <- nms
   }
   return(y)
 }
 
 
-# Check for a binomial model with Y given as proportion of successes and weights 
+# Check for a binomial model with Y given as proportion of successes and weights
 # given as total number of trials
-# 
+#
 binom_y_prop <- function(y, family, weights) {
-  if (!is.binomial(family$family)) 
+  if (!is.binomial(family$family))
     return(FALSE)
 
-  yprop <- NCOL(y) == 1L && 
-    is.numeric(y) && 
-    any(y > 0 & y < 1) && 
+  yprop <- NCOL(y) == 1L &&
+    is.numeric(y) &&
+    any(y > 0 & y < 1) &&
     !any(y < 0 | y > 1)
   if (!yprop)
     return(FALSE)
-  
-  wtrials <- !identical(weights, double(0)) && 
-    all(weights > 0) && 
+
+  wtrials <- !identical(weights, double(0)) &&
+    all(weights > 0) &&
     all(abs(weights - round(weights)) < .Machine$double.eps^0.5)
   isTRUE(wtrials)
 }
 
 # Convert 2-level factor to 0/1
 fac2bin <- function(y) {
-  if (!is.factor(y)) 
-    stop("Bug found: non-factor as input to fac2bin.", 
+  if (!is.factor(y))
+    stop("Bug found: non-factor as input to fac2bin.",
          call. = FALSE)
-  if (!identical(nlevels(y), 2L)) 
-    stop("Bug found: factor with nlevels != 2 as input to fac2bin.", 
+  if (!identical(nlevels(y), 2L))
+    stop("Bug found: factor with nlevels != 2 as input to fac2bin.",
          call. = FALSE)
   as.integer(y != levels(y)[1L])
 }
 
 # Check weights argument
-# 
+#
 # @param w The \code{weights} argument specified by user or the result of
 #   calling \code{model.weights} on a model frame.
 # @return If no error is thrown then \code{w} is returned.
@@ -235,14 +237,14 @@ validate_weights <- function(w) {
   if (missing(w) || is.null(w)) {
     w <- double(0)
   } else {
-    if (!is.numeric(w)) 
-      stop("'weights' must be a numeric vector.", 
+    if (!is.numeric(w))
+      stop("'weights' must be a numeric vector.",
            call. = FALSE)
-    if (any(w < 0)) 
-      stop("Negative weights are not allowed.", 
+    if (any(w < 0))
+      stop("Negative weights are not allowed.",
            call. = FALSE)
   }
-  
+
   return(w)
 }
 
@@ -271,13 +273,13 @@ validate_offset <- function(o, y) {
 #   already a family) or the family object created from \code{f} is returned (if
 #   \code{f} is a string or function).
 validate_family <- function(f) {
-  if (is.character(f)) 
+  if (is.character(f))
     f <- get(f, mode = "function", envir = parent.frame(2))
-  if (is.function(f)) 
+  if (is.function(f))
     f <- f()
-  if (!is(f, "family")) 
+  if (!is(f, "family"))
     stop("'family' must be a family.", call. = FALSE)
-  
+
   return(f)
 }
 
@@ -300,14 +302,14 @@ validate_glm_formula <- function(f) {
 check_constant_vars <- function(mf) {
   # don't check if columns are constant for binomial
   mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
-  
+
   lu <- function(x) length(unique(x))
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
   is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
-  if (any(is_constant)) 
-    stop("Constant variable(s) found: ", 
-         paste(names(is_constant)[is_constant], collapse = ", "), 
+  if (any(is_constant))
+    stop("Constant variable(s) found: ",
+         paste(names(is_constant)[is_constant], collapse = ", "),
          call. = FALSE)
   return(mf)
 }
@@ -335,12 +337,12 @@ last_dimnames <- function(x) {
 #   \code{fit$algorithm}).
 # @return Either \code{"50%"} or \code{"Median"} depending on \code{algorithm}.
 select_median <- function(algorithm) {
-  switch(algorithm, 
+  switch(algorithm,
          sampling = "50%",
          meanfield = "50%",
          fullrank = "50%",
          optimizing = "Median",
-         stop("Bug found (incorrect algorithm name passed to select_median)", 
+         stop("Bug found (incorrect algorithm name passed to select_median)",
               call. = FALSE))
 }
 
@@ -357,11 +359,11 @@ grep_for_pars <- function(x, regex_pars) {
   }
   stopifnot(is.character(regex_pars))
   out <- unlist(lapply(seq_along(regex_pars), function(j) {
-    grep(regex_pars[j], rownames(x$stan_summary), value = TRUE) 
+    grep(regex_pars[j], rownames(x$stan_summary), value = TRUE)
   }))
   if (!length(out))
     stop("No matches for 'regex_pars'.", call. = FALSE)
-  
+
   return(out)
 }
 
@@ -371,11 +373,11 @@ grep_for_pars <- function(x, regex_pars) {
 # @param pars Character vector of parameter names
 # @param regex_pars Character vector of patterns
 collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
-  if (is.null(pars) && is.null(regex_pars)) 
+  if (is.null(pars) && is.null(regex_pars))
     return(NULL)
-  if (!is.null(pars)) 
+  if (!is.null(pars))
     pars[pars == "varying"] <- "b"
-  if (!is.null(regex_pars)) 
+  if (!is.null(regex_pars))
     pars <- c(pars, grep_for_pars(x, regex_pars))
   unique(pars)
 }
@@ -386,7 +388,7 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # @return NULL if used.optimizing(x), otherwise the posterior sample size
 posterior_sample_size <- function(x) {
   validate_stanreg_object(x)
-  if (used.optimizing(x)) 
+  if (used.optimizing(x))
     return(NULL)
   pss <- x$stanfit@sim$n_save
   if (used.variational(x))
@@ -403,10 +405,10 @@ posterior_sample_size <- function(x) {
   if (a == Inf) b else a
 }
 
-# Maybe broadcast 
+# Maybe broadcast
 #
 # @param x A vector or scalar.
-# @param n Number of replications to possibly make. 
+# @param n Number of replications to possibly make.
 # @return If \code{x} has no length the \code{0} replicated \code{n} times is
 #   returned. If \code{x} has length 1, the \code{x} replicated \code{n} times
 #   is returned. Otherwise \code{x} itself is returned.
@@ -423,39 +425,25 @@ maybe_broadcast <- function(x, n) {
 # Create a named list using specified names or, if names are omitted, using the
 # names of the objects in the list
 #
-# @param ... Objects to include in the list. 
+# @param ... Objects to include in the list.
 # @return A named list.
 nlist <- function(...) {
   m <- match.call()
   out <- list(...)
   no_names <- is.null(names(out))
   has_name <- if (no_names) FALSE else nzchar(names(out))
-  if (all(has_name)) 
+  if (all(has_name))
     return(out)
   nms <- as.character(m)[-1L]
   if (no_names) {
     names(out) <- nms
   } else {
     names(out)[!has_name] <- nms[!has_name]
-  } 
-  
+  }
+
   return(out)
 }
 
-# Check for positive scale or df parameter (NULL ok)
-#
-# @param x The value to check.
-# @return Either an error is thrown or \code{TRUE} is returned invisibly.
-validate_parameter_value <- function(x) {
-  nm <- deparse(substitute(x))
-  if (!is.null(x)) {
-    if (!is.numeric(x)) 
-      stop(nm, " should be NULL or numeric", call. = FALSE)
-    if (any(x <= 0)) 
-      stop(nm, " should be positive", call. = FALSE)
-  }
-  invisible(TRUE)
-}
 
 # Check and set scale parameters for priors
 #
@@ -467,18 +455,18 @@ validate_parameter_value <- function(x) {
 #   either \code{scale} or \code{default} is returned.
 set_prior_scale <- function(scale, default, link) {
   stopifnot(is.numeric(default), is.character(link) || is.null(link))
-  if (is.null(scale)) 
+  if (is.null(scale))
     scale <- default
   if (isTRUE(link == "probit"))
     scale <- scale * dnorm(0) / dlogis(0)
-  
+
   return(scale)
 }
 
 
 # Methods for creating linear predictor
 #
-# Make linear predictor vector from x and point estimates for beta, or linear 
+# Make linear predictor vector from x and point estimates for beta, or linear
 # predictor matrix from x and full posterior sample of beta.
 #
 # @param beta A vector or matrix or parameter estimates.
@@ -492,14 +480,14 @@ linear_predictor.default <- function(beta, x, offset = NULL) {
   eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
   if (length(offset))
     eta <- eta + offset
-  
+
   return(eta)
 }
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
-  if (NCOL(beta) == 1L) 
+  if (NCOL(beta) == 1L)
     beta <- as.matrix(beta)
   eta <- beta %*% t(x)
-  if (length(offset)) 
+  if (length(offset))
     eta <- sweep(eta, 2L, offset, `+`)
 
   return(eta)
@@ -507,7 +495,7 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 
 
 #' Extract X, Y or Z from a stanreg object
-#' 
+#'
 #' @keywords internal
 #' @export
 #' @templateVar stanregArg object
@@ -554,8 +542,8 @@ get_z.gamm4 <- function(object) {
 
 # Get inverse link function
 #
-# @param x A stanreg object, family object, or string. 
-# @param ... Ignored. 
+# @param x A stanreg object, family object, or string.
+# @param ... Ignored.
 # @return The inverse link function associated with x.
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {
@@ -580,15 +568,15 @@ polr_linkinv <- function(x) {
   } else if (is.character(x) && length(x) == 1L) {
     method <- x
   } else {
-    stop("'x' should be a stanreg object created by stan_polr ", 
+    stop("'x' should be a stanreg object created by stan_polr ",
          "or a single string.")
   }
-  if (is.null(method) || method == "logistic") 
+  if (is.null(method) || method == "logistic")
     method <- "logit"
-  
+
   if (method == "loglog")
     return(pgumbel)
-  
+
   make.link(method)$linkinv
 }
 
@@ -596,10 +584,10 @@ polr_linkinv <- function(x) {
 # @param stanfit A stanfit object created using rstan::sampling or rstan::vb
 # @return A matrix of summary stats
 make_stan_summary <- function(stanfit) {
-  levs <- c(0.5, 0.8, 0.95, 0.99)
+  levs <- c(0.5, 0.8, 0.95)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
-  rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+  rstan::summary(stanfit, probs = probs, digits = 10)$summary
 }
 
 is_scobit <- function(object) {
@@ -617,9 +605,9 @@ check_reTrms <- function(reTrms) {
     dupe <- reTrms$cnms[[i]]
     overlap <- dupe %in% original
     if (any(overlap))
-      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n", 
+      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n",
            "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
-           dupe[overlap], " is included multiple times.\n", 
+           dupe[overlap], " is included multiple times.\n",
            "Consider using || or -1 in your formulas to prevent this from happening.")
   }
   return(invisible(NULL))
@@ -631,11 +619,11 @@ make_glmerControl <- function(...) {
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
-               check.nobs.vs.nRE = "ignore", ...)  
+               check.nobs.vs.nRE = "ignore", ...)
 }
 
 # Check if a fitted model (stanreg object) has weights
-# 
+#
 # @param x stanreg object
 # @return Logical. Only TRUE if x$weights has positive length and the elements
 #   of x$weights are not all the same.
@@ -685,6 +673,37 @@ check_stanfit <- function(x) {
   return(TRUE)
 }
 
+# Validate data argument
+#
+# Make sure that, if specified, data is a data frame.
+#
+# @param data User's data argument
+# @param if_missing Object to return if data is missing/null
+# @return If no error is thrown, data itself is returned if not missing/null,
+#   otherwise if_missing is returned.
+#
+validate_data <- function(data, if_missing = NULL) {
+  if (missing(data) || is.null(data)) {
+    warn_data_arg_missing()
+    return(if_missing)
+  }
+  if (!is.data.frame(data))
+    stop("'data' must be a data frame.", call. = FALSE)
+
+  return(data)
+}
+
+# Throw a warning if 'data' argument to modeling function is missing
+warn_data_arg_missing <- function() {
+  warning(
+    "Omitting the 'data' argument is not recommended ",
+    "and may not be allowed in future versions of rstanarm. ",
+    "Some post-estimation functions (in particular 'update', 'loo', 'kfold') ",
+    "are not guaranteed to work properly unless 'data' is specified as a data frame.",
+    call. = FALSE
+  )
+}
+
 # multivariate normal density (in precision form)
 dmultinorm <- function(x, mu, H, log = FALSE) {
   k <- length(mu)
@@ -693,7 +712,7 @@ dmultinorm <- function(x, mu, H, log = FALSE) {
     out <- -k * 0.5 * log(2*pi) + 0.5 * log(det(H)) - 0.5 * t(x - mu) %*% H %*% (x - mu)
   }
   else {
-    out <- (2*pi)^(-k/2) * sqrt(det(H)) * exp(-0.5 * t(x - mu) %*% H %*% (x - mu)) 
+    out <- (2*pi)^(-k/2) * sqrt(det(H)) * exp(-0.5 * t(x - mu) %*% H %*% (x - mu))
   }
   return(diag(out))
 }

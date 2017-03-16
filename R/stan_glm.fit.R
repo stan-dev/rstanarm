@@ -25,8 +25,10 @@
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
-stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)), 
-                         offset = rep(0, NROW(x)), family = gaussian(),
+stan_glm.fit <- function(x, y, 
+                         weights = rep(1, NROW(x)), 
+                         offset = rep(0, NROW(x)), 
+                         family = gaussian(),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
@@ -36,7 +38,9 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
                          prior_PD = FALSE, 
                          algorithm = c("sampling", "optimizing", 
                                        "meanfield", "fullrank"), 
-                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                         adapt_delta = NULL, 
+                         QR = FALSE, 
+                         sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -79,7 +83,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- 
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- 
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- 
-    prior_autoscale <- prior_autoscale_for_intercept <- 
+    prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <- 
     global_prior_scale <- global_prior_df <- NULL
   
   x_stuff <- center_x(x, sparse)
@@ -152,26 +156,29 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
-
-  if (prior_dist > 0L) {
-    if (is_gaussian) {
-      ss <- 2 * sd(y)
-      if (prior_autoscale) 
-        prior_scale <- ss * prior_scale
-      if (prior_autoscale_for_intercept && prior_dist_for_intercept > 0L) 
-        prior_scale_for_intercept <-  ss * prior_scale_for_intercept
-    }
-    if (!QR && prior_autoscale) {
-      min_prior_scale <- 1e-12 # used to be set in prior_options()
-      prior_scale <- pmax(min_prior_scale, prior_scale / 
-             apply(xtemp, 2L, FUN = function(x) {
-               num.categories <- length(unique(x))
-               x.scale <- 1
-               if (num.categories == 2) x.scale <- diff(range(x))
-               else if (num.categories > 2) x.scale <- 2 * sd(x)
-               return(x.scale)
-             }))
-    }
+  
+  if (is_gaussian) {
+    ss <- sd(y)
+    if (prior_dist > 0L && prior_autoscale) 
+      prior_scale <- ss * prior_scale
+    if (prior_dist_for_intercept > 0L && prior_autoscale_for_intercept) 
+      prior_scale_for_intercept <-  ss * prior_scale_for_intercept
+    if (prior_dist_for_aux > 0L && prior_autoscale_for_aux)
+      prior_scale_for_aux <- ss * prior_scale_for_aux
+  }
+  if (!QR && prior_dist > 0L && prior_autoscale) {
+    min_prior_scale <- 1e-12
+    prior_scale <- pmax(min_prior_scale, prior_scale / 
+                          apply(xtemp, 2L, FUN = function(x) {
+                            num.categories <- length(unique(x))
+                            x.scale <- 1
+                            if (num.categories == 2) {
+                              x.scale <- diff(range(x))
+                            } else if (num.categories > 2) {
+                              x.scale <- sd(x)
+                            }
+                            return(x.scale)
+                          }))
   }
   prior_scale <- 
     as.array(pmin(.Machine$double.xmax, prior_scale))
@@ -429,6 +436,7 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
     has_predictors = nvars > 0,
     adjusted_prior_scale = prior_scale,
     adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    adjusted_prior_aux_scale = prior_scale_for_aux,
     family = family
   )
   
@@ -476,8 +484,8 @@ stan_glm.fit <- function(x, y, weights = rep(1, NROW(x)),
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, ...)
-      if (algorithm == "meanfield" && !QR) 
-        msg_meanfieldQR()
+      if (!QR) 
+        recommend_QR_for_vb()
     }
     check_stanfit(stanfit)
     if (QR) {
@@ -704,7 +712,7 @@ make_b_nms <- function(group) {
 #   passed in after broadcasting the df/location/scale arguments if necessary.
 # @param has_intercept T/F, does model have an intercept?
 # @param has_predictors T/F, does model have predictors?
-# @param adjusted_prior_* adjusted scales computed if using autoscaled priors
+# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
 # @param family Family object.
 # @return A named list with components 'prior', 'prior_intercept', and possibly 
 #   'prior_covariance' and 'prior_aux' each of which itself is a list
@@ -718,6 +726,7 @@ summarize_glm_prior <-
            has_predictors,
            adjusted_prior_scale,
            adjusted_prior_intercept_scale, 
+           adjusted_prior_aux_scale,
            family) {
     rescaled_coef <-
       user_prior$prior_autoscale && 
@@ -729,6 +738,9 @@ summarize_glm_prior <-
       has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
       (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
+    rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
+      !is.na(user_prior_aux$prior_dist_name_for_aux) &&
+      (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
     
     if (has_predictors && user_prior$prior_dist_name %in% "t") {
       if (all(user_prior$prior_df == 1)) {
@@ -788,6 +800,8 @@ summarize_glm_prior <-
         scale = if (!is.na(prior_dist_name_for_aux) && 
                     prior_dist_name_for_aux != "exponential")
           prior_scale_for_aux else NULL,
+        adjusted_scale = if (rescaled_aux)
+          adjusted_prior_aux_scale else NULL,
         df = if (!is.na(prior_dist_name_for_aux) && 
                  prior_dist_name_for_aux %in% "student_t")
           prior_df_for_aux else NULL, 

@@ -20,15 +20,21 @@
 #' @param z For \code{stan_betareg.fit}, a regressor matrix for \code{phi}.
 #'   Defaults to an intercept only.
 stan_betareg.fit <- function(x, y, z = NULL, 
-                             weights = rep(1, NROW(x)), offset = rep(0, NROW(x)),
-                             link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
+                             weights = rep(1, NROW(x)), 
+                             offset = rep(0, NROW(x)),
+                             link = c("logit", "probit", "cloglog", 
+                                      "cauchit", "log", "loglog"), 
                              link.phi = NULL, ...,
-                             prior = normal(), prior_intercept = normal(),
-                             prior_z = normal(), prior_intercept_z = normal(),
+                             prior = normal(), 
+                             prior_intercept = normal(),
+                             prior_z = normal(), 
+                             prior_intercept_z = normal(),
                              prior_phi = cauchy(0, 5),
                              prior_PD = FALSE, 
-                             algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                             adapt_delta = NULL, QR = FALSE) {
+                             algorithm = c("sampling", "optimizing", 
+                                           "meanfield", "fullrank"),
+                             adapt_delta = NULL, 
+                             QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   
@@ -142,25 +148,31 @@ stan_betareg.fit <- function(x, y, z = NULL,
 
   # prior scaling (using sd of predictors)
   min_prior_scale <- 1e-12
-  if (prior_dist > 0L && !QR && prior_autoscale) {
+  if (prior_dist > 0L && !QR && nvars != 0 && prior_autoscale) {
     prior_scale <- pmax(min_prior_scale, prior_scale / 
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
-                            if (num.categories == 2) x.scale <- diff(range(x))
-                            else if (num.categories > 2) x.scale <- 2 * sd(x)
+                            if (num.categories == 2) {
+                              x.scale <- diff(range(x))
+                            } else if (num.categories > 2) {
+                              x.scale <- sd(x)
+                            }
                             return(x.scale)
                           }))
-    if (nvars_z != 0 && prior_autoscale_z) {
-      prior_scale_z <- pmax(min_prior_scale, prior_scale_z / 
+  }
+  if (prior_dist_z > 0L && !QR && nvars_z != 0 && prior_autoscale_z) {
+    prior_scale_z <- pmax(min_prior_scale, prior_scale_z / 
                             apply(ztemp, 2L, FUN = function(z) {
                               num.categories <- length(unique(z))
                               z.scale <- 1
-                              if (num.categories == 2) z.scale <- diff(range(z))
-                              else if (num.categories > 2) z.scale <- 2 * sd(z)
+                              if (num.categories == 2) {
+                                z.scale <- diff(range(z))
+                              } else if (num.categories > 2) {
+                                z.scale <- sd(z)
+                              }
                               return(z.scale)
                             }))
-    }
   }
   prior_scale <- as.array(pmin(.Machine$double.xmax, prior_scale))
   prior_scale_for_intercept <- 
@@ -173,9 +185,10 @@ stan_betareg.fit <- function(x, y, z = NULL,
 
   # QR decomposition for both x and z
   if (QR) {
-    if ( (ncol(xtemp) <= 1 & ncol(ztemp) <= 1 & Z_true == 1) || (ncol(xtemp) <= 1 & Z_true == 0))
+    if ((nvars <= 1 && nvars_z <= 1 && Z_true == 1) || 
+        (nvars <= 1 && Z_true == 0))
       stop("'QR' can only be specified when there are multiple predictors.")
-    if (ncol(xtemp) > 1) {
+    if (nvars > 1) {
       cn <- colnames(xtemp)
       decomposition <- qr(xtemp)
       sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
@@ -185,7 +198,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
       colnames(xtemp) <- cn
       xbar <- c(xbar %*% R_inv) 
     }
-    if (Z_true == 1 & ncol(ztemp) > 1) {
+    if (Z_true == 1 && nvars_z > 1) {
       cn_z <- colnames(ztemp)
       decomposition_z <- qr(ztemp)
       sqrt_nm1_z <- sqrt(nrow(ztemp) - 1L)
@@ -199,7 +212,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
   
   # create entries in the data block of the .stan file
   standata <- nlist(
-    N = nrow(xtemp), K = ncol(xtemp), xbar = as.array(xbar), dense_X = !sparse,
+    N = nrow(xtemp), K = ncol(xtemp), 
+    xbar = as.array(xbar), dense_X = !sparse,
     X = array(xtemp, dim = c(1L, dim(xtemp))),
     nnz_X = 0L, 
     w_X = double(), 
@@ -234,22 +248,34 @@ stan_betareg.fit <- function(x, y, z = NULL,
     betareg_z = array(ztemp, dim = c(dim(ztemp))),
     has_intercept_z,
     zbar = array(zbar),
-    prior_dist_z, prior_mean_z, prior_scale_z = as.array(pmin(.Machine$double.xmax, prior_scale_z)),
-    prior_df_z,
-    prior_dist_for_intercept_z, prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
-    prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
+    prior_dist_z, prior_mean_z, prior_df_z,
+    prior_scale_z = as.array(pmin(.Machine$double.xmax, prior_scale_z)),
+    prior_dist_for_intercept_z, 
+    prior_mean_for_intercept_z = c(prior_mean_for_intercept_z), 
     prior_df_for_intercept_z = c(prior_df_for_intercept_z),
+    prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
+    # for hs family priors
     global_prior_scale_z,
-    num_normals = if(prior_dist == 7) as.array(as.integer(prior_df)) else integer(0),
-    num_normals_z = if(prior_dist_z == 7) as.array(as.integer(prior_df_z)) else integer(0)
+    # for product normal prior
+    num_normals = if (prior_dist == 7) 
+      as.array(as.integer(prior_df)) else integer(0),
+    num_normals_z = if (prior_dist_z == 7) 
+      as.array(as.integer(prior_df_z)) else integer(0)
     )
 
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$continuous
   if (Z_true == 1) {
-    pars <- c(if (has_intercept) "alpha", "beta", "omega_int", "omega", "mean_PPD")
+    pars <- c(if (has_intercept) "alpha", 
+              "beta", 
+              "omega_int", 
+              "omega", 
+              "mean_PPD")
   } else {
-    pars <- c(if (has_intercept) "alpha", "beta", "aux", "mean_PPD")
+    pars <- c(if (has_intercept) "alpha", 
+              "beta", 
+              "aux", 
+              "mean_PPD")
   }
   
   prior_info <- summarize_betareg_prior(
@@ -271,13 +297,18 @@ stan_betareg.fit <- function(x, y, z = NULL,
   
 
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, draws = 1000, constrained = TRUE, ...)
+    out <-
+      optimizing(stanfit,
+                 data = standata,
+                 draws = 1000,
+                 constrained = TRUE,
+                 ...)
     check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
-    out$theta_tilde <- out$theta_tilde[,!grepl("eta_z", colnames(out$theta_tilde))]
+    out$theta_tilde <- out$theta_tilde[, !grepl("eta_z", colnames(out$theta_tilde))]
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
-    if (QR & ncol(xtemp) > 1) {
+    if (QR && ncol(xtemp) > 1) {
       out$par[mark] <- R_inv %*% out$par[mark]
       out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
     }
@@ -286,7 +317,7 @@ stan_betareg.fit <- function(x, y, z = NULL,
     if (Z_true == 1) {
       new_names[new_names == "omega_int[1]"] <- "(phi)_(Intercept)"
       mark_z <- grepl("^omega\\[[[:digit:]]+\\]$", new_names)
-      if (QR & ncol(ztemp) > 1) {
+      if (QR && ncol(ztemp) > 1) {
         out$par[mark_z] <- R_inv_z %*% out$par[mark_z]
         out$theta_tilde[,mark_z] <- out$theta_tilde[, mark_z] %*% t(R_inv_z)
       }
@@ -312,8 +343,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     } else { # algorithm either "meanfield" or "fullrank"
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
-      if (algorithm == "meanfield" && !QR) 
-        msg_meanfieldQR()
+      if (!QR) 
+        recommend_QR_for_vb()
     }
     check_stanfit(stanfit)
     if (QR) {
@@ -328,24 +359,28 @@ stan_betareg.fit <- function(x, y, z = NULL,
         } 
       }
       if (Z_true == 1 & ncol(ztemp) > 1) {
-        thetas_z <- extract(stanfit, pars = "omega", inc_warmup = TRUE, 
-                          permuted = FALSE)
+        thetas_z <- extract(stanfit, pars = "omega", 
+                            inc_warmup = TRUE, permuted = FALSE)
         omegas <- apply(thetas_z, 1:2, FUN = function(theta) R_inv_z %*% theta)
         end_z <- tail(dim(omegas), 1L)
         for (chain_z in 1:end_z) for (param_z in 1:nrow(omegas)) {
-          stanfit@sim$samples[[chain_z]][[has_intercept + ncol(xtemp) + has_intercept_z + param_z]] <-
+          sel <- has_intercept + ncol(xtemp) + has_intercept_z + param_z
+          stanfit@sim$samples[[chain_z]][[sel]] <-
             if (ncol(ztemp) > 1) omegas[param_z, , chain_z] else omegas[param_z, chain_z]
         }
       }
     }
     if (Z_true == 1) {
-      new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp),
+      new_names <- c(if (has_intercept) "(Intercept)", 
+                     colnames(xtemp),
                      if (has_intercept_z) "(phi)_(Intercept)", 
                      paste0("(phi)_", colnames(ztemp)),
                      "mean_PPD", "log-posterior")
     } else {
-      new_names <- c(if (has_intercept) "(Intercept)", colnames(xtemp), 
-                     "(phi)",  "mean_PPD", "log-posterior")
+      new_names <- c(if (has_intercept) "(Intercept)", 
+                     colnames(xtemp), 
+                     "(phi)",  
+                     "mean_PPD", "log-posterior")
     }
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))

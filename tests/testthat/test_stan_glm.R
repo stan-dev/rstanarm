@@ -57,11 +57,6 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   expect_error(stan_glm(f, family = "poisson", QR = TRUE, sparse = TRUE), 
                regexp = "'QR' and 'sparse' cannot both be TRUE")
   
-  # message: recommend QR if using meanfield vb
-  # expect_message(capture.output(stan_glm(f, family = "poisson",
-  #                                        algorithm = "meanfield", seed = SEED)), 
-  #                regexp = "Setting 'QR' to TRUE can often be helpful")
-  
   # require intercept for certain family and link combinations
   expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
                         family = poisson(link="identity"), seed = SEED), 
@@ -303,15 +298,21 @@ test_that("model with product_normal prior doesn't error", {
 
 test_that("prior_aux argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_aux = exponential(5))
+                  refresh = -1, prior_aux = exponential(5), 
+                  prior = normal(autoscale=FALSE), 
+                  prior_intercept = normal(autoscale=FALSE))
   expect_identical(
     fit$prior.info$prior_aux, 
     list(dist = "exponential", 
-         location = NULL, scale = NULL, df = NULL, rate = 5, 
+         location = NULL, scale = NULL, 
+         adjusted_scale = 1/5 * sd(mtcars$mpg),
+         df = NULL, rate = 5, 
          aux_name = "sigma")
   )
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
+  expect_output(print(prior_summary(fit)), 
+                "**adjusted scale", fixed = TRUE)
 })
 
 test_that("prior_aux can be NULL", {
@@ -325,7 +326,8 @@ test_that("autoscale works (insofar as it's reported by prior_summary)", {
   suppressWarnings(capture.output(
     fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, 
                     prior = normal(autoscale=FALSE), 
-                    prior_intercept = normal(autoscale=FALSE)), 
+                    prior_intercept = normal(autoscale=FALSE), 
+                    prior_aux = cauchy(autoscale=FALSE)), 
     fit2 <- update(fit, prior = normal())
   ))
   
@@ -349,7 +351,7 @@ test_that("prior_options is deprecated", {
   )
   expect_output(
     print(prior_summary(fit)), 
-    "~ cauchy(location = 0, scale = 3)", 
+    "~ half-cauchy(location = 0, scale = 3)", 
     fixed = TRUE
   )
 })

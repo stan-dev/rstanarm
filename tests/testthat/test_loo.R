@@ -281,6 +281,19 @@ test_that("kfold works on some examples", {
   expect_output(print(kf2), "2-fold cross-validation")
 })
 
+test_that("setting the argument 'save_fits' to TRUE works as expected", {
+  SW(
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, seed = 12345, refresh = 0,
+                         chains = 1, iter = 100)
+  )
+  SW(kf <- kfold(fit_gaus, K = 2, save_fits = TRUE))
+
+  expect_true("fits" %in% names(kf))
+  expect_s3_class(kf$fits[[1, "fit"]], "stanreg")
+  expect_type(kf$fits[[2, "omitted"]], "integer")
+  expect_length(kf$fits[[2, "omitted"]], 16)
+})
+
 
 
 # compare_models ----------------------------------------------------------
@@ -393,6 +406,11 @@ test_that("kfold_and_reloo_data works", {
   y <- rnorm(40)
   SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
   expect_equivalent(f(fit), model.frame(fit))
+  
+  # if 'subset' arg specified when fitting the model
+  SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, 
+                      chains = CHAINS, refresh = REFRESH))
+  expect_equivalent(f(fit2), model.frame(fit2))
 })
 
 test_that(".weighted works", {
