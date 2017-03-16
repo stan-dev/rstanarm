@@ -17,38 +17,69 @@
 
 #' Bayesian spatial simultaneous autoregressive error model estimation via Stan
 #'
-#' Note this doc is incomplete!
-#'
-#' @export
+#' Spatial autoregressive (SAR) models with spatial dependence modeled through
+#' the error term. The model takes the form:
+#' \deqn{y = X \beta + u}
+#' \deqn{u = \rho W u + e}
+#' where \eqn{\rho} is the spatial autogregressive error coefficient and
+#' \eqn{W} is a spatial weight matrix.
 #' 
+#' @export
+#' @templateVar fun stan_errorsarlm
+#' @templateVar fitfun stan_sp.fit
+#' @template args-x-y
 #' @param listw Spatial weights as a "listw" object. This can be constructed from
 #' a variety of formats using the appropriate functions in the \code{spdep}
-#' package (e.g. \code{mat2listw} transforms a "matrix" class object to a
+#' package (e.g. \code{spdep::mat2listw} transforms a "matrix" class object to a
 #' "listw" class object).
 #' @param  prior_aux Prior on spatial autocorrelation term.
-#' @param prior_intercept Prior on intercept of linear predictor.
+#'   \code{prior_aux} can be set to \code{beta}.
+#'   See the \link[=priors]{priors help page} for details.
+#'   To omit a prior on the intercept ---i.e., to use a flat
+#'   (improper) uniform prior--- \code{prior_aux} can be set to
+#'   \code{NULL}.
+#' @param prior_intercept The prior distribution for the intercept. 
+#'   \code{prior_intercept} can be a call to \code{normal}, \code{student_t} or 
+#'   \code{cauchy}. See the \link[=priors]{priors help page} for details on 
+#'   these functions. To omit a prior on the intercept ---i.e., to use a flat
+#'   (improper) uniform prior--- \code{prior_intercept} can be set to
+#'   \code{NULL}.
+#' @template args-algorithm
+#' @template args-adapt_delta
+#' @template args-dots
+#' @template return-stanreg-object
+#' @template return-stanfit-object
+#' 
+#' @details The \code{stan_errorsarlm} function is similar in syntax to 
+#'   \code{\link[spdep]{errorsarlm}} but rather than performing maximum likelihood 
+#'   estimation, full Bayesian estimation is performed (if \code{algorithm} is 
+#'   \code{"sampling"}) via MCMC. The Bayesian model adds priors on the intercept
+#'   and the spatial autocorrelation coefficient. The \code{stan_errorsarlm}
+#'   function calls the workhorse \code{stan_sp.fit} function.
 #' 
 #' @examples 
+#' \donttest{
 #' ### Spatial AR error Simulation
-#' N <- 10
-#' W_bin <- matrix(rep(0, N * N), nrow = N)
-#' W_bin[lower.tri(W_bin)] <- rbinom(choose(N,2), 1, 0.5)
-#' W_bin <- W_bin + t(W_bin)
-#' W <- apply(W_bin, 2, function(x){x/rowSums(W_bin)})
+#' path <- system.file(package = "rstanarm", "data/spatial")
+#' sim_grid <- rgdal::readOGR(path, layer = "grid_map")
+#' W <- spdep::nb2mat(spdep::poly2nb(sim_grid, queen = TRUE), style = "W", zero.policy = TRUE)
+#' N <- nrow(as.data.frame(sim_grid))
 #' I <- diag(N)
-#' lambda <- 0.5
+#' rho <- 0.8
 #' sigma <- 0.3
-#' Sigma <- solve((I - lambda * W) %*% (I - lambda * t(W))) * sigma
+#' Sigma <- solve(I - rho * W) %*% t(solve(I - rho * W)) * sigma
 #' X <- cbind(rep(1,N),rnorm(N, 0, 1), rnorm(N, 3, 1))
-#' beta <- c(3, 2.5, -1.5)
+#' beta <- c(3, 2.5, 1.5)
 #' mu <- X %*% beta
-#' y <- c(mvtnorm::rmvnorm(1, mu, Sigma))
+#' # y <- c(mvtnorm::rmvnorm(1, mu, Sigma))
+#' y <- t(rstanarm:::rmultinorm(1, mu, Sigma))
 #' lw <- spdep::mat2listw(W)
-#' 
 #' dat <- data.frame(cbind(y, X[,-1]))
 #' names(dat) <- c("y","x1","x2")
-#' 
-#' fit <- stan_errorsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
+#' fit <- stan_errorsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4, iter = 100)
+#' rstan::traceplot(fit$stanfit)
+#' print(fit, digits = 2)
+#' }
 
 stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
                           prior_aux = beta(), prior_intercept = normal(),
