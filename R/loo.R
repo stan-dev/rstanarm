@@ -129,6 +129,8 @@
 #' @importFrom loo loo loo.function
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
+  if (is(x, "spatial"))
+    stop("loo is currently unavailable for spatial models.")
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
   if (model_has_weights(x))

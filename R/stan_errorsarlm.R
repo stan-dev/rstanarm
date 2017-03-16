@@ -60,10 +60,8 @@
 #' @examples 
 #' \donttest{
 #' ### Spatial AR error Simulation
-#' path <- system.file(package = "rstanarm", "data/spatial")
-#' sim_grid <- rgdal::readOGR(path, layer = "grid_map")
-#' W <- spdep::nb2mat(spdep::poly2nb(sim_grid, queen = TRUE), style = "W", zero.policy = TRUE)
-#' N <- nrow(as.data.frame(sim_grid))
+#' W <- spdep::nb2mat(spdep::poly2nb(spatial_grid, queen = TRUE), style = "W", zero.policy = TRUE)
+#' N <- nrow(as.data.frame(spatial_grid))
 #' I <- diag(N)
 #' rho <- 0.8
 #' sigma <- 0.3

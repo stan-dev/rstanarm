@@ -59,19 +59,17 @@
 #' @examples 
 #' \donttest{
 #' ### Spatial AR lag Simulation
-#' path <- system.file(package = "rstanarm", "data/spatial")
-#' sim_grid <- rgdal::readOGR(path, layer = "grid_map")
-#' N <- nrow(as.data.frame(sim_grid))
+#' N <- nrow(as.data.frame(spatial_grid))
 #' I <- diag(N)
 #' lambda <- 0.8
 #' sigma <- 0.3
-#' W <- spdep::nb2mat(spdep::poly2nb(sim_grid, queen = TRUE), style = "W", zero.policy = TRUE)
+#' W <- spdep::nb2mat(spdep::poly2nb(spatial_grid, queen = TRUE), style = "W", zero.policy = TRUE)
 #' Sigma <- solve(I - lambda * W) %*% t(solve(I - lambda * W)) * sigma
 #' X <- cbind(rep(1,N),rnorm(N, 0, 1), rnorm(N, 3, 1))
 #' beta <- c(3, 2.5, 1.5)
 #' mu <- solve(I - lambda * W) %*% X %*% beta
-#' # y <- c(mvtnorm::rmvnorm(1, mu, Sigma))
-#' y <- rstanarm:::rmultinorm(1, mu, Sigma)
+#' # y <- mvtnorm::rmvnorm(1, mu, Sigma)
+#' y <- t(rstanarm:::rmultinorm(1, mu, Sigma))
 #' lw <- spdep::mat2listw(W)
 #' dat <- data.frame(cbind(y, X[,-1]))
 #' names(dat) <- c("y","x1","x2")
