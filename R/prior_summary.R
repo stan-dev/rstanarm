@@ -228,6 +228,8 @@ used.sparse <- function(x) {
         "flat"
       } else if (p$dist == "exponential") {
         paste0(p$dist,"(rate = ", .f1(p$rate), ")")
+      } else if (p$dist == "beta") {
+        paste0(p$dist,"(alpha = ", .f1(p$alpha), ", beta = ", .f1(p$beta), ")")
       } else { # normal, studen_t, cauchy
         if (is.null(p$df)) {
           paste0(p$dist,"(location = ", .f1(p$location), 

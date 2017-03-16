@@ -17,15 +17,15 @@
 
 #' @export
 stan_sp.fit <- function(y, x, w, ..., sp_model,
-                        prior_rho = beta(), prior_intercept = normal(), 
+                        prior_aux = beta(), prior_intercept = normal(), 
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   # check prior for spatial correlation parameter
-  if(is.null(prior_rho))
-    prior_rho = beta(1,1)  # kinda hacky
-  else if(prior_rho$dist != "beta")
-    stop("'prior_rho' can only be specified with 'beta()'")
+  if(is.null(prior_aux))
+    prior_aux = beta(1,1)  # kinda hacky
+  else if(prior_aux$dist != "beta")
+    stop("'prior_aux' can only be specified with 'beta()'")
   
   algorithm <- match.arg(algorithm)
   
@@ -80,8 +80,8 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                     X = xtemp,
                     y = y,
                     mod = if(sp_model == "lagsarlm"){1}else if(sp_model == "errorsarlm"){2},
-                    shape1 = prior_rho$alpha,
-                    shape2 = prior_rho$beta,
+                    shape1 = prior_aux$alpha,
+                    shape2 = prior_aux$beta,
                     has_intercept = has_intercept,
                     xbar = xbar,
                     prior_dist_for_intercept = prior_dist_for_intercept,
@@ -90,6 +90,13 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
                     prior_df_for_intercept = c(prior_df_for_intercept)
                     )
   
+  prior_info <- summarize_spatial_prior(
+    user_prior_intercept = prior_intercept_stuff,
+    adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    has_intercept = has_intercept,
+    user_prior_aux = prior_aux
+  )
+
   stanfit <- stanmodels$spatial
   
   if(algorithm == "optimizing") {
@@ -107,13 +114,13 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(structure(out))
+    return(structure(out, prior.info = prior_info))
   }
   else {
     if (algorithm == "sampling") {
       sampling_args <- set_sampling_args(
         object = stanfit, 
-        prior = prior_rho, 
+        prior = prior_aux, 
         user_dots = list(...), 
         user_adapt_delta = adapt_delta, 
         data = standata, 
@@ -144,6 +151,43 @@ stan_sp.fit <- function(y, x, w, ..., sp_model,
       new_names <- c(colnames(xtemp), "rho", "sigma", "mean_PPD", "log-posterior")
     
     stanfit@sim$fnames_oi <- new_names
-    return(structure(stanfit))  #  prior.info = prior_info
+    return(structure(stanfit, prior.info = prior_info))
   }
+}
+
+# Create "prior.info" attribute needed for prior_summary()
+summarize_spatial_prior <- function(user_prior_intercept,
+                                    adjusted_prior_intercept_scale,
+                                    has_intercept,
+                                    user_prior_aux) {
+  
+  rescaled_int <-
+    user_prior_intercept$prior_autoscale_for_intercept && has_intercept &&
+    !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+    (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
+  
+  if (has_intercept &&
+      user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+    if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
+      user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
+    } else {
+      user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
+    }
+  }
+  prior_list <- list(
+    prior_intercept = 
+      if (!has_intercept) NULL else with(user_prior_intercept, list(
+        dist = prior_dist_name_for_intercept,
+        location = prior_mean_for_intercept,
+        scale = prior_scale_for_intercept,
+        adjusted_scale = if (rescaled_int)
+          adjusted_prior_intercept_scale else NULL,
+        df = if (prior_dist_name_for_intercept %in% "student_t")
+          prior_df_for_intercept else NULL
+      )),
+    prior_aux = list(dist = user_prior_aux$dist,
+                     alpha = user_prior_aux$alpha,
+                     beta = user_prior_aux$beta,
+                     aux_name = "rho")
+  )
 }

@@ -25,7 +25,7 @@
 #' a variety of formats using the appropriate functions in the \code{spdep}
 #' package (e.g. \code{mat2listw} transforms a "matrix" class object to a
 #' "listw" class object).
-#' @param  prior_rho Prior on spatial autocorrelation term.
+#' @param  prior_aux Prior on spatial autocorrelation term.
 #' @param prior_intercept Prior on intercept of linear predictor.
 #' 
 #' @examples 
@@ -51,7 +51,7 @@
 #' fit <- stan_errorsarlm(y ~ x1 + x2, data = dat, listw = lw, cores = 4)
 
 stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
-                          prior_rho = beta(), prior_intercept = normal(),
+                          prior_aux = beta(), prior_intercept = normal(),
                           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
                           adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   sp_model <- "errorsarlm"
@@ -67,7 +67,7 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   mc <- match.call(expand.dots = FALSE)
   
   # NULLify any Stan specific arguments in mc
-  mc$prior_rho <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- 
+  mc$prior_aux <- mc$prior_intercept <- mc$algorithm <- mc$adapt_delta <- 
     mc$QR <- mc$sparse <- NULL
   
   # mc$drop.unused.levels <- TRUE  # drop stuff in ... so quote evaluates
@@ -84,7 +84,7 @@ stan_errorsarlm <- function(formula, data, listw, type = "lag", ...,
   }
   
   stanfit <- stan_sp.fit(y = Y, x = X, w = W, ..., sp_model = sp_model,
-                         prior_rho = prior_rho, prior_intercept = prior_intercept, 
+                         prior_aux = prior_aux, prior_intercept = prior_intercept, 
                          algorithm = algorithm, adapt_delta = adapt_delta, QR = QR, sparse = sparse)
   
   

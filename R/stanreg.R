@@ -116,7 +116,7 @@ stanreg <- function(object) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
   }
-  
+
   out <- nlist(
     coefficients = unpad_reTrms(coefs), 
     ses = unpad_reTrms(ses),
