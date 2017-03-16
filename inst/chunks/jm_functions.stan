@@ -51,6 +51,25 @@
   }
 
   /** 
+  * Generate auxiliary parameters using unscaled params and prior information
+  *
+  * @param aux_unscaled Vector of unscaled auxiliary params
+  * @param prior_dist An integer indicating the prior distribution
+  * @param prior_{mean,scale} Vector of prior means and scales
+  * @return A vector
+  */  
+  vector generate_aux(vector aux_unscaled, int prior_dist, vector prior_mean, vector prior_scale) {
+    if (prior_dist == 0) // none
+      aux = aux_unscaled;
+    else {
+      aux = prior_scale .* aux_unscaled;
+      if (prior_dist <= 2) // normal or student_t
+        aux = aux + prior_mean;
+    }
+    return aux;	
+  }
+  
+  /** 
   * Add intercept term to linear predictor for submodel m 
   *
   * @param eta Vector of linear predictors for all longitudinal submodels
