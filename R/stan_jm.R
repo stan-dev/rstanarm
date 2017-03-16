@@ -2281,8 +2281,11 @@ handle_assocmod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
 # @return A data.table formed by a merge of ids, times, and the closest 
 #   preceding (in terms of times) rows in data
 rolling_merge <- function(data, ids, times) {
-  do.call(rbind, lapply(times, FUN = function(x) 
-    data[data.table::SJ(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)]))  
+  if (is(times, "list")) {
+    return(do.call(rbind, lapply(times, FUN = function(x) 
+      data[data.table::SJ(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
+  } else 
+    return(data[data.table::SJ(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
 }
 
 # Evaluate a glFormula call and return model components

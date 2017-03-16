@@ -395,11 +395,13 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     stop("This method is for stan_glmer and stan_lmer models only.", 
          call. = FALSE)
 }
-.cnms <- function(object) {
+.cnms <- function(object, ...) UseMethod(".cnms")
+.cnms.stanreg <- function(object, ...) {
   .glmer_check(object)
   object$glmod$reTrms$cnms
 }
-.flist <- function(object) {
+.flist <- function(object, ...) UseMethod(".flist")
+.flist.stanreg <- function(object, ...) {
   .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
 }

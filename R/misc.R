@@ -498,54 +498,76 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
+#' @param ... Other arguments passed to methods. For a \code{stanjm} object
+#'   this can be an integer \code{m} specifying the submodel.
 #' @return For \code{get_x} and \code{get_z}, a matrix. For \code{get_y}, either
 #'   a vector or a matrix, depending on how the response variable was specified.
-get_y <- function(object) UseMethod("get_y")
+get_y <- function(object, ...) UseMethod("get_y")
 #' @rdname get_y
 #' @export
-get_x <- function(object) UseMethod("get_x")
+get_x <- function(object, ...) UseMethod("get_x")
 #' @rdname get_y
 #' @export
-get_z <- function(object) UseMethod("get_z")
+get_z <- function(object, ...) UseMethod("get_z")
 
 #' @export
-get_y.default <- function(object) {
+get_y.default <- function(object, ...) {
   object[["y"]] %ORifNULL% model.response(model.frame(object))
 }
 #' @export
-get_x.default <- function(object) {
+get_x.default <- function(object, ...) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
-get_x.gamm4 <- function(object) {
+get_x.gamm4 <- function(object, ...) {
   object$glmod$raw_X %ORifNULL% stop("X not found")
 }
 #' @export
-get_x.lmerMod <- function(object) {
+get_x.lmerMod <- function(object, ...) {
   object$glmod$X %ORifNULL% stop("X not found")
 }
 #' @export
-get_z.lmerMod <- function(object) {
+get_z.lmerMod <- function(object, ...) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(Zt)
 }
 #' @export
-get_z.gamm4 <- function(object) {
+get_z.gamm4 <- function(object, ...) {
   X <- get_x(object)
   XZ <- object$x
   Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
   Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
   return(Z)
 }
+#' @export
+get_y.stanjm <- function(object, m = NULL, ...) {
+  ret <- lapply(object$glmod, lme4::getME, "y") %ORifNULL% stop("y not found")
+  if (!is.null(m)) ret[[m]] else list_nms(ret)
+}
+#' @export
+get_x.stanjm <- function(object, m = NULL, ...) {
+  ret <- lapply(object$glmod, lme4::getME, "X") %ORifNULL% stop("X not found")
+  if (!is.null(m)) ret[[m]] else list_nms(ret)
+}
+#' @export
+get_z.stanjm <- function(object, m = NULL, ...) {
+  ret <- lapply(object$glmod, lme4::getME, "Z") %ORifNULL% stop("Z not found")
+  if (!is.null(m)) ret[[m]] else list_nms(ret)
+}
 
 # Get inverse link function
 #
 # @param x A stanreg object, family object, or string. 
-# @param ... Ignored. 
+# @param ... Other arguments passed to methods. For a \code{stanjm} object
+#'   this can be an integer \code{m} specifying the submodel.
 # @return The inverse link function associated with x.
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {
   if (is(x, "polr")) polr_linkinv(x) else family(x)$linkinv
+}
+linkinv.stanjm <- function(x, m = NULL, ...) {
+  ret <- lapply(family(x), `[[`, "linkinv")
+  if (!is.null(m)) ret[[m]] else list_nms(ret)
 }
 linkinv.family <- function(x, ...) {
   x$linkinv

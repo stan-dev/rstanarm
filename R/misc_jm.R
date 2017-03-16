@@ -81,7 +81,7 @@ validate_stanjm_object <- function(x, call. = FALSE) {
 # Throw error if parameter isn't a positive scalar
 #
 # @param x The object to test.
-validate_positive_scalar <- function(x) {
+validate_positive_scalar <- function(x, not_greater_than = NULL) {
   nm <- deparse(substitute(x))
   if (is.null(x))
     stop(nm, " cannot be NULL", call. = FALSE)
@@ -89,7 +89,107 @@ validate_positive_scalar <- function(x) {
     stop(nm, " should be numeric", call. = FALSE)
   if (any(x <= 0)) 
     stop(nm, " should be postive", call. = FALSE)
+  if (!is.null(not_greater_than)) {
+    if (!is.numeric(not_greater_than) || (not_greater_than <= 0))
+      stop("'not_greater_than' should be numeric and postive")
+    if (!all(x <= not_greater_than))
+      stop(nm, " should less than or equal to ", not_greater_than, call. = FALSE)
+  }
   invisible(TRUE)
+}
+
+# Return a list with the control arguments for interpolation and/or
+# extrapolation in posterior_predict.stanjm and posterior_survfit.stanjm
+#
+# @param control A named list, being the user input to the control argument
+#   in the posterior_predict.stanjm or posterior_survfit.stanjm call
+# @param ok_control_args A character vector of allowed control arguments
+# @param standardise A logical, being the user input to the standardise
+#   argument in a posterior_survfit.stanjm call.
+# @return A named list
+get_extrapolation_control <- function(control = list(), 
+                                      ok_control_args = c("epoints", "edist", "eprop"), 
+                                      standardise = FALSE) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
+                   condition = TRUE, last_time = NULL)
+  if (!is.list(control)) {
+    stop("'control' should be a named list.")
+  } else if (!length(control)) {
+    control <- defaults[ok_control_args] 
+    if (("condition" %in% ok_control_args) && standardise) 
+      control$condition <- FALSE
+  } else {  # user specified control list
+    nms <- names(control)
+    if (!length(nms))
+      stop("'control' should be a named list.")
+    if (any(!nms %in% ok_control_args))
+      stop(paste0("'control' list can only contain the following named arguments: ",
+                  paste(ok_control_args, collapse = ", ")))
+    if (all(c("edist", "eprop") %in% nms))
+      stop("'control' list cannot include both 'edist' and 'eprop'.")        
+    if (("ipoints" %in% ok_control_args) && is.null(control$ipoints)) 
+      control$ipoints <- defaults$ipoints   
+    if (("epoints" %in% ok_control_args) && is.null(control$epoints)) 
+      control$epoints <- defaults$epoints  
+    if (is.null(control$edist) && is.null(control$eprop)) 
+      control$eprop <- defaults$eprop
+    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
+      control$condition <- if (!standardise) defaults$condition else FALSE
+    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
+      stop("'condition' cannot be set to TRUE if standardised survival ",
+           "probabilities are requested.")
+    }
+  }
+  return(control)
+}
+
+# Return an array or list with the time sequence used for posterior predictions
+#
+# @param increments An integer with the number of increments (time points) at
+#   which to predict the outcome for each individual
+# @param t0,t1 Numeric vectors giving the start and end times across which to
+#   generate prediction times
+# @param simplify Logical specifying whether to return each increment as a 
+#   column of an array (TRUE) or as an element of a list (FALSE) 
+get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
+  val <- sapply(0:increments, function(x, t0, t1) {
+    t0 + (t1 - t0) * (x / increments)
+  }, t0 = t0, t1 = t1, simplify = simplify)
+  if (simplify && is.vector(val)) {
+    # need to transform if there is only one individual
+    val <- t(val)
+    rownames(val) <- ifelse(is.null(names(t0)), names(t1), names(t0))
+  }
+  return(val)
+}
+
+# Return a list with the median and prob% CrI bounds for each column of a 
+# matrix or 2D array
+#
+# @param x A matrix or 2D array
+# @param prob Value between 0 and 1 indicating the desired width of the CrI
+median_and_bounds <- function(x, prob) {
+  if (!any(is.matrix(x), is.array(x)))
+    stop("x should be a matrix or 2D array.")
+  med <- apply(x, 2, median)
+  lb  <- apply(x, 2, quantile, (1 - prob)/2)
+  ub  <- apply(x, 2, quantile, (1 + prob)/2)
+  nlist(med, lb, ub)
+}
+
+
+# Return the stub for variable names from one submodel of a stan_jm model
+#
+# @param m An integer specifying the number of the longitudinal submodel or
+#   a character string specifying the submodel (e.g. "Long1", "Event", etc)
+get_m_stub <- function(m) {
+  if (is.null(m)) {
+    return(NULL)
+  } else if (is.numeric(m)) {
+    return(paste0("Long", m, "|"))
+  } else if (is.character(m)) {
+    return(paste0(m, "|"))
+  }
 }
 
 # Separates a names object into separate parts based on the longitudinal, 
@@ -181,12 +281,23 @@ mod2rx <- function(x) {
   }   
 }
 
+# Return the number of longitudinal submodels
+#
+# @param object A stanjm object
+get_M <- function(object) {
+  validate_stanjm_object(object)
+  return(object$n_markers)
+}
+
 # Supplies names for the output list returned by most stanjm methods
 #
-# @param x The list object to which the names are to be applied
-# @param M The number of longitudinal submodels
-list_nms <- function(object, M) {
-  if (!is.list(object)) stop("'object' argument should be a list")
+# @param object The list object to which the names are to be applied
+# @param M The number of longitudinal submodels. If NULL then the number of
+#   longitudinal submodels is assumed to be equal to the length of object.
+list_nms <- function(object, M = NULL) {
+  if (!is.list(object)) 
+    stop("'object' argument should be a list")
+  if (is.null(M)) M <- length(object)
   nms <- paste0("Long", 1:M)
   if (length(object) > M) nms <- c(nms, "Event")
   names(object) <- nms
@@ -213,15 +324,6 @@ strip_nms <- function(x, string) {
   x
 }
 
-# Get inverse link function
-#
-# @param x A stanjm object or family object. 
-# @param ... Ignored. 
-# @return The inverse link function associated with x.
-linkinv.stanjm <- function(x, ...) {
-  lapply(family(x), function(y) y$linkinv)
-}
-
 # Check argument contains one of the allowed options
 check_submodelopt2 <- function(x) {
   if (!x %in% c("long", "event"))
@@ -230,4 +332,12 @@ check_submodelopt2 <- function(x) {
 check_submodelopt3 <- function(x) {
   if (!x %in% c("long", "event", "both"))
     stop("submodel option must be 'long', 'event' or 'both'") 
+}
+
+# Error message when not specifying an argument required for stanjm objects
+#
+# @param arg The argument
+STOP_arg_required_for_stanjm <- function(arg) {
+  nm <- deparse(substitute(arg))
+  stop(paste0("Argument '", nm, "' required for stanjm objects."))
 }
