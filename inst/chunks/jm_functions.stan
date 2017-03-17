@@ -22,7 +22,7 @@
   vector generate_beta(vector z_beta, int prior_dist, vector prior_mean, 
                        vector prior_scale, vector prior_df, real[] global, 
                        vector[] local, real global_prior_scale, 
-                       real[] one_over_lambda, vector[] S, int[] num_normals) {
+                       real[] one_over_lambda, vector[] S) {
     vector[rows(z_beta)] beta;
     if      (prior_dist == 0) beta = z_beta;
     else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
@@ -35,21 +35,29 @@
       beta = prior_mean + prior_scale .* sqrt(2 * S[1]) .* z_beta;
     else if (prior_dist == 6) // lasso
       beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * S[1]) .* z_beta;
-    else if (prior_dist == 7) { // product_normal
-      int z_pos = 1;
-      for (k in 1:rows(z_beta)) {
-        beta[k] = z_beta[z_pos];
-        z_pos = z_pos + 1;
-        for (n in 2:num_normals[k]) {
-          beta[k] = beta[k] * z_beta[z_pos];
-          z_pos = z_pos + 1;
-        }
-        beta[k] = beta[k] * prior_scale[k] ^ num_normals[k] + prior_mean[k];
-      }
-    }
     return beta;
   }
 
+  /** 
+  * Generate auxiliary parameters using unscaled params and prior information
+  *
+  * @param aux_unscaled Vector of unscaled auxiliary params
+  * @param prior_dist An integer indicating the prior distribution
+  * @param prior_{mean,scale} Vector of prior means and scales
+  * @return A vector
+  */  
+  vector generate_aux(vector aux_unscaled, int prior_dist, vector prior_mean, vector prior_scale) {
+    vector[rows(aux_unscaled)] aux;
+    if (prior_dist == 0) // none
+      aux = aux_unscaled;
+    else {
+      aux = prior_scale .* aux_unscaled;
+      if (prior_dist <= 2) // normal or student_t
+        aux = aux + prior_mean;
+    }
+    return aux;	
+  }
+  
   /** 
   * Add intercept term to linear predictor for submodel m 
   *
@@ -70,27 +78,25 @@
   * @return A vector of length len_eta_m
   */
   vector add_intercept(vector eta, int m, int len_eta_m, int[] has_intercept, 
-                       int[] has_intercept_unbound, int[] has_intercept_lobound, 
-                       int[] has_intercept_upbound, real[] gamma_unbound, 
-                       real[] gamma_lobound, real[] gamma_upbound, 
+                       int[] has_intercept_nob, int[] has_intercept_lob, 
+                       int[] has_intercept_upb, real[] gamma_nob, 
+                       real[] gamma_lob, real[] gamma_upb, 
                        vector xbar, vector beta, int[] K) {
-    int beg;
-    int end;
     vector[len_eta_m] eta_m;
     eta_m = segment(eta, ((m-1) * len_eta_m) + 1, len_eta_m);
     if (has_intercept[m] == 1) {
-      if (has_intercept_unbound[m] == 1) 
-        eta_m = eta_m + gamma_unbound[sum(has_intercept_unbound[1:m])];
-      else if (has_intercept_lobound[m] == 1)
-        eta_m = eta_m - min(eta_m) + gamma_lobound[sum(has_intercept_lobound[1:m])];
-	    else if (has_intercept_upbound[m] == 1)
-        eta_m = eta_m - max(eta_m) + gamma_upbound[sum(has_intercept_upbound[1:m])];
+      if (has_intercept_nob[m] == 1) 
+        eta_m = eta_m + gamma_nob[sum(has_intercept_nob[1:m])];
+      else if (has_intercept_lob[m] == 1)
+        eta_m = eta_m - min(eta_m) + gamma_lob[sum(has_intercept_lob[1:m])];
+	    else if (has_intercept_upb[m] == 1)
+        eta_m = eta_m - max(eta_m) + gamma_upb[sum(has_intercept_upb[1:m])];
+    } else {  // no intercept, so model must have at least 1 predictor
+      int K1 = (m == 1) ? 1 : (sum(K[1:(m-1)]) + 1);
+      int K2 = sum(K[1:m]);  
+      // correction to eta if model has no intercept (and X is centered)
+      eta_m = eta_m + dot_product(xbar[K1:K2], beta[K1:K2]);
     }
-    if (m == 1) beg = 1;
-    else beg = sum(K[1:(m-1)]) + 1;
-    end = sum(K[1:m]);   
-    // correction to eta if model has no intercept (and X is centered)
-    eta_m = eta_m + dot_product(xbar[beg:end], beta[beg:end]); 
     return eta_m;
   } 
 
@@ -424,13 +430,13 @@
   *   repeated (quadnodes + 1) times (bounded by rows)
   */  
   matrix make_x_assoc_shared_coef(
-    vector b, vector y_beta, int[] y_K, int M, int t_i,
+    vector b, vector beta, int[] KM, int M, int t_i,
     int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
     int sum_size_which_coef, int[] size_which_coef,
     int[] which_coef_zindex, int[] which_coef_xindex,
-    int[] y_has_intercept, int[] y_has_intercept_unbound,
-    int[] y_has_intercept_lobound, int[] y_has_intercept_upbound,
-    real[] y_gamma_unbound, real[] y_gamma_lobound, real[] y_gamma_upbound) {
+    int[] has_intercept, int[] has_intercept_nob,
+    int[] has_intercept_lob, int[] has_intercept_upb,
+    real[] gamma_nob, real[] gamma_lob, real[] gamma_upb) {
       
     # in the loops below:
     #   t_i should only really ever equal 1 (since shared_coef association
@@ -466,10 +472,10 @@
           else {
             j_shift = sum(size_which_coef[1:(m-1)]);
             m_shift = sum(pmat[t_i, 1:(m-1)]);
-            shift_nb = sum(y_has_intercept_unbound[1:(m-1)]); 
-            shift_lb = sum(y_has_intercept_lobound[1:(m-1)]); 
-            shift_ub = sum(y_has_intercept_upbound[1:(m-1)]); 
-            shift_beta = sum(y_K[1:(m-1)]);
+            shift_nb = sum(has_intercept_nob[1:(m-1)]); 
+            shift_lb = sum(has_intercept_lob[1:(m-1)]); 
+            shift_ub = sum(has_intercept_upb[1:(m-1)]); 
+            shift_beta = sum(KM[1:(m-1)]);
           }
           for (j in 1:size_which_coef[m]) {
             int b_collect;      // group-level coefficients to extract for current i, j, m
@@ -480,22 +486,22 @@
             beta_collect_m = which_coef_xindex[(j_shift + j)];
             beta_collect = shift_beta + beta_collect_m;
             coef = b[b_collect];  // start with group-level coefficient
-            if ((y_has_intercept[m] == 1) && (beta_collect == 1)) {
+            if ((has_intercept[m] == 1) && (beta_collect == 1)) {
               # collect intercept
-              if (y_has_intercept_unbound[m] == 1)
-                coef = coef + y_gamma_unbound[sum(y_has_intercept_unbound[1:m])];
-              else if (y_has_intercept_lobound[m] == 1)
-                coef = coef + y_gamma_lobound[sum(y_has_intercept_lobound[1:m])];
-              else if (y_has_intercept_upbound[m] == 1)
-                coef = coef + y_gamma_upbound[sum(y_has_intercept_upbound[1:m])];
+              if (has_intercept_nob[m] == 1)
+                coef = coef + gamma_nob[sum(has_intercept_nob[1:m])];
+              else if (has_intercept_lob[m] == 1)
+                coef = coef + gamma_lob[sum(has_intercept_lob[1:m])];
+              else if (has_intercept_upb[m] == 1)
+                coef = coef + gamma_upb[sum(has_intercept_upb[1:m])];
             } 
-            else if (y_has_intercept[m] == 1) {
+            else if (has_intercept[m] == 1) {
               # collect fixed effect whilst recognising intercept term 
-              # isn't in y_beta and correcting for that in the indexing
-              coef = coef + y_beta[(beta_collect - 1)];
+              # isn't in beta and correcting for that in the indexing
+              coef = coef + beta[(beta_collect - 1)];
             }
             else
-              coef = coef + y_beta[beta_collect];
+              coef = coef + beta[beta_collect];
               
             temp[i, mark] = coef;
             mark = mark + 1;  # move to next shared coefficient for individual i
