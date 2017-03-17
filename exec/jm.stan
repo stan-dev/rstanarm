@@ -88,7 +88,7 @@ transformed parameters {
                          a_prior_scale, a_prior_df, a_global, a_local, 
 						 a_global_prior_scale, a_ool, a_S);         
   e_aux  = generate_aux(e_aux_unscaled, e_prior_dist_for_aux,
-                        e_prior_mean_for_aux, e_prior_scale_for_aux) 
+                        e_prior_mean_for_aux, e_prior_scale_for_aux);
   if (t > 0) {
     theta_L = make_theta_L(len_theta_L, p, 1.0, tau, scale, zeta, rho, z_T);
     b_not_by_model = make_b(z_b, theta_L, p, l);
@@ -147,9 +147,9 @@ model {
   // increment target with priors for betas and gammas 
   #include "priors_mvglm.stan"  
   beta_lp(e_z_beta, e_prior_dist, e_prior_scale, e_prior_df, 
-          e_global_prior_df, e_local, e_global, e_S, e_one_over_lambda)
+          e_global_prior_df, e_local, e_global, e_S, e_ool)
   beta_lp(a_z_beta, a_prior_dist, a_prior_scale, a_prior_df, 
-          a_global_prior_df, a_local, a_global, a_S, a_one_over_lambda)
+          a_global_prior_df, a_local, a_global, a_S, a_ool)
   if (e_has_intercept == 1) 
     gamma_lp(e_gamma[1], e_prior_dist_for_intercept, e_prior_mean_for_intercept, 
              e_prior_scale_for_intercept, e_prior_df_for_intercept);  

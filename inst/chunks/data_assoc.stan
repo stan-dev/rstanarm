@@ -21,7 +21,7 @@
   int<lower=1> which_interactions[sum_size_which_interactions];  // which terms to interact with
 
   // data for calculating eta in GK quadrature
-  matrix[M*nrow_y_Xq*(assoc_uses[1]>0),sum_y_K] y_Xq_eta; // predictor matrix (long submodel) at quadpoints, centred     
+  matrix[M*nrow_y_Xq*(assoc_uses[1]>0),K] y_Xq_eta; // predictor matrix (long submodel) at quadpoints, centred     
   int<lower=0> nnz_Zq_eta;    // number of non-zero elements in the Z matrix (at quadpoints)
   vector[nnz_Zq_eta] w_Zq_eta;  // non-zero elements in the implicit Z matrix (at quadpoints)
   int<lower=0> v_Zq_eta[nnz_Zq_eta]; // column indices for w (at quadpoints)
@@ -29,7 +29,7 @@
 
   // data for calculating slope in GK quadrature
   real<lower=0> eps;  // time shift used for numerically calculating derivative
-  matrix[M*nrow_y_Xq*(assoc_uses[2]>0),sum_y_K] 
+  matrix[M*nrow_y_Xq*(assoc_uses[2]>0),K] 
     y_Xq_eps; // predictor matrix (long submodel) at quadpoints plus time shift of epsilon              
   int<lower=0> nnz_Zq_eps;        // number of non-zero elements in the Zq_eps matrix (at quadpoints plus time shift of epsilon)
   vector[nnz_Zq_eps] w_Zq_eps;    // non-zero elements in the implicit Zq_eps matrix (at quadpoints plus time shift of epsilon)
@@ -38,7 +38,7 @@
     // where the non-zeros start in each row (at quadpoints plus time shift of epsilon)
 
   // data for calculating lag in GK quadrature
-  matrix[M*nrow_y_Xq*(assoc_uses[3]>0),sum_y_K] 
+  matrix[M*nrow_y_Xq*(assoc_uses[3]>0),K] 
     y_Xq_lag; // predictor matrix (long submodel) at lagged quadpoints            
   int<lower=0> nnz_Zq_lag;        // number of non-zero elements in the Zq_lag matrix (at lagged quadpoints)
   vector[nnz_Zq_lag] w_Zq_lag;    // non-zero elements in the implicit Zq_lag matrix (at lagged quadpointsn)
@@ -50,7 +50,7 @@
   int<lower=0> nrow_y_Xq_auc;     // num. rows in long. predictor matrix at auc quad points
   int<lower=0> auc_quadnodes;              // num. of nodes for Gauss-Kronrod quadrature for area under marker trajectory 
   vector[nrow_y_Xq_auc*(assoc_uses[4]>0)] auc_quadweights;
-  matrix[M*nrow_y_Xq_auc*(assoc_uses[4]>0),sum_y_K] 
+  matrix[M*nrow_y_Xq_auc*(assoc_uses[4]>0),K] 
     y_Xq_auc; // predictor matrix (long submodel) at auc quadpoints            
   int<lower=0> nnz_Zq_auc;        // number of non-zero elements in the Zq_lag matrix (at auc quadpoints)
   vector[nnz_Zq_auc] w_Zq_auc;    // non-zero elements in the implicit Zq_lag matrix (at auc quadpointsn)

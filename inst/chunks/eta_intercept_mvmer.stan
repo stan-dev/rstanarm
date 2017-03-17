@@ -8,7 +8,7 @@
       else if (has_intercept_upb[m] == 1)
         eta_tmp = eta_tmp - max(eta_tmp) + gamma_upb[sum(has_intercept_upb[1:m])];					
     }
-    else {	// no intercept, so model must have at least 1 predictor
+    else {  // no intercept, so model must have at least 1 predictor
       int K1 = idx_K[m,1];  // indexing for beta
       int K2 = idx_K[m,2];  // indexing for beta
       // correction to eta if model has no intercept (if X is centered)

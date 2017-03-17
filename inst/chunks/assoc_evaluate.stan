@@ -187,7 +187,7 @@
       mark_beg = mark + 1;	  
   	  mark_end = mark + sum_size_which_b;
   	  x_assoc_shared_b = make_x_assoc_shared_b(
-  	    b, l, p, pmat, Npat, quadnodes, which_b_zindex,
+  	    b_not_by_model, l, p, pmat, Npat, quadnodes, which_b_zindex,
   	    sum_size_which_b, size_which_b, t_i, M);
   	  e_eta_q = e_eta_q + x_assoc_shared_b * a_beta[mark_beg:mark_end];
   	  mark = mark + sum_size_which_b;
@@ -199,12 +199,12 @@
       mark_beg = mark + 1;	  
   	  mark_end = mark + sum_size_which_coef;
   	  x_assoc_shared_coef = make_x_assoc_shared_coef(
-  	    b, y_beta, y_K, M, t_i, l, p, pmat, Npat, quadnodes,
+  	    b_not_by_model, beta, KM, M, t_i, l, p, pmat, Npat, quadnodes,
   	    sum_size_which_coef, size_which_coef,
   	    which_coef_zindex, which_coef_xindex,
-  	    y_has_intercept, y_has_intercept_unbound,
-  	    y_has_intercept_lobound, y_has_intercept_upbound,
-  	    y_gamma_unbound, y_gamma_lobound, y_gamma_upbound);
+  	    has_intercept, has_intercept_nob,
+  	    has_intercept_lob, has_intercept_upb,
+  	    gamma_nob, gamma_lob, gamma_upb);
   	  e_eta_q = e_eta_q + x_assoc_shared_coef * a_beta[mark_beg:mark_end];
   	  mark = mark + sum_size_which_coef;
     }    
