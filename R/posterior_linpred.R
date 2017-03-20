@@ -23,7 +23,6 @@
 #' carried out using the posterior predictive distribution (i.e., using 
 #' \code{\link{posterior_predict}}).
 #'
-#' @keywords internal
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
