@@ -89,7 +89,7 @@ pp_data <-
   x <- get_x(object, m = m)
   if (is.null(newdata)) return(x)
   form <- if (is.null(m)) attr(object$glmod$fr, "formula") else 
-    attr(model.frame(object, m = m), "formula")
+    formula(object, m = m)
   L <- length(form)
   form[[L]] <- lme4::nobars(form[[L]])
   RHS <- formula(substitute(~R, list(R = form[[L]])))

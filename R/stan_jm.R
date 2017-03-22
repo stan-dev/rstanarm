@@ -656,26 +656,26 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
   colnames(assoc) <- paste0("Long", 1:M)
 
-  # Time shift used for numerically calculating derivative of linear predictor 
-  # or expected value of longitudinal outcome using one-sided difference
-  eps <- 1E-5
-  
-  # Unstandardised quadrature nodes for AUC association structure
-  auc_quadnodes <- 15
-  auc_quadpoints <- get_quadpoints(auc_quadnodes)
-  auc_quadweights <- unlist(
-    lapply(e_mod_stuff$quadtimes, function(x) 
-      lapply(x, function(y) 
-        lapply(auc_quadpoints$weights, unstandardise_quadweights, 0, y))))
-
   # Return design matrices for evaluating longitudinal submodel quantities
   # at the quadrature points
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE,
-                        MoreArgs = list(e_mod_stuff = e_mod_stuff, assoc = assoc, 
-                                        id_var = id_var, time_var = time_var, 
-                                        eps = eps, dataAssoc = dataAssoc))
-  a_mod_stuff <- structure(a_mod_stuff, auc_quadnodes = auc_quadnodes,
-                           auc_quadweights = auc_quadweights, eps = eps)
+  eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
+  auc_quadnodes <- 15L
+  auc_quadweights <- 
+    unlist(lapply(e_mod_stuff$quadtimes, function(x) 
+      lapply(x, function(y) 
+        lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y)))) 
+  a_mod_attr <- list(id_list         = e_mod_stuff$e_flist, 
+                     times           = e_mod_stuff$quadtimes, 
+                     assoc           = assoc, 
+                     id_var          = id_var, 
+                     time_var        = time_var, 
+                     eps             = eps, 
+                     auc_quadnodes   = auc_quadnodes,
+                     auc_quadweights = auc_quadweights,
+                     dataAssoc       = dataAssoc)
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, 
+                        SIMPLIFY = FALSE, MoreArgs = assoc_attr)
+  a_mod_stuff <- do.call("structure", c(list(a_mod_stuff), a_mod_attr))
 
   # Number of association parameters
   a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
@@ -757,7 +757,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   e_prior_stuff           <- autoscale_prior(e_prior_stuff, e_mod_stuff, QR = QR, use_x = TRUE)
   e_prior_intercept_stuff <- autoscale_prior(e_prior_intercept_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
   e_prior_aux_stuff       <- autoscale_prior(e_prior_aux_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
-  a_prior_stuff           <- autoscale_prior(a_prior_stuff, a_mod_stuff, QR = QR, use_x = FALSE, assoc = assoc)
+  a_prior_stuff           <- autoscale_prior(a_prior_stuff, a_mod_stuff, QR = QR, use_x = FALSE, 
+                                             assoc = assoc, family = family)
     
   #-------------------------
   # Data for export to Stan
@@ -968,7 +969,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$quadnodes       <- as.integer(quadnodes)
   standata$quadweight      <- as.array(e_mod_stuff$quadweight)
   standata$Npat_times_quadnodes <- as.integer(e_mod_stuff$Npat * quadnodes)
-  standata$nrow_y_Xq       <- NROW(a_mod_stuff[[1]]$xtemp_eta)
+  standata$nrow_y_Xq       <- NROW(a_mod_stuff[[1]]$mod_eta$xtemp)
   standata$nrow_e_Xq       <- NROW(e_mod_stuff$xtemp)
   standata$e_times         <- c(e_mod_stuff$eventtime, unlist(e_mod_stuff$quadpoint))
   standata$e_d             <- c(e_mod_stuff$d, rep(1, length(unlist(e_mod_stuff$quadpoint))))
@@ -1035,11 +1036,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                        auc = "auc")
     sel <- grep(nm_check, rownames(assoc))
     if (any(unlist(assoc[sel,]))) {
-      X_tmp <- as.matrix(Matrix::bdiag(fetch(a_mod_stuff, paste0("xtemp_", i))))
-      group_tmp <- lapply(a_mod_stuff, function(x) {
-        pad_reTrms(Ztlist = x[[paste0("group_", i)]][["Ztlist"]], 
-                   cnms   = x[[paste0("group_", i)]][["cnms"]], 
-                   flist  = x[[paste0("group_", i)]][["flist"]])})
+      tmp_stuff <- fetch(a_mod_stuff, paste0("mod_", i))
+      X_tmp <- as.matrix(Matrix::bdiag(fetch(tmp_stuff, "xtemp")))
+      group_tmp <- lapply(tmp_stuff, function(x) {
+        pad_reTrms(Ztlist = x[["group"]][["Ztlist"]], 
+                   cnms   = x[["group"]][["cnms"]], 
+                   flist  = x[["group"]][["flist"]])})
       Z_tmp <- Matrix::bdiag(fetch(group_tmp, "Z"))      
     } else {
       X_tmp <- matrix(0,0,standata$K)
@@ -1054,18 +1056,19 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   }  
   
   # Data for auc association structure
-  standata$auc_quadnodes <- as.integer(auc_quadnodes)
+  standata$auc_quadnodes <- 
+    as.integer(auc_quadnodes)
   standata$Npat_times_auc_quadnodes <- 
     as.integer(e_mod_stuff$Npat * auc_quadnodes)  
   standata$nrow_y_Xq_auc <- 
-    as.integer(auc_quadnodes * NROW(a_mod_stuff[[1]]$xtemp_eta))
+    as.integer(NROW(a_mod_stuff[[1]]$mod_auc$xtemp))
   standata$auc_quadweights <- 
     if (standata$assoc_uses[4]) as.array(auc_quadweights) else double(0)
 
   # Interactions between association terms and data
   # design matrix for the interactions
   standata$y_Xq_data <- 
-    as.array(t(as.matrix(do.call("cbind", fetch(a_mod_stuff, "xtemp_data")))))
+    as.array(t(as.matrix(do.call("cbind", fetch(a_mod_stuff, "xmat_data")))))
   # number of columns in y_Xq_data corresponding to each interaction type 
   # (ie, etavalue, etaslope, muvalue, muslope) for each submodel
   standata$a_K_data  <- fetch_array(a_mod_stuff, "K_data")  
@@ -2107,11 +2110,8 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc, 
-                         id_var, time_var, eps, dataAssoc = NULL) {
-  
-  e_flist <- e_mod_stuff$flist
-  quadtimes <- e_mod_stuff$quadtimes
+handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc, 
+                            id_var, time_var, eps, auc_quadnodes, dataAssoc = NULL) {
   
   # Update longitudinal call to include time variable in formula
   mc_stored  <- mc
@@ -2133,105 +2133,13 @@ handle_assocmod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
                                c(y_mod_stuff$vars$predvars$fixed[-1], y_mod_stuff$vars$predvars$random[-1]))
   mc$control <- mc_stored$control # revert to original control args    
   
-  # Identify row in longitudinal data closest to event time or quadrature point
-  #   NB if the quadrature point is earlier than the first observation time, 
-  #   then covariates values are carried back to avoid missing values.
-  #   In any other case, the observed covariates values from the most recent 
-  #   observation time preceeding the quadrature point are carried forward to 
-  #   represent the covariate value(s) at the quadrature point. (To avoid 
-  #   missingness there is no limit on how far forwards or how far backwards 
-  #   covariate values can be carried). If no time varying covariates are 
-  #   present in the longitudinal submodel (other than the time variable) 
-  #   then nothing is carried forward or backward.    
-  mfq <- rolling_merge(data = mf, ids = e_flist, times = quadtimes)
-  mod <- handle_glFormula(mc = mc, data = mfq, y_mod_stuff = y_mod_stuff)
-  xtemp_eta <- mod$xtemp
-  group_eta <- mod$group
-  linpred_eta <- mod$linpred
- 
-  # If association structure is based on slope, then calculate design 
-  # matrices under a time shift of epsilon
-  sel_slope <- grep("etaslope|muslope", rownames(assoc))
-  if (any(unlist(assoc[sel_slope,]))) {
-    mfq_eps <- mfq
-    mfq_eps[[time_var]] <- mfq_eps[[time_var]] + eps
-    mod_eps <- handle_glFormula(mc = mc, data = mfq_eps, y_mod_stuff = y_mod_stuff)
-    xtemp_eps <- mod_eps$xtemp
-    group_eps <- mod_eps$group
-    linpred_eps <- mod_eps$linpred
-  } else xtemp_eps <- group_eps <- linpred_eps <- NULL 
-  
-  # If association structure is based on a time lag, then calculate design 
-  # matrices under the specified time lag
-  sel_lag <- grep("etalag|mulag", rownames(assoc))
-  if (any(unlist(assoc[sel_lag,]))) {
-    quadtimes_lag <- lapply(quadtimes, function(x, lag) {
-      newtimes <- x - lag
-      newtimes[newtimes < 0] <- 0.0  # use baseline where lagged t is before baseline
-      newtimes
-    }, lag = ifelse(length(assoc["which_lag",][[m]]), assoc["which_lag",][[m]], 0))
-    mfq_lag <- rolling_merge(data = mf, ids = e_flist, times = quadtimes_lag)
-    mod_lag <- handle_glFormula(mc = mc, data = mfq_lag, y_mod_stuff = y_mod_stuff)
-    xtemp_lag <- mod_lag$xtemp
-    group_lag <- mod_lag$group
-    linpred_lag <- mod_lag$linpred
-  } else xtemp_lag <- group_lag <- linpred_lag <- NULL
-  
-  # If association structure is based on area under the marker trajectory, then 
-  # calculate design matrices at the subquadrature points
-  sel_auc <- grep("etaauc|muauc", rownames(assoc))
-  if (any(unlist(assoc[sel_auc,]))) {
-    # Return a design matrix that is (quadnodes * auc_quadnodes * Npat) rows
-    quadtimes_auc <- lapply(quadtimes, function(x) 
-      unlist(lapply(x, function(y) 
-        lapply(auc_quadpoints$points, unstandardise_quadpoints, 0, y))))
-    ids2 <- rep(e_flist, each = auc_quadnodes)
-    mfq_auc <- rolling_merge(data = mf, ids = ids2, times = quadtimes_auc)
-    mod_auc <- handle_glFormula(mc = mc, data = mfq_auc, y_mod_stuff = y_mod_stuff)
-    xtemp_auc <- mod_auc$xtemp
-    group_auc <- mod_auc$group
-    linpred_auc <- mod_auc$linpred
-  } else xtemp_auc <- group_auc <- linpred_auc <- NULL
-  
-  # If association structure is based on interactions with data, then calculate 
-  # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
-  sel_data <- grep("_data", rownames(assoc), value = TRUE)
-  xq_data <- sapply(sel_data,
-    function(x) {
-      fm <- assoc["which_formulas",][[m]][[x]]
-      if (length(fm)) {
-        vars <- rownames(attr(terms.formula(fm), "factors"))
-        if (is.null(vars))
-          stop(paste0("No variables found in the formula specified for the '", x,
-                      "' association structure.", call. = FALSE))
-        ff <- ~ foo + bar
-        gg <- parse(text = paste("~", paste(c(id_var, time_var), collapse = "+")))[[1L]]
-        ff[[2L]][[2L]] <- fm[[2L]]
-        ff[[2L]][[3L]] <- gg[[2L]]
-        oldcall <- getCall(y_mod_stuff$mod)
-        naa <- oldcall$na.action
-        subset <- if (is.null(dataAssoc)) eval(oldcall$subset) else NULL               
-        df <- if (is.null(dataAssoc)) eval(oldcall$data) else dataAssoc
-        sel <- which(!vars %in% colnames(df))
-        if (length(sel))
-          stop(paste0("The following variables were specified in the formula for the '", x,
-                      "' association structure, but they cannot be found in the data: ", 
-                      paste0(vars, collapse = ", ")))
-        mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
-                         na.action = naa), envir = environment(y_mod_stuff$mod))
-        mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
-        mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-        mf2q <- rolling_merge(data = mf2, ids = e_flist, times = quadtimes)
-        xq <- stats::model.matrix(fm, data = mf2q)
-        if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
-        if (!ncol(xq))
-          stop(paste0("Bug found: A formula was specified for the '", x, "' association ", 
-                      "structure, but the resulting design matrix has no columns."), call. = FALSE)
-      } else xq <- matrix(0, length(unlist(quadtimes)), 0)
-      xq
-    }, simplify = FALSE, USE.NAMES = TRUE)
-  K_data <- sapply(xq_data, ncol)
-  xtemp_data <- do.call(cbind, xq_data)
+  # Design matrices for calculating eta, eps, lag, auc and data interactions
+  # in association structure
+  parts <- make_assoc_parts(newdata = mf, assoc = assoc, m = m, id_var = id_var, 
+                            time_var = time_var, id_list = id_list, times = times, 
+                            eps = eps, auc_quadnodes = auc_quadnodes,
+                            use_function = handle_glFormula, 
+                            mc = mc, y_mod_stuff = y_mod_stuff, dataAssoc = dataAssoc)
   
   # If association structure is based on shared random effects or shared 
   # coefficients then construct a matrix with the estimated b parameters
@@ -2254,10 +2162,138 @@ handle_assocmod <- function(m, mc, y_mod_stuff, e_mod_stuff, assoc,
     b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp)), byrow = TRUE)
   } else b_mat <- NULL
   
-  nlist(xtemp_eta, group_eta, linpred_eta, xtemp_eps, group_eps, linpred_eps,
-        xtemp_lag, group_lag, linpred_lag, xtemp_auc, group_auc, linpred_auc,
-        xq_data, xtemp_data, K_data, b_mat, fr)  
+  parts$b_mat <- b_mat
+  parts$model_frame <- fr
+  return(parts)
 }
+
+# Function to construct quantities, primarily design matrices (X, Zt), that
+# will be used to evaluate the longitudinal submodel contributions to the 
+# association structure in the event submodel. For example, the design matrices
+# evaluated at the quadpoints, the quadpoints, lagged quadpoints, auc quadpoints,
+# and so on. Exactly what quantities are returned depends on what is specified
+# in the use_function argument.
+#
+# @param data A model frame used for constructing the design matrices
+# @param assoc A named list returned by a call to validate_assoc (details
+#   on the desired association structure for all longitudinal submodels)
+# @param id_var The name on the ID variable
+# @param time_var The name of the time variable
+# @param id_list A vector of subject IDs
+# @param times A vector (or possibly a list of vectors) of times at which the 
+#   design matrices should be evaluated (most likely the event times and the
+#   quadrature times)
+# @param eps A numeric value used as the time shift for numerically evaluating
+#   the slope of the longitudinal submodel using a one-sided difference
+# @param auc_quadnodes An integer specifying the number of quadrature nodes to
+#   use when evaluating the area under the curve for the longitudinal submodel
+# @param use_function The function to call which will return the design 
+#   matrices for eta, eps, lag, auc, etc.
+# @param ... Additional arguments passes to use_function
+# @return A named list
+make_assoc_parts <- function(newdata, assoc, id_var, time_var, id_list, times, 
+                             eps = 1E-5, auc_quadnodes = 15L, dataAssoc = NULL,
+                             use_function = handle_glFormula, ...) {
+  dots <- list(...)
+  m <- dots$m 
+  if (is.null(m)) stop("Argument m must be specified in dots.")
+
+  # Identify row in longitudinal data closest to event time or quadrature point
+  #   NB if the quadrature point is earlier than the first observation time, 
+  #   then covariates values are carried back to avoid missing values.
+  #   In any other case, the observed covariates values from the most recent 
+  #   observation time preceeding the quadrature point are carried forward to 
+  #   represent the covariate value(s) at the quadrature point. (To avoid 
+  #   missingness there is no limit on how far forwards or how far backwards 
+  #   covariate values can be carried). If no time varying covariates are 
+  #   present in the longitudinal submodel (other than the time variable) 
+  #   then nothing is carried forward or backward.    
+  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times)
+  mod_eta <- use_function(newdata = dataQ, ...)
+  
+  # If association structure is based on slope, then calculate design 
+  # matrices under a time shift of epsilon
+  sel_slope <- grep("etaslope|muslope", rownames(assoc))
+  if (any(unlist(assoc[sel_slope,]))) {
+    dataQ_eps <- dataQ
+    dataQ_eps[[time_var]] <- dataQ_eps[[time_var]] + eps
+    mod_eps <- use_function(newdata = dataQ_eps, ...)
+  } else mod_eps <- NULL 
+  
+  # If association structure is based on a time lag, then calculate design 
+  # matrices under the specified time lag
+  sel_lag <- grep("etalag|mulag", rownames(assoc))
+  if (any(unlist(assoc[sel_lag,]))) {
+    times_lag <- lapply(times, function(x, lag) {
+      newtimes <- x - lag
+      newtimes[newtimes < 0] <- 0.0  # use baseline where lagged t is before baseline
+      newtimes
+    }, lag = ifelse(length(assoc["which_lag",][[m]]), assoc["which_lag",][[m]], 0))
+    dataQ_lag <- rolling_merge(data = newdata, ids = id_list, times = times_lag)
+    mod_lag <- use_function(newdata = dataQ_lag, ...)
+  } else mod_lag <- NULL
+  
+  # If association structure is based on area under the marker trajectory, then 
+  # calculate design matrices at the subquadrature points
+  sel_auc <- grep("etaauc|muauc", rownames(assoc))
+  if (any(unlist(assoc[sel_auc,]))) {
+    # Return a design matrix that is (quadnodes * auc_quadnodes * Npat) rows 
+    times_auc <- 
+      lapply(times, function(x) unlist(
+        lapply(x, function(y) 
+          lapply(get_quadpoints(auc_quadnodes)$points, unstandardise_quadpoints, 0, y))))
+    ids2 <- rep(id_list, each = auc_quadnodes)
+    dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = times_auc)
+    mod_auc <- use_function(newdata = dataQ_auc, ...)
+  } else mod_auc <- NULL
+  
+  # If association structure is based on interactions with data, then calculate 
+  # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
+  sel_data <- grep("_data", rownames(assoc), value = TRUE)
+  xq_data <- sapply(sel_data,
+                    function(x) { 
+                      fm <- assoc["which_formulas",][[m]][[x]]
+                      if (length(fm)) {
+                        vars <- rownames(attr(terms.formula(fm), "factors"))
+                        if (is.null(vars))
+                          stop(paste0("No variables found in the formula specified for the '", x,
+                                      "' association structure.", call. = FALSE))
+                        ff <- ~ foo + bar
+                        gg <- parse(text = paste("~", paste(c(id_var, time_var), collapse = "+")))[[1L]]
+                        ff[[2L]][[2L]] <- fm[[2L]]
+                        ff[[2L]][[3L]] <- gg[[2L]]
+                        if ("y_mod_stuff" %in% names(dots)) { # call from stan_jm
+                          y_mod_stuff <- dots$y_mod_stuff
+                          oldcall <- getCall(y_mod_stuff$mod)
+                          naa <- oldcall$na.action
+                          subset <- if (is.null(dataAssoc)) eval(oldcall$subset) else NULL               
+                          df <- if (is.null(dataAssoc)) eval(oldcall$data) else dataAssoc
+                          sel <- which(!vars %in% colnames(df))
+                          if (length(sel))
+                            stop(paste0("The following variables were specified in the formula for the '", x,
+                                        "' association structure, but they cannot be found in the data: ", 
+                                        paste0(vars, collapse = ", ")))
+                          mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
+                                           na.action = naa), envir = environment(y_mod_stuff$mod))
+                        } else { # call from posterior_survfit
+                          mf2 <- model.frame(ff, data = newdata)
+                        }
+                        mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
+                        mf2[[time_var]] <- as.numeric(mf2[[time_var]])
+                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times)
+                        xq <- stats::model.matrix(fm, data = mf2q)
+                        if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
+                        if (!ncol(xq))
+                          stop(paste0("Bug found: A formula was specified for the '", x, "' association ", 
+                                      "structure, but the resulting design matrix has no columns."), call. = FALSE)
+                      } else xq <- matrix(0, length(unlist(times)), 0)
+                      xq
+                    }, simplify = FALSE, USE.NAMES = TRUE)
+  K_data <- sapply(xq_data, ncol)
+  xmat_data <- do.call(cbind, xq_data)
+  
+  nlist(times, mod_eta, mod_eps, mod_lag, mod_auc, xq_data, xmat_data, K_data)
+}                              
 
 # Carry out a rolling merge
 #
@@ -2277,12 +2313,14 @@ rolling_merge <- function(data, ids, times) {
 # Evaluate a glFormula call and return model components
 # 
 # @param mc A glFormula call
-# @param data A data frame to substitute into the data argument of the call
+# @param newdata A data frame to substitute into the data argument of the call
 # @param y_mod_stuff A named list, returned by a call to handle_glmod (and
 #   containing an indicator of whether the original longitudinal submodel had
 #   an intercept term)
-handle_glFormula <- function(mc, data, y_mod_stuff) { 
-  mc$data <- data
+# @param m Argument ignored (included to avoid error when passing m to 
+#   make_assoc_Xparts function)
+handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL) { 
+  mc$data <- newdata
   mod    <- eval(mc, parent.frame())
   x      <- as.matrix(mod$X)
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
@@ -2403,7 +2441,7 @@ handle_weights <- function(mod_stuff, weights, id_var) {
 # @param min_prior_scale The minimum allowed for prior scales
 # @return A named list of the same structure as returned by handle_glm_prior
 autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, 
-                            assoc = NULL, min_prior_scale = 1e-12) {
+                            min_prior_scale = 1e-12, assoc = NULL, family = NULL) {
   
   is_glmod    <- ("y"         %in% names(mod_stuff))
   is_coxmod   <- ("eventtime" %in% names(mod_stuff))
@@ -2438,241 +2476,10 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     # from the separate longitudinal submodels estimated using glmer).
     # The mean will be used for centering each association term.
     # The SD will be used for autoscaling the prior for each association parameter.
-    if (is.null(assoc))
-      stop("'assoc' cannot be NULL for autoscaling association parameters.")    
-    a_beta_shift <- c() # mean used to center assoc terms, same ordering as used in jm.stan
-    a_beta_scale <- c() # SD used to scale assoc priors, same ordering as used in jm.stan
-    mark <- 1
-    for (m in 1:length(mod_stuff)) {
-      if (!assoc["null",][[m]]) {
-        
-        # etavalue and any interactions
-        if (assoc["etavalue",][[m]]) { # etavalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          a_beta_shift[mark] <- mean(as.vector(eta_m)) 
-          a_beta_scale[mark] <- scale_val(as.vector(eta_m))
-          mark <- mark + 1
-        }
-        if (assoc["etavalue_data",][[m]]) { # etavalue*data
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          dat_m <- mod_stuff[[m]]$xtemp_data
-          cbeg  <- 1
-          cend  <- mod_stuff[[m]]$K_data[[1]]
-          val   <- eta_m * dat_m[, cbeg:cend] 
-          for (j in 1:ncol(val)) {
-            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-            mark <- mark + 1
-          }
-        }
-        if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          sel <- assoc["which_interactions",][[m]][["etavalue_etavalue"]]
-          for (j in 1:length(sel)) {
-            eta_j <- mod_stuff[[j]]$linpred_eta
-            val   <- eta_m * eta_j 
-            a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- scale_val(as.vector(val)) 
-            mark <- mark + 1                   
-          }
-        } 
-        if (assoc["etavalue_muvalue",][[m]]) { # etavalue*muvalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          sel <- assoc["which_interactions",][[m]][["etavalue_muvalue"]]
-          for (j in 1:length(sel)) {
-            eta_j <- mod_stuff[[j]]$linpred_eta
-            invlink_j <- family[[j]]$linkinv
-            val <- eta_m * invlink_j(eta_j) 
-            a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- scale_val(as.vector(val)) 
-            mark <- mark + 1                   
-          }
-        } 
-        
-        # etaslope and any interactions
-        if (assoc["etaslope",][[m]]) { # etaslope
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          eps_m <- mod_stuff[[m]]$linpred_eps
-          eps   <- attr(mod_stuff, "eps")
-          val   <- (eps_m - eta_m) / eps
-          a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        }
-        if (assoc["etaslope_data",][[m]]) { # etaslope*data
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          eps_m <- mod_stuff[[m]]$linpred_eps
-          eps   <- attr(mod_stuff, "eps")
-          dydt_m <- (eps_m - eta_m) / eps
-          dat_m <- mod_stuff[[m]]$xtemp_data
-          cbeg  <- mod_stuff[[m]]$K_data[[1]] + 1
-          cend  <- sum(mod_stuff[[m]]$K_data[1:2])
-          val   <- dydt_m * dat_m[, cbeg:cend] 
-          for (j in 1:ncol(val)) {
-            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-            mark <- mark + 1
-          }
-        }
-        
-        # etalag
-        if (assoc["etalag",][[m]]) { # etalag
-          lag_m <- mod_stuff[[m]]$linpred_lag
-          a_beta_shift[mark] <- mean(as.vector(lag_m)) 
-          a_beta_scale[mark] <- scale_val(as.vector(lag_m))
-          mark <- mark + 1
-        }     
-        
-        # etaauc
-        if (assoc["etaauc",][[m]]) { # etaauc
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          auc_m <- mod_stuff[[m]]$linpred_auc
-          qwts   <- attr(mod_stuff, "auc_quadweights")
-          qnodes <- attr(mod_stuff, "auc_quadnodes")
-          val   <- c()
-          for (j in 1:length(eta_m)) {
-            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
-            auc_j <- auc_m[((j-1) * qnodes + 1):(j * qnodes)]
-            val[j] <- sum(wgt_j * auc_j)
-          }
-          a_beta_shift[mark] <- mean(as.vector(val))
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        }  
-        
-        # muvalue and any interactions
-        if (assoc["muvalue",][[m]]) { # muvalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          invlink_m <- family[[m]]$linkinv
-          val <- invlink_m(eta_m) 
-          a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        }
-        if (assoc["muvalue_data",][[m]]) { # muvalue*data
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          invlink_m <- family[[m]]$linkinv
-          dat_m <- mod_stuff[[m]]$xtemp_data
-          cbeg  <- sum(mod_stuff[[m]]$K_data[1:2]) + 1
-          cend  <- sum(mod_stuff[[m]]$K_data[1:3])
-          val   <- invlink_m(eta_m) * dat_m[, cbeg:cend] 
-          for (j in 1:ncol(val)) {
-            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-            mark <- mark + 1
-          }
-        }
-        if (assoc["muvalue_etavalue",][[m]]) { # muvalue*etavalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          invlink_m <- family[[m]]$linkinv
-          sel <- assoc["which_interactions",][[m]][["muvalue_etavalue"]]
-          for (j in 1:length(sel)) {
-            eta_j <- mod_stuff[[j]]$linpred_eta
-            val   <- invlink_m(eta_m) * eta_j 
-            a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- scale_val(as.vector(val)) 
-            mark <- mark + 1                   
-          }
-        } 
-        if (assoc["muvalue_muvalue",][[m]]) { # muvalue*muvalue
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          invlink_m <- family[[m]]$linkinv
-          sel <- assoc["which_interactions",][[m]][["muvalue_muvalue"]]
-          for (j in 1:length(sel)) {
-            eta_j <- mod_stuff[[j]]$linpred_eta
-            invlink_j <- family[[j]]$linkinv
-            val <- invlink_m(eta_m) * invlink_j(eta_j) 
-            a_beta_shift[mark] <- mean(as.vector(val)) 
-            a_beta_scale[mark] <- scale_val(as.vector(val)) 
-            mark <- mark + 1                   
-          }
-        }    
-        
-        # muslope and any interactions
-        if (assoc["muslope",][[m]]) { # muslope
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          eps_m <- mod_stuff[[m]]$linpred_eps
-          eps   <- attr(mod_stuff, "eps")
-          invlink_m <- family[[m]]$linkinv
-          val   <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
-          a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        }
-        if (assoc["muslope_data",][[m]]) { # muslope*data
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          eps_m <- mod_stuff[[m]]$linpred_eps
-          eps   <- attr(mod_stuff, "eps")
-          invlink_m <- family[[m]]$linkinv
-          dydt_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
-          dat_m <- mod_stuff[[m]]$xtemp_data
-          cbeg  <- mod_stuff[[m]]$K_data[1:3] + 1
-          cend  <- sum(mod_stuff[[m]]$K_data[1:4])
-          val   <- dydt_m * dat_m[, cbeg:cend] 
-          for (j in 1:ncol(val)) {
-            a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-            a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-            mark <- mark + 1
-          }
-        }
-        
-        # mulag
-        if (assoc["mulag",][[m]]) { # mulag
-          lag_m <- mod_stuff[[m]]$linpred_lag
-          invlink_m <- family[[m]]$linkinv
-          val   <- invlink_m(lag_m)
-          a_beta_shift[mark] <- mean(as.vector(val)) 
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        }
-        
-        # muauc
-        if (assoc["etaauc",][[m]]) { # etaauc
-          eta_m <- mod_stuff[[m]]$linpred_eta
-          auc_m <- mod_stuff[[m]]$linpred_auc
-          invlink_m <- family[[m]]$linkinv
-          qwts   <- attr(mod_stuff, "auc_quadweights")
-          qnodes <- attr(mod_stuff, "auc_quadnodes")
-          val   <- c()
-          for (j in 1:length(eta_m)) {
-            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
-            auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])
-            val[j] <- sum(wgt_j * auc_j)
-          }
-          a_beta_shift[mark] <- mean(as.vector(val))
-          a_beta_scale[mark] <- scale_val(as.vector(val))
-          mark <- mark + 1
-        } 
-        
-      }    
-    }
-    
-    for (m in 1:length(mod_stuff)) {
-      # shared_b
-      if (assoc["shared_b",][[m]]) { # shared_b
-        sel <- assoc["which_b_zindex",][[m]]
-        val <- mod_stuff[[m]][["b_mat"]][,sel]
-        for (j in 1:ncol(val)) {
-          a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-          a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-          mark <- mark + 1
-        }
-      }
-    }
-    
-    for (m in 1:length(mod_stuff)) {
-      # shared_coef
-      if (assoc["shared_coef",][[m]]) { # shared_coef
-        sel <- assoc["which_coef_zindex",][[m]]
-        val <- mod_stuff[[m]][["b_mat"]][,sel]
-        for (j in 1:ncol(val)) {
-          a_beta_shift[mark] <- mean(as.vector(val[,j])) 
-          a_beta_scale[mark] <- scale_val(as.vector(val[,j])) 
-          mark <- mark + 1
-        }
-      }
-    }
-    
+    if (is.null(assoc) || is.null(family))
+      stop("'assoc' and 'family' cannot be NULL when autoscaling association parameters.")
+    assoc_terms <- make_assoc_terms(parts = mod_stuff, assoc = assoc, family = family)
+    a_beta_scale <- apply(assoc_terms, 2L, scale_val)
     prior_stuff$prior_scale <- 
       pmax(min_prior_scale, prior_stuff$prior_scale / a_beta_scale) 
   }
@@ -2681,6 +2488,235 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     as.array(pmin(.Machine$double.xmax, prior_stuff$prior_scale))
   
   prior_stuff
+}
+
+
+# Function to construct a design matrix for the association structure in
+# the event submodel, to be multiplied by a vector of association parameters
+#
+# @param assoc An array with information about the desired association 
+#   structure, returned by a call to validate_assoc
+# @param parts A list equal in length to the number of markers. Each element
+#   parts[[m]] should contain a named list with components $mod_eta, $mod_eps,
+#   $mod_lag, $mod_auc, which each contain either the linear predictor at quadtimes, 
+#   quadtimes + eps, lagged quadtimes, and auc quadtimes, or the design matrices
+#   used for constructing the linear predictor. Each element parts[[m]] should 
+#   also contain $xmat_data and $K_data.
+# @param family A list of family objects, equal in length to the number of 
+#   longitudinal submodels
+# @param ... If parts does not contain the linear predictors, then this should
+#   include elements beta and b, each being a length M list of parameters for the
+#   longitudinal submodels
+# @return A design matrix containing the association terms to be multiplied by
+#   the association paramters.
+make_assoc_terms <- function(parts, assoc, family, ...) {
+  M      <- length(parts)
+  times  <- attr(parts, "times")
+  eps    <- attr(parts, "eps")  
+  qnodes <- attr(parts, "auc_quadnodes")
+  # quadweights for auc assoc structure
+  qwts <- unlist(lapply(times, function(x) lapply(x, function(y) 
+    lapply(get_quadpoints(qnodes)$weights, unstandardise_quadweights, 0, y)))) 
+
+  a_X <- list()
+  mark <- 1
+  for (m in 1:M) {
+    if (!assoc["null",][[m]]) {
+      invlink_m <- family[[m]]$linkinv    
+      eta_m <- get_element(parts, m = m, "eta", ...)
+      eps_m <- get_element(parts, m = m, "eps", ...)
+      lag_m <- get_element(parts, m = m, "lag", ...)
+      auc_m <- get_element(parts, m = m, "auc", ...)
+      data_m <- get_element(parts, m = m, "xmat_data", ...)
+      K_data_m <- get_element(parts, m = m, "K_data", ...)
+      
+      # etavalue and any interactions      
+      if (assoc["etavalue",][[m]]) { # etavalue
+        a_X[[mark]] <- eta_m
+        mark <- mark + 1
+      }
+      if (assoc["etavalue_data",][[m]]) { # etavalue*data
+        idx_ev <- which(names(K_data_m) == "etavalue_data")
+        cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
+        cend  <- sum(K_data_m[0: idx_ev   ])
+        val <- eta_m * data_m[, cbeg:cend]
+        a_X[[mark]] <- val
+        mark <- mark + 1
+      }
+      if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
+        sel <- assoc["which_interactions",][[m]][["etavalue_etavalue"]]
+        for (j in sel) {
+          eta_j <- get_element(parts, m = j, "eta")
+          val   <- eta_m * eta_j 
+          a_X[[mark]] <- val
+          mark <- mark + 1
+        }
+      } 
+      if (assoc["etavalue_muvalue",][[m]]) { # etavalue*muvalue
+        sel <- assoc["which_interactions",][[m]][["etavalue_muvalue"]]
+        for (j in sel) {
+          eta_j <- get_element(parts, m = j, "eta")
+          invlink_j <- family[[j]]$linkinv
+          val <- eta_m * invlink_j(eta_j) 
+          a_X[[mark]] <- val
+          mark <- mark + 1             
+        }
+      }       
+      # etaslope and any interactions
+      if (assoc["etaslope",][[m]]) { # etaslope
+        dydt_m <- (eps_m - eta_m) / eps
+        a_X[[mark]] <- dydt_m
+        mark <- mark + 1             
+      }
+      if (assoc["etaslope_data",][[m]]) { # etaslope*data
+        dydt_m <- (eps_m - eta_m) / eps
+        idx_es <- which(names(K_data_m) == "etaslope_data")
+        cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
+        cend  <- sum(K_data_m[0: idx_es   ])
+        val <- dydt_m * data_m[, cbeg:cend]
+        a_X[[mark]] <- val
+        mark <- mark + 1            
+      }
+      # etalag
+      if (assoc["etalag",][[m]]) { # etalag
+        a_X[[mark]] <- lag_m
+        mark <- mark + 1
+      } 
+      # etaauc
+      if (assoc["etaauc",][[m]]) { # etaauc
+        val   <- c()
+        for (j in 1:length(eta_m)) {
+          wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+          auc_j <- auc_m[((j-1) * qnodes + 1):(j * qnodes)]
+          val[j] <- sum(wgt_j * auc_j)
+        }
+        a_X[[mark]] <- val
+        mark <- mark + 1            
+      }        
+      # muvalue and any interactions
+      if (assoc["muvalue",][[m]]) { # muvalue
+        val <- invlink_m(eta_m) 
+        a_X[[mark]] <- val
+        mark <- mark + 1            
+      }
+      if (assoc["muvalue_data",][[m]]) { # muvalue*data
+        idx_mv <- which(names(K_data_m) == "muvalue_data")
+        cbeg  <- sum(K_data_m[0:(idx_mv-1)]) + 1
+        cend  <- sum(K_data_m[0: idx_mv   ])
+        val   <- invlink_m(eta_m) * data_m[, cbeg:cend] 
+        a_X[[mark]] <- val
+        mark <- mark + 1           
+      }
+      if (assoc["muvalue_etavalue",][[m]]) { # muvalue*etavalue
+        sel <- assoc["which_interactions",][[m]][["muvalue_etavalue"]]
+        for (j in sel) {
+          eta_j <- get_element(parts, m = j, "eta")
+          val   <- invlink_m(eta_m) * eta_j 
+          a_X[[mark]] <- val
+          mark <- mark + 1           
+        }
+      } 
+      if (assoc["muvalue_muvalue",][[m]]) { # muvalue*muvalue
+        sel <- assoc["which_interactions",][[m]][["muvalue_muvalue"]]
+        for (j in sel) {
+          eta_j <- get_element(parts, m = j, "eta")
+          invlink_j <- family[[j]]$linkinv
+          val <- invlink_m(eta_m) * invlink_j(eta_j) 
+          a_X[[mark]] <- val
+          mark <- mark + 1                   
+        }
+      }       
+      # muslope and any interactions
+      if (assoc["muslope",][[m]]) { # muslope
+        val <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
+        a_X[[mark]] <- val
+        mark <- mark + 1                   
+      }
+      if (assoc["muslope_data",][[m]]) { # muslope*data
+        dydt_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
+        idx_ms <- which(names(K_data_m) == "muslope_data")
+        cbeg  <- sum(K_data_m[0:(idx_ms-1)]) + 1
+        cend  <- sum(K_data_m[0: idx_ms   ])
+        val   <- dydt_m * data_m[, cbeg:cend] 
+        a_X[[mark]] <- val
+        mark <- mark + 1              
+      }    
+      # mulag
+      if (assoc["mulag",][[m]]) { # mulag
+        val <- invlink_m(lag_m)
+        a_X[[mark]] <- val
+        mark <- mark + 1              
+      }  
+      # muauc
+      if (assoc["etaauc",][[m]]) { # etaauc
+        val   <- c()
+        for (j in 1:length(eta_m)) {
+          wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+          auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])
+          val[j] <- sum(wgt_j * auc_j)
+        }
+        a_X[[mark]] <- val
+        mark <- mark + 1 
+      }
+    }
+  }
+  for (m in 1:M) {
+    # shared_b
+    if (assoc["shared_b",][[m]]) {
+      sel <- assoc["which_b_zindex",][[m]]
+      val <- get_element(parts, m = m, "b_mat")[,sel]
+      a_X[[mark]] <- val
+      mark <- mark + 1                   
+    }
+  }    
+  for (m in 1:M) {
+    # shared_coef
+    if (assoc["shared_coef",][[m]]) {
+      sel <- assoc["which_coef_zindex",][[m]]
+      val <- get_element(parts, m = m, "b_mat")[,sel]
+      a_X[[mark]] <- val
+      mark <- mark + 1                   
+    }
+  }
+  
+  a_X <- do.call("cbind", a_X)
+  if (nrow(a_X) == 1L) t(a_X) else a_X
+}
+
+# Function to get linear predictor and other bits
+#
+# @param parts A named list containing the parts for constructing the association 
+#   structure. It may contain elements $mod_eta, $mod_eps, $mod_lag, etc. as 
+#   well as $xmat_data, $K_data
+# @param which
+get_element <- function(parts, m = 1, which = "eta", ...) {
+  dots <- list(...)
+  ok_which_args <- c("eta", "eps", "lag", "auc", "xmat_data", "K_data", "b_mat")
+  if (!which %in% ok_which_args)
+    stop("'which' must be one of: ", paste(ok_which_args, collapse = ", "))
+  if (which %in% c("eta", "eps", "lag", "auc")) {
+    part <- parts[[m]][[paste0("mod_", which)]]
+    if (is.null(part)) { # model doesn't include an assoc related to 'part'
+      return(NULL)
+    } else if (!is.null(part$linpred)) { # linpred already provided in object
+      return(part$linpred)
+    } else { # need to construct linpred
+      x <- part$x
+      Zt <- part$Zt
+      if (is.null(x) || is.null(Zt))
+        stop(paste0("Bug found: cannot find x and Zt in object. They are ",
+             "required to build the linear predictor for '", which, "'."))          
+      beta <- dots$beta[[m]]
+      b <- dots$b[[m]]
+      if (is.null(beta) || is.null(b))
+        stop("Bug found: beta and b must be provided to construct linpred.")
+      return(linear_predictor.default(beta, x) + as.matrix(b %*% Zt))
+    }
+  } else if (which %in% c("xmat_data", "K_data", "b_mat")) {
+    return(parts[[m]][[which]])
+  } else {
+    stop("'which' argument doesn't include a valid entry.")
+  }
 }
 
 # Function to return the range or SD of the predictors, used for scaling the priors

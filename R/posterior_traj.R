@@ -213,9 +213,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   
   # User specified a subset of ids
   if (!is.null(ids)) {
-    sel <- which(!ids %in% data[[id_var]])
-    if (length(sel))
-      stop("The following 'ids' do not appear in the data: ", paste(ids[[sel]], collapse = ", "))
+    check_for_missing_ids(data, id_var, ids)
     data <- data[data[[id_var]] %in% ids, , drop = FALSE] 
     newX <- newX[newX[[id_var]] %in% ids, , drop = FALSE]     
   }
@@ -224,16 +222,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   id_list <- unique(data[[id_var]])
   
   # Issue warning if IDs in newdata match individuals in the estimation data
-  if (!is.null(newdata)) {
-    id_fit <- unique(model.frame(object)[[m]][[id_var]])
-    if (any(id_list %in% id_fit))
-      warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
-              "estimation dataset. Please be sure you want to obtain subject-",
-              "specific predictions using the estimated random effects for those ",
-              "individuals. If you instead meant to marginalise over the distribution ",
-              "of the random effects, then please make sure the ID values do not ",
-              "correspond to individuals in the estimation dataset.", immediate. = TRUE)
-  }  
+  if (!is.null(newdata))
+    check_for_estimation_ids(object, id_list, m = m)
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata
@@ -514,4 +504,103 @@ set_geom_args <- function(defaults, ...) {
   return(defaults)
 }
 
+# Check whether individuals in the ids argument are present in the data
+#
+# @param data A data frame
+# @param id_var The name of the ID variable in data
+# @param ids A vector of ids
+check_for_missing_ids <- function(data, id_var, ids) {
+  if (!is.data.frame(data))
+    stop("'data' should be a data frame.")
+  if (!all(is.character(id_var), length(id_var == 1L)))
+    stop("'id_var' should be a variable name.")
+  if (!id_var %in% colnames(data))
+    stop(paste(substitute(deparse(id_var)), "not found in 'data'."))
+  sel <- which(!ids %in% data[[id_var]])
+  if (length(sel))
+    stop("The following 'ids' do not appear in the data: ", 
+         paste(ids[[sel]], collapse = ", "))
+}
 
+# Check whether individuals in the ids argument were used in the 
+# model estimation
+#
+# @param object A stanjm object
+# @param ids A vector of ids
+# @param m Integer specifying which submodel to get the estimation IDs from
+check_for_estimation_ids <- function(object, ids, m = 1) {
+  ids2 <- unique(model.frame(object, m = m)[[object$id_var]])
+  if (any(ids %in% ids2))
+    warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
+            "estimation dataset. Please be sure you want to obtain subject-",
+            "specific predictions using the estimated random effects for those ",
+            "individuals. If you instead meant to marginalise over the distribution ",
+            "of the random effects, then please make sure the ID values do not ",
+            "correspond to individuals in the estimation dataset.", immediate. = TRUE)
+}
+
+# Return a list with the control arguments for interpolation and/or
+# extrapolation in posterior_predict.stanjm and posterior_survfit.stanjm
+#
+# @param control A named list, being the user input to the control argument
+#   in the posterior_predict.stanjm or posterior_survfit.stanjm call
+# @param ok_control_args A character vector of allowed control arguments
+# @param standardise A logical, being the user input to the standardise
+#   argument in a posterior_survfit.stanjm call.
+# @return A named list
+get_extrapolation_control <- function(control = list(), 
+                                      ok_control_args = c("epoints", "edist", "eprop"), 
+                                      standardise = FALSE) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
+                   condition = TRUE, last_time = NULL)
+  if (!is.list(control)) {
+    stop("'control' should be a named list.")
+  } else if (!length(control)) {
+    control <- defaults[ok_control_args] 
+    if (("condition" %in% ok_control_args) && standardise) 
+      control$condition <- FALSE
+  } else {  # user specified control list
+    nms <- names(control)
+    if (!length(nms))
+      stop("'control' should be a named list.")
+    if (any(!nms %in% ok_control_args))
+      stop(paste0("'control' list can only contain the following named arguments: ",
+                  paste(ok_control_args, collapse = ", ")))
+    if (all(c("edist", "eprop") %in% nms))
+      stop("'control' list cannot include both 'edist' and 'eprop'.")        
+    if (("ipoints" %in% ok_control_args) && is.null(control$ipoints)) 
+      control$ipoints <- defaults$ipoints   
+    if (("epoints" %in% ok_control_args) && is.null(control$epoints)) 
+      control$epoints <- defaults$epoints  
+    if (is.null(control$edist) && is.null(control$eprop)) 
+      control$eprop <- defaults$eprop
+    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
+      control$condition <- if (!standardise) defaults$condition else FALSE
+    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
+      stop("'condition' cannot be set to TRUE if standardised survival ",
+           "probabilities are requested.")
+    }
+  }
+  return(control)
+}
+
+# Return an array or list with the time sequence used for posterior predictions
+#
+# @param increments An integer with the number of increments (time points) at
+#   which to predict the outcome for each individual
+# @param t0,t1 Numeric vectors giving the start and end times across which to
+#   generate prediction times
+# @param simplify Logical specifying whether to return each increment as a 
+#   column of an array (TRUE) or as an element of a list (FALSE) 
+get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
+  val <- sapply(0:(increments - 1), function(x, t0, t1) {
+    t0 + (t1 - t0) * (x / (increments - 1))
+  }, t0 = t0, t1 = t1, simplify = simplify)
+  if (simplify && is.vector(val)) {
+    # need to transform if there is only one individual
+    val <- t(val)
+    rownames(val) <- if (!is.null(names(t0))) names(t0) else 
+      if (!is.null(names(t1))) names(t1) else NULL
+  }
+  return(val)
+}
