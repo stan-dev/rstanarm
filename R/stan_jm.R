@@ -1,6 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
-# Copyright (C) 2016 Monash University
+# Copyright (C) 2016 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -660,21 +660,16 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
-  auc_quadweights <- 
-    unlist(lapply(e_mod_stuff$quadtimes, function(x) 
-      lapply(x, function(y) 
-        lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y)))) 
-  a_mod_attr <- list(id_list         = e_mod_stuff$e_flist, 
+  a_mod_attr <- list(id_list         = e_mod_stuff$flist, 
                      times           = e_mod_stuff$quadtimes, 
                      assoc           = assoc, 
                      id_var          = id_var, 
                      time_var        = time_var, 
                      eps             = eps, 
                      auc_quadnodes   = auc_quadnodes,
-                     auc_quadweights = auc_quadweights,
                      dataAssoc       = dataAssoc)
   a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, 
-                        SIMPLIFY = FALSE, MoreArgs = assoc_attr)
+                        SIMPLIFY = FALSE, MoreArgs = a_mod_attr)
   a_mod_stuff <- do.call("structure", c(list(a_mod_stuff), a_mod_attr))
 
   # Number of association parameters
@@ -1062,6 +1057,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     as.integer(e_mod_stuff$Npat * auc_quadnodes)  
   standata$nrow_y_Xq_auc <- 
     as.integer(NROW(a_mod_stuff[[1]]$mod_auc$xtemp))
+  auc_quadweights <- 
+    unlist(lapply(e_mod_stuff$quadtimes, function(x) 
+      lapply(x, function(y) 
+        lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y)))) 
   standata$auc_quadweights <- 
     if (standata$assoc_uses[4]) as.array(auc_quadweights) else double(0)
 
@@ -1205,15 +1204,15 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
   fit <- nlist(stanfit, family, formula = c(formulaLong, formulaEvent), 
-               id_var, time_var, offset = NULL, weights, quadnodes, basehaz,
+               id_var, time_var, offset, weights, quadnodes, basehaz,
                M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
                n_subjects = e_mod_stuff$Npat, n_grps, assoc,
-               y_mod_stuff, e_mod_stuff, fr = c(fetch(a_mod_stuff, "fr"), list(e_mod_stuff$model_frame)),
+               y_mod_stuff, e_mod_stuff, a_mod_stuff,
+               fr = c(fetch(a_mod_stuff, "model_frame"), list(e_mod_stuff$model_frame)),
                y = list_nms(fetch(y_mod_stuff, "y"), M),
                d = e_mod_stuff$d, eventtime = e_mod_stuff$eventtime,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
-               glmod = fetch(y_mod_stuff, "mod"), coxmod = e_mod_stuff$mod,
                standata = NULL, terms = NULL, 
                prior.info = nlist(y_prior_stuff, y_prior_intercept_stuff, y_prior_aux_stuff,
                                   e_prior_stuff, e_prior_intercept_stuff, e_prior_aux_stuff,

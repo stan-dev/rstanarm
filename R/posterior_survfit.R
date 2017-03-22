@@ -16,16 +16,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Estimate marginal or subject-specific survival probabilities
+#' Estimate subject-specific or marginal survival probabilities
 #' 
-#' The posterior predictive distribution is the distribution of the outcome 
-#' implied by the model after using the observed data to update our beliefs 
-#' about the unknown parameters in the model. This function allows us to 
-#' generate estimated survival probabilities (either subject-specific, or
-#' by marginalising over the distribution of the random effects) based on
-#' draws from the posterior predictive distribution. In both the "subject-specifc"
-#' and "marginal" situations, the predicted survival probabilities will still be 
-#' \emph{conditional} on observed values of the fixed effect covariates 
+#' This function allows us to generate estimated survival probabilities (either 
+#' subject-specific, or by marginalising over the distribution of the random effects) 
+#' based on draws from the posterior predictive distribution. In both the 
+#' "subject-specifc" and "marginal" situations, the predicted survival probabilities 
+#' will still be \emph{conditional} on observed values of the fixed effect covariates 
 #' in the longitudinal and event submodels (ie, the predictions will be obtained 
 #' using either the design matrices used in the original \code{\link{stan_jm}} model
 #' call, or using the covariate values provided in the \code{newdata} argument). However, 
@@ -55,10 +52,10 @@
 #'   of the estimated survival function when \code{extrapolate = TRUE}. The list
 #'   can contain one or more of the following named elements: \cr
 #'   \describe{
-#'     \item{\code{ext_points}}{a positive integer specifying the number of  
+#'     \item{\code{epoints}}{a positive integer specifying the number of  
 #'     discrete time points at which to calculate the forecasted survival 
 #'     probabilities. The default is 10.}
-#'     \item{\code{ext_distance}}{a positive scalar specifying the amount of time 
+#'     \item{\code{edist}}{a positive scalar specifying the amount of time 
 #'     across which to forecast the estimated survival function, represented 
 #'     in units of the time variable \code{time_var} (from fitting the model). 
 #'     The default is to extrapolate between the times specified in the 
@@ -120,10 +117,6 @@
 #' @param draws An integer indicating the number of MCMC draws to return. The default
 #'   and maximum number of draws is the size of the posterior sample.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
-#' @param offset Not currently used. A vector of offsets. Would  
-#'   only be required if \code{newdata} is specified and an \code{offset}  
-#'   argument was specified when fitting the model, but offsets are not currently
-#'   implemented for \code{stan_jm}.
 #' @param ... Currently unused.
 #'
 #' @details 
@@ -244,7 +237,7 @@
 posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE, 
                               control = list(), prob = 0.95, ids,
                               times = NULL, standardise = FALSE, 
-                              draws = NULL, seed = NULL, offset = NULL, ...) {
+                              draws = NULL, seed = NULL, ...) {
   
   validate_stanjm_object(object)
   M        <- object$n_markers
@@ -265,7 +258,7 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
   } else { # user specified newdata
     if (!id_var %in% colnames(newdata))
       stop("id_var from the original model call must appear 'newdata'.")
-    if (any(duplicated[[id_var]]))
+    if (any(duplicated(newdata[[id_var]])))
       stop("'newdata' should only contain one row per individual, since ",
            "time varying covariates are not allowed in the prediction data.")
     ndL <- rep(list(newdata), M)
@@ -356,9 +349,6 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     endtime <- if (!is.null(control$edist)) times + control$edist else maxtime
     endtime[endtime > maxtime] <- maxtime # nothing beyond end of baseline hazard 
     time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
-    # If conditioning then also need to obtain surv probs at last known survival time
-    if (control$condition)
-      time_seq <- c(list(last_time), time_seq) 
   } else time_seq <- list(times) # no extrapolation
   
   # Obtain survival prob matrix at each increment of time_seq
@@ -385,10 +375,11 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
                           offset = offset, m = "Event")       
     # matrix of survival probs at current increment  
     surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = t, 
-                        quadnodes = quadnodes, draws = draws)
+                        quadpoints = quadpoints, quadweights = quadweights, 
+                        draws = draws)
     # standardised survival probs
     if (standardise) { 
-      ret <- matrix(rowMeans(surv), ncol = 1)
+      surv <- matrix(rowMeans(surv), ncol = 1)
       dimnames(surv) <- list(iterations = NULL, "standardised_survprob") 
     } else {
       dimnames(surv) <- list(iterations = NULL, ids = id_list)
@@ -396,16 +387,35 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     surv
   }, quadnodes = object$quadnodes)
   
-  # Conditional subject-specific survival probs
-  if (control$condition) { 
-    surv <- lapply(surv[2:length(surv)], function(x, y) {
-      vec <- x / y
+  # If conditioning then also need to obtain surv probs at last known survival time
+  if (extrapolate && control$condition) {
+    # evaluate quadrature points and weights for last_time        
+    quadpoints <- lapply(get_quadpoints(object$quadnodes)$points, unstandardise_quadpoints, 0, last_time)
+    quadweights <- lapply(get_quadpoints(object$quadnodes)$weights, unstandardise_quadweights, 0, last_time)  
+    # evaluate design matrices for various longitudinal submodel contributions 
+    # to the association structure (e.g. x_eta, Zt_eta, x_eps, Zt_eps, etc)
+    y_X <- lapply(1:M, function(m)
+      make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = id_var, 
+                       time_var = time_var, id_list = id_list, times = quadpoints, 
+                       use_function = pp_data, object = object,
+                       m = m, re.form = NULL, offset = offset))
+    # design matrix for event submodel at last_time
+    e_mf <- rolling_merge(ndE, ids = id_list, times = quadpoints)
+    e_X <- .pp_data_mer_x(object, newdata = e_mf, re.form = NULL, 
+                          offset = offset, m = "Event")       
+    # matrix of survival probs at last_time 
+    cond_surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = last_time, 
+                             quadpoints = quadpoints, quadweights = quadweights, 
+                             draws = draws)
+    # conditional survival probs
+    surv <- lapply(surv, function(x) {
+      vec <- x / cond_surv
       vec[is.na(vec)] <- 1
       # If last_time was after the time of the estimated probability, 
       # leading to a survival probability greater than 1
       vec[vec > 1] <- 1  
       vec
-    }, y = surv[[1]])        
+    })        
   }
   
   # Summarise posterior draws to get median and ci
@@ -430,6 +440,162 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
             control = control, standardise = standardise, ids = id_list, 
             draws = draws, seed = seed, offset = offset)
 }
+
+#' Plot the estimated subject-specific or marginal survival function
+#' 
+#' This generic \code{plot} method for \code{survfit.stanjm} objects will
+#' plot the estimated subject-specific or marginal survival function
+#' using the data frame returned by a call to \code{\link{posterior_survfit}}.
+#' The call to \code{posterior_survfit} should ideally have included an
+#' "extrapolation" of the survival function, obtained by setting the 
+#' \code{extrapolate} argument to \code{TRUE}.
+#'    
+#' @method plot survfit.stanjm
+#' @export
+#' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon 
+#'   facet_wrap labs coord_cartesian
+#'   
+#' @templateVar idsArg ids
+#' @templateVar labsArg xlab,ylab
+#' @templateVar scalesArg facet_scales
+#' @templateVar cigeomArg ci_geom_args
+#' @template args-ids
+#' @template args-labs
+#' @template args-scales
+#' @template args-ci-geom-args
+#'  
+#' @param x A data frame and object of class \code{survfit.stanjm}
+#'   returned by a call to the function \code{\link{posterior_survfit}}.
+#'   The object contains point estimates and uncertainty interval limits
+#'   for estimated values of the survival function.
+#' @param limits A quoted character string specifying the type of limits to
+#'   include in the plot. Can be one of: \code{"ci"} for the Bayesian
+#'   posterior uncertainty interval for the estimated survival probability
+#'   (often known as a credible interval); or \code{"none"} for no interval 
+#'   limits.
+#' @param ... Optional arguments passed to 
+#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   of the plotted survival function.
+#'      
+#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanjm}.
+#'   This object can be further customised using the \pkg{ggplot2} package.
+#'   It can also be passed to the function \code{\link{plot_stack}}.
+#'   
+#' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack}},
+#'   \code{\link{posterior_predict}}, \code{\link{plot.predict.stanjm}}      
+#'   
+#' @examples 
+#' 
+#'   # Run example model if not already loaded
+#'   if (!exists("examplejm")) example(examplejm)
+#'   
+#'   # Obtain subject-specific conditional survival probabilities
+#'   # for all individuals in the estimation dataset.
+#'   ps1 <- posterior_survfit(examplejm, extrapolate = TRUE)
+#'   
+#'   # We then plot the conditional survival probabilities for
+#'   # a subset of individuals
+#'   plot(ps1, ids = c(7,13,16))
+#'   
+#'   # We can change or add attributes to the plot
+#'   plot(ps1, ids = c(7,13,16), limits = "none")
+#'   plot(ps1, ids = c(7,13,16), xlab = "Follow up time")
+#'   plot(ps1, ids = c(7,13,16), ci_geom_args = list(fill = "red"),
+#'        color = "blue", linetype = 2)
+#'   plot(ps1, ids = c(7,13,16), facet_scales = "fixed")
+#'   
+#'   # Since the returned plot is also a ggplot object, we can
+#'   # modify some of its attributes after it has been returned
+#'   plot1 <- plot(ps1, ids = c(7,13,16))
+#'   plot1 + 
+#'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
+#'     ggplot2::coord_cartesian(xlim = c(0, 15)) +
+#'     ggplot2::labs(title = "Some plotted survival functions")
+#'     
+#'   # We can also combine the plot(s) of the estimated 
+#'   # subject-specific survival functions, with plot(s) 
+#'   # of the estimated longitudinal trajectories for the
+#'   # same individuals
+#'   ps1 <- posterior_survfit(examplejm, ids = c(7,13,16))
+#'   pt1 <- posterior_predict(examplejm, , ids = c(7,13,16),
+#'                            interpolate = TRUE, extrapolate = TRUE)
+#'   plot_surv <- plot(ps1) 
+#'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
+#'   plot_stack(plot_traj, plot_surv)
+#'    
+#'   # Lastly, let us plot the standardised survival function
+#'   # based on all individuals in our estimation dataset
+#'   ps2 <- posterior_survfit(examplejm, standardise = TRUE, times = 0,
+#'                           control = list(ext_points = 20))
+#'   plot(ps2)   
+#' 
+#'    
+plot.survfit.stanjm <- function(x, ids = NULL, 
+                                limits = c("ci", "none"),  
+                                xlab = NULL, ylab = NULL, facet_scales = "free", 
+                                ci_geom_args = NULL, ...) {
+  
+  limits <- match.arg(limits)
+  ci <- (limits == "ci")
+  standardise <- attr(x, "standardise")
+  id_var <- attr(x, "id_var")
+  time_var <- attr(x, "time_var")
+  if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
+  if (is.null(ylab)) ylab <- "Event free probability"
+  if (!is.null(ids)) {
+    if (standardise) 
+      stop("'ids' argument cannot be specified when plotting standardised ",
+           "survival probabilities.")
+    if (!id_var %in% colnames(x))
+      stop("Bug found: could not find 'id_var' column in the data frame.")
+    ids_missing <- which(!ids %in% x[[id_var]])
+    if (length(ids_missing))
+      stop("The following 'ids' are not present in the survfit.stanjm object: ",
+           paste(ids[[ids_missing]], collapse = ", "), call. = FALSE)
+    x <- x[(x[[id_var]] %in% ids), , drop = FALSE]
+  } else {
+    ids <- if (!standardise) attr(x, "ids") else NULL
+  }
+  if (!standardise) x$id <- x[[id_var]]
+  x$time <- x[[time_var]]
+  
+  geom_defaults <- list(color = "black")
+  geom_args <- set_geom_args(geom_defaults, ...)  
+  
+  lim_defaults <- list(alpha = 0.3)
+  lim_args <- do.call("set_geom_args", c(defaults = list(lim_defaults), ci_geom_args))
+  
+  if ((!standardise) && (length(ids) > 60L)) {
+    stop("Too many individuals to plot for. Perhaps consider limiting ",
+         "the number of individuals by specifying the 'ids' argument.")
+  } else if ((!standardise) && (length(ids) > 1L)) {
+    graph <- ggplot(x, aes_string(x = "time", y = "survpred")) +
+      theme_bw() +
+      do.call("geom_line", geom_args) +
+      coord_cartesian(ylim = c(0, 1)) +      
+      facet_wrap(~ id, scales = facet_scales)
+    if (ci) {
+      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
+    } else graph_limits <- NULL
+  } else {
+    graph <- ggplot(x, aes_string(x = "time", y = "survpred")) + 
+      theme_bw() +
+      do.call("geom_line", geom_args) + 
+      coord_cartesian(ylim = c(0, 1))
+    if (ci) {
+      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
+    } else graph_limits <- NULL
+    
+  }    
+  
+  ret <- graph + graph_limits + labs(x = xlab, y = ylab) 
+  class_ret <- class(ret)
+  class(ret) <- c("plot.survfit.stanjm", class_ret)
+  ret
+}
+
 
 # internal ----------------------------------------------------------------
 
@@ -488,11 +654,9 @@ prepare_data_table <- function(data, id_var, time_var) {
 #   rows corresponding to different MCMC draws of the parameters 
 #   from the posterior, and each column corresponding to one of the Npat
 #   individuals in the new data
-pp_survcalc <- function(object, y_X, e_X, eventtime, quadnodes, draws = NULL) {
-  M <- object$n_markers
-  quadpoints <- lapply(get_quadpoints(quadnodes)$points, unstandardise_quadpoints, 0, eventtime)
-  quadweights <- lapply(get_quadpoints(quadnodes)$weights, unstandardise_quadweights, 0, eventtime)
-  
+pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints, 
+                        quadweights, draws = NULL) {
+
   # Get stanmat for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
@@ -509,6 +673,7 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadnodes, draws = NULL) {
   }
 
   # Extract parameters for constructing linear predictor  
+  M <- object$n_markers
   nms <- collect_nms(colnames(stanmat), M)
   b_ord  <- lapply(1:M, function(m) y_X[[m]]$mod_eta$Z_names)
   y_b    <- lapply(1:M, function(m) pp_b_ord(stanmat[, nms$y_b[[m]], drop = FALSE], b_ord[[m]]))
@@ -547,7 +712,7 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadnodes, draws = NULL) {
   # Evaluate cumulative hazard up to time t, and survival prob at time t
   haz <- exp(log_basehaz + e_eta)
   qweighted_haz <- t(apply(haz, 1L, function(row) unlist(quadweights) * row))
-  cum_haz <- Reduce('+', array2list(qweighted_haz, nsplits = quadnodes))  
+  cum_haz <- Reduce('+', array2list(qweighted_haz, nsplits = length(quadweights)))  
   surv_t <- exp(-cum_haz) # should be S * Npat matrix
   if (is.vector(surv_t) == 1L) # transform if only one individual
     surv_t <- t(surv_t)
@@ -558,6 +723,12 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadnodes, draws = NULL) {
 }
 
 
+# default plotting attributes
+.PP_FILL <- "skyblue"
+.PP_DARK <- "skyblue4"
+.PP_VLINE_CLR <- "#222222"
+.PP_YREP_CLR <- "#487575"
+.PP_YREP_FILL <- "#222222"
 
 
 
