@@ -186,7 +186,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            return_matrix = FALSE, ...) {
   validate_stanjm_object(object)
   M <- get_M(object)
-  m <- validate_positive_scalar(m, not_greater_than = M)
+  validate_positive_scalar(m, not_greater_than = M)
   if (missing(ids)) 
     ids <- NULL
   
@@ -258,7 +258,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
   }
   
-  ytilde <- posterior_predict(object, newdata = newX, ...)
+  ytilde <- posterior_predict(object, newdata = newX, m = m, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde) # return S * N matrix, instead of data frame 

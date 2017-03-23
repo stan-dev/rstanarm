@@ -112,7 +112,6 @@ validate_positive_scalar <- function(x, not_greater_than = NULL) {
     if (!all(x <= not_greater_than))
       stop(nm, " should less than or equal to ", not_greater_than, call. = FALSE)
   }
-  invisible(TRUE)
 }
 
 # Return a list with the median and prob% CrI bounds for each column of a 

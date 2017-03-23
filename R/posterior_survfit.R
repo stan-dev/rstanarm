@@ -247,7 +247,13 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
- 
+  
+  # temporary stop, until make_assoc_terms can handle it
+  sel_stop <- grep("^shared", rownames(object$assoc))
+  if (any(unlist(object$assoc[sel_stop,])))
+    stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
+         "association structures.") 
+  
   # Construct prediction data
   # ndL: dataLong to be used in predictions
   # ndE: dataEvent to be used in predictions
@@ -686,10 +692,6 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints,
   assoc <- object$assoc
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   if (any(unlist(assoc[sel,]))) { # has association structure
-    sel_stop <- grep("shared_b|shared_coef", rownames(assoc))
-    if (any(unlist(assoc[sel_stop,])))
-      stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
-           "association structures.") # until make_assoc_terms can handle it
     for (s in seq(nrow(stanmat))) {
       beta_s <- lapply(y_beta, function(x) x[s,])
       b_s    <- lapply(y_b,    function(x) x[s,])

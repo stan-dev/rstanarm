@@ -660,17 +660,15 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
-  a_mod_attr <- list(id_list         = e_mod_stuff$flist, 
-                     times           = e_mod_stuff$quadtimes, 
-                     assoc           = assoc, 
-                     id_var          = id_var, 
-                     time_var        = time_var, 
-                     eps             = eps, 
-                     auc_quadnodes   = auc_quadnodes,
-                     dataAssoc       = dataAssoc)
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, 
-                        SIMPLIFY = FALSE, MoreArgs = a_mod_attr)
-  a_mod_stuff <- do.call("structure", c(list(a_mod_stuff), a_mod_attr))
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE, 
+                        MoreArgs = list(id_list         = e_mod_stuff$flist, 
+                                        times           = e_mod_stuff$quadtimes, 
+                                        assoc           = assoc, 
+                                        id_var          = id_var, 
+                                        time_var        = time_var, 
+                                        eps             = eps, 
+                                        auc_quadnodes   = auc_quadnodes,
+                                        dataAssoc       = dataAssoc))
 
   # Number of association parameters
   a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
@@ -2158,7 +2156,7 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
     # b vector for grouping factor = id_var
     b_vec <- getME(y_mod_stuff$mod, "b")[b_beg:b_end]
     # convert to Npat * n_re matrix
-    b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp)), byrow = TRUE)
+    b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp[[Gp_sel]])), byrow = TRUE)
   } else b_mat <- NULL
   
   parts$b_mat <- b_mat
@@ -2238,14 +2236,18 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
   if (any(unlist(assoc[sel_auc,]))) {
     # Return a design matrix that is (quadnodes * auc_quadnodes * Npat) rows 
-    times_auc <- 
+    auc_quadtimes <- 
       lapply(times, function(x) unlist(
         lapply(x, function(y) 
           lapply(get_quadpoints(auc_quadnodes)$points, unstandardise_quadpoints, 0, y))))
+    auc_quadweights <- 
+      lapply(times, function(x) unlist(
+        lapply(x, function(y) 
+          lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y))))
     ids2 <- rep(id_list, each = auc_quadnodes)
     dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = times_auc)
     mod_auc <- use_function(newdata = dataQ_auc, ...)
-  } else mod_auc <- NULL
+  } else mod_auc <- auc_quadtimes <- auc_quadweights <- NULL
   
   # If association structure is based on interactions with data, then calculate 
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
@@ -2317,7 +2319,11 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   K_data <- sapply(xq_data, ncol)
   xmat_data <- do.call(cbind, xq_data)
   
-  nlist(times, mod_eta, mod_eps, mod_lag, mod_auc, xq_data, xmat_data, K_data)
+  ret <- nlist(times, mod_eta, mod_eps, mod_lag, mod_auc, 
+               xq_data, xmat_data, K_data)
+  
+  structure(ret, times = times, eps = eps, auc_quadnodes = auc_quadnodes,
+            auc_quadtimes = auc_quadtimes, auc_quadweights = auc_quadweights)
 }                              
 
 # Carry out a rolling merge
@@ -2535,17 +2541,15 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
 # @return A design matrix containing the association terms to be multiplied by
 #   the association paramters.
 make_assoc_terms <- function(parts, assoc, family, ...) {
-  M      <- length(parts)
-  times  <- attr(parts, "times")
-  eps    <- attr(parts, "eps")  
-  qnodes <- attr(parts, "auc_quadnodes")
-  # quadweights for auc assoc structure
-  qwts <- unlist(lapply(times, function(x) lapply(x, function(y) 
-    lapply(get_quadpoints(qnodes)$weights, unstandardise_quadweights, 0, y)))) 
-
+  M <- length(parts)
   a_X <- list()
   mark <- 1
   for (m in 1:M) {
+    times  <- attr(parts[[m]], "times")
+    eps    <- attr(parts[[m]], "eps")  
+    qnodes <- attr(parts[[m]], "auc_quadnodes")
+    qwts   <- attr(parts[[m]], "auc_quadweights")
+    
     if (!assoc["null",][[m]]) {
       invlink_m <- family[[m]]$linkinv    
       eta_m <- get_element(parts, m = m, "eta", ...)
@@ -2703,9 +2707,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       mark <- mark + 1                   
     }
   }
-  
-  a_X <- do.call("cbind", a_X)
-  if (nrow(a_X) == 1L) t(a_X) else a_X
+  return(do.call("cbind", a_X))
 }
 
 # Function to get linear predictor and other bits
@@ -2735,7 +2737,7 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
       b <- dots$b[[m]]
       if (is.null(beta) || is.null(b))
         stop("Bug found: beta and b must be provided to construct linpred.")
-      return(linear_predictor.default(beta, x) + as.matrix(b %*% Zt))
+      return(linear_predictor.default(beta, x) + as.vector(b %*% Zt))
     }
   } else if (which %in% c("xmat_data", "K_data", "b_mat")) {
     return(parts[[m]][[which]])

@@ -146,8 +146,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   if (is.stanjm(object)) {
     dots <- list(...)
     m <- dots[["m"]]
-    if (is.null(m))
-      stop("Argument 'm' must be provided for stanjm objects.")
+    if (is.null(m)) 
+      STOP_arg_required_for_stanjm(m)
   } else m <- NULL
   
   newdata <- validate_newdata(newdata)
