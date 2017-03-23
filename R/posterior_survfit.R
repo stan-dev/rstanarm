@@ -247,7 +247,7 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
-  
+ 
   # Construct prediction data
   # ndL: dataLong to be used in predictions
   # ndE: dataEvent to be used in predictions
@@ -350,6 +350,21 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     endtime[endtime > maxtime] <- maxtime # nothing beyond end of baseline hazard 
     time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
   } else time_seq <- list(times) # no extrapolation
+
+  # Get stanmat parameter matrix for specified number of draws
+  S <- posterior_sample_size(object)
+  if (is.null(draws)) 
+    draws <- S
+  if (draws > S) {
+    err <- paste0("'draws' should be <= posterior sample size (", S, ").")
+    stop(err)
+  }
+  stanmat <- as.matrix(object$stanfit)
+  some_draws <- isTRUE(draws < S)
+  if (some_draws) {
+    samp <- sample(S, draws)
+    stanmat <- stanmat[samp, , drop = FALSE]
+  }  
   
   # Obtain survival prob matrix at each increment of time_seq
   # NB: length(time_seq) == 1 if no extrapolation
@@ -376,7 +391,7 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     # matrix of survival probs at current increment  
     surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = t, 
                         quadpoints = quadpoints, quadweights = quadweights, 
-                        draws = draws)
+                        stanmat = stanmat)
     # standardised survival probs
     if (standardise) { 
       surv <- matrix(rowMeans(surv), ncol = 1)
@@ -406,7 +421,7 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
     # matrix of survival probs at last_time 
     cond_surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = last_time, 
                              quadpoints = quadpoints, quadweights = quadweights, 
-                             draws = draws)
+                             stanmat = stanmat)
     # conditional survival probs
     surv <- lapply(surv, function(x) {
       vec <- x / cond_surv
@@ -648,28 +663,14 @@ prepare_data_table <- function(data, id_var, time_var) {
 #   The list also includes elements $xmat_data and $K_data.
 # @param pp_dataEvent A list returned by a call to .pp_data_mer_X containing
 #   the design matrix for the event submodel evaluated at the quadpoints.
-# @param draws Integer specifying the number of draws
+# @param stanmat The stanfit matrix, already reduced to the desired number of 
+#   draws.
 # @return A matrix of survival probabilities at time t, with the S
 #   rows corresponding to different MCMC draws of the parameters 
 #   from the posterior, and each column corresponding to one of the Npat
 #   individuals in the new data
 pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints, 
-                        quadweights, draws = NULL) {
-
-  # Get stanmat for specified number of draws
-  S <- posterior_sample_size(object)
-  if (is.null(draws)) 
-    draws <- S
-  if (draws > S) {
-    err <- paste0("'draws' should be <= posterior sample size (", S, ").")
-    stop(err)
-  }
-  stanmat <- as.matrix(object$stanfit)
-  some_draws <- isTRUE(draws < S)
-  if (some_draws) {
-    samp <- sample(S, draws)
-    stanmat <- stanmat[samp, , drop = FALSE]
-  }
+                        quadweights, stanmat) {
 
   # Extract parameters for constructing linear predictor  
   M <- object$n_markers
@@ -685,10 +686,11 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints,
   assoc <- object$assoc
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   if (any(unlist(assoc[sel,]))) { # has association structure
-    if (any(unlist(assoc["shared_b|shared_coef",])))
+    sel_stop <- grep("shared_b|shared_coef", rownames(assoc))
+    if (any(unlist(assoc[sel_stop,])))
       stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
            "association structures.") # until make_assoc_terms can handle it
-    for (s in seq(draws)) {
+    for (s in seq(nrow(stanmat))) {
       beta_s <- lapply(y_beta, function(x) x[s,])
       b_s    <- lapply(y_b,    function(x) x[s,])
       a_Xs <- make_assoc_terms(parts = y_X, assoc = assoc, family = object$family, 
