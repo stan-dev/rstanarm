@@ -685,6 +685,9 @@ pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints,
   assoc <- object$assoc
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   if (any(unlist(assoc[sel,]))) { # has association structure
+    if (any(unlist(assoc["shared_b|shared_coef",])))
+      stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
+           "association structures.") # until make_assoc_terms can handle it
     for (s in seq(draws)) {
       beta_s <- lapply(y_beta, function(x) x[s,])
       b_s    <- lapply(y_b,    function(x) x[s,])
