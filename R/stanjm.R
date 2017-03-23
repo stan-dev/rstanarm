@@ -119,10 +119,11 @@ stanjm <- function(object) {
     prior.info        = object$prior.info,
     algorithm         = object$algorithm,
     runtime           = times,
-    glmod_stuff       = object$glmod_stuff,
-    coxmod_stuff      = object$coxmod_stuff,    
-    glmod             = object$glmod,
-    coxmod            = object$coxmod,
+    glmod_stuff       = object$y_mod_stuff,
+    coxmod_stuff      = object$e_mod_stuff,    
+    assocmod_stuff    = object$a_mod_stuff,    
+    glmod             = fetch(object$y_mod_stuff, "mod"),
+    coxmod            = object$e_mod_stuff$mod,
     stan_summary, stanfit
   )
   

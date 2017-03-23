@@ -1,6 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
-# Copyright (C) 2016 Monash University
+# Copyright (C) 2016 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -118,15 +118,15 @@
 #' @examples
 #' \donttest{
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # Obtain subject-specific predictions for all individuals 
 #'   # in the estimation dataset
-#'   pt1 <- posterior_traj(examplejm, interpolate = FALSE, extrapolate = FALSE)
+#'   pt1 <- posterior_traj(example_jm, interpolate = FALSE, extrapolate = FALSE)
 #'   head(pt1)
 #'   
 #'   # Obtain subject-specific predictions only for a few selected individuals
-#'   pt2 <- posterior_traj(examplejm, ids = c(1,3,8))
+#'   pt2 <- posterior_traj(example_jm, ids = c(1,3,8))
 #'   
 #'   # If we wanted to obtain subject-specific predictions in order to plot the 
 #'   # longitudinal trajectories, then we might want to ensure a full trajectory 
@@ -134,14 +134,14 @@
 #'   # generic plot function to plot the subject-specific predicted trajectories
 #'   # for the first three individuals. Interpolation and extrapolation is 
 #'   # carried out by default.
-#'   pt3 <- posterior_traj(examplejm)
+#'   pt3 <- posterior_traj(example_jm)
 #'   head(pt3) # predictions at additional time points compared with pt1 
 #'   plot(pt3, ids = 1:3)
 #'   
 #'   # If we wanted to extrapolate further in time, but decrease the number of 
 #'   # discrete time points at which we obtain predictions for each individual, 
 #'   # then we could specify a named list in the 'control' argument
-#'   pt4 <- posterior_traj(examplejm, control = list(ipoints = 10, epoints = 10, eprop = 0.5))
+#'   pt4 <- posterior_traj(example_jm, control = list(ipoints = 10, epoints = 10, eprop = 0.5))
 #'   
 #'   # Alternatively we may want to estimate the marginal longitudinal
 #'   # trajectory for a given set of covariates. To do this, we can pass
@@ -155,7 +155,7 @@
 #'   # Our marginal prediction will therefore capture the between-individual 
 #'   # variation associated with the random effects.)
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
-#'   pt5 <- posterior_traj(examplejm, newdata = nd)
+#'   pt5 <- posterior_traj(example_jm, newdata = nd)
 #'   head(pt5)  # note the greater width of the uncertainty interval compared 
 #'              # with the subject-specific predictions in pt1, pt2, etc
 #'   
@@ -176,7 +176,7 @@
 #'   # the fixed effect component of the model, we simply specify 're.form = NA'. 
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
-#'   pt6 <- posterior_traj(examplejm, newdata = nd, re.form = NA)
+#'   pt6 <- posterior_traj(example_jm, newdata = nd, re.form = NA)
 #'   head(pt6)  # note the much narrower ci, compared with pt5
 #' }
 #' 
@@ -186,7 +186,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            return_matrix = FALSE, ...) {
   validate_stanjm_object(object)
   M <- get_M(object)
-  m <- validate_positive_scalar(m, not_greater_than = M)
+  validate_positive_scalar(m, not_greater_than = M)
   if (missing(ids)) 
     ids <- NULL
   
@@ -213,9 +213,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   
   # User specified a subset of ids
   if (!is.null(ids)) {
-    sel <- which(!ids %in% data[[id_var]])
-    if (length(sel))
-      stop("The following 'ids' do not appear in the data: ", paste(ids[[sel]], collapse = ", "))
+    check_for_missing_ids(data, id_var, ids)
     data <- data[data[[id_var]] %in% ids, , drop = FALSE] 
     newX <- newX[newX[[id_var]] %in% ids, , drop = FALSE]     
   }
@@ -224,16 +222,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   id_list <- unique(data[[id_var]])
   
   # Issue warning if IDs in newdata match individuals in the estimation data
-  if (!is.null(newdata)) {
-    id_fit <- unique(model.frame(object)[[m]][[id_var]])
-    if (any(id_list %in% id_fit))
-      warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
-              "estimation dataset. Please be sure you want to obtain subject-",
-              "specific predictions using the estimated random effects for those ",
-              "individuals. If you instead meant to marginalise over the distribution ",
-              "of the random effects, then please make sure the ID values do not ",
-              "correspond to individuals in the estimation dataset.", immediate. = TRUE)
-  }  
+  if (!is.null(newdata))
+    check_for_estimation_ids(object, id_list, m = m)
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata
@@ -268,7 +258,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
   }
   
-  ytilde <- posterior_predict(object, newdata = newX, ...)
+  ytilde <- posterior_predict(object, newdata = newX, m = m, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde) # return S * N matrix, instead of data frame 
@@ -349,18 +339,18 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' @examples 
 #' 
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # For a subset of individuals in the estimation dataset we will
 #'   # obtain subject-specific predictions for the longitudinal submodel 
 #'   # at evenly spaced times between 0 and their event or censoring time.
-#'   pt1 <- posterior_traj(examplejm, ids = c(7,13,16), interpolate = TRUE)
+#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE)
 #'   plot(pt1)                  # credible interval for mean response
 #'   plot(pt1, limits = "pi")   # prediction interval for raw response
 #'   plot(pt1, limits = "none") # no uncertainty interval
 #'   
 #'   # We can also extrapolate the longitudinal trajectories.
-#'   pt2 <- posterior_traj(examplejm, ids = c(7,13,16), interpolate = TRUE,
+#'   pt2 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE,
 #'                            extrapolate = TRUE)
 #'   plot(pt2)
 #'   plot(pt2, vline = TRUE)    # add line indicating event or censoring time
@@ -514,4 +504,103 @@ set_geom_args <- function(defaults, ...) {
   return(defaults)
 }
 
+# Check whether individuals in the ids argument are present in the data
+#
+# @param data A data frame
+# @param id_var The name of the ID variable in data
+# @param ids A vector of ids
+check_for_missing_ids <- function(data, id_var, ids) {
+  if (!is.data.frame(data))
+    stop("'data' should be a data frame.")
+  if (!all(is.character(id_var), length(id_var == 1L)))
+    stop("'id_var' should be a variable name.")
+  if (!id_var %in% colnames(data))
+    stop(paste(substitute(deparse(id_var)), "not found in 'data'."))
+  sel <- which(!ids %in% data[[id_var]])
+  if (length(sel))
+    stop("The following 'ids' do not appear in the data: ", 
+         paste(ids[[sel]], collapse = ", "))
+}
 
+# Check whether individuals in the ids argument were used in the 
+# model estimation
+#
+# @param object A stanjm object
+# @param ids A vector of ids
+# @param m Integer specifying which submodel to get the estimation IDs from
+check_for_estimation_ids <- function(object, ids, m = 1) {
+  ids2 <- unique(model.frame(object, m = m)[[object$id_var]])
+  if (any(ids %in% ids2))
+    warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
+            "estimation dataset. Please be sure you want to obtain subject-",
+            "specific predictions using the estimated random effects for those ",
+            "individuals. If you instead meant to marginalise over the distribution ",
+            "of the random effects, then please make sure the ID values do not ",
+            "correspond to individuals in the estimation dataset.", immediate. = TRUE)
+}
+
+# Return a list with the control arguments for interpolation and/or
+# extrapolation in posterior_predict.stanjm and posterior_survfit.stanjm
+#
+# @param control A named list, being the user input to the control argument
+#   in the posterior_predict.stanjm or posterior_survfit.stanjm call
+# @param ok_control_args A character vector of allowed control arguments
+# @param standardise A logical, being the user input to the standardise
+#   argument in a posterior_survfit.stanjm call.
+# @return A named list
+get_extrapolation_control <- function(control = list(), 
+                                      ok_control_args = c("epoints", "edist", "eprop"), 
+                                      standardise = FALSE) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
+                   condition = TRUE, last_time = NULL)
+  if (!is.list(control)) {
+    stop("'control' should be a named list.")
+  } else if (!length(control)) {
+    control <- defaults[ok_control_args] 
+    if (("condition" %in% ok_control_args) && standardise) 
+      control$condition <- FALSE
+  } else {  # user specified control list
+    nms <- names(control)
+    if (!length(nms))
+      stop("'control' should be a named list.")
+    if (any(!nms %in% ok_control_args))
+      stop(paste0("'control' list can only contain the following named arguments: ",
+                  paste(ok_control_args, collapse = ", ")))
+    if (all(c("edist", "eprop") %in% nms))
+      stop("'control' list cannot include both 'edist' and 'eprop'.")        
+    if (("ipoints" %in% ok_control_args) && is.null(control$ipoints)) 
+      control$ipoints <- defaults$ipoints   
+    if (("epoints" %in% ok_control_args) && is.null(control$epoints)) 
+      control$epoints <- defaults$epoints  
+    if (is.null(control$edist) && is.null(control$eprop)) 
+      control$eprop <- defaults$eprop
+    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
+      control$condition <- if (!standardise) defaults$condition else FALSE
+    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
+      stop("'condition' cannot be set to TRUE if standardised survival ",
+           "probabilities are requested.")
+    }
+  }
+  return(control)
+}
+
+# Return an array or list with the time sequence used for posterior predictions
+#
+# @param increments An integer with the number of increments (time points) at
+#   which to predict the outcome for each individual
+# @param t0,t1 Numeric vectors giving the start and end times across which to
+#   generate prediction times
+# @param simplify Logical specifying whether to return each increment as a 
+#   column of an array (TRUE) or as an element of a list (FALSE) 
+get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
+  val <- sapply(0:(increments - 1), function(x, t0, t1) {
+    t0 + (t1 - t0) * (x / (increments - 1))
+  }, t0 = t0, t1 = t1, simplify = simplify)
+  if (simplify && is.vector(val)) {
+    # need to transform if there is only one individual
+    val <- t(val)
+    rownames(val) <- if (!is.null(names(t0))) names(t0) else 
+      if (!is.null(names(t1))) names(t1) else NULL
+  }
+  return(val)
+}
