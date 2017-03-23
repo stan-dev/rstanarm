@@ -143,7 +143,12 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     fun <- match.fun(fun)
 
   dots <- list(...)
-  m <- if (is.stanjm(object) && is.null(dots$m)) 1 else dots$m 
+  if (is.stanjm(object)) {
+    dots <- list(...)
+    m <- dots[["m"]]
+    if (is.null(m))
+      stop("Argument 'm' must be provided for stanjm objects.")
+  } else m <- NULL
   
   newdata <- validate_newdata(newdata)
   dat <-
@@ -151,7 +156,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
             newdata = newdata,
             re.form = re.form,
             offset = offset,
-            m = m,
             ...)
   if (is_scobit(object)) {
     data <- pp_eta(object, dat, NULL)

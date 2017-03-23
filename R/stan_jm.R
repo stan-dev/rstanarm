@@ -40,8 +40,8 @@
 #'   of the list providing the formula for one of the longitudinal submodels.
 #' @param dataLong A data frame containing the variables specified in
 #'   \code{formulaLong}. If fitting a multivariate joint model, then this can
-#'   be either a single data frame which contains the data/variables for all 
-#'   the longitudinal submodels, or it can be a list of data frames where each
+#'   be either a single data frame which contains the data for all 
+#'   longitudinal submodels, or it can be a list of data frames where each
 #'   element of the list provides the data for one of the longitudinal 
 #'   submodels.
 #' @param formulaEvent A two-sided formula object describing the event
@@ -265,7 +265,7 @@
 #'   time-to-event model using \code{\link[survival]{coxph}}. These time-varying
 #'   covariates should be exogenous in nature, otherwise they would perhaps 
 #'   be better specified as an additional outcome (i.e. by including them as an 
-#'   additional longitudinal outcome/submodel in the joint model). \cr
+#'   additional longitudinal outcome in the joint model). \cr
 #'   \cr
 #'   Bayesian estimation of the joint model is performed via MCMC. The Bayesian  
 #'   model includes independent priors on the 
@@ -373,9 +373,9 @@
 #' # Univariate joint model, with association structure based on the 
 #' # current value of the linear predictor
 #' f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
-#'               dataLong = pbcLong_subset,
+#'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'               dataEvent = pbcSurv_subset,
+#'               dataEvent = pbcSurv,
 #'               time_var = "year")
 #' summary(f1) 
 #'         
@@ -383,9 +383,9 @@
 #' # Univariate joint model, with association structure based on the 
 #' # current value of the linear predictor and shared random intercept
 #' f2 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
-#'               dataLong = pbcLong_subset,
+#'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'               dataEvent = pbcSurv_subset,
+#'               dataEvent = pbcSurv,
 #'               assoc = c("etavalue", "shared_b"),
 #'               time_var = "year")
 #' summary(f2)          
@@ -400,9 +400,9 @@
 #'         formulaLong = list(
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (1 + year | id)),
-#'         dataLong = pbcLong_subset,
+#'         dataLong = pbcLong,
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'         dataEvent = pbcSurv_subset,
+#'         dataEvent = pbcSurv,
 #'         assoc = list("etavalue", c("etavalue", "shared_b(1)")), 
 #'         time_var = "year")
 #' summary(mv1)
@@ -423,9 +423,9 @@
 #'         formulaLong = list(
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (1 + year | id)),
-#'         dataLong = pbcLong_subset,
+#'         dataLong = pbcLong,
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'         dataEvent = pbcSurv_subset,
+#'         dataEvent = pbcSurv,
 #'         assoc = list("etavalue", c("etavalue", "shared_b(1)")),
 #'         time_var = "year",
 #'         chains = 3, refresh = 25,
@@ -437,9 +437,9 @@
 #' # based on the lagged value of the linear predictor, where the lag
 #' # is 2 time units (i.e. 2 years in this example)
 #' f3 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
-#'               dataLong = pbcLong_subset,
+#'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'               dataEvent = pbcSurv_subset,
+#'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               assoc = "etalag(2)")
 #' summary(f3) 
@@ -450,13 +450,13 @@
 #' # structure based on the current value of the linear predictor from
 #' # the longitudinal submodel ("etavalue"), but we will also specify
 #' # that we want to interact this with the treatment covariate (trt) from
-#' # pbcLong_subset data frame so that we can estimate a different association 
+#' # pbcLong data frame so that we can estimate a different association 
 #' # parameter (i.e. estimated effect of log serum bilirubin on the log hazard 
 #' # of death) for each treatment group
 #' f4 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
-#'               dataLong = pbcLong_subset,
+#'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'               dataEvent = pbcSurv_subset,
+#'               dataEvent = pbcSurv,
 #'               time_var = "year", chains = 1,
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"))
 #' 
@@ -472,9 +472,9 @@
 #'         formulaLong = list(
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (1 + year | id)),
-#'         dataLong = pbcLong_subset,
+#'         dataLong = pbcLong,
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'         dataEvent = pbcSurv_subset,
+#'         dataEvent = pbcSurv,
 #'         time_var = "year", chains = 1,
 #'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"))
 #' }

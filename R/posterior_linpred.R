@@ -78,14 +78,15 @@ posterior_linpred.stanreg <-
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,
-                   offset = offset)
+                   offset = offset,
+                   ...)
     if (XZ) {
       XZ <- dat[["x"]]
       if (is.mer(object))
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
+    eta <- pp_eta(object, data = dat, draws = NULL, ...)[["eta"]]
     if (!transform)
       return(eta)
     

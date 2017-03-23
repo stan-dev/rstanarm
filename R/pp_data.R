@@ -21,11 +21,12 @@ pp_data <-
            newdata = NULL,
            re.form = NULL,
            offset = NULL,
+           m = NULL,
            ...) {
     validate_stanreg_object(object)
     if (is.mer(object)) {
       out <- .pp_data_mer(object, newdata = newdata,
-                          re.form = re.form, ...)
+                          re.form = re.form, m = m, ...)
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
@@ -108,7 +109,8 @@ pp_data <-
 }
 
 .pp_data_mer_z <- function(object, newdata, re.form = NULL,
-                           allow.new.levels = TRUE, na.action = na.pass, m = NULL) {
+                           allow.new.levels = TRUE, na.action = na.pass, 
+                           m = NULL, ...) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
   fmla0check <- (is(re.form, "formula") && 
                    length(re.form) == 2 && 

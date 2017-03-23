@@ -1,6 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
-# Copyright (C) 2016 Monash University
+# Copyright (C) 2016 Sam Brilleman
 # Copyright (C) 2016 Margarita Moreno-Betancur
 # 
 # This program is free software; you can redistribute it and/or

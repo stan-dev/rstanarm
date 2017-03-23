@@ -92,7 +92,7 @@
 #'   percentiles will be provided.
 #' @param times A numeric vector of length 1 or a character string. Specifies the  
 #'   times at which to obtain the estimated survival probabilities. 
-#'   If \code{newdata} is not provided, then the 
+#'   If \code{newdata} is \code{NULL}, then the 
 #'   \code{times} argument is optional; if it is not provided then \code{times} 
 #'   will default to the last known event or censoring time for each individual,
 #'   whereas if it is provided then it must be a numeric vector of length 1, and 
@@ -161,13 +161,13 @@
 #' 
 #' @seealso \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
 #'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
-#'   survival function, and \code{\link{posterior_predict}} for estimating the
+#'   survival function, and \code{\link{posterior_traj}} for estimating the
 #'   marginal or subject-specific longitudinal trajectories.
 #'   
 #' @examples
 #' 
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # Obtain subject-specific survival probabilities for a few
 #'   # selected individuals in the estimation dataset who were  
@@ -176,8 +176,8 @@
 #'   # survival probabilities, that is, conditional on having survived
 #'   # until the event or censoring time, and then by default will
 #'   # extrapolate the survival predictions forward from there.  
-#'   head(pbcSurv_subset[pbcSurv_subset$status == 0,])
-#'   ps1 <- posterior_survfit(examplejm, ids = c(7,13,16))
+#'   head(pbcSurv[pbcSurv$status == 0,])
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
 #'   head(ps1)
 #'   # We can plot the estimated survival probabilities using the
 #'   # associated plot function
@@ -193,8 +193,8 @@
 #'   # is to specify that we want the survival time estimated at time 0
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
-#'   ps2 <- posterior_survfit(examplejm, ids = c(7,13,16), times == 0,
-#'     extrapolate = TRUE, control = list(ext_distance = 5, condition = FALSE))
+#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times == 0,
+#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
 #'   ps2
 #'   
 #'   # Instead of estimating survival probabilities for a specific individual 
@@ -215,8 +215,8 @@
 #'   nd <- data.frame(id = c("new1", "new2"),
 #'                    sex = c("f", "f"), 
 #'                    trt = c(1, 0))
-#'   ps3 <- posterior_survfit(examplejm, newdata = nd, times = 0,
-#'     extrapolate = TRUE, control = list(ext_distance = 5, condition = FALSE))
+#'   ps3 <- posterior_survfit(example_jm, newdata = nd, times = 0,
+#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
 #'   ps3
 #'   
 #'   # We can then plot the estimated survival functions to compare
@@ -229,7 +229,7 @@
 #'   # for individuals in our estimation sample) then we can specify
 #'   # 'standardise = TRUE'. We can then plot the resulting standardised
 #'   # survival curve.
-#'   ps4 <- posterior_survfit(examplejm, standardise = TRUE, 
+#'   ps4 <- posterior_survfit(example_jm, standardise = TRUE, 
 #'                            times = 0, extrapolate = TRUE)
 #'   plot(ps4)                         
 #' 
@@ -482,16 +482,16 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
 #'   It can also be passed to the function \code{\link{plot_stack}}.
 #'   
 #' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack}},
-#'   \code{\link{posterior_predict}}, \code{\link{plot.predict.stanjm}}      
+#'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
 #' @examples 
 #' 
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # Obtain subject-specific conditional survival probabilities
 #'   # for all individuals in the estimation dataset.
-#'   ps1 <- posterior_survfit(examplejm, extrapolate = TRUE)
+#'   ps1 <- posterior_survfit(example_jm, extrapolate = TRUE)
 #'   
 #'   # We then plot the conditional survival probabilities for
 #'   # a subset of individuals
@@ -516,17 +516,16 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
 #'   # subject-specific survival functions, with plot(s) 
 #'   # of the estimated longitudinal trajectories for the
 #'   # same individuals
-#'   ps1 <- posterior_survfit(examplejm, ids = c(7,13,16))
-#'   pt1 <- posterior_predict(examplejm, , ids = c(7,13,16),
-#'                            interpolate = TRUE, extrapolate = TRUE)
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
+#'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,16))
 #'   plot_surv <- plot(ps1) 
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack(plot_traj, plot_surv)
 #'    
 #'   # Lastly, let us plot the standardised survival function
 #'   # based on all individuals in our estimation dataset
-#'   ps2 <- posterior_survfit(examplejm, standardise = TRUE, times = 0,
-#'                           control = list(ext_points = 20))
+#'   ps2 <- posterior_survfit(example_jm, standardise = TRUE, times = 0,
+#'                           control = list(epoints = 20))
 #'   plot(ps2)   
 #' 
 #'    

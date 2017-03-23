@@ -118,15 +118,15 @@
 #' @examples
 #' \donttest{
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # Obtain subject-specific predictions for all individuals 
 #'   # in the estimation dataset
-#'   pt1 <- posterior_traj(examplejm, interpolate = FALSE, extrapolate = FALSE)
+#'   pt1 <- posterior_traj(example_jm, interpolate = FALSE, extrapolate = FALSE)
 #'   head(pt1)
 #'   
 #'   # Obtain subject-specific predictions only for a few selected individuals
-#'   pt2 <- posterior_traj(examplejm, ids = c(1,3,8))
+#'   pt2 <- posterior_traj(example_jm, ids = c(1,3,8))
 #'   
 #'   # If we wanted to obtain subject-specific predictions in order to plot the 
 #'   # longitudinal trajectories, then we might want to ensure a full trajectory 
@@ -134,14 +134,14 @@
 #'   # generic plot function to plot the subject-specific predicted trajectories
 #'   # for the first three individuals. Interpolation and extrapolation is 
 #'   # carried out by default.
-#'   pt3 <- posterior_traj(examplejm)
+#'   pt3 <- posterior_traj(example_jm)
 #'   head(pt3) # predictions at additional time points compared with pt1 
 #'   plot(pt3, ids = 1:3)
 #'   
 #'   # If we wanted to extrapolate further in time, but decrease the number of 
 #'   # discrete time points at which we obtain predictions for each individual, 
 #'   # then we could specify a named list in the 'control' argument
-#'   pt4 <- posterior_traj(examplejm, control = list(ipoints = 10, epoints = 10, eprop = 0.5))
+#'   pt4 <- posterior_traj(example_jm, control = list(ipoints = 10, epoints = 10, eprop = 0.5))
 #'   
 #'   # Alternatively we may want to estimate the marginal longitudinal
 #'   # trajectory for a given set of covariates. To do this, we can pass
@@ -155,7 +155,7 @@
 #'   # Our marginal prediction will therefore capture the between-individual 
 #'   # variation associated with the random effects.)
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
-#'   pt5 <- posterior_traj(examplejm, newdata = nd)
+#'   pt5 <- posterior_traj(example_jm, newdata = nd)
 #'   head(pt5)  # note the greater width of the uncertainty interval compared 
 #'              # with the subject-specific predictions in pt1, pt2, etc
 #'   
@@ -176,7 +176,7 @@
 #'   # the fixed effect component of the model, we simply specify 're.form = NA'. 
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
-#'   pt6 <- posterior_traj(examplejm, newdata = nd, re.form = NA)
+#'   pt6 <- posterior_traj(example_jm, newdata = nd, re.form = NA)
 #'   head(pt6)  # note the much narrower ci, compared with pt5
 #' }
 #' 
@@ -339,18 +339,18 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' @examples 
 #' 
 #'   # Run example model if not already loaded
-#'   if (!exists("examplejm")) example(examplejm)
+#'   if (!exists("example_jm")) example(example_jm)
 #'   
 #'   # For a subset of individuals in the estimation dataset we will
 #'   # obtain subject-specific predictions for the longitudinal submodel 
 #'   # at evenly spaced times between 0 and their event or censoring time.
-#'   pt1 <- posterior_traj(examplejm, ids = c(7,13,16), interpolate = TRUE)
+#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE)
 #'   plot(pt1)                  # credible interval for mean response
 #'   plot(pt1, limits = "pi")   # prediction interval for raw response
 #'   plot(pt1, limits = "none") # no uncertainty interval
 #'   
 #'   # We can also extrapolate the longitudinal trajectories.
-#'   pt2 <- posterior_traj(examplejm, ids = c(7,13,16), interpolate = TRUE,
+#'   pt2 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE,
 #'                            extrapolate = TRUE)
 #'   plot(pt2)
 #'   plot(pt2, vline = TRUE)    # add line indicating event or censoring time
