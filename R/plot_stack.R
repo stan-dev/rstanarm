@@ -76,7 +76,7 @@ plot_stack <- function(yplot, survplot) {
   e_ids <- if (!"id" %in% colnames(e_layout)) NULL else e_layout[["id"]]
   
   lapply(y_ids, function(x, e_ids) {
-    if (!all(x %in% e_ids)) 
+    if (!all(sort(x) == sort(e_ids))) 
       stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
            "reestimate the plots using a common 'ids' argument.", call. = FALSE)
     }, e_ids = e_ids)
