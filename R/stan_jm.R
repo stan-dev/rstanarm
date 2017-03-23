@@ -2190,9 +2190,10 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
 #   matrices for eta, eps, lag, auc, etc.
 # @param ... Additional arguments passes to use_function
 # @return A named list
-make_assoc_parts <- function(newdata, assoc, id_var, time_var, id_list, times, 
-                             eps = 1E-5, auc_quadnodes = 15L, dataAssoc = NULL,
-                             use_function = handle_glFormula, ...) {
+make_assoc_parts <- function(newdata, assoc, id_var, time_var, 
+                             id_list, times, eps = 1E-5, auc_quadnodes = 15L, 
+                             dataAssoc = NULL, use_function = handle_glFormula, 
+                             ...) {
   dots <- list(...)
   m <- dots$m 
   if (is.null(m)) stop("Argument m must be specified in dots.")
@@ -2265,7 +2266,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, id_list, times,
                           y_mod_stuff <- dots$y_mod_stuff
                           oldcall <- getCall(y_mod_stuff$mod)
                           naa <- oldcall$na.action
-                          subset <- if (is.null(dataAssoc)) eval(oldcall$subset) else NULL               
+                          subset <- if (is.null(dataAssoc)) eval(oldcall$subset) else NULL 
                           df <- if (is.null(dataAssoc)) eval(oldcall$data) else dataAssoc
                           sel <- which(!vars %in% colnames(df))
                           if (length(sel))
@@ -2275,8 +2276,33 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, id_list, times,
                           mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
                                            na.action = naa), envir = environment(y_mod_stuff$mod))
                         } else { # call from posterior_survfit
-                          mf2 <- model.frame(ff, data = newdata)
-                        }
+                          object <- dots$object
+                          oldcall <- getCall(object$glmod_stuff[[m]]$mod)
+                          naa <- oldcall$na.action
+                          subset <- eval(oldcall$subset) 
+                          df <- 
+                            tryCatch(eval(oldcall$data), error = function(e) {
+                              tryCatch(if (is(object$dataLong, "list")) 
+                                object$dataLong[[m]] else object$dataLong, error = function(e) {
+                                  stop("Bug found: cannot find data frame to use for ",
+                                       "assoc data interactions.")
+                              })
+                            })
+                          mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
+                                           na.action = naa))                          
+                        }  
+             
+                        if (is.null(dataAssoc)) {
+                          df <- 
+                            tryCatch(eval(oldcall$data), error = function(e) {
+                              tryCatch(if (is(object$dataLong, "list")) 
+                                object$dataLong[[m]] else object$dataLong, error = function(e) {
+                                stop("Bug found: cannot find data frame to use for ",
+                                     "assoc data interactions, please report bug.")
+                              })
+                            })
+                        } else df <- dataAssoc
+
                         mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
                         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
                         mf2q <- rolling_merge(data = mf2, ids = id_list, times = times)
