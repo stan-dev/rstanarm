@@ -137,13 +137,13 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
   N <- 200
   dat <- data.frame(x = rnorm(N, 2, 1), z = rnorm(N, 2, 1))
   mu <- binomial(link = "logit")$linkinv(1 + 0.2*dat$x)
-  phi <- dat$z - min(dat$z) + 5.5
+  phi <- dat$z - min(dat$z) + 8
   dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
   for (i in 1:length(link1)) {
     SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[2],
                            prior = NULL, prior_intercept = NULL,
                            prior_z = NULL, prior_intercept_z = NULL,
-                           data = dat, algorithm = "optimizing", 
+                           data = dat, algorithm = "sampling", chains = 2, iter = 100,
                            seed = SEED))
     expect_stanreg(fit)
     val <- coef(fit)
