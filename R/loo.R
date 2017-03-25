@@ -126,7 +126,7 @@
 #' compare_models(kfold1, kfold2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
@@ -140,7 +140,8 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  if (is(x, "clogit")) loo_x <- loo.matrix(log_lik.stanreg(x), ...)
+  else loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
@@ -181,12 +182,13 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 # 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
+#' @importFrom loo waic waic.function waic.matrix
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
+  if (is(x, "clogit")) out <- waic.matrix(log_Lik(x))
+  else out <- waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
@@ -469,10 +471,20 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   return(loo_x)
 }
 
+log_sum_exp2 <- function(a,b) {
+  m <- max(a,b)
+  m + log(sum(exp(c(a,b) - m)))
+}
+
+# @param x numeric vector
+log_sum_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x)))
+}
+
 # log_mean_exp (just log_sum_exp(x) - log(length(x)))
 log_mean_exp <- function(x) {
-  max_x <- max(x)
-  max_x + log(sum(exp(x - max_x))) - log(length(x))
+  log_sum_exp(x) - log(length(x))
 }
 
 # Get correct data to use for kfold and reloo 

@@ -165,9 +165,21 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
       ppargs <- pp_args(object, data)
     }
   } else {
+    if (!is.null(newdata) && is(object, "clogit")) {
+      y <- eval(formula(object)[[2L]], newdata)
+      strata <- as.factor(eval(object$call$strata, newdata))
+      formals(object$family$linkinv)$g <- strata
+      formals(object$family$linkinv)$successes <- 
+        aggregate(y, by = list(strata), FUN = sum)$x
+    }
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   }
-  if (!is(object, "polr") && is.binomial(family(object)$family))
+  if (is(object, "clogit")) {
+    if (is.null(newdata)) ppargs$strata <- model.frame(object)[,"(weights)"]
+    else ppargs$strata <- eval(object$call$strata, newdata)
+    ppargs$strata <- as.factor(ppargs$strata)
+  }
+  else if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
 
   ppfun <- pp_fun(object)
@@ -185,7 +197,9 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object) {
-  suffix <- if (is(object, "polr")) "polr" else family(object)$family
+  suffix <- if (is(object, "polr")) "polr" else 
+            if (is(object, "clogit")) "clogit" else 
+            family(object)$family
   get(paste0(".pp_", suffix), mode = "function")
 }
 
@@ -197,6 +211,11 @@ pp_fun <- function(object) {
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
+  }))
+}
+.pp_clogit <- function(mu, strata) {
+  t(sapply(1:nrow(mu), function(s) {
+    unlist(by(mu[s,], INDICES = list(strata), FUN = rmultinom, n = 1, size = 1))
   }))
 }
 .pp_beta <- function(mu, phi) {
@@ -247,7 +266,7 @@ pp_fun <- function(object) {
   } else {
     t(sapply(1:NROW(eta), FUN = function(s) {
       tmp <- matrix(zeta[s, ], n, q, byrow = TRUE) - eta[s, ]
-      cumpr <- matrix(linkinv(tmp), , q)
+      cumpr <- matrix(linkinv(tmp), ncol = q)
       fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
       apply(fitted, 1, function(p) which(rmultinom(1, 1, p) == 1))
     }))
@@ -272,6 +291,7 @@ pp_args <- function(object, data) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
+  else if (is(object, "clogit")) return(list(mu = inverse_link(eta)))
 
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family
@@ -303,7 +323,7 @@ pp_args <- function(object, data) {
 # @param object stanreg object
 # @param data output from pp_data()
 # @param draws number of draws
-# @return linear predictor "eta" and matrix of posterior draws stanmat"
+# @return linear predictor "eta" and matrix of posterior draws "stanmat"
 pp_eta <- function(object, data, draws = NULL) {
   x <- data$x
   S <- posterior_sample_size(object)

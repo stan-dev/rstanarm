@@ -15,6 +15,10 @@ data {
   matrix[N[1],K] X0[dense_X];   // centered (by xbar) predictor matrix | y = 0
   matrix[N[2],K] X1[dense_X];   // centered (by xbar) predictor matrix | y = 1
   
+  int<lower=0, upper=1> clogit; // 1 iff the number of successes is fixed in each stratum
+  int<lower=0> J; // number of strata (possibly zero)
+  int<lower=1,upper=J> strata[clogit == 1 ? N[1] + N[2] : 0];
+
   // stuff for the sparse case
   int<lower=0> nnz_X0;                       // number of non-zero elements in the implicit X0 matrix
   vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
@@ -57,7 +61,17 @@ transformed data {
   real aux = not_a_number();
   int<lower=1> V0[special_case ? t : 0,N[1]] = make_V(N[1], special_case ? t : 0, v0);
   int<lower=1> V1[special_case ? t : 0,N[2]] = make_V(N[2], special_case ? t : 0, v1);
+  int<lower=0> successes[clogit ? J : 0];
+  int<lower=0> failures[clogit ? J : 0];
+  int<lower=0> observations[clogit ? J : 0];
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
+  for (j in 1:J) {
+    successes[j] = 0;
+    failures[j] = 0;
+  }
+  if (J > 0) for (i in 1:N[2]) successes[strata[i]] = successes[strata[i]] + 1;
+  if (J > 0) for (i in (N[2] + 1):NN) failures[strata[i]] =  failures[strata[i]] + 1;
+  for (j in 1:J) observations[j] = failures[j] + successes[j];
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
@@ -91,16 +105,17 @@ model {
       eta1 = gamma[1] + eta1;
     }
     else {
-      real shift;
-      shift = fmax(max(eta0), max(eta1));
+      real shift = fmax(max(eta0), max(eta1));
       eta0 = gamma[1] + eta0 - shift;
       eta1 = gamma[1] + eta1 - shift;
     }
   }
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    real dummy;  // irrelevant but useful for testing
-    dummy = ll_bern_lp(eta0, eta1, link, N);
+  // Log-likelihood
+  if (clogit && prior_PD == 0) { 
+    real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
+  }
+  else if (has_weights == 0 && prior_PD == 0) {
+    real dummy = ll_bern_lp(eta0, eta1, link, N);
   }
   else if (prior_PD == 0) {  // weighted log-likelihoods
     target += dot_product(weights0, pw_bern(0, eta0, link));
@@ -119,8 +134,6 @@ generated quantities {
     else alpha[1] = gamma[1];
   }
   {
-    vector[N[1]] pi0;
-    vector[N[2]] pi1;
     #include "make_eta_bern.stan" // defines eta0, eta1
     if (has_intercept == 1) {
       if (link != 4) {
@@ -135,10 +148,13 @@ generated quantities {
         alpha[1] = alpha[1] - shift;
       }
     }
-    pi0 = linkinv_bern(eta0, link);
-    pi1 = linkinv_bern(eta1, link);
-    for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
-    for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
+    if (clogit) for (j in 1:J) mean_PPD = mean_PPD + successes[j]; // fixed by design
+    else {
+      vector[N[1]] pi0 = linkinv_bern(eta0, link);
+      vector[N[2]] pi1 = linkinv_bern(eta1, link);
+      for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
+      for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
+    }
     mean_PPD = mean_PPD / NN;
   }
 }

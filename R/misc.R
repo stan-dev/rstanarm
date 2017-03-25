@@ -106,6 +106,7 @@ validate_stanreg_object <- function(x, call. = FALSE) {
 #
 # @param x A character vector (probably x = family(fit)$family)
 is.binomial <- function(x) x == "binomial"
+is.clogit <- function(x) x == "clogit"
 is.gaussian <- function(x) x == "gaussian"
 is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"

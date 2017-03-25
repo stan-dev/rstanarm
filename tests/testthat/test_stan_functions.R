@@ -456,3 +456,18 @@ test_that("pw_beta and ll_beta_lp return expected results", {
     expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
   }
 })
+
+context("clogit")
+test_that("ll_clogit_lp (which calls log_clogit_denom) returns the expected results", {
+  data(infert)
+  infert <- infert[order(infert$stratum, !infert$case),]
+  betas <- c(spontaneous = 1.98587551667772, induced = 1.40901163187514)
+  X <- model.matrix(case ~ spontaneous + induced - 1, data = infert)
+  eta <- c(X %*% betas)
+  y <- infert$case == 1
+  s <- aggregate(y, by = list(infert$stratum), FUN = sum)$x
+  obs <- aggregate(y, by = list(infert$stratum), FUN = length)$x
+  ll <- ll_clogit_lp(eta0 = eta[!y], eta1 = eta[y], 
+                     successes = s, failures = obs - s, observations = obs)
+  expect_equal(-64.202236924431, ll)
+})
