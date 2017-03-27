@@ -113,6 +113,18 @@ is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 is.beta <- function(x) x == "beta"
 
+# test if a stanreg object has class polr 
+is_polr <- function(object) {
+  inherits(object, "polr")
+}
+
+# test if a stanreg object is a scobit model
+is_scobit <- function(object) {
+  validate_stanreg_object(object)
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
 # Test for a given estimation method
 #
 # @param x A stanreg object.
@@ -163,11 +175,13 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
-# Message to issue when mean-field selected but 'QR=FALSE'. 
-msg_meanfieldQR <- function() {
-  message("Setting 'QR' to TRUE can often be helpful when ", 
-          "using the 'meanfield' algorithm.",
-          "\nSee the documentation for the 'QR' argument.")
+# Message to issue when fitting model with ADVI but 'QR=FALSE'. 
+recommend_QR_for_vb <- function() {
+  message(
+    "Setting 'QR' to TRUE can often be helpful when using ", 
+    "one of the variational inference algorithms. ", 
+    "See the documentation for the 'QR' argument."
+  )
 }
 
 # Issue warning if high rhat values
@@ -582,16 +596,10 @@ polr_linkinv <- function(x) {
 # @param stanfit A stanfit object created using rstan::sampling or rstan::vb
 # @return A matrix of summary stats
 make_stan_summary <- function(stanfit) {
-  levs <- c(0.5, 0.8, 0.95, 0.99)
+  levs <- c(0.5, 0.8, 0.95)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
-}
-
-is_scobit <- function(object) {
-  validate_stanreg_object(object)
-  if (!is(object, "polr")) return(FALSE)
-  return("alpha" %in% rownames(object$stan_summary))
 }
 
 check_reTrms <- function(reTrms) {

@@ -23,11 +23,11 @@
 #' carried out using the posterior predictive distribution (i.e., using 
 #' \code{\link{posterior_predict}}).
 #'
-#' @keywords internal
+#' @aliases posterior_linpred
 #' @export
+#' 
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @template args-dots-ignored
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the
 #'   untransformed linear predictor is returned.
@@ -37,9 +37,9 @@
 #'   terms) constructed from \code{newdata} is returned. The default is 
 #'   \code{FALSE}.
 #'   
-#' @return The default is to return a \code{draws} by \code{nrow(newdata)} 
-#'   matrix of simulations from the posterior distribution of the (possibly 
-#'   transformed) linear predictor. The exception is if the argument \code{XZ} 
+#' @return The default is to return a \code{draws} by \code{nrow(newdata)}
+#'   matrix of simulations from the posterior distribution of the (possibly
+#'   transformed) linear predictor. The exception is if the argument \code{XZ}
 #'   is set to \code{TRUE} (see the \code{XZ} argument description above).
 #'   
 #' @seealso \code{\link{posterior_predict}} to draw from the posterior 
@@ -51,18 +51,16 @@
 #' 
 #' # linear predictor on log-odds scale
 #' linpred <- posterior_linpred(example_model)
+#' colMeans(linpred)
+#' 
 #' # probabilities
 #' probs <- posterior_linpred(example_model, transform = TRUE)
-#'
+#' colMeans(probs)
+#' 
 #' # not conditioning on any group-level parameters
 #' probs2 <- posterior_linpred(example_model, transform = TRUE, re.form = NA)
-#'
-posterior_linpred <- function(object, ...) {
-  UseMethod("posterior_linpred")
-}
-
-#' @rdname posterior_linpred
-#' @export 
+#' apply(probs2, 2, median)
+#' 
 posterior_linpred.stanreg <-
   function(object,
            transform = FALSE,

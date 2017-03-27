@@ -55,7 +55,13 @@
 #'   the exponent applied to the probability of success when there are only
 #'   two outcome categories. If \code{NULL}, which is the default, then the
 #'   exponent is taken to be fixed at \eqn{1}.
-#'
+#' @param do_residuals A logical scalar indicating whether or not to 
+#'   automatically calculate fit residuals after sampling completes. Defaults to
+#'   \code{TRUE} if and only if \code{algorithm="sampling"}. Setting
+#'   \code{do_residuals=FALSE} is only useful in the somewhat rare case that
+#'   \code{stan_polr} appears to finish sampling but hangs instead of returning
+#'   the fitted model object.
+#'   
 #' @details The \code{stan_polr} function is similar in syntax to
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood
 #'   estimation of a proportional odds model, Bayesian estimation is performed
@@ -128,17 +134,21 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       prior_counts = dirichlet(1), shape = NULL, rate = NULL,
                       prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = NULL) {
+                      adapt_delta = NULL,
+                      do_residuals = NULL) {
 
   data <- validate_data(data)
   algorithm <- match.arg(algorithm)
+  if (is.null(do_residuals)) 
+    do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data)))
     m$data <- as.data.frame(data)
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
-    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
+    m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m <- eval.parent(m)
   m <- check_constant_vars(m)
@@ -176,7 +186,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                            prior = prior, prior_counts = prior_counts,
                            shape = shape, rate = rate,
                            prior_PD = prior_PD, algorithm = algorithm,
-                           adapt_delta = adapt_delta, ...)
+                           adapt_delta = adapt_delta, do_residuals=do_residuals, ...)
 
   inverse_link <- linkinv(method)
 
@@ -189,22 +199,14 @@ stan_polr <- function(formula, data, weights, ..., subset,
                  x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]),
                  data, call, terms = Terms, model = m,
                  algorithm, na.action = attr(m, "na.action"),
-                 contrasts = attr(x, "contrasts"))
+                 contrasts = attr(x, "contrasts"), 
+                 modeling_function = "stan_polr")
     out <- stanreg(fit)
     if (!model)
       out$model <- NULL
-
-    means <- rstan::get_posterior_mean(stanfit)
-    residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
-    if (length(residuals))
-      names(residuals) <- names(eta) <- names(mu) <- rownames(x)
-
-    levs <- c(0.5, 0.8, 0.95, 0.99)
-    qq <- (1 - levs) / 2
-    probs <- sort(c(0.5, qq, 1 - qq))
-    stan_summary <- rstan::summary(stanfit, probs = probs, digits = 10)$summary
     if (algorithm == "sampling")
-      check_rhats(stan_summary[, "Rhat"])
+      check_rhats(out$stan_summary[, "Rhat"])
+    
     if (is.null(shape) && is.null(rate)) # not a scobit model
       return(out)
 
@@ -225,9 +227,12 @@ stan_polr <- function(formula, data, weights, ..., subset,
   means <- rstan::get_posterior_mean(stanfit)
   residuals <- means[grep("^residuals", rownames(means)), ncol(means)]
   names(eta) <- names(mu) <- rownames(x)
-  if (!prior_PD)
+  if (!prior_PD) {
+    if (!do_residuals) {
+      residuals <- rep(NA, times = n)
+    }
     names(residuals) <- rownames(x)
-
+  }
   stan_summary <- make_stan_summary(stanfit)
   if (algorithm == "sampling")
     check_rhats(stan_summary[, "Rhat"])
@@ -240,7 +245,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
-               rstan_version = utils::packageVersion("rstan"))
+               rstan_version = utils::packageVersion("rstan"), 
+               modeling_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }
 

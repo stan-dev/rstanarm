@@ -406,6 +406,11 @@ test_that("kfold_and_reloo_data works", {
   y <- rnorm(40)
   SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
   expect_equivalent(f(fit), model.frame(fit))
+  
+  # if 'subset' arg specified when fitting the model
+  SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, 
+                      chains = CHAINS, refresh = REFRESH))
+  expect_equivalent(f(fit2), model.frame(fit2))
 })
 
 test_that(".weighted works", {

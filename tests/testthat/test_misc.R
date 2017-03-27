@@ -489,3 +489,11 @@ test_that("validate_newdata works", {
   expect_error(validate_newdata(nd2), "NAs are not allowed")
   expect_error(validate_newdata(1:10, "must be a data frame"))
 })
+
+
+test_that("recommend_QR_for_vb produces the right message", {
+  expect_output(
+    recommend_QR_for_vb(), 
+    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+  )
+})

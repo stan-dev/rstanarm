@@ -206,7 +206,7 @@ pp_check.stanreg <-
 
 # check if binomial
 is_binomial_ppc <- function(object) {
-  if (is(object, "polr") && !is_scobit(object)) {
+  if (is_polr(object) && !is_scobit(object)) {
     FALSE
   } else {
     is.binomial(family(object)$family)
@@ -227,7 +227,7 @@ is_binomial_ppc <- function(object) {
       yrep <- posterior_predict(object, draws = nreps, seed = seed)
     }
     
-    if (is_binomial_ppc(object)) {
+    if (is_binomial_ppc(object)) { # includes stan_polr's scobit models
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L] / trials
@@ -235,14 +235,14 @@ is_binomial_ppc <- function(object) {
           yrep <- sweep(yrep, 2L, trials, "/")
       } else if (is.factor(y))
         y <- fac2bin(y)
-    }
-    if (is(object, "polr")) {
+    } else if (is_polr(object)) { # excluding scobit
       y <- as.integer(y)
-      yrep <- apply(yrep, 2L, function(x) as.integer(as.factor(x)))
+      yrep <- polr_yrep_to_numeric(yrep)
     }
     
     nlist(y, yrep)
   }
+
 
 # prepare 'group' and 'x' variable for certain plots
 .ppc_xvar <- .ppc_groupvar <- function(object, var = NULL) {
@@ -378,6 +378,15 @@ is_binomial_ppc <- function(object) {
   if (!is.null(nreps))
     warning("'nreps' is ignored for this PPC", call. = FALSE)
   return(NULL)
+}
+
+
+# convert a character matrix (returned by posterior_predict for ordinal models) to a 
+# numeric matrix
+# 
+# @param yrep character matrix
+polr_yrep_to_numeric <- function(yrep) {
+  apply(yrep, 2L, function(x) as.integer(as.factor(x)))
 }
 
 
