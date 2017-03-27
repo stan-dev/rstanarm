@@ -10,9 +10,9 @@
 #' @template args-stanreg-object
 #' @param lw An optional matrix of (smoothed) log-weights. If \code{lw} is 
 #'   missing then \code{\link[loo]{psislw}} is executed internally, which may be
-#'   time consuming for large amounts of data.
-#' @param ... Optional arguments passed to \code{\link[loo]{psislw}} if 
-#'   \code{lw} is not specified.
+#'   time consuming for models fit to very large datasets.
+#' @param ... Optional arguments passed to \code{\link[loo]{psislw}}. If 
+#'   \code{lw} is specified these arguments are ignored.
 #' @inheritParams loo::E_loo
 #'   
 #' @return \code{loo_predict} and \code{loo_linpred} return a vector with one 
@@ -41,12 +41,17 @@
 #' fit <- stan_glm(weight ~ group, data = d)
 #' head(loo_predictive_interval(fit, prob = 0.8))
 #' 
+#' # optionally, log-weights can be pre-computed and reused
+#' psis <- loo::psislw(-log_lik(fit), cores = 2)
+#' loo_predictive_interval(fit, prob = 0.8, lw = psis$lw_smooth)
+#' loo_predict(fit, type = "var", lw = psis$lw_smooth)
+#' 
 loo_predict.stanreg <-
   function(object, 
-           lw, 
            type = c("mean", "var", "quantile"), 
            probs = 0.5,
-           ...) {
+           ...,
+           lw) {
     
     type <- match.arg(type)
     lwts <- loo_weights(object, lw, log = TRUE, ...)
@@ -68,15 +73,16 @@ loo_predict.stanreg <-
 #'    
 loo_linpred.stanreg <-
   function(object,
-           lw,
            type = c("mean", "var", "quantile"),
            probs = 0.5,
            transform = FALSE,
-           ...) {
+           ..., 
+           lw) {
     
     type <- match.arg(type)
     lwts <- loo_weights(object, lw, log = TRUE, ...)
     linpreds <- posterior_linpred(object, transform = transform)
+    
     loo::E_loo(
       x = linpreds,
       lw = lwts,
@@ -88,7 +94,7 @@ loo_linpred.stanreg <-
 #' @rdname loo_predict.stanreg
 #' @export
 #' 
-loo_pit.stanreg <- function(object, lw, ...) {
+loo_pit.stanreg <- function(object, ..., lw) {
   lw <- loo_weights(object, lw, log = TRUE, ...)
   yrep <- posterior_predict(object)
   y <- get_y(object)
@@ -98,6 +104,7 @@ loo_pit.stanreg <- function(object, lw, ...) {
   } else if (is_binomial_ppc(object) && NCOL(y) == 2) {
     y <- y[, 1]
   }
+  
   rstantools::loo_pit(object = yrep, y = y, lw = lw)
 }
 
@@ -107,12 +114,17 @@ loo_pit.stanreg <- function(object, lw, ...) {
 #' @param prob For \code{loo_predictive_interval}, a scalar in \eqn{(0,1)}
 #'   indicating the desired probability mass to include in the intervals. The
 #'   default is \code{prob=0.9} (\eqn{90}\% intervals).
-loo_predictive_interval.stanreg <- function(object, lw, prob = 0.9, ...) {
+loo_predictive_interval.stanreg <- function(object, prob = 0.9, ..., lw) {
   stopifnot(length(prob) == 1)
   alpha <- (1 - prob) / 2
   probs <- c(alpha, 1 - alpha)
   labs <- paste0(100 * probs, "%")
-  intervals <- loo_predict.stanreg(object, lw, type = "quantile", probs)
+  intervals <-
+    loo_predict.stanreg(object,
+                        type = "quantile",
+                        probs = probs,
+                        lw = lw, 
+                        ...)
   rownames(intervals) <- labs
   t(intervals)
 }
@@ -126,7 +138,7 @@ loo_weights <- function(object, lw, log = FALSE, ...) {
   if (!missing(lw)) {
     stopifnot(is.matrix(lw))
   } else {
-    message("'lw' argument not specified. Running PSIS to compute weights...")
+    message("Running PSIS to compute weights...")
     psis <- loo::psislw(llfun = ll_fun(object), llargs = ll_args(object), ...)
     lw <- psis[["lw_smooth"]]
   }
