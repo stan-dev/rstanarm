@@ -18,6 +18,10 @@
 # tests can be run using devtools::test() or manually by loading testthat
 # package and then running the code below possibly with options(mc.cores = 4).
 
+
+context("pp_check")
+
+
 library(rstanarm)
 SEED <- 123
 set.seed(SEED)
@@ -36,32 +40,10 @@ expect_gg <- function(x, info = NULL, label = NULL) {
 }
 
 
-context("pp_check")
-
-
-# test deprecated stuff -----------------------------------------------
-test_that("pp_check with deprecated 'check' arg works", {
-  expect_warning(p1 <- pp_check(fit, check = "dist"), 
-                 "Argument 'check' is deprecated")
-  expect_warning(p2 <- pp_check(fit2, check = "dist", overlay = FALSE))
-  expect_warning(p3 <- pp_check(fit, check = "resid"))
-  expect_warning(p4 <- pp_check(fit2, check = "resid", binwidth = .5))
-  expect_warning(p5 <- pp_check(fit, check = "scatter"))
-  expect_warning(p6 <- pp_check(fit2, check = "scatter"))
-  expect_gg(p1)
-  expect_gg(p2)
-  expect_gg(p3)
-  expect_gg(p4)
-  expect_gg(p5)
-  expect_gg(p6)
-})
-
-
-# test new pp_check.stanreg  ----------------------------------------------
-patt <- "rootogram|_bars_|vs_x|grouped$"
+patt <- "rootogram|_bars|vs_x|grouped$"
 ppc_funs_not_grouped <- bayesplot::available_ppc(patt, invert = TRUE)
-ppc_funs_grouped <- bayesplot::available_ppc(patt)
-ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars_")
+ppc_funs_grouped <- bayesplot::available_ppc("vs_x|grouped")
+ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars")
 
 
 test_that("pp_check.stanreg creates ggplot object", {
@@ -72,14 +54,30 @@ test_that("pp_check.stanreg creates ggplot object", {
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
-  for (f in ppc_funs_grouped) for (j in 1:2) {
+  for (f in setdiff(ppc_funs_grouped, ppc_funs_discrete)) for (j in 1:2) {
     expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
               info = f)
   }
 })
 
 test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes", {
-  # FIXME test ppc_rootogram with poisson and ppc_bars(_grouped) with stan_polr
+  d <- data.frame(
+    counts = c(18,17,15,20,10,20,25,13,12),
+    outcome = gl(3,1,9),
+    treatment = gl(3,3)
+  )
+  SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d, 
+                   family = poisson(link="log"),
+                   iter = ITER, chains = CHAINS,
+                   seed = SEED, refresh = REFRESH))
+  expect_gg(pp_check(fit3, plotfun = "rootogram"))
+  
+  SW(fit4 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+                       prior = R2(0.2, "mean"), init_r = 0.1, 
+                       iter = ITER, chains = CHAINS,
+                       seed = SEED, refresh = REFRESH))
+  expect_gg(pp_check(fit4, plotfun = "bars"))
+  expect_gg(pp_check(fit4, plotfun = "bars_grouped", group = "agegp"))
 })
 
 
@@ -101,7 +99,7 @@ test_that("pp_check binned residual plot works for factors", {
 
 
 # test errors --------------------------------------------------------------
-test_that("pp_check throws error if 'test' arg is bad", {
+test_that("pp_check throws error if 'stat' arg is bad", {
   expect_error(pp_check(fit, plotfun = "stat", stat = "10982pqmeaw"),
                regexp = "not found")
 })
