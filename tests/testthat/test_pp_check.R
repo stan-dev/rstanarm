@@ -58,9 +58,11 @@ test_that("pp_check with deprecated 'check' arg works", {
 
 
 # test new pp_check.stanreg  ----------------------------------------------
-all_ppc_funs <- grep("^ppc_", getNamespaceExports("bayesplot"), value = TRUE)
-ppc_funs_not_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE, invert = TRUE)
-ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
+patt <- "rootogram|_bars_|vs_x|grouped$"
+ppc_funs_not_grouped <- bayesplot::available_ppc(patt, invert = TRUE)
+ppc_funs_grouped <- bayesplot::available_ppc(patt)
+ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars_")
+
 
 test_that("pp_check.stanreg creates ggplot object", {
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
@@ -74,6 +76,10 @@ test_that("pp_check.stanreg creates ggplot object for grouped functions", {
     expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
               info = f)
   }
+})
+
+test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes", {
+  # FIXME test ppc_rootogram with poisson and ppc_bars(_grouped) with stan_polr
 })
 
 
