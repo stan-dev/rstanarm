@@ -29,7 +29,7 @@
 #' @import Rcpp
 #' @import bayesplot
 #' @import rstantools
-#' @export log_lik posterior_predict posterior_interval predictive_interval predictive_error prior_summary
+#' @export log_lik posterior_linpred posterior_predict posterior_interval predictive_interval predictive_error prior_summary
 #' @export loo waic
 #' @export launch_shinystan
 #' 
@@ -39,12 +39,12 @@
 #'    \emph{Stan Development Team}
 #' }
 #' 
-#' An appendage to the \pkg{rstan} package that enables some of the most common
-#' applied regression models to be estimated using Markov Chain Monte Carlo,
-#' variational approximations to the posterior distribution, or optimization.
-#' The \pkg{rstanarm} package allows these models to be specified using the
-#' customary R modeling syntax (e.g., like that of \code{\link[stats]{glm}} with
-#' a \code{formula} and a \code{data.frame}).
+#' The \pkg{rstanarm} package is an appendage to the \pkg{rstan} package that
+#' enables many of the most common applied regression models to be estimated
+#' using Markov Chain Monte Carlo, variational approximations to the posterior
+#' distribution, or optimization. The \pkg{rstanarm} package allows these models
+#' to be specified using the customary R modeling syntax (e.g., like that of
+#' \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
 #' 
 #' The set of models supported by \pkg{rstanarm} is large (and will continue to
 #' grow), but also limited enough so that it is possible to integrate them 

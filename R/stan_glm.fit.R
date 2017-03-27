@@ -484,8 +484,8 @@ stan_glm.fit <- function(x, y,
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, ...)
-      if (algorithm == "meanfield" && !QR) 
-        msg_meanfieldQR()
+      if (!QR) 
+        recommend_QR_for_vb()
     }
     check_stanfit(stanfit)
     if (QR) {

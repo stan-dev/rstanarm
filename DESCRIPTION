@@ -17,9 +17,10 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Estimates pre-compiled regression models using the 'rstan' package, which provides
-    the R interface to the Stan C++ library for Bayesian estimation. Users specify models via the
-    customary R syntax with a formula and data.frame plus some additional arguments for priors.
+Description: Estimates pre-compiled regression models using the 'rstan' package,
+    which provides the R interface to the Stan C++ library for Bayesian estimation.
+    Users specify models via the customary R syntax with a formula and data.frame
+    plus some additional arguments for priors.
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
@@ -33,7 +34,7 @@ Imports:
     Matrix,
     nlme (>= 3.1-124),
     rstan (>= 2.14.1),
-    rstantools (>= 1.1.0),
+    rstantools (>= 1.2.0),
     shinystan (>= 2.2.1),
     stats,
     utils
@@ -57,4 +58,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

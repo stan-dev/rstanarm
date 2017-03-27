@@ -118,6 +118,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
+  validate_data(data)
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
@@ -144,7 +145,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                algorithm, call, terms = mt,
                model = if (model) modelframe else NULL,
                na.action = attr(modelframe, "na.action"),
-               contrasts = attr(X, "contrasts"))
+               contrasts = attr(X, "contrasts"), 
+               modeling_function = "stan_lm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 
