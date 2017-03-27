@@ -3,8 +3,9 @@ sudo: false
 r: devel
 cache: packages
 
-r_build_args: --no-build-vignettes
-r_check_args: --no-build-vignettes
+latex: false
+r_build_args: '--no-build-vignettes'
+r_check_args: '--ignore-vignettes --no-examples'
 
 r_github_packages:
   - jimhester/covr
@@ -25,7 +26,7 @@ before_install:
 script: 
   - |
     travis_wait R CMD build .
-    travis_wait 60 R CMD check rstanarm*tar.gz
+    travis_wait 40 R CMD check rstanarm*tar.gz
 
 after_script:
   - tar -ztvf rstanarm_*.tar.gz
