@@ -291,3 +291,13 @@ STOP_arg_required_for_stanjm <- function(arg) {
   nm <- deparse(substitute(arg))
   stop(paste0("Argument '", nm, "' required for stanjm objects."))
 }
+
+# Error message when a function is not yet implemented for stanjm objects
+#
+# @param what A character string
+STOP_if_stanjm <- function(what) {
+  msg <- "not yet implemented for stanjm objects."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}

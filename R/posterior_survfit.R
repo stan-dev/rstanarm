@@ -234,9 +234,9 @@
 #'   plot(ps4)                         
 #' 
 #'  
-posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE, 
-                              control = list(), prob = 0.95, ids,
-                              times = NULL, standardise = FALSE, 
+posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
+                              extrapolate = TRUE, control = list(), prob = 0.95, 
+                              ids, times = NULL, standardise = FALSE, 
                               draws = NULL, seed = NULL, ...) {
   
   validate_stanjm_object(object)
@@ -257,18 +257,26 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
   # Construct prediction data
   # ndL: dataLong to be used in predictions
   # ndE: dataEvent to be used in predictions
-  newdata <- validate_newdata(newdata)
-  if (is.null(newdata)) { # user did not specify newdata
+  check1 <- (is.null(newdataLong) && !is.null(newdataEvent))
+  check2 <- (is.null(newdataEvent) && !is.null(newdataLong))
+  if (check1 || check2)
+    stop("Both newdataLong and newdataEvent must be supplied together.")
+  if (is.null(newdataLong)) { # user did not specify newdata
     ndL <- model.frame(object)[1:M]
     ndE <- model.frame(object)$Event
   } else { # user specified newdata
-    if (!id_var %in% colnames(newdata))
-      stop("id_var from the original model call must appear 'newdata'.")
-    if (any(duplicated(newdata[[id_var]])))
-      stop("'newdata' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")
-    ndL <- rep(list(newdata), M)
-    ndE <- newdata
+    if (!is(newdataLong, "list"))
+      newdataLong <- rep(list(newdataLong), M)
+    lapply(c(newdataLong, list(newdataEvent)), function(i) {
+      if (!id_var %in% colnames(i))
+        stop("id_var from the original model call must appear in the new data.")
+      validate_newdata(newdata)
+    })
+    ndL <- newdataLong
+    ndE <- newdataEvent   
+    if (any(duplicated(ndE[[id_var]])))
+      stop("'newdataEvent' should only contain one row per individual, since ",
+           "time varying covariates are not allowed in the prediction data.")    
   }
   
   # User specified a subset of ids
@@ -279,7 +287,7 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
   }  
   id_list <- unique(ndE[[id_var]]) # order of ids from data, not ids arg
   if (!is.null(newdata))
-    check_for_estimation_ids(object, id_list) # warn if ids not in newdata
+    check_for_estimation_ids(object, id_list) # warn if newdata ids are from estimation
   
   # Prediction times
   if (standardise) { # standardised survival probs
@@ -370,64 +378,88 @@ posterior_survfit <- function(object, newdata = NULL, extrapolate = TRUE,
   if (some_draws) {
     samp <- sample(S, draws)
     stanmat <- stanmat[samp, , drop = FALSE]
-  }  
+  }
+  M <- object$n_markers
+  nms  <- collect_nms(colnames(stanmat), M)
+  ybeta <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
+  ebeta <- stanmat[, nms$e, drop = FALSE]
+  abeta <- stanmat[, nms$a, drop = FALSE]
+  yb    <- lapply(1:M, function(m) stanmat[, nms$yb[[m]], drop = FALSE])
+  bhcoefs <- stanmat[, nms$e_extra, drop = FALSE]
   
   # Obtain survival prob matrix at each increment of time_seq
   # NB: length(time_seq) == 1 if no extrapolation
   ndL <- lapply(ndL, prepare_data_table, id_var = id_var, time_var = time_var)
   ndE <- prepare_data_table(ndE, id_var = id_var, time_var = time_var)
-  surv <- lapply(time_seq, function(t, quadnodes) {  
+  surv <- lapply(time_seq, function(t) {  
     if (!identical(length(t), length(id_list))) # check length of times vector
       stop("Bug found: the vector of prediction times is not the same length ",
            "as the number of individuals.")
     # evaluate quadrature points and weights for t        
-    quadpoints <- lapply(get_quadpoints(quadnodes)$points, unstandardise_quadpoints, 0, t)
-    quadweights <- lapply(get_quadpoints(quadnodes)$weights, unstandardise_quadweights, 0, t)
+    qq <- get_quadpoints(object$quadnodes)
+    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, t)
+    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, t)
     # evaluate design matrices for various longitudinal submodel contributions 
     # to the association structure (e.g. x_eta, Zt_eta, x_eps, Zt_eps, etc)
-    y_X <- lapply(1:M, function(m)
+    assoc_parts <- lapply(1:M, function(m)
       make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = id_var, 
-                       time_var = time_var, id_list = id_list, times = quadpoints, 
-                       use_function = pp_data, object = object,
-                       m = m, re.form = NULL, offset = offset))
+                       time_var = time_var, id_list = id_list, times = qtimes, 
+                       use_function = pp_data, object = object, m = m, 
+                       re.form = NULL, offset = offset))
     # design matrix for event submodel at current increment  
-    e_mf <- rolling_merge(ndE, ids = id_list, times = quadpoints)
-    e_X <- .pp_data_mer_x(object, newdata = e_mf, re.form = NULL, 
-                          offset = offset, m = "Event")       
+    emf <- rolling_merge(ndE, ids = id_list, times = qtimes)
+    eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")       
     # matrix of survival probs at current increment  
-    surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = t, 
-                        quadpoints = quadpoints, quadweights = quadweights, 
-                        stanmat = stanmat)
+    surv_t <-
+      ll_surv(ybeta = ybeta, ebeta = ebeta, abeta = abeta, yb = yb, 
+              bhcoefs = bhcoefs, eXq = eXq, basehaz = object$basehaz, 
+              assoc = object$assoc, assoc_parts = assoc_parts, 
+              family = object$family, qnodes = object$quadnodes, 
+              qtimes = qtimes, qwts = qwts, return_ll = FALSE)
+    if (is.vector(surv_t) == 1L) # transform if only one individual
+      surv_t <- t(surv_t)
+    # set survprob matrix at time 0 to S(t) = 1 
+    # (otherwise some NaN possible due to numerical inaccuracies)
+    surv_t[, (t == 0)] <- 1
+    return(surv_t) # returns S x Npat matrix of survival probabilities at t
     # standardised survival probs
     if (standardise) { 
-      surv <- matrix(rowMeans(surv), ncol = 1)
-      dimnames(surv) <- list(iterations = NULL, "standardised_survprob") 
+      surv_t <- matrix(rowMeans(surv_t), ncol = 1)
+      dimnames(surv_t) <- list(iterations = NULL, "standardised_survprob") 
     } else {
-      dimnames(surv) <- list(iterations = NULL, ids = id_list)
+      dimnames(surv_t) <- list(iterations = NULL, ids = id_list)
     }
-    surv
-  }, quadnodes = object$quadnodes)
+    surv_t
+  })
   
   # If conditioning then also need to obtain surv probs at last known survival time
   if (extrapolate && control$condition) {
     # evaluate quadrature points and weights for last_time        
-    quadpoints <- lapply(get_quadpoints(object$quadnodes)$points, unstandardise_quadpoints, 0, last_time)
-    quadweights <- lapply(get_quadpoints(object$quadnodes)$weights, unstandardise_quadweights, 0, last_time)  
+    qq <- get_quadpoints(object$quadnodes)
+    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, last_time)
+    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, last_time)  
     # evaluate design matrices for various longitudinal submodel contributions 
     # to the association structure (e.g. x_eta, Zt_eta, x_eps, Zt_eps, etc)
-    y_X <- lapply(1:M, function(m)
+    assoc_parts <- lapply(1:M, function(m)
       make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = id_var, 
-                       time_var = time_var, id_list = id_list, times = quadpoints, 
+                       time_var = time_var, id_list = id_list, times = qtimes, 
                        use_function = pp_data, object = object,
                        m = m, re.form = NULL, offset = offset))
     # design matrix for event submodel at last_time
-    e_mf <- rolling_merge(ndE, ids = id_list, times = quadpoints)
-    e_X <- .pp_data_mer_x(object, newdata = e_mf, re.form = NULL, 
-                          offset = offset, m = "Event")       
+    emf <- rolling_merge(ndE, ids = id_list, times = qtimes)
+    eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")       
     # matrix of survival probs at last_time 
-    cond_surv <- pp_survcalc(object, y_X = y_X, e_X = e_X, eventtime = last_time, 
-                             quadpoints = quadpoints, quadweights = quadweights, 
-                             stanmat = stanmat)
+    cond_surv <-
+      ll_surv(ybeta = ybeta, ebeta = ebeta, abeta = abeta, yb = yb, 
+              bhcoefs = bhcoefs, eXq = eXq, basehaz = object$basehaz, 
+              assoc = object$assoc, assoc_parts = assoc_parts, 
+              family = object$family, qnodes = object$quadnodes, 
+              qtimes = qtimes, qwts = qwts, return_ll = FALSE)
+    if (is.vector(cond_surv) == 1L) # transform if only one individual
+      cond_surv <- t(cond_surv)
+    # set survprob matrix at time 0 to S(t) = 1 
+    # (otherwise some NaN possible due to numerical inaccuracies)
+    cond_surv[, (last_time == 0)] <- 1
     # conditional survival probs
     surv <- lapply(surv, function(x) {
       vec <- x / cond_surv
@@ -619,6 +651,98 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 
 # internal ----------------------------------------------------------------
 
+# Return survival probability or log-likelihood for event submodel
+#
+# @param pars A list of parameter estimates, being a single draw, with elements
+#   $ybeta, $ebeta, $abeta, $basehaz_coefs, $yb
+# @param eXq Design matrix for event submodel, evaluated at etimes (if not NULL)
+#   and qtimes
+# @param basehaz A named list containing information about the baseline hazard
+# @param assoc An array with information about the desired association structure
+# @param assoc_parts A named list with the design matrices etc for evaluating
+#   the longitudinal submodel quantities that are used in the association
+#   structure
+# @param family A list of family objects for each longitudinal submodel
+# @param qnodes An integer specifying the number of quadrature nodes
+# @param qtimes A vector of quadrature times
+# @param qwts A vector of quadrature weights corresponding to the qtimes, already
+#   incorporating the (b-a)/2 scaling
+# @param etimes A vector of event times. If not NULL then the first length(etimes)
+#   rows of eXq correspond to the etimes, and the last length(qtimes) rows 
+#   correspond to the qtimes.
+# @param estatus A vector of event indicators corresponding to the etimes
+# @param A logical specifying whether to return the log likelihood for the event
+#   submodel (TRUE) or the survival probability (FALSE)
+# @param A vector with length equal to the number of individuals
+ll_surv <- function(ybeta, ebeta, abeta, yb, bhcoefs, eXq, 
+                    basehaz, assoc, assoc_parts, family, qnodes, 
+                    qtimes, qwts, etimes = NULL, estatus = NULL, 
+                    return_ll = TRUE) {
+  one_draw <- (is.vector(ybeta[[1]]))
+  if (!one_draw) {
+    if (!is.matrix(ybeta[[1]]) || !is.array(ybeta[[1]]))
+      stop("pars should be vectors or arrays.")
+    lapply(c(ybeta, yb, list(ebeta, abeta, bhcoefs)), function(x)
+      if (!identical(nrow(ybeta[[1]]), nrow(x)))
+        stop("All pars should have the same number of draws."))
+  }
+  M <- ncol(assoc)
+  
+  # Linear predictor for the event submodel
+  e_eta <- linear_predictor(ebeta, eXq) 
+  if (one_draw) {
+    aXq <- make_assoc_terms(parts = assoc_parts, assoc = assoc, 
+                            family = family, beta = ybeta, b = yb)
+    e_eta <- e_eta + linear_predictor.default(abeta, aXq)
+  } else {
+    aXq <- matrix(NA, NROW(eXq), NCOL(abeta))
+    for (s in 1:NROW(e_eta)) {
+      abeta_s <- abeta[s,]
+      ybeta_s <- lapply(ybeta, function(x) x[s,])
+      yb_s    <- lapply(yb,    function(x) x[s,])
+      aXq_s   <- make_assoc_terms(parts = assoc_parts, assoc = assoc, 
+                                  family = family, beta = ybeta_s, b = yb_s)
+      e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
+    }
+  }
+
+  # Baseline hazard
+  if (basehaz$type_name == "weibull") { # bhcoefs == weibull shape
+    log_basehaz <- as.vector(log(bhcoefs)) + linear_predictor(bhcoefs-1, log(qtimes))
+  } else if (basehaz$type_name == "bs") {
+    log_basehaz <- linear_predictor(bhcoefs, predict(basehaz$bs_basis, qtimes))
+  } else {
+    stop("Not yet implemented for basehaz = ", basehaz$type_name)
+  }  
+  loghaz <- log_basehaz + e_eta # log haz at etimes (if not NULL) and qtimes
+  
+    # Calculate survival prob or log_lik  
+  if (one_draw) {
+    qhaz <- tail(exp(loghaz), length(qtimes)) # haz at qtimes
+    qwhaz <- qwts * qhaz
+    splitting_vec <- rep(1:qnodes, each = length(ids))
+    cumhaz <- Reduce('+', split(qwhaz, splitting_vec))
+  } else {
+    qhaz <- exp(loghaz[, tail(1:ncol(loghaz), length(qtimes))])
+    qwhaz <- t(apply(qhaz, 1L, function(row) qwts * row))
+    cumhaz <- Reduce('+', array2list(qwhaz, nsplits = qnodes))  
+  }
+  ll_survt <- -cumhaz
+  if (!return_ll) { # return surv prob at time t (upper limit of integral)
+    return(exp(ll_survt)) 
+  } else { # return log_lik at event time
+    if (is.null(etimes) || is.null(estatus))
+      stop("'etimes' and 'estatus' cannot be NULL if 'return_ll = TRUE'.")
+    if (one_draw) { # return vector of length npat
+      return(estatus * head(loghaz, length(etimes)) - ll_survt)
+    } else { # return S * npat matrix
+      eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
+      ll_hazt <- t(apply(eloghaz, 1L, function(row) estatus * row))
+      return(ll_hazt - ll_survt)
+    }
+  }
+} 
+
 # Return a data.table with the key set using the appropriate time variable
 # 
 # @param data A data frame
@@ -659,83 +783,9 @@ prepare_data_table <- function(data, id_var, time_var) {
   return(data)
 }
 
-# Create matrix of posterior survival probabilities at time t
-# 
-# @param object A stanjm object
-# @param pp_dataLong A list equal in length to the number of markers.
-#   Each element contains a named list with elements $mod_eta, $mod_eps,
-#   $mod_lag, $mod_auc, which each contain output returned by pp_data()
-#   namely the X and Zt matrices evaluated at the relevant quadpoints.
-#   The list also includes elements $xmat_data and $K_data.
-# @param pp_dataEvent A list returned by a call to .pp_data_mer_X containing
-#   the design matrix for the event submodel evaluated at the quadpoints.
-# @param stanmat The stanfit matrix, already reduced to the desired number of 
-#   draws.
-# @return A matrix of survival probabilities at time t, with the S
-#   rows corresponding to different MCMC draws of the parameters 
-#   from the posterior, and each column corresponding to one of the Npat
-#   individuals in the new data
-pp_survcalc <- function(object, y_X, e_X, eventtime, quadpoints, 
-                        quadweights, stanmat) {
-
-  # Extract parameters for constructing linear predictor  
-  M <- object$n_markers
-  nms <- collect_nms(colnames(stanmat), M)
-  b_ord  <- lapply(1:M, function(m) y_X[[m]]$mod_eta$Z_names)
-  y_b    <- lapply(1:M, function(m) pp_b_ord(stanmat[, nms$y_b[[m]], drop = FALSE], b_ord[[m]]))
-  y_beta <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
-  e_beta <- stanmat[, nms$e, drop = FALSE]
-  a_beta <- stanmat[, nms$a, drop = FALSE]
-  
-  # Linear predictor for the event submodel
-  e_eta <- linear_predictor.matrix(e_beta, e_X, offset = NULL)
-  assoc <- object$assoc
-  sel <- grep("which|null", rownames(assoc), invert = TRUE)
-  if (any(unlist(assoc[sel,]))) { # has association structure
-    for (s in seq(nrow(stanmat))) {
-      beta_s <- lapply(y_beta, function(x) x[s,])
-      b_s    <- lapply(y_b,    function(x) x[s,])
-      a_Xs <- make_assoc_terms(parts = y_X, assoc = assoc, family = object$family, 
-                               beta = beta_s, b = b_s)
-      e_eta[s,] <- e_eta[s,] + linear_predictor.default(a_beta[s,], a_Xs)
-    }
-  }
-  
-  # Baseline hazard
-  if (object$basehaz$type_name == "weibull") {
-    shape <- stanmat[, nms$e_extra, drop = FALSE]
-    log_basehaz <- as.vector(log(shape)) + 
-      (shape - 1) %*% matrix(log(unlist(quadpoints)), nrow = 1)
-  } else if (object$basehaz$type_name == "bs") {
-    coefs <- stanmat[, nms$e_extra, drop = FALSE]
-    log_basehaz <- 
-      coefs %*% t(predict(object$basehaz$bs_basis, unlist(quadpoints)))
-  } else {
-    stop("posterior_survfit not yet implemented for basehaz = ", 
-         object$basehaz$type_name)
-  }
-  
-  # Evaluate cumulative hazard up to time t, and survival prob at time t
-  haz <- exp(log_basehaz + e_eta)
-  qweighted_haz <- t(apply(haz, 1L, function(row) unlist(quadweights) * row))
-  cum_haz <- Reduce('+', array2list(qweighted_haz, nsplits = length(quadweights)))  
-  surv_t <- exp(-cum_haz) # should be S * Npat matrix
-  if (is.vector(surv_t) == 1L) # transform if only one individual
-    surv_t <- t(surv_t)
-  # set survprob matrix at time 0 to S(t) = 1 
-  # (otherwise some NaN possible due to numerical inaccuracies)
-  surv_t[, (eventtime == 0)] <- 1
-  return(surv_t) # returns S x Npat matrix of survival probabilities at t
-}
-
-
 # default plotting attributes
 .PP_FILL <- "skyblue"
 .PP_DARK <- "skyblue4"
 .PP_VLINE_CLR <- "#222222"
 .PP_YREP_CLR <- "#487575"
 .PP_YREP_FILL <- "#222222"
-
-
-
-
