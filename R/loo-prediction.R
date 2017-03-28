@@ -4,7 +4,7 @@
 #' (\pkg{loo} package).
 #' 
 #' @export
-#' @aliases loo_predict loo_linpred loo_pit loo_predictive_interval
+#' @aliases loo_predict loo_linpred loo_predictive_interval
 #' 
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
@@ -27,8 +27,6 @@
 #'   \code{loo_predict(..., type = "quantile", probs = c(a, 1-a))} with 
 #'   \code{a = (1 - p)/2}, except it transposes the result and adds informative 
 #'   column names.
-#'   
-#'   \code{loo_pit} returns a vector with one element per observation.
 #'   
 #' @examples
 #' # data from help("lm")
@@ -90,23 +88,6 @@ loo_linpred.stanreg <-
       probs = probs
     )
   }
-
-#' @rdname loo_predict.stanreg
-#' @export
-#' 
-loo_pit.stanreg <- function(object, ..., lw) {
-  lw <- loo_weights(object, lw, log = TRUE, ...)
-  yrep <- posterior_predict(object)
-  y <- get_y(object)
-  if (is_polr(object) && !is_scobit(object)) {
-    yrep <- polr_yrep_to_numeric(yrep)
-    y <- as.integer(y)
-  } else if (is_binomial_ppc(object) && NCOL(y) == 2) {
-    y <- y[, 1]
-  }
-  
-  rstantools::loo_pit(object = yrep, y = y, lw = lw)
-}
 
 
 #' @rdname loo_predict.stanreg
