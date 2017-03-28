@@ -2730,11 +2730,12 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
     } else { # need to construct linpred
       x <- part$x
       Zt <- part$Zt
+      Znames  <- part$Z_names
       if (is.null(x) || is.null(Zt))
         stop(paste0("Bug found: cannot find x and Zt in object. They are ",
              "required to build the linear predictor for '", which, "'."))          
       beta <- dots$beta[[m]]
-      b <- dots$b[[m]]
+      b <- pp_b_ord(t(dots$b[[m]]), Znames)
       if (is.null(beta) || is.null(b))
         stop("Bug found: beta and b must be provided to construct linpred.")
       return(linear_predictor.default(beta, x) + as.vector(b %*% Zt))
