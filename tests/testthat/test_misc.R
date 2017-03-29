@@ -492,8 +492,8 @@ test_that("validate_newdata works", {
 
 
 test_that("recommend_QR_for_vb produces the right message", {
-  expect_output(
-    recommend_QR_for_vb(), 
+  expect_message(
+    rstanarm:::recommend_QR_for_vb(),
     "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
   )
 })
