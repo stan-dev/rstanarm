@@ -86,31 +86,14 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanjm_object(object)
   M <- get_M(object)
-  id_var <- object$id_var
+  id_var   <- object$id_var
   time_var <- object$time_var
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
-    stop("newdataLong and newdataEvent must both be provided, or both be NULL.")
-  if (!is(newdataLong, "list"))
-    newdataLong <- rep(list(newdataLong), M)
-  if (!length(newdataLong) == M)
-    stop("'newdataLong' should be a data frame or a list of length ", M)  
-  newdataLong <- lapply(newdataLong, validate_newdata)
-  newdataEvent <- validate_newdata(newdataEvent)
-  has_newdata <- !is.null(newdataEvent)
-  if (has_newdata) {
-    ids <- lapply(c(newdataLong, list(newdataEvent)), function(x) {
-      if (!id_var %in% colnames(x))
-        stop("The ID variable should appear in all new data frames.")
-      unique(x[[id_var]])
-    })
-    sorted_ids <- lapply(ids, sort)
-    if (!length(unique(sorted_ids)) == 1L) 
-      stop("The same subject ids should appear in each new data frame.")
-    if (!length(unique(ids)) == 1L) 
-      stop("The subject ids should be ordered the same in each new data frame.")
-    if (any(duplicated(newdataEvent[[id_var]])))
-      stop("'newdataEvent' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")
+    stop("Both newdataLong and newdataEvent must be supplied together.")
+  if (!is.null(newdataLong)) {
+    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdataLong  <- newdatas[1:M]
+    newdataEvent <- newdatas[["Event"]]
   }
 
   # log_lik matrix for each longitudinal submodel
@@ -124,60 +107,16 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
       as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
                     draws = args$draws))})
     # return an S * npat array (sum of log_lik over yobs for each individual)
-    flist_m <- if (has_newdata) newdataLong[[m]][[id_var]] else 
+    flist_m <- if (!is.null(newdataLong)) newdataLong[[m]][[id_var]] else 
       object$glmod_stuff[[m]]$flist[[id_var]]
     t(apply(ll, 1L, function(row) tapply(row, flist_m, sum)))
   })
     
   # log_lik matrix for event submodel
-  stanmat <- as.matrix(object$stanfit)
-  nms  <- collect_nms(colnames(stanmat), M)
-  ybeta <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
-  ebeta <- stanmat[, nms$e, drop = FALSE]
-  abeta <- stanmat[, nms$a, drop = FALSE]
-  yb    <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
-  bhcoefs <- stanmat[, nms$e_extra, drop = FALSE]
-  family  <- family(object)
-  qnodes  <- object$quadnodes
-  if (has_newdata) {
-    ndL <- lapply(newdataLong, prepare_data_table, 
-                  id_var = id_var, time_var = time_var)
-    ndE <- prepare_data_table(newdataEvent, id_var = id_var, time_var = time_var)
-    y <- eval(formula(object, m = "Event")[[2L]], ndE)
-    etimes  <- y[["time"]]
-    estatus <- y[["status"]]
-    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, etimes)
-    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, etimes)
-  } else {
-    ndL <- lapply(model.frame(object)[1:M], prepare_data_table, 
-                  id_var = id_var, time_var = time_var)
-    ndE <- prepare_data_table(model.frame(object)$Event,
-                              id_var = id_var, time_var = time_var)
-    etimes  <- object$eventtime
-    estatus <- object$status
-  }
-  qq <- get_quadpoints(qnodes)
-  qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
-  qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
-  assoc_parts <- lapply(1:M, function(m)
-    make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = object$id_var, 
-                     time_var = object$time_var, id_list = ndE[[id_var]], 
-                     times = qtimes, use_function = pp_data, object = object,
-                     m = m, re.form = NULL, offset = offset))
-  emf <- rolling_merge(ndE, ids = ndE[[id_var]], times = qtimes)
-  eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")
-  e_ll <- ll_surv(ybeta = ybeta, 
-                  ebeta = ebeta, 
-                  abeta = abeta, 
-                  yb = yb, 
-                  bhcoefs = bhcoefs, 
-                  eXq = eXq, 
-                  basehaz = object$basehaz,
-                  assoc = object$assoc, 
-                  assoc_parts = assoc_parts, 
-                  family =  family(object), qnodes = qnodes, 
-                  qtimes = qtimes, qwts = qwts, 
-                  etimes = etimes, estatus = estatus)
+  pars <- extract_pars(object, stanmat) # array of draws
+  dat  <- jm_data(object, newdataLong, newdataEvent)
+  e_ll <- ll_event(data = dat, pars = pars, basehaz = basehaz, 
+                   family = family, assoc = assoc)
   
   return(Reduce('+', c(y_ll, list(e_ll))))
 }
@@ -210,15 +149,16 @@ ll_fun <- function(x, m = NULL) {
 #   only a single level.
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, newdata = NULL, offset = NULL, 
-                    reloo_or_kfold = FALSE, m = NULL, ...) {
+ll_args <- function(object, ...) UseMethod("ll_args")
+ll_args.stanreg <- function(object, newdata = NULL, offset = NULL,
+                            reloo_or_kfold = FALSE, m = NULL, ...) {
   validate_stanreg_object(object)
   f <- family(object, m = m)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
   
+  dots <- list(...)
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
-    dots <- list(...)
     x <- dots$newx
     stanmat <- dots$stanmat
     y <- eval(formula(object)[[2L]], newdata)
@@ -234,6 +174,9 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     x <- get_x(object, m = m)
     y <- get_y(object, m = m)
   }
+  if (is.stanjm(object) && !is.null(dots$stanmat)) {
+    stanmat <- dots$stanmat # potentially replace stanmat with a single draw
+  }  
   
   if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
@@ -299,7 +242,16 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   if (model_has_weights(object))
     data$weights <- object$weights # not yet compatible with stanjm
   
-  if (is.mer(object)) {
+  if (is.stanjm(object) && !is.null(dots$user_b)) {
+    if (has_newdata) {
+      if (is.null(ppdat$Zt)) z <- matrix(NA, nrow = nrow(x), ncol = 0)
+      else z <- t(ppdat$Zt)
+    } else {
+      z <- get_z(object, m = m)
+    }
+    b <- dots$user_b
+    draws$beta <- cbind(draws$beta, b)
+  } else if (is.mer(object)) {
     b_sel <- if (is.null(nms)) b_names(colnames(stanmat)) else nms$y_b[[m]]
     b <- stanmat[, b_sel, drop = FALSE]
     if (has_newdata) {

@@ -243,12 +243,15 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   M        <- object$n_markers
   id_var   <- object$id_var
   time_var <- object$time_var
+  basehaz  <- object$basehaz
+  assoc    <- object$assoc
+  family   <- family(object)
   if (!is.null(seed)) 
     set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
   
-  # temporary stop, until make_assoc_terms can handle it
+  # Temporary stop, until make_assoc_terms can handle it
   sel_stop <- grep("^shared", rownames(object$assoc))
   if (any(unlist(object$assoc[sel_stop,])))
     stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
@@ -257,72 +260,59 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Construct prediction data
   # ndL: dataLong to be used in predictions
   # ndE: dataEvent to be used in predictions
-  check1 <- (is.null(newdataLong) && !is.null(newdataEvent))
-  check2 <- (is.null(newdataEvent) && !is.null(newdataLong))
-  if (check1 || check2)
+  if (!identical(is.null(newdataLong), is.null(newdataEvent)))
     stop("Both newdataLong and newdataEvent must be supplied together.")
   if (is.null(newdataLong)) { # user did not specify newdata
     ndL <- model.frame(object)[1:M]
     ndE <- model.frame(object)$Event
   } else { # user specified newdata
-    if (!is(newdataLong, "list"))
-      newdataLong <- rep(list(newdataLong), M)
-    lapply(c(newdataLong, list(newdataEvent)), function(i) {
-      if (!id_var %in% colnames(i))
-        stop("id_var from the original model call must appear in the new data.")
-      validate_newdata(newdata)
-    })
-    ndL <- newdataLong
-    ndE <- newdataEvent   
-    if (any(duplicated(ndE[[id_var]])))
-      stop("'newdataEvent' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")    
+    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    ndL <- newdatas[1:M]
+    ndE <- newdatas[["Event"]]   
   }
-  
-  # User specified a subset of ids
-  if (!is.null(ids)) {
-    check_for_missing_ids(ndE, id_var, ids)
-    ndE <- ndE[ndE[[id_var]] %in% ids, , drop = FALSE]
-    ndL <- lapply(ndL, function(x) x[x[[id_var]] %in% ids, , drop = FALSE])
+  if (!is.null(ids)) { # user specified a subset of ids
+    ndL <- subset_ids(object, ndL, ids)
+    ndE <- subset_ids(object, ndE, ids)
   }  
   id_list <- unique(ndE[[id_var]]) # order of ids from data, not ids arg
-  if (!is.null(newdata))
-    check_for_estimation_ids(object, id_list) # warn if newdata ids are from estimation
+  newpats <- if (is.null(newdataLong)) FALSE else check_pp_ids(object, id_list)
   
   # Prediction times
   if (standardise) { # standardised survival probs
-    if (is.null(times)) {
-      stop("'times' cannot be NULL for obtaining standardised survival probabilities.")
-    } else if (is.numeric(times) && (length(times) == 1L)) {
-      times <- rep(times, length(id_list))
-    } else {
-      stop("'times' should be a numeric vector of length 1 in order to obtain ",
-           "standardised survival probabilities (the subject-specific survival ",
-           "probabilities will be calculated at the specified time point, and ",
-           "then averaged).")      
-    }    
-  } else if (is.null(newdata)) { # subject-specific survival probs without newdata
-    if (is.null(times)) {
-      times <- object$eventtime[as.character(id_list)]
-    } else if (is.numeric(times) && (length(times) == 1L)) {
-      times <- rep(times, length(id_list))
-    } else {
-      stop("If 'newdata' is NULL then 'times' can only be NULL or a ",
-           "numeric vector of length 1.")     
-    }
+    times <- 
+      if (is.null(times)) {
+        stop("'times' cannot be NULL for obtaining standardised survival probabilities.")
+      } else if (is.numeric(times) && (length(times) == 1L)) {
+        rep(times, length(id_list))
+      } else {
+        stop("'times' should be a numeric vector of length 1 in order to obtain ",
+             "standardised survival probabilities (the subject-specific survival ",
+             "probabilities will be calculated at the specified time point, and ",
+             "then averaged).")      
+      }    
+  } else if (is.null(newdataLong)) { # subject-specific survival probs without newdata
+    times <- 
+      if (is.null(times)) {
+        object$eventtime[as.character(id_list)]
+      } else if (is.numeric(times) && (length(times) == 1L)) {
+        rep(times, length(id_list))
+      } else {
+        stop("If newdata is NULL then 'times' must be NULL or a single number.")     
+      }
   } else { # subject-specific survival probs with newdata
-    if (is.null(times)) {
-      stop("'times' cannot be NULL if newdata is specified.")
-    } else if (is.character(times) && (length(times) == 1L)) {
-      if (!times %in% colnames(ndE))
-        stop("Variable specified in 'times' argument could not be found in 'newdata'.")
-      times <- tapply(ndE[[times]], ndE[[id_var]], FUN = max)
-    } else if (is.numeric(times) && (length(times) == 1L)) {
-      times <- rep(times, length(id_list))
-    } else {
-      stop("If 'newdata' is specified then 'times' can only be the name of a ",
-           "variable in newdata, or a numeric vector of length 1.")      
-    }
+    times <- 
+      if (is.null(times)) {
+        stop("'times' cannot be NULL if newdata is specified.")
+      } else if (is.character(times) && (length(times) == 1L)) {
+        if (!times %in% colnames(ndE))
+          stop("Variable specified in 'times' argument could not be found in newdata.")
+        tapply(ndE[[times]], ndE[[id_var]], FUN = max)
+      } else if (is.numeric(times) && (length(times) == 1L)) {
+        rep(times, length(id_list))
+      } else {
+        stop("If newdata is specified then 'times' can only be the name of a ",
+             "variable in newdata, or a single number.")      
+      }
   }
   if (!identical(length(times), length(id_list)))
     stop(paste0("length of the 'times' vector should be equal to the number of individuals ",
@@ -333,9 +323,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
          "time (since unable to extrapolate the baseline hazard).")
   
   # Last known survival time for each individual
-  if (is.null(newdata)) { # user did not specify newdata
+  if (is.null(newdataLong)) { # user did not specify newdata
     if (!is.null(control$last_time))
-      stop("'last_time' cannot be provided when 'newdata' is NULL, since times ",
+      stop("'last_time' cannot be provided when newdata is NULL, since times ",
            "are taken to be the event or censoring time for each individual.")
     last_time <- object$eventtime[as.character(id_list)]
   } else { # user specified newdata
@@ -344,7 +334,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       last_time <- times
     } else if (is.character(user_arg) && (length(user_arg) == 1L)) {
       if (!user_arg %in% colnames(ndE))
-        stop("Cannot find 'last_time' column named in 'newdata'")
+        stop("Cannot find 'last_time' column named in newdataEvent.")
       last_time <- ndE[[user_arg]]      
     } else if (is.numeric(user_arg) && (length(user_arg) == 1L)) {
       last_time <- rep(user_arg, length(id_list)) 
@@ -379,51 +369,59 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     samp <- sample(S, draws)
     stanmat <- stanmat[samp, , drop = FALSE]
   }
-  M <- object$n_markers
-  nms  <- collect_nms(colnames(stanmat), M)
-  ybeta <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
-  ebeta <- stanmat[, nms$e, drop = FALSE]
-  abeta <- stanmat[, nms$a, drop = FALSE]
-  yb    <- lapply(1:M, function(m) stanmat[, nms$yb[[m]], drop = FALSE])
-  bhcoefs <- stanmat[, nms$e_extra, drop = FALSE]
+  stanmat_means <- colMeans(stanmat)
+  pars_means <- extract_pars(object, means = TRUE) # posterior means
+  pars <- extract_pars(object, stanmat) # array of draws
+
+  # Draw b pars for new ids
+  if (newpats) {
+    if (length(object$cnms) > 1L)
+      stop("posterior_survfit not yet implemented for models with more than ",
+           "one grouping factor.")
+    len_b <- sapply(object$glmod_stuff, function(m) length(m$cnms[[id_var]]))
+    #yb <- lapply(len_b, function(x) matrix(NA, draws, length(id_list) * x))
+    # Log-lik function to optimise to obtain mode of new b pars
+    scale <- 1.6 # scale b_vcov to determine width of proposal distribution
+    b_mode <- list()
+    b_vcov <- list()
+    for (i in 1:length(id_list)) {
+      ndL_i <- subset_ids(object, ndL, ids = id_list[[i]])
+      ndE_i <- subset_ids(object, ndE, ids = id_list[[i]])
+      dat_i <- jm_data(object, ndL_i, ndE_i)
+      pars_i <- pars_means
+      # Get modes for new b pars, used to center proposal distribution
+      val <- optim(rep(0, sum(len_b)), optim_fn, object = object, 
+                   stanmat = stanmat, ndL_i = ndL_i, 
+                   dat_i = dat_i, pars_i = pars_i, len_b = len_b, 
+                   method = "BFGS", hessian = TRUE)
+      b_mode[[i]] <- val$par
+      b_vcov[[i]] <- scale * solve(val$hessian)
+      # Run 1:draws iterations of the MH algorithm
+      #yb_i <- matrix(NA, nrow(ebeta), sum(len_b))
+      #bnew_i <- list()
+      #bcurrent <- b_mode[[i]]
+      #for (s in 1:nrow(ebeta)) {
+      #  bnew_i[[s]] <- mh_step(b = bcurrent, delta = b_mode[[i]], sigma = b_vcov[[i]], df = 4,
+      #                         yppdat, eXq, assoc_parts, stanmat[samp[[s]],])
+      #  yb_i[s,] <- bcurrent <- bnew_i[[s]]
+      #}
+    }
+  }
   
-  # Obtain survival prob matrix at each increment of time_seq
-  # NB: length(time_seq) == 1 if no extrapolation
-  ndL <- lapply(ndL, prepare_data_table, id_var = id_var, time_var = time_var)
-  ndE <- prepare_data_table(ndE, id_var = id_var, time_var = time_var)
+  # Matrix of surv probs at each increment of the extrapolation sequence
+  # NB If no extrapolation then length(time_seq) == 1L
   surv <- lapply(time_seq, function(t) {  
-    if (!identical(length(t), length(id_list))) # check length of times vector
+    if (!identical(length(t), length(id_list)))
       stop("Bug found: the vector of prediction times is not the same length ",
            "as the number of individuals.")
-    # evaluate quadrature points and weights for t        
-    qq <- get_quadpoints(object$quadnodes)
-    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, t)
-    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, t)
-    # evaluate design matrices for various longitudinal submodel contributions 
-    # to the association structure (e.g. x_eta, Zt_eta, x_eps, Zt_eps, etc)
-    assoc_parts <- lapply(1:M, function(m)
-      make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = id_var, 
-                       time_var = time_var, id_list = id_list, times = qtimes, 
-                       use_function = pp_data, object = object, m = m, 
-                       re.form = NULL, offset = offset))
-    # design matrix for event submodel at current increment  
-    emf <- rolling_merge(ndE, ids = id_list, times = qtimes)
-    eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")       
-    # matrix of survival probs at current increment  
-    surv_t <-
-      ll_surv(ybeta = ybeta, ebeta = ebeta, abeta = abeta, yb = yb, 
-              bhcoefs = bhcoefs, eXq = eXq, basehaz = object$basehaz, 
-              assoc = object$assoc, assoc_parts = assoc_parts, 
-              family = object$family, qnodes = object$quadnodes, 
-              qtimes = qtimes, qwts = qwts, return_ll = FALSE)
-    if (is.vector(surv_t) == 1L) # transform if only one individual
-      surv_t <- t(surv_t)
-    # set survprob matrix at time 0 to S(t) = 1 
-    # (otherwise some NaN possible due to numerical inaccuracies)
-    surv_t[, (t == 0)] <- 1
-    return(surv_t) # returns S x Npat matrix of survival probabilities at t
-    # standardised survival probs
-    if (standardise) { 
+    dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
+                   ids = id_list, etimes = t, long_parts = FALSE)
+    surv_t <- ll_event(data = dat, pars = pars, basehaz = basehaz, 
+                       family = family, assoc = assoc, return_ll = FALSE)
+    if (is.vector(surv_t) == 1L) 
+      surv_t <- t(surv_t)   # transform if only one individual
+    surv_t[, (t == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
+    if (standardise) {      # standardised survival probs
       surv_t <- matrix(rowMeans(surv_t), ncol = 1)
       dimnames(surv_t) <- list(iterations = NULL, "standardised_survprob") 
     } else {
@@ -432,53 +430,31 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     surv_t
   })
   
-  # If conditioning then also need to obtain surv probs at last known survival time
+  # If conditioning, need to obtain matrix of surv probs at last known surv time
   if (extrapolate && control$condition) {
-    # evaluate quadrature points and weights for last_time        
-    qq <- get_quadpoints(object$quadnodes)
-    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, last_time)
-    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, last_time)  
-    # evaluate design matrices for various longitudinal submodel contributions 
-    # to the association structure (e.g. x_eta, Zt_eta, x_eps, Zt_eps, etc)
-    assoc_parts <- lapply(1:M, function(m)
-      make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = id_var, 
-                       time_var = time_var, id_list = id_list, times = qtimes, 
-                       use_function = pp_data, object = object,
-                       m = m, re.form = NULL, offset = offset))
-    # design matrix for event submodel at last_time
-    emf <- rolling_merge(ndE, ids = id_list, times = qtimes)
-    eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")       
+    cond_dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
+                        ids = id_list, etimes = last_time, long_parts = FALSE)
     # matrix of survival probs at last_time 
-    cond_surv <-
-      ll_surv(ybeta = ybeta, ebeta = ebeta, abeta = abeta, yb = yb, 
-              bhcoefs = bhcoefs, eXq = eXq, basehaz = object$basehaz, 
-              assoc = object$assoc, assoc_parts = assoc_parts, 
-              family = object$family, qnodes = object$quadnodes, 
-              qtimes = qtimes, qwts = qwts, return_ll = FALSE)
-    if (is.vector(cond_surv) == 1L) # transform if only one individual
-      cond_surv <- t(cond_surv)
-    # set survprob matrix at time 0 to S(t) = 1 
-    # (otherwise some NaN possible due to numerical inaccuracies)
-    cond_surv[, (last_time == 0)] <- 1
-    # conditional survival probs
-    surv <- lapply(surv, function(x) {
+    cond_surv <- ll_event(data = cond_dat, pars = pars, basehaz = basehaz, 
+                          family = family, assoc = assoc, return_ll = FALSE)
+    if (is.vector(cond_surv) == 1L)
+      cond_surv <- t(cond_surv)        # transform if only one individual
+    cond_surv[, (last_time == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
+    surv <- lapply(surv, function(x) { # conditional survival probs
       vec <- x / cond_surv
-      vec[is.na(vec)] <- 1
-      # If last_time was after the time of the estimated probability, 
-      # leading to a survival probability greater than 1
-      vec[vec > 1] <- 1  
+      vec[vec > 1] <- 1 # if t was before last_time then surv prob may be > 1
       vec
     })        
   }
   
   # Summarise posterior draws to get median and ci
-  out <- do.call("rbind", 
-                 lapply(seq_along(surv), function(x, standardise, id_list, time_seq, prob) {
-                   val <- median_and_bounds(surv[[x]], prob) 
-                   cbind(IDVAR   = if (!standardise) id_list, 
-                         TIMEVAR = if (!standardise) time_seq[[x]] else unique(time_seq[[x]]),
-                         val$med, val$lb, val$ub)
-                 }, standardise = standardise, id_list = id_list, time_seq = time_seq, prob = prob))
+  out <- do.call("rbind", lapply(
+    seq_along(surv), function(x, standardise, id_list, time_seq, prob) {
+      val <- median_and_bounds(surv[[x]], prob)
+      cbind(IDVAR   = if (!standardise) id_list,
+            TIMEVAR = if (!standardise) time_seq[[x]] else unique(time_seq[[x]]),
+            val$med, val$lb, val$ub)
+      }, standardise, id_list, time_seq, prob))
   rownames(out) <- NULL
   colnames(out) <- c(if ("IDVAR" %in% colnames(out)) id_var,
                      time_var, "survpred", "ci_lb", "ci_ub")
@@ -492,6 +468,105 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
             control = control, standardise = standardise, ids = id_list, 
             draws = draws, seed = seed, offset = offset)
+}
+
+optim_fn <- function(b, object, stanmat, ndL_i, dat_i, pars_i, len_b) {
+  M <- get_M(object)
+  stanmat_means <- t(colMeans(stanmat))
+  pars_i$b <- mapply(function(b, x) {
+    names(b) <- paste0("b[", x$mod_eta$Z_names, "]")
+    return(t(b))
+  }, b = split(b, rep(1:M, len_b)), x = dat_i$assoc_parts, SIMPLIFY = FALSE)
+  ll_long_i <- lapply(1:M, function(m) {
+    args <- ll_args(object, newdata = ndL_i[[m]], m = m, 
+                    stanmat = stanmat_means, user_b = pars_i$b[[m]])
+    fun  <- ll_fun(object, m = m)
+    return(sum(sapply(seq_len(args$N), function(j) as.vector(
+      fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))))
+  })
+  ll_event_i <- ll_event(dat_i, pars_i, object$basehaz, object$family, 
+                         object$assoc, one_draw = TRUE)
+  ll_b_i <- mvtnorm::dmvnorm(b, mean = rep(0, length(b)), 
+                             sigma = VarCorr(object)[[object$id_var]], log = TRUE)
+  ll_jm_i <- ll_jm(ll_long_i, ll_event_i) + ll_b_i
+  return(-ll_jm_i)  
+}    
+
+mh_step <- function(b, delta, sigma, df, yppdat, eXq, assoc_parts, stanmat) {
+  
+  # New proposal for b pars
+  b_new <- mvtnorm::rmvt(n = 1, delta = delta, sigma = sigma, df = df)
+  # Calculate density for proposal distribution
+  propdens <- mvtnorm::dmvt(
+    x = b, delta = delta, sigma = sigma, df = df, log = TRUE)
+  propdens_new <- mvtnorm::dmvt(
+    x = b_new, delta = delta, sigma = sigma, df = df, log = TRUE)
+  # Calculate density for target distribution
+  targdens <- ll_jm(
+    x = b, delta = delta, sigma = sigma, df = df, log = TRUE)
+  targdens_new <- ll_jm(
+    x = b_new, delta = delta, sigma = sigma, df = df, log = TRUE)
+  # MH accept/reject step
+  accept_ratio <- exp(targdens_new - targdens - propdens_new + propdens)
+  if (accept_ratio >= runif(1)) return(b_prop) else return(b)
+}
+
+jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL, 
+                    ids = NULL, etimes = NULL, long_parts = TRUE, 
+                    event_parts = TRUE) {
+  M <- get_M(object)
+  id_var   <- object$id_var
+  time_var <- object$time_var
+  newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+  ndL <- newdatas[1:M]
+  ndE <- newdatas[["Event"]]   
+  ndL <- subset_ids(object, ndL, ids)
+  ndE <- subset_ids(object, ndE, ids)
+  id_list <- unique(newdataEvent[[id_var]])
+  if (!is.null(newdataEvent) && is.null(etimes)) {
+    y <- eval(formula(object, m = "Event")[[2L]], newdataEvent)
+    etimes  <- unclass(y)[,"time"]
+    estatus <- unclass(y)[,"status"]    
+  } else if (is.null(etimes)) {
+    etimes  <- object$eventtime[[as.character(id_list)]]
+    estatus <- object$status[[as.character(id_list)]]
+  }
+  res <- nlist(M, Npat = length(id_list))
+  if (long_parts && event_parts) 
+    lapply(newdataLong, function(x) {
+      if (!time_var %in% colnames(x)) STOP_no_var(time_var)
+      mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
+      if (any(mt > etimes))
+        stop("There appears to be observation times in the longitudinal data that ",
+             "are later than the event time specified in the 'etimes' argument.")      
+    }) 
+  if (long_parts) {
+    ydat <- lapply(1:M, function(m) pp_data(object, newdataLong[[m]], m = m))
+    yX <- fetch(ydat, "X")
+    yZt <- fetch(ydat, "Zt")
+    yZnames <- fetch(ydat, "Znames")
+    res <- c(res, nlist(yX, yZt, yZnames))
+  }
+  if (event_parts) {
+    qnodes <- object$quadnodes
+    qq <- get_quadpoints(qnodes)
+    qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
+    qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
+    edat <- prepare_data_table(newdataEvent, id_var, time_var)
+    edat <- rolling_merge(edat, ids = rep(id_list, qnodes), times = qtimes)
+    eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")       
+    assoc_parts <- lapply(1:M, function(m) {
+      ymf <- prepare_data_table(newdataLong[[m]], id_var, time_var)
+      make_assoc_parts(
+        ymf, assoc = object$assoc, id_var = object$id_var, 
+        time_var = object$time_var, id_list = id_list, times = qtimes, 
+        use_function = pp_data, object = object, m = m)
+    })
+    assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)
+    assoc_parts <- do.call("structure", assoc_attr)
+    res <- c(res, nlist(eXq, assoc_parts))
+  }
+  return(res)
 }
 
 #' Plot the estimated subject-specific or marginal survival function
@@ -651,6 +726,111 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 
 # internal ----------------------------------------------------------------
 
+ll_args.stanjm <- function(object, newdata, m = 1, stanmat = NULL, user_b = NULL,
+                           reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), ...) {
+  validate_stanjm_object(object)
+  f <- family(object, m = m)
+  draws <- nlist(f)
+  has_newdata <- !is.null(newdata)
+  if (model_has_weights(object))
+    STOP_if_stanjm("posterior_survfit with weights")
+  
+  if (has_newdata) {
+    ppdat <- pp_data(object, as.data.frame(newdata), offset = offset, m = m)
+    x <- ppdat$x
+    y <- eval(formula(object, m = m)[[2L]], newdata)
+    z <- t(ppdat$Zt)
+  } else {
+    x <- get_x(object, m = m)
+    y <- get_y(object, m = m)
+    z <- get_z(object, m = m)
+  }
+  if (is.null(stanmat)) 
+    stanmat <- as.matrix.stanreg(object)
+  one_draw <- is.vector(stanmat)
+  
+  fname <- f$family
+  if (!is.binomial(fname)) {
+    data <- data.frame(y, x)
+  } else {
+    if (NCOL(y) == 2L) {
+      trials <- rowSums(y)
+      y <- y[, 1L]
+    } else {
+      trials <- 1
+      if (is.factor(y)) 
+        y <- fac2bin(y)
+      stopifnot(all(y %in% c(0, 1)))
+    }
+    data <- data.frame(y, trials, x)
+  }
+  data <- cbind(data, as.matrix(z))
+  
+  if (one_draw) { # stanmat is a vector
+    nms <- collect_nms(names(stanmat), get_M(object))
+    draws$beta <- stanmat[nms$y[[m]]]
+    m_stub <- get_m_stub(m)
+    if (is.gaussian(fname)) 
+      draws$sigma <- stanmat[[paste0(m_stub, "sigma")]]
+    if (is.gamma(fname)) 
+      draws$shape <- stanmat[[paste0(m_stub, "shape")]]
+    if (is.ig(fname)) 
+      draws$lambda <- stanmat[[paste0(m_stub, "lambda")]]
+    if (is.nb(fname)) 
+      draws$size <- stanmat[[paste0(m_stub, "reciprocal_dispersion")]]
+    if (is.null(user_b)) { # use b pars from stanmat
+      b <- stanmat[nms$y_b[[m]]]
+      if (has_newdata) {
+        Z_names <- ppdat$Z_names
+        if (is.null(Z_names)) {
+          b <- b[!grepl("_NEW_", names(b), fixed = TRUE)]
+        } else {
+          b <- t(as.matrix(b))
+          b <- pp_b_ord(b, Z_names)
+          b <- unlist(as.data.frame(b)) # keeps colnames
+        }
+      }
+    } else { # b pars provided directly
+      if (!is.vector(user_b))
+        stop("'user_b' should be the same form as stanmat, i.e. a vector.")
+      b <- user_b
+    }
+    draws$beta <- c(draws$beta, b)
+  } else { # stanmat is a matrix
+    nms <- collect_nms(colnames(stanmat), get_M(object))
+    draws$beta <- stanmat[, nms$y[[m]], drop = FALSE]
+    m_stub <- get_m_stub(m)
+    if (is.gaussian(fname)) 
+      draws$sigma <- stanmat[, paste0(m_stub, "sigma")]
+    if (is.gamma(fname)) 
+      draws$shape <- stanmat[, paste0(m_stub, "shape")]
+    if (is.ig(fname)) 
+      draws$lambda <- stanmat[, paste0(m_stub, "lambda")]
+    if (is.nb(fname)) 
+      draws$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")] 
+    if (is.null(user_b)) { # use b pars from stanmat
+      b <- stanmat[, nms$y_b[[m]], drop = FALSE]
+      if (has_newdata) {
+        Z_names <- ppdat$Z_names
+        if (is.null(Z_names)) {
+          b <- b[, !grepl("_NEW_", colnames(b), fixed = TRUE), drop = FALSE]
+        } else {
+          b <- pp_b_ord(b, Z_names)
+        }
+      }
+    } else { # b pars provided directly
+      if (!any(is.matrix(user_b), is.array(user_b)))
+        stop("'user_b' should be the same form as stanmat, i.e. a matrix or array.")
+      if (!nrow(user_b) == nrow(stanmat))
+        stop("'user_b' should have the same number of rows as stanmat.")
+      b <- user_b
+    }
+    draws$beta <- cbind(draws$beta, b)
+  }
+  
+  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+}
+
 # Return survival probability or log-likelihood for event submodel
 #
 # @param pars A list of parameter estimates, being a single draw, with elements
@@ -671,56 +851,54 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 #   rows of eXq correspond to the etimes, and the last length(qtimes) rows 
 #   correspond to the qtimes.
 # @param estatus A vector of event indicators corresponding to the etimes
-# @param A logical specifying whether to return the log likelihood for the event
-#   submodel (TRUE) or the survival probability (FALSE)
+# @param one_draw A logical specifying whether the parameters provided in the 
+#   pars argument are vectors for a single realisation of the parameter (e.g.
+#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE)
+# @param return_ll A logical specifying whether to return the log likelihood for 
+#   the event submodel (TRUE) or the survival probability (FALSE)
 # @param A vector with length equal to the number of individuals
-ll_surv <- function(ybeta, ebeta, abeta, yb, bhcoefs, eXq, 
-                    basehaz, assoc, assoc_parts, family, qnodes, 
-                    qtimes, qwts, etimes = NULL, estatus = NULL, 
-                    return_ll = TRUE) {
-  one_draw <- (is.vector(ybeta[[1]]))
-  if (!one_draw) {
-    if (!is.matrix(ybeta[[1]]) || !is.array(ybeta[[1]]))
-      stop("pars should be vectors or arrays.")
-    lapply(c(ybeta, yb, list(ebeta, abeta, bhcoefs)), function(x)
-      if (!identical(nrow(ybeta[[1]]), nrow(x)))
-        stop("All pars should have the same number of draws."))
-  }
-  M <- ncol(assoc)
+ll_event <- function(data, pars, basehaz, family = NULL, assoc = NULL, 
+                     one_draw = FALSE, return_ll = TRUE) {
+  etimes  <- attr(data$assoc_parts, "etimes")
+  estatus <- attr(data$assoc_parts, "estatus")
+  qnodes  <- attr(data$assoc_parts, "qnodes")
+  qtimes  <- attr(data$assoc_parts, "qtimes")
+  qwts    <- attr(data$assoc_parts, "qwts")
   
   # Linear predictor for the event submodel
-  e_eta <- linear_predictor(ebeta, eXq) 
+  e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (one_draw) {
-    aXq <- make_assoc_terms(parts = assoc_parts, assoc = assoc, 
-                            family = family, beta = ybeta, b = yb)
-    e_eta <- e_eta + linear_predictor.default(abeta, aXq)
+    aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                            family = family, beta = pars$beta, b = pars$b)
+    e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
   } else {
-    aXq <- matrix(NA, NROW(eXq), NCOL(abeta))
+    aXq <- matrix(NA, NROW(data$eXq), NCOL(pars$abeta))
     for (s in 1:NROW(e_eta)) {
-      abeta_s <- abeta[s,]
-      ybeta_s <- lapply(ybeta, function(x) x[s,])
-      yb_s    <- lapply(yb,    function(x) x[s,])
-      aXq_s   <- make_assoc_terms(parts = assoc_parts, assoc = assoc, 
-                                  family = family, beta = ybeta_s, b = yb_s)
+      abeta_s <- pars$abeta[s,]
+      beta_s  <- lapply(pars$beta, function(x) x[s,])
+      b_s     <- lapply(pars$b,    function(x) x[s,])
+      aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                                  family = family, beta = beta_s, b = b_s)
       e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
     }
   }
 
   # Baseline hazard
-  if (basehaz$type_name == "weibull") { # bhcoefs == weibull shape
-    log_basehaz <- as.vector(log(bhcoefs)) + linear_predictor(bhcoefs-1, log(qtimes))
-  } else if (basehaz$type_name == "bs") {
-    log_basehaz <- linear_predictor(bhcoefs, predict(basehaz$bs_basis, qtimes))
+  if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
+    log_basehaz <- as.vector(log(pars$bhcoef)) + 
+      linear_predictor(pars$bhcoef - 1, log(qtimes))
+  } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
+    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, qtimes))
   } else {
     stop("Not yet implemented for basehaz = ", basehaz$type_name)
   }  
   loghaz <- log_basehaz + e_eta # log haz at etimes (if not NULL) and qtimes
   
-    # Calculate survival prob or log_lik  
+  # Calculate survival prob or log_lik  
   if (one_draw) {
     qhaz <- tail(exp(loghaz), length(qtimes)) # haz at qtimes
     qwhaz <- qwts * qhaz
-    splitting_vec <- rep(1:qnodes, each = length(ids))
+    splitting_vec <- rep(1:qnodes, each = data$Npat)
     cumhaz <- Reduce('+', split(qwhaz, splitting_vec))
   } else {
     qhaz <- exp(loghaz[, tail(1:ncol(loghaz), length(qtimes))])
@@ -734,11 +912,11 @@ ll_surv <- function(ybeta, ebeta, abeta, yb, bhcoefs, eXq,
     if (is.null(etimes) || is.null(estatus))
       stop("'etimes' and 'estatus' cannot be NULL if 'return_ll = TRUE'.")
     if (one_draw) { # return vector of length npat
-      return(estatus * head(loghaz, length(etimes)) - ll_survt)
+      return(estatus * head(loghaz, length(etimes)) + ll_survt)
     } else { # return S * npat matrix
       eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
       ll_hazt <- t(apply(eloghaz, 1L, function(row) estatus * row))
-      return(ll_hazt - ll_survt)
+      return(ll_hazt + ll_survt)
     }
   }
 } 

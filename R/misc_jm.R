@@ -294,10 +294,159 @@ STOP_arg_required_for_stanjm <- function(arg) {
 
 # Error message when a function is not yet implemented for stanjm objects
 #
-# @param what A character string
+# @param what A character string naming the function not yet implemented
 STOP_if_stanjm <- function(what) {
   msg <- "not yet implemented for stanjm objects."
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
+}
+
+# Error message when a required variable is missing from the data frame
+#
+# @param var The name of the variable that could not be found
+STOP_no_var <- function(var) {
+  stop("Variable '", var, "' cannot be found in the data frame.", call. = FALSE)
+}
+
+# Extract parameters from stanmat and return as a list
+# 
+# @param object A stanjm object
+# @param stanmat A matrix of posterior draws, may be provided if the desired 
+#   stanmat is only a subset of the draws from as.matrix(object$stanfit)
+# @return A named list
+extract_pars <- function(object, stanmat = NULL, means = FALSE) {
+  validate_stanjm_object(object)
+  M <- get_M(object)
+  if (is.null(stanmat)) 
+    stanmat <- as.matrix(object$stanfit)
+  nms   <- collect_nms(colnames(stanmat), M)
+  if (!means) { # return array of posterior draws
+    beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
+    ebeta <- stanmat[, nms$e, drop = FALSE]
+    abeta <- stanmat[, nms$a, drop = FALSE]
+    bhcoef <- stanmat[, nms$e_extra, drop = FALSE]
+    b     <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
+  } else { # return posterior means
+    stanmat <- colMeans(stanmat)
+    beta  <- lapply(1:M, function(m) stanmat[nms$y[[m]]])
+    ebeta <- stanmat[nms$e]
+    abeta <- stanmat[nms$a]
+    bhcoef <- stanmat[nms$e_extra]
+    b     <- lapply(1:M, function(m) stanmat[nms$yb[[m]]])
+  }
+  nlist(beta, ebeta, abeta, bhcoef, b)
+}
+
+# Validate newdataLong and newdataEvent arguments
+#
+# @param object A stanjm object
+# @param newdataLong A data frame, or a list of data frames
+# @param newdataEvent A data frame
+# @param duplicate_ok A logical. If FALSE then only one row per individual is
+#   allowed in the newdataEvent data frame
+# @return A list of validated data frames
+validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
+                              duplicate_ok = FALSE) {
+  validate_stanjm_object(object)
+  id_var <- object$id_var
+  newdatas <- list()
+  if (!is.null(newdataLong)) {
+    if (!is(newdataLong, "list"))
+      newdataLong <- rep(list(newdataLong), get_M(object))
+    newdatas <- c(newdatas, newdataLong)
+  }
+  if (!is.null(newdataEvent)) {
+    if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
+      stop("'newdataEvent' should only contain one row per individual, since ",
+           "time varying covariates are not allowed in the prediction data.")
+    newdatas <- c(newdatas, list(Event = newdataEvent))
+  }
+  newdatas <- lapply(newdatas, function(x) {
+    if (!id_var %in% colnames(x)) STOP_no_var(id_var)
+    validate_newdata(x)
+  })
+  ids <- lapply(newdatas, function(x) unique(x[[id_var]]))
+  sorted_ids <- lapply(ids, sort)
+  if (!length(unique(sorted_ids)) == 1L) 
+    stop("The same subject ids should appear in each new data frame.")
+  if (!length(unique(ids)) == 1L) 
+    stop("The subject ids should be ordered the same in each new data frame.")  
+  return(newdatas)
+}
+
+# Return data frames only including the specified subset of individuals
+#
+# @param object A stanjm object
+# @param data A data frame, or a list of data frames
+# @param ids A vector of ids indicating which individuals to keep
+# @return A data frame, or a list of data frames, depending on the input
+subset_ids <- function(object, data, ids) {
+  validate_stanjm_object(object)
+  id_var <- object$id_var
+  is_list <- is(data, "list")
+  if (!is_list) data <- list(data)
+  is_df <- sapply(data, is.data.frame)
+  if (!all(is_df)) stop("'data' should be a data frame, or list of data frames.")
+  data <- lapply(data, function(x) {
+    if (!id_var %in% colnames(x)) STOP_no_var(id_var)
+    sel <- which(!ids %in% x[[id_var]])
+    if (length(sel)) 
+      stop("The following 'ids' do not appear in the data: ", 
+           paste(ids[[sel]], collapse = ", "))
+    x[x[[id_var]] %in% ids, , drop = FALSE]
+  })
+  if (is_list) return(data) else return(data[[1]])
+}
+
+# Check if individuals in ids argument were also used in model estimation
+#
+# @param object A stanjm object
+# @param ids A vector of ids appearing in the pp data
+# @param m Integer specifying which submodel to get the estimation IDs from
+# @return A logical. TRUE indicates their are new ids in the prediction data,
+#   while FALSE indicates all ids in the prediction data were used in fitting
+#   the model. This return is used to determine whether to draw new b pars.
+check_pp_ids <- function(object, ids, m = 1) {
+  ids2 <- unique(model.frame(object, m = m)[[object$id_var]])
+  if (any(ids %in% ids2))
+    warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
+            "estimation dataset. Please be sure you want to obtain subject-",
+            "specific predictions using the estimated random effects for those ",
+            "individuals. If you instead meant to marginalise over the distribution ",
+            "of the random effects, then please make sure the ID values do not ",
+            "correspond to individuals in the estimation dataset.", immediate. = TRUE)
+  if (!all(ids %in% ids2)) TRUE else FALSE
+}
+
+# Return log likelihood for full joint model
+#
+# @param ll_long A list with the log likelihood for each longitudinal submodel,
+#   each element must be either: an S * Npat matrix (where S is the number of 
+#   posterior draws used to calculate the log likelihood), a vector of length 
+#   Npat, or a single value.  
+# @param ll_event The log likelihood for the event submodel. Can be in any of  
+#   the same forms as described for the ll_long argument.
+# @param sum_ll A logical. If TRUE then the log likelihood is summed across all
+#   individuals.
+# @return Either a matrix, a vector or a scalar, depending on the input types
+#   and whether sum_ll is set to TRUE.
+ll_jm <- function(ll_long, ll_event, sum_ll = FALSE) {
+  if (!is(ll_long, "list"))
+    stop("'ll_long' should be a list.")
+  ll_all <- c(ll_long, list(ll_event))
+  if (is.matrix(ll_event)) { # inputs as matrices
+    mats <- unique(sapply(ll_all, is.matrix))
+    dims <- unique(sapply(ll_all, dim)) 
+    if ((length(dims) > 1L) || (length(mats) > 1L))
+      stop("Elements of 'll_long' should be the same class and dimension as 'll_event'.")
+  } else { # inputs as vectors
+    lens <- unique(sapply(ll_all, length))
+    if (length(lens) > 1L)
+      stop("Elements of 'll_long' should be the same length as 'll_event'.")
+  }
+  val <- Reduce('+', ll_all)
+  if (!sum_ll) return(val) 
+  else if (is.matrix(val)) return(rowSums(val)) 
+  else return(sum(val))
 }

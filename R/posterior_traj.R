@@ -186,44 +186,22 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            return_matrix = FALSE, ...) {
   validate_stanjm_object(object)
   M <- get_M(object)
+  id_var   <- object$id_var
+  time_var <- object$time_var
   validate_positive_scalar(m, not_greater_than = M)
   if (missing(ids)) 
     ids <- NULL
   
-  # data: observed data to return to user
-  # newX: design matrix used for predictions
+  # Construct prediction data, NB data == observed data to return to user
   newdata <- validate_newdata(newdata)
-  if (is.null(newdata)) {      
-    data <- newX <- as.data.frame(model.frame(object)[[m]])
-  } else {
-    data <- newX <- as.data.frame(newdata)
-  }  
-  
-  id_var <- object$id_var
-  if (!id_var %in% names(data))
-    stop("The ID variable (", id_var, ") from the original fitted model ",
-         "must appear in 'newdata'. To predict for new individuals ",
-         "you should enter values for the ID variable that do not coincide ",
-         "with those individuals used to fit the model. See the help file ",
-         "for more details.", call. = FALSE)
-  time_var <- object$time_var
-  if (!time_var %in% names(data))
-    stop("The time variable from the original fitted model must appear ",
-         "in 'newdata'.", call. = FALSE) 
-  
-  # User specified a subset of ids
-  if (!is.null(ids)) {
-    check_for_missing_ids(data, id_var, ids)
-    data <- data[data[[id_var]] %in% ids, , drop = FALSE] 
-    newX <- newX[newX[[id_var]] %in% ids, , drop = FALSE]     
-  }
-  
-  # Ordering of IDs taken from data, not from ids argument  
-  id_list <- unique(data[[id_var]])
-  
-  # Issue warning if IDs in newdata match individuals in the estimation data
-  if (!is.null(newdata))
-    check_for_estimation_ids(object, id_list, m = m)
+  data <- if (is.null(newdata)) model.frame(object)[[m]] else newdata
+  if (!id_var   %in% names(data)) STOP_no_var(id_var)
+  if (!time_var %in% names(data)) STOP_no_var(time_var)
+  if (!is.null(ids)) # user specified a subset of ids
+    data <- subset_ids(object, data, ids)
+  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
+  if (!is.null(newdata)) # warn if newdata ids are from fit
+    newpats <- check_pp_ids(object, id_list, m = m) # newpats not actually used
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata
@@ -238,11 +216,10 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     }
   }
   
-  # User specified interpolation or extrapolation
-  if (interpolate || extrapolate) {  
+  newX <- data # design matrix used for predictions
+  if (interpolate || extrapolate) {  # user specified interpolation or extrapolation
     if (return_matrix) 
-      stop("'return_matrix' cannot be TRUE if either 'interpolate' or ",
-           "'extrapolate' is set to TRUE.")
+      stop("'return_matrix' cannot be TRUE if 'interpolate' or 'extrapolate' is TRUE.")
     ok_control_args <- c("ipoints", "epoints", "edist", "eprop")
     control <- get_extrapolation_control(control, ok_control_args = ok_control_args)
     dist <- if (!is.null(control$eprop)) control$eprop * (last_time - 0) else control$edist
@@ -257,7 +234,6 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     newX <- data.table::data.table(newX, key = c(id_var, time_var))
     newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
   }
-  
   ytilde <- posterior_predict(object, newdata = newX, m = m, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
@@ -502,41 +478,6 @@ set_geom_args <- function(defaults, ...) {
       defaults[[extras[j]]] <- dots[[extras[j]]]
   }
   return(defaults)
-}
-
-# Check whether individuals in the ids argument are present in the data
-#
-# @param data A data frame
-# @param id_var The name of the ID variable in data
-# @param ids A vector of ids
-check_for_missing_ids <- function(data, id_var, ids) {
-  if (!is.data.frame(data))
-    stop("'data' should be a data frame.")
-  if (!all(is.character(id_var), length(id_var == 1L)))
-    stop("'id_var' should be a variable name.")
-  if (!id_var %in% colnames(data))
-    stop(paste(substitute(deparse(id_var)), "not found in 'data'."))
-  sel <- which(!ids %in% data[[id_var]])
-  if (length(sel))
-    stop("The following 'ids' do not appear in the data: ", 
-         paste(ids[[sel]], collapse = ", "))
-}
-
-# Check whether individuals in the ids argument were used in the 
-# model estimation
-#
-# @param object A stanjm object
-# @param ids A vector of ids
-# @param m Integer specifying which submodel to get the estimation IDs from
-check_for_estimation_ids <- function(object, ids, m = 1) {
-  ids2 <- unique(model.frame(object, m = m)[[object$id_var]])
-  if (any(ids %in% ids2))
-    warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
-            "estimation dataset. Please be sure you want to obtain subject-",
-            "specific predictions using the estimated random effects for those ",
-            "individuals. If you instead meant to marginalise over the distribution ",
-            "of the random effects, then please make sure the ID values do not ",
-            "correspond to individuals in the estimation dataset.", immediate. = TRUE)
 }
 
 # Return a list with the control arguments for interpolation and/or
