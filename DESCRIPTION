@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.14.1
-Date: 2017-01-16
+Version: 2.14.2
+Date: 2017-03-29
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
@@ -34,7 +34,7 @@ Imports:
     Matrix,
     nlme (>= 3.1-124),
     rstan (>= 2.14.1),
-    rstantools (>= 1.1.0),
+    rstantools (>= 1.2.0),
     shinystan (>= 2.2.1),
     stats,
     utils

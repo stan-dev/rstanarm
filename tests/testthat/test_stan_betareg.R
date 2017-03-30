@@ -143,8 +143,8 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
     SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[2],
                            prior = NULL, prior_intercept = NULL,
                            prior_z = NULL, prior_intercept_z = NULL,
-                           data = dat, algorithm = "sampling", 
-                           chains = 2, iter = 300, seed = SEED))
+                           data = dat, algorithm = "optimizing", 
+                           seed = SEED))
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[2], data = dat))
@@ -155,15 +155,14 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
 # sqrt link is unstable so only testing that the model runs. 
 test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
   for (i in 1:length(link1)) {  # FIXME!
-    N <- 300
+    N <- 1000
     dat <- data.frame(x = rnorm(N, 2, 1), z = rep(1, N))
     mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
     phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
 
     SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                           data = dat, algorithm = "sampling",
-                           chains = 1, iter = 1)) 
+                           data = dat, algorithm = "sampling", chains = 1, iter = 1)) 
     expect_stanreg(fit)
   }
 })

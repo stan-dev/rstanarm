@@ -177,11 +177,15 @@ recommend_QR_for_vb <- function() {
 # @param rhats Vector of rhat values.
 # @param threshold Threshold value. If any rhat values are above threshold a
 #   warning is issued.
-check_rhats <- function(rhats, threshold = 1.1) {
+check_rhats <- function(rhats, threshold = 1.1, check_lp = FALSE) {
+  if (!check_lp)
+    rhats <- rhats[!names(rhats) %in% c("lp__", "log-posterior")]
+
   if (any(rhats > threshold, na.rm = TRUE))
     warning("Markov chains did not converge! Do not analyze results!",
             call. = FALSE, noBreaks. = TRUE)
 }
+
 
 # If y is a 1D array keep any names but convert to vector (used in stan_glm)
 #
