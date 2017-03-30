@@ -65,6 +65,9 @@ stan_betareg.fit <- function(x, y, z = NULL,
   if (Z_true == 0)
     link_num_phi <- 0
 
+  # optimizing still fails for `link.phi = "identity"`
+  if (algorithm == "optimizing" & link.phi == "identity")
+    stop("algorithm = 'optimizing' is not supported for link.phi = 'identity'")
   # useless assignments to pass R CMD check
   has_intercept <- min_prior_scale <- 
     prior_df <- prior_df_for_intercept <- prior_df_for_intercept_z <- prior_df_z <-
