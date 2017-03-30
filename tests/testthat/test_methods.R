@@ -594,8 +594,10 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_silent(d <- as.data.frame(s))
   expect_s3_class(s, "summary.stanreg")
   expect_output(print(s), "stan_glmer")
-  expect_output(print(s), paste("Posterior sample size:",
-                                rstanarm:::posterior_sample_size(example_model)))
+  expect_output(
+    print(s), 
+    paste(rstanarm:::posterior_sample_size(example_model)), "(posterior sample size)"
+  )
   expect_identical(attr(s, "algorithm"), "sampling")
   expect_identical(colnames(s), colnames(d))
   expect_identical(rownames(s), rownames(d))
