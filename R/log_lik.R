@@ -95,30 +95,16 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
     newdataLong  <- newdatas[1:M]
     newdataEvent <- newdatas[["Event"]]
   }
-
+  pars <- extract_pars(object, stanmat) # array of draws
+  data <- jm_data(object, newdataLong, newdataEvent)
   # log_lik matrix for each longitudinal submodel
   calling_fun <- as.character(sys.call(-1))[1]
-  y_ll <- lapply(1:M, function(m) {
-    args <- ll_args(object, newdata = newdataLong[[m]], offset = offset, 
-                    reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
-                    m = m, ...)
-    fun <- ll_fun(object, m = m)
-    ll <- sapply(seq_len(args$N), function(i) {
-      as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
-                    draws = args$draws))})
-    # return an S * npat array (sum of log_lik over yobs for each individual)
-    flist_m <- if (!is.null(newdataLong)) newdataLong[[m]][[id_var]] else 
-      object$glmod_stuff[[m]]$flist[[id_var]]
-    t(apply(ll, 1L, function(row) tapply(row, flist_m, sum)))
-  })
-    
+  ll_long <- lapply(1:M, function(m)
+    ll_long(object, data, pars, offset = offset, m = m, 
+            reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), ...))
   # log_lik matrix for event submodel
-  pars <- extract_pars(object, stanmat) # array of draws
-  dat  <- jm_data(object, newdataLong, newdataEvent)
-  e_ll <- ll_event(data = dat, pars = pars, basehaz = basehaz, 
-                   family = family, assoc = assoc)
-  
-  return(Reduce('+', c(y_ll, list(e_ll))))
+  ll_event <- ll_event(object = object, data = data, pars = pars)
+  return(ll_jm(ll_long, ll_event))
 }
 
 
@@ -149,9 +135,8 @@ ll_fun <- function(x, m = NULL) {
 #   only a single level.
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, ...) UseMethod("ll_args")
-ll_args.stanreg <- function(object, newdata = NULL, offset = NULL,
-                            reloo_or_kfold = FALSE, m = NULL, ...) {
+ll_args <- function(object, newdata = NULL, offset = NULL,
+                    reloo_or_kfold = FALSE, m = NULL, ...) {
   validate_stanreg_object(object)
   f <- family(object, m = m)
   draws <- nlist(f)
@@ -239,8 +224,12 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL,
   }
   
   data$offset <- if (has_newdata) offset else object$offset
-  if (model_has_weights(object))
-    data$weights <- object$weights # not yet compatible with stanjm
+  if (model_has_weights(object)) {
+    if (is.stanjm(object)) 
+      STOP_if_stanjm("posterior_survfit with weights")
+    data$weights <- object$weights
+  }
+    
   
   if (is.stanjm(object) && !is.null(dots$user_b)) {
     if (has_newdata) {
@@ -250,6 +239,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL,
       z <- get_z(object, m = m)
     }
     b <- dots$user_b
+    data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   } else if (is.mer(object)) {
     b_sel <- if (is.null(nms)) b_names(colnames(stanmat)) else nms$y_b[[m]]

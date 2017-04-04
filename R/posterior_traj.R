@@ -462,24 +462,6 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
 
 # internal ----------------------------------------------------------------
 
-set_geom_args <- function(defaults, ...) {
-  dots <- list(...)
-  if (!length(dots)) 
-    return(defaults)
-  dot_names <- names(dots)
-  def_names <- names(defaults)
-  for (j in seq_along(def_names)) {
-    if (def_names[j] %in% dot_names)
-      defaults[[j]] <- dots[[def_names[j]]]
-  }
-  extras <- setdiff(dot_names, def_names)
-  if (length(extras)) {
-    for (j in seq_along(extras))
-      defaults[[extras[j]]] <- dots[[extras[j]]]
-  }
-  return(defaults)
-}
-
 # Return a list with the control arguments for interpolation and/or
 # extrapolation in posterior_predict.stanjm and posterior_survfit.stanjm
 #
@@ -525,23 +507,23 @@ get_extrapolation_control <- function(control = list(),
   return(control)
 }
 
-# Return an array or list with the time sequence used for posterior predictions
-#
-# @param increments An integer with the number of increments (time points) at
-#   which to predict the outcome for each individual
-# @param t0,t1 Numeric vectors giving the start and end times across which to
-#   generate prediction times
-# @param simplify Logical specifying whether to return each increment as a 
-#   column of an array (TRUE) or as an element of a list (FALSE) 
-get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
-  val <- sapply(0:(increments - 1), function(x, t0, t1) {
-    t0 + (t1 - t0) * (x / (increments - 1))
-  }, t0 = t0, t1 = t1, simplify = simplify)
-  if (simplify && is.vector(val)) {
-    # need to transform if there is only one individual
-    val <- t(val)
-    rownames(val) <- if (!is.null(names(t0))) names(t0) else 
-      if (!is.null(names(t1))) names(t1) else NULL
+# Set plotting defaults
+set_geom_args <- function(defaults, ...) {
+  dots <- list(...)
+  if (!length(dots)) 
+    return(defaults)
+  dot_names <- names(dots)
+  def_names <- names(defaults)
+  for (j in seq_along(def_names)) {
+    if (def_names[j] %in% dot_names)
+      defaults[[j]] <- dots[[def_names[j]]]
   }
-  return(val)
+  extras <- setdiff(dot_names, def_names)
+  if (length(extras)) {
+    for (j in seq_along(extras))
+      defaults[[extras[j]]] <- dots[[extras[j]]]
+  }
+  return(defaults)
 }
+
+

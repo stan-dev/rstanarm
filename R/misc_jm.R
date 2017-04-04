@@ -320,22 +320,15 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
   M <- get_M(object)
   if (is.null(stanmat)) 
     stanmat <- as.matrix(object$stanfit)
+  if (means) 
+    stanmat <- t(colMeans(stanmat)) # return posterior means
   nms   <- collect_nms(colnames(stanmat), M)
-  if (!means) { # return array of posterior draws
-    beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
-    ebeta <- stanmat[, nms$e, drop = FALSE]
-    abeta <- stanmat[, nms$a, drop = FALSE]
-    bhcoef <- stanmat[, nms$e_extra, drop = FALSE]
-    b     <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
-  } else { # return posterior means
-    stanmat <- colMeans(stanmat)
-    beta  <- lapply(1:M, function(m) stanmat[nms$y[[m]]])
-    ebeta <- stanmat[nms$e]
-    abeta <- stanmat[nms$a]
-    bhcoef <- stanmat[nms$e_extra]
-    b     <- lapply(1:M, function(m) stanmat[nms$yb[[m]]])
-  }
-  nlist(beta, ebeta, abeta, bhcoef, b)
+  beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
+  ebeta <- stanmat[, nms$e, drop = FALSE]
+  abeta <- stanmat[, nms$a, drop = FALSE]
+  bhcoef <- stanmat[, nms$e_extra, drop = FALSE]
+  b     <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
+  nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
 }
 
 # Validate newdataLong and newdataEvent arguments
@@ -419,34 +412,106 @@ check_pp_ids <- function(object, ids, m = 1) {
   if (!all(ids %in% ids2)) TRUE else FALSE
 }
 
-# Return log likelihood for full joint model
+
+# Return an array or list with the time sequence used for posterior predictions
 #
-# @param ll_long A list with the log likelihood for each longitudinal submodel,
-#   each element must be either: an S * Npat matrix (where S is the number of 
-#   posterior draws used to calculate the log likelihood), a vector of length 
-#   Npat, or a single value.  
-# @param ll_event The log likelihood for the event submodel. Can be in any of  
-#   the same forms as described for the ll_long argument.
-# @param sum_ll A logical. If TRUE then the log likelihood is summed across all
-#   individuals.
-# @return Either a matrix, a vector or a scalar, depending on the input types
-#   and whether sum_ll is set to TRUE.
-ll_jm <- function(ll_long, ll_event, sum_ll = FALSE) {
-  if (!is(ll_long, "list"))
-    stop("'ll_long' should be a list.")
-  ll_all <- c(ll_long, list(ll_event))
-  if (is.matrix(ll_event)) { # inputs as matrices
-    mats <- unique(sapply(ll_all, is.matrix))
-    dims <- unique(sapply(ll_all, dim)) 
-    if ((length(dims) > 1L) || (length(mats) > 1L))
-      stop("Elements of 'll_long' should be the same class and dimension as 'll_event'.")
-  } else { # inputs as vectors
-    lens <- unique(sapply(ll_all, length))
-    if (length(lens) > 1L)
-      stop("Elements of 'll_long' should be the same length as 'll_event'.")
+# @param increments An integer with the number of increments (time points) at
+#   which to predict the outcome for each individual
+# @param t0,t1 Numeric vectors giving the start and end times across which to
+#   generate prediction times
+# @param simplify Logical specifying whether to return each increment as a 
+#   column of an array (TRUE) or as an element of a list (FALSE) 
+get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
+  val <- sapply(0:(increments - 1), function(x, t0, t1) {
+    t0 + (t1 - t0) * (x / (increments - 1))
+  }, t0 = t0, t1 = t1, simplify = simplify)
+  if (simplify && is.vector(val)) {
+    # need to transform if there is only one individual
+    val <- t(val)
+    rownames(val) <- if (!is.null(names(t0))) names(t0) else 
+      if (!is.null(names(t1))) names(t1) else NULL
   }
-  val <- Reduce('+', ll_all)
-  if (!sum_ll) return(val) 
-  else if (is.matrix(val)) return(rowSums(val)) 
-  else return(sum(val))
+  return(val)
 }
+
+#-------- Functions for constructing data and pars
+
+# Return design matrices for calculating linear predictor or
+# log-likelihood of longitudinal or event submodels
+#
+# @param object A stanjm object
+# @param newdataLong A data frame or list of data frames with the new 
+#   covariate data for the longitudinal submodel
+# @param newdataEvent A data frame with the new covariate data for the
+#   event submodel
+# @param ids An optional vector of subject IDs specifying which individuals
+#   should be included in the returned design matrices.
+# @param etimes An optional vector of times at which the event submodel
+#   design matrices should be evaluated (also used to determine the 
+#   quadrature times). If NULL then times are taken to be the eventimes in
+#   the fitted object (if newdataEvent is NULL) or in newdataEvent.
+# @param long_parts,event_parts A logical specifying whether to return the
+#   design matrices for the longitudinal and/or event submodels.
+# @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
+#   yZnames, eXq, assoc_parts) 
+jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL, 
+                    ids = NULL, etimes = NULL, long_parts = TRUE, 
+                    event_parts = TRUE) {
+  M <- get_M(object)
+  id_var   <- object$id_var
+  time_var <- object$time_var
+  newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+  ndL <- newdatas[1:M]
+  ndE <- newdatas[["Event"]]   
+  ndL <- subset_ids(object, ndL, ids)
+  ndE <- subset_ids(object, ndE, ids)
+  id_list <- unique(ndE[[id_var]])
+  if (!is.null(newdataEvent) && is.null(etimes)) {
+    y <- eval(formula(object, m = "Event")[[2L]], ndE)
+    etimes  <- unclass(y)[,"time"]
+    estatus <- unclass(y)[,"status"]    
+  } else if (is.null(etimes)) {
+    etimes  <- object$eventtime[[as.character(id_list)]]
+    estatus <- object$status[[as.character(id_list)]]
+  } else estatus <- NULL
+  res <- nlist(M, Npat = length(id_list), ndL, ndE)
+  if (long_parts && event_parts) 
+    lapply(ndL, function(x) {
+      if (!time_var %in% colnames(x)) STOP_no_var(time_var)
+      mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
+      if (any(mt > etimes))
+        stop("There appears to be observation times in the longitudinal data that ",
+             "are later than the event time specified in the 'etimes' argument.")      
+    }) 
+  if (long_parts) {
+    ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
+    yX <- fetch(ydat, "X")
+    yZt <- fetch(ydat, "Zt")
+    yZ_names <- fetch(ydat, "Z_names")
+    flist <- if (is.null(newdataLong)) 
+      lapply(object$glmod_stuff, function(x) x$flist[[id_var]]) else 
+        lapply(newdataLong, `[[`, id_var)
+    res <- c(res, nlist(yX, yZt, yZ_names, flist))
+  }
+  if (event_parts) {
+    qnodes <- object$quadnodes
+    qq <- get_quadpoints(qnodes)
+    qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
+    qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
+    edat <- prepare_data_table(ndE, id_var, time_var)
+    edat <- rolling_merge(edat, ids = rep(id_list, qnodes), times = qtimes)
+    eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")       
+    assoc_parts <- lapply(1:M, function(m) {
+      ymf <- prepare_data_table(ndL[[m]], id_var, time_var)
+      make_assoc_parts(
+        ymf, assoc = object$assoc, id_var = object$id_var, 
+        time_var = object$time_var, id_list = id_list, times = qtimes, 
+        use_function = pp_data, object = object, m = m)
+    })
+    assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)
+    assoc_parts <- do.call("structure", assoc_attr)
+    res <- c(res, nlist(eXq, assoc_parts))
+  }
+  return(res)
+}
+
