@@ -376,83 +376,45 @@
 #'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
-#'               time_var = "year")
+#'               time_var = "year",
+#'               # this next line is only to keep the example small in size!
+#'               chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(f1) 
 #'         
 #' #####
 #' # Univariate joint model, with association structure based on the 
-#' # current value of the linear predictor and shared random intercept
-#' f2 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
+#' # current value and slope of the linear predictor
+#' f2 <- stan_jm(formulaLong = logBili ~ year + (year | id), 
 #'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
-#'               assoc = c("etavalue", "shared_b"),
-#'               time_var = "year")
-#' summary(f2)          
-#' 
-#' ######
-#' # Multivariate joint model, with association structure based 
-#' # on the current value of the linear predictor in each longitudinal 
-#' # submodel and shared random intercept from the second longitudinal 
-#' # submodel only (which is the first random effect in that submodel
-#' # and is therefore indexed the '(1)' suffix in the code below)
-#' mv1 <- stan_jm(
-#'         formulaLong = list(
-#'           logBili ~ year + (1 | id), 
-#'           albumin ~ sex + year + (1 + year | id)),
-#'         dataLong = pbcLong,
-#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'         dataEvent = pbcSurv,
-#'         assoc = list("etavalue", c("etavalue", "shared_b(1)")), 
-#'         time_var = "year")
-#' summary(mv1)
-#' 
-#' # To include both the random intercept and random slope in the shared 
-#' # random effects association structure for the second longitudinal 
-#' # submodel, we could specify the following:
-#' #   update(mv1, assoc = list("etavalue", c("etavalue", "shared_b"))
-#' # which would be equivalent to:  
-#' #   update(mv1, assoc = list("etavalue", c("etavalue", "shared_b(1,2)"))
-#' # or:
-#' #   update(mv1, assoc = list("etavalue", c("etavalue", "shared_b(1:2)"))     
-#' 
-#' ######
-#' # Multivariate joint model, estimated using multiple MCMC chains 
-#' # run in parallel across all available PC cores
-#' mv2 <- stan_jm(
-#'         formulaLong = list(
-#'           logBili ~ year + (1 | id), 
-#'           albumin ~ sex + year + (1 + year | id)),
-#'         dataLong = pbcLong,
-#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-#'         dataEvent = pbcSurv,
-#'         assoc = list("etavalue", c("etavalue", "shared_b(1)")),
-#'         time_var = "year",
-#'         chains = 3, refresh = 25,
-#'         cores = parallel::detectCores())
-#' summary(mv2)  
+#'               assoc = c("etavalue", "etaslope"),
+#'               time_var = "year",
+#'               chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' summary(f2)  
 #' 
 #' #####
-#' # Here we provide an example of specifying an association structure 
-#' # based on the lagged value of the linear predictor, where the lag
-#' # is 2 time units (i.e. 2 years in this example)
+#' # Univariate joint model, with association structure based on the 
+#' # lagged value of the linear predictor, where the lag is 2 time 
+#' # units (i.e. 2 years in this example)
 #' f3 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
-#'               assoc = "etalag(2)")
+#'               assoc = "etalag(2)",
+#'               chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(f3) 
 #' 
 #' #####
-#' # Here we provide an example of specifying an association structure with 
-#' # interaction terms. Here we specify that we want to use an association
-#' # structure based on the current value of the linear predictor from
-#' # the longitudinal submodel ("etavalue"), but we will also specify
-#' # that we want to interact this with the treatment covariate (trt) from
-#' # pbcLong data frame so that we can estimate a different association 
-#' # parameter (i.e. estimated effect of log serum bilirubin on the log hazard 
-#' # of death) for each treatment group
+#' # Univariate joint model, where the association structure includes 
+#' # interactions with observed data. Here we specify that we want to use 
+#' # an association structure based on the current value of the linear 
+#' # predictor from the longitudinal submodel (i.e. "etavalue"), but we 
+#' # also want to interact this with the treatment covariate (trt) from
+#' # pbcLong data frame, so that we can estimate a different association 
+#' # parameter (i.e. estimated effect of log serum bilirubin on the log 
+#' # hazard of death) for each treatment group
 #' f4 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
@@ -460,25 +422,53 @@
 #'               time_var = "year", chains = 1,
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"))
 #' 
-#' #####
-#' # Here we provide an example of a multivariate joint model, where the
-#' # association structure is formed by including the expected value of 
-#' # each marker (logBili and albumin) in the linear predictor of the event
-#' # submodel, as well as their interaction effect. (Noting that whether an  
-#' # association structure based on a marker by marker interaction term makes 
-#' # sense will depend on the context of your application -- here we just show
-#' # it for demostration purposes).
-#' mv3 <- stan_jm(
+#' ######
+#' # Multivariate joint model, with association structure based 
+#' # on the current value of the linear predictor in the first longitudinal 
+#' # submodel and shared random intercept from the second longitudinal 
+#' # submodel only (which is the first random effect in that submodel
+#' # and is therefore indexed using the '(1)' suffix in the code below)
+#' mv1 <- stan_jm(
 #'         formulaLong = list(
 #'           logBili ~ year + (1 | id), 
-#'           albumin ~ sex + year + (1 + year | id)),
+#'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
 #'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
-#'         time_var = "year", chains = 1,
-#'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"))
-#' }
+#'         assoc = list("etavalue", "shared_b(1)"), 
+#'         time_var = "year",
+#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' summary(mv1)
 #' 
+#' # To include both the random intercept and random slope in the shared 
+#' # random effects association structure for the second longitudinal 
+#' # submodel, we could specify the following:
+#' #   update(mv1, assoc = list("etavalue", "shared_b")
+#' # which would be equivalent to:  
+#' #   update(mv1, assoc = list("etavalue", "shared_b(1,2)")
+#' # or:
+#' #   update(mv1, assoc = list("etavalue", "shared_b(1:2)")     
+#' 
+#' #####
+#' # Multivariate joint model, where the association structure is formed by 
+#' # including the expected value of each longitudinal marker (logBili and 
+#' # albumin) in the linear predictor of the event submodel, as well as their 
+#' # interaction effect (i.e. the interaction between the two "etavalue" terms). 
+#' # Note that whether such an association structure based on a marker by 
+#' # marker interaction term makes sense will depend on the context of your 
+#' # application -- here we just show it for demostration purposes).
+#' mv2 <- stan_jm(
+#'         formulaLong = list(
+#'           logBili ~ year + (1 | id), 
+#'           albumin ~ sex + year + (year | id)),
+#'         dataLong = pbcLong,
+#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'         dataEvent = pbcSurv,
+#'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"),
+#'         time_var = "year", 
+#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' }
+#'  
 #' @import data.table
 #' @importFrom lme4 lmerControl glmerControl
 #' 
@@ -999,7 +989,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     c("etavalue", "etaslope", "etalag", "etaauc", "muvalue", "muslope", "mulag", "muauc"), 
     function(x, assoc) {
       nm_check <- switch(x,
-                         etavalue = "etavalue|muvalue|etaslope|muslope",
+                         etavalue = "^eta|^mu",
                          etaslope = "etaslope|muslope",
                          etalag   = "etalag|mulag",
                          etaauc   = "etaauc|muauc",
@@ -1071,7 +1061,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$a_K_data  <- fetch_array(a_mod_stuff, "K_data")  
   
   # Interactions between association terms
-  standata$which_interactions      <- unlist(assoc["which_interactions",])
+  standata$which_interactions      <- as.array(unlist(assoc["which_interactions",]))
   standata$size_which_interactions <- c(sapply(assoc["which_interactions",], sapply, length))
    
   # Shared random effects
@@ -2336,9 +2326,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
 rolling_merge <- function(data, ids, times) {
   if (is(times, "list")) {
     return(do.call(rbind, lapply(times, FUN = function(x) 
-      data[data.table::SJ(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
+      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
   } else 
-    return(data[data.table::SJ(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
+    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
 }
 
 # Evaluate a glFormula call and return model components
@@ -2730,11 +2720,13 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
     } else { # need to construct linpred
       x <- part$x
       Zt <- part$Zt
+      Znames  <- part$Z_names
       if (is.null(x) || is.null(Zt))
         stop(paste0("Bug found: cannot find x and Zt in object. They are ",
              "required to build the linear predictor for '", which, "'."))          
       beta <- dots$beta[[m]]
-      b <- dots$b[[m]]
+      b <- dots$b[[m]] 
+      b <- pp_b_ord(if (is.matrix(b)) b else t(b), Znames)
       if (is.null(beta) || is.null(b))
         stop("Bug found: beta and b must be provided to construct linpred.")
       return(linear_predictor.default(beta, x) + as.vector(b %*% Zt))

@@ -124,7 +124,7 @@
 #' compare_models(kfold1, kfold2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
@@ -138,7 +138,11 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  if (is.stanjm(x)) {
+    loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
+  } else {
+    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  }
   
   bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
   n_bad <- length(bad_obs)
@@ -175,12 +179,13 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 # 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
+#' @importFrom loo waic waic.function waic.matrix
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
+  out <- if (is.stanjm(x)) waic.matrix(log_lik(x)) else 
+    waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
@@ -223,6 +228,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
+  if (is.stanjm(x))
+    STOP_if_stanjm("kfold")
   if (model_has_weights(x))
     stop("kfold is not currently available for models fit using weights.")
   
@@ -403,6 +410,8 @@ recommend_exact_loo <- function(reason) {
 # @param refit logical, to toggle whether refitting actually happens (only used
 #   to avoid refitting in tests)
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
+  if (is.stanjm(x))
+    STOP_if_stanjm("reloo")
   stopifnot(!is.null(x$data), inherits(loo_x, "loo"))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")

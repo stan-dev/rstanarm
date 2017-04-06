@@ -275,7 +275,8 @@ sigma.stanreg <- function(object, ...) {
 #' @importFrom nlme VarCorr
 #' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
-  mat <- as.matrix(x)
+  dots <- list(...) # used to pass stanmat with a single draw for posterior_survfit
+  mat <- if ("stanmat" %in% names(dots)) as.matrix(dots$stanmat) else as.matrix(x)
   cnms <- .cnms(x)
   useSc <- "sigma" %in% colnames(mat)
   if (useSc) sc <- mat[,"sigma"]
