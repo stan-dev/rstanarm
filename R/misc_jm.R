@@ -355,17 +355,19 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
            "time varying covariates are not allowed in the prediction data.")
     newdatas <- c(newdatas, list(Event = newdataEvent))
   }
-  newdatas <- lapply(newdatas, function(x) {
-    if (!id_var %in% colnames(x)) STOP_no_var(id_var)
-    validate_newdata(x)
-  })
-  ids <- lapply(newdatas, function(x) unique(x[[id_var]]))
-  sorted_ids <- lapply(ids, sort)
-  if (!length(unique(sorted_ids)) == 1L) 
-    stop("The same subject ids should appear in each new data frame.")
-  if (!length(unique(ids)) == 1L) 
-    stop("The subject ids should be ordered the same in each new data frame.")  
-  return(newdatas)
+  if (length(newdatas)) {
+    idvar_check <- sapply(newdatas, function(x) id_var %in% colnames(x)) 
+    if (!all(idvar_check)) 
+      STOP_no_var(id_var)
+    ids <- lapply(newdatas, function(x) unique(x[[id_var]]))
+    sorted_ids <- lapply(ids, sort)
+    if (!length(unique(sorted_ids)) == 1L) 
+      stop("The same subject ids should appear in each new data frame.")
+    if (!length(unique(ids)) == 1L) 
+      stop("The subject ids should be ordered the same in each new data frame.")  
+    newdatas <- lapply(newdatas, validate_newdata)
+    return(newdatas)
+  } else return(NULL)
 }
 
 # Return data frames only including the specified subset of individuals
@@ -407,8 +409,11 @@ check_pp_ids <- function(object, ids, m = 1) {
             "estimation dataset. Please be sure you want to obtain subject-",
             "specific predictions using the estimated random effects for those ",
             "individuals. If you instead meant to marginalise over the distribution ",
-            "of the random effects, then please make sure the ID values do not ",
-            "correspond to individuals in the estimation dataset.", immediate. = TRUE)
+            "of the random effects (for posterior_predict or posterior_traj), or ",
+            "to draw new random effects conditional on outcome data provided in ",
+            "the 'newdata' arguments (for posterior_survfit), then please make ",
+            "sure the ID values do not correspond to individuals in the ",
+            "estimation dataset.", immediate. = TRUE)
   if (!all(ids %in% ids2)) TRUE else FALSE
 }
 
@@ -461,19 +466,28 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   id_var   <- object$id_var
   time_var <- object$time_var
   newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
-  ndL <- newdatas[1:M]
-  ndE <- newdatas[["Event"]]   
-  ndL <- subset_ids(object, ndL, ids)
-  ndE <- subset_ids(object, ndE, ids)
+  ndL <- if (!is.null(newdataLong))  newdatas[1:M]       else model.frame(object)[1:M] 
+  ndE <- if (!is.null(newdataEvent)) newdatas[["Event"]] else model.frame(object)$Event   
+  if (!is.null(ids)) {
+    ndL <- subset_ids(object, ndL, ids)
+    ndE <- subset_ids(object, ndE, ids)
+  }
   id_list <- unique(ndE[[id_var]])
   if (!is.null(newdataEvent) && is.null(etimes)) {
     y <- eval(formula(object, m = "Event")[[2L]], ndE)
     etimes  <- unclass(y)[,"time"]
     estatus <- unclass(y)[,"status"]    
   } else if (is.null(etimes)) {
-    etimes  <- object$eventtime[[as.character(id_list)]]
-    estatus <- object$status[[as.character(id_list)]]
-  } else estatus <- NULL
+    etimes  <- object$eventtime[as.character(id_list)]
+    estatus <- object$status[as.character(id_list)]
+  } else { 
+    # 'etimes' are only directly specified for dynamic predictions via 
+    # posterior_survfit in which case the 'etimes' correspond to the last known 
+    # survival time and therefore we assume everyone has survived up to that 
+    # point (ie, set estatus = 0 for all individuals), this is true even if 
+    # there is an event indicated in the data supplied by the user.
+    estatus <- rep(0, length(etimes))
+  }
   res <- nlist(M, Npat = length(id_list), ndL, ndE)
   if (long_parts && event_parts) 
     lapply(ndL, function(x) {
@@ -490,7 +504,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     yZ_names <- fetch(ydat, "Z_names")
     flist <- if (is.null(newdataLong)) 
       lapply(object$glmod_stuff, function(x) x$flist[[id_var]]) else 
-        lapply(newdataLong, `[[`, id_var)
+        lapply(ndL, `[[`, id_var)
     res <- c(res, nlist(yX, yZt, yZ_names, flist))
   }
   if (event_parts) {
