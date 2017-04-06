@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #' Example model
 #' 
 #' A model for use in \pkg{rstanarm} examples. 
@@ -37,4 +38,32 @@
 #'              # this next line is only to keep the example small in size!
 #'              chains = 2, cores = 1, seed = 12345, iter = 500)
 #' example_model
+NULL
+
+#' Example joint longitudinal and time-to-event model
+#' 
+#' A model for use in the \pkg{rstanarm} examples related to \code{\link{stan_jm}}. 
+#' 
+#' @name example_jm
+#' @format Calling \code{example("example_jm")} will run the model in the 
+#'   Examples section, below, and the resulting stanjm object will then be
+#'   available in the global environment. The \code{chains} and \code{iter}
+#'   arguments are specified to make this example be small in size. In practice,
+#'   we recommend that they be left unspecified in order to use the default
+#'   values or increased if there are convergence problems. The \code{cores} 
+#'   argument is optional and on a multicore system, the user may well want 
+#'   to set that equal to the number of chains being executed.
+#'   
+#' @examples
+#'   set.seed(123)
+#'   example_jm <- 
+#'      stan_jm(formulaLong = logBili ~ year + (1 | id), 
+#'              dataLong = pbcLong,
+#'              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'              dataEvent = pbcSurv,
+#'              time_var = "year",
+#'              # this next line is only to keep the example small in size!
+#'              chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' 
+#' 
 NULL
