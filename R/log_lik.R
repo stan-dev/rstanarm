@@ -143,8 +143,9 @@ ll_fun <- function(x, m = NULL) {
 #   just a single MCMC draw).
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, newdata = NULL, offset = NULL, m = NULL, 
-                    reloo_or_kfold = FALSE, ...) {
+ll_args <- function(object, ...) UseMethod("ll_args")
+ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL, 
+                            reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
   f <- family(object, m = m)
   draws <- nlist(f)
@@ -260,6 +261,59 @@ ll_args <- function(object, newdata = NULL, offset = NULL, m = NULL,
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
+# Alternative method for stanjm objects that allows data and pars to be
+# passed directly, rather than constructed using pp_data within the ll_args
+# method. This can be much faster when used in the MH algorithm within
+# posterior_survfit, since it doesn't require repeated calls to pp_data.
+#
+# @param object A stanjm object
+# @param data Output from jm_data
+# @param pars Output from extract_pars
+# @param m Integer specifying which submodel
+# @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
+ll_args.stanjm <- function(object, data, pars, m = 1, 
+                           reloo_or_kfold = FALSE, ...) {
+  validate_stanjm_object(object)
+  if (model_has_weights(object))
+    STOP_if_stanjm("posterior_survfit or log_lik with weights")
+  f <- family(object, m = m)
+  fname <- f$family
+  draws <- nlist(f)
+  stanmat <- pars$stanmat # potentially a stanmat with a single draw
+  nms <- collect_nms(colnames(stanmat), get_M(object))
+  y <- eval(formula(object, m = m)[[2L]], data$ndL[[m]])
+  x <- data$yX[[m]]
+  z <- t(data$yZt[[m]])
+  if (!is.binomial(fname)) {
+    dat <- data.frame(y, x)
+  } else {
+    if (NCOL(y) == 2L) {
+      trials <- rowSums(y)
+      y <- y[, 1L]
+    } else {
+      trials <- 1
+      if (is.factor(y)) 
+        y <- fac2bin(y)
+      stopifnot(all(y %in% c(0, 1)))
+    }
+    dat <- data.frame(y, trials, x)
+  }  
+  dat <- cbind(dat, as.matrix(z))
+  draws$beta <- stanmat[, nms$y[[m]], drop = FALSE]
+  m_stub <- get_m_stub(m)
+  if (is.gaussian(fname)) 
+    draws$sigma <- stanmat[, paste0(m_stub, "sigma")]
+  if (is.gamma(fname)) 
+    draws$shape <- stanmat[, paste0(m_stub, "shape")]
+  if (is.ig(fname)) 
+    draws$lambda <- stanmat[, paste0(m_stub, "lambda")]
+  if (is.nb(fname)) 
+    draws$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
+  b <- stanmat[, nms$y_b[[m]], drop = FALSE]
+  b <- pp_b_ord(b, data$yZ_names[[m]])
+  draws$beta <- cbind(draws$beta, b)
+  nlist(data = dat, draws, S = NROW(draws$beta), N = nrow(dat))
+}
 
 # check intercept for polr models -----------------------------------------
 # Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
@@ -389,8 +443,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL, m = NULL,
 # @param user_b Parameters passed to ll_args and used to overide the selection
 #   of b parameters which are normally taken from the stanmat draws
 ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
-  args <- ll_args(object, newdata = data$ndL[[m]], m = m, 
-                  reloo_or_kfold = reloo_or_kfold, stanmat = pars$stanmat)
+  args <- ll_args(object, data, pars, m = m, reloo_or_kfold = reloo_or_kfold)
   fun  <- ll_fun(object, m = m)
   ll <- lapply(seq_len(args$N), function(j) as.vector(
     fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))

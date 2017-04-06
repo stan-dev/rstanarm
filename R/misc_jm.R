@@ -499,7 +499,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     }) 
   if (long_parts) {
     ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
-    yX <- fetch(ydat, "X")
+    yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
     yZ_names <- fetch(ydat, "Z_names")
     flist <- if (is.null(newdataLong)) 
