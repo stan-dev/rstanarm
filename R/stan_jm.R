@@ -2336,9 +2336,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
 rolling_merge <- function(data, ids, times) {
   if (is(times, "list")) {
     return(do.call(rbind, lapply(times, FUN = function(x) 
-      data[data.table::SJ(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
+      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
   } else 
-    return(data[data.table::SJ(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
+    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
 }
 
 # Evaluate a glFormula call and return model components
@@ -2735,7 +2735,8 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
         stop(paste0("Bug found: cannot find x and Zt in object. They are ",
              "required to build the linear predictor for '", which, "'."))          
       beta <- dots$beta[[m]]
-      b <- pp_b_ord(t(dots$b[[m]]), Znames)
+      b <- dots$b[[m]] 
+      b <- pp_b_ord(if (is.matrix(b)) b else t(b), Znames)
       if (is.null(beta) || is.null(b))
         stop("Bug found: beta and b must be provided to construct linpred.")
       return(linear_predictor.default(beta, x) + as.vector(b %*% Zt))

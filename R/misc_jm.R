@@ -294,10 +294,238 @@ STOP_arg_required_for_stanjm <- function(arg) {
 
 # Error message when a function is not yet implemented for stanjm objects
 #
-# @param what A character string
+# @param what A character string naming the function not yet implemented
 STOP_if_stanjm <- function(what) {
   msg <- "not yet implemented for stanjm objects."
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
 }
+
+# Error message when a required variable is missing from the data frame
+#
+# @param var The name of the variable that could not be found
+STOP_no_var <- function(var) {
+  stop("Variable '", var, "' cannot be found in the data frame.", call. = FALSE)
+}
+
+# Extract parameters from stanmat and return as a list
+# 
+# @param object A stanjm object
+# @param stanmat A matrix of posterior draws, may be provided if the desired 
+#   stanmat is only a subset of the draws from as.matrix(object$stanfit)
+# @return A named list
+extract_pars <- function(object, stanmat = NULL, means = FALSE) {
+  validate_stanjm_object(object)
+  M <- get_M(object)
+  if (is.null(stanmat)) 
+    stanmat <- as.matrix(object$stanfit)
+  if (means) 
+    stanmat <- t(colMeans(stanmat)) # return posterior means
+  nms   <- collect_nms(colnames(stanmat), M)
+  beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
+  ebeta <- stanmat[, nms$e, drop = FALSE]
+  abeta <- stanmat[, nms$a, drop = FALSE]
+  bhcoef <- stanmat[, nms$e_extra, drop = FALSE]
+  b     <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
+  nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
+}
+
+# Validate newdataLong and newdataEvent arguments
+#
+# @param object A stanjm object
+# @param newdataLong A data frame, or a list of data frames
+# @param newdataEvent A data frame
+# @param duplicate_ok A logical. If FALSE then only one row per individual is
+#   allowed in the newdataEvent data frame
+# @return A list of validated data frames
+validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
+                              duplicate_ok = FALSE) {
+  validate_stanjm_object(object)
+  id_var <- object$id_var
+  newdatas <- list()
+  if (!is.null(newdataLong)) {
+    if (!is(newdataLong, "list"))
+      newdataLong <- rep(list(newdataLong), get_M(object))
+    newdatas <- c(newdatas, newdataLong)
+  }
+  if (!is.null(newdataEvent)) {
+    if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
+      stop("'newdataEvent' should only contain one row per individual, since ",
+           "time varying covariates are not allowed in the prediction data.")
+    newdatas <- c(newdatas, list(Event = newdataEvent))
+  }
+  if (length(newdatas)) {
+    idvar_check <- sapply(newdatas, function(x) id_var %in% colnames(x)) 
+    if (!all(idvar_check)) 
+      STOP_no_var(id_var)
+    ids <- lapply(newdatas, function(x) unique(x[[id_var]]))
+    sorted_ids <- lapply(ids, sort)
+    if (!length(unique(sorted_ids)) == 1L) 
+      stop("The same subject ids should appear in each new data frame.")
+    if (!length(unique(ids)) == 1L) 
+      stop("The subject ids should be ordered the same in each new data frame.")  
+    newdatas <- lapply(newdatas, validate_newdata)
+    return(newdatas)
+  } else return(NULL)
+}
+
+# Return data frames only including the specified subset of individuals
+#
+# @param object A stanjm object
+# @param data A data frame, or a list of data frames
+# @param ids A vector of ids indicating which individuals to keep
+# @return A data frame, or a list of data frames, depending on the input
+subset_ids <- function(object, data, ids) {
+  validate_stanjm_object(object)
+  id_var <- object$id_var
+  is_list <- is(data, "list")
+  if (!is_list) data <- list(data)
+  is_df <- sapply(data, is.data.frame)
+  if (!all(is_df)) stop("'data' should be a data frame, or list of data frames.")
+  data <- lapply(data, function(x) {
+    if (!id_var %in% colnames(x)) STOP_no_var(id_var)
+    sel <- which(!ids %in% x[[id_var]])
+    if (length(sel)) 
+      stop("The following 'ids' do not appear in the data: ", 
+           paste(ids[[sel]], collapse = ", "))
+    x[x[[id_var]] %in% ids, , drop = FALSE]
+  })
+  if (is_list) return(data) else return(data[[1]])
+}
+
+# Check if individuals in ids argument were also used in model estimation
+#
+# @param object A stanjm object
+# @param ids A vector of ids appearing in the pp data
+# @param m Integer specifying which submodel to get the estimation IDs from
+# @return A logical. TRUE indicates their are new ids in the prediction data,
+#   while FALSE indicates all ids in the prediction data were used in fitting
+#   the model. This return is used to determine whether to draw new b pars.
+check_pp_ids <- function(object, ids, m = 1) {
+  ids2 <- unique(model.frame(object, m = m)[[object$id_var]])
+  if (any(ids %in% ids2))
+    warning("Some of the IDs in the 'newdata' correspond to individuals in the ",
+            "estimation dataset. Please be sure you want to obtain subject-",
+            "specific predictions using the estimated random effects for those ",
+            "individuals. If you instead meant to marginalise over the distribution ",
+            "of the random effects (for posterior_predict or posterior_traj), or ",
+            "to draw new random effects conditional on outcome data provided in ",
+            "the 'newdata' arguments (for posterior_survfit), then please make ",
+            "sure the ID values do not correspond to individuals in the ",
+            "estimation dataset.", immediate. = TRUE)
+  if (!all(ids %in% ids2)) TRUE else FALSE
+}
+
+
+# Return an array or list with the time sequence used for posterior predictions
+#
+# @param increments An integer with the number of increments (time points) at
+#   which to predict the outcome for each individual
+# @param t0,t1 Numeric vectors giving the start and end times across which to
+#   generate prediction times
+# @param simplify Logical specifying whether to return each increment as a 
+#   column of an array (TRUE) or as an element of a list (FALSE) 
+get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
+  val <- sapply(0:(increments - 1), function(x, t0, t1) {
+    t0 + (t1 - t0) * (x / (increments - 1))
+  }, t0 = t0, t1 = t1, simplify = simplify)
+  if (simplify && is.vector(val)) {
+    # need to transform if there is only one individual
+    val <- t(val)
+    rownames(val) <- if (!is.null(names(t0))) names(t0) else 
+      if (!is.null(names(t1))) names(t1) else NULL
+  }
+  return(val)
+}
+
+#-------- Functions for constructing data and pars
+
+# Return design matrices for calculating linear predictor or
+# log-likelihood of longitudinal or event submodels
+#
+# @param object A stanjm object
+# @param newdataLong A data frame or list of data frames with the new 
+#   covariate data for the longitudinal submodel
+# @param newdataEvent A data frame with the new covariate data for the
+#   event submodel
+# @param ids An optional vector of subject IDs specifying which individuals
+#   should be included in the returned design matrices.
+# @param etimes An optional vector of times at which the event submodel
+#   design matrices should be evaluated (also used to determine the 
+#   quadrature times). If NULL then times are taken to be the eventimes in
+#   the fitted object (if newdataEvent is NULL) or in newdataEvent.
+# @param long_parts,event_parts A logical specifying whether to return the
+#   design matrices for the longitudinal and/or event submodels.
+# @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
+#   yZnames, eXq, assoc_parts) 
+jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL, 
+                    ids = NULL, etimes = NULL, long_parts = TRUE, 
+                    event_parts = TRUE) {
+  M <- get_M(object)
+  id_var   <- object$id_var
+  time_var <- object$time_var
+  newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+  ndL <- if (!is.null(newdataLong))  newdatas[1:M]       else model.frame(object)[1:M] 
+  ndE <- if (!is.null(newdataEvent)) newdatas[["Event"]] else model.frame(object)$Event   
+  if (!is.null(ids)) {
+    ndL <- subset_ids(object, ndL, ids)
+    ndE <- subset_ids(object, ndE, ids)
+  }
+  id_list <- unique(ndE[[id_var]])
+  if (!is.null(newdataEvent) && is.null(etimes)) {
+    y <- eval(formula(object, m = "Event")[[2L]], ndE)
+    etimes  <- unclass(y)[,"time"]
+    estatus <- unclass(y)[,"status"]    
+  } else if (is.null(etimes)) {
+    etimes  <- object$eventtime[as.character(id_list)]
+    estatus <- object$status[as.character(id_list)]
+  } else { 
+    # 'etimes' are only directly specified for dynamic predictions via 
+    # posterior_survfit in which case the 'etimes' correspond to the last known 
+    # survival time and therefore we assume everyone has survived up to that 
+    # point (ie, set estatus = 0 for all individuals), this is true even if 
+    # there is an event indicated in the data supplied by the user.
+    estatus <- rep(0, length(etimes))
+  }
+  res <- nlist(M, Npat = length(id_list), ndL, ndE)
+  if (long_parts && event_parts) 
+    lapply(ndL, function(x) {
+      if (!time_var %in% colnames(x)) STOP_no_var(time_var)
+      mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
+      if (any(mt > etimes))
+        stop("There appears to be observation times in the longitudinal data that ",
+             "are later than the event time specified in the 'etimes' argument.")      
+    }) 
+  if (long_parts) {
+    ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
+    yX <- fetch(ydat, "X")
+    yZt <- fetch(ydat, "Zt")
+    yZ_names <- fetch(ydat, "Z_names")
+    flist <- if (is.null(newdataLong)) 
+      lapply(object$glmod_stuff, function(x) x$flist[[id_var]]) else 
+        lapply(ndL, `[[`, id_var)
+    res <- c(res, nlist(yX, yZt, yZ_names, flist))
+  }
+  if (event_parts) {
+    qnodes <- object$quadnodes
+    qq <- get_quadpoints(qnodes)
+    qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
+    qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
+    edat <- prepare_data_table(ndE, id_var, time_var)
+    edat <- rolling_merge(edat, ids = rep(id_list, qnodes), times = qtimes)
+    eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")       
+    assoc_parts <- lapply(1:M, function(m) {
+      ymf <- prepare_data_table(ndL[[m]], id_var, time_var)
+      make_assoc_parts(
+        ymf, assoc = object$assoc, id_var = object$id_var, 
+        time_var = object$time_var, id_list = id_list, times = qtimes, 
+        use_function = pp_data, object = object, m = m)
+    })
+    assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)
+    assoc_parts <- do.call("structure", assoc_attr)
+    res <- c(res, nlist(eXq, assoc_parts))
+  }
+  return(res)
+}
+

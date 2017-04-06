@@ -19,7 +19,9 @@
 #'
 #' For models fit using MCMC only, the \code{log_lik} method returns the
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
-#' of the posterior sample and \eqn{N} is the number of data points.
+#' of the posterior sample and \eqn{N} is the number of data points, or in the
+#' case of the \code{stanjm} method an \eqn{S} by \eqn{Npat} matrix where 
+#' \eqn{Npat} is the number of individuals.
 #'
 #' @aliases log_lik
 #' @export
@@ -33,8 +35,10 @@
 #' @param offset A vector of offsets. Only required if \code{newdata} is
 #'   specified and an \code{offset} was specified when fitting the model.
 #'
-#' @return An \eqn{S} by \eqn{N} matrix, where \eqn{S} is the size of the
-#'   posterior sample and \eqn{N} is the number of data points.
+#' @return For the \code{stanreg} method an \eqn{S} by \eqn{N} matrix, where 
+#'   \eqn{S} is the size of the posterior sample and \eqn{N} is the number of 
+#'   data points, or for the \code{stanjm} method an \eqn{S} by \eqn{Npat} 
+#'   matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
 #' @examples 
@@ -77,109 +81,35 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   })
 }
 
-#' @aliases log_lik
+#' @rdname log_lik.stanreg
 #' @export
+#' @param newdataLong,newdataEvent Optional data frames containing new data 
+#'   (e.g. holdout data) to use when evaluating the log-likelihood for a 
+#'   model estimated using \code{\link{stan_jm}}. If the fitted model 
+#'   was a multivariate joint model (i.e. more than one longitudinal outcome),
+#'   then \code{newdataLong} is allowed to be a list of data frames. If supplying 
+#'   new data, then \code{newdataEvent} should also include variables corresponding
+#'   to the event time and event indicator. For more details, see the description 
+#'   of \code{newdataLong} and \code{newdataEvent} for \code{\link{posterior_survfit}}.
 #' 
-log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                           offset = NULL, ...) {
+log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanjm_object(object)
   M <- get_M(object)
-  id_var <- object$id_var
-  time_var <- object$time_var
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
-    stop("newdataLong and newdataEvent must both be provided, or both be NULL.")
-  if (!is(newdataLong, "list"))
-    newdataLong <- rep(list(newdataLong), M)
-  if (!length(newdataLong) == M)
-    stop("'newdataLong' should be a data frame or a list of length ", M)  
-  newdataLong <- lapply(newdataLong, validate_newdata)
-  newdataEvent <- validate_newdata(newdataEvent)
-  has_newdata <- !is.null(newdataEvent)
-  if (has_newdata) {
-    ids <- lapply(c(newdataLong, list(newdataEvent)), function(x) {
-      if (!id_var %in% colnames(x))
-        stop("The ID variable should appear in all new data frames.")
-      unique(x[[id_var]])
-    })
-    sorted_ids <- lapply(ids, sort)
-    if (!length(unique(sorted_ids)) == 1L) 
-      stop("The same subject ids should appear in each new data frame.")
-    if (!length(unique(ids)) == 1L) 
-      stop("The subject ids should be ordered the same in each new data frame.")
-    if (any(duplicated(newdataEvent[[id_var]])))
-      stop("'newdataEvent' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")
+    stop("Both newdataLong and newdataEvent must be supplied together.")
+  if (!is.null(newdataLong)) {
+    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdataLong  <- newdatas[1:M]      
+    newdataEvent <- newdatas[["Event"]]
   }
-
-  # log_lik matrix for each longitudinal submodel
+  pars <- extract_pars(object) # full array of draws
+  data <- jm_data(object, newdataLong, newdataEvent) 
   calling_fun <- as.character(sys.call(-1))[1]
-  y_ll <- lapply(1:M, function(m) {
-    args <- ll_args(object, newdata = newdataLong[[m]], offset = offset, 
-                    reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
-                    m = m, ...)
-    fun <- ll_fun(object, m = m)
-    ll <- sapply(seq_len(args$N), function(i) {
-      as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
-                    draws = args$draws))})
-    # return an S * npat array (sum of log_lik over yobs for each individual)
-    flist_m <- if (has_newdata) newdataLong[[m]][[id_var]] else 
-      object$glmod_stuff[[m]]$flist[[id_var]]
-    t(apply(ll, 1L, function(row) tapply(row, flist_m, sum)))
-  })
-    
-  # log_lik matrix for event submodel
-  stanmat <- as.matrix(object$stanfit)
-  nms  <- collect_nms(colnames(stanmat), M)
-  ybeta <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
-  ebeta <- stanmat[, nms$e, drop = FALSE]
-  abeta <- stanmat[, nms$a, drop = FALSE]
-  yb    <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
-  bhcoefs <- stanmat[, nms$e_extra, drop = FALSE]
-  family  <- family(object)
-  qnodes  <- object$quadnodes
-  if (has_newdata) {
-    ndL <- lapply(newdataLong, prepare_data_table, 
-                  id_var = id_var, time_var = time_var)
-    ndE <- prepare_data_table(newdataEvent, id_var = id_var, time_var = time_var)
-    y <- eval(formula(object, m = "Event")[[2L]], ndE)
-    etimes  <- y[["time"]]
-    estatus <- y[["status"]]
-    qtimes <- lapply(qq$points,  unstandardise_quadpoints,  0, etimes)
-    qwts   <- lapply(qq$weights, unstandardise_quadweights, 0, etimes)
-  } else {
-    ndL <- lapply(model.frame(object)[1:M], prepare_data_table, 
-                  id_var = id_var, time_var = time_var)
-    ndE <- prepare_data_table(model.frame(object)$Event,
-                              id_var = id_var, time_var = time_var)
-    etimes  <- object$eventtime
-    estatus <- object$status
-  }
-  qq <- get_quadpoints(qnodes)
-  qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
-  qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
-  assoc_parts <- lapply(1:M, function(m)
-    make_assoc_parts(ndL[[m]], assoc = object$assoc, id_var = object$id_var, 
-                     time_var = object$time_var, id_list = ndE[[id_var]], 
-                     times = qtimes, use_function = pp_data, object = object,
-                     m = m, re.form = NULL, offset = offset))
-  emf <- rolling_merge(ndE, ids = ndE[[id_var]], times = qtimes)
-  eXq <- .pp_data_mer_x(object, newdata = emf, m = "Event")
-  e_ll <- ll_surv(ybeta = ybeta, 
-                  ebeta = ebeta, 
-                  abeta = abeta, 
-                  yb = yb, 
-                  bhcoefs = bhcoefs, 
-                  eXq = eXq, 
-                  basehaz = object$basehaz,
-                  assoc = object$assoc, 
-                  assoc_parts = assoc_parts, 
-                  family =  family(object), qnodes = qnodes, 
-                  qtimes = qtimes, qwts = qwts, 
-                  etimes = etimes, estatus = estatus)
-  
-  return(Reduce('+', c(y_ll, list(e_ll))))
+  reloo_or_kfold <- calling_fun %in% c("kfold", "reloo")
+  val <- ll_jm(object, data, pars, reloo_or_kfold = reloo_or_kfold, ...)
+  return(val)
 }
 
 
@@ -202,23 +132,26 @@ ll_fun <- function(x, m = NULL) {
 # @param newdata same as posterior predict
 # @param offset vector of offsets (only required if model has offset term and
 #   newdata is specified)
+# @param m Integer specifying which submodel for stanjm objects
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
 # @param ... For models without group-specific terms (i.e., not stan_[g]lmer), 
 #   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to 
 #   pass 'newx' and 'stanmat' from reloo or kfold (bypassing pp_data). This is a
 #   workaround in case there are issues with newdata containing factors with
-#   only a single level.
+#   only a single level. Or for stanjm objects, then ... can be used to pass
+#   'stanmat', which may be a matrix with a reduced number of draws (potentially
+#   just a single MCMC draw).
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
-ll_args <- function(object, newdata = NULL, offset = NULL, 
-                    reloo_or_kfold = FALSE, m = NULL, ...) {
+ll_args <- function(object, newdata = NULL, offset = NULL, m = NULL, 
+                    reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
   f <- family(object, m = m)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
   
+  dots <- list(...)
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
-    dots <- list(...)
     x <- dots$newx
     stanmat <- dots$stanmat
     y <- eval(formula(object)[[2L]], newdata)
@@ -234,6 +167,9 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     x <- get_x(object, m = m)
     y <- get_y(object, m = m)
   }
+  if (is.stanjm(object) && !is.null(dots$stanmat)) {
+    stanmat <- dots$stanmat # potentially use a stanmat with a single draw
+  }  
   
   if (is(f, "family") && !is_scobit(object)) {
     fname <- f$family
@@ -296,9 +232,12 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   }
   
   data$offset <- if (has_newdata) offset else object$offset
-  if (model_has_weights(object))
-    data$weights <- object$weights # not yet compatible with stanjm
-  
+  if (model_has_weights(object)) {
+    if (is.stanjm(object)) 
+      STOP_if_stanjm("posterior_survfit with weights")
+    data$weights <- object$weights
+  }
+    
   if (is.mer(object)) {
     b_sel <- if (is.null(nms)) b_names(colnames(stanmat)) else nms$y_b[[m]]
     b <- stanmat[, b_sel, drop = FALSE]
@@ -436,4 +375,174 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
   }
   val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data$weights)
+}
+
+# for stanjm objects only ------------------------------------------------
+
+# Return log-likelihood for longitudinal submodel m
+#
+# @param object A stanjm object, or (when used in stan_jm function) a named list
+#   with elements $basehaz, $family, $assoc
+# @param data Output from jm_data
+# @param pars Output from extract_pars
+# @param m Integer specifying the longitudinal submodel
+# @param user_b Parameters passed to ll_args and used to overide the selection
+#   of b parameters which are normally taken from the stanmat draws
+ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
+  args <- ll_args(object, newdata = data$ndL[[m]], m = m, 
+                  reloo_or_kfold = reloo_or_kfold, stanmat = pars$stanmat)
+  fun  <- ll_fun(object, m = m)
+  ll <- lapply(seq_len(args$N), function(j) as.vector(
+    fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
+  ll <- do.call("cbind", ll)
+  # return S * npat array by summing log-lik for y within each individual
+  res <- t(apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum)))
+  return(res) 
+}
+
+# Return survival probability or log-likelihood for event submodel
+#
+# @param object A stanjm object, or (when used in stan_jm function) a named list
+#   with elements $basehaz, $family, $assoc
+# @param data Output from jm_data
+# @param pars Output from extract_pars
+# @param one_draw A logical specifying whether the parameters provided in the 
+#   pars argument are vectors for a single realisation of the parameter (e.g.
+#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE)
+# @param survprob A logical specifying whether to return the survival probability 
+#   (TRUE) or the log likelihood for the event submodel (FALSE)
+# @param An S by Npat matrix, or a length Npat vector, depending on the inputs
+#   (where S is the size of the posterior sample and Npat is the number of 
+#   individuals).
+ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
+  basehaz <- object$basehaz
+  family  <- object$family
+  assoc   <- object$assoc          
+  etimes  <- attr(data$assoc_parts, "etimes")
+  estatus <- attr(data$assoc_parts, "estatus")
+  qnodes  <- attr(data$assoc_parts, "qnodes")
+  qtimes  <- attr(data$assoc_parts, "qtimes")
+  qwts    <- attr(data$assoc_parts, "qwts") 
+  # linear predictor for the event submodel
+  e_eta <- linear_predictor(pars$ebeta, data$eXq) 
+  if (one_draw) {
+    aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                            family = family, beta = pars$beta, b = pars$b)
+    e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
+  } else {
+    aXq <- matrix(NA, NROW(data$eXq), NCOL(pars$abeta))
+    for (s in 1:NROW(e_eta)) {
+      abeta_s <- pars$abeta[s,]
+      beta_s  <- lapply(pars$beta, function(x) x[s,])
+      b_s     <- lapply(pars$b,    function(x) x[s,])
+      aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                                  family = family, beta = beta_s, b = b_s)
+      e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
+    }
+  }
+  # baseline hazard
+  if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
+    log_basehaz <- as.vector(log(pars$bhcoef)) + 
+      linear_predictor(pars$bhcoef - 1, log(qtimes))
+  } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
+    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, qtimes))
+  } else {
+    stop("Not yet implemented for basehaz = ", basehaz$type_name)
+  }  
+  loghaz <- log_basehaz + e_eta # log haz at etimes (if not NULL) and qtimes  
+  # calculate survival prob or log_lik  
+  if (one_draw) {
+    qhaz <- tail(exp(loghaz), length(qtimes)) # haz at qtimes
+    qwhaz <- qwts * qhaz
+    splitting_vec <- rep(1:qnodes, each = data$Npat)
+    cumhaz <- Reduce('+', split(qwhaz, splitting_vec))
+  } else {
+    qhaz <- exp(loghaz[, tail(1:ncol(loghaz), length(qtimes)), drop = FALSE])
+    qwhaz <- t(apply(qhaz, 1L, function(row) qwts * row))
+    cumhaz <- Reduce('+', array2list(qwhaz, nsplits = qnodes))  
+  }
+  ll_survt <- -cumhaz
+  if (survprob) { # return surv prob at time t (upper limit of integral)
+    return(exp(ll_survt)) 
+  } else { # return log_lik at event time
+    if (is.null(etimes) || is.null(estatus))
+      stop("'etimes' and 'estatus' cannot be NULL if 'survprob = FALSE'.")
+    if (one_draw) { # return vector of length npat
+      return(estatus * head(loghaz, length(etimes)) + ll_survt)
+    } else { # return S * npat matrix
+      eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
+      ll_hazt <- t(apply(eloghaz, 1L, function(row) estatus * row))
+      return(ll_hazt + ll_survt)
+    }
+  }
+} 
+
+# Return log likelihood for full joint model
+#
+# @param object A stanjm object, or (when used in stan_jm function) a named list
+#   with elements $basehaz, $family, $assoc
+# @param data Output from jm_data
+# @param pars Output from extract_pars
+# @param include_b A logical, if TRUE then the log likelihood for the random 
+#   effects distribution is also included in the log likelihood calculation.
+# @param sum A logical. If TRUE then the log likelihood is summed across all
+#   individuals. If FALSE then the log likelihood is returned for each
+#   individual (either as an S * Npat matrix, or a length Npat vector, depending
+#   on the type of inputs to the pars argument).
+# @param ... Arguments passed to ll_long. Can include 'reloo_or_kfold' which is
+#   a logical specifying whether the function calling ll_jm was reloo or kfold.
+# @return Either a matrix, a vector or a scalar, depending on the input types
+#   and whether sum is set to TRUE.
+ll_jm <- function(object, data, pars, include_b = FALSE, sum = FALSE, ...) {
+  M <- get_M(object)
+  # log-lik for longitudinal submodels
+  ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
+  # log-lik for event submodel
+  ll_event <- ll_event(object, data, pars)
+  # log-lik for random effects model
+  if (include_b) {
+    if (length(object$cnms) > 1L)
+      stop("Bug found: 'include_b' can only be TRUE when there is one grouping factor.")
+    if ((data$Npat > 1) || (nrow(pars$stanmat) > 1L))
+      stop("Bug found: 'include_b' can only be TRUE when 'data' is for one ",
+           "individual, and stanmat is for a single draw.")
+    id_var <- object$id_var
+    nms    <- unlist(lapply(data$assoc_parts, function(x) x$mod_eta$Z_names))
+    b      <- do.call("cbind", pars$b)
+    b      <- as.vector(pp_b_ord(b, nms))
+    mu     <- rep(0, length(b))
+    Sigma  <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
+    ll_b   <- mvtnorm::dmvnorm(b, mean = mu, sigma = Sigma, log = TRUE)
+  } else ll_b <- NULL
+  # check the dimensions of the various components
+  if (is.matrix(ll_event)) { # S * Npat matrices
+    mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
+    dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
+    if ((length(dims) > 1L) || (length(mats) > 1L))
+      stop("Bug found: elements of 'll_long' should be same class and ",
+           "dimension as 'll_event'.")
+    if (include_b && !identical(length(ll_b), ncol(ll_event)))
+      stop("Bug found: length of 'll_b' should be equal to the number of ",
+           "columns in 'll_event'.")
+  } else { # length Npat vectors (ie, log-lik based on a single draw of pars)
+    lens <- unique(sapply(c(ll_long, list(ll_event)), length))
+    if (length(lens) > 1L)
+      stop("Bug found: elements of 'll_long' should be same length as 'll_event'.")
+    if (include_b && !identical(length(ll_b), length(ll_event)))
+      stop("Bug found: length of 'll_b' should be equal to length of 'll_event'.")
+  }  
+  # sum the various components (long + event + random effects)
+  val <- Reduce('+', c(ll_long, list(ll_event)))
+  if (include_b && is.matrix(val)) {
+    val <- t(apply(val, 1L, function(row) row + ll_b)) 
+  } else if (include_b && is.vector(val)) {
+    val <- val + ll_b
+  } 
+  # return log-lik for joint model
+  if (!sum) 
+    return(val)             # S * Npat matrix or length Npat vector
+  else if (is.matrix(val)) 
+    return(rowSums(val))    # length S vector
+  else 
+    return(sum(val))        # scalar 
 }
