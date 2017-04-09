@@ -137,13 +137,13 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
   N <- 200
   dat <- data.frame(x = rnorm(N, 2, 1), z = rnorm(N, 2, 1))
   mu <- binomial(link = "logit")$linkinv(1 + 0.2*dat$x)
-  phi <- dat$z - min(dat$z) + 8
+  phi <- dat$z - min(dat$z) + 5.5
   dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
   for (i in 1:length(link1)) {
     SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[2],
                            prior = NULL, prior_intercept = NULL,
                            prior_z = NULL, prior_intercept_z = NULL,
-                           data = dat, algorithm = "sampling", chains = 2, iter = 100,
+                           data = dat, algorithm = "sampling", iter = 300, chains = 2,
                            seed = SEED))
     expect_stanreg(fit)
     val <- coef(fit)
@@ -154,14 +154,15 @@ test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
 
 # sqrt link is unstable so only testing that the model runs. 
 test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
-  for (i in 1:length(link1)) {
-    N <- 200
+  for (i in 1:length(link1)) {  # FIXME!
+    N <- 1000
     dat <- data.frame(x = rnorm(N, 2, 1), z = rep(1, N))
-    mu <- binomial(link = "logit")$linkinv(0.5 + 0.5*dat$x)
-    phi <- poisson(link = "sqrt")$linkinv(2.5 + 1.2*dat$z)
+    mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
+    phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
+
     SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                           data = dat, algorithm = "optimizing")) 
+                           data = dat, algorithm = "sampling", chains = 1, iter = 1)) 
     expect_stanreg(fit)
   }
 })
