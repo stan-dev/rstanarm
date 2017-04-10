@@ -318,6 +318,8 @@ is_binomial_ppc <- function(object) {
     "dens_overlay" = nreps %ORifNULL% 50,
     "ecdf_overlay" = nreps %ORifNULL% 50,
     "hist" = nreps %ORifNULL% 8,
+    "bars" = nreps %ORifNULL% 8,
+    "bars_grouped" = nreps %ORifNULL% 3,
     "dens" = nreps %ORifNULL% 8,
     "boxplot" = nreps %ORifNULL% 8,
     "freqpoly" = nreps %ORifNULL% 8,
