@@ -5,8 +5,8 @@
   // data for association structure
   int<lower=0> a_K;                     // num. of association parameters
   int<lower=0,upper=1> assoc;           // 0 = no assoc structure, 1 = any assoc structure
-  int<lower=0,upper=1> assoc_uses[8];   // which components required to build association terms
-  int<lower=0,upper=1> has_assoc[18,M]; // which association terms does each submodel use
+  int<lower=0,upper=1> assoc_uses[6];   // which components required to build association terms
+  int<lower=0,upper=1> has_assoc[16,M]; // which association terms does each submodel use
   int<lower=0> sum_size_which_b;        // num. of shared random effects
   int<lower=0> size_which_b[M];         // num. of shared random effects for each long submodel
   int<lower=1> which_b_zindex[sum_size_which_b]; // which random effects are shared for each long submodel
@@ -37,25 +37,16 @@
   int<lower=0> u_Zq_eps[(M*nrow_y_Xq*(assoc_uses[2]>0) + 1)]; 
     // where the non-zeros start in each row (at quadpoints plus time shift of epsilon)
 
-  // data for calculating lag in GK quadrature
-  matrix[M*nrow_y_Xq*(assoc_uses[3]>0),K] 
-    y_Xq_lag; // predictor matrix (long submodel) at lagged quadpoints            
-  int<lower=0> nnz_Zq_lag;        // number of non-zero elements in the Zq_lag matrix (at lagged quadpoints)
-  vector[nnz_Zq_lag] w_Zq_lag;    // non-zero elements in the implicit Zq_lag matrix (at lagged quadpointsn)
-  int<lower=0> v_Zq_lag[nnz_Zq_lag]; // column indices for w (at lagged quadpoints)
-  int<lower=0> u_Zq_lag[(M*nrow_y_Xq*(assoc_uses[3]>0) + 1)]; 
-    // where the non-zeros start in each row (at lagged quadpoints)
-
   // data for calculating auc in GK quadrature
   int<lower=0> nrow_y_Xq_auc;     // num. rows in long. predictor matrix at auc quad points
   int<lower=0> auc_quadnodes;              // num. of nodes for Gauss-Kronrod quadrature for area under marker trajectory 
-  vector[nrow_y_Xq_auc*(assoc_uses[4]>0)] auc_quadweights;
-  matrix[M*nrow_y_Xq_auc*(assoc_uses[4]>0),K] 
+  vector[nrow_y_Xq_auc*(assoc_uses[3]>0)] auc_quadweights;
+  matrix[M*nrow_y_Xq_auc*(assoc_uses[3]>0),K] 
     y_Xq_auc; // predictor matrix (long submodel) at auc quadpoints            
   int<lower=0> nnz_Zq_auc;        // number of non-zero elements in the Zq_lag matrix (at auc quadpoints)
   vector[nnz_Zq_auc] w_Zq_auc;    // non-zero elements in the implicit Zq_lag matrix (at auc quadpointsn)
   int<lower=0> v_Zq_auc[nnz_Zq_auc]; // column indices for w (at auc quadpoints)
-  int<lower=0> u_Zq_auc[(M*nrow_y_Xq_auc*(assoc_uses[4]>0) + 1)]; 
+  int<lower=0> u_Zq_auc[(M*nrow_y_Xq_auc*(assoc_uses[3]>0) + 1)]; 
     // where the non-zeros start in each row (at auc quadpoints)
 
   // data for calculating assoc*data interactions in GK quadrature

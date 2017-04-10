@@ -30,22 +30,8 @@
       }
     }
 
-    // Linear predictor at lagged time
-    if (assoc_uses[3] == 1) {
-      if (K > 0) y_eta_q_lag = y_Xq_lag * beta;
-      else y_eta_q_lag = rep_vector(0.0, (M*nrow_y_Xq));
-      //if (has_offset == 1) y_eta_q_lag = y_eta_q_lag + y_offset; # how to handle offset?
-      y_eta_q_lag = y_eta_q_lag + csr_matrix_times_vector((M*nrow_y_Xq), q, w_Zq_lag, v_Zq_lag, u_Zq_lag, b);
-      for (m in 1:M) {
-        y_eta_qwide_lag[m] = add_intercept(
-          y_eta_q_lag, m, nrow_y_Xq, has_intercept, has_intercept_nob, 
-          has_intercept_lob, has_intercept_upb, gamma_nob, 
-          gamma_lob, gamma_upb, xbar, beta, KM);
-      }
-    }  
-
     // Linear predictor at auc quadpoints
-    if (assoc_uses[4] == 1) {
+    if (assoc_uses[3] == 1) {
       if (K > 0) y_eta_q_auc = y_Xq_auc * beta;
       else y_eta_q_auc = rep_vector(0.0, (M*nrow_y_Xq_auc));
       //if (has_offset == 1) y_eta_q_auc = y_eta_q_auc + y_offset; # how to handle offset?
@@ -59,21 +45,16 @@
     }   
 
     // Expected value 
-    if (assoc_uses[5] == 1) 
+    if (assoc_uses[4] == 1) 
       for (m in 1:M) 
         y_qwide[m] = evaluate_mu(y_eta_qwide[m], family[m], link[m]);
       
     // Expected value at time plus epsilon
-    if (assoc_uses[6] == 1)
+    if (assoc_uses[5] == 1)
       for (m in 1:M) 
         y_qwide_eps[m] = evaluate_mu(y_eta_qwide_eps[m], family[m], link[m]);
 
-    // Expected value at lagged time
-    if (assoc_uses[7] == 1) 
-      for (m in 1:M) 
-        y_qwide_lag[m] = evaluate_mu(y_eta_qwide_lag[m], family[m], link[m]);
-
     // Expected value at auc quadpoints
-    if (assoc_uses[8] == 1) 
+    if (assoc_uses[6] == 1) 
       for (m in 1:M) 
         y_qwide_auc[m] = evaluate_mu(y_eta_qwide_auc[m], family[m], link[m]);
