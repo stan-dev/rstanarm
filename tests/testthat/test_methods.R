@@ -54,23 +54,6 @@ capture.output(
                                chains = CHAINS, seed = SEED, refresh = REFRESH))
 )
 
-N <- 200
-x <- rnorm(N, 2, 1)
-z <- rnorm(N, 2, 1)
-mu <- binomial(link = "logit")$linkinv(1 + 0.2*x)
-phi <- exp(1.5 + 0.4*z)
-y <- rbeta(N, mu * phi, (1 - mu) * phi)
-fake_dat <- data.frame(y, x, z)
-remove(N, x, y, z, mu, phi)
-
-capture.output(
-  stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
-                                link = "logit", link.phi = "log",
-                                iter = ITER, chains = CHAINS, seed = SEED)
-)
-betareg1 <- betareg(y ~ x | z, data = fake_dat, 
-                    link = "logit", link.phi = "log")
-
 att_names <- function(object) {
   nms <- names(object)
   att_nms <- names(attributes(object))
@@ -119,13 +102,6 @@ test_that("stanreg extractor methods work properly", {
   expect_equal(se(example_model), example_model$ses)
   # coef and vcov are different for stan_(g)lmer models and are tested
   # separately later in this file
-  
-  # stan_betareg
-  expect_equal(resid(stan_betareg1), stan_betareg1$residuals)
-  expect_equal(coef(stan_betareg1), stan_betareg1$coefficients)
-  expect_equal(vcov(stan_betareg1), stan_betareg1$covmat)
-  expect_equal(fitted(stan_betareg1), stan_betareg1$fitted.values)
-  expect_equal(se(stan_betareg1), stan_betareg1$ses)
 })
 
 
@@ -143,7 +119,6 @@ test_that("confint method returns correct structure", {
   expect_error(confint(stan_polr1), regexp = "use posterior_interval")
   expect_error(confint(stan_lmer1), regexp = "use posterior_interval")
   expect_error(confint(stan_lmer2), regexp = "use posterior_interval")
-  expect_error(confint(stan_betareg1), regexp = "use posterior_interval")
 })
 
 
@@ -155,7 +130,6 @@ test_that("posterior_interval returns correct structure", {
   expect_silent(ci4 <- posterior_interval(example_model, prob = 0.8, pars = "(Intercept)",
                                regex_pars = "period"))
   expect_silent(ci5 <- posterior_interval(stan_polr1, prob = 0.9))
-  expect_silent(ci6 <- posterior_interval(stan_betareg1, prob = 0.5))
   
   expect_identical(rownames(ci), c("(Intercept)", "wt", "cyl", "sigma"))
   expect_identical(rownames(ci2), "wt")
@@ -167,7 +141,6 @@ test_that("posterior_interval returns correct structure", {
   expect_identical(colnames(ci3), c("2.5%", "97.5%"))
   expect_identical(colnames(ci4), c("10%", "90%"))
   expect_identical(colnames(ci5), c("5%", "95%"))
-  expect_identical(colnames(ci6), c("25%", "75%"))
 
   expect_error(posterior_interval(stan_glm1, type = "HPD"),
                regexp = "only option for 'type' is 'central'")
@@ -223,7 +196,6 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_glm1), log_lik(stan_glm1, newdata = mtcars))
   expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
   expect_equal(log_lik(stan_gamm41), log_lik(stan_gamm41, newdata = mtcars))
-  expect_equal(log_lik(stan_betareg1), log_lik(stan_betareg1, newdata = fake_dat))
 })
 
 
@@ -232,7 +204,6 @@ test_that("ngrps is right", {
   expect_equal(ngrps(lmer1), ngrps(stan_lmer1))
   expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
   expect_error(ngrps(stan_glm1), "stan_glmer and stan_lmer models only")
-  expect_error(ngrps(stan_betareg1), "stan_glmer and stan_lmer models only")
 })
 
 test_that("nobs is right", {
@@ -241,7 +212,6 @@ test_that("nobs is right", {
   expect_equal(nobs(glm1), nobs(stan_glm_opt1))
   expect_equal(nobs(glm1), nobs(stan_glm1))
   expect_equal(nobs(polr1), nobs(stan_polr1))
-  expect_equal(nobs(stan_betareg1), nobs(betareg1))
 })
 
 
@@ -251,7 +221,6 @@ test_that("vcov returns correct structure", {
   expect_equal(dimnames(vcov(stan_polr1)), dimnames(vcov(polr1)))
   expect_equal(dimnames(vcov(stan_lmer1)), dimnames(vcov(lmer1)))
   expect_equal(dimnames(vcov(stan_lmer2)), dimnames(vcov(lmer2)))
-  expect_equal(dimnames(vcov(stan_betareg1)), dimnames(vcov(betareg1)))
 })
 
 # sigma --------------------------------------------------------------
@@ -273,9 +242,6 @@ test_that("sigma method works", {
   expect_false(identical(sig, 1))
   expect_double(sig <- rsigma(stan_glm_opt1))
   expect_false(identical(sig, 1))
-  # errors not modeled in stan_betareg 
-  expect_double(sig <- rsigma(stan_betareg1))
-  expect_true(identical(sig, 1))
 })
 
 
@@ -290,7 +256,6 @@ test_that("VarCorr returns correct structure", {
   v <- sapply(vc_stan1, "[[", 1)
   expect_true(length(unique(v)) == length(v))
   expect_error(VarCorr(stan_glm1), "stan_glmer and stan_lmer models only")
-  expect_error(VarCorr(stan_betareg1), "stan_glmer and stan_lmer models only")
 })
 
 
@@ -305,7 +270,6 @@ test_that("ranef returns correct structure", {
   check_sizes(re_stan1, re_lmer1)
   check_sizes(re_stan2, re_lmer2)
   expect_error(ranef(stan_glm1), "stan_glmer and stan_lmer models only")
-  expect_error(ranef(stan_betareg1), "stan_glmer and stan_lmer models only")
 })
 test_that("fixef returns the right coefs", {
   expect_identical(names(fixef(stan_lmer1)), names(fixef(lmer1)))
@@ -416,17 +380,6 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   df <- as.data.frame(stan_polr1, regex_pars = "\\^")
   expect_identical(df, as.data.frame(mat))
   expect_identical(colnames(mat), paste0("agegp^", 4:5))
-  
-  # betareg
-  mat <- as.matrix(stan_betareg1)
-  df <- as.data.frame(stan_betareg1)
-  arr <- as.array(stan_betareg1)
-  expect_identical(df, as.data.frame(mat))
-  expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-  expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 4L))
-  expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 4L))
-  expect_identical(last_dimnames(mat), c("(Intercept)", "x", "(phi)_(Intercept)", "(phi)_z"))
-  expect_identical(last_dimnames(arr), last_dimnames(mat))
 })
 
 test_that("as.matrix and as.data.frame work for optimization and vb", {
@@ -487,7 +440,6 @@ test_that("model.frame works properly", {
                    model.frame(lmer1, fixed.only = TRUE))
   expect_identical(model.frame(stan_lmer2, fixed.only = TRUE),
                    model.frame(lmer2, fixed.only = TRUE))
-  expect_identical(model.frame(stan_betareg1), model.frame(betareg1))
 })
 
 test_that("terms works properly", {
@@ -507,7 +459,6 @@ test_that("terms works properly", {
                terms(lmer2, random.only = TRUE))
   expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE),
                regexp = "can't both be TRUE")
-  expect_identical(terms(stan_betareg1), terms(betareg1))
 })
 
 test_that("formula works properly", {
@@ -527,7 +478,6 @@ test_that("formula works properly", {
                formula(lmer2, random.only = TRUE))
   expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE),
                regexp = "can't both be TRUE")
-  expect_identical(formula(stan_betareg1), formula(betareg1))
 
   tmp <- stan_lmer1
   tmp$formula <- NULL
@@ -542,12 +492,10 @@ test_that("update works properly", {
 
   SW(capture.output(
     fit1 <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS),
-    fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS),
-    fit3 <- update(stan_betareg1, iter = ITER * 2, chains = 2 * CHAINS)
+    fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS)
   ))
   expect_equal(pss(fit1), 4 * pss(stan_lmer2))
   expect_equal(pss(fit2), 4 * pss(stan_glm1))
-  expect_equal(pss(fit3), 4 * pss(stan_betareg1))
 
   call_only <- update(fit1, evaluate = FALSE)
   expect_is(call_only, "call")
@@ -575,7 +523,6 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(stan_polr1), "Cutpoints")
   expect_output(print(stan_glm_opt1, digits = 5), "stan_glm")
   expect_output(print(stan_glm_vb1, digits = 5), "stan_glm")
-  expect_output(print(stan_betareg1, digits = 2), "stan_betareg")
 
   expect_silent(s <- summary(stan_lmer1, pars = "varying", regex_pars = "Sigma"))
   expect_silent(s_alt <- summary(stan_lmer1, regex_pars = c("plate", "sample")))
@@ -618,14 +565,6 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(s), "stan_glm")
   expect_identical(attr(s, "algorithm"), "sampling")
   
-  # stan_betareg
-  expect_warning(s <- summary(stan_betareg1, pars = "varying"),
-                 regexp = "No group-specific parameters. 'varying' ignored.")
-  expect_silent(s <- summary(stan_betareg1, pars = c("alpha", "beta"), digits = 3))
-  expect_s3_class(s, "summary.stanreg")
-  expect_output(print(s), "stan_betareg")
-  expect_identical(attr(s, "algorithm"), "sampling")
-
   expect_silent(s <- summary(stan_glm_vb1, pars = c("alpha", "beta")))
   expect_silent(d <- as.data.frame(s))
   expect_s3_class(s, "summary.stanreg")
@@ -686,8 +625,6 @@ test_that("prior_summary doesn't error", {
                 "stan_glm_opt1")
   expect_output(print(prior_summary(stan_glm_vb1)),
                 "stan_glm_vb1")
-  expect_output(print(prior_summary(stan_betareg1)),
-                "stan_betareg1")
 })
 test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(example_model),
@@ -702,8 +639,6 @@ test_that("prior_summary returns correctly named list", {
                c("prior", "prior_intercept", "prior_aux"))
   expect_named(prior_summary(stan_glm_vb1),
                c("prior", "prior_intercept", "prior_aux"))
-  expect_named(prior_summary(stan_betareg1),
-               c("prior", "prior_z", "prior_intercept", "prior_intercept_z", "prior_aux"))  
 })
 
 
@@ -714,8 +649,6 @@ test_that("predictive_error works", {
                "'draws' should be <= posterior sample size")
   expect_error(predictive_error(stan_polr1),
                "not currently available for stan_polr")
-  expect_error(predictive_error(stan_betareg1, draws = 600),
-               "'draws' should be <= posterior sample size")
   mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1",
             "stan_lmer2", "example_model")
   for (m in seq_along(mods)) {
@@ -744,10 +677,6 @@ test_that("predictive_interval works", {
                "'prob' should be a single number greater than 0 and less than 1")
   expect_error(predictive_interval(stan_polr1),
                "not currently available for stan_polr")
-  expect_error(predictive_interval(stan_betareg1, draws = 600),
-               "'draws' should be <= posterior sample size")
-  expect_error(predictive_interval(stan_betareg1, prob = c(0.25, 0.76)),
-               "'prob' should be a single number greater than 0 and less than 1")
   mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1",
             "stan_lmer2", "example_model")
   for (m in seq_along(mods)) {
@@ -772,21 +701,11 @@ test_that("predictive_error stanreg and ppd methods return the same thing", {
     predictive_error(stan_glm1, seed = 123),
     predictive_error(preds, y = stan_glm1$y)
   )
-  preds <- posterior_predict(stan_betareg1, seed = 123)
-  expect_equal(
-    predictive_error(stan_betareg1, seed = 123),
-    predictive_error(preds, y = stan_betareg1$y)
-  )
 })
 test_that("predictive_interval stanreg and ppd methods return the same thing", {
   preds <- posterior_predict(stan_glm1, seed = 123)
   expect_equal(
     predictive_interval(stan_glm1, seed = 123),
-    predictive_interval(preds)
-  )
-  preds <- posterior_predict(stan_betareg1, seed = 123)
-  expect_equal(
-    predictive_interval(stan_betareg1, seed = 123),
     predictive_interval(preds)
   )
 })

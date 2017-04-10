@@ -64,15 +64,18 @@ ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
 
 test_that("pp_check.stanreg creates ggplot object", {
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
-    expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
-              info = f)
+    if (!(f %in% c("ppc_bars", "ppc_loo_pit", "ppc_loo_intervals", 
+                   "ppc_loo_ribbon", "ppc_rootogram")))
+      expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
+                info = f)
   }
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
   for (f in ppc_funs_grouped) for (j in 1:2) {
-    expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
-              info = f)
+    if (f != "ppc_bars_grouped")
+      expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, 
+                                          group = "am", x = "wt")), info = f)
   }
 })
 

@@ -179,17 +179,6 @@ test_that("loo/waic for stan_glmer works", {
   expect_identical(ll_fun(example_model), rstanarm:::.ll_binomial_i)
 })
 
-test_that("loo/waic for stan_betareg works", {
-  data("GasolineYield", package = "betareg")
-  SW(fit_logit <- stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
-                               link = "logit",
-                               chains = CHAINS, iter = ITER,
-                               seed = SEED, refresh = REFRESH))
-  expect_equivalent_loo(fit_logit)
-  expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
-})
-
-
 # loo with refitting ------------------------------------------------------
 context("loo then refitting")
 

@@ -251,38 +251,6 @@ test_that("compatible with stan_lmer with offset", {
   check_for_error(fit, offset = offs)
 })
 
-context("posterior_predict (stan_betareg)")
-test_that("compatible with stan_betareg with z", {
-  data("GasolineYield", package = "betareg")
-  fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
-                         iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
-                         refresh = REFRESH))
-  check_for_error(fit)
-  expect_linpred_equal(fit)
-})
-test_that("compatible with stan_betareg without z", {
-  data("GasolineYield", package = "betareg")
-  fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield, 
-                     iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
-  check_for_error(fit)
-  expect_linpred_equal(fit)
-})
-test_that("compatible with betareg with offset", {
-  GasolineYield2 <- GasolineYield
-  GasolineYield2$offs <- runif(nrow(GasolineYield2))
-  fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
-                     iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
-  fit2 <- SW(stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
-                      iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
-  
-  expect_warning(posterior_predict(fit, newdata = GasolineYield), 
-                 "offset")
-  check_for_error(fit, data = GasolineYield2, offset = GasolineYield2$offs)
-  check_for_error(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
-  expect_linpred_equal(fit)
-  expect_linpred_equal(fit2)
-})
-
 # compare to lme4 ---------------------------------------------------------
 context("posterior_predict (compare to lme4)")
 test_that("posterior_predict close to predict.merMod for gaussian", {
