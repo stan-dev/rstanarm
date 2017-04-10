@@ -23,14 +23,16 @@ params:
 
 # Introduction
 
-This vignette provides an overview of how the specification of prior
-distributions works in the __rstanarm__ package. Before reading this vignette it
-is important to first go over the 
+This vignette provides an overview of how the specification of prior 
+distributions works in the __rstanarm__ package. It is still a work in progress 
+and more content will be added in future versions of __rstanarm__. Before
+reading this vignette it is important to first read the
 [How to Use the __rstanarm__ Package](rstanarm.html) 
 vignette, which provides a general overview of the package.
 
-Every modeling function in __rstanarm__ offers a subset of the following 
-arguments for specifying priors:
+Every modeling function in __rstanarm__ offers a subset of the arguments in the 
+table below which are used for specifying prior distributions for the model 
+parameters.
 
 <br>
 
@@ -55,31 +57,35 @@ specific only to those models:
 | `prior_intercept_z` | `stan_betareg`| Intercept in the model for `phi`. |
 | `prior_phi` | `stan_betareg`| `phi`, if not modeled as function of predictors. |
 
-
 <br> 
-The __rstanarm__ documentation and the other [vignettes](index.html) provide 
-many examples of using these arguments to specify priors. The documentation 
-for these arguments on the help pages for the various __rstanarm__ modeling 
-functions also explains which distributions can be used when specifying 
-each of the prior-related arguments.
 
+To specify these arguments the user provides a call to one of the various
+available functions for specifying priors (e.g., `prior = normal(0, 1)`). The
+documentation for these functions can be found at `help("priors")`. The
+__rstanarm__ documentation and the other [vignettes](index.html) provide many
+examples of using these arguments to specify priors and the documentation for
+these arguments on the help pages for the various __rstanarm__ modeling 
+functions (e.g., `help("stan_glm")`) also explains which distributions can be
+used when specifying each of the prior-related arguments.
+
+<br>
 
 # Default (Weakly Informative) Prior Distributions
 
 With very few exceptions, the default priors in __rstanarm__ ---the priors used 
-if the arguments in the tables above are untouched--- are _not flat priors_. 
+if the arguments in the tables above are untouched--- are _not_ flat priors. 
 Rather, the defaults are intended to be _weakly informative_. That is, they are 
-designed to provide moderate regularlization and help stabilize computation. 
-For many (if not most) applications the defaults will perform well, but this is 
-not guaranteed. It would be impossible to have default priors that work well 
-with every possible model specification.
+designed to provide moderate regularization and help stabilize computation. For
+many (if not most) applications the defaults will perform well, but this is not
+guaranteed (there are no default priors that make sense for every possible model
+specification).
 
 The way __rstanarm__ attempts to make priors weakly informative by default is to
 internally adjust the scales of the priors. How this works (and, importantly, 
-how to turn it off) is explained below, but first let's see the default priors 
-in action by fitting a basic linear regression model with the `stan_glm` 
-function. For specifying priors, the `stan_glm` function accepts the arguments
-`prior_intercept`, `prior`, and `prior_aux`. To use the default priors we just
+how to turn it off) is explained below, but first we can look at the default
+priors in action by fitting a basic linear regression model with the `stan_glm` 
+function. For specifying priors, the `stan_glm` function accepts the arguments 
+`prior_intercept`, `prior`, and `prior_aux`. To use the default priors we just 
 leave those arguments at their defaults (i.e., we don't specify them):
 
 ```{r, default-prior-1, results="hide"}
@@ -127,24 +133,24 @@ The next two subsections describe how this rescaling works and how to easily
 disable it if desired.
 
 
-### Automatic Prior Scale Adjustments
+### Automatic prior scale adjustments
 
 For distributions that take an `autoscale` argument (see `help("priors")` for a
 list), if `autoscale` is left at `TRUE` (the default) then, in certain cases,
 the prior scales will be adjusted internally by __rstanarm__.
 
-First, if the __outcome__ $y$ is Gaussian, the prior scales for the intercept,
+First, if the _outcome_ $y$ is Gaussian, the prior scales for the intercept,
 coefficients, and error standard deviation are multiplied by a factor of
 $\mathrm{sd}(y)$.
 
 Additionally (not only for Gaussian models), if the `QR` argument to the model
 fitting function (e.g. `stan_glm`) is `FALSE` (the default) then:
 
-* For a __predictor__ $x$ with only one value nothing is changed.
-* For a __predictor__ $x$ with exactly two unique values, we take the
+* For a predictor $x$ with only one value nothing is changed.
+* For a predictor $x$ with exactly two unique values, we take the
 user-specified (or default) scale(s) for the selected priors and divide by the
 range of $x$.
-* For a __predictor__ $x$ with more than two unique values, we divide the prior 
+* For a predictor $x$ with more than two unique values, we divide the prior 
 scale(s) by $\mathrm{sd}(x)$.
 
 Because the scaling is based on the scales of the predictors (and possibly the
@@ -154,7 +160,7 @@ information used is weak and mainly takes into account the order of magnitude of
 the variables. This enables __rstanarm__ to offer defaults that are reasonable 
 for many models.
 
-### Disabling Prior Scale Adjustments
+### Disabling prior scale adjustments
 
 To disable automatic rescaling simply set the `autoscale` argument to to
 `FALSE`. For example:
@@ -176,36 +182,58 @@ We can verify that the prior scales weren't adjusted by checking
 prior_summary(test_no_autoscale)
 ```
 
-# How to Specify Flat Priors (and why you usually shouldn't)
+Disabling prior scale adjustments is usually unnecessary but is useful for when 
+more informative prior information is available. There is an example of
+specifying an informative prior later in this vignette.
 
-### Uninformative? Unrealistic.
+<br>
 
-When "noninformative" or "uninformative" is used in the context of prior 
+# How to Specify Flat Priors (and why you typically shouldn't)
+
+### Uninformative is usually unwarranted and unrealistic (flat is frequently frivolous and fictional)
+
+When "non-informative" or "uninformative" is used in the context of prior 
 distributions, it typically refers to a flat (uniform) distribution or a nearly 
 flat distribution. Sometimes it may also be used to refer to the 
 parameterization-invariant Jeffreys prior. Although __rstanarm__ does not
 prevent you from using very diffuse or flat priors, unless the data is
-very strong it is wise to avoid them. Rarely is it approrpriate in any applied
-setting to use a prior that gives the same (or nearly the same) probability mass
-to values near zero as it gives values bigger than the age of the universe in
-nanoseconds. Even a much narrower prior than that, e.g., a normal distribution with $\sigma = 500$, will tend to put much more probability mass on unreasonable
-parameter values than reasonable ones. In fact, using the prior
-$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ implies that you believe
-a priori that $Pr(|\theta| > 300) > Pr(|\theta| < 300)$. This can be
-verified numerically or visually:
+very strong it is wise to avoid them. 
 
-```{r, fig.cap="There is more probability mass outside the interval (-300, 300) than inside the interval."}
-print(2 * pnorm(-300, mean = 0, sd = 500))
+Rarely is it appropriate in any applied setting to use a prior that gives the
+same (or nearly the same) probability mass to values near zero as it gives
+values bigger than the age of the universe in nanoseconds. Even a much narrower
+prior than that, e.g., a normal distribution with $\sigma = 500$, will tend to
+put much more probability mass on unreasonable parameter values than reasonable
+ones. In fact, using the prior 
+$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ 
+implies some strange prior beliefs. For example, you believe a priori that 
+$P(|\theta| < 250) < P(|\theta| > 250)$, 
+which can easily be verified by doing the calculation with the normal CDF
 
-theta <- rnorm(10000, mean = 0, sd = 500)
-ggplot(data.frame(theta, clr = abs(theta) < 300), 
-       aes(x = theta, fill = clr)) + 
-  geom_histogram(binwidth = 10, show.legend = FALSE) + 
+```{r}
+p <- 1 - 2 * pnorm(-250, mean = 0, sd = 500)
+print(paste("Pr(-250 < theta < 250) =", round(p, 2)))
+```
+
+or via approximation with Monte Carlo draws:
+
+```{r, fig.cap="_There is much more probability mass outside the interval (-250, 250)._"}
+theta <- rnorm(1e5, mean = 0, sd = 500)
+p_approx <- mean(abs(theta) < 250)
+print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
+
+d <- data.frame(theta, clr = abs(theta) > 250)
+ggplot(d, aes(x = theta, fill = clr)) + 
+  geom_histogram(binwidth = 5, show.legend = FALSE) + 
   scale_y_continuous(name = "", labels = NULL, expand = c(0,0)) + 
-  scale_x_continuous(name = expression(theta), breaks = c(-1000, -300, 0, 300, 1000))
+  scale_x_continuous(name = expression(theta), breaks = c(-1000, -250, 250, 1000))
 ```
 
 <br>
+This will almost never correspond to the prior beliefs of a researcher about a
+parameter in a well-specified applied regression model and yet priors like 
+$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ (and more extreme) remain quite popular. 
+
 Even when you know very little, a flat or very wide prior will almost never be 
 the best approximation to your beliefs about the parameters in your model that 
 you can express using __rstanarm__ (or other software). _Some_ amount of prior 
@@ -213,17 +241,16 @@ information will be available. For example, even if there is nothing to suggest
 a priori that a particular coefficient will be positive or negative, there is 
 almost always enough information to suggest that different orders of magnitude
 are not equally likely. Making use of this information when setting a prior
-scale parameter is simple ---a useful heuristic is to set the scale an order of
+scale parameter is simple ---one heuristic is to set the scale an order of
 magnitude bigger than you suspect it to be--- and has the added benefit of
 helping to stabilize computations.
 
-A more in-depth discussion of non-informative vs weakly informative priors is
-available in Stan developer Michael Betancourt's case study [_How the Shape of a
-Weakly Informative Prior Affects
-Inferences_](http://mc-stan.org/documentation/case-studies/weakly_informative_shapes.html).
+A more in-depth discussion of non-informative vs weakly informative priors is 
+available in the case study 
+[_How the Shape of a Weakly Informative Prior Affects  Inferences_](http://mc-stan.org/documentation/case-studies/weakly_informative_shapes.html).
 
 
-### Specifying Flat Priors
+### Specifying flat priors
 
 __rstanarm__ will use flat priors if `NULL` is specified rather than a
 distribution. For example, to use a flat prior on regression coefficients you
@@ -246,25 +273,30 @@ indeed a flat prior was used for the coefficient on `wt` we can call
 prior_summary(flat_prior_test)
 ```
 
+<br>
 
 # Informative Prior Distributions
 
 Although the default priors tend to work well, prudent use of more informative
 priors is encouraged. For example, suppose we have a linear regression model 
-$$y \sim \mathsf{Normal}\left(\alpha + \beta_1 x_1 + \beta_2 x_2, \, \sigma\right)$$ 
-and we have a strong reason to believe (perhaps from previous research on the
-same topic) that $\beta_1 \in (-15, -5)$ and $\beta_2 \in (-1, 1)$. An example 
-of an informative prior for $\boldsymbol{\beta} = (\beta_1, \beta_2)$ could be 
+$$y_i \sim \mathsf{Normal}\left(\alpha + \beta_1 x_{1,i} + \beta_2 x_{2,i}, \, \sigma\right)$$ 
+and we have evidence (perhaps from previous research on
+the same topic) that approximately $\beta_1 \in (-15, -5)$ and 
+$\beta_2 \in (-1, 1)$. An example of an informative prior for 
+$\boldsymbol{\beta} = (\beta_1, \beta_2)'$ could be
 
 $$
-\begin{pmatrix} \beta_1 \\ \beta_2 \end{pmatrix}
-\sim \mathsf{Normal} \left( 
-\begin{pmatrix} -10 \\ 0 \end{pmatrix},
-\begin{pmatrix} 5^2 & 0 \\ 0 & 2^2 \end{pmatrix}
+\boldsymbol{\beta} \sim \mathsf{Normal} \left( 
+  \begin{pmatrix} -10 \\ 0 \end{pmatrix},
+  \begin{pmatrix} 5^2 & 0 \\ 0 & 2^2 \end{pmatrix}
 \right),
 $$
-which sets the prior means at the midpoints of the intervals and then allows
-for some wiggle room on either side.
+which sets the prior means at the midpoints of the intervals and then allows for
+some wiggle room on either side. If the data are highly informative about the
+parameter values (enough to overwhelm the prior) then this prior will yield
+similar results to a non-informative prior. But as the amount of data
+and/or the signal-to-noise ratio decrease, using a more informative prior
+becomes increasingly important.
 
 If the variables `y`, `x1`, and `x2` are in the data frame `dat` then this
 model can be specified as
@@ -272,4 +304,7 @@ model can be specified as
 my_prior <- normal(location = c(-10, 0), scale = c(5, 2), autoscale = FALSE)
 stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
 ```
+We left the priors for the intercept and error standard deviation at their 
+defaults, but informative priors can be specified for those parameters in 
+an analogous manner.
 
