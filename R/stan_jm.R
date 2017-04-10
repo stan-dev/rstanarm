@@ -65,8 +65,8 @@
 #'   family for one of the longitudinal submodels.
 #' @param assoc A character string or character vector specifying the joint
 #'   model association structure. Possible association structures that can
-#'   be used include: "etavalue" (the default); "etaslope"; "etalag"; "etaauc"; 
-#'   "muvalue"; "muslope"; "mulag"; "muauc"; "shared_b"; "shared_coef"; or "null". 
+#'   be used include: "etavalue" (the default); "etaslope"; "etaauc"; 
+#'   "muvalue"; "muslope"; "muauc"; "shared_b"; "shared_coef"; or "null". 
 #'   These are described in the \strong{Details} section below. For a multivariate 
 #'   joint model, different association structures can optionally be used for 
 #'   each longitudinal submodel by specifying a list of character
@@ -292,16 +292,10 @@
 #'         longitudinal submodel (\code{"etavalue"}) 
 #'       \item first derivative (slope) of the linear predictor in the 
 #'         longitudinal submodel (\code{"etaslope"}) 
-#'       \item lagged value of the linear predictor in the longitudinal 
-#'         submodel (\code{"etalag(#)"}, replacing \code{#} with the desired 
-#'         lag in units of the time variable);
 #'       \item the area under the curve of the linear predictor in the 
 #'         longitudinal submodel (\code{"etaauc"}) 
 #'       \item current expected value of the longitudinal submodel 
 #'         (\code{"muvalue"})
-#'       \item lagged expected value of the longitudinal submodel 
-#'         (\code{"mulag(#)"}, replacing \code{#} with the desired lag in 
-#'         units of the time variable) 
 #'       \item the area under the curve of the expected value from the 
 #'         longitudinal submodel (\code{"muauc"})
 #'       \item shared individual-level random effects (\code{"shared_b"}) 
@@ -322,8 +316,8 @@
 #'     }
 #'   More than one association structure can be specified, however,
 #'   not all possible combinations are allowed.   
-#'   Note that for the lagged association structures (\code{"etalag(#)"} and 
-#'   \code{"mulag(#)"}) baseline values (time = 0) are used for the instances 
+#'   Note that for the lagged association structures baseline values (time = 0) 
+#'   are used for the instances 
 #'   where the time lag results in a time prior to baseline. When using the 
 #'   \code{"etaauc"} or \code{"muauc"} association structures, the area under
 #'   the curve is evaluated using Gauss-Kronrod quadrature with 15 quadrature 
@@ -402,7 +396,7 @@
 #'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
-#'               assoc = "etalag(2)",
+#'               assoc = "etavalue", lag_assoc = 2,
 #'               chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(f3) 
 #' 
@@ -473,7 +467,8 @@
 #' @importFrom lme4 lmerControl glmerControl
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
-                    id_var, family = gaussian, assoc = "etavalue", dataAssoc,
+                    id_var, family = gaussian, assoc = "etavalue", 
+                    lag_assoc = 0, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
                     quadnodes = 15, subsetLong, subsetEvent, init = "model_based", 
                     na.action = getOption("na.action", "na.omit"), weights, 
@@ -541,8 +536,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Matched call
   call <- match.call(expand.dots = TRUE)    
   mc   <- match.call(expand.dots = FALSE)
-  mc$time_var <- mc$id_var <- mc$assoc <- 
-    mc$basehaz <- mc$basehaz_ops <-
+  mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- 
+    mc$dataAssoc <- mc$basehaz <- mc$basehaz_ops <-
     mc$df <- mc$knots <- mc$quadnodes <- NULL
   mc$priorLong <- mc$priorLong_intercept <- mc$priorLong_aux <-
     mc$priorEvent <- mc$priorEvent_intercept <- mc$priorEvent_aux <-
@@ -634,12 +629,22 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Handle association structure
   # !!! NB if ordering is changed here, then must also change standata$has_assoc
-  ok_assoc <- c("null", "etavalue","etaslope", "etalag", "etaauc", "muvalue", 
-                "muslope", "mulag", "muauc", "shared_b", "shared_coef")
-  ok_assoc_data         <- ok_assoc[c(2:3,6:7)]
-  ok_assoc_interactions <- ok_assoc[c(2,6)]
+  ok_assoc <- c("null", "etavalue","etaslope", "etaauc", "muvalue", 
+                "muslope", "muauc", "shared_b", "shared_coef")
+  ok_assoc_data         <- ok_assoc[c(2:3,5:6)]
+  ok_assoc_interactions <- ok_assoc[c(2,5)]
   
-  assoc <- mapply(validate_assoc, assoc, y_mod_stuff, 
+  # Check lag
+  if (length(lag_assoc) == 1L)
+    lag_assoc <- rep(lag_assoc, M)
+  if (!length(lag_assoc) == M)
+    stop("'lag_assoc' should length 1 or length equal to the number of markers.")
+  if (!is.numeric(lag_assoc))
+    stop("'lag_assoc' must be numeric.")
+  if (any(lag_assoc < 0))
+    stop("'lag_assoc' must be non-negative.")
+  
+  assoc <- mapply(validate_assoc, assoc, y_mod_stuff, lag = lag_assoc,
                   MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
                                   ok_assoc_interactions = ok_assoc_interactions, 
                                   id_var = id_var, M = M))
@@ -986,16 +991,14 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Indicator for which components are required to build the association terms
   standata$assoc_uses <- sapply(
-    c("etavalue", "etaslope", "etalag", "etaauc", "muvalue", "muslope", "mulag", "muauc"), 
+    c("etavalue", "etaslope", "etaauc", "muvalue", "muslope", "muauc"), 
     function(x, assoc) {
       nm_check <- switch(x,
                          etavalue = "^eta|^mu",
                          etaslope = "etaslope|muslope",
-                         etalag   = "etalag|mulag",
                          etaauc   = "etaauc|muauc",
                          muvalue  = "muvalue|muslope",
                          muslope  = "muslope",
-                         mulag    = "mulag",
                          muauc    = "muauc")
       sel <- grep(nm_check, rownames(assoc))
       as.integer(any(unlist(assoc[sel,])))
@@ -1003,19 +1006,18 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     
   # Indexing for desired association types
   # !!! must be careful with corresponding use of indexing in Stan code
-  # 1 = ev; 2 = es; 3 = el; 4 = ea; 5 = mv; 6 = ms; 7 = ml; 8 = ma;
-  # 9 = shared_b; 10 = shared_coef;
-  # 11 = ev_data; 12 = es_data; 13 = mv_data; 14 = ms_data;
-  # 15 = evev; 16 = evmv; 17 = mvev; 18 = mvmv;
+  # 1 = ev; 2 = es; 3 = ea; 4 = mv; 5 = ms; 6 = ma;
+  # 7 = shared_b; 8 = shared_coef;
+  # 9 = ev_data; 10 = es_data; 11 = mv_data; 12 = ms_data;
+  # 13 = evev; 14 = evmv; 15 = mvev; 16 = mvmv;
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
   
-  # Data for calculating eta, eta slope, eta lag, eta auc in GK quadrature 
-  for (i in c("eta", "eps", "lag", "auc")) {
+  # Data for calculating value, slope, auc in GK quadrature 
+  for (i in c("eta", "eps", "auc")) {
     nm_check <- switch(i,
                        eta = "^eta|^mu",
                        eps = "slope",
-                       lag = "etalag|mulag",
                        auc = "auc")
     sel <- grep(nm_check, rownames(assoc))
     if (any(unlist(assoc[sel,]))) {
@@ -1144,7 +1146,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     if (assoc["etavalue_muvalue", ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_muvalue"]],  "|muvalue"))
     if (assoc["etaslope",         ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|etaslope"))
     if (assoc["etaslope_data",    ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod_stuff[[m]][["xq_data"]][["etaslope_data"]])))    
-    if (assoc["etalag",           ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|etalag"))
     if (assoc["etaauc",           ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|etaauc"))
     if (assoc["muvalue",          ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muvalue"))
     if (assoc["muvalue_data",     ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod_stuff[[m]][["xq_data"]][["muvalue_data"]])))    
@@ -1152,7 +1153,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     if (assoc["muvalue_muvalue",  ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_muvalue"]],  "|muvalue"))
     if (assoc["muslope",          ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muslope"))
     if (assoc["muslope_data",     ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod_stuff[[m]][["xq_data"]][["muslope_data"]])))    
-    if (assoc["mulag",            ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|mulag"))
     if (assoc["muauc",            ][[m]]) a_nms <- c(a_nms, paste0("Assoc|Long", m,"|muauc"))
   }
   if (sum(standata$size_which_b)) {
@@ -1820,7 +1820,7 @@ get_quadpoints <- function(nodes = 15) {
 # @param M Integer specifying the total number of longitudinal submodels
 # @return A list with information about the desired association structure
 validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
-                           ok_assoc_interactions, id_var, M) {
+                           ok_assoc_interactions, lag, id_var, M) {
 
   ok_inputs <- c(ok_assoc, paste0(ok_assoc_data, "_data"),
                  unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))) 
@@ -1837,7 +1837,7 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
              "with another association type", call. = FALSE)
       STOP_combination_not_allowed(assoc, "etavalue", "muvalue")
       STOP_combination_not_allowed(assoc, "etaslope", "muslope")
-      STOP_combination_not_allowed(assoc, "etalag",   "mulag")
+      STOP_combination_not_allowed(assoc, "etaauc",   "muauc")
     } else {
       stop("'assoc' argument should be a character vector or, for a multivariate ",
            "joint model, possibly a list of character vectors.", call. = FALSE)    
@@ -1850,10 +1850,6 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
          "with observed data.", call. = FALSE)  
   }
   
-  # Parse suffix specifying desired time lag
-  ok_inputs_lag <- c("etalag", "mulag")
-  assoc$which_lag <- parse_assoc_lag(ok_inputs_lag, user_x)
-       
   # Parse suffix specifying indices for shared random effects
   cnms <- y_mod_stuff$cnms[[id_var]] # names of random effect terms
   assoc$which_b_zindex    <- parse_assoc_sharedRE("shared_b",    user_x, max_index = length(cnms), cnms)
@@ -1896,6 +1892,9 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   ok_inputs_interactions <- unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))
   assoc$which_interactions <- sapply(ok_inputs_interactions, parse_assoc_interactions, 
                                      user_x, max_index = M, simplify = FALSE)
+  
+  # Lag for association structure
+  assoc$which_lag <- lag
 
   assoc
 }
@@ -1910,8 +1909,6 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
 #   of association terms are allowed to be interacted with other 
 #   association terms
 trim_assoc <- function(x, ok_assoc_data, ok_assoc_interactions) {
-  x <- gsub("^etalag\\(.*",      "etalag",      x) 
-  x <- gsub("^mulag\\(.*",       "mulag",       x) 
   x <- gsub("^shared_b\\(.*",    "shared_b",    x) 
   x <- gsub("^shared_coef\\(.*", "shared_coef", x) 
   for (i in ok_assoc_data)
@@ -1919,37 +1916,6 @@ trim_assoc <- function(x, ok_assoc_data, ok_assoc_interactions) {
   for (i in ok_assoc_interactions) for (j in ok_assoc_interactions)
     x <- gsub(paste0("^", i, "_", j, "\\(.*"), paste0(i, "_", j),  x) 
   x     
-}
-
-# Parse the suffix specified for lagged association terms
-# 
-# @param ok_inputs A character vector specifying which association
-#   structures are allowed to include a suffix specifying a lag time
-# @param user_x A character vector, being the user input to the assoc
-#   argument in the stan_jm call
-# @return A numeric vector of length one specifying the time lag to use
-parse_assoc_lag <- function(ok_inputs, user_x) {
-  val <- grep(paste0("^", ok_inputs, ".*", collapse = "|"), user_x, value = TRUE)
-  if (length(val)) {
-    val2 <- unlist(strsplit(val, paste0(ok_inputs, collapse = "|")))[-1]
-    if (length(val2) == 1L) {
-      lag <- tryCatch(eval(parse(text = paste0("c", val2))), error = function(e) 
-        stop("Lagged association structure was specified incorrectly. It should ",
-             "include a suffix with the desired lag inside parentheses. See ",
-             "Examples in the help file.", call. = FALSE))
-      if (length(lag) > 1L) 
-        stop("Currently only one lag time is allowed for the lagged association ",
-             "structure.", call. = FALSE)
-      return(lag)
-    } else if (length(val2) > 1L) {
-      stop("Only one lagged association structure can be specified for each ",
-           "longitudinal submodel.", call. = FALSE)
-    } else {
-      stop("Lagged association structure was specified incorrectly. It should ",
-           "include a suffix with the desired lag inside parentheses. See the ",
-           "help file for details.", call. = FALSE)     
-    }
-  } else numeric(0) 
 }
 
 # Parse the formula for specifying a data interaction with an association term
@@ -2186,6 +2152,16 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   m <- dots$m 
   if (is.null(m)) stop("Argument m must be specified in dots.")
 
+  # Apply lag
+  lag <- assoc["which_lag",][[m]]
+  if (!lag == 0) {
+    times <- lapply(times, function(x, lag) {
+      newtimes <- x - lag
+      newtimes[newtimes < 0] <- 0.0  # use baseline where lagged t is before baseline
+      newtimes
+    }, lag = lag)  
+  }
+  
   # Identify row in longitudinal data closest to event time or quadrature point
   #   NB if the quadrature point is earlier than the first observation time, 
   #   then covariates values are carried back to avoid missing values.
@@ -2208,19 +2184,6 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
     mod_eps <- use_function(newdata = dataQ_eps, ...)
   } else mod_eps <- NULL 
   
-  # If association structure is based on a time lag, then calculate design 
-  # matrices under the specified time lag
-  sel_lag <- grep("etalag|mulag", rownames(assoc))
-  if (any(unlist(assoc[sel_lag,]))) {
-    times_lag <- lapply(times, function(x, lag) {
-      newtimes <- x - lag
-      newtimes[newtimes < 0] <- 0.0  # use baseline where lagged t is before baseline
-      newtimes
-    }, lag = ifelse(length(assoc["which_lag",][[m]]), assoc["which_lag",][[m]], 0))
-    dataQ_lag <- rolling_merge(data = newdata, ids = id_list, times = times_lag)
-    mod_lag <- use_function(newdata = dataQ_lag, ...)
-  } else mod_lag <- NULL
-  
   # If association structure is based on area under the marker trajectory, then 
   # calculate design matrices at the subquadrature points
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
@@ -2235,7 +2198,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
         lapply(x, function(y) 
           lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y))))
     ids2 <- rep(id_list, each = auc_quadnodes)
-    dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = times_auc)
+    dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = auc_quadtimes)
     mod_auc <- use_function(newdata = dataQ_auc, ...)
   } else mod_auc <- auc_quadtimes <- auc_quadweights <- NULL
   
@@ -2272,29 +2235,19 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
                           oldcall <- getCall(object$glmod_stuff[[m]]$mod)
                           naa <- oldcall$na.action
                           subset <- eval(oldcall$subset) 
-                          df <- 
-                            tryCatch(eval(oldcall$data), error = function(e) {
-                              tryCatch(if (is(object$dataLong, "list")) 
-                                object$dataLong[[m]] else object$dataLong, error = function(e) {
-                                  stop("Bug found: cannot find data frame to use for ",
-                                       "assoc data interactions.")
+                          if (is.null(dataAssoc)) {
+                            df <- 
+                              tryCatch(eval(oldcall$data), error = function(e) {
+                                tryCatch(if (is(object$dataLong, "list")) 
+                                  object$dataLong[[m]] else object$dataLong, error = function(e) {
+                                    stop("Bug found: cannot find data frame to use for ",
+                                         "assoc data interactions, please report bug.")
+                                  })
                               })
-                            })
+                          } else df <- dataAssoc
                           mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
                                            na.action = naa))                          
                         }  
-             
-                        if (is.null(dataAssoc)) {
-                          df <- 
-                            tryCatch(eval(oldcall$data), error = function(e) {
-                              tryCatch(if (is(object$dataLong, "list")) 
-                                object$dataLong[[m]] else object$dataLong, error = function(e) {
-                                stop("Bug found: cannot find data frame to use for ",
-                                     "assoc data interactions, please report bug.")
-                              })
-                            })
-                        } else df <- dataAssoc
-
                         mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
                         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
                         mf2q <- rolling_merge(data = mf2, ids = id_list, times = times)
@@ -2309,10 +2262,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   K_data <- sapply(xq_data, ncol)
   xmat_data <- do.call(cbind, xq_data)
   
-  ret <- nlist(times, mod_eta, mod_eps, mod_lag, mod_auc, 
-               xq_data, xmat_data, K_data)
+  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data)
   
-  structure(ret, times = times, eps = eps, auc_quadnodes = auc_quadnodes,
+  structure(ret, times = times, lag = lag, eps = eps, auc_quadnodes = auc_quadnodes,
             auc_quadtimes = auc_quadtimes, auc_quadweights = auc_quadweights)
 }                              
 
@@ -2363,8 +2315,8 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL) {
 #   call to handle_assocmod
 # @return Integer indicating the number of association parameters in the model 
 get_num_assoc_pars <- function(assoc, a_mod_stuff) {
-  sel1 <- c("etavalue", "etaslope", "etalag", "etaauc", 
-            "muvalue", "muslope", "mulag", "muauc")
+  sel1 <- c("etavalue", "etaslope", "etaauc", 
+            "muvalue", "muslope", "muauc")
   sel2 <- c("which_b_zindex", "which_coef_zindex")
   sel3 <- c("which_interactions")
   K1 <- sum(as.integer(assoc[sel1,]))
@@ -2519,8 +2471,8 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
 #   structure, returned by a call to validate_assoc
 # @param parts A list equal in length to the number of markers. Each element
 #   parts[[m]] should contain a named list with components $mod_eta, $mod_eps,
-#   $mod_lag, $mod_auc, which each contain either the linear predictor at quadtimes, 
-#   quadtimes + eps, lagged quadtimes, and auc quadtimes, or the design matrices
+#   $mod_auc, which each contain either the linear predictor at quadtimes, 
+#   quadtimes + eps, and auc quadtimes, or the design matrices
 #   used for constructing the linear predictor. Each element parts[[m]] should 
 #   also contain $xmat_data and $K_data.
 # @param family A list of family objects, equal in length to the number of 
@@ -2544,7 +2496,6 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       invlink_m <- family[[m]]$linkinv    
       eta_m <- get_element(parts, m = m, "eta", ...)
       eps_m <- get_element(parts, m = m, "eps", ...)
-      lag_m <- get_element(parts, m = m, "lag", ...)
       auc_m <- get_element(parts, m = m, "auc", ...)
       data_m <- get_element(parts, m = m, "xmat_data", ...)
       K_data_m <- get_element(parts, m = m, "K_data", ...)
@@ -2596,11 +2547,6 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         a_X[[mark]] <- val
         mark <- mark + 1            
       }
-      # etalag
-      if (assoc["etalag",][[m]]) { # etalag
-        a_X[[mark]] <- lag_m
-        mark <- mark + 1
-      } 
       # etaauc
       if (assoc["etaauc",][[m]]) { # etaauc
         val   <- c()
@@ -2660,12 +2606,6 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         a_X[[mark]] <- val
         mark <- mark + 1              
       }    
-      # mulag
-      if (assoc["mulag",][[m]]) { # mulag
-        val <- invlink_m(lag_m)
-        a_X[[mark]] <- val
-        mark <- mark + 1              
-      }  
       # muauc
       if (assoc["etaauc",][[m]]) { # etaauc
         val   <- c()
@@ -2703,15 +2643,15 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
 # Function to get linear predictor and other bits
 #
 # @param parts A named list containing the parts for constructing the association 
-#   structure. It may contain elements $mod_eta, $mod_eps, $mod_lag, etc. as 
+#   structure. It may contain elements $mod_eta, $mod_eps, $mod_auc, etc. as 
 #   well as $xmat_data, $K_data
 # @param which
 get_element <- function(parts, m = 1, which = "eta", ...) {
   dots <- list(...)
-  ok_which_args <- c("eta", "eps", "lag", "auc", "xmat_data", "K_data", "b_mat")
+  ok_which_args <- c("eta", "eps", "auc", "xmat_data", "K_data", "b_mat")
   if (!which %in% ok_which_args)
     stop("'which' must be one of: ", paste(ok_which_args, collapse = ", "))
-  if (which %in% c("eta", "eps", "lag", "auc")) {
+  if (which %in% c("eta", "eps", "auc")) {
     part <- parts[[m]][[paste0("mod_", which)]]
     if (is.null(part)) { # model doesn't include an assoc related to 'part'
       return(NULL)

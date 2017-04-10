@@ -1,14 +1,11 @@
     vector[M*nrow_y_Xq*(assoc_uses[1]>0)]     y_eta_q;     // linear predictor (all long submodels) evaluated at quadpoints
     vector[M*nrow_y_Xq*(assoc_uses[2]>0)]     y_eta_q_eps; // linear predictor (all long submodels) evaluated at quadpoints plus time shift of epsilon
-    vector[M*nrow_y_Xq*(assoc_uses[3]>0)]     y_eta_q_lag; // linear predictor (all long submodels) evaluated at lagged quadpoints
-    vector[M*nrow_y_Xq_auc*(assoc_uses[4]>0)] y_eta_q_auc; // linear predictor (all long submodels) evaluated at auc quadpoints
+    vector[M*nrow_y_Xq_auc*(assoc_uses[3]>0)] y_eta_q_auc; // linear predictor (all long submodels) evaluated at auc quadpoints
     vector[nrow_y_Xq]     y_eta_qwide    [M];    
     vector[nrow_y_Xq]     y_eta_qwide_eps[M];  
-    vector[nrow_y_Xq]     y_eta_qwide_lag[M];  
     vector[nrow_y_Xq_auc] y_eta_qwide_auc[M];  
     vector[nrow_y_Xq]     y_qwide    [M];         
     vector[nrow_y_Xq]     y_qwide_eps[M];     
-    vector[nrow_y_Xq]     y_qwide_lag[M];     
     vector[nrow_y_Xq_auc] y_qwide_auc[M];
     // mark tracks indexing within a_beta vector, which is the 
     // vector of association parameters
