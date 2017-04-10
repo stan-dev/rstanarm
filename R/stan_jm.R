@@ -80,6 +80,19 @@
 #'   interaction terms between the association terms ("etavalue" or "muvalue") 
 #'   corresponding to the different longitudinal outcomes. See the 
 #'   \strong{Details} section as well as the \strong{Examples} below.
+#' @param lag_assoc A non-negative scalar specifying the time lag that should be
+#'   used for the association structure. That is, the hazard of the event at 
+#'   time \emph{t} will be assumed to be associated with the value/slope/auc of 
+#'   the longitudinal marker at time \emph{t-u}, where \emph{u} is the time lag.
+#'   If fitting a multivariate joint model, then a different time lag can be used
+#'   for each longitudinal marker by providing a numeric vector of lags, otherwise
+#'   if a scalar is provided then the specified time lag will be used for all 
+#'   longitudinal markers. Note however that only one time lag  can be specified 
+#'   for linking each longitudinal marker to the 
+#'   event, and that that time lag will be used for all association structure
+#'   types (e.g. \code{"etavalue"}, \code{"etaslope"}, \code{"etaauc"}, 
+#'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
+#'   the \code{assoc} argument.
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a Weibull baseline hazard
 #'   (\code{"weibull"}, the default), a B-splines approximation estimated 
