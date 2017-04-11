@@ -319,6 +319,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'
 #' @method pairs stanreg
 #' @export
+#' @importFrom bayesplot pairs_style_np pairs_condition
 #' @export pairs_style_np pairs_condition
 #' @aliases pairs_style_np pairs_condition
 #' 

@@ -27,7 +27,7 @@ Depends:
     Rcpp (>= 0.12.0),
     methods
 Imports:
-    bayesplot (>= 1.1.0),
+    bayesplot (>= 1.2.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 1.1.0),
@@ -58,4 +58,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1

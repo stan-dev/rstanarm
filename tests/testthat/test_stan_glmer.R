@@ -236,17 +236,17 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd, seed = SEED)),
       unname(predict(get(paste0("lfit", j)), newdata = nd)),
-      tol = tol)
+      tol = tol, check.attributes = FALSE)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd2, seed = SEED,
                                  allow.new.levels = TRUE)),
       unname(predict(get(paste0("lfit", j)), newdata = nd2, allow.new.levels = TRUE)),
-      tol = tol)
+      tol = tol, check.attributes = FALSE)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd3, seed = SEED,
                                  allow.new.levels = TRUE)),
       unname(predict(get(paste0("lfit", j)), newdata = nd3, allow.new.levels = TRUE)),
-      tol = tol)
+      tol = tol, check.attributes = FALSE)
   }
 })
 
@@ -266,5 +266,5 @@ test_that("posterior_predict close to predict.merMod for binomial", {
                              seed = SEED)
   spred <- sweep(spred, 2, rowSums(get_y(sfit)), "/")
   expect_equal(colMeans(spred), unname(colMeans(lpred)),
-               tol = .125)
+               tol = .125, check.attributes = FALSE)
 })
