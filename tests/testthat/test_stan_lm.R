@@ -25,14 +25,15 @@ ITER <- 400
 threshold <- 0.21
 REFRESH <- 0
 
-SW <- function(expr) capture.output(suppressWarnings(expr))
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
+source(file.path("helpers", "SW.R"))
+
+SW(fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
+                  chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
 
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
   # example using mtcars dataset
-  SW(fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
-                 chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
   expect_stanreg(fit)
   
   fit_sigma <- fit$stan_summary["sigma", "mean"]
@@ -127,4 +128,20 @@ test_that("stan_biglm returns stanfit (not stanreg) object ", {
   SW(post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
                            chains = 1, iter = 10, seed = SEED))
   expect_s4_class(post, "stanfit")
+})
+
+test_that("loo/waic for stan_lm works", {
+  source(file.path("helpers", "expect_equivalent_loo.R"))
+  ll_fun <- rstanarm:::ll_fun
+  expect_equivalent_loo(fit)
+  expect_identical(ll_fun(fit), rstanarm:::.ll_gaussian_i)
+})
+
+context("posterior_predict (stan_lm)")
+test_that("posterior_predict compatible with stan_lm", {
+  source(file.path("helpers", "check_for_error.R"))
+  source(file.path("helpers", "expect_linpred_equal.R"))
+  
+  check_for_error(fit)
+  expect_linpred_equal(fit)
 })
