@@ -21,8 +21,75 @@
 library(rstanarm)
 SEED <- 12345
 set.seed(SEED)
+CHAINS <- 2
+ITER <- 40 # small iter for speed but large enough for psis
+REFRESH <- 0
 
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
+source(file.path("helpers", "SW.R"))
+
+SW(
+  fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
+                       chains = CHAINS, iter = ITER,
+                       seed = SEED, refresh = REFRESH)
+)
+dat <- data.frame(ldose = rep(0:5, 2),
+                  sex = factor(rep(c("M", "F"), c(6, 6))))
+numdead <- c(1, 4, 9, 13, 18, 20, 0, 2, 6, 10, 12, 16)
+SF <- cbind(numdead, numalive = 20-numdead)
+SW(
+  fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial,
+                        chains = CHAINS, iter = ITER, seed = SEED,
+                        refresh = REFRESH)
+)
+dead <- rbinom(length(numdead), 1, prob = 0.5)
+SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
+
+d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9),
+                   counts = c(18,17,15,20,10,20,25,13,12))
+SW(fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD,
+                        family = poisson, chains = CHAINS, iter = ITER,
+                        seed = SEED, refresh = REFRESH))
+SW(fit_negbin <- update(fit_pois, family = neg_binomial_2))
+
+clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
+                       lot1 = c(118,58,42,35,27,25,21,19,18),
+                       lot2 = c(69,35,26,21,18,16,13,12,12))
+SW(fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
+                         chains = CHAINS, iter = ITER, seed = SEED,
+                         refresh = REFRESH))
+SW(fit_igaus <- update(fit_gamma, family = inverse.gaussian))
+
+test_that("loo/waic for stan_glm works", {
+  ll_fun <- rstanarm:::ll_fun
+  source(file.path("helpers", "expect_equivalent_loo.R"))
+  
+  # gaussian
+  expect_equivalent_loo(fit_gaus)
+  expect_identical(ll_fun(fit_gaus), rstanarm:::.ll_gaussian_i)
+  
+  # binomial
+  expect_equivalent_loo(fit_binom)
+  expect_equivalent_loo(fit_binom2)
+  expect_identical(ll_fun(fit_binom), rstanarm:::.ll_binomial_i)
+  expect_identical(ll_fun(fit_binom2), rstanarm:::.ll_binomial_i)
+  
+  # poisson
+  expect_equivalent_loo(fit_pois)
+  expect_identical(ll_fun(fit_pois), rstanarm:::.ll_poisson_i)
+  
+  # negative binomial
+  expect_equivalent_loo(fit_negbin)
+  expect_identical(ll_fun(fit_negbin), rstanarm:::.ll_neg_binomial_2_i)
+  
+  # gamma
+  expect_equivalent_loo(fit_gamma)
+  expect_identical(ll_fun(fit_gamma), rstanarm:::.ll_Gamma_i)
+  
+  # inverse gaussian
+  expect_equivalent_loo(fit_igaus)
+  expect_identical(ll_fun(fit_igaus), rstanarm:::.ll_inverse.gaussian_i)
+})
 
 context("stan_glm (errors, warnings, messages)")
 test_that("stan_glm throws appropriate errors, warnings, and messages", {
@@ -117,19 +184,17 @@ context("stan_glm (poisson)")
 links <- c("log", "identity", "sqrt")
 test_that("stan_glm returns expected result for glm poisson example", {
   # example from help("glm")
-  counts <- c(18,17,15,20,10,20,25,13,12)
-  outcome <- gl(3,1,9)
-  treatment <- gl(3,3)
-
   for (i in 1:length(links)) {
-    fit <- stan_glm(counts ~ outcome + treatment, family = poisson(links[i]), 
+    fit <- stan_glm(counts ~ outcome + treatment, data = d.AD,
+                    family = poisson(links[i]), 
                     prior = NULL, prior_intercept = NULL, QR = TRUE,
                     algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
     expect_stanreg(fit)
     
-    ans <- glm(counts ~ outcome + treatment, family = poisson(links[i]), start = coef(fit))
+    ans <- glm(counts ~ outcome + treatment, data = d.AD,
+               family = poisson(links[i]), start = coef(fit))
     if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
-    if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
+    # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
         expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
@@ -140,10 +205,10 @@ test_that("stan_glm returns expected result for glm poisson example", {
 })
 
 context("stan_glm (negative binomial)")
-test_that("stan_glm returns something for glm negative binomial example", {
+if (require(MASS)) 
+  test_that("stan_glm returns something for glm negative binomial example", {
   # example from MASS::glm.nb
-  require(MASS)
-
+  
   for (i in 1:length(links)) {
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
@@ -364,4 +429,37 @@ test_that("empty interaction levels dropped", {
   y <- rnorm(100)
   expect_warning(stan_glm(y ~ x1*x2, chains = 2, iter = 20, refresh = 0), 
                  regexp = "Dropped empty interaction levels")
+})
+
+context("posterior_predict (stan_glm)")
+
+test_that("posterior_predict compatible with glms", {
+  source(file.path("helpers", "check_for_error.R"))
+  source(file.path("helpers", "expect_linpred_equal.R"))
+  SW <- suppressWarnings
+  
+  check_for_error(fit_gaus)
+  expect_linpred_equal(fit_gaus)
+  
+  mtcars2 <- mtcars
+  mtcars2$offs <- runif(nrow(mtcars))
+  fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
+                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+  expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
+                 "offset")
+  check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)
+  check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
+  expect_linpred_equal(fit_gaus)
+  expect_linpred_equal(fit2)
+  
+  check_for_error(fit_pois)
+  check_for_error(fit_negbin)
+  expect_linpred_equal(fit_pois)
+  expect_linpred_equal(fit_negbin)
+
+  check_for_error(fit_gamma)
+  check_for_error(fit_igaus)
+  expect_linpred_equal(fit_gamma)
+  expect_linpred_equal(fit_igaus)
+  
 })
