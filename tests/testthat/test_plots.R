@@ -71,7 +71,7 @@ test_that("plot.stanreg returns correct object", {
   
   # requires exactly 2 parameters
   expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
-  expect_gg(plot(fit, "scatter", pars = c("period2", "period3")))
+  expect_gg(plot(fit, "hex", pars = c("period2", "period3")))
 })
 
 test_that("plot method returns correct object for nuts diagnostic plots", {
@@ -124,12 +124,10 @@ test_that("plot.stanreg ok for vb", {
 # pairs.stanreg -----------------------------------------------------------
 context("pairs.stanreg")
 test_that("pairs method ok", {
-  requireNamespace("rstan")
-  requireNamespace("KernSmooth")
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
   expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma"))
-  # expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma", 
-  #                     log = TRUE, condition = "lp__"))
+  expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma", 
+                      condition = pairs_condition(nuts = "lp__")))
   expect_error(pairs(fitvb), regexp = "only available for models fit using MCMC")
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })

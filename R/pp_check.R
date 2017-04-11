@@ -138,7 +138,7 @@
 #' # Example of a PPC for ordinal models (stan_polr)
 #' fit2 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'                   prior = R2(0.2, "mean"), init_r = 0.1)
-#' pp_check(fit2, plotfun = "bars", nreps = 200, prob = 0.5)
+#' pp_check(fit2, plotfun = "bars", nreps = 500, prob = 0.5)
 #' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
 #'          nreps = 500, prob = 0.5)
 #' }
@@ -308,8 +308,6 @@ is_binomial_ppc <- function(object) {
     "dens_overlay" = nreps %ORifNULL% 50,
     "ecdf_overlay" = nreps %ORifNULL% 50,
     "hist" = nreps %ORifNULL% 8,
-    "bars" = nreps %ORifNULL% 8,
-    "bars_grouped" = nreps %ORifNULL% 3,
     "dens" = nreps %ORifNULL% 8,
     "boxplot" = nreps %ORifNULL% 8,
     "freqpoly" = nreps %ORifNULL% 8,

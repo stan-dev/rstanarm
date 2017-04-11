@@ -35,7 +35,7 @@ Imports:
     nlme (>= 3.1-124),
     rstan (>= 2.14.1),
     rstantools (>= 1.2.0),
-    shinystan (>= 2.2.1),
+    shinystan (>= 2.3.0),
     stats,
     utils
 Suggests:
@@ -44,7 +44,6 @@ Suggests:
     digest,
     gridExtra,
     HSAUR3,
-    KernSmooth,
     knitr (>= 1.15.1),
     MASS,
     mgcv,
