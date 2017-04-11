@@ -15,13 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Leave-one-out (LOO) and K-fold cross-validation
+#' Information criteria and cross-validation
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
-#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
+#' (LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
+#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
 #' cross-validation is also available. Compare two or more models using the 
-#' \code{compare_models} function. \strong{Note:} these functions are not
+#' \code{compare_models} function. \strong{Note:} these functions are not 
 #' guaranteed to work properly unless the \code{data} argument was specified 
 #' when the model was fit.
 #' 
@@ -117,7 +117,7 @@
 #' # when comparing three or more models they are ordered by expected
 #' # predictive accuracy
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
-#' loo3 <- loo(fit3, cores = 2)
+#' loo3 <- loo(fit3, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation
