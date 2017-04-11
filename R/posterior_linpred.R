@@ -28,7 +28,6 @@
 #' 
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @template args-dots-ignored
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the
 #'   untransformed linear predictor is returned.

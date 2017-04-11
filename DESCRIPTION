@@ -30,7 +30,7 @@ Imports:
     bayesplot (>= 1.1.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
-    loo (>= 1.0.0),
+    loo (>= 1.1.0),
     Matrix,
     nlme (>= 3.1-124),
     rstan (>= 2.14.1),
