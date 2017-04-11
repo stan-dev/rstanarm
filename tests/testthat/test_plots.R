@@ -24,14 +24,12 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-SW <- function(expr) capture.output(suppressWarnings(expr))
+source(file.path("helpers", "SW.R"))
+source(file.path("helpers", "expect_gg.R"))
 
 fit <- example_model
 SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED))
 SW(fitvb <- update(fito, algorithm = "meanfield"))
-
-expect_gg <- function(x) expect_s3_class(x, "ggplot")
-
 
 # plot.stanreg ------------------------------------------------------------
 context("plot.stanreg")

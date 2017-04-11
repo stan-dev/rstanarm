@@ -25,15 +25,12 @@ ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- function(expr) capture.output(suppressWarnings(expr))
+source(file.path("helpers", "SW.R"))
+source(file.path("helpers", "expect_gg.R"))
 
 fit <- example_model
 SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
                     seed = SEED, refresh = REFRESH))
-
-expect_gg <- function(x, info = NULL, label = NULL) {
-  testthat::expect_is(x, "ggplot", info = info, label = label)
-}
 
 
 context("pp_check")

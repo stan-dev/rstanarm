@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 

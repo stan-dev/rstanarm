@@ -28,8 +28,8 @@ if (require(betareg)) {
   
   context("stan_betareg")
   
-  SW <- suppressWarnings
-  expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+  source(file.path("helpers", "expect_stanreg.R"))
+  source(file.path("helpers", "SW.R"))
   
   simple_betareg_data <- function(N, draw_z = FALSE) {
     x <- rnorm(N, 2, 1)
@@ -196,25 +196,10 @@ if (require(betareg)) {
                                chains = 1, iter = 1))
   })
   
-  expect_equivalent_loo <- function(fit) {
-    l <- suppressWarnings(loo(fit))
-    w <- suppressWarnings(waic(fit))
-    expect_s3_class(l, "loo")
-    expect_s3_class(w, "loo")
-    expect_s3_class(w, "waic")
-    
-    att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
-    expect_named(attributes(l), att_names)
-    expect_named(attributes(w), att_names)
-    
-    discrete <- attr(l, "discrete")
-    expect_true(!is.na(discrete) && is.logical(discrete))
-    
-    expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
-    expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
-  }
-  
   test_that("loo/waic for stan_betareg works", {
+    source(file.path("helpers", "expect_equivalent_loo.R"))
+    ll_fun <- rstanarm:::ll_fun
+    
     data("GasolineYield", package = "betareg")
     SW(fit_logit <- stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
                                  link = "logit",
@@ -223,144 +208,10 @@ if (require(betareg)) {
     expect_equivalent_loo(fit_logit)
     expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
   })
-  
-  N <- 200
-  x <- rnorm(N, 2, 1)
-  z <- rnorm(N, 2, 1)
-  mu <- binomial(link = "logit")$linkinv(1 + 0.2*x)
-  phi <- exp(1.5 + 0.4*z)
-  y <- rbeta(N, mu * phi, (1 - mu) * phi)
-  fake_dat <- data.frame(y, x, z)
-  remove(N, x, y, z, mu, phi)
-  
-  capture.output(
-    stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
-                                  link = "logit", link.phi = "log",
-                                  iter = ITER, chains = CHAINS, seed = SEED)
-  )
-  betareg1 <- betareg(y ~ x | z, data = fake_dat, 
-                      link = "logit", link.phi = "log")
-  
-  test_that("a bunch of methods stuff works properly for stan_betareg", {
-    expect_equal(resid(stan_betareg1), stan_betareg1$residuals)
-    expect_equal(coef(stan_betareg1), stan_betareg1$coefficients)
-    expect_equal(vcov(stan_betareg1), stan_betareg1$covmat)
-    expect_equal(fitted(stan_betareg1), stan_betareg1$fitted.values)
-    expect_equal(se(stan_betareg1), stan_betareg1$ses)
-    
-    expect_error(confint(stan_betareg1), regexp = "use posterior_interval")
-    expect_silent(ci6 <- posterior_interval(stan_betareg1, prob = 0.5))
-    expect_identical(colnames(ci6), c("25%", "75%"))
-    expect_equal(log_lik(stan_betareg1), log_lik(stan_betareg1, newdata = fake_dat))
-    expect_error(ngrps(stan_betareg1), "stan_glmer and stan_lmer models only")
-    expect_equal(nobs(stan_betareg1), nobs(betareg1))
-    expect_equal(dimnames(vcov(stan_betareg1)), dimnames(vcov(betareg1)))
-    expect_output(print(stan_betareg1, digits = 2), "stan_betareg")
-    
-    # errors not modeled in stan_betareg
-    expect_double <- function(x) expect_type(x, "double")
-    expect_double(sig <- rstanarm::sigma(stan_betareg1))
-    expect_true(identical(sig, 1))
-    expect_error(VarCorr(stan_betareg1), "stan_glmer and stan_lmer models only")
-    expect_error(ranef(stan_betareg1), "stan_glmer and stan_lmer models only")
-    expect_identical(model.frame(stan_betareg1), model.frame(betareg1))
-    expect_identical(terms(stan_betareg1), terms(betareg1))
-    expect_identical(formula(stan_betareg1), formula(betareg1))
-    expect_output(print(prior_summary(stan_betareg1)),
-                  "stan_betareg1")
-    expect_named(prior_summary(stan_betareg1),
-                 c("prior", "prior_z", "prior_intercept", "prior_intercept_z", "prior_aux"))  
-    expect_error(predictive_error(stan_betareg1, draws = 600),
-                 "'draws' should be <= posterior sample size")
-    expect_error(predictive_interval(stan_betareg1, draws = 600),
-                 "'draws' should be <= posterior sample size")
-    expect_error(predictive_interval(stan_betareg1, prob = c(0.25, 0.76)),
-                 "'prob' should be a single number greater than 0 and less than 1")
-    
-    # stan_betareg
-    expect_warning(s <- summary(stan_betareg1, pars = "varying"),
-                   regexp = "No group-specific parameters. 'varying' ignored.")
-    expect_silent(s <- summary(stan_betareg1, pars = c("alpha", "beta"), digits = 3))
-    expect_s3_class(s, "summary.stanreg")
-    expect_output(print(s), "stan_betareg")
-    expect_identical(attr(s, "algorithm"), "sampling")
-    
-    # betareg
-    mat <- as.matrix(stan_betareg1)
-    df <- as.data.frame(stan_betareg1)
-    arr <- as.array(stan_betareg1)
-    expect_identical(df, as.data.frame(mat))
-    expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
-    expect_equal(dim(mat), c(floor(ITER/2) * CHAINS, 4L))
-    expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 4L))
-    expect_identical(last_dimnames(mat), c("(Intercept)", "x", "(phi)_(Intercept)", "(phi)_z"))
-    expect_identical(last_dimnames(arr), last_dimnames(mat))
-    
-    SW(capture.output(fit3 <- update(stan_betareg1, 
-                                     iter = ITER * 2, chains = CHAINS * 2)))
-    pss <- rstanarm:::posterior_sample_size
-    expect_equal(pss(fit3), 4 * pss(stan_betareg1))
-    
-    preds <- posterior_predict(stan_betareg1, seed = 123)
-    expect_equal(
-      predictive_error(stan_betareg1, seed = 123),
-      predictive_error(preds, y = stan_betareg1$y)
-    )
-    preds <- posterior_predict(stan_betareg1, seed = 123)
-    expect_equal(
-      predictive_interval(stan_betareg1, seed = 123),
-      predictive_interval(preds)
-    )
-    
-  })
-  
-  # These tests just make sure that posterior_predict doesn't throw errors and
-  # that result has correct dimensions
-  check_for_error <- function(fit, data = NULL, offset = NULL) {
-    nsims <- nrow(as.data.frame(fit))
-    mf <- if (!is.null(data)) 
-      data else model.frame(fit)
-    if (identical(deparse(substitute(fit)), "example_model"))
-      mf <- lme4::cbpp
-    
-    expect_silent(yrep1 <- posterior_predict(fit))
-    expect_silent(lin1 <- posterior_linpred(fit))
-    expect_silent(posterior_linpred(fit, transform = TRUE))
-    expect_equal(dim(yrep1), c(nsims, nobs(fit)))
-    expect_equal(dim(lin1), c(nsims, nobs(fit)))
-    
-    expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
-    expect_equal(dim(yrep2), c(1, nobs(fit)))
-    
-    offs <- if (!is.null(offset)) offset[1] else offset
-    expect_silent(yrep3 <- posterior_predict(fit, newdata = mf[1,], offset = offs))
-    expect_silent(lin3 <- posterior_linpred(fit, newdata = mf[1,], offset = offs))
-    expect_equal(dim(yrep3), c(nsims, 1))
-    expect_equal(dim(lin3), c(nsims, 1))
-    
-    expect_silent(yrep4 <- posterior_predict(fit, draws = 2, newdata = mf[1,], offset = offs))
-    expect_equal(dim(yrep4), c(2, 1))
-    
-    offs <- if (!is.null(offset)) offset[1:5] else offset
-    expect_silent(yrep5 <- posterior_predict(fit, newdata = mf[1:5,], offset = offs))
-    expect_silent(lin5 <- posterior_linpred(fit, newdata = mf[1:5,], offset = offs))
-    expect_equal(dim(yrep5), c(nsims, 5))
-    expect_equal(dim(lin5), c(nsims, 5))
-    
-    expect_silent(yrep6 <- posterior_predict(fit, draws = 3, newdata = mf[1:5,], offset = offs))
-    expect_equal(dim(yrep6), c(3, 5))
-    
-    expect_error(posterior_predict(fit, draws = nsims + 1), 
-                 regexep = "posterior sample size is only")
-  }
-  
-  expect_linpred_equal <- function(object, tol = 0.1) {
-    linpred <- posterior_linpred(object)
-    expect_equal(apply(linpred, 2, median), object$linear.predictors, 
-                 tolerance = tol, 
-                 check.attributes = FALSE)
-  }
-  
+
+  source(file.path("helpers", "check_for_error.R"))
+  source(file.path("helpers", "expect_linpred_equal.R"))
+  SW <- suppressWarnings
   context("posterior_predict (stan_betareg)")
   test_that("compatible with stan_betareg with z", {
     data("GasolineYield", package = "betareg")
