@@ -150,6 +150,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
+  m$drop.unused.levels <- TRUE
   m <- eval.parent(m)
   m <- check_constant_vars(m)
   Terms <- attr(m, "terms")
