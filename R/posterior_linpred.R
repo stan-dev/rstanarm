@@ -85,6 +85,9 @@ posterior_linpred.stanreg <-
       return(XZ)
     }
     eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
+    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
+    else colnames(ytilde) <- rownames(newdata)
+    
     if (!transform)
       return(eta)
     
