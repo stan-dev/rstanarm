@@ -138,7 +138,7 @@
 #' # Example of a PPC for ordinal models (stan_polr)
 #' fit2 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'                   prior = R2(0.2, "mean"), init_r = 0.1)
-#' pp_check(fit, plotfun = "bars", nreps = 200, prob = 0.5)
+#' pp_check(fit2, plotfun = "bars", nreps = 200, prob = 0.5)
 #' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
 #'          nreps = 500, prob = 0.5)
 #' }
