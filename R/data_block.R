@@ -25,7 +25,7 @@ center_x <- function(x, sparse) {
     FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
   
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
-  if (!sparse) {
+  if (has_intercept && !sparse) {
     xbar <- colMeans(xtemp)
     xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   }
