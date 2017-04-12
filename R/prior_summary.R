@@ -256,7 +256,7 @@ used.sparse <- function(x) {
       if (!is.null(p$df))
         p$df <- .format_pars(p$df, .f1)
       if (!is.null(p$adjusted_scale))
-        p$adjusted_scale <- .format_pars(p$adjusted_scale, .f1)
+        p$adjusted_scale <- .format_pars(p$adjusted_scale, .f2)
     } else if (p$dist %in% c("hs_plus")) {
       p$df1 <- .format_pars(p$df, .f1)
       p$df2 <- .format_pars(p$scale, .f1)

@@ -59,10 +59,6 @@
 #'   actual values of the variables. See the \strong{Examples} section, below.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to pass to 
 #'   \code{\link{posterior_predict}}.
-#' @param check,overlay,test Deprecated arguments to be removed in a future 
-#'   release. These arguments are still functional so as to not break backwards 
-#'   compatibility, but they are unnecessary now that \code{pp_check} is 
-#'   providing an interface to \pkg{bayesplot}.
 #' 
 #' @return \code{pp_check} returns a ggplot object that can be further
 #'   customized using the \pkg{ggplot2} package.
@@ -137,39 +133,28 @@
 #' pp_check(fit, plotfun = "error_hist", nreps = 6)
 #' pp_check(fit, plotfun = "error_scatter_avg_vs_x", x = "wt") + 
 #'   ggplot2::xlab("wt")
+#'   
+#' \donttest{
+#' # Example of a PPC for ordinal models (stan_polr)
+#' fit2 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+#'                   prior = R2(0.2, "mean"), init_r = 0.1)
+#' pp_check(fit2, plotfun = "bars", nreps = 500, prob = 0.5)
+#' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
+#'          nreps = 500, prob = 0.5)
+#' }
 #' 
 pp_check.stanreg <-
   function(object,
-           check = NULL,
            plotfun = "dens_overlay",
            nreps = NULL,
            seed = NULL,
-           overlay = TRUE,
-           test = "mean",
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
-    if (!is.null(check)) {
-      warning(
-        "Argument 'check' is deprecated. Specify 'plotfun' instead. ", 
-        "In future versions the 'check' argument will be removed."
-      )
-      return(
-        pp_check_old(
-          object,
-          check = check,
-          nreps = nreps,
-          seed = seed,
-          overlay = overlay,
-          test = test,
-          ...
-        )
-      )
-    }
-    
     plotfun_name <- .ppc_function_name(plotfun)
-    plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), mode = "function")
+    plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), 
+                   mode = "function")
     is_binomial_model <- is_binomial_ppc(object)
     y_yrep <-
       .ppc_y_and_yrep(
@@ -197,7 +182,7 @@ pp_check.stanreg <-
 
 # check if binomial
 is_binomial_ppc <- function(object) {
-  if (is(object, "polr") && !is_scobit(object)) {
+  if (is_polr(object) && !is_scobit(object)) {
     FALSE
   } else {
     is.binomial(family(object)$family)
@@ -218,7 +203,7 @@ is_binomial_ppc <- function(object) {
       yrep <- posterior_predict(object, draws = nreps, seed = seed)
     }
     
-    if (is_binomial_ppc(object)) {
+    if (is_binomial_ppc(object)) { # includes stan_polr's scobit models
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L] / trials
@@ -226,14 +211,14 @@ is_binomial_ppc <- function(object) {
           yrep <- sweep(yrep, 2L, trials, "/")
       } else if (is.factor(y))
         y <- fac2bin(y)
-    }
-    if (is(object, "polr")) {
+    } else if (is_polr(object)) { # excluding scobit
       y <- as.integer(y)
-      yrep <- apply(yrep, 2L, function(x) as.integer(as.factor(x)))
+      yrep <- polr_yrep_to_numeric(yrep)
     }
     
     nlist(y, yrep)
   }
+
 
 # prepare 'group' and 'x' variable for certain plots
 .ppc_xvar <- .ppc_groupvar <- function(object, var = NULL) {
@@ -307,6 +292,11 @@ is_binomial_ppc <- function(object) {
       }
     }
   }
+  if ("lw" %in% argnames && is.null(dots[["lw"]])) {
+    # for LOO predictive checks
+    dots[["lw"]] <- loo_weights(object, log = TRUE)
+  }
+  
   return(dots)
 }
 
@@ -349,6 +339,18 @@ is_binomial_ppc <- function(object) {
     "ribbon" = .ignore_nreps(nreps),
     "ribbon_grouped" = .ignore_nreps(nreps), 
     
+    # ROOTOGRAMS
+    "rootogram" = nreps, # NULL ok
+    
+    # BAR PLOTS
+    "bars" = nreps, # NULL ok
+    "bars_grouped" = nreps, # NULL ok
+    
+    # LOO PLOTS
+    "loo_pit" = .ignore_nreps(nreps),
+    "loo_intervals" = .ignore_nreps(nreps),
+    "loo_ribbon" = .ignore_nreps(nreps),
+    
     # otherwise function not found
     stop(
       "Plotting function not supported. ",
@@ -364,101 +366,10 @@ is_binomial_ppc <- function(object) {
   return(NULL)
 }
 
-
-# deprecated, to be removed -----------------------------------------------
-# these functions are used to maintain backwards compatibility but will be 
-# removed when the 'check' argument is removed in a future release
-pp_check_old <- function(object,
-                         check = "distributions",
-                         nreps = NULL,
-                         seed = NULL,
-                         overlay = TRUE,
-                         test = "mean",
-                         ...) {
-  is_binomial_model <- is_binomial_ppc(object)
-  dots <- list(...)
-  fun <-
-    ppc_fun_old(
-      check = match.arg(
-        check,
-        choices = c(
-          "distributions",
-          "residuals",
-          "scatterplots",
-          "test-statistics"
-        )
-      ),
-      nreps = nreps,
-      ntests = length(test),
-      overlay = isTRUE(overlay),
-      binomial_model = is_binomial_model
-    )
-  
-  y_yrep <-
-    .ppc_y_and_yrep(
-      object,
-      seed = seed,
-      nreps = .set_nreps(nreps, fun = fun),
-      binned_resid_plot = isTRUE(fun == "ppc_error_binned")
-    )
-  
-  args <-
-    ppc_args_old(
-      y = y_yrep[["y"]],
-      yrep = y_yrep[["yrep"]],
-      fun = fun,
-      test = test,
-      ...
-    )
-  
-  do.call(fun, args)
+# convert a character matrix (returned by posterior_predict for ordinal models) to a 
+# numeric matrix
+# 
+# @param yrep character matrix
+polr_yrep_to_numeric <- function(yrep) {
+  apply(yrep, 2L, function(x) as.integer(as.factor(x)))
 }
-
-ppc_args_old <-
-  function(y, 
-           yrep,
-           fun = character(),
-           test = NULL,
-           ...) {
-    args <- nlist(y, yrep, ...)
-    if (grepl("^ppc_stat", fun))
-      args$stat <- test
-    
-    args
-  }
-
-ppc_fun_old <-
-  function(check,
-           nreps = NULL,
-           ntests = 1,
-           overlay = TRUE,
-           binomial_model = FALSE) {
-    
-    if (check == "distributions") {
-      if (overlay) 
-        return("ppc_dens_overlay")
-      else 
-        return("ppc_hist")
-    }
-    
-    if (check == "residuals") {
-      if (binomial_model) 
-        return("ppc_error_binned")
-      else 
-        return("ppc_error_hist")  
-    }
-    
-    if (check == "test-statistics") {
-      if (ntests > 1)
-        return("ppc_stat_2d")
-      else
-        return("ppc_stat")
-    }
-    
-    if (check == "scatterplots") {
-      if (!is.null(nreps))
-        return("ppc_scatter" )
-      else
-        return("ppc_scatter_avg")
-    }
-  }

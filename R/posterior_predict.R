@@ -183,6 +183,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 }
 
 
+# internal ----------------------------------------------------------------
+
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object) {
   suffix <- if (is(object, "polr")) "polr" else family(object)$family

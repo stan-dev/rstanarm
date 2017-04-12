@@ -113,6 +113,18 @@ is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 is.beta <- function(x) x == "beta"
 
+# test if a stanreg object has class polr 
+is_polr <- function(object) {
+  inherits(object, "polr")
+}
+
+# test if a stanreg object is a scobit model
+is_scobit <- function(object) {
+  validate_stanreg_object(object)
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
 # Test for a given estimation method
 #
 # @param x A stanreg object.
@@ -592,12 +604,6 @@ make_stan_summary <- function(stanfit) {
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
-}
-
-is_scobit <- function(object) {
-  validate_stanreg_object(object)
-  if (!is(object, "polr")) return(FALSE)
-  return("alpha" %in% rownames(object$stan_summary))
 }
 
 check_reTrms <- function(reTrms) {

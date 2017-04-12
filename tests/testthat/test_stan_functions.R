@@ -360,8 +360,7 @@ test_that("draw_ystar_rng returns expected results", {
 
 # glmer
 context("glmer")
-test_that("the Stan equivalent of lme4's Z %*% b works", {
-  stopifnot(require(lme4))
+if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(Matrix))
   test_lme4 <- function(group) {
     Lambdati <- group$Lambdat
