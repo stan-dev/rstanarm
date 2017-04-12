@@ -77,7 +77,8 @@ ps_check <- function(object, check = "survival",
   limits <- match.arg(limits)
 
   # Predictions for plotting the estimated survival function
-  dat <- posterior_survfit(object, standardise = TRUE, condition = FALSE, 
+  dat <- posterior_survfit(object, standardise = TRUE, 
+                           control = list(condition = FALSE), 
                            times = 0, extrapolate = TRUE, 
                            draws = draws, seed = seed)
   
