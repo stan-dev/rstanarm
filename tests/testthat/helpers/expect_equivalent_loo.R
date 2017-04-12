@@ -1,4 +1,5 @@
 expect_equivalent_loo <- function(fit) {
+  options(loo.cores = ifelse(.Platform$OS.type == "windows", 1, 2))  
   l <- suppressWarnings(loo(fit))
   w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "loo")

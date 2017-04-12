@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.14.2
-Date: 2017-04-12
+Version: 2.14.3
+Date: 2017-04-13
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
