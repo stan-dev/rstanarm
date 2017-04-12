@@ -31,7 +31,10 @@
 #'   part of the longitudinal model
 #' @param random_trajectory The desired type of trajectory in the random effects 
 #'   part of the longitudinal model
-#' @param assoc The desired type of association structure   
+#' @param assoc The desired type of association structure for the joint model.
+#'   Only one association structure type can be specified. The options are: 
+#'   \code{"etavalue"}, \code{"etaslope"}, \code{"shared_b(1)"}, 
+#'   \code{"shared_coef(1)"}, \code{"shared_b(2)"}, \code{"shared_coef(2)"}.      
 #' @param betaLong_intercept True intercept in the longitudinal submodel
 #' @param betaLong_binary True coefficient for the binary covariate in the 
 #'   longitudinal submodel
@@ -55,7 +58,10 @@
 #'   actual number of observed measurements will depend on the individuals event time.
 #' @param max_fuptime The maximum follow up time in whatever the desired time 
 #'   units are. This time will also be used as the censoring time (i.e. for subjects
-#'   who have a simulated survival time that is after \code{max_fuptime})  
+#'   who have a simulated survival time that is after \code{max_fuptime})
+#' @param family A family for the the longitudinal submodel, or for a multivariate 
+#'   joint model this can be a list of families. See \code{\link[stats]{glm}} and
+#'   \code{\link[stats]{family}}.  
 #' 
 #' @return A data frame in long format. The data frame also has a number of 
 #'   attributes that record the values specified for the arguments in the 
@@ -80,16 +86,30 @@
 #' # For three longitudinal markers, we can just use the defaults:
 #' simdat3 <- simjm()
 #'  
-#' # As a final example, we will simulate three markers for just 100
-#' # individuals and then return the true parameter values (which are stored
-#' # as an attribute):
+#' # Simulate three markers for just 100 individuals and then return 
+#' # the true parameter values (which are stored as an attribute):
 #' simdat4 <- simjm(n = 100)
 #' attr(simdat4, "params")
+#' 
+#' # Simulate three longitudinal markers, using "etaslope"
+#' # association structure
+#' simdat5 <- simjm(assoc = "etaslope", betaEvent_assoc = 0.3)
+#'
+#' # For one longitudinal marker, with a bernoulli outcome:
+#' simdat6 <- simjm(M = 1, 
+#'                  betaLong_intercept = 1.3, 
+#'                  betaLong_binary = -0.6,
+#'                  betaLong_continuous = -0.03,
+#'                  betaLong_slope = 0.05,
+#'                  b_sd = c(1, 0.05),
+#'                  betaEvent_intercept = -9,
+#'                  betaEvent_assoc = 0.05, 
+#'                  family = binomial())
 #' 
 simjm <- function(n = 200, M = 3,
                   fixed_trajectory = c("linear", "none"),
                   random_trajectory = c("linear", "none"),
-                  assoc = c("etavalue"),
+                  assoc = "etavalue",
                   betaLong_intercept = 90, 
                   betaLong_binary = -1.5, 
                   betaLong_continuous = 1, 
@@ -101,15 +121,22 @@ simjm <- function(n = 200, M = 3,
                   b_sd = c(20,3), b_rho = 0.5,
                   error_sd = 10,
                   max_yobs = 8, 
-                  max_fuptime = 10)
+                  max_fuptime = 10,
+                  family = gaussian)
 {
   
   fixed_trajectory  <- match.arg(fixed_trajectory)
   random_trajectory <- match.arg(random_trajectory)
-  assoc             <- match.arg(assoc)             # only etavalue currently implemented
-  
+  ok_assocs <- c("etavalue", "etaslope", "shared_b(1)", "shared_coef(1)",
+                 "shared_b(2)", "shared_coef(2)")
+  if (!assoc %in% ok_assocs)
+    stop("'assoc' must be one of: ", paste(ok_assocs, collapse = ", "))
   if (random_trajectory == "linear" && fixed_trajectory == "none")
     stop("Cannot use a linear random slope without a fixed linear slope.")
+  if (random_trajectory == "none" && assoc %in% c("shared_b(2)", "shared_coef(2)"))
+    stop("Cannot use 'shared_b(2)' or 'shared_coef(2)' without a random slope.")
+  if (!is(family, "list"))
+    family <- list(family)
   
   betaLong_intercept  <- maybe_broadcast(betaLong_intercept,  M)
   betaLong_binary     <- maybe_broadcast(betaLong_binary,     M)
@@ -117,7 +144,13 @@ simjm <- function(n = 200, M = 3,
   betaLong_slope      <- maybe_broadcast(betaLong_slope,      M)
   betaEvent_assoc     <- maybe_broadcast(betaEvent_assoc,     M)
   error_sd            <- maybe_broadcast(error_sd,            M)
-
+  family              <- maybe_broadcast(family,              M)
+  family              <- lapply(family, validate_family)
+  
+  ok_families <- c("gaussian", "binomial")
+  lapply(family, function(x) if (!x$family %in% ok_families)
+    stop("'family' must be one of: ", paste(ok_families, collapse = ", ")))
+  
   weibull_shape <- 2  # must be 2, for correct closed-form solution to integral in cumhCox function
     
   # Generate baseline covariates - binary
@@ -173,30 +206,71 @@ simjm <- function(n = 200, M = 3,
       nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
       dat[[paste0("Xij_", m)]] <- dat[[paste0("Xij_", m)]] + (dat[[nm_slope]] * dat$tij) 
     }  
-    dat[[paste0("Yij_", m)]] <- dat[[paste0("Xij_", m)]] + dat[[paste0("eij_", m)]]
+    if (family[[m]]$family == "gaussian") {
+      dat[[paste0("Yij_", m)]] <- dat[[paste0("Xij_", m)]] + dat[[paste0("eij_", m)]]
+    } else if (family[[m]]$family == "binomial") {
+      invlink <- linkinv(family[[m]])
+      prob <- invlink(dat[[paste0("Xij_", m)]])
+      dat[[paste0("Yij_", m)]] <- rbinom(length(prob), 1, prob)
+    }
   }
   
   # Sum parameters for time-fixed part of each longitudinal submodel
   # for feeding into the calculation of the cumulative hazard
   time_fixed_part <- lapply(1:M, function(m) {
     nm_intercept <- paste0("b", (m - 1) * b_dim_perM + 1)
-    betaLong_intercept[m] + 
-    betaLong_binary[m]     * dat.id$Z1 + 
-    betaLong_continuous[m] * dat.id$Z2 +
-    dat.id[[nm_intercept]]
+    nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+    if (assoc == "etavalue") { # time-fixed part of current value
+      val <- 
+        betaLong_intercept[m] + 
+        betaLong_binary[m]     * dat.id$Z1 + 
+        betaLong_continuous[m] * dat.id$Z2 +
+        dat.id[[nm_intercept]] 
+      return(val) 
+    } else if (assoc == "etaslope") { # linear slope is time-fixed
+      val <- 0
+      if (fixed_trajectory == "linear")
+        val <- val + betaLong_slope[m] 
+      if (random_trajectory == "linear")
+        val <- val + dat.id[[nm_slope]]
+      return(val)
+    } else if (assoc == "shared_b(1)") {
+      val <- dat.id[[nm_intercept]]
+      return(val)
+    } else if (assoc == "shared_coef(1)") {
+      nm_intercept <- paste0("b", (m - 1) * b_dim_perM + 1)
+      val <- betaLong_intercept[m] + dat.id[[nm_intercept]]
+      return(val)
+    } else if (assoc == "shared_b(2)") {
+      nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+      val <- dat.id[[nm_slope]]      
+      return(val)
+    } else if (assoc == "shared_coef(2)") {
+      nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+      val <- betaLong_slope[m] + dat.id[[nm_slope]]      
+      return(val)      
+    }  
   })
   
   # Sum parameters for time-varying part of each longitudinal submodel 
   # for feeding into the calculation of the cumulative hazard
   time_varying_part <- lapply(1:M, function(m) {
-    val <- 0
-    if (fixed_trajectory == "linear")
-      val <- val + betaLong_slope[m] 
-    if (random_trajectory == "linear") {
-      nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
-      val <- val + dat.id[[nm_slope]]
+    nm_slope <- paste0("b", (m-1) * b_dim_perM + 2)
+    if (assoc == "etavalue") { # time-varying part of current value
+        val <- 0
+      if (fixed_trajectory == "linear")
+        val <- val + betaLong_slope[m] 
+      if (random_trajectory == "linear")
+        val <- val + dat.id[[nm_slope]]
+      return(val)
+    } else if (assoc %in% c(
+      "etaslope", 
+      "shared_b(1)", 
+      "shared_coef(1)", 
+      "shared_b(2)", 
+      "shared_coef(2)")) { # assoc has no time-varying part
+      return(0)
     }
-    val
   })  
 
   # Random uniform variable used for generating survival time
@@ -252,8 +326,9 @@ simjm <- function(n = 200, M = 3,
   
   # Return object
   structure(ret, params = c(long_params, event_params, re_params), 
-            n = n, M = M, max_yobs = max_yobs, max_fuptime = max_fuptime, assoc = assoc,
-            fixed_trajectory = fixed_trajectory, random_trajectory = random_trajectory)
+            n = n, M = M, max_yobs = max_yobs, max_fuptime = max_fuptime, 
+            assoc = assoc, family = family, fixed_trajectory = fixed_trajectory, 
+            random_trajectory = random_trajectory)
 } 
   
   
