@@ -60,7 +60,7 @@ specific only to those models:
 <br> 
 
 To specify these arguments the user provides a call to one of the various
-available functions for specifying priors (e.g., `prior = normal(0, 1)`). The
+available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). The
 documentation for these functions can be found at `help("priors")`. The
 __rstanarm__ documentation and the other [vignettes](index.html) provide many
 examples of using these arguments to specify priors and the documentation for
