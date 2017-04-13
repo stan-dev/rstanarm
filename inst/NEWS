@@ -1,3 +1,18 @@
+Wed April 12 2017 (2.14.2)
+1. Bug fixes
+  * Fix for intercept with identity or square root link functions for the auxiliary parameter
+    of a beta regression
+  * Fix for special case where only the intercepts vary by group and a non-default prior is
+    specified for their standard deviation
+  * Fix for off-by-one error in some lme4-style models with multiple grouping terms
+  
+2. New features
+  * Support for loo_linpred, loo_pit, loo_predict, and loo_predictive_interval from the loo
+    package
+  * Support for many more plotfuns in pp_check that are implemented in the bayesplot package
+  * Option to compute latent residuals in stan_polr (Thanks to Nate Sanders)
+  * The pairs plot now uses the ggplot2 package
+
 Mon January 16 2017 (2.14.1)
 1. Bug fixes
   * VarCorr() could return duplicates in cases where a stan_{g}lmer model used grouping

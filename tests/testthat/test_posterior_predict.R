@@ -183,7 +183,8 @@ test_that("posterior_linpred not sensitive to spaces in factor levels", {
     int = 1:4
   )
   ans2 <- posterior_linpred(fit1, newdata = nd2)
-  expect_equal(ans2[, 1:2], ans1) # should be same as ans1 except for cols 3:4 with new levels
+  # should be same as ans1 except for cols 3:4 with new levels
+  expect_equal(ans2[, 1:2], ans1, check.attributes = FALSE)
   expect_equal(ans2, posterior_linpred(fit2, newdata = nd2))
   expect_equal(ans2, posterior_linpred(fit3, newdata = nd2))
   expect_equal(ans2, posterior_linpred(fit4, newdata = nd2))

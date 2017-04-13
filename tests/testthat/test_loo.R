@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 library(rstanarm)
-options(loo.cores = 2)
+options(loo.cores = ifelse(.Platform$OS.type == "windows", 1, 2))
 SEED <- 1234
 set.seed(SEED)
 CHAINS <- 2

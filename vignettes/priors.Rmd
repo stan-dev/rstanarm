@@ -6,7 +6,7 @@ output:
   html_vignette: 
     toc: yes
 params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+  EVAL: !r TRUE
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -90,7 +90,7 @@ leave those arguments at their defaults (i.e., we don't specify them):
 
 ```{r, default-prior-1, results="hide"}
 library("rstanarm")
-default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars)
+default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars, chains = 1)
 ```
 
 The `prior_summary` function provides a concise summary of the priors used: 
@@ -129,7 +129,12 @@ when $x=0$ is not meaningful and it is easier to think about the value when $x =
 predictors typically makes it easier to specify a reasonable prior for the
 intercept. (Note: the user does _not_ need to manually center the predictors.)
 
-The next two subsections describe how this rescaling works and how to easily
+To disable the centering of the predictors, you need to omit the intercept from
+the model `formula` and include a column of ones as a predictor (which cannot
+be named `"(Intercept)"` in the `data.frame`). Then you can specify a prior
+"coefficient" for the column of ones.
+
+The next two subsections describe how the rescaling works and how to easily
 disable it if desired.
 
 

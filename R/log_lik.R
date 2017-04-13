@@ -71,7 +71,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                   reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                   ...)
   fun <- ll_fun(object)
-  vapply(
+  out <- vapply(
     seq_len(args$N),
     FUN = function(i) {
       as.vector(fun(
@@ -82,6 +82,9 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     },
     FUN.VALUE = numeric(length = args$S)
   )
+  if (is.null(newdata)) colnames(out) <- rownames(model.frame(object))
+  else colnames(out) <- rownames(newdata)
+  return(out)
 }
 
 

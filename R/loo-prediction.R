@@ -37,7 +37,7 @@
 #'   group = gl(2, 10, 20, labels = c("Ctl","Trt"))
 #' ) 
 #' fit <- stan_glm(weight ~ group, data = d)
-#' head(loo_predictive_interval(fit, prob = 0.8))
+#' head(loo_predictive_interval(fit, prob = 0.8, cores = 2))
 #' 
 #' # optionally, log-weights can be pre-computed and reused
 #' psis <- loo::psislw(-log_lik(fit), cores = 2)

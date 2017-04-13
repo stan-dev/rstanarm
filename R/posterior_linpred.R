@@ -36,6 +36,7 @@
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
 #'   terms) constructed from \code{newdata} is returned. The default is 
 #'   \code{FALSE}.
+#' @param ... Currently ignored.   
 #'   
 #' @return The default is to return a \code{draws} by \code{nrow(newdata)}
 #'   matrix of simulations from the posterior distribution of the (possibly
@@ -84,6 +85,9 @@ posterior_linpred.stanreg <-
       return(XZ)
     }
     eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
+    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
+    else colnames(eta) <- rownames(newdata)
+    
     if (!transform)
       return(eta)
     

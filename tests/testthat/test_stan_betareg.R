@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-if (require(betareg)) {
+if (.Platform$OS.type != "windows" && require(betareg)) {
   library(rstanarm)
   SEED <- 12345
   set.seed(SEED)

@@ -43,7 +43,7 @@ Regarding the above diagram, the `model_*.R` and `model.fit` files are in the `R
 
 In the .fit function you should,
 
-* Center the covariates.
+* Center the covariates (if there is an intercept).
 * Perform QR decomposition.
 * Determine whether the intercept is declared (or whether multiple linear predictors have been declared).
 * Extract and process information regarding the priors declared.
@@ -66,12 +66,12 @@ Conditionals should be set up so that the .fit workhorse function can deal with 
 
 In the Stan file you should try to minimize the number of loops, storing n-dimensional objects, redoing calculations that only need to be done once, calculating inverses (e.g. use the precision multinormal instead of multinormal).
 
-Because we center the covariates you have to separate the intercept out of the linear predictor matrix (i.e. `X` should not contain a vector of ones). If `gamma` is the intercept parameter fit using centered predictors and `alpha` is the intercept parameter you want to report then do the following transformation in generated quantities:
+Because we center the covariates when there is an intercept, you have to separate the intercept out of the linear predictor matrix (i.e. `X` should not contain a vector of ones). If `gamma` is the intercept parameter fit using centered predictors and `alpha` is the intercept parameter you want to report then do the following transformation in generated quantities:
 ```
 ...
 generated quantities {
   real alpha[has_intercept];
-  {
+  if (has_intercept) {
     alpha[1] = gamma[1] - dot_product(beta, xbar)
   }
 }

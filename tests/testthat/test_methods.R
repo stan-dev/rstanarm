@@ -209,9 +209,9 @@ test_that("log_lik method works", {
     llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
     llmat_new[i, ] <- dnorm(y_new, mean = eta_new[, i], sd = sigma[i], log = TRUE)
   }
-  expect_equal(log_lik(stan_glm1), llmat)
+  expect_equal(log_lik(stan_glm1), llmat, check.attributes = FALSE)
   nd <- data.frame(mpg = y_new, wt = x_new[, 2], cyl = x_new[, 3])
-  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
+  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new, check.attributes = FALSE)
 
 
   # make sure log_lik with newdata equals log_lik if newdata is the same as the
