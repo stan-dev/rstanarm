@@ -29,20 +29,13 @@
 #'   column names.
 #'   
 #' @examples
-#' # data from help("lm")
-#' ctl <- c(4.17,5.58,5.18,6.11,4.50,4.61,5.17,4.53,5.33,5.14)
-#' trt <- c(4.81,4.17,4.41,3.59,5.87,3.83,6.03,4.89,4.32,4.69)
-#' d <- data.frame(
-#'   weight = c(ctl, trt), 
-#'   group = gl(2, 10, 20, labels = c("Ctl","Trt"))
-#' ) 
-#' fit <- stan_glm(weight ~ group, data = d)
-#' head(loo_predictive_interval(fit, prob = 0.8, cores = 2))
+#' if (!exists("example_model")) example(example_model)
+#' head(loo_predictive_interval(example_model, prob = 0.8, cores = 2))
 #' 
 #' # optionally, log-weights can be pre-computed and reused
-#' psis <- loo::psislw(-log_lik(fit), cores = 2)
-#' loo_predictive_interval(fit, prob = 0.8, lw = psis$lw_smooth)
-#' loo_predict(fit, type = "var", lw = psis$lw_smooth)
+#' psis <- loo::psislw(-log_lik(example_model), cores = 2)
+#' loo_predictive_interval(example_model, prob = 0.8, lw = psis$lw_smooth)
+#' loo_predict(example_model, type = "var", lw = psis$lw_smooth)
 #' 
 loo_predict.stanreg <-
   function(object, 
