@@ -29,6 +29,7 @@
 #'   column names.
 #'   
 #' @examples
+#' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' head(loo_predictive_interval(example_model, prob = 0.8, cores = 2))
 #' 
@@ -36,6 +37,7 @@
 #' psis <- loo::psislw(-log_lik(example_model), cores = 2)
 #' loo_predictive_interval(example_model, prob = 0.8, lw = psis$lw_smooth)
 #' loo_predict(example_model, type = "var", lw = psis$lw_smooth)
+#' }
 #' 
 loo_predict.stanreg <-
   function(object, 

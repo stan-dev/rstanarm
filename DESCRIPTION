@@ -1,7 +1,7 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.15.1
+Version: 2.15.2
 Date: 2017-04-19
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
@@ -17,7 +17,7 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Estimates pre-compiled regression models using the 'rstan' package,
+Description: Estimates previously compiled regression models using the 'rstan' package,
     which provides the R interface to the Stan C++ library for Bayesian estimation.
     Users specify models via the customary R syntax with a formula and data.frame
     plus some additional arguments for priors.
@@ -33,7 +33,7 @@ Imports:
     loo (>= 1.1.0),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.15.1),
+    rstan (>= 2.14.2),
     rstantools (>= 1.2.0),
     shinystan (>= 2.3.0),
     stats,
@@ -50,7 +50,7 @@ Suggests:
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.15.0), rstan (>= 2.15.1), BH (>= 1.62.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.14.0), rstan (>= 2.14.2), BH (>= 1.62.0), Rcpp (>=
     0.12.0), RcppEigen
 SystemRequirements: pandoc    
 VignetteBuilder: knitr
