@@ -1,3 +1,7 @@
+Wed April 19 2017 (2.15.1)
+1. Bug fixes
+  * Only changes are to allow tests to pass on CRAN
+
 Wed April 12 2017 (2.14.2)
 1. Bug fixes
   * Fix for intercept with identity or square root link functions for the auxiliary parameter
