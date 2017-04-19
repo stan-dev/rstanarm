@@ -1556,8 +1556,11 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse) {
   mc[[1]] <- quote(survival::coxph) 
   mc$x    <- TRUE
   mod <- eval(mc, parent.frame())
-  mf1 <- mf2 <- expand.model.frame(mod, id_var, na.expand = TRUE)
-  mf2 <- cbind(unclass(mf2[,1]), mf2[, -1, drop = FALSE])
+  mf1 <- expand.model.frame(mod, id_var, na.expand = TRUE)
+  # since lme4 promotes character grouping variables to factors
+  if (is.character(mf1[[id_var]]))
+    mf1[[id_var]] <- as.factor(mf1[[id_var]])
+  mf2 <- cbind(unclass(mf1[,1]), mf1[, -1, drop = FALSE])
   y   <- mod$y
   
   # Entry and exit times
