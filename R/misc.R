@@ -1179,9 +1179,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
     yZ_names <- fetch(ydat, "Z_names")
-    flist <- if (is.null(newdataLong)) 
-      lapply(object$glmod_stuff, function(x) x$flist[[id_var]]) else 
-        lapply(ndL, `[[`, id_var)
+    flist <- lapply(ndL, function(x) factor(x[[id_var]]))
     res <- c(res, nlist(yX, yZt, yZ_names, flist))
   }
   if (event_parts) {

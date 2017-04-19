@@ -286,6 +286,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       max_ytimes <- do.call("cbind", lapply(ndL, function(x) 
         tapply(x[[time_var]], x[[id_var]], FUN = max)))
       last_time <- apply(max_ytimes, 1L, max)
+      # re-order last-time according to id_list
+      last_time <- last_time[as.character(id_list)]
     } else if (is.character(user_arg) && (length(user_arg) == 1L)) {
       if (!user_arg %in% colnames(ndE))
         stop("Cannot find 'last_time' column named in newdataEvent.")
