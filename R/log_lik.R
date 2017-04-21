@@ -476,7 +476,13 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   qnodes  <- attr(data$assoc_parts, "qnodes")
   qtimes  <- attr(data$assoc_parts, "qtimes")
   qwts    <- attr(data$assoc_parts, "qwts") 
-  # linear predictor for the event submodel
+  times   <- c(etimes, qtimes)
+  # To avoid an error in log(times) replace times equal to zero with a small 
+  # non-zero value. Note that these times correspond to individuals where the,
+  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
+  # be forced to zero for these individuals further down in the code anyhow.  
+  times[times == 0] <- 1E-10 
+  # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (one_draw) {
     aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
@@ -493,26 +499,28 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
       e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
     }
   }
-  # baseline hazard
+  # Baseline hazard
   if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
     log_basehaz <- as.vector(log(pars$bhcoef)) + 
-      linear_predictor(pars$bhcoef - 1, log(qtimes))
+      linear_predictor(pars$bhcoef - 1, log(times))
   } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
-    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, qtimes))
+    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
   } else {
     stop("Not yet implemented for basehaz = ", basehaz$type_name)
   }  
   loghaz <- log_basehaz + e_eta # log haz at etimes (if not NULL) and qtimes  
-  # calculate survival prob or log_lik  
+  # Calculate survival prob or log_lik  
   if (one_draw) {
     qhaz <- tail(exp(loghaz), length(qtimes)) # haz at qtimes
     qwhaz <- qwts * qhaz
     splitting_vec <- rep(1:qnodes, each = data$Npat)
     cumhaz <- Reduce('+', split(qwhaz, splitting_vec))
+    cumhaz[etimes == 0] <- 0 # force cumhaz to zero if last_time is zero
   } else {
     qhaz <- exp(loghaz[, tail(1:ncol(loghaz), length(qtimes)), drop = FALSE])
     qwhaz <- t(apply(qhaz, 1L, function(row) qwts * row))
     cumhaz <- Reduce('+', array2list(qwhaz, nsplits = qnodes))  
+    cumhaz[, etimes == 0] <- 0 # force cumhaz to zero if last_time is zero
   }
   ll_survt <- -cumhaz
   if (survprob) { # return surv prob at time t (upper limit of integral)
@@ -521,8 +529,12 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
     if (is.null(etimes) || is.null(estatus))
       stop("'etimes' and 'estatus' cannot be NULL if 'survprob = FALSE'.")
     if (one_draw) { # return vector of length npat
+      if (!length(loghaz) == (length(c(etimes, qtimes))))
+        stop("Bug found: length of loghaz vector appears to be incorrect.")
       return(estatus * head(loghaz, length(etimes)) + ll_survt)
     } else { # return S * npat matrix
+      if (!ncol(loghaz) == (length(c(etimes, qtimes))))
+        stop("Bug found: number of cols in loghaz matrix appears to be incorrect.")
       eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
       ll_hazt <- t(apply(eloghaz, 1L, function(row) estatus * row))
       return(ll_hazt + ll_survt)
