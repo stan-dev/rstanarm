@@ -1188,13 +1188,14 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
     qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
     edat <- prepare_data_table(ndE, id_var, time_var)
-    edat <- rolling_merge(edat, ids = rep(id_list, qnodes), times = qtimes)
+    times <- c(etimes, qtimes) # times used to design event submodel matrices
+    edat <- rolling_merge(edat, ids = rep(id_list, qnodes + 1), times = times)
     eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")       
     assoc_parts <- lapply(1:M, function(m) {
       ymf <- prepare_data_table(ndL[[m]], id_var, time_var)
       make_assoc_parts(
         ymf, assoc = object$assoc, id_var = object$id_var, 
-        time_var = object$time_var, id_list = id_list, times = qtimes, 
+        time_var = object$time_var, id_list = id_list, times = times, 
         use_function = pp_data, object = object, m = m)
     })
     assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)
