@@ -498,9 +498,35 @@ stan_glm.fit <- function(x, y,
           if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
       }
     }
-    if (standata$len_theta_L)
-      Sigma_nms <- construct_Sigma_nms(stanfit, cnms = group$cnms)
-    
+    if (standata$len_theta_L) {
+      thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      cnms <- group$cnms
+      nc <- sapply(cnms, FUN = length)
+      nms <- names(cnms)
+      Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+        Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+        unlist(sapply(Sigma, simplify = FALSE, 
+                      FUN = function(x) x[lower.tri(x, TRUE)]))
+      })
+      l <- length(dim(Sigma))
+      end <- tail(dim(Sigma), 1L)
+      shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+      if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+        stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+      }
+      else for (chain in 1:end) {
+        stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
+      }
+      Sigma_nms <- lapply(cnms, FUN = function(grp) {
+        nm <- outer(grp, grp, FUN = paste, sep = ",")
+        nm[lower.tri(nm, diag = TRUE)]
+      })
+      for (j in seq_along(Sigma_nms)) {
+        Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+      }
+      Sigma_nms <- unlist(Sigma_nms)
+    }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), 
                    if (length(group)) c(paste0("b[", b_nms, "]")),
@@ -795,40 +821,4 @@ summarize_glm_prior <-
     if (is.gamma(fam)) "shape" else
       if (is.ig(fam)) "lambda" else 
         if (is.nb(fam)) "reciprocal_dispersion" else NA
-}
-
-
-# Construct a vector with names for the terms in the covariance
-# matrix for the group-specific parameters
-#
-# @param stanfit The stanfit object
-# @param cnms The list of component names for the group-specific parameters
-construct_Sigma_nms <- function(stanfit, cnms) {
-  thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
-                    permuted = FALSE)
-  nc <- sapply(cnms, FUN = length)
-  nms <- names(cnms)
-  Sigma <- apply(thetas, 1:2, FUN = function(theta) {
-    Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
-    unlist(sapply(Sigma, simplify = FALSE, 
-                  FUN = function(x) x[lower.tri(x, TRUE)]))
-  })
-  l <- length(dim(Sigma))
-  end <- tail(dim(Sigma), 1L)
-  shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
-  if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
-    stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
-  }
-  else for (chain in 1:end) {
-    stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
-  }
-  Sigma_nms <- lapply(cnms, FUN = function(grp) {
-    nm <- outer(grp, grp, FUN = paste, sep = ",")
-    nm[lower.tri(nm, diag = TRUE)]
-  })
-  for (j in seq_along(Sigma_nms)) {
-    Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
-  }
-  
-  return(unlist(Sigma_nms))
 }
