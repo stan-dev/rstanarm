@@ -132,7 +132,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
-               na.action, contrasts, algorithm, glmod, 
+               na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                modeling_function = "stan_glmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
