@@ -36,9 +36,8 @@
       }
     }
     else if (link == 5) {  // cloglog
-      real neg_exp_eta;
       for (n in 1:num_elements(y)) {
-        neg_exp_eta = -exp(eta[n]);
+        real neg_exp_eta = -exp(eta[n]);
         target += y[n] * log1m_exp(neg_exp_eta);
         target += (trials[n] - y[n]) * neg_exp_eta;
       }
