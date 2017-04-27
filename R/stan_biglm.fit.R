@@ -39,7 +39,7 @@
 #' s_y <- sd(y)
 #' post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
 #'                        # the next line is only to make the example go fast
-#'                        chains = 1, iter = 1000, seed = 12345)
+#'                        chains = 1, iter = 500, seed = 12345)
 #' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, ...,
                            prior = R2(stop("'location' must be specified")), 
