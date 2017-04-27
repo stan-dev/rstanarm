@@ -95,7 +95,7 @@
 #' 
 #' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
 #'                     link = "logit", link.phi = "log", 
-#'                     chains = 1, algorithm = "optimizing")
+#'                     algorithm = "optimizing")
 #' print(fit, digits = 2)
 #'
 stan_betareg <-
