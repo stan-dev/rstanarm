@@ -1,3 +1,10 @@
+Sat April 29 2017 (2.15.3)
+1. Bug fixes
+  * Fix to stan_glmer() Bernoulli models with multiple group-specific intercept terms that
+    would result in draws from the wrong posterior distribution
+  * Fix bug with contrasts in stan_aov (thanks to Henrik Singmann)
+  * Fix bug with na.action in stan_glmer (thanks to Henrik Singmann)
+
 Wed April 19 2017 (2.15.1)
 1. Bug fixes
   * Only changes are to allow tests to pass on CRAN
