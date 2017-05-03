@@ -477,7 +477,7 @@
 #' }
 #'  
 #' @import data.table
-#' @importFrom lme4 lmerControl glmerControl
+#' @importFrom lme4 lmerControl glmerControl glmer
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
@@ -498,6 +498,11 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   #-----------------------------
   # Pre-processing of arguments
   #-----------------------------  
+  
+  # Set seed if specified
+  dots <- list(...)
+  if ("seed" %in% names(dots))
+    set.seed(dots$seed)
   
   # Check for arguments not yet implemented
   if (!missing(dataAssoc))
@@ -547,6 +552,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
 
   # Matched call
+  calling_env <- parent.frame()
   call <- match.call(expand.dots = TRUE)    
   mc   <- match.call(expand.dots = FALSE)
   mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- 
@@ -568,18 +574,18 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   y_mc$formulaEvent <- y_mc$dataEvent <- y_mc$subsetEvent <- NULL
 
   # Create call for each longitudinal submodel separately
-  m_mc <- lapply(1:M, function(m, old_call) {
+  m_mc <- lapply(1:M, function(m, old_call, env) {
     new_call <- old_call
-    fm       <- eval(old_call$formula)
-    data     <- eval(old_call$data)
-    subset   <- eval(old_call$subset)
-    family   <- eval(old_call$family)
-    new_call$formula <- if (is(fm, "list"))     fm[[m]]     else old_call$formula
-    new_call$data    <- if (is(data, "list"))   data[[m]]   else old_call$data
-    new_call$subset  <- if (is(subset, "list")) subset[[m]] else old_call$subset
-    new_call$family  <- if (is(family, "list")) family[[m]] else old_call$family
+    fm     <- old_call$formula
+    data   <- old_call$data
+    subset <- old_call$subset
+    family <- old_call$family
+    new_call$formula <- if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
+    new_call$data    <- if (is(eval(data,   env), "list")) data[[m+1]]   else data
+    new_call$subset  <- if (is(eval(subset, env), "list")) subset[[m+1]] else subset
+    new_call$family  <- if (is(eval(family, env), "list")) family[[m+1]] else family
     new_call
-  }, old_call = y_mc)
+  }, old_call = y_mc, env = calling_env)
 
   # Create call for event submodel
   e_mc <- mc
@@ -599,7 +605,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   y_mod_stuff <- mapply(handle_glmod, m_mc, family, 
                         MoreArgs = list(supported_families = supported_families, 
                                         supported_links = supported_links, 
-                                        sparse = sparse), SIMPLIFY = FALSE)
+                                        sparse = sparse, env = calling_env), 
+                        SIMPLIFY = FALSE)
 
   # Construct single cnms list for all longitudinal submodels
   cnms <- get_common_cnms(fetch(y_mod_stuff, "cnms"))
@@ -623,7 +630,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Fit separate event submodel
   e_mod_stuff <- handle_coxmod(e_mc, quadnodes = quadnodes, id_var = id_var, 
-                                unique_id_list = unique_id_list, sparse = sparse)
+                               unique_id_list = unique_id_list, sparse = sparse,
+                               env = calling_env)
   
   # Construct prior weights
   e_weights <- handle_weights(e_mod_stuff, weights, id_var)
@@ -676,7 +684,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                                         time_var        = time_var, 
                                         eps             = eps, 
                                         auc_quadnodes   = auc_quadnodes,
-                                        dataAssoc       = dataAssoc))
+                                        dataAssoc       = dataAssoc,
+                                        env             = calling_env))
 
   # Number of association parameters
   a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
@@ -1264,7 +1273,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 # @param supported_links A string vector of supported link names
 # @param sparse A logical specifying whether to use a sparse design matrix
 # @return A named list
-handle_glmod <- function(mc, family, supported_families, supported_links, sparse) {
+handle_glmod <- function(mc, family, supported_families, supported_links, 
+                         sparse, env = parent.frame()) {
   
   if ((family$family == "gaussian") && (family$link == "identity")) {
     mc[[1]]    <- quote(lme4::lmer)
@@ -1311,7 +1321,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links, sparse
   # Random effect terms
   group_call <- mc
   group_call[[1]] <- quote(lme4::glFormula)
-  group <- eval(group_call, parent.frame())$reTrms      	
+  group <- eval(group_call, envir = env)$reTrms      	
   
   Ztlist <- group$Ztlist
   cnms   <- group$cnms
@@ -1582,11 +1592,12 @@ check_for_aux <- function(family) {
 # @param unique_id_list A character vector with the unique IDs (factor levels)
 #   that appeared in the longitudinal submodels
 # @param sparse A logical indicating whether to use a sparse design matrix
-handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse) {
+handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
+                          env = parent.frame()) {
   
   mc[[1]] <- quote(survival::coxph) 
   mc$x    <- TRUE
-  mod <- eval(mc, parent.frame())
+  mod <- eval(mc, envir = env)
   mf1 <- expand.model.frame(mod, id_var, na.expand = TRUE)
   # since lme4 promotes character grouping variables to factors
   if (is.character(mf1[[id_var]]))
@@ -2111,16 +2122,18 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
 handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc, 
-                            id_var, time_var, eps, auc_quadnodes, dataAssoc = NULL) {
+                            id_var, time_var, eps, auc_quadnodes, 
+                            dataAssoc = NULL, env = parent.frame()) {
   
   # Update longitudinal call to include time variable in formula
   mc_stored  <- mc
   mc[[1]]    <- quote(lme4::glFormula)
-  mc$formula <- do.call(update.formula, list(mc$formula, paste0("~ . +", time_var)))
+  mc$formula <- do.call(update.formula, 
+                        list(eval(mc$formula, env), paste0("~ . +", time_var)))
   mc$control <- get_control_args(glmer = !y_mod_stuff$is_lmer, norank = TRUE)
   
   # Obtain a model frame with time variable definitely included
-  fr <- eval(mc, parent.frame())$fr
+  fr <- eval(mc, envir = env)$fr
   mf <- data.table::data.table(fr, key = c(id_var, time_var)) # create data.table
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
@@ -2139,7 +2152,8 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
                             time_var = time_var, id_list = id_list, times = times, 
                             eps = eps, auc_quadnodes = auc_quadnodes,
                             use_function = handle_glFormula, 
-                            mc = mc, y_mod_stuff = y_mod_stuff, dataAssoc = dataAssoc)
+                            mc = mc, y_mod_stuff = y_mod_stuff, 
+                            dataAssoc = dataAssoc, env = env)
   
   # If association structure is based on shared random effects or shared 
   # coefficients then construct a matrix with the estimated b parameters
@@ -2339,9 +2353,14 @@ rolling_merge <- function(data, ids, times) {
 #   an intercept term)
 # @param m Argument ignored (included to avoid error when passing m to 
 #   make_assoc_Xparts function)
-handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL) { 
+# @param env The environment in which to evaluate the glFormula call (note that
+#   although the formula and data have been substituted, there may be additional
+#   arugments (for example family or subset) that need to be evaluated in the 
+#   environment of the original stan_jm call).
+handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
+                             env = parent.frame()) { 
   mc$data <- newdata
-  mod    <- eval(mc, parent.frame())
+  mod    <- eval(mc, env)
   x      <- as.matrix(mod$X)
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
   xtemp  <- sweep(xtemp, 2, y_mod_stuff$xbar, FUN = "-")
