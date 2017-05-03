@@ -120,6 +120,8 @@
       mu = linkinv_bern(eta, link);	
     else if (family == 5)		  
       mu = linkinv_binom(eta, link);
+    else if (family == 6 || family == 7 || family == 8)		  
+      mu = linkinv_count(eta, link);      
     return mu;
   }
 

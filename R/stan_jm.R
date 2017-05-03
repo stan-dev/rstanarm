@@ -530,7 +530,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2")
-  if (!is.list(family)) {
+  if (!is(family, "list")) {
     family <- rep(list(family), M) 
   } else if (!length(family) == M) {
     stop("family is a list of the incorrect length.")
@@ -758,9 +758,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   e_prior_stuff           <- autoscale_prior(e_prior_stuff, e_mod_stuff, QR = QR, use_x = TRUE)
   e_prior_intercept_stuff <- autoscale_prior(e_prior_intercept_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
   e_prior_aux_stuff       <- autoscale_prior(e_prior_aux_stuff, e_mod_stuff, QR = QR, use_x = FALSE)
-  a_prior_stuff           <- autoscale_prior(a_prior_stuff, a_mod_stuff, QR = QR, use_x = FALSE, 
-                                             assoc = assoc, family = family)
-    
+  if (a_K)
+    a_prior_stuff <- autoscale_prior(a_prior_stuff, a_mod_stuff, QR = QR, use_x = FALSE, 
+                                     assoc = assoc, family = family)
+  
   #-------------------------
   # Data for export to Stan
   #-------------------------
@@ -999,7 +1000,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   }
   
   #----- Association structure
-    
+  
   standata$assoc <- as.integer(a_K > 0L) # any association structure, 1 = yes
 
   # Indicator for which components are required to build the association terms
@@ -1052,6 +1053,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     standata[[paste0("v_Zq_", i)]] <- parts_Z_tmp$v
     standata[[paste0("u_Zq_", i)]] <- as.array(parts_Z_tmp$u)    
   }  
+  
+  # Data for slope association structure
+  standata$eps <- eps
   
   # Data for auc association structure
   standata$auc_quadnodes <- 
