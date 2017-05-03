@@ -477,7 +477,7 @@
 #' }
 #'  
 #' @import data.table
-#' @importFrom lme4 lmerControl glmerControl
+#' @importFrom lme4 lmerControl glmerControl glmer
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
@@ -1276,9 +1276,10 @@ handle_glmod <- function(mc, family, supported_families, supported_links, sparse
     mc$control <- get_control_args(glmer = TRUE)               
   } else {
     mc[[1]]    <- quote(lme4::glmer)
-    mc$control <- get_control_args(glmer = TRUE)               
+    mc$control <- get_control_args(glmer = TRUE)
+    mc$initCtrl <- quote(list(limit = 50))
   }
-  mod <- eval(mc, parent.frame())      	
+  mod <- eval(mc, parent.frame())     	
   
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
