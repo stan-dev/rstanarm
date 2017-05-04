@@ -22,8 +22,8 @@
 library(rstanarm)
 stopifnot(require(lme4))
 stopifnot(require(survival))
-ITER <- 400
-CHAINS <- if (interactive()) 2 else 1
+ITER <- 1000
+CHAINS <- if (interactive()) 1 else 1
 SEED <- 12345
 REFRESH <- ITER
 set.seed(SEED)
@@ -296,11 +296,70 @@ test_that("QR argument works", {
 
 if (interactive()) {
 
-  test_that("coefs from stan_jm with NULL assoc same as from stan_lmer and coxph", {
-    y1 <- stan_lmer(logBili ~ year + (1 | id), data = pbcLong, 
+  compare_lmer <- function(fm) {
+    y1 <- stan_lmer(fm, pbcLong, iter = 2000, chains = CHAINS, seed = SEED)
+    s1 <- coxph(Surv(futimeYears, death) ~ sex + trt, data = pbcSurv)
+    j1 <- stan_jm(fm, pbcLong, Surv(futimeYears, death) ~ sex + trt, pbcSurv,
+                  time_var = "year", assoc = NULL, 
+                  iter = 2000, chains = CHAINS, seed = SEED)        
+    expect_equal(ranef(y1), ranef(j1)$Long1, tol = RANEF_tol)
+    tols <- TOLSCALE_lmer * y1$ses
+    for (i in 1:length(fixef(y1)))
+      expect_equal(fixef(y1)[[i]], fixef(j1)$Long1[[i]], tol = tols[[i]])
+    tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
+    for (i in 1:length(coef(s1)))
+      expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])        
+  }  
+    
+  compare_glmer <- function(fm, fam) {
+    y1 <- stan_glmer(fm, pbcLong, fam, iter = 2000, chains = CHAINS, seed = SEED)
+    s1 <- coxph(Surv(futimeYears, death) ~ sex + trt, data = pbcSurv)
+    j1 <- stan_jm(fm, pbcLong, Surv(futimeYears, death) ~ sex + trt, pbcSurv,
+                  time_var = "year", assoc = NULL, family = fam,
+                  iter = 2000, chains = CHAINS, seed = SEED)
+    expect_equal(ranef(y1), ranef(j1)$Long1, tol = RANEF_tol)
+    tols <- TOLSCALE_glmer * y1$ses
+    for (i in 1:length(fixef(y1)))
+      expect_equal(fixef(y1)[[i]], fixef(j1)$Long1[[i]], tol = tols[[i]])
+    tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
+    for (i in 1:length(coef(s1)))
+      expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])       
+  } 
+  
+  pbcLong$ybino_successes <- as.integer(cut(pbcLong$logBili, 6))
+  pbcLong$ybino_failures  <- 6 - as.integer(cut(pbcLong$logBili, 6)) 
+  pbcLong$ybino_trials    <- rep_len(6, length(pbcLong$ybino_successes))
+  pbcLong$ybino_prop      <- pbcLong$ybino_successes / pbcLong$ybino_trials
+  pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
+  pbcLong$ypois <- as.integer(pbcLong$albumin)
+  pbcLong$ygamm <- as.integer(pbcLong$platelet)
+  pbcLong$xbern <- as.numeric(pbcLong$platelet / 100)
+  pbcLong$xpois <- as.numeric(pbcLong$platelet / 100)
+  pbcLong$xgamm <- as.numeric(pbcLong$logBili)
+ 
+  test_that("coefs same for stan_jm and stan_lmer/coxph", {
+    compare_lmer(logBili ~ year + (1 | id))})
+  test_that("coefs same for stan_jm and stan_glmer, binomial as cbind(success, failure)", {
+    compare_glmer(cbind(ybino_successes, ybino_failures) ~ year + xbern + (1 | id), binomial)})
+  test_that("coefs same for stan_jm and stan_glmer, binomial as cbind(success, trials-success)", {
+    compare_glmer(cbind(ybino_successes, ybino_trials - ybino_successes) ~ year + xbern + (1 | id), binomial)})
+  test_that("coefs same for stan_jm and stan_glmer, bernoulli", {
+    compare_glmer(ybern ~ year + xbern + (1 | id), binomial)})
+  test_that("coefs same for stan_jm and stan_glmer, poisson", {
+    compare_glmer(ypois ~ year + xpois + (1 | id), poisson)})
+  test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
+    compare_glmer(ypois ~ year + xpois + (1 | id), neg_binomial_2)})
+  #test_that("coefs same for stan_jm and stan_glmer, Gamma", {
+    #compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma)})
+  #test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
+    #compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})
+
+  test_that("coefs same for stan_jm and stan_glmer, binomial as prop as outcome and trials as weights", {
+    jm_weights <- data.frame(id = pbcLong$id, weights = pbcLong$ybino_trials)
+    y1 <- stan_glmer(ybino_prop ~ year + (1 | id), pbcLong, weights = ybino_trials, 
                      iter = 2000, chains = CHAINS, seed = SEED)
     s1 <- coxph(Surv(futimeYears, death) ~ sex + trt, data = pbcSurv)
-    j1 <- stan_jm(formulaLong = logBili ~ year + (1 | id),
+    j1 <- stan_jm(ybino_prop ~ year + (1 | id), data = pbcLong, weights = jm_weights,
                   formulaEvent = Surv(futimeYears, death) ~ sex + trt,
                   dataLong = pbcLong, dataEvent = pbcSurv,
                   time_var = "year", assoc = NULL,
@@ -312,34 +371,7 @@ if (interactive()) {
     tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
     for (i in 1:length(coef(s1)))
       expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])       
-  })
- 
-  test_that("coefs from stan_jm with NULL assoc same as from stan_glmer", {
-    compare_glmer <- function(fm, fam) {
-      y1 <- stan_glmer(eval(fm), data = pbcLong, family = fam, 
-                       iter = 2000, chains = CHAINS, seed = SEED)
-      s1 <- coxph(Surv(futimeYears, death) ~ sex + trt, data = pbcSurv)
-      j1 <- stan_jm(formulaLong = eval(fm),
-                    formulaEvent = Surv(futimeYears, death) ~ sex + trt,
-                    dataLong = pbcLong, dataEvent = pbcSurv,
-                    time_var = "year", assoc = NULL, family = fam,
-                    iter = 2000, chains = CHAINS, seed = SEED)
-      expect_equal(ranef(y1), ranef(j1)$Long1, tol = RANEF_tol)
-      tols <- TOLSCALE_glmer * y1$ses
-      for (i in 1:length(fixef(y1)))
-        expect_equal(fixef(y1)[[i]], fixef(j1)$Long1[[i]], tol = tols[[i]])
-      tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
-      for (i in 1:length(coef(s1)))
-        expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])       
-    }
-    pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
-    pbcLong$xbern <- pbcLong$platelet / 100
-    pbcLong$ypois <- as.integer(pbcLong$albumin)
-    compare_glmer(logBili ~ year + (1 | id), gaussian)
-    compare_glmer(ybern ~ year + xbern + (1 | id), binomial)
-    compare_glmer(ypois ~ year + xbern + (1 | id), poisson)
-    compare_glmer(ypois ~ year + xbern + (1 | id), neg_binomial_2)
-  })
-
+  })  
+  
 }
 
