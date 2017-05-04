@@ -22,6 +22,8 @@
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
 #' @export
+#' @templateVar pkg stats
+#' @templateVar pkgfun glm
 #' @templateVar rareargs na.action,contrasts
 #' @template args-same-as-rarely
 #' @template args-dots
@@ -1287,9 +1289,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   } else {
     mc[[1]]    <- quote(lme4::glmer)
     mc$control <- get_control_args(glmer = TRUE)
-    mc$initCtrl <- quote(list(limit = 50))
   }
-  mod <- suppressWarnings(eval(mc, parent.frame()))     	
+  mod <- suppressWarnings(eval(mc, envir = env))     	
   
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
@@ -2130,7 +2131,11 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
   mc[[1]]    <- quote(lme4::glFormula)
   mc$formula <- do.call(update.formula, 
                         list(eval(mc$formula, env), paste0("~ . +", time_var)))
-  mc$control <- get_control_args(glmer = !y_mod_stuff$is_lmer, norank = TRUE)
+  mc$formula[[2L]] <- NULL # remove response, since not needed and binomial 
+                           # response causes an error in data.table merge
+  mc$control <- get_control_args(glmer = !y_mod_stuff$is_lmer, 
+                                 norank = TRUE)
+  mc$control$checkControl$check.formula.LHS <- "ignore"
   
   # Obtain a model frame with time variable definitely included
   fr <- eval(mc, envir = env)$fr
@@ -2360,6 +2365,9 @@ rolling_merge <- function(data, ids, times) {
 handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
                              env = parent.frame()) { 
   mc$data <- newdata
+  # remove response, since not required for building model matrices
+  mc$formula[[2L]] <- NULL  
+  mc$control$checkControl$check.formula.LHS <- "ignore"
   mod    <- eval(mc, env)
   x      <- as.matrix(mod$X)
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
