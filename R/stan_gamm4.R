@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,7 +35,10 @@
 #' @template args-sparse
 #' 
 #' @param formula,random,family,data,knots,drop.unused.levels Same as for 
-#'   \code{\link[gamm4]{gamm4}}.
+#'   \code{\link[gamm4]{gamm4}}. \emph{We strongly advise against
+#'   omitting the \code{data} argument}. Unless \code{data} is specified (and is
+#'   a data frame) many post-estimation functions (including \code{update},
+#'   \code{loo}, \code{kfold}) are not guaranteed to work properly.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
 #' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
@@ -110,7 +113,7 @@
 #' }
 #' 
 #' @importFrom lme4 getME
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(), 
+stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
                        weights = NULL, subset = NULL, na.action, knots = NULL, 
                        drop.unused.levels = TRUE, ..., 
                        prior = normal(), prior_intercept = normal(),
@@ -120,6 +123,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
 
   mc <- match.call(expand.dots = FALSE)
+  data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   glmod <- suppressWarnings(gamm4_to_glmer(formula, random, family, data, weights, 
                                            subset, na.action, knots, drop.unused.levels))
@@ -195,7 +199,8 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data = list(
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = XZ, y = y, data, terms = NULL, model = NULL, 
                call = match.call(expand.dots = TRUE),
-               algorithm, glmod = glmod)
+               algorithm, glmod = glmod, 
+               modeling_function = "stan_gamm4")
   out <- stanreg(fit)
   class(out) <- c(class(out), "gamm4", "lmerMod")
   return(out)

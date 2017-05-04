@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 
@@ -181,6 +181,13 @@ test_that("validate_glm_formula works", {
   expect_error(validate_glm_formula(mpg ~ (1|cyl/gear)), "not allowed")
 })
 
+test_that("validate_data works", {
+  expect_error(validate_data(list(1)), 
+               "'data' must be a data frame")
+  expect_warning(d <- validate_data(if_missing = 3), 
+                 "Omitting the 'data' argument is not recommended")
+  expect_equal(d, 3)
+})
 
 test_that("array1D_check works", {
   array1D_check <- rstanarm:::array1D_check
@@ -481,4 +488,12 @@ test_that("validate_newdata works", {
   expect_identical(validate_newdata(nd2[-1,]), nd2[-1, ])
   expect_error(validate_newdata(nd2), "NAs are not allowed")
   expect_error(validate_newdata(1:10, "must be a data frame"))
+})
+
+
+test_that("recommend_QR_for_vb produces the right message", {
+  expect_message(
+    rstanarm:::recommend_QR_for_vb(),
+    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+  )
 })

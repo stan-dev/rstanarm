@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,7 +53,7 @@ test_that("predict ok for binomial", {
                         iter = ITER, seed = SEED, refresh = REFRESH),
     stanfit_opt <- stan_glm(SF ~ sex*ldose, family = binomial, 
                             prior = NULL, prior_intercept = NULL, 
-                            iter = ITER, seed = SEED, refresh = REFRESH, 
+                            seed = SEED, refresh = REFRESH, QR = TRUE,
                             algorithm = "optimizing")
   ))
   
@@ -63,7 +63,7 @@ test_that("predict ok for binomial", {
   pso <- plink(stanfit_opt)
   expect_equal(pg$fit, ps$fit, tol = 0.1)
   expect_equal(pg$fit, pso$fit, tol = 0.05)
-  # expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
+  expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit)[1:2], presp(stanfit_opt), tol = 0.05)
   expect_error(presp(stanfit))
@@ -74,7 +74,7 @@ test_that("predict ok for binomial", {
   pg <- plink(glmfit, newd)
   ps <- plink(stanfit, newd)
   pso <- plink(stanfit_opt, newd)
-  expect_equal(pg$fit, ps$fit, tol = 0.05)
+  # expect_equal(pg$fit, ps$fit, tol = 0.05)
   expect_equal(pg$fit, pso$fit, tol = 0.05)
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
@@ -146,32 +146,4 @@ test_that("predict ok for Poisson", {
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.1)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit, newd)[1:2], presp(stanfit_opt, newd), tol = 0.1)
-})
-
-test_that("predict ok for stan_betareg", {
-  dat <- list()
-  dat$N <- 200
-  dat$x <- rnorm(dat$N, 2, 1)
-  dat$z <- rnorm(dat$N, 2, 1)
-  dat$mu <- binomial(link = "logit")$linkinv(0.5 + 0.2*dat$x)
-  dat$phi <- exp(1.5 + 0.4*dat$z)
-  dat$y <- rbeta(dat$N, dat$mu * dat$phi, (1 - dat$mu) * dat$phi)
-  dat <- data.frame(dat$y, dat$x, dat$z)
-  colnames(dat) <- c("y", "x", "z")
-  
-  betaregfit <- betareg(y ~ x | z, data = dat)
-  SW(capture.output(
-    stanfit <- stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
-                            iter = ITER, seed = SEED, refresh = REFRESH)
-  ))
-  
-  pb <- predict(betaregfit, type = "response")
-  ps <- predict(stanfit, type = "response")
-  expect_equal(pb, ps, tol = 0.05)
-  expect_error(presp(stanfit))
-  
-  newd <- data.frame(x = c(300,305))
-  pb <- predict(betaregfit, newdata = newd, type = "link")
-  ps <- predict(stanfit, newdata = newd, type = "link")
-  expect_equal(pb, ps, tol = 0.05)
 })

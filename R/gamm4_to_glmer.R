@@ -1,6 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2000-2015 Simon N. Wood  simon.wood@r-project.org
-# Copyright (C) 2016 Trustees of Columbia University
+# Copyright (C) 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -24,14 +24,12 @@ ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-SW <- function(expr) capture.output(suppressWarnings(expr))
+source(file.path("helpers", "SW.R"))
+source(file.path("helpers", "expect_gg.R"))
 
 fit <- example_model
 SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED))
 SW(fitvb <- update(fito, algorithm = "meanfield"))
-
-expect_gg <- function(x) expect_s3_class(x, "ggplot")
-
 
 # plot.stanreg ------------------------------------------------------------
 context("plot.stanreg")
@@ -73,7 +71,7 @@ test_that("plot.stanreg returns correct object", {
   
   # requires exactly 2 parameters
   expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
-  expect_gg(plot(fit, "scatter", pars = c("period2", "period3")))
+  expect_gg(plot(fit, "hex", pars = c("period2", "period3")))
 })
 
 test_that("plot method returns correct object for nuts diagnostic plots", {
@@ -126,12 +124,10 @@ test_that("plot.stanreg ok for vb", {
 # pairs.stanreg -----------------------------------------------------------
 context("pairs.stanreg")
 test_that("pairs method ok", {
-  requireNamespace("rstan")
-  requireNamespace("KernSmooth")
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
   expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma"))
   expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma", 
-                      log = TRUE, condition = "lp__"))
+                      condition = pairs_condition(nuts = "lp__")))
   expect_error(pairs(fitvb), regexp = "only available for models fit using MCMC")
   expect_error(pairs(fito), regexp = "only available for models fit using MCMC")
 })

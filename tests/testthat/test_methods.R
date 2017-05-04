@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,7 +18,6 @@
 library(rstanarm)
 library(lme4)
 library(MASS)
-library(betareg)
 SEED <- 12345
 set.seed(SEED)
 ITER <- 10
@@ -26,6 +25,15 @@ CHAINS <- 2
 REFRESH <- 0
 
 SW <- suppressWarnings
+
+N <- 200
+x <- rnorm(N, 2, 1)
+z <- rnorm(N, 2, 1)
+mu <- binomial(link = "logit")$linkinv(1 + 0.2*x)
+phi <- exp(1.5 + 0.4*z)
+y <- rbeta(N, mu * phi, (1 - mu) * phi)
+fake_dat <- data.frame(y, x, z)
+remove(N, x, y, z, mu, phi)
 
 capture.output(
   stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
@@ -51,25 +59,13 @@ capture.output(
   polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE),
   
   stan_gamm41 <- SW(stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
-                               chains = CHAINS, seed = SEED, refresh = REFRESH))
-)
+                               chains = CHAINS, seed = SEED, refresh = REFRESH)),
 
-N <- 200
-x <- rnorm(N, 2, 1)
-z <- rnorm(N, 2, 1)
-mu <- binomial(link = "logit")$linkinv(1 + 0.2*x)
-phi <- exp(1.5 + 0.4*z)
-y <- rbeta(N, mu * phi, (1 - mu) * phi)
-fake_dat <- data.frame(y, x, z)
-remove(N, x, y, z, mu, phi)
-
-capture.output(
-  stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
-                                link = "logit", link.phi = "log",
-                                iter = ITER, chains = CHAINS, seed = SEED)
+  stan_betareg1 <- SW(stan_betareg(y ~ x | z, data = fake_dat, 
+                                   link = "logit", link.phi = "log",
+                                   iter = ITER, chains = CHAINS, seed = SEED)),
+  betareg1 <- betareg::betareg(y ~ x | z, data = fake_dat, link = "logit", link.phi = "log")
 )
-betareg1 <- betareg(y ~ x | z, data = fake_dat, 
-                    link = "logit", link.phi = "log")
 
 att_names <- function(object) {
   nms <- names(object)
@@ -120,12 +116,12 @@ test_that("stanreg extractor methods work properly", {
   # coef and vcov are different for stan_(g)lmer models and are tested
   # separately later in this file
   
-  # stan_betareg
   expect_equal(resid(stan_betareg1), stan_betareg1$residuals)
   expect_equal(coef(stan_betareg1), stan_betareg1$coefficients)
   expect_equal(vcov(stan_betareg1), stan_betareg1$covmat)
   expect_equal(fitted(stan_betareg1), stan_betareg1$fitted.values)
   expect_equal(se(stan_betareg1), stan_betareg1$ses)
+  
 })
 
 
@@ -155,7 +151,6 @@ test_that("posterior_interval returns correct structure", {
   expect_silent(ci4 <- posterior_interval(example_model, prob = 0.8, pars = "(Intercept)",
                                regex_pars = "period"))
   expect_silent(ci5 <- posterior_interval(stan_polr1, prob = 0.9))
-  expect_silent(ci6 <- posterior_interval(stan_betareg1, prob = 0.5))
   
   expect_identical(rownames(ci), c("(Intercept)", "wt", "cyl", "sigma"))
   expect_identical(rownames(ci2), "wt")
@@ -167,8 +162,10 @@ test_that("posterior_interval returns correct structure", {
   expect_identical(colnames(ci3), c("2.5%", "97.5%"))
   expect_identical(colnames(ci4), c("10%", "90%"))
   expect_identical(colnames(ci5), c("5%", "95%"))
-  expect_identical(colnames(ci6), c("25%", "75%"))
 
+  expect_silent(ci6 <- posterior_interval(stan_betareg1, prob = 0.5))
+  expect_identical(colnames(ci6), c("25%", "75%"))
+  
   expect_error(posterior_interval(stan_glm1, type = "HPD"),
                regexp = "only option for 'type' is 'central'")
   expect_error(posterior_interval(stan_glm_opt1), regexp = "not available")
@@ -194,7 +191,8 @@ test_that("log_lik method works", {
   expect_silent(log_lik(stan_gamm41))
   expect_equal(dim(log_lik(stan_polr1)), c(ITER, nobs(stan_polr1)))
   expect_equal(dim(log_lik(stan_lmer1)), c(ITER, nobs(stan_lmer1)))
-
+  expect_equal(log_lik(stan_betareg1), log_lik(stan_betareg1, newdata = fake_dat))
+  
   # Compute log-lik matrix using different method than log_lik.stanreg
   # and compare
   samp <- as.matrix(stan_glm1)
@@ -211,9 +209,9 @@ test_that("log_lik method works", {
     llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
     llmat_new[i, ] <- dnorm(y_new, mean = eta_new[, i], sd = sigma[i], log = TRUE)
   }
-  expect_equal(log_lik(stan_glm1), llmat)
+  expect_equal(log_lik(stan_glm1), llmat, check.attributes = FALSE)
   nd <- data.frame(mpg = y_new, wt = x_new[, 2], cyl = x_new[, 3])
-  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new)
+  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new, check.attributes = FALSE)
 
 
   # make sure log_lik with newdata equals log_lik if newdata is the same as the
@@ -223,7 +221,6 @@ test_that("log_lik method works", {
   expect_equal(log_lik(stan_glm1), log_lik(stan_glm1, newdata = mtcars))
   expect_equal(log_lik(stan_polr1), log_lik(stan_polr1, newdata = esoph))
   expect_equal(log_lik(stan_gamm41), log_lik(stan_gamm41, newdata = mtcars))
-  expect_equal(log_lik(stan_betareg1), log_lik(stan_betareg1, newdata = fake_dat))
 })
 
 
@@ -233,6 +230,7 @@ test_that("ngrps is right", {
   expect_equal(ngrps(lmer2), ngrps(stan_lmer2))
   expect_error(ngrps(stan_glm1), "stan_glmer and stan_lmer models only")
   expect_error(ngrps(stan_betareg1), "stan_glmer and stan_lmer models only")
+  expect_equal(nobs(stan_betareg1), nobs(betareg1))
 })
 
 test_that("nobs is right", {
@@ -241,7 +239,6 @@ test_that("nobs is right", {
   expect_equal(nobs(glm1), nobs(stan_glm_opt1))
   expect_equal(nobs(glm1), nobs(stan_glm1))
   expect_equal(nobs(polr1), nobs(stan_polr1))
-  expect_equal(nobs(stan_betareg1), nobs(betareg1))
 })
 
 
@@ -273,7 +270,7 @@ test_that("sigma method works", {
   expect_false(identical(sig, 1))
   expect_double(sig <- rsigma(stan_glm_opt1))
   expect_false(identical(sig, 1))
-  # errors not modeled in stan_betareg 
+  
   expect_double(sig <- rsigma(stan_betareg1))
   expect_true(identical(sig, 1))
 })
@@ -412,12 +409,11 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, length(nms)))
   expect_identical(last_dimnames(mat), nms)
   expect_identical(last_dimnames(mat), last_dimnames(arr))
-  mat <- as.matrix(stan_polr1, regex_pars = "\\^")
-  df <- as.data.frame(stan_polr1, regex_pars = "\\^")
+  mat <- as.matrix(stan_polr1, regex_pars = "agegp")
+  df <- as.data.frame(stan_polr1, regex_pars = "agegp")
   expect_identical(df, as.data.frame(mat))
-  expect_identical(colnames(mat), paste0("agegp^", 4:5))
-  
-  # betareg
+
+  # betareg  
   mat <- as.matrix(stan_betareg1)
   df <- as.data.frame(stan_betareg1)
   arr <- as.array(stan_betareg1)
@@ -427,6 +423,7 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   expect_equal(dim(arr), c(floor(ITER/2), CHAINS, 4L))
   expect_identical(last_dimnames(mat), c("(Intercept)", "x", "(phi)_(Intercept)", "(phi)_z"))
   expect_identical(last_dimnames(arr), last_dimnames(mat))
+  
 })
 
 test_that("as.matrix and as.data.frame work for optimization and vb", {
@@ -514,6 +511,7 @@ test_that("formula works properly", {
   expect_identical(formula(stan_glm1), formula(glm1))
   expect_identical(formula(stan_glm_opt1), formula(glm1))
   expect_identical(formula(stan_glm_vb1), formula(glm1))
+  expect_identical(formula(stan_betareg1), formula(betareg1))
   expect_equal(terms(stan_polr1), formula(polr1))
   expect_identical(formula(stan_lmer1), formula(lmer1))
   expect_identical(formula(stan_lmer2), formula(lmer2))
@@ -527,7 +525,7 @@ test_that("formula works properly", {
                formula(lmer2, random.only = TRUE))
   expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE),
                regexp = "can't both be TRUE")
-  expect_identical(formula(stan_betareg1), formula(betareg1))
+  
 
   tmp <- stan_lmer1
   tmp$formula <- NULL
@@ -543,12 +541,12 @@ test_that("update works properly", {
   SW(capture.output(
     fit1 <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS),
     fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS),
-    fit3 <- update(stan_betareg1, iter = ITER * 2, chains = 2 * CHAINS)
+    fit3 <- update(stan_betareg1, iter = ITER * 2, chains = CHAINS * 2)
   ))
   expect_equal(pss(fit1), 4 * pss(stan_lmer2))
   expect_equal(pss(fit2), 4 * pss(stan_glm1))
   expect_equal(pss(fit3), 4 * pss(stan_betareg1))
-
+  
   call_only <- update(fit1, evaluate = FALSE)
   expect_is(call_only, "call")
   expect_identical(call_only, getCall(fit1))
@@ -576,7 +574,7 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(stan_glm_opt1, digits = 5), "stan_glm")
   expect_output(print(stan_glm_vb1, digits = 5), "stan_glm")
   expect_output(print(stan_betareg1, digits = 2), "stan_betareg")
-
+  
   expect_silent(s <- summary(stan_lmer1, pars = "varying", regex_pars = "Sigma"))
   expect_silent(s_alt <- summary(stan_lmer1, regex_pars = c("plate", "sample")))
   expect_identical(s, s_alt)
@@ -594,8 +592,10 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_silent(d <- as.data.frame(s))
   expect_s3_class(s, "summary.stanreg")
   expect_output(print(s), "stan_glmer")
-  expect_output(print(s), paste("Posterior sample size:",
-                                rstanarm:::posterior_sample_size(example_model)))
+  expect_output(
+    print(s), 
+    paste(rstanarm:::posterior_sample_size(example_model)), "(posterior sample size)"
+  )
   expect_identical(attr(s, "algorithm"), "sampling")
   expect_identical(colnames(s), colnames(d))
   expect_identical(rownames(s), rownames(d))
@@ -603,7 +603,6 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_silent(s <- summary(stan_polr1, pars = "beta", probs = c(0.25, 0.75)))
   expect_silent(d <- as.data.frame(s))
   expect_identical(colnames(s), c("mean", "mcse", "sd", "25%", "75%", "n_eff", "Rhat"))
-  expect_identical(rownames(s), c("agegp.L", "agegp.Q", "agegp.C", "agegp^4", "agegp^5"))
   expect_identical(colnames(s), colnames(d))
   expect_identical(rownames(s), rownames(d))
   expect_s3_class(s, "summary.stanreg")
@@ -616,19 +615,19 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(s), "stan_glm")
   expect_identical(attr(s, "algorithm"), "sampling")
   
-  # stan_betareg
+  expect_silent(s <- summary(stan_glm_vb1, pars = c("alpha", "beta")))
+  expect_silent(d <- as.data.frame(s))
+  expect_s3_class(s, "summary.stanreg")
+  expect_output(print(s), "stan_glm")
+  expect_identical(attr(s, "algorithm"), "meanfield")
+  
   expect_warning(s <- summary(stan_betareg1, pars = "varying"),
                  regexp = "No group-specific parameters. 'varying' ignored.")
   expect_silent(s <- summary(stan_betareg1, pars = c("alpha", "beta"), digits = 3))
   expect_s3_class(s, "summary.stanreg")
   expect_output(print(s), "stan_betareg")
   expect_identical(attr(s, "algorithm"), "sampling")
-
-  expect_silent(s <- summary(stan_glm_vb1, pars = c("alpha", "beta")))
-  expect_silent(d <- as.data.frame(s))
-  expect_s3_class(s, "summary.stanreg")
-  expect_output(print(s), "stan_glm")
-  expect_identical(attr(s, "algorithm"), "meanfield")
+  
 })
 
 test_that("print and summary methods ok for optimization", {
@@ -686,6 +685,7 @@ test_that("prior_summary doesn't error", {
                 "stan_glm_vb1")
   expect_output(print(prior_summary(stan_betareg1)),
                 "stan_betareg1")
+  
 })
 test_that("prior_summary returns correctly named list", {
   expect_named(prior_summary(example_model),
@@ -714,6 +714,7 @@ test_that("predictive_error works", {
                "not currently available for stan_polr")
   expect_error(predictive_error(stan_betareg1, draws = 600),
                "'draws' should be <= posterior sample size")
+  
   mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1",
             "stan_lmer2", "example_model")
   for (m in seq_along(mods)) {
@@ -746,6 +747,7 @@ test_that("predictive_interval works", {
                "'draws' should be <= posterior sample size")
   expect_error(predictive_interval(stan_betareg1, prob = c(0.25, 0.76)),
                "'prob' should be a single number greater than 0 and less than 1")
+  
   mods <- c("stan_glm1", "stan_glm_vb1", "stan_lmer1",
             "stan_lmer2", "example_model")
   for (m in seq_along(mods)) {

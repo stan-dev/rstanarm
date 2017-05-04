@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2016 Trustees of Columbia University
+# Copyright (C) 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -23,9 +23,7 @@
 #' 
 #' @export
 #' @param biglm The list output by \code{\link[biglm]{biglm}} in the \pkg{biglm}
-#'   package. The original call to \code{\link[biglm]{biglm}} must not have an 
-#'   intercept and must utilize \emph{centered} but not \emph{standardized} 
-#'   predictors. See the \strong{Details} and \strong{Examples} sections.
+#'   package.
 #' @param xbar A numeric vector of column means in the implicit design matrix 
 #'   excluding the intercept for the observations included in the model.
 #' @param ybar A numeric scalar indicating the mean of the outcome for the

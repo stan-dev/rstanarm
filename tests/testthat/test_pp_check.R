@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,6 +18,10 @@
 # tests can be run using devtools::test() or manually by loading testthat
 # package and then running the code below possibly with options(mc.cores = 4).
 
+
+context("pp_check")
+
+
 library(rstanarm)
 SEED <- 123
 set.seed(SEED)
@@ -25,55 +29,54 @@ ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- function(expr) capture.output(suppressWarnings(expr))
+source(file.path("helpers", "SW.R"))
+source(file.path("helpers", "expect_gg.R"))
 
 fit <- example_model
 SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
                     seed = SEED, refresh = REFRESH))
 
-expect_gg <- function(x, info = NULL, label = NULL) {
-  expect_is(x, "ggplot", info = info, label = label)
-}
 
+patt <- "rootogram|_bars|vs_x|grouped$"
+ppc_funs_not_grouped <- bayesplot::available_ppc(patt, invert = TRUE)
+ppc_funs_grouped <- bayesplot::available_ppc("vs_x|grouped")
+ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars")
 
-context("pp_check")
-
-
-# test deprecated stuff -----------------------------------------------
-test_that("pp_check with deprecated 'check' arg works", {
-  expect_warning(p1 <- pp_check(fit, check = "dist"), 
-                 "Argument 'check' is deprecated")
-  expect_warning(p2 <- pp_check(fit2, check = "dist", overlay = FALSE))
-  expect_warning(p3 <- pp_check(fit, check = "resid"))
-  expect_warning(p4 <- pp_check(fit2, check = "resid", binwidth = .5))
-  expect_warning(p5 <- pp_check(fit, check = "scatter"))
-  expect_warning(p6 <- pp_check(fit2, check = "scatter"))
-  expect_gg(p1)
-  expect_gg(p2)
-  expect_gg(p3)
-  expect_gg(p4)
-  expect_gg(p5)
-  expect_gg(p6)
-})
-
-
-# test new pp_check.stanreg  ----------------------------------------------
-all_ppc_funs <- grep("^ppc_", getNamespaceExports("bayesplot"), value = TRUE)
-ppc_funs_not_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE, invert = TRUE)
-ppc_funs_grouped <- grep("vs_x|_grouped$", all_ppc_funs, value = TRUE)
 
 test_that("pp_check.stanreg creates ggplot object", {
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
-    expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
-              info = f)
+    if (!(f %in% c("ppc_bars", "ppc_loo_pit", "ppc_loo_intervals", 
+                   "ppc_loo_ribbon", "ppc_rootogram")))
+      expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
+                info = f)
   }
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
-  for (f in ppc_funs_grouped) for (j in 1:2) {
+  for (f in setdiff(ppc_funs_grouped, ppc_funs_discrete)) for (j in 1:2) {
     expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
               info = f)
   }
+})
+
+test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes", {
+  d <- data.frame(
+    counts = c(18,17,15,20,10,20,25,13,12),
+    outcome = gl(3,1,9),
+    treatment = gl(3,3)
+  )
+  SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d, 
+                   family = poisson(link="log"),
+                   iter = ITER, chains = CHAINS,
+                   seed = SEED, refresh = REFRESH))
+  expect_gg(pp_check(fit3, plotfun = "rootogram"))
+  
+  SW(fit4 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
+                       prior = R2(0.2, "mean"), init_r = 0.1, 
+                       iter = ITER, chains = CHAINS,
+                       seed = SEED, refresh = REFRESH))
+  expect_gg(pp_check(fit4, plotfun = "bars"))
+  expect_gg(pp_check(fit4, plotfun = "bars_grouped", group = "agegp"))
 })
 
 
@@ -95,7 +98,7 @@ test_that("pp_check binned residual plot works for factors", {
 
 
 # test errors --------------------------------------------------------------
-test_that("pp_check throws error if 'test' arg is bad", {
+test_that("pp_check throws error if 'stat' arg is bad", {
   expect_error(pp_check(fit, plotfun = "stat", stat = "10982pqmeaw"),
                regexp = "not found")
 })
@@ -139,4 +142,12 @@ test_that(".ignore_nreps and .set_nreps work", {
   expect_warning(r <- set_nreps(10, "ppc_stat"), "'nreps' is ignored")
   expect_null(r)
   expect_equal(set_nreps(10, "ppc_hist"), 10)
+})
+
+test_that("y coerced to numeric (attributes dropped)", {
+  d <- mtcars
+  attr(d$mpg, "test") <- "something"
+  SW(fit3 <- update(fit2, data = d))
+  expect_equal(attr(get_y(fit3), "test"), "something")
+  expect_gg(pp_check(fit3, nreps = 3))
 })
