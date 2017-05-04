@@ -696,14 +696,18 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Prior distributions
   #---------------------
   
+  
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
                     "laplace", "lasso")
   ok_intercept_dists <- ok_dists[1:3]
   ok_y_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   ok_e_aux_dists <- ok_dists[1:3]
   
+  # Note: *_user_prior_*_stuff objects are stored unchanged for constructing 
+  # prior_summary, while *_prior_*_stuff objects are autoscaled
+  
   # Priors for longitudinal submodel(s)
-  y_prior_stuff <- mapply(
+  y_user_prior_stuff <- y_prior_stuff <- mapply(
     handle_glm_prior,
     priorLong,
     nvars = fetch(y_mod_stuff, "K"),
@@ -711,21 +715,21 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     MoreArgs = list(default_scale = 2.5, ok_dists = ok_dists), 
     SIMPLIFY = FALSE)
 
-  y_prior_intercept_stuff <- mapply(
+  y_user_prior_intercept_stuff <- y_prior_intercept_stuff <- mapply(
     handle_glm_prior,
     priorLong_intercept,
     link = fetch(family, "link"),
     MoreArgs = list(nvars = 1, default_scale = 10, ok_dists = ok_intercept_dists), 
     SIMPLIFY = FALSE)
 
-  y_prior_aux_stuff <- mapply(
+  y_user_prior_aux_stuff <- y_prior_aux_stuff <- mapply(
     handle_glm_prior,
     priorLong_aux,
     MoreArgs = list(nvars = 1, default_scale = 5, link = NULL, ok_dists = ok_y_aux_dists), 
     SIMPLIFY = FALSE)  
   
   # Priors for event submodel
-  e_prior_stuff <- 
+  e_user_prior_stuff <- e_prior_stuff <- 
     handle_glm_prior(
       priorEvent,
       nvars = e_mod_stuff$K,
@@ -734,7 +738,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
       ok_dists = ok_dists
     )  
   
-  e_prior_intercept_stuff <- 
+  e_user_prior_intercept_stuff <- e_prior_intercept_stuff <- 
     handle_glm_prior(
       priorEvent_intercept,
       nvars = 1,
@@ -743,7 +747,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
       ok_dists = ok_intercept_dists
     )  
   
-  e_prior_aux_stuff <-
+  e_user_prior_aux_stuff <- e_prior_aux_stuff <-
     handle_glm_prior(
       priorEvent_aux,
       nvars = basehaz$df,
@@ -753,7 +757,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     )
   
   # Priors for association parameters
-  a_prior_stuff <- 
+  a_user_prior_stuff <- a_prior_stuff <- 
     handle_glm_prior(
       priorAssoc,
       nvars = a_K,
@@ -1105,7 +1109,35 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   for (i in c("a_K_data", paste0("size_which_", c("b", "coef", "interactions")))) {
     standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
   }
-
+  
+  #---------------
+  # Prior summary
+  #---------------
+  
+  prior_info <- summarize_jm_prior(
+    user_priorLong = y_user_prior_stuff,
+    user_priorLong_intercept = y_user_prior_intercept_stuff,
+    user_priorLong_aux = y_user_prior_aux_stuff,
+    user_priorEvent = e_user_prior_stuff,
+    user_priorEvent_intercept = e_user_prior_intercept_stuff,
+    user_priorEvent_aux = e_user_prior_aux_stuff,
+    user_priorAssoc = a_user_prior_stuff,
+    user_prior_covariance = prior_covariance,
+    y_has_intercept = sapply(y_mod_stuff, `[[`, "has_intercept"),
+    y_has_predictors = sapply(y_mod_stuff, function(x) x$K > 0),
+    e_has_intercept = e_mod_stuff$has_intercept,
+    e_has_predictors = e_mod_stuff$K > 0,
+    has_assoc = a_K > 0,
+    adjusted_priorLong_scale = fetch_(y_prior_stuff, "prior_scale"),
+    adjusted_priorLong_intercept_scale = fetch_(y_prior_intercept_stuff, "prior_scale"),
+    adjusted_priorLong_aux_scale = fetch_(y_prior_aux_stuff, "prior_scale"),
+    adjusted_priorEvent_scale = e_prior_stuff$prior_scale,
+    adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
+    adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
+    adjusted_priorAssoc_scale = a_prior_stuff$prior_scale,
+    family = family
+  )  
+  
   #----------------
   # Initial values
   #----------------
@@ -1255,10 +1287,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                d = e_mod_stuff$d, eventtime = e_mod_stuff$eventtime,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
-               standata = NULL, terms = NULL, 
-               prior.info = nlist(y_prior_stuff, y_prior_intercept_stuff, y_prior_aux_stuff,
-                                  e_prior_stuff, e_prior_intercept_stuff, e_prior_aux_stuff,
-                                  a_prior_stuff, prior_covariance))
+               standata = NULL, terms = NULL, prior.info = prior_info)
   out <- stanjm(fit)
   
   return(out)
@@ -2778,6 +2807,191 @@ get_nvars_for_hs <- function(prior_dist) {
   else return(0L)
 }
 
+# Create "prior.info" attribute needed for prior_summary()
+#
+# @param user_* The user's priors. These should be passed in after broadcasting 
+#   the df/location/scale arguments if necessary.
+# @param y_has_intercept Vector of T/F, does each long submodel have an intercept?
+# @param y_has_predictors Vector of T/F, does each long submodel have predictors?
+# @param y_has_intercept T/F, does event submodel have an intercept?
+# @param has_predictors T/F, does event submodel have predictors?
+# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
+# @param family A list of family objects.
+# @return A named list with components 'prior*', 'prior*_intercept', 
+#   'prior_covariance' and 'prior*_aux' each of which itself is a list
+#   containing the needed values for prior_summary.
+summarize_jm_prior <-
+  function(user_priorLong,
+           user_priorLong_intercept,
+           user_priorLong_aux,
+           user_priorEvent,
+           user_priorEvent_intercept,
+           user_priorEvent_aux,
+           user_priorAssoc,
+           user_prior_covariance,
+           y_has_intercept,
+           e_has_intercept,
+           y_has_predictors,
+           e_has_predictors,
+           has_assoc,
+           adjusted_priorLong_scale,
+           adjusted_priorLong_intercept_scale, 
+           adjusted_priorLong_aux_scale,
+           adjusted_priorEvent_scale,
+           adjusted_priorEvent_intercept_scale, 
+           adjusted_priorEvent_aux_scale,           
+           adjusted_priorAssoc_scale,
+           family) {
+    if (!is(family, "list"))
+      stop("'family' should be a list of family objects, one for each submodel.")
+    if (!is.logical(has_assoc) && (length(has_assoc) == 1L))
+      stop("'has_assoc' should be a logical vector of length 1.")
+    M <- length(family)
+    
+    rescaled_coefLong <- mapply(check_if_rescaled, user_priorLong, 
+                                y_has_predictors, adjusted_priorLong_scale)
+    rescaled_intLong  <- mapply(check_if_rescaled, user_priorLong_intercept, 
+                                y_has_intercept, adjusted_priorLong_intercept_scale)
+    rescaled_auxLong  <- mapply(check_if_rescaled, user_priorLong_aux, 
+                                TRUE, adjusted_priorLong_aux_scale)
+    rescaled_coefEvent <- check_if_rescaled(user_priorEvent, e_has_predictors,
+                                            adjusted_priorEvent_scale)
+    rescaled_intEvent  <- check_if_rescaled(user_priorEvent_intercept, e_has_intercept, 
+                                            adjusted_priorEvent_intercept_scale)
+    rescaled_auxEvent  <- check_if_rescaled(user_priorEvent_aux, TRUE, 
+                                            adjusted_priorEvent_aux_scale)
+    rescaled_coefAssoc <- check_if_rescaled(user_priorAssoc, has_assoc, 
+                                            adjusted_priorAssoc_scale)
+   
+    for (m in 1:M) {
+      user_priorLong[[m]] <- 
+        rename_t_and_cauchy(user_priorLong[[m]], y_has_predictors[m])
+      user_priorLong_intercept[[m]] <-
+        rename_t_and_cauchy(user_priorLong_intercept[[m]], y_has_intercept[m])
+      user_priorLong_aux[[m]] <-
+        rename_t_and_cauchy(user_priorLong_aux[[m]], TRUE)
+    }  
+    user_priorEvent <- 
+      rename_t_and_cauchy(user_priorEvent, e_has_predictors)  
+    user_priorEvent_intercept <- 
+      rename_t_and_cauchy(user_priorEvent_intercept, e_has_intercept)  
+    user_priorEvent_aux <- 
+      rename_t_and_cauchy(user_priorEvent_aux, TRUE)  
+    user_priorAssoc <- 
+      rename_t_and_cauchy(user_priorAssoc, has_assoc)  
+    
+    prior_list <- list(
+      priorLong = list_nms(lapply(1:M, function(m) {
+        if (!y_has_predictors[m]) NULL else with(user_priorLong[[m]], list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coefLong[m])
+            adjusted_priorLong_scale[[m]] else NULL,
+          df = if (prior_dist_name %in% c
+                   ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
+            prior_df else NULL
+        ))        
+      }), M),
+      priorLong_intercept = list_nms(lapply(1:M, function(m) {
+        if (!y_has_intercept[m]) NULL else with(user_priorLong_intercept[[m]], list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_intLong[m]) 
+            adjusted_priorLong_intercept_scale[[m]] else NULL,
+          df = if (prior_dist_name %in% "student_t") 
+            prior_df else NULL
+        ))
+      }), M),
+      priorEvent = 
+        if (!e_has_predictors) NULL else with(user_priorEvent, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coefEvent)
+            adjusted_priorEvent_scale else NULL,
+          df = if (prior_dist_name %in% c
+                   ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
+            prior_df else NULL
+        )),
+      priorEvent_intercept =
+        if (!e_has_intercept) NULL else with(user_priorEvent_intercept, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_intEvent)
+            adjusted_priorEvent_intercept_scale else NULL,
+          df = if (prior_dist_name %in% "student_t")
+            prior_df else NULL
+        )),      
+      priorAssoc = 
+        if (!has_assoc) NULL else with(user_priorAssoc, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_coefAssoc)
+            adjusted_priorAssoc_scale else NULL,
+          df = if (prior_dist_name %in% c
+                   ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
+            prior_df else NULL
+        ))
+    )
+    if (length(user_prior_covariance))
+      prior_list$prior_covariance <- user_prior_covariance
+    
+    aux_name <- lapply(family, .rename_aux)
+    prior_list$priorLong_aux <- lapply(1:M, function(m) {
+      if (is.na(aux_name[[m]])) NULL else with(user_priorLong_aux[[m]], list(
+        dist = prior_dist_name,
+        location = if (!is.na(prior_dist_name) && 
+                       prior_dist_name != "exponential")
+          prior_mean else NULL,
+        scale = if (!is.na(prior_dist_name) && 
+                    prior_dist_name != "exponential")
+          prior_scale else NULL,
+        adjusted_scale = if (rescaled_auxLong[m])
+          adjusted_priorLong_aux_scale else NULL,
+        df = if (!is.na(prior_dist_name) && 
+                 prior_dist_name %in% "student_t")
+          prior_df else NULL, 
+        rate = if (!is.na(prior_dist_name) && 
+                   prior_dist_name %in% "exponential")
+          1 / prior_scale else NULL,
+        aux_name = aux_name
+      ))
+    })
+    
+    return(prior_list)
+  }
+
+# Check if priors were autoscaled
+#
+# @param prior_stuff A list with prior info returned by handle_glm_prior
+# @param has A logical checking, for example, whether the model has_predictors, 
+#   has_intercept, has_assoc, etc
+# @param adjusted_prior_scale The prior scale after any autoscaling
+check_if_rescaled <- function(prior_stuff, has, adjusted_prior_scale) {
+  prior_stuff$prior_autoscale && has &&
+    !is.na(prior_stuff$prior_dist_name) &&
+    !all(prior_stuff$prior_scale == adjusted_prior_scale)      
+}
+
+# Rename the t prior as being student-t or cauchy
+#
+# @param prior_stuff A list with prior info returned by handle_glm_prior
+# @param has A logical checking, for example, whether the model has_predictors, 
+#   has_intercept, has_assoc, etc
+rename_t_and_cauchy <- function(prior_stuff, has) {
+  if (has && prior_stuff$prior_dist_name %in% "t") {
+    if (all(prior_stuff$prior_df == 1)) {
+      prior_stuff$prior_dist_name <- "cauchy"
+    } else {
+      prior_stuff$prior_dist_name <- "student_t"
+    }
+  }
+  return(prior_stuff)
+}
 
 #--------------- Functions related to generating initial values
 

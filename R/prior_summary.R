@@ -101,12 +101,22 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
   if (is.null(x)) {
     message("Priors not found in stanreg object.")
     return(invisible(NULL))
+  }  
+  if (is.stanjm(object)) {
+    M <- get_M(object)
+    yvars <- sapply(1:M, function(m) {
+      terms_m <- terms(object)[[m]]
+      sel <- attr(terms_m, "response")
+      rownames(attr(terms_m, "factors"))[sel]
+    })
+    x <- structure(x, M = M, yvars = yvars) 
   }
   structure(x, class = "prior_summary.stanreg",
             QR = used.QR(object),
             sparse = used.sparse(object),
             model_name = deparse(substitute(object)), 
             print_digits = digits)
+  
 }
 
 #' @export
@@ -159,7 +169,71 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
-  # unique to stan_(g)lmer or stan_gamm4
+  # unique to stan_jm
+  if (!is.null(attr(x, "M"))) {
+    cat("\nEvent submodel:")   
+    if (!is.null(x[["priorEvent_intercept"]]))
+      .print_scalar_prior(
+        x[["priorEvent_intercept"]], 
+        txt = paste0("\nIntercept", if (!sparse) " (after predictors centered)"), 
+        formatters
+      )
+    if (!is.null(x[["priorEvent"]]))
+      .print_vector_prior(
+        x[["priorEvent"]], 
+        txt = "\nCoefficients", 
+        formatters = formatters
+      )
+    if (!is.null(x[["priorAssoc"]]))
+      .print_vector_prior(
+        x[["priorAssoc"]], 
+        txt = "\nAssociation parameters", 
+        formatters = formatters
+      )    
+    if (!is.null(x[["priorEvent_aux"]])) {
+      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
+      aux_dist <- x[["priorEvent_aux"]][["dist"]]
+      if (aux_dist %in% c("normal", "student_t", "cauchy"))
+        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+      .print_scalar_prior(
+        x[["priorEvent_aux"]], 
+        txt = paste0("\nAuxiliary (", aux_name, ")"), 
+        formatters
+      )
+    }
+    M <- attr(x, "M")
+    yvars <- attr(x, "yvars") 
+    for (m in 1:M) {
+      cat(paste0("\n---\nLongitudinal submodel", if (M > 1) paste0(" ", m), 
+                 ": ", yvars[m]))      
+      if (!is.null(x[["priorLong_intercept"]][[m]]))
+        .print_scalar_prior(
+          x[["priorLong_intercept"]][[m]], 
+          txt = paste0("\nIntercept", if (!sparse) " (after predictors centered)"), 
+          formatters
+        )
+      if (!is.null(x[["priorLong"]][[m]]))
+        .print_vector_prior(
+          x[["priorLong"]][[m]], 
+          txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
+          formatters = formatters
+        )
+      if (!is.null(x[["priorLong_aux"]][[m]])) {
+        aux_name <- x[["priorLong_aux"]][[m]][["aux_name"]]
+        aux_dist <- x[["priorLong_aux"]][[m]][["dist"]]
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["priorLong_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorLong_aux"]][[m]], 
+          txt = paste0("\nAuxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
+    cat("\n---")
+  }  
+  
+  # unique to stan_(g)lmer or stan_gamm4 or stan_jm
   if (!is.null(x[["prior_covariance"]]))
     .print_covariance_prior(x[["prior_covariance"]], txt = "\nCovariance", formatters)
   
@@ -176,7 +250,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         paste0(p$dist, "(shape = ", .fr2(p$shape), 
                ", rate = ", .fr2(p$rate), ")"))
   }
-  
+
   cat("\n------\n")
   cat("See help('prior_summary.stanreg') for more details")
   invisible(x)
