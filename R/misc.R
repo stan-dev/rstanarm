@@ -1151,9 +1151,9 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
   id_list <- unique(ndE[[id_var]])
   if (!is.null(newdataEvent) && is.null(etimes)) {
-    y <- eval(formula(object, m = "Event")[[2L]], ndE)
-    etimes  <- unclass(y)[,"time"]
-    estatus <- unclass(y)[,"status"]    
+    surv <- eval(formula(object, m = "Event")[[2L]], ndE)
+    etimes  <- unclass(surv)[,"time"]
+    estatus <- unclass(surv)[,"status"]    
   } else if (is.null(etimes)) {
     etimes  <- object$eventtime[as.character(id_list)]
     estatus <- object$status[as.character(id_list)]
@@ -1175,12 +1175,20 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
              "are later than the event time specified in the 'etimes' argument.")      
     }) 
   if (long_parts) {
+    if (is.null(newdataLong)) {
+      y <- lapply(1:M, function(m) {
+        rows <- which(ndL[[m]][[id_var]] %in% id_list)
+        get_y(object)[[m]][rows]
+      })
+    } else {
+      y <- eval(formula(object, m = m)[[2L]], ndL[[m]])
+    }
     ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
     yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
     yZ_names <- fetch(ydat, "Z_names")
     flist <- lapply(ndL, function(x) factor(x[[id_var]]))
-    res <- c(res, nlist(yX, yZt, yZ_names, flist))
+    res <- c(res, nlist(y, yX, yZt, yZ_names, flist))
   }
   if (event_parts) {
     qnodes <- object$quadnodes

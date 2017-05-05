@@ -1287,9 +1287,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   } else {
     mc[[1]]    <- quote(lme4::glmer)
     mc$control <- get_control_args(glmer = TRUE)
-    mc$initCtrl <- quote(list(limit = 50))
   }
-  mod <- suppressWarnings(eval(mc, parent.frame()))     	
+  mod <- suppressWarnings(eval(mc, envir = env))     	
   
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
@@ -2360,6 +2359,8 @@ rolling_merge <- function(data, ids, times) {
 handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
                              env = parent.frame()) { 
   mc$data <- newdata
+  mc$formula[[2L]] <- NULL # remove response from formula, not need for constructing design matrices
+  mc$control$checkControl$check.formula.LHS = "ignore" # avoids error when formula is passed to lme4::glFormula
   mod    <- eval(mc, env)
   x      <- as.matrix(mod$X)
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
