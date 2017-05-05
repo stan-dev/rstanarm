@@ -1225,7 +1225,9 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
         get_y(object)[[m]][rows]
       })
     } else {
-      y <- eval(formula(object, m = m)[[2L]], ndL[[m]])
+      y <- lapply(1:M, function(m) {
+        eval(formula(object, m = m)[[2L]], ndL[[m]])
+      })
     }
     ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
     yX <- fetch(ydat, "x")

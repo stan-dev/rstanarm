@@ -2160,12 +2160,9 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
   mc[[1]]    <- quote(lme4::glFormula)
   mc$formula <- do.call(update.formula, 
                         list(eval(mc$formula, env), paste0("~ . +", time_var)))
-  mc$formula[[2L]] <- NULL # remove response, since not needed and binomial 
-                           # response causes an error in data.table merge
   mc$control <- get_control_args(glmer = !y_mod_stuff$is_lmer, 
                                  norank = TRUE)
-  mc$control$checkControl$check.formula.LHS <- "ignore"
-  
+
   # Obtain a model frame with time variable definitely included
   fr <- eval(mc, envir = env)$fr
   mf <- data.table::data.table(fr, key = c(id_var, time_var)) # create data.table
