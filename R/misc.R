@@ -1177,7 +1177,8 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (long_parts) {
     if (is.null(newdataLong)) {
       y <- lapply(1:M, function(m) {
-        rows <- which(ndL[[m]][[id_var]] %in% id_list)
+        mf <- model.frame(object)[[m]]
+        rows <- which(mf[[id_var]] %in% id_list)
         get_y(object)[[m]][rows]
       })
     } else {
