@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -95,11 +95,8 @@
 #' 
 #' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
 #'                     link = "logit", link.phi = "log", 
-#'                     chains = 1, iter = 250) # for speed of example only
+#'                     algorithm = "optimizing")
 #' print(fit, digits = 2)
-#' plot(fit)
-#' pp_check(fit)
-#' prior_summary(fit)
 #'
 stan_betareg <-
   function(formula,
@@ -123,9 +120,11 @@ stan_betareg <-
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
+    
     if (!requireNamespace("betareg", quietly = TRUE))
       stop("Please install the betareg package before using 'stan_betareg'.")
     
+    data <- validate_data(data, if_missing = environment(formula))
     mc <- match.call(expand.dots = FALSE)
     mc$model <- mc$y <- mc$x <- TRUE
     
@@ -170,7 +169,8 @@ stan_betareg <-
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
             family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
             formula, model = mf, terms = mt, call = match.call(),
-            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"))
+            na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"), 
+            modeling_function = "stan_betareg")
     out <- stanreg(fit)
     out$xlevels <- lapply(mf[,-1], FUN = function(x) {
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL

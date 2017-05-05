@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ center_x <- function(x, sparse) {
     FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
   
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
-  if (!sparse) {
+  if (has_intercept && !sparse) {
     xbar <- colMeans(xtemp)
     xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   }

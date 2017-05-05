@@ -79,7 +79,7 @@ transformed parameters {
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = tau * aux;
+      theta_L = scale .* tau * aux;
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
@@ -192,11 +192,8 @@ generated quantities {
     omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
   }
   {
-    real nan_count; // for the beta_rng underflow issue
-    real yrep; // pick up value to test for the beta_rng underflow issue
     vector[N] eta_z;
     #include "make_eta.stan" // defines eta
-    nan_count = 0;
     if (t > 0) {
       #include "eta_add_Zb.stan"
     }
@@ -253,22 +250,9 @@ generated quantities {
     else if (family == 4 && link_phi > 0) {
       eta = linkinv_beta(eta, link);
       eta_z = linkinv_beta_z(eta_z, link_phi);
-      for (n in 1:N) {
-        yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
-          if (is_nan(yrep) == 1) {
-            mean_PPD = mean_PPD;
-            nan_count = nan_count + 1;
-          }
-          else if (is_nan(yrep) == 0) {
-            mean_PPD = mean_PPD + yrep; 
-          }
-      }
+      for (n in 1:N)
+        mean_PPD = mean_PPD + beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
     }
-    if (family == 4 && link_phi > 0) {
-      mean_PPD = mean_PPD / (N - nan_count);
-    }
-    else {
-      mean_PPD = mean_PPD / N;
-    }
+    mean_PPD = mean_PPD / N;
   }
 }

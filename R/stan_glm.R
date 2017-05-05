@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -141,8 +141,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   validate_glm_formula(formula)
-  if (missing(data)) 
-    data <- environment(formula)
+  data <- validate_data(data, if_missing = environment(formula))
+  
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
@@ -176,7 +176,8 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"))
+               contrasts = attr(X, "contrasts"), 
+               modeling_function = "stan_glm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
@@ -224,5 +225,6 @@ stan_glm.nb <- function(formula,
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
+  out$modeling_function <- "stan_glm.nb"
   return(out)
 }

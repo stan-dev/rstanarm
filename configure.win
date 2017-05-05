@@ -1,0 +1,4 @@
+CXX11=`"${R_HOME}/bin/R" CMD config CXX11`
+CXX11STD="-std=c++14"
+CXX="${CXX11} ${CXX11STD}"
+CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXX11FLAGS`

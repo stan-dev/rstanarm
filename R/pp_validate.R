@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2016 Trustees of Columbia University
+# Copyright (C) 2016, 2017 Trustees of Columbia University
 # Copyright (C) 2005 Samantha Cook
 #
 # This program is free software; you can redistribute it and/or

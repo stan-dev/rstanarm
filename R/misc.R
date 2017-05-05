@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -113,6 +113,18 @@ is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 is.beta <- function(x) x == "beta"
 
+# test if a stanreg object has class polr 
+is_polr <- function(object) {
+  inherits(object, "polr")
+}
+
+# test if a stanreg object is a scobit model
+is_scobit <- function(object) {
+  validate_stanreg_object(object)
+  if (!is(object, "polr")) return(FALSE)
+  return("alpha" %in% rownames(object$stan_summary))
+}
+
 # Test for a given estimation method
 #
 # @param x A stanreg object.
@@ -163,11 +175,13 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
-# Message to issue when mean-field selected but 'QR=FALSE'. 
-msg_meanfieldQR <- function() {
-  message("Setting 'QR' to TRUE can often be helpful when ", 
-          "using the 'meanfield' algorithm.",
-          "\nSee the documentation for the 'QR' argument.")
+# Message to issue when fitting model with ADVI but 'QR=FALSE'. 
+recommend_QR_for_vb <- function() {
+  message(
+    "Setting 'QR' to TRUE can often be helpful when using ", 
+    "one of the variational inference algorithms. ", 
+    "See the documentation for the 'QR' argument."
+  )
 }
 
 # Issue warning if high rhat values
@@ -175,11 +189,15 @@ msg_meanfieldQR <- function() {
 # @param rhats Vector of rhat values.
 # @param threshold Threshold value. If any rhat values are above threshold a 
 #   warning is issued.
-check_rhats <- function(rhats, threshold = 1.1) {
+check_rhats <- function(rhats, threshold = 1.1, check_lp = FALSE) {
+  if (!check_lp)
+    rhats <- rhats[!names(rhats) %in% c("lp__", "log-posterior")]
+  
   if (any(rhats > threshold, na.rm = TRUE)) 
     warning("Markov chains did not converge! Do not analyze results!", 
             call. = FALSE, noBreaks. = TRUE)
 }
+
 
 # If y is a 1D array keep any names but convert to vector (used in stan_glm)
 #
@@ -604,16 +622,10 @@ polr_linkinv <- function(x) {
 # @param stanfit A stanfit object created using rstan::sampling or rstan::vb
 # @return A matrix of summary stats
 make_stan_summary <- function(stanfit) {
-  levs <- c(0.5, 0.8, 0.95, 0.99)
+  levs <- c(0.5, 0.8, 0.95)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
   rstan::summary(stanfit, probs = probs, digits = 10)$summary  
-}
-
-is_scobit <- function(object) {
-  validate_stanreg_object(object)
-  if (!is(object, "polr")) return(FALSE)
-  return("alpha" %in% rownames(object$stan_summary))
 }
 
 check_reTrms <- function(reTrms) {
@@ -691,6 +703,37 @@ check_stanfit <- function(x) {
       stop("Invalid stanfit object produced please report bug")
   }
   return(TRUE)
+}
+
+# Validate data argument
+#
+# Make sure that, if specified, data is a data frame.
+# 
+# @param data User's data argument
+# @param if_missing Object to return if data is missing/null
+# @return If no error is thrown, data itself is returned if not missing/null, 
+#   otherwise if_missing is returned.
+# 
+validate_data <- function(data, if_missing = NULL) {
+  if (missing(data) || is.null(data)) {
+    warn_data_arg_missing()
+    return(if_missing)
+  }
+  if (!is.data.frame(data))
+    stop("'data' must be a data frame.", call. = FALSE)
+  
+  return(data)
+}
+
+# Throw a warning if 'data' argument to modeling function is missing
+warn_data_arg_missing <- function() {
+  warning(
+    "Omitting the 'data' argument is not recommended ",
+    "and may not be allowed in future versions of rstanarm. ", 
+    "Some post-estimation functions (in particular 'update', 'loo', 'kfold') ", 
+    "are not guaranteed to work properly unless 'data' is specified as a data frame.",
+    call. = FALSE
+  )
 }
 
 
@@ -1213,4 +1256,5 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
   return(res)
 }
+
 

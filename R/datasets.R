@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -195,7 +195,7 @@
 #' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
 #'                prior = R2(location = 0.30, what = "mean"),
 #'                # the next line is only to make the example go fast enough
-#'                chains = 2, iter = 500, seed = 12345)
+#'                chains = 1, iter = 500, seed = 12345)
 #' pp_check(fit, nreps = 20)
 #' \donttest{
 #' bayesplot::color_scheme_set("brightblue")

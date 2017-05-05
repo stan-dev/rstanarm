@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -144,7 +144,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
   dots <- list(...)
   if (is.stanjm(object)) {
-    dots <- list(...)
     m <- dots[["m"]]
     if (is.null(m)) 
       STOP_arg_required_for_stanjm(m)
@@ -188,6 +187,9 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   if (is(object, "polr") && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   
+  if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
+  else colnames(ytilde) <- rownames(newdata)  
+  
   # if function is called from posterior_traj then add mu as attribute
   fn <- tryCatch(sys.call(-2)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
@@ -196,6 +198,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   structure(ytilde, class = c("ppd", class(ytilde)))
 }
 
+
+# internal ----------------------------------------------------------------
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object, m = NULL) {

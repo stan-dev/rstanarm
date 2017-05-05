@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -120,14 +120,18 @@ stanreg <- function(object) {
     prior.weights = object$weights, 
     contrasts = object$contrasts, 
     na.action = object$na.action,
-    call = object$call, 
     formula = object$formula, 
     terms = object$terms,
     prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit,
-    rstan_version = utils::packageVersion("rstan")
+    rstan_version = utils::packageVersion("rstan"),
+    call = object$call, 
+    # sometimes 'call' is no good (e.g. if using do.call(stan_glm, args)) so
+    # also include the name of the modeling function (for use when printing,
+    # etc.)
+    modeling_function = object$modeling_function
   )
 
   if (opt) 

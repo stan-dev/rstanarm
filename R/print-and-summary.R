@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -68,7 +68,11 @@
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
-  print(x$call)
+  cat(x$modeling_function)
+  cat("\n family: ", family_plus_link(x))
+  cat("\n formula:", formula_string(formula(x)))
+  
+  cat("\n------\n")
   cat("\nEstimates:\n")
   
   mer <- is.mer(x)
@@ -91,7 +95,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
     if (mer)
-      estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),]
+      estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
     .printfr(estimates, digits, ...)
     if (ord) {
       cat("\nCutpoints:\n")
@@ -338,24 +342,12 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     out <- object$stan_summary[mark, , drop=FALSE]
   }
   
-  fam <- family(object)
-  if (is.character(fam)) {
-    stopifnot(identical(fam, object$method))
-    fam <- paste0("ordered (", fam, ")")
-  } else if (inherits(object, "betareg")) {
-    fam <- paste0("beta (", 
-                  object$family$link, 
-                  ", link.phi=", 
-                  object$family_phi$link, 
-                  ")")
-  } else {
-    fam <- paste0(fam$family, " (", fam$link, ")") 
-  }
-  
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
-            family = fam,
+            modeling_function = object$modeling_function,
+            family = family_plus_link(object),
+            formula = formula(object),
             posterior_sample_size = posterior_sample_size(object),
             nobs = nobs(object),
             ngrps = if (mer) ngrps(object) else NULL,
@@ -372,14 +364,17 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
 print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), 
                                   ...) {
   atts <- attributes(x)
-  print(atts$call)
-  cat("\nFamily:", atts$family)
-  cat("\nAlgorithm:", atts$algorithm)
+  cat("\nModel Info:\n")
+  cat("\n function: ", atts$modeling_function)
+  cat("\n family:   ", atts$family)
+  cat("\n formula:  ", formula_string(atts$formula))
+  cat("\n algorithm:", atts$algorithm)
+  cat("\n priors:   ", "see help('prior_summary')")
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-    cat("\nPosterior sample size:", atts$posterior_sample_size)
-  cat("\nObservations:", atts$nobs)
+    cat("\n sample:   ", atts$posterior_sample_size, "(posterior sample size)")
+  cat("\n num obs:  ", atts$nobs)
   if (!is.null(atts$ngrps))
-    cat("\nGroups:", paste(names(atts$ngrps), unname(atts$ngrps), 
+    cat("\n groups:   ", paste0(names(atts$ngrps), " (", unname(atts$ngrps), ")",
                            collapse = ", "))
   
   cat("\n\nEstimates:\n")
@@ -586,5 +581,33 @@ allow_special_parnames <- function(object, pars) {
   }
   pars2 <- c(pars2, setdiff(pars, c("alpha", "beta", "varying")))
   pars2[!is.na(pars2)]
+}
+
+# Family name with link in parenthesis 
+# @param x stanreg object
+family_plus_link <- function(x) {
+  fam <- family(x)
+  if (is.character(fam)) {
+    stopifnot(identical(fam, x$method))
+    fam <- paste0("ordered [", fam, "]")
+  } else if (inherits(x, "betareg")) {
+    fam <- paste0("beta [",
+                  x$family$link,
+                  ", link.phi=",
+                  x$family_phi$link,
+                  "]")
+  } else {
+    fam <- paste0(fam$family, " [", fam$link, "]")
+  }
+  return(fam)
+}
+
+# @param formula formula object
+formula_string <- function(formula, break_and_indent = TRUE) {
+  coll <- if (break_and_indent) "--MARK--" else " "
+  char <- gsub("\\s+", " ", paste(deparse(formula), collapse = coll))
+  if (!break_and_indent)
+    return(char)
+  gsub("--MARK--", "\n\t  ", char, fixed = TRUE)
 }
 

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -484,8 +484,8 @@ stan_glm.fit <- function(x, y,
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, ...)
-      if (algorithm == "meanfield" && !QR) 
-        msg_meanfieldQR()
+      if (!QR) 
+        recommend_QR_for_vb()
     }
     check_stanfit(stanfit)
     if (QR) {
