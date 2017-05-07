@@ -459,7 +459,8 @@ ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
     fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
   ll <- do.call("cbind", ll)
   # return S * npat array by summing log-lik for y within each individual
-  res <- t(apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum)))
+  res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
+  res <- if (is.vector(res) & (args$S > 1L)) cbind(res) else t(res)
   return(res) 
 }
 
@@ -546,7 +547,8 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
       if (!ncol(loghaz) == (length(c(etimes, qtimes))))
         stop("Bug found: number of cols in loghaz matrix appears to be incorrect.")
       eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
-      ll_hazt <- t(apply(eloghaz, 1L, function(row) estatus * row))
+      ll_hazt <- apply(eloghaz, 1L, function(row) estatus * row)
+      ll_hazt <- if (length(estatus) == 1L) cbind(ll_hazt) else t(ll_hazt)
       return(ll_hazt + ll_survt)
     }
   }
