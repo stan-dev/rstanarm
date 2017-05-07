@@ -132,10 +132,6 @@
 #' @param quadnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard in the likelihood function. 
 #'   Options are 15 (the default), 11 or 7.
-#' @param subsetLong,subsetEvent Same as subset in \code{\link[stats]{glm}}.
-#'   However, if fitting a multivariate joint model and a list of data frames 
-#'   is provided in \code{dataLong} then a corresponding list of subsets 
-#'   must be provided in \code{subsetLong}.
 #' @param weights Experimental and should be used with caution. The 
 #'   user can optionally supply a 2-column data frame containing a set of
 #'   'prior weights' to be used in the estimation process. The data frame should
@@ -485,7 +481,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
-                    quadnodes = 15, subsetLong, subsetEvent, init = "model_based", 
+                    quadnodes = 15, init = "model_based", 
                     na.action = getOption("na.action", "na.omit"), weights, 
                     offset, contrasts, ...,				          
                     priorLong = normal(), priorLong_intercept = normal(), 
@@ -521,7 +517,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
-  if (missing(subsetLong))  subsetLong  <- NULL
   if (missing(dataAssoc))   dataAssoc   <- NULL 
   
   basehaz   <- match.arg(basehaz)
@@ -531,7 +526,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   formulaLong <- validate_arg(formulaLong, "formula")
   M           <- length(formulaLong)
   dataLong    <- validate_arg(dataLong,   "data.frame", null_ok = TRUE, validate_length = M)
-  subsetLong  <- validate_arg(subsetLong, "vector",     null_ok = TRUE, validate_length = M)
   assoc       <- validate_arg(assoc,      "character",  null_ok = TRUE, validate_length = M, broadcast = TRUE)
 
   # Check family and link
@@ -573,18 +567,16 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Create call for longitudinal submodel  
   y_mc <- mc
   y_mc <- strip_nms(y_mc, "Long") 
-  y_mc$formulaEvent <- y_mc$dataEvent <- y_mc$subsetEvent <- NULL
+  y_mc$formulaEvent <- y_mc$dataEvent <- NULL
 
   # Create call for each longitudinal submodel separately
   m_mc <- lapply(1:M, function(m, old_call, env) {
     new_call <- old_call
     fm     <- old_call$formula
     data   <- old_call$data
-    subset <- old_call$subset
     family <- old_call$family
     new_call$formula <- if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
     new_call$data    <- if (is(eval(data,   env), "list")) data[[m+1]]   else data
-    new_call$subset  <- if (is(eval(subset, env), "list")) subset[[m+1]] else subset
     new_call$family  <- if (is(eval(family, env), "list")) family[[m+1]] else family
     new_call
   }, old_call = y_mc, env = calling_env)
@@ -592,7 +584,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Create call for event submodel
   e_mc <- mc
   e_mc <- strip_nms(e_mc, "Event")
-  e_mc$formulaLong <- e_mc$dataLong <- e_mc$family <- e_mc$subsetLong <- NULL
+  e_mc$formulaLong <- e_mc$dataLong <- e_mc$family <- NULL
   
   # Is priorLong* already a list?
   priorLong           <- maybe_broadcast_priorarg(priorLong)
@@ -2386,8 +2378,8 @@ rolling_merge <- function(data, ids, times) {
 #   make_assoc_Xparts function)
 # @param env The environment in which to evaluate the glFormula call (note that
 #   although the formula and data have been substituted, there may be additional
-#   arugments (for example family or subset) that need to be evaluated in the 
-#   environment of the original stan_jm call).
+#   arugments (for example family) that need to be evaluated in the environment
+#   of the original stan_jm call).
 handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
                              env = parent.frame()) { 
   mc$data <- newdata
