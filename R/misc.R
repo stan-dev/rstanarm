@@ -1186,8 +1186,8 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   id_var   <- object$id_var
   time_var <- object$time_var
   newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
-  ndL <- if (!is.null(newdataLong))  newdatas[1:M]       else model.frame(object)[1:M] 
-  ndE <- if (!is.null(newdataEvent)) newdatas[["Event"]] else model.frame(object)$Event   
+  ndL <- if (!is.null(newdataLong))  newdatas[1:M]       else object$dataLong
+  ndE <- if (!is.null(newdataEvent)) newdatas[["Event"]] else object$dataEvent
   if (!is.null(ids)) {
     ndL <- subset_ids(object, ndL, ids)
     ndE <- subset_ids(object, ndE, ids)
@@ -1220,7 +1220,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (long_parts) {
     if (is.null(newdataLong)) {
       y <- lapply(1:M, function(m) {
-        mf <- model.frame(object)[[m]]
+        mf <- object$dataLong[[m]]
         rows <- which(mf[[id_var]] %in% id_list)
         get_y(object)[[m]][rows]
       })
