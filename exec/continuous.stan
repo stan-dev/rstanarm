@@ -225,7 +225,8 @@ generated quantities {
       #include "eta_add_Zb.stan"
     }
     if (has_intercept == 1) {
-      if (make_lower(family,link) == negative_infinity()) eta = eta + gamma[1];
+      if (make_lower(family,link) == negative_infinity() &&
+          make_upper(family,link) == positive_infinity()) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {
         real max_eta;
         max_eta = max(eta);
