@@ -6,6 +6,34 @@ functions {
   #include "common_functions.stan"
   #include "continuous_likelihoods.stan"
   
+  /*
+   * Calculate lower bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real lower bound
+   */
+  real make_lower(int family, int link) {
+    if (family == 1) return negative_infinity(); // Gaussian
+    if (family <= 3) { // Gamma or inverse Gaussian
+      if (link == 2) return negative_infinity(); // log
+      return 0;
+    }
+    return negative_infinity();
+  }
+
+  /*
+   * Calculate upper bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real upper bound
+   */
+  real make_upper(int family, int link) {
+    if (family == 4 && link == 5) return 0;
+    return positive_infinity();
+  }
+  
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -53,8 +81,7 @@ transformed data {
   }
 }
 parameters {
-  real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
-       upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
+  real<lower=make_lower(family, link),upper=make_upper(family,link)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> aux_unscaled; # interpretation depends on family!
   #include "parameters_betareg.stan"
@@ -198,7 +225,7 @@ generated quantities {
       #include "eta_add_Zb.stan"
     }
     if (has_intercept == 1) {
-      if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
+      if (make_lower(family,link) == negative_infinity()) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {
         real max_eta;
         max_eta = max(eta);
