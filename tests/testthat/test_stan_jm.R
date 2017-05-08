@@ -292,7 +292,7 @@ test_that("QR argument works", {
   expect_error(update(examplejm1, QR = TRUE), "not yet implemented")
 })
 
-#--------  Interactive tests
+#--------  Check parameter estimates with NULL assoc against stan_glmer and coxph
 
 if (interactive()) {
 
@@ -374,4 +374,94 @@ if (interactive()) {
   })  
   
 }
+
+#--------  Check stanjm prediction functions work with various formula specifications
+
+if (interactive()) {
+  
+f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
+              dataLong = pbcLong,
+              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+              dataEvent = pbcSurv,
+              time_var = "year",
+              # this next line is only to keep the example small in size!
+              chains = 1, cores = 1, seed = 12345, iter = 10)
+
+f2 <- stan_jm(formulaLong = exp(logBili) ~ year + (1 | id), 
+              dataLong = pbcLong,
+              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+              dataEvent = pbcSurv,
+              time_var = "year",
+              # this next line is only to keep the example small in size!
+              chains = 1, cores = 1, seed = 12345, iter = 10)
+
+f3 <- stan_jm(formulaLong = logBili ~ poly(year, degree = 2) + (1 | id), 
+              dataLong = pbcLong,
+              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+              dataEvent = pbcSurv,
+              time_var = "year",
+              # this next line is only to keep the example small in size!
+              chains = 1, cores = 1, seed = 12345, iter = 10)
+
+f4 <- stan_jm(formulaLong = exp(logBili) ~ poly(year, degree = 2) + (1 | id), 
+              dataLong = pbcLong,
+              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+              dataEvent = pbcSurv,
+              time_var = "year",
+              # this next line is only to keep the example small in size!
+              chains = 1, cores = 1, seed = 12345, iter = 10)
+
+pbcLong$trials <- rpois(nrow(pbcLong), 6)
+pbcLong$succ <- rbinom(nrow(pbcLong), pbcLong$trials, .7)
+pbcLong$fail <- pbcLong$trials - pbcLong$succ
+f5 <- stan_jm(formulaLong = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
+              dataLong = pbcLong,
+              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+              dataEvent = pbcSurv,
+              time_var = "year", family = binomial,
+              # this next line is only to keep the example small in size!
+              chains = 1, cores = 1, seed = 12345, iter = 10, init = 0)
+
+for (j in 1:4) {
+  mod <- get(paste0("f", j))
+  
+  test_that("log_lik works with estimation data", {
+    expect_output(ll <- log_lik(mod))
+  })
+  test_that("posterior_survfit works with estimation data", {
+    expect_output(ps <- posterior_survfit(mod))
+  })
+  test_that("posterior_predict works with estimation data", {
+    expect_output(pp <- posterior_predict(mod, m = 1))
+  }) 
+  
+  ndL <- pbcLong[pbcLong$id == 2,]
+  ndE <- pbcSurv[pbcSurv$id == 2,]
+  test_that("log_lik works with new data (one individual)", {
+    expect_output(ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE))
+  })
+  test_that("posterior_survfit works with new data (one individual)", {
+    expect_output(ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE))
+  })  
+    test_that("posterior_predict works with new data (one individual)", {
+      expect_output(pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE))
+  })  
+    
+  ndL <- pbcLong[pbcLong$id %in% c(1,2),]
+  ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
+  test_that("log_lik works with new data (multiple individuals)", {
+    expect_output(ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE))
+  })
+  test_that("posterior_survfit works with new data (multiple individuals)", {
+    expect_output(ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE))
+  })
+  test_that("posterior_predict works with new data (multiple individuals)", {
+    expect_output(pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE))
+  })
+  
+}
+
+}
+
+
 
