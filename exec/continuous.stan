@@ -244,10 +244,10 @@ generated quantities {
     }
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
-      if (aux <= 0) mean_PPD = 0.5 * N;
-      else for (n in 1:N) {
+      for (n in 1:N) {
         real eta_n = eta[n];
-        if (eta_n >= 1) mean_PPD = mean_PPD + 1;
+        if (aux <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
+        else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
         else if (eta_n > 0)
           mean_PPD = mean_PPD + beta_rng(eta[n] * aux, (1 - eta[n]) * aux);
       }
@@ -258,7 +258,7 @@ generated quantities {
       for (n in 1:N) {
         real eta_n = eta[n];
         real aux_n = eta_z[n];
-        if (aux_n <= 0) mean_PPD = mean_PPD + 0.5;
+        if (aux_n <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
         else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
         else if (eta_n > 0)
           mean_PPD = mean_PPD + beta_rng(eta_n * aux_n, (1 - eta_n) * aux_n);
