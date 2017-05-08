@@ -511,22 +511,21 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     stop("QR decomposition not yet implemented for stan_jm")
   if (sparse)
     stop("'sparse' option is not yet implemented for stan_jm")
-  #  if (algorithm %in% c("meanfield", "fullrank"))
-  #    stop ("Meanfield and fullrank algorithms not yet implemented for stan_jm")
   if (missing(offset))      offset      <- NULL 
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
   if (missing(dataAssoc))   dataAssoc   <- NULL 
   
+  # Validate arguments
   basehaz   <- match.arg(basehaz)
   algorithm <- match.arg(algorithm)
-  
-  # Validate arguments
   formulaLong <- validate_arg(formulaLong, "formula")
   M           <- length(formulaLong)
-  dataLong    <- validate_arg(dataLong,   "data.frame", null_ok = TRUE, validate_length = M)
-  assoc       <- validate_arg(assoc,      "character",  null_ok = TRUE, validate_length = M, broadcast = TRUE)
+  dataLong    <- validate_arg(dataLong, "data.frame", null_ok = TRUE, 
+                              validate_length = M, broadcast = TRUE)
+  assoc       <- validate_arg(assoc, "character", null_ok = TRUE, 
+                              validate_length = M, broadcast = TRUE)
 
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
@@ -556,11 +555,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     mc$df <- mc$knots <- mc$quadnodes <- NULL
   mc$priorLong <- mc$priorLong_intercept <- mc$priorLong_aux <-
     mc$priorEvent <- mc$priorEvent_intercept <- mc$priorEvent_aux <-
-    mc$priorAssoc <- mc$prior_covariance <-
-    mc$prior_PD <- mc$algorithm <- mc$scale <- 
-    mc$concentration <- mc$shape <- mc$init <- 
-    mc$adapt_delta <- mc$max_treedepth <- 
-    mc$... <- mc$QR <- NULL
+    mc$priorAssoc <- mc$prior_covariance <-  mc$prior_PD <- mc$algorithm <- 
+    mc$scale <- mc$concentration <- mc$shape <- mc$init <- mc$adapt_delta <- 
+    mc$max_treedepth <- mc$... <- mc$QR <- NULL
   mc$weights <- NULL 
   mc$long_lp <- mc$event_lp <- NULL
 
@@ -670,7 +667,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, y_mod_stuff, SIMPLIFY = FALSE, 
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff, 
+                        SIMPLIFY = FALSE, 
                         MoreArgs = list(id_list         = e_mod_stuff$flist, 
                                         times           = e_mod_stuff$quadtimes, 
                                         assoc           = assoc, 
@@ -1446,7 +1444,7 @@ use_these_vars <- function(mod, oldvars, newvars) {
   if (!identical(oldvars, newvars)) {
     for (j in 1:length(oldvars))
       fm <- gsub(oldvars[[j]], newvars[[j]], fm, fixed = TRUE)    
-    fm <- reformulate(fm[[3]], response = fm[[2]])
+    fm <- reformulate(fm[[3]], response = formula(mod)[[2]])
   }
   fm
 }
@@ -2143,34 +2141,28 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc, 
+handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc, 
                             id_var, time_var, eps, auc_quadnodes, 
                             dataAssoc = NULL, env = parent.frame()) {
   
-  # Update longitudinal call to include time variable in formula
-  mc_stored  <- mc
-  mc[[1]]    <- quote(lme4::glFormula)
-  mc$formula <- do.call(update.formula, 
-                        list(eval(mc$formula, env), paste0("~ . +", time_var)))
-  mc$control <- get_control_args(glmer = !y_mod_stuff$is_lmer, 
-                                 norank = TRUE)
-
-  # Obtain a model frame with time variable definitely included
-  fr <- eval(mc, envir = env)$fr
-  mf <- data.table::data.table(fr, key = c(id_var, time_var)) # create data.table
+  # Obtain a model frame defined as a data.table
+  rows <- rownames(model.frame(y_mod_stuff$mod))
+  df   <- dataLong[rows,]
+  mf   <- data.table::data.table(df, key = c(id_var, time_var))
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
-  # Revert to original formula, and update to reflect predvars (for 
-  # example if an individual used data depend predictor variables such
-  # as splines with knot points based on quantiles of the original data)
-  mc$formula <- mc_stored$formula
-  mc$formula <- use_these_vars(y_mod_stuff$mod, 
-                               c(y_mod_stuff$vars$formvars$fixed[-1], y_mod_stuff$vars$formvars$random[-1]), 
-                               c(y_mod_stuff$vars$predvars$fixed[-1], y_mod_stuff$vars$predvars$random[-1]))
-  mc$control <- mc_stored$control # revert to original control args    
-  
+  # Update longitudinal submodel formula to reflect predvars (e.g. if the user
+  # specified data dependent predictor variables such as splines with knot 
+  # points based on quantiles of the original data)
+  ff <- y_mod_stuff$vars$formvars$fixed [-1]
+  fr <- y_mod_stuff$vars$formvars$random[-1]
+  pf <- y_mod_stuff$vars$predvars$fixed [-1]
+  pr <- y_mod_stuff$vars$predvars$random[-1]
+  mc$formula <- use_these_vars(y_mod_stuff$mod, c(ff, fr), c(pf, pr))
+
   # Design matrices for calculating eta, eps, lag, auc and data interactions
   # in association structure
+  mc[[1]] <- quote(lme4::glFormula)
   parts <- make_assoc_parts(newdata = mf, assoc = assoc, m = m, id_var = id_var, 
                             time_var = time_var, id_list = id_list, times = times, 
                             eps = eps, auc_quadnodes = auc_quadnodes,
@@ -2200,7 +2192,6 @@ handle_assocmod <- function(m, mc, y_mod_stuff, id_list, times, assoc,
   } else b_mat <- NULL
   
   parts$b_mat <- b_mat
-  parts$model_frame <- fr
   return(parts)
 }
 
@@ -2383,9 +2374,6 @@ rolling_merge <- function(data, ids, times) {
 handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
                              env = parent.frame()) { 
   mc$data <- newdata
-  # remove response, since not required for building model matrices
-  mc$formula[[2L]] <- NULL  
-  mc$control$checkControl$check.formula.LHS <- "ignore"
   mod    <- eval(mc, env)
   x      <- as.matrix(mod$X)
   xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
@@ -3177,7 +3165,7 @@ validate_arg <- function(arg, type, null_ok = FALSE,
   }
   if (!is.null(validate_length)) {
     if (length(arg) == 1L && validate_length > 1) {
-      arg <- if (broadcast) rep(arg, times = validate_length) else obj
+      arg <- if (broadcast) rep(arg, times = validate_length) else arg
     } else if (!length(arg) == validate_length) {
       stop(paste0(arg, " is a list of the incorrect length."))
     }
