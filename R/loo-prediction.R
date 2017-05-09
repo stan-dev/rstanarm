@@ -6,6 +6,7 @@
 #' @export
 #' @aliases loo_predict loo_linpred loo_predictive_interval
 #' 
+#' @template reference-loo
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param lw An optional matrix of (smoothed) log-weights. If \code{lw} is 
