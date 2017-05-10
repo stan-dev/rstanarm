@@ -1161,6 +1161,26 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
   nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
 }
 
+# Return a data frame for each submodel that:
+# (1) only includes variables used in the model formula
+# (2) only includes rows contained in the actual glmod/coxmod model frames
+# (3) ensures the ID variable is included in every model frame
+#
+# @param object A stanjm object
+# @param m Integer specifying which submodel
+get_model_data <- function(object, m = NULL) {
+  validate_stanjm_object(object)
+  forms <- formula(object)
+  RHS <- paste(deparse(forms$Event[[3L]]), "+", object$id_var)
+  forms$Event <- reformulate(RHS, response = forms$Event[[2L]])
+  datas <- c(object$dataLong, list(object$dataEvent))
+  row_nms <- lapply(model.frame(object), rownames)
+  mfs <- mapply(function(w, x, y) {
+    get_all_vars(w, x)[y, , drop = FALSE]
+  }, w = forms, x = datas, y = row_nms, SIMPLIFY = FALSE)
+  if (is.null(m)) return(mfs) else return(mfs[[m]])
+}
+
 # Return design matrices for calculating linear predictor or
 # log-likelihood of longitudinal or event submodels
 #
@@ -1185,9 +1205,12 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   M <- get_M(object)
   id_var   <- object$id_var
   time_var <- object$time_var
-  newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
-  ndL <- if (!is.null(newdataLong))  newdatas[1:M]       else object$dataLong
-  ndE <- if (!is.null(newdataEvent)) newdatas[["Event"]] else object$dataEvent
+  if (!is.null(newdataLong) || !is.null(newdataEvent))
+    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+  ndL <- if (is.null(newdataLong)) 
+    get_model_data(object)[1:M] else newdatas[1:M]
+  ndE <- if (is.null(newdataEvent)) 
+    get_model_data(object)[["Event"]] else newdatas[["Event"]]   
   if (!is.null(ids)) {
     ndL <- subset_ids(object, ndL, ids)
     ndE <- subset_ids(object, ndE, ids)
@@ -1218,17 +1241,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
              "are later than the event time specified in the 'etimes' argument.")      
     }) 
   if (long_parts) {
-    if (is.null(newdataLong)) {
-      y <- lapply(1:M, function(m) {
-        mf <- object$dataLong[[m]]
-        rows <- which(mf[[id_var]] %in% id_list)
-        get_y(object)[[m]][rows]
-      })
-    } else {
-      y <- lapply(1:M, function(m) {
-        eval(formula(object, m = m)[[2L]], ndL[[m]])
-      })
-    }
+    y <- lapply(1:M, function(m) eval(formula(object, m = m)[[2L]], ndL[[m]]))
     ydat <- lapply(1:M, function(m) pp_data(object, ndL[[m]], m = m))
     yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
@@ -1241,12 +1254,13 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     qq <- get_quadpoints(qnodes)
     qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
     qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
-    edat <- prepare_data_table(ndE, id_var, time_var)
+    starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
+    edat <- prepare_data_table(ndE, id_var, time_var = starttime)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
     edat <- rolling_merge(edat, ids = rep(id_list, qnodes + 1), times = times)
     eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")       
     assoc_parts <- lapply(1:M, function(m) {
-      ymf <- prepare_data_table(ndL[[m]], id_var, time_var)
+      ymf <- prepare_data_table(ndL[[m]], id_var, time_var = time_var)
       make_assoc_parts(
         ymf, assoc = object$assoc, id_var = object$id_var, 
         time_var = object$time_var, id_list = id_list, times = times, 

@@ -380,7 +380,7 @@ family.stanjm <- function(object, m = NULL, ...) {
 model.frame.stanjm <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanjm(formula)) {
     M <- formula$n_markers
-    fr <- formula$fr
+    fr <- lapply(formula$glmod, model.frame)
     if (fixed.only) {
       fr <- lapply(seq(M), function(i) {
         ff <- formula(formula, fixed.only = TRUE, m = i)
@@ -388,6 +388,7 @@ model.frame.stanjm <- function(formula, fixed.only = FALSE, m = NULL, ...) {
         fr[[i]][vars]
       })
     }
+    fr$Event <- model.frame(formula$coxmod)
     if (is.null(m)) return(list_nms(fr, M)) else return(fr[[m]])
   } 
   NextMethod("model.frame")

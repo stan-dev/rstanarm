@@ -35,6 +35,9 @@ FIXEF_tol <- 0.02
 RANEF_tol <- 0.05
 EVENT_tol <- 0.05
 
+expect_matrix  <- function(x) expect_identical(class(x), "matrix")
+expect_survfit <- function(x) expect_s3_class(x, "survfit.stanjm")
+expect_ppd     <- function(x) expect_s3_class(x, "ppd")
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 SW <- function(expr) capture.output(suppressWarnings(expr))
 
@@ -426,37 +429,46 @@ for (j in 1:4) {
   mod <- get(paste0("f", j))
   
   test_that("log_lik works with estimation data", {
-    expect_output(ll <- log_lik(mod))
+    ll <- log_lik(mod)
+    expect_matrix(ll)
   })
   test_that("posterior_survfit works with estimation data", {
-    expect_output(ps <- posterior_survfit(mod))
+    ps <- posterior_survfit(mod)
+    expect_survfit(ps)
   })
   test_that("posterior_predict works with estimation data", {
-    expect_output(pp <- posterior_predict(mod, m = 1))
+    pp <- posterior_predict(mod, m = 1)
+    expect_ppd(pp)
   }) 
   
   ndL <- pbcLong[pbcLong$id == 2,]
   ndE <- pbcSurv[pbcSurv$id == 2,]
   test_that("log_lik works with new data (one individual)", {
-    expect_output(ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE))
+    ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+    expect_matrix(ll)
   })
   test_that("posterior_survfit works with new data (one individual)", {
-    expect_output(ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE))
+    ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+    expect_survfit(ps)
   })  
-    test_that("posterior_predict works with new data (one individual)", {
-      expect_output(pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE))
+  test_that("posterior_predict works with new data (one individual)", {
+    pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+    expect_ppd(pp)
   })  
-    
+  
   ndL <- pbcLong[pbcLong$id %in% c(1,2),]
   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
   test_that("log_lik works with new data (multiple individuals)", {
-    expect_output(ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE))
+    ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+    expect_matrix(ll)
   })
   test_that("posterior_survfit works with new data (multiple individuals)", {
-    expect_output(ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE))
+    ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+    expect_survfit(ps)
   })
   test_that("posterior_predict works with new data (multiple individuals)", {
-    expect_output(pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE))
+    pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+    expect_ppd(pp)
   })
   
 }
