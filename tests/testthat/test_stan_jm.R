@@ -359,7 +359,7 @@ if (interactive()) {
   pbcLong$ybino_prop      <- pbcLong$ybino_successes / pbcLong$ybino_trials
   pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
   pbcLong$ypois <- as.integer(pbcLong$albumin)
-  pbcLong$ygamm <- as.integer(pbcLong$platelet)
+  pbcLong$ygamm <- as.integer(1 + (2 * pbcLong$platelet / 100))
   pbcLong$xbern <- as.numeric(pbcLong$platelet / 100)
   pbcLong$xpois <- as.numeric(pbcLong$platelet / 100)
   pbcLong$xgamm <- as.numeric(pbcLong$logBili)
@@ -376,10 +376,10 @@ if (interactive()) {
     compare_glmer(ypois ~ year + xpois + (1 | id), poisson)})
   test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
     compare_glmer(ypois ~ year + xpois + (1 | id), neg_binomial_2)})
-  #test_that("coefs same for stan_jm and stan_glmer, Gamma", {
-    #compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma)})
-  #test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
-    #compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})
+  test_that("coefs same for stan_jm and stan_glmer, Gamma", {
+    compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma)})
+  test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
+    compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})
 
   test_that("coefs same for stan_jm and stan_glmer, binomial as prop as outcome and trials as weights", {
     jm_weights <- data.frame(id = pbcLong$id, weights = pbcLong$ybino_trials)

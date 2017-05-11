@@ -124,6 +124,7 @@ stanjm <- function(object) {
     assocmod_stuff    = object$a_mod_stuff,    
     glmod             = fetch(object$y_mod_stuff, "mod"),
     coxmod            = object$e_mod_stuff$mod,
+    modeling_function = object$modeling_function,
     stan_summary, stanfit
   )
   

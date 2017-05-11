@@ -159,11 +159,19 @@ print.stanreg <- function(x, digits = 1, ...) {
 #' @export
 #' @method print stanjm
 print.stanjm <- function(x, digits = 3, ...) {
-  print(x$call) 
-  
   M <- x$n_markers
-  link    <- sapply(1:M, function(m) x$family[[m]]$link)
-  
+  jmtype <- paste0(if (M == 1) "uni" else "multi", "variate joint model")
+  stubs <- paste0("(Long", 1:M, "):")
+  cat(x$modeling_function, jmtype)
+  for (m in 1:M) {
+    cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
+    cat("\n family ", stubs[m], family_plus_link(x, m = m))
+  }
+  cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
+  cat("\n baseline hazard:", x$basehaz$type_name) 
+  cat("\n------\n")
+
+  link <- sapply(1:M, function(m) x$family[[m]]$link)
   mat <- as.matrix(x$stanfit)
   nms <- collect_nms(rownames(x$stan_summary), M, value = TRUE)
   
@@ -208,10 +216,20 @@ print.stanjm <- function(x, digits = 3, ...) {
   .printfr(estimates, digits, ...)
   
   # Estimates table for group-level random effects
-  cat("\nGroup-level random effects:\n") 
+  cat("\nGroup-level error terms:\n") 
   print(VarCorr(x), digits = digits + 1, ...)
   cat("Num. levels:", paste(names(ngrps(x)), unname(ngrps(x)), 
                             collapse = ", "), "\n")  
+ 
+  # Sample average of the PPD
+  ppd_mat <- mat[, nms$ppd, drop = FALSE]
+  ppd_estimates <- .median_and_madsd(ppd_mat)
+  cat("\nSample avg. posterior predictive distribution \nof longitudinal",
+      "outcomes:\n")
+  .printfr(ppd_estimates, digits, ...)
+  
+  cat("\n------\n")
+  cat("For info on the priors used see help('prior_summary.stanreg').")
   
   invisible(x)
 }
@@ -585,8 +603,9 @@ allow_special_parnames <- function(object, pars) {
 
 # Family name with link in parenthesis 
 # @param x stanreg object
-family_plus_link <- function(x) {
-  fam <- family(x)
+# @param ... Optionally include m to specify which submodel for stanjm models
+family_plus_link <- function(x, ...) {
+  fam <- family(x, ...)
   if (is.character(fam)) {
     stopifnot(identical(fam, x$method))
     fam <- paste0("ordered [", fam, "]")

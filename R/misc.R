@@ -875,13 +875,14 @@ get_m_stub <- function(m) {
 #   to parameters from the M longitudinal submodels, the event submodel
 #   or association parameters.
 collect_nms <- function(x, M, ...) {
+  ppd <- grep("^Long.{1}\\|mean_PPD", x, ...)      
   y <- lapply(1:M, function(m) grep(mod2rx(m), x, ...))
   y_extra <- lapply(1:M, function(m) 
     c(grep(paste0("^Long", m, "\\|sigma"), x, ...),
       grep(paste0("^Long", m, "\\|shape"), x, ...),
       grep(paste0("^Long", m, "\\|lambda"), x, ...),
       grep(paste0("^Long", m, "\\|reciprocal_dispersion"), x, ...)))             
-  y <- lapply(1:M, function(m) setdiff(y[[m]], y_extra[[m]]))
+  y <- lapply(1:M, function(m) setdiff(y[[m]], c(y_extra[[m]], ppd[m])))
   e <- grep(mod2rx("^Event"), x, ...)     
   e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
   e <- setdiff(e, e_extra)
@@ -890,7 +891,7 @@ collect_nms <- function(x, M, ...) {
   y_b <- lapply(1:M, function(m) b_names_M(x, m, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
-  nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta) 
+  nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta, ppd) 
 }
 
 # Grep for "b" parameters (ranef), can optionally be specified

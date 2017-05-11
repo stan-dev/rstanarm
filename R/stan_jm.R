@@ -1149,7 +1149,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
             if (standata$q) "b",
             if (standata$sum_has_aux) "aux",
             if (length(standata$basehaz_X)) "e_aux",
-            if (standata$len_theta_L) "theta_L")
+            if (standata$len_theta_L) "theta_L",
+            "mean_PPD")
             
   cat(paste0(if (M == 1L) "Uni" else "Multi", "variate joint model specified\n"))
   if (algorithm == "sampling") {
@@ -1257,6 +1258,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                  y_aux_nms,
                  e_aux_nms,
                  if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
+                 paste0("Long", 1:M, "|mean_PPD"), 
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   
@@ -1277,7 +1279,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                d = e_mod_stuff$d, eventtime = e_mod_stuff$eventtime,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
-               standata = NULL, terms = NULL, prior.info = prior_info)
+               standata = NULL, terms = NULL, prior.info = prior_info,
+               modeling_function = "stan_jm")
   out <- stanjm(fit)
   
   return(out)
