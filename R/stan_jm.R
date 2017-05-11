@@ -604,9 +604,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   cnms_nms <- names(cnms)
   
   # Additional error checks
-  id_var <- check_id_var (id_var, fetch(y_mod_stuff, "cnms"))
+  id_var <- check_id_var(id_var, fetch(y_mod_stuff, "cnms"), fetch(y_mod_stuff, "flist"))
   unique_id_list <- check_id_list(id_var, fetch(y_mod_stuff, "flist"))
-  
+    
   # Construct prior weights
   has_weights <- (!is.null(weights))
   if (has_weights) check_arg_weights(weights, id_var)
@@ -1476,10 +1476,11 @@ use_predvars <- function(mod) {
 # @param id_var The character string that the user specified for the id_var
 #   argument -- will have been set to NULL if the argument was missing.
 # @param y_cnms A list of length M with the cnms for each longitudinal submodel
+# @param y_flist A list of length M with the flist for each longitudinal submodel
 # @return Returns the character string corresponding to the appropriate id_var.
 #   This will either be the user specified id_var argument or the only grouping
 #   factor.
-check_id_var <- function(id_var, y_cnms) {
+check_id_var <- function(id_var, y_cnms, y_flist) {
   len_cnms <- sapply(y_cnms, length)
   if (any(len_cnms > 1L)) {  # more than one grouping factor
     if (is.null(id_var)) {
@@ -1489,8 +1490,26 @@ check_id_var <- function(id_var, y_cnms) {
       lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
         stop("'id_var' must be included as a grouping factor in each ",
              "of the longitudinal submodels", call. = FALSE)) 
+      mapply(function(cnms, flist, id_var) { # loop over submodels
+        # If there is more than one grouping factor, then make sure that the id_var 
+        # is the lowest level of clustering, by checking that the observations for 
+        # a given individual don't have more than one level for each other grouping
+        # factor included in the model
+        nms <- grep(id_var, names(cnms), value = TRUE, invert = TRUE)
+        if (length(nms)) { # submodel has additional grouping factors
+          lapply(nms, function(x) { # loop over additional grouping factors
+            # within each ID, count the number of levels for the additional grouping factor 
+            tally <- tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y)))
+            # within each ID, ensure max of 1 level for each other grouping factor
+            if (!all(tally == 1L))
+              stop("The 'id_var' must correspond to the lowest level of clustering. ",
+                   "Yet for some levels of '", id_var, "' there appears to be more ",
+                   "than one level for '", x, "'.", call. = FALSE)
+          }) 
+        }
+      }, cnms = y_cnms, flist = y_flist, MoreArgs = list(id_var = id_var))    
       return(id_var)
-    }      
+    }
   } else {  # only one grouping factor (assumed to be subject ID)
     only_cnm <- unique(sapply(y_cnms, names))
     if (length(only_cnm) > 1L)
