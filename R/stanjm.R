@@ -61,20 +61,6 @@ stanjm <- function(object) {
     stanmat <- as.matrix(stanfit)[, c(nms$alpha, nms$beta), drop = FALSE]
     covmat <- cov(stanmat)
   }
-  
-  # Linear predictor, fitted values
-  #y_eta <- lapply(1:M, function(m) linear_predictor.default(y_coefs[[m]], object$x[[m]], object$offset))
-  #y_mu  <- lapply(1:M, function(m) object$family[[m]]$linkinv(y_eta[[m]]))
-
-  # Residuals
-  #y_tmp <- lapply(1:M, function(m) if (is.factor(object$y[[m]])) fac2bin(object$y[[m]]) else object$y[[m]])
-  #y_residuals <- lapply(1:M, function(m) y_tmp[[m]] - y_mu[[m]])
-
-  # Observation labels
-  #y_nms      <- lapply(object$y, names)
-  #for (m in 1:M) {
-  #  names(y_eta[[m]]) <- names(y_mu[[m]]) <- names(y_residuals[[m]]) <- y_nms[[m]]
-  #}
 
   # Remove padding
   y_coefs <- lapply(y_coefs, unpad_reTrms.default)
@@ -87,9 +73,6 @@ stanjm <- function(object) {
   out <- nlist(
     coefficients      = list_nms(c(y_coefs, list(e_coefs)), M), 
     ses               = list_nms(c(y_ses, list(e_ses)), M),
-    #fitted.values     = list_nms(y_mu, M),
-    #linear.predictors = list_nms(y_eta, M),
-    #residuals         = list_nms(y_residuals, M), 
     covmat            = covmat,
     n_events          = sum(object$d > 0),
     n_markers         = object$M,
