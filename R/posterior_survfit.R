@@ -260,8 +260,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
     stop("Both newdataLong and newdataEvent must be supplied together.")
   if (is.null(newdataLong)) { # user did not specify newdata
-    ndL <- model.frame(object)[1:M]
-    ndE <- model.frame(object)$Event
+    dats <- get_model_data(object)
+    ndL <- dats[1:M]
+    ndE <- dats[["Event"]]
   } else { # user specified newdata
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
     ndL <- newdatas[1:M]
@@ -731,35 +732,15 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
 # @return A data.table (which will be used in a rolling merge against the
 #   event times and/or quadrature times)
 prepare_data_table <- function(data, id_var, time_var) {
-  if (survival::is.Surv(data[[1]])) { # event submodel model.frame from fitted JM
-    # If the design matrix is for the event submodel and data is model.frame obtained 
-    # from the fitted model (ie, not supplied by the user) then the time point
-    # for merging on covariate values is taken to be either:
-    # (i) the unique observation time (single row per individual surv data), or 
-    # (ii) "start" of the start/stop interval (multiple row per individual surv data)
-    resp_type <- attr(data[[1]], "type")
-    data <- cbind(unclass(data[[1]]), data[,-1])
-    if (resp_type == "right") { # single row data
-      data <- data.table::data.table(data, key = c(id_var, "time"))
-      data[["time"]] <- as.numeric(data[["time"]])
-    } else if (resp_type == "counting") { # start/stop multiple row data
-      data <- data.table::data.table(data, key = c(id_var, "start"))
-      data[["start"]] <- as.numeric(data[["start"]])
-    } else {
-      stop("Bug found: 'data' arg appears to be the model.frame from the fitted model, ",
-           "but cannot find an appropriate time variable in the Surv(.) response.")
-    }
-  } else { # user provided new data, or the data is for the long. submodel
-    # Alternatively, the user provided the new data for the event submodel 
-    # which must be single row per individual (since multiple row per individual
-    # data is not allowed by posterior_survfit), or, the data is for a 
-    # longitudinal submodel. In either case, the time_var variable is used
-    # for merging on covariate values -- if time_var doesn't already exist in
-    # the single row per individual data then we create a dud time_var variable.
-    if (!time_var %in% colnames(data)) 
-      data[[time_var]] <- rep(0.0, nrow(data))  
-    data <- data.table::data.table(data, key = c(id_var, time_var))
-  }
+  if (!is.data.frame(data))
+    stop("'data' should be a data frame.")
+  if (!id_var %in% colnames(data))
+    STOP_no_var(id_var)
+  if (!time_var %in% colnames(data))
+    STOP_no_var(time_var)
+  # ensure no rounding in data.table merge 
+  data[[time_var]] <- as.numeric(data[[time_var]]) 
+  data <- data.table::data.table(data, key = c(id_var, time_var))
   return(data)
 }
 

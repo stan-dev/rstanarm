@@ -194,14 +194,21 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   
   # Construct prediction data, NB data == observed data to return to user
   newdata <- validate_newdata(newdata)
-  data <- if (is.null(newdata)) model.frame(object)[[m]] else newdata
-  if (!id_var   %in% names(data)) STOP_no_var(id_var)
-  if (!time_var %in% names(data)) STOP_no_var(time_var)
+  if (is.null(newdata)) {
+    rows <- rownames(model.frame(object, m = m))
+    data <- object$dataLong[[m]][rows, , drop = FALSE] 
+  } else {
+    data <- newdata  
+  }
+  if (!id_var %in% names(data)) 
+    STOP_no_var(id_var)
+  if (!time_var %in% names(data)) 
+    STOP_no_var(time_var)
   if (!is.null(ids)) # user specified a subset of ids
     data <- subset_ids(object, data, ids)
-  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   if (!is.null(newdata)) # warn if newdata ids are from fit
-    newpats <- check_pp_ids(object, id_list, m = m) # newpats not actually used
+    check_pp_ids(object, id_list, m = m)
+  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata
@@ -217,7 +224,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   }
   
   newX <- data # design matrix used for predictions
-  if (interpolate || extrapolate) {  # user specified interpolation or extrapolation
+  if (interpolate || extrapolate) { # user specified interpolation or extrapolation
     if (return_matrix) 
       stop("'return_matrix' cannot be TRUE if 'interpolate' or 'extrapolate' is TRUE.")
     ok_control_args <- c("ipoints", "epoints", "edist", "eprop")
@@ -244,15 +251,15 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     mutilde <- t(mutilde)
   ytilde_bounds  <- median_and_bounds(ytilde,  prob) # median and prob% CrI limits
   mutilde_bounds <- median_and_bounds(mutilde, prob) # median and prob% CrI limits
-  
-  Terms <- terms(model.frame(object)[[m]])
-  y_var <- rownames(attr(Terms, "factors"))[attr(Terms, "response")]
-  xvars <- rownames(attr(Terms, "factors"))[-attr(Terms, "response")]
-  ret_dat <- if (length(xvars)) as.data.frame(newX)[, xvars, drop = FALSE] else NULL
-  out <- data.frame(cbind(ret_dat, yfit = mutilde_bounds$med, 
-                          ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub, 
-                          pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub))
+  out <- data.frame(IDVAR = newX[[id_var]], TIMEVAR = newX[[time_var]], 
+                    yfit = mutilde_bounds$med,
+                    ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
+                    pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
+  colnames(out) <- c(id_var, time_var, "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
   class(out) <- c("predict.stanjm", "data.frame")
+  Terms <- terms(formula(object, m = m))
+  vars  <- rownames(attr(Terms, "factors"))
+  y_var <- vars[[attr(Terms, "response")]]
   structure(out, observed_data = data, last_time = last_time,
             y_var = y_var, id_var = id_var, time_var = time_var,
             interpolate = interpolate, extrapolate = extrapolate, 
@@ -379,10 +386,6 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
   plot_dat$time <- plot_dat[[time_var]]
   plot_dat$id <- plot_dat[[id_var]]
   
-  obs_dat$y <- obs_dat[[y_var]]
-  obs_dat$time <- obs_dat[[time_var]]
-  obs_dat$id <- obs_dat[[id_var]]
-  
   geom_defaults <- list(color = "black", method = "loess", se = FALSE)
   geom_args <- set_geom_args(geom_defaults, ...)
   
@@ -440,6 +443,16 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
     } else graph_limits <- NULL
   }    
   if (plot_observed) {
+    if (y_var %in% colnames(obs_dat)) {
+      obs_dat$y <- obs_dat[[y_var]]
+    } else {
+      obs_dat$y <- try(eval(parse(text = y_var), obs_dat))
+      if (inherits(obs_dat$y, "try-error"))
+        stop("Could not find ", y_var, "in observed data, nor able to parse ",
+             y_var, "as an expression.")
+    }
+    obs_dat$time <- obs_dat[[time_var]]
+    obs_dat$id <- obs_dat[[id_var]]    
     if (is.null(obs_dat[["y"]]))
       stop("Cannot find observed outcome data to add to plot.")
     obs_mapp <- list(mapping = aes_string(x = "time", y = "y"), 
