@@ -584,9 +584,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   e_mc$formulaLong <- e_mc$dataLong <- e_mc$family <- NULL
   
   # Is priorLong* already a list?
-  priorLong           <- maybe_broadcast_priorarg(priorLong)
-  priorLong_intercept <- maybe_broadcast_priorarg(priorLong_intercept)
-  priorLong_aux       <- maybe_broadcast_priorarg(priorLong_aux)
+  priorLong           <- maybe_broadcast_priorarg(priorLong, M)
+  priorLong_intercept <- maybe_broadcast_priorarg(priorLong_intercept, M)
+  priorLong_aux       <- maybe_broadcast_priorarg(priorLong_aux, M)
     
   #--------------------------------
   # Data for longitudinal submodel
