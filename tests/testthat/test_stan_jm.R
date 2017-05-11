@@ -124,6 +124,7 @@ test_that("family argument works", {
 test_that("assoc argument works", {
   
   # Univariate joint models
+  
   expect_output(ret <- update(examplejm2, assoc = NULL))
   expect_output(ret <- update(examplejm2, assoc = "null"))
   expect_output(ret <- update(examplejm2, assoc = "etavalue"))
@@ -134,7 +135,7 @@ test_that("assoc argument works", {
   expect_output(ret <- update(examplejm2, assoc = c("etavalue", "muslope"))) 
   expect_output(ret <- update(examplejm2, assoc = c("muvalue", "etaslope"))) 
   expect_output(ret <- update(examplejm2, assoc = c("muvalue", "muslope")))
-  
+ 
   expect_error(ret <- update(examplejm2, assoc = c("etavalue", "muvalue")), "cannot be specified together")
   expect_error(ret <- update(examplejm2, assoc = c("etaslope", "muslope")), "cannot be specified together")
   
@@ -173,9 +174,9 @@ test_that("assoc argument works", {
   expect_error(ret <- update(examplejm2, assoc = c("wrong")), "unsupported association type") 
   expect_error(ret <- update(examplejm2, assoc = list("wrong")), "unsupported association type") 
   
-  expect_error(ret <- update(examplejm2, assoc = list(NULL, NULL)), "length equal to the number of") 
-  expect_error(ret <- update(examplejm2, assoc = list("etavalue", "etavalue")), "length equal to the number of") 
-  expect_error(ret <- update(examplejm2, assoc = list(c("etavalue", "etaslope"), "etavalue")), "length equal to the number of") 
+  expect_error(ret <- update(examplejm2, assoc = list(NULL, NULL)), "incorrect length") 
+  expect_error(ret <- update(examplejm2, assoc = list("etavalue", "etavalue")), "incorrect length") 
+  expect_error(ret <- update(examplejm2, assoc = list(c("etavalue", "etaslope"), "etavalue")), "incorrect length") 
   
   # Multivariate joint models
   
@@ -195,9 +196,8 @@ test_that("assoc argument works", {
   expect_output(ret <- update(examplejm3, assoc = list(c("etavalue", "etaslope"), c("muvalue", "muslope"))))
   
   expect_error(ret <- update(examplejm3, assoc = list("wrong", "etavalue")), "unsupported association type")
-  expect_error(ret <- update(examplejm3, assoc = list("null", "etavalue", "etaslope")), "length equal to the number of")
+  expect_error(ret <- update(examplejm3, assoc = list("null", "etavalue", "etaslope")), "incorrect length")
   expect_error(ret <- update(examplejm3, assoc = data.frame("etavalue", "etaslope")), "'assoc' should be") 
-  
   
 })
 
@@ -218,7 +218,7 @@ test_that("basehaz argument works", {
   
   expect_output(update(examplejm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5))))
   
-  expect_error(update(examplejm1, basehaz = "bs", basehaz_ops = list(df = 1)), "must be atleast 3")
+  expect_error(update(examplejm1, basehaz = "bs", basehaz_ops = list(df = 1)), "must be at least 3")
   expect_error(update(examplejm1, basehaz = "bs", basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
   expect_error(update(examplejm1, basehaz = "piecewise", basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
   expect_error(update(examplejm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,2,50))), "cannot be greater than the largest event time")
@@ -291,8 +291,11 @@ test_that("max_treedepth argument works", {
   expect_output(update(examplejm1, max_treedepth = 5L))
 })
 
-test_that("QR argument works", {
+test_that("error message occurs for arguments not implemented", {
+  expect_error(update(examplejm1, offset = 1:10), "not yet implemented")
   expect_error(update(examplejm1, QR = TRUE), "not yet implemented")
+  expect_error(update(examplejm1, sparse = TRUE), "not yet implemented")
+  expect_error(update(examplejm1, dataAssoc = data.frame(a=1:10)), "not yet implemented")
 })
 
 #--------  Check parameter estimates with NULL assoc against stan_glmer and coxph

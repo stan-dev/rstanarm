@@ -851,7 +851,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$xbar              <- fetch_array(y_mod_stuff, "xbar")
   standata$trials            <- fetch_array(y_mod_stuff, "trials")
   standata$weights <- 
-    if (!is.null(weights)) as.array(unlist(weights)) else as.array(numeric(0))
+    if (!is.null(weights)) as.array(unlist(y_weights)) else as.array(numeric(0))
   standata$offset  <- 
     if (!is.null(offset)) stop("bug found. offset not yet implemented.") else double(0)
   standata$link    <- as.array(link)
@@ -1074,7 +1074,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
       lapply(x, function(y) 
         lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y)))) 
   standata$auc_quadweights <- 
-    if (standata$assoc_uses[4]) as.array(auc_quadweights) else double(0)
+    if (standata$assoc_uses[3]) as.array(auc_quadweights) else double(0)
 
   # Interactions between association terms and data
   # design matrix for the interactions
@@ -3159,15 +3159,16 @@ validate_arg <- function(arg, type, null_ok = FALSE,
     check <- sapply(arg, function(x) if (null_ok) 
       (is.null(x) || any(sapply(type, function(y) is(x, y)))) else 
         (any(sapply(type, function(y) is(x, y)))))
-    if (!all(check)) STOP_arg(arg, type, null_ok = null_ok)
+    if (!all(check)) STOP_arg(deparse(substitute(arg)), type, null_ok = null_ok)
   } else {
-    STOP_arg(arg, type, null_ok = null_ok)
+    STOP_arg(deparse(substitute(arg)), type, null_ok = null_ok)
   }
   if (!is.null(validate_length)) {
     if (length(arg) == 1L && validate_length > 1) {
       arg <- if (broadcast) rep(arg, times = validate_length) else arg
     } else if (!length(arg) == validate_length) {
-      stop(paste0(arg, " is a list of the incorrect length."))
+      stop(paste(deparse(substitute(arg)), "is a list of the incorrect length."),
+           call. = FALSE)
     }
   }
   arg
@@ -3188,7 +3189,8 @@ maybe_broadcast_priorarg <- function(priorarg, M) {
   } else {
     nm <- deparse(substitute(priorarg))
     stop(nm, "appears to provide prior information separately for the different ",
-         "longitudinal submodels, but the list is of the incorrect length.")
+         "longitudinal submodels, but the list is of the incorrect length.", 
+         call. = FALSE)
   }
 }
 
@@ -3207,9 +3209,9 @@ get_idx_array <- function(x) {
 }
 
 # Error message when the argument contains an object of the incorrect type
-STOP_arg <- function(arg, type, null_ok = FALSE) {
-  stop(paste0(deparse(substitute(arg)), " should be ", ifelse(null_ok, "NULL, ", ""),
-              "a ", type, " object or a list of ", type, " objects.")) 
+STOP_arg <- function(arg_name, type, null_ok = FALSE) {
+  stop(paste0("'", arg_name, "' should be ", ifelse(null_ok, "NULL, ", ""), "a ", 
+              type, " object or a list of ", type, " objects."), call. = FALSE) 
 }
 
 # Return error msg if both elements of the object are TRUE
