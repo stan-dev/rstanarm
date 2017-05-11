@@ -1,5 +1,5 @@
 #include "Columbia_copyright.stan"
-#include "Monash_copyright.stan"
+#include "Brilleman_copyright.stan"
 #include "license.stan" // GPL3+
 
 // Shared parameter joint model
