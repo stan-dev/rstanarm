@@ -83,10 +83,10 @@ transformed parameters {
   #include "tparameters_mvglm.stan" // defines aux, beta, b{_not_by_model}, theta_L
   e_beta = generate_beta(e_z_beta, e_prior_dist, e_prior_mean, 
                          e_prior_scale, e_prior_df, e_global, e_local,
-						 e_global_prior_scale, e_ool, e_S);  
+                         e_global_prior_scale, e_ool, e_S);  
   a_beta = generate_beta(a_z_beta, a_prior_dist, a_prior_mean, 
-                         a_prior_scale, a_prior_df, a_global, a_local, 
-						 a_global_prior_scale, a_ool, a_S);         
+                         a_prior_scale, a_prior_df, a_global, a_local,
+                         a_global_prior_scale, a_ool, a_S);         
   e_aux  = generate_aux(e_aux_unscaled, e_prior_dist_for_aux,
                         e_prior_mean_for_aux, e_prior_scale_for_aux);
   if (t > 0) {
@@ -107,11 +107,13 @@ model {
     #include "eta_add_Zb.stan"
   } 
   for (m in 1:M) {
-	#include "eta_intercept_mvmer.stan"	// adds intercept or shifts eta
+    vector[NM[m]] eta_tmp;	            // eta for just one submodel 
+    eta_tmp = eta[idx[m,1]:idx[m,2]];   // eta for just one submodel 
+    #include "eta_intercept_mvmer.stan"	// adds intercept or shifts eta
     if (family[m] == 8) {  // poisson-gamma mixture
 	  #include "eta_add_noise_mvmer.stan"
     }    
-	#include "mvmer_lp.stan" // increments target with long log-liks
+    #include "mvmer_lp.stan" // increments target with long log-liks
     if (has_aux[m] == 1) aux_mark = aux_mark + 1;
   }
   
@@ -124,14 +126,14 @@ model {
   else e_eta_q = e_eta_q + dot_product(e_xbar, e_beta);     
   if (assoc == 1) { 
     // declares y_eta_q{_eps,_lag,_auc}, y_eta_qwide{_eps,_lag,_auc}, 
-	//   y_q_wide{_eps,_lag,_auc}, mark{2,3}
+	  //   y_q_wide{_eps,_lag,_auc}, mark{2,3}
     #include "assoc_definitions.stan"  
     #include "assoc_prepwork.stan"
     #include "assoc_evaluate.stan"
   }
   { 
     // declares log_basehaz, ll_{haz_q,haz_eventtime,surv_eventtime,event}
-	#include "event_lp.stan" // increments target with event log-lik
+	  #include "event_lp.stan" // increments target with event log-lik
   }
   
   //----- Log-priors
@@ -158,7 +160,8 @@ model {
   basehaz_lp(e_aux_unscaled, e_prior_dist_for_aux, 
              e_prior_scale_for_aux, e_prior_df_for_aux)
   
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, regularization, delta, shape, t, p);
+  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
+                      regularization, delta, shape, t, p);
 }
 generated quantities {
   #include "gen_quantities_mvmer.stan"  // defines alpha, mean_PPD

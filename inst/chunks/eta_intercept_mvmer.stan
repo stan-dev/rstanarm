@@ -1,5 +1,3 @@
-    vector[NM[m]] eta_tmp;	           // eta for just one submodel 
-    eta_tmp = eta[idx[m,1]:idx[m,2]];  // eta for just one submodel 
     if (has_intercept[m] == 1) {  // has intercept
       if (has_intercept_nob[m] == 1)
         eta_tmp = eta_tmp + gamma_nob[sum(has_intercept_nob[1:m])];
