@@ -28,14 +28,17 @@ SEED <- 12345
 REFRESH <- ITER
 set.seed(SEED)
 if (interactive()) options(mc.cores = parallel::detectCores())
-TOLSCALE_lmer  <- 0.2 # how many SEs can stan_jm fixefs be from lmer fixefs
-TOLSCALE_glmer <- 0.3 # how many SEs can stan_jm fixefs be from glmer fixefs
+TOLSCALE_lmer_fixef <- 0.2  # how many SEs can stan_jm fixefs be from lmer fixefs
+TOLSCALE_lmer_ranef <- 0.05 # how many SDs can stan_jm ranefs be from lmer ranefs
+TOLSCALE_glmer_fixef <- 0.3 # how many SEs can stan_jm fixefs be from glmer fixefs
+TOLSCALE_glmer_ranef <- 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
 TOLSCALE_event <- 0.2 # how many SEs can stan_jm fixefs be from coxph fixefs
 FIXEF_tol <- 0.02
 RANEF_tol <- 0.05
 EVENT_tol <- 0.05
 
 expect_matrix  <- function(x) expect_identical(class(x), "matrix")
+expect_stanjm  <- function(x) expect_s3_class(x, "stanjm")
 expect_survfit <- function(x) expect_s3_class(x, "survfit.stanjm")
 expect_ppd     <- function(x) expect_s3_class(x, "ppd")
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
@@ -108,11 +111,11 @@ test_that("id_var argument works", {
   tmpdat <- pbcLong
   tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
   tmpfm <- logBili ~ year + (1 | id) + (1 | practice)
-  expect_error(update(examplejm1, formulaLong. = tmpfm, dataLong = tmpdat), 
-               "'id_var' must be specified")
-  expect_error(update(examplejm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "year"), 
-               "'id_var' must be included as a grouping factor")
-  expect_output(update(examplejm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "id", init = 0))
+  ok_mod <- update(examplejm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "id", init = 0)
+  expect_stanjm(ok_mod)
+  expect_error(update(ok_mod, id_var = NULL), "'id_var' must be specified")
+  expect_error(update(ok_mod, id_var = "year"), "'id_var' must be included as a grouping factor")
+  expect_error(update(ok_mod, id_var = "practice"), "'id_var' must correspond to the lowest level of clustering")
 })
 
 
@@ -307,12 +310,21 @@ if (interactive()) {
     s1 <- coxph(Surv(futimeYears, death) ~ sex + trt, data = pbcSurv)
     j1 <- stan_jm(fm, pbcLong, Surv(futimeYears, death) ~ sex + trt, pbcSurv,
                   time_var = "year", assoc = NULL, 
-                  iter = 2000, chains = CHAINS, seed = SEED)        
-    expect_equal(ranef(y1), ranef(j1)$Long1, tol = RANEF_tol)
-    tols <- TOLSCALE_lmer * y1$ses
+                  iter = 2000, chains = CHAINS, seed = SEED) 
+    ranef_sds <- attr(VarCorr(y1)[[1]], "stddev")
+    tols <- TOLSCALE_lmer_ranef * ranef_sds
+    for (i in 1:length(tols))
+      expect_equal(ranef(y1)[[1]][[i]], ranef(j1)$Long1[[1]][[i]], tol = tols[[i]])     
+    fixef_ses <- y1$ses
+    tols <- TOLSCALE_lmer_fixef * fixef_ses
+    if ("(Intercept)" %in% names(tols)) # use weaker tolerance for intercept
+      tols[["(Intercept)"]] <- 2 * tols[["(Intercept)"]] 
     for (i in 1:length(fixef(y1)))
       expect_equal(fixef(y1)[[i]], fixef(j1)$Long1[[i]], tol = tols[[i]])
-    tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
+    event_ses <- summary(s1)$coefficients[, "se(coef)"]
+    tols <- TOLSCALE_event * event_ses
+    if ("(Intercept)" %in% names(tols)) # use weaker tolerance for intercept
+      tols[["(Intercept)"]] <- 2 * tols[["(Intercept)"]] 
     for (i in 1:length(coef(s1)))
       expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])        
   }  
@@ -323,13 +335,22 @@ if (interactive()) {
     j1 <- stan_jm(fm, pbcLong, Surv(futimeYears, death) ~ sex + trt, pbcSurv,
                   time_var = "year", assoc = NULL, family = fam,
                   iter = 2000, chains = CHAINS, seed = SEED)
-    expect_equal(ranef(y1), ranef(j1)$Long1, tol = RANEF_tol)
-    tols <- TOLSCALE_glmer * y1$ses
+    ranef_sds <- attr(VarCorr(y1)[[1]], "stddev")
+    tols <- TOLSCALE_glmer_ranef * ranef_sds
+    for (i in 1:length(tols))
+      expect_equal(ranef(y1)[[1]][[i]], ranef(j1)$Long1[[1]][[i]], tol = tols[[i]])     
+    fixef_ses <- y1$ses
+    tols <- TOLSCALE_glmer_fixef * fixef_ses
+    if ("(Intercept)" %in% names(tols)) # use weaker tolerance for intercept
+      tols[["(Intercept)"]] <- 2 * tols[["(Intercept)"]]     
     for (i in 1:length(fixef(y1)))
       expect_equal(fixef(y1)[[i]], fixef(j1)$Long1[[i]], tol = tols[[i]])
-    tols <- TOLSCALE_event * summary(s1)$coefficients[, "se(coef)"]
+    event_ses <- summary(s1)$coefficients[, "se(coef)"]
+    tols <- TOLSCALE_event * event_ses
+    if ("(Intercept)" %in% names(tols)) # use weaker tolerance for intercept
+      tols[["(Intercept)"]] <- 2 * tols[["(Intercept)"]] 
     for (i in 1:length(coef(s1)))
-      expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])       
+      expect_equal(coef(s1)[[i]], fixef(j1)$Event[[i+1]], tol = tols[[i]])     
   } 
   
   pbcLong$ybino_successes <- as.integer(cut(pbcLong$logBili, 6))
