@@ -1372,9 +1372,6 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   K       <- ncol(xtemp)	
   has_aux <- check_for_aux(family$family)
   
-  # Update formula if using splines or other data dependent predictors
-  vars <- get_formvars(mod)
-
   # Family indicators
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   famname <- supported_families[fam]
@@ -1398,7 +1395,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   }    
     
   # Return list
-  nlist(mod, vars, is_real, y, x, xtemp, xbar, trials, N01, ord, famname,
+  nlist(mod, is_real, y, x, xtemp, xbar, trials, N01, ord, famname,
     offset, Ztlist, cnms, flist, has_intercept, has_intercept_unbound,
     has_intercept_lobound, has_intercept_upbound, has_aux, N, real_N, int_N, K,
     is_bernoulli, is_nb, is_gaussian, is_gamma, is_ig, is_continuous, is_lmer)
@@ -1419,41 +1416,10 @@ get_common_cnms <- function(x) {
   cnms
 }
 
-# Function to return the variables used in fitting a model, as well as the
-# predvars, for both the fixed and random parts of a (g)lmer fit
-#
-# @param mod A (g)lmer model object
-# @return A named list of lists
-get_formvars <- function(mod) {
-  vars_f <- grep("", attr(terms(mod, fixed.only = TRUE), "variables"), value = TRUE)
-  vars_r <- grep("", attr(terms(mod, random.only = TRUE), "variables"), value = TRUE)
-  predvars_f <- grep("", attr(terms(mod, fixed.only = TRUE), "predvars"), value = TRUE)
-  predvars_r <- grep("", attr(terms(mod, random.only = TRUE), "predvars"), value = TRUE)
-  list(formvars = list(fixed = vars_f, random = vars_r),
-       predvars = list(fixed = predvars_f, random = predvars_r))
-}
-
 # Function to substitute variables in the formula of a fitted model
-#
-# @param mod A (g)lmer model object from which to extract the model formula
-# @param formvars A list of the original variables used in the model formula
-# @param newvars A list of the variables to use as replacements
-# @return The reformulated model formula with the variables in oldvars replaced 
-#   the corresponding entries in newvars
-use_these_vars <- function(mod, oldvars, newvars) {
-  if (!identical(length(oldvars), length(newvars)))
-    stop("oldvars and newvars should be the same length.")
-  fm <- formula(mod)
-  if (!identical(oldvars, newvars)) {
-    for (j in 1:length(oldvars))
-      fm <- gsub(oldvars[[j]], newvars[[j]], fm, fixed = TRUE)    
-    fm <- reformulate(fm[[3]], response = formula(mod)[[2]])
-  }
-  fm
-}
-
-# Function to substitute variables in the formula of a fitted model
-# with the corresponding predvars based on the terms object for the model
+# with the corresponding predvars based on the terms object for the model.
+# (This is useful since lme4::glFormula doesn't allow a terms object to be 
+# passed as the first argument instead of a model formula).
 #
 # @param mod A (g)lmer model object from which to extract the formula and terms
 # @return A reformulated model formula with variables replaced by predvars
@@ -1468,7 +1434,7 @@ use_predvars <- function(mod) {
       fm <- gsub(ff[[j]], pf[[j]], fm, fixed = TRUE)    
     for (j in 1:length(fr))
       fm <- gsub(fr[[j]], pr[[j]], fm, fixed = TRUE)    
-    fm <- reformulate(fm[[3]], response = fm[[2]])
+    fm <- reformulate(fm[[3L]], response = formula(mod)[[2L]])
   }
   fm
 }
@@ -2173,14 +2139,8 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
   mf   <- data.table::data.table(df, key = c(id_var, time_var))
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
-  # Update longitudinal submodel formula to reflect predvars (e.g. if the user
-  # specified data dependent predictor variables such as splines with knot 
-  # points based on quantiles of the original data)
-  ff <- y_mod_stuff$vars$formvars$fixed [-1]
-  fr <- y_mod_stuff$vars$formvars$random[-1]
-  pf <- y_mod_stuff$vars$predvars$fixed [-1]
-  pr <- y_mod_stuff$vars$predvars$random[-1]
-  mc$formula <- use_these_vars(y_mod_stuff$mod, c(ff, fr), c(pf, pr))
+  # Update longitudinal submodel formula to reflect predvars
+  mc$formula <- use_predvars(y_mod_stuff$mod)
 
   # Design matrices for calculating eta, eps, lag, auc and data interactions
   # in association structure
