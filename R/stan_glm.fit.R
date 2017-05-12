@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -484,8 +484,8 @@ stan_glm.fit <- function(x, y,
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, ...)
-      if (algorithm == "meanfield" && !QR) 
-        msg_meanfieldQR()
+      if (!QR) 
+        recommend_QR_for_vb()
     }
     check_stanfit(stanfit)
     if (QR) {
@@ -688,17 +688,18 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   return(x_keep)
 }
 
-make_b_nms <- function(group) {
+make_b_nms <- function(group, m = NULL) {
   group_nms <- names(group$cnms)
   b_nms <- character()
+  m_stub <- if (!is.null(m)) get_m_stub(m) else NULL
   for (i in seq_along(group$cnms)) {
     nm <- group_nms[i]
     nms_i <- paste(group$cnms[[i]], nm)
     levels(group$flist[[nm]]) <- gsub(" ", "_", levels(group$flist[[nm]]))
     if (length(nms_i) == 1) {
-      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+      b_nms <- c(b_nms, paste0(m_stub, nms_i, ":", levels(group$flist[[nm]])))
     } else {
-      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+      b_nms <- c(b_nms, c(t(sapply(paste0(m_stub, nms_i), paste0, ":", levels(group$flist[[nm]])))))
     }
   }
   return(b_nms)  

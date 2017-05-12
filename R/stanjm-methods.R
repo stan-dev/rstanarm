@@ -1,6 +1,6 @@
 # Part of the rstanjm package
 # Copyright (C) 2015, 2016 Trustees of Columbia University
-# Copyright (C) 2016 Sam Brilleman
+# Copyright (C) 2016, 2017 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -28,8 +28,9 @@
 #' @name stanjm-methods
 #' @aliases coef VarCorr fixef ranef ngrps sigma
 #' 
-#' #@templateVar stanjmArg object,x
-#' #@template args-stanjm-object
+#' @templateVar mArg m
+#' @template args-m
+#' @template args-remove-stub
 #' @param ... Ignored, except by the \code{update} method. See
 #'   \code{\link{update}}.
 #' 
@@ -90,7 +91,7 @@ NULL
 #' @export
 #' @export coef
 #'    
-coef.stanjm <- function(object, ...) {
+coef.stanjm <- function(object, m = NULL, ...) {
   M <- object$n_markers
   if (length(list(...))) 
     warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
@@ -121,89 +122,26 @@ coef.stanjm <- function(object, ...) {
   }
   val <- lapply(val, function(x) structure(x, class = "coef.mer"))
   val <- c(val, fef[length(fef)])         
-  val <- list_nms(val, M)
-  val        
+  if (is.null(m)) list_nms(val, M) else val[[m]]       
 }
 
 #' @rdname stanjm-methods
 #' @export
 #' 
-fitted.stanjm <- function(object, ...)  {
-  object$fitted.values
-}
-
-#' Extract pointwise log-likelihood matrix
-#' 
-#' @export
-#' @keywords internal
-#' @param object Fitted model object.
-#' @param ... Arguments to methods. For example the
-#'   \code{\link[=stanjm-methods]{stanjm}} method accepts the arguments
-#'   \code{newdataLong} and \code{newdataEvent}.
-#' @return The \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
-#'   where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
-#'   of individuals in the fitted model. The likelihood for a single individual 
-#'   is therefore the sum of the likelihood contributions from their observed
-#'   longitudinal measurements and their event time data.
-#' @seealso \code{\link{log_lik.stanjm}}
-#' 
-log_lik <- function(object, ...) UseMethod("log_lik")
-
-#' @rdname stanjm-methods
-#' @export
-#' @param newdataLong,newdataEvent For \code{log_lik}, an optional data frame 
-#'   of new data (e.g. holdout data) to use when evaluating the log-likelihood. 
-#'   See the description of \code{newdataLong} and \code{newdataEvent} for 
-#'   \code{\link{posterior_survfit}}.
-log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
-  
-  M <- object$n_markers
-  
-  if (!is.null(newdataLong)) {
-    stop("'loglik' method not yet implemented for new data.", call. = FALSE)
-    if (!is(newdataLong, "list")) 
-      newdataLong <- list(newdataLong)
-    newdataLong <- lapply(newdataLong, function(x) {
-      x <- as.data.frame(x)
-      if (any(is.na(x))) 
-        stop("Currently NAs are not allowed in 'newdataLong'.") 
-      x})
-    if ((length(newdataLong) == 1L) && (M > 1))
-      newdataLong <- rep(newdataLong, M)
-  } else newdataLong <- rep(list(NULL), M)
-  
-  if (!is.null(newdataEvent)) {
-    stop("'loglik' method not yet implemented for new data.", call. = FALSE)
-    newdataEvent <- as.data.frame(newdataEvent)
-    if (any(is.na(newdataEvent))) 
-      stop("Currently NAs are not allowed in 'newdataEvent'.") 
-  }
-  
+fitted.stanjm <- function(object, m = NULL, ...)  {
+  if (is.null(m)) list_nms(object$fitted.values) else object$fitted.values[[m]]
 }
 
 #' @rdname stanjm-methods
 #' @export 
-residuals.stanjm <- function(object, ...) {
-  object$residuals
+residuals.stanjm <- function(object, m = NULL, ...) {
+  if (is.null(m)) list_nms(object$residuals) else object$residuals[[m]]
 }
-
-#' Extract standard errors
-#' 
-#' Generic function for extracting standard errors from a fitted joint model.
-#' 
-#' @export
-#' @keywords internal
-#' @param object A fitted model object.
-#' @param ... Arguments to methods.
-#' @return Standard errors of model parameters.
-#' @seealso \code{\link{se.stanjm}}
-#' 
-se <- function(object, ...) UseMethod("se")
 
 #' @rdname stanjm-methods
 #' @export
-se.stanjm <- function(object, ...) {
-  object$ses
+se.stanjm <- function(object, m = NULL, ...) {
+  if (is.null(m)) list_nms(object$ses) else object$ses[[m]]
 }
 
 #' @rdname stanjm-methods
@@ -212,7 +150,7 @@ se.stanjm <- function(object, ...) {
 #'   part of the longitudinal submodel formulas
 #' @param random.only A logical specifying whether to only retain the random effect
 #'   part of the longitudinal submodel formulas  
-formula.stanjm <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
+formula.stanjm <- function (x, fixed.only = FALSE, random.only = FALSE, m = NULL, ...) {
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
@@ -220,32 +158,31 @@ formula.stanjm <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
   
   M <- x$n_markers
   fr <- lapply(x$glmod, model.frame) 
-  form <- lapply(x$formula, as.formula, ...)
-  glmod_form <- lapply(seq(M), function(m) attr(fr[[m]], "formula")) 
+  form <- lapply(x$formula, as.formula, ...) # includes Event submodel formula
+  glmod_form <- lapply(seq(M), function(i) attr(fr[[i]], "formula")) 
   if (!is.null(glmod_form)) form[1:M] <- glmod_form[1:M]
   if (any(fixed.only, random.only)) {
     if (fixed.only) {
-      for (m in 1:M)
-        form[[m]][[length(form[[m]])]] <- lme4::nobars(form[[m]][[length(form[[m]])]])
+      for (i in 1:M)
+        form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
     }
     if (random.only)
-      for (m in 1:M)
-        form[[m]] <- justRE(form[[m]], response = TRUE)
+      for (i in 1:M)
+        form[[i]] <- justRE(form[[i]], response = TRUE)
   }
-  form <- list_nms(form, M)
-  
-  return(form)
+  if (is.null(m)) return(list_nms(form, M)) else return(form[[m]])
 }
 
 #' terms method for stanjm objects
 #' @export
 #' @keywords internal
+#' @templateVar mArg m
+#' @template args-m
 #' @param x,fixed.only,random.only,... See lme4:::terms.merMod.
 #' 
-terms.stanjm <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
+terms.stanjm <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL, ...) {
   if (!is.stanjm(x))
     return(NextMethod("terms"))
-  
   M <- x$n_markers
   fr <- lapply(x$glmod, model.frame) 
   if (missing(fixed.only) && random.only) 
@@ -253,27 +190,24 @@ terms.stanjm <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   if (fixed.only && random.only) 
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
   
-  Terms <- lapply(fr, function(m) attr(m, "terms"))
+  Terms <- lapply(fr, function(i) attr(i, "terms"))
   if (fixed.only) {
-    Terms <- lapply(seq(M), function(m) {
-      Terms <- terms.formula(formula(x, fixed.only = TRUE)[[m]])
-      attr(Terms, "predvars") <- attr(terms(fr[[m]]), "predvars.fixed")
+    Terms <- lapply(seq(M), function(i) {
+      Terms <- terms.formula(formula(x, fixed.only = TRUE, m = i))
+      attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.fixed")
       Terms
     })     
   } 
   if (random.only) {
-    Terms <- lapply(seq(M), function(m) {
-      Terms <- terms.formula(lme4::subbars(formula.stanjm(x, random.only = TRUE)[[m]]))
-      attr(Terms, "predvars") <- attr(terms(fr[[m]]), "predvars.random")
+    Terms <- lapply(seq(M), function(i) {
+      Terms <- terms.formula(lme4::subbars(formula.stanjm(x, random.only = TRUE, m = i)))
+      attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.random")
       Terms
     })      
   }
   Terms$Event <- terms(x$coxmod)
-  Terms <- list_nms(Terms, M)
-  
-  return(Terms)
+  if (is.null(m)) list_nms(Terms, M) else Terms[[m]]
 }
-
 
 #' @rdname stanjm-methods
 #' @export
@@ -339,59 +273,18 @@ update.stanjm <- function(object, formulaLong., formulaEvent., ..., evaluate = T
 }
 
 #' @rdname stanjm-methods
-#' @export 
-#' @param correlation For \code{vcov}, if \code{FALSE} (the default) the
-#'   covariance matrix is returned. If \code{TRUE}, the correlation matrix is
-#'   returned instead.
-#'
-vcov.stanjm <- function(object, correlation = FALSE, ...) {
-  out <- object$covmat
-  if (!correlation) return(out)
-  out <- lapply(out, cov2cor)
-  out
-}
-
-
-.stanjm_check <- function(object) {
-  if (!is.stanjm(object))
-    stop("This method is for stanjm objects only.", call. = FALSE)
-}
-.cnmsjm <- function(object, remove_stub = FALSE) {
-  .stanjm_check(object)
-  cnms <- object$cnms
-  if (remove_stub) {
-    cnms <- lapply(cnms, rm_stub)
-  }
-  cnms
-}
-.p <- function(object) {
-  .stanjm_check(object)
-  sapply(object$cnms, length)
-}
-#.y_cnms <- function(object) {
-#  .stanjm_check(object)
-#  object$y_cnms
-#}
-#.y_flist <- function(object) {
-#  .stanjm_check(object)
-#  as.list(object$y_flist)
-#}
-
-
-#' @rdname stanjm-methods
 #' @export
 #' @export fixef
 #' @importFrom lme4 fixef
-#' @param remove_stub Logical specifying whether to remove the string identifying 
-#'    the longitudinal or event submodel from each of the coefficient names.
 #' 
-fixef.stanjm <- function(object, remove_stub = TRUE, ...) {
+fixef.stanjm <- function(object, m = NULL, remove_stub = TRUE, ...) {
+  M <- object$n_markers
   coefs <- object$coefficients
   coefs <- lapply(coefs, function(x) x[b_names(names(x), invert = TRUE)])
   if (remove_stub) {
     for (i in 1:length(coefs)) names(coefs[[i]]) <- rm_stub(names(coefs[[i]]))
   }
-  coefs
+  if (is.null(m)) list_nms(coefs, M) else coefs[[m]]
 }
 
 #' @rdname stanjm-methods
@@ -408,19 +301,19 @@ ngrps.stanjm <- function(object, ...) {
 #' @export ranef
 #' @importFrom lme4 ranef
 #'
-ranef.stanjm <- function(object, ...) {
+ranef.stanjm <- function(object, m = NULL, ...) {
   M <- object$n_markers
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
-  ans_list <- lapply(1:M, function(m) { 
-    sel <- b_names(all_names, m)
+  ans_list <- lapply(1:M, function(x) { 
+    sel <- b_names_M(all_names, x)
     ans <- object$stan_summary[sel, select_median(object$algorithm)]
     # avoid returning the extra levels that were included
     ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]
-    fl <- as.list(object$glmod[[m]]@flist)
+    fl <- .flist(object, m = x) 
     levs <- lapply(fl, levels)
     asgn <- attr(fl, "assign")
-    cnms <- object$glmod[[m]]@cnms
+    cnms <- .cnms(object, m = x) 
     nc <- vapply(cnms, length, 1L)
     nb <- nc * vapply(levs, length, 1L)[asgn]
     nbseq <- rep.int(seq_along(nb), nb)
@@ -437,10 +330,8 @@ ranef.stanjm <- function(object, ...) {
     class(ans) <- c("ranef.mer")
     ans
   })
-  ans_list <- list_nms(ans_list, M)
-  ans_list
+  if (is.null(m)) list_nms(ans_list, M) else ans_list[[m]]
 }
-
 
 #' @rdname stanjm-methods
 #' @export
@@ -448,49 +339,19 @@ ranef.stanjm <- function(object, ...) {
 #' @rawNamespace if(getRversion()>='3.3.0') importFrom(stats, sigma) else
 #'   importFrom(lme4,sigma)
 #'
-sigma.stanjm <- function(object, ...) {
-  M <- object$n_markers
-  nms <- grep("^Long[1-9]\\|sigma", rownames(object$stan_summary), value = TRUE)
+sigma.stanjm <- function(object, m = NULL, ...) {
+  stub <- if (is.null(m)) "Long[1-9]" else if 
+    (is.numeric(m)) paste0("Long", m) else if (is.character(m)) m else
+      stop("Could not reconcile 'm' argument.")
+  nms <- grep("^", stub, "\\|sigma", rownames(object$stan_summary), value = TRUE)
   if (!length(nms)) 
     return(1)
   sigma <- object$stan_summary[nms, select_median(object$algorithm)]
-  if (M > 1L) {
+  if (length(sigma) > 1L) {
     new_nms <- gsub("\\|sigma", "", nms)
     names(sigma) <- new_nms
   }
   return(sigma)
-}
-
-#' @rdname stanjm-methods
-#' @param sigma Ignored (included for compatibility with
-#'   \code{\link[nlme]{VarCorr}}).
-#' @export
-#' @export VarCorr
-#' @importFrom nlme VarCorr
-#' @importFrom lme4 mkVarCorr
-VarCorr.stanjm <- function(x, sigma = 1, ...) {
-  mat <- as.matrix(x)
-  cnms <- .cnmsjm(x)
-  useSc <- "sigma" %in% colnames(mat)
-  if (useSc) sc <- mat[,"sigma"]
-  else sc <- 1
-  Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
-  nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
-  nms <- names(cnms)
-  ncseq <- seq_along(nc)
-  spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
-  ans <- lapply(ncseq, function(i) {
-    Sigma <- matrix(0, nc[i], nc[i])
-    Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
-    Sigma <- Sigma + t(Sigma)
-    diag(Sigma) <- diag(Sigma) / 2
-    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
-    stddev <- sqrt(diag(Sigma))
-    corr <- cov2cor(Sigma)
-    structure(Sigma, stddev = stddev, correlation = corr)
-  })
-  names(ans) <- nms
-  structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }
 
 
@@ -500,52 +361,59 @@ VarCorr.stanjm <- function(x, sigma = 1, ...) {
 #'
 #' @keywords internal
 #' @export
+#' @templateVar mArg m
+#' @template args-m
 #' @param object,... See \code{\link[stats]{family}}.
-family.stanjm <- function(object, ...) object$family
+family.stanjm <- function(object, m = NULL, ...) {
+  if (!is.null(m)) object$family[[m]] else list_nms(object$family)
+}
 
 #' model.frame method for stanjm objects
 #' 
 #' @keywords internal
 #' @export
+#' @templateVar mArg m
+#' @template args-m
 #' @param formula,... See \code{\link[stats]{model.frame}}.
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
-model.frame.stanjm <- function(formula, fixed.only = FALSE, ...) {
+model.frame.stanjm <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanjm(formula)) {
     M <- formula$n_markers
-    fr <- formula$fr
-    #fr <- lapply(formula$glmod, model.frame)
+    fr <- lapply(formula$glmod, model.frame)
     if (fixed.only) {
-      fr <- lapply(seq(M), function(m) {
-        ff <- formula(formula, fixed.only = TRUE)[[m]]
+      fr <- lapply(seq(M), function(i) {
+        ff <- formula(formula, fixed.only = TRUE, m = i)
         vars <- rownames(attr(terms.formula(ff), "factors"))
-        fr[[m]][vars]
+        fr[[i]][vars]
       })
     }
-    #fr$Event <- formula$coxmod$x
-    fr <- list_nms(fr, M)
-    return(fr)
+    fr$Event <- model.frame(formula$coxmod)
+    if (is.null(m)) return(list_nms(fr, M)) else return(fr[[m]])
   } 
-  
   NextMethod("model.frame")
 }
 
 
-#----------------------------------------------
-# The following are not yet adapted for stan_jm
-#----------------------------------------------
+# internal ----------------------------------------------------------------
 
-#' model.matrix method for stanjm objects
-#' 
-#' @keywords internal
-#' @export
-#' @param object,... See \code{\link[stats]{model.matrix}}.
-#' 
-model.matrix.stanjm <- function(object, ...) {
-  if (is.stanjm(object)) {
-    M <- object$n_markers
-    return(lapply(seq(M), function(m) object$glmod[[m]]$X))
-  }
-  
-  NextMethod("model.matrix")
+.stanjm_check <- function(object) {
+  if (!is.stanjm(object))
+    stop("This method is for stanjm objects only.", call. = FALSE)
 }
+.cnms.stanjm <- function(object, m = NULL, remove_stub = FALSE, ...) {
+  .stanjm_check(object)
+  cnms <- if (is.null(m)) object$cnms else object$glmod[[m]]@cnms
+  if (remove_stub) lapply(cnms, rm_stub) else cnms
+}
+.flist.stanjm <- function(object, m = NULL, ...) {
+  .stanjm_check(object)
+  if (is.null(m)) {
+    stop("'m = NULL' cannot currently be handled by .flist.stanjm method.")
+  } else as.list(object$glmod[[m]]@flist)
+}
+.p <- function(object) {
+  .stanjm_check(object)
+  sapply(object$cnms, length)
+}
+

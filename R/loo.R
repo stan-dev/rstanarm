@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,13 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Leave-one-out (LOO) and K-fold cross-validation
+#' Information criteria and cross-validation
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
-#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
+#' (LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
+#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
 #' cross-validation is also available. Compare two or more models using the 
-#' \code{compare_models} function.
+#' \code{compare_models} function. \strong{Note:} these functions are not 
+#' guaranteed to work properly unless the \code{data} argument was specified 
+#' when the model was fit.
 #' 
 #' @aliases loo waic
 #'
@@ -115,7 +117,7 @@
 #' # when comparing three or more models they are ordered by expected
 #' # predictive accuracy
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
-#' loo3 <- loo(fit3, cores = 2)
+#' loo3 <- loo(fit3, k_threshold = 0.7, cores = 2)
 #' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation
@@ -124,7 +126,7 @@
 #' compare_models(kfold1, kfold2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
@@ -138,9 +140,13 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  if (is.stanjm(x)) {
+    loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
+  } else {
+    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  }
   
-  bad_obs <- which(loo_x[["pareto_k"]] > k_threshold)
+  bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
   
   out <- structure(loo_x, 
@@ -167,7 +173,11 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     return(out)
   }
   
-  reloo(x, loo_x, obs = bad_obs)
+  reloo_out <- reloo(x, loo_x, obs = bad_obs)
+  structure(reloo_out, 
+            name = attr(out, "name"), 
+            discrete = attr(out, "discrete"),
+            yhash = attr(out, "yhash"))
 }
 
 
@@ -175,12 +185,13 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 # 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
+#' @importFrom loo waic waic.function waic.matrix
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
+  out <- if (is.stanjm(x)) waic.matrix(log_lik(x)) else 
+    waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
@@ -223,6 +234,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
+  if (is.stanjm(x))
+    STOP_if_stanjm("kfold")
   if (model_has_weights(x))
     stop("kfold is not currently available for models fit using weights.")
   
@@ -248,7 +261,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
       log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
                       stanmat = as.matrix.stanreg(x))
-    if (save_fits) fits[k, ] <- list(fit = fit_k, omitted = omitted)
+    if (save_fits) 
+      fits[k, ] <- list(fit = fit_k, omitted = omitted)
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -259,7 +273,9 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
     se_elpd_kfold = sqrt(N * var(elpds)),
     pointwise = cbind(elpd_kfold = elpds)
   )
-  if (save_fits) out$fits <- fits
+  if (save_fits) 
+    out$fits <- fits
+  
   structure(out, 
             class = c("kfold", "loo"), 
             K = K, 
@@ -397,13 +413,19 @@ recommend_exact_loo <- function(reason) {
 # Refit model leaving out specific observations
 #
 # @param x stanreg object
-# @param loo_x result of loo(x)
-# @param obs vector of observation indexes
+# @param loo_x the result of loo(x)
+# @param obs vector of observation indexes. the model will be refit length(obs)
+#   times, each time leaving out one of the observations specified in 'obs'.
 # @param ... unused currently
 # @param refit logical, to toggle whether refitting actually happens (only used
 #   to avoid refitting in tests)
+#
+# @return A modified version of 'loo_x'. 
+#
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
-  stopifnot(!is.null(x$data), inherits(loo_x, "loo"))
+  if (is.stanjm(x))
+    STOP_if_stanjm("reloo")
+  stopifnot(!is.null(x$data), is.loo(loo_x))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")
   
@@ -428,22 +450,32 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     lls[[j]] <-
       log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
-                      stanmat = as.matrix.stanreg(x))
+                      stanmat = as.matrix.stanreg(fit_j))
   }
   
-  # replace parts of loo_x
-  sel <- c("elpd_loo", "looic")
-  elppds <- unlist(lapply(lls, log_mean_exp))
-  loo_x$pointwise[obs, sel] <- cbind(elppds, -2 * elppds)
+  # compute elpd_{loo,j} for each of the held out observations
+  elpd_loo <- unlist(lapply(lls, log_mean_exp))
+  
+  # compute \hat{lpd}_j for each of the held out observations (using log-lik
+  # matrix from full posterior, not the leave-one-out posteriors)
+  ll_x <- log_lik(x, newdata = d[obs,, drop=FALSE])
+  hat_lpd <- apply(ll_x, 2, log_mean_exp)
+  
+  # compute effective number of parameters
+  p_loo <- hat_lpd - elpd_loo
+
+  # replace parts of the loo object with these computed quantities
+  sel <- c("elpd_loo", "p_loo", "looic")
+  loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
   loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
   loo_x[paste0("se_", sel)] <- with(loo_x, {
     N <- nrow(pointwise)
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
-  
-  # what should we do about pareto k's? for now setting them to 0
+  # what should we do about pareto k? for now setting them to 0
   loo_x$pareto_k[obs] <- 0
-  loo_x
+  
+  return(loo_x)
 }
 
 # log_mean_exp (just log_sum_exp(x) - log(length(x)))
@@ -457,17 +489,18 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  d <- get_all_vars(formula(x), x[["data"]])
+  dat <- x[["data"]]
+  sub <- getCall(x)[["subset"]]
+  
+  d <- get_all_vars(formula(x), dat)
+  if (!is.null(sub)) {
+    keep <- eval(substitute(sub), envir = dat)
+    d <- d[keep,, drop=FALSE]
+  }
+  
   na.omit(d)
 }
 
-
-# @param x stanreg object
-family_string <- function(x) {
-  fam <- family(x)
-  if (is.character(fam)) 
-    fam else fam$family
-}
 
 # Calculate a SHA1 hash of y
 # @param x stanreg object

@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
-#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon
+#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon pbcLong pbcSurv
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -76,6 +76,34 @@
 #' \item \code{K} Number of surgeries
 #' }
 #' }
+#' \item{\code{pbcLong,pbcSurv}}{
+#' Longitudinal biomarker and time-to-event survival data for 40 patients 
+#' with primary biliary cirrhosis who participated in a randomised 
+#' placebo controlled trial of D-penicillamine conducted at the Mayo
+#' Clinic between 1974 and 1984.
+#' 
+#' Source: Therneau and Grambsch (2000)
+#' 
+#' 304 obs. of 8 variables (\code{pbcLong}) and 40 obs. of 7 variables (\code{pbcSurv})
+#' \itemize{
+#' \item \code{age} {in years}
+#' \item \code{albumin} {serum albumin (g/dl)}
+#' \item \code{logBili} {logarithm of serum bilirubin}
+#' \item \code{death} {indicator of death at endpoint} 
+#' \item \code{futimeYears} {time (in years) between baseline and  
+#'     the earliest of death, transplantion or censoring}
+#' \item \code{id} {numeric ID unique to each individual}
+#' \item \code{platelet} {platelet count}
+#' \item \code{sex} {gender (m = male, f = female)}
+#' \item \code{status} {status at endpoint (0 = censored, 
+#'     1 = transplant, 2 = dead)}
+#' \item \code{trt} {binary treatment code (0 = placebo, 1 = 
+#'     D-penicillamine)}
+#' \item \code{year} {time (in years) of the longitudinal measurements,
+#'     taken as time since baseline)}
+#' }
+#' }
+#' 
 #' \item{\code{radon}}{
 #' Data on radon levels in houses in the state of Minnesota. 
 #' 
@@ -159,12 +187,15 @@
 #' Tarone, R. E. (1982) The use of historical control information in testing for
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
 #' 
+#' Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending 
+#' the Cox Model}. Springer-Verlag, New York, US.
+#' 
 #' @examples 
 #' # Using 'kidiq' dataset 
 #' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
 #'                prior = R2(location = 0.30, what = "mean"),
 #'                # the next line is only to make the example go fast enough
-#'                chains = 2, iter = 500, seed = 12345)
+#'                chains = 1, iter = 500, seed = 12345)
 #' pp_check(fit, nreps = 20)
 #' \donttest{
 #' bayesplot::color_scheme_set("brightblue")
