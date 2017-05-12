@@ -402,101 +402,90 @@ if (interactive()) {
   
 }
 
-#--------  Check stanjm prediction functions work with various formula specifications
+#--------  Check (post-)estimation functions work with various model specifications
 
 if (interactive()) {
   
-f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
-              dataLong = pbcLong,
-              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-              dataEvent = pbcSurv,
-              time_var = "year",
-              # this next line is only to keep the example small in size!
-              chains = 1, cores = 1, seed = 12345, iter = 10)
-
-f2 <- stan_jm(formulaLong = exp(logBili) ~ year + (1 | id), 
-              dataLong = pbcLong,
-              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-              dataEvent = pbcSurv,
-              time_var = "year",
-              # this next line is only to keep the example small in size!
-              chains = 1, cores = 1, seed = 12345, iter = 10)
-
-f3 <- stan_jm(formulaLong = logBili ~ poly(year, degree = 2) + (1 | id), 
-              dataLong = pbcLong,
-              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-              dataEvent = pbcSurv,
-              time_var = "year",
-              # this next line is only to keep the example small in size!
-              chains = 1, cores = 1, seed = 12345, iter = 10)
-
-f4 <- stan_jm(formulaLong = exp(logBili) ~ poly(year, degree = 2) + (1 | id), 
-              dataLong = pbcLong,
-              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-              dataEvent = pbcSurv,
-              time_var = "year",
-              # this next line is only to keep the example small in size!
-              chains = 1, cores = 1, seed = 12345, iter = 10)
-
-pbcLong$trials <- rpois(nrow(pbcLong), 6)
-pbcLong$succ <- rbinom(nrow(pbcLong), pbcLong$trials, .7)
-pbcLong$fail <- pbcLong$trials - pbcLong$succ
-f5 <- stan_jm(formulaLong = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
-              dataLong = pbcLong,
-              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
-              dataEvent = pbcSurv,
-              time_var = "year", family = binomial,
-              # this next line is only to keep the example small in size!
-              chains = 1, cores = 1, seed = 12345, iter = 10, init = 0)
-
-for (j in 1:4) {
-  mod <- get(paste0("f", j))
+  # No functions in formula
+  f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
+                dataLong = pbcLong,
+                formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+                dataEvent = pbcSurv,
+                time_var = "year",
+                # this next line is only to keep the example small in size!
+                chains = 1, cores = 1, seed = 12345, iter = 10)
   
-  test_that("log_lik works with estimation data", {
-    ll <- log_lik(mod)
-    expect_matrix(ll)
-  })
-  test_that("posterior_survfit works with estimation data", {
-    ps <- posterior_survfit(mod)
-    expect_survfit(ps)
-  })
-  test_that("posterior_predict works with estimation data", {
-    pp <- posterior_predict(mod, m = 1)
-    expect_ppd(pp)
-  }) 
+  # Functions on LHS of formula
+  f2 <- update(f1, formulaLong. = exp(logBili) ~ year + (1 | id))
   
-  ndL <- pbcLong[pbcLong$id == 2,]
-  ndE <- pbcSurv[pbcSurv$id == 2,]
-  test_that("log_lik works with new data (one individual)", {
-    ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-    expect_matrix(ll)
-  })
-  test_that("posterior_survfit works with new data (one individual)", {
-    ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-    expect_survfit(ps)
-  })  
-  test_that("posterior_predict works with new data (one individual)", {
-    pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
-    expect_ppd(pp)
-  })  
+  # Functions on RHS of formula
+  f3 <- update(f1, formulaLong. = logBili ~ poly(year, degree = 2) + (1 | id))
   
-  ndL <- pbcLong[pbcLong$id %in% c(1,2),]
-  ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-  test_that("log_lik works with new data (multiple individuals)", {
-    ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-    expect_matrix(ll)
-  })
-  test_that("posterior_survfit works with new data (multiple individuals)", {
-    ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-    expect_survfit(ps)
-  })
-  test_that("posterior_predict works with new data (multiple individuals)", {
-    pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
-    expect_ppd(pp)
-  })
+  # Functions on LHS and RHS of formula
+  f4 <- update(f1, formulaLong. = exp(logBili) ~ poly(year, degree = 2) + (1 | id))
   
-}
-
+  # Binomial outcome on LHS of formula
+  pbcLong$trials <- rpois(nrow(pbcLong), 6)
+  pbcLong$succ <- rbinom(nrow(pbcLong), pbcLong$trials, .7)
+  pbcLong$fail <- pbcLong$trials - pbcLong$succ
+  f5 <- update(f1, formulaLong. = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
+               family = binomial, init = 0, iter = 1000)
+  
+  # Different baseline hazards
+  f6 <- update(f1, basehaz = "weibull")
+  f7 <- update(f1, basehaz = "bs")
+  #f8 <- update(f1, basehaz = "piecewise") # posterior_survfit not yet implemented for piecewise
+  
+  # Test the models
+  for (j in c(1:4,6,7)) {
+    mod <- get(paste0("f", j))
+    cat("Checking model:", paste0("f", j), "\n")
+    
+    test_that("log_lik works with estimation data", {
+      ll <- log_lik(mod)
+      expect_matrix(ll)
+    })
+    test_that("posterior_survfit works with estimation data", {
+      ps <- posterior_survfit(mod)
+      expect_survfit(ps)
+    })
+    test_that("posterior_predict works with estimation data", {
+      pp <- posterior_predict(mod, m = 1)
+      expect_ppd(pp)
+    }) 
+    
+    ndL <- pbcLong[pbcLong$id == 2,]
+    ndE <- pbcSurv[pbcSurv$id == 2,]
+    test_that("log_lik works with new data (one individual)", {
+      ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+      expect_matrix(ll)
+    })
+    test_that("posterior_survfit works with new data (one individual)", {
+      ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+      expect_survfit(ps)
+    })  
+    test_that("posterior_predict works with new data (one individual)", {
+      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+      expect_ppd(pp)
+    })  
+    
+    ndL <- pbcLong[pbcLong$id %in% c(1,2),]
+    ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
+    test_that("log_lik works with new data (multiple individuals)", {
+      ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+      expect_matrix(ll)
+    })
+    test_that("posterior_survfit works with new data (multiple individuals)", {
+      ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+      expect_survfit(ps)
+    })
+    test_that("posterior_predict works with new data (multiple individuals)", {
+      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+      expect_ppd(pp)
+    })
+    
+  }
+  
 }
 
 

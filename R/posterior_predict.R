@@ -176,7 +176,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m), m = m)
   }
   if (!is(object, "polr") && is.binomial(family(object, m = m)$family))
-    ppargs$trials <- pp_binomial_trials(object, newdata)
+    ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
 
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
