@@ -130,7 +130,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     }
   })
   
-  # tests use sampling instead of optimizing (the latter fails)
   test_that("stan_betareg ok when modeling x and z (link.phi = 'identity')", {
     N <- 200
     dat <- data.frame(x = rnorm(N, 2, 1), z = rnorm(N, 2, 1))
@@ -150,17 +149,22 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     }
   })
   
-  # sqrt link is unstable so only testing that the model runs. 
   test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
-    for (i in 1:length(link1)) {  # FIXME!
-      N <- 1000
-      dat <- data.frame(x = rnorm(N, 2, 1), z = rep(1, N))
-      mu <- binomial(link = "logit")$linkinv(-0.8 + 0.5*dat$x)
-      phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
+    for (i in 1:length(link1)) {
+      N <- 200
+      dat <- data.frame(x = rnorm(N, 1, 1), z = rnorm(N, 2, 1))
+      if (i==4)
+        mu <- binomial(link = "cauchit")$linkinv(1 - 0.2*dat$x)
+      else if (i==2)
+        mu <- binomial(link = "probit")$linkinv(1 - 0.2*dat$x)
+      else if (i==5)
+        mu <- binomial(link = "log")$linkinv(-1 - 0.2*dat$x)
+      else
+        mu <- binomial(link = "logit")$linkinv(2 - 0.2*dat$x)
+      phi <- dat$z - min(dat$z) + 10
       dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
-  
-      SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                             data = dat, algorithm = "sampling", chains = 1, iter = 1)) 
+      SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[3], 
+                             data = dat, algorithm = "optimizing")) 
       expect_stanreg(fit)
     }
   })
