@@ -16,7 +16,6 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("Brian", "Ripley", role = "cph", 
                     comment = "R/stan_aov.R, R/stan_polr.R"),
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
-             person("Margarita", "Moreno-Betancur", role = "cph", comment = "R/simjm.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
 Description: Estimates previously compiled regression models using the 'rstan' package,
