@@ -66,14 +66,15 @@
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
   cat(x$modeling_function)
-  cat("\n family: ", family_plus_link(x))
-  cat("\n formula:", formula_string(formula(x)))
+  cat("\n family:  ", family_plus_link(x))
+  cat("\n formula: ", formula_string(formula(x)))
+  cat("\n num. obs:", nobs(x))
   
   cat("\n------\n")
   cat("\nEstimates:\n")
   
   mer <- is.mer(x)
-  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
+  ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
