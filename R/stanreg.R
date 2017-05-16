@@ -131,7 +131,7 @@ stanreg <- function(object) {
     # sometimes 'call' is no good (e.g. if using do.call(stan_glm, args)) so
     # also include the name of the modeling function (for use when printing,
     # etc.)
-    modeling_function = object$modeling_function
+    stan_function = object$stan_function
   )
 
   if (opt) 
