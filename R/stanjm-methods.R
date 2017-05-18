@@ -388,7 +388,7 @@ model.frame.stanjm <- function(formula, fixed.only = FALSE, m = NULL, ...) {
         fr[[i]][vars]
       })
     }
-    fr$Event <- model.frame(formula$coxmod)
+    fr$Event <- formula$coxmod_stuff$model_frame
     if (is.null(m)) return(list_nms(fr, M)) else return(fr[[m]])
   } 
   NextMethod("model.frame")
