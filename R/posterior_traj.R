@@ -195,8 +195,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   # Construct prediction data, NB data == observed data to return to user
   newdata <- validate_newdata(newdata)
   if (is.null(newdata)) {
-    rows <- rownames(model.frame(object, m = m))
-    data <- object$dataLong[[m]][rows, , drop = FALSE] 
+    data <- get_model_data(object)[[m]]
   } else {
     data <- newdata  
   }
