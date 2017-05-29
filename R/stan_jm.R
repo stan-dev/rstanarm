@@ -479,7 +479,7 @@
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
-                    lag_assoc = 0, dataAssoc,
+                    lag_assoc = 0, grp_assoc, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
                     quadnodes = 15, init = "model_based", 
                     na.action = getOption("na.action", "na.omit"), weights, 
@@ -515,6 +515,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
+  if (missing(grp_assoc))   grp_assoc   <- NULL
   if (missing(dataAssoc))   dataAssoc   <- NULL 
   
   # Validate arguments
@@ -550,7 +551,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   calling_env <- parent.frame()
   call <- match.call(expand.dots = TRUE)    
   mc   <- match.call(expand.dots = FALSE)
-  mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- 
+  mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- mc$grp_assoc <- 
     mc$dataAssoc <- mc$basehaz <- mc$basehaz_ops <-
     mc$df <- mc$knots <- mc$quadnodes <- NULL
   mc$priorLong <- mc$priorLong_intercept <- mc$priorLong_aux <-
@@ -606,7 +607,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Additional error checks
   id_var <- check_id_var(id_var, fetch(y_mod_stuff, "cnms"), fetch(y_mod_stuff, "flist"))
   unique_id_list <- check_id_list(id_var, fetch(y_mod_stuff, "flist"))
-    
+  
   # Construct prior weights
   has_weights <- (!is.null(weights))
   if (has_weights) check_arg_weights(weights, id_var)
@@ -663,12 +664,34 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
   colnames(assoc) <- paste0("Long", 1:M)
 
+  # For each submodel, identify the index of any grouping factors that are
+  # clustered within id_var (i.e. lower level clustering)
+  clust_stuff <- mapply(get_clust_info, 
+                        fetch(y_mod_stuff, "cnms"),
+                        fetch(y_mod_stuff, "flist"),
+                        MoreArgs = list(id_var = id_var),
+                        SIMPLIFY = FALSE)
+  
+  # Check the association structure for lower level clustering
+  has_clust <- fetch_(clust_stuff, "has_clust")
+  if (any(has_clust)) {
+    ok_grp_args <- c("sum", "mean")
+    if (is.null(grp_assoc))
+      stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
+           "within 'id_var'.", call. = FALSE)        
+    if (!grp_assoc %in% ok_grp_args)
+      stop("'grp_assoc' must be one of: ", paste(ok_grp_args, collapse = ", "))
+  } else if (!is.null(grp_assoc)) {
+    stop("'grp_assoc' can only be specified when there is lower level ",
+         "clustering within 'id_var'.", call. = FALSE)  
+  }    
+  
   # Return design matrices for evaluating longitudinal submodel quantities
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
   a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff, 
-                        SIMPLIFY = FALSE, 
+                        clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
                         MoreArgs = list(id_list         = e_mod_stuff$flist, 
                                         times           = e_mod_stuff$quadtimes, 
                                         assoc           = assoc, 
@@ -1032,6 +1055,19 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
   
+  # Indexing for type of association structure when there is
+  # clustering below the individual
+  standata$has_clust <- as.integer(has_clust)
+  if (any(has_clust)) {
+    standata$grp_assoc <- switch(grp_assoc,
+                                 sum = 1L,
+                                 mean = 2L)
+  } else {
+    standata$grp_assoc <- 0L
+  }
+  clust_freq <- fetch(clust_stuff, "clust_freq")
+  standata$clust_freq <- matrix(unlist(clust_freq), ncol = M)
+
   # Data for calculating value, slope, auc in GK quadrature 
   for (i in c("eta", "eps", "auc")) {
     nm_check <- switch(i,
@@ -1286,6 +1322,24 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   return(out)
 }
 
+get_clust_info <- function(cnms, flist, id_var) {
+  cnms_nms <- names(cnms)
+  tally <- sapply(cnms_nms, function(x) 
+    # within each ID, count the number of levels for the grouping factor x
+    tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
+    simplify = FALSE)
+  sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
+  has_clust <- as.logical(length(sel) > 0L)
+  if (has_clust) {
+    if (length(sel) > 1L)
+      stop("There can only be one grouping factor clustered within 'id_var'.") 
+    clust_var <- cnms_nms[sel] 
+    clust_freq <- tally[[clust_var]] 
+    clust_list <- unique(flist[[clust_var]])
+  } else clust_var <- clust_freq <- clust_list <- NULL
+  nlist(has_clust, clust_var, clust_list, clust_freq)
+}
+
 
 #--------------- Functions related to longitudinal submodel
 
@@ -1459,26 +1513,8 @@ check_id_var <- function(id_var, y_cnms, y_flist) {
       lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
         stop("'id_var' must be included as a grouping factor in each ",
              "of the longitudinal submodels", call. = FALSE)) 
-      mapply(function(cnms, flist, id_var) { # loop over submodels
-        # If there is more than one grouping factor, then make sure that the id_var 
-        # is the lowest level of clustering, by checking that the observations for 
-        # a given individual don't have more than one level for each other grouping
-        # factor included in the model
-        nms <- grep(id_var, names(cnms), value = TRUE, invert = TRUE)
-        if (length(nms)) { # submodel has additional grouping factors
-          lapply(nms, function(x) { # loop over additional grouping factors
-            # within each ID, count the number of levels for the additional grouping factor 
-            tally <- tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y)))
-            # within each ID, ensure max of 1 level for each other grouping factor
-            if (!all(tally == 1L))
-              stop("The 'id_var' must correspond to the lowest level of clustering. ",
-                   "Yet for some levels of '", id_var, "' there appears to be more ",
-                   "than one level for '", x, "'.", call. = FALSE)
-          }) 
-        }
-      }, cnms = y_cnms, flist = y_flist, MoreArgs = list(id_var = id_var))    
-      return(id_var)
     }
+    return(id_var)
   } else {  # only one grouping factor (assumed to be subject ID)
     only_cnm <- unique(sapply(y_cnms, names))
     if (length(only_cnm) > 1L)
@@ -2129,14 +2165,20 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc, 
+handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff, 
+                            id_list, times, assoc, 
                             id_var, time_var, eps, auc_quadnodes, 
                             dataAssoc = NULL, env = parent.frame()) {
   
   # Obtain a model frame defined as a data.table
   rows <- rownames(model.frame(y_mod_stuff$mod))
   df   <- dataLong[rows,]
-  mf   <- data.table::data.table(df, key = c(id_var, time_var))
+  if (clust_stuff$has_clust) {
+    clust_var <- clust_stuff$clust_var
+    mf <- data.table::data.table(df, key = c(id_var, clust_var, time_var))
+  } else {
+    mf <- data.table::data.table(df, key = c(id_var, time_var))
+  }
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
   # Update longitudinal submodel formula to reflect predvars
@@ -2146,7 +2188,8 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
   # in association structure
   mc[[1]] <- quote(lme4::glFormula)
   parts <- make_assoc_parts(newdata = mf, assoc = assoc, m = m, id_var = id_var, 
-                            time_var = time_var, id_list = id_list, times = times, 
+                            time_var = time_var, clust_stuff = clust_stuff, 
+                            id_list = id_list, times = times, 
                             eps = eps, auc_quadnodes = auc_quadnodes,
                             use_function = handle_glFormula, 
                             mc = mc, y_mod_stuff = y_mod_stuff, 
@@ -2201,7 +2244,7 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
 #   matrices for eta, eps, lag, auc, etc.
 # @param ... Additional arguments passes to use_function
 # @return A named list
-make_assoc_parts <- function(newdata, assoc, id_var, time_var, 
+make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
                              id_list, times, eps = 1E-5, auc_quadnodes = 15L, 
                              dataAssoc = NULL, use_function = handle_glFormula, 
                              ...) {
@@ -2219,6 +2262,13 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
     }, lag = lag)  
   }
   
+  # Broadcast id_list and times if there is lower level clustering
+  if (clust_stuff$has_clust) {
+    id_list <- rep(id_list, clust_stuff$clust_freq)
+    times <- lapply(times, rep, clust_stuff$clust_freq)
+    clust <- clust_stuff$clust_list
+  } else clust <- NULL
+  
   # Identify row in longitudinal data closest to event time or quadrature point
   #   NB if the quadrature point is earlier than the first observation time, 
   #   then covariates values are carried back to avoid missing values.
@@ -2229,7 +2279,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   #   covariate values can be carried). If no time varying covariates are 
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
-  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times)
+  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times, clust = clust)
   mod_eta <- use_function(newdata = dataQ, ...)
   
   # If association structure is based on slope, then calculate design 
@@ -2245,6 +2295,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   # calculate design matrices at the subquadrature points
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
   if (any(unlist(assoc[sel_auc,]))) {
+    if (clust_stuff$has_clust)
+      stop("'etaauc' and 'muauc' not yet implemented when there is clustering ",
+           "below 'id_var'.", call. = FALSE)
     # Return a design matrix that is (quadnodes * auc_quadnodes * Npat) rows 
     auc_quadtimes <- 
       lapply(times, function(x) unlist(
@@ -2328,16 +2381,28 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
 # Carry out a rolling merge
 #
 # @param data A data.table with a set key corresponding to ids and times
-# @param ids A vector of ids to merge against
+# @param ids A vector of patient ids to merge against
 # @param times A vector of (new) times to merge against
-# @return A data.table formed by a merge of ids, times, and the closest 
+# @param clust A vector of cluster ids to merge against when there is clustering
+#   within patient ids
+# @return A data.table formed by a merge of ids, (clust), times, and the closest 
 #   preceding (in terms of times) rows in data
-rolling_merge <- function(data, ids, times) {
-  if (is(times, "list")) {
+rolling_merge <- function(data, ids, times, clust = NULL) {
+  key_length <- if (is.null(clust)) 2L else 3L
+  if (!length(key(data)) == key_length)
+    stop("Bug found: data.table key is not the same length as supplied keylist.")
+  
+  if (is(times, "list") && is.null(clust)) {
     return(do.call(rbind, lapply(times, FUN = function(x) 
       data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
-  } else 
-    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
+  } else if (is(times, "list")) {
+    return(do.call(rbind, lapply(times, FUN = function(x) 
+      data[list(ids, clust, x), roll = TRUE, rollends = c(TRUE, TRUE)])))       
+  } else if (is.null(clust)) {
+    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])       
+  } else {
+    return(data[list(ids, clust, times), roll = TRUE, rollends = c(TRUE, TRUE)])       
+  }
 }
 
 # Evaluate a glFormula call and return model components
