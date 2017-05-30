@@ -7,6 +7,8 @@
   int<lower=0,upper=1> assoc;           // 0 = no assoc structure, 1 = any assoc structure
   int<lower=0,upper=1> assoc_uses[6];   // which components required to build association terms
   int<lower=0,upper=1> has_assoc[16,M]; // which association terms does each submodel use
+  int<lower=0,upper=1> has_clust;    // 1 = has clustering below patient level
+  matrix<lower=0,upper=nrow_y_Xq>[nrow_e_Xq,nrow_y_Xq] clust_mat; // design matrix used for summing across lower level clusters for each patient
   int<lower=0> sum_size_which_b;        // num. of shared random effects
   int<lower=0> size_which_b[M];         // num. of shared random effects for each long submodel
   int<lower=1> which_b_zindex[sum_size_which_b]; // which random effects are shared for each long submodel

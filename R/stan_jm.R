@@ -671,10 +671,16 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                         fetch(y_mod_stuff, "flist"),
                         MoreArgs = list(id_var = id_var),
                         SIMPLIFY = FALSE)
-  
+  clust_stuff <- unique(clust_stuff)
+  if (!length(clust_stuff) == 1L) {
+    stop("The structure of the lower level clustering within 'id_var' must ",
+         "be the same for all longitudinal submodels (i.e. same clustering ",
+         "variable, same number of units within each individual, and same ",
+         "ordering of the units.")    
+  } else clust_stuff <- clust_stuff[[1]]
+
   # Check the association structure for lower level clustering
-  has_clust <- fetch_(clust_stuff, "has_clust")
-  if (any(has_clust)) {
+  if (clust_stuff$has_clust) {
     ok_grp_args <- c("sum", "mean")
     if (is.null(grp_assoc))
       stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
@@ -685,14 +691,15 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     stop("'grp_assoc' can only be specified when there is lower level ",
          "clustering within 'id_var'.", call. = FALSE)  
   }    
-  
+
   # Return design matrices for evaluating longitudinal submodel quantities
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
   a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff, 
-                        clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
-                        MoreArgs = list(id_list         = e_mod_stuff$flist, 
+                        SIMPLIFY = FALSE, 
+                        MoreArgs = list(clust_stuff     = clust_stuff,
+                                        id_list         = e_mod_stuff$flist, 
                                         times           = e_mod_stuff$quadtimes, 
                                         assoc           = assoc, 
                                         id_var          = id_var, 
@@ -1057,17 +1064,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Indexing for type of association structure when there is
   # clustering below the individual
-  standata$has_clust <- as.integer(has_clust)
-  if (any(has_clust)) {
-    standata$grp_assoc <- switch(grp_assoc,
-                                 sum = 1L,
-                                 mean = 2L)
-  } else {
-    standata$grp_assoc <- 0L
-  }
-  clust_freq <- fetch(clust_stuff, "clust_freq")
-  standata$clust_freq <- matrix(unlist(clust_freq), ncol = M)
-
+  standata$has_clust <- as.integer(clust_stuff$has_clust)
+  clust_mat <- clust_stuff$clust_mat
+  if (grp_assoc == "mean")
+    clust_mat <- clust_mat / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)
+  standata$clust_mat <- t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1)))
+  
   # Data for calculating value, slope, auc in GK quadrature 
   for (i in c("eta", "eps", "auc")) {
     nm_check <- switch(i,
@@ -1334,10 +1336,13 @@ get_clust_info <- function(cnms, flist, id_var) {
     if (length(sel) > 1L)
       stop("There can only be one grouping factor clustered within 'id_var'.") 
     clust_var <- cnms_nms[sel] 
-    clust_freq <- tally[[clust_var]] 
+    clust_freq <- tally[[clust_var]]
     clust_list <- unique(flist[[clust_var]])
-  } else clust_var <- clust_freq <- clust_list <- NULL
-  nlist(has_clust, clust_var, clust_list, clust_freq)
+    clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
+    clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
+  } else 
+    clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_mat <- NULL
+  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat)
 }
 
 
@@ -2267,6 +2272,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
     id_list <- rep(id_list, clust_stuff$clust_freq)
     times <- lapply(times, rep, clust_stuff$clust_freq)
     clust <- clust_stuff$clust_list
+    clust_var <- clust_stuff$clust_var
   } else clust <- NULL
   
   # Identify row in longitudinal data closest to event time or quadrature point
@@ -2324,7 +2330,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
                           stop(paste0("No variables found in the formula specified for the '", x,
                                       "' association structure.", call. = FALSE))
                         ff <- ~ foo + bar
-                        gg <- parse(text = paste("~", paste(c(id_var, time_var), collapse = "+")))[[1L]]
+                        varlist <- if (clust_stuff$has_clust) 
+                          c(id_var, clust_var, time_var) else c(id_var, time_var)
+                        gg <- parse(text = paste("~", paste(varlist, collapse = "+")))[[1L]]
                         ff[[2L]][[2L]] <- fm[[2L]]
                         ff[[2L]][[3L]] <- gg[[2L]]
                         if ("y_mod_stuff" %in% names(dots)) { # call from stan_jm
@@ -2358,9 +2366,11 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
                           mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
                                            na.action = naa))                          
                         }  
-                        mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
+                        mf2 <- if (clust_stuff$has_clust)
+                          data.table::data.table(mf2, key = c(id_var, clust_var, time_var)) else 
+                            data.table::data.table(mf2, key = c(id_var, time_var))
                         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times)
+                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times, clust = clust)
                         xq <- stats::model.matrix(fm, data = mf2q)
                         if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
                         if (!ncol(xq))
