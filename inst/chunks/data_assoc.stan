@@ -52,4 +52,4 @@
     // where the non-zeros start in each row (at auc quadpoints)
 
   // data for calculating assoc*data interactions in GK quadrature
-  vector[nrow_e_Xq] y_Xq_data[sum_a_K_data]; // design matrix for interacting with ev/es/mv/ms at quadpoints 
+  vector[nrow_y_Xq] y_Xq_data[sum_a_K_data]; // design matrix for interacting with ev/es/mv/ms at quadpoints 

@@ -1068,7 +1068,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   clust_mat <- clust_stuff$clust_mat
   if (grp_assoc == "mean")
     clust_mat <- clust_mat / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)
-  standata$clust_mat <- t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1)))
+  standata$clust_mat <- as.matrix(
+    t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))
   
   # Data for calculating value, slope, auc in GK quadrature 
   for (i in c("eta", "eps", "auc")) {
