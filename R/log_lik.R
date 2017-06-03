@@ -495,20 +495,22 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   times[times == 0] <- 1E-10 
   # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
-  if (one_draw) {
-    aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
-                            family = family, beta = pars$beta, b = pars$b)
-    e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
-  } else {
-    aXq <- matrix(NA, NROW(data$eXq), NCOL(pars$abeta))
-    for (s in 1:NROW(e_eta)) {
-      abeta_s <- pars$abeta[s,]
-      beta_s  <- lapply(pars$beta, function(x) x[s,])
-      b_s     <- lapply(pars$b,    function(x) x[s,])
-      aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
-                                  family = family, beta = beta_s, b = b_s)
-      e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
-    }
+  if (length(pars$abeta)) {
+    if (one_draw) {
+      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                              family = family, beta = pars$beta, b = pars$b)
+      e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
+    } else {
+      aXq <- matrix(NA, NROW(data$eXq), NCOL(pars$abeta))
+      for (s in 1:NROW(e_eta)) {
+        abeta_s <- pars$abeta[s,]
+        beta_s  <- lapply(pars$beta, function(x) x[s,])
+        b_s     <- lapply(pars$b,    function(x) x[s,])
+        aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                                    family = family, beta = beta_s, b = b_s)
+        e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
+      }
+    }    
   }
   # Baseline hazard
   if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
