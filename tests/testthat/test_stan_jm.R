@@ -38,8 +38,8 @@ RANEF_tol <- 0.05
 EVENT_tol <- 0.05
 
 expect_matrix  <- function(x) expect_identical(class(x), "matrix")
-expect_stanjm  <- function(x) expect_s3_class(x, "stanjm")
-expect_survfit <- function(x) expect_s3_class(x, "survfit.stanjm")
+expect_stanmvreg  <- function(x) expect_s3_class(x, "stanmvreg")
+expect_survfit <- function(x) expect_s3_class(x, "survfit.stanmvreg")
 expect_ppd     <- function(x) expect_s3_class(x, "ppd")
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 SW <- function(expr) capture.output(suppressWarnings(expr))
@@ -112,7 +112,7 @@ test_that("id_var argument works", {
   tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
   tmpfm <- logBili ~ year + (1 | id) + (1 | practice)
   ok_mod <- update(examplejm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "id", init = 0)
-  expect_stanjm(ok_mod)
+  expect_stanmvreg(ok_mod)
   expect_error(update(ok_mod, id_var = NULL), "'id_var' must be specified")
   expect_error(update(ok_mod, id_var = "year"), "'id_var' must be included as a grouping factor")
   expect_error(update(ok_mod, id_var = "practice"), "'id_var' must correspond to the lowest level of clustering")
