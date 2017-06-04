@@ -14,7 +14,6 @@
   int<lower=1,upper=3> basehaz_type;    // 1 = weibull, 2 = B-splines, 3 = piecewise
   int<lower=0> basehaz_df;              // df for baseline hazard
   int<lower=0,upper=1> e_has_intercept; // 1 = yes
-  int<lower=0> nrow_y_Xq;     // num. rows in long. predictor matrix at quad points
   int<lower=0> nrow_e_Xq;     // num. rows in event predictor matrix at quad points
   matrix[nrow_e_Xq,e_K] e_Xq; // predictor matrix (event submodel) at quadpoints, centred
   vector[nrow_e_Xq] e_times;  // event times and unstandardised quadrature points

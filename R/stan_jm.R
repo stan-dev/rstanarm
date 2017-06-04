@@ -677,18 +677,13 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   clust_stuff <- mapply(get_clust_info, 
                         fetch(y_mod_stuff, "cnms"),
                         fetch(y_mod_stuff, "flist"),
-                        MoreArgs = list(id_var = id_var),
+                        MoreArgs = list(id_var = id_var, 
+                                        quadnodes = quadnodes,
+                                        grp_assoc = grp_assoc),
                         SIMPLIFY = FALSE)
-  clust_stuff <- unique(clust_stuff)
-  if (!length(clust_stuff) == 1L) {
-    stop("The structure of the lower level clustering within 'id_var' must ",
-         "be the same for all longitudinal submodels (i.e. same clustering ",
-         "variable, same number of units within each individual, and same ",
-         "ordering of the units.")    
-  } else clust_stuff <- clust_stuff[[1]]
 
   # Check the association structure for lower level clustering
-  if (clust_stuff$has_clust) {
+  if (any(fetch_(clust_stuff, "has_clust"))) {
     ok_grp_args <- c("sum", "mean")
     if (is.null(grp_assoc))
       stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
@@ -704,10 +699,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
   auc_quadnodes <- 15L
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff, 
-                        SIMPLIFY = FALSE, 
-                        MoreArgs = list(clust_stuff     = clust_stuff,
-                                        id_list         = e_mod_stuff$flist, 
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff,
+                        clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
+                        MoreArgs = list(id_list         = e_mod_stuff$flist, 
                                         times           = e_mod_stuff$quadtimes, 
                                         assoc           = assoc, 
                                         id_var          = id_var, 
@@ -1014,7 +1008,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$quadnodes       <- as.integer(quadnodes)
   standata$quadweight      <- as.array(e_mod_stuff$quadweight)
   standata$Npat_times_quadnodes <- as.integer(e_mod_stuff$Npat * quadnodes)
-  standata$nrow_y_Xq       <- NROW(a_mod_stuff[[1]]$mod_eta$xtemp)
   standata$nrow_e_Xq       <- NROW(e_mod_stuff$xtemp)
   standata$e_times         <- c(e_mod_stuff$eventtime, unlist(e_mod_stuff$quadpoint))
   standata$e_d             <- c(e_mod_stuff$d, rep(1, length(unlist(e_mod_stuff$quadpoint))))
@@ -1072,14 +1065,16 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Indexing for type of association structure when there is
   # clustering below the individual
-  standata$has_clust <- as.integer(clust_stuff$has_clust)
-  clust_mat <- clust_stuff$clust_mat
-  if (grp_assoc == "mean")
-    clust_mat <- clust_mat / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)
-  standata$clust_mat <- as.matrix(
-    t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))
+  standata$has_clust <- as.array(as.integer(fetch_(clust_stuff, "has_clust")))
+  standata$clust_mat <- as.matrix(Matrix::bdiag(fetch(clust_stuff, "clust_mat")))
+  cols_clust_mat <- sapply(fetch(clust_stuff, "clust_mat"), ncol)
+  standata$ncol_clust <- sum(cols_clust_mat)
+  standata$idx_clust <- get_idx_array(cols_clust_mat)
   
   # Data for calculating value, slope, auc in GK quadrature 
+  standata$nrow_y_Xq <- as.array(as.integer(
+    sapply(a_mod_stuff, function(x) NROW(x$mod_eta$xtemp))))
+  standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
   for (i in c("eta", "eps", "auc")) {
     nm_check <- switch(i,
                        eta = "^eta|^mu",
@@ -1113,9 +1108,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$auc_quadnodes <- 
     as.integer(auc_quadnodes)
   standata$Npat_times_auc_quadnodes <- 
-    as.integer(e_mod_stuff$Npat * auc_quadnodes)  
-  standata$nrow_y_Xq_auc <- 
-    as.integer(NROW(a_mod_stuff[[1]]$mod_auc$xtemp))
+    as.integer(e_mod_stuff$Npat * auc_quadnodes) 
+  standata$nrow_y_Xq_auc <- as.array(as.integer(
+    sapply(a_mod_stuff, function(x) NROW(x$mod_auc$xtemp))))
+  standata$idx_qauc <- get_idx_array(standata$nrow_y_Xq_auc)
   auc_quadweights <- 
     unlist(lapply(e_mod_stuff$quadtimes, function(x) 
       lapply(x, function(y) 
@@ -1126,7 +1122,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Interactions between association terms and data
   # design matrix for the interactions
   standata$y_Xq_data <- 
-    as.array(t(as.matrix(do.call("cbind", fetch(a_mod_stuff, "xmat_data")))))
+    as.array(as.matrix(Matrix::bdiag(fetch(a_mod_stuff, "xmat_data"))))
   # number of columns in y_Xq_data corresponding to each interaction type 
   # (ie, etavalue, etaslope, muvalue, muslope) for each submodel
   standata$a_K_data  <- fetch_array(a_mod_stuff, "K_data")  
@@ -1155,7 +1151,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
   } else if (is.character(init) && (init == "prefit_vb")) {
     cat("Obtaining initial values using variational bayes\n")
-    dropargs <- c("chains", "cores", "iter")
+    dropargs <- c("chains", "cores", "iter", "refresh")
     vbdots <- list(...)
     for (i in dropargs) 
       vbdots[[i]] <- NULL
@@ -1355,7 +1351,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   return(out)
 }
 
-get_clust_info <- function(cnms, flist, id_var) {
+get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
   cnms_nms <- names(cnms)
   tally <- sapply(cnms_nms, function(x) 
     # within each ID, count the number of levels for the grouping factor x
@@ -1371,8 +1367,13 @@ get_clust_info <- function(cnms, flist, id_var) {
     clust_list <- unique(flist[[clust_var]])
     clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
     clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
-  } else 
-    clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_mat <- NULL
+    if (grp_assoc == "mean")
+      clust_mat <- clust_mat / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)
+    clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))    
+  } else {
+    clust_var <- clust_freq <- clust_list <- clust_idlist <- NULL
+    clust_mat <- matrix(0, 0, 0)    
+  }
   nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat)
 }
 
@@ -3095,8 +3096,8 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   e_aux_unscaled<- standardise_coef(e_aux,        standata$e_prior_mean_for_aux, standata$e_prior_scale_for_aux)
   b_Cov         <- lapply(y_mod_stuff, function(x) lme4::VarCorr(x$mod)[[1L]])
   sel           <- sapply(y_mod_stuff, function(x) length(lme4::VarCorr(x$mod)) > 1L)
-  if (any(sel)) stop("Model-based initial values cannot yet be used with more ",
-                     "than one clustering level.", call. = FALSE)
+  #if (any(sel)) stop("Model-based initial values cannot yet be used with more ",
+  #                   "than one clustering level.", call. = FALSE)
  
   # Initial values for random effects distribution
   scale <- standata$scale
