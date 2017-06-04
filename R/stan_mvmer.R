@@ -334,9 +334,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   for (i in c("has_aux", paste0("has_intercept", c("", "_nob", "_lob", "_upb")))) 
     standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
   
-  # hyperparameters for priors of auxiliary parameters
-  
-  # data for random effects
+  # Data for group-specific terms
   group <- lapply(y_mod_stuff, function(x) {
     pad_reTrms(Ztlist = x$Ztlist, 
                cnms   = x$cnms, 
@@ -344,48 +342,33 @@ stan_mvmer <- function(formula, data, family = gaussian,
   Z              <- fetch(group, "Z")
   y_cnms         <- fetch(group, "cnms")
   y_flist_padded <- fetch(group, "flist")
-  t <- length(cnms_nms) # num. of unique grouping factors
-  pmat <- matrix(0, t, M)
-  for (i in 1:t) {
-    for (j in 1:M) {
-      pmat[i,j] <- length(y_cnms[[j]][[cnms_nms[i]]])
-    }
-  }
-  p <- rowSums(pmat)
-  lmat <- matrix(0, t, M)
+  t <- length(cnms_nms)   # num of unique grouping factors
+  pmat <- matrix(0, t, M) # num of group-specific terms
+  lmat <- matrix(0, t, M) # num of factor levels
   l <- c()
   for (i in 1:t) {
     for (j in 1:M) {
+      pmat[i,j] <- length(y_cnms[[j]][[cnms_nms[i]]])
       lmat[i,j] <- nlevels(y_flist_padded[[j]][[cnms_nms[i]]])
     }
     l[i] <- max(lmat[i,])
     if (!all(lmat[i,] %in% c(0, l[i])))
       stop("The number of factor levels for each of the grouping factors ",
-           "must be the same in each of the longitudinal submodels")
+           "must be the same in each of the longitudinal submodels.")     
   }
   qmat <- l * pmat
-  q1 <- rowSums(qmat)
-  q2 <- colSums(qmat)
-  
-  # Names of clustering variables
-  group_nms <- lapply(y_cnms, names)
-  # Names of random effects and random coefficients
-  b_nms <- character()
-  g_nms <- character() 
-  for (m in 1:M) {
-    for (i in seq_along(group_nms[[m]])) {
-      # !!! if you change this change .pp_data_mer_z() as well
-      nm <- group_nms[[m]][i]
-      nms_i <- paste(y_cnms[[m]][[nm]], nm)
-      if (length(nms_i) == 1) {
-        b_nms <- c(b_nms, paste0("Long", m, "|", nms_i, ":", levels(y_flist_padded[[m]][[nm]])))
-      } else {
-        b_nms <- c(b_nms, c(t(sapply(nms_i, function(x) 
-          paste0("Long", m, "|", x, ":", levels(y_flist_padded[[m]][[nm]]))))))
-      }
-      g_nms <- c(g_nms, paste0("Long", m, "|", nms_i)) 
-    }
-  }
+  p  <- rowSums(pmat) # num group-specific terms for each grouping factor 
+  q1 <- rowSums(qmat) # num group-specific coefs for each grouping factor
+  q2 <- colSums(qmat) # num group-specific coefs for each submodel
+  q  <- sum(qmat)     # total num group-specific coefs
+  b_nms <- unlist(Map(make_b_nms, group, m = seq(M)))
+  g_nms <- unlist(
+    lapply(1:M, FUN = function(m) {
+      lapply(1:length(group[[m]]$cnms), FUN = function(i) {
+        paste(paste0("Long", m), group[[m]]$cnms[[i]], names(group[[m]]$cnms)[i], sep = "|")
+      })
+    })
+  )
   standata$t    <- as.integer(t)
   standata$pmat <- as.array(pmat)
   standata$p    <- as.array(p)
@@ -393,16 +376,16 @@ stan_mvmer <- function(formula, data, family = gaussian,
   standata$qmat <- as.array(qmat)
   standata$q1   <- as.array(q1)
   standata$q2   <- as.array(q2)
+  standata$q    <- as.integer(q)
   standata$len_theta_L <- sum(choose(p, 2), p)
   Zmerge <- Matrix::bdiag(Z)
-  standata$q    <- as.integer(ncol(Zmerge))
   parts <- rstan::extract_sparse_parts(Zmerge)
   standata$num_non_zero <- as.integer(length(parts$w))
   standata$w <- parts$w
   standata$v <- parts$v
   standata$u <- as.array(parts$u)
   
-  # hyperparameters for random effects model
+  # Hyperparameters for decov prior
   if (prior_covariance$dist == "decov") {
     decov_args <- prior_covariance
     standata$shape <- as.array(maybe_broadcast(decov_args$shape, t))
@@ -449,9 +432,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$mvmer
-  pars <- c(if (standata$sum_has_intercept_nob) "gamma_nob",
-            if (standata$sum_has_intercept_lob) "gamma_lob",
-            if (standata$sum_has_intercept_upb) "gamma_upb", 
+  pars <- c(if (standata$sum_has_intercept) "alpha", 
             if (standata$K) "beta",
             if (standata$q) "b",
             if (standata$sum_has_aux) "aux",

@@ -140,13 +140,21 @@
 #'   have one row for each individual; that is, weights should be constant 
 #'   within individuals.
 #' @param init The method for generating the initial values for the MCMC.
-#'   The default is \code{"model_based"}, which uses those obtained from 
+#'   The default is \code{"prefit"}, which uses those obtained from 
 #'   fitting separate longitudinal and time-to-event models prior  
-#'   to fitting the joint model. Parameters that cannot be obtained from 
+#'   to fitting the joint model. The separate models are estimated using the
+#'   \code{\link[lme4]{glmer}} and \code{\link[survival]{coxph}} functions.
+#'   Parameters that cannot be obtained from 
 #'   fitting separate longitudinal and time-to-event models are initialised 
-#'   at 0. This provides reasonable initial values which should aid the MCMC
-#'   sampler. However, it is recommended that any final analysis should be
-#'   performed with several MCMC chains each initiated from a different
+#'   at 0. This often provides reasonable initial values which should aid the 
+#'   MCMC sampler, but may not work for some complex or heavily constrained 
+#'   models such as those with multiple longitudinal submodels or multilevel
+#'   clustering. An alternative is to \code{"prefit_vb"} which will obtain 
+#'   initial values for the longitudinal submodels by estimating
+#'   a multivariate GLM using the \code{\link{stan_mvmer}} function with 
+#'   \code{algorithm = "meanfield"}. This may help with initial values for some
+#'   complex models. Note that it is recommended that any final analysis should 
+#'   be performed with several MCMC chains each initiated from a different
 #'   set of initial values; this can be obtained by setting
 #'   \code{init = "random"}. Other possibilities for specifying \code{init}
 #'   are those described for \code{\link[rstan]{stan}}.  
@@ -481,7 +489,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
-                    quadnodes = 15, init = "model_based", 
+                    quadnodes = 15, init = "prefit", 
                     na.action = getOption("na.action", "na.omit"), weights, 
                     offset, contrasts, ...,				          
                     priorLong = normal(), priorLong_intercept = normal(), 
@@ -1100,6 +1108,35 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
   }
   
+  #----------------
+  # Initial values
+  #----------------
+  
+  if (is.character(init) && (init =="prefit")) {
+    init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
+  } else if (is.character(init) && (init == "prefit_vb")) {
+    cat("Obtaining initial values using variational bayes\n")
+    dropargs <- c("chains", "cores", "iter")
+    vbdots <- list(...)
+    for (i in dropargs) 
+      vbdots[[i]] <- NULL
+    vbargs <- c(list(stanmodels$mvmer, pars = "mean_PPD", data = standata, 
+                     algorithm = "meanfield"), vbdots)
+    initfit <- do.call(rstan::vb, vbargs)
+    initmeans <- rstan::get_posterior_mean(initfit)
+    initnms <- rownames(initmeans)
+    inits <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)()
+    sel <- c("gamma_nob", "gamma_lob", "gamma_upb", "z_beta", "aux_unscaled", 
+             "z_b", "z_T", "rho", "zeta", "tau", "global", "local2", "local4", 
+             "S", "ool", "noise")
+    for (i in sel) {
+      sel_i <- grep(paste0("^", i, "\\."), initnms)
+      if (length(sel_i))
+        inits[[i]] <- as.array(initmeans[sel_i,])
+    }
+    init <- function() inits
+  }
+  
   #---------------
   # Prior summary
   #---------------
@@ -1127,13 +1164,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     adjusted_priorAssoc_scale = a_prior_stuff$prior_scale,
     family = family
   )  
-  
-  #----------------
-  # Initial values
-  #----------------
-  
-  if (is.character(init) && (init == "model_based"))
-    init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
 
   #-----------
   # Fit model
