@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # Copyright (C) 2016, 2017 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
@@ -24,10 +24,10 @@
 #' overlays the Kaplan-Meier curve based on the observed data.
 #' 
 #' @export
-#' @templateVar stanjmArg object
+#' @templateVar stanmvregArg object
 #' @templateVar labsArg xlab,ylab
 #' @templateVar cigeomArg ci_geom_args
-#' @template args-stanjm-object
+#' @template args-stanmvreg-object
 #' @template args-labs
 #' @template args-ci-geom-args
 #'   
@@ -73,7 +73,7 @@ ps_check <- function(object, check = "survival",
                      draws = NULL, seed = NULL, 
                      xlab = NULL, ylab = NULL,
                      ci_geom_args = NULL, ...) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   limits <- match.arg(limits)
 
   # Predictions for plotting the estimated survival function
@@ -102,7 +102,7 @@ ps_check <- function(object, check = "survival",
                        lb = km$lower, ub = km$upper)
   
   # Plot estimated survival function with KM curve overlaid
-  graph <- plot.survfit.stanjm(dat, ids = NULL, limits = limits, ...)
+  graph <- plot.survfit.stanmvreg(dat, ids = NULL, limits = limits, ...)
   kmgraph <- geom_step(data = kmdat, 
                        mapping = aes_string(x = "times", y = "surv"))
   graph + kmgraph

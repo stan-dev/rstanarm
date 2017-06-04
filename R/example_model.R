@@ -46,7 +46,7 @@ NULL
 #' 
 #' @name example_jm
 #' @format Calling \code{example("example_jm")} will run the model in the 
-#'   Examples section, below, and the resulting stanjm object will then be
+#'   Examples section, below, and the resulting stanmvreg object will then be
 #'   available in the global environment. The \code{chains} and \code{iter}
 #'   arguments are specified to make this example be small in size. In practice,
 #'   we recommend that they be left unspecified in order to use the default
