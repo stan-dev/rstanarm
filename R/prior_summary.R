@@ -104,12 +104,7 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
   }  
   if (is.stanmvreg(object)) {
     M <- get_M(object)
-    yvars <- sapply(1:M, function(m) {
-      terms_m <- terms(object)[[m]]
-      sel <- attr(terms_m, "response")
-      rownames(attr(terms_m, "factors"))[sel]
-    })
-    x <- structure(x, M = M, yvars = yvars) 
+    x <- structure(x, M = M, modeling_function = object$modeling_function) 
   }
   structure(x, class = "prior_summary.stanreg",
             QR = used.QR(object),
@@ -131,6 +126,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   QR <- attr(x, "QR")
   sparse <- attr(x, "sparse")
   model_name <- attr(x, "model_name")
+  modeling_function <- attr(x, "modeling_function")
   
   msg <- paste0("Priors for model '", model_name, "'")
   cat(msg, "\n------")
@@ -169,10 +165,40 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
-  # unique to stan_mvmer or stan_jm
-  if (!is.null(attr(x, "M"))) {
+  # unique to stan_mvmer
+  if (!is.null(modeling_function) && (modeling_function == "stan_mvmer")) {
     M <- attr(x, "M")
-    yvars <- attr(x, "yvars") 
+    for (m in 1:M) {
+      if (!is.null(x[["prior_intercept"]][[m]]))
+        .print_scalar_prior(
+          x[["prior_intercept"]][[m]], 
+          txt = paste0(if (M > 1) "\n", "Submodel", m, "|Intercept", if (!sparse) 
+            " (after predictors centered)"), 
+          formatters
+        )
+      if (!is.null(x[["prior"]][[m]]))
+        .print_vector_prior(
+          x[["prior"]][[m]], 
+          txt = paste0("\nSubmodel", m, "|Coefficients", if (QR) " (in Q-space)"), 
+          formatters = formatters
+        )
+      if (!is.null(x[["prior_aux"]][[m]])) {
+        aux_name <- x[["prior_aux"]][[m]][["aux_name"]]
+        aux_dist <- x[["prior_aux"]][[m]][["dist"]]
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["prior_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["prior_aux"]][[m]], 
+          txt = paste0("\nSubmodel", m, "|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }    
+  }
+  
+  # unique to stan_jm
+  if (!is.null(modeling_function) && (modeling_function == "stan_jm")) {
+    M <- attr(x, "M")
     for (m in 1:M) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))
         .print_scalar_prior(
@@ -211,26 +237,34 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         txt = "\nEvent|Coefficients", 
         formatters = formatters
       )
+    if (!is.null(x[["priorEvent_aux"]])) {
+      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
+      aux_dist <- x[["priorEvent_aux"]][["dist"]]
+      if ((aux_name == "weibull-shape") &&
+          (aux_dist %in% c("normal", "student_t", "cauchy"))) { # weibull
+        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nEvent|Auxiliary (", aux_name, ")"), 
+          formatters
+        )        
+      } else { # bs or piecewise
+        .print_vector_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nEvent|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
     if (!is.null(x[["priorAssoc"]]))
       .print_vector_prior(
         x[["priorAssoc"]], 
         txt = "\nAssociation parameters", 
         formatters = formatters
-      )    
-    if (!is.null(x[["priorEvent_aux"]])) {
-      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
-      aux_dist <- x[["priorEvent_aux"]][["dist"]]
-      if (aux_dist %in% c("normal", "student_t", "cauchy"))
-        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
-      .print_scalar_prior(
-        x[["priorEvent_aux"]], 
-        txt = paste0("\nEvent|Auxiliary (", aux_name, ")"), 
-        formatters
       )
-    }
   }  
   
-  # unique to stan_(g)lmer or stan_gamm4 or stan_jm
+  # unique to stan_(g)lmer, stan_gamm4, stan_mvmer, or stan_jm
   if (!is.null(x[["prior_covariance"]]))
     .print_covariance_prior(x[["prior_covariance"]], txt = "\nCovariance", formatters)
   

@@ -1162,7 +1162,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
     adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
     adjusted_priorAssoc_scale = a_prior_stuff$prior_scale,
-    family = family
+    family = family, basehaz = basehaz
   )  
 
   #-----------
@@ -1387,7 +1387,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
     trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
     Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
-    flist  <- lapply(flist,  function(x) x[ord]) 
+    flist  <- flist[ord, , drop = FALSE] 
     N01    <- sapply(0:1,    function(x) sum(y == x))
   } else {
     ord    <- NULL
@@ -1567,7 +1567,7 @@ unorder_bernoulli <- function(mod_stuff) {
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])
-    mod_stuff$flist   <- lapply(mod_stuff$flist,  function(x) x[order(mod_stuff$ord)])
+    mod_stuff$flist   <- mod_stuff$flist[order(mod_stuff$ord), , drop = FALSE]
   }
   mod_stuff
 }
@@ -2830,7 +2830,9 @@ summarize_jm_prior <-
            adjusted_priorEvent_intercept_scale = NULL, 
            adjusted_priorEvent_aux_scale = NULL,           
            adjusted_priorAssoc_scale = NULL,
-           family = NULL, strip_from_names = NULL) {
+           family = NULL, 
+           basehaz = NULL,
+           strip_from_names = NULL) {
     if (!is.null(family) && !is(family, "list"))
       stop("'family' should be a list of family objects, one for each submodel.")
     if (!is.null(has_assoc) && !is.logical(has_assoc) && (length(has_assoc) == 1L))
@@ -2933,7 +2935,20 @@ summarize_jm_prior <-
             adjusted_priorEvent_intercept_scale else NULL,
           df = if (prior_dist_name %in% "student_t")
             prior_df else NULL
-        ))           
+        ))
+      e_aux_name <- .rename_e_aux(basehaz) 
+      prior_list$priorEvent_aux <-
+        with(user_priorEvent_aux, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_auxEvent)
+            adjusted_priorEvent_aux_scale else NULL,
+          df = if (!is.na(prior_dist_name) && 
+                   prior_dist_name %in% "student_t")
+            prior_df else NULL, 
+          aux_name = e_aux_name
+        ))      
     }
 
     if (!is.null(user_priorAssoc)) {
@@ -2962,6 +2977,16 @@ summarize_jm_prior <-
     
     return(prior_list)
   }
+
+# Get name of auxiliary parameters for event submodel
+#
+# @param basehaz A list with information about the baseline hazard
+.rename_e_aux <- function(basehaz) {
+  nm <- basehaz$type_name
+  if (nm == "weibull") "weibull-shape" else
+    if (nm == "bs") "spline-coefficients" else
+      if (nm == "piecewise") "piecewise-coefficients" else NA
+}
 
 # Check if priors were autoscaled
 #

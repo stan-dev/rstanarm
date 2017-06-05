@@ -423,7 +423,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
     adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
     adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
     adjusted_priorLong_aux_scale = fetch(y_prior_aux_stuff, "prior_scale"),
-    family = family
+    family = family, strip_nms = "Long"
   )    
   
   #-----------

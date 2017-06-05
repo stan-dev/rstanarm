@@ -405,7 +405,7 @@ if (interactive()) {
 #--------  Check (post-)estimation functions work with various model specifications
 
 if (interactive()) {
-  
+
   # No functions in formula
   f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
                 dataLong = pbcLong,
@@ -424,66 +424,97 @@ if (interactive()) {
   # Functions on LHS and RHS of formula
   f4 <- update(f1, formulaLong. = exp(logBili) ~ poly(year, degree = 2) + (1 | id))
   
+  # Intercept only event submodel
+  f5 <- update(f1, formulaEvent. = Surv(futimeYears, death) ~ 1)
+    
   # Binomial outcome on LHS of formula
   pbcLong$trials <- rpois(nrow(pbcLong), 6)
   pbcLong$succ <- rbinom(nrow(pbcLong), pbcLong$trials, .7)
   pbcLong$fail <- pbcLong$trials - pbcLong$succ
-  f5 <- update(f1, formulaLong. = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
-               family = binomial, init = 0, iter = 1000)
-  
+  f6 <- update(f1, formulaLong. = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
+               family = binomial, init = "prefit_vb", iter = 1000)
+
   # Different baseline hazards
-  f6 <- update(f1, basehaz = "weibull")
-  f7 <- update(f1, basehaz = "bs")
-  #f8 <- update(f1, basehaz = "piecewise") # posterior_survfit not yet implemented for piecewise
+  f7 <- update(f1, basehaz = "weibull")
+  f8 <- update(f1, basehaz = "bs")
+#  f9 <- update(f1, basehaz = "piecewise") # posterior_survfit not yet implemented for piecewise
+  
+  # Different association structures
+  f10 <- update(f1, assoc = NULL)
+  f11 <- update(f1, assoc = "etavalue")
+  f12 <- update(f1, assoc = "etaslope")
+  f13 <- update(f1, assoc = "etaauc")
+  f14 <- update(f1, assoc = "muvalue")
+  f15 <- update(f1, assoc = "muslope")
+  f16 <- update(f1, assoc = "muauc")
+  f17 <- update(f1, assoc = c("etavalue", "etaslope")) 
+  f18 <- update(f1, assoc = c("muvalue", "muslope"))
+
+  # Different association structures with intercept only submodel
+  f19 <- update(f5, assoc = NULL)
+  f20 <- update(f5, assoc = "etavalue")
+  f21 <- update(f5, assoc = "etaslope")
+  f22 <- update(f5, assoc = "etaauc")
+  f23 <- update(f5, assoc = "muvalue")
+  f24 <- update(f5, assoc = "muslope")
+  f25 <- update(f5, assoc = "muauc")
+  f26 <- update(f5, assoc = c("etavalue", "etaslope")) 
+  f27 <- update(f5, assoc = c("muvalue", "muslope"))   
+  
+  # Shared random effect association structures
+  f28 <- update(f1, assoc = c("shared_b"))
+  f29 <- update(f1, assoc = c("shared_coef"))
   
   # Test the models
-  for (j in c(1:4,6,7)) {
-    mod <- get(paste0("f", j))
-    cat("Checking model:", paste0("f", j), "\n")
-    
-    test_that("log_lik works with estimation data", {
-      ll <- log_lik(mod)
-      expect_matrix(ll)
-    })
-    test_that("posterior_survfit works with estimation data", {
-      ps <- posterior_survfit(mod)
-      expect_survfit(ps)
-    })
-    test_that("posterior_predict works with estimation data", {
-      pp <- posterior_predict(mod, m = 1)
-      expect_ppd(pp)
-    }) 
-    
-    ndL <- pbcLong[pbcLong$id == 2,]
-    ndE <- pbcSurv[pbcSurv$id == 2,]
-    test_that("log_lik works with new data (one individual)", {
-      ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-      expect_matrix(ll)
-    })
-    test_that("posterior_survfit works with new data (one individual)", {
-      ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-      expect_survfit(ps)
-    })  
-    test_that("posterior_predict works with new data (one individual)", {
-      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
-      expect_ppd(pp)
-    })  
-    
-    ndL <- pbcLong[pbcLong$id %in% c(1,2),]
-    ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-    test_that("log_lik works with new data (multiple individuals)", {
-      ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-      expect_matrix(ll)
-    })
-    test_that("posterior_survfit works with new data (multiple individuals)", {
-      ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-      expect_survfit(ps)
-    })
-    test_that("posterior_predict works with new data (multiple individuals)", {
-      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
-      expect_ppd(pp)
-    })
-    
+  for (j in 1:29) {
+    tryCatch({
+      mod <- get(paste0("f", j))
+      cat("Checking model:", paste0("f", j), "\n")
+      
+      test_that("log_lik works with estimation data", {
+        ll <- log_lik(mod)
+        expect_matrix(ll)
+      })
+      test_that("posterior_survfit works with estimation data", {
+        ps <- posterior_survfit(mod)
+        expect_survfit(ps)
+      })
+      test_that("posterior_predict works with estimation data", {
+        pp <- posterior_predict(mod, m = 1)
+        expect_ppd(pp)
+      }) 
+      
+      ndL <- pbcLong[pbcLong$id == 2,]
+      ndE <- pbcSurv[pbcSurv$id == 2,]
+      test_that("log_lik works with new data (one individual)", {
+        ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+        expect_matrix(ll)
+      })
+      test_that("posterior_survfit works with new data (one individual)", {
+        ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+        expect_survfit(ps)
+      })  
+      test_that("posterior_predict works with new data (one individual)", {
+        pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+        expect_ppd(pp)
+      })  
+      
+      ndL <- pbcLong[pbcLong$id %in% c(1,2),]
+      ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
+      test_that("log_lik works with new data (multiple individuals)", {
+        ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
+        expect_matrix(ll)
+      })
+      test_that("posterior_survfit works with new data (multiple individuals)", {
+        ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
+        expect_survfit(ps)
+      })
+      test_that("posterior_predict works with new data (multiple individuals)", {
+        pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+        expect_ppd(pp)
+      })  
+    }, error = function(e)
+      cat(" Failed for model", paste0("f", j), " due to error:\n", paste(e)))
   }
   
 }
