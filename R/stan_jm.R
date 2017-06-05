@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # Copyright (C) 2016, 2017 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
@@ -140,13 +140,21 @@
 #'   have one row for each individual; that is, weights should be constant 
 #'   within individuals.
 #' @param init The method for generating the initial values for the MCMC.
-#'   The default is \code{"model_based"}, which uses those obtained from 
+#'   The default is \code{"prefit"}, which uses those obtained from 
 #'   fitting separate longitudinal and time-to-event models prior  
-#'   to fitting the joint model. Parameters that cannot be obtained from 
+#'   to fitting the joint model. The separate models are estimated using the
+#'   \code{\link[lme4]{glmer}} and \code{\link[survival]{coxph}} functions.
+#'   Parameters that cannot be obtained from 
 #'   fitting separate longitudinal and time-to-event models are initialised 
-#'   at 0. This provides reasonable initial values which should aid the MCMC
-#'   sampler. However, it is recommended that any final analysis should be
-#'   performed with several MCMC chains each initiated from a different
+#'   at 0. This often provides reasonable initial values which should aid the 
+#'   MCMC sampler, but may not work for some complex or heavily constrained 
+#'   models such as those with multiple longitudinal submodels or multilevel
+#'   clustering. An alternative is to \code{"prefit_vb"} which will obtain 
+#'   initial values for the longitudinal submodels by estimating
+#'   a multivariate GLM using the \code{\link{stan_mvmer}} function with 
+#'   \code{algorithm = "meanfield"}. This may help with initial values for some
+#'   complex models. Note that it is recommended that any final analysis should 
+#'   be performed with several MCMC chains each initiated from a different
 #'   set of initial values; this can be obtained by setting
 #'   \code{init = "random"}. Other possibilities for specifying \code{init}
 #'   are those described for \code{\link[rstan]{stan}}.  
@@ -364,10 +372,10 @@
 #'   There are additional examples in the \strong{Examples} section below.
 #'   }
 #' 
-#' @return A \link[=stanjm-object]{stanjm} object is returned.
+#' @return A \link[=stanmvreg-object]{stanmvreg} object is returned.
 #' 
-#' @seealso \code{\link{stanjm-object}}, \code{\link{stanjm-methods}}, 
-#'   \code{\link{print.stanjm}}, \code{\link{summary.stanjm}},
+#' @seealso \code{\link{stanmvreg-object}}, \code{\link{stanmvreg-methods}}, 
+#'   \code{\link{print.stanmvreg}}, \code{\link{summary.stanmvreg}},
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}.
@@ -481,7 +489,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
-                    quadnodes = 15, init = "model_based", 
+                    quadnodes = 15, init = "prefit", 
                     na.action = getOption("na.action", "na.omit"), weights, 
                     offset, contrasts, ...,				          
                     priorLong = normal(), priorLong_intercept = normal(), 
@@ -1100,6 +1108,35 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
   }
   
+  #----------------
+  # Initial values
+  #----------------
+  
+  if (is.character(init) && (init =="prefit")) {
+    init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
+  } else if (is.character(init) && (init == "prefit_vb")) {
+    cat("Obtaining initial values using variational bayes\n")
+    dropargs <- c("chains", "cores", "iter")
+    vbdots <- list(...)
+    for (i in dropargs) 
+      vbdots[[i]] <- NULL
+    vbargs <- c(list(stanmodels$mvmer, pars = "mean_PPD", data = standata, 
+                     algorithm = "meanfield"), vbdots)
+    initfit <- do.call(rstan::vb, vbargs)
+    initmeans <- rstan::get_posterior_mean(initfit)
+    initnms <- rownames(initmeans)
+    inits <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)()
+    sel <- c("gamma_nob", "gamma_lob", "gamma_upb", "z_beta", "aux_unscaled", 
+             "z_b", "z_T", "rho", "zeta", "tau", "global", "local2", "local4", 
+             "S", "ool", "noise")
+    for (i in sel) {
+      sel_i <- grep(paste0("^", i, "\\."), initnms)
+      if (length(sel_i))
+        inits[[i]] <- as.array(initmeans[sel_i,])
+    }
+    init <- function() inits
+  }
+  
   #---------------
   # Prior summary
   #---------------
@@ -1125,15 +1162,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
     adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
     adjusted_priorAssoc_scale = a_prior_stuff$prior_scale,
-    family = family
+    family = family, basehaz = basehaz
   )  
-  
-  #----------------
-  # Initial values
-  #----------------
-  
-  if (is.character(init) && (init == "model_based"))
-    init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
 
   #-----------
   # Fit model
@@ -1269,20 +1299,20 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Undo ordering of matrices if bernoulli
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
-  fit <- nlist(stanfit, family, formula = c(formulaLong, formulaEvent), 
+  fit <- nlist(stanfit, family, formula = list_nms(c(formulaLong, formulaEvent), M), 
                id_var, time_var, offset, weights, quadnodes, basehaz,
                M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
                n_subjects = e_mod_stuff$Npat, n_grps, assoc,
                y_mod_stuff, e_mod_stuff, a_mod_stuff,
-               fr = c(fetch(a_mod_stuff, "model_frame"), list(e_mod_stuff$model_frame)),
+               fr = list_nms(c(fetch(a_mod_stuff, "model_frame"), 
+                               list(e_mod_stuff$model_frame)), M),
                y = list_nms(fetch(y_mod_stuff, "y"), M),
                d = e_mod_stuff$d, eventtime = e_mod_stuff$eventtime,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                standata = NULL, terms = NULL, prior.info = prior_info,
                modeling_function = "stan_jm")
-  out <- stanjm(fit)
-  
+  out <- stanmvreg(fit)
   return(out)
 }
 
@@ -1357,7 +1387,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
     trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
     Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
-    flist  <- lapply(flist,  function(x) x[ord]) 
+    flist  <- flist[ord, , drop = FALSE] 
     N01    <- sapply(0:1,    function(x) sum(y == x))
   } else {
     ord    <- NULL
@@ -1404,13 +1434,13 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
 # Function to return a single cnms object for all longitudinal submodels
 #
 # @param x A list, with each element being a cnms object returned by (g)lmer
-get_common_cnms <- function(x) {
+get_common_cnms <- function(x, stub = "Long") {
   nms <- lapply(x, names)
   unique_nms <- unique(unlist(nms))
   cnms <- lapply(seq_along(unique_nms), function(i) {
     nm <- unique_nms[i]
     unlist(lapply(1:length(x), function(m) 
-      if (nm %in% nms[[m]]) paste0("Long", m, "|", x[[m]][[nm]])))
+      if (nm %in% nms[[m]]) paste0(stub, m, "|", x[[m]][[nm]])))
   })
   names(cnms) <- unique_nms
   cnms
@@ -1537,7 +1567,7 @@ unorder_bernoulli <- function(mod_stuff) {
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])
-    mod_stuff$flist   <- lapply(mod_stuff$flist,  function(x) x[order(mod_stuff$ord)])
+    mod_stuff$flist   <- mod_stuff$flist[order(mod_stuff$ord), , drop = FALSE]
   }
   mod_stuff
 }
@@ -2552,7 +2582,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     times  <- attr(parts[[m]], "times")
     eps    <- attr(parts[[m]], "eps")  
     qnodes <- attr(parts[[m]], "auc_quadnodes")
-    qwts   <- attr(parts[[m]], "auc_quadweights")
+    qwts   <- unlist(attr(parts[[m]], "auc_quadweights"))
     
     if (!assoc["null",][[m]]) {
       invlink_m <- family[[m]]$linkinv    
@@ -2578,7 +2608,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
         sel <- assoc["which_interactions",][[m]][["etavalue_etavalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           val   <- eta_m * eta_j 
           a_X[[mark]] <- val
           mark <- mark + 1
@@ -2587,7 +2617,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["etavalue_muvalue",][[m]]) { # etavalue*muvalue
         sel <- assoc["which_interactions",][[m]][["etavalue_muvalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           invlink_j <- family[[j]]$linkinv
           val <- eta_m * invlink_j(eta_j) 
           a_X[[mark]] <- val
@@ -2637,7 +2667,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["muvalue_etavalue",][[m]]) { # muvalue*etavalue
         sel <- assoc["which_interactions",][[m]][["muvalue_etavalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           val   <- invlink_m(eta_m) * eta_j 
           a_X[[mark]] <- val
           mark <- mark + 1           
@@ -2646,7 +2676,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["muvalue_muvalue",][[m]]) { # muvalue*muvalue
         sel <- assoc["which_interactions",][[m]][["muvalue_muvalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           invlink_j <- family[[j]]$linkinv
           val <- invlink_m(eta_m) * invlink_j(eta_j) 
           a_X[[mark]] <- val
@@ -2669,7 +2699,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         mark <- mark + 1              
       }    
       # muauc
-      if (assoc["etaauc",][[m]]) { # etaauc
+      if (assoc["muauc",][[m]]) { # muauc
         val   <- c()
         for (j in 1:length(eta_m)) {
           wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
@@ -2685,7 +2715,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     # shared_b
     if (assoc["shared_b",][[m]]) {
       sel <- assoc["which_b_zindex",][[m]]
-      val <- get_element(parts, m = m, "b_mat")[,sel]
+      val <- get_element(parts, m = m, "b_mat", ...)[,sel]
       a_X[[mark]] <- val
       mark <- mark + 1                   
     }
@@ -2694,7 +2724,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     # shared_coef
     if (assoc["shared_coef",][[m]]) {
       sel <- assoc["which_coef_zindex",][[m]]
-      val <- get_element(parts, m = m, "b_mat")[,sel]
+      val <- get_element(parts, m = m, "b_mat", ...)[,sel]
       a_X[[mark]] <- val
       mark <- mark + 1                   
     }
@@ -2780,67 +2810,53 @@ get_nvars_for_hs <- function(prior_dist) {
 #   'prior_covariance' and 'prior*_aux' each of which itself is a list
 #   containing the needed values for prior_summary.
 summarize_jm_prior <-
-  function(user_priorLong,
-           user_priorLong_intercept,
-           user_priorLong_aux,
-           user_priorEvent,
-           user_priorEvent_intercept,
-           user_priorEvent_aux,
-           user_priorAssoc,
-           user_prior_covariance,
-           y_has_intercept,
-           e_has_intercept,
-           y_has_predictors,
-           e_has_predictors,
-           has_assoc,
-           adjusted_priorLong_scale,
-           adjusted_priorLong_intercept_scale, 
-           adjusted_priorLong_aux_scale,
-           adjusted_priorEvent_scale,
-           adjusted_priorEvent_intercept_scale, 
-           adjusted_priorEvent_aux_scale,           
-           adjusted_priorAssoc_scale,
-           family) {
-    if (!is(family, "list"))
+  function(user_priorLong = NULL,
+           user_priorLong_intercept = NULL,
+           user_priorLong_aux = NULL,
+           user_priorEvent = NULL,
+           user_priorEvent_intercept = NULL,
+           user_priorEvent_aux = NULL,
+           user_priorAssoc = NULL,
+           user_prior_covariance = NULL,
+           y_has_intercept = NULL,
+           e_has_intercept = NULL,
+           y_has_predictors = NULL,
+           e_has_predictors = NULL,
+           has_assoc = NULL,
+           adjusted_priorLong_scale = NULL,
+           adjusted_priorLong_intercept_scale = NULL, 
+           adjusted_priorLong_aux_scale = NULL,
+           adjusted_priorEvent_scale = NULL,
+           adjusted_priorEvent_intercept_scale = NULL, 
+           adjusted_priorEvent_aux_scale = NULL,           
+           adjusted_priorAssoc_scale = NULL,
+           family = NULL, 
+           basehaz = NULL,
+           stub_for_names = "Long") {
+    if (!is.null(family) && !is(family, "list"))
       stop("'family' should be a list of family objects, one for each submodel.")
-    if (!is.logical(has_assoc) && (length(has_assoc) == 1L))
+    if (!is.null(has_assoc) && !is.logical(has_assoc) && (length(has_assoc) == 1L))
       stop("'has_assoc' should be a logical vector of length 1.")
     M <- length(family)
     
-    rescaled_coefLong <- mapply(check_if_rescaled, user_priorLong, 
-                                y_has_predictors, adjusted_priorLong_scale)
-    rescaled_intLong  <- mapply(check_if_rescaled, user_priorLong_intercept, 
-                                y_has_intercept, adjusted_priorLong_intercept_scale)
-    rescaled_auxLong  <- mapply(check_if_rescaled, user_priorLong_aux, 
-                                TRUE, adjusted_priorLong_aux_scale)
-    rescaled_coefEvent <- check_if_rescaled(user_priorEvent, e_has_predictors,
-                                            adjusted_priorEvent_scale)
-    rescaled_intEvent  <- check_if_rescaled(user_priorEvent_intercept, e_has_intercept, 
-                                            adjusted_priorEvent_intercept_scale)
-    rescaled_auxEvent  <- check_if_rescaled(user_priorEvent_aux, TRUE, 
-                                            adjusted_priorEvent_aux_scale)
-    rescaled_coefAssoc <- check_if_rescaled(user_priorAssoc, has_assoc, 
-                                            adjusted_priorAssoc_scale)
-   
-    for (m in 1:M) {
-      user_priorLong[[m]] <- 
-        rename_t_and_cauchy(user_priorLong[[m]], y_has_predictors[m])
-      user_priorLong_intercept[[m]] <-
-        rename_t_and_cauchy(user_priorLong_intercept[[m]], y_has_intercept[m])
-      user_priorLong_aux[[m]] <-
-        rename_t_and_cauchy(user_priorLong_aux[[m]], TRUE)
-    }  
-    user_priorEvent <- 
-      rename_t_and_cauchy(user_priorEvent, e_has_predictors)  
-    user_priorEvent_intercept <- 
-      rename_t_and_cauchy(user_priorEvent_intercept, e_has_intercept)  
-    user_priorEvent_aux <- 
-      rename_t_and_cauchy(user_priorEvent_aux, TRUE)  
-    user_priorAssoc <- 
-      rename_t_and_cauchy(user_priorAssoc, has_assoc)  
+    prior_list <- list()
     
-    prior_list <- list(
-      priorLong = list_nms(lapply(1:M, function(m) {
+    if (!is.null(user_priorLong)) {
+      rescaled_coefLong <- mapply(check_if_rescaled, user_priorLong, 
+                                  y_has_predictors, adjusted_priorLong_scale)
+      rescaled_intLong  <- mapply(check_if_rescaled, user_priorLong_intercept, 
+                                  y_has_intercept, adjusted_priorLong_intercept_scale)
+      rescaled_auxLong  <- mapply(check_if_rescaled, user_priorLong_aux, 
+                                  TRUE, adjusted_priorLong_aux_scale) 
+      for (m in 1:M) {
+        user_priorLong[[m]] <- 
+          rename_t_and_cauchy(user_priorLong[[m]], y_has_predictors[m])
+        user_priorLong_intercept[[m]] <-
+          rename_t_and_cauchy(user_priorLong_intercept[[m]], y_has_intercept[m])
+        user_priorLong_aux[[m]] <-
+          rename_t_and_cauchy(user_priorLong_aux[[m]], TRUE)
+      }
+      prior_list$priorLong <- list_nms(lapply(1:M, function(m) {
         if (!y_has_predictors[m]) NULL else with(user_priorLong[[m]], list(
           dist = prior_dist_name,
           location = prior_mean,
@@ -2851,8 +2867,8 @@ summarize_jm_prior <-
                    ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
             prior_df else NULL
         ))        
-      }), M),
-      priorLong_intercept = list_nms(lapply(1:M, function(m) {
+      }), M, stub = stub_for_names)
+      prior_list$priorLong_intercept <- list_nms(lapply(1:M, function(m) {
         if (!y_has_intercept[m]) NULL else with(user_priorLong_intercept[[m]], list(
           dist = prior_dist_name,
           location = prior_mean,
@@ -2862,8 +2878,44 @@ summarize_jm_prior <-
           df = if (prior_dist_name %in% "student_t") 
             prior_df else NULL
         ))
-      }), M),
-      priorEvent = 
+      }), M, stub = stub_for_names)      
+      aux_name <- lapply(family, .rename_aux)
+      prior_list$priorLong_aux <- list_nms(lapply(1:M, function(m) {
+        if (is.na(aux_name[[m]])) NULL else with(user_priorLong_aux[[m]], list(
+          dist = prior_dist_name,
+          location = if (!is.na(prior_dist_name) && 
+                         prior_dist_name != "exponential")
+            prior_mean else NULL,
+          scale = if (!is.na(prior_dist_name) && 
+                      prior_dist_name != "exponential")
+            prior_scale else NULL,
+          adjusted_scale = if (rescaled_auxLong[m])
+            adjusted_priorLong_aux_scale[[m]] else NULL,
+          df = if (!is.na(prior_dist_name) && 
+                   prior_dist_name %in% "student_t")
+            prior_df else NULL, 
+          rate = if (!is.na(prior_dist_name) && 
+                     prior_dist_name %in% "exponential")
+            1 / prior_scale else NULL,
+          aux_name = aux_name[[m]]
+        ))
+      }), M, stub = stub_for_names)     
+    }
+
+    if (!is.null(user_priorEvent)) {
+      rescaled_coefEvent <- check_if_rescaled(user_priorEvent, e_has_predictors,
+                                              adjusted_priorEvent_scale)
+      rescaled_intEvent  <- check_if_rescaled(user_priorEvent_intercept, e_has_intercept, 
+                                              adjusted_priorEvent_intercept_scale)
+      rescaled_auxEvent  <- check_if_rescaled(user_priorEvent_aux, TRUE, 
+                                              adjusted_priorEvent_aux_scale)
+      user_priorEvent <- 
+        rename_t_and_cauchy(user_priorEvent, e_has_predictors)  
+      user_priorEvent_intercept <- 
+        rename_t_and_cauchy(user_priorEvent_intercept, e_has_intercept)  
+      user_priorEvent_aux <- 
+        rename_t_and_cauchy(user_priorEvent_aux, TRUE)     
+      prior_list$priorEvent <-
         if (!e_has_predictors) NULL else with(user_priorEvent, list(
           dist = prior_dist_name,
           location = prior_mean,
@@ -2873,8 +2925,8 @@ summarize_jm_prior <-
           df = if (prior_dist_name %in% c
                    ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
             prior_df else NULL
-        )),
-      priorEvent_intercept =
+        ))
+      prior_list$priorEvent_intercept <-
         if (!e_has_intercept) NULL else with(user_priorEvent_intercept, list(
           dist = prior_dist_name,
           location = prior_mean,
@@ -2883,8 +2935,27 @@ summarize_jm_prior <-
             adjusted_priorEvent_intercept_scale else NULL,
           df = if (prior_dist_name %in% "student_t")
             prior_df else NULL
-        )),      
-      priorAssoc = 
+        ))
+      e_aux_name <- .rename_e_aux(basehaz) 
+      prior_list$priorEvent_aux <-
+        with(user_priorEvent_aux, list(
+          dist = prior_dist_name,
+          location = prior_mean,
+          scale = prior_scale,
+          adjusted_scale = if (rescaled_auxEvent)
+            adjusted_priorEvent_aux_scale else NULL,
+          df = if (!is.na(prior_dist_name) && 
+                   prior_dist_name %in% "student_t")
+            prior_df else NULL, 
+          aux_name = e_aux_name
+        ))      
+    }
+
+    if (!is.null(user_priorAssoc)) {
+      rescaled_coefAssoc <- check_if_rescaled(user_priorAssoc, has_assoc, 
+                                              adjusted_priorAssoc_scale)
+      user_priorAssoc <- rename_t_and_cauchy(user_priorAssoc, has_assoc)        
+      prior_list$priorAssoc <-
         if (!has_assoc) NULL else with(user_priorAssoc, list(
           dist = prior_dist_name,
           location = prior_mean,
@@ -2895,34 +2966,23 @@ summarize_jm_prior <-
                    ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
             prior_df else NULL
         ))
-    )
+    }
+ 
     if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance
     
-    aux_name <- lapply(family, .rename_aux)
-    prior_list$priorLong_aux <- lapply(1:M, function(m) {
-      if (is.na(aux_name[[m]])) NULL else with(user_priorLong_aux[[m]], list(
-        dist = prior_dist_name,
-        location = if (!is.na(prior_dist_name) && 
-                       prior_dist_name != "exponential")
-          prior_mean else NULL,
-        scale = if (!is.na(prior_dist_name) && 
-                    prior_dist_name != "exponential")
-          prior_scale else NULL,
-        adjusted_scale = if (rescaled_auxLong[m])
-          adjusted_priorLong_aux_scale else NULL,
-        df = if (!is.na(prior_dist_name) && 
-                 prior_dist_name %in% "student_t")
-          prior_df else NULL, 
-        rate = if (!is.na(prior_dist_name) && 
-                   prior_dist_name %in% "exponential")
-          1 / prior_scale else NULL,
-        aux_name = aux_name
-      ))
-    })
-    
     return(prior_list)
   }
+
+# Get name of auxiliary parameters for event submodel
+#
+# @param basehaz A list with information about the baseline hazard
+.rename_e_aux <- function(basehaz) {
+  nm <- basehaz$type_name
+  if (nm == "weibull") "weibull-shape" else
+    if (nm == "bs") "spline-coefficients" else
+      if (nm == "piecewise") "piecewise-coefficients" else NA
+}
 
 # Check if priors were autoscaled
 #
@@ -2971,11 +3031,12 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   gamma_lob <- gamma[as.logical(standata$has_intercept_lob)]
   gamma_upb <- gamma[as.logical(standata$has_intercept_upb)]
   beta      <- lapply(est, drop_intercept)
-  aux       <- lapply(y_mod_stuff, function(x) sigma(x$mod))[as.logical(standata$has_aux)]
+  aux       <- lapply(y_mod_stuff, function(x) sigma(x$mod))
   e_beta    <- e_mod_stuff$mod$coef
   e_aux     <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_df)
   z_beta        <- standardise_coef(unlist(beta), standata$prior_mean,           standata$prior_scale)
   aux_unscaled  <- standardise_coef(unlist(aux),  standata$prior_mean_for_aux,   standata$prior_scale_for_aux)
+  aux_unscaled  <- aux_unscaled[as.logical(standata$has_aux)] # only keep aux where relevant
   e_z_beta      <- standardise_coef(e_beta,       standata$e_prior_mean,         standata$e_prior_scale) 
   e_aux_unscaled<- standardise_coef(e_aux,        standata$e_prior_mean_for_aux, standata$e_prior_scale_for_aux)
   b_Cov         <- lapply(y_mod_stuff, function(x) lme4::VarCorr(x$mod)[[1L]])

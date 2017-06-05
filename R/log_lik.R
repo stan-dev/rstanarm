@@ -20,7 +20,7 @@
 #' For models fit using MCMC only, the \code{log_lik} method returns the
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
 #' of the posterior sample and \eqn{N} is the number of data points, or in the
-#' case of the \code{stanjm} method an \eqn{S} by \eqn{Npat} matrix where 
+#' case of the \code{stanmvreg} method an \eqn{S} by \eqn{Npat} matrix where 
 #' \eqn{Npat} is the number of individuals.
 #'
 #' @aliases log_lik
@@ -37,7 +37,7 @@
 #'
 #' @return For the \code{stanreg} method an \eqn{S} by \eqn{N} matrix, where 
 #'   \eqn{S} is the size of the posterior sample and \eqn{N} is the number of 
-#'   data points, or for the \code{stanjm} method an \eqn{S} by \eqn{Npat} 
+#'   data points, or for the \code{stanmvreg} method an \eqn{S} by \eqn{Npat} 
 #'   matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
@@ -102,10 +102,12 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
 #'   to the event time and event indicator. For more details, see the description 
 #'   of \code{newdataLong} and \code{newdataEvent} for \code{\link{posterior_survfit}}.
 #' 
-log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
+log_lik.stanmvreg <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
+  if (object$modeling_function == "stan_mvmer")
+    STOP_stan_mvmer("'log_lik'")
   M <- get_M(object)
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
     stop("Both newdataLong and newdataEvent must be supplied together.")
@@ -142,13 +144,13 @@ ll_fun <- function(x, m = NULL) {
 # @param newdata same as posterior predict
 # @param offset vector of offsets (only required if model has offset term and
 #   newdata is specified)
-# @param m Integer specifying which submodel for stanjm objects
+# @param m Integer specifying which submodel for stanmvreg objects
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
 # @param ... For models without group-specific terms (i.e., not stan_[g]lmer), 
 #   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to 
 #   pass 'newx' and 'stanmat' from reloo or kfold (bypassing pp_data). This is a
 #   workaround in case there are issues with newdata containing factors with
-#   only a single level. Or for stanjm objects, then ... can be used to pass
+#   only a single level. Or for stanmvreg objects, then ... can be used to pass
 #   'stanmat', which may be a matrix with a reduced number of draws (potentially
 #   just a single MCMC draw).
 # @return a named list with elements data, draws, S (posterior sample size) and
@@ -178,7 +180,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     x <- get_x(object, m = m)
     y <- get_y(object, m = m)
   }
-  if (is.stanjm(object) && !is.null(dots$stanmat)) {
+  if (is.stanmvreg(object) && !is.null(dots$stanmat)) {
     stanmat <- dots$stanmat # potentially use a stanmat with a single draw
   }  
   
@@ -198,7 +200,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       }
       data <- data.frame(y, trials, x)
     }
-    nms <- if (is.stanjm(object)) 
+    nms <- if (is.stanmvreg(object)) 
       collect_nms(colnames(stanmat), get_M(object)) else NULL  
     beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]
     draws$beta <- stanmat[, beta_sel, drop = FALSE]
@@ -244,8 +246,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   
   data$offset <- if (has_newdata) offset else object$offset
   if (model_has_weights(object)) {
-    if (is.stanjm(object)) 
-      STOP_if_stanjm("posterior_survfit with weights")
+    if (is.stanmvreg(object)) 
+      STOP_if_stanmvreg("posterior_survfit with weights")
     data$weights <- object$weights
   }
     
@@ -271,21 +273,21 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
-# Alternative method for stanjm objects that allows data and pars to be
+# Alternative method for stanmvreg objects that allows data and pars to be
 # passed directly, rather than constructed using pp_data within the ll_args
 # method. This can be much faster when used in the MH algorithm within
 # posterior_survfit, since it doesn't require repeated calls to pp_data.
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param data Output from jm_data
 # @param pars Output from extract_pars
 # @param m Integer specifying which submodel
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
-ll_args.stanjm <- function(object, data, pars, m = 1, 
+ll_args.stanmvreg <- function(object, data, pars, m = 1, 
                            reloo_or_kfold = FALSE, ...) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   if (model_has_weights(object))
-    STOP_if_stanjm("posterior_survfit or log_lik with weights")
+    STOP_if_stanmvreg("posterior_survfit or log_lik with weights")
   f <- family(object, m = m)
   fname <- f$family
   draws <- nlist(f)
@@ -441,11 +443,11 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   .weighted(val, data$weights)
 }
 
-# for stanjm objects only ------------------------------------------------
+# for stanmvreg objects only ------------------------------------------------
 
 # Return log-likelihood for longitudinal submodel m
 #
-# @param object A stanjm object, or (when used in stan_jm function) a named list
+# @param object A stanmvreg object, or (when used in stan_jm function) a named list
 #   with elements $basehaz, $family, $assoc
 # @param data Output from jm_data
 # @param pars Output from extract_pars
@@ -466,7 +468,7 @@ ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
 
 # Return survival probability or log-likelihood for event submodel
 #
-# @param object A stanjm object, or (when used in stan_jm function) a named list
+# @param object A stanmvreg object, or (when used in stan_jm function) a named list
 #   with elements $basehaz, $family, $assoc
 # @param data Output from jm_data
 # @param pars Output from extract_pars
@@ -496,6 +498,11 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (length(pars$abeta)) {
+    # Temporary stop, until make_assoc_terms can handle it
+    sel_stop <- grep("^shared", rownames(object$assoc))
+    if (any(unlist(object$assoc[sel_stop,])))
+      stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
+           "association structures.", call. = FALSE) 
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
@@ -558,7 +565,7 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
 
 # Return log likelihood for full joint model
 #
-# @param object A stanjm object, or (when used in stan_jm function) a named list
+# @param object A stanmvreg object, or (when used in stan_jm function) a named list
 #   with elements $basehaz, $family, $assoc
 # @param data Output from jm_data
 # @param pars Output from extract_pars

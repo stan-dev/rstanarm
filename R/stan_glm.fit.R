@@ -688,10 +688,10 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   return(x_keep)
 }
 
-make_b_nms <- function(group, m = NULL) {
+make_b_nms <- function(group, m = NULL, stub = "Long") {
   group_nms <- names(group$cnms)
   b_nms <- character()
-  m_stub <- if (!is.null(m)) get_m_stub(m) else NULL
+  m_stub <- if (!is.null(m)) get_m_stub(m, stub = stub) else NULL
   for (i in seq_along(group$cnms)) {
     nm <- group_nms[i]
     nms_i <- paste(group$cnms[[i]], nm)
@@ -699,7 +699,8 @@ make_b_nms <- function(group, m = NULL) {
     if (length(nms_i) == 1) {
       b_nms <- c(b_nms, paste0(m_stub, nms_i, ":", levels(group$flist[[nm]])))
     } else {
-      b_nms <- c(b_nms, c(t(sapply(paste0(m_stub, nms_i), paste0, ":", levels(group$flist[[nm]])))))
+      b_nms <- c(b_nms, c(t(sapply(paste0(m_stub, nms_i), paste0, ":", 
+                                   levels(group$flist[[nm]])))))
     }
   }
   return(b_nms)  

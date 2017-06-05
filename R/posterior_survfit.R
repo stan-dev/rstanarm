@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # Copyright (C) 2016, 2017 Sam Brilleman
 # 
 # This program is free software; you can redistribute it and/or
@@ -35,8 +35,8 @@
 #' \code{standardise} argument below.
 #' 
 #' @export
-#' @templateVar stanjmArg object
-#' @template args-stanjm-object
+#' @templateVar stanmvregArg object
+#' @template args-stanmvreg-object
 #' 
 #' @param newdataLong,newdataEvent Optionally, a data frame (or in the case of 
 #'   \code{newdataLong} this can be a list of data frames) in which to look 
@@ -138,7 +138,7 @@
 #'   see the \strong{Note} section in \code{\link{posterior_predict}} for a note  
 #'   about using the \code{newdataLong} argument with binomial models.
 #'    
-#' @return A data frame of class \code{survfit.stanjm}. The data frame includes 
+#' @return A data frame of class \code{survfit.stanmvreg}. The data frame includes 
 #'   columns for each of the following: 
 #'   (i) the median of the posterior predictions of the estimated survival
 #'   probabilities (\code{survpred});
@@ -151,7 +151,7 @@
 #'   (\code{time_var}).
 #'   The returned object also includes a number of additional attributes.
 #' 
-#' @seealso \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
+#' @seealso \code{\link{plot.survfit.stanmvreg}} for plotting the estimated survival  
 #'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
 #'   survival function, and \code{\link{posterior_traj}} for estimating the
 #'   marginal or subject-specific longitudinal trajectories.
@@ -235,8 +235,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), prob = 0.95, 
                               ids, times = NULL, standardise = FALSE, 
                               draws = NULL, seed = NULL, ...) {
-  
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
+  if (!is.jm(object)) 
+    STOP_jm_only("'posterior_survfit'")
   M        <- object$n_markers
   id_var   <- object$id_var
   time_var <- object$time_var
@@ -251,7 +252,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Temporary stop, until make_assoc_terms can handle it
   sel_stop <- grep("^shared", rownames(object$assoc))
   if (any(unlist(object$assoc[sel_stop,])))
-    stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
+    stop("'posterior_survfit' cannot yet be used with shared_b or shared_coef ",
          "association structures.") 
   
   # Construct prediction data
@@ -467,7 +468,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     out <- out[order(out[, time_var, drop = F]), , drop = F]
   }
   rownames(out) <- NULL
-  class(out) <- c("survfit.stanjm", "data.frame")
+  class(out) <- c("survfit.stanmvreg", "data.frame")
   structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
             control = control, standardise = standardise, ids = id_list, 
             draws = draws, seed = seed, offset = offset, 
@@ -476,14 +477,14 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
 #' Plot the estimated subject-specific or marginal survival function
 #' 
-#' This generic \code{plot} method for \code{survfit.stanjm} objects will
+#' This generic \code{plot} method for \code{survfit.stanmvreg} objects will
 #' plot the estimated subject-specific or marginal survival function
 #' using the data frame returned by a call to \code{\link{posterior_survfit}}.
 #' The call to \code{posterior_survfit} should ideally have included an
 #' "extrapolation" of the survival function, obtained by setting the 
 #' \code{extrapolate} argument to \code{TRUE}.
 #'    
-#' @method plot survfit.stanjm
+#' @method plot survfit.stanmvreg
 #' @export
 #' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon 
 #'   facet_wrap labs coord_cartesian
@@ -497,7 +498,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #' @template args-scales
 #' @template args-ci-geom-args
 #'  
-#' @param x A data frame and object of class \code{survfit.stanjm}
+#' @param x A data frame and object of class \code{survfit.stanmvreg}
 #'   returned by a call to the function \code{\link{posterior_survfit}}.
 #'   The object contains point estimates and uncertainty interval limits
 #'   for estimated values of the survival function.
@@ -510,12 +511,12 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   \code{\link[ggplot2]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
-#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanjm}.
+#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanmvreg}.
 #'   This object can be further customised using the \pkg{ggplot2} package.
 #'   It can also be passed to the function \code{\link{plot_stack}}.
 #'   
 #' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack}},
-#'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
+#'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanmvreg}}      
 #'   
 #' @examples 
 #' 
@@ -562,7 +563,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   plot(ps2)   
 #' 
 #'    
-plot.survfit.stanjm <- function(x, ids = NULL, 
+plot.survfit.stanmvreg <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
                                 xlab = NULL, ylab = NULL, facet_scales = "free", 
                                 ci_geom_args = NULL, ...) {
@@ -582,7 +583,7 @@ plot.survfit.stanjm <- function(x, ids = NULL,
       stop("Bug found: could not find 'id_var' column in the data frame.")
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
-      stop("The following 'ids' are not present in the survfit.stanjm object: ",
+      stop("The following 'ids' are not present in the survfit.stanmvreg object: ",
            paste(ids[[ids_missing]], collapse = ", "), call. = FALSE)
     x <- x[(x[[id_var]] %in% ids), , drop = FALSE]
   } else {
@@ -623,26 +624,26 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   
   ret <- graph + graph_limits + labs(x = xlab, y = ylab) 
   class_ret <- class(ret)
-  class(ret) <- c("plot.survfit.stanjm", class_ret)
+  class(ret) <- c("plot.survfit.stanmvreg", class_ret)
   ret
 }
 
 
 # ------------------ exported but doc kept internal
 
-#' Generic print method for \code{survfit.stanjm} objects
+#' Generic print method for \code{survfit.stanmvreg} objects
 #' 
-#' @rdname print.survfit.stanjm
-#' @method print survfit.stanjm
+#' @rdname print.survfit.stanmvreg
+#' @method print survfit.stanmvreg
 #' @keywords internal
 #' @export
-#' @param x An object of class \code{survfit.stanjm}, returned by a call to 
+#' @param x An object of class \code{survfit.stanmvreg}, returned by a call to 
 #'   \code{\link{posterior_survfit}}.
 #' @param digits Number of digits to use for formatting the time variable and 
 #'   the survival probabilities.
 #' @param ... Ignored.
 #' 
-print.survfit.stanjm <- function(x, digits = 4, ...) {
+print.survfit.stanmvreg <- function(x, digits = 4, ...) {
   time_var <- attr(x, "time_var")
   x <- as.data.frame(x)
   sel <- c(time_var, "survpred", "ci_lb", "ci_ub")
@@ -657,7 +658,7 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 # Function to optimise to obtain mode and var-cov matrix for b pars
 # 
 # @param b The vector of b parameters
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param data Output from jm_data
 # @param pars Output from extract_pars
 optim_fn <- function(b, object, data, pars) {
@@ -672,7 +673,7 @@ optim_fn <- function(b, object, data, pars) {
 # @param b_old The current vector of b parameters
 # @param delta The mean vector for the proposal distribution
 # @param sigma The variance-covariance matrix for the proposal distribution
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param data Output from jm_data
 # @param pars Output from extract_pars
 mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
@@ -694,7 +695,7 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
 
 # Function to add new b parameters
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param data Output from jm_data
 # @param pars Output from extract_pars
 # @param new_b A vector of new b pars, or a list of vectors with each element

@@ -72,6 +72,8 @@ posterior_linpred.stanreg <-
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("posterior_linpred")
+    if (is.stanmvreg(object))
+      STOP_if_stanmvreg("'posterior_linpred'")
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,

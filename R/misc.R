@@ -516,7 +516,7 @@ linear_predictor.matrix <- function(beta, x, offset = NULL) {
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param ... Other arguments passed to methods. For a \code{stanjm} object
+#' @param ... Other arguments passed to methods. For a \code{stanmvreg} object
 #'   this can be an integer \code{m} specifying the submodel.
 #' @return For \code{get_x} and \code{get_z}, a matrix. For \code{get_y}, either
 #'   a vector or a matrix, depending on how the response variable was specified.
@@ -558,34 +558,38 @@ get_z.gamm4 <- function(object, ...) {
   return(Z)
 }
 #' @export
-get_y.stanjm <- function(object, m = NULL, ...) {
+get_y.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "y") %ORifNULL% stop("y not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
-get_x.stanjm <- function(object, m = NULL, ...) {
+get_x.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "X") %ORifNULL% stop("X not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
-get_z.stanjm <- function(object, m = NULL, ...) {
+get_z.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "Z") %ORifNULL% stop("Z not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 
 # Get inverse link function
 #
 # @param x A stanreg object, family object, or string. 
-# @param ... Other arguments passed to methods. For a \code{stanjm} object
+# @param ... Other arguments passed to methods. For a \code{stanmvreg} object
 #'   this can be an integer \code{m} specifying the submodel.
 # @return The inverse link function associated with x.
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {
   if (is(x, "polr")) polr_linkinv(x) else family(x)$linkinv
 }
-linkinv.stanjm <- function(x, m = NULL, ...) {
+linkinv.stanmvreg <- function(x, m = NULL, ...) {
   ret <- lapply(family(x), `[[`, "linkinv")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(x)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 linkinv.family <- function(x, ...) {
   x$linkinv
@@ -803,19 +807,40 @@ unstandardise_quadweights <- function(x, a, b) {
   ((b - a) / 2) * x
 }
 
-# Test if object is stanjm class
+# Test if object is stanmvreg class
 #
 # @param x An object to be tested.
-is.stanjm <- function(x) {
-  is(x, "stanjm")
+is.stanmvreg <- function(x) {
+  is(x, "stanmvreg")
 }
 
-# Throw error if object isn't a stanjm object
+# Test if object is a joint longitudinal and survival model
+#
+# @param x An object to be tested.
+is.jm <- function(x) {
+  x$modeling_function == "stan_jm"
+}
+
+# Test if object contains a multivariate GLM
+#
+# @param x An object to be tested.
+is.mvmer <- function(x) {
+  x$modeling_function %in% c("stan_mvmer", "stan_jm")
+}
+
+# Test if object contains a survival model
+#
+# @param x An object to be tested.
+is.surv <- function(x) {
+  x$modeling_function %in% c("stan_jm")
+}
+
+# Throw error if object isn't a stanmvreg object
 # 
 # @param x The object to test.
-validate_stanjm_object <- function(x, call. = FALSE) {
-  if (!is.stanjm(x))
-    stop("Object is not a stanjm object.", call. = call.) 
+validate_stanmvreg_object <- function(x, call. = FALSE) {
+  if (!is.stanmvreg(x))
+    stop("Object is not a stanmvreg object.", call. = call.) 
 }
 
 # Throw error if parameter isn't a positive scalar
@@ -855,41 +880,52 @@ median_and_bounds <- function(x, prob) {
 #
 # @param m An integer specifying the number of the longitudinal submodel or
 #   a character string specifying the submodel (e.g. "Long1", "Event", etc)
-get_m_stub <- function(m) {
+# @param stub A character string to prefix to m, if m is supplied as an integer
+get_m_stub <- function(m, stub = "Long") {
   if (is.null(m)) {
     return(NULL)
   } else if (is.numeric(m)) {
-    return(paste0("Long", m, "|"))
+    return(paste0(stub, m, "|"))
   } else if (is.character(m)) {
     return(paste0(m, "|"))
   }
 }
+
+# Return the appropriate stub for variable names
+#
+# @param object A stanmvreg object
+get_stub <- function(object) {
+  if (is.jm(object)) "Long" else "y"  
+} 
 
 # Separates a names object into separate parts based on the longitudinal, 
 # event, or association parameters.
 # 
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param M An integer specifying the number of longitudinal submodels.
+# @param stub The character string used at the start of the names of variables
+#   in the longitudinal/GLM submodels
 # @param ... Arguments passed to grep
 # @return A list with x separated out into those names corresponding
 #   to parameters from the M longitudinal submodels, the event submodel
 #   or association parameters.
-collect_nms <- function(x, M, ...) {
-  ppd <- grep("^Long.{1}\\|mean_PPD", x, ...)      
-  y <- lapply(1:M, function(m) grep(mod2rx(m), x, ...))
+collect_nms <- function(x, M, stub = "Long", ...) {
+  ppd <- grep(paste0("^", stub, ".{1}\\|mean_PPD"), x, ...)      
+  y <- lapply(1:M, function(m) grep(mod2rx(m, stub = stub), x, ...))
   y_extra <- lapply(1:M, function(m) 
-    c(grep(paste0("^Long", m, "\\|sigma"), x, ...),
-      grep(paste0("^Long", m, "\\|shape"), x, ...),
-      grep(paste0("^Long", m, "\\|lambda"), x, ...),
-      grep(paste0("^Long", m, "\\|reciprocal_dispersion"), x, ...)))             
+    c(grep(paste0("^", stub, m, "\\|sigma"), x, ...),
+      grep(paste0("^", stub, m, "\\|shape"), x, ...),
+      grep(paste0("^", stub, m, "\\|lambda"), x, ...),
+      grep(paste0("^", stub, m, "\\|reciprocal_dispersion"), x, ...)))             
   y <- lapply(1:M, function(m) setdiff(y[[m]], c(y_extra[[m]], ppd[m])))
   e <- grep(mod2rx("^Event"), x, ...)     
   e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
-  y_b <- lapply(1:M, function(m) b_names_M(x, m, ...))
+  y_b <- lapply(1:M, function(m) b_names_M(x, m, stub = stub, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
+  alpha <- c(alpha, grep("^", stub, ".{1}\\|\\(Intercept\\)", x, ...))      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta, ppd) 
 }
@@ -900,11 +936,11 @@ collect_nms <- function(x, M, ...) {
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param submodel Optional integer specifying which long submodel
 # @param ... Passed to grep
-b_names_M <- function(x, submodel = NULL, ...) {
+b_names_M <- function(x, submodel = NULL, stub = "Long", ...) {
   if (is.null(submodel)) {
     grep("^b\\[", x, ...)
   } else {
-    grep(paste0("^b\\[Long", submodel, "\\|"), x, ...)
+    grep(paste0("^b\\[", stub, submodel, "\\|"), x, ...)
   }
 }
 
@@ -937,7 +973,7 @@ beta_names <- function(x, submodel = NULL, ...) {
 # @param x The submodel for which the regular expression should be
 #   obtained. Can be "Long", "Event", "Assoc", or an integer specifying
 #   a specific longitudinal submodel.
-mod2rx <- function(x) {
+mod2rx <- function(x, stub = "Long") {
   if (x == "^Long") {
     c("^Long[1-9]\\|")
   } else if (x == "^Event") {
@@ -951,28 +987,30 @@ mod2rx <- function(x) {
   } else if (x == "Assoc") {
     c("Assoc\\|")
   } else {
-    paste0("^Long", x, "\\|")
+    paste0("^", stub, x, "\\|")
   }   
 }
 
 # Return the number of longitudinal submodels
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 get_M <- function(object) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   return(object$n_markers)
 }
 
-# Supplies names for the output list returned by most stanjm methods
+# Supplies names for the output list returned by most stanmvreg methods
 #
 # @param object The list object to which the names are to be applied
-# @param M The number of longitudinal submodels. If NULL then the number of
-#   longitudinal submodels is assumed to be equal to the length of object.
-list_nms <- function(object, M = NULL) {
+# @param M The number of longitudinal/GLM submodels. If NULL then the number of
+#   longitudinal/GLM submodels is assumed to be equal to the length of object.
+# @param stub The character string to use at the start of the names for
+#   list items related to the longitudinal/GLM submodels
+list_nms <- function(object, M = NULL, stub = "Long") {
   if (!is.list(object)) 
     stop("'object' argument should be a list")
   if (is.null(M)) M <- length(object)
-  nms <- paste0("Long", 1:M)
+  nms <- paste0(stub, 1:M)
   if (length(object) > M) nms <- c(nms, "Event")
   names(object) <- nms
   object
@@ -1008,19 +1046,41 @@ check_submodelopt3 <- function(x) {
     stop("submodel option must be 'long', 'event' or 'both'") 
 }
 
-# Error message when not specifying an argument required for stanjm objects
+# Error message when not specifying an argument required for stanmvreg objects
 #
 # @param arg The argument
-STOP_arg_required_for_stanjm <- function(arg) {
+STOP_arg_required_for_stanmvreg <- function(arg) {
   nm <- deparse(substitute(arg))
-  stop(paste0("Argument '", nm, "' required for stanjm objects."))
+  msg <- paste0("Argument '", nm, "' required for stanmvreg objects.")
+  stop(msg, call. = FALSE)
 }
 
-# Error message when a function is not yet implemented for stanjm objects
+# Error message when a function is not yet implemented for stanmvreg objects
 #
 # @param what A character string naming the function not yet implemented
-STOP_if_stanjm <- function(what) {
-  msg <- "not yet implemented for stanjm objects."
+STOP_if_stanmvreg <- function(what) {
+  msg <- "not yet implemented for stanmvreg objects."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
+# Error message when a function is not yet implemented for stan_mvmer models
+#
+# @param what An optional message to prepend to the default message.
+STOP_stan_mvmer <- function(what) {
+  msg <- "is not yet implemented for models fit using stan_mvmer."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
+# Consistent error message to use when something that is only available for 
+# models fit using stan_jm
+#
+# @param what An optional message to prepend to the default message.
+STOP_jm_only <- function(what) {
+  msg <- "can only be used with stan_jm models."
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
@@ -1035,7 +1095,7 @@ STOP_no_var <- function(var) {
 
 # Check if individuals in ids argument were also used in model estimation
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param ids A vector of ids appearing in the pp data
 # @param m Integer specifying which submodel to get the estimation IDs from
 # @return A logical. TRUE indicates their are new ids in the prediction data,
@@ -1058,7 +1118,7 @@ check_pp_ids <- function(object, ids, m = 1) {
 
 # Validate newdataLong and newdataEvent arguments
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param newdataLong A data frame, or a list of data frames
 # @param newdataEvent A data frame
 # @param duplicate_ok A logical. If FALSE then only one row per individual is
@@ -1066,7 +1126,7 @@ check_pp_ids <- function(object, ids, m = 1) {
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               duplicate_ok = FALSE) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   id_var <- object$id_var
   newdatas <- list()
   if (!is.null(newdataLong)) {
@@ -1097,12 +1157,12 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
 # Return data frames only including the specified subset of individuals
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param data A data frame, or a list of data frames
 # @param ids A vector of ids indicating which individuals to keep
 # @return A data frame, or a list of data frames, depending on the input
 subset_ids <- function(object, data, ids) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   id_var <- object$id_var
   is_list <- is(data, "list")
   if (!is_list) data <- list(data)
@@ -1142,18 +1202,18 @@ get_time_seq <- function(increments, t0, t1, simplify = TRUE) {
 
 # Extract parameters from stanmat and return as a list
 # 
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param stanmat A matrix of posterior draws, may be provided if the desired 
 #   stanmat is only a subset of the draws from as.matrix(object$stanfit)
 # @return A named list
 extract_pars <- function(object, stanmat = NULL, means = FALSE) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   M <- get_M(object)
   if (is.null(stanmat)) 
     stanmat <- as.matrix(object$stanfit)
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
-  nms   <- collect_nms(colnames(stanmat), M)
+  nms   <- collect_nms(colnames(stanmat), M, stub = get_stub(object))
   beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
   ebeta <- stanmat[, nms$e, drop = FALSE]
   abeta <- stanmat[, nms$a, drop = FALSE]
@@ -1167,10 +1227,10 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
 # (2) only includes rows contained in the actual glmod/coxmod model frames
 # (3) ensures the ID variable is included in every model frame
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param m Integer specifying which submodel
 get_model_data <- function(object, m = NULL) {
-  validate_stanjm_object(object)
+  validate_stanmvreg_object(object)
   forms <- formula(object)
   RHS <- paste(deparse(forms$Event[[3L]]), "+", object$id_var)
   forms$Event <- reformulate(RHS, response = forms$Event[[2L]])

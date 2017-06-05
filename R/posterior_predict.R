@@ -60,7 +60,7 @@
 #' @param offset A vector of offsets. Only required if \code{newdata} is
 #'   specified and an \code{offset} argument was specified when fitting the
 #'   model.
-#' @param ... For \code{stanjm} objects, argument \code{m} can be specified
+#' @param ... For \code{stanmvreg} objects, argument \code{m} can be specified
 #'   indicating the submodel for which you wish to obtain predictions.
 #'   
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
@@ -143,10 +143,10 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     fun <- match.fun(fun)
 
   dots <- list(...)
-  if (is.stanjm(object)) {
+  if (is.stanmvreg(object)) {
     m <- dots[["m"]]
     if (is.null(m)) 
-      STOP_arg_required_for_stanjm(m)
+      STOP_arg_required_for_stanmvreg(m)
   } else m <- NULL
   
   newdata <- validate_newdata(newdata)
@@ -275,15 +275,15 @@ pp_fun <- function(object, m = NULL) {
 
 # create list of arguments to pass to the function returned by pp_fun
 #
-# @param object stanreg or stanjm object
+# @param object stanreg or stanmvreg object
 # @param data output from pp_eta (named list with eta and stanmat)
-# @param m optional integer specifying the submodel for stanjm objects
+# @param m optional integer specifying the submodel for stanmvreg objects
 # @return named list
 pp_args <- function(object, data, m = NULL) {
   stanmat <- data$stanmat
   eta <- data$eta
   stopifnot(is.stanreg(object), is.matrix(stanmat))
-  if (is.stanjm(object) && is.null(m)) STOP_arg_required_for_stanjm(m)
+  if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
   inverse_link <- linkinv(object, m = m)
   if (is(object, "polr")) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
@@ -295,7 +295,7 @@ pp_args <- function(object, data, m = NULL) {
   
   args <- list(mu = inverse_link(eta))
   famname <- family(object, m = m)$family
-  m_stub <- get_m_stub(m)
+  m_stub <- get_m_stub(m, stub = get_stub(object))
   if (is.gaussian(famname)) {
     args$sigma <- stanmat[, paste0(m_stub, "sigma")]
   } else if (is.gamma(famname)) {
@@ -321,10 +321,10 @@ pp_args <- function(object, data, m = NULL) {
 
 # create eta and stanmat (matrix of posterior draws)
 #
-# @param object stanreg or stanjm object
+# @param object stanreg or stanmvreg object
 # @param data output from pp_data()
 # @param draws number of draws
-# @param m optional integer specifying the submodel for stanjm objects
+# @param m optional integer specifying the submodel for stanmvreg objects
 # @return linear predictor "eta" and matrix of posterior draws stanmat"
 pp_eta <- function(object, data, draws = NULL, m = NULL) {
   x <- data$x
@@ -339,13 +339,14 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
   some_draws <- isTRUE(draws < S)
   if (some_draws)
     samp <- sample(S, draws)
-  if (is.stanjm(object)) {
-    if (is.null(m)) STOP_arg_required_for_stanjm(m)
+  if (is.stanmvreg(object)) {
+    if (is.null(m)) STOP_arg_required_for_stanmvreg(m)
     M <- get_M(object)
   }
   stanmat <- if (is.null(data$Zt)) 
     as.matrix.stanreg(object) else as.matrix(object$stanfit)
-  nms <- if (is.stanjm(object)) collect_nms(colnames(stanmat), M) else NULL  
+  nms <- if (is.stanmvreg(object)) 
+    collect_nms(colnames(stanmat), M, stub = get_stub(object)) else NULL  
   beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]
   beta <- stanmat[, beta_sel, drop = FALSE]
   if (some_draws)
@@ -404,7 +405,7 @@ pp_b_ord <- function(b, Z_names) {
 
 # Number of trials for binomial models
 pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
-  if (is.stanjm(object) && is.null(m)) STOP_arg_required_for_stanjm(m)
+  if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
   y <- if (is.null(newdata))
       get_y(object, m) else eval(formula(object, m)[[2L]], newdata)    
   if (NCOL(y) == 2L)
