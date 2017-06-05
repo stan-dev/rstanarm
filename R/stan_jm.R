@@ -1434,13 +1434,13 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
 # Function to return a single cnms object for all longitudinal submodels
 #
 # @param x A list, with each element being a cnms object returned by (g)lmer
-get_common_cnms <- function(x) {
+get_common_cnms <- function(x, stub = "Long") {
   nms <- lapply(x, names)
   unique_nms <- unique(unlist(nms))
   cnms <- lapply(seq_along(unique_nms), function(i) {
     nm <- unique_nms[i]
     unlist(lapply(1:length(x), function(m) 
-      if (nm %in% nms[[m]]) paste0("Long", m, "|", x[[m]][[nm]])))
+      if (nm %in% nms[[m]]) paste0(stub, m, "|", x[[m]][[nm]])))
   })
   names(cnms) <- unique_nms
   cnms
@@ -2582,7 +2582,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     times  <- attr(parts[[m]], "times")
     eps    <- attr(parts[[m]], "eps")  
     qnodes <- attr(parts[[m]], "auc_quadnodes")
-    qwts   <- attr(parts[[m]], "auc_quadweights")
+    qwts   <- unlist(attr(parts[[m]], "auc_quadweights"))
     
     if (!assoc["null",][[m]]) {
       invlink_m <- family[[m]]$linkinv    
@@ -2608,7 +2608,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
         sel <- assoc["which_interactions",][[m]][["etavalue_etavalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           val   <- eta_m * eta_j 
           a_X[[mark]] <- val
           mark <- mark + 1
@@ -2617,7 +2617,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["etavalue_muvalue",][[m]]) { # etavalue*muvalue
         sel <- assoc["which_interactions",][[m]][["etavalue_muvalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           invlink_j <- family[[j]]$linkinv
           val <- eta_m * invlink_j(eta_j) 
           a_X[[mark]] <- val
@@ -2667,7 +2667,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["muvalue_etavalue",][[m]]) { # muvalue*etavalue
         sel <- assoc["which_interactions",][[m]][["muvalue_etavalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           val   <- invlink_m(eta_m) * eta_j 
           a_X[[mark]] <- val
           mark <- mark + 1           
@@ -2676,7 +2676,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       if (assoc["muvalue_muvalue",][[m]]) { # muvalue*muvalue
         sel <- assoc["which_interactions",][[m]][["muvalue_muvalue"]]
         for (j in sel) {
-          eta_j <- get_element(parts, m = j, "eta")
+          eta_j <- get_element(parts, m = j, "eta", ...)
           invlink_j <- family[[j]]$linkinv
           val <- invlink_m(eta_m) * invlink_j(eta_j) 
           a_X[[mark]] <- val
@@ -2699,7 +2699,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         mark <- mark + 1              
       }    
       # muauc
-      if (assoc["etaauc",][[m]]) { # etaauc
+      if (assoc["muauc",][[m]]) { # muauc
         val   <- c()
         for (j in 1:length(eta_m)) {
           wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
@@ -2715,7 +2715,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     # shared_b
     if (assoc["shared_b",][[m]]) {
       sel <- assoc["which_b_zindex",][[m]]
-      val <- get_element(parts, m = m, "b_mat")[,sel]
+      val <- get_element(parts, m = m, "b_mat", ...)[,sel]
       a_X[[mark]] <- val
       mark <- mark + 1                   
     }
@@ -2724,7 +2724,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     # shared_coef
     if (assoc["shared_coef",][[m]]) {
       sel <- assoc["which_coef_zindex",][[m]]
-      val <- get_element(parts, m = m, "b_mat")[,sel]
+      val <- get_element(parts, m = m, "b_mat", ...)[,sel]
       a_X[[mark]] <- val
       mark <- mark + 1                   
     }
@@ -2832,7 +2832,7 @@ summarize_jm_prior <-
            adjusted_priorAssoc_scale = NULL,
            family = NULL, 
            basehaz = NULL,
-           strip_from_names = NULL) {
+           stub_for_names = "Long") {
     if (!is.null(family) && !is(family, "list"))
       stop("'family' should be a list of family objects, one for each submodel.")
     if (!is.null(has_assoc) && !is.logical(has_assoc) && (length(has_assoc) == 1L))
@@ -2867,7 +2867,7 @@ summarize_jm_prior <-
                    ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
             prior_df else NULL
         ))        
-      }), M)
+      }), M, stub = stub_for_names)
       prior_list$priorLong_intercept <- list_nms(lapply(1:M, function(m) {
         if (!y_has_intercept[m]) NULL else with(user_priorLong_intercept[[m]], list(
           dist = prior_dist_name,
@@ -2878,7 +2878,7 @@ summarize_jm_prior <-
           df = if (prior_dist_name %in% "student_t") 
             prior_df else NULL
         ))
-      }), M)      
+      }), M, stub = stub_for_names)      
       aux_name <- lapply(family, .rename_aux)
       prior_list$priorLong_aux <- lapply(1:M, function(m) {
         if (is.na(aux_name[[m]])) NULL else with(user_priorLong_aux[[m]], list(
@@ -2970,10 +2970,6 @@ summarize_jm_prior <-
  
     if (length(user_prior_covariance))
       prior_list$prior_covariance <- user_prior_covariance
-    
-    if (!is.null(strip_from_names))
-      names(prior_list) <- gsub(strip_from_names, "", 
-                                names(prior_list), fixed = TRUE)
     
     return(prior_list)
   }

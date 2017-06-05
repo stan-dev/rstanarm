@@ -29,12 +29,13 @@ stanmvreg <- function(object) {
   mvmer      <- is.mvmer(object)
   surv       <- is.surv(object)
   jm         <- is.jm(object)
+  stub       <- if (jm) "Long" else "y"
   
   if (opt) {
     stop("Optimisation not implemented for stanmvreg objects.")
   } else {
     stan_summary <- make_stan_summary(stanfit)
-    nms <- collect_nms(rownames(stan_summary), M)
+    nms <- collect_nms(rownames(stan_summary), M, stub = get_stub(object))
     coefs <- list()
     ses <- list()
     
@@ -47,21 +48,24 @@ stanmvreg <- function(object) {
       y_ses <- lapply(y_stanmat, function(m) apply(m, 2L, mad))
       y_covmat <- lapply(y_stanmat, cov)
       for (m in 1:M) {
-        rownames(y_covmat[[m]]) <- colnames(y_covmat[[m]]) <- rownames(stan_summary)[c(nms$y[[m]], nms$y_b[[m]])]
+        rownames(y_covmat[[m]]) <- colnames(y_covmat[[m]]) <- 
+          rownames(stan_summary)[c(nms$y[[m]], nms$y_b[[m]])]
       }
       # Remove padding
-      coefs[1:M] <- list_nms(lapply(y_coefs, unpad_reTrms.default), M)
-      ses[1:M]   <- list_nms(lapply(y_ses, unpad_reTrms.default), M)
+      coefs[1:M] <- list_nms(lapply(y_coefs, unpad_reTrms.default), M, stub = stub)
+      ses[1:M]   <- list_nms(lapply(y_ses, unpad_reTrms.default), M, stub = stub)
     }
 
     # Coefs and SEs for event submodel    
     if (!is.null(object$e_mod_stuff)) {
       e_coefs <- stan_summary[c(nms$e, nms$a), select_median(object$algorithm)]        
-      if (length(e_coefs) == 1L) names(e_coefs) <- rownames(stan_summary)[c(nms$e, nms$a)[1L]]
+      if (length(e_coefs) == 1L) 
+        names(e_coefs) <- rownames(stan_summary)[c(nms$e, nms$a)[1L]]
       e_stanmat <- as.matrix(stanfit)[, c(nms$e, nms$a), drop = FALSE]
       e_ses <- apply(e_stanmat, 2L, mad)    
       e_covmat <- cov(e_stanmat)
-      rownames(e_covmat) <- colnames(e_covmat) <- rownames(stan_summary)[c(nms$e, nms$a)]
+      rownames(e_covmat) <- colnames(e_covmat) <- 
+        rownames(stan_summary)[c(nms$e, nms$a)]
       coefs$Event <- e_coefs
       ses$Event <- e_ses
     }

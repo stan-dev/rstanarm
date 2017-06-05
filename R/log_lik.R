@@ -106,6 +106,8 @@ log_lik.stanmvreg <- function(object, newdataLong = NULL, newdataEvent = NULL, .
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanmvreg_object(object)
+  if (object$modeling_function == "stan_mvmer")
+    STOP_stan_mvmer("'log_lik'")
   M <- get_M(object)
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
     stop("Both newdataLong and newdataEvent must be supplied together.")
@@ -496,6 +498,11 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (length(pars$abeta)) {
+    # Temporary stop, until make_assoc_terms can handle it
+    sel_stop <- grep("^shared", rownames(object$assoc))
+    if (any(unlist(object$assoc[sel_stop,])))
+      stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
+           "association structures.", call. = FALSE) 
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)

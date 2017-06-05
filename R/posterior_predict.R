@@ -295,7 +295,7 @@ pp_args <- function(object, data, m = NULL) {
   
   args <- list(mu = inverse_link(eta))
   famname <- family(object, m = m)$family
-  m_stub <- get_m_stub(m)
+  m_stub <- get_m_stub(m, stub = get_stub(object))
   if (is.gaussian(famname)) {
     args$sigma <- stanmat[, paste0(m_stub, "sigma")]
   } else if (is.gamma(famname)) {
@@ -345,7 +345,8 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
   }
   stanmat <- if (is.null(data$Zt)) 
     as.matrix.stanreg(object) else as.matrix(object$stanfit)
-  nms <- if (is.stanmvreg(object)) collect_nms(colnames(stanmat), M) else NULL  
+  nms <- if (is.stanmvreg(object)) 
+    collect_nms(colnames(stanmat), M, stub = get_stub(object)) else NULL  
   beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]
   beta <- stanmat[, beta_sel, drop = FALSE]
   if (some_draws)

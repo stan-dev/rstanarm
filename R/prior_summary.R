@@ -104,12 +104,13 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
   }  
   if (is.stanmvreg(object)) {
     M <- get_M(object)
-    x <- structure(x, M = M, modeling_function = object$modeling_function) 
+    x <- structure(x, M = M) 
   }
   structure(x, class = "prior_summary.stanreg",
             QR = used.QR(object),
             sparse = used.sparse(object),
             model_name = deparse(substitute(object)), 
+            modeling_function = object$modeling_function,
             print_digits = digits)
   
 }
@@ -131,28 +132,58 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   msg <- paste0("Priors for model '", model_name, "'")
   cat(msg, "\n------")
   
-  if (!is.null(x[["prior_intercept"]]))
-    .print_scalar_prior(
-      x[["prior_intercept"]], 
-      txt = paste0("Intercept", if (!sparse) " (after predictors centered)"), 
-      formatters
-    )
-  if (!is.null(x[["prior"]]))
-    .print_vector_prior(
-      x[["prior"]], 
-      txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
-      formatters = formatters
-    )
-  if (!is.null(x[["prior_aux"]])) {
-    aux_name <- x[["prior_aux"]][["aux_name"]]
-    aux_dist <- x[["prior_aux"]][["dist"]]
-    if (aux_dist %in% c("normal", "student_t", "cauchy"))
-      x[["prior_aux"]][["dist"]] <- paste0("half-", aux_dist)
-    .print_scalar_prior(
-      x[["prior_aux"]], 
-      txt = paste0("\nAuxiliary (", aux_name, ")"), 
-      formatters
-    )
+  if (!modeling_function == "stan_mvmer") {
+    if (!is.null(x[["prior_intercept"]]))
+      .print_scalar_prior(
+        x[["prior_intercept"]], 
+        txt = paste0("Intercept", if (!sparse) " (after predictors centered)"), 
+        formatters
+      )
+    if (!is.null(x[["prior"]]))
+      .print_vector_prior(
+        x[["prior"]], 
+        txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
+        formatters = formatters
+      )
+    if (!is.null(x[["prior_aux"]])) {
+      aux_name <- x[["prior_aux"]][["aux_name"]]
+      aux_dist <- x[["prior_aux"]][["dist"]]
+      if (aux_dist %in% c("normal", "student_t", "cauchy"))
+        x[["prior_aux"]][["dist"]] <- paste0("half-", aux_dist)
+      .print_scalar_prior(
+        x[["prior_aux"]], 
+        txt = paste0("\nAuxiliary (", aux_name, ")"), 
+        formatters
+      )
+    }    
+  } else { # unique to stan_mvmer
+    M <- attr(x, "M")
+    for (m in 1:M) {
+      if (!is.null(x[["prior_intercept"]][[m]]))
+        .print_scalar_prior(
+          x[["prior_intercept"]][[m]], 
+          txt = paste0(if (M > 1) "\n", "y", m, "|Intercept", if (!sparse) 
+            " (after predictors centered)"), 
+          formatters
+        )
+      if (!is.null(x[["prior"]][[m]]))
+        .print_vector_prior(
+          x[["prior"]][[m]], 
+          txt = paste0("\ny", m, "|Coefficients", if (QR) " (in Q-space)"), 
+          formatters = formatters
+        )
+      if (!is.null(x[["prior_aux"]][[m]])) {
+        aux_name <- x[["prior_aux"]][[m]][["aux_name"]]
+        aux_dist <- x[["prior_aux"]][[m]][["dist"]]
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["prior_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["prior_aux"]][[m]], 
+          txt = paste0("\ny", m, "|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }    
   }
   
   # unique to stan_betareg
@@ -165,39 +196,8 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
-  # unique to stan_mvmer
-  if (!is.null(modeling_function) && (modeling_function == "stan_mvmer")) {
-    M <- attr(x, "M")
-    for (m in 1:M) {
-      if (!is.null(x[["prior_intercept"]][[m]]))
-        .print_scalar_prior(
-          x[["prior_intercept"]][[m]], 
-          txt = paste0(if (M > 1) "\n", "Submodel", m, "|Intercept", if (!sparse) 
-            " (after predictors centered)"), 
-          formatters
-        )
-      if (!is.null(x[["prior"]][[m]]))
-        .print_vector_prior(
-          x[["prior"]][[m]], 
-          txt = paste0("\nSubmodel", m, "|Coefficients", if (QR) " (in Q-space)"), 
-          formatters = formatters
-        )
-      if (!is.null(x[["prior_aux"]][[m]])) {
-        aux_name <- x[["prior_aux"]][[m]][["aux_name"]]
-        aux_dist <- x[["prior_aux"]][[m]][["dist"]]
-        if (aux_dist %in% c("normal", "student_t", "cauchy"))
-          x[["prior_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
-        .print_scalar_prior(
-          x[["prior_aux"]][[m]], 
-          txt = paste0("\nSubmodel", m, "|Auxiliary (", aux_name, ")"), 
-          formatters
-        )
-      }
-    }    
-  }
-  
   # unique to stan_jm
-  if (!is.null(modeling_function) && (modeling_function == "stan_jm")) {
+  if (modeling_function == "stan_jm") {
     M <- attr(x, "M")
     for (m in 1:M) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))

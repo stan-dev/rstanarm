@@ -20,10 +20,13 @@
 #' 
 #' S3 methods for \link[=stanmvreg-object]{stanmvreg} objects. There are also 
 #' several methods (listed in \strong{See Also}, below) with their own
-#' individual help pages. A number of these methods will return a named list, 
-#' with each element of the list  containing the described item (for example, 
-#' coefficients, standard errors, residuals, etc) for one of the longitudinal 
-#' submodels or the event submodel.
+#' individual help pages. 
+#' The main difference between these methods and the 
+#' \link[=stanreg-methods]{stanreg} methods is that the methods described here
+#' generally include an additional argument \code{m} which allows the user to
+#' specify which submodel they wish to return the result for. If the argument
+#' \code{m} is set to \code{NULL} then the result will generally be a named list
+#' with each element of the list containing the result for one of the submodels.
 #' 
 #' @name stanmvreg-methods
 #' @aliases coef VarCorr fixef ranef ngrps sigma
@@ -92,7 +95,7 @@ NULL
 #' @export coef
 #'    
 coef.stanmvreg <- function(object, m = NULL, ...) {
-  M <- object$n_markers
+  M <- get_M(object)
   if (length(list(...))) 
     warning("Arguments named \"", paste(names(list(...)), collapse = ", "), 
             "\" ignored.", call. = FALSE)
@@ -122,26 +125,34 @@ coef.stanmvreg <- function(object, m = NULL, ...) {
   }
   val <- lapply(val, function(x) structure(x, class = "coef.mer"))
   val <- c(val, fef[length(fef)])         
-  if (is.null(m)) list_nms(val, M) else val[[m]]       
+  if (is.null(m)) list_nms(val, M, stub = get_stub(object)) else val[[m]]       
 }
 
 #' @rdname stanmvreg-methods
 #' @export
 #' 
 fitted.stanmvreg <- function(object, m = NULL, ...)  {
-  if (is.null(m)) list_nms(object$fitted.values) else object$fitted.values[[m]]
+  M <- get_M(object)
+  stub <- get_stub(object)
+  if (is.null(m)) 
+    list_nms(object$fitted.values, M, stub = stub) else object$fitted.values[[m]]
 }
 
 #' @rdname stanmvreg-methods
 #' @export 
 residuals.stanmvreg <- function(object, m = NULL, ...) {
-  if (is.null(m)) list_nms(object$residuals) else object$residuals[[m]]
+  M <- get_M(object)
+  stub <- get_stub(object)
+  if (is.null(m)) 
+    list_nms(object$residuals, M, stub = stub) else object$residuals[[m]]
 }
 
 #' @rdname stanmvreg-methods
 #' @export
 se.stanmvreg <- function(object, m = NULL, ...) {
-  if (is.null(m)) list_nms(object$ses) else object$ses[[m]]
+  M <- get_M(object)
+  stub <- get_stub(object)
+  if (is.null(m)) list_nms(object$ses, M, stub = stub) else object$ses[[m]]
 }
 
 #' @rdname stanmvreg-methods
@@ -156,7 +167,7 @@ formula.stanmvreg <- function (x, fixed.only = FALSE, random.only = FALSE, m = N
   if (fixed.only && random.only) 
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
   
-  M <- x$n_markers
+  M <- get_M(x)
   fr <- lapply(x$glmod, model.frame) 
   form <- lapply(x$formula, as.formula, ...) # includes Event submodel formula
   glmod_form <- lapply(seq(M), function(i) attr(fr[[i]], "formula")) 
@@ -170,7 +181,7 @@ formula.stanmvreg <- function (x, fixed.only = FALSE, random.only = FALSE, m = N
       for (i in 1:M)
         form[[i]] <- justRE(form[[i]], response = TRUE)
   }
-  if (is.null(m)) return(list_nms(form, M)) else return(form[[m]])
+  if (is.null(m)) return(list_nms(form, M, stub = get_stub(x))) else return(form[[m]])
 }
 
 #' terms method for stanmvreg objects
@@ -189,7 +200,7 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
   Terms <- list()
   if (is.mvmer(x)) {
-    M <- x$n_markers
+    M <- get_M(x)
     fr <- lapply(x$glmod, model.frame)
     Terms[1:M] <- lapply(fr, function(i) attr(i, "terms"))
     if (fixed.only) {
@@ -206,7 +217,7 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
         Terms
       })      
     }
-    list_nms(Terms, M)
+    list_nms(Terms, M, stub = get_stub(x))
   }
   if (is.surv(x)) {
     Terms$Event <- terms(x$coxmod)
@@ -225,7 +236,7 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
 #'
 update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate = TRUE) {
   call <- getCall(object)
-  M <- object$n_markers
+  M <- get_M(object)
   if (is.null(call)) 
     stop("'object' does not contain a 'call' component.", call. = FALSE)
   extras <- match.call(expand.dots = FALSE)$...
@@ -283,13 +294,13 @@ update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate 
 #' @importFrom lme4 fixef
 #' 
 fixef.stanmvreg <- function(object, m = NULL, remove_stub = TRUE, ...) {
-  M <- object$n_markers
+  M <- get_M(object)
   coefs <- object$coefficients
   coefs <- lapply(coefs, function(x) x[b_names(names(x), invert = TRUE)])
   if (remove_stub) {
     for (i in 1:length(coefs)) names(coefs[[i]]) <- rm_stub(names(coefs[[i]]))
   }
-  if (is.null(m)) list_nms(coefs, M) else coefs[[m]]
+  if (is.null(m)) list_nms(coefs, M, stub = get_stub(object)) else coefs[[m]]
 }
 
 #' @rdname stanmvreg-methods
@@ -307,7 +318,7 @@ ngrps.stanmvreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #'
 ranef.stanmvreg <- function(object, m = NULL, ...) {
-  M <- object$n_markers
+  M <- get_M(object)
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
   ans_list <- lapply(1:M, function(x) { 
@@ -335,7 +346,7 @@ ranef.stanmvreg <- function(object, m = NULL, ...) {
     class(ans) <- c("ranef.mer")
     ans
   })
-  if (is.null(m)) list_nms(ans_list, M) else ans_list[[m]]
+  if (is.null(m)) list_nms(ans_list, M, stub = get_stub(object)) else ans_list[[m]]
 }
 
 #' @rdname stanmvreg-methods
@@ -370,7 +381,10 @@ sigma.stanmvreg <- function(object, m = NULL, ...) {
 #' @template args-m
 #' @param object,... See \code{\link[stats]{family}}.
 family.stanmvreg <- function(object, m = NULL, ...) {
-  if (!is.null(m)) object$family[[m]] else list_nms(object$family)
+  M <- get_M(object)
+  stub <- get_stub(object)
+  if (!is.null(m)) object$family[[m]] else 
+    list_nms(object$family, M , stub = stub)
 }
 
 #' model.frame method for stanmvreg objects
@@ -384,7 +398,7 @@ family.stanmvreg <- function(object, m = NULL, ...) {
 #' 
 model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanmvreg(formula)) {
-    M <- formula$n_markers
+    M <- get_M(formula)
     fr <- lapply(formula$glmod, model.frame)
     if (fixed.only) {
       fr <- lapply(seq(M), function(i) {
@@ -394,7 +408,8 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
       })
     }
     fr$Event <- formula$coxmod_stuff$model_frame
-    if (is.null(m)) return(list_nms(fr, M)) else return(fr[[m]])
+    if (is.null(m)) 
+      return(list_nms(fr, M, stub = get_stub(formula))) else return(fr[[m]])
   } 
   NextMethod("model.frame")
 }

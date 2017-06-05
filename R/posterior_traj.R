@@ -185,6 +185,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            prob = 0.95, ids, control = list(), 
                            return_matrix = FALSE, ...) {
   validate_stanmvreg_object(object)
+  if (!is.jm(object)) 
+    STOP_jm_only("'posterior_traj'")
   M <- get_M(object)
   id_var   <- object$id_var
   time_var <- object$time_var
