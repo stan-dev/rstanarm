@@ -1066,7 +1066,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Indexing for type of association structure when there is
   # clustering below the individual
   standata$has_clust <- as.array(as.integer(fetch_(clust_stuff, "has_clust")))
-  standata$clust_mat <- as.matrix(Matrix::bdiag(fetch(clust_stuff, "clust_mat")))
+  standata$clust_mat <- as.matrix(do.call("cbind", fetch(clust_stuff, "clust_mat")))
   cols_clust_mat <- sapply(fetch(clust_stuff, "clust_mat"), ncol)
   standata$ncol_clust <- sum(cols_clust_mat)
   standata$idx_clust <- get_idx_array(cols_clust_mat)
@@ -1372,7 +1372,7 @@ get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
     clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))    
   } else {
     clust_var <- clust_freq <- clust_list <- clust_idlist <- NULL
-    clust_mat <- matrix(0, 0, 0)    
+    clust_mat <- matrix(0, length(unique(flist[[id_var]])) * (quadnodes + 1), 0)    
   }
   nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat)
 }
