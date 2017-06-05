@@ -2880,7 +2880,7 @@ summarize_jm_prior <-
         ))
       }), M, stub = stub_for_names)      
       aux_name <- lapply(family, .rename_aux)
-      prior_list$priorLong_aux <- lapply(1:M, function(m) {
+      prior_list$priorLong_aux <- list_nms(lapply(1:M, function(m) {
         if (is.na(aux_name[[m]])) NULL else with(user_priorLong_aux[[m]], list(
           dist = prior_dist_name,
           location = if (!is.na(prior_dist_name) && 
@@ -2890,16 +2890,16 @@ summarize_jm_prior <-
                       prior_dist_name != "exponential")
             prior_scale else NULL,
           adjusted_scale = if (rescaled_auxLong[m])
-            adjusted_priorLong_aux_scale else NULL,
+            adjusted_priorLong_aux_scale[[m]] else NULL,
           df = if (!is.na(prior_dist_name) && 
                    prior_dist_name %in% "student_t")
             prior_df else NULL, 
           rate = if (!is.na(prior_dist_name) && 
                      prior_dist_name %in% "exponential")
             1 / prior_scale else NULL,
-          aux_name = aux_name
+          aux_name = aux_name[[m]]
         ))
-      })      
+      }), M, stub = stub_for_names)     
     }
 
     if (!is.null(user_priorEvent)) {
@@ -3031,11 +3031,12 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   gamma_lob <- gamma[as.logical(standata$has_intercept_lob)]
   gamma_upb <- gamma[as.logical(standata$has_intercept_upb)]
   beta      <- lapply(est, drop_intercept)
-  aux       <- lapply(y_mod_stuff, function(x) sigma(x$mod))[as.logical(standata$has_aux)]
+  aux       <- lapply(y_mod_stuff, function(x) sigma(x$mod))
   e_beta    <- e_mod_stuff$mod$coef
   e_aux     <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_df)
   z_beta        <- standardise_coef(unlist(beta), standata$prior_mean,           standata$prior_scale)
   aux_unscaled  <- standardise_coef(unlist(aux),  standata$prior_mean_for_aux,   standata$prior_scale_for_aux)
+  aux_unscaled  <- aux_unscaled[as.logical(standata$has_aux)] # only keep aux where relevant
   e_z_beta      <- standardise_coef(e_beta,       standata$e_prior_mean,         standata$e_prior_scale) 
   e_aux_unscaled<- standardise_coef(e_aux,        standata$e_prior_mean_for_aux, standata$e_prior_scale_for_aux)
   b_Cov         <- lapply(y_mod_stuff, function(x) lme4::VarCorr(x$mod)[[1L]])
