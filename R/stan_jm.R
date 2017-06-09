@@ -2165,7 +2165,7 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
   
   # Obtain a model frame defined as a data.table
   rows <- rownames(model.frame(y_mod_stuff$mod))
-  df   <- dataLong[rows,]
+  df   <- as.data.frame(dataLong)[rows,]
   mf   <- data.table::data.table(df, key = c(id_var, time_var))
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
