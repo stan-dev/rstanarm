@@ -1,0 +1,7 @@
+template:
+  params:
+reference:
+- title: Render components
+  desc:  Build each component of the site.
+  contents:
+  - stan_betareg
