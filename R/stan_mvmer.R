@@ -137,6 +137,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   M <- length(formula)
   data <- validate_arg(data, "data.frame", null_ok = TRUE, 
                        validate_length = M, broadcast = TRUE)
+  data <- lapply(data, as.data.frame)
 
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
