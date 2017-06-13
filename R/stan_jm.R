@@ -534,6 +534,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                               validate_length = M, broadcast = TRUE)
   assoc       <- validate_arg(assoc, "character", null_ok = TRUE, 
                               validate_length = M, broadcast = TRUE)
+  dataLong <- lapply(dataLong, as.data.frame)
+  dataEvent <- as.data.frame(dataEvent)
 
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
