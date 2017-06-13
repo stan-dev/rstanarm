@@ -19,7 +19,7 @@
 # Return design matrices required for evaluating the linear predictor or
 # log-likelihood of the longitudinal/event submodels in a stan_jm model
 #
-# @param object A stanjm object
+# @param object A stanmvreg object
 # @param newdataLong A data frame or list of data frames with the new 
 #   covariate data for the longitudinal submodel
 # @param newdataEvent A data frame with the new covariate data for the

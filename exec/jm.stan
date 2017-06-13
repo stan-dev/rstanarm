@@ -32,13 +32,14 @@ data {
   int<lower=1,upper=t> t_i;    // index of grouping factor corresponding to patient-level
 
   // declares e_prior_dist{_for_intercept,_for_aux}, Npat{_times_}quadnodes, quadweight, 
-  //   basehaz_{type,df,X}, nrow_{y,e}_Xq, e_{K,Xq,times,d,xbar,weights,weights_rep}  
+  //   basehaz_{type,df,X}, nrow_e_Xq, e_{K,Xq,times,d,xbar,weights,weights_rep}  
   #include "data_event.stan"
 
   // declares a_K, a_prior_dist, assoc, assoc_uses, has_assoc, {sum_}size_which_b, 
   //   which_b_zindex, {sum_}size_which_coef, which_coef_{zindex,xindex}, 
   //   {sum_}a_K_data, {sum_,sum_size_}which_interactions, y_Xq_{eta,eps,lag,auc,data},
-  //   {nnz,w,v,u}_Zq_{eta,eps,lag,auc}, nrow_y_Xq_auc, auc_quadnodes, auc_quadweights   
+  //   {nnz,w,v,u}_Zq_{eta,eps,lag,auc}, nrow_y_Xq, nrow_y_Xq_auc, 
+  //   auc_quadnodes, auc_quadweights   
   #include "data_assoc.stan"
   
   // declares {e_,a_}{prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, 

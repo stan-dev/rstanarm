@@ -157,76 +157,88 @@ print.stanreg <- function(x, digits = 1, ...) {
 
 #' @rdname print.stanreg
 #' @export
-#' @method print stanjm
-print.stanjm <- function(x, digits = 3, ...) {
+#' @method print stanmvreg
+print.stanmvreg <- function(x, digits = 3, ...) {
   M <- x$n_markers
-  jmtype <- paste0(if (M == 1) "uni" else "multi", "variate joint model")
+  mvmer <- is.mvmer(x)
+  surv <- is.surv(x)
+  jm <- is.jm(x)
   stubs <- paste0("(Long", 1:M, "):")
-  cat(x$modeling_function, jmtype)
-  for (m in 1:M) {
-    cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
-    cat("\n family ", stubs[m], family_plus_link(x, m = m))
+  cat(x$modeling_function)
+  if (mvmer) {
+    for (m in 1:M) {
+      cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
+      cat("\n family ", stubs[m], family_plus_link(x, m = m))
+    }    
   }
-  cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
-  cat("\n baseline hazard:", x$basehaz$type_name) 
+  if (surv) {
+    cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
+    cat("\n baseline hazard:", x$basehaz$type_name) 
+  }
   cat("\n------\n")
 
-  link <- sapply(1:M, function(m) x$family[[m]]$link)
   mat <- as.matrix(x$stanfit)
   nms <- collect_nms(rownames(x$stan_summary), M, value = TRUE)
   
   # Estimates table for longitudinal submodel(s)
-  for (m in 1:M) {
-    terms_m <- terms(x)[[m]]
-    sel <- attr(terms_m, "response")
-    yvar <- rownames(attr(terms_m, "factors"))[sel]
-    cat(paste0("\nLongitudinal submodel", if (M > 1) paste0(" ", m), 
-               ": ", yvar,"\n"))
-    coef_mat <- mat[, c(nms$y[[m]], nms$y_extra[[m]]), drop = FALSE]
+  if (mvmer) {
+    link <- sapply(1:M, function(m) x$family[[m]]$link)
+    for (m in 1:M) {
+      terms_m <- terms(x)[[m]]
+      sel <- attr(terms_m, "response")
+      yvar <- rownames(attr(terms_m, "factors"))[sel]
+      cat(paste0("\nLongitudinal submodel", if (M > 1) paste0(" ", m), 
+                 ": ", yvar,"\n"))
+      coef_mat <- mat[, c(nms$y[[m]], nms$y_extra[[m]]), drop = FALSE]
+      
+      # Calculate median and MAD
+      estimates <- .median_and_madsd(coef_mat)
+      
+      # Add column with eform
+      if (link[m] %in% c("log", "logit")) 
+        estimates <- cbind(estimates, 
+                           "exp(Median)" = c(exp(estimates[nms$y[[m]], "Median"]), 
+                                             rep(NA, length(nms$y_extra[[m]]))))
+      
+      # Print estimates
+      rownames(estimates) <- 
+        gsub(paste0("^Long", m, "\\|"), "", rownames(estimates))     
+      .printfr(estimates, digits, ...)
+    }    
+  }
+  
+  # Estimates table for event submodel
+  if (surv) {
+    cat("\nEvent submodel:\n")   
+    coef_mat <- mat[, c(nms$e, nms$a, nms$e_extra), drop = FALSE]
     
     # Calculate median and MAD
     estimates <- .median_and_madsd(coef_mat)
     
     # Add column with eform
-    if (link[m] %in% c("log", "logit")) 
-      estimates <- cbind(estimates, 
-                         "exp(Median)" = c(exp(estimates[nms$y[[m]], "Median"]), 
-                                           rep(NA, length(nms$y_extra[[m]]))))
+    estimates <- cbind(estimates, 
+                       "exp(Median)" = c(exp(estimates[c(nms$e, nms$a), "Median"]), 
+                                         rep(NA, length(nms$e_extra))))
     
-    # Print estimates
-    rownames(estimates) <- 
-      gsub(paste0("^Long", m, "\\|"), "", rownames(estimates))     
+    rownames(estimates) <- gsub("^Event\\|", "", rownames(estimates))  
+    rownames(estimates) <- gsub("^Assoc\\|", "", rownames(estimates))   
     .printfr(estimates, digits, ...)
   }
   
-  # Estimates table for event submodel
-  cat("\nEvent submodel:\n")   
-  coef_mat <- mat[, c(nms$e, nms$a, nms$e_extra), drop = FALSE]
-  
-  # Calculate median and MAD
-  estimates <- .median_and_madsd(coef_mat)
-  
-  # Add column with eform
-  estimates <- cbind(estimates, 
-                     "exp(Median)" = c(exp(estimates[c(nms$e, nms$a), "Median"]), 
-                                       rep(NA, length(nms$e_extra))))
-  
-  rownames(estimates) <- gsub("^Event\\|", "", rownames(estimates))  
-  rownames(estimates) <- gsub("^Assoc\\|", "", rownames(estimates))   
-  .printfr(estimates, digits, ...)
-  
   # Estimates table for group-level random effects
-  cat("\nGroup-level error terms:\n") 
-  print(VarCorr(x), digits = digits + 1, ...)
-  cat("Num. levels:", paste(names(ngrps(x)), unname(ngrps(x)), 
-                            collapse = ", "), "\n")  
- 
-  # Sample average of the PPD
-  ppd_mat <- mat[, nms$ppd, drop = FALSE]
-  ppd_estimates <- .median_and_madsd(ppd_mat)
-  cat("\nSample avg. posterior predictive distribution \nof longitudinal",
-      "outcomes:\n")
-  .printfr(ppd_estimates, digits, ...)
+  if (mvmer) {
+    cat("\nGroup-level error terms:\n") 
+    print(VarCorr(x), digits = digits + 1, ...)
+    cat("Num. levels:", paste(names(ngrps(x)), unname(ngrps(x)), 
+                              collapse = ", "), "\n")  
+    
+    # Sample average of the PPD
+    ppd_mat <- mat[, nms$ppd, drop = FALSE]
+    ppd_estimates <- .median_and_madsd(ppd_mat)
+    cat("\nSample avg. posterior predictive distribution \nof longitudinal",
+        "outcomes:\n")
+    .printfr(ppd_estimates, digits, ...)
+  }
   
   cat("\n------\n")
   cat("For info on the priors used see help('prior_summary.stanreg').")
@@ -256,7 +268,7 @@ print.stanjm <- function(x, digits = 3, ...) {
 #'   varying intercepts and/or slopes they can be selected using \code{pars = 
 #'   "varying"}.
 #'   
-#'   In addition, for \code{stanjm} objects there are some additional shortcuts 
+#'   In addition, for \code{stanmvreg} objects there are some additional shortcuts 
 #'   available. Using \code{pars = "long"} will display the 
 #'   parameter estimates for the longitudinal submodels only (excluding group-specific
 #'   pparameters, but including auxiliary parameters).
@@ -272,7 +284,7 @@ print.stanjm <- function(x, digits = 3, ...) {
 #'   auxiliary parameters and the log posterior.   
 #'   
 #'   If \code{pars} is \code{NULL} all parameters are selected for a \code{stanreg}
-#'   object, while for a \code{stanjm} object all 
+#'   object, while for a \code{stanmvreg} object all 
 #'   fixed effect regression coefficients are selected as well as any 
 #'   auxiliary parameters and the log posterior. See 
 #'   \strong{Examples}.
@@ -284,12 +296,12 @@ print.stanjm <- function(x, digits = 3, ...) {
 #'   \code{"print.digits"} attribute of the returned object.
 #'   
 #' @return The \code{summary} method returns an object of class 
-#'   \code{"summary.stanreg"} (or \code{"summary.stanjm"}, inheriting 
+#'   \code{"summary.stanreg"} (or \code{"summary.stanmvreg"}, inheriting 
 #'   \code{"summary.stanreg"}), which is a matrix of 
 #'   summary statistics and 
 #'   diagnostics, with attributes storing information for use by the
 #'   \code{print} method. The \code{print} method for \code{summary.stanreg} or
-#'   \code{summary.stanjm} objects is called for its side effect and just returns 
+#'   \code{summary.stanmvreg} objects is called for its side effect and just returns 
 #'   its input. The \code{as.data.frame} method for \code{summary.stanreg} 
 #'   objects converts the matrix to a data.frame, preserving row and column 
 #'   names but dropping the \code{print}-related attributes.
@@ -425,29 +437,32 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 
 #' @rdname summary.stanreg
 #' @export
-#' @method summary stanjm
-summary.stanjm <- function(object, pars = NULL, regex_pars = NULL, 
+#' @method summary stanmvreg
+summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL, 
                            probs = NULL, ..., digits = 3) {
   pars <- collect_pars(object, pars, regex_pars)
   M <- object$n_markers
+  mvmer <- is.mvmer(object)
+  surv <- is.surv(object)
+  jm <- is.jm(object)  
   
-  # Outcome variable for each submodel
-  y_vars <- sapply(1:M, function(m, object) {
-    terms_m <- terms(object)[[m]]
-    sel <- attr(terms_m, "response")
-    ret <- rownames(attr(terms_m, "factors"))[sel]
-  }, object = object)
-  
-  # Family and link for each submodel
-  fam <- sapply(object$family, function(x) 
-    paste0(x$family, " (", x$link, ")")) 
+  # Outcome variable for each longitudinal submodel
+  if (mvmer) {
+    y_vars <- sapply(1:M, function(m, object) {
+      terms_m <- terms(object)[[m]]
+      sel <- attr(terms_m, "response")
+      ret <- rownames(attr(terms_m, "factors"))[sel]
+    }, object = object)
+    
+    # Family and link for each longitudinal submodel
+    fam <- lapply(1:M, function(m) family_plus_link(object, m = m))   
+  }
   
   # Construct summary table  
   args <- list(object = object$stanfit)
   if (!is.null(probs)) 
     args$probs <- probs
   out <- do.call("summary", args)$summary
-  
   nms <- collect_nms(rownames(object$stan_summary), M, value = TRUE)
   if (!is.null(pars)) {
     pars2 <- NA     
@@ -463,10 +478,11 @@ summary.stanjm <- function(object, pars = NULL, regex_pars = NULL,
                                 "long", "event", "assoc", "fixef")))
     pars <- pars2[!is.na(pars2)]
   } else {
-    pars <- c(unlist(nms$y), unlist(nms$y_extra),
-              nms$e, nms$a, nms$e_extra, "log-posterior")
+    pars <- rownames(object$stan_summary)
+    pars <- setdiff(pars, b_names(pars, value = TRUE))
+    if (!used.variational(object)) 
+      pars <- setdiff(pars, "log-posterior")
   }
-  
   out <- out[rownames(out) %in% pars, , drop = FALSE]
   out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE), , drop = FALSE]
   stats <- colnames(out)
@@ -482,69 +498,76 @@ summary.stanjm <- function(object, pars = NULL, regex_pars = NULL,
   nms_tmp_e <- grep("^Event\\|", nms_tmp, value = TRUE)
   nms_tmp_a <- grep("^Assoc\\|", nms_tmp, value = TRUE)
   nms_tmp_b <- b_names(nms_tmp, value = TRUE)
+  nms_tmp_Sigma <- grep("^Sigma", nms_tmp, value = TRUE)
   nms_tmp_lp <- grep("^log-posterior$", nms_tmp, value = TRUE)
-  out <- out[c(unlist(nms_tmp_y), nms_tmp_e, nms_tmp_a, nms_tmp_b, nms_tmp_lp), , drop = FALSE]
-  
-  # Run times
-  times <- round((rstan::get_elapsed_time(object$stanfit))/60, digits = 1)
-  times <- cbind(times, total = rowSums(times))
+  out <- out[c(unlist(nms_tmp_y), nms_tmp_e, nms_tmp_a, nms_tmp_b, 
+               nms_tmp_Sigma, nms_tmp_lp), , drop = FALSE]
   
   # Output object
-  structure(out, 
-            call = object$call, 
-            algorithm = object$algorithm,
-            n_markers = object$n_markers,
-            n_subjects = object$n_subjects,
-            n_grps = object$n_grps,
-            n_events = object$n_events,
-            n_yobs = object$n_yobs,
-            y_vars = y_vars,
-            id_var = object$id_var,
-            time_var = object$time_var,
-            family = fam,
-            basehaz = object$basehaz$type_name,
-            posterior_sample_size = posterior_sample_size(object),
-            times = times,
-            print.digits = digits, 
-            class = c("summary.stanjm", "summary.stanreg"))
+  if (mvmer)
+    out <- structure(
+      out, y_vars = y_vars, family = fam, n_markers = object$n_markers, 
+      n_yobs = object$n_yobs, n_grps = object$n_grps)
+  if (surv)
+    out <- structure(
+      out, n_subjects = object$n_subjects, n_events = object$n_events,
+      basehaz = object$basehaz) 
+  if (jm)
+    out <- structure(
+      out, id_var = object$id_var, time_var = object$time_var)
+  structure(
+    out, formula = object$formula, algorithm = object$algorithm,
+    modeling_function = object$modeling_function,
+    posterior_sample_size = posterior_sample_size(object),
+    runtime = object$runtime, print.digits = digits,
+    class = c("summary.stanmvreg", "summary.stanreg"))
 }
 
 #' @rdname summary.stanreg
 #' @export
-#' @method print summary.stanjm
-print.summary.stanjm <- function(x, digits = max(1, attr(x, "print.digits")), 
+#' @method print summary.stanmvreg
+print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")), 
                                  ...) {
   atts <- attributes(x)
-  M <- atts$n_markers
-  
-  print(atts$call)
-  
-  cat(paste0("\n", if (M == 1) "Uni" else "Multi", 
-             "variate joint model, consisting of:")) 
-  for (m in 1:M) {
-    cat(paste0("\n  Outcome variable", 
-               if (M > 1) paste0(" (Long ", m, ")"), 
-               ": ", atts$y_vars[m]))
+  mvmer <- !is.null(atts$n_markers)
+  surv <- !is.null(atts$n_events)
+  cat("\nModel Info:\n")
+  cat("\n function:       ", atts$modeling_function)
+  if (mvmer) {
+    M <- atts$n_markers
+    stubs <- paste0("(Long", 1:M, "):")
+    for (m in 1:M) {
+      cat("\n formula", stubs[m], formula_string(atts$formula[[m]]))
+      cat("\n family ", stubs[m], atts$family[[m]])
+    }    
   }
-  for (m in 1:M) {
-    cat(paste0("\n  Family", 
-               if (M > 1) paste0(" (Long ", m, ")"), 
-               ": ", atts$family[m]))
+  if (surv) {
+    cat("\n formula (Event):", formula_string(atts$formula[["Event"]]))
+    cat("\n baseline hazard:", atts$basehaz$type_name)
   }
-  cat(paste0("\n  Baseline hazard: ", atts$basehaz))  
-  cat(paste0("\n  Clustering variables: ", paste(names(atts$n_grps), sep = ",")))
-  if (!is.null(atts$n_subjects))
-    cat(paste0("\n  Num. subjects (", atts$id_var, "): ", atts$n_subjects))
-  cat(paste0("\n  Num. events: ", atts$n_events, " (", 
-             round(100 * atts$n_events/atts$n_subjects, 1), "%)"))
-  cat("\n  Num. long observations: ")
-  cat(paste0(atts$n_yobs, if (M > 1) paste0(" (Long ", 1:M, ")"), collapse = ", "))
-  cat("\n  Posterior sample size:", atts$posterior_sample_size, "MCMC iterations")
-  
-  cat("\n\nTime taken for sampling (mins):\n")
-  print(atts$times)
-  
-  cat("\nEstimates:\n")
+  cat("\n algorithm:      ", atts$algorithm)
+  cat("\n priors:         ", "see help('prior_summary')")
+  if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
+    cat("\n sample:         ", atts$posterior_sample_size, "(posterior sample size)")
+  if (mvmer) {
+    obs_vals <- paste0(atts$n_yobs, " (Long ", 1:M, ")")
+    cat("\n num obs:        ", paste(obs_vals, collapse = ", "))
+  }
+  if (surv) {
+    cat("\n num subjects:   ", atts$n_subjects)
+    cat(paste0("\n num events:      ", atts$n_events, " (", 
+               round(100 * atts$n_events/atts$n_subjects, 1), "%)"))
+  }  
+  if (!is.null(atts$n_grps))
+    cat("\n groups:         ", paste0(names(atts$n_grps), " (", 
+                                      unname(atts$n_grps), ")", collapse = ", "))  
+  if (atts$algorithm == "sampling") {
+    maxtime <- max(atts$runtime[, "total"])
+    if (maxtime == 0) maxtime <- "<0.1"
+    cat("\n runtime:        ", maxtime, "mins")
+  } 
+    
+  cat("\n\nEstimates:\n")
   sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
   if (!length(sel)) {
     .printfr(x, digits)
@@ -603,7 +626,7 @@ allow_special_parnames <- function(object, pars) {
 
 # Family name with link in parenthesis 
 # @param x stanreg object
-# @param ... Optionally include m to specify which submodel for stanjm models
+# @param ... Optionally include m to specify which submodel for stanmvreg models
 family_plus_link <- function(x, ...) {
   fam <- family(x, ...)
   if (is.character(fam)) {

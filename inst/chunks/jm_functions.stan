@@ -63,27 +63,25 @@
   *
   * @param eta Vector of linear predictors for all longitudinal submodels
   * @param m Integer specifying which submodel to return 'eta + intercept' for
-  * @param len_eta_m Integer specifying the length of the returned eta vector
-  *   (this is the same for each longitudinal submodel since it corresponds to 
-  *    the number of quadrature points and individuals in the model, rather than
-  *    the number of longitudinal observations)
-  * @param has_intercept{_unbound,_lobound,_upbound} Integer arrays indicating 
-  *   whether each submodel has (the specific type of) intercept
-  * @param gamma{_unbound,_lobound,_upbound} Vector containing the parameters
-  *   for each type of intercept
+  * @param idx Indices of the first and last rows of eta that correspond to
+  *   submodel m
+  * @param has_intercept{_nob,_lob,_upb} Integer arrays indicating whether
+  *   each submodel has (the specific type of) intercept
+  * @param gamma{_nob,_lob,_upb} Vector containing the parameters for each 
+  *   type of intercept
   * @param xbar Vector of predictor means
   * @param beta Vector of coefficients across all longitudinal submodels
   * @param K Integer array specifying the number of parameters in each
   *   longitudinal submodel
-  * @return A vector of length len_eta_m
+  * @return A vector containing the linear predictor for submodel m
   */
-  vector add_intercept(vector eta, int m, int len_eta_m, int[] has_intercept, 
+  vector add_intercept(vector eta, int m, int[,] idx, int[] has_intercept, 
                        int[] has_intercept_nob, int[] has_intercept_lob, 
                        int[] has_intercept_upb, real[] gamma_nob, 
                        real[] gamma_lob, real[] gamma_upb, 
                        vector xbar, vector beta, int[] K) {
-    vector[len_eta_m] eta_m;
-    eta_m = segment(eta, ((m-1) * len_eta_m) + 1, len_eta_m);
+    vector[idx[m,2] - idx[m,1] + 1] eta_m;
+    eta_m = eta[idx[m,1]:idx[m,2]];
     if (has_intercept[m] == 1) {
       if (has_intercept_nob[m] == 1) 
         eta_m = eta_m + gamma_nob[sum(has_intercept_nob[1:m])];

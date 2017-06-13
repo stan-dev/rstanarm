@@ -1,209 +1,281 @@
-   # !!! Be careful that indexing of has_assoc matches stan_jm file
-   for (m in 1:M) {
+    # !!! Be careful that indexing of has_assoc matches stan_jm file
+   
+    for (m in 1:M) {
 
-      // etavalue and any interactions
-      mark2 = mark2 + 1; // count even if assoc type isn't used
-      if (has_assoc[1,m] == 1) { # etavalue
-        vector[nrow_e_Xq] val;    
-        mark = mark + 1;
-        if (has_clust == 1) val = clust_mat * y_eta_qwide[m];
-        else val = y_eta_qwide[m];
-	      e_eta_q = e_eta_q + a_beta[mark] * val;
-      }	
-      if (has_assoc[9,m] == 1) { # etavalue*data
-  	    int tmp;
-  	    int j_shift;
-  	    if (mark2 == 1) j_shift = 0;
-  	    else j_shift = sum(a_K_data[1:(mark2-1)]);
-  	    tmp = a_K_data[mark2];  
-        for (j in 1:tmp) {
+      //----- etavalue or etaslope, and any interactions     
+
+      if (has_assoc[1,m]  == 1 || // etavalue
+          has_assoc[9,m]  == 1 || // etavalue * data
+          has_assoc[13,m] == 1 || // etavalue * etavalue
+          has_assoc[14,m] == 1 || // etavalue * muvalue 
+          has_assoc[2,m]  == 1 || // etaslope
+          has_assoc[10,m] == 1) { // etaslope * data
+          
+        // declare and define eta at quadpoints for submodel m  
+        vector[nrow_y_Xq[m]] eta_tmp;
+        eta_tmp = add_intercept( // adds intercept to eta
+          y_eta_q, m, idx_q, has_intercept, has_intercept_nob, 
+          has_intercept_lob, has_intercept_upb, gamma_nob, 
+          gamma_lob, gamma_upb, xbar, beta, KM);
+
+        // add etavalue and any interactions to event submodel eta
+        mark2 = mark2 + 1; // count even if assoc type isn't used
+        if (has_assoc[1,m] == 1) { # etavalue
           vector[nrow_e_Xq] val;    
-          int sel;
-          sel = j_shift + j;
+          if (has_clust[m] == 1) 
+            val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * eta_tmp;
+          else val = eta_tmp;
           mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_eta_qwide[m] .* y_Xq_data[sel]);
-          else val = y_eta_qwide[m] .* y_Xq_data[sel];
-          e_eta_q = e_eta_q + a_beta[mark] * val;
-        }
-      }
-      mark3 = mark3 + 1; // count even if assoc type isn't used
-      if (has_assoc[13,m] == 1) { # etavalue*etavalue
-        for (j in 1:size_which_interactions[mark3]) { 
-          vector[nrow_e_Xq] val;    
-          int sel;
-    	    int j_shift;
-     	    if (mark3 == 1) j_shift = 0;
-    	    else j_shift = sum(size_which_interactions[1:(mark3-1)]);
-    	    sel = which_interactions[j+j_shift];
-  	      mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_eta_qwide[m] .* y_eta_qwide[sel]);
-          else val = y_eta_qwide[m] .* y_eta_qwide[sel];
-          e_eta_q = e_eta_q + a_beta[mark] * val;  
-       }
-      }
-      mark3 = mark3 + 1; // count even if assoc type isn't used
-      if (has_assoc[14,m] == 1) { # etavalue*muvalue
-        for (j in 1:size_which_interactions[mark3]) { 
-          vector[nrow_e_Xq] val;    
-  	      int sel;
-    	    int j_shift;
-    	    if (mark3 == 1) j_shift = 0;
-    	    else j_shift = sum(size_which_interactions[1:(mark3-1)]);
-    	    sel = which_interactions[j+j_shift];
-  	      mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_eta_qwide[m] .* y_qwide[sel]);
-          else val = y_eta_qwide[m] .* y_qwide[sel];  	      
-          e_eta_q = e_eta_q + a_beta[mark] * val;  
-        }
-      }
-      
-      // etaslope and any interactions
-      mark2 = mark2 + 1;
-      if ((has_assoc[2,m] == 1) || (has_assoc[10,m] == 1)) {
-        vector[nrow_y_Xq] dydt_eta_q;
-        dydt_eta_q = (y_eta_qwide_eps[m] - y_eta_qwide[m]) / eps;
-        if (has_assoc[2,m] == 1) { # etaslope
-          vector[nrow_e_Xq] val;    
-          mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * dydt_eta_q;
-          else val = dydt_eta_q;          
-          e_eta_q = e_eta_q + a_beta[mark] * val;
-        }
-        if (has_assoc[10,m] == 1) { # etaslope*data
-    	    int tmp;
-    	    int j_shift;
-    	    if (mark2 == 1) j_shift = 0;
-    	    else j_shift = sum(a_K_data[1:(mark2-1)]);
-    	    tmp = a_K_data[mark2];  
+  	      e_eta_q = e_eta_q + a_beta[mark] * val;
+        }	
+        if (has_assoc[9,m] == 1) { # etavalue*data
+    	    int tmp = a_K_data[mark2];
+    	    int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
           for (j in 1:tmp) {
-            vector[nrow_e_Xq] val;    
-            int sel;
-            sel = j_shift + j;
+            vector[nrow_e_Xq] val;
+            int sel = j_shift + j;
+            if (has_clust[m] == 1) 
+              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
+                (eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+            else val = eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];
             mark = mark + 1;
-            if (has_clust == 1) val = clust_mat * (dydt_eta_q .* y_Xq_data[sel]);
-            else val = dydt_eta_q .* y_Xq_data[sel];            
             e_eta_q = e_eta_q + a_beta[mark] * val;
-          }    
-        }         
+          }
+        }
+        mark3 = mark3 + 1; // count even if assoc type isn't used
+        if (has_assoc[13,m] == 1) { # etavalue*etavalue
+          for (j in 1:size_which_interactions[mark3]) { 
+      	    int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
+            int sel = which_interactions[j+j_shift];
+            vector[nrow_e_Xq] val;    
+            vector[nrow_y_Xq[sel]] eta_tmp2;
+            eta_tmp2 = add_intercept( // adds intercept to eta
+              y_eta_q, sel, idx_q, has_intercept, has_intercept_nob, 
+              has_intercept_lob, has_intercept_upb, gamma_nob, 
+              gamma_lob, gamma_upb, xbar, beta, KM);
+            val = eta_tmp .* eta_tmp2;
+    	      mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;  
+         }
+        }
+        mark3 = mark3 + 1; // count even if assoc type isn't used
+        if (has_assoc[14,m] == 1) { # etavalue*muvalue
+          for (j in 1:size_which_interactions[mark3]) { 
+      	    int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
+            int sel = which_interactions[j+j_shift];
+            vector[nrow_e_Xq] val;    
+            vector[nrow_y_Xq[sel]] eta_tmp2;
+            vector[nrow_y_Xq[sel]] mu_tmp2;
+            eta_tmp2 = add_intercept( // adds intercept to eta
+              y_eta_q, sel, idx_q, has_intercept, has_intercept_nob, 
+              has_intercept_lob, has_intercept_upb, gamma_nob, 
+              gamma_lob, gamma_upb, xbar, beta, KM);
+            mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
+            val = eta_tmp .* mu_tmp2;  	      
+    	      mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;  
+          }
+        }
+        
+        // add etaslope and any interactions  to event submodel eta
+        mark2 = mark2 + 1;
+        if ((has_assoc[2,m] == 1) || (has_assoc[10,m] == 1)) {
+          vector[nrow_y_Xq[m]] eta_eps_tmp;
+          vector[nrow_y_Xq[m]] dydt_eta_q;
+          eta_eps_tmp = add_intercept(
+            y_eta_q_eps, m, idx_q, has_intercept, has_intercept_nob, 
+            has_intercept_lob, has_intercept_upb, gamma_nob, 
+            gamma_lob, gamma_upb, xbar, beta, KM);
+          dydt_eta_q = (eta_eps_tmp - eta_tmp) / eps;
+          if (has_assoc[2,m] == 1) { # etaslope
+            vector[nrow_e_Xq] val;    
+            if (has_clust[m] == 1) 
+              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * dydt_eta_q;
+            else val = dydt_eta_q;          
+            mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;
+          }
+          if (has_assoc[10,m] == 1) { # etaslope*data
+      	    int tmp = a_K_data[mark2];
+      	    int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
+            for (j in 1:tmp) {
+              vector[nrow_e_Xq] val;    
+              int sel = j_shift + j;
+              if (has_clust[m] == 1) 
+                val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
+                  (dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+              else val = dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];            
+              mark = mark + 1;
+              e_eta_q = e_eta_q + a_beta[mark] * val;
+            }    
+          }         
+        }
       }
+          
+      //----- etaauc
       
-      // etaauc
+      // add etaauc to event submodel eta
       if (has_assoc[3,m] == 1) { # etaauc
-        vector[nrow_y_Xq] y_eta_q_auc_tmp;  
+        vector[nrow_y_Xq_auc[m]] eta_auc_tmp; # eta at all auc quadpoints (for submodel m)
+        vector[nrow_y_Xq[m]] val; # eta following summation over auc quadpoints 
+        eta_auc_tmp = add_intercept(
+          y_eta_q_auc, m, idx_qauc, has_intercept, has_intercept_nob, 
+          has_intercept_lob, has_intercept_upb, gamma_nob, 
+          gamma_lob, gamma_upb, xbar, beta, KM);
         mark = mark + 1;
-        for (r in 1:nrow_y_Xq) {
+        for (r in 1:nrow_y_Xq[m]) {
           vector[auc_quadnodes] val_tmp;
           vector[auc_quadnodes] wgt_tmp;
-          val_tmp = y_eta_qwide_auc[m,((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          val_tmp = eta_auc_tmp[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
           wgt_tmp = auc_quadweights[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
-          y_eta_q_auc_tmp[r] = sum(wgt_tmp .* val_tmp);
+          val[r] = sum(wgt_tmp .* val_tmp);
         }
-        e_eta_q = e_eta_q + a_beta[mark] * y_eta_q_auc_tmp;          
+        e_eta_q = e_eta_q + a_beta[mark] * val;          
       }       
       
-      // muvalue and any interactions
-      mark2 = mark2 + 1;
-      if (has_assoc[4,m] == 1) { # muvalue
-        vector[nrow_e_Xq] val;    
-        mark = mark + 1;
-        if (has_clust == 1) val = clust_mat * y_qwide[m];
-        else val = y_qwide[m];        
-        e_eta_q = e_eta_q + a_beta[mark] * val; 
-      }
-      if (has_assoc[11,m] == 1) { # muvalue*data
-  	    int tmp;
-  	    int j_shift;
-  	    if (mark2 == 1) j_shift = 0;
-  	    else j_shift = sum(a_K_data[1:(mark2-1)]);
-  	    tmp = a_K_data[mark2];  
-        for (j in 1:tmp) {
-          vector[nrow_e_Xq] val;    
-          int sel;
-          sel = j_shift + j;
-          mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_qwide[m] .* y_Xq_data[sel]);
-          else val = y_qwide[m] .* y_Xq_data[sel];              
-          e_eta_q = e_eta_q + a_beta[mark] * val;
-        }      
-      } 
-      mark3 = mark3 + 1; // count even if assoc type isn't used
-      if (has_assoc[15,m] == 1) { # muvalue*etavalue
-        for (j in 1:size_which_interactions[mark3]) {
-          vector[nrow_e_Xq] val;    
-          int sel;
-    	    int j_shift;
-     	    if (mark3 == 1) j_shift = 0;
-    	    else j_shift = sum(size_which_interactions[1:(mark3-1)]);
-    	    sel = which_interactions[j+j_shift];
-  	      mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_qwide[m] .* y_eta_qwide[sel]);
-          else val = y_qwide[m] .* y_eta_qwide[sel];        	      
-          e_eta_q = e_eta_q + a_beta[mark] * val;  
-       }
-      }      
-      mark3 = mark3 + 1; // count even if assoc type isn't used
-      if (has_assoc[16,m] == 1) { # muvalue*muvalue
-        for (j in 1:size_which_interactions[mark3]) { 
-          vector[nrow_e_Xq] val;    
-          int sel;
-    	    int j_shift;
-     	    if (mark3 == 1) j_shift = 0;
-    	    else j_shift = sum(size_which_interactions[1:(mark3-1)]);
-    	    sel = which_interactions[j+j_shift];
-  	      mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * (y_qwide[m] .* y_qwide[sel]);
-          else val = y_qwide[m] .* y_qwide[sel];   	      
-          e_eta_q = e_eta_q + a_beta[mark] * val;  
-       }
-      }      
+      //----- muvalue or muslope, and any interactions
       
-      // muslope and any interactions
-      mark2 = mark2 + 1;
-      if ((has_assoc[5,m] == 1) || (has_assoc[12,m] == 1)) {
-        vector[nrow_y_Xq] dydt_q;
-        dydt_q = (y_qwide_eps[m] - y_qwide[m]) / eps;
-        if (has_assoc[5,m] == 1) { # muslope
+      if (has_assoc[4,m]  == 1 || // muvalue
+          has_assoc[11,m] == 1 || // muvalue * data
+          has_assoc[15,m] == 1 || // muvalue * etavalue
+          has_assoc[16,m] == 1 || // muvalue * muvalue 
+          has_assoc[5,m]  == 1 || // muslope
+          has_assoc[12,m] == 1) { // muslope * data
+          
+        // declare and define mu for submodel m  
+        vector[nrow_y_Xq[m]] eta_tmp; 
+        vector[nrow_y_Xq[m]] mu_tmp; 
+        eta_tmp = add_intercept( // adds intercept to eta
+          y_eta_q, m, idx_q, has_intercept, has_intercept_nob, 
+          has_intercept_lob, has_intercept_upb, gamma_nob, 
+          gamma_lob, gamma_upb, xbar, beta, KM);
+        mu_tmp = evaluate_mu(eta_tmp, family[m], link[m]);
+                             
+        // add muvalue and any interactions to event submodel eta   
+        mark2 = mark2 + 1;
+        if (has_assoc[4,m] == 1) { # muvalue
           vector[nrow_e_Xq] val;    
+          if (has_clust[m] == 1) 
+            val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * mu_tmp;
+          else val = mu_tmp;        
           mark = mark + 1;
-          if (has_clust == 1) val = clust_mat * dydt_q;
-          else val = dydt_q;  
-          e_eta_q = e_eta_q + a_beta[mark] * val;          
+          e_eta_q = e_eta_q + a_beta[mark] * val; 
         }
-        if (has_assoc[12,m] == 1) { # muslope*data
-    	    int tmp;
-    	    int j_shift;
-    	    if (mark2 == 1) j_shift = 0;
-    	    else j_shift = sum(a_K_data[1:(mark2-1)]);
-    	    tmp = a_K_data[mark2];  
+        if (has_assoc[11,m] == 1) { # muvalue*data
+    	    int tmp = a_K_data[mark2]; 
+    	    int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
           for (j in 1:tmp) {
             vector[nrow_e_Xq] val;    
-            int sel;
-            sel = j_shift + j;
+            int sel = j_shift + j;
+            if (has_clust[m] == 1) 
+              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] *
+                (mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+            else val = mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];              
             mark = mark + 1;
-            if (has_clust == 1) val = clust_mat * (dydt_q .* y_Xq_data[sel]);
-            else val = dydt_q .* y_Xq_data[sel];             
             e_eta_q = e_eta_q + a_beta[mark] * val;
-          }          
+          }      
         } 
+        mark3 = mark3 + 1; // count even if assoc type isn't used
+        if (has_assoc[15,m] == 1) { # muvalue*etavalue
+          for (j in 1:size_which_interactions[mark3]) {
+      	    int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
+            int sel = which_interactions[j+j_shift];
+            vector[nrow_e_Xq] val;    
+            vector[nrow_y_Xq[sel]] eta_tmp2;
+            eta_tmp2 = add_intercept( // adds intercept to eta
+              y_eta_q, sel, idx_q, has_intercept, has_intercept_nob, 
+              has_intercept_lob, has_intercept_upb, gamma_nob, 
+              gamma_lob, gamma_upb, xbar, beta, KM);
+            val = mu_tmp .* eta_tmp2;        	      
+    	      mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;  
+         }
+        }      
+        mark3 = mark3 + 1; // count even if assoc type isn't used
+        if (has_assoc[16,m] == 1) { # muvalue*muvalue
+          for (j in 1:size_which_interactions[mark3]) { 
+      	    int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
+      	    int sel = which_interactions[j+j_shift];
+            vector[nrow_e_Xq] val;    
+            vector[nrow_y_Xq[sel]] eta_tmp2;
+            vector[nrow_y_Xq[sel]] mu_tmp2;
+            eta_tmp2 = add_intercept( // adds intercept to eta
+              y_eta_q, sel, idx_q, has_intercept, has_intercept_nob, 
+              has_intercept_lob, has_intercept_upb, gamma_nob, 
+              gamma_lob, gamma_upb, xbar, beta, KM);
+            mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
+            val = mu_tmp .* mu_tmp2;        	      
+    	      mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;  
+         }
+        }      
+        
+        // declare and define slope of mu for submodel m
+        if (has_assoc[5,m] == 1 || has_assoc[12,m] == 1) {
+          vector[nrow_y_Xq[m]] eta_eps_tmp; 
+          vector[nrow_y_Xq[m]] mu_eps_tmp; 
+          vector[nrow_y_Xq[m]] dydt_q;
+          eta_eps_tmp = add_intercept(
+            y_eta_q_eps, m, idx_q, has_intercept, has_intercept_nob, 
+            has_intercept_lob, has_intercept_upb, gamma_nob, 
+            gamma_lob, gamma_upb, xbar, beta, KM);
+          mu_eps_tmp = evaluate_mu(eta_eps_tmp, family[m], link[m]);
+          dydt_q = (mu_eps_tmp - mu_tmp) / eps;
+          
+          // add muslope and any interactions to event submodel eta
+          mark2 = mark2 + 1;
+          if (has_assoc[5,m] == 1) { # muslope
+            vector[nrow_e_Xq] val;    
+            if (has_clust[m] == 1) 
+              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * dydt_q;
+            else val = dydt_q;  
+            mark = mark + 1;
+            e_eta_q = e_eta_q + a_beta[mark] * val;          
+          }
+          if (has_assoc[12,m] == 1) { # muslope*data
+      	    int tmp = a_K_data[mark2];
+      	    int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
+            for (j in 1:tmp) {
+              vector[nrow_e_Xq] val;    
+              int sel = j_shift + j;
+              if (has_clust[m] == 1) 
+                val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
+                  (dydt_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+              else val = dydt_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];             
+              mark = mark + 1;
+              e_eta_q = e_eta_q + a_beta[mark] * val;
+            }          
+          } 
+        }            
       }
-      
-      // muauc
+
+      //----- muauc
+
+      // add muauc to event submodel eta
       if (has_assoc[6,m] == 1) { # muauc
-        vector[nrow_y_Xq] y_qwide_auc_tmp;  
+        vector[nrow_y_Xq_auc[m]] eta_auc_tmp; # eta at all auc quadpoints (for submodel m)
+        vector[nrow_y_Xq_auc[m]] mu_auc_tmp; # mu at all auc quadpoints (for submodel m)  
+        vector[nrow_y_Xq[m]] val; # mu following summation over auc quadpoints 
+        eta_auc_tmp = add_intercept(
+          y_eta_q_auc, m, idx_qauc, has_intercept, has_intercept_nob, 
+          has_intercept_lob, has_intercept_upb, gamma_nob, 
+          gamma_lob, gamma_upb, xbar, beta, KM);
+        mu_auc_tmp = evaluate_mu(eta_auc_tmp, family[m], link[m]);
         mark = mark + 1;
-        for (r in 1:nrow_y_Xq) {
+        for (r in 1:nrow_y_Xq[m]) {
           vector[auc_quadnodes] val_tmp;
           vector[auc_quadnodes] wgt_tmp;
-          val_tmp = y_qwide_auc[m,((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
+          val_tmp = mu_auc_tmp[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
           wgt_tmp = auc_quadweights[((r-1) * auc_quadnodes + 1):(r * auc_quadnodes)];
-          y_qwide_auc_tmp[r] = sum(wgt_tmp .* val_tmp);
+          val[r] = sum(wgt_tmp .* val_tmp);
         }
-        e_eta_q = e_eta_q + a_beta[mark] * y_qwide_auc_tmp;          
+        e_eta_q = e_eta_q + a_beta[mark] * val;          
       }  
 
     }
     
-    // shared random effects
+    //-----  shared random effects
+    
   	if (sum_size_which_b > 0) {
   	  int mark_beg;  // used to define segment of a_beta
   	  int mark_end;

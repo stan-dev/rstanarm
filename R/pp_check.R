@@ -146,11 +146,11 @@ pp_check.stanreg <-
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
-    if (is.stanjm(object)) {
+    if (is.stanmvreg(object)) {
       dots <- list(...)
       m <- dots[["m"]]
       if (is.null(m))
-        stop("Argument 'm' must be provided for stanjm objects.")
+        stop("Argument 'm' must be provided for stanmvreg objects.")
     } else m <- NULL
     
     plotfun_name <- .ppc_function_name(plotfun)
@@ -277,10 +277,10 @@ is_binomial_ppc <- function(object, ...) {
   dots[["yrep"]] <- yrep
   argnames <- names(formals(fun))
   
-  if (is.stanjm(object)) {
+  if (is.stanmvreg(object)) {
     m <- dots[["m"]]
     if (is.null(m))
-      stop("Argument 'm' must be provided for stanjm objects.")
+      stop("Argument 'm' must be provided for stanmvreg objects.")
     dots[["m"]] <- NULL # don't return m as part of bayesplot arguments
   }
   

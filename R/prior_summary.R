@@ -102,7 +102,7 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
     message("Priors not found in stanreg object.")
     return(invisible(NULL))
   }  
-  if (is.stanjm(object)) {
+  if (is.stanmvreg(object)) {
     M <- get_M(object)
     yvars <- sapply(1:M, function(m) {
       terms_m <- terms(object)[[m]]
@@ -169,7 +169,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
-  # unique to stan_jm
+  # unique to stan_mvmer or stan_jm
   if (!is.null(attr(x, "M"))) {
     M <- attr(x, "M")
     yvars <- attr(x, "yvars") 
