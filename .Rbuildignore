@@ -13,3 +13,4 @@ LICENSE$
 ^inst/doc/[A-Za-z0-9\-_]+[.]csv
 ^inst/doc/\.install_extras$
 dev-notes/*
+^docs$
