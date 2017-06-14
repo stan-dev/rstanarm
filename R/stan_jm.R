@@ -1069,25 +1069,16 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
   
-  # Indexing for type of association structure when there is
-  # clustering below the individual
+  # Data for association structure when there is
+  # clustering below the patient-level
   standata$has_clust <- as.array(as.integer(has_clust))
-  if (any(has_clust)) {
-    grp_assoc_sparse <- TRUE
-    if (grp_assoc_sparse) { # use sparse clust_mat
-      parts_clust_mat <- rstan::extract_sparse_parts(clust_mat[[1L]])
-      standata$clust_nnz <- length(parts_clust_mat$w)
-      standata$clust_w <- parts_clust_mat$w
-      standata$clust_v <- parts_clust_mat$v
-      standata$clust_u <- parts_clust_mat$u
-    } else { # use dense clust_mat
-      standata$has_clust <- as.array(as.integer(fetch_(clust_stuff, "has_clust")))
-      standata$clust_mat <- as.matrix(do.call("cbind", fetch(clust_stuff, "clust_mat")))
-      cols_clust_mat <- sapply(fetch(clust_stuff, "clust_mat"), ncol)
-      standata$ncol_clust <- sum(cols_clust_mat)
-      standata$idx_clust <- get_idx_array(cols_clust_mat)
-    }    
-  } else {
+  if (any(has_clust)) { # has lower level clustering
+    parts_clust_mat <- rstan::extract_sparse_parts(clust_mat[[1L]])
+    standata$clust_nnz <- length(parts_clust_mat$w)
+    standata$clust_w <- parts_clust_mat$w
+    standata$clust_v <- parts_clust_mat$v
+    standata$clust_u <- parts_clust_mat$u
+  } else { # no lower level clustering
     standata$clust_nnz <- 0L
     standata$clust_w <- double(0)
     standata$clust_v <- integer(0)
