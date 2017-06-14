@@ -1065,12 +1065,31 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Indexing for type of association structure when there is
   # clustering below the individual
-  standata$has_clust <- as.array(as.integer(fetch_(clust_stuff, "has_clust")))
-  standata$clust_mat <- as.matrix(do.call("cbind", fetch(clust_stuff, "clust_mat")))
-  cols_clust_mat <- sapply(fetch(clust_stuff, "clust_mat"), ncol)
-  standata$ncol_clust <- sum(cols_clust_mat)
-  standata$idx_clust <- get_idx_array(cols_clust_mat)
-  
+  grp_assoc_sparse <- TRUE
+  if (grp_assoc_sparse) { # use sparse clust_mat
+    has_clust <- fetch_(clust_stuff, "has_clust")
+    clust_mat <- unique(fetch(clust_stuff, "clust_mat")[has_clust])
+    clust_wgts <- unique(fetch(clust_stuff, "clust_mat")[has_clust])
+    if ((length(clust_mat) > 1L) || (length(clust_wgts) > 1L))
+      stop("Any longitudinal submodels with lower level clustering (i.e. clustering ",
+           "below the patient-level) must have the same structure.")    
+    if (!length(clust_mat)) 
+      clust_mat <- list(matrix(0,0,0))
+    parts_clust_mat <- rstan::extract_sparse_parts(clust_mat[[1L]])
+    standata$clust_nnz <- as.integer(length(parts_clust_mat$w))
+    standata$clust_w <- parts_clust_mat$w
+    standata$clust_v <- parts_clust_mat$v
+    standata$clust_u <- as.array(parts_clust_mat$u)
+    standata$clust_wgts <- array_else_double(clust_wgts)
+    standata$has_clust <- as.array(as.integer(has_clust))
+  } else { # use dense clust_mat
+    standata$has_clust <- as.array(as.integer(fetch_(clust_stuff, "has_clust")))
+    standata$clust_mat <- as.matrix(do.call("cbind", fetch(clust_stuff, "clust_mat")))
+    cols_clust_mat <- sapply(fetch(clust_stuff, "clust_mat"), ncol)
+    standata$ncol_clust <- sum(cols_clust_mat)
+    standata$idx_clust <- get_idx_array(cols_clust_mat)
+  }
+
   # Data for calculating value, slope, auc in GK quadrature 
   standata$nrow_y_Xq <- as.array(as.integer(
     sapply(a_mod_stuff, function(x) NROW(x$mod_eta$xtemp))))
@@ -1349,32 +1368,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                modeling_function = "stan_jm")
   out <- stanmvreg(fit)
   return(out)
-}
-
-get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
-  cnms_nms <- names(cnms)
-  tally <- sapply(cnms_nms, function(x) 
-    # within each ID, count the number of levels for the grouping factor x
-    tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
-    simplify = FALSE)
-  sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
-  has_clust <- as.logical(length(sel) > 0L)
-  if (has_clust) {
-    if (length(sel) > 1L)
-      stop("There can only be one grouping factor clustered within 'id_var'.") 
-    clust_var <- cnms_nms[sel] 
-    clust_freq <- tally[[clust_var]]
-    clust_list <- unique(flist[[clust_var]])
-    clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
-    clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
-    if (grp_assoc == "mean")
-      clust_mat <- clust_mat / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)
-    clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))    
-  } else {
-    clust_var <- clust_freq <- clust_list <- clust_idlist <- NULL
-    clust_mat <- matrix(0, length(unique(flist[[id_var]])) * (quadnodes + 1), 0)    
-  }
-  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat)
 }
 
 
@@ -2474,6 +2467,49 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
   linpred <- linpred + (t(as.matrix(group$Zt)) %*% getME(y_mod_stuff$mod, "b"))
   nlist(xtemp, group, linpred)
 }   
+
+# Get the information need for combining the information in lower-level units
+# clustered within an individual, when the patient-level is not the only 
+# clustering level in the longitudinal submodel
+#
+#
+# @param cnms The component names for a single longitudinal submodel
+# @param flist The flist for a single longitudinal submodel
+# @param id_var The name of the ID variable
+# @param quadnodes Integer specifying the number of quadnodes being used for 
+#   the GK quadrature in the stan_jm call
+# @param grp_assoc Character string specifying the association structure used
+#   for combining information in the lower level units clustered within an
+#   individual
+# @return A named list
+get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
+  cnms_nms <- names(cnms)
+  tally <- sapply(cnms_nms, function(x) 
+    # within each ID, count the number of levels for the grouping factor x
+    tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
+    simplify = FALSE)
+  sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
+  has_clust <- as.logical(length(sel) > 0L)
+  if (has_clust) {
+    if (length(sel) > 1L)
+      stop("There can only be one grouping factor clustered within 'id_var'.") 
+    clust_var <- cnms_nms[sel] 
+    clust_freq <- tally[[clust_var]]
+    clust_list <- unique(flist[[clust_var]])
+    clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
+    clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
+    clust_wgts <- if (grp_assoc == "mean")
+      (1 / rep(clust_stuff$clust_freq, clust_stuff$clust_freq)) else 
+        rep(1, length(clust_idlist))
+    # broadcast clust_mat and clust_wgts for each quadnode
+    clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))
+    clust_wgts <- rep(clust_wgts, quadnodes + 1)
+  } else {
+    clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_wgts <- NULL
+    clust_mat <- matrix(0, length(unique(flist[[id_var]])) * (quadnodes + 1), 0)    
+  }
+  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_wgts, clust_mat)
+}
 
 # Function to calculate the number of association parameters in the model
 #
