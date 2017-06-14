@@ -57,6 +57,7 @@
   
   // data for combining lower level units clustered within patients
   int<lower=0,upper=1> has_clust[M]; // 1 = has clustering below patient level
-  int<lower=0,upper=sum(nrow_y_Xq)> ncol_clust; // num. cols in clust_mat design matrix
-  int<lower=0,upper=ncol_clust> idx_clust[M,2]; // indices of first and last row in clust_mat corresponding to each submodel
-  matrix<lower=0,upper=1>[nrow_e_Xq,ncol_clust] clust_mat; // design matrix used for combining lower level units clustered within patients
+  int<lower=0> clust_nnz; // info on sparse design matrix used for combining lower level units clustered within patients
+  vector<lower=0,upper=1>[clust_nnz] clust_w; 
+  int<lower=0> clust_v[clust_nnz];      
+  int<lower=0> clust_u[sum(has_clust) > 0 ? nrow_e_Xq + 1 : 0]; 

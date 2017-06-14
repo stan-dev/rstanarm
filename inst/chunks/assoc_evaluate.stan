@@ -23,7 +23,8 @@
         if (has_assoc[1,m] == 1) { # etavalue
           vector[nrow_e_Xq] val;    
           if (has_clust[m] == 1) 
-            val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * eta_tmp;
+            val = csr_matrix_times_vector(
+              nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, eta_tmp);
           else val = eta_tmp;
           mark = mark + 1;
   	      e_eta_q = e_eta_q + a_beta[mark] * val;
@@ -35,8 +36,9 @@
             vector[nrow_e_Xq] val;
             int sel = j_shift + j;
             if (has_clust[m] == 1) 
-              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
-                (eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+              val = csr_matrix_times_vector(
+                nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, 
+                (eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]));
             else val = eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * val;
@@ -90,7 +92,8 @@
           if (has_assoc[2,m] == 1) { # etaslope
             vector[nrow_e_Xq] val;    
             if (has_clust[m] == 1) 
-              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * dydt_eta_q;
+              val = csr_matrix_times_vector(
+                nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, dydt_eta_q);
             else val = dydt_eta_q;          
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * val;
@@ -101,9 +104,10 @@
             for (j in 1:tmp) {
               vector[nrow_e_Xq] val;    
               int sel = j_shift + j;
-              if (has_clust[m] == 1) 
-                val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
-                  (dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+              if (has_clust[m] == 1)
+                val = csr_matrix_times_vector(
+                  nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, 
+                  (dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]));
               else val = dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];            
               mark = mark + 1;
               e_eta_q = e_eta_q + a_beta[mark] * val;
@@ -156,7 +160,8 @@
         if (has_assoc[4,m] == 1) { # muvalue
           vector[nrow_e_Xq] val;    
           if (has_clust[m] == 1) 
-            val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * mu_tmp;
+            val = csr_matrix_times_vector(
+              nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, mu_tmp);
           else val = mu_tmp;        
           mark = mark + 1;
           e_eta_q = e_eta_q + a_beta[mark] * val; 
@@ -168,8 +173,9 @@
             vector[nrow_e_Xq] val;    
             int sel = j_shift + j;
             if (has_clust[m] == 1) 
-              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] *
-                (mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+              val = csr_matrix_times_vector(
+                nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u,
+                (mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]));
             else val = mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];              
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * val;
@@ -227,7 +233,8 @@
           if (has_assoc[5,m] == 1) { # muslope
             vector[nrow_e_Xq] val;    
             if (has_clust[m] == 1) 
-              val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * dydt_q;
+              val = csr_matrix_times_vector(
+                nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u, dydt_q);
             else val = dydt_q;  
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * val;          
@@ -239,8 +246,9 @@
               vector[nrow_e_Xq] val;    
               int sel = j_shift + j;
               if (has_clust[m] == 1) 
-                val = clust_mat[, idx_clust[m,1]:idx_clust[m,2]] * 
-                  (dydt_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]);
+                val = csr_matrix_times_vector(
+                  nrow_e_Xq, nrow_y_Xq[m], clust_w, clust_v, clust_u,
+                  (dydt_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel]));
               else val = dydt_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];             
               mark = mark + 1;
               e_eta_q = e_eta_q + a_beta[mark] * val;
