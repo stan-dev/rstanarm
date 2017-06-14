@@ -60,11 +60,28 @@ stan_arima <-
     
     mc <- match.call(expand.dots = FALSE)
     algorithm <- match.arg(algorithm)
-
+    
+    # create lag matrix
+    time_periods <- length(x)
+    p <- order[1]
+    Tmp <- time_periods - p;
+    yy <- rep(NA, time_periods - p)
+    X <- matrix(NA, nrow = time_periods - p, ncol = p)
+    for (t in 1:Tmp) {
+      yy[t] = x[t + p];
+      for (k in 1:p)
+        X[t, p - k + 1] = x[t + k - 1];
+    }
+    
     stanfit <-
       stan_arima.fit(
-        y = x,
+        yy = yy,
         x = xreg,
+        X = X,
+        order,
+        p = p,
+        time_periods = time_periods,
+        # seasonal = seasonal,
         ...,
         has_intercept = include.mean,
         prior = prior,
@@ -78,13 +95,13 @@ stan_arima <-
       nlist(
         stanfit,
         algorithm,
-        y = x,
-        x = xreg,
+        y = yy,
+        x = X,
         family = gaussian(),
         call = match.call(),
         stan_function = "stan_arima"
       )
     out <- stanreg(fit)
-    structure(out, class = c("stanreg", "Arima"))
+    structure(out, class = c("stanreg", "arima"))
   }
 

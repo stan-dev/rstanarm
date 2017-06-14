@@ -100,7 +100,7 @@ stanreg <- function(object) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
   }
-  
+
   out <- nlist(
     coefficients = unpad_reTrms(coefs), 
     ses = unpad_reTrms(ses),
@@ -120,7 +120,7 @@ stanreg <- function(object) {
     prior.weights = object$weights, 
     contrasts = object$contrasts, 
     na.action = object$na.action,
-    formula = object$formula, 
+    formula = if (object$stan_function != "stan_arima") object$formula else NULL, 
     terms = object$terms,
     prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
