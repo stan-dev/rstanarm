@@ -582,9 +582,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     fm     <- old_call$formula
     data   <- old_call$data
     family <- old_call$family
-    new_call$formula <- if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
-    new_call$data    <- if (is(eval(data,   env), "list")) data[[m+1]]   else data
-    new_call$family  <- if (is(eval(family, env), "list")) family[[m+1]] else family
+    new_call$formula <- if (is(fm, 'list')) fm[[m]] else if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
+    new_call$data    <- if (is(data, 'list') && !inherits(data, 'data.frame')) data[[m]] else if (is(eval(data,   env), "list")) data[[m+1]]   else data
+    new_call$family  <- if (is(family, 'list')) family[[m]] else if (is(eval(family, env), "list")) family[[m+1]] else family
     new_call
   }, old_call = y_mc, env = calling_env)
 
