@@ -52,7 +52,7 @@
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../Articles/index.html">Vignettes</a>
+  <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
@@ -248,9 +248,9 @@ model.</p></td>
 #&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.055341 seconds (Warm-up)
-#&gt;                0.058471 seconds (Sampling)
-#&gt;                0.113812 seconds (Total)
+#&gt;  Elapsed Time: 0.046235 seconds (Warm-up)
+#&gt;                0.04771 seconds (Sampling)
+#&gt;                0.093945 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -267,9 +267,9 @@ model.</p></td>
 #&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.071293 seconds (Warm-up)
-#&gt;                0.05714 seconds (Sampling)
-#&gt;                0.128433 seconds (Total)
+#&gt;  Elapsed Time: 0.050745 seconds (Warm-up)
+#&gt;                0.052061 seconds (Sampling)
+#&gt;                0.102806 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
@@ -286,9 +286,9 @@ model.</p></td>
 #&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.051687 seconds (Warm-up)
-#&gt;                0.054031 seconds (Sampling)
-#&gt;                0.105718 seconds (Total)
+#&gt;  Elapsed Time: 0.056638 seconds (Warm-up)
+#&gt;                0.050207 seconds (Sampling)
+#&gt;                0.106845 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
@@ -305,9 +305,9 @@ model.</p></td>
 #&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.053367 seconds (Warm-up)
-#&gt;                0.054202 seconds (Sampling)
-#&gt;                0.107569 seconds (Total)
+#&gt;  Elapsed Time: 0.043582 seconds (Warm-up)
+#&gt;                0.044343 seconds (Sampling)
+#&gt;                0.087925 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>treatment</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fu'>rep</span>(<span class='fl'>1</span>,<span class='fl'>3</span>)), <span class='kw'>outcome</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fl'>1</span>:<span class='fl'>3</span>))
 <span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit3</span>, <span class='no'>nd</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>500</span>)
 <span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>ytilde</span>))  <span class='co'># 500 by 3 matrix (draws by nrow(nd))</span></div><div class='output co'>#&gt; [1] 500   3</div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>count</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>ytilde</span>),
@@ -345,9 +345,9 @@ model.</p></td>
 #&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.367641 seconds (Warm-up)
-#&gt;                0.055104 seconds (Sampling)
-#&gt;                0.422745 seconds (Total)
+#&gt;  Elapsed Time: 0.265551 seconds (Warm-up)
+#&gt;                0.04501 seconds (Sampling)
+#&gt;                0.310561 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -364,9 +364,9 @@ model.</p></td>
 #&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.050694 seconds (Warm-up)
-#&gt;                0.055004 seconds (Sampling)
-#&gt;                0.105698 seconds (Total)
+#&gt;  Elapsed Time: 0.045197 seconds (Warm-up)
+#&gt;                0.043492 seconds (Sampling)
+#&gt;                0.088689 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
@@ -383,9 +383,9 @@ model.</p></td>
 #&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.050598 seconds (Warm-up)
-#&gt;                0.056907 seconds (Sampling)
-#&gt;                0.107505 seconds (Total)
+#&gt;  Elapsed Time: 0.043221 seconds (Warm-up)
+#&gt;                0.0449 seconds (Sampling)
+#&gt;                0.088121 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
@@ -402,9 +402,9 @@ model.</p></td>
 #&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.05758 seconds (Warm-up)
-#&gt;                0.052734 seconds (Sampling)
-#&gt;                0.110314 seconds (Total)
+#&gt;  Elapsed Time: 0.045459 seconds (Warm-up)
+#&gt;                0.0462 seconds (Sampling)
+#&gt;                0.091659 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit</span>, <span class='kw'>fun</span> <span class='kw'>=</span> <span class='no'>exp</span>)</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

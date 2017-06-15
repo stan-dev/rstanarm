@@ -7,7 +7,7 @@ navbar:
   title: "rstanarm"
   left:
     - text: "Vignettes"
-      href: Articles/index.html
+      href: articles/index.html
     - text: "Functions"
       href: reference/index.html
     - text: "Develop"
