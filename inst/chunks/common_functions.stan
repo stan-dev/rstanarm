@@ -160,6 +160,33 @@
     target += gamma_lpdf(tau  | shape, 1);
   }
   
+  /** 
+   * Prior on group-specific parameters for 
+   * interactions
+   *
+   * @param z_b A vector of primitive coefficients
+   * @param z_T A vector of primitives for the unit vectors in the onion method
+   * @param rho A vector radii for the onion method
+   * @param zeta A vector of primitives for the simplexes
+   * @param tau A vector of scale parameters
+   * @param regularization A real array of LKJ hyperparameters
+   * @param delta A real array of concentration paramters
+   * @param shape A vector of shape parameters
+   * @param t An integer indicating the number of group-specific terms
+   * @param p An integer array with the number variables on the LHS of each |
+   * @return nothing
+   */
+  void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau_main,
+                      vector lambda_inter, real glob_scale,
+                      real[] delta, vector shape) {
+    target += normal_lpdf(z_b | 0, 1);
+    target += normal_lpdf(z_T | 0, 1);
+    target += normal_lpdf(tau_main  | 0, 1);
+    target += normal_lpdf(lambda_inter  | 0, 1);
+    target += normal_lpdf(glob_scale  | 0, 1);
+    target += gamma_lpdf(zeta | delta, 1);
+  }
+  
   /**
    * Hierarchical shrinkage parameterization
    *

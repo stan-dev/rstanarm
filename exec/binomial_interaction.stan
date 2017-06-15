@@ -15,7 +15,7 @@ data {
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff_interaction.stan"  
+  #include "glmer_stuff.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data {
@@ -25,28 +25,26 @@ transformed data {
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm_interaction.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
 }
 transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
-        int start = 1;
-      vector[n_multi_way] multi_way;
-      vector[n_one_way] one_way;
-      one_way = glob_scale * lambda_one_way;
-      for (ix in 1:n_multi_way) {
-        multi_way[ix] = 
-        prod(lambda_one_way[main_multi_map[ix, 1:multi_depth[ix]]])
-        * glob_scale * lambda_multi_way[depth_ind[ix]];
-      }
-      theta_L[one_way_ix] = one_way;
-      theta_L[multi_way_ix] = multi_way;
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = scale .* tau;
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
         b[start:end] = theta_L[i] * z_b[start:end];
         start = end + 1;
       }
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 
+                             1.0, tau, scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {
@@ -72,8 +70,8 @@ model {
   
   #include "priors_glm.stan" // increments target()
   
-  if (t > 0) decov_inter_lp(z_b, z_T, zeta, lambda_one_way, lambda_multi_way, glob_scale,
-                            delta, shape);
+  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
+                      regularization, delta, shape, t, p);
 }
 generated quantities {
   real alpha[has_intercept];

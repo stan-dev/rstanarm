@@ -253,6 +253,24 @@ stan_glm.fit <- function(x, y,
     p <- sapply(group$cnms, FUN = length)
     l <- sapply(attr(group$flist, "assign"), function(i) 
       nlevels(group$flist[[i]]))
+    names(l) <- names(group$flist)
+    
+    mains <- Filter(function(x) !grepl(':',x),names(l))
+    n_one_way <- length(mains)
+    one_way_ix <- match(mains, names(l))
+    ints <- Filter(function(x) grepl(':',x),names(l))
+    n_multi_way <- length(ints)
+    multi_way_ix <- match(ints, names(l))
+    ints_split <- strsplit(x = ints, split = ':')
+    multi_depth <- sapply(ints_split, length)
+    max_way <- max(multi_depth)
+    ints_mains_match <- lapply(ints_split, function(x) match(x, mains))
+    ints_mains_match <- lapply(ints_mains_match, function(x) c(x, rep(0,max_way - length(x))))
+    main_multi_map <- matrix(unlist(ints_mains_match), byrow=T, nrow = n_multi_way, ncol = max_way)
+    n_way_uniq <- unique(multi_depth)
+    depth_ind <- sapply(multi_depth, function(x) which(n_way_uniq == x))
+    len_multi_way_uniq <- length(n_way_uniq)
+    
     t <- length(l)
     b_nms <- make_b_nms(group)
     g_nms <- unlist(lapply(1:t, FUN = function(i) {
@@ -263,6 +281,15 @@ stan_glm.fit <- function(x, y,
     standata$l <- as.array(l)
     standata$q <- ncol(Z)
     standata$len_theta_L <- sum(choose(p, 2), p)
+    standata$n_one_way <- n_one_way
+    standata$n_multi_way <- n_multi_way
+    standata$one_way_ix <- one_way_ix
+    standata$multi_way_ix <- multi_way_ix
+    standata$multi_depth <- multi_depth
+    standata$main_multi_map <- main_multi_map
+    standata$len_multi_way_uniq <- len_multi_way_uniq
+    standata$depth_ind <- depth_ind
+    
     if (is_bernoulli) {
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
       parts1 <- extract_sparse_parts(Z[y == 1, , drop = FALSE])
