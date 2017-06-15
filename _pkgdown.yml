@@ -1,0 +1,12 @@
+navbar:
+  title: "rstanarm"
+  left:
+    - text: "Reference"
+      href: reference/index.html
+    - text: "Articles"
+      href: Articles/index.html
+    - text: "Develop"
+      href: https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html
+  right:
+   - icon: fa-github
+     href: https://github.com/stan-dev/rstanarm

@@ -55,12 +55,20 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
-  <a href="../articles/index.html">Articles</a>
+  <a href="../Articles/index.html">Articles</a>
+</li>
+<li>
+  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
 </li>
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/stan-dev/rstanarm">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -334,8 +342,8 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; 
 #&gt; (EXPERIMENTAL ALGORITHM: expect frequent updates to the procedure.)
 #&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 iterations under these settings should take 0.014 seconds.
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 iterations under these settings should take 0.015 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; Begin eta adaptation.
@@ -415,9 +423,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 1, Iteration: 160 / 200 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 200 / 200 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.450444 seconds (Warm-up)
-#&gt;                0.297646 seconds (Sampling)
-#&gt;                0.74809 seconds (Total)
+#&gt;  Elapsed Time: 0.455525 seconds (Warm-up)
+#&gt;                0.301349 seconds (Sampling)
+#&gt;                0.756874 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
@@ -441,9 +449,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 2, Iteration: 160 / 200 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 200 / 200 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.269994 seconds (Warm-up)
-#&gt;                0.308229 seconds (Sampling)
-#&gt;                0.578223 seconds (Total)
+#&gt;  Elapsed Time: 0.267255 seconds (Warm-up)
+#&gt;                0.316869 seconds (Sampling)
+#&gt;                0.584124 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:   binomial [logit]
 #&gt;  formula:  switch ~ dist100 + arsenic
@@ -502,9 +510,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 1, Iteration: 200 / 250 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 225 / 250 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 250 / 250 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.00846 seconds (Warm-up)
-#&gt;                0.00948 seconds (Sampling)
-#&gt;                0.01794 seconds (Total)
+#&gt;  Elapsed Time: 0.007005 seconds (Warm-up)
+#&gt;                0.010595 seconds (Sampling)
+#&gt;                0.0176 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -528,9 +536,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 2, Iteration: 200 / 250 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 225 / 250 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 250 / 250 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.007104 seconds (Warm-up)
-#&gt;                0.323202 seconds (Sampling)
-#&gt;                0.330306 seconds (Total)
+#&gt;  Elapsed Time: 0.00764 seconds (Warm-up)
+#&gt;                0.008839 seconds (Sampling)
+#&gt;                0.016479 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:   poisson [log]
 #&gt;  formula:  counts ~ outcome + treatment
@@ -574,9 +582,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 1, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.01621 seconds (Warm-up)
-#&gt;                0.007198 seconds (Sampling)
-#&gt;                0.023408 seconds (Total)
+#&gt;  Elapsed Time: 0.014319 seconds (Warm-up)
+#&gt;                0.607055 seconds (Sampling)
+#&gt;                0.621374 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -593,9 +601,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 2, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.013728 seconds (Warm-up)
-#&gt;                0.005951 seconds (Sampling)
-#&gt;                0.019679 seconds (Total)
+#&gt;  Elapsed Time: 0.013982 seconds (Warm-up)
+#&gt;                0.006743 seconds (Sampling)
+#&gt;                0.020725 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit4</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:   Gamma [log]
 #&gt;  formula:  lot1 ~ log_u
@@ -629,9 +637,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 1, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.022448 seconds (Warm-up)
-#&gt;                0.006741 seconds (Sampling)
-#&gt;                0.029189 seconds (Total)
+#&gt;  Elapsed Time: 0.016587 seconds (Warm-up)
+#&gt;                0.006831 seconds (Sampling)
+#&gt;                0.023418 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -648,9 +656,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 2, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.012229 seconds (Warm-up)
-#&gt;                0.006973 seconds (Sampling)
-#&gt;                0.019202 seconds (Total)
+#&gt;  Elapsed Time: 0.013997 seconds (Warm-up)
+#&gt;                0.008201 seconds (Sampling)
+#&gt;                0.022198 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'>### Negative binomial regression</span>
 <span class='no'>fit6</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm.nb</span>(<span class='no'>Days</span> ~ <span class='no'>Sex</span>/(<span class='no'>Age</span> + <span class='no'>Eth</span>*<span class='no'>Lrn</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>MASS</span><span class='kw'>::</span><span class='no'>quine</span>,
@@ -677,9 +685,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 1, Iteration: 160 / 200 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 200 / 200 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.234274 seconds (Warm-up)
-#&gt;                0.229196 seconds (Sampling)
-#&gt;                0.46347 seconds (Total)
+#&gt;  Elapsed Time: 0.23386 seconds (Warm-up)
+#&gt;                0.230131 seconds (Sampling)
+#&gt;                0.463991 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -703,9 +711,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Chain 2, Iteration: 160 / 200 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 200 / 200 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.202474 seconds (Warm-up)
-#&gt;                0.246835 seconds (Sampling)
-#&gt;                0.449309 seconds (Total)
+#&gt;  Elapsed Time: 0.211002 seconds (Warm-up)
+#&gt;                0.246809 seconds (Sampling)
+#&gt;                0.457811 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='fu'><a href='prior_summary.stanreg.html'>prior_summary</a></span>(<span class='no'>fit6</span>)</div><div class='output co'>#&gt; Priors for model 'fit6' 
 #&gt; ------

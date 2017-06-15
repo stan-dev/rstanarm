@@ -55,12 +55,20 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
-  <a href="../articles/index.html">Articles</a>
+  <a href="../Articles/index.html">Articles</a>
+</li>
+<li>
+  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
 </li>
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/stan-dev/rstanarm">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -173,9 +181,9 @@ model object.</p></td>
 #&gt; Chain 1, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.026408 seconds (Warm-up)
-#&gt;                0.006881 seconds (Sampling)
-#&gt;                0.033289 seconds (Total)
+#&gt;  Elapsed Time: 0.017586 seconds (Warm-up)
+#&gt;                0.007695 seconds (Sampling)
+#&gt;                0.025281 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -192,9 +200,9 @@ model object.</p></td>
 #&gt; Chain 2, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.013195 seconds (Warm-up)
-#&gt;                0.007857 seconds (Sampling)
-#&gt;                0.021052 seconds (Total)
+#&gt;  Elapsed Time: 0.018194 seconds (Warm-up)
+#&gt;                0.012127 seconds (Sampling)
+#&gt;                0.030321 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
@@ -211,9 +219,9 @@ model object.</p></td>
 #&gt; Chain 3, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.022104 seconds (Warm-up)
-#&gt;                0.006828 seconds (Sampling)
-#&gt;                0.028932 seconds (Total)
+#&gt;  Elapsed Time: 0.01464 seconds (Warm-up)
+#&gt;                0.011841 seconds (Sampling)
+#&gt;                0.026481 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
@@ -230,9 +238,9 @@ model object.</p></td>
 #&gt; Chain 4, Iteration: 240 / 300 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.013635 seconds (Warm-up)
-#&gt;                0.006677 seconds (Sampling)
-#&gt;                0.020312 seconds (Total)
+#&gt;  Elapsed Time: 0.015123 seconds (Warm-up)
+#&gt;                0.00903 seconds (Sampling)
+#&gt;                0.024153 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>preds</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>)
 <span class='fu'>all.equal</span>(
   <span class='fu'>predictive_error</span>(<span class='no'>fit</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>),

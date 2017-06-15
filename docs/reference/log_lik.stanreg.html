@@ -55,12 +55,20 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
-  <a href="../articles/index.html">Articles</a>
+  <a href="../Articles/index.html">Articles</a>
+</li>
+<li>
+  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
 </li>
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/stan-dev/rstanarm">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -141,9 +149,9 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.133073 seconds (Warm-up)
-#&gt;                0.113895 seconds (Sampling)
-#&gt;                0.246968 seconds (Total)
+#&gt;  Elapsed Time: 0.13622 seconds (Warm-up)
+#&gt;                0.117849 seconds (Sampling)
+#&gt;                0.254069 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -160,9 +168,9 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Chain 2, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.100905 seconds (Warm-up)
-#&gt;                0.127532 seconds (Sampling)
-#&gt;                0.228437 seconds (Total)
+#&gt;  Elapsed Time: 0.126428 seconds (Warm-up)
+#&gt;                0.154483 seconds (Sampling)
+#&gt;                0.280911 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
@@ -179,9 +187,9 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Chain 3, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.154772 seconds (Warm-up)
-#&gt;                0.119275 seconds (Sampling)
-#&gt;                0.274047 seconds (Total)
+#&gt;  Elapsed Time: 0.179559 seconds (Warm-up)
+#&gt;                0.138556 seconds (Sampling)
+#&gt;                0.318115 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
@@ -198,9 +206,9 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Chain 4, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.119393 seconds (Warm-up)
-#&gt;                0.119078 seconds (Sampling)
-#&gt;                0.238471 seconds (Total)
+#&gt;  Elapsed Time: 0.133504 seconds (Warm-up)
+#&gt;                0.133793 seconds (Sampling)
+#&gt;                0.267297 seconds (Total)
 #&gt; </div><div class='input'> <span class='no'>ll</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>)
  <span class='fu'>dim</span>(<span class='no'>ll</span>)</div><div class='output co'>#&gt; [1] 1000  262</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll</span>), <span class='fu'>nobs</span>(<span class='no'>fit</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
  <span class='co'># using newdata argument</span>

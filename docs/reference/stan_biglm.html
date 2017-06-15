@@ -55,12 +55,20 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
-  <a href="../articles/index.html">Articles</a>
+  <a href="../Articles/index.html">Articles</a>
+</li>
+<li>
+  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
 </li>
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/stan-dev/rstanarm">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -240,9 +248,9 @@ to the model when estimating it.</p></td>
 #&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 1.16844 seconds (Warm-up)
-#&gt;                1.1943 seconds (Sampling)
-#&gt;                2.36274 seconds (Total)
+#&gt;  Elapsed Time: 1.13481 seconds (Warm-up)
+#&gt;                1.15904 seconds (Sampling)
+#&gt;                2.29385 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw'>rstan</span><span class='kw'>::</span><span class='fu'>get_posterior_mean</span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
 #&gt; wt   -3.916504 -3.740117
 #&gt; qsec  1.225886  1.176062

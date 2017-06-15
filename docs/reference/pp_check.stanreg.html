@@ -55,12 +55,20 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
-  <a href="../articles/index.html">Articles</a>
+  <a href="../Articles/index.html">Articles</a>
+</li>
+<li>
+  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
 </li>
       </ul>
       
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/stan-dev/rstanarm">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -187,9 +195,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 1, Iteration: 320 / 400 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 360 / 400 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 400 / 400 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.138055 seconds (Warm-up)
-#&gt;                0.051559 seconds (Sampling)
-#&gt;                0.189614 seconds (Total)
+#&gt;  Elapsed Time: 0.142326 seconds (Warm-up)
+#&gt;                0.05415 seconds (Sampling)
+#&gt;                0.196476 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -206,9 +214,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 2, Iteration: 320 / 400 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 360 / 400 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 400 / 400 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.158834 seconds (Warm-up)
-#&gt;                0.056835 seconds (Sampling)
-#&gt;                0.215669 seconds (Total)
+#&gt;  Elapsed Time: 0.155892 seconds (Warm-up)
+#&gt;                0.057993 seconds (Sampling)
+#&gt;                0.213885 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'># Compare distribution of y to distributions of multiple yrep datasets</span>
 <span class='fu'>pp_check</span>(<span class='no'>fit</span>)</div><img src='pp_check.stanreg-4.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"boxplot"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>notch</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><img src='pp_check.stanreg-6.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-9.png' alt='' width='540' height='400' /><div class='input'>
@@ -255,9 +263,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.678213 seconds (Warm-up)
-#&gt;                0.917964 seconds (Sampling)
-#&gt;                1.59618 seconds (Total)
+#&gt;  Elapsed Time: 0.774091 seconds (Warm-up)
+#&gt;                1.10568 seconds (Sampling)
+#&gt;                1.87977 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 2).
@@ -274,9 +282,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.449609 seconds (Warm-up)
-#&gt;                0.460285 seconds (Sampling)
-#&gt;                0.909894 seconds (Total)
+#&gt;  Elapsed Time: 0.495054 seconds (Warm-up)
+#&gt;                0.523397 seconds (Sampling)
+#&gt;                1.01845 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 3).
@@ -293,9 +301,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.457011 seconds (Warm-up)
-#&gt;                0.474575 seconds (Sampling)
-#&gt;                0.931586 seconds (Total)
+#&gt;  Elapsed Time: 0.473268 seconds (Warm-up)
+#&gt;                0.602987 seconds (Sampling)
+#&gt;                1.07626 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 4).
@@ -312,9 +320,9 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 #&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.480945 seconds (Warm-up)
-#&gt;                0.475093 seconds (Sampling)
-#&gt;                0.956038 seconds (Total)
+#&gt;  Elapsed Time: 0.490267 seconds (Warm-up)
+#&gt;                0.47531 seconds (Sampling)
+#&gt;                0.965577 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-44.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars_grouped"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='no'>esoph</span>$<span class='no'>agegp</span>,
          <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-46.png' alt='' width='540' height='400' /><div class='input'>
 </div></pre>
