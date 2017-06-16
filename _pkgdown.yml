@@ -1,7 +1,7 @@
 
-templates:
+template:
   params:
-    bootswatch: readable
+    bootswatch: cosmo
 
 navbar:
   title: "rstanarm"
@@ -11,7 +11,7 @@ navbar:
     - text: "Functions"
       href: reference/index.html
     - text: "Develop"
-      href: https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html
+      href: dev-notes/index.html
     - text: "Other Packages"
       menu:
         - text: "rstan"

@@ -1,0 +1,3 @@
+book_filename: "dev-notes.Rmd"
+output_dir: "dev-notes-output"
+rmd_files: ["index.Rmd", "model-fitting.Rmd", "stanreg.Rmd", "methods.Rmd", "doc-ex.Rmd", "testing.Rmd", "vignettes.Rmd", "what-goes-where.Rmd"]

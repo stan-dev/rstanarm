@@ -11,8 +11,8 @@
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
+<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -58,7 +58,7 @@
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
-  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
+  <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -248,9 +248,9 @@ model.</p></td>
 #&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.046235 seconds (Warm-up)
-#&gt;                0.04771 seconds (Sampling)
-#&gt;                0.093945 seconds (Total)
+#&gt;  Elapsed Time: 0.048479 seconds (Warm-up)
+#&gt;                0.051926 seconds (Sampling)
+#&gt;                0.100405 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -267,9 +267,9 @@ model.</p></td>
 #&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.050745 seconds (Warm-up)
-#&gt;                0.052061 seconds (Sampling)
-#&gt;                0.102806 seconds (Total)
+#&gt;  Elapsed Time: 0.058366 seconds (Warm-up)
+#&gt;                0.068075 seconds (Sampling)
+#&gt;                0.126441 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
@@ -286,9 +286,9 @@ model.</p></td>
 #&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.056638 seconds (Warm-up)
-#&gt;                0.050207 seconds (Sampling)
-#&gt;                0.106845 seconds (Total)
+#&gt;  Elapsed Time: 0.05072 seconds (Warm-up)
+#&gt;                0.050603 seconds (Sampling)
+#&gt;                0.101323 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
@@ -305,9 +305,9 @@ model.</p></td>
 #&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.043582 seconds (Warm-up)
-#&gt;                0.044343 seconds (Sampling)
-#&gt;                0.087925 seconds (Total)
+#&gt;  Elapsed Time: 0.048607 seconds (Warm-up)
+#&gt;                0.047728 seconds (Sampling)
+#&gt;                0.096335 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>treatment</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fu'>rep</span>(<span class='fl'>1</span>,<span class='fl'>3</span>)), <span class='kw'>outcome</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fl'>1</span>:<span class='fl'>3</span>))
 <span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit3</span>, <span class='no'>nd</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>500</span>)
 <span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>ytilde</span>))  <span class='co'># 500 by 3 matrix (draws by nrow(nd))</span></div><div class='output co'>#&gt; [1] 500   3</div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>count</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>ytilde</span>),
@@ -345,9 +345,9 @@ model.</p></td>
 #&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.265551 seconds (Warm-up)
-#&gt;                0.04501 seconds (Sampling)
-#&gt;                0.310561 seconds (Total)
+#&gt;  Elapsed Time: 0.317594 seconds (Warm-up)
+#&gt;                0.052738 seconds (Sampling)
+#&gt;                0.370332 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -364,9 +364,9 @@ model.</p></td>
 #&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.045197 seconds (Warm-up)
-#&gt;                0.043492 seconds (Sampling)
-#&gt;                0.088689 seconds (Total)
+#&gt;  Elapsed Time: 0.047244 seconds (Warm-up)
+#&gt;                0.05023 seconds (Sampling)
+#&gt;                0.097474 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
@@ -383,9 +383,9 @@ model.</p></td>
 #&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.043221 seconds (Warm-up)
-#&gt;                0.0449 seconds (Sampling)
-#&gt;                0.088121 seconds (Total)
+#&gt;  Elapsed Time: 0.046779 seconds (Warm-up)
+#&gt;                0.063472 seconds (Sampling)
+#&gt;                0.110251 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
@@ -402,9 +402,9 @@ model.</p></td>
 #&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
 #&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.045459 seconds (Warm-up)
-#&gt;                0.0462 seconds (Sampling)
-#&gt;                0.091659 seconds (Total)
+#&gt;  Elapsed Time: 0.051467 seconds (Warm-up)
+#&gt;                0.04767 seconds (Sampling)
+#&gt;                0.099137 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit</span>, <span class='kw'>fun</span> <span class='kw'>=</span> <span class='no'>exp</span>)</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+@import url('https://fonts.googleapis.com/css?family=Volkhov');
+@import url('https://fonts.googleapis.com/css?family=Roboto+Slab');
+
+.book.font-family-0 {
+  font-family: 'Roberto Slab', serif;
+}
+
+.book.font-family-1 {
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.book-body .page-wrapper .page-inner section.normal h1.title {
+	font-family: 'Volkhov', serif;
+	font-style: italic;
+  font-weight: bold !important;
+	letter-spacing: -3px;
+	font-weight: 700;
+	line-height: 1;
+	text-align: center;
+	max-width: 100%;
+	font-size: 5em;
+	color: #444;
+}
+
+.book.color-theme-1 .book-body .page-wrapper .page-inner section.normal h1.title,
+.book.color-theme-2 .book-body .page-wrapper .page-inner section.normal h1.title {
+	font-family: 'Volkhov', serif;
+	font-style: italic;
+	letter-spacing: -3px;
+	font-weight: 700;
+	line-height: 1;
+	text-align: center;
+	max-width: 100%;
+	font-size: 5em;
+}
+
+.book-body .page-wrapper .page-inner section.normal h4.author  {
+	font-family: 'Volkhov', serif;
+  text-align: center;
+  font-size: 1.5em;
+  margin: 1.5 0 1.5em 0;
+  padding: 0;
+}
+
+.book .book-body .page-wrapper .page-inner section.normal h4.date {
+	font-family: 'Source Sans Pro', sans-serif;
+	text-align: center;
+}
+/*
+.book .book-body .page-wrapper .page-inner section.normal h1, h2, h3, h4, h5, h6 {
+	font-family: 'Source Sans Pro', sans-serif;
+}
+*/
+.book .book-body .page-wrapper .page-inner section.normal h1 {
+	margin: 1.1em 0 0 0;
+	font-weight: 400;
+	text-align: center;
+}
+.book .book-body .page-wrapper .page-inner section.normal h2 {
+	margin: 1em 0 0 0;
+  font-weight: 400;
+}
+
+/* Hyperlinks */
+
+.book .book-body .page-wrapper .page-inner a {
+	text-decoration: none !important;
+	color: #6f6f6f !important;
+	border-bottom: 1px dotted #6f6f6f;
+}
+
+.book .book-body .page-wrapper .page-inner a:hover {
+	color: black !important;
+	outline: 0;
+	border-bottom: 1px solid;
+	border-color: #6f6f6f;
+}
+
+.book .book-body .page-wrapper .page-inner a:visited {
+	color: #484848;
+}
+
+.book.color-theme-1 .book-body .page-wrapper .page-inner a {
+	color: #9a7a5a !important;
+	border-bottom: 1px dotted #9a7a5a;
+}
+
+.book.color-theme-2 .book-body .page-wrapper .page-inner a {
+	color: #d4d8dd !important;
+	border-bottom: 1px dotted #d4d8dd;
+}
+
+.book.color-theme-1 .book-body .page-wrapper .page-inner a:hover {
+	color: #704214 !important;
+	outline: 0;
+	border-bottom: 1px solid #9a7a5a;
+}
+
+.book.color-theme-2 .book-body .page-wrapper .page-inner a:hover {
+	color: #dce6f4 !important;
+	outline: 0;
+	border-bottom: 1px solid #d4d8dd;
+}
+
+/* Side Bar */
+
+.book .book-summary .book-search input.form-control {
+	color: #FFFFFF;
+}
+
+.book .book-header,.book .book-summary {
+	font-family: 'Source Sans Pro', sans-serif;
+	background-color: #444;
+}
+
+.book .book-summary ul.summary li.chapter.active a {
+	color: #FFFFFF;
+	font-weight: bold;
+}
+
+.book .book-summary ul.summary li.chapter a {
+	color: #FFFFFF;
+	font-weight: normal;
+}
+.book .book-summary ul.summary li a:hover {
+	color: #FFFFFF;
+	font-weight: bold;
+}
+
+.book .book-summary ul.summary li.chapter.active ul li.chapter a {
+	color: #FFFFFF;
+	font-weight: normal;
+}
+.book .book-summary ul.summary li.chapter.active ul li.chapter a:hover {
+	color: #FFFFFF;
+	font-weight: bold;
+}
+
+/* Custom Blocks */
+
+.rmddanger, .rmdwarning, .rmdsuccess, .rmdinfo, .rmdnote {
+  padding: 1em 4em 1em 4em;
+  margin-bottom: 10px;
+  background: 5px center/3em no-repeat;
+}
+.rmddanger {
+  background: #fdefee;
+}
+.rmdwarning {
+  background: #fef4e6;
+}
+.rmdsuccess {
+  background: #eff9ef;
+}
+.rmdinfo {
+  background: #edf6f9;
+}
+.rmdnote {
+  background: #f1f2f3;
+}

@@ -11,8 +11,8 @@
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
+<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -58,7 +58,7 @@
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
-  <a href="https://htmlpreview.github.io/?https://github.com/stan-dev/rstanarm/blob/master/dev-notes/rstanarm_dev_notes.html">Develop</a>
+  <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -281,9 +281,9 @@ to the model when estimating it.</p></td>
 #&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 1.11956 seconds (Warm-up)
-#&gt;                1.12422 seconds (Sampling)
-#&gt;                2.24377 seconds (Total)
+#&gt;  Elapsed Time: 1.26881 seconds (Warm-up)
+#&gt;                1.2447 seconds (Sampling)
+#&gt;                2.51351 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw'>rstan</span><span class='kw'>::</span><span class='fu'>get_posterior_mean</span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
 #&gt; wt   -3.916504 -3.740117
 #&gt; qsec  1.225886  1.176062

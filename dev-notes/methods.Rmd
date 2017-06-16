@@ -1,0 +1,49 @@
+# Methods
+
+Most of the `*.stanreg` methods are in `R/stanreg-methods.R`, but as long as things are done appropriately in the .fit file and in `stanreg.R` all the methods here should work fine.
+
+## `predict`
+
+The main thing here is to make sure predict works appropriately when the user declares new data. As a rough check, the predictions should match the predictions made by the function you're emulating.
+
+Also, if no new data is declared then `predict(fit)` and `fit$fitted.values` should be identical.
+
+## `posterior_predict`
+
+This is a little more involved than the `predict` method. Essentially you need to return and $N \times S$ dimensional matrix where $N$ is the number of observations and $S$ is the number of draws from the posterior distribution. There are two parts to this:
+
+1. Specify `pp_fun`
+   * `pp_fun` will call on the posterior prediction function of the form `.pp_*`. So you need to specify the (stochastic) data generating process within `.pp_*`. We use `sapply()` to iterate over the number of draws and compute the fitted values.
+
+2. Specify `pp_args`
+   * Include anything you might need for posterior predictions within the `args` list in the `pp_args` function. (Make sure you do any necessary link function transformations here.)
+
+## `posterior_linpred`
+
+## `loo` and `log_lik`
+
+You need to check whether,
+
+1. `loo()` is using the correct log likelihood specified in `log_lik.R`. This is the log likelihood function that corresponds to `object$family` (or some other identifier that you can subset from `object`). If it does then you're done.
+2.  If not then you need to specify the appropriate log likelihood to be used in `loo()`.
+
+Getting the loo function to work on a stanreg object can be tricky. It involves creating a log likelihood function for the posterior `llfun` and a set of arguments to be passed through this function `llargs`.
+
+### `llfun`  
+The best way to think about this is that you want to  create a $S \times N$ matrix point-wise log likelihood, where $S$ is the number of draws and $N$ is the number of observations (i.e. you're evaluating the log-likelihood of the posterior for each datum and draw from the marginal posterior).
+
+The approach taken with using loo on a stanreg object is to declare a function that iterates over the data, rather than specifying the entire point-wise log likelihood matrix.
+
+### `llargs`  
+Within the `llargs` list `data` needs to be a data frame or matrix that can be iterated over $N$ times. `draws` should be a list containing the draws of $S$ dimension. One way to think about it is that data is what you need to iterate over and draws is fixed. ~~This is useful in cases where some variables may be considered as data but you don't actually want to iterate over them, or in cases where you only have one observation and actually need to iterate over the draws (e.g. a multinormal outcome with correlated errors.)~~
+
+## `prior_summary`
+
+The `prior_summary` function is used to report the prior distributions specified on the parameters when the sampler iterates over the target distribution (which is not necessarily identical to what the user declares).
+
+1. Define a `summarize_*_prior` function at the end of the model's .fit file to capture all the prior information. See `stan_glm.fit` for a comprehensive example or `stan_sp.fit` for a simple example.
+     * If the user can call `prior_aux` then you need to give this parameter a name in `$prior_aux$aux_name = "prior_aux_name_here"`. (e.g. in spatial models we have `$prior_aux$aux_name = "rho"` and in stan_betareg we have `$prior_aux$aux_name = "phi"`)
+2. Call `prior_info <- summarize_*_prior(...)` before you do any model fitting.
+3. At end of the `"optimizing"` and `"sampling"` conditionals make sure you `return(structure(stanfit, prior.info = prior_info))`.
+
+If you do this right then everything should work out swimmingly in the `prior_summary.R` file. If it so happens that you've introduced a new prior then you'll need to update the conditional in the relevant `.prior_*_prior` function to pick this information up.

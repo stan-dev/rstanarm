@@ -1,0 +1,9 @@
+# `R/stanreg.R`
+
+The main things to deal with here are the **coefficients** and the **linear predictors/fitted values**.
+
+The first few conditionals deal with picking up the estimated coefficients. Sometimes `object$family$family` isn't sufficient to pick up on this so you might have to use `is(object, "class_name")` to determine whether the object is of a certain class (in addition to the class "stanreg").
+
+The `linear.predictors` should be an N-dimensional vector of predictions that have not been transformed by the link function. The `fitted.values` are the linear predictors transformed by the link function. (e.g. if `object$family$family == "gaussian"` then the linear predictor and fitted values will be identical since the link function is the identity function.)
+
+Lastly, at the end of `out <- list(...)` you should include any other stuff that you might need for the methods (e.g. spatial models need the spatial weight matrix, stan_betareg needs the info associated with the "z" linear predictor if declared, etc.)

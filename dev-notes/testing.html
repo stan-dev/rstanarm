@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Rstanarm Developer Notes</title>
+  <meta name="description" content="Rstanarm Developer Notes">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Rstanarm Developer Notes" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://mc-stan.org/rstanarm/index.html" />
+  <meta property="og:image" content="https://mc-stan.org/rstanarm/index.htmlimages/logo.png" />
+  
+  <meta name="github-repo" content="stan-dev/rstanarm" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Rstanarm Developer Notes" />
+  
+  
+  <meta name="twitter:image" content="https://mc-stan.org/rstanarm/index.htmlimages/logo.png" />
+
+<meta name="author" content="Stan Development Team">
+
+
+<meta name="date" content="2017-06-16">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  <link rel="shortcut icon" href="images/logo-icon.png" type="image/x-icon">
+<link rel="prev" href="documentation-and-examples.html">
+<link rel="next" href="vignettes.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Rstanarm Developer Notes</a></li>
+<li class="chapter" data-level="1" data-path="model-fitting.html"><a href="model-fitting.html"><i class="fa fa-check"></i><b>1</b> Model Fitting</a><ul>
+<li class="chapter" data-level="1.1" data-path="model-fitting.html"><a href="model-fitting.html#r-stuff"><i class="fa fa-check"></i><b>1.1</b> R Stuff</a><ul>
+<li class="chapter" data-level="1.1.1" data-path="model-fitting.html"><a href="model-fitting.html#tips"><i class="fa fa-check"></i><b>1.1.1</b> Tips</a></li>
+</ul></li>
+<li class="chapter" data-level="1.2" data-path="model-fitting.html"><a href="model-fitting.html#stan-stuff"><i class="fa fa-check"></i><b>1.2</b> Stan Stuff</a><ul>
+<li class="chapter" data-level="1.2.1" data-path="model-fitting.html"><a href="model-fitting.html#tips-1"><i class="fa fa-check"></i><b>1.2.1</b> Tips</a></li>
+</ul></li>
+<li class="chapter" data-level="1.3" data-path="model-fitting.html"><a href="model-fitting.html#priors"><i class="fa fa-check"></i><b>1.3</b> Priors</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="rstanreg-r.html"><a href="rstanreg-r.html"><i class="fa fa-check"></i><b>2</b> <code>R/stanreg.R</code></a></li>
+<li class="chapter" data-level="3" data-path="methods.html"><a href="methods.html"><i class="fa fa-check"></i><b>3</b> Methods</a><ul>
+<li class="chapter" data-level="3.1" data-path="methods.html"><a href="methods.html#predict"><i class="fa fa-check"></i><b>3.1</b> <code>predict</code></a></li>
+<li class="chapter" data-level="3.2" data-path="methods.html"><a href="methods.html#posterior_predict"><i class="fa fa-check"></i><b>3.2</b> <code>posterior_predict</code></a></li>
+<li class="chapter" data-level="3.3" data-path="methods.html"><a href="methods.html#posterior_linpred"><i class="fa fa-check"></i><b>3.3</b> <code>posterior_linpred</code></a></li>
+<li class="chapter" data-level="3.4" data-path="methods.html"><a href="methods.html#loo-and-log_lik"><i class="fa fa-check"></i><b>3.4</b> <code>loo</code> and <code>log_lik</code></a><ul>
+<li class="chapter" data-level="3.4.1" data-path="methods.html"><a href="methods.html#llfun"><i class="fa fa-check"></i><b>3.4.1</b> <code>llfun</code></a></li>
+<li class="chapter" data-level="3.4.2" data-path="methods.html"><a href="methods.html#llargs"><i class="fa fa-check"></i><b>3.4.2</b> <code>llargs</code></a></li>
+</ul></li>
+<li class="chapter" data-level="3.5" data-path="methods.html"><a href="methods.html#prior_summary"><i class="fa fa-check"></i><b>3.5</b> <code>prior_summary</code></a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="documentation-and-examples.html"><a href="documentation-and-examples.html"><i class="fa fa-check"></i><b>4</b> Documentation and Examples</a></li>
+<li class="chapter" data-level="5" data-path="testing.html"><a href="testing.html"><i class="fa fa-check"></i><b>5</b> Testing</a></li>
+<li class="chapter" data-level="6" data-path="vignettes.html"><a href="vignettes.html"><i class="fa fa-check"></i><b>6</b> Vignettes</a></li>
+<li class="chapter" data-level="7" data-path="an-outline-of-what-goes-where.html"><a href="an-outline-of-what-goes-where.html"><i class="fa fa-check"></i><b>7</b> An outline of what goes where</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Rstanarm Developer Notes</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="testing" class="section level1">
+<h1><span class="header-section-number">5</span> Testing</h1>
+<p>All tests go in <code>tests/testthat</code>. Test everything you could possibly think of. If you think it should be a test, then that probably means it should be a test. Arguably, before writing any code you should write (at the very least) some basic tests first.</p>
+<p>Make sure you add a test file for the model you’re including as <code>tests/testthat/test_stan_*.R</code>. Also don’t forget to add the relevant tests for the methods associated with your model in the other test files.</p>
+<p>For speed, most of the tests should be specified using <code>algorithm = 'optimizing'</code>, <code>QR = TRUE</code>, and around 200 iterations.</p>
+<p>You should have tests for the following,</p>
+<ul>
+<li>All variations of model specification and comparison with the package you’re emulating. (e.g. model with a constant, without a constant, etc.)</li>
+<li>Test predict/posterior_predict with and without new data.</li>
+<li>Test that loo and compare work on the stanreg object.</li>
+</ul>
+<p>Run a comprehensive test of rstanarm often. Especially if you’re altering Stan files. This will help you catch any bugs early on (which means they’ll be easier to fix).</p>
+<p>This script should be sufficient (at the time of writing) to run all the tests (excluding the vignettes):</p>
+<pre><code>### script to run all rstanarm tests locally
+
+library(rstanarm)
+# library(rstantools)
+# library(bayesplot)
+
+remove(list=ls())
+### run prerequisite functions
+#
+example_model &lt;-
+  stan_glmer(cbind(incidence, size - incidence) ~ size
+  + period + (1|herd),
+             data = lme4::cbpp, family = binomial,
+             # this next line is only to keep the example small in size!
+             chains = 2, cores = 1, seed = 12345, iter = 500)
+#
+last_dimnames &lt;- function(x) {
+  ndim &lt;- length(dim(x))
+  dimnames(x)[[ndim]]
+}
+
+### run tests
+devtools::test()</code></pre>
+
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="documentation-and-examples.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="vignettes.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": false,
+"twitter": false,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": false
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

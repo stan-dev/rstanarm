@@ -1,0 +1,77 @@
+# Model Fitting
+
+Below we break things down into stuff you need to do in R and stuff you need to do in Stan to get the model working.
+
+## R Stuff
+
+First add the package you plan on emulating in the `DESCRIPTION` file under `suggests:`.
+
+You'll need to write an rstanarm function for each of the models you plan on emulating. These functions should call a .fit workhorse function which will run Stan. Essentially, the workflow will look something like the following:
+
+```
+┏━━━━━━ USER ━━━━━━┓
+model_A.R                  model_B.R
+┗━━━━ model.fit ━━━━┛
+┃
+model.stan
+```
+
+Regarding the above diagram, the `model_*.R` and `model.fit` files are in the `R` folder and the `model.stan` file is in the `exec` folder. You should include existing snippets of stan code in your `model.stan` file. These are located in the `inst/chunks` folder.
+
+In the .fit function you should,
+
+* Center the covariates (if there is an intercept).
+* Perform QR decomposition.
+* Determine whether the intercept is declared (or whether multiple linear predictors have been declared).
+* Extract and process information regarding the priors declared.
+* Define the parameters that you want Stan to return as a vector of strings `pars`.
+* Put together data as a list that can be called into rstan.
+
+Conditionals should be set up so that the .fit workhorse function can deal with the following algorithm arguments.
+
+* `'optimizing'`
+* `'sampling'`
+* `'fullrank'` and `'meanfield'` (Variational Bayes methods)
+
+### Tips
+
+* If you added a new argument to your modeling function and are wondering why the argument is not recognized when you run the function (after building the package) it's probably because you haven't NULLified the argument in the `match.call(expand.dots = FALSE)` list.
+* If Stan isn't returning parameters that are in the model make sure you've specified them in `pars`.
+* If the model's family is using an existing family but the model linear predictor, etc. is different then it might be a good idea to give it an additional class identifier: `class(out) <- c("stanreg", "additional_class")`
+
+## Stan Stuff
+
+In the Stan file you should try to minimize the number of loops, storing n-dimensional objects, redoing calculations that only need to be done once, calculating inverses (e.g. use the precision multinormal instead of multinormal).
+
+Because we center the covariates when there is an intercept, you have to separate the intercept out of the linear predictor matrix (i.e. `X` should not contain a vector of ones). If `gamma` is the intercept parameter fit using centered predictors and `alpha` is the intercept parameter you want to report then do the following transformation in generated quantities:
+  ```
+...
+generated quantities {
+  real alpha[has_intercept];
+  if (has_intercept) {
+    alpha[1] = gamma[1] - dot_product(beta, xbar)
+  }
+}
+```
+
+Don't forget to evaluate `mean_PPD` (the mean of the posterior predictive distribution) in the generated quantities block.
+
+For efficiency posterior predictions and the log likelihood is computed in R.
+
+### Tips
+
+* **Every time you make a change to a Stan file you need to recompile the package**. (Only running `devtools::build()` is not sufficient.) So do the following:  
+1. Move one level up from the `rstanarm/` directory.
+2. From the command line run `R CMD INSTALL --preclean rstanarm`.
+3. In RStudio run `devtools::build()`.
+* In the generated quantities block define the variables you want to report globally and use local scopes (i.e. `{}`) to define (and perform calculations on) N-dimensional objects.
+
+## Priors
+
+This varies from model to model.
+
+In the Stan file you should be able to use existing code in `inst/chunks` to apply priors on the intercept (if it exists) and independent priors on the parameters of the predictors.
+
+User `prior_aux` to take care of single scalar parameters in the model (e.g. the spatial autocorrelation coefficient in spatial models)
+
+If you need the user to define a prior distribution that is not currently available then add the function in `R/priors.R`. (Use the existing functions as a guide). Include the appropriate documentation so that prior distribution is defined in the `?priors` help page.

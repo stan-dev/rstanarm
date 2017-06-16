@@ -1,0 +1,20 @@
+# Documentation and Examples
+We use [roxygen](http://r-pkgs.had.co.nz/man.html) for documentation and examples. Some advice follows,
+
+* The title will probably be something like "Bayesian model of awesomeness".
+* Following the title you should add a description of the model. Some things to consider are,  
+    * What is the model?
+    * What are the equation(s) of the model (if it is not already obvious and if they can be stated clearly)?
+    * On what parameters can the user specify priors?
+* Don't forget to export the function with `@export`.
+* Where possible, always use `@template` (and, if relevant, `@tamplateVar`) to pull in the existing templates from the `man-roxygen` folder.
+* Document the additional arguments that are not covered by the templates using `@param`
+* In `@seealso`,
+    * Point the user to the rstanarm vignettes associated with the model.
+    * Mention related models (especially if you're implementing multiple models from a single package).
+* In `@details` specify,
+    * The R package being emulated.
+    * What is being done "under-the-hood" at a high-level.
+    * What .fit file the model calls.
+
+Note, every time you make a change to the documentation you need to rebuild the documentation (e.g. run `devtools::document()`) to make sure it works. If you want to check that links to other packages work then you'll have to rebuild the package (e.g. run `devtools::build()`).

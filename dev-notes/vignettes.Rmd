@@ -1,0 +1,19 @@
+# Vignettes
+
+This should be pretty straightforward if you use the existing vignettes as a template. You should cover the following,
+
+1. Mathematically define the posterior distribution of the model.
+2. An example using simulated data.
+3. An example using real data.
+
+In both examples above you should,
+
+* Inspect the data.
+* Fit a couple of models.
+* Run a posterior predictive checks (e.g. `pp_check`).
+* Do basic model comparison with `loo`.
+
+Where possible use existing templates in `vignettes/children`. You can include them with:
+```
+{r, child="children/*.txt"}
+```

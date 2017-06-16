@@ -1,0 +1,31 @@
+# An outline of what goes where
+
+A brief description of what (generally) goes into each the various files/folders.
+
+**`/R`**
+
+* Contains all the model functions and corresponding .fit functions (e.g. `stan_glm` and `stan_glm.fit`).  
+
+**`/exec`** and **`/inst/chunks`**
+
+* The `/inst/chunks` folder contains reusable snippits of Stan code. The `/exec` folder contains the Stan models that are used in the relevant R function. For example, `continuous.stan` contains all the models that can be declared by `stan_glm` (as well as some others). You can view the compiled model in R by executing `rstanarm:::stanmodels$continuous`.
+
+**`data`**
+
+* Example data used in the examples/tests.
+
+**`man-roxygen`**
+
+* Templates for documentation.
+
+**`man`**
+
+* Don't edit any documentation here (changes will get overwritten when rebuilding the package).
+
+**`tests/testthat`**
+
+* Tests run using the [testthat](http://r-pkgs.had.co.nz/tests.html) package.
+
+**`R/misc.R`**
+
+* Contains a bunch of helper functions.

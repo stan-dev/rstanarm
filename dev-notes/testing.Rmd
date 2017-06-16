@@ -1,0 +1,43 @@
+# Testing
+
+All tests go in `tests/testthat`. Test everything you could possibly think of. If you think it should be a test, then that probably means it should be a test. Arguably, before writing any code you should write (at the very least) some basic tests first.
+
+Make sure you add a test file for the model you're including as `tests/testthat/test_stan_*.R`. Also don't forget to add the relevant tests for the methods associated with your model in the other test files.
+
+For speed, most of the tests should be specified using `algorithm = 'optimizing'`, `QR = TRUE`, and around 200 iterations.
+
+You should have tests for the following,
+
+* All variations of model specification and comparison with the package you're emulating. (e.g. model with a constant, without a constant, etc.)
+* Test predict/posterior_predict with and without new data.
+* Test that loo and compare work on the stanreg object.
+
+Run a comprehensive test of rstanarm often. Especially if you're altering Stan files. This will help you catch any bugs early on (which means they'll be easier to fix).
+
+This script should be sufficient (at the time of writing) to run all the tests (excluding the vignettes):
+
+```
+### script to run all rstanarm tests locally
+
+library(rstanarm)
+# library(rstantools)
+# library(bayesplot)
+
+remove(list=ls())
+### run prerequisite functions
+#
+example_model <-
+  stan_glmer(cbind(incidence, size - incidence) ~ size
+  + period + (1|herd),
+             data = lme4::cbpp, family = binomial,
+             # this next line is only to keep the example small in size!
+             chains = 2, cores = 1, seed = 12345, iter = 500)
+#
+last_dimnames <- function(x) {
+  ndim <- length(dim(x))
+  dimnames(x)[[ndim]]
+}
+
+### run tests
+devtools::test()
+```
