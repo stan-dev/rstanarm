@@ -112,11 +112,11 @@
 <h2><span class="header-section-number">1.1</span> R Stuff</h2>
 <p>First add the package you plan on emulating in the <code>DESCRIPTION</code> file under <code>suggests:</code>.</p>
 <p>You’ll need to write an rstanarm function for each of the models you plan on emulating. These functions should call a .fit workhorse function which will run Stan. Essentially, the workflow will look something like the following:</p>
-<pre><code>┏━━━━━━ USER ━━━━━━┓
-model_A.R                  model_B.R
-┗━━━━ model.fit ━━━━┛
-┃
-model.stan</code></pre>
+<pre><code>                                 ┏━━━━━━ USER ━━━━━━┓
+                         model_A.R                  model_B.R
+                                 ┗━━━━ model.fit ━━━┛
+                                          ┃
+                                      model.stan</code></pre>
 <p>Regarding the above diagram, the <code>model_*.R</code> and <code>model.fit</code> files are in the <code>R</code> folder and the <code>model.stan</code> file is in the <code>exec</code> folder. You should include existing snippets of stan code in your <code>model.stan</code> file. These are located in the <code>inst/chunks</code> folder.</p>
 <p>In the .fit function you should,</p>
 <ul>

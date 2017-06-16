@@ -18,7 +18,7 @@ site: bookdown::bookdown_site
 cover-image: images/logo.png
 url: https\://mc-stan.org/rstanarm/index.html
 ---
-  
+
 # Rstanarm Developer Notes {-}
 
 This note is designed to help a developer contribute to rstanarm, which requires an understanding of how the various components of the package fit together.
@@ -29,4 +29,3 @@ Some things to keep in mind going forward:
 * rstan objects are S4 objects of class `'stanfit'`.
 
 Before working on including a model into rstanarm you should get the general form of the model(s) working using rstan. Include generated quantities such as posterior predictions, `log_lik`, and the mean posterior predictive distribution (`mean_PPD`). This will be useful in debugging the same model that you'll implement in rstanarm.
-  

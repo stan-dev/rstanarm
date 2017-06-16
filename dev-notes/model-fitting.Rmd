@@ -9,11 +9,11 @@ First add the package you plan on emulating in the `DESCRIPTION` file under `sug
 You'll need to write an rstanarm function for each of the models you plan on emulating. These functions should call a .fit workhorse function which will run Stan. Essentially, the workflow will look something like the following:
 
 ```
-┏━━━━━━ USER ━━━━━━┓
-model_A.R                  model_B.R
-┗━━━━ model.fit ━━━━┛
-┃
-model.stan
+                                 ┏━━━━━━ USER ━━━━━━┓
+                         model_A.R                  model_B.R
+                                 ┗━━━━ model.fit ━━━┛
+                                          ┃
+                                      model.stan
 ```
 
 Regarding the above diagram, the `model_*.R` and `model.fit` files are in the `R` folder and the `model.stan` file is in the `exec` folder. You should include existing snippets of stan code in your `model.stan` file. These are located in the `inst/chunks` folder.
