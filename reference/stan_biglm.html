@@ -281,9 +281,9 @@ to the model when estimating it.</p></td>
 #&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
 #&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 1.26881 seconds (Warm-up)
-#&gt;                1.2447 seconds (Sampling)
-#&gt;                2.51351 seconds (Total)
+#&gt;  Elapsed Time: 1.27819 seconds (Warm-up)
+#&gt;                1.32574 seconds (Sampling)
+#&gt;                2.60394 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw'>rstan</span><span class='kw'>::</span><span class='fu'>get_posterior_mean</span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
 #&gt; wt   -3.916504 -3.740117
 #&gt; qsec  1.225886  1.176062
