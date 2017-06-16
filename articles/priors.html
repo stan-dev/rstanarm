@@ -279,7 +279,7 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">theta &lt;-<span class="st"> </span><span class="kw">rnorm</span>(<span class="fl">1e5</span>, <span class="dt">mean =</span> <span class="dv">0</span>, <span class="dt">sd =</span> <span class="dv">500</span>)
 p_approx &lt;-<span class="st"> </span><span class="kw">mean</span>(<span class="kw">abs</span>(theta) &lt;<span class="st"> </span><span class="dv">250</span>)
 <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">"Pr(-250 &lt; theta &lt; 250) ="</span>, <span class="kw">round</span>(p_approx, <span class="dv">2</span>)))</code></pre></div>
-<pre><code>[1] "Pr(-250 &lt; theta &lt; 250) = 0.38"</code></pre>
+<pre><code>[1] "Pr(-250 &lt; theta &lt; 250) = 0.39"</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(theta, <span class="dt">clr =</span> <span class="kw">abs</span>(theta) &gt;<span class="st"> </span><span class="dv">250</span>)
 <span class="kw">ggplot</span>(d, <span class="kw">aes</span>(<span class="dt">x =</span> theta, <span class="dt">fill =</span> clr)) +<span class="st"> </span>
 <span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">binwidth =</span> <span class="dv">5</span>, <span class="dt">show.legend =</span> <span class="ot">FALSE</span>) +<span class="st"> </span>

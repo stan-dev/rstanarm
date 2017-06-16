@@ -107,6 +107,13 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette explains how to estimate generalized linear models (GLMs) for binary (Bernoulli) and Binomial response variables using the <code>stan_glm</code> function in the <strong>rstanarm</strong> package.</p>
+<p>The four steps of a Bayesian analysis are</p>
+<ol style="list-style-type: decimal">
+<li>Specify a joint distribution for the outcome(s) and all the unknowns, which typically takes the form of a marginal prior distribution for the unknowns multiplied by a likelihood for the outcome(s) conditional on the unknowns. This joint distribution is proportional to a posterior distribution of the unknowns conditional on the observed data</li>
+<li>Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).</li>
+<li>Evaluate how well the model fits the data and possibly revise the model.</li>
+<li>Draw from the posterior predictive distribution of the outcome(s) given interesting values of the predictors in order to visualize how a manipulation of a predictor affects (a function of) the outcome(s).</li>
+</ol>
 <p>Steps 3 and 4 are covered in more depth by the vignette entitled <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a>. This vignette focuses on Step 1 when the likelihood is the product of conditionally independent binomial distributions (possibly with only one trial per observation).</p>
 </div>
 <div id="likelihood" class="section level1">
@@ -128,6 +135,9 @@
 <div id="priors" class="section level1">
 <h1 class="hasAnchor">
 <a href="#priors" class="anchor"></a>Priors</h1>
+<p>A full Bayesian analysis requires specifying prior distributions <span class="math inline">\(f(\alpha)\)</span> and <span class="math inline">\(f(\boldsymbol{\beta})\)</span> for the intercept and vector of regression coefficients. When using <code>stan_glm</code>, these distributions can be set using the <code>prior_intercept</code> and <code>prior</code> arguments. The <code>stan_glm</code> function supports a variety of prior distributions, which are explained in the <strong>rstanarm</strong> documentation (<code>help(priors, package = 'rstanarm')</code>).</p>
+<p>As an example, suppose we have <span class="math inline">\(K\)</span> predictors and believe — prior to seeing the data — that <span class="math inline">\(\alpha, \beta_1, \dots, \beta_K\)</span> are as likely to be positive as they are to be negative, but are highly unlikely to be far from zero. These beliefs can be represented by normal distributions with mean zero and a small scale (standard deviation). To give <span class="math inline">\(\alpha\)</span> and each of the <span class="math inline">\(\beta\)</span>s this prior (with a scale of 1, say), in the call to <code>stan_glm</code> we would include the arguments <code>prior_intercept = normal(0,1)</code> and <code>prior = normal(0,1)</code>.</p>
+<p>If, on the other hand, we have less a priori confidence that the parameters will be close to zero then we could use a larger scale for the normal distribution and/or a distribution with heavier tails than the normal like the Student t distribution. <strong>Step 1</strong> in the “How to Use the <strong>rstanarm</strong> Package” vignette discusses one such example.</p>
 </div>
 <div id="posterior" class="section level1">
 <h1 class="hasAnchor">
@@ -154,6 +164,7 @@ wells$dist100 &lt;-<span class="st"> </span>wells$dist /<span class="st"> </span
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(wells, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> switch ==<span class="st"> </span><span class="dv">1</span>)) +
 <span class="st">  </span><span class="kw">geom_histogram</span>() +<span class="st"> </span>
 <span class="st">  </span><span class="kw">scale_fill_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="st">"gray30"</span>, <span class="st">"skyblue"</span>))</code></pre></div>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-dist100-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>In the plot above the blue bars correspond to the 1737 residents who said they switched wells and darker bars show the distribution of <code>dist100</code> for the 1283 residents who didn’t switch. As we would expect, for the residents who switched wells, the distribution of <code>dist100</code> is more concentrated at smaller distances.</p>
 <p>A Bayesian version of Gelman and Hill’s initial logistic regression model can be estimated using the <code>stan_glm</code> function. Here we’ll use a Student t prior with 7 degrees of freedom and a scale of 2.5, which, as discussed above, is a reasonable default prior when coefficients should be close to zero but have some chance of being large.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">t_prior &lt;-<span class="st"> </span><span class="kw"><a href="../reference/priors.html">student_t</a></span>(<span class="dt">df =</span> <span class="dv">7</span>, <span class="dt">location =</span> <span class="dv">0</span>, <span class="dt">scale =</span> <span class="fl">2.5</span>)
@@ -161,9 +172,14 @@ fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_g
                  <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="dt">link =</span> <span class="st">"logit"</span>), 
                  <span class="dt">prior =</span> t_prior, <span class="dt">prior_intercept =</span> t_prior,  
                  <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)</code></pre></div>
+<pre><code>(Intercept)     dist100 
+      0.606      -0.624 </code></pre>
 <p>The <code>formula</code>, <code>data</code> and <code>family</code> arguments to <code>stan_glm</code> are specified in exactly the same way as for <code>glm</code>. We’ve also added the optional additional arguments <code>chains</code> (how many chains we want to execute), <code>cores</code> (how many cores we want the computer to utilize) and <code>seed</code> (for reproducibility). You can read about other possible arguments in the <code>stan_glm</code> documentation (<code>help(stan_glm, package = 'rstanarm')</code>).</p>
 <p>To get a sense for the uncertainty in our estimates we can use the <code>posterior_interval</code> function to get Bayesian uncertainty intervals. The uncertainty intervals are computed by finding the relevant quantiles of the draws from the posterior distribution. For example, to compute 50% intervals we use:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw"><a href="../reference/posterior_interval.stanreg.html">posterior_interval</a></span>(fit1, <span class="dt">prob =</span> <span class="fl">0.5</span>), <span class="dv">2</span>)</code></pre></div>
+<pre><code>              25%   75%
+(Intercept)  0.57  0.65
+dist100     -0.69 -0.56</code></pre>
 <p>For more on <code>posterior_interval</code> and interpreting the parameter estimates from a Bayesian model see Step 2 in the <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a> vignette.</p>
 <p>Using the coefficient estimates we can plot the predicted probability of <code>switch = 1</code> (as a function of <code>dist100</code>) together with the observed outcomes:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Predicted probability as a function of x</span>
@@ -178,10 +194,13 @@ jitt &lt;-<span class="st"> </span>function(...) {
 <span class="st">  </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"dist100"</span>) +<span class="st"> </span>
 <span class="st">  </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch, <span class="dt">args =</span> <span class="kw">list</span>(<span class="dt">ests =</span> <span class="kw">coef</span>(fit1)), 
                 <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">color =</span> <span class="st">"gray35"</span>)</code></pre></div>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The plot shows that under this model the predicted probability of switching is a decent bit above 50% for residents living very close to wells with safe drinking water. As expected, larger values of <code>dist100</code> are associated with lower predicted probabilities of switching. At the extreme (<span class="math inline">\(\approx 300\)</span> meters), the probability is about 25%.</p>
 <p>Next, we incorporate an additional predictor into the model: the arsenic level of water in the respondent’s well. According to Gelman and Hill, “At the levels present in the Bangladesh drinking water, the health risks from arsenic are roughly proportional to exposure, and so we would expect switching to be more likely from wells with high arsenic levels” (pg. 90). We only need to change the formula, so we can use the <code>update</code> function:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit2 &lt;-<span class="st"> </span><span class="kw">update</span>(fit1, <span class="dt">formula =</span> switch ~<span class="st"> </span>dist100 +<span class="st"> </span>arsenic) </code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(coef_fit2 &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">coef</span>(fit2), <span class="dv">3</span>))</code></pre></div>
+<pre><code>(Intercept)     dist100     arsenic 
+      0.006      -0.911       0.463 </code></pre>
 <p>As expected the coefficient on <code>arsenic</code> is positive. The plot below shows distance on the x-axis and arsenic level on the y-axis with the predicted probability of well-switching mapped to the color of the background tiles (the lighter the color the higher the probability). The observed value of <code>switch</code> is indicated by the color of the points.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pr_switch2 &lt;-<span class="st"> </span>function(x, y, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] +<span class="st"> </span>ests[<span class="dv">2</span>] *<span class="st"> </span>x +<span class="st"> </span>ests[<span class="dv">3</span>] *<span class="st"> </span>y)
 grid &lt;-<span class="st"> </span><span class="kw">expand.grid</span>(<span class="dt">dist100 =</span> <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">4</span>, <span class="dt">length.out =</span> <span class="dv">100</span>), 
@@ -192,6 +211,7 @@ grid$prob &lt;-<span class="st"> </span><span class="kw">with</span>(grid, <span
 <span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">data =</span> wells, <span class="kw">aes</span>(<span class="dt">color =</span> <span class="kw">factor</span>(switch)), <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">alpha =</span> <span class="fl">0.85</span>) +<span class="st"> </span>
 <span class="st">  </span><span class="kw">scale_fill_gradient</span>() +
 <span class="st">  </span><span class="kw">scale_color_manual</span>(<span class="st">"switch"</span>, <span class="dt">values =</span> <span class="kw">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>), <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>))</code></pre></div>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can see that the black points (<code>switch=1</code>) are predominantly clustered in the upper-left region of the plot where the predicted probability of switching is highest.</p>
 <p>Another way we can visualize the data and model is to follow Gelman and Hill and create separate plots for varying the arsenic level and distance. Here we’ll plot curves representing the predicted probability of switching for the minimum, maximum and quartile values of both variables.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">require</span>(gridExtra)) {
@@ -212,10 +232,31 @@ grid$prob &lt;-<span class="st"> </span><span class="kw">with</span>(grid, <span
   }
   <span class="kw">grid.arrange</span>(vary_dist, vary_arsenic, <span class="dt">ncol =</span> <span class="dv">2</span>)
 }</code></pre></div>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-alt-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can compare our two models (with and without <code>arsenic</code>) using an approximation to Leave-One-Out (LOO) cross-validation, which is a method for estimating out of sample predictive performance and is implemented by the <code>loo</code> function in the <strong>loo</strong> package:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit1))
-(loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2))
-<span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit1))</code></pre></div>
+<pre><code>Computed from 500 by 3020 log-likelihood matrix
+
+         Estimate   SE
+elpd_loo  -2040.2 10.5
+p_loo         2.1  0.0
+looic      4080.4 20.9
+
+All Pareto k estimates are good (k &lt; 0.5)
+See help('pareto-k-diagnostic') for details.</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2))</code></pre></div>
+<pre><code>Computed from 500 by 3020 log-likelihood matrix
+
+         Estimate   SE
+elpd_loo  -1968.3 15.8
+p_loo         3.0  0.1
+looic      3936.5 31.5
+
+All Pareto k estimates are good (k &lt; 0.5)
+See help('pareto-k-diagnostic') for details.</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
+<pre><code>elpd_diff        se 
+     72.0      12.2 </code></pre>
 <p>These results favor <code>fit2</code> over <code>fit1</code>, as the estimated difference in <code>elpd</code> (the expected log pointwise predictive density for a new dataset) is so much larger than its standard error. LOO penalizes models for adding additional predictors (this helps counter overfitting), but in this case <code>fit2</code> represents enough of an improvement over <code>fit1</code> that the penalty for including <code>arsenic</code> is negligible (as it should be if <code>arsenic</code> is an important predictor).</p>
 <p>The <a href="lm.html">vignette</a> for the <code>stan_lm</code> function also has an example of using the <code>loo</code> function where the results are quite a bit different from what we see here and some important additional considerations are discussed.</p>
 </div>

@@ -107,6 +107,13 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette explains how to estimate generalized linear models (GLMs) for count data using the <code>stan_glm</code> function in the <strong>rstanarm</strong> package.</p>
+<p>The four steps of a Bayesian analysis are</p>
+<ol style="list-style-type: decimal">
+<li>Specify a joint distribution for the outcome(s) and all the unknowns, which typically takes the form of a marginal prior distribution for the unknowns multiplied by a likelihood for the outcome(s) conditional on the unknowns. This joint distribution is proportional to a posterior distribution of the unknowns conditional on the observed data</li>
+<li>Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).</li>
+<li>Evaluate how well the model fits the data and possibly revise the model.</li>
+<li>Draw from the posterior predictive distribution of the outcome(s) given interesting values of the predictors in order to visualize how a manipulation of a predictor affects (a function of) the outcome(s).</li>
+</ol>
 <p>Steps 3 and 4 are covered in more depth by the vignette entitled <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a>. This vignette focuses on Step 1 for Poisson and negative binomial regression models using the <code>stan_glm</code> function.</p>
 </div>
 <div id="likelihood" class="section level1">
@@ -123,6 +130,9 @@
 <div id="priors" class="section level1">
 <h1 class="hasAnchor">
 <a href="#priors" class="anchor"></a>Priors</h1>
+<p>A full Bayesian analysis requires specifying prior distributions <span class="math inline">\(f(\alpha)\)</span> and <span class="math inline">\(f(\boldsymbol{\beta})\)</span> for the intercept and vector of regression coefficients. When using <code>stan_glm</code>, these distributions can be set using the <code>prior_intercept</code> and <code>prior</code> arguments. The <code>stan_glm</code> function supports a variety of prior distributions, which are explained in the <strong>rstanarm</strong> documentation (<code>help(priors, package = 'rstanarm')</code>).</p>
+<p>As an example, suppose we have <span class="math inline">\(K\)</span> predictors and believe — prior to seeing the data — that <span class="math inline">\(\alpha, \beta_1, \dots, \beta_K\)</span> are as likely to be positive as they are to be negative, but are highly unlikely to be far from zero. These beliefs can be represented by normal distributions with mean zero and a small scale (standard deviation). To give <span class="math inline">\(\alpha\)</span> and each of the <span class="math inline">\(\beta\)</span>s this prior (with a scale of 1, say), in the call to <code>stan_glm</code> we would include the arguments <code>prior_intercept = normal(0,1)</code> and <code>prior = normal(0,1)</code>.</p>
+<p>If, on the other hand, we have less a priori confidence that the parameters will be close to zero then we could use a larger scale for the normal distribution and/or a distribution with heavier tails than the normal like the Student t distribution. <strong>Step 1</strong> in the “How to Use the <strong>rstanarm</strong> Package” vignette discusses one such example.</p>
 </div>
 <div id="posterior" class="section level1">
 <h1 class="hasAnchor">
@@ -159,9 +169,15 @@ stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/s
 <p>The <code>formula</code>, <code>data</code>, <code>family</code>, and <code>offset</code> arguments to <code>stan_glm</code> can be specified in exactly the same way as for <code>glm</code>. The <code>poisson</code> family function defaults to using the log link, but to write code readable to someone not familiar with the defaults we should be explicit and use <code>family = poisson(link = "log")</code>.</p>
 <p>We’ve also specified some optional arguments. The <code>chains</code> argument controls how many Markov chains are executed, the <code>cores</code> argument controls the number of cores utilized by the computer when fitting the model. We also provided a seed so that we have the option to deterministically reproduce these results at any time. The <code>stan_glm</code> function has many other optional arguments that allow for more user control over the way estimation is performed. The documentation for <code>stan_glm</code> has more information about these controls as well as other topics related to GLM estimation.</p>
 <p>Here are the point estimates and uncertainties from the <code>glm</code> fit and <code>stan_glm</code> fit, which we see are nearly identical:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">coef</span>(glm1), <span class="dt">stan_glm =</span> <span class="kw">coef</span>(stan_glm1)), <span class="dt">digits =</span> <span class="dv">2</span>)
-<span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">summary</span>(glm1)$coefficients[, <span class="st">"Std. Error"</span>], 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">coef</span>(glm1), <span class="dt">stan_glm =</span> <span class="kw">coef</span>(stan_glm1)), <span class="dt">digits =</span> <span class="dv">2</span>)</code></pre></div>
+<pre><code>         (Intercept) roach1 treatment senior
+glm             3.09    0.7     -0.52  -0.38
+stan_glm        3.09    0.7     -0.52  -0.38</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">summary</span>(glm1)$coefficients[, <span class="st">"Std. Error"</span>], 
             <span class="dt">stan_glm =</span> <span class="kw"><a href="../reference/se.html">se</a></span>(stan_glm1)), <span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<pre><code>         (Intercept) roach1 treatment senior
+glm            0.021  0.009     0.025  0.033
+stan_glm       0.021  0.009     0.024  0.034</code></pre>
 <p>(Note: the dataset we have is slightly different from the one used in Gelman and Hill (2007), which leads to slightly different parameter estimates than those shown in the book even when copying the <code>glm</code> call verbatim. Also, we have rescaled the <code>roach1</code> predictor. For the purposes of this example, the actual estimates are less important than the process.)</p>
 <p>Gelman and Hill next show how to compare the observed data to replicated datasets from the model to check the quality of the fit. Here we don’t show the original code used by Gelman and Hill because it’s many lines, requiring several loops and some care to get the matrix multiplications right (see pg. 161-162). On the other hand, the <strong>rstanarm</strong> package makes this easy. We can generate replicated datasets with a single line of code using the <code>posterior_predict</code> function:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yrep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(stan_glm1)</code></pre></div>
@@ -169,6 +185,7 @@ stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/s
 <p>Gelman and Hill take the simulated datasets and for each of them compute the proportion of zeros and compare to the observed proportion in the original data. We can do this easily using the <code>pp_check</code> function, which generates graphical comparisons of the data <code>y</code> and replicated datasets <code>yrep</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">prop_zero &lt;-<span class="st"> </span>function(y) <span class="kw">mean</span>(y ==<span class="st"> </span><span class="dv">0</span>)
 (prop_zero_test1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(stan_glm1, <span class="dt">plotfun =</span> <span class="st">"stat"</span>, <span class="dt">stat =</span> <span class="st">"prop_zero"</span>))</code></pre></div>
+<p><img src="count_files/figure-html/count-roaches-plot-pp_check1-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The value of the test statistic (in this case the proportion of zeros) computed from the sample <code>y</code> is the dark blue vertical line. More than 30% of these observations are zeros, whereas the replicated datasets all contain less than 1% zeros. This is a sign that we should consider a model that more accurately accounts for the large proportion of zeros in the data. Gelman and Hill show how we can do this using an overdispered Poisson regression. To illustrate the use of a different <code>stan_glm</code> model, here we will instead try <a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">negative binomial</a> regression, which is also used for overdispersed or zero-inflated count data. The negative binomial distribution allows the (conditional) mean and variance of <span class="math inline">\(y\)</span> to differ unlike the Poisson distribution. To fit the negative binomial model can either use the <code>stan_glm.nb</code> function or, equivalently, change the <code>family</code> we specify in the call to <code>stan_glm</code> to <code>neg_binomial_2</code> instead of <code>poisson</code>. To do the latter we can just use <code>update</code>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stan_glm2 &lt;-<span class="st"> </span><span class="kw">update</span>(stan_glm1, <span class="dt">family =</span> neg_binomial_2) </code></pre></div>
 <p>We now use <code>pp_check</code> again, this time to check the proportion of zeros in the replicated datasets under the negative binomial model:</p>
@@ -179,12 +196,15 @@ stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/s
                prop_zero_test2 +<span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">"Negative Binomial"</span>), 
                <span class="dt">ncol =</span> <span class="dv">2</span>)
 }</code></pre></div>
+<p><img src="count_files/figure-html/count-roaches-plot-pp_check2-1.png" width="80%" style="display: block; margin: auto;"></p>
 <p>This is a much better fit, as the proportion of zeros in the data falls nicely near the center of the distribution of the proportion of zeros among the replicated datasets. The observed proportion of zeros is quite plausible under this model.</p>
 <p>We could have also made these plots manually without using the <code>pp_check</code> function because we have the <code>yrep</code> datasets created by <code>posterior_predict</code>. The <code>pp_check</code> function takes care of this for us, but <code>yrep</code> can be used directly to carry out other posterior predictive checks that aren’t automated by <code>pp_check</code>.</p>
 <p>When we comparing the models using the <strong>loo</strong> package we also see a clear preference for the negative binomial model</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(stan_glm1)
 loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(stan_glm2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
+<pre><code>elpd_diff        se 
+   5352.1     708.9 </code></pre>
 <p>which is not surprising given the better fit we’ve already observed from the posterior predictive checks.</p>
 </div>
 <div id="references" class="section level1">

@@ -107,6 +107,13 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette explains how to model continuous outcomes on the open unit interval using the <code>stan_betareg</code> function in the <strong>rstanarm</strong> package.</p>
+<p>The four steps of a Bayesian analysis are</p>
+<ol style="list-style-type: decimal">
+<li>Specify a joint distribution for the outcome(s) and all the unknowns, which typically takes the form of a marginal prior distribution for the unknowns multiplied by a likelihood for the outcome(s) conditional on the unknowns. This joint distribution is proportional to a posterior distribution of the unknowns conditional on the observed data</li>
+<li>Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).</li>
+<li>Evaluate how well the model fits the data and possibly revise the model.</li>
+<li>Draw from the posterior predictive distribution of the outcome(s) given interesting values of the predictors in order to visualize how a manipulation of a predictor affects (a function of) the outcome(s).</li>
+</ol>
 <p>Steps 3 and 4 are covered in more depth by the vignette entitled <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a>. This vignette focuses on Step 1 when the likelihood is the product of beta distributions.</p>
 </div>
 <div id="likelihood" class="section level1">
@@ -167,6 +174,7 @@ phi &lt;-<span class="st"> </span><span class="kw">binomial</span>(<span class="
 y &lt;-<span class="st"> </span><span class="kw">rbeta</span>(N, mu *<span class="st"> </span>phi, (<span class="dv">1</span> -<span class="st"> </span>mu) *<span class="st"> </span>phi)
 dat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="kw">cbind</span>(y, x, z))
 <span class="kw">hist</span>(dat$y, <span class="dt">col =</span> <span class="st">"darkgrey"</span>, <span class="dt">border =</span> F, <span class="dt">main =</span> <span class="st">"Distribution of Outcome Variable"</span>, <span class="dt">xlab =</span> <span class="st">"y"</span>, <span class="dt">breaks =</span> <span class="dv">20</span>, <span class="dt">freq =</span> F)</code></pre></div>
+<p><img src="betareg_files/figure-html/simulated-data-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The model can be fit by calling <code>stan_betareg</code>, using the appropriate link functions.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
 fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(y ~<span class="st"> </span>x |<span class="st"> </span>z, <span class="dt">data =</span> dat, <span class="dt">link =</span> <span class="st">"logit"</span>, <span class="dt">link.phi =</span> <span class="st">"log"</span>,
@@ -175,8 +183,29 @@ fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_b
                      <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)
 <span class="kw">round</span>(<span class="kw">coef</span>(fit1), <span class="dv">2</span>)
 <span class="kw">round</span>(<span class="kw">coef</span>(fit2), <span class="dv">2</span>)</code></pre></div>
+<pre><code>      (Intercept)                 x (phi)_(Intercept)           (phi)_z 
+             0.93             -0.20              1.83              0.31 </code></pre>
+<pre><code>                x (phi)_(Intercept) 
+             0.00              1.08 </code></pre>
 <p>For clarity we can use <code>prior_summary</code> to print the information about the prior distributions used to fit the models. The priors used in <code>fit1</code> are provided below.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/prior_summary.stanreg.html">prior_summary</a></span>(fit1)</code></pre></div>
+<pre><code>Priors for model 'fit1' 
+------
+Intercept (after predictors centered)
+ ~ normal(location = 0, scale = 10)
+
+Coefficients
+ ~ normal(location = 0, scale = 2.5)
+     **adjusted scale = 1.22
+
+Intercept_z (after predictors centered)
+ ~ normal(location = 0, scale = 10)
+
+Coefficients_z
+ ~ normal(location = 0, scale = 2.5)
+     **adjusted scale = 1.24
+------
+See help('prior_summary.stanreg') for more details</code></pre>
 <p>The usual posterior analyses are available in <strong>rstanarm</strong>. The plots below illustrate simulated values of the outcome variable. The incorrect model noticeably fails to capture the top of the distribution consistently in comparison to the true model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
 <span class="kw">library</span>(bayesplot)
@@ -187,10 +216,13 @@ fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_b
   <span class="dt">titles =</span> <span class="kw">c</span>(<span class="st">"True Model: y ~ x | z"</span>, <span class="st">"False Model: y ~ x - 1"</span>),
   <span class="dt">grid_args =</span> <span class="kw">list</span>(<span class="dt">ncol =</span> <span class="dv">2</span>)
 )</code></pre></div>
+<p><img src="betareg_files/figure-html/simulated-analysis-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can also compare models by evaluating the expected log pointwise predictive density (<code>elpd</code>), which can be calculated using the <code>loo</code> method, which provides an interface for <strong>rstanarm</strong> models to the functionality in the <strong>loo</strong> package.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit1)
 loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
+<pre><code>elpd_diff        se 
+    -79.7      11.8 </code></pre>
 <p>The difference in <code>elpd</code> is negative indicating that the expected predictive accuracy for the first model is higher.</p>
 </div>
 <div id="an-example-using-gasoline-data" class="section level1">
@@ -206,6 +238,18 @@ gas_fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/st
                          <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)
 <span class="kw">round</span>(<span class="kw">coef</span>(gas_fit1), <span class="dv">2</span>)
 <span class="kw">round</span>(<span class="kw">coef</span>(gas_fit2), <span class="dv">2</span>)</code></pre></div>
+<pre><code>(Intercept)        temp      batch1      batch2      batch3      batch4 
+      -6.12        0.01        1.69        1.28        1.54        1.02 
+     batch5      batch6      batch7      batch8      batch9       (phi) 
+       1.09        0.99        0.50        0.46        0.36      251.94 </code></pre>
+<pre><code>      (Intercept)              temp            batch1            batch2 
+            -6.07              0.01              1.69              1.29 
+           batch3            batch4            batch5            batch6 
+             1.52              1.03              1.11              1.02 
+           batch7            batch8            batch9 (phi)_(Intercept) 
+             0.53              0.47              0.37              5.37 
+   (phi)_pressure 
+             0.05 </code></pre>
 <p>The plots below illustrate simulated values of gasoline yield. While the first model accounts for variation in batch conditions its predictions looks somewhat uniform rather than resembling the peaked and right-skewed behavior of the true data. The second model does a somewhat better job at capturing the shape of the distribution, however its location is off as it is centered around 0.50 rather than 0.20.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
 <span class="kw">bayesplot_grid</span>(
@@ -215,9 +259,12 @@ gas_fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/st
   <span class="dt">titles =</span> <span class="kw">c</span>(<span class="st">"gas_fit1"</span>, <span class="st">"gas_fit2"</span>),
   <span class="dt">grid_args =</span> <span class="kw">list</span>(<span class="dt">ncol =</span> <span class="dv">2</span>)
 )</code></pre></div>
+<p><img src="betareg_files/figure-html/gas-analysis-1.png" width="60%" style="display: block; margin: auto;"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">gas_loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(gas_fit1)
 gas_loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(gas_fit2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(gas_loo1, gas_loo2)</code></pre></div>
+<pre><code>elpd_diff        se 
+     -0.8       1.0 </code></pre>
 <p>Evaluating the expected log predictive distribution using <code>loo</code> reveals that the second of the two models is slightly preferred. That said, in this case the standard error of the difference in <code>elpd</code> is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.</p>
 </div>
 <div id="references" class="section level1">

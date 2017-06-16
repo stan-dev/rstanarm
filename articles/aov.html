@@ -107,6 +107,13 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette explains how to estimate ANalysis Of VAriance (ANOVA) models using the <code>stan_aov</code> function in the <strong>rstanarm</strong> package</p>
+<p>The four steps of a Bayesian analysis are</p>
+<ol style="list-style-type: decimal">
+<li>Specify a joint distribution for the outcome(s) and all the unknowns, which typically takes the form of a marginal prior distribution for the unknowns multiplied by a likelihood for the outcome(s) conditional on the unknowns. This joint distribution is proportional to a posterior distribution of the unknowns conditional on the observed data</li>
+<li>Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).</li>
+<li>Evaluate how well the model fits the data and possibly revise the model.</li>
+<li>Draw from the posterior predictive distribution of the outcome(s) given interesting values of the predictors in order to visualize how a manipulation of a predictor affects (a function of) the outcome(s).</li>
+</ol>
 <p>Steps 3 and 4 are covered in more depth by the vignette entitled <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a>. This vignette focuses on Step 1 when the likelihood is the product of independent normal distributions. We also demonstrate that Step 2 is not entirely automatic because it is sometimes necessary to specify some additional tuning parameters in order to obtain optimally efficient results.</p>
 </div>
 <div id="likelihood" class="section level1">
@@ -129,12 +136,45 @@
 <p>The model in section 4.3.1 analyzes an experiment where rats were subjected to different diets in order to see how much weight they gained. The experimental factors were whether their diet had low or high protein and whether the protein was derived from beef or cereal. Before seeing the data, one might expect that a moderate proportion of the variance in weight gain might be attributed to protein (source) in the diet. The frequentist ANOVA estimates can be obtained:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">"weightgain"</span>, <span class="dt">package =</span> <span class="st">"HSAUR3"</span>)
 <span class="kw">coef</span>(<span class="kw">aov</span>(weightgain ~<span class="st"> </span>source *<span class="st"> </span>type, <span class="dt">data =</span> weightgain))</code></pre></div>
+<pre><code>         (Intercept)         sourceCereal              typeLow 
+               100.0                -14.1                -20.8 
+sourceCereal:typeLow 
+                18.8 </code></pre>
 <p>To obtain Bayesian estimates we can prepend <code>stan_</code> to <code>aov</code> and specify the prior location of the <span class="math inline">\(R^2\)</span> as well as optionally the number of cores that the computer is allowed to utilize:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
 post1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_lm.html">stan_aov</a></span>(weightgain ~<span class="st"> </span>source *<span class="st"> </span>type, <span class="dt">data =</span> weightgain, 
                   <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">R2</a></span>(<span class="dt">location =</span> <span class="fl">0.5</span>), <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>,
                   <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)
 post1</code></pre></div>
+<pre><code>stan_aov
+ family:   gaussian [identity]
+ formula:  weightgain ~ source * type
+ num. obs: 40
+------
+
+Estimates:
+                     Median MAD_SD
+(Intercept)           99.1    4.4 
+sourceCereal         -13.1    6.4 
+typeLow              -19.3    6.6 
+sourceCereal:typeLow  17.8    8.9 
+sigma                 14.8    1.7 
+log-fit_ratio          0.0    0.1 
+R2                     0.2    0.1 
+
+Sample avg. posterior predictive 
+distribution of y (X = xbar):
+         Median MAD_SD
+mean_PPD 87.5    3.4  
+
+ANOVA-like table:
+                    Median MAD_SD
+Mean Sq source       591.8  451.1
+Mean Sq type        1044.1  621.8
+Mean Sq source:type  788.0  743.3
+
+------
+For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <p>Here we have specified <code>adapt_delta = 0.999</code> to decrease the stepsize and largely prevent divergent transitions. See the Troubleshooting section in the main rstanarm <a href="rstanarm.html">vignette</a> for more details about <code>adapt_delta</code>. Also, our prior guess that <span class="math inline">\(R^2 = 0.5\)</span> was overly optimistic. However, the frequentist estimates presumably overfit the data even more.</p>
 <p>Alternatively, we could prepend <code>stan_</code> to <code>lmer</code> and specify the corresponding priors</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_lmer</a></span>(weightgain ~<span class="st"> </span><span class="dv">1</span> +<span class="st"> </span>(<span class="dv">1</span>|source) +<span class="st"> </span>(<span class="dv">1</span>|type) +<span class="st"> </span>(<span class="dv">1</span>|source:type),

@@ -107,6 +107,13 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette explains how to estimate models for ordinal outcomes using the <code>stan_polr</code> function in the <strong>rstanarm</strong> package.</p>
+<p>The four steps of a Bayesian analysis are</p>
+<ol style="list-style-type: decimal">
+<li>Specify a joint distribution for the outcome(s) and all the unknowns, which typically takes the form of a marginal prior distribution for the unknowns multiplied by a likelihood for the outcome(s) conditional on the unknowns. This joint distribution is proportional to a posterior distribution of the unknowns conditional on the observed data</li>
+<li>Draw from posterior distribution using Markov Chain Monte Carlo (MCMC).</li>
+<li>Evaluate how well the model fits the data and possibly revise the model.</li>
+<li>Draw from the posterior predictive distribution of the outcome(s) given interesting values of the predictors in order to visualize how a manipulation of a predictor affects (a function of) the outcome(s).</li>
+</ol>
 <p>Steps 3 and 4 are covered in more depth by the vignette entitled <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a>. This vignette focuses on Step 1.</p>
 <p>One of the strengths of doing MCMC with Stan — as opposed to a Gibbs sampler — is that reparameterizations are essentially costless, which allows the user to specify priors on parameters that are either more intuitive, numerically stable, or computationally efficient without changing the posterior distribution of the parameters that enter the likelihood. Advantageous parameterizations are already built into the Stan programs used in the <strong>rstanarm</strong> package, so it is just a matter of using these vignettes to explain how the priors work in the context of these reparameterizations.</p>
 </div>
@@ -140,12 +147,58 @@ J &amp; \mbox{if }\zeta_{J-1}\leq y^{\ast}
 <p>In this section, we start with an ordinal model of tobacco consumption as a function of age and alcohol consumption. Frequentist estimates can be obtained using the <code>polr</code> function in the <strong>MASS</strong> package:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(MASS)
 <span class="kw">print</span>(<span class="kw">polr</span>(tobgp ~<span class="st"> </span>agegp +<span class="st"> </span>alcgp, <span class="dt">data =</span> esoph), <span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<pre><code>Call:
+polr(formula = tobgp ~ agegp + alcgp, data = esoph)
+
+Coefficients:
+agegp.L agegp.Q agegp.C agegp^4 agegp^5 alcgp.L alcgp.Q alcgp.C 
+  -0.37   -0.38   -0.24    0.04   -0.04   -0.19   -0.02    0.03 
+
+Intercepts:
+0-9g/day|10-19    10-19|20-29      20-29|30+ 
+          -1.0            0.2            1.3 
+
+Residual Deviance: 241.8195 
+AIC: 263.8195 </code></pre>
 <p>To obtain Bayesian estimates, we prepend <code>stan_</code> and specify the priors:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
 post0 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_polr.html">stan_polr</a></span>(tobgp ~<span class="st"> </span>agegp +<span class="st"> </span>alcgp, <span class="dt">data =</span> esoph, 
                    <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">R2</a></span>(<span class="fl">0.25</span>), <span class="dt">prior_counts =</span> <span class="kw"><a href="../reference/priors.html">dirichlet</a></span>(<span class="dv">1</span>),
                    <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> <span class="dv">200</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(post0, <span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<pre><code>stan_polr
+ family:   ordered [logistic]
+ formula:  tobgp ~ agegp + alcgp
+ num. obs: 88
+------
+
+Estimates:
+        Median MAD_SD
+agegp.L -0.2    0.3  
+agegp.Q -0.2    0.3  
+agegp.C -0.1    0.4  
+agegp^4  0.0    0.3  
+agegp^5  0.0    0.3  
+alcgp.L -0.1    0.2  
+alcgp.Q  0.0    0.3  
+alcgp.C  0.0    0.3  
+
+Cutpoints:
+               Median MAD_SD
+0-9g/day|10-19 -1.0    0.3  
+10-19|20-29     0.2    0.2  
+20-29|30+       1.3    0.3  
+
+Sample avg. posterior predictive 
+distribution of y (X = xbar):
+                  Median MAD_SD
+mean_PPD:0-9g/day 0.3    0.1   
+mean_PPD:10-19    0.3    0.1   
+mean_PPD:20-29    0.2    0.1   
+mean_PPD:30+      0.2    0.1   
+
+------
+For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <p>The point estimates, represented by the posterior medians, are qualitatively similar to the maximum-likelihood estimates but are somewhat shrunk toward zero due to the regularizing prior on the coefficients. Since these cutpoints are actually <em>known</em>, it would be more appropriate for the model to take that into account, but <code>stan_polr</code> does not currently support that.</p>
 <p>Next, we utilize an example from the <strong>MASS</strong> package where low birthweight is the binary outcome of interest. First, we recode some of the variables:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">"birthwt"</span>, <span class="dt">package =</span> <span class="st">"MASS"</span>)
@@ -158,15 +211,52 @@ birthwt$low &lt;-<span class="st"> </span><span class="kw">factor</span>(birthwt
                  <span class="dt">data =</span> birthwt, <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">R2</a></span>(<span class="fl">0.5</span>), 
                  <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(post1)</code></pre></div>
+<pre><code>stan_lm
+ family:   gaussian [identity]
+ formula:  -bwt ~ smoke + age + race + ptl + ht + ftv
+ num. obs: 189
+------
+
+Estimates:
+              Median MAD_SD
+(Intercept)   -3.3    0.3  
+smoke          0.4    0.1  
+age            0.0    0.0  
+raceblack      0.4    0.2  
+raceother      0.4    0.1  
+ptl            0.2    0.1  
+ht             0.4    0.2  
+ftv            0.0    0.0  
+sigma          0.7    0.0  
+log-fit_ratio  0.0    0.1  
+R2             0.2    0.0  
+
+Sample avg. posterior predictive 
+distribution of y (X = xbar):
+         Median MAD_SD
+mean_PPD -2.9    0.1  
+
+------
+For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <p>Next, we estimate an “ordinal” model for the incidence of low birthweight, which is defined as a birth weight of less than <span class="math inline">\(2.5\)</span> kilograms. Even though this outcome is binary, a binary variable is a special case of an ordinal variable with <span class="math inline">\(J=2\)</span> categories and is acceptable to <code>stan_polr</code>. We can think of <code>bwt</code> as something proportional to <span class="math inline">\(y^\ast\)</span> and pretend that it is not observed, forcing us to estimate an ordinal model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_polr.html">stan_polr</a></span>(low ~<span class="st"> </span>smoke +<span class="st"> </span>age +<span class="st"> </span>race +<span class="st"> </span>ptl +<span class="st"> </span>ht +<span class="st"> </span>ftv, <span class="dt">data =</span> birthwt,
                    <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">R2</a></span>(<span class="fl">0.5</span>), <span class="dt">prior_counts =</span> <span class="kw"><a href="../reference/priors.html">dirichlet</a></span>(<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>)), 
                    <span class="dt">method =</span> <span class="st">"probit"</span>, 
                    <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(post2))</code></pre></div>
+<p><img src="polr_files/figure-html/polr-loo-plot-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>This prior seems to have worked well in this case because none of the points in the plot are above <span class="math inline">\(0.5\)</span>, which would have indicated the the posterior is very sensitive to those observations. If we compare the estimated coefficients,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">cbind</span>(<span class="dt">Linear =</span> <span class="kw">coef</span>(post1), <span class="dt">Ordinal =</span> <span class="kw">coef</span>(post2), 
             <span class="dt">Rescaled =</span> <span class="kw">coef</span>(post1) /<span class="st"> </span><span class="kw"><a href="../reference/stanreg-methods.html">sigma</a></span>(post1)), <span class="dv">3</span>)</code></pre></div>
+<pre><code>            Linear Ordinal Rescaled
+(Intercept) -3.256  -0.541   -4.817
+smoke        0.360   0.509    0.533
+age         -0.003  -0.025   -0.004
+raceblack    0.387   0.529    0.572
+raceother    0.395   0.550    0.584
+ptl          0.152   0.407    0.225
+ht           0.358   0.694    0.529
+ftv         -0.006  -0.003   -0.008</code></pre>
 <p>they have the same signs and similar magnitudes, with the exception of the “Intercept”. In an ordinal model where the outcome only has <span class="math inline">\(J=2\)</span> categories, this “Intercept” is actually <span class="math inline">\(\zeta_1\)</span>, but it is more conventional to call it the “Intercept” so that it agrees with <code>stan_glm</code> when <code>family = binomial(link = 'probit')</code>. Recall that <span class="math inline">\(\sigma_{\epsilon} = 1\)</span> in an ordinal model, so if we rescale the coefficients from a linear model by dividing by the posterior median of <span class="math inline">\(\sigma\)</span>, the resulting coefficients are even closer to those of the ordinal model.</p>
 <p>This illustrates the fundamental similarity between a linear model for a continuous observed outcome and a linear model for a latent <span class="math inline">\(y^\ast\)</span> that generates an ordinal observed outcome. The main difference is when the outcome is continuous and observed, we can estimate the scale of the errors meaningfully. When the outcome is ordinal, we can only fix the scale of the latent errors to <span class="math inline">\(1\)</span> arbitrarily.</p>
 <p>Finally, when <span class="math inline">\(J = 2\)</span>, the <code>stan_polr</code> function allows you to specify non-<code>NULL</code> values of the <code>shape</code> and <code>rate</code> arguments, which implies a “scobit” likelihood where the probability of success is given by <span class="math inline">\(F\left(y^\ast \right)^\alpha\)</span>, where <span class="math inline">\(F\left(\right)\)</span> is the logistic CDF and <span class="math inline">\(\alpha &gt; 0\)</span> is a skewing parameter that has a gamma prior with a given <code>shape</code> and <code>rate</code>. If <span class="math inline">\(\alpha \neq 1\)</span>, then the relationship between <span class="math inline">\(y^\ast\)</span> and the probability of success is asymmetric. In principle, it seems appropriate to estimate <span class="math inline">\(\alpha\)</span> but in practice, a lot of data is needed to estimate <span class="math inline">\(\alpha\)</span> with adequate precision. In the previous example, if we specify <code>shape = 2</code> and <code>rate = 2</code> to reflect the prior beliefs that <span class="math inline">\(\alpha\)</span> is expected to be <span class="math inline">\(1\)</span> but has a variance of <span class="math inline">\(\frac{1}{2}\)</span>, then the <code>loo</code> calculation yields many Pareto shape parameters that are excessively large. However, with more than <span class="math inline">\(189\)</span> observations, such a model may be more fruitful.</p>

@@ -1,10 +1,9 @@
 ```{r, SETTINGS-knitr, include=FALSE}
 stopifnot(require(knitr))
 opts_chunk$set(
-  comment=NA, 
-  message = FALSE, 
-  warning = FALSE, 
-  eval = params$EVAL,
+  comment=NA,
+  message = FALSE,
+  warning = FALSE,
   dev = "png",
   dpi = 150,
   fig.asp = 0.618,

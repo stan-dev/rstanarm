@@ -183,6 +183,7 @@ post &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_g
                    <span class="dt">data =</span> roaches, <span class="dt">family =</span> neg_binomial_2, <span class="dt">QR =</span> <span class="ot">TRUE</span>,
                    <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/stan_gamm4.html">plot_nonlinear</a></span>(post)</code></pre></div>
+<p><img src="glmer_files/figure-html/unnamed-chunk-6-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>Here we see that the relationship between past and present roaches is estimated to be nonlinear. For a small number of past roaches, the function is steep and then it appears to flatten out, although we become highly uncertain about the function in the rare cases where the number of past roaches is large.</p>
 </div>
 </div>
