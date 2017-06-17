@@ -15,7 +15,7 @@
 <![endif]-->
 </head>
 <body>
-    <div class="container template-vignette">
+    <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
@@ -88,18 +88,17 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="contents col-md-9">
     
 
-    
-    
-<div class="contents">
-
+<p><br></p>
 <div style="text-align:center">
-<p><a href="http://mc-stan.org"> <img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width="200" alt="Stan Logo"></a></p>
+<a href="http://mc-stan.org">
+<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width="200" alt="Stan Logo"></a>
 </div>
+<p><br></p>
 <p><strong>rstanarm</strong> is an R package that emulates other R model-fitting functions but uses Stan (via the <a href="http://mc-stan.org/interfaces/rstan.html">rstan</a> package) for the back-end estimation. The primary target audience is people who would be open to Bayesian inference if using Bayesian software were easier but would use frequentist software otherwise.</p>
-<p><br><br></p>
+<p><br></p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
@@ -119,7 +118,7 @@
 }
 <span class="kw">install_github</span>(<span class="st">"stan-dev/rstanarm"</span>, <span class="dt">args =</span> <span class="st">"--preclean"</span>, <span class="dt">build_vignettes =</span> <span class="ot">FALSE</span>)</code></pre></div>
 <p>Make sure to include the <code>args = "--preclean"</code> and <code>build_vignettes = FALSE</code> arguments or the development version of package will not install properly. If installation fails, please let us know by <a href="https://github.com/stan-dev/rstanarm/issues">filing an issue</a>.</p>
-<p><br><br></p>
+<p><br></p>
 </div>
 </div>
 <div id="getting-help" class="section level2">
@@ -129,19 +128,18 @@
 <li><a href="https://github.com/stan-dev/rstanarm/issues">File an issue on GitHub</a></li>
 <li><a href="http://discourse.mc-stan.org/">Ask a question on Discourse</a></li>
 </ul>
-<p><br><br></p>
+<p><br></p>
 </div>
 <div id="contributing" class="section level2">
 <h2 class="hasAnchor">
 <a href="#contributing" class="anchor"></a>Contributing</h2>
 <p>If you are interested in contributing to the development of <strong>rstanarm</strong> please see the <a href="https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development">Contributing to development</a> page of the Github wiki.</p>
 </div>
-</div>
+
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2 class="hasAnchor">
-<a href="#sidebar" class="anchor"></a>Links</h2>
+  <div class="col-md-3" id="sidebar">
+    <h2>Links</h2>
 <ul class="list-unstyled">
 <li>Download from CRAN at <br><a href="https://cran.r-project.org/package=rstanarm">https://​cran.r-project.org/​package=rstanarm</a>
 </li>
@@ -167,7 +165,6 @@
 <li><a href="http://cran.rstudio.com/package=rstanarm"><img src="http://cranlogs.r-pkg.org/badges/rstanarm?color=blue" alt="Downloads"></a></li>
 </ul>
 </div>
-
 </div>
 
 

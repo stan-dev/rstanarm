@@ -93,7 +93,7 @@
       <h1>How to Use the rstanarm Package</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-16</h4>
+            <h4 class="date">2017-06-17</h4>
           </div>
 
     
@@ -305,7 +305,7 @@ newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 y_rep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(womensrole_bglm_2, newdata)
 <span class="kw">summary</span>(<span class="kw">apply</span>(y_rep, <span class="dv">1</span>, diff))</code></pre></div>
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
- -38.00  -24.00  -20.00  -19.81  -16.00   -1.00 </code></pre>
+ -40.00  -23.00  -20.00  -19.73  -16.00    0.00 </code></pre>
 <p>As can be seen, out of <span class="math inline">\(100\)</span> women who have a college degree versus <span class="math inline">\(100\)</span> women with only a high school degree, we would expect about <span class="math inline">\(20\)</span> fewer college-educated women to agree with the question. There is an even chance that the difference is between <span class="math inline">\(24\)</span> and <span class="math inline">\(16\)</span>, a one-in-four chance that it is greater, and one-in-four chance that it is less.</p>
 </div>
 <div id="troubleshooting" class="section level1">

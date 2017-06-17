@@ -2,11 +2,15 @@
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
 [![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 
+<br>
+
 <div style="text-align:center">
 <a href="http://mc-stan.org">
 <img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=200 alt="Stan Logo"/>
 </a>
 </div>
+
+<br>
 
 **rstanarm** is an R package that emulates other R model-fitting functions but
 uses Stan (via the [rstan](http://mc-stan.org/interfaces/rstan.html) package)
@@ -14,13 +18,14 @@ for the back-end estimation. The primary
 target audience is people who would be open to Bayesian inference if using
 Bayesian software were easier but would use frequentist software otherwise.
 
-<br><br>
+<br>
 
 ## Installation
 
 ### Latest Release
 The most recent **rstanarm** release can be installed from CRAN via
-```{r eval=FALSE}
+
+```r
 install.packages("rstanarm")
 ```
 
@@ -31,7 +36,7 @@ package and C++ toolchain by following these
 Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **devtools** package by executing the following in R:
 
-```{r eval=FALSE}
+```r
 if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
@@ -43,14 +48,14 @@ Make sure to include the `args = "--preclean"` and `build_vignettes = FALSE` arg
 or the development version of package will not install properly. If installation fails,
 please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
-<br><br>
+<br>
 
 ## Getting help
 
 * [File an issue on GitHub](https://github.com/stan-dev/rstanarm/issues)
 * [Ask a question on Discourse](http://discourse.mc-stan.org/)
 
-<br><br>
+<br>
 
 ## Contributing
 
