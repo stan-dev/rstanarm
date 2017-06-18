@@ -235,8 +235,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), prob = 0.95, 
                               ids, times = NULL, standardise = FALSE, 
                               draws = NULL, seed = NULL, ...) {
-  
   validate_stanmvreg_object(object)
+  if (!is.jm(object)) 
+    STOP_jm_only("'posterior_survfit'")
   M        <- object$n_markers
   id_var   <- object$id_var
   time_var <- object$time_var
@@ -251,7 +252,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Temporary stop, until make_assoc_terms can handle it
   sel_stop <- grep("^shared", rownames(object$assoc))
   if (any(unlist(object$assoc[sel_stop,])))
-    stop("posterior_survfit cannot yet be used with shared_b or shared_coef ",
+    stop("'posterior_survfit' cannot yet be used with shared_b or shared_coef ",
          "association structures.") 
   
   # Construct prediction data

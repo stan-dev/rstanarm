@@ -96,8 +96,10 @@
 #' f1 <- stan_mvmer(
 #'         formula = list(
 #'           logBili ~ year + (1 | id), 
-#'           albumin ~ sex + year + (1 + year | id)),
-#'         data = pbcLong, seed = 12345)
+#'           albumin ~ sex + year + (year | id)),
+#'         data = pbcLong, 
+#'         # this next line is only to keep the example small in size!
+#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(f1) 
 #' }
 #' 
@@ -135,6 +137,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   M <- length(formula)
   data <- validate_arg(data, "data.frame", null_ok = TRUE, 
                        validate_length = M, broadcast = TRUE)
+  data <- lapply(data, as.data.frame)
 
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
@@ -195,7 +198,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
                         SIMPLIFY = FALSE)
   
   # Construct single cnms list for all longitudinal submodels
-  cnms <- get_common_cnms(fetch(y_mod_stuff, "cnms"))
+  cnms <- get_common_cnms(fetch(y_mod_stuff, "cnms"), stub = "y")
   cnms_nms <- names(cnms)
   
   # Prior weights
@@ -361,11 +364,11 @@ stan_mvmer <- function(formula, data, family = gaussian,
   q1 <- rowSums(qmat) # num group-specific coefs for each grouping factor
   q2 <- colSums(qmat) # num group-specific coefs for each submodel
   q  <- sum(qmat)     # total num group-specific coefs
-  b_nms <- unlist(Map(make_b_nms, group, m = seq(M)))
+  b_nms <- unlist(Map(make_b_nms, group, m = seq(M), stub = "y"))
   g_nms <- unlist(
     lapply(1:M, FUN = function(m) {
       lapply(1:length(group[[m]]$cnms), FUN = function(i) {
-        paste(paste0("Long", m), group[[m]]$cnms[[i]], names(group[[m]]$cnms)[i], sep = "|")
+        paste(paste0("y", m), group[[m]]$cnms[[i]], names(group[[m]]$cnms)[i], sep = "|")
       })
     })
   )
@@ -423,8 +426,9 @@ stan_mvmer <- function(formula, data, family = gaussian,
     adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
     adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
     adjusted_priorLong_aux_scale = fetch(y_prior_aux_stuff, "prior_scale"),
-    family = family
-  )    
+    family = family, stub_for_names = "y"
+  ) 
+  names(prior_info) <- gsub("Long", "", names(prior_info), fixed = TRUE)
   
   #-----------
   # Fit model
@@ -461,15 +465,15 @@ stan_mvmer <- function(formula, data, family = gaussian,
   
   # Names for pars
   y_nms <- unlist(lapply(1:M, function(m) 
-    if (ncol(y_mod_stuff[[m]]$xtemp)) paste0("Long", m, "|", colnames(y_mod_stuff[[m]]$xtemp))))
+    if (ncol(y_mod_stuff[[m]]$xtemp)) paste0("y", m, "|", colnames(y_mod_stuff[[m]]$xtemp))))
   y_int_nms <- unlist(lapply(1:M, function(m) 
-    if (y_mod_stuff[[m]]$has_intercept) paste0("Long", m, "|(Intercept)")))
+    if (y_mod_stuff[[m]]$has_intercept) paste0("y", m, "|(Intercept)")))
   y_aux_nms <- character()  
   for (m in 1:M) {
-    if (is.gaussian(y_mod_stuff[[m]]$famname))   y_aux_nms <- c(y_aux_nms, paste0("Long", m,"|sigma"))
-    else if (is.gamma(y_mod_stuff[[m]]$famname)) y_aux_nms <- c(y_aux_nms, paste0("Long", m,"|shape"))
-    else if (is.ig(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("Long", m,"|lambda"))
-    else if (is.nb(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("Long", m,"|reciprocal_dispersion"))
+    if (is.gaussian(y_mod_stuff[[m]]$famname))   y_aux_nms <- c(y_aux_nms, paste0("y", m,"|sigma"))
+    else if (is.gamma(y_mod_stuff[[m]]$famname)) y_aux_nms <- c(y_aux_nms, paste0("y", m,"|shape"))
+    else if (is.ig(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("y", m,"|lambda"))
+    else if (is.nb(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("y", m,"|reciprocal_dispersion"))
   }  
   
   # Sigma values in stanmat, and Sigma names
@@ -507,7 +511,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
                  if (length(group)) c(paste0("b[", b_nms, "]")),
                  y_aux_nms,
                  if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                 paste0("Long", 1:M, "|mean_PPD"), 
+                 paste0("y", 1:M, "|mean_PPD"), 
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   
@@ -519,8 +523,10 @@ stan_mvmer <- function(formula, data, family = gaussian,
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
-               n_grps, y_mod_stuff, y = list_nms(fetch(y_mod_stuff, "y"), M),
+               M, cnms, n_yobs = 
+                 unlist(list_nms(fetch(y_mod_stuff, "N"), M, stub = "y")), 
+               n_grps, y_mod_stuff, y = 
+                 list_nms(fetch(y_mod_stuff, "y"), M, stub = "y"),
                data, call, na.action, algorithm, glmod = fetch(y_mod_stuff, "mod"),
                standata = NULL, terms = NULL, prior.info = prior_info,
                modeling_function = "stan_mvmer")

@@ -560,17 +560,20 @@ get_z.gamm4 <- function(object, ...) {
 #' @export
 get_y.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "y") %ORifNULL% stop("y not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_x.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "X") %ORifNULL% stop("X not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_z.stanmvreg <- function(object, m = NULL, ...) {
   ret <- lapply(object$glmod, lme4::getME, "Z") %ORifNULL% stop("Z not found")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(object)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 
 # Get inverse link function
@@ -585,7 +588,8 @@ linkinv.stanreg <- function(x, ...) {
 }
 linkinv.stanmvreg <- function(x, m = NULL, ...) {
   ret <- lapply(family(x), `[[`, "linkinv")
-  if (!is.null(m)) ret[[m]] else list_nms(ret)
+  stub <- get_stub(x)
+  if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 linkinv.family <- function(x, ...) {
   x$linkinv
@@ -876,41 +880,52 @@ median_and_bounds <- function(x, prob) {
 #
 # @param m An integer specifying the number of the longitudinal submodel or
 #   a character string specifying the submodel (e.g. "Long1", "Event", etc)
-get_m_stub <- function(m) {
+# @param stub A character string to prefix to m, if m is supplied as an integer
+get_m_stub <- function(m, stub = "Long") {
   if (is.null(m)) {
     return(NULL)
   } else if (is.numeric(m)) {
-    return(paste0("Long", m, "|"))
+    return(paste0(stub, m, "|"))
   } else if (is.character(m)) {
     return(paste0(m, "|"))
   }
 }
+
+# Return the appropriate stub for variable names
+#
+# @param object A stanmvreg object
+get_stub <- function(object) {
+  if (is.jm(object)) "Long" else "y"  
+} 
 
 # Separates a names object into separate parts based on the longitudinal, 
 # event, or association parameters.
 # 
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param M An integer specifying the number of longitudinal submodels.
+# @param stub The character string used at the start of the names of variables
+#   in the longitudinal/GLM submodels
 # @param ... Arguments passed to grep
 # @return A list with x separated out into those names corresponding
 #   to parameters from the M longitudinal submodels, the event submodel
 #   or association parameters.
-collect_nms <- function(x, M, ...) {
-  ppd <- grep("^Long.{1}\\|mean_PPD", x, ...)      
-  y <- lapply(1:M, function(m) grep(mod2rx(m), x, ...))
+collect_nms <- function(x, M, stub = "Long", ...) {
+  ppd <- grep(paste0("^", stub, ".{1}\\|mean_PPD"), x, ...)      
+  y <- lapply(1:M, function(m) grep(mod2rx(m, stub = stub), x, ...))
   y_extra <- lapply(1:M, function(m) 
-    c(grep(paste0("^Long", m, "\\|sigma"), x, ...),
-      grep(paste0("^Long", m, "\\|shape"), x, ...),
-      grep(paste0("^Long", m, "\\|lambda"), x, ...),
-      grep(paste0("^Long", m, "\\|reciprocal_dispersion"), x, ...)))             
+    c(grep(paste0("^", stub, m, "\\|sigma"), x, ...),
+      grep(paste0("^", stub, m, "\\|shape"), x, ...),
+      grep(paste0("^", stub, m, "\\|lambda"), x, ...),
+      grep(paste0("^", stub, m, "\\|reciprocal_dispersion"), x, ...)))             
   y <- lapply(1:M, function(m) setdiff(y[[m]], c(y_extra[[m]], ppd[m])))
   e <- grep(mod2rx("^Event"), x, ...)     
   e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
-  y_b <- lapply(1:M, function(m) b_names_M(x, m, ...))
+  y_b <- lapply(1:M, function(m) b_names_M(x, m, stub = stub, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
+  alpha <- c(alpha, grep("^", stub, ".{1}\\|\\(Intercept\\)", x, ...))      
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta, ppd) 
 }
@@ -921,11 +936,11 @@ collect_nms <- function(x, M, ...) {
 # @param x Character vector (often rownames(fit$stan_summary))
 # @param submodel Optional integer specifying which long submodel
 # @param ... Passed to grep
-b_names_M <- function(x, submodel = NULL, ...) {
+b_names_M <- function(x, submodel = NULL, stub = "Long", ...) {
   if (is.null(submodel)) {
     grep("^b\\[", x, ...)
   } else {
-    grep(paste0("^b\\[Long", submodel, "\\|"), x, ...)
+    grep(paste0("^b\\[", stub, submodel, "\\|"), x, ...)
   }
 }
 
@@ -958,7 +973,7 @@ beta_names <- function(x, submodel = NULL, ...) {
 # @param x The submodel for which the regular expression should be
 #   obtained. Can be "Long", "Event", "Assoc", or an integer specifying
 #   a specific longitudinal submodel.
-mod2rx <- function(x) {
+mod2rx <- function(x, stub = "Long") {
   if (x == "^Long") {
     c("^Long[1-9]\\|")
   } else if (x == "^Event") {
@@ -972,7 +987,7 @@ mod2rx <- function(x) {
   } else if (x == "Assoc") {
     c("Assoc\\|")
   } else {
-    paste0("^Long", x, "\\|")
+    paste0("^", stub, x, "\\|")
   }   
 }
 
@@ -987,13 +1002,15 @@ get_M <- function(object) {
 # Supplies names for the output list returned by most stanmvreg methods
 #
 # @param object The list object to which the names are to be applied
-# @param M The number of longitudinal submodels. If NULL then the number of
-#   longitudinal submodels is assumed to be equal to the length of object.
-list_nms <- function(object, M = NULL) {
+# @param M The number of longitudinal/GLM submodels. If NULL then the number of
+#   longitudinal/GLM submodels is assumed to be equal to the length of object.
+# @param stub The character string to use at the start of the names for
+#   list items related to the longitudinal/GLM submodels
+list_nms <- function(object, M = NULL, stub = "Long") {
   if (!is.list(object)) 
     stop("'object' argument should be a list")
   if (is.null(M)) M <- length(object)
-  nms <- paste0("Long", 1:M)
+  nms <- paste0(stub, 1:M)
   if (length(object) > M) nms <- c(nms, "Event")
   names(object) <- nms
   object
@@ -1043,6 +1060,27 @@ STOP_arg_required_for_stanmvreg <- function(arg) {
 # @param what A character string naming the function not yet implemented
 STOP_if_stanmvreg <- function(what) {
   msg <- "not yet implemented for stanmvreg objects."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
+# Error message when a function is not yet implemented for stan_mvmer models
+#
+# @param what An optional message to prepend to the default message.
+STOP_stan_mvmer <- function(what) {
+  msg <- "is not yet implemented for models fit using stan_mvmer."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
+# Consistent error message to use when something that is only available for 
+# models fit using stan_jm
+#
+# @param what An optional message to prepend to the default message.
+STOP_jm_only <- function(what) {
+  msg <- "can only be used with stan_jm models."
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
@@ -1175,7 +1213,7 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
     stanmat <- as.matrix(object$stanfit)
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
-  nms   <- collect_nms(colnames(stanmat), M)
+  nms   <- collect_nms(colnames(stanmat), M, stub = get_stub(object))
   beta  <- lapply(1:M, function(m) stanmat[, nms$y[[m]], drop = FALSE])
   ebeta <- stanmat[, nms$e, drop = FALSE]
   abeta <- stanmat[, nms$a, drop = FALSE]
