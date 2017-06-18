@@ -579,12 +579,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Create call for each longitudinal submodel separately
   m_mc <- lapply(1:M, function(m, old_call, env) {
     new_call <- old_call
-    fm     <- old_call$formula
-    data   <- old_call$data
-    family <- old_call$family
-    new_call$formula <- if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
-    new_call$data    <- if (is(eval(data,   env), "list")) data[[m+1]]   else data
-    new_call$family  <- if (is(eval(family, env), "list")) family[[m+1]] else family
+    fm     <- eval(old_call$formula, env)
+    data   <- eval(old_call$data, env)
+    family <- eval(old_call$family, env)
+    new_call$formula <- if (is(fm, 'list')) fm[[m]] else fm
+    new_call$data    <- if (is(data, 'list') && !inherits(data, 'data.frame')) data[[m]] else data
+    new_call$family  <- if (is(family, 'list')) family[[m]] else family
     new_call
   }, old_call = y_mc, env = calling_env)
 
