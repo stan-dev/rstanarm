@@ -95,6 +95,20 @@
 #'   types (e.g. \code{"etavalue"}, \code{"etaslope"}, \code{"etaauc"}, 
 #'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
 #'   the \code{assoc} argument.
+#' @param grp_assoc Character string specifying the method for combining information
+#'   across the lower level units clustered within an individual when forming the
+#'   association structure. This is only relevant when a grouping factor is  
+#'   specified in \code{formulaLong} that corresponds to clustering within 
+#'   individuals. Can be \code{"sum"} for specifying which indicates
+#'   the association structure should be based on a summation across the lower
+#'   level units clustered within an individual. Can be \code{"mean"} which
+#'   indicates that the association structure should be based on the mean
+#'   (i.e. average) taken across the lower level units clustered within an
+#'   individual. (As an example, specifying \code{assoc = "muvalue"} 
+#'   and \code{grp_assoc = "sum"} would mean the log hazard 
+#'   for an individual would be linearly related to the sum of
+#'   the expected values for each of the lower level units clustered within
+#'   that individual). 
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a Weibull baseline hazard
 #'   (\code{"weibull"}, the default), a B-splines approximation estimated 
