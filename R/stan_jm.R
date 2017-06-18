@@ -676,23 +676,19 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # For each submodel, identify the index of any grouping factors that are
   # clustered within id_var (i.e. lower level clustering)
+  ok_grp_assocs <- c("sum", "mean")
   clust_stuff <- mapply(get_clust_info, 
                         fetch(y_mod_stuff, "cnms"),
                         fetch(y_mod_stuff, "flist"),
                         MoreArgs = list(id_var = id_var, 
                                         quadnodes = quadnodes,
-                                        grp_assoc = grp_assoc),
+                                        grp_assoc = grp_assoc,
+                                        ok_grp_assocs = ok_grp_assocs),
                         SIMPLIFY = FALSE)
   
   # Check the association structure for lower level clustering
   has_clust <- fetch_(clust_stuff, "has_clust")
   if (any(has_clust)) {
-    ok_grp_args <- c("sum", "mean")
-    if (is.null(grp_assoc))
-      stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
-           "within 'id_var'.", call. = FALSE)        
-    if (!grp_assoc %in% ok_grp_args)
-      stop("'grp_assoc' must be one of: ", paste(ok_grp_args, collapse = ", "))
     clust_mat <- unique(fetch(clust_stuff, "clust_mat")[has_clust])
     if (length(clust_mat) > 1L)
       stop("Any longitudinal submodels with lower level clustering (i.e. ",
@@ -2202,6 +2198,7 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff,
   df   <- as.data.frame(dataLong)[rows,]
   if (clust_stuff$has_clust) {
     clust_var <- clust_stuff$clust_var
+    df[[clust_var]] <- factor(df[[clust_var]])
     mf <- data.table::data.table(df, key = c(id_var, clust_var, time_var))
   } else {
     mf <- data.table::data.table(df, key = c(id_var, time_var))
@@ -2425,15 +2422,21 @@ rolling_merge <- function(data, ids, times, clust = NULL) {
     stop("Bug found: data.table key is not the same length as supplied keylist.")
   
   if (is(times, "list") && is.null(clust)) {
-    return(do.call(rbind, lapply(times, FUN = function(x) 
-      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
+    return(do.call(rbind, lapply(times, FUN = function(x, ids) {
+      tmp <- data.table::data.table(ids, x)
+      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
+      }, ids = ids)))     
   } else if (is(times, "list")) {
-    return(do.call(rbind, lapply(times, FUN = function(x) 
-      data[list(ids, clust, x), roll = TRUE, rollends = c(TRUE, TRUE)])))       
+    return(do.call(rbind, lapply(times, FUN = function(x, ids, clust) {
+      tmp <- data.table::data.table(ids, clust, x)
+      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
+      }, ids = ids, clust = clust)))
   } else if (is.null(clust)) {
-    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])       
+    tmp <- data.table::data.table(ids, times)
+    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
   } else {
-    return(data[list(ids, clust, times), roll = TRUE, rollends = c(TRUE, TRUE)])       
+    tmp <- data.table::data.table(ids, clust, times)
+    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
   }
 }
 
@@ -2479,7 +2482,8 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
 #   for combining information in the lower level units clustered within an
 #   individual
 # @return A named list
-get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
+get_clust_info <- function(cnms, flist, id_var, quadnodes, 
+                           grp_assoc, ok_grp_assocs) {
   cnms_nms <- names(cnms)
   tally <- sapply(cnms_nms, function(x) 
     # within each ID, count the number of levels for the grouping factor x
@@ -2495,8 +2499,14 @@ get_clust_info <- function(cnms, flist, id_var, quadnodes, grp_assoc) {
     clust_list <- unique(flist[[clust_var]])
     clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
     clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
-    if (grp_assoc == "mean")
+    if (is.null(grp_assoc)) {
+      stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
+           "within 'id_var'.", call. = FALSE)       
+    } else if (!grp_assoc %in% ok_grp_assocs) {
+      stop("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))      
+    } else if (grp_assoc == "mean") {
       clust_mat <- clust_mat / rep(clust_freq, clust_freq)
+    }
     # broadcast clust_mat for each quadnode
     clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), quadnodes + 1))))
   } else {
