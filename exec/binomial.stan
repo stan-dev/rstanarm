@@ -30,23 +30,28 @@ parameters {
 transformed parameters {
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   if (t > 0) {
-        int start = 1;
-      vector[n_multi_way] multi_way;
-      vector[n_one_way] one_way;
-      one_way = glob_scale * lambda_one_way;
-      for (ix in 1:n_multi_way) {
-        multi_way[ix] = 
-        prod(lambda_one_way[main_multi_map[ix, 1:multi_depth[ix]]])
-        * glob_scale * lambda_multi_way[depth_ind[ix]];
+    if (special_case == 1) {
+      int start = 1;
+      if (interaction_prior > 0) {
+        theta_L = make_theta_L_int(interaction_prior, len_theta_L,
+                                   n_multi_way, n_one_way, tau, glob_scale,
+                                   multi_depth, main_multi_map, depth_ind,
+                                   one_way_ix, multi_way_ix,
+                                   lambda_multi_way);
+      } else {
+        theta_L = scale .* tau;
       }
-      theta_L[one_way_ix] = one_way;
-      theta_L[multi_way_ix] = multi_way;
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
         b[start:end] = theta_L[i] * z_b[start:end];
         start = end + 1;
       }
+    } else {
+       theta_L = make_theta_L(len_theta_L, p, 
+                              1.0, tau, scale, zeta, rho, z_T);
+       b = make_b(z_b, theta_L, p, l);
+    }
   }
 }
 model {
@@ -72,8 +77,15 @@ model {
   
   #include "priors_glm.stan" // increments target()
   
-  if (t > 0) decov_inter_lp(z_b, z_T, zeta, lambda_one_way, lambda_multi_way, glob_scale,
-                            delta, shape);
+  if (t > 0) {
+    if (interaction_prior > 0 && special_case == 1) {
+      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale,
+                     delta, shape, n_multi_way, interaction_prior);
+    } else {
+      decov_lp(z_b, z_T, rho, zeta, tau, 
+               regularization, delta, shape, t, p);
+    }
+  }
 }
 generated quantities {
   real alpha[has_intercept];

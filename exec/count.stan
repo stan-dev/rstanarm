@@ -14,7 +14,7 @@ data {
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
+  #include "glmer_stuff_interaction.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
 }
 transformed data{
@@ -24,7 +24,7 @@ transformed data{
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  #include "parameters_glm_interaction.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> aux_unscaled[family > 1];
   vector<lower=0>[N] noise[family == 3]; // do not store this
 }
@@ -43,7 +43,16 @@ transformed parameters {
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = scale .* (family == 1 ? tau : tau * aux);
+      if (interaction_prior > 0) {
+        theta_L = make_theta_L_int(interaction_prior, len_theta_L,
+                                   n_multi_way, n_one_way, tau, glob_scale,
+                                   multi_depth, main_multi_map, depth_ind,
+                                   one_way_ix, multi_way_ix,
+                                   lambda_multi_way);
+      }
+      else {
+        theta_L = scale .* (family == 1 ? tau : tau * aux);
+      }
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
@@ -113,8 +122,15 @@ model {
   // Log-prior for noise
   if (family == 3) target += gamma_lpdf(noise[1] | aux, 1);
   
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) {
+    if (interaction_prior > 0 && special_case == 1) {
+      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale,
+                     delta, shape, n_multi_way, interaction_prior);
+    } else {
+      decov_lp(z_b, z_T, rho, zeta, tau, 
+               regularization, delta, shape, t, p);
+    }
+  }
 }
 generated quantities {
   real alpha[has_intercept];

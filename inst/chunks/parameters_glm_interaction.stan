@@ -7,6 +7,8 @@
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;
   vector<lower=0>[len_concentration] zeta;
-  vector<lower=0>[n_one_way] lambda_one_way;
-  vector<lower=0>[len_multi_way_uniq] lambda_multi_way;
-  real<lower=0> glob_scale;
+  vector<lower=0>[t - (special_case && interaction_prior == 1 ? n_multi_way : 0)] tau;
+  vector<lower=0>[len_multi_way_uniq] lambda_multi_way[special_case == 1
+                                                       && n_multi_way > 0
+                                                       && interaction_prior == 1];
+  real<lower=0> glob_scale[n_multi_way > 0 && interaction_prior == 1 && special_case == 1];

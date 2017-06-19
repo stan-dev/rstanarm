@@ -75,6 +75,45 @@
   }
   
   /** 
+   * Create structured prior for random intercepts in 
+   * @param len_theta_L An integer indicating the length of returned vector, 
+   *   which lme4 denotes as m
+   * @param p An integer array with the number variables on the LHS of each |
+   * @param dispersion Scalar standard deviation of the errors, calles sigma by lme4
+   * @param tau Vector of scale parameters whose squares are proportional to the 
+   *   traces of the relative covariance matrices of the group-specific terms
+   * @param scale Vector of prior scales that are multiplied by elements of tau
+   * @param zeta Vector of positive parameters that are normalized into simplexes
+   *   and multiplied by the trace of the covariance matrix to produce variances
+   * @param rho Vector of radii in the onion method for creating Cholesky factors
+   * @param z_T Vector used in the onion method for creating Cholesky factors
+   * @return A vector that corresponds to theta in lme4
+   */
+  vector make_theta_L_int(int interaction_prior, int len_theta_L,
+                          int n_multi_way, int n_one_way, vector tau,
+                          real[] glob_scale, int[] multi_depth,
+                          int[,] main_multi_map, int[] depth_ind,
+                          int[] one_way_ix, int[] multi_way_ix,
+                          vector[] lambda_multi_way) {
+    vector[len_theta_L] theta_L;
+    if (interaction_prior == 1 && n_multi_way > 0) {
+      vector[n_multi_way] multi_way;
+      vector[n_one_way] one_way;
+      one_way = glob_scale[1] * tau;
+      for (ix in 1:n_multi_way) {
+        multi_way[ix] =
+        prod(tau[main_multi_map[ix, 1:multi_depth[ix]]])
+        * glob_scale[1] * lambda_multi_way[1][depth_ind[ix]];
+      }
+      theta_L[one_way_ix] = one_way;
+      theta_L[multi_way_ix] = multi_way;
+    } else {
+      theta_L = tau;
+    }
+    return theta_L;
+  }
+  
+  /** 
   * Create group-specific coefficients, see section 2 of
   * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
   *
@@ -176,13 +215,15 @@
    * @param p An integer array with the number variables on the LHS of each |
    * @return nothing
    */
-  void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau_main,
-                      vector lambda_inter, real glob_scale,
-                      real[] delta, vector shape) {
+  void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
+                      vector[] lambda_inter, real[] glob_scale,
+                      real[] delta, vector shape, int n_multi_way,
+                      int interaction_prior) {
     target += normal_lpdf(z_b | 0, 1);
     target += normal_lpdf(z_T | 0, 1);
-    target += normal_lpdf(tau_main  | 0, 1);
-    target += normal_lpdf(lambda_inter  | 0, 1);
+    target += normal_lpdf(tau | 0, 1);
+    if (n_multi_way > 0 && interaction_prior == 1)
+      target += normal_lpdf(lambda_inter[1] | 0, 1);
     target += normal_lpdf(glob_scale  | 0, 1);
     target += gamma_lpdf(zeta | delta, 1);
   }
