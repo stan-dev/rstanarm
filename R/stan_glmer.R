@@ -51,7 +51,7 @@
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
 #' @param prior_covariance The prior distribution for the group-level part of
-#'   the model. Must be either a call to \code{\link{decov}} or
+#'   the model. Must be either a call to \code{\link{decov}} (the default) or
 #'   \code{\link{mrp_structured}}. See the \link[=priors]{priors help page} and
 #'   the vignette for \code{stan_glmer} for information about these priors and
 #'   the default arguments.
