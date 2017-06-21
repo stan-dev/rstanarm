@@ -292,16 +292,16 @@ stan_glm.fit <- function(x, y,
       depth_ind <- rep(0,0)
     }
     
-    standata$interaction_prior = 1
+    standata$interaction_prior <- 1 # 0) decov, 1) yajuan's prior, 2) independent half-normal priors
     standata$n_one_way <- n_one_way
     standata$n_multi_way <- n_multi_way
     standata$max_way <- max_way
-    standata$one_way_ix <- one_way_ix
-    standata$multi_way_ix <- multi_way_ix
-    standata$multi_depth <- multi_depth
-    standata$main_multi_map <- main_multi_map
     standata$len_multi_way_uniq <- len_multi_way_uniq
-    standata$depth_ind <- depth_ind
+    standata$one_way_ix <- one_way_ix
+    standata$multi_way_ix <- as.array(multi_way_ix)
+    standata$multi_depth <- as.array(multi_depth)
+    standata$main_multi_map <- as.array(main_multi_map)
+    standata$depth_ind <- as.array(depth_ind)
     
     if (is_bernoulli) {
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
