@@ -273,6 +273,8 @@ stan_glm.fit <- function(x, y,
     standata$q <- ncol(Z)
     standata$len_theta_L <- sum(choose(p, 2), p)
     
+    # detect interactions in ranef and collect interaction metadata (needed only
+    # for mrp_structed prior but passed to stan so needs a value regardless)
     mains <- Filter(function(x) !grepl(':',x),names(l))
     n_one_way <- length(mains)
     one_way_ix <- match(mains, names(l))
@@ -284,9 +286,22 @@ stan_glm.fit <- function(x, y,
       multi_depth <- sapply(ints_split, length)
       max_way <- max(multi_depth)
       ints_mains_match <- lapply(ints_split, function(x) match(x, mains))
-      ints_mains_match <- lapply(ints_mains_match, 
-                                 function(x) c(x, rep(0,max_way - length(x))))
-      main_multi_map <- matrix(unlist(ints_mains_match), byrow=T, nrow = n_multi_way, ncol = max_way)
+      ints_mains_match <-
+        lapply(ints_mains_match, function(x)
+          c(x, rep(0, max_way - length(x))))
+      main_multi_map <-
+        matrix(
+          unlist(ints_mains_match),
+          byrow = TRUE,
+          nrow = n_multi_way,
+          ncol = max_way
+        )
+      if (anyNA(main_multi_map))
+        stop(
+          "To include an interaction of the form (1|x1:x2), ", 
+          "both (1|x1) and (1|x2) must also be included in the formula.",
+          call. = FALSE
+        )
       n_way_uniq <- unique(multi_depth)
       depth_ind <- sapply(multi_depth, function(x) which(n_way_uniq == x))
       len_multi_way_uniq <- length(n_way_uniq)
