@@ -510,6 +510,16 @@ dirichlet <- function(concentration = 1) {
 
 #' @rdname priors
 #' @export
+#' @param indep If using the \code{mrp_structured} prior, toggle structured 
+#'   prior (\code{indep=FALSE}, the default) vs independent half normals
+#'   (\code{indep=TRUE}).
+mrp_structured <- function(indep = FALSE) {
+  nlist(dist = if (indep) "indep_normals" else "mrp_structured")
+}
+
+
+#' @rdname priors
+#' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   what <- match.arg(what)
   validate_R2_location(location, what)

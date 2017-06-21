@@ -244,6 +244,13 @@ stan_glm.fit <- function(x, y,
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
+    if (decov$dist != "decov") {
+      # ignored in the Stan model but need values
+      decov$regularization <- 1
+      decov$concentration <- 1
+      decov$shape <- 1
+      decov$scale <- 1
+    }
     Z <- t(group$Zt)
     group <-
       pad_reTrms(Ztlist = group$Ztlist,
@@ -292,7 +299,13 @@ stan_glm.fit <- function(x, y,
       depth_ind <- rep(0,0)
     }
     
-    standata$interaction_prior <- 1 # 0) decov, 1) yajuan's prior, 2) independent half-normal priors
+    standata$interaction_prior <-
+      switch(
+        decov$dist,
+        "decov" = 0,
+        "mrp_structured" = 1,
+        "indep_normals" = 2
+      )
     standata$n_one_way <- n_one_way
     standata$n_multi_way <- n_multi_way
     standata$max_way <- max_way
@@ -331,6 +344,14 @@ stan_glm.fit <- function(x, y,
     standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
       length(x) == 1 && x == "(Intercept)"
     }))
+    if (!standata$special_case &&
+        decov$dist %in% c("mrp_structured", "indep_normals")) {
+      stop(
+        "prior_covariance = mrp_structured is not allowed ",
+        "for models with varying slopes (only varying intercepts).",
+        call. = FALSE
+      )
+    }
   } else { # !length(group)
     standata$t <- 0L
     standata$p <- integer(0)

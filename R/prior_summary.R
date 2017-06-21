@@ -290,15 +290,19 @@ used.sparse <- function(x) {
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
 }
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
-  .f1 <- formatters[[1]]
-  p$regularization <- .format_pars(p$regularization, .f1)
-  p$concentration <- .format_pars(p$concentration, .f1)
-  p$shape <- .format_pars(p$shape, .f1)
-  p$scale <- .format_pars(p$scale, .f1)
-  cat(paste0("\n", txt, "\n ~"),
-      paste0(p$dist, "(",  
-             "reg. = ", .f1(p$regularization),
-             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
-             ", scale = ", .f1(p$scale), ")")
-  )
+  if (p$dist != "decov") {
+    cat(paste0("\n", txt, p$dist))
+  } else {
+    .f1 <- formatters[[1]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$concentration <- .format_pars(p$concentration, .f1)
+    p$shape <- .format_pars(p$shape, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "reg. = ", .f1(p$regularization),
+               ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
+               ", scale = ", .f1(p$scale), ")")
+    )
+  }
 }
