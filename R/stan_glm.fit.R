@@ -275,10 +275,11 @@ stan_glm.fit <- function(x, y,
     
     # detect interactions in ranef and collect interaction metadata (needed only
     # for mrp_structed prior but passed to stan so needs a value regardless)
-    mains <- Filter(function(x) !grepl(':',x),names(l))
+    colons <- grepl(":", names(l))
+    mains <- names(l)[!colons]
     n_one_way <- length(mains)
     one_way_ix <- match(mains, names(l))
-    ints <- Filter(function(x) grepl(':',x),names(l))
+    ints <- names(l)[colons]
     n_multi_way <- length(ints)
     if (n_multi_way > 0) {
       multi_way_ix <- match(ints, names(l))
@@ -286,9 +287,8 @@ stan_glm.fit <- function(x, y,
       multi_depth <- sapply(ints_split, length)
       max_way <- max(multi_depth)
       ints_mains_match <- lapply(ints_split, function(x) match(x, mains))
-      ints_mains_match <-
-        lapply(ints_mains_match, function(x)
-          c(x, rep(0, max_way - length(x))))
+      ints_mains_match <- lapply(ints_mains_match, function(x)
+        c(x, rep(0, max_way - length(x)))) # pad with zeros
       main_multi_map <-
         matrix(
           unlist(ints_mains_match),

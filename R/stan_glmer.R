@@ -50,8 +50,11 @@
 #'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
-#' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
-#'   more information about the default arguments.
+#' @param prior_covariance The prior distribution for the group-level part of
+#'   the model. Must be either a call to \code{\link{decov}} or
+#'   \code{\link{mrp_structured}}. See the \link[=priors]{priors help page} and
+#'   the vignette for \code{stan_glmer} for information about these priors and
+#'   the default arguments.
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
