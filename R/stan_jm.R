@@ -2603,7 +2603,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_ev <- which(names(K_data_m) == "etavalue_data")
         cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ev   ])
-        val <- eta_m * data_m[, cbeg:cend]
+        val <- as.vector(eta_m) * data_m[, cbeg:cend, drop = FALSE]
         a_X[[mark]] <- val
         mark <- mark + 1
       }
@@ -2637,7 +2637,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_es <- which(names(K_data_m) == "etaslope_data")
         cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
         cend  <- sum(K_data_m[0: idx_es   ])
-        val <- dydt_m * data_m[, cbeg:cend]
+        val <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE]
         a_X[[mark]] <- val
         mark <- mark + 1            
       }
@@ -2662,7 +2662,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_mv <- which(names(K_data_m) == "muvalue_data")
         cbeg  <- sum(K_data_m[0:(idx_mv-1)]) + 1
         cend  <- sum(K_data_m[0: idx_mv   ])
-        val   <- invlink_m(eta_m) * data_m[, cbeg:cend] 
+        val   <- as.vector(invlink_m(eta_m)) * data_m[, cbeg:cend, drop = FALSE] 
         a_X[[mark]] <- val
         mark <- mark + 1           
       }
@@ -2696,7 +2696,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_ms <- which(names(K_data_m) == "muslope_data")
         cbeg  <- sum(K_data_m[0:(idx_ms-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ms   ])
-        val   <- dydt_m * data_m[, cbeg:cend] 
+        val   <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE] 
         a_X[[mark]] <- val
         mark <- mark + 1              
       }    
