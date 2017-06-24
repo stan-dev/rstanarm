@@ -12,3 +12,8 @@
   vector[nnz_X] w_X;                     // non-zero elements in the implicit X matrix
   int<lower=0> v_X[nnz_X];               // column indices for w_X
   int<lower=0> u_X[dense_X ? 0 : N + 1]; // where the non-zeros start in each row of X
+  
+  // smooths
+  int<lower=0> K_smooth;
+  matrix[N,K_smooth] S;
+  int<lower=1> smooth_map[K_smooth];
