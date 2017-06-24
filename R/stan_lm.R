@@ -146,7 +146,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                model = if (model) modelframe else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"), 
-               modeling_function = "stan_lm")
+               stan_function = "stan_lm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 

@@ -68,15 +68,16 @@
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
-  cat(x$modeling_function)
-  cat("\n family: ", family_plus_link(x))
-  cat("\n formula:", formula_string(formula(x)))
+  cat(x$stan_function)
+  cat("\n family:  ", family_plus_link(x))
+  cat("\n formula: ", formula_string(formula(x)))
+  cat("\n num. obs:", nobs(x))
   
   cat("\n------\n")
   cat("\nEstimates:\n")
   
   mer <- is.mer(x)
-  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
+  ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
@@ -388,7 +389,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
-            modeling_function = object$modeling_function,
+            stan_function = object$stan_function,
             family = family_plus_link(object),
             formula = formula(object),
             posterior_sample_size = posterior_sample_size(object),
@@ -408,7 +409,7 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                   ...) {
   atts <- attributes(x)
   cat("\nModel Info:\n")
-  cat("\n function: ", atts$modeling_function)
+  cat("\n function: ", atts$stan_function)
   cat("\n family:   ", atts$family)
   cat("\n formula:  ", formula_string(atts$formula))
   cat("\n algorithm:", atts$algorithm)
