@@ -131,7 +131,7 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  if (x$modeling_function == "stan_mvmer")
+  if (x$stan_function == "stan_mvmer")
     STOP_stan_mvmer("'loo'")
   if (model_has_weights(x))
     recommend_exact_loo(reason = "model has weights")
@@ -192,7 +192,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  if (x$modeling_function == "stan_mvmer")
+  if (x$stan_function == "stan_mvmer")
     STOP_stan_mvmer("'waic'")
   out <- if (is.stanmvreg(x)) waic.matrix(log_lik(x)) else 
     waic.function(ll_fun(x), args = ll_args(x))

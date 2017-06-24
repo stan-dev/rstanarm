@@ -1313,7 +1313,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                standata = NULL, terms = NULL, prior.info = prior_info,
-               modeling_function = "stan_jm")
+               stan_function = "stan_jm")
   out <- stanmvreg(fit)
   return(out)
 }

@@ -818,21 +818,21 @@ is.stanmvreg <- function(x) {
 #
 # @param x An object to be tested.
 is.jm <- function(x) {
-  x$modeling_function == "stan_jm"
+  x$stan_function == "stan_jm"
 }
 
 # Test if object contains a multivariate GLM
 #
 # @param x An object to be tested.
 is.mvmer <- function(x) {
-  x$modeling_function %in% c("stan_mvmer", "stan_jm")
+  x$stan_function %in% c("stan_mvmer", "stan_jm")
 }
 
 # Test if object contains a survival model
 #
 # @param x An object to be tested.
 is.surv <- function(x) {
-  x$modeling_function %in% c("stan_jm")
+  x$stan_function %in% c("stan_jm")
 }
 
 # Throw error if object isn't a stanmvreg object

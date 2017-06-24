@@ -529,7 +529,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
                  list_nms(fetch(y_mod_stuff, "y"), M, stub = "y"),
                data, call, na.action, algorithm, glmod = fetch(y_mod_stuff, "mod"),
                standata = NULL, terms = NULL, prior.info = prior_info,
-               modeling_function = "stan_mvmer")
+               stan_function = "stan_mvmer")
   out <- stanmvreg(fit)
   return(out)
 }

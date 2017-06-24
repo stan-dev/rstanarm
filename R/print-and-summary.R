@@ -165,7 +165,7 @@ print.stanmvreg <- function(x, digits = 3, ...) {
   surv <- is.surv(x)
   jm <- is.jm(x)
   stubs <- paste0("(", get_stub(x), 1:M, "):")
-  cat(x$modeling_function)
+  cat(x$stan_function)
   if (mvmer) {
     for (m in 1:M) {
       cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
@@ -538,7 +538,7 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
       out, id_var = object$id_var, time_var = object$time_var, assoc = assoc)
   structure(
     out, formula = object$formula, algorithm = object$algorithm,
-    modeling_function = object$modeling_function,
+    stan_function = object$stan_function,
     posterior_sample_size = posterior_sample_size(object),
     runtime = object$runtime, print.digits = digits,
     class = c("summary.stanmvreg", "summary.stanreg"))
@@ -550,11 +550,11 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
 print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")), 
                                  ...) {
   atts <- attributes(x)
-  mvmer <- atts$modeling_function %in% c("stan_mvmer", "stan_jm")
-  jm <- atts$modeling_function == "stan_jm"
+  mvmer <- atts$stan_function %in% c("stan_mvmer", "stan_jm")
+  jm <- atts$stan_function == "stan_jm"
   tab <- if (jm) "   " else ""
   cat("\nModel Info:\n")
-  cat("\n function:   ", tab, atts$modeling_function)
+  cat("\n function:   ", tab, atts$stan_function)
   if (mvmer) {
     M <- atts$n_markers
     stubs <- paste0("(", if (jm) "Long" else "y", 1:M, "):") 
