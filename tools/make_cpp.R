@@ -33,7 +33,7 @@ options("useFancyQuotes" = FALSE)
 
 sapply(sub(".stan", "", basename(stan_files), fixed = TRUE), function(f) {
   Rcpp::exposeClass(class = paste0("model_", f),
-                    constructors = list(c("SEXP", "SEXP")), fields = character(),
+                    constructors = list(c("SEXP", "SEXP", "SEXP")), fields = character(),
                     methods = c("call_sampler", 
                                 "param_names", "param_names_oi", "param_fnames_oi", 
                                 "param_dims",  "param_dims_oi", "update_param_oi", "param_oi_tidx", 
