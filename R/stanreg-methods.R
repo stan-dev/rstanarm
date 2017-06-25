@@ -232,11 +232,10 @@ ranef.stanreg <- function(object, ...) {
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
   cnms <- .cnms(object)
-  mark <- !grepl("^Xr", names(cnms))
-  fl <- fl[mark]
-  asgn <- asgn[mark]
-  levs <- levs[mark]
-  cnms <- cnms[mark]
+  fl <- fl
+  asgn <- asgn
+  levs <- levs
+  cnms <- cnms
   nc <- vapply(cnms, length, 1L)
   nb <- nc * vapply(levs, length, 1L)
   nbseq <- rep.int(seq_along(nb), nb)

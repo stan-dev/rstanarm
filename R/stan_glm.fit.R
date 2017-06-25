@@ -694,12 +694,10 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
   p <- sapply(cnms, FUN = length)
   n <- ncol(Ztlist[[1]])
   for (i in attr(flist, "assign")) {
-    if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
   for (i in 1:length(p)) {
-    if (grepl("^Xr", names(p)[i])) next
     Ztlist[[i]] <- if (getRversion() < "3.2.0") {
       rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     } else {
