@@ -1,5 +1,5 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a Gaussian outcome with no link function
 functions {

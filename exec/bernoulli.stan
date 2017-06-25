@@ -1,10 +1,10 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a Bernoulli outcome
 functions {
-  #include "common_functions.stan"
-  #include "bernoulli_likelihoods.stan"  
+#include /functions/common_functions.stan
+#include /functions/bernoulli_likelihoods.stan
 }
 data {
   // dimensions
@@ -24,8 +24,8 @@ data {
   vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
   int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
   int<lower=0> u_X1[dense_X ? 0 : N[2] + 1]; // where the non-zeros start in each row of X1
-  
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+#include /data/data_glm.stan
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
@@ -38,9 +38,9 @@ data {
   vector[has_offset ? N[2] : 0] offset1;
   
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
-  #include "hyperparameters.stan"
+#include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
+#include /data/glmer_stuff.stan
 
   // more glmer stuff
   int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
@@ -57,14 +57,17 @@ transformed data {
   real aux = not_a_number();
   int<lower=1> V0[special_case ? t : 0,N[1]] = make_V(N[1], special_case ? t : 0, v0);
   int<lower=1> V1[special_case ? t : 0,N[2]] = make_V(N[2], special_case ? t : 0, v1);
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
+  // defines hs, len_z_T, len_var_group, delta, pos
+#include /tdata/tdata_glm.stan
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+#include /parameters/parameters_glm.stan
 }
 transformed parameters {
-  #include "tparameters_glm.stan" // defines beta, b, theta_L
+  // defines beta, b, theta_L
+#include /tparameters/tparameters_glm.stan
   if (t > 0) {
     if (special_case) {
       int start = 1;
@@ -84,7 +87,8 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta_bern.stan" // defines eta0, eta1
+  // defines eta0, eta1
+#include /model/make_eta_bern.stan
   if (has_intercept == 1) {
     if (link != 4) {
       eta0 = gamma[1] + eta0;
@@ -107,7 +111,7 @@ model {
     target += dot_product(weights1, pw_bern(1, eta1, link));
   }
   
-  #include "priors_glm.stan" // increments target()
+#include /model/priors_glm.stan
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -121,7 +125,8 @@ generated quantities {
   {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
-    #include "make_eta_bern.stan" // defines eta0, eta1
+    // defines eta0, eta1
+#include /model/make_eta_bern.stan
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 = gamma[1] + eta0;
