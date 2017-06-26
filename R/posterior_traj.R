@@ -207,9 +207,9 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     STOP_no_var(time_var)
   if (!is.null(ids)) # user specified a subset of ids
     data <- subset_ids(object, data, ids)
+  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   if (!is.null(newdata)) # warn if newdata ids are from fit
     check_pp_ids(object, id_list, m = m)
-  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata
