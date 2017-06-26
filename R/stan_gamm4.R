@@ -247,14 +247,17 @@ plot_nonlinear <- function(x, smooths, ...,
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
-  
+  on.exit("try plot(x$jam) instead")
   scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
   labels <- sapply(x$jam$smooth, "[[", "label")
   xnames <- sapply(x$jam$smooth, "[[", "vn")
+  names(x$jam$smooth) <- labels
   names(xnames) <- labels
+  fs <- sapply(x$jam$smooth, FUN = "inherits", what = "fs.interaction")
+  
   if (!missing(smooths)) {
     found <- smooths %in% labels
     if (all(!found)) {
@@ -266,16 +269,20 @@ plot_nonlinear <- function(x, smooths, ...,
               paste(smooths[!found], collapse = ", "))
     }
     labels <- smooths[found]
+    fs <- fs[found]
     if (!is.matrix(xnames)) xnames <- xnames[found]
   }
+  else smooths <- 1:length(labels)
   
   B <- as.matrix(x)[, colnames(XZ), drop = FALSE]
   original <- x$jam$model
   
   bivariate <- any(grepl(",", labels, fixed = TRUE))
-  if (bivariate) {
-    if (length(labels) > 1)
+  if (bivariate && !any(fs)) {
+    if (length(labels) > 1) {
+      on.exit(NULL)
       stop("Multivariate functions can only be plotted one at a time; specify 'smooths'.")
+    }
     if (length(xnames) > 2)
       stop("Only univariate and bivariate functions can be plotted currently.")
     xrange <- range(original[, xnames[1]])
@@ -304,20 +311,48 @@ plot_nonlinear <- function(x, smooths, ...,
     )
   }
   
-  df_list <- lapply(labels, FUN = function(term) {
-    incl <- grepl(term, colnames(B), fixed = TRUE)
-    xz <- XZ[, incl, drop = FALSE]
+  df_list <- lapply(x$jam$smooth[smooths], FUN = function(s) {
+    incl <- s$first.para:s$last.para
     b <- B[, incl, drop = FALSE]
-    x <- original[, xnames[term]]
-    xz <- xz[order(x), , drop=FALSE]
-    f <- linear_predictor.matrix(b, xz)
-    data.frame(
-      predictor = sort(x),
-      lower  = apply(f, 2, quantile, probs = (1 - prob) / 2),
-      upper  = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
-      middle = apply(f, 2, median),
-      term = term
-    )
+    if (inherits(s, "fs.interaction")) { # see mgcv:::plot.fs.interaction
+      xx <- original[,s$base$term]
+      fac <- original[,s$fterm]
+      out <- by(data.frame(fac, xx), list(fac), FUN = function(df) {
+        df <- df[order(df[,2]),]
+        names(df) <- c(s$fterm, s$base$term)
+        xz <- mgcv::PredictMat(s, df)
+        f <- linear_predictor.matrix(b, xz)
+        data.frame(
+          predictor = df[,2],
+          lower  = apply(f, 2, quantile, probs = (1 - prob) / 2),
+          upper  = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
+          middle = apply(f, 2, median),
+          term = paste(s$label, df[,1], sep = ".")
+        )
+      })
+      do.call(rbind, args = out)
+    }
+    else {
+      xz <- XZ[, incl, drop = FALSE]
+      x <- original[, s$term]
+      ord <- order(x)
+      x <- x[ord]
+      xz <- xz[ord, , drop=FALSE]
+      if (!is.null(s$by.level)) {
+        fac <- original[,s$by][ord]
+        mark <- fac == s$by.level
+        x <- x[mark]
+        xz <- xz[mark, , drop = FALSE]
+      }
+      f <- linear_predictor.matrix(b, xz)
+      data.frame(
+        predictor = x,
+        lower  = apply(f, 2, quantile, probs = (1 - prob) / 2),
+        upper  = apply(f, 2, quantile, probs = prob + (1 - prob) / 2),
+        middle = apply(f, 2, median),
+        term = s$label
+      )
+    }
   })
   plot_data <- do.call(rbind, df_list)
   
@@ -326,7 +361,8 @@ plot_nonlinear <- function(x, smooths, ...,
     facet_args[["scales"]] <- "free"
   if (is.null(facet_args[["strip.position"]]))
     facet_args[["strip.position"]] <- "left"
-  
+
+  on.exit(NULL)  
   ggplot(plot_data, aes_(x = ~ predictor)) + 
     geom_ribbon(aes_(ymin = ~ lower, ymax = ~ upper), 
                 fill = scheme[[1]], color = scheme[[2]],
