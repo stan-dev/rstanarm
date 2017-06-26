@@ -5,3 +5,4 @@
   }
   else eta = rep_vector(0.0, N);
   if (has_offset == 1) eta = eta + offset;
+  if (K_smooth) eta = eta + S * beta_smooth;

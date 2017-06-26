@@ -200,8 +200,9 @@ package.
 library(rstanarm)
 data(roaches)
 roaches$roach1 <- roaches$roach1 / 100
-post <- stan_gamm4(y ~ s(roach1) + treatment + log(roaches$exposure2), 
-                   random = ~(1 | senior),
+roaches$log_exposure2 <- log(roaches$exposure2)
+post <- stan_gamm4(y ~ s(roach1) + treatment + log_exposure2, 
+                   random = ~(1 | senior), adapt_delta = 0.999,
                    data = roaches, family = neg_binomial_2, QR = TRUE,
                    chains = CHAINS, cores = CORES, seed = SEED)
 ```
