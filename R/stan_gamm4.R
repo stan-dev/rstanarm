@@ -205,7 +205,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data,
   jd$pregam$coefficients <- colMeans(mat[,mark, drop = FALSE])
   jd$pregam$sig2 <- if ("sigma" %in% colnames(mat)) mean(mat[,"sigma"]) else 1
   eta <- X %*% t(mat[,mark,drop = FALSE])
-  mu <- rowMeans(family$linkfun(eta))
+  mu <- rowMeans(family$linkinv(eta))
   eta <- rowMeans(eta)
   w <- as.numeric(jd$pregam$w * family$mu.eta(eta) ^ 2 / family$variance(mu))
   XWX <- t(X) %*% (w * X)
