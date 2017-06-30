@@ -21,7 +21,7 @@ data {
   // declares prior_PD, has_intercept{_nob,_lob,_upb}, family, link, prior_dist, 
   //   prior_dist_for_intercept, prior_dist_for_aux
   #include "data_mvglm.stan"     // same as data_glm.stan, but arrays of size M 
-  #include "data2_mvglm.stan"    // declares y_{real,int}, trials, has_aux 
+  #include "data2_mvglm.stan"    // declares y_{real,int}, has_aux 
   #include "weights_offset.stan" // declares has_weights, weights, has_offset, offset
  
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, 

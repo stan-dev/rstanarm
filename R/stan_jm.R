@@ -859,7 +859,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$has_intercept_upb <- fetch_array(y_mod_stuff, "has_intercept_upbound")
   standata$has_aux           <- fetch_array(y_mod_stuff, "has_aux")
   standata$xbar              <- fetch_array(y_mod_stuff, "xbar")
-  standata$trials            <- fetch_array(y_mod_stuff, "trials")
   standata$weights <- 
     if (!is.null(weights)) as.array(unlist(y_weights)) else as.array(numeric(0))
   standata$offset  <- 
@@ -1349,12 +1348,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
   y <- validate_glm_outcome_support(y, family)
-  if (is.binomial(family$family) && NCOL(y) == 2L) {
-    y      <- as.integer(y[, 1L])
-    trials <- as.integer(y[, 1L] + y[, 2L])
-  } else {
-    trials <- rep(0L, length(y))
-  }
+  if (is.binomial(family$family) && NCOL(y) == 2L)
+    STOP_binomial()
   
   # Design matrix
   x <- as.matrix(lme4::getME(mod, "X"))
@@ -1386,7 +1381,6 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   if (is.binomial(family$family) && all(y %in% 0:1)) {      
     ord    <- order(y)
     y      <- y     [ord]
-    trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
     Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
     flist  <- flist[ord, , drop = FALSE] 
@@ -1414,6 +1408,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   is_ig <- is.ig(famname)
   is_continuous <- is_gaussian || is_gamma || is_ig
   is_lmer <- is.lmer(family)
+  if (is.binomial(famname) && !is_bernoulli)
+    STOP_binomial()
   
   # Require intercept for certain family and link combinations
   if (!has_intercept) {
@@ -1427,7 +1423,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   }    
     
   # Return list
-  nlist(mod, is_real, y, x, xtemp, xbar, trials, N01, ord, famname,
+  nlist(mod, is_real, y, x, xtemp, xbar, N01, ord, famname,
     offset, Ztlist, cnms, flist, has_intercept, has_intercept_unbound,
     has_intercept_lobound, has_intercept_upbound, has_aux, N, real_N, int_N, K,
     is_bernoulli, is_nb, is_gaussian, is_gamma, is_ig, is_continuous, is_lmer)
@@ -1565,7 +1561,6 @@ unorder_bernoulli <- function(mod_stuff) {
     if (is.null(mod_stuff$ord))
       stop("Bernoulli sorting vector not found.")
     mod_stuff$y       <- mod_stuff$y[order(mod_stuff$ord)]
-    mod_stuff$trials  <- mod_stuff$trials[order(mod_stuff$ord)]
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])

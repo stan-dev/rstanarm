@@ -64,10 +64,7 @@
           mean_PPD[m] = mean_PPD[m] + bernoulli_rng(eta_tmp[n]);
       } 
       else if (family[m] == 5) {  // binomial
-	      int trials_tmp[NM[m]];
-	      trials_tmp = trials[idx[m,1]:idx[m,2]];
-        for (n in 1:NM[m]) 
-          mean_PPD[m] = mean_PPD[m] + binomial_rng(trials_tmp[n], eta_tmp[n]);
+	    // binomial with num trials > 1 has been removed	  
       }
       else if (family[m] == 6 || family[m] == 8) { 
         for (n in 1:NM[m]) {  // poisson or poisson-gamma

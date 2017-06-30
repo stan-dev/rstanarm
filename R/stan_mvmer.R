@@ -265,7 +265,6 @@ stan_mvmer <- function(formula, data, family = gaussian,
     has_intercept_upb = fetch_array(y_mod_stuff, "has_intercept_upbound"),
     has_aux           = fetch_array(y_mod_stuff, "has_aux"),
     xbar              = fetch_array(y_mod_stuff, "xbar"),
-    trials            = fetch_array(y_mod_stuff, "trials"),
     weights           = as.array(numeric(0)), # not yet implemented
     offset            = if (!is.null(offset))  stop("bug found. offset not yet implemented.") else double(0),
     

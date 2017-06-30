@@ -1086,6 +1086,15 @@ STOP_jm_only <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Consistent error message when binomial models with greater than
+# one trial are not allowed
+#
+STOP_binomial <- function() {
+  stop("Binomial models with number of trials greater than one ",
+       "are not allowed (i.e. only bernoulli models are allowed).", 
+       call. = FALSE)
+}
+
 # Error message when a required variable is missing from the data frame
 #
 # @param var The name of the variable that could not be found
