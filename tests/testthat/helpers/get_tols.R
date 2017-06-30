@@ -21,14 +21,20 @@ get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
     modEvent <- modLong # if modLong is already a joint model
   
   if (class(modLong)[1] == "stanreg") {
-    fixef_ses <- modLong$ses 
+    fixef_nms <- names(fixef(modLong))
+    fixef_ses <- modLong$ses[fixef_nms] 
     ranef_sds <- attr(VarCorr(modLong)[[idvar]], "stddev")
     if (modLong$stan_function == "stan_lmer") {
       fixef_tols <- tolscales$lmer_fixef * fixef_ses
       ranef_tols <- tolscales$lmer_ranef * ranef_sds
     } else if (modLong$stan_function == "stan_glmer") {
-      fixef_tols <- tolscales$glmer_fixef * fixef_ses
-      ranef_tols <- tolscales$glmer_ranef * ranef_sds
+      if (modLong$family$family == "gaussian") {
+        fixef_tols <- tolscales$lmer_fixef * fixef_ses
+        ranef_tols <- tolscales$lmer_ranef * ranef_sds
+      } else {
+        fixef_tols <- tolscales$glmer_fixef * fixef_ses
+        ranef_tols <- tolscales$glmer_ranef * ranef_sds
+      }
     }
   } else if (class(modLong)[1] %in% c("lmerMod", "glmerMod")) {
     fixef_ses <- sqrt(diag(vcov(modLong)))

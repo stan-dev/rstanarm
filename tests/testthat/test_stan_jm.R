@@ -45,6 +45,7 @@ source(file.path("helpers", "expect_stanreg.R"))
 source(file.path("helpers", "expect_stanmvreg.R"))
 source(file.path("helpers", "SW.R"))
 source(file.path("helpers", "get_tols.R"))
+source(file.path("helpers", "recover_pars.R"))
 
 context("stan_jm")
 
@@ -69,19 +70,19 @@ jm1 <- stan_jm(
 
 # multivariate joint model
 jm2 <- update(
-  jm1, .formulaLong = list(
+  jm1, formulaLong. = list(
     logBili ~ year + (year | id), 
     albumin ~ year + (year | id)))
 
 #----  Tests for stan_jm arguments
 
 test_that("formula argument works", {
-  expect_identical(jm1, update(jm1, .formulaLong = list(fmLong))) # fm as list
+  expect_identical(jm1, update(jm1, formulaLong. = list(fmLong))) # fm as list
 })
 
 test_that("data argument works", {
-  expect_identical(jm1, update(jm1, data = list(dataLong))) # data as list
-  expect_identical(jm2, update(jm2, data = list(dataLong, dataLong)))
+  expect_identical(jm1, update(jm1, dataLong = list(pbcLong))) # data as list
+  expect_identical(jm2, update(jm2, dataLong = list(pbcLong, pbcLong)))
 })
 
 test_that("id_var argument works", {
@@ -105,17 +106,16 @@ test_that("id_var argument works", {
 test_that("family argument works", {
   
   expect_output(ret <- update(jm1, family = "gaussian"))
-  expect_output(ret <- update(jm1, family = "gaussian(link = identity)"))
   expect_output(ret <- update(jm1, family = gaussian))
   expect_output(ret <- update(jm1, family = gaussian(link = identity)))
   
-  expect_output(ret <- update(jm1, .formulaLong = ybern ~ ., family = binomial))
-  expect_output(ret <- update(jm1, .formulaLong = ypois ~ ., family = poisson))
-  expect_output(ret <- update(jm1, .formulaLong = ypois ~ ., family = neg_binomial_2))
-  expect_output(ret <- update(jm1, .formulaLong = ygamm ~ ., family = Gamma))
-  expect_output(ret <- update(jm1, .formulaLong = ygamm ~ ., family = inverse.gaussian))
+  expect_output(ret <- update(jm1, formulaLong. = ybern ~ ., family = binomial))
+  expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson))
+  expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = neg_binomial_2))
+  expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = Gamma))
+  expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
   
-  expect_error(ret <- update(jm1, .formulaLong = ybino ~ ., family = binomial))
+  expect_error(ret <- update(jm1, formulaLong. = ybino ~ ., family = binomial))
 })
 
 test_that("assoc argument works", {
@@ -295,30 +295,12 @@ test_that("error message occurs for arguments not implemented", {
 #----  Compare parameter estimates: stan_jm(assoc = NULL) vs stan_glmer/coxph
 
 if (interactive()) {
-  
-  compare_lmer <- function(fmLong) {
-    fmSurv <- Surv(futimeYears, death) ~ sex + trt
-    y1 <- stan_lmer(fmLong, pbcLong, iter = 1000, chains = CHAINS, seed = SEED)
-    s1 <- coxph(fmSurv, data = pbcSurv)
-    j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", 
-                  assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED) 
-    tols <- get_tols(y1, s1, tolscales = TOLSCALES)
-    pars <- recover_pars(y1, s1)
-    parsjm <- recover_pars(j1)
-    for (i in names(tols$fixef))
-      expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]])     
-    for (i in names(tols$ranef))
-      expect_equal(pars$ranef[[i]], parsjm$ranef[[i]], tol = tols$ranef[[i]])
-    for (i in names(tols$event))
-      expect_equal(pars$event[[i]], parsjm$event[[i]], tol = tols$event[[i]])
-  }  
-    
-  compare_glmer <- function(fmLong, fam = gaussian) {
+  compare_glmer <- function(fmLong, fam = gaussian, ...) {
     fmSurv <- Surv(futimeYears, death) ~ sex + trt
     y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED)
     s1 <- coxph(fmSurv, data = pbcSurv)
-    j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", 
-                  family = fam, assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED) 
+    j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", family = fam, 
+                  assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED, ...) 
     tols <- get_tols(y1, s1, tolscales = TOLSCALES)
     pars <- recover_pars(y1, s1)
     parsjm <- recover_pars(j1)
@@ -328,21 +310,19 @@ if (interactive()) {
       expect_equal(pars$ranef[[i]], parsjm$ranef[[i]], tol = tols$ranef[[i]])
     for (i in names(tols$event))
       expect_equal(pars$event[[i]], parsjm$event[[i]], tol = tols$event[[i]])
-  } 
-
+  }
   test_that("coefs same for stan_jm and stan_lmer/coxph", {
-    compare_lmer(logBili ~ year + (1 | id))})
+    compare_glmer(logBili ~ year + (1 | id), gaussian)})
   test_that("coefs same for stan_jm and stan_glmer, bernoulli", {
     compare_glmer(ybern ~ year + xbern + (1 | id), binomial)})
   test_that("coefs same for stan_jm and stan_glmer, poisson", {
-    compare_glmer(ypois ~ year + xpois + (1 | id), poisson)})
+    compare_glmer(ypois ~ year + xpois + (1 | id), poisson, init = 0)})
   test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
     compare_glmer(ypois ~ year + xpois + (1 | id), neg_binomial_2)})
   test_that("coefs same for stan_jm and stan_glmer, Gamma", {
     compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma)})
-  test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
-    compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
-  
+  #test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
+  #  compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
 }
 
 #--------  Check (post-)estimation functions work with various model specifications
