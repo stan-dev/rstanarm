@@ -111,7 +111,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
-is.beta <- function(x) x == "beta"
+is.beta <- function(x) x == "beta" || x == "Beta regression"
 
 # test if a stanreg object has class polr 
 is_polr <- function(object) {

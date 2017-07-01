@@ -181,6 +181,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
+  if (family$family == "Beta regression") family$family <- "beta"
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
