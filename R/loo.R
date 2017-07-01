@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,13 +15,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Leave-one-out (LOO) and K-fold cross-validation
+#' Information criteria and cross-validation
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO) or, less preferably, the Widely Applicable Information Criterion (WAIC)
-#' using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
+#' (LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
+#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
 #' cross-validation is also available. Compare two or more models using the 
-#' \code{compare_models} function. \strong{Note:} these functions are not
+#' \code{compare_models} function. \strong{Note:} these functions are not 
 #' guaranteed to work properly unless the \code{data} argument was specified 
 #' when the model was fit.
 #' 
@@ -68,7 +68,7 @@
 #'   problems stemming from the posterior's sensitivity to particular
 #'   observations. Warnings about Pareto \eqn{k} estimates indicate observations
 #'   for which the approximation to LOO is problematic (this is described in
-#'   detail in Vehtari, Gelman, and Gabry (2016) and the
+#'   detail in Vehtari, Gelman, and Gabry (2017) and the
 #'   \pkg{\link[=loo-package]{loo}} package documentation). The
 #'   \code{k_threshold} argument can be used to set the \eqn{k} value above
 #'   which an observation is flagged. If \code{k_threshold} is not \code{NULL}
@@ -83,7 +83,7 @@
 #'   \strong{Note}: in the warning messages issued by \code{loo} about large 
 #'   Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at
 #'   least \eqn{0.7}. There is a theoretical reason, explained in Vehtari,
-#'   Gelman, and Gabry (2016), for setting the threshold to the stricter value
+#'   Gelman, and Gabry (2017), for setting the threshold to the stricter value
 #'   of \eqn{0.5}, but in practice they find that errors in the LOO
 #'   approximation start to increase non-negligibly when \eqn{k > 0.7}. 
 #'   }
@@ -117,7 +117,7 @@
 #' # when comparing three or more models they are ordered by expected
 #' # predictive accuracy
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
-#' loo3 <- loo(fit3, cores = 2)
+#' loo3 <- loo(fit3, k_threshold = 0.7, cores = 2)
 #' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation

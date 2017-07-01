@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -72,17 +72,26 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                   ...)
   fun <- ll_fun(object)
   if (is(object, "clogit"))
-    sapply(seq_len(args$N), function(i) {
+    out <- vapply(seq_len(args$N), FUN.VALUE = numeric(length = args$S), function(i) {
       as.vector(fun(i = i, draws = args$draws,
                     data = args$data[args$data$strata == 
                               levels(args$data$strata)[i],, drop = FALSE]))
-      })
-  else sapply(seq_len(args$N), function(i) {
-    as.vector(fun(i = i, data = args$data[i, , drop = FALSE],
-                  draws = args$draws))
   })
+  else out <- vapply(
+    seq_len(args$N),
+    FUN = function(i) {
+      as.vector(fun(
+        i = i,
+        data = args$data[i,, drop = FALSE],
+        draws = args$draws
+      ))
+    },
+    FUN.VALUE = numeric(length = args$S)
+  )
+  if (is.null(newdata)) colnames(out) <- rownames(model.frame(object))
+  else colnames(out) <- rownames(newdata)
+  return(out)
 }
-
 
 
 # internal ----------------------------------------------------------------
@@ -96,7 +105,9 @@ ll_fun <- function(x) {
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
   else if (is(x, "clogit")) return(.ll_clogit_i)
-  get(paste0(".ll_", f$family, "_i"), mode = "function")
+  
+  fun <- paste0(".ll_", f$family, "_i")
+  get(fun, mode = "function")
 }
 
 # get arguments needed for ll_fun

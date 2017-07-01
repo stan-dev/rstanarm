@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,7 +34,6 @@
 #' @template args-formula-data-subset
 #' @template args-same-as
 #' @template args-same-as-rarely
-#' @template args-x-y
 #' @template args-dots
 #' @template args-priors
 #' @template args-prior-intercept
@@ -48,7 +47,16 @@
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
 #'   are also possible using the \code{\link{neg_binomial_2}} family object.
-#' 
+#' @param y In \code{stan_glm}, logical scalar indicating whether to
+#'   return the response vector. In \code{stan_glm.fit}, a response vector.
+#' @param x In \code{stan_glm}, logical scalar indicating whether to
+#'   return the design matrix. In \code{stan_glm.fit}, usually a design matrix
+#'   but can also be a list of design matrices with the same number of rows, in
+#'   which case the first element of the list is interpreted as the primary design
+#'   matrix and the remaining list elements collectively constitute a basis for a
+#'   smooth nonlinear function of the predictors indicated by the \code{formula}
+#'   argument to \code{\link{stan_gamm4}}.
+
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
@@ -178,7 +186,7 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"), 
-               modeling_function = "stan_glm")
+               stan_function = "stan_glm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
@@ -226,6 +234,6 @@ stan_glm.nb <- function(formula,
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  out$modeling_function <- "stan_glm.nb"
+  out$stan_function <- "stan_glm.nb"
   return(out)
 }

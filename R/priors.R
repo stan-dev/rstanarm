@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -351,7 +351,7 @@
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
 #' prior_pred_fit <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
-#'                            chains = 1, seed = 12345, iter = 500, # for speed only
+#'                            chains = 1, seed = 12345, iter = 250, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
 #'                            prior_aux = exponential(1/2))

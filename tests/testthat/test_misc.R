@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 
@@ -492,8 +492,8 @@ test_that("validate_newdata works", {
 
 
 test_that("recommend_QR_for_vb produces the right message", {
-  expect_output(
-    recommend_QR_for_vb(), 
+  expect_message(
+    rstanarm:::recommend_QR_for_vb(),
     "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
   )
 })

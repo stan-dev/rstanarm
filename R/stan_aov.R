@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #  Copyright (C) 1995-2015 The R Core Team
 #  Copyright (C) 1998 B. D. Ripley
 # 
@@ -24,8 +24,10 @@
 #'   on the fit.
 #' @examples
 #' \donttest{
-#' stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
+#' op <- options(contrasts = c("contr.helmert", "contr.poly"))
+#' stan_aov(yield ~ block + N*P*K, data = npk,
 #'          prior = R2(0.5), seed = 12345) 
+#' options(op)
 #' }
 #'             
 stan_aov <- function(formula, data, projections = FALSE,
@@ -57,7 +59,7 @@ stan_aov <- function(formula, data, projections = FALSE,
         ## no Error term
         fit <- eval(lmcall, parent.frame())
         fit$terms <- Terms
-        fit$qr <- qr(model.matrix(Terms, data = fit$data))
+        fit$qr <- qr(model.matrix(Terms, data = fit$data, contrasts.arg = contrasts))
         R <- qr.R(fit$qr)
         beta <- extract(fit$stanfit, pars = "beta", permuted = FALSE)
         pnames <- dimnames(beta)$parameters
@@ -70,7 +72,7 @@ stan_aov <- function(formula, data, projections = FALSE,
         if (projections) 
           fit$projections <- proj(fit)
         fit$call <- Call
-        fit$modeling_function <- "stan_aov"
+        fit$stan_function <- "stan_aov"
         return(fit)
     } else { # nocov start
       

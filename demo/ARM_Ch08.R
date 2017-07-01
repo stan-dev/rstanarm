@@ -2,10 +2,10 @@
 demo("SETUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
 
 source(paste0(ROOT, "ARM/Ch.8/lightspeed.data.R"), local = DATA_ENV, verbose = FALSE)
-
+light_dat <- with(DATA_ENV, data.frame(y))
 # The stuff in sections 8.0 -- 8.2 is not very relevant 
 
-(post1 <- stan_glm(y ~ 1, data = DATA_ENV, seed = SEED, refresh = REFRESH))
+(post1 <- stan_glm(y ~ 1, data = light_dat, seed = SEED, refresh = REFRESH))
 y_rep <- posterior_predict(post1)
 
 pp_check(post1, plotfun = "stat", stat = "min") + 
@@ -25,20 +25,21 @@ pp_check(post1, plotfun = "hist") + ggtitle(ttl)
 # Make similar plot manually but combine all y_rep
 op <- par('mfrow')
 par(mfrow = 1:2, mar = c(5,4,1,1) + .1)
-hist(DATA_ENV$y, prob = TRUE, main = "", las = 1,
+hist(light_dat$y, prob = TRUE, main = "", las = 1,
      xlab = "Measurement Error for the Speed of Light")
 hist(y_rep, prob = TRUE, main = "", las = 1,
      xlab = "Predicted Measurement Error")
 par(mfrow = op)
 
-source(paste0(ROOT, "ARM/Ch.8/roaches.data.R"), local = DATA_ENV, verbose = FALSE)
-post2 <- stan_glm(y ~ roach1 + treatment + senior, data = DATA_ENV, 
+# Roaches example
+data(roaches, package = "rstanarm")
+post2 <- stan_glm(y ~ roach1 + treatment + senior, data = roaches, 
                   family = poisson(link = "log"), seed = SEED, refresh = REFRESH)
 y_rep <- posterior_predict(post2)
 
 # Compare observed proportion of zeros to predicted proportion of zeros
 mean(y_rep == 0)
-mean(DATA_ENV$y == 0)
+mean(roaches$y == 0)
 summary(apply(y_rep == 0, 1, mean))
 prop0 <- function(x) mean(x == 0)
 pp_check(post2, plotfun = "stat", stat = "prop0") # model doesn't predict enough zeros

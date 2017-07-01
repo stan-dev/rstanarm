@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # Copyright 1994-2013 William N. Venables and Brian D. Ripley
 #
 # This program is free software; you can redistribute it and/or
@@ -150,6 +150,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
+  m$drop.unused.levels <- TRUE
   m <- eval.parent(m)
   m <- check_constant_vars(m)
   Terms <- attr(m, "terms")
@@ -200,7 +201,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                  data, call, terms = Terms, model = m,
                  algorithm, na.action = attr(m, "na.action"),
                  contrasts = attr(x, "contrasts"), 
-                 modeling_function = "stan_polr")
+                 stan_function = "stan_polr")
     out <- stanreg(fit)
     if (!model)
       out$model <- NULL
@@ -246,7 +247,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
                rstan_version = utils::packageVersion("rstan"), 
-               modeling_function = "stan_polr")
+               stan_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }
 

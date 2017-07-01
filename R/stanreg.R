@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -131,7 +131,7 @@ stanreg <- function(object) {
     # sometimes 'call' is no good (e.g. if using do.call(stan_glm, args)) so
     # also include the name of the modeling function (for use when printing,
     # etc.)
-    modeling_function = object$modeling_function
+    stan_function = object$stan_function
   )
 
   if (opt) 

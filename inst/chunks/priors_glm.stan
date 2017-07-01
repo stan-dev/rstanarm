@@ -20,11 +20,11 @@
   }
   else if (prior_dist == 5) { // laplace
     target += normal_lpdf(z_beta | 0, 1);
-    target += exponential_lpdf(S[1] | 1);
+    target += exponential_lpdf(mix[1] | 1);
   }
   else if (prior_dist == 6) { // lasso
     target += normal_lpdf(z_beta | 0, 1);
-    target += exponential_lpdf(S[1] | 1);
+    target += exponential_lpdf(mix[1] | 1);
     target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
   }
   else if (prior_dist == 7) { // product_normal
@@ -40,4 +40,16 @@
       target += student_t_lpdf(gamma | prior_df_for_intercept, prior_mean_for_intercept, 
                                prior_scale_for_intercept);
     /* else prior_dist is 0 and nothing is added */
+  }
+
+  if (K_smooth) {
+    target += normal_lpdf(z_beta_smooth | 0, 1);
+    if (prior_dist_for_smooth > 0) {
+      if (prior_dist_for_smooth == 1) 
+        target += normal_lpdf(smooth_sd_raw | 0, 1);
+      else if (prior_dist_for_smooth == 2)
+        target += student_t_lpdf(smooth_sd_raw | prior_df_for_smooth, 0, 1);
+      else if (prior_dist_for_smooth == 3) 
+        target += exponential_lpdf(smooth_sd_raw | 1);
+    }
   }

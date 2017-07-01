@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -133,8 +133,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call, terms = NULL, model = NULL, 
-               na.action, contrasts, algorithm, glmod, 
-               modeling_function = "stan_glmer")
+               na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
+               stan_function = "stan_glmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "lmerMod")
   
@@ -170,7 +170,7 @@ stan_lmer <- function(formula,
   mc$family <- "gaussian"
   out <- eval(mc, parent.frame())
   out$call <- call
-  out$modeling_function <- "stan_lmer"
+  out$stan_function <- "stan_lmer"
   return(out)
 }
 
@@ -207,6 +207,6 @@ stan_glmer.nb <- function(formula,
   mc$family <- neg_binomial_2(link = link)
   out <- eval(mc, parent.frame())
   out$call <- call
-  out$modeling_function <- "stan_glmer.nb"
+  out$stan_function <- "stan_glmer.nb"
   return(out)
 }

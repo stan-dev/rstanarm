@@ -31,8 +31,7 @@
     if (link == 1)  // log
       for (n in 1:N) ll[n] = poisson_log_lpmf(y[n] | eta[n]);
     else {  // link = identity or sqrt
-      vector[N] phi;
-      phi = linkinv_count(eta, link);
+      vector[N] phi = linkinv_count(eta, link);
       for (n in 1:N) ll[n] = poisson_lpmf(y[n] | phi[n]) ;
     }
     return ll;

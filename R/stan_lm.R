@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -102,7 +102,7 @@
 #' @examples
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
-#'                 chains = 1, iter = 1000, seed = 12345))
+#'                 chains = 1, iter = 500, seed = 12345))
 #' plot(fit, prob = 0.8)
 #' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
 #'      transformations = list(sigma = "log"))
@@ -146,7 +146,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                model = if (model) modelframe else NULL,
                na.action = attr(modelframe, "na.action"),
                contrasts = attr(X, "contrasts"), 
-               modeling_function = "stan_lm")
+               stan_function = "stan_lm")
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, modelframe)
   if (!x) 
