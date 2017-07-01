@@ -172,6 +172,13 @@
 #'   estimation, full Bayesian estimation is performed by default, with 
 #'   customizable prior distributions for all parameters.
 #'  }
+#'  \item{\code{\link{stan_clogit}}}{
+#'    Similar to \code{\link[survival]{clogit}} in that it models an binary outcome
+#'    where the number of successes and failures is fixed within each stratum by
+#'    the research design. There are some minor syntactical differences relative
+#'    to \code{\link[survival]{clogit}} that allow \code{stan_clogit} to accept
+#'    group-specific terms as in \code{\link{stan_glmer}}.
+#'  }
 #' }
 #' 
 #' @section Prior distributions:

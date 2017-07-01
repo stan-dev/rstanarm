@@ -17,7 +17,8 @@
 
 #' Conditional logistic (clogit) models via Stan
 #'
-#' clogit
+#' A model for case-control studies with optional prior distributions for the
+#' coefficients, intercept, and auxiliary parameters.
 #'
 #' @export
 #' @templateVar pkg survival
@@ -34,6 +35,7 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' @template args-sparse
+#' @template args-dots
 #' 
 #' @param formula,data,subset,na.action Same as for \code{\link[lme4]{glmer}}, 
 #'   except that any intercept included in the formula will be dropped. \emph{We
@@ -45,6 +47,10 @@
 #'   successes (possibly one) is fixed by the research design. It may be useful
 #'   to use \code{\link{interaction}} or \code{\link[survival]{strata}} to create
 #'   this factor
+#' @param prior_covariance Cannot be \code{NULL} when lme4-style group-specific
+#'   terms are included in the \code{formula}. See \code{\link{decov}} for
+#'   more information about the default arguments. Ignored when there are no
+#'   group-specific terms.
 #' 
 #' @details The \code{stan_clogit} function is mostly similar in syntax to 
 #'   \code{\link[survival]{clogit}} but rather than performing maximum likelihood 
@@ -52,11 +58,17 @@
 #'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
 #'   model adds priors (independent by default) on the coefficients of the GLM.
 #'   
-#' @seealso The Bernoulli vignette
+#'   The \code{formula} may have group-specific terms like in 
+#'   \code{\link{stan_glmer}} but should not allow the intercept to vary by
+#'   the stratifying variable, since there is no information in the data with
+#'   which to estimate such deviations in the intercept.
+#'   
+#' @seealso The vignette for Bernoulli and binomial models.
 #' 
 #' @examples
 #' stan_clogit(case ~ spontaneous + induced, strata = stratum,
-#'             data = infert[order(infert$stratum, !infert$case),], QR = TRUE)
+#'             data = infert[order(infert$stratum, !infert$case),], QR = TRUE,
+#'             iter = 500) # for speed only
 #'
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
                         strata, prior = normal(), 
@@ -133,7 +145,8 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"), 
-               modeling_function = "stan_clogit", if(has_bars) glmod)
+               modeling_function = "stan_clogit", 
+               glmod = if(has_bars) glmod)
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)
   class(out) <- c(class(out), if(has_bars) "lmerMod", "clogit")

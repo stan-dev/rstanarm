@@ -37,6 +37,7 @@
 #' @template args-x-y
 #' @template args-dots
 #' @template args-priors
+#' @template args-prior-intercept
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta

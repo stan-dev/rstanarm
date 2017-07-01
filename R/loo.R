@@ -140,7 +140,16 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  if (is(x, "clogit")) loo_x <- loo.matrix(log_lik.stanreg(x), ...)
+  if (is(x, "clogit")) {
+    ll <- log_lik.stanreg(x)
+    cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+    if (any(cons)) {
+      message("The following groups were dropped from the loo calculation:",
+              which(cons))
+      ll <- ll[,!cons, drop = FALSE]
+    }
+    loo_x <- loo.matrix(ll, ...)
+  }
   else loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)

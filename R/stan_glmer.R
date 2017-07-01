@@ -28,6 +28,7 @@
 #' @template return-stanreg-object
 #' @template see-also
 #' @template args-priors
+#' @template args-prior-intercept
 #' @template args-prior_aux
 #' @template args-prior_PD
 #' @template args-algorithm
