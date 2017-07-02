@@ -71,12 +71,14 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                   reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                   ...)
   fun <- ll_fun(object)
-  if (is(object, "clogit"))
+  if (is(object, "clogit")) {
     out <- vapply(seq_len(args$N), FUN.VALUE = numeric(length = args$S), function(i) {
       as.vector(fun(i = i, draws = args$draws,
                     data = args$data[args$data$strata == 
                               levels(args$data$strata)[i],, drop = FALSE]))
-  })
+    })
+    return(out)
+  }
   else out <- vapply(
     seq_len(args$N),
     FUN = function(i) {

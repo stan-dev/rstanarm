@@ -111,7 +111,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   }
   ord <- order(group$strata, !Y)
   if (!identical(ord, 1:NROW(Y)))
-    stop("data must be sorted by 'stratum' and successes before failures within 'stratum'")
+    stop("data must be sorted by 'strata' and successes before failures within 'strata'")
   offset <- model.offset(mf) %ORifNULL% double(0)
   weights <- double(0)
   mf <- check_constant_vars(mf)

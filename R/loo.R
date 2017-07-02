@@ -145,7 +145,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
     if (any(cons)) {
       message("The following groups were dropped from the loo calculation:",
-              which(cons))
+              paste(which(cons), collapse = ", "))
       ll <- ll[,!cons, drop = FALSE]
     }
     loo_x <- loo.matrix(ll, ...)
