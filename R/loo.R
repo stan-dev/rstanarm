@@ -196,7 +196,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  if (is(x, "clogit")) out <- waic.matrix(log_Lik(x))
+  if (is(x, "clogit")) out <- waic.matrix(log_lik(x))
   else out <- waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
