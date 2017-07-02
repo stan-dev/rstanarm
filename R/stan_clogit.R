@@ -69,7 +69,7 @@
 #' stan_clogit(case ~ spontaneous + induced, strata = stratum,
 #'             data = infert[order(infert$stratum, !infert$case),], QR = TRUE,
 #'             iter = 500) # for speed only
-#'
+#' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
                         strata, prior = normal(), 
                         prior_covariance = decov(), prior_PD = FALSE, 
@@ -145,7 +145,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"), 
-               modeling_function = "stan_clogit", 
+               stan_function = "stan_clogit", 
                glmod = if(has_bars) glmod)
   out <- stanreg(fit)
   out$xlevels <- .getXlevels(mt, mf)

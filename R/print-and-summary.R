@@ -115,7 +115,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("Num. levels:", 
           paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
     }
-    if (x$modeling_function != "stan_clogit") {
+    if (x$stan_function != "stan_clogit") {
       cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
       .printfr(ppd_estimates, digits, ...)
     }
