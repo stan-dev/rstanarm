@@ -64,6 +64,9 @@ data {
   #include "glmer_stuff_interaction.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
   #include "data_betareg.stan"
+  // container for the scale_weights
+  int<lower=0, upper=1> weighted_scale;
+  vector[N] scale_weights;
 }
 transformed data {
   vector[family == 3 ? N : 0] sqrt_y;
@@ -159,8 +162,10 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (family == 1) {
-      if (link == 1) 
+      if (link == 1 && weighted_scale == 0) 
         target += normal_lpdf(y | eta, aux);
+      else if (link == 1 && weighted_scale == 1)
+        target += normal_lpdf(y | eta, aux * scale_weights);
       else if (link == 2) 
         target += normal_lpdf(y | exp(eta), aux);
       else 
