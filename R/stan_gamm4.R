@@ -291,11 +291,11 @@ plot_nonlinear <- function(x, smooths, ...,
                       seq(from = yrange[1], to = yrange[2], length.out = 100))
     colnames(xz) <- xnames[1:2]
     plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
-    for (i in colnames(original)) {
-      if (i %in% colnames(xz)) next
-      xz[[i]] <- 1
-    }
-    XZ <- predict(x$jam, newdata = xz, type = "lpmatrix")
+    nd <- original
+    nd[[xnames[1]]] <- xz[[xnames[1]]]
+    nd[[xnames[2]]] <- xz[[xnames[2]]]
+    requireNamespace("mgcv", quietly = TRUE)
+    XZ <- predict(x$jam, newdata = nd, type = "lpmatrix")
     incl <- grepl(labels, colnames(B), fixed = TRUE)
     b <- B[, incl, drop = FALSE]
     xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
