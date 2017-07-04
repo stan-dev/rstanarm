@@ -21,7 +21,7 @@ data {
   // declares prior_PD, has_intercept{_nob,_lob,_upb}, family, link, prior_dist, 
   //   prior_dist_for_intercept, prior_dist_for_aux
   #include "data_mvglm.stan"     // same as data_glm.stan, but arrays of size M 
-  #include "data2_mvglm.stan"    // declares y_{real,int}, trials, has_aux 
+  #include "data2_mvglm.stan"    // declares y_{real,int}, has_aux 
   #include "weights_offset.stan" // declares has_weights, weights, has_offset, offset
  
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, 
@@ -46,10 +46,6 @@ data {
   #include "hyperparameters_mvglm.stan" // same as hyperparameters.stan, but arrays of size M
   #include "hyperparameters_event.stan" 
   #include "hyperparameters_assoc.stan" 
-  
-  // flag indiciating whether to accumulate lp for each submodel
-  int<lower=0,upper=1> long_lp;  // 1 = yes
-  int<lower=0,upper=1> event_lp; // 1 = yes
 }
 transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);                 

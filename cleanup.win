@@ -3,7 +3,7 @@
 # Note to Windows users: This is not actually platform specific.
 mkdir -p src/include
 "${R_HOME}/bin/R" --vanilla --slave --file=tools/make_cpp.R
-
+cp src/*.hpp src/include || echo "OK, no user-defined functions to include."
 cat src/*.cc > src/Modules.cpp
 rm src/*.cc
 "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'

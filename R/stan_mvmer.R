@@ -142,7 +142,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   # Check family and link
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2")
-  if (!is.list(family)) {
+  if (!is(family, "list")) {
     family <- rep(list(family), M) 
   } else if (!length(family) == M) {
     stop("family is a list of the incorrect length.")
@@ -172,12 +172,12 @@ stan_mvmer <- function(formula, data, family = gaussian,
   # Create call for each longitudinal submodel separately
   m_mc <- lapply(1:M, function(m, old_call, env) {
     new_call <- old_call
-    fm     <- old_call$formula
-    data   <- old_call$data
-    family <- old_call$family
-    new_call$formula <- if (is(eval(fm,     env), "list")) fm[[m+1]]     else fm
-    new_call$data    <- if (is(eval(data,   env), "list")) data[[m+1]]   else data
-    new_call$family  <- if (is(eval(family, env), "list")) family[[m+1]] else family
+    fm     <- eval(old_call$formula, env)
+    data   <- eval(old_call$data, env)
+    family <- eval(old_call$family, env)
+    new_call$formula <- if (is(fm, 'list')) fm[[m]] else fm
+    new_call$data    <- if (is(data, 'list') && !inherits(data, 'data.frame')) data[[m]] else data
+    new_call$family  <- if (is(family, 'list')) family[[m]] else family
     new_call
   }, old_call = y_mc, env = calling_env)
   
@@ -265,7 +265,6 @@ stan_mvmer <- function(formula, data, family = gaussian,
     has_intercept_upb = fetch_array(y_mod_stuff, "has_intercept_upbound"),
     has_aux           = fetch_array(y_mod_stuff, "has_aux"),
     xbar              = fetch_array(y_mod_stuff, "xbar"),
-    trials            = fetch_array(y_mod_stuff, "trials"),
     weights           = as.array(numeric(0)), # not yet implemented
     offset            = if (!is.null(offset))  stop("bug found. offset not yet implemented.") else double(0),
     
@@ -529,7 +528,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
                  list_nms(fetch(y_mod_stuff, "y"), M, stub = "y"),
                data, call, na.action, algorithm, glmod = fetch(y_mod_stuff, "mod"),
                standata = NULL, terms = NULL, prior.info = prior_info,
-               modeling_function = "stan_mvmer")
+               stan_function = "stan_mvmer")
   out <- stanmvreg(fit)
   return(out)
 }

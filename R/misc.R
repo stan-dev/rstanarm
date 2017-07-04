@@ -818,21 +818,21 @@ is.stanmvreg <- function(x) {
 #
 # @param x An object to be tested.
 is.jm <- function(x) {
-  x$modeling_function == "stan_jm"
+  x$stan_function == "stan_jm"
 }
 
 # Test if object contains a multivariate GLM
 #
 # @param x An object to be tested.
 is.mvmer <- function(x) {
-  x$modeling_function %in% c("stan_mvmer", "stan_jm")
+  x$stan_function %in% c("stan_mvmer", "stan_jm")
 }
 
 # Test if object contains a survival model
 #
 # @param x An object to be tested.
 is.surv <- function(x) {
-  x$modeling_function %in% c("stan_jm")
+  x$stan_function %in% c("stan_jm")
 }
 
 # Throw error if object isn't a stanmvreg object
@@ -986,6 +986,10 @@ mod2rx <- function(x, stub = "Long") {
     c("Event\\|")
   } else if (x == "Assoc") {
     c("Assoc\\|")
+  } else if (x == "^y") {
+    c("^y[1-9]\\|")
+  } else if (x == "y") {
+    c("y[1-9]\\|")
   } else {
     paste0("^", stub, x, "\\|")
   }   
@@ -1022,6 +1026,7 @@ list_nms <- function(object, M = NULL, stub = "Long") {
 # @param x Character vector (often rownames(fit$stan_summary)) from which
 #   the stub should be removed
 rm_stub <- function(x) {
+  x <- gsub(mod2rx("y"), "", x)
   x <- gsub(mod2rx("Long"), "", x)
   x <- gsub(mod2rx("Event"), "", x)
 }
@@ -1084,6 +1089,15 @@ STOP_jm_only <- function(what) {
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
+}
+
+# Consistent error message when binomial models with greater than
+# one trial are not allowed
+#
+STOP_binomial <- function() {
+  stop("Binomial models with number of trials greater than one ",
+       "are not allowed (i.e. only bernoulli models are allowed).", 
+       call. = FALSE)
 }
 
 # Error message when a required variable is missing from the data frame

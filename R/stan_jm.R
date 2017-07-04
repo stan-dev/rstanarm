@@ -233,10 +233,6 @@
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
 #'   estimates of the log baseline hazard.
-#' @param long_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the longitudinal outcome(s).    
-#' @param event_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the event outcome.
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
@@ -498,7 +494,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorAssoc = normal(), prior_covariance = decov(), prior_PD = FALSE, 
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
-                    sparse = FALSE, long_lp = TRUE, event_lp = TRUE) {
+                    sparse = FALSE) {
   
   
   #-----------------------------
@@ -569,7 +565,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     mc$scale <- mc$concentration <- mc$shape <- mc$init <- mc$adapt_delta <- 
     mc$max_treedepth <- mc$... <- mc$QR <- NULL
   mc$weights <- NULL 
-  mc$long_lp <- mc$event_lp <- NULL
 
   # Create call for longitudinal submodel  
   y_mc <- mc
@@ -827,9 +822,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     a_global_prior_df          = a_prior_stuff$global_prior_df,
     
     # flags
-    prior_PD = as.integer(prior_PD),
-    long_lp  = as.integer(long_lp),
-    event_lp = as.integer(event_lp)
+    prior_PD = as.integer(prior_PD)
   )
   
   # prior flag (same prior for all long submodel)
@@ -859,7 +852,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$has_intercept_upb <- fetch_array(y_mod_stuff, "has_intercept_upbound")
   standata$has_aux           <- fetch_array(y_mod_stuff, "has_aux")
   standata$xbar              <- fetch_array(y_mod_stuff, "xbar")
-  standata$trials            <- fetch_array(y_mod_stuff, "trials")
   standata$weights <- 
     if (!is.null(weights)) as.array(unlist(y_weights)) else as.array(numeric(0))
   standata$offset  <- 
@@ -1313,7 +1305,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                standata = NULL, terms = NULL, prior.info = prior_info,
-               modeling_function = "stan_jm")
+               stan_function = "stan_jm")
   out <- stanmvreg(fit)
   return(out)
 }
@@ -1349,12 +1341,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
   y <- validate_glm_outcome_support(y, family)
-  if (is.binomial(family$family) && NCOL(y) == 2L) {
-    y      <- as.integer(y[, 1L])
-    trials <- as.integer(y[, 1L] + y[, 2L])
-  } else {
-    trials <- rep(0L, length(y))
-  }
+  if (is.binomial(family$family) && NCOL(y) == 2L)
+    STOP_binomial()
   
   # Design matrix
   x <- as.matrix(lme4::getME(mod, "X"))
@@ -1386,7 +1374,6 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   if (is.binomial(family$family) && all(y %in% 0:1)) {      
     ord    <- order(y)
     y      <- y     [ord]
-    trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
     Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
     flist  <- flist[ord, , drop = FALSE] 
@@ -1414,6 +1401,8 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   is_ig <- is.ig(famname)
   is_continuous <- is_gaussian || is_gamma || is_ig
   is_lmer <- is.lmer(family)
+  if (is.binomial(famname) && !is_bernoulli)
+    STOP_binomial()
   
   # Require intercept for certain family and link combinations
   if (!has_intercept) {
@@ -1427,7 +1416,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   }    
     
   # Return list
-  nlist(mod, is_real, y, x, xtemp, xbar, trials, N01, ord, famname,
+  nlist(mod, is_real, y, x, xtemp, xbar, N01, ord, famname,
     offset, Ztlist, cnms, flist, has_intercept, has_intercept_unbound,
     has_intercept_lobound, has_intercept_upbound, has_aux, N, real_N, int_N, K,
     is_bernoulli, is_nb, is_gaussian, is_gamma, is_ig, is_continuous, is_lmer)
@@ -1565,7 +1554,6 @@ unorder_bernoulli <- function(mod_stuff) {
     if (is.null(mod_stuff$ord))
       stop("Bernoulli sorting vector not found.")
     mod_stuff$y       <- mod_stuff$y[order(mod_stuff$ord)]
-    mod_stuff$trials  <- mod_stuff$trials[order(mod_stuff$ord)]
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])
