@@ -17,6 +17,7 @@
 
 #' @rdname stan_glm
 #' @export
+#' @template args-prior_smooth
 #' @param prior_ops Deprecated. See \link{rstanarm-deprecated} for details.
 #' @param group A list, possibly of length zero (the default), but otherwise
 #'   having the structure of that produced by \code{\link[lme4]{mkReTrms}} to
@@ -26,13 +27,14 @@
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
 stan_glm.fit <- function(x, y, 
-                         weights = rep(1, NROW(x)), 
-                         offset = rep(0, NROW(x)), 
+                         weights = rep(1, NROW(y)), 
+                         offset = rep(0, NROW(y)), 
                          family = gaussian(),
                          ...,
                          prior = normal(),
                          prior_intercept = normal(),
                          prior_aux = cauchy(0, 5),
+                         prior_smooth = exponential(autoscale = FALSE),
                          prior_ops = NULL,
                          group = list(),
                          prior_PD = FALSE, 
@@ -56,7 +58,7 @@ stan_glm.fit <- function(x, y,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "neg_binomial_2")
+                          "poisson", "neg_binomial_2", "Beta regression")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
@@ -79,14 +81,25 @@ stan_glm.fit <- function(x, y,
 
   # useless assignments to pass R CMD check
   has_intercept <- 
-    prior_df <- prior_df_for_intercept <- prior_df_for_aux <-
-    prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- 
-    prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- 
-    prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- 
+    prior_df <- prior_df_for_intercept <- prior_df_for_aux <- prior_df_for_smooth <-
+    prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- prior_dist_for_smooth <-
+    prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- prior_scale_for_smooth <-
     prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <- 
-    global_prior_scale <- global_prior_df <- NULL
+    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <- NULL
   
-  x_stuff <- center_x(x, sparse)
+  if (is.list(x)) {
+    x_stuff <- center_x(x[[1]], sparse)
+    smooth_map <- unlist(lapply(1:(length(x) - 1L), FUN = function(j) {
+      rep(j, NCOL(x[[j + 1L]]))
+    }))
+    S <- do.call(cbind, x[-1L])
+  }
+  else {
+    x_stuff <- center_x(x, sparse)
+    S <- matrix(NA_real_, nrow = nrow(x), ncol = 0L)
+    smooth_map <- integer()
+  }
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
@@ -132,11 +145,36 @@ stan_glm.fit <- function(x, y,
   names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), "_for_aux")
   if (is.null(prior_aux)) {
     if (prior_PD)
-      stop("'prior_aux' can't be NULL if 'prior_PD' is TRUE.")
+      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE.")
     prior_aux_stuff$prior_scale_for_aux <- Inf
   }
   for (i in names(prior_aux_stuff)) 
     assign(i, prior_aux_stuff[[i]])
+  
+  if (ncol(S) > 0) {   # prior_{dist, mean, scale, df, dist_name, autoscale}_for_smooth
+    prior_smooth_stuff <-
+      handle_glm_prior(
+        prior_smooth,
+        nvars = max(smooth_map),
+        default_scale = 1,
+        link = NULL,
+        ok_dists = ok_aux_dists)
+    
+    names(prior_smooth_stuff) <- paste0(names(prior_smooth_stuff), "_for_smooth")
+    if (is.null(prior_smooth)) {
+      if (prior_PD)
+        stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")
+      prior_smooth_stuff$prior_scale_for_smooth <- Inf
+    }
+    for (i in names(prior_smooth_stuff))
+      assign(i, prior_smooth_stuff[[i]])
+  }
+  else {
+    prior_dist_for_smooth <- 0L
+    prior_mean_for_smooth <- array(NA_real_, dim = 0)
+    prior_scale_for_smooth <- array(NA_real_, dim = 0)
+    prior_df_for_smooth <- array(NA_real_, dim = 0)
+  }
   
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
@@ -144,7 +182,8 @@ stan_glm.fit <- function(x, y,
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
   is_ig <- is.ig(famname)
-  is_continuous <- is_gaussian || is_gamma || is_ig
+  is_beta <- is.beta(famname)
+  is_continuous <- is_gaussian || is_gamma || is_ig || is_beta
   
   # require intercept for certain family and link combinations
   if (!has_intercept) {
@@ -232,6 +271,7 @@ stan_glm.fit <- function(x, y,
     prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_dist_for_aux = prior_dist_for_aux,
+    prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0)
     # mean,df,scale for aux added below depending on family
@@ -333,6 +373,9 @@ stan_glm.fit <- function(x, y,
     standata$y <- y
     standata$weights <- weights
     standata$offset <- offset
+    standata$K_smooth <- ncol(S)
+    standata$S <- S
+    standata$smooth_map <- smooth_map
   }
 
   # call stan() to draw from posterior distribution
@@ -345,7 +388,8 @@ stan_glm.fit <- function(x, y,
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
-                              3L)
+                              inverse.gaussian = 3L,
+                              4L) # beta
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_aux <- 
@@ -403,6 +447,10 @@ stan_glm.fit <- function(x, y,
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
       }
+      standata$K_smooth <- ncol(S)
+      standata$S0 <- S[y0, , drop = FALSE]
+      standata$S1 <- S[y1, , drop = FALSE]
+      standata$smooth_map <- smooth_map
       stanfit <- stanmodels$bernoulli
     } else {
       standata$trials <- trials
@@ -441,9 +489,11 @@ stan_glm.fit <- function(x, y,
   )
   
   pars <- c(if (has_intercept) "alpha", 
-            "beta", 
+            "beta",
+            if (ncol(S)) "beta_smooth",
             if (length(group)) "b",
             if (is_continuous | is_nb) "aux",
+            if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
             "mean_PPD")
   if (algorithm == "optimizing") {
@@ -457,12 +507,17 @@ stan_glm.fit <- function(x, y,
       out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
     }
     new_names[mark] <- colnames(xtemp)
+    if (ncol(S)) {
+      mark <- grepl("^beta_smooth\\[[[:digit:]]+\\]$", new_names)
+      new_names[mark] <- colnames(S)
+    }
     new_names[new_names == "alpha[1]"] <- "(Intercept)"
     new_names[grepl("aux(\\[1\\])?$", new_names)] <- 
       if (is_gaussian) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
-            if (is_nb) "reciprocal_dispersion" else NA
+            if (is_nb) "reciprocal_dispersion" 
+              if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
@@ -528,12 +583,15 @@ stan_glm.fit <- function(x, y,
       Sigma_nms <- unlist(Sigma_nms)
     }
     new_names <- c(if (has_intercept) "(Intercept)", 
-                   colnames(xtemp), 
+                   colnames(xtemp),
+                   if (ncol(S)) colnames(S),
                    if (length(group)) c(paste0("b[", b_nms, "]")),
                    if (is_gaussian) "sigma", 
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
-                   if (is_nb) "reciprocal_dispersion", 
+                   if (is_nb) "reciprocal_dispersion",
+                   if (is_beta) "(phi)",
+                   if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    "mean_PPD", 
                    "log-posterior")
@@ -557,6 +615,7 @@ supported_glm_links <- function(famname) {
     inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
     "neg_binomial_2" = , # intentional
     poisson = c("log", "identity", "sqrt"),
+    "Beta regression" = c("logit", "probit", "cloglog", "cauchit"),
     stop("unsupported family")
   )
 }
@@ -640,12 +699,10 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
   p <- sapply(cnms, FUN = length)
   n <- ncol(Ztlist[[1]])
   for (i in attr(flist, "assign")) {
-    if (grepl("^Xr", names(p)[i])) next
     levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])), 
                             paste0("_NEW_", names(flist)[i]))
   }
   for (i in 1:length(p)) {
-    if (grepl("^Xr", names(p)[i])) next
     Ztlist[[i]] <- if (getRversion() < "3.2.0") {
       rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
     } else {

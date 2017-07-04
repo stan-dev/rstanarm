@@ -1,4 +1,6 @@
   vector[K] beta;
+  vector[K_smooth] beta_smooth;
+  vector[K_smooth > 0 ? smooth_map[K_smooth] : 0] smooth_sd;
   vector[q] b;
   vector[len_theta_L] theta_L;
   if      (prior_dist == 0) beta = z_beta;
@@ -17,9 +19,9 @@
     else beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1);
   }
   else if (prior_dist == 5) // laplace
-    beta = prior_mean + prior_scale .* sqrt(2 * S[1]) .* z_beta;
+    beta = prior_mean + prior_scale .* sqrt(2 * mix[1]) .* z_beta;
   else if (prior_dist == 6) // lasso
-    beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * S[1]) .* z_beta;
+    beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * mix[1]) .* z_beta;
   else if (prior_dist == 7) { // product_normal
     int z_pos = 1;
     for (k in 1:K) {
@@ -31,4 +33,10 @@
       }
       beta[k] = beta[k] * prior_scale[k] ^ num_normals[k] + prior_mean[k];
     }
+  }
+
+  if (K_smooth) {
+    smooth_sd = prior_mean_for_smooth + prior_scale_for_smooth .* smooth_sd_raw;
+    if (is_continuous && family == 1) smooth_sd = smooth_sd * aux;
+    beta_smooth = z_beta_smooth .* smooth_sd[smooth_map];
   }
