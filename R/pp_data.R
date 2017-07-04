@@ -36,6 +36,7 @@ pp_data <-
 # for models without lme4 structure
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is(object, "gamm4")) {
+    requireNamespace("mgcv", quietly = TRUE)
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     if (is.null(offset)) 
@@ -65,6 +66,7 @@ pp_data <-
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, ...) {
   if (is(object, "gamm4")) {
+    requireNamespace("mgcv", quietly = TRUE)
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     if (is.null(re.form)) {
@@ -125,6 +127,7 @@ pp_data <-
     rfd <- mfnew <- model.frame(object)
   } 
   else if (inherits(object, "gamm4")) {
+    requireNamespace("mgcv", quietly = TRUE)
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     NAs <- apply(is.na(x), 1, any)
