@@ -37,18 +37,18 @@ data {
 transformed data {          
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);  // not used
   
-  // declares poisson_max, hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool,noise}, {sqrt_,log_,sum_log_}y, 
-  //   len_z_T, len_var_group, delta, is_continuous, pos
+  // declares poisson_max, hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool,noise}, {sqrt_,log_,sum_log_}y, 
+  //   len_z_T, len_var_group, delta, is_continuous, pos, beta_smooth
   #include "tdata_mvglm.stan" 
 
-  // defines hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool}, {sqrt_,log_,sum_log_}y, 
+  // defines hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool}, {sqrt_,log_,sum_log_}y, 
   //   len_z_T, len_var_group, delta, is_continuous, pos  
   #include "tdata2_mvglm.stan" 
 }
 parameters {
-  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, S, 
+  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, mix, 
   //   ool, noise, aux_unscaled, z_b, z_T, rho, zeta, tau
   #include "parameters_mvglm.stan"
 }

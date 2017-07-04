@@ -10,5 +10,5 @@
   // parameters for priors on log haz ratios
   real<lower=0> e_global[e_hs];
   vector<lower=0>[(e_hs>0)*e_K] e_local[e_hs];
-  vector<lower=0>[e_K] e_S[e_prior_dist == 5 || e_prior_dist == 6];
+  vector<lower=0>[e_K] e_mix[e_prior_dist == 5 || e_prior_dist == 6];
   real<lower=0> e_ool[e_prior_dist == 6];

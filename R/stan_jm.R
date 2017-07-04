@@ -859,7 +859,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$link    <- as.array(link)
   standata$dense_X <- !sparse
   standata$special_case <- as.integer(FALSE)
-
+  
+  # Not used
+  standata$K_smooth   <- 0L
+  standata$S          <- matrix(NA_real_, standata$N, 0L)
+  standata$smooth_map <- integer(0)  
+  
   # Design matrices
   X <- as.matrix(Matrix::bdiag(fetch(y_mod_stuff, "xtemp")))
   if (sparse) {
@@ -1122,7 +1127,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     inits <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)()
     sel <- c("gamma_nob", "gamma_lob", "gamma_upb", "z_beta", "aux_unscaled", 
              "z_b", "z_T", "rho", "zeta", "tau", "global", "local2", "local4", 
-             "S", "ool", "noise")
+             "mix", "ool", "noise")
     for (i in sel) {
       sel_i <- grep(paste0("^", i, "\\."), initnms)
       if (length(sel_i))
@@ -2180,15 +2185,15 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
   sel_shared <- grep("^shared", rownames(assoc))
   if (any(unlist(assoc[sel_shared,]))) {
     # flist for long submodel
-    flist_tmp <- getME(y_mod_stuff$mod, "flist")
+    flist_tmp <- lme4::getME(y_mod_stuff$mod, "flist")
     # which grouping factor is id_var
     Gp_sel <- which(names(flist_tmp) == id_var) 
     # grouping factor indices
-    Gp <- getME(y_mod_stuff$mod, "Gp")  
+    Gp <- lme4::getME(y_mod_stuff$mod, "Gp")  
     b_beg <- Gp[[Gp_sel]] + 1
     b_end <- Gp[[Gp_sel + 1]]
     # b vector for grouping factor = id_var
-    b_vec <- getME(y_mod_stuff$mod, "b")[b_beg:b_end]
+    b_vec <- lme4::getME(y_mod_stuff$mod, "b")[b_beg:b_end]
     # convert to Npat * n_re matrix
     b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp[[Gp_sel]])), byrow = TRUE)
   } else b_mat <- NULL
@@ -2382,9 +2387,9 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
   xtemp  <- sweep(xtemp, 2, y_mod_stuff$xbar, FUN = "-")
   group  <- mod$reTrms    
   beta   <- fixef(y_mod_stuff$mod)
-  b      <- getME(y_mod_stuff$mod, "b")
+  b      <- lme4::getME(y_mod_stuff$mod, "b")
   linpred <- linear_predictor.default(beta, x) # offset not accomodated here
-  linpred <- linpred + (t(as.matrix(group$Zt)) %*% getME(y_mod_stuff$mod, "b"))
+  linpred <- linpred + (t(as.matrix(group$Zt)) %*% b)
   nlist(xtemp, group, linpred)
 }   
 
@@ -3075,7 +3080,7 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   len_global <- sum((2 * (standata$prior_dist == 3)) + (4 * (standata$prior_dist == 4)))
   len_local2 <- sum((standata$prior_dist == 3) * standata$KM) 
   len_local4 <- sum((standata$prior_dist == 4) * standata$KM)
-  len_S   <- sum((standata$prior_dist %in% c(5,6)) * standata$KM)
+  len_mix   <- sum((standata$prior_dist %in% c(5,6)) * standata$KM)
   len_ool <- sum(standata$prior_dist == 6)
   len_noise <- sum((standata$family == 8) * standata$NM)
     
@@ -3098,9 +3103,9 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
     local4   = matrix_of_uniforms(nrow = 4, ncol = len_local4),
     e_local  = matrix_of_uniforms(nrow = get_nvars_for_hs(standata$e_prior_dist), ncol = standata$e_K),
     a_local  = matrix_of_uniforms(nrow = get_nvars_for_hs(standata$a_prior_dist), ncol = standata$a_K),
-    S     = if (len_S > 0) matrix(rep(1, len_S), 1, len_S) else matrix(0,0,0),
-    e_S   = if (standata$e_prior_dist %in% c(5,6)) matrix(rep(1, standata$e_K), 1, standata$e_K) else matrix(0,0,standata$e_K),
-    a_S   = if (standata$a_prior_dist %in% c(5,6)) matrix(rep(1, standata$a_K), 1, standata$a_K) else matrix(0,0,standata$a_K),
+    mix   = if (len_mix > 0) matrix(rep(1, len_mix), 1, len_mix) else matrix(0,0,0),
+    e_mix = if (standata$e_prior_dist %in% c(5,6)) matrix(rep(1, standata$e_K), 1, standata$e_K) else matrix(0,0,standata$e_K),
+    a_mix = if (standata$a_prior_dist %in% c(5,6)) matrix(rep(1, standata$a_K), 1, standata$a_K) else matrix(0,0,standata$a_K),
     ool   = if (len_ool > 0) as.array(len_ool) else as.array(double(0)), 
     e_ool = if (standata$e_prior_dist == 6) as.array(1) else as.array(double(0)), 
     a_ool = if (standata$a_prior_dist == 6) as.array(1) else as.array(double(0)),
