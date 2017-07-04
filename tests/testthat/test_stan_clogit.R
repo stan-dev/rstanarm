@@ -18,6 +18,8 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
+# this mostly goes through same code as a logit model so only testing the unique stuff
+
 library(rstanarm)
 
 SEED <- 123
@@ -26,19 +28,19 @@ CHAINS <- 2
 CORES <- 1
 REFRESH <- 0
 
-threshold <- 0.03
+threshold <- 0.01
 
 source(file.path("helpers", "expect_stanreg.R"))
 
 context("stan_clogit")
 
 fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
-                   data = infert[order(infert$stratum, !infert$case),], 
+                   data = infert[order(infert$stratum), ], 
                    QR = TRUE, init_r = 0.5,
                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH)
 
 test_that("stan_clogit is similar to survival::clogit", {
-  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = 0.01)
+  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
 })
 
 test_that("stan_clogit runs for infert example", {
@@ -60,6 +62,8 @@ test_that("loo/waic for stan_clogit works", {
 context("posterior_predict (stan_clogit)")
 test_that("compatible with stan_clogit", {
   PPD1 <- posterior_predict(fit)
-  PPD2 <- posterior_predict(fit, newdata = infert[order(infert$stratum, !infert$case),])
+  PPD2 <- posterior_predict(fit, newdata = infert) # order irrelevant
   expect_identical(rowSums(PPD1), rowSums(PPD2))
+  expect_equal(rowSums(PPD1), round(rowSums(
+               posterior_linpred(fit, newdata = infert, transform = TRUE))))
 })

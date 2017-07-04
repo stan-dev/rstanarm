@@ -314,16 +314,15 @@ function estimates such a model and is very similar to the `clogit` function in 
 **survival** package. The main syntactical difference is that the `clogit` function
 requires that the user call the `strata` function in the model formula, whereas
 the `stan_clogit` function has a required `strata` argument. In addition, in the
-`stan_clogit` case the data must be sorted by the variable passed to `strata` and
-successes must appear before failures within each stratum. The advantage to these
-changes is that `stan_clogit` can optionally utilize the multilevel syntax from the 
-**lme4** package to specify group-specific terms, rather than the more limited
-multilevel structure supported by the `fraility` function in the **survival**
+`stan_clogit` case the data must be sorted by the variable passed to `strata`. The 
+advantage to these changes is that `stan_clogit` can optionally utilize the multilevel 
+syntax from the **lme4** package to specify group-specific terms, rather than the more 
+limited multilevel structure supported by the `fraility` function in the **survival**
 package. The [vignette](glmer.html) for the `stan_glmer` function discusses the
 lme4-style syntax in more detail. For example,
 ```{r, results = "hide"}
-infert <- infert[order(infert$stratum, !infert$case),]
-post <- stan_clogit(case ~ spontaneous + induced + (1 | parity), data = infert, 
+post <- stan_clogit(case ~ spontaneous + induced + (1 | parity), 
+                    data = infert[order(infert$stratum), ], # order necessary
                     strata = stratum, QR = TRUE,
                     chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 ```
@@ -331,10 +330,13 @@ post <- stan_clogit(case ~ spontaneous + induced + (1 | parity), data = infert,
 post
 ```
 The posterior predictions are also constrained such that there is exactly one
-success (in this case) for each of the strata:
+success (in this case) for each of the strata and thus the posterior distribution
+of the probabilities are also so constrained:
 ```{r}
 PPD <- posterior_predict(post)
 stopifnot(rowSums(PPD) == max(infert$stratum))
+PLP <- posterior_linpred(post, transform = TRUE)
+stopifnot(round(rowSums(PLP)) == max(infert$stratum))
 ```
 
 # Binomial Models
