@@ -123,7 +123,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
-
+  if (family$family == "Beta regression") family$family <- "beta"
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)

@@ -121,7 +121,8 @@ test_that("stan_lmer returns an error when 'family' specified", {
 context("stan_gamm4")
 source(file.path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
-  SW(fit <- stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, sparse = TRUE,
+  sleepstudy$y <- sleepstudy$Reaction / 10
+  SW(fit <- stan_gamm4(y ~ s(Days), data = sleepstudy, sparse = TRUE,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
                        seed = SEED, refresh = REFRESH))
   expect_stanreg(fit)
@@ -152,7 +153,8 @@ test_that("loo/waic for stan_glmer works", {
 SW <- suppressWarnings
 context("posterior_predict (stan_gamm4)")
 test_that("stan_gamm4 returns expected result for sleepstudy example", {
-  fit <- SW(stan_gamm4(Reaction / 10 ~ s(Days), data = sleepstudy,
+  sleepstudy$y <- sleepstudy$Reaction / 10
+  fit <- SW(stan_gamm4(y ~ s(Days), data = sleepstudy,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
                        seed = SEED, refresh = REFRESH))
   expect_silent(yrep1 <- posterior_predict(fit))

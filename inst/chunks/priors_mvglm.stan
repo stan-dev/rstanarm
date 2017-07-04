@@ -36,11 +36,11 @@
   }
   else if (prior_dist[m] == 5) { // laplace
     target += normal_lpdf(z_beta[K1:K2] | 0, 1);
-    target += exponential_lpdf(S[1][idx_S[m,1]:idx_S[m,2]] | 1);
+    target += exponential_lpdf(mix[1][idx_mix[m,1]:idx_mix[m,2]] | 1);
   }
   else if (prior_dist[m] == 6) { // lasso
     target += normal_lpdf(z_beta[K1:K2] | 0, 1);
-    target += exponential_lpdf(S[1][idx_S[m,1]:idx_S[m,2]] | 1);
+    target += exponential_lpdf(mix[1][idx_mix[m,1]:idx_mix[m,2]] | 1);
     target += chi_square_lpdf(ool[idx_ool[m]] | prior_df[K1]);
   }
   /* else prior_dist is 0 and nothing is added */	

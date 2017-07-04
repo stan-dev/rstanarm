@@ -303,6 +303,11 @@ stan_mvmer <- function(formula, data, family = gaussian,
   standata$N_int  <- as.integer(sum(fetch_(y_mod_stuff, "int_N")))
   standata$N01    <- as.array(t(sapply(fetch(y_mod_stuff, "N01"), cbind))) 
   
+  # Not used
+  standata$K_smooth   <- 0L
+  standata$S          <- matrix(NA_real_, standata$N, 0L)
+  standata$smooth_map <- integer(0)  
+  
   # Design matrices
   X <- as.matrix(Matrix::bdiag(fetch(y_mod_stuff, "xtemp")))
   if (sparse) {

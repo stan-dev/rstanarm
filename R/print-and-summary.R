@@ -81,6 +81,12 @@ print.stanreg <- function(x, digits = 1, ...) {
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+    if (x$stan_function == "stan_gamm4") {
+      smooth_sd_nms <- grep("^smooth_sd\\[", nms, value = TRUE)
+      nms <- setdiff(nms, smooth_sd_nms)
+      smooth_sd_mat <- mat[, smooth_sd_nms, drop = FALSE]
+      smooth_sd_estimates <- .median_and_madsd(smooth_sd_mat)
+    }
     if (mer) 
       nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     if (ord) {
@@ -101,6 +107,10 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (ord) {
       cat("\nCutpoints:\n")
       .printfr(cut_estimates, digits, ...)
+    }
+    if (x$stan_function == "stan_gamm4") {
+      cat("\nSmoothing terms:\n")
+      .printfr(smooth_sd_estimates, digits, ...)
     }
     if (mer) {
       cat("\nError terms:\n")

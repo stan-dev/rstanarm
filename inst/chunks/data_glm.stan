@@ -18,3 +18,5 @@
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
   int<lower=0,upper=3> prior_dist_for_aux;
   
+  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
+  int<lower=0,upper=3> prior_dist_for_smooth;

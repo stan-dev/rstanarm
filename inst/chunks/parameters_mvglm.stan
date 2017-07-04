@@ -12,7 +12,7 @@
   real<lower=0> global[len_global];
   vector<lower=0>[len_local2] local2[(len_local2 > 0) ? 2 : 0];
   vector<lower=0>[len_local4] local4[(len_local4 > 0) ? 4 : 0];
-  vector<lower=0>[len_S] S[(len_S > 0)];
+  vector<lower=0>[len_mix] mix[(len_mix > 0)];
   real<lower=0> ool[len_ool]; // one_over_lambda
   vector<lower=0>[len_noise] noise[(len_noise > 0)];
   vector<lower=0>[sum_has_aux] aux_unscaled; // interpretation depends on family!

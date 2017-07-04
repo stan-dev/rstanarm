@@ -142,6 +142,7 @@ transformed data {
   real<lower=0> half_K = 0.5 * K;
   real<lower=0> sqrt_Nm1 = sqrt(N - 1.0);
   int<lower=0,upper=1> is_constant = 1;
+  vector[0] beta_smooth;  // not used
   for (j in 1:J) if (prior_counts[j] != 1) is_constant = 0;
 }
 parameters {

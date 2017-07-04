@@ -22,7 +22,7 @@
   vector generate_beta(vector z_beta, int prior_dist, vector prior_mean, 
                        vector prior_scale, vector prior_df, real[] global, 
                        vector[] local, real global_prior_scale, 
-                       real[] one_over_lambda, vector[] S) {
+                       real[] one_over_lambda, vector[] mix) {
     vector[rows(z_beta)] beta;
     if      (prior_dist == 0) beta = z_beta;
     else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
@@ -32,9 +32,9 @@
     else if (prior_dist == 3) beta = hs_prior(z_beta, global, local, global_prior_scale, 1.0);
     else if (prior_dist == 4) beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1.0);
     else if (prior_dist == 5) // laplace
-      beta = prior_mean + prior_scale .* sqrt(2 * S[1]) .* z_beta;
+      beta = prior_mean + prior_scale .* sqrt(2 * mix[1]) .* z_beta;
     else if (prior_dist == 6) // lasso
-      beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * S[1]) .* z_beta;
+      beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * mix[1]) .* z_beta;
     return beta;
   }
 
@@ -135,13 +135,13 @@
   * @param global_prior_df Real, df for the prior for the global hs parameter
   * @param local Vector of hs local parameters
   * @param global Real, the global parameter
-  * @param S Vector of shrinkage parameters
+  * @param mix Vector of shrinkage parameters
   * @param one_over_lambda Real
   * @return nothing
   */
   void beta_lp(vector z_beta, int prior_dist, vector prior_scale,
                  vector prior_df, real global_prior_df, vector[] local,
-                 real[] global, vector[] S, real[] one_over_lambda) {
+                 real[] global, vector[] mix, real[] one_over_lambda) {
     if      (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
     else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
     else if (prior_dist == 3) { // hs
@@ -163,11 +163,11 @@
     }
     else if (prior_dist == 5) { // laplace
       target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(S[1] | 1);
+      target += exponential_lpdf(mix[1] | 1);
     }
     else if (prior_dist == 6) { // lasso
       target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(S[1] | 1);
+      target += exponential_lpdf(mix[1] | 1);
       target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
     }
     else if (prior_dist == 7) { // product_normal

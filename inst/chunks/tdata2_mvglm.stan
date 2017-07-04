@@ -54,13 +54,13 @@
 
     // indexing for shrinkage params
 	if (prior_dist[m] == 5 || prior_dist[m] == 6) {
-	  idx_S[m,1] = len_S + 1;
-	  idx_S[m,2] = len_S + KM[m];
-	  len_S      = len_S + KM[m];
+	  idx_mix[m,1] = len_mix + 1;
+	  idx_mix[m,2] = len_mix + KM[m];
+	  len_mix      = len_mix + KM[m];
 	} 
 	else {
-	  idx_S[m,1] = 0;
-	  idx_S[m,2] = 0;	
+	  idx_mix[m,1] = 0;
+	  idx_mix[m,2] = 0;	
 	}
 	
     // indexing for one over lambda params

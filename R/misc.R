@@ -111,7 +111,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
-is.beta <- function(x) x == "beta"
+is.beta <- function(x) x == "beta" || x == "Beta regression"
 
 # test if a stanreg object has class polr 
 is_polr <- function(object) {
@@ -537,8 +537,8 @@ get_x.default <- function(object, ...) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
-get_x.gamm4 <- function(object, ...) {
-  object$glmod$raw_X %ORifNULL% stop("X not found")
+get_x.gamm4 <- function(object) {
+  as.matrix(object[["x"]])
 }
 #' @export
 get_x.lmerMod <- function(object, ...) {
@@ -548,14 +548,6 @@ get_x.lmerMod <- function(object, ...) {
 get_z.lmerMod <- function(object, ...) {
   Zt <- object$glmod$reTrms$Zt %ORifNULL% stop("Z not found")
   t(Zt)
-}
-#' @export
-get_z.gamm4 <- function(object, ...) {
-  X <- get_x(object)
-  XZ <- object$x
-  Z <- XZ[,-c(1:ncol(X)), drop = FALSE]
-  Z <- Z[, !grepl("_NEW_", colnames(Z), fixed = TRUE), drop = FALSE]
-  return(Z)
 }
 #' @export
 get_y.stanmvreg <- function(object, m = NULL, ...) {

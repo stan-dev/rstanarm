@@ -34,8 +34,15 @@ pp_data <-
       .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
-# for models not fit using stan_(g)lmer or stan_gamm4
+# for models without lme4 structure
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
+  if (is(object, "gamm4")) {
+    if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
+    else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% rep(0, nrow(x))
+    return(nlist(x, offset))
+  }
   if (is.null(newdata)) {
     x <- get_x(object)
     if (is.null(offset)) 
@@ -59,11 +66,8 @@ pp_data <-
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, m = NULL, ...) {
   if (is(object, "gamm4")) {
-    if (is.null(newdata)) x <- object$glmod$raw_X
-    else {
-      x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
-                             newdata = newdata, type = "lpmatrix")
-    }
+    if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
+    else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     if (is.null(re.form)) {
       re.form <- as.formula(object$call$random)
       if (length(re.form) == 0) re.form <- NA
@@ -124,8 +128,8 @@ pp_data <-
     rfd <- mfnew <- model.frame(object, m = m)
   } 
   else if (inherits(object, "gamm4")) {
-    x <- mgcv::predict.gam(mgcv::gam(formula(object), data = object$data), 
-                           newdata = newdata, type = "lpmatrix")
+    if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
+    else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     NAs <- apply(is.na(x), 1, any)
     rfd <- mfnew <- newdata[!NAs,]
     attr(rfd,"na.action") <- "na.omit"
