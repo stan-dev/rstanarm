@@ -82,6 +82,12 @@
 #'   probably with \code{successes} set to \code{0} and \code{trials} specifying
 #'   the number of trials. See the Examples section below and the
 #'   \emph{How to Use the rstanarm Package} for examples.
+#' @note For models estimated with \code{\link{stan_clogit}}, the number of 
+#'   successes per stratum is ostensibly fixed by the research design. Thus, when
+#'   doing posterior prediction with new data, the \code{data.frame} passed to
+#'   the \code{newdata} argument must contain an outcome variable and a stratifying
+#'   factor, both with the same name as in the original \code{data.frame}. Then, the 
+#'   posterior predictions will condition on this outcome in the new data.
 #'   
 #' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
