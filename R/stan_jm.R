@@ -233,10 +233,6 @@
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
 #'   estimates of the log baseline hazard.
-#' @param long_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the longitudinal outcome(s).    
-#' @param event_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the event outcome.
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
@@ -498,7 +494,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorAssoc = normal(), prior_covariance = decov(), prior_PD = FALSE, 
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
-                    sparse = FALSE, long_lp = TRUE, event_lp = TRUE) {
+                    sparse = FALSE) {
   
   
   #-----------------------------
@@ -569,7 +565,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     mc$scale <- mc$concentration <- mc$shape <- mc$init <- mc$adapt_delta <- 
     mc$max_treedepth <- mc$... <- mc$QR <- NULL
   mc$weights <- NULL 
-  mc$long_lp <- mc$event_lp <- NULL
 
   # Create call for longitudinal submodel  
   y_mc <- mc
@@ -827,9 +822,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     a_global_prior_df          = a_prior_stuff$global_prior_df,
     
     # flags
-    prior_PD = as.integer(prior_PD),
-    long_lp  = as.integer(long_lp),
-    event_lp = as.integer(event_lp)
+    prior_PD = as.integer(prior_PD)
   )
   
   # prior flag (same prior for all long submodel)

@@ -46,10 +46,6 @@ data {
   #include "hyperparameters_mvglm.stan" // same as hyperparameters.stan, but arrays of size M
   #include "hyperparameters_event.stan" 
   #include "hyperparameters_assoc.stan" 
-  
-  // flag indiciating whether to accumulate lp for each submodel
-  int<lower=0,upper=1> long_lp;  // 1 = yes
-  int<lower=0,upper=1> event_lp; // 1 = yes
 }
 transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);                 

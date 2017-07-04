@@ -228,20 +228,50 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
 #' @rdname stanmvreg-methods
 #' @export
 #' @method update stanmvreg
+#' @param formula. An updated formula for the model. For a multivariate model  
+#'   \code{formula.} should be a list of formulas, as described for the 
+#'   \code{formula} argument in \code{\link{stan_mvmer}}.
 #' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
-#'   or event submodel. For a multivariate joint model \code{formulaLong.} 
+#'   or event submodel, when \code{object} was estimated using 
+#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
 #'   should be a list of formulas, as described for the \code{formulaLong}
 #'   argument in \code{\link{stan_jm}}.
 #' @param evaluate See \code{\link[stats]{update}}.
 #'
-update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate = TRUE) {
+update.stanmvreg <- function(object, formula., formulaLong., 
+                             formulaEvent., ..., evaluate = TRUE) {
   call <- getCall(object)
   M <- get_M(object)
   if (is.null(call)) 
     stop("'object' does not contain a 'call' component.", call. = FALSE)
   extras <- match.call(expand.dots = FALSE)$...
   fm <- formula(object)
+  if (!missing(formula.)) {
+    if (is.jm(object))
+      stop("'formula.' should not be specified for joint models estimated ",
+           "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
+    if (M > 1) {
+      if (!is.list(formula.))
+        stop("To update the formula for a multivariate model ",
+             "'formula.' should be a list of formula objects. Use ",
+             "'~ .' if you do not wish to alter the formula for one or ",
+             "more of the submodels.", call. = FALSE)
+      if (length(formula.) != M)
+        stop(paste0("The list provided in 'formula.' appears to be the ",
+                    "incorrect length; should be length ", M), call. = FALSE)     
+    } else {
+      if (!is.list(formula.)) formula. <- list(formula.)
+    }
+    fm_mvmer <- lapply(1:M, function(m) 
+      update.formula(fm[[m]], formula.[[m]]))
+    names(fm_mvmer) <- NULL
+    fm_mvmer <- as.call(c(quote(list), fm_mvmer))
+    call$formula <- fm_mvmer
+  }  
   if (!missing(formulaLong.)) {
+    if (!is.jm(object))
+      stop("'formulaLong.' should only be specified for joint models estimated ",
+           "using stan_jm. Specify 'formula.' instead.")
     if (M > 1) {
       if (!is.list(formulaLong.))
         stop("To update the formula for a multivariate joint model ",
@@ -260,8 +290,12 @@ update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate 
     fm_long <- as.call(c(quote(list), fm_long))
     call$formulaLong <- fm_long
   }
-  if (!missing(formulaEvent.))
+  if (!missing(formulaEvent.)) {
+    if (!is.jm(object))
+      stop("'formulaEvent.' should only be specified for joint models estimated ",
+           "using stan_jm.")
     call$formulaEvent <- update.formula(fm[[length(fm)]], formulaEvent.)  
+  }
   if (length(extras)) {
     existing <- !is.na(match(names(extras), names(call)))
     for (a in names(extras)[existing]) 
@@ -319,10 +353,11 @@ ngrps.stanmvreg <- function(object, ...) {
 #'
 ranef.stanmvreg <- function(object, m = NULL, ...) {
   M <- get_M(object)
+  stub <- get_stub(object)
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
   ans_list <- lapply(1:M, function(x) { 
-    sel <- b_names_M(all_names, x)
+    sel <- b_names_M(all_names, x, stub = stub)
     ans <- object$stan_summary[sel, select_median(object$algorithm)]
     # avoid returning the extra levels that were included
     ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]

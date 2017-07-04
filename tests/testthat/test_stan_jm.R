@@ -38,11 +38,11 @@ TOLSCALES <- list(
   event = 0.2        # how many SEs can stan_jm fixefs be from coxph fixefs
 )
 
-expect_matrix  <- function(x) expect_identical(class(x), "matrix")
-expect_survfit <- function(x) expect_s3_class(x, "survfit.stanmvreg")
-expect_ppd     <- function(x) expect_s3_class(x, "ppd")
+source(file.path("helpers", "expect_matrix.R"))
 source(file.path("helpers", "expect_stanreg.R"))
 source(file.path("helpers", "expect_stanmvreg.R"))
+source(file.path("helpers", "expect_survfit.R"))
+source(file.path("helpers", "expect_ppd.R"))
 source(file.path("helpers", "SW.R"))
 source(file.path("helpers", "get_tols.R"))
 source(file.path("helpers", "recover_pars.R"))
@@ -54,7 +54,7 @@ context("stan_jm")
 pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
 pbcLong$ybino <- as.integer(rpois(nrow(pbcLong), 5))
 pbcLong$ypois <- as.integer(pbcLong$albumin)
-pbcLong$ygamm <- as.integer(1 + (2 * pbcLong$platelet / 100))
+pbcLong$ygamm <- as.numeric(pbcLong$platelet / 10)
 pbcLong$xbern <- as.numeric(pbcLong$platelet / 100)
 pbcLong$xpois <- as.numeric(pbcLong$platelet / 100)
 pbcLong$xgamm <- as.numeric(pbcLong$logBili)
@@ -62,27 +62,32 @@ pbcLong$xgamm <- as.numeric(pbcLong$logBili)
 #----  Models
 
 # univariate joint model
-fmLong <- logBili ~ year + (year | id)
-fmSurv <- Surv(futimeYears, death) ~ sex + trt
+fmLong1 <- logBili ~ year + (year | id)
+fmSurv1 <- Surv(futimeYears, death) ~ sex + trt
 jm1 <- stan_jm(
-  fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", 
+  fmLong1, pbcLong, fmSurv1, pbcSurv, time_var = "year", 
   iter = 1, chains = 1, seed = SEED)
 
 # multivariate joint model
-jm2 <- update(
-  jm1, formulaLong. = list(
-    logBili ~ year + (year | id), 
-    albumin ~ year + (year | id)))
+fmLong2 <- list(
+  logBili ~ year + (year | id),
+  albumin ~ year + (year | id))
+fmSurv2 <- Surv(futimeYears, death) ~ sex + trt
+jm2 <- stan_jm(
+  fmLong2, pbcLong, fmSurv2, pbcSurv, time_var = "year", 
+  iter = 1, chains = 1, seed = SEED)
 
 #----  Tests for stan_jm arguments
 
 test_that("formula argument works", {
-  expect_identical(jm1, update(jm1, formulaLong. = list(fmLong))) # fm as list
+  expect_identical(as.matrix(jm1), as.matrix(update(jm1, formulaLong. = list(fmLong1)))) # fm as list
 })
 
 test_that("data argument works", {
-  expect_identical(jm1, update(jm1, dataLong = list(pbcLong))) # data as list
-  expect_identical(jm2, update(jm2, dataLong = list(pbcLong, pbcLong)))
+  expect_identical(as.matrix(jm1), 
+                   as.matrix(update(jm1, dataLong = list(pbcLong)))) # data as list
+  expect_identical(as.matrix(jm2), 
+                   as.matrix(update(jm2, dataLong = list(pbcLong, pbcLong))))
 })
 
 test_that("id_var argument works", {
@@ -320,7 +325,7 @@ if (interactive()) {
   test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
     compare_glmer(ypois ~ year + xpois + (1 | id), neg_binomial_2)})
   test_that("coefs same for stan_jm and stan_glmer, Gamma", {
-    compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma)})
+    compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma(log))})
   #test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
   #  compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
 }
@@ -349,13 +354,6 @@ if (interactive()) {
   
   # Intercept only event submodel
   f5 <- update(f1, formulaEvent. = Surv(futimeYears, death) ~ 1)
-    
-  # Binomial outcome on LHS of formula
-  pbcLong$trials <- rpois(nrow(pbcLong), 6)
-  pbcLong$succ <- rbinom(nrow(pbcLong), pbcLong$trials, .7)
-  pbcLong$fail <- pbcLong$trials - pbcLong$succ
-  f6 <- update(f1, formulaLong. = cbind(succ, fail) ~ poly(year, degree = 2) + (1 | id), 
-               family = binomial, init = "prefit_vb", iter = 1000)
 
   # Different baseline hazards
   f7 <- update(f1, basehaz = "weibull")
@@ -387,59 +385,74 @@ if (interactive()) {
   # Shared random effect association structures
   f28 <- update(f1, assoc = c("shared_b"))
   f29 <- update(f1, assoc = c("shared_coef"))
-  
+ 
+  # New data for predictions
+  ndL1 <- pbcLong[pbcLong$id == 2,]
+  ndE1 <- pbcSurv[pbcSurv$id == 2,]
+  ndL2 <- pbcLong[pbcLong$id %in% c(1,2),]
+  ndE2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
+   
   # Test the models
-  for (j in 1:29) {
+  for (j in c(1:5,7,8,10:27)) {
     tryCatch({
       mod <- get(paste0("f", j))
       cat("Checking model:", paste0("f", j), "\n")
-      
       test_that("log_lik works with estimation data", {
         ll <- log_lik(mod)
         expect_matrix(ll)
       })
+      test_that("log_lik works with new data (one individual)", {
+        ll <- log_lik(mod, newdataLong = ndL1, newdataEvent = ndE1)
+        expect_matrix(ll)
+      })
+      test_that("log_lik works with new data (multiple individuals)", {
+        ll <- log_lik(mod, newdataLong = ndL2, newdataEvent = ndE2)
+        expect_matrix(ll)
+      })
+    }, error = function(e)
+      cat(" Failed for model", paste0("f", j), " due to error:\n", paste(e)))
+  } 
+  
+  for (j in c(1:5,7,8,10:27)) {
+    tryCatch({
+      mod <- get(paste0("f", j))
+      cat("Checking model:", paste0("f", j), "\n")
       test_that("posterior_survfit works with estimation data", {
         ps <- posterior_survfit(mod)
         expect_survfit(ps)
       })
+      test_that("posterior_survfit works with new data (one individual)", {
+        ps <- posterior_survfit(mod, newdataLong = ndL1, newdataEvent = ndE1)
+        expect_survfit(ps)
+      })  
+      test_that("posterior_survfit works with new data (multiple individuals)", {
+        ps <- posterior_survfit(mod, newdataLong = ndL2, newdataEvent = ndE2)
+        expect_survfit(ps)
+      })
+    }, error = function(e)
+      cat(" Failed for model", paste0("f", j), " due to error:\n", paste(e)))
+  }  
+  
+  for (j in c(1:5,7,8,10:29)) {
+    tryCatch({
+      mod <- get(paste0("f", j))
+      cat("Checking model:", paste0("f", j), "\n")
       test_that("posterior_predict works with estimation data", {
         pp <- posterior_predict(mod, m = 1)
         expect_ppd(pp)
       }) 
-      
-      ndL <- pbcLong[pbcLong$id == 2,]
-      ndE <- pbcSurv[pbcSurv$id == 2,]
-      test_that("log_lik works with new data (one individual)", {
-        ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-        expect_matrix(ll)
-      })
-      test_that("posterior_survfit works with new data (one individual)", {
-        ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-        expect_survfit(ps)
-      })  
       test_that("posterior_predict works with new data (one individual)", {
-        pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+        pp <- posterior_predict(mod, m = 1, newdataLong = ndL1, newdataEvent = ndE1)
         expect_ppd(pp)
       })  
-      
-      ndL <- pbcLong[pbcLong$id %in% c(1,2),]
-      ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-      test_that("log_lik works with new data (multiple individuals)", {
-        ll <- log_lik(mod, newdataLong = ndL, newdataEvent = ndE)
-        expect_matrix(ll)
-      })
-      test_that("posterior_survfit works with new data (multiple individuals)", {
-        ps <- posterior_survfit(mod, newdataLong = ndL, newdataEvent = ndE)
-        expect_survfit(ps)
-      })
       test_that("posterior_predict works with new data (multiple individuals)", {
-        pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+        pp <- posterior_predict(mod, m = 1, newdataLong = ndL2, newdataEvent = ndE2)
         expect_ppd(pp)
       })  
     }, error = function(e)
       cat(" Failed for model", paste0("f", j), " due to error:\n", paste(e)))
-  }
-  
+  }      
+
 }
 
 

@@ -50,13 +50,17 @@ get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
   
   if (class(modEvent)[1] == "coxph") {
     event_ses <- summary(modEvent)$coefficients[, "se(coef)"]
-  }
-  event_tols <- tolscales$event * event_ses
+  } else event_ses <- NULL
+  event_tols <- if (!is.null(event_ses))
+    tolscales$event * event_ses else NULL
   
   for (i in c(fixef_tols, ranef_tols, event_tols)) {
     if ("(Intercept)" %in% names(i)) # use weaker tolerance for intercept
       i[["(Intercept)"]] <- 2 * i[["(Intercept)"]]  
   }
   
-  list(fixef = fixef_tols, ranef = ranef_tols, event = event_tols)
+  ret <- Filter(
+    function(x) !is.null(x),
+    list(fixef = fixef_tols, ranef = ranef_tols, event = event_tols))
+  return(ret)
 }

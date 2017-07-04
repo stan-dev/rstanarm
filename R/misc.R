@@ -986,6 +986,10 @@ mod2rx <- function(x, stub = "Long") {
     c("Event\\|")
   } else if (x == "Assoc") {
     c("Assoc\\|")
+  } else if (x == "^y") {
+    c("^y[1-9]\\|")
+  } else if (x == "y") {
+    c("y[1-9]\\|")
   } else {
     paste0("^", stub, x, "\\|")
   }   
@@ -1022,6 +1026,7 @@ list_nms <- function(object, M = NULL, stub = "Long") {
 # @param x Character vector (often rownames(fit$stan_summary)) from which
 #   the stub should be removed
 rm_stub <- function(x) {
+  x <- gsub(mod2rx("y"), "", x)
   x <- gsub(mod2rx("Long"), "", x)
   x <- gsub(mod2rx("Event"), "", x)
 }
