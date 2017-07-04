@@ -104,27 +104,28 @@ coef.stanmvreg <- function(object, m = NULL, ...) {
   refnames <- lapply(ref, function(x) unlist(lapply(x, colnames)))
   missnames <- lapply(1:M, function(m) setdiff(refnames[[m]], names(fef[[m]])))
   nmiss <- sapply(missnames, length)
-  if (any(nmiss > 0)) for (m in 1:M) {
-    if (nmiss[m] > 0) {
-      fillvars <- setNames(data.frame(rbind(rep(0, nmiss[m]))), missnames[[m]])
-      fef[[m]] <- cbind(fillvars, fef[[m]])
+  if (any(nmiss > 0)) for (x in 1:M) {
+    if (nmiss[x] > 0) {
+      fillvars <- setNames(data.frame(rbind(rep(0, nmiss[x]))), missnames[[x]])
+      fef[[x]] <- cbind(fillvars, fef[[x]])
     }
   }
   val <- lapply(1:M, function(m) 
     lapply(ref[[m]], function(x) fef[[m]][rep.int(1L, nrow(x)), , drop = FALSE]))
-  for (m in 1:M) {  # loop over number of markers
-    for (i in seq(a = val[[m]])) {  # loop over number of grouping factors
-      refi <- ref[[m]][[i]]
-      row.names(val[[m]][[i]]) <- row.names(refi)
+  for (x in 1:M) {  # loop over number of markers
+    for (i in seq(a = val[[x]])) {  # loop over number of grouping factors
+      refi <- ref[[x]][[i]]
+      row.names(val[[x]][[i]]) <- row.names(refi)
       nmsi <- colnames(refi)
-      if (!all(nmsi %in% names(fef[[m]]))) 
+      if (!all(nmsi %in% names(fef[[x]]))) 
         stop("Unable to align random and fixed effects.", call. = FALSE)
       for (nm in nmsi) 
-        val[[m]][[i]][[nm]] <- val[[m]][[i]][[nm]] + refi[, nm]
+        val[[x]][[i]][[nm]] <- val[[x]][[i]][[nm]] + refi[, nm]
     }
   }
   val <- lapply(val, function(x) structure(x, class = "coef.mer"))
-  val <- c(val, fef[length(fef)])         
+  if (is.jm(object))
+    val <- c(val, list(fixef(object)$Event))        
   if (is.null(m)) list_nms(val, M, stub = get_stub(object)) else val[[m]]       
 }
 
