@@ -58,6 +58,9 @@
 #'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
 #'   model adds priors (independent by default) on the coefficients of the GLM.
 #'   
+#'   The \code{data.frame} passed to the \code{data} argument must be sorted by
+#'   the variable passed to the \code{stratum} argument.
+#'   
 #'   The \code{formula} may have group-specific terms like in 
 #'   \code{\link{stan_glmer}} but should not allow the intercept to vary by
 #'   the stratifying variable, since there is no information in the data with
@@ -67,7 +70,7 @@
 #' 
 #' @examples
 #' stan_clogit(case ~ spontaneous + induced, strata = stratum,
-#'             data = infert[order(infert$stratum, !infert$case),], QR = TRUE,
+#'             data = infert[order(infert$stratum), ], QR = TRUE,
 #'             iter = 500) # for speed only
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
@@ -109,9 +112,8 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     X <- model.matrix(mt, mf, contrasts)
     Y <- array1D_check(model.response(mf, type = "any"))
   }
-  ord <- order(group$strata, !Y)
-  if (!identical(ord, 1:NROW(Y)))
-    stop("data must be sorted by 'strata' and successes before failures within 'strata'")
+  ord <- order(group$strata)
+  if (any(diff(ord) <= 0)) stop("data must be sorted by 'strata'")
   offset <- model.offset(mf) %ORifNULL% double(0)
   weights <- double(0)
   mf <- check_constant_vars(mf)
