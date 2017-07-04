@@ -79,6 +79,14 @@
     return ll;
   }
 
+  /** 
+   * Log-normalizing constant in the clogit case
+   *
+   * @param N_j Integer number of observations in the j-th group
+   * @param D_j Integer number of successes in the j-th group
+   * @param eta_j Vector of linear predictions in the j-th group
+   * @return A scalar that normalizes the probabilities on the log-scale
+   */
   real log_clogit_denom(int N_j, int D_j, vector eta_j);
   real log_clogit_denom(int N_j, int D_j, vector eta_j) {
     if (D_j == 1 && N_j == rows(eta_j)) return log_sum_exp(eta_j);
@@ -92,10 +100,16 @@
       return log_sum_exp(log_clogit_denom(N_jm1, D_j, eta_j),
                          log_clogit_denom(N_jm1, D_j - 1, eta_j) + eta_j[N_j]);
     }
+    return not_a_number();  // never reaches
   }
 
   /**
-   * Increment with the unweighted log-likelihood for clogit
+   * Log-likelihood for a clogit model
+   * @param eta0 Linear predictors when y == 0
+   * @param eta1 Linear predictors when y == 1
+   * @param successes Integer array with the number of successes in group j
+   * @param failures Integer array with the number of failures in group j
+   * @param observations Integer array with the number of observations in group j
    * @return lp__
    */
   real ll_clogit_lp(vector eta0, vector eta1,
