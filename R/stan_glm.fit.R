@@ -516,7 +516,7 @@ stan_glm.fit <- function(x, y,
       if (is_gaussian) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
-            if (is_nb) "reciprocal_dispersion" 
+            if (is_nb) "reciprocal_dispersion" else
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
