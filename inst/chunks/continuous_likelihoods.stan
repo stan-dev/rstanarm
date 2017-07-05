@@ -53,15 +53,15 @@
   real GammaReg(vector y, vector eta, real shape, 
                 int link, real sum_log_y) {
     real ret;
-    if (link < 1 || link > 3) reject("Invalid link");
     ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
       (shape - 1) * sum_log_y;
     if (link == 2)      // link is log
       ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
     else if (link == 1) // link is identity
       ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                // link is inverse
+    else if (link == 3) // link is inverse
       ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+    else reject("Invalid link");
     return ret;
   }
   
@@ -112,7 +112,7 @@
   }
 
   /** 
-  * inverse Gaussian log-PDF (for data only, excludes constants)
+  * inverse Gaussian log-PDF
   *
   * @param y The vector of outcomes
   * @param mu The vector of conditional means
@@ -157,14 +157,10 @@
   */
   real inv_gaussian_rng(real mu, real lambda) {
     real mu2 = square(mu);
-    // compound declare & define does not work with _rng
-    real z;
-    real y;
-    real x;
-    z = uniform_rng(0,1);
-    y = square(normal_rng(0,1));
-    x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
-      / (2 * lambda);
+    real z = uniform_rng(0,1);
+    real y = square(normal_rng(0,1));
+    real x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
+           / (2 * lambda);
     if (z <= (mu / (mu + x))) return x;
     else return mu2 / x;
   }
