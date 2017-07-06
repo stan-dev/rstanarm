@@ -27,6 +27,7 @@
 #' @importFrom lme4 mkVarCorr
 stan_glm.fit <- function(x, y, 
                          weights = rep(1, NROW(x)), 
+                         scale_weights = rep(1, NROW(x)),
                          offset = rep(0, NROW(x)), 
                          family = gaussian(),
                          ...,
@@ -330,13 +331,15 @@ stan_glm.fit <- function(x, y,
     standata$multi_depth <- as.array(multi_depth)
     standata$main_multi_map <- as.array(main_multi_map)
     standata$depth_ind <- as.array(depth_ind)
-    standata$weighted_scale <- ifelse(length(table(weights)) > 1,1,0)
+    standata$weighted_scale <- ifelse(length(table(scale_weights)) > 1, 1, 0)
     if (standata$weighted_scale == 0) {
       standata$scale_weights <- rep(1, length(y))
     } else {
-      standata$scale_weights <- weights
+      if (!is_gaussian || (is_gaussian && standata$link != 1))
+        stop("Scale weights only allowed for Gaussian models with identity link")
+      standata$scale_weights <- scale_weights
     }
-    if (standata$weighted_scale == 1 && standata$N != length(weights))
+    if (standata$weighted_scale == 1 && standata$N != length(scale_weights))
       stop("Scale weights must be the same length as the data",
            call. = FALSE)
     
