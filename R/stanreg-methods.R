@@ -274,7 +274,8 @@ sigma.stanreg <- function(object, ...) {
 #' @importFrom nlme VarCorr
 #' @importFrom stats cov2cor
 VarCorr.stanreg <- function(x, sigma = 1, ...) {
-  mat <- as.matrix(x)
+  dots <- list(...) # used to pass stanmat with a single draw for posterior_survfit
+  mat <- if ("stanmat" %in% names(dots)) as.matrix(dots$stanmat) else as.matrix(x)
   cnms <- .cnms(x)
   useSc <- "sigma" %in% colnames(mat)
   if (useSc) sc <- mat[,"sigma"]
@@ -390,11 +391,13 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     stop("This method is for stan_glmer and stan_lmer models only.", 
          call. = FALSE)
 }
-.cnms <- function(object) {
+.cnms <- function(object, ...) UseMethod(".cnms")
+.cnms.stanreg <- function(object, ...) {
   .glmer_check(object)
   object$glmod$reTrms$cnms
 }
-.flist <- function(object) {
+.flist <- function(object, ...) UseMethod(".flist")
+.flist.stanreg <- function(object, ...) {
   .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
 }
