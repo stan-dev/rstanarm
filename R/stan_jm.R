@@ -233,6 +233,9 @@
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
 #'   estimates of the log baseline hazard.
+#' @param max_treedepth A positive integer specifying the maximum treedepth 
+#'   for the non-U-turn sampler. See the \code{control} argument in 
+#'   \code{\link[rstan]{stan}}.
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
@@ -368,9 +371,9 @@
 #'   There are additional examples in the \strong{Examples} section below.
 #'   }
 #' 
-#' @return A \link[=stanmvreg-object]{stanmvreg} object is returned.
+#' @return A \link[=stanmvreg-objects]{stanmvreg} object is returned.
 #' 
-#' @seealso \code{\link{stanmvreg-object}}, \code{\link{stanmvreg-methods}}, 
+#' @seealso \code{\link{stanmvreg-objects}}, \code{\link{stanmvreg-methods}}, 
 #'   \code{\link{print.stanmvreg}}, \code{\link{summary.stanmvreg}},
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
@@ -1350,6 +1353,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
     STOP_binomial()
   
   # Design matrix
+  xtemp <- xbar <- has_intercept <- NULL # useless assignments to pass R CMD check
   x <- as.matrix(lme4::getME(mod, "X"))
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -1411,6 +1415,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   
   # Require intercept for certain family and link combinations
   if (!has_intercept) {
+    link <- which(supported_links == family$link)
     linkname <- supported_links[link]
     needs_intercept <- !is_gaussian && linkname == "identity" ||
       is_gamma && linkname == "inverse" ||
@@ -1709,6 +1714,7 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
   }
   
   # Centering of design matrix for event model
+  xtemp <- xbar <- has_intercept <- NULL # useless assignments for R CMD check
   x <- as.matrix(x_quadtime) 
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept

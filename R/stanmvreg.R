@@ -93,7 +93,7 @@ stanmvreg <- function(object) {
     prior.info        = object$prior.info,
     algorithm         = object$algorithm,
     call              = object$call,
-    stan_function = object$stan_function,
+    stan_function     = object$stan_function,
     runtime           = if (object$algorithm == "sampling") times else NULL,
     stan_summary, 
     stanfit

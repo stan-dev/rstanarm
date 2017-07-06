@@ -18,7 +18,7 @@
 
 #' Methods for stanmvreg objects
 #' 
-#' S3 methods for \link[=stanmvreg-object]{stanmvreg} objects. There are also 
+#' S3 methods for \link[=stanmvreg-objects]{stanmvreg} objects. There are also 
 #' several methods (listed in \strong{See Also}, below) with their own
 #' individual help pages. 
 #' The main difference between these methods and the 
@@ -29,9 +29,10 @@
 #' with each element of the list containing the result for one of the submodels.
 #' 
 #' @name stanmvreg-methods
-#' @aliases coef VarCorr fixef ranef ngrps sigma
 #' 
+#' @templateVar stanmvregArg object,x
 #' @templateVar mArg m
+#' @template args-stanmvreg-object
 #' @template args-m
 #' @template args-remove-stub
 #' @param ... Ignored, except by the \code{update} method. See
@@ -80,8 +81,7 @@
 #' 
 #' @seealso
 #' Other S3 methods for stanmvreg objects, which have separate documentation, 
-#' including \code{\link{as.matrix.stanmvreg}},  
-#' \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
+#' including \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
 #' 
 #' Also \code{\link{posterior_interval}} for an alternative to \code{confint}, 
 #' and \code{posterior_predict}, \code{posterior_traj} and 
@@ -92,7 +92,6 @@ NULL
 
 #' @rdname stanmvreg-methods
 #' @export
-#' @export coef
 #'    
 coef.stanmvreg <- function(object, m = NULL, ...) {
   M <- get_M(object)

@@ -537,7 +537,7 @@ get_x.default <- function(object, ...) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
-get_x.gamm4 <- function(object) {
+get_x.gamm4 <- function(object, ...) {
   as.matrix(object[["x"]])
 }
 #' @export
@@ -572,7 +572,7 @@ get_z.stanmvreg <- function(object, m = NULL, ...) {
 #
 # @param x A stanreg object, family object, or string. 
 # @param ... Other arguments passed to methods. For a \code{stanmvreg} object
-#'   this can be an integer \code{m} specifying the submodel.
+#   this can be an integer \code{m} specifying the submodel.
 # @return The inverse link function associated with x.
 linkinv <- function(x, ...) UseMethod("linkinv")
 linkinv.stanreg <- function(x, ...) {

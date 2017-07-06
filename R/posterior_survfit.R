@@ -51,8 +51,6 @@
 #'   individuals -- see the description for the \code{control} argument below
 #'   -- however also note that it is assumed that all individuals in
 #'   \code{newdataEvent} have not yet experienced the event.
-#'   In addition, see the \strong{Details} section for important details that 
-#'   need to be considered when specifying \code{newdataLong} for binomial models.
 #' @param extrapolate A logical specifying whether to extrapolate the estimated 
 #'   survival probabilities beyond the times specified in the \code{times} argument.
 #'   If \code{TRUE} then the extrapolation can be further controlled using
@@ -159,7 +157,7 @@
 #' @references 
 #'   Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in 
 #'   joint models for longitudinal and time-to-event data. \emph{Biometrics}
-#'   \strong{67}, 819–829.
+#'   \strong{67}, 819.
 #'      
 #' @examples
 #' 
