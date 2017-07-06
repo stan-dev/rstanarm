@@ -530,7 +530,7 @@ stan_glm.fit <- function(x, y,
             if (length(group)) "b",
             if (is_continuous | is_nb) "aux",
             if (standata$len_theta_L) "theta_L",
-            "mean_PPD")
+            'lambda_multi_way', "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
@@ -620,6 +620,7 @@ stan_glm.fit <- function(x, y,
                    if (is_ig) "lambda",
                    if (is_nb) "reciprocal_dispersion", 
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
+                   'abc1', 'abc2',
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
