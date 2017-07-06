@@ -44,6 +44,7 @@
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
+#' @param scale_weights For Gaussian models, 
 #' @param ... For \code{stan_glmer}, further arguments passed to 
 #'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
 #'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 
@@ -84,9 +85,11 @@
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t cBind
 stan_glmer <- function(formula, data = NULL, family = gaussian, 
-                       subset, weights, 
+                       subset, weights,
                        na.action = getOption("na.action", "na.omit"), 
-                       offset, contrasts = NULL, ...,
+                       offset, contrasts = NULL, 
+                       scale_weights,
+                       ...,
                        prior = normal(), prior_intercept = normal(),
                        prior_aux = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
@@ -101,7 +104,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   mc$control <- make_glmerControl()
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
-    mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
+    mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- mc$scale_weights <- NULL
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
   y <- glmod$fr[, as.character(glmod$formula[2L])]
@@ -121,7 +124,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
   group <- glmod$reTrms
   group$decov <- prior_covariance
   algorithm <- match.arg(algorithm)
-  stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
+  stanfit <- stan_glm.fit(x = X, y = y, weights = weights, 
+                          scale_weights = scale_weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
@@ -153,6 +157,7 @@ stan_lmer <- function(formula,
                       na.action = getOption("na.action", "na.omit"),
                       offset,
                       contrasts = NULL,
+                      scale_weights,
                       ...,
                       prior = normal(),
                       prior_intercept = normal(),
