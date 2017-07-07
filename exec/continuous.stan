@@ -115,7 +115,7 @@ transformed parameters {
                                    one_way_ix, multi_way_ix,
                                    lambda_multi_way);
       } else {
-        theta_L = scale .* tau;
+        theta_L = scale .* tau * aux;
       }
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
