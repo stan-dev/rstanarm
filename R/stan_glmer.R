@@ -113,6 +113,7 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
   offset <- model.offset(glmod$fr) %ORifNULL% double(0)
   weights <- validate_weights(weights)
+  scale_weights <- validate_weights(scale_weights)
   if (is.null(prior)) 
     prior <- list()
   if (is.null(prior_intercept)) 
