@@ -94,7 +94,7 @@
                           real[] glob_scale, int[] multi_depth,
                           int[,] main_multi_map, int[] depth_ind,
                           int[] one_way_ix, int[] multi_way_ix,
-                          vector[] lambda_multi_way) {
+                          vector lambda_multi_way) {
     vector[len_theta_L] theta_L;
     if (interaction_prior == 1 && n_multi_way > 0) {
       vector[n_multi_way] multi_way;
@@ -103,7 +103,7 @@
       for (ix in 1:n_multi_way) {
         multi_way[ix] =
         prod(tau[main_multi_map[ix, 1:multi_depth[ix]]])
-        * glob_scale[1] * lambda_multi_way[1][depth_ind[ix]];
+        * glob_scale[1] * lambda_multi_way[depth_ind[ix]];
       }
       theta_L[one_way_ix] = one_way;
       theta_L[multi_way_ix] = multi_way;
@@ -216,14 +216,14 @@
    * @return nothing
    */
   void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
-                      vector[] lambda_inter, real[] glob_scale,
+                      vector lambda_inter, real[] glob_scale,
                       real[] delta, vector shape, int n_multi_way,
                       int interaction_prior) {
     target += normal_lpdf(z_b | 0, 1);
     target += normal_lpdf(z_T | 0, 1);
     target += normal_lpdf(tau | 0, 1);
     if (n_multi_way > 0 && interaction_prior == 1)
-      target += normal_lpdf(lambda_inter[1] | 0, 1);
+      target += normal_lpdf(lambda_inter | 0, 1);
     target += normal_lpdf(glob_scale  | 0, 1);
     if (rows(zeta) > 0)
       target += gamma_lpdf(zeta | delta, 1);
