@@ -74,21 +74,7 @@
     return theta_L;
   }
   
-  /** 
-   * Create structured prior for random intercepts in 
-   * @param len_theta_L An integer indicating the length of returned vector, 
-   *   which lme4 denotes as m
-   * @param p An integer array with the number variables on the LHS of each |
-   * @param dispersion Scalar standard deviation of the errors, calles sigma by lme4
-   * @param tau Vector of scale parameters whose squares are proportional to the 
-   *   traces of the relative covariance matrices of the group-specific terms
-   * @param scale Vector of prior scales that are multiplied by elements of tau
-   * @param zeta Vector of positive parameters that are normalized into simplexes
-   *   and multiplied by the trace of the covariance matrix to produce variances
-   * @param rho Vector of radii in the onion method for creating Cholesky factors
-   * @param z_T Vector used in the onion method for creating Cholesky factors
-   * @return A vector that corresponds to theta in lme4
-   */
+  // For special MRP structured interactions prior
   vector make_theta_L_int(int interaction_prior, int len_theta_L,
                           int n_multi_way, int n_one_way, vector tau,
                           real[] glob_scale, int[] multi_depth,
@@ -199,22 +185,7 @@
     target += gamma_lpdf(tau  | shape, 1);
   }
   
-  /** 
-   * Prior on group-specific parameters for 
-   * interactions
-   *
-   * @param z_b A vector of primitive coefficients
-   * @param z_T A vector of primitives for the unit vectors in the onion method
-   * @param rho A vector radii for the onion method
-   * @param zeta A vector of primitives for the simplexes
-   * @param tau A vector of scale parameters
-   * @param regularization A real array of LKJ hyperparameters
-   * @param delta A real array of concentration paramters
-   * @param shape A vector of shape parameters
-   * @param t An integer indicating the number of group-specific terms
-   * @param p An integer array with the number variables on the LHS of each |
-   * @return nothing
-   */
+  // For special MRP structured interactions prior
   void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
                       vector lambda_inter, real[] glob_scale,
                       real[] delta, vector shape, int n_multi_way,
