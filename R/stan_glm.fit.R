@@ -29,7 +29,6 @@
 stan_glm.fit <- function(x, y, 
                          weights = rep(1, NROW(y)), 
                          offset = rep(0, NROW(y)), 
-                         scale_weights = rep(1, NROW(y)),
                          family = gaussian(),
                          ...,
                          prior = normal(),
@@ -285,7 +284,7 @@ stan_glm.fit <- function(x, y,
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
-    if (decov$dist != "decov") {
+    if (decov$dist != "decov") { # so either indep_normals or mrp_structured
       # ignored in the Stan model but need values
       decov$regularization <- 1
       decov$concentration <- 1
@@ -377,16 +376,17 @@ stan_glm.fit <- function(x, y,
     standata$multi_depth <- as.array(multi_depth)
     standata$main_multi_map <- as.array(main_multi_map)
     standata$depth_ind <- as.array(depth_ind)
-    standata$weighted_scale <- ifelse(length(table(scale_weights)) > 1, 1, 0)
+    standata$weighted_scale <- ifelse(length(table(decov$scale_weights)) > 1, 1, 0)
     if (standata$weighted_scale == 0) {
       standata$scale_weights <- rep(1, length(y))
     } else {
       if (!is_gaussian || (is_gaussian && standata$link != 1))
         stop("Scale weights only allowed for Gaussian models with identity link.", 
              call. = FALSE)
-      if (standata$N != length(scale_weights))
-        stop("Scale weights must be the same length as the data", call. = FALSE)
-      standata$scale_weights <- scale_weights
+      if (standata$N != length(decov$scale_weights))
+        stop("Scale weights must be the same length as the outcome variable.", 
+             call. = FALSE)
+      standata$scale_weights <- decov$scale_weights
     }
     
     if (is_bernoulli) {

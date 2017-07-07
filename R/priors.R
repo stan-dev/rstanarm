@@ -513,8 +513,15 @@ dirichlet <- function(concentration = 1) {
 #' @param indep If using the \code{mrp_structured} prior, toggle structured 
 #'   prior (\code{indep=FALSE}, the default) vs independent half normals
 #'   (\code{indep=TRUE}).
-mrp_structured <- function(indep = FALSE) {
-  nlist(dist = if (indep) "indep_normals" else "mrp_structured")
+#' @param scale_weights For Gaussian models, an optional vector the same length
+#'   as \eqn{y} containing weights to apply to the scale parameter when
+#'   evaluating the Gaussian likelihood.
+#' 
+mrp_structured <- function(indep = FALSE, scale_weights = NULL) {
+  nlist(
+    dist = if (indep) "indep_normals" else "mrp_structured", 
+    scale_weights
+  )
 }
 
 
