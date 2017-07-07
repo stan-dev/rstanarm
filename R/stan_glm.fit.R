@@ -274,15 +274,25 @@ stan_glm.fit <- function(x, y,
     standata$q <- ncol(Z)
     standata$len_theta_L <- sum(choose(p, 2), p)
     
-    # detect interactions in ranef and collect interaction metadata (needed only
-    # for mrp_structed prior but passed to stan so needs a value regardless)
-    colons <- grepl(":", names(l))
-    mains <- names(l)[!colons]
-    n_one_way <- length(mains)
-    one_way_ix <- match(mains, names(l))
-    ints <- names(l)[colons]
-    n_multi_way <- length(ints)
-    if (n_multi_way > 0) {
+    
+    standata$interaction_prior <-
+      switch(
+        decov$dist,
+        "decov" = 0,
+        "mrp_structured" = 1,
+        "indep_normals" = 2
+      )
+    
+    
+    if (standata$interaction_prior > 0 && n_multi_way > 0) {
+      # detect interactions in ranef and collect interaction metadata (needed only
+      # for mrp_structed prior but passed to stan so needs a value regardless)
+      colons <- grepl(":", names(l))
+      mains <- names(l)[!colons]
+      n_one_way <- length(mains)
+      one_way_ix <- match(mains, names(l))
+      ints <- names(l)[colons]
+      n_multi_way <- length(ints)
       multi_way_ix <- match(ints, names(l))
       ints_split <- strsplit(x = ints, split = ':')
       multi_depth <- sapply(ints_split, length)
@@ -307,21 +317,17 @@ stan_glm.fit <- function(x, y,
       depth_ind <- sapply(multi_depth, function(x) which(n_way_uniq == x))
       len_multi_way_uniq <- length(n_way_uniq)
     } else {
+      n_one_way <- 0
+      n_multi_way <- 0
+      len_multi_way_uniq <- 0
       max_way <- 0
+      one_way_ix <- rep(0,0)
       multi_way_ix <- rep(0,0)
       multi_depth <- rep(0,0)
       main_multi_map <- matrix(0, 0, 0)
-      len_multi_way_uniq <- 0
       depth_ind <- rep(0,0)
     }
     
-    standata$interaction_prior <-
-      switch(
-        decov$dist,
-        "decov" = 0,
-        "mrp_structured" = 1,
-        "indep_normals" = 2
-      )
     standata$n_one_way <- n_one_way
     standata$n_multi_way <- n_multi_way
     standata$max_way <- max_way
@@ -336,12 +342,12 @@ stan_glm.fit <- function(x, y,
       standata$scale_weights <- rep(1, length(y))
     } else {
       if (!is_gaussian || (is_gaussian && standata$link != 1))
-        stop("Scale weights only allowed for Gaussian models with identity link")
+        stop("Scale weights only allowed for Gaussian models with identity link.", 
+             call. = FALSE)
+      if (standata$N != length(scale_weights))
+        stop("Scale weights must be the same length as the data", call. = FALSE)
       standata$scale_weights <- scale_weights
     }
-    if (standata$weighted_scale == 1 && standata$N != length(scale_weights))
-      stop("Scale weights must be the same length as the data",
-           call. = FALSE)
     
     if (is_bernoulli) {
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
