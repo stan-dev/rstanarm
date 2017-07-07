@@ -284,7 +284,7 @@ stan_glm.fit <- function(x, y,
       )
     
     
-    if (standata$interaction_prior > 0 && n_multi_way > 0) {
+    if (standata$interaction_prior > 0) {
       # detect interactions in ranef and collect interaction metadata (needed only
       # for mrp_structed prior but passed to stan so needs a value regardless)
       colons <- grepl(":", names(l))
