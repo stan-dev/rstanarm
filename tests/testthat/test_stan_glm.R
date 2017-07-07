@@ -150,7 +150,7 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # prior_aux can't be NULL if prior_PD is TRUE
   expect_error(stan_glm(mpg ~ wt, data = mtcars, prior_aux = NULL, prior_PD = TRUE),
-               "'prior_aux' can't be NULL if 'prior_PD' is TRUE")
+               "'prior_aux' cannot be NULL if 'prior_PD' is TRUE")
 })
 
 context("stan_glm (gaussian)")

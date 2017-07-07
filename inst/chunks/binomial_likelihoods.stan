@@ -24,15 +24,13 @@
   * @return lp__
   */
   real ll_binom_lp(int[] y, int[] trials, vector eta, int link) {
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
     if (link == 1) target += binomial_logit_lpmf(y | trials, eta);
     else if (link <  4) target += binomial_lpmf( y | trials, linkinv_binom(eta, link));
     else if (link == 4) {  // log
       for (n in 1:num_elements(y)) {
         target += y[n] * eta[n];
         target += (trials[n] - y[n]) * log1m_exp(eta[n]);
+        target += lchoose(trials[n], y[n]);
       }
     }
     else if (link == 5) {  // cloglog
@@ -40,8 +38,10 @@
         real neg_exp_eta = -exp(eta[n]);
         target += y[n] * log1m_exp(neg_exp_eta);
         target += (trials[n] - y[n]) * neg_exp_eta;
+        target += lchoose(trials[n], y[n]);
       }
     }
+    else reject("Invalid link");
     return target();
   }
   

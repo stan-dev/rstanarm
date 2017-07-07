@@ -25,6 +25,11 @@ data {
   int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
   int<lower=0> u_X1[dense_X ? 0 : N[2] + 1]; // where the non-zeros start in each row of X1
   
+  int<lower=0> K_smooth;
+  matrix[N[1], K_smooth] S0;
+  matrix[N[2], K_smooth] S1;
+  int<lower=1> smooth_map[K_smooth];
+  
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
 
   // weights
