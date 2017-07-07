@@ -291,7 +291,7 @@ used.sparse <- function(x) {
 }
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
   if (p$dist != "decov") {
-    cat(paste0("\n", txt, p$dist))
+    cat(paste0("\n", txt, "\n ~ ", p$dist))
   } else {
     .f1 <- formatters[[1]]
     p$regularization <- .format_pars(p$regularization, .f1)
