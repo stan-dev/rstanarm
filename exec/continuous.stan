@@ -94,14 +94,6 @@ transformed parameters {
   vector[z_dim] omega; // used in tparameters_betareg.stan             
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   #include "tparameters_betareg.stan"
-  
-  if (prior_dist_for_aux == 0) // none
-    aux = aux_unscaled;
-  else {
-    aux = prior_scale_for_aux * aux_unscaled;
-    if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
-  }
 
   if (t > 0) {
     if (special_case == 1) {
