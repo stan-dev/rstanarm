@@ -225,7 +225,8 @@
     if (n_multi_way > 0 && interaction_prior == 1)
       target += normal_lpdf(lambda_inter[1] | 0, 1);
     target += normal_lpdf(glob_scale  | 0, 1);
-    target += gamma_lpdf(zeta | delta, 1);
+    if (rows(zeta) > 0)
+      target += gamma_lpdf(zeta | delta, 1);
   }
   
   /**
