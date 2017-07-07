@@ -126,11 +126,13 @@
 #' compare_models(kfold1, kfold2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
+  if (x$stan_function == "stan_mvmer")
+    STOP_stan_mvmer("'loo'")
   if (model_has_weights(x))
     recommend_exact_loo(reason = "model has weights")
   
@@ -140,7 +142,11 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  if (is.stanmvreg(x)) {
+    loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
+  } else {
+    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  }
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
@@ -181,12 +187,15 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 # 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
+#' @importFrom loo waic waic.function waic.matrix
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
+  if (x$stan_function == "stan_mvmer")
+    STOP_stan_mvmer("'waic'")
+  out <- if (is.stanmvreg(x)) waic.matrix(log_lik(x)) else 
+    waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 
@@ -229,6 +238,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
+  if (is.stanmvreg(x))
+    STOP_if_stanmvreg("kfold")
   if (model_has_weights(x))
     stop("kfold is not currently available for models fit using weights.")
   
@@ -416,6 +427,8 @@ recommend_exact_loo <- function(reason) {
 # @return A modified version of 'loo_x'. 
 #
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
+  if (is.stanmvreg(x))
+    STOP_if_stanmvreg("reloo")
   stopifnot(!is.null(x$data), is.loo(loo_x))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")

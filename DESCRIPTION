@@ -5,6 +5,7 @@ Version: 2.15.4
 Date: 2017-04-27
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
+             person("Sam", "Brilleman", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
@@ -29,15 +30,19 @@ Depends:
     methods
 Imports:
     bayesplot (>= 1.2.0),
+    cowplot (>= 0.7.0),
+    data.table (>= 1.10.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 1.1.0),
     Matrix,
+    mvtnorm (>= 1.0.6),
     nlme (>= 3.1-124),
     rstan (>= 2.14.2),
     rstantools (>= 1.2.0),
     shinystan (>= 2.3.0),
     stats,
+    survival (>= 2.40.1),
     utils
 Suggests:
     arm,
@@ -59,4 +64,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

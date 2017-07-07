@@ -72,22 +72,24 @@ posterior_linpred.stanreg <-
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("posterior_linpred")
+    if (is.stanmvreg(object))
+      STOP_if_stanmvreg("'posterior_linpred'")
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,
-                   offset = offset)
+                   offset = offset,
+                   ...)
     if (XZ) {
       XZ <- dat[["x"]]
       if (is.mer(object))
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
-    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
+    eta <- pp_eta(object, data = dat, draws = NULL, ...)[["eta"]]
+    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object, ...))
     else colnames(eta) <- rownames(newdata)
-    
     if (!transform)
       return(eta)
     
