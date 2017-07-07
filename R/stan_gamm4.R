@@ -292,6 +292,7 @@ plot_nonlinear <- function(x, smooths, ...,
     colnames(xz) <- xnames[1:2]
     plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
     nd <- original
+    nd <- nd[sample(nrow(xz), size = nrow(xz), replace = TRUE), ]
     nd[[xnames[1]]] <- xz[[xnames[1]]]
     nd[[xnames[2]]] <- xz[[xnames[2]]]
     requireNamespace("mgcv", quietly = TRUE)
