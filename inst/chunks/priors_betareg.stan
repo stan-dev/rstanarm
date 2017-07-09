@@ -6,7 +6,8 @@
     target += normal_lpdf(local_z[1] | 0, 1);
     target += inv_gamma_lpdf(local_z[2] | 0.5 * prior_df_z, 0.5 * prior_df_z);
     target += normal_lpdf(global_z[1] | 0, 1);
-    target += inv_gamma_lpdf(global_z[2] | 0.5, 0.5);
+    target += inv_gamma_lpdf(global_z[2] | 0.5 * global_prior_df_z, 0.5 * global_prior_df_z);
+    target += inv_gamma_lpdf(caux_z | 0.5 * slab_df_z, 0.5 * slab_df_z);
   }
   else if (prior_dist_z == 4) { // hs+
     target += normal_lpdf(z_omega | 0, 1);

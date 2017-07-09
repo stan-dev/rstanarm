@@ -9,9 +9,10 @@
     beta[k] = CFt(z_beta[k], prior_df[k]) * prior_scale[k] + prior_mean[k];
   }
   else if (prior_dist == 3) {
+    real c2 = square(slab_scale) * caux[1];
     if (is_continuous == 1 && family == 1)
-      beta = hs_prior(z_beta, global, local, global_prior_scale, aux);
-    else beta = hs_prior(z_beta, global, local, global_prior_scale, 1);
+      beta = hs_prior(z_beta, global, local, global_prior_scale, aux, c2);
+    else beta = hs_prior(z_beta, global, local, global_prior_scale, 1, c2);
   }
   else if (prior_dist == 4) {
     if (is_continuous == 1 && family == 1)

@@ -86,7 +86,8 @@ stan_glm.fit <- function(x, y,
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- prior_scale_for_smooth <-
     prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <- 
-    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <- NULL
+    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <- slab_df <- 
+    slab_scale <- NULL
   
   if (is.list(x)) {
     x_stuff <- center_x(x[[1]], sparse)
@@ -117,7 +118,8 @@ stan_glm.fit <- function(x, y,
     default_scale = 2.5,
     ok_dists = ok_dists
   )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}, global_prior_df, global_prior_scale
+  # prior_{dist, mean, scale, df, dist_name, autoscale}, 
+  # global_prior_df, global_prior_scale, slab_df, slab_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
   
@@ -258,7 +260,7 @@ stan_glm.fit <- function(x, y,
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
-    global_prior_df, global_prior_scale, # for hs priors
+    global_prior_df, global_prior_scale, slab_df, slab_scale, # for hs priors
     has_intercept, prior_PD,
     z_dim = 0,  # betareg data
     link_phi = 0,
@@ -266,12 +268,13 @@ stan_glm.fit <- function(x, y,
     has_intercept_z = 0,
     zbar = array(0, dim = c(0)),
     prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(), 
-    prior_df_z = integer(), global_prior_scale_z = 0,
+    prior_df_z = integer(), global_prior_scale_z = 0, global_prior_df_z = 0,
     prior_dist_for_intercept_z = 0, prior_mean_for_intercept_z = 0,
     prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_dist_for_aux = prior_dist_for_aux,
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
+    slab_df_z = 0, slab_scale_z = 0,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0)
     # mean,df,scale for aux added below depending on family

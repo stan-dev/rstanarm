@@ -4,7 +4,8 @@
     omega[k] = CFt(omega[k], prior_df_z[k]) * prior_scale_z[k] + prior_mean_z[k];
   }
   else if (prior_dist_z == 3) 
-    omega = hs_prior(z_omega, global_z, local_z, global_prior_scale, 1);
+    omega = hs_prior(z_omega, global_z, local_z, global_prior_scale, 
+                     1, square(slab_scale_z) * caux_z[1]);
   else if (prior_dist_z == 4) 
     omega = hsplus_prior(z_omega, global_z, local_z, global_prior_scale, 1);
   else if (prior_dist_z == 5)

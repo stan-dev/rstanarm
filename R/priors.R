@@ -48,9 +48,9 @@
 #'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} 
 #'   prior, the degrees of freedom parameter must be an integer (vector) that is
 #'   at least \eqn{2} (the default).
-#' @param global_df,global_scale Optional arguments for the hierarchical
-#'   shrinkage priors. See the \emph{Hierarchical shrinkage family} section
-#'   below.
+#' @param global_df,global_scale,slab_df,slab_scale Optional arguments for the
+#'   hierarchical shrinkage priors. See the \emph{Hierarchical shrinkage family}
+#'   section below.
 #' @param what A character string among \code{'mode'} (the default),
 #'   \code{'mean'}, \code{'median'}, or \code{'log'} indicating how the
 #'   \code{location} parameter is interpreted in the \code{LKJ} case. If
@@ -105,7 +105,7 @@
 #' \subsection{Hierarchical shrinkage family}{
 #'   Family members:
 #'   \itemize{
-#'   \item \code{hs(df, global_df, global_scale)}
+#'   \item \code{hs(df, global_df, global_scale, slab_df, slab_scale)}
 #'   \item \code{hs_plus(df1, df2, global_df, global_scale)}
 #'   }
 #'   
@@ -115,15 +115,10 @@
 #'   distributed half Cauchy with a median of zero and a scale parameter that is
 #'   also half Cauchy. This is called the "horseshoe prior". The hierarchical 
 #'   shrinkage (\code{hs}) prior in the \pkg{rstanarm} package instead utilizes 
-#'   a half Student t distribution for the standard deviation (with 3 degrees of
-#'   freedom by default), as described by Piironen and Vehtari (2015). It is
-#'   possible to change the \code{df} argument, the prior degrees of freedom, to
-#'   obtain less or more shrinkage. Traditionally the standard deviation
-#'   parameter is then scaled by the square root of a \emph{global} half Cauchy 
-#'   parameter, although \pkg{rstanarm} allows setting \code{global_df} and 
-#'   \code{global_scale} arguments, in which case this global parameter is 
-#'   distributed half Student t with degrees of freedom \code{global_df} and 
-#'   scale \code{global_scale}.
+#'   a regularized horseshoe prior, as described by Piironen and Vehtari (2017),
+#'   which recommends setting the \code{global_scale} argument equal to the ratio
+#'   of the expected number of non-zero coefficients to the expected number of
+#'   zero coefficients, divided by the square root of the number of observations.
 #'   
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
 #'   mean of zero and a standard deviation that is distributed as the product of
@@ -428,11 +423,15 @@ cauchy <- function(location = 0, scale = NULL, autoscale = TRUE) {
 
 #' @rdname priors
 #' @export
-hs <- function(df = 3, global_df = 1, global_scale = 1) {
+hs <- function(df = 1, global_df = 1, global_scale = 0.01,
+               slab_df = 4, slab_scale = 2.5) {
   validate_parameter_value(df)
   validate_parameter_value(global_df)
   validate_parameter_value(global_scale)
-  nlist(dist = "hs", df, location = 0, scale = 1, global_df, global_scale)
+  validate_parameter_value(slab_df)
+  validate_parameter_value(slab_scale)
+  nlist(dist = "hs", df, location = 0, scale = 1, 
+        global_df, global_scale, slab_df, slab_scale)
 }
 
 #' @rdname priors
