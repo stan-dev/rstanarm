@@ -92,6 +92,8 @@ print.stanreg <- function(x, digits = 1, ...) {
       cut_mat <- mat[, cut_nms, drop = FALSE]
       cut_estimates <- .median_and_madsd(cut_mat)
     }
+    if ("car" %in% class(x))
+        nms <- setdiff(rownames(x$stan_summary), c("log-posterior", paste0("psi[", 1:length(x$y), "]")))
     ppd_nms <- grep("^mean_PPD", nms, value = TRUE)
     nms <- setdiff(nms, ppd_nms)
     coef_mat <- mat[, nms, drop = FALSE]
@@ -223,7 +225,6 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
                             probs = NULL, ..., digits = 1) {
   mer <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
-  
   if (!used.optimizing(object)) {
     args <- list(object = object$stanfit)
     if (!is.null(probs)) 
