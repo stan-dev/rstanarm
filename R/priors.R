@@ -513,14 +513,22 @@ dirichlet <- function(concentration = 1) {
 #' @param indep If using the \code{mrp_structured} prior, toggle structured 
 #'   prior (\code{indep=FALSE}, the default) vs independent half normals
 #'   (\code{indep=TRUE}).
-#' @param scale_weights For Gaussian models, an optional vector the same length
-#'   as \eqn{y} containing weights to apply to the scale parameter when
-#'   evaluating the Gaussian likelihood.
+#' @param cell_size,cell_sd For Gaussian models, if (and only if) \code{y} is provided
+#'   as cell means then \code{cell_size} and \code{cell_sd} should be vectors the same length as 
+#'   \eqn{y} (and in the same order) containing, respectively, the number of observations in 
+#'   each poststratification cell and the standard deviation of the outcome 
+#'   within each poststratification cell.
 #' 
-mrp_structured <- function(indep = FALSE, scale_weights = NULL) {
+mrp_structured <- function(indep = FALSE, cell_size = NULL, cell_sd = NULL) {
+  if (length(cell_size) != length(cell_sd))
+    stop("'cell_size' and 'cell_sd' must be the same length.")
+  if (anyNA(cell_sd))
+    stop("NAs not allowed in 'cell_sd'.")
+
   nlist(
     dist = if (indep) "indep_normals" else "mrp_structured", 
-    scale_weights
+    cell_size, 
+    cell_sd
   )
 }
 

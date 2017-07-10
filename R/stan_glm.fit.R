@@ -322,7 +322,6 @@ stan_glm.fit <- function(x, y,
         "indep_normals" = 2
       )
     
-    
     if (standata$interaction_prior > 0) {
       # detect interactions in ranef and collect interaction metadata (needed only
       # for mrp_structed prior but passed to stan so needs a value regardless)
@@ -376,17 +375,21 @@ stan_glm.fit <- function(x, y,
     standata$multi_depth <- as.array(multi_depth)
     standata$main_multi_map <- as.array(main_multi_map)
     standata$depth_ind <- as.array(depth_ind)
-    standata$weighted_scale <- ifelse(length(table(decov$scale_weights)) > 1, 1, 0)
-    if (standata$weighted_scale == 0) {
-      standata$scale_weights <- rep(1, length(y))
+    
+    if (length(table(decov$cell_size)) <= 1) {
+      standata$use_cell_weights <- 0
+      standata$cell_size <- double(0)
+      standata$sum_cell_ssr <- double(0)
     } else {
       if (!is_gaussian || (is_gaussian && standata$link != 1))
-        stop("Scale weights only allowed for Gaussian models with identity link.", 
+        stop("'cell_size' only allowed for Gaussian models with identity link.", 
              call. = FALSE)
-      if (standata$N != length(decov$scale_weights))
-        stop("Scale weights must be the same length as the outcome variable.", 
+      if (standata$N != length(decov$cell_size))
+        stop("'cell_size' must be the same length as the outcome variable.", 
              call. = FALSE)
-      standata$scale_weights <- decov$scale_weights
+      standata$use_cell_weights <- 1
+      standata$cell_size <- decov$cell_size
+      standata$sum_cell_ssr <- array(sum((decov$cell_size - 1) * decov$cell_sd^2))
     }
     
     if (is_bernoulli) {

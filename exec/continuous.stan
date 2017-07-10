@@ -64,11 +64,17 @@ data {
   #include "glmer_stuff_interaction.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
   #include "data_betareg.stan"
-  // container for the scale_weights
-  int<lower=0, upper=1> weighted_scale;
-  vector[N] scale_weights;
+  
+  // stuff for mrp structured prior
+  int<lower=0, upper=1> use_cell_weights;
+  vector<lower=1>[N * use_cell_weights] cell_size;
+  real<lower=0> sum_cell_ssr[use_cell_weights];
 }
 transformed data {
+  // for mrp_structured prior
+  vector[use_cell_weights ? N : 0] cell_weights; 
+  real sum_cell_size[use_cell_weights]; 
+  
   vector[family == 3 ? N : 0] sqrt_y;
   vector[family == 3 ? N : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
@@ -81,6 +87,11 @@ transformed data {
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
+  }
+  
+  if (use_cell_weights) {
+    cell_weights = 1.0 ./ sqrt(cell_size);
+    sum_cell_size[1] = sum(cell_size);
   }
 }
 parameters {
@@ -154,11 +165,14 @@ model {
 
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
-    if (family == 1) {
-      if (link == 1 && weighted_scale == 0) 
+    if (use_cell_weights) { 
+      // special case for mrp structured prior with aggregate data
+      target += normal_lpdf(y | eta, aux * cell_weights);
+      target += (N - sum_cell_size[1]) * log(aux) - 0.5 * sum_cell_ssr[1] * inv(aux^2);
+    }
+    else if (family == 1) {
+      if (link == 1) 
         target += normal_lpdf(y | eta, aux);
-      else if (link == 1 && weighted_scale == 1)
-        target += normal_lpdf(y | eta, aux * scale_weights);
       else if (link == 2) 
         target += normal_lpdf(y | exp(eta), aux);
       else 
