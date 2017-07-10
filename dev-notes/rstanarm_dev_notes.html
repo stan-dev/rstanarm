@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Imad Ali   March 10, 2017" />
+  <title>RStanARM Developer Notes</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="frost.css" type="text/css" />
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">RStanARM Developer Notes</h1>
+<h2 class="author">Imad Ali <br> March 10, 2017</h2>
+</div>
+<div id="TOC">
+<ul>
+<li><a href="#preliminaries"><span class="toc-section-number">1</span> Preliminaries</a></li>
+<li><a href="#model-fitting"><span class="toc-section-number">2</span> Model Fitting</a><ul>
+<li><a href="#r-stuff"><span class="toc-section-number">2.1</span> R Stuff</a><ul>
+<li><a href="#tips"><span class="toc-section-number">2.1.1</span> Tips</a></li>
+</ul></li>
+<li><a href="#stan-stuff"><span class="toc-section-number">2.2</span> Stan Stuff</a><ul>
+<li><a href="#tips-1"><span class="toc-section-number">2.2.1</span> Tips</a></li>
+</ul></li>
+<li><a href="#priors"><span class="toc-section-number">2.3</span> Priors</a></li>
+</ul></li>
+<li><a href="#rstanreg.r"><span class="toc-section-number">3</span> <code>R/stanreg.R</code></a></li>
+<li><a href="#methods"><span class="toc-section-number">4</span> Methods</a><ul>
+<li><a href="#predict"><span class="toc-section-number">4.1</span> <code>predict</code></a></li>
+<li><a href="#posterior_predict"><span class="toc-section-number">4.2</span> <code>posterior_predict</code></a></li>
+<li><a href="#posterior_linpred"><span class="toc-section-number">4.3</span> <code>posterior_linpred</code></a></li>
+<li><a href="#loo-and-log_lik"><span class="toc-section-number">4.4</span> <code>loo</code> and <code>log_lik</code></a><ul>
+<li><a href="#llfun"><span class="toc-section-number">4.4.1</span> <code>llfun</code></a></li>
+<li><a href="#llargs"><span class="toc-section-number">4.4.2</span> <code>llargs</code></a></li>
+</ul></li>
+<li><a href="#prior_summary"><span class="toc-section-number">4.5</span> <code>prior_summary</code></a></li>
+</ul></li>
+<li><a href="#documentation-and-examples"><span class="toc-section-number">5</span> Documentation and Examples</a></li>
+<li><a href="#testing"><span class="toc-section-number">6</span> Testing</a></li>
+<li><a href="#vignettes"><span class="toc-section-number">7</span> Vignettes</a></li>
+<li><a href="#an-outline-of-what-goes-where"><span class="toc-section-number">8</span> An outline of what goes where</a></li>
+</ul>
+</div>
+<!---
+Run the following in terminal to render the md doc as a html file
+with frost.css:
+pandoc --css frost.css rstanarm_dev_notes.md --mathjax --toc --number-sections -o rstanarm_dev_notes.html
+-->
+<h1 id="preliminaries"><span class="header-section-number">1</span> Preliminaries</h1>
+<p>This note is designed to help a developer contribute to rstanarm, which requires an understanding of how the various components of the package fit together.</p>
+<p>Some things to keep in mind going forward:</p>
+<ul>
+<li>rstanarm objects are S3 objects of class <code>'stanreg'</code>.</li>
+<li>rstan objects are S4 objects of class <code>'stanfit'</code>.</li>
+</ul>
+<p>Before working on including a model into rstanarm you should get the general form of the model(s) working using rstan. Include generated quantities such as posterior predictions, <code>log_lik</code>, and the mean posterior predictive distribution (<code>mean_PPD</code>). This will be useful in debugging the same model that you'll implement in rstanarm.</p>
+<h1 id="model-fitting"><span class="header-section-number">2</span> Model Fitting</h1>
+<p>Below we break things down into stuff you need to do in R and stuff you need to do in Stan to get the model working.</p>
+<h2 id="r-stuff"><span class="header-section-number">2.1</span> R Stuff</h2>
+<p>First add the package you plan on emulating in the <code>DESCRIPTION</code> file under <code>suggests:</code>.</p>
+<p>You'll need to write an rstanarm function for each of the models you plan on emulating. These functions should call a .fit workhorse function which will run Stan. Essentially, the workflow will look something like the following:</p>
+<pre><code>                     ┏━━━━━━ USER ━━━━━━┓
+                  model_A.R                  model_B.R
+                      ┗━━━━ model.fit ━━━━┛
+                                   ┃
+                               model.stan</code></pre>
+<p>Regarding the above diagram, the <code>model_*.R</code> and <code>model.fit</code> files are in the <code>R</code> folder and the <code>model.stan</code> file is in the <code>exec</code> folder. You should include existing snippets of stan code in your <code>model.stan</code> file. These are located in the <code>inst/chunks</code> folder.</p>
+<p>In the .fit function you should,</p>
+<ul>
+<li>Center the covariates.</li>
+<li>Perform QR decomposition.</li>
+<li>Determine whether the intercept is declared (or whether multiple linear predictors have been declared).</li>
+<li>Extract and process information regarding the priors declared.</li>
+<li>Define the parameters that you want Stan to return as a vector of strings <code>pars</code>.</li>
+<li>Put together data as a list that can be called into rstan.</li>
+</ul>
+<p>Conditionals should be set up so that the .fit workhorse function can deal with the following algorithm arguments.</p>
+<ul>
+<li><code>'optimizing'</code></li>
+<li><code>'sampling'</code></li>
+<li><code>'fullrank'</code> and <code>'meanfield'</code> (Variational Bayes methods)</li>
+</ul>
+<h3 id="tips"><span class="header-section-number">2.1.1</span> Tips</h3>
+<ul>
+<li>If you added a new argument to your modeling function and are wondering why the argument is not recognized when you run the function (after building the package) it's probably because you haven't NULLified the argument in the <code>match.call(expand.dots = FALSE)</code> list.</li>
+<li>If Stan isn't returning parameters that are in the model make sure you've specified them in <code>pars</code>.</li>
+<li>If the model's family is using an existing family but the model linear predictor, etc. is different then it might be a good idea to give it an additional class identifier: <code>class(out) &lt;- c(&quot;stanreg&quot;, &quot;additional_class&quot;)</code></li>
+</ul>
+<h2 id="stan-stuff"><span class="header-section-number">2.2</span> Stan Stuff</h2>
+<p>In the Stan file you should try to minimize the number of loops, storing n-dimensional objects, redoing calculations that only need to be done once, calculating inverses (e.g. use the precision multinormal instead of multinormal).</p>
+<p>Because we center the covariates you have to separate the intercept out of the linear predictor matrix (i.e. <code>X</code> should not contain a vector of ones). If <code>gamma</code> is the intercept parameter fit using centered predictors and <code>alpha</code> is the intercept parameter you want to report then do the following transformation in generated quantities:</p>
+<pre><code>...
+generated quantities {
+  real alpha[has_intercept];
+  {
+    alpha[1] = gamma[1] - dot_product(beta, xbar)
+  }
+}</code></pre>
+<p>Don't forget to evaluate <code>mean_PPD</code> (the mean of the posterior predictive distribution) in the generated quantities block.</p>
+<p>For efficiency posterior predictions and the log likelihood is computed in R.</p>
+<h3 id="tips-1"><span class="header-section-number">2.2.1</span> Tips</h3>
+<ul>
+<li><strong>Every time you make a change to a Stan file you need to recompile the package</strong>. (Only running <code>devtools::build()</code> is not sufficient.) So do the following:
+<ol style="list-style-type: decimal">
+<li>Move one level up from the <code>rstanarm/</code> directory.</li>
+<li>From the command line run <code>R CMD INSTALL --preclean rstanarm</code>.</li>
+<li>In RStudio run <code>devtools::build()</code>.</li>
+</ol></li>
+<li>In the generated quantities block define the variables you want to report globally and use local scopes (i.e. <code>{}</code>) to define (and perform calculations on) N-dimensional objects.</li>
+</ul>
+<h2 id="priors"><span class="header-section-number">2.3</span> Priors</h2>
+<p>This varies from model to model.</p>
+<p>In the Stan file you should be able to use existing code in <code>inst/chunks</code> to apply priors on the intercept (if it exists) and independent priors on the parameters of the predictors.</p>
+<p>User <code>prior_aux</code> to take care of single scalar parameters in the model (e.g. the spatial autocorrelation coefficient in spatial models)</p>
+<p>If you need the user to define a prior distribution that is not currently available then add the function in <code>R/priors.R</code>. (Use the existing functions as a guide). Include the appropriate documentation so that prior distribution is defined in the <code>?priors</code> help page.</p>
+<h1 id="rstanreg.r"><span class="header-section-number">3</span> <code>R/stanreg.R</code></h1>
+<p>The main things to deal with here are the <strong>coefficients</strong> and the <strong>linear predictors/fitted values</strong>.</p>
+<p>The first few conditionals deal with picking up the estimated coefficients. Sometimes <code>object$family$family</code> isn't sufficient to pick up on this so you might have to use <code>is(object, &quot;class_name&quot;)</code> to determine whether the object is of a certain class (in addition to the class &quot;stanreg&quot;).</p>
+<p>The <code>linear.predictors</code> should be an N-dimensional vector of predictions that have not been transformed by the link function. The <code>fitted.values</code> are the linear predictors transformed by the link function. (e.g. if <code>object$family$family == &quot;gaussian&quot;</code> then the linear predictor and fitted values will be identical since the link function is the identity function.)</p>
+<p>Lastly, at the end of <code>out &lt;- list(...)</code> you should include any other stuff that you might need for the methods (e.g. spatial models need the spatial weight matrix, stan_betareg needs the info associated with the &quot;z&quot; linear predictor if declared, etc.)</p>
+<h1 id="methods"><span class="header-section-number">4</span> Methods</h1>
+<p>Most of the <code>*.stanreg</code> methods are in <code>R/stanreg-methods.R</code>, but as long as things are done appropriately in the .fit file and in <code>stanreg.R</code> all the methods here should work fine.</p>
+<h2 id="predict"><span class="header-section-number">4.1</span> <code>predict</code></h2>
+<p>The main thing here is to make sure predict works appropriately when the user declares new data. As a rough check, the predictions should match the predictions made by the function you're emulating.</p>
+<p>Also, if no new data is declared then <code>predict(fit)</code> and <code>fit$fitted.values</code> should be identical.</p>
+<h2 id="posterior_predict"><span class="header-section-number">4.2</span> <code>posterior_predict</code></h2>
+<p>This is a little more involved than the <code>predict</code> method. Essentially you need to return and <span class="math inline">\(N \times S\)</span> dimensional matrix where <span class="math inline">\(N\)</span> is the number of observations and <span class="math inline">\(S\)</span> is the number of draws from the posterior distribution. There are two parts to this:</p>
+<ol style="list-style-type: decimal">
+<li>Specify <code>pp_fun</code></li>
+</ol>
+<ul>
+<li><code>pp_fun</code> will call on the posterior prediction function of the form <code>.pp_*</code>. So you need to specify the (stochastic) data generating process within <code>.pp_*</code>. We use <code>sapply()</code> to iterate over the number of draws and compute the fitted values.</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Specify <code>pp_args</code></li>
+</ol>
+<ul>
+<li>Include anything you might need for posterior predictions within the <code>args</code> list in the <code>pp_args</code> function. (Make sure you do any necessary link function transformations here.)</li>
+</ul>
+<h2 id="posterior_linpred"><span class="header-section-number">4.3</span> <code>posterior_linpred</code></h2>
+<h2 id="loo-and-log_lik"><span class="header-section-number">4.4</span> <code>loo</code> and <code>log_lik</code></h2>
+<p>You need to check whether,</p>
+<ol style="list-style-type: decimal">
+<li><code>loo()</code> is using the correct log likelihood specified in <code>log_lik.R</code>. This is the log likelihood function that corresponds to <code>object$family</code> (or some other identifier that you can subset from <code>object</code>). If it does then you're done.</li>
+<li>If not then you need to specify the appropriate log likelihood to be used in <code>loo()</code>.</li>
+</ol>
+<p>Getting the loo function to work on a stanreg object can be tricky. It involves creating a log likelihood function for the posterior <code>llfun</code> and a set of arguments to be passed through this function <code>llargs</code>.</p>
+<h3 id="llfun"><span class="header-section-number">4.4.1</span> <code>llfun</code></h3>
+<p>The best way to think about this is that you want to create a <span class="math inline">\(S \times N\)</span> matrix point-wise log likelihood, where <span class="math inline">\(S\)</span> is the number of draws and <span class="math inline">\(N\)</span> is the number of observations (i.e. you're evaluating the log-likelihood of the posterior for each datum and draw from the marginal posterior).</p>
+<p>The approach taken with using loo on a stanreg object is to declare a function that iterates over the data, rather than specifying the entire point-wise log likelihood matrix.</p>
+<h3 id="llargs"><span class="header-section-number">4.4.2</span> <code>llargs</code></h3>
+<p>Within the <code>llargs</code> list <code>data</code> needs to be a data frame or matrix that can be iterated over <span class="math inline">\(N\)</span> times. <code>draws</code> should be a list containing the draws of <span class="math inline">\(S\)</span> dimension. One way to think about it is that data is what you need to iterate over and draws is fixed. <del>This is useful in cases where some variables may be considered as data but you don't actually want to iterate over them, or in cases where you only have one observation and actually need to iterate over the draws (e.g. a multinormal outcome with correlated errors.)</del></p>
+<h2 id="prior_summary"><span class="header-section-number">4.5</span> <code>prior_summary</code></h2>
+<p>The <code>prior_summary</code> function is used to report the prior distributions specified on the parameters when the sampler iterates over the target distribution (which is not necessarily identical to what the user declares).</p>
+<ol style="list-style-type: decimal">
+<li>Define a <code>summarize_*_prior</code> function at the end of the model's .fit file to capture all the prior information. See <code>stan_glm.fit</code> for a comprehensive example or <code>stan_sp.fit</code> for a simple example.
+<ul>
+<li>If the user can call <code>prior_aux</code> then you need to give this parameter a name in <code>$prior_aux$aux_name = &quot;prior_aux_name_here&quot;</code>. (e.g. in spatial models we have <code>$prior_aux$aux_name = &quot;rho&quot;</code> and in stan_betareg we have <code>$prior_aux$aux_name = &quot;phi&quot;</code>)</li>
+</ul></li>
+<li>Call <code>prior_info &lt;- summarize_*_prior(...)</code> before you do any model fitting.</li>
+<li>At end of the <code>&quot;optimizing&quot;</code> and <code>&quot;sampling&quot;</code> conditionals make sure you <code>return(structure(stanfit, prior.info = prior_info))</code>.</li>
+</ol>
+<p>If you do this right then everything should work out swimmingly in the <code>prior_summary.R</code> file. If it so happens that you've introduced a new prior then you'll need to update the conditional in the relevant <code>.prior_*_prior</code> function to pick this information up.</p>
+<h1 id="documentation-and-examples"><span class="header-section-number">5</span> Documentation and Examples</h1>
+<p>We use <a href="http://r-pkgs.had.co.nz/man.html">roxygen</a> for documentation and examples. Some advice follows,</p>
+<ul>
+<li>The title will probably be something like &quot;Bayesian model of awesomeness&quot;.</li>
+<li>Following the title you should add a description of the model. Some things to consider are,
+<ul>
+<li>What is the model?</li>
+<li>What are the equation(s) of the model (if it is not already obvious and if they can be stated clearly)?</li>
+<li>On what parameters can the user specify priors?</li>
+</ul></li>
+<li>Don't forget to export the function with <code>@export</code>.</li>
+<li>Where possible, always use <code>@template</code> (and, if relevant, <code>@tamplateVar</code>) to pull in the existing templates from the <code>man-roxygen</code> folder.</li>
+<li>Document the additional arguments that are not covered by the templates using <code>@param</code></li>
+<li>In <code>@seealso</code>,
+<ul>
+<li>Point the user to the rstanarm vignettes associated with the model.</li>
+<li>Mention related models (especially if you're implementing multiple models from a single package).</li>
+</ul></li>
+<li>In <code>@details</code> specify,
+<ul>
+<li>The R package being emulated.</li>
+<li>What is being done &quot;under-the-hood&quot; at a high-level.</li>
+<li>What .fit file the model calls.</li>
+</ul></li>
+</ul>
+<p>Note, every time you make a change to the documentation you need to rebuild the documentation (e.g. run <code>devtools::document()</code>) to make sure it works. If you want to check that links to other packages work then you'll have to rebuild the package (e.g. run <code>devtools::build()</code>).</p>
+<h1 id="testing"><span class="header-section-number">6</span> Testing</h1>
+<p>All tests go in <code>tests/testthat</code>. Test everything you could possibly think of. If you think it should be a test, then that probably means it should be a test. Arguably, before writing any code you should write (at the very least) some basic tests first.</p>
+<p>Make sure you add a test file for the model you're including as <code>tests/testthat/test_stan_*.R</code>. Also don't forget to add the relevant tests for the methods associated with your model in the other test files.</p>
+<p>For speed, most of the tests should be specified using <code>algorithm = 'optimizing'</code>, <code>QR = TRUE</code>, and around 200 iterations.</p>
+<p>You should have tests for the following,</p>
+<ul>
+<li>All variations of model specification and comparison with the package you're emulating. (e.g. model with a constant, without a constant, etc.)</li>
+<li>Test predict/posterior_predict with and without new data.</li>
+<li>Test that loo and compare work on the stanreg object.</li>
+</ul>
+<p>Run a comprehensive test of rstanarm often. Especially if you're altering Stan files. This will help you catch any bugs early on (which means they'll be easier to fix).</p>
+<p>This script should be sufficient (at the time of writing) to run all the tests (excluding the vignettes):</p>
+<pre><code>### script to run all rstanarm tests locally
+
+library(rstanarm)
+# library(rstantools)
+# library(bayesplot)
+
+remove(list=ls())
+### run prerequisite functions
+#
+example_model &lt;-
+  stan_glmer(cbind(incidence, size - incidence) ~ size
+  + period + (1|herd),
+             data = lme4::cbpp, family = binomial,
+             # this next line is only to keep the example small in size!
+             chains = 2, cores = 1, seed = 12345, iter = 500)
+#
+last_dimnames &lt;- function(x) {
+  ndim &lt;- length(dim(x))
+  dimnames(x)[[ndim]]
+}
+
+### run tests
+devtools::test()</code></pre>
+<h1 id="vignettes"><span class="header-section-number">7</span> Vignettes</h1>
+<p>This should be pretty straightforward if you use the existing vignettes as a template. You should cover the following,</p>
+<ol style="list-style-type: decimal">
+<li>Mathematically define the posterior distribution of the model.</li>
+<li>An example using simulated data.</li>
+<li>An example using real data.</li>
+</ol>
+<p>In both examples above you should,</p>
+<ul>
+<li>Inspect the data.</li>
+<li>Fit a couple of models.</li>
+<li>Run a posterior predictive checks (e.g. <code>pp_check</code>).</li>
+<li>Do basic model comparison with <code>loo</code>.</li>
+</ul>
+<p>Where possible use existing templates in <code>vignettes/children</code>. You can include them with:</p>
+<pre><code>{r, child=&quot;children/*.txt&quot;}</code></pre>
+<h1 id="an-outline-of-what-goes-where"><span class="header-section-number">8</span> An outline of what goes where</h1>
+<p>A brief description of what (generally) goes into each the various files/folders.</p>
+<p><strong><code>/R</code></strong></p>
+<ul>
+<li>Contains all the model functions and corresponding .fit functions (e.g. <code>stan_glm</code> and <code>stan_glm.fit</code>).</li>
+</ul>
+<p><strong><code>/exec</code></strong> and <strong><code>/inst/chunks</code></strong></p>
+<ul>
+<li>The <code>/inst/chunks</code> folder contains reusable snippits of Stan code. The <code>/exec</code> folder contains the Stan models that are used in the relevant R function. For example, <code>continuous.stan</code> contains all the models that can be declared by <code>stan_glm</code> (as well as some others). You can view the compiled model in R by executing <code>rstanarm:::stanmodels$continuous</code>.</li>
+</ul>
+<p><strong><code>data</code></strong></p>
+<ul>
+<li>Example data used in the examples/tests.</li>
+</ul>
+<p><strong><code>man-roxygen</code></strong></p>
+<ul>
+<li>Templates for documentation.</li>
+</ul>
+<p><strong><code>man</code></strong></p>
+<ul>
+<li>Don't edit any documentation here (changes will get overwritten when rebuilding the package).</li>
+</ul>
+<p><strong><code>tests/testthat</code></strong></p>
+<ul>
+<li>Tests run using the <a href="http://r-pkgs.had.co.nz/tests.html">testthat</a> package.</li>
+</ul>
+<p><strong><code>R/misc.R</code></strong></p>
+<ul>
+<li>Contains a bunch of helper functions.</li>
+</ul>
+</body>
+</html>

@@ -25,6 +25,11 @@ data {
   int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
   int<lower=0> u_X1[dense_X ? 0 : N[2] + 1]; // where the non-zeros start in each row of X1
   
+  int<lower=0> K_smooth;
+  matrix[N[1], K_smooth] S0;
+  matrix[N[2], K_smooth] S1;
+  int<lower=1> smooth_map[K_smooth];
+  
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
 
   // weights
@@ -68,11 +73,11 @@ transformed parameters {
   if (t > 0) {
     if (special_case) {
       int start = 1;
-      theta_L = tau;
-      if (t == 1) b = tau[1] * z_b;
+      theta_L = scale .* tau;
+      if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
-        b[start:end] = tau[i] * z_b[start:end];
+        b[start:end] = theta_L[i] * z_b[start:end];
         start = end + 1;
       }
     }

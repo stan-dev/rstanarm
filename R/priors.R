@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,21 +31,23 @@
 #' plausible ones.
 #' 
 #' @name priors
-#' @param location Prior location. In most cases, this is the prior mean, but for 
-#'   \code{cauchy} (which is equivalent to \code{student_t} with \code{df=1}), 
-#'   the mean does not exist and \code{location} is the prior median. The default 
-#'   value is \eqn{0}, except for \code{R2} which has no default value for
-#'   \code{location}. For \code{R2}, \code{location} pertains to the prior
-#'   location of the \eqn{R^2} under a Beta distribution, but the interpretation
-#'   of the \code{location} parameter depends on the specified value of the
-#'   \code{what} argument (see the "R2 family" section in Details).
-#' @param scale Prior scale. The default depends on the family (see Details).
+#' @param location Prior location. In most cases, this is the prior mean, but
+#'   for \code{cauchy} (which is equivalent to \code{student_t} with
+#'   \code{df=1}), the mean does not exist and \code{location} is the prior
+#'   median. The default value is \eqn{0}, except for \code{R2} which has no
+#'   default value for \code{location}. For \code{R2}, \code{location} pertains
+#'   to the prior location of the \eqn{R^2} under a Beta distribution, but the
+#'   interpretation of the \code{location} parameter depends on the specified
+#'   value of the \code{what} argument (see the \emph{R2 family} section in
+#'   \strong{Details}).
+#' @param scale Prior scale. The default depends on the family (see
+#'   \strong{Details}).
 #' @param df,df1,df2 Prior degrees of freedom. The default is \eqn{1} for 
-#'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the
+#'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the 
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
-#'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} prior,
-#'   the degrees of freedom parameter defauls must be an integer (vector) that
-#'   is at least \eqn{2} (the default).
+#'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} 
+#'   prior, the degrees of freedom parameter must be an integer (vector) that is
+#'   at least \eqn{2} (the default).
 #' @param global_df,global_scale Optional arguments for the hierarchical
 #'   shrinkage priors. See the \emph{Hierarchical shrinkage family} section
 #'   below.
@@ -61,16 +63,16 @@
 #'   \code{what}.
 #' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
 #'   then the scales of the priors on the intercept and regression coefficients 
-#'   may be additionally modified internally by \pkg{rstanarm} as follows.
-#'   First, if the \emph{outcome} is Gaussian, the prior scales for the
-#'   intercept and coefficients are multiplied by \code{2*sd(y)}. Additionally,
-#'   if the \code{QR} argument to the model fitting function (e.g.
-#'   \code{stan_glm}) is \code{FALSE} then: for a predictor with only one value
-#'   nothing is changed; for a predictor \code{x} with exactly two unique
-#'   values, we take the user-specified (or default) scale(s) for the selected
-#'   priors and divide by the range of \code{x}; for a predictor \code{x} with
-#'   more than two unique values, we divide the prior scale(s) by
-#'   \code{2*sd(x)}.
+#'   may be additionally modified internally by \pkg{rstanarm} in the following 
+#'   cases. First, for Gaussian models only, the prior scales for the intercept, 
+#'   coefficients, and the auxiliary parameter \code{sigma} (error standard 
+#'   deviation) are multiplied by \code{sd(y)}. Additionally --- not only for 
+#'   Gaussian models --- if the \code{QR} argument to the model fitting function
+#'   (e.g. \code{stan_glm}) is \code{FALSE} then: for a predictor with only one 
+#'   value nothing is changed; for a predictor \code{x} with exactly two unique 
+#'   values, we take the user-specified (or default) scale(s) for the selected 
+#'   priors and divide by the range of \code{x}; for a predictor \code{x} with 
+#'   more than two unique values, we divide the prior scale(s) by \code{sd(x)}.
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
@@ -91,13 +93,13 @@
 #'   approaches the normal distribution and if the degrees of freedom are one,
 #'   then the Student t distribution is the Cauchy distribution.
 #'   
-#'   If \code{scale} is not specified it will default to 10 for the intercept
-#'   and 2.5 for the other coefficients, unless the probit link function is
-#'   used, in which case these defaults are scaled by a factor of 
-#'   \code{dnorm(0)/dlogis(0)}, which is roughly 1.6.
+#'   If \code{scale} is not specified it will default to \eqn{10} for the
+#'   intercept and \eqn{2.5} for the other coefficients, unless the probit link
+#'   function is used, in which case these defaults are scaled by a factor of 
+#'   \code{dnorm(0)/dlogis(0)}, which is roughly \eqn{1.6}.
 #'   
-#'   If the \code{autoscale} argument is \code{TRUE} (the default), then the
-#'   scales will be further adjusted as described above in the documentation of
+#'   If the \code{autoscale} argument is \code{TRUE} (the default), then the 
+#'   scales will be further adjusted as described above in the documentation of 
 #'   the \code{autoscale} argument in the \strong{Arguments} section.
 #' }
 #' \subsection{Hierarchical shrinkage family}{
@@ -125,19 +127,19 @@
 #'   
 #'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
 #'   mean of zero and a standard deviation that is distributed as the product of
-#'   two independent half Student t parameters (both with 3 degrees of freedom
-#'   (\code{df1}, \code{df2}) by default) that are each scaled in a similar way
-#'   to the \code{hs} prior.
+#'   two independent half Student t parameters (both with \eqn{3} degrees of
+#'   freedom (\code{df1}, \code{df2}) by default) that are each scaled in a
+#'   similar way to the \code{hs} prior.
 #'   
-#'   The hierarchical shrinkage priors have very tall modes and very fat 
-#'   tails. Consequently, they tend to produce posterior distributions that are
-#'   very concentrated near zero, unless the predictor has a strong influence on
-#'   the outcome, in which case the prior has little influence. Hierarchical
+#'   The hierarchical shrinkage priors have very tall modes and very fat tails.
+#'   Consequently, they tend to produce posterior distributions that are very
+#'   concentrated near zero, unless the predictor has a strong influence on the
+#'   outcome, in which case the prior has little influence. Hierarchical 
 #'   shrinkage priors often require you to increase the 
-#'   \code{\link{adapt_delta}} tuning parameter in order to diminish the number
-#'   of divergent transitions. For more details on tuning parameters and
-#'   divergent transitions see the Troubleshooting section of the 
-#'   \emph{How to Use the rstanarm Package} vignette.
+#'   \code{\link{adapt_delta}} tuning parameter in order to diminish the number 
+#'   of divergent transitions. For more details on tuning parameters and 
+#'   divergent transitions see the Troubleshooting section of the \emph{How to
+#'   Use the rstanarm Package} vignette.
 #' }
 #' \subsection{Laplace family}{
 #'   Family members:
@@ -146,12 +148,12 @@
 #'   \item \code{lasso(df, location, scale)}
 #'   }
 #'   Each of these functions also takes an argument \code{autoscale}.
-#'
-#'   The Laplace distribution is also known as the double-exponential distribution.
-#'   It is a symmetric distribution with a sharp peak at its mean / median / mode
-#'   and fairly long tails. This distribution can be motivated as a scale mixture
-#'   of a normal distribution and the remarks above about the normal distribution
-#'   apply here as well.
+#'   
+#'   The Laplace distribution is also known as the double-exponential 
+#'   distribution. It is a symmetric distribution with a sharp peak at its mean 
+#'   / median / mode and fairly long tails. This distribution can be motivated 
+#'   as a scale mixture of normal distributions and the remarks above about the 
+#'   normal distribution apply here as well.
 #'   
 #'   The lasso approach to supervised learning can be expressed as finding the
 #'   posterior mode when the likelihood is Gaussian and the priors on the 
@@ -178,30 +180,33 @@
 #'   \item \code{product_normal(df, location, scale)}
 #'   }
 #'   The product-normal distribution is the product of at least two independent 
-#'   normal variates each with mean zero, shifted by the \code{location} parameter. It 
-#'   can be shown that the density of a product-normal variate is symmetric and 
-#'   infinite at \code{location}, so this prior resembles a \dQuote{spike-and-slab} 
-#'   prior for sufficiently large values of the \code{scale} parameter. For better 
-#'   or for worse, this prior may be appropriate when it is strongly believed (by 
-#'   someone) that a regression coefficient \dQuote{is} equal to the \code{location}, 
-#'   parameter even though no true Bayesian would specify such a prior.
+#'   normal variates each with mean zero, shifted by the \code{location}
+#'   parameter. It can be shown that the density of a product-normal variate is
+#'   symmetric and infinite at \code{location}, so this prior resembles a
+#'   \dQuote{spike-and-slab} prior for sufficiently large values of the
+#'   \code{scale} parameter. For better or for worse, this prior may be
+#'   appropriate when it is strongly believed (by someone) that a regression
+#'   coefficient \dQuote{is} equal to the \code{location}, parameter even though
+#'   no true Bayesian would specify such a prior.
 #'   
-#'   Each element of \code{df} must be an integer of at least \eqn{2} because these 
-#'   \dQuote{degrees of freedom} are interpreted as the number of normal variates being
-#'   multiplied and then shifted by \code{location} to yield the regression coefficient.
-#'   Higher degrees of freedom produce more a sharper spike at \code{location}. 
+#'   Each element of \code{df} must be an integer of at least \eqn{2} because
+#'   these \dQuote{degrees of freedom} are interpreted as the number of normal
+#'   variates being multiplied and then shifted by \code{location} to yield the
+#'   regression coefficient. Higher degrees of freedom produce a sharper
+#'   spike at \code{location}.
 #'   
-#'   Each element of \code{scale} must be a non-negative real number that is interpreted
-#'   as the standard deviation of the normal variates being multiplied and then shifted
-#'   by \code{location} to yield the regression coefficient. In other words, the elements
-#'   of \code{scale} may differ, but the k-th standard deviation is presumed to
-#'   hold for all the normal deviates that are multiplied together and shifted by the k-th
-#'   element of \code{location} to yield the k-th regression coefficient. The elements of
-#'   \code{scale} are not the prior standard deviations of the regression coefficients. The
-#'   prior variance of the regression coefficients is equal to the scale raised to the power
-#'   of \eqn{2} times the corresponding element of \code{df}. Thus, larger values of 
-#'   \code{scale} put more prior volume on values of the regression coefficient that are far 
-#'   from zero.
+#'   Each element of \code{scale} must be a non-negative real number that is
+#'   interpreted as the standard deviation of the normal variates being
+#'   multiplied and then shifted by \code{location} to yield the regression
+#'   coefficient. In other words, the elements of \code{scale} may differ, but
+#'   the k-th standard deviation is presumed to hold for all the normal deviates
+#'   that are multiplied together and shifted by the k-th element of
+#'   \code{location} to yield the k-th regression coefficient. The elements of 
+#'   \code{scale} are not the prior standard deviations of the regression
+#'   coefficients. The prior variance of the regression coefficients is equal to
+#'   the scale raised to the power of \eqn{2} times the corresponding element of
+#'   \code{df}. Thus, larger values of \code{scale} put more prior volume on
+#'   values of the regression coefficient that are far from zero.
 #' }
 #' \subsection{Dirichlet family}{
 #'   Family members:
@@ -346,7 +351,7 @@
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
 #' prior_pred_fit <- stan_glm(fmla, data = mtcars, prior_PD = TRUE,
-#'                            chains = 1, seed = 12345, iter = 500, # for speed only
+#'                            chains = 1, seed = 12345, iter = 250, # for speed only
 #'                            prior = student_t(df = 4, 0, 2.5), 
 #'                            prior_intercept = cauchy(0,10), 
 #'                            prior_aux = exponential(1/2))
@@ -468,10 +473,12 @@ product_normal <- function(df = 2, location = 0, scale = 1) {
 #'   \code{1}. For the exponential distribution, the rate parameter is the
 #'   \emph{reciprocal} of the mean.
 #' 
-exponential <- function(rate = 1) {
+exponential <- function(rate = 1, autoscale = TRUE) {
   stopifnot(length(rate) == 1)
   validate_parameter_value(rate)
-  nlist(dist = "exponential", df = NA, location = NA, scale = 1/rate)
+  nlist(dist = "exponential", 
+        df = NA, location = NA, scale = 1/rate, 
+        autoscale)
 }
 
 #' @rdname priors
@@ -505,15 +512,72 @@ dirichlet <- function(concentration = 1) {
 #' @export
 R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   what <- match.arg(what)
+  validate_R2_location(location, what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
 
+
+
+# internal ----------------------------------------------------------------
+
+# Check for positive scale or df parameter (NULL ok)
+#
+# @param x The value to check.
+# @return Either an error is thrown or \code{TRUE} is returned invisibly.
+validate_parameter_value <- function(x) {
+  nm <- deparse(substitute(x))
+  if (!is.null(x)) {
+    if (!is.numeric(x)) 
+      stop(nm, " should be NULL or numeric", call. = FALSE)
+    if (any(x <= 0)) 
+      stop(nm, " should be positive", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+
+# Throw informative error if 'location' isn't valid for the particular 'what' 
+# specified or isn't the right length.
+#
+# @param location,what User's location and what arguments to R2()
+# @return Either an error is thrown or TRUE is returned invisibly.
+#
+validate_R2_location <- function(location = NULL, what) {
+  stopifnot(is.numeric(location))
+  if (length(location) > 1)
+    stop(
+      "The 'R2' function only accepts a single value for 'location', ",
+      "which applies to the prior R^2. ",
+      "If you are trying to put different priors on different coefficients ", 
+      "rather than specify a joint prior via 'R2', you can use stan_glm ",
+      "which accepts a wider variety of priors, many of which allow ", 
+      "specifying arguments as vectors.", 
+      call. = FALSE
+    )
+  
+  if (what == "log") {
+    if (location >= 0)
+      stop("If 'what' is 'log' then location must be negative.", call. = FALSE)
+  } else if (what == "mode") {
+    if (location <= 0 || location > 1)
+      stop("If 'what' is 'mode', location must be in (0,1].", 
+           call. = FALSE)
+  } else { # "mean", "median"
+    if (location <= 0 || location >= 1)
+      stop("If 'what' is 'mean' or 'median', location must be in (0,1).", 
+           call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# For the R2 prior, calculate LKJ shape eta
+#
+# @param location,what User's R2 prior arguments.
+# @param K number of predictors.
+# @return A positive scalar.
+#
 make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
-  if (is.null(location)) 
-    stop("For the R2 prior, 'location' must be in the (0,1) interval unless ",
-         "'what' is 'log'. If 'what' is 'log' then 'location' must be negative.",
-         call. = FALSE)
   stopifnot(length(location) == 1, is.numeric(location))
   stopifnot(is.numeric(K), K == as.integer(K))
   if (K == 0) 

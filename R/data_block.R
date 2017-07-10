@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ center_x <- function(x, sparse) {
     FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
   
   xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
-  if (!sparse) {
+  if (has_intercept && !sparse) {
     xbar <- colMeans(xtemp)
     xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
   }
@@ -89,7 +89,7 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
     global_prior_scale <- prior$global_scale
     global_prior_df <- prior$global_df
   } else if (prior_dist_name %in% "exponential") {
-    prior_dist <- 3L
+    prior_dist <- 3L # only used for scale parameters so 3 not a conflict with 3 for hs
   }
   
   prior_df <- maybe_broadcast(prior_df, nvars)

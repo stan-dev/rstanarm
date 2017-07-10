@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -30,7 +30,8 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                           prior_counts = dirichlet(1), shape = NULL, rate = NULL, 
                           prior_PD = FALSE, 
                           algorithm = c("sampling", "meanfield", "fullrank"),
-                          adapt_delta = NULL) {
+                          adapt_delta = NULL,
+                          do_residuals = algorithm == "sampling") {
   
   algorithm <- match.arg(algorithm)
   method <- match.arg(method)
@@ -107,14 +108,21 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     family = 1L, has_intercept = 0L, 
                     prior_dist_for_intercept = 0L, prior_dist_for_aux = 0L, 
                     dense_X = TRUE, # sparse is not a viable option
-                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0))
+                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0),
+                    prior_dist_for_smooth = 0L,
+                    K_smooth = 0L, S = matrix(NA_real_, N, 0L), smooth_map = integer(0))
   stanfit <- stanmodels$polr
   if (J > 2) {
     pars <- c("beta", "zeta", "mean_PPD")
   } else { 
     pars <- c("zeta", "beta", if (is_skewed) "alpha", "mean_PPD")
   }
-  standata$do_residuals <- isTRUE(J > 2) && !prior_PD
+  
+  if (do_residuals) {
+    standata$do_residuals <- isTRUE(J > 2) && !prior_PD
+  } else {
+    standata$do_residuals <- FALSE
+  }
   
   if (algorithm == "sampling") {
     sampling_args <- set_sampling_args(

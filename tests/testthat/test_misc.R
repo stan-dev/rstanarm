@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 
@@ -106,6 +106,30 @@ test_that("validate_parameter_value works", {
   expect_true(validate_parameter_value(.Machine$double.xmax))
 })
 
+test_that("validate_R2_location works", {
+  validate_R2_location <- rstanarm:::validate_R2_location
+  expect_error(
+    validate_R2_location(-1, what = "mode"), 
+    "location must be in (0,1]", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(.5, what = "log"), 
+    "location must be negative", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(0, what = "mean"), 
+    "location must be in (0,1)", 
+    fixed = TRUE
+  )
+  expect_error(
+    validate_R2_location(c(0.5, 0.25), what = "mode"), 
+    "only accepts a single value for 'location'", 
+    fixed = TRUE
+  )
+})
+
 test_that("validate_weights works", {
   validate_weights <- rstanarm:::validate_weights
   ff <- function(weights) validate_weights(weights)
@@ -157,6 +181,13 @@ test_that("validate_glm_formula works", {
   expect_error(validate_glm_formula(mpg ~ (1|cyl/gear)), "not allowed")
 })
 
+test_that("validate_data works", {
+  expect_error(validate_data(list(1)), 
+               "'data' must be a data frame")
+  expect_warning(d <- validate_data(if_missing = 3), 
+                 "Omitting the 'data' argument is not recommended")
+  expect_equal(d, 3)
+})
 
 test_that("array1D_check works", {
   array1D_check <- rstanarm:::array1D_check
@@ -375,9 +406,9 @@ test_that("linkinv methods work", {
   
   SW(capture.output(
     fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
-                           prior = R2(0.2, "mean"), init_r = 0.1, 
-                           chains = CHAINS, iter = ITER, seed = SEED, 
-                           refresh = REFRESH)
+                          prior = R2(0.2, "mean"), init_r = 0.1, 
+                          chains = CHAINS, iter = ITER, seed = SEED, 
+                          refresh = REFRESH)
   ))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
@@ -457,4 +488,12 @@ test_that("validate_newdata works", {
   expect_identical(validate_newdata(nd2[-1,]), nd2[-1, ])
   expect_error(validate_newdata(nd2), "NAs are not allowed")
   expect_error(validate_newdata(1:10, "must be a data frame"))
+})
+
+
+test_that("recommend_QR_for_vb produces the right message", {
+  expect_message(
+    rstanarm:::recommend_QR_for_vb(),
+    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+  )
 })

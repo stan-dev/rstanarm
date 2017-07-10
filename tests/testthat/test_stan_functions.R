@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -113,8 +113,7 @@ test_that("pw_binom and ll_binom_lp return expected results", {
     linkinv <- binomial(link = links[i])$linkinv
     ll <- dbinom(y, size = trials, prob = linkinv(eta), log = TRUE)
     expect_true(all.equal(ll,  pw_binom(y, rep(trials, N), eta, i)), info = links[i])
-    expect_true(all.equal(sum(ll), ll_binom_lp(y, rep(trials, N), eta, i) + 
-                ifelse(i > 3, sum(lchoose(trials, y)), 0)), info = links[i])
+    expect_true(all.equal(sum(ll), ll_binom_lp(y, rep(trials, N), eta, i), info = links[i]))
   }
 })
 
@@ -247,7 +246,8 @@ test_that("pw_inv_gaussian returns expected results", {
     linkinv <- inverse.gaussian(link = links[i])$linkinv
     y <- rinvGauss(N, linkinv(eta), lambda)
     expect_true(all.equal(dinvGauss(y, linkinv(eta), lambda, log = TRUE),
-                          pw_inv_gaussian(y, eta, lambda, i, log(y), sqrt(y))), info = links[i])
+                          pw_inv_gaussian(y, eta, lambda, i, log(y), sqrt(y))), 
+                info = links[i])
   }
 })
 test_that("pw_inv_gaussian implies an actual density", {
@@ -361,8 +361,7 @@ test_that("draw_ystar_rng returns expected results", {
 
 # glmer
 context("glmer")
-test_that("the Stan equivalent of lme4's Z %*% b works", {
-  stopifnot(require(lme4))
+if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(Matrix))
   test_lme4 <- function(group) {
     Lambdati <- group$Lambdat
@@ -398,9 +397,9 @@ test_that("the Stan equivalent of lme4's Z %*% b works", {
     Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
                                        parts$v, parts$u, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
-    if ( FALSE && all(sapply(group$cnms, FUN = function(x) {
+    if (all(sapply(group$cnms, FUN = function(x) {
         length(x) == 1 && x == "(Intercept)"
-      })) ) { # reenable with new expose_stan_functions
+      })) ) {
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
                         t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))

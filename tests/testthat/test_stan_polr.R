@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -29,14 +29,14 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
+source(file.path("helpers", "expect_stanreg.R"))
 
 context("stan_polr")
 
 
 f <- tobgp ~ agegp + alcgp
 suppressWarnings(capture.output(
-  fit1 <- stan_polr(f, data = esoph, method = "loglog", prior_PD = TRUE,
+  fit1 <- stan_polr(f, data = esoph, method = "logistic", prior_PD = TRUE,
                     prior = R2(location = 0.4, what = "median"),
                     chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
   fit1vb <- stan_polr(f, data = esoph, method = "loglog",
@@ -46,8 +46,12 @@ suppressWarnings(capture.output(
                     prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
                     chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
   fit2vb <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
-                      method = "loglog", seed = SEED, algorithm = "fullrank",
-                      prior = NULL, prior_counts = NULL) # test with NULL priors
+                      method = "probit", seed = SEED, algorithm = "fullrank",
+                      prior = NULL, prior_counts = NULL), # test with NULL priors
+  fit3 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
+                    data = esoph, prior = R2(location = 0.4),
+                    shape = 2, rate = 2, chains = CHAINS, iter = ITER,
+                    seed = SEED, refresh = REFRESH)
 ))
 
 test_that("stan_polr runs for esoph example", {
@@ -83,4 +87,25 @@ test_that("gumbel functions ok", {
   expect_equal(rstanarm:::qgumbel(0.5), 0.3665129, tol = 0.00001)
   expect_equal(rstanarm:::pgumbel(0.3665129), 0.5, tol = 0.00001)
   expect_equal(rstanarm:::qgumbel(1), Inf)
+})
+
+test_that("loo/waic for stan_polr works", {
+  source(file.path("helpers", "expect_equivalent_loo.R"))
+  ll_fun <- rstanarm:::ll_fun
+  expect_equivalent_loo(fit1)
+  expect_identical(ll_fun(fit1), rstanarm:::.ll_polr_i)
+  
+  expect_equivalent_loo(fit2)
+  expect_identical(ll_fun(fit2), rstanarm:::.ll_polr_i)
+  
+  expect_equivalent_loo(fit3)
+  expect_identical(ll_fun(fit3), rstanarm:::.ll_polr_i)
+})
+
+context("posterior_predict (stan_polr)")
+test_that("compatible with stan_polr", {
+  source(file.path("helpers", "check_for_error.R"))
+  check_for_error(fit1)
+  check_for_error(fit2)
+  check_for_error(fit3)
 })

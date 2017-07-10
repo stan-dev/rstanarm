@@ -43,7 +43,7 @@ transformed parameters {
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = family == 1 ? tau : tau * aux;
+      theta_L = scale .* (family == 1 ? tau : tau * aux);
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
@@ -100,10 +100,11 @@ model {
   // Log-prior for aux
   if (family > 1 && 
       prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
+    real log_half = -0.693147180559945286;    
     if (prior_dist_for_aux == 1)
-      target += normal_lpdf(aux_unscaled | 0, 1);
+      target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
     else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
     else 
       target += exponential_lpdf(aux_unscaled | 1);
   }

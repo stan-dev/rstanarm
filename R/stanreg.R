@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -34,8 +34,12 @@ stanreg <- function(object) {
   is_betareg <- is.beta(family$family)
   if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
-    z <- object$z        # pull out betareg z vars so that they can be used in posterior_predict/loo
-    nvars_z <- ncol(z)   # used so that all coefficients are printed with coef()
+    if (is.null(family_phi)) {
+      family_phi <- beta_fam("log")
+      z <- matrix(1, nrow = nobs, ncol = 1, dimnames = list(NULL, "(Intercept)"))
+    }
+    else z <- object$z   # pull out betareg z vars so that they can be used in posterior_predict/loo
+    nvars_z <- NCOL(z)   # used so that all coefficients are printed with coef()
   }
   if (opt) {
     stanmat <- stanfit$theta_tilde
@@ -120,13 +124,18 @@ stanreg <- function(object) {
     prior.weights = object$weights, 
     contrasts = object$contrasts, 
     na.action = object$na.action,
-    call = object$call, 
     formula = object$formula, 
     terms = object$terms,
     prior.info = attr(stanfit, "prior.info"),
     algorithm = object$algorithm,
     stan_summary,  
-    stanfit = if (opt) stanfit$stanfit else stanfit
+    stanfit = if (opt) stanfit$stanfit else stanfit,
+    rstan_version = utils::packageVersion("rstan"),
+    call = object$call, 
+    # sometimes 'call' is no good (e.g. if using do.call(stan_glm, args)) so
+    # also include the name of the modeling function (for use when printing,
+    # etc.)
+    stan_function = object$stan_function
   )
 
   if (opt) 

@@ -2,13 +2,14 @@
 demo("SETUP", package = "rstanarm", verbose = FALSE, echo = FALSE, ask = FALSE)
 
 source(paste0(ROOT, "ARM/Ch.3/kidiq.data.R"), local = DATA_ENV, verbose = FALSE)
+dat <- with(DATA_ENV, data.frame(kid_score, mom_hs, mom_iq))
 
 # Estimate four contending models
-post1 <- stan_glm(kid_score ~ mom_hs, data = DATA_ENV, 
+post1 <- stan_glm(kid_score ~ mom_hs, data = dat, 
                   family = gaussian(link = "identity"), 
                   seed = SEED, refresh = REFRESH)
 post2 <- update(post1, formula = kid_score ~ mom_iq)
-post3 <- stan_lm(kid_score ~ mom_hs + mom_iq, data = DATA_ENV,
+post3 <- stan_lm(kid_score ~ mom_hs + mom_iq, data = dat,
                  prior = R2(location = 0.25, what = "mean"), 
                  seed = SEED, refresh = REFRESH)
 post4 <- update(post3, formula = kid_score ~ mom_hs * mom_iq,
@@ -45,14 +46,21 @@ source(paste0(ROOT, "ARM/Ch.3/kids_before1987.data.R"),
        local = DATA_ENV, verbose = FALSE)
 source(paste0(ROOT, "ARM/Ch.3/kids_after1987.data.R"), 
        local = DATA_ENV, verbose = FALSE)
-post5 <- stan_lm(ppvt ~ hs + afqt, data = DATA_ENV,
+
+fit_data <- with(DATA_ENV, data.frame(ppvt, hs, afqt))
+pred_data <- with(DATA_ENV, data.frame(ppvt_ev, hs_ev, afqt_ev))
+
+post5 <- stan_lm(ppvt ~ hs + afqt, data = fit_data,
                  prior = R2(location = 0.25, what = "mean"), 
                  seed = SEED, refresh = REFRESH)
-y_ev <- posterior_predict(post5, newdata = 
-                          data.frame(hs = DATA_ENV$hs_ev, afqt = DATA_ENV$afqt_ev))
+y_ev <- posterior_predict(
+  post5, 
+  newdata = with(pred_data, data.frame(hs = hs_ev, afqt = afqt_ev))
+)
 par(mfrow = c(1,1))
-hist(-sweep(y_ev, 2, STATS = DATA_ENV$ppvt_ev, FUN = "-"), prob = TRUE,
+hist(-sweep(y_ev, 2, STATS = pred_data$ppvt_ev, FUN = "-"), prob = TRUE,
      xlab = "Predictive Errors in ppvt", main = "", las = 2)
+
 
 ANSWER <- tolower(readline("Do you want to remove the objects this demo created? (y/n) "))
 if (ANSWER != "n") {
