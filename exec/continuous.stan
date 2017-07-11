@@ -341,11 +341,6 @@ generated quantities {
           mean_PPD = mean_PPD + beta_rng(eta_n * aux_n, (1 - eta_n) * aux_n);
       }
     }
-    if (family == 4 && link_phi > 0) {
-      mean_PPD = mean_PPD / (N - nan_count);
-    }
-    else {
-      mean_PPD = mean_PPD / len_y;
-    }
+    mean_PPD = mean_PPD / len_y;
   }
 }

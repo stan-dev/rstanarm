@@ -108,7 +108,18 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = FALSE, sparse = sparse, ...)
-  
+  if (SSfun == 6L) {
+    stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
+      x[[4L]] <- exp(x[[4L]])
+      return(x)
+    })
+  }
+  if (SSfun == 8L) {
+    stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
+      x[[3L]] <- exp(x[[3L]])
+      return(x)
+    })
+  }
   Z <- pad_reTrms(Ztlist = nlf$reTrms$Ztlist, cnms = nlf$reTrms$cnms, 
                   flist = nlf$reTrms$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
@@ -145,7 +156,8 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
   fit <- nlist(stanfit, family = g, formula, offset, weights, 
                x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
                y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               na.action = na.omit, contrasts, algorithm, glmod = nlf)
+               na.action = na.omit, contrasts, algorithm, glmod = nlf, 
+               stan_function = "stan_nlmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "nlmerMod", "lmerMod")
   return(out)

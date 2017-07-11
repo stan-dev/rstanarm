@@ -79,12 +79,12 @@ vector SS_fpl(vector input, matrix Phi) {
   // input is generally data so cannot switch signs
   if (rows(Phi) > 1) {
     vector[rows(Phi)] A = Phi[,1];
-    return A + (Phi[,2] - A) ./ (1 + exp((Phi[,3] - input) ./ Phi[,4]));
+    return A + (Phi[,2] - A) ./ (1 + exp((Phi[,3] - input) ./ exp(Phi[,4])));
   }
   else {
     real A = Phi[1,1];
     return A + rep_vector(Phi[1,2] - A, rows(input)) 
-      ./ (1 + exp((Phi[1,3] - input) / Phi[1,4]));
+      ./ (1 + exp((Phi[1,3] - input) / exp(Phi[1,4])));
   }
 }
 
@@ -106,10 +106,10 @@ vector SS_logis(vector input, matrix Phi) {
   // Phi[,1] = Asym, Phi[,2] = xmid, Phi[,3] = scal
   // input is typically data so cannot switch signs of everything
   if (rows(Phi) > 1)
-    return Phi[,1] ./ (1 + exp( (Phi[,2] - input) ./ Phi[,3]));
+    return Phi[,1] ./ (1 + exp( (Phi[,2] - input) ./ exp(Phi[,3])));
   else 
     return rep_vector(Phi[1,1], rows(input)) ./ 
-      (1 + exp( (Phi[1,2] - input) / Phi[1,3]));
+      (1 + exp( (Phi[1,2] - input) / exp(Phi[1,3])));
 }
 
 vector SS_micmen(vector input, matrix Phi) {
