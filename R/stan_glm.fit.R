@@ -378,7 +378,7 @@ stan_glm.fit <- function(x, y,
     standata$main_multi_map <- as.array(main_multi_map)
     standata$depth_ind <- as.array(depth_ind)
     
-    standata$prior_group_level_scale <- decov$group_level_scale
+    standata$prior_group_level_scale <- decov$group_level_scale %ORifNULL% 1
     
     if (length(table(decov$cell_size)) <= 1) {
       standata$use_cell_weights <- 0
