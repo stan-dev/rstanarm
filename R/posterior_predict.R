@@ -340,8 +340,11 @@ pp_eta <- function(object, data, draws = NULL) {
     }
     eta <- eta + as.matrix(b %*% data$Zt)
   }
-  if (is.nlmer(object))
-    eta <- linkinv(object)(eta, data$arg1, data$arg2)
+  if (is.nlmer(object)) {
+    if (is.null(data$arg1)) eta <- linkinv(object)(eta)
+    else eta <- linkinv(object)(eta, data$arg1, data$arg2)
+    eta <- t(eta)
+  }
   nlist(eta, stanmat)
 }
 

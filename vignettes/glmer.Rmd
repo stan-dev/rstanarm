@@ -1,5 +1,5 @@
 ---
-title: "Estimating Generalized Linear Models with Group-Specific Terms with rstanarm"
+title: "Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm"
 author: "Jonah Gabry and Ben Goodrich"
 date: "`r Sys.Date()`"
 output: 
@@ -23,15 +23,12 @@ params:
 
 # Introduction
 
-This vignette explains how to use the `stan_lmer` and `stan_glmer` functions in 
-the __rstanarm__ package to estimate linear and generalized linear models with
-intercepts and slopes that may vary across groups. Before continuing, we
+This vignette explains how to use the `stan_lmer`, `stan_glmer`, and `stan_nlmer` 
+functions in the __rstanarm__ package to estimate linear and generalized (non-)linear 
+models with parameters that may vary across groups. Before continuing, we
 recommend reading the [vignettes](glm.html) for the `stan_glm` function.
 The _Hierarchical Partial Pooling_ [vignette](pooling.html) also has examples of both 
 `stan_glm` and `stan_glmer`.
-
-_NOTE: a more thorough vignette for_ `stan_lmer` _and_ `stan_glmer` _with detailed examples is forthcoming._
-
 
 # GLMs with group-specific terms
 
@@ -57,7 +54,7 @@ and it is possible to maximize this likelihood function by choosing proposals
 for the parameters $\alpha$, $\boldsymbol{\beta}$, and (the free elements of) $\boldsymbol{\Sigma}$.
 
 Consequently, frequentists refer to $\mathbf{b}$ as the _random effects_ because
-the capture the random deviation in the effects of predictors from one group to
+they capture the random deviation in the effects of predictors from one group to
 the next. In contradistinction, $\alpha$ and $\boldsymbol{\beta}$ are referred to
 as _fixed effects_ because they are the same for all groups. Moreover, $\alpha$ 
 and $\boldsymbol{\beta}$ persist in the model in hypothetical replications of the
@@ -239,7 +236,7 @@ Bayesians do not (have to) integrate $\mathbf{b}$ out of the likelihood and if
 $\mathbf{b}$ is not of interest, then the margins of its posterior distribution
 can simply be ignored.
 
-# Relationship to __gamm4__
+# Relationship to `gamm4`
 
 The __rstanarm__ package includes a `stan_gamm4` function that is similar to the
 `gamm4` function in the __gamm4__ package, which is in turn similar to the `gamm`
@@ -259,7 +256,8 @@ package.
 library(rstanarm)
 data(roaches)
 roaches$roach1 <- roaches$roach1 / 100
-post <- stan_gamm4(y ~ s(roach1) + treatment + log(roaches$exposure2), 
+roaches$log_exposure2 <- log(roaches$exposure2)
+post <- stan_gamm4(y ~ s(roach1) + treatment + log_exposure2,
                    random = ~(1 | senior),
                    data = roaches, family = neg_binomial_2, QR = TRUE,
                    chains = CHAINS, cores = CORES, seed = SEED)

@@ -120,7 +120,7 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
       SSargs <- lapply(1:nargs, FUN = function(i) {
         start <- 1 + (i - 1) * len
         end <- i * len
-        eta[,start:end, drop = FALSE]
+        t(eta[,start:end, drop = FALSE])
       })
       if (is.null(arg2)) SSargs <- c(list(arg1), SSargs)
       else SSargs <- c(list(arg1, arg2), SSargs)

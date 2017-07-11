@@ -86,32 +86,12 @@ pp_data <-
 
 # for models fit using stan_nlmer
 .pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, ...) {
-  f <- formula(object)
-  if (!is.null(re.form)) {
-    f <- as.character(f)
-    if (is.na(re.form)) f <- as.formula(f[-3])
-    else {
-      f[3] <- as.character(re.form)
-      f <- as.formula(f)
-    }
-  }
-  mc <- match.call(expand.dots = FALSE)
-  mc$re.form <- mc$offset <- mc$object <- NULL
-  names(mc)[2] <- "data"
-  mc$formula <- f
-  if (is.null(newdata)) {
-    newdata <- model.frame(object)
-    mc$data <- newdata
-  }
-  mc$start <- fixef(object)
-  nlf <- nlformula(mc)
-  offset <- .pp_data_offset(object, newdata, offset)
-
   inputs <- as.character(object$glmod$respMod$nlmod[2])
   inputs <- sub("(", ",", inputs, fixed = TRUE)
   inputs <- sub(")", "", inputs, fixed = TRUE)
   inputs <- scan(text = inputs, what = character(), sep = ",", 
                  strip.white = TRUE, quiet = TRUE)
+
   if (is.null(newdata)) {
     arg1 <- arg2 <- NULL
   }
@@ -123,6 +103,28 @@ pp_data <-
     arg1 <- newdata[[inputs[2]]]
     arg2 <- NULL
   }
+  f <- formula(object)
+  if (!is.null(re.form)) {
+    f <- as.character(f)
+    if (is.na(re.form)) f <- as.formula(f[2])
+    else {
+      f[3] <- as.character(re.form)
+      f <- as.formula(f[-1])
+    }
+  }
+  if (is.null(newdata)) newdata <- model.frame(object)
+  else {
+    yname <- names(model.frame(object))[1]
+    newdata[[yname]] <- 0
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
+  mc$data <- newdata
+  mc$formula <- f
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
+  offset <- .pp_data_offset(object, newdata, offset)
+
   group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
   return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
