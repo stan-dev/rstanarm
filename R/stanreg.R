@@ -23,6 +23,7 @@
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
+  is_car <- object$stan_function %in% c("stan_CARbym", "stan_CARleroux")
   stanfit <- object$stanfit
   family <- object$family
   y <- object$y
@@ -90,8 +91,13 @@ stanreg <- function(object) {
   
   # linear predictor, fitted values
   eta <- linear_predictor(coefs, x, object$offset)
+  if (is_car) {
+    psi_indx <- grep("psi", colnames(as.matrix(object$stanfit)))
+    psi <- as.matrix(object$stanfit)[,psi_indx]
+    psi <- unname(colMeans(psi))
+    eta <- eta + psi
+  }
   mu <- family$linkinv(eta)
-
   if (NCOL(y) == 2L) {
     # residuals of type 'response', (glm which does 'deviance' residuals by default)
     residuals <- y[, 1L] / rowSums(y) - mu 
@@ -148,6 +154,13 @@ stanreg <- function(object) {
     out$family_phi <- family_phi
     out$eta_z <- eta_z
     out$phi <- phi
+  }
+  if (is_car) {
+    # CARBayes doesn't include the scale parameters in out$coefficients so not sure if we want to.
+    # exclude <- c(1:nvars, psi_indx, which(rownames(stan_summary) %in% c("mean_PPD", "log-posterior")))
+    # out$coefficients = c(coefs, stan_summary[-exclude, select_median(object$algorithm)])
+    out$psi <- psi
+    out$trials <- object$trials
   }
   
   structure(out, class = c("stanreg", "glm", "lm"))

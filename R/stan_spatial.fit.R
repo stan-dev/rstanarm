@@ -163,6 +163,5 @@ stan_spatial.fit <- function(x, y, w,
                  colnames(xtemp), "tau2", if(mod == 1) "sigma2",
                  if(family == "gaussian") "nu2", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
   stanfit@sim$fnames_oi <- new_names
-  browser()
   return(structure(stanfit))  # return(structure(stanfit, prior.info = prior_info))
 }

@@ -52,12 +52,6 @@ stan_CARbym <- function(formula,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)
-  if (family == "binomial")
-    family <- binomial(link = "logit")
-  else if (family == "poisson")
-    family <- poisson(link = "log")
-  else if (family == "gaussian")
-    family <- gaussian(link = "identity")
   fit <- nlist(stanfit,
                algorithm,
                data,
@@ -67,7 +61,14 @@ stan_CARbym <- function(formula,
                model = mf, 
                call = match.call(),
                stan_function = "stan_CARbym")
+  if (family == "binomial") {
+    fit$family <- binomial(link = "logit")
+    fit$trials <- trials
+  }
+  else if (family == "poisson")
+    fit$family <- poisson(link = "log")
+  else if (family == "gaussian")
+    fit$family <- gaussian(link = "identity")
   out <- stanreg(fit)
-  browser()
   structure(out, class = c("stanreg", "car"))
 }

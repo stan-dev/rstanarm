@@ -169,7 +169,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   }
   if (!is(object, "polr") && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
-
+  if (is(object, "car") && is.binomial(family(object)$family))
+    ppargs$trials <- object$trials
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
   if (!is.null(newdata) && nrow(newdata) == 1L)
@@ -326,7 +327,15 @@ pp_eta <- function(object, data, draws = NULL) {
     beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
     if (some_draws)
       beta <- beta[samp, , drop = FALSE]
-    eta <- linear_predictor(beta, x, data$offset)
+    if (is(object, "car")) {
+      psi_indx <- grep("psi", colnames(stanmat))
+      psi <- stanmat[, psi_indx, drop = FALSE]
+      if (some_draws)
+        psi <- psi[samp, , drop = FALSE]
+      eta <- linear_predictor(beta, x, data$offset) + psi
+    }
+    else
+      eta <- linear_predictor(beta, x, data$offset)
   } else {
     stanmat <- as.matrix(object$stanfit)
     beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]

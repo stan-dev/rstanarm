@@ -153,7 +153,10 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
         trials <- 1
         if (is.factor(y)) 
           y <- fac2bin(y)
-        stopifnot(all(y %in% c(0, 1)))
+        if (!is(object, "car"))
+          stopifnot(all(y %in% c(0, 1)))
+        else
+          trials <- object$trials
       }
       data <- data.frame(y, trials, x)
     }
@@ -218,7 +221,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     data <- cbind(data, as.matrix(z))
     draws$beta <- cbind(draws$beta, b)
   }
-  
+  if (is(object, "car")) {
+    psi_indx <- grep("psi", colnames(stanmat))
+    psi <- stanmat[, psi_indx, drop = FALSE]
+    data$psi <- t(psi)
+  }
   nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
 }
 
@@ -247,11 +254,16 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 }
 
 .xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
+  if (!is.null(data$psi))
+    sel <- c("y", "weights","offset", "trials", "psi")
+  else
+    sel <- c("y", "weights","offset", "trials")
   data[, -which(colnames(data) %in% sel)]
 }
 .mu <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  if (!is.null(data$psi))
+    eta <- eta + as.vector(data$psi)
   draws$f$linkinv(eta)
 }
 
