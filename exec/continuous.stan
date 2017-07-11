@@ -7,6 +7,34 @@ functions {
   #include "continuous_likelihoods.stan"
   #include "SSfunctions.stan"
   
+  /*
+   * Calculate lower bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real lower bound
+   */
+  real make_lower(int family, int link) {
+    if (family == 1) return negative_infinity(); // Gaussian
+    if (family <= 3) { // Gamma or inverse Gaussian
+      if (link == 2) return negative_infinity(); // log
+      return 0;
+    }
+    return negative_infinity();
+  }
+
+  /*
+   * Calculate upper bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real upper bound
+   */
+  real make_upper(int family, int link) {
+    if (family == 4 && link == 5) return 0;
+    return positive_infinity();
+  }
+  
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -58,8 +86,7 @@ transformed data {
   }
 }
 parameters {
-  real<lower=((family == 1 || link == 2) || (family == 4 && link == 5) ? negative_infinity() : 0.0), 
-       upper=((family == 4 && link == 5) ? 0.0 : positive_infinity())> gamma[has_intercept];
+  real<lower=make_lower(family, link),upper=make_upper(family,link)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
   real<lower=0> aux_unscaled; # interpretation depends on family!
   #include "parameters_betareg.stan"
@@ -72,19 +99,11 @@ transformed parameters {
   vector[z_dim] omega; // used in tparameters_betareg.stan             
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   #include "tparameters_betareg.stan"
-  
-  if (prior_dist_for_aux == 0) // none
-    aux = aux_unscaled;
-  else {
-    aux = prior_scale_for_aux * aux_unscaled;
-    if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
-  }
 
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = tau * aux;
+      theta_L = scale .* tau * aux;
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
@@ -197,10 +216,11 @@ model {
 
   // Log-priors
   if (prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
+    real log_half = -0.693147180559945286;
     if (prior_dist_for_aux == 1)
-      target += normal_lpdf(aux_unscaled | 0, 1);
+      target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
     else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1);
+      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
     else 
      target += exponential_lpdf(aux_unscaled | 1);
   }
@@ -222,16 +242,14 @@ generated quantities {
     omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
   }
   {
-    real nan_count; // for the beta_rng underflow issue
-    real yrep; // pick up value to test for the beta_rng underflow issue
     vector[N] eta_z;
     #include "make_eta.stan" // defines eta
-    nan_count = 0;
     if (t > 0) {
       #include "eta_add_Zb.stan"
     }
     if (has_intercept == 1) {
-      if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
+      if (make_lower(family,link) == negative_infinity() &&
+          make_upper(family,link) == positive_infinity()) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {
         real max_eta;
         max_eta = max(eta);
@@ -303,21 +321,24 @@ generated quantities {
     }
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
-      for (n in 1:N) 
-        mean_PPD = mean_PPD + beta_rng(eta[n] * aux, (1 - eta[n]) * aux);
+      for (n in 1:N) {
+        real eta_n = eta[n];
+        if (aux <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
+        else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
+        else if (eta_n > 0)
+          mean_PPD = mean_PPD + beta_rng(eta[n] * aux, (1 - eta[n]) * aux);
+      }
     }
     else if (family == 4 && link_phi > 0) {
       eta = linkinv_beta(eta, link);
       eta_z = linkinv_beta_z(eta_z, link_phi);
       for (n in 1:N) {
-        yrep = beta_rng(eta[n] * eta_z[n], (1 - eta[n]) * eta_z[n]);
-          if (is_nan(yrep) == 1) {
-            mean_PPD = mean_PPD;
-            nan_count = nan_count + 1;
-          }
-          else if (is_nan(yrep) == 0) {
-            mean_PPD = mean_PPD + yrep; 
-          }
+        real eta_n = eta[n];
+        real aux_n = eta_z[n];
+        if (aux_n <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
+        else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
+        else if (eta_n > 0)
+          mean_PPD = mean_PPD + beta_rng(eta_n * aux_n, (1 - eta_n) * aux_n);
       }
     }
     if (family == 4 && link_phi > 0) {

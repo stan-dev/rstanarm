@@ -32,11 +32,11 @@ transformed parameters {
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = tau;
-      if (t == 1) b = tau[1] * z_b;
+      theta_L = scale .* tau;
+      if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
-        b[start:end] = tau[i] * z_b[start:end];
+        b[start:end] = theta_L[i] * z_b[start:end];
         start = end + 1;
       }
     }

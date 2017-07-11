@@ -1,14 +1,14 @@
 #' Summarize the priors used for an rstanarm model
 #' 
-#' The \code{prior_summary} method provides a numerical summary of the prior 
-#' distributions used for the parameters in a given model. In some cases the 
-#' user-specified prior does not correspond exactly to the prior used internally
-#' by \pkg{rstanarm} (see the sections below). Especially in these cases, but 
-#' also in general, it can be much more useful to visualize the priors. 
-#' Visualizing the priors can be done using the \code{\link{posterior_vs_prior}}
-#' function, or alternatively by fitting the model with the \code{prior_PD}
-#' argument set to \code{TRUE} (to draw from the prior predictive distribution
-#' instead of conditioning on the outcome) and then plotting the parameters.
+#' The \code{prior_summary} method provides a summary of the prior distributions
+#' used for the parameters in a given model. In some cases the user-specified
+#' prior does not correspond exactly to the prior used internally by
+#' \pkg{rstanarm} (see the sections below). Especially in these cases, but also
+#' in general, it can be much more useful to visualize the priors. Visualizing
+#' the priors can be done using the \code{\link{posterior_vs_prior}} function,
+#' or alternatively by fitting the model with the \code{prior_PD} argument set
+#' to \code{TRUE} (to draw from the prior predictive distribution instead of
+#' conditioning on the outcome) and then plotting the parameters.
 #' 
 #' @aliases prior_summary
 #' @export
@@ -37,10 +37,9 @@
 #'   scales specified by the user to account for the scales of the predictors 
 #'   (as described in the documentation for the \code{\link[=priors]{autoscale}}
 #'   argument). To disable internal prior scale adjustments set the 
-#'   \code{autoscale} argument to \code{FALSE} when setting a prior using the 
-#'   \code{\link{normal}}, \code{\link{student_t}}, or \code{\link{cauchy}} 
-#'   functions. For example, \code{normal(0, 5, autoscale=FALSE)} instead of 
-#'   just \code{normal(0, 5)}.
+#'   \code{autoscale} argument to \code{FALSE} when setting a prior using one of
+#'   the distributions that accepts an \code{autoscale} argument. For example,
+#'   \code{normal(0, 5, autoscale=FALSE)} instead of just \code{normal(0, 5)}.
 #' 
 #' @section Coefficients in Q-space:
 #'   For the models fit with an \pkg{rstanarm} modeling function that supports 
@@ -140,6 +139,9 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
     )
   if (!is.null(x[["prior_aux"]])) {
     aux_name <- x[["prior_aux"]][["aux_name"]]
+    aux_dist <- x[["prior_aux"]][["dist"]]
+    if (aux_dist %in% c("normal", "student_t", "cauchy"))
+      x[["prior_aux"]][["dist"]] <- paste0("half-", aux_dist)
     .print_scalar_prior(
       x[["prior_aux"]], 
       txt = paste0("\nAuxiliary (", aux_name, ")"), 
@@ -228,7 +230,7 @@ used.sparse <- function(x) {
         "flat"
       } else if (p$dist == "exponential") {
         paste0(p$dist,"(rate = ", .f1(p$rate), ")")
-      } else { # normal, studen_t, cauchy
+      } else { # normal, student_t, cauchy
         if (is.null(p$df)) {
           paste0(p$dist,"(location = ", .f1(p$location), 
                  ", scale = ", .f1(p$scale),")")
@@ -241,7 +243,7 @@ used.sparse <- function(x) {
   )
   if (!is.null(p$adjusted_scale))
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
-      }
+}
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
@@ -254,7 +256,7 @@ used.sparse <- function(x) {
       if (!is.null(p$df))
         p$df <- .format_pars(p$df, .f1)
       if (!is.null(p$adjusted_scale))
-        p$adjusted_scale <- .format_pars(p$adjusted_scale, .f1)
+        p$adjusted_scale <- .format_pars(p$adjusted_scale, .f2)
     } else if (p$dist %in% c("hs_plus")) {
       p$df1 <- .format_pars(p$df, .f1)
       p$df2 <- .format_pars(p$scale, .f1)

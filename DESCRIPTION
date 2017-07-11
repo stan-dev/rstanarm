@@ -1,10 +1,12 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.14.1
-Date: 2017-01-16
+Version: 2.15.4
+Date: 2017-04-27
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
+             person("Imad", "Ali", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
+             person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
                      comment = "R/stan_aov.R"),
              person("Douglas", "Bates", role = "cph", comment = "R/pp_data.R"),
@@ -16,24 +18,25 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Estimates pre-compiled regression models using the 'rstan' package, which provides
-    the R interface to the Stan C++ library for Bayesian estimation. Users specify models via the
-    customary R syntax with a formula and data.frame plus some additional arguments for priors.
+Description: Estimates previously compiled regression models using the 'rstan' package,
+    which provides the R interface to the Stan C++ library for Bayesian estimation.
+    Users specify models via the customary R syntax with a formula and data.frame
+    plus some additional arguments for priors.
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
     Rcpp (>= 0.12.0),
     methods
 Imports:
-    bayesplot (>= 1.1.0),
-    ggplot2 (>= 2.2.0),
+    bayesplot (>= 1.2.0),
+    ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
-    loo (>= 1.0.0),
+    loo (>= 1.1.0),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.14.1),
-    rstantools (>= 1.1.0),
-    shinystan (>= 2.2.1),
+    rstan (>= 2.14.2),
+    rstantools (>= 1.2.0),
+    shinystan (>= 2.3.0),
     stats,
     utils
 Suggests:
@@ -42,15 +45,15 @@ Suggests:
     digest,
     gridExtra,
     HSAUR3,
-    KernSmooth,
     knitr (>= 1.15.1),
     MASS,
-    mgcv,
+    mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.14.0), rstan (>= 2.14.1), BH (>= 1.62.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.14.0), rstan (>= 2.14.2), BH (>= 1.62.0), Rcpp (>=
     0.12.0), RcppEigen
+SystemRequirements: pandoc    
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes

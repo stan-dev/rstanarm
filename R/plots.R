@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -162,6 +162,10 @@
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
                          regex_pars = NULL, ...) {
+  
+  if (plotfun %in% c("pairs", "mcmc_pairs"))
+    return(pairs.stanreg(x, pars = pars, regex_pars = regex_pars, ...))
+  
   fun <- set_plotting_fun(plotfun)
   args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
   do.call(fun, args)
@@ -169,7 +173,7 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 
 
 
-# internal ----------------------------------------------------------------
+# internal for plot.stanreg ----------------------------------------------
 
 # Prepare argument list to pass to plotting function
 #
@@ -304,15 +308,21 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 }
 
 
+
+# pairs method ------------------------------------------------------------
 #' Pairs method for stanreg objects
 #' 
-#' This is essentially the same as \code{\link[rstan]{pairs.stanfit}} but with a
-#' few tweaks for compatibility with \pkg{rstanarm} models. \strong{Be careful
-#' not to specify too many parameters to include or the plot will be both hard
-#' to read and slow to render.}
+#' Interface to \pkg{bayesplot}'s \code{\link[bayesplot]{mcmc_pairs}} function 
+#' for use with \pkg{rstanarm} models. Be careful not to specify too
+#' many parameters to include or the plot will be both hard to read and slow to
+#' render.
 #'
 #' @method pairs stanreg
 #' @export
+#' @importFrom bayesplot pairs_style_np pairs_condition
+#' @export pairs_style_np pairs_condition
+#' @aliases pairs_style_np pairs_condition
+#' 
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template args-regex-pars
@@ -320,280 +330,148 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   are included by default, but for models with more than just a few 
 #'   parameters it may be far too many to visualize on a small computer screen 
 #'   and also may require substantial computing time.
+#' @param ... Optional arguments passed to \code{\link[bayesplot]{mcmc_pairs}}. 
+#'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to 
+#'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not 
+#'   need to be specified by the user in \code{...}. The arguments that can be 
+#'   specified in \code{...} include \code{transformations}, \code{diag_fun},
+#'   \code{off_diag_fun}, \code{diag_args}, \code{off_diag_args},
+#'   \code{condition}, and \code{np_style}. These arguments are
+#'   documented thoroughly on the help page for
+#'   \code{\link[bayesplot]{mcmc_pairs}}.
 #' 
-#' @inheritParams rstan::pairs.stanfit
-#' @param ...,labels,panel,lower.panel,upper.panel,diag.panel Same as in 
-#'   \code{\link[graphics]{pairs}} syntactically but see the \strong{Details}
-#'   section for different default arguments.
-#' @param text.panel,label.pos,cex.labels,font.labels,row1attop,gap Same as in 
-#'   \code{\link[graphics]{pairs.default}}.
-#' @param log Same as in \code{\link[graphics]{pairs.default}} (but additionally
-#'   accepts \code{log=TRUE}), which makes it possible to utilize logarithmic
-#'   axes. See the \strong{Details} section.
+#' @details 
+#' By default, the \code{mcmc_pairs} function in the \pkg{bayesplot} package 
+#' plots some of the Markov chains (half, in the case of an even number of
+#' chains) in the panels above the diagonal and the other half in the panels
+#' below the diagonal. This can be changed using the \code{condition} argument
+#' along with the \code{pairs_condition} helper function. 
+#' We provide an example in the \pkg{Examples} section, below, but 
+#' for full details see the \code{\link[bayesplot]{mcmc_pairs}} help page. 
+#' In particular, if when you fit your model \pkg{rstanarm} issues warnings 
+#' about convergence, divergent transitions, or transitions hitting the maximum 
+#' treedepth, then it can sometimes be useful to use one of the NUTS sampler 
+#' parameters/diagnostics for \code{condition}. The last few examples below
+#' demonstrate this feature.
 #' 
-#' @details This method differs from the default \code{\link{pairs}} method in 
-#'   the following ways. If unspecified, the \code{\link{smoothScatter}} 
-#'   function is used for the off-diagonal plots, rather than 
-#'   \code{\link{points}}, since the former is more appropriate for visualizing 
-#'   thousands of draws from a posterior distribution. Also, if unspecified, 
-#'   histograms of the marginal distribution of each quantity are placed on the 
-#'   diagonal of the plot, after pooling the chains.
-#'   
-#'   The draws from the warmup phase are always discarded before plotting.
-#'   
-#'   By default, the lower (upper) triangle of the plot contains draws with 
-#'   below (above) median acceptance probability. Also, if \code{condition} is 
-#'   not \code{"divergent__"}, red points will be superimposed onto the smoothed
-#'   density plots indicating which (if any) iterations encountered a divergent 
-#'   transition. Otherwise, yellow points indicate a transition that hit the 
-#'   maximum treedepth rather than terminated its evolution normally.
-#'   
-#'   You may very well want to specify the \code{log} argument for non-negative 
-#'   parameters. Of the various allowed specifications of \code{log}, it is 
-#'   probably easiest to specify \code{log = TRUE}, which will utilize 
-#'   logarithmic axes for all non-negative quantities.
 #'   
 #' @examples
 #' if (!exists("example_model")) example(example_model)
+#' 
+#' bayesplot::color_scheme_set("purple")
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
+#' \donttest{
+#' pairs(
+#'   example_model, 
+#'   regex_pars = "herd:[2,7,9]", 
+#'   diag_fun = "dens",
+#'   off_diag_fun = "hex"
+#' )
+#' }
 #' 
 #' \donttest{
-#' pairs(example_model, regex_pars = "herd:[279]")
+#' # for demonstration purposes, intentionally fit a model that
+#' # will (almost certainly) have some divergences
+#' fit <- stan_glm(
+#'   mpg ~ ., data = mtcars,
+#'   iter = 1000,
+#'   # this combo of prior and adapt_delta should lead to some divergences
+#'   prior = hs(),
+#'   adapt_delta = 0.9
+#' )
+#' 
+#' pairs(
+#'   fit, 
+#'   pars = c("wt", "sigma", "log-posterior"), 
+#'   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
+#'   off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
+#' )
+#' 
+#' 
+#' bayesplot::color_scheme_set("brightblue")
+#' pairs(
+#'   fit, 
+#'   pars = c("(Intercept)", "wt", "sigma", "log-posterior"), 
+#'   transformations = list(sigma = "log"), 
+#'   off_diag_args = list(size = 3/4, alpha = 1/3), # size and transparency of scatterplot points
+#'   np_style = pairs_style_np(div_color = "black", div_shape = 2) # color and shape of the divergences
+#' )
+#' 
+#' # Using the condition argument to show divergences above the diagonal 
+#' pairs(
+#'   fit, 
+#'   pars = c("(Intercept)", "wt", "log-posterior"), 
+#'   condition = pairs_condition(nuts = "divergent__")
+#' )
+#' 
+#' # Using the condition argument to divide iterations by whether NUTS
+#' # accept_stat__ is at least the median accept_stat__ (above diagonal) or less
+#' # than the median accept_stat__ (below diagonal). divergences are still
+#' # marked in red.
+#' pairs(
+#'   fit, 
+#'   pars = c("(Intercept)", "wt", "log-posterior"), 
+#'   condition = pairs_condition(nuts = "accept_stat__")
+#' )
 #' }
 #'
-#' @importFrom graphics hist pairs par points rect smoothScatter text
-#' @importFrom rstan get_logposterior
-#' 
 pairs.stanreg <-
   function(x,
            pars = NULL,
            regex_pars = NULL,
-           condition = "accept_stat__",
-           ...,
-           labels = NULL,
-           panel = NULL,
-           lower.panel = NULL,
-           upper.panel = NULL,
-           diag.panel = NULL,
-           text.panel = NULL,
-           label.pos = 0.5 + 1 / 3,
-           cex.labels = NULL,
-           font.labels = 1,
-           row1attop = TRUE,
-           gap = 1,
-           log = "") {
+           ...) {
     
     if (!used.sampling(x))
       STOP_sampling_only("pairs")
     
-    requireNamespace("rstan")
-    requireNamespace("KernSmooth")
-    
-    arr <- as.array.stanreg(x, pars = pars, regex_pars = regex_pars)
+    dots <- list(...)
+    ignored_args <- c("np", "lp", "max_treedepth")
+    specified <- ignored_args %in% names(dots)
+    if (any(specified)) {
+      warning(
+        "The following arguments were ignored because they are ",
+        "specified automatically by rstanarm: ", 
+        paste(sQuote(ignored_args[specified]), collapse = ", ")
+      )
+    }
+
+    posterior <- as.array.stanreg(x, pars = pars, regex_pars = regex_pars)
     if (is.null(pars) && is.null(regex_pars)) {
       # include log-posterior by default
       lp_arr <- as.array.stanreg(x, pars = "log-posterior")
-      dd <- dim(arr)
-      dn <- dimnames(arr)
+      dd <- dim(posterior)
+      dn <- dimnames(posterior)
       dd[3] <- dd[3] + 1
       dn$parameters <- c(dn$parameters, "log-posterior")
       tmp <- array(NA, dim = dd, dimnames = dn)
-      tmp[,, 1:(dd[3] - 1)] <- arr
+      tmp[,, 1:(dd[3] - 1)] <- posterior
       tmp[,, dd[3]] <- lp_arr
-      arr <- tmp
+      posterior <- tmp
     }
-    arr <- round(arr, digits = 12)
-    x <- x$stanfit
+    posterior <- round(posterior, digits = 12)
     
-    gsp <- rstan::get_sampler_params(x, inc_warmup = FALSE)
-    # if ("energy__" %in% colnames(gsp[[1]])) {
-    #   dims <- dim(arr)
-    #   dims[3] <- dims[3] + 1L
-    #   nms <- dimnames(arr)
-    #   nms$parameters <- c(nms$parameters, "energy__")
-    #   E <- sapply(gsp, FUN = function(y) y[, "energy__"])
-    #   arr <- array(c(c(arr), c(E)), dim = dims, dimnames = nms)
-    # }
-    
-    sims <- nrow(arr)
-    chains <- ncol(arr)
-    varying <- apply(arr, 3, FUN = function(y) length(unique(c(y))) > 1)
-    if (any(!varying)) {
-      message(
-        "The following parameters were dropped because they are constant:\n",
-        paste(names(varying)[!varying], collapse = ", ")
-      )
-      arr <- arr[, , varying, drop = FALSE]
-    }
-    
-    dupes <- duplicated(arr, MARGIN = 3)
-    if (any(dupes)) {
-      message(
-        "The following parameters were dropped because they are duplicative:\n",
-        paste(dimnames(arr)[[3]][dupes], collapse = ", ")
-      )
-      arr <- arr[, , !dupes, drop = FALSE]
-    }
-    
-    tmp <- c(sapply(gsp, FUN = function(y) y[, "divergent__"]))
-    divergent__ <- matrix(tmp, nrow = sims * chains, ncol = dim(arr)[3])
-    
-    max_td <- x@stan_args[[1]]$control
-    if (is.null(max_td)) {
-      max_td <- 10
-    } else {
-      max_td <- max_td$max_treedepth
-      if (is.null(max_td))
-        max_td <- 10
-    }
-    tmp <- c(sapply(gsp, FUN = function(y) y[, "treedepth__"] > max_td))
-    hit <- matrix(tmp, nrow = sims * chains, ncol = dim(arr)[3])
-    
-    if (is.list(condition)) {
-      if (length(condition) != 2)
-        stop("If a list, 'condition' must be of length 2.")
-      arr <- arr[, c(condition[[1]], condition[[2]]), , drop = FALSE]
-      k <- length(condition[[1]])
-      mark <- c(rep(TRUE, sims * k), rep(FALSE, sims * length(condition[[2]])))
-      
-    } else if (is.logical(condition)) {
-      
-      stopifnot(length(condition) == (sims * chains))
-      mark <- !condition
-      
-    } else if (is.character(condition)) {
-      
-      condition <- match.arg(condition, several.ok = FALSE, 
-                             choices = c("accept_stat__", "stepsize__",
-                                         "treedepth__", "n_leapfrog__",
-                                         "divergent__", "energy__", "lp__"))
-      if (condition == "lp__") {
-        mark <- simplify2array(get_logposterior(x, inc_warmup = FALSE))
-      } else {
-        mark <- sapply(gsp, FUN = function(y) y[, condition])
-      }
-      if (condition == "divergent__") {
-        mark <- as.logical(mark)
-      } else {
-        mark <- c(mark) >= median(mark)
-      }
-      if (length(unique(mark)) == 1)
-        stop(condition, " is constant so it cannot be used as a condition.")
-      
-    } else if (!is.null(condition)) {
-      
-      if (all(condition == as.integer(condition))) {
-        arr <- arr[, condition, , drop = FALSE]
-        k <- ncol(arr) %/% 2
-        mark <- c(rep(FALSE, sims * k), rep(TRUE, sims * (chains - k)))
-      } else if (condition > 0 && condition < 1) {
-        mark <- rep(1:sims > (condition * sims), times = chains)
-      } else {
-        stop("If numeric, 'condition' must be an integer (vector) ",
-             "or a number between 0 and 1 (exclusive).")
-      }
-      
-    } else {
-      
-      k <- ncol(arr) %/% 2
-      mark <- c(rep(FALSE, sims * k), rep(TRUE, sims * (chains - k)))
-    }
-    
-    x <- apply(arr, MARGIN = "parameters", FUN = function(y) y)
-    nc <- ncol(x)
-    
-    if (isTRUE(log)) {
-      xl <- apply(x >= 0, 2, FUN = all)
-      if ("log-posterior" %in% names(xl))
-        xl["log-posterior"] <- FALSE
-    } else if (is.numeric(log)) {
-      xl <- log
-    } else {
-      xl <- grepl("x", log)
-    }
-    
-    if (is.numeric(xl) || any(xl)) {
-      x[, xl] <- log(x[, xl])
-      colnames(x)[xl] <- paste("log", colnames(x)[xl], sep = "-")
-    }
-    if (is.null(lower.panel)) {
-      if (!is.null(panel)) {
-        lower.panel <- panel
-      } else {
-        lower.panel <- function(x, y, ...) {
-          dots <- list(...)
-          dots$x <- x[!mark]
-          dots$y <- y[!mark]
-          if (is.null(mc$nrpoints) &&
-              !identical(condition, "divergent__")) {
-            dots$nrpoints <- Inf
-            dots$col <- ifelse(divergent__[!mark] == 1,
-                               "red",
-                               ifelse(hit[!mark] == 1, "yellow", NA_character_))
-          }
-          dots$add <- TRUE
-          do.call(smoothScatter, args = dots)
-        }
-      }
-    }
-    if (is.null(upper.panel)) {
-      if (!is.null(panel)) {
-        upper.panel <- panel
-      } else {
-        upper.panel <- function(x, y, ...) {
-          dots <- list(...)
-          dots$x <- x[mark]
-          dots$y <- y[mark]
-          if (is.null(mc$nrpoints) &&
-              !identical(condition, "divergent__")) {
-            dots$nrpoints <- Inf
-            dots$col <- ifelse(divergent__[mark] == 1,
-                               "red",
-                               ifelse(hit[mark] == 1, "yellow", NA_character_))
-          }
-          dots$add <- TRUE
-          do.call(smoothScatter, args = dots)
-        }
-      }
-    }
-    if (is.null(diag.panel))
-      diag.panel <- function(x, ...) {
-        usr <- par("usr")
-        on.exit(par(usr))
-        par(usr = c(usr[1:2], 0, 1.5))
-        h <- hist(x, plot = FALSE)
-        breaks <- h$breaks
-        y <- h$counts
-        y <- y / max(y)
-        nB <- length(breaks)
-        rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
-      }
-    if (is.null(panel))
-      panel <- points
-    
-    if (is.null(text.panel)) {
-      textPanel <- function(x = 0.5, y = 0.5, txt, cex, font) {
-        text(x, y, txt, cex = cex, font = font)
-      }
-    } else {
-      textPanel <- text.panel
-    }
-    if (is.null(labels))
-      labels <- colnames(x)
-    
-    mc <- match.call(expand.dots = FALSE)
-    mc[1] <- call("pairs")
-    mc$x <- x
-    mc$labels <- labels
-    mc$panel <- panel
-    mc$lower.panel <- lower.panel
-    mc$upper.panel <- upper.panel
-    mc$diag.panel <- diag.panel
-    mc$text.panel <- textPanel
-    mc$log <- ""
-    mc$condition <- NULL
-    mc$pars <- NULL
-    mc$regex_pars <- NULL
-    mc$include <- NULL
-    eval(mc)
+    bayesplot::mcmc_pairs(
+      x = posterior, 
+      np = bayesplot::nuts_params(x),  
+      lp = bayesplot::log_posterior(x),  
+      max_treedepth = .max_treedepth(x),
+      ...
+    )
+  
   }
+
+
+# internal for pairs.stanreg ----------------------------------------------
+
+# @param x stanreg object
+.max_treedepth <- function(x) {
+  control <- x$stanfit@stan_args[[1]]$control
+  if (is.null(control)) {
+    max_td <- 10
+  } else {
+    max_td <- control$max_treedepth
+    if (is.null(max_td))
+      max_td <- 10
+  }
+  return(max_td)
+}

@@ -16,7 +16,7 @@
   /** 
   * Pointwise (pw) log-likelihood vector
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y A vector corresponding to the outcome variable.
   * @param link An integer indicating the link function
   * @return A vector
   */
@@ -52,16 +52,15 @@
   */
   real GammaReg(vector y, vector eta, real shape, 
                 int link, real sum_log_y) {
-    real ret;
-    if (link < 1 || link > 3) reject("Invalid link");
-    ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
-      (shape - 1) * sum_log_y;
+    real ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
+               (shape - 1) * sum_log_y;
     if (link == 2)      // link is log
       ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
     else if (link == 1) // link is identity
       ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                // link is inverse
+    else if (link == 3) // link is inverse
       ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+    else reject("Invalid link");
     return ret;
   }
   
@@ -112,7 +111,7 @@
   }
 
   /** 
-  * inverse Gaussian log-PDF (for data only, excludes constants)
+  * inverse Gaussian log-PDF
   *
   * @param y The vector of outcomes
   * @param mu The vector of conditional means
@@ -131,7 +130,7 @@
   /** 
   * Pointwise (pw) log-likelihood vector
   *
-  * @param y The integer array corresponding to the outcome variable.
+  * @param y A vector corresponding to the outcome variable.
   * @param eta The linear predictors
   * @param lamba A positive scalar dispersion parameter
   * @param link An integer indicating the link function
@@ -141,8 +140,7 @@
   */
   vector pw_inv_gaussian(vector y, vector eta, real lambda, 
                          int link, vector log_y, vector sqrt_y) {
-    vector[rows(y)] mu;
-    mu = linkinv_inv_gaussian(eta, link); // link checked
+    vector[rows(y)] mu = linkinv_inv_gaussian(eta, link); // link checked
     return -0.5 * lambda * square( (y - mu) ./ (mu .* sqrt_y) ) +
             0.5 * log(lambda / 6.283185307179586232) - 1.5 * log_y;
   }
@@ -158,14 +156,10 @@
   */
   real inv_gaussian_rng(real mu, real lambda) {
     real mu2 = square(mu);
-    // compound declare & define does not work with _rng
-    real z;
-    real y;
-    real x;
-    z = uniform_rng(0,1);
-    y = square(normal_rng(0,1));
-    x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
-      / (2 * lambda);
+    real z = uniform_rng(0,1);
+    real y = square(normal_rng(0,1));
+    real x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
+           / (2 * lambda);
     if (z <= (mu / (mu + x))) return x;
     else return mu2 / x;
   }
@@ -178,26 +172,14 @@
   * @return A vector, i.e. inverse-link(eta)
   */
   vector linkinv_beta(vector eta, int link) {
-    vector[rows(eta)] mu;
-    if (link < 1 || link > 6) reject("Invalid link");
-    if (link == 1)  // logit
-      for(n in 1:rows(eta)) mu[n] = inv_logit(eta[n]);
-    else if (link == 2)  // probit
-      for(n in 1:rows(eta)) mu[n] = Phi(eta[n]);
-    else if (link == 3)  // cloglog
-      for(n in 1:rows(eta)) mu[n] = inv_cloglog(eta[n]);
-    else if (link == 4) // cauchy
-      for(n in 1:rows(eta)) mu[n] = cauchy_cdf(eta[n], 0.0, 1.0);
-    else if (link == 5)  // log 
-      for(n in 1:rows(eta)) {
-          mu[n] = exp(eta[n]);
-          if (mu[n] < 0 || mu[n] > 1)
-            reject("mu needs to be between 0 and 1");
-      }
-    else if (link == 6) // loglog
-      for(n in 1:rows(eta)) mu[n] = 1-inv_cloglog(-eta[n]); 
-      
-    return mu;
+    if (link == 1) return inv_logit(eta);  // logit
+    else if (link == 2) return Phi(eta);   // probit
+    else if (link == 3) return inv_cloglog(eta);  // cloglog
+    else if (link == 4) return 0.5 + atan(eta) / pi(); // cauchy
+    else if (link == 5) return exp(eta); // log 
+    else if (link == 6) return 1 - inv_cloglog(-eta); // loglog
+    else reject("invalid link");
+    return eta; // never reached
   }
   
   /** 
@@ -208,15 +190,11 @@
   * @return A vector, i.e. inverse-link(eta)
   */
   vector linkinv_beta_z(vector eta, int link) {
-    vector[rows(eta)] mu;
-    if (link < 1 || link > 3) reject("Invalid link");
-    if (link == 1)        // log
-      for(n in 1:rows(eta)) mu[n] = exp(eta[n]);
-    else if (link == 2)   // identity
-      return eta;
-    else if (link == 3)   // sqrt
-      for(n in 1:rows(eta)) mu[n] = square(eta[n]);
-    return mu;
+    if (link == 1) return exp(eta);         // log
+    else if (link == 2) return eta;         // identity
+    else if (link == 3) return square(eta); // sqrt
+    else reject("Invalid link")
+    return eta; // never reached
   }
   
   /** 
@@ -230,15 +208,9 @@
   */
   vector pw_beta(vector y, vector eta, real dispersion, int link) {
     vector[rows(y)] ll;
-    vector[rows(y)] mu;
-    vector[rows(y)] shape1;
-    vector[rows(y)] shape2;
-    if (link < 1 || link > 6) reject("Invalid link");
-    mu = linkinv_beta(eta, link);
-    shape1 = mu * dispersion;
-    shape2 = (1 - mu) * dispersion;
+    vector[rows(y)] mu = linkinv_beta(eta, link); // link checked
     for (n in 1:rows(y)) {
-      ll[n] = beta_lpdf(y[n] | shape1[n], shape2[n]);
+      ll[n] = beta_lpdf(y[n] | mu[n] * dispersion, (1 - mu[n]) * dispersion);
     }
     return ll;
   }
@@ -255,12 +227,8 @@
   */
   vector pw_beta_z(vector y, vector eta, vector eta_z, int link, int link_phi) {
     vector[rows(y)] ll;
-    vector[rows(y)] mu;
-    vector[rows(y)] mu_z;
-    if (link < 1 || link > 6) reject("Invalid link");
-    if (link_phi < 1 || link_phi > 3) reject("Invalid link");
-    mu = linkinv_beta(eta, link);
-    mu_z = linkinv_beta_z(eta_z, link_phi);
+    vector[rows(y)] mu = linkinv_beta(eta, link); // link checked
+    vector[rows(y)] mu_z = linkinv_beta_z(eta_z, link_phi); // link checked
     for (n in 1:rows(y)) {
       ll[n] = beta_lpdf(y[n] | mu[n] * mu_z[n], (1-mu[n]) * mu_z[n]);
     }

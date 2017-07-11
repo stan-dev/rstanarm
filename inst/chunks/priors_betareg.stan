@@ -2,20 +2,22 @@
   if (prior_dist_z == 1)  target += normal_lpdf(z_omega | 0, 1);
   else if (prior_dist_z == 2) target += normal_lpdf(z_omega | 0, 1);
   else if (prior_dist_z == 3) { // hs
+    real log_half = -0.693147180559945286;
     target += normal_lpdf(z_omega | 0, 1);
-    target += normal_lpdf(local_z[1] | 0, 1);
+    target += normal_lpdf(local_z[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(local_z[2] | 0.5 * prior_df_z, 0.5 * prior_df_z);
-    target += normal_lpdf(global_z[1] | 0, 1);
+    target += normal_lpdf(global_z[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(global_z[2] | 0.5, 0.5);
   }
   else if (prior_dist_z == 4) { // hs+
+    real log_half = -0.693147180559945286;
     target += normal_lpdf(z_omega | 0, 1);
-    target += normal_lpdf(local_z[1] | 0, 1);
+    target += normal_lpdf(local_z[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(local_z[2] | 0.5 * prior_df_z, 0.5 * prior_df_z);
-    target += normal_lpdf(local_z[3] | 0, 1);
+    target += normal_lpdf(local_z[3] | 0, 1) - log_half;
     // unorthodox useage of prior_scale as another df hyperparameter
     target += inv_gamma_lpdf(local_z[4] | 0.5 * prior_scale_z, 0.5 * prior_scale_z);
-    target += normal_lpdf(global_z[1] | 0, 1);
+    target += normal_lpdf(global_z[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(global_z[2] | 0.5, 0.5);
   }
   else if (prior_dist_z == 5) { // laplace
