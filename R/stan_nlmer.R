@@ -80,7 +80,7 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
   if (any(SSfun)) SSfun <- which(SSfun)
   else stop("'stan_nlmer' requires a named self-starting nonlinear function")
   mc <- match.call(expand.dots = FALSE)
-  mc$start <- unlist(getInitial(as.formula(f), data, 
+  mc$start <- unlist(getInitial(as.formula(f[-1]), data, 
                                 control = list(maxiter = 0, warnOnly = TRUE)))
   nlf <- nlformula(mc)
   y <- nlf$respMod$y

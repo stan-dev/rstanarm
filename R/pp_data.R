@@ -110,13 +110,10 @@ pp_data <-
     arg2 <- NULL
   }
   f <- formula(object)
-  if (!is.null(re.form)) {
+  if (!is.null(re.form) && !is.na(re.form)) {
     f <- as.character(f)
-    if (is.na(re.form)) f <- as.formula(f[2])
-    else {
-      f[3] <- as.character(re.form)
-      f <- as.formula(f[-1])
-    }
+    f[3] <- as.character(re.form)
+    f <- as.formula(f[-1])
   }
   if (is.null(newdata)) newdata <- model.frame(object)
   else {
@@ -132,6 +129,7 @@ pp_data <-
   offset <- .pp_data_offset(object, newdata, offset)
 
   group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  if (is.na(re.form)) group$Z@x <- 0
   return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
 }
