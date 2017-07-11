@@ -273,8 +273,9 @@ stan_glm.fit <- function(x, y,
     prior_dist_for_aux = prior_dist_for_aux,
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
-    num_normals_z = integer(0)
-    # mean,df,scale for aux added below depending on family
+    num_normals_z = integer(0),
+    # mean,df,scale for aux added below depending on family, 
+    prior_group_level_scale = 1  # changed below iff mrp_structured prior is used
   )
 
   # make a copy of user specification before modifying 'group' (used for keeping
@@ -323,6 +324,7 @@ stan_glm.fit <- function(x, y,
       )
     
     if (standata$interaction_prior > 0) {
+      
       # detect interactions in ranef and collect interaction metadata (needed only
       # for mrp_structed prior but passed to stan so needs a value regardless)
       colons <- grepl(":", names(l))
@@ -375,6 +377,8 @@ stan_glm.fit <- function(x, y,
     standata$multi_depth <- as.array(multi_depth)
     standata$main_multi_map <- as.array(main_multi_map)
     standata$depth_ind <- as.array(depth_ind)
+    
+    standata$prior_group_level_scale <- decov$group_level_scale
     
     if (length(table(decov$cell_size)) <= 1) {
       standata$use_cell_weights <- 0

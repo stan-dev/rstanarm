@@ -8,6 +8,7 @@
   
   // interaction-specific inputs
   int<lower=0, upper=2> interaction_prior;  // 0) decov, 1) yajuan's prior, 2) independent half-normal priors
+  real<lower=0> prior_group_level_scale;    // 
   int<lower=0> n_one_way;                   // num. one-way random intercepts
   int<lower=0> n_multi_way;                 // num. multi-way interaction random intercepts
   int<lower=0> max_way;                     // deepest multi-way interaction random intercepts

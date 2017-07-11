@@ -290,10 +290,15 @@ used.sparse <- function(x) {
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
 }
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
-  if (p$dist != "decov") {
+  .f1 <- formatters[[1]]
+  if (p$dist == "indep_normals") {
     cat(paste0("\n", txt, "\n ~ ", p$dist))
-  } else {
-    .f1 <- formatters[[1]]
+  } else if (p$dist == "mrp_structured") { 
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "grp-lev scale = ", .f1(p$group_level_scale), 
+               ")"))
+  } else { # decov
     p$regularization <- .format_pars(p$regularization, .f1)
     p$concentration <- .format_pars(p$concentration, .f1)
     p$shape <- .format_pars(p$shape, .f1)

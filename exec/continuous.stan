@@ -114,7 +114,8 @@ transformed parameters {
       int start = 1;
       if (interaction_prior > 0) {
         theta_L = make_theta_L_int(interaction_prior, len_theta_L,
-                                   n_multi_way, n_one_way, tau, glob_scale,
+                                   n_multi_way, n_one_way, tau, 
+                                   prior_group_level_scale * glob_scale[1],
                                    multi_depth, main_multi_map, depth_ind,
                                    one_way_ix, multi_way_ix,
                                    lambda_multi_way);
@@ -166,7 +167,7 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
     if (use_cell_weights) { 
-      // special case for mrp structured prior with aggregate data
+      // special case for gaussian model where y is passed in as cell means
       target += normal_lpdf(y | eta, aux * cell_weights);
       target += (N - sum_cell_size[1]) * log(aux) - 0.5 * sum_cell_ssr[1] * inv(aux^2);
     }
@@ -224,7 +225,7 @@ model {
   #include "priors_betareg.stan"
   if (t > 0) {
     if (interaction_prior > 0 && special_case == 1) {
-      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale,
+      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale[1],
                      delta, shape, n_multi_way, interaction_prior);
     } else {
       decov_lp(z_b, z_T, rho, zeta, tau, 
