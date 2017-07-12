@@ -363,5 +363,7 @@ post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~
 However, in this case the posterior distribution is bimodal
 ```{r}
 pairs(post3, regex_pars = "^l")
+pairs(post3, regex_pars = "igma")
 ```
-
+Thus, you should always be running many chains when using Stan, especially
+`stan_nlmer`.
