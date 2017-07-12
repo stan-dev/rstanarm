@@ -115,7 +115,7 @@ transformed parameters {
       if (interaction_prior > 0) {
         theta_L = make_theta_L_int(interaction_prior, len_theta_L,
                                    n_multi_way, n_one_way, tau, 
-                                   prior_group_level_scale * glob_scale[1],
+                                   interaction_prior == 1 ? prior_group_level_scale * glob_scale[1] : 0,
                                    multi_depth, main_multi_map, depth_ind,
                                    one_way_ix, multi_way_ix,
                                    lambda_multi_way);
@@ -225,7 +225,7 @@ model {
   #include "priors_betareg.stan"
   if (t > 0) {
     if (interaction_prior > 0 && special_case == 1) {
-      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale[1],
+      decov_inter_lp(z_b, z_T, zeta, tau, lambda_multi_way, glob_scale,
                      delta, shape, n_multi_way, interaction_prior);
     } else {
       decov_lp(z_b, z_T, rho, zeta, tau, 

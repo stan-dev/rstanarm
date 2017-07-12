@@ -187,15 +187,19 @@
   
   // For special MRP structured interactions prior
   void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
-                      vector lambda_inter, real glob_scale,
+                      vector lambda_inter, real[] glob_scale,
                       real[] delta, vector shape, int n_multi_way,
                       int interaction_prior) {
     target += normal_lpdf(z_b | 0, 1);
     target += normal_lpdf(z_T | 0, 1);
-    target += normal_lpdf(tau | 0, 1);
-    if (n_multi_way > 0 && interaction_prior == 1)
-      target += normal_lpdf(lambda_inter | 0, 1);
-    target += normal_lpdf(glob_scale  | 0, 1);
+    if (interaction_prior == 1) {
+      target += normal_lpdf(tau | 0, 1);
+      target += normal_lpdf(glob_scale[1]  | 0, 1);
+      if (n_multi_way > 0) 
+        target += normal_lpdf(lambda_inter | 0, 1);
+    } else if (interaction_prior == 2) {
+      target += cauchy_lpdf(tau | 0, 1);
+    }
     if (rows(zeta) > 0)
       target += gamma_lpdf(zeta | delta, 1);
   }
