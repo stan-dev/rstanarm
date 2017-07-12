@@ -33,6 +33,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #' @template args-sparse
+#' @template args-QR
 #' 
 #' @param formula,data Same as for \code{\link[lme4]{nlmer}}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
@@ -72,7 +73,7 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
                         prior = normal(), prior_aux = cauchy(0, 5),
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL, sparse = FALSE) {
+                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   f <- as.character(formula[-3])
   SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE)
   SSfun <- sapply(SSfunctions, function(ss) 
@@ -80,6 +81,8 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
   if (any(SSfun)) SSfun <- which(SSfun)
   else stop("'stan_nlmer' requires a named self-starting nonlinear function")
   mc <- match.call(expand.dots = FALSE)
+  mc$prior <- mc$prior_aux <- mc$prior_covariance <- mc$prior_PD <-
+    mc$algorithm <- mc$adapt_delta <- mc$QR <- mc$sparse <- NULL
   mc$start <- unlist(getInitial(as.formula(f[-1]), data, 
                                 control = list(maxiter = 0, warnOnly = TRUE)))
   nlf <- nlformula(mc)
@@ -107,7 +110,7 @@ stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset
                           prior = prior, prior_intercept = NULL,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = nlf$reTrms, QR = FALSE, sparse = sparse, ...)
+                          group = nlf$reTrms, QR = QR, sparse = sparse, ...)
   if (SSfun == 6L) {
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x[[4L]] <- exp(x[[4L]])
