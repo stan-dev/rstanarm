@@ -355,20 +355,13 @@ ggplot(PPD_df, aes(age, circumference)) + geom_boxplot()
 If we were pharmacological, we could evaluate drug concentration using a
 first-order compartment model
 ```{r, results = "hide"}
-post3 <- stan_nlmer(conc ~ SSfol(Dose, Time,lKe, lKa, lCl) ~
-                    (0 + lKa + lCl | Subject), data = Theoph,
+post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~ 
+                    (0 + lKe + lKa + lCl | Subject), data = Theoph,
                     chains = CHAINS, cores = CORES, seed = SEED, 
-                    init_r = 0.5)
+                    QR = TRUE, init_r = 0.25, adapt_delta = 0.999)
 ```
-which is increasing in the dosage and decreasing in time
+However, in this case the posterior distribution is bimodal
 ```{r}
-nd <- expand.grid(Dose = 3:6, Time = 1:25)
-nd$Subject <- factor("0", levels = 0:12) # necessary, even with re.form = NA
-PPD <- posterior_predict(post3, newdata = nd, re.form = NA)
-PPD_df <- data.frame(Dose = nd$Dose, each = nrow(PPD),
-                     Time = nd$Time, each = nrow(PPD),
-                     conc = colMeans(PPD))
-ggplot(PPD_df, aes(x = Dose, y = Time, z = conc)) + 
-  geom_contour(aes(color = ..level..), bins = 8)
+pairs(post3, regex_pars = "^l")
 ```
 
