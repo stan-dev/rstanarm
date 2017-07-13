@@ -63,6 +63,7 @@ stan_bym <- function(formula,
                model = mf, 
                call = match.call(),
                stan_function = stan_function)
+  
   if (family == "binomial") {
     fit$family <- binomial(link = "logit")
     fit$trials <- trials

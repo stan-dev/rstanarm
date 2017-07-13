@@ -23,7 +23,7 @@
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
-  is_car <- object$stan_function %in% c("stan_CARbym", "stan_CARleroux")
+  is_car <- object$stan_function %in% c("stan_besag", "stan_bym")
   stanfit <- object$stanfit
   family <- object$family
   y <- object$y
