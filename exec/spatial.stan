@@ -11,16 +11,17 @@ data {
   int edges[E_n, 2];              // adjacency pairs
   real loc_beta[K];               // priors
   real<lower=0> scale_beta[K];    // priors
-  real<lower=0> shape_tau;        // priors
-  real<lower=0> scale_tau;        // priors
-  real<lower=0> shape_sigma;      // priors
+  real<lower=0> shape1_tau;        // priors
+  real<lower=0> shape2_tau;        // priors
+  real<lower=0> loc_sigma;      // priors
   real<lower=0> scale_sigma;      // priors
-  real<lower=0> shape_nu;         // priors
+  real<lower=0> loc_nu;         // priors
   real<lower=0> scale_nu;         // priors
   real<lower=0> loc_alpha;        // priors
   real<lower=0> scale_alpha;      // priors
   int<lower=0,upper=1> has_intercept;
-  int<lower=1,upper=2> mod;
+  int<lower=1,upper=2> mod;       // 1 = icar; 2 = bym
+  real scaling_factor;
 }
 transformed data {
   real poisson_max = pow(2.0, 30.0);
@@ -28,38 +29,34 @@ transformed data {
 parameters {
   real alpha[has_intercept];  // intercept
   vector[K] beta;             // predictors on covariates (including intercept)
-  vector[N] theta_raw[mod == 1? 1 : 0];        // used for random effect (non-spatial)
+  vector[N] theta_raw[mod == 2? 1 : 0];        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)
-  real<lower=0> tau;          // variance i.e. tau^2
-  real<lower=0> sigma;        // variance i.e. sigma^2
+  real<lower=0,upper=1> tau[mod == 2? 1 : 0];          // variance i.e. tau^2
+  real<lower=0> sigma[mod == 2? 1 : 0];        // variance i.e. sigma^2
   real<lower=0> nu[family == 1? 1 : 0];  // applies only if family is gaussian
 }
 transformed parameters {
-  vector[N] theta[mod == 1? 1 : 0];        // non-centered random effect (non-spatial)
   vector[N] phi;          // non-centered random effect (spatial)
-  theta[1] = sqrt(sigma) * theta_raw[1];
+  vector[N] psi;
   phi[1:(N - 1)] = phi_raw;
   phi[N] = -sum(phi_raw);
-  phi = phi * sqrt(tau);
+  if (mod == 1)
+    psi = phi;
+  else if (mod == 2)
+    psi = sigma[1] *(sqrt(tau[1])*theta_raw[1] + sqrt(1-tau[1])*scaling_factor*phi);
 }
 model {
   vector[N] eta;   // linear predictor + spatial random effects
   // model
   if (has_intercept == 1) {
-    if (mod == 1)
-      eta = alpha[1] + X * beta + phi + theta[1];
-    else if (mod == 2)
-      eta = alpha[1] + X * beta + phi;
+    eta = alpha[1] + X * beta + psi;
   }
   else {
-    if (mod == 1)
-      eta = X * beta + phi + theta[1];
-    else if (mod == 2)
-      eta = X * beta + phi;
+    eta = X * beta + psi;
   }
   if (family == 1) {
     target+= normal_lpdf(y_real | eta, nu[1]);
-    target+= inv_gamma_lpdf(nu[1] | shape_nu, scale_nu);
+    target+= normal_lpdf(nu[1] | loc_nu, scale_nu);
   }
   else if (family == 2) {
     target+= poisson_log_lpmf(y_int | eta);
@@ -68,38 +65,25 @@ model {
     target+= binomial_lpmf(y_int | trials, inv_logit(eta));
   }
   // priors
-  if (mod == 1)
-    target+= - N * log(sqrt(tau)) - 0.5 * inv(tau) * dot_self(phi[edges[,1]] - phi[edges[,2]]);
-  else if (mod == 2)
-    reject("leroux model not supported")
+  target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
   if (has_intercept == 1)
     target += normal_lpdf(alpha | loc_alpha, scale_alpha);
   target+= normal_lpdf(beta | loc_beta , scale_beta);
-  target+= normal_lpdf(theta_raw[1] | 0, 1);
-  target+= normal_lpdf(phi_raw | 0, 1);
-  target+= inv_gamma_lpdf(tau | shape_tau, scale_tau);
-  target+= inv_gamma_lpdf(sigma | shape_sigma, scale_sigma);
+  if (mod == 2) {
+    target+= normal_lpdf(theta_raw[1] | 0, 1);
+    target+= normal_lpdf(sigma | loc_sigma, scale_sigma);
+    target+= beta_lpdf(tau | shape1_tau, shape2_tau);
+  }
 }
 generated quantities {
   real mean_PPD = 0;
-  vector[N] psi;
-  if (mod == 1)
-    psi = theta[1] + phi;
-  else if (mod == 2)
-    psi = phi;
   {
     vector[N] eta;
     if (has_intercept == 1) {
-      if (mod == 1)
-        eta = alpha[1] + X * beta + phi + theta[1];
-      else if (mod == 2)
-        eta = alpha[1] + X * beta + phi;
+      eta = alpha[1] + X * beta + psi;
     }
     else {
-      if (mod == 1)
-        eta = X * beta + phi + theta[1];
-      else if (mod == 2)
-        eta = X * beta + phi;
+      eta = X * beta + psi;
     }
     for (n in 1:N) {
       if (family == 1)

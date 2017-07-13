@@ -17,25 +17,26 @@
 
 #' Bayesian CAR BYM models via Stan
 #'
-#' Spatial regression modeling with a conditional autoregressive (CAR).
+#' Spatial regression modeling with a conditional autoregressive (CAR) prior.
 #'
 #' @export
 #' 
 
-stan_CARbym <- function(formula,
+stan_bym <- function(formula,
                         family = c("binomial", "poisson", "gaussian"),
                         data,
                         trials = NULL,
                         W,
                         ...,
                         prior = normal(), prior_intercept = normal(),
+                        prior_sigma = normal(), prior_tau = beta(), prior_nu = NULL,
                         prior_PD = FALSE,
                         algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                         adapt_delta = NULL,
                         QR = FALSE) {
-  stan_function <- "stan_CARbym"
-  if (!requireNamespace("CARBayes", quietly = TRUE))
-    stop("Please install the CARBayes package before using 'stan_CARbym.")
+  stan_function <- "stan_bym"
+  if (!requireNamespace("INLA", quietly = TRUE))
+    stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
   family <- match.arg(family)
@@ -49,6 +50,7 @@ stan_CARbym <- function(formula,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
+                              prior_sigma = prior_sigma, prior_tau = prior_tau, prior_nu = prior_nu,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)
@@ -60,7 +62,7 @@ stan_CARbym <- function(formula,
                formula,
                model = mf, 
                call = match.call(),
-               stan_function = "stan_CARbym")
+               stan_function = stan_function)
   if (family == "binomial") {
     fit$family <- binomial(link = "logit")
     fit$trials <- trials

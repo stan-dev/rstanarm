@@ -24,6 +24,7 @@ stan_spatial.fit <- function(x, y, w,
                              stan_function,
                              ...,
                              prior = normal(), prior_intercept = normal(),
+                             prior_sigma = normal(), prior_tau = beta(), prior_nu = NULL,
                              prior_PD = FALSE,
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL,
@@ -54,9 +55,9 @@ stan_spatial.fit <- function(x, y, w,
     }
   }
   
-  if (stan_function == "stan_CARbym")
+  if (stan_function == "stan_icar")
     mod <- 1
-  else if(stan_function == "stan_CARleroux")
+  else if (stan_function == "stan_bym")
     mod <- 2
   
   sparse <- FALSE
@@ -64,15 +65,19 @@ stan_spatial.fit <- function(x, y, w,
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
-
-  ok_dists <- nlist("normal", student_t = "t", "cauchy")
+  
+  # temporarily suppress certain prior options
+  # ok_dists <- nlist("normal", student_t = "t", "cauchy")
+  ok_dists <- nlist("normal")
   ok_intercept_dists <- ok_dists
 
+  # Deal with prior
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
                                   ok_dists = ok_dists)
   for (i in names(prior_stuff)) # prior_{dist, mean, scale, df, autoscale}
     assign(i, prior_stuff[[i]])
   
+  # Deal with prior_intercept
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
                                             default_scale = 10, link = link,
                                             ok_dists = ok_intercept_dists)
@@ -80,6 +85,31 @@ stan_spatial.fit <- function(x, y, w,
                                          "_for_intercept")
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, autoscale}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
+  
+  # Deal with prior_tau and prior_sigma
+  if (stan_function == "stan_bym") {
+    prior_sigma_stuff <- handle_glm_prior(prior_sigma, nvars = 1, link, default_scale = 1, 
+                                          ok_dists = "normal")
+    for (i in names(prior_sigma_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_sigma_stuff[[i]])
+    
+    prior_tau_stuff <- list(alpha = prior_tau$alpha, beta = prior_tau$beta)
+  }
+  else if (stan_function == "stan_icar") {
+    prior_tau_stuff <- list(alpha = 0, beta = 0)
+    prior_sigma_stuff <- list(prior_mean = 0, prior_scale = 0)
+  }
+  
+  # Deal with prior_nu
+  if (family == "gaussian") {
+    prior_nu_stuff <- handle_glm_prior(prior_nu, nvars = 1, link, default_scale = 1, 
+                                    ok_dists = "normal")
+    for (i in names(prior_nu_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_nu_stuff[[i]])
+  }
+  else {
+    prior_nu_stuff <- list(prior_mean = 0, prior_scale = 0)
+  }
   
   # QR decomposition for both x and z
   if (QR) {
@@ -104,7 +134,7 @@ stan_spatial.fit <- function(x, y, w,
     return(out)
   }
   edges <- adj_fun(W)
-  
+
   # need to use uncentered version
   standata <- nlist(N = nrow(xtemp),
                     K = ncol(xtemp),
@@ -115,21 +145,40 @@ stan_spatial.fit <- function(x, y, w,
                     y_real = y_real,
                     y_int = y_int,
                     trials = trials,
-                    shape_tau = 1,
-                    shape_sigma = 1,
-                    shape_nu = 1,
-                    scale_tau = 1,
-                    scale_sigma = 1,
-                    scale_nu = 1,
-                    loc_beta = rep(0,ncol(xtemp)),
-                    scale_beta = rep(1,ncol(xtemp)),
-                    loc_alpha = 0,
-                    scale_alpha = 1,
+                    shape1_tau = c(prior_tau_stuff$alpha),
+                    shape2_tau = c(prior_tau_stuff$beta),
+                    loc_sigma = c(prior_sigma_stuff$prior_mean),
+                    scale_sigma = c(prior_sigma_stuff$prior_scale),
+                    loc_nu = c(prior_nu_stuff$prior_mean),
+                    scale_nu = c(prior_nu_stuff$prior_scale),
+                    loc_beta = as.array(prior_stuff$prior_mean),
+                    scale_beta = as.array(prior_stuff$prior_scale),
+                    loc_alpha = c(prior_intercept_stuff$prior_mean_for_intercept),
+                    scale_alpha = c(prior_intercept_stuff$prior_scale_for_intercept),
                     has_intercept = has_intercept,
                     mod = mod)
+  standata$X <- array(standata$X, dim = c(standata$N, standata$K))
+
+  # create scaling_factor a la Dan Simpson
+  create_scaling_factor <- function(dat, W) {
+    #The ICAR precision matrix (note! This is singular)
+    Q <-  diag(rowSums(W), dat$N) - W
+    #Add a small jitter to the diagonal for numerical stability (optional but recommended)
+    Q_pert <- Q + diag(dat$N) * max(diag(Q)) * sqrt(.Machine$double.eps)
+    
+    # Compute the diagonal elements of the covariance matrix subject to the 
+    # constraint that the entries of the ICAR sum to zero.
+    #See the function help for further details.
+    Q_inv <- inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
+    Q_inv <- as.matrix(Q_inv)
+    #Compute the geometric mean of the variances, which are on the diagonal of Q.inv
+    scaling_factor <- exp(mean(log(diag(Q_inv))))
+    return(scaling_factor)
+  }
+  standata$scaling_factor <- create_scaling_factor(standata, W)
   
-  pars <- c(if (has_intercept) "alpha", "beta", if(mod == 1) "sigma", "tau", if(family == "gaussian") "nu",
-            "mean_PPD", if (mod < 2) "psi")
+  pars <- c(if (has_intercept) "alpha", "beta", if(mod == 2) c("sigma", "tau"), if(family == "gaussian") "nu",
+            "mean_PPD", "psi")
   
   stanfit <- stanmodels$spatial
 
@@ -160,8 +209,8 @@ stan_spatial.fit <- function(x, y, w,
     } 
   }
   new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(xtemp), "tau2", if(mod == 1) "sigma2",
-                 if(family == "gaussian") "nu2", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
+                 colnames(xtemp), if(mod == 2) c("tau", "sigma"),
+                 if(family == "gaussian") "nu", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
   stanfit@sim$fnames_oi <- new_names
   return(structure(stanfit))  # return(structure(stanfit, prior.info = prior_info))
 }

@@ -516,7 +516,13 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
-
+#' @rdname priors
+#' @export
+beta <- function(alpha = 2, beta = 2) {
+  validate_parameter_value(alpha)
+  validate_parameter_value(beta)
+  nlist(dist = "beta", alpha, beta)
+}
 
 
 # internal ----------------------------------------------------------------
