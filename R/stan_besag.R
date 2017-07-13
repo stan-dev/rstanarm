@@ -15,26 +15,26 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian CAR BYM models via Stan
+#' Bayesian CAR Intrinsic Autoregressive models via Stan
 #'
-#' Spatial regression modeling with a conditional autoregressive (CAR) prior.
+#' Spatial regression modeling with an intrinsic conditional autoregressive (ICAR) prior.
 #'
 #' @export
 #' 
 
-stan_bym <- function(formula,
-                        family = c("binomial", "poisson", "gaussian"),
-                        data,
-                        trials = NULL,
-                        W,
-                        ...,
-                        prior = normal(), prior_intercept = normal(),
-                        prior_sigma = normal(), prior_tau = beta(), prior_nu = NULL,
-                        prior_PD = FALSE,
-                        algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-                        adapt_delta = NULL,
-                        QR = FALSE) {
-  stan_function <- "stan_bym"
+stan_besag <- function(formula,
+                     family = c("binomial", "poisson", "gaussian"),
+                     data,
+                     trials = NULL,
+                     W,
+                     ...,
+                     prior = normal(), prior_intercept = normal(),
+                     prior_nu = NULL,
+                     prior_PD = FALSE,
+                     algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                     adapt_delta = NULL,
+                     QR = FALSE) {
+  stan_function <- "stan_besag"
   if (!requireNamespace("INLA", quietly = TRUE))
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
@@ -46,11 +46,11 @@ stan_bym <- function(formula,
   stanfit <- stan_spatial.fit(x = X, y = Y, w = W,
                               trials = trials,
                               family = family,
-                              stan_function,
+                              stan_function = stan_function,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
-                              prior_sigma = prior_sigma, prior_tau = prior_tau, prior_nu = prior_nu,
+                              prior_nu = prior_nu,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)

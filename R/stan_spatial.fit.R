@@ -21,10 +21,10 @@
 stan_spatial.fit <- function(x, y, w,
                              trials = NULL,
                              family = c("binomial", "poisson", "gaussian"),
-                             stan_function,
+                             stan_function = c("stan_besag", "stan_bym"),
                              ...,
                              prior = normal(), prior_intercept = normal(),
-                             prior_sigma = normal(), prior_tau = beta(), prior_nu = NULL,
+                             prior_sigma = NULL, prior_tau = NULL, prior_nu = NULL,
                              prior_PD = FALSE,
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL,
@@ -55,7 +55,7 @@ stan_spatial.fit <- function(x, y, w,
     }
   }
   
-  if (stan_function == "stan_icar")
+  if (stan_function == "stan_besag")
     mod <- 1
   else if (stan_function == "stan_bym")
     mod <- 2
@@ -95,7 +95,7 @@ stan_spatial.fit <- function(x, y, w,
     
     prior_tau_stuff <- list(alpha = prior_tau$alpha, beta = prior_tau$beta)
   }
-  else if (stan_function == "stan_icar") {
+  else if (stan_function == "stan_besag") {
     prior_tau_stuff <- list(alpha = 0, beta = 0)
     prior_sigma_stuff <- list(prior_mean = 0, prior_scale = 0)
   }

@@ -45,6 +45,7 @@ Suggests:
     digest,
     gridExtra,
     HSAUR3,
+    INLA,
     knitr (>= 1.15.1),
     MASS,
     mgcv (>= 1.8-13),
