@@ -164,13 +164,14 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
+
     fit <- 
       nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),
             family = beta_fam(link), family_phi = beta_phi_fam(link_phi),
             formula, model = mf, terms = mt, call = match.call(),
             na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"), 
-            stan_function = "stan_betareg")
+            stan_function = "stan_betareg", x_true = x)
     out <- stanreg(fit)
     out$xlevels <- lapply(mf[,-1], FUN = function(x) {
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL

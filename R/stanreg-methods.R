@@ -337,7 +337,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 model.matrix.stanreg <- function(object, ...) {
   if (inherits(object, "gamm4")) return(object$jam$X)
   if (is.mer(object)) return(object$glmod$X)
-    
+  if (is(object, "betareg") & !is.null(object[["x"]])) return(object$x)
   NextMethod("model.matrix")
 }
 
