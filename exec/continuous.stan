@@ -135,7 +135,7 @@ model {
   
   if (SSfun > 0) { // nlmer
     matrix[len_y, K] P;
-    P = reshape(eta, len_y, K);
+    P = reshape_vec(eta, len_y, K);
     if (SSfun < 5) {
       if (SSfun <= 2) {
         if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
@@ -284,7 +284,7 @@ generated quantities {
     if (SSfun > 0) { // nlmer
       vector[len_y] eta_nlmer;
       matrix[len_y, K] P;      
-      P = reshape(eta, len_y, K);
+      P = reshape_vec(eta, len_y, K);
       if (SSfun < 5) {
         if (SSfun <= 2) {
           if (SSfun == 1) eta_nlmer = SS_asymp(input, P);

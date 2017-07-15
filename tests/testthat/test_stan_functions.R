@@ -546,8 +546,7 @@ test_that("SSweibull works", {
 context("nlmer")
 test_that("reshape works", {
   x <- as.double(1:10)
-  expect_true(all(matrix(x, 5, 2) == .GlobalEnv::reshape(x, 5L, 2L)))
-  # this works in an interactive session but not with R CMD check
+  expect_true(all(matrix(x, 5, 2) == reshape_vec(x, 5L, 2L)))
 })
 
 # betareg

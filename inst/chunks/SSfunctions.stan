@@ -136,7 +136,7 @@ vector SS_weibull(vector x, matrix Phi) {
   return out;
 }
 
-matrix reshape(vector x, int Rows, int Cols) {
+matrix reshape_vec(vector x, int Rows, int Cols) {
   matrix[Rows, Cols] out;
   int pos = 1;
   if (rows(x) != Rows * Cols) reject("x is the wrong length");
