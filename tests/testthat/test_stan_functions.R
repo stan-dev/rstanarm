@@ -491,7 +491,7 @@ test_that("SSfol works", {
 context("nlmer")
 test_that("SSfpl works", {
   example("SSfpl", package = "stats", character.only = TRUE, ask = FALSE)
-  Phi <- cbind(A, B, xmid, scal)
+  Phi <- cbind(A, B, xmid, log(scal))
   expect_true(all.equal(SSfpl(Chick.1$Time, A, B, xmid, scal),
                         SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
   Phi <- matrix(Phi, nrow = nrow(Chick.1), ncol = ncol(Phi), byrow = TRUE)
@@ -513,7 +513,7 @@ test_that("SSgompertz works", {
 context("nlmer")
 test_that("SSlogis works", {
   example("SSlogis", package = "stats", character.only = TRUE, ask = FALSE)
-  Phi <- cbind(Asym, xmid, scal)
+  Phi <- cbind(Asym, xmid, log(scal))
   expect_true(all.equal(SSlogis(Chick.1$Time, Asym, xmid, scal),
                         SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
   Phi <- matrix(Phi, nrow = nrow(Chick.1), ncol = ncol(Phi), byrow = TRUE)
@@ -546,7 +546,7 @@ test_that("SSweibull works", {
 context("nlmer")
 test_that("reshape works", {
   x <- as.double(1:10)
-  # expect_true(all(matrix(x, 5, 2) == reshape(x, 5L, 2L)))
+  expect_true(all(matrix(x, 5, 2) == .GlobalEnv::reshape(x, 5L, 2L)))
   # this works in an interactive session but not with R CMD check
 })
 

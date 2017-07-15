@@ -129,7 +129,8 @@ pp_data <-
   offset <- .pp_data_offset(object, newdata, offset)
 
   group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
-  if (!is.null(re.form) && !is.formula(re.form) && is.na(re.form)) group$Z@x <- 0
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+    group$Z@x <- 0
   return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
 }

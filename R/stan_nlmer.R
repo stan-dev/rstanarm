@@ -64,7 +64,7 @@
 #' Orange$circumference <- Orange$circumference / 100
 #' Orange$age <- Orange$age / 100
 #' stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
-#'            data = Orange)
+#'            data = Orange, chains = 1, iter = 1000) # for speed only
 #' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial
