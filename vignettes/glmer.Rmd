@@ -367,3 +367,21 @@ pairs(post3, regex_pars = "igma")
 ```
 Thus, you should always be running many chains when using Stan, especially
 `stan_nlmer`.
+
+# Conclusion
+
+There are model fitting functions in the **rstanarm** package that can do
+essentially all of what can be done in the **lme4** and **gamm4** packages
+--- in the sense that they can fit models with multilevel structure and / or
+nonlinear relationships --- and propagate the uncertainty in the parameter
+estimates to the predictions and other functions of interest. The documentation
+of **lme4** and **gamm4** has various warnings that acknowledge that the 
+estimated standard errors, confidence intervals, etc. are not entirely correct,
+even from a frequentist perspective. 
+
+A frequentist point estimate would also completely miss the second mode in the
+last example with `stan_nlmer`. Thus, there is considerable reason to prefer
+the **rstanarm** variants of these functions for regression modeling. The only
+disadvantage is the execution time required to produce an answer that properly
+captures the uncertainty in the estimates of complicated models such as these.
+

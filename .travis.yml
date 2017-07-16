@@ -25,7 +25,7 @@ before_install:
 
 script: 
   - |
-    travis_wait R CMD build .
+    travis_wait 21 R CMD build .
     travis_wait 42 R CMD check rstanarm*tar.gz
 
 after_script:
