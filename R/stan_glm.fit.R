@@ -596,6 +596,8 @@ stan_glm.fit <- function(x, y,
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
+            if (length(group) && isTRUE(standata$interaction_prior > 0)) 
+              c("lambda_multi_way", "glob_scale"),
             "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
@@ -694,6 +696,15 @@ stan_glm.fit <- function(x, y,
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
+                   if (length(group) && isTRUE(standata$interaction_prior > 0)) {
+                      c(
+                        gsub(pattern = "lambda_multi_way", 
+                             replacement = "lambda_m", 
+                             x = grep("lambda_multi_way", 
+                                  stanfit@sim$fnames_oi, value = TRUE)), 
+                        "sigma_m"
+                      )
+                    },
                    "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
