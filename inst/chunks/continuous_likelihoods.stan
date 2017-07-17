@@ -52,16 +52,15 @@
   */
   real GammaReg(vector y, vector eta, real shape, 
                 int link, real sum_log_y) {
-    real ret;
-    if (link < 1 || link > 3) reject("Invalid link");
-    ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
-      (shape - 1) * sum_log_y;
+    real ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
+               (shape - 1) * sum_log_y;
     if (link == 2)      // link is log
       ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
     else if (link == 1) // link is identity
       ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
-    else                // link is inverse
+    else if (link == 3) // link is inverse
       ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+    else reject("Invalid link");
     return ret;
   }
   
@@ -112,7 +111,7 @@
   }
 
   /** 
-  * inverse Gaussian log-PDF (for data only, excludes constants)
+  * inverse Gaussian log-PDF
   *
   * @param y The vector of outcomes
   * @param mu The vector of conditional means
@@ -157,14 +156,10 @@
   */
   real inv_gaussian_rng(real mu, real lambda) {
     real mu2 = square(mu);
-    // compound declare & define does not work with _rng
-    real z;
-    real y;
-    real x;
-    z = uniform_rng(0,1);
-    y = square(normal_rng(0,1));
-    x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
-      / (2 * lambda);
+    real z = uniform_rng(0,1);
+    real y = square(normal_rng(0,1));
+    real x = mu + ( mu2 * y - mu * sqrt(4 * mu * lambda * y + mu2 * square(y)) )
+           / (2 * lambda);
     if (z <= (mu / (mu + x))) return x;
     else return mu2 / x;
   }
@@ -177,19 +172,14 @@
   * @return A vector, i.e. inverse-link(eta)
   */
   vector linkinv_beta(vector eta, int link) {
-    vector[rows(eta)] mu;
-    if (link == 1) mu = inv_logit(eta);  // logit
-    else if (link == 2) mu = Phi(eta);   // probit
-    else if (link == 3) mu = inv_cloglog(eta);  // cloglog
-    else if (link == 4) mu = 0.5 + atan(eta) / pi(); // cauchy
-    else if (link == 5)  // log 
-      for(n in 1:rows(eta)) {
-          if (eta[n] > 0) reject("mu must be between 0 and 1");
-          mu[n] = exp(eta[n]);
-      }
-    else if (link == 6) mu = 1 - inv_cloglog(-eta); // loglog
+    if (link == 1) return inv_logit(eta);  // logit
+    else if (link == 2) return Phi(eta);   // probit
+    else if (link == 3) return inv_cloglog(eta);  // cloglog
+    else if (link == 4) return 0.5 + atan(eta) / pi(); // cauchy
+    else if (link == 5) return exp(eta); // log 
+    else if (link == 6) return 1 - inv_cloglog(-eta); // loglog
     else reject("invalid link");
-    return mu;
+    return eta; // never reached
   }
   
   /** 
