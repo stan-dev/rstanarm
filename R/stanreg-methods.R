@@ -350,7 +350,7 @@ model.matrix.stanreg <- function(object, ...) {
 #' @param ... Can contain \code{fixed.only} and \code{random.only} arguments 
 #'   that both default to \code{FALSE}.
 #' 
-formula.stanreg <- function(x, ...) {
+formula.stanreg <- function(x, ..., m = NULL) {
   if (is.mer(x)) return(formula_mer(x, ...))
   x$formula
 }
