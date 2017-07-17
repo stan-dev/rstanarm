@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-
+#' 
 #' Combine plots of the estimated longitudinal trajectory and survival function
 #' 
 #' This function takes arguments containing the plots of the estimated  
@@ -125,7 +125,8 @@ plot_stack <- function(yplot, survplot) {
   if (!is.null(e_ids)) 
     yplot <- lapply(yplot, function(x) x + expand_limits(x = c(0, xmax)) + 
                       facet_wrap(~ id, scales = "free", nrow = 1))
-  
+  if (!requireNamespace("cowplot"))
+    stop("the 'cowplot' package needs to be installed for this plot")
   do.call(cowplot::plot_grid, c(yplot, list(survplot_updated), ncol = 1))
 }
 
