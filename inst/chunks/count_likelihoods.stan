@@ -25,20 +25,18 @@
   vector pw_pois(int[] y, vector eta, int link) {
     int N = rows(eta);
     vector[N] ll;
-    if (link < 1 || link > 3) 
-      reject("Invalid link");
-      
     if (link == 1)  // log
       for (n in 1:N) ll[n] = poisson_log_lpmf(y[n] | eta[n]);
-    else {  // link = identity or sqrt
+    else if (link <= 3) {  // link = identity or sqrt
       vector[N] phi = linkinv_count(eta, link);
       for (n in 1:N) ll[n] = poisson_lpmf(y[n] | phi[n]) ;
     }
+    else reject("Invalid link");
     return ll;
   }
   
   /** 
-  * Pointwise (pw) log-likelihood vector for the negative binomial  distribution
+  * Pointwise (pw) log-likelihood vector for the negative binomial distribution
   *
   * @param y The integer array corresponding to the outcome variable.
   * @param eta The vector of linear predictors
@@ -48,7 +46,7 @@
   */
   vector pw_nb(int[] y, vector eta, real theta, int link) {
     int N = rows(eta);
-    vector[N] rho = linkinv_count(eta, link);
+    vector[N] rho = linkinv_count(eta, link); // link checked
     vector[N] ll;
     for (n in 1:N) ll[n] = neg_binomial_2_lpmf(y[n] | rho[n], theta);
     return ll;
