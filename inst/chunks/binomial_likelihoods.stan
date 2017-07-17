@@ -55,15 +55,14 @@
   vector pw_binom(int[] y, int[] trials, vector eta, int link) {
     int N = rows(eta);
     vector[N] ll;
-    if (link < 1 || link > 5) reject("Invalid link");
     if (link == 1) {  // logit
       for (n in 1:N) 
         ll[n] = binomial_logit_lpmf(y[n] | trials[n], eta[n]);
     }
-    else {  // link = probit, cauchit, log, or cloglog (may be numerically unstable)
-      vector[N] pi;
-      pi = linkinv_binom(eta, link);
+    else if (link <= 5) {  // link = probit, cauchit, log, or cloglog
+      vector[N] pi = linkinv_binom(eta, link); // may be unstable
       for (n in 1:N) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
     }
+    else reject("Invalid link");
     return ll;
   }

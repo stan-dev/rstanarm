@@ -330,35 +330,38 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   are included by default, but for models with more than just a few 
 #'   parameters it may be far too many to visualize on a small computer screen 
 #'   and also may require substantial computing time.
+#' @param condition Same as the \code{condition} argument to 
+#'   \code{\link[bayesplot]{mcmc_pairs}} except the \emph{default is different}
+#'   for \pkg{rstanarm} models. By default, the \code{mcmc_pairs} function in
+#'   the \pkg{bayesplot} package plots some of the Markov chains (half, in the
+#'   case of an even number of chains) in the panels above the diagonal and the
+#'   other half in the panels below the diagonal. However since we know that 
+#'   \pkg{rstanarm} models were fit using Stan (which \pkg{bayesplot} doesn't 
+#'   assume) we can make the default more useful by splitting the draws 
+#'   according to the \code{accept_stat__} diagnostic. The plots below the 
+#'   diagonal will contain realizations that are below the median 
+#'   \code{accept_stat__} and the plots above the diagonal will contain 
+#'   realizations that are above the median \code{accept_stat__}. To change this
+#'   behavior see the documentation of the \code{condition} argument at 
+#'   \code{\link[bayesplot]{mcmc_pairs}}.
 #' @param ... Optional arguments passed to \code{\link[bayesplot]{mcmc_pairs}}. 
 #'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to 
 #'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not 
 #'   need to be specified by the user in \code{...}. The arguments that can be 
 #'   specified in \code{...} include \code{transformations}, \code{diag_fun},
 #'   \code{off_diag_fun}, \code{diag_args}, \code{off_diag_args},
-#'   \code{condition}, and \code{np_style}. These arguments are
+#'   and \code{np_style}. These arguments are
 #'   documented thoroughly on the help page for
 #'   \code{\link[bayesplot]{mcmc_pairs}}.
-#' 
-#' @details 
-#' By default, the \code{mcmc_pairs} function in the \pkg{bayesplot} package 
-#' plots some of the Markov chains (half, in the case of an even number of
-#' chains) in the panels above the diagonal and the other half in the panels
-#' below the diagonal. This can be changed using the \code{condition} argument
-#' along with the \code{pairs_condition} helper function. 
-#' We provide an example in the \pkg{Examples} section, below, but 
-#' for full details see the \code{\link[bayesplot]{mcmc_pairs}} help page. 
-#' In particular, if when you fit your model \pkg{rstanarm} issues warnings 
-#' about convergence, divergent transitions, or transitions hitting the maximum 
-#' treedepth, then it can sometimes be useful to use one of the NUTS sampler 
-#' parameters/diagnostics for \code{condition}. The last few examples below
-#' demonstrate this feature.
 #' 
 #'   
 #' @examples
 #' if (!exists("example_model")) example(example_model)
 #' 
 #' bayesplot::color_scheme_set("purple")
+#' 
+#' # see 'condition' argument above for details on the plots below and 
+#' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' \donttest{
 #' pairs(
@@ -379,6 +382,8 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   prior = hs(),
 #'   adapt_delta = 0.9
 #' )
+#' 
+#' pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 #' 
 #' pairs(
 #'   fit, 
@@ -404,21 +409,13 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   condition = pairs_condition(nuts = "divergent__")
 #' )
 #' 
-#' # Using the condition argument to divide iterations by whether NUTS
-#' # accept_stat__ is at least the median accept_stat__ (above diagonal) or less
-#' # than the median accept_stat__ (below diagonal). divergences are still
-#' # marked in red.
-#' pairs(
-#'   fit, 
-#'   pars = c("(Intercept)", "wt", "log-posterior"), 
-#'   condition = pairs_condition(nuts = "accept_stat__")
-#' )
 #' }
 #'
 pairs.stanreg <-
   function(x,
            pars = NULL,
            regex_pars = NULL,
+           condition = pairs_condition(nuts = "accept_stat__"),
            ...) {
     
     if (!used.sampling(x))
@@ -434,7 +431,7 @@ pairs.stanreg <-
         paste(sQuote(ignored_args[specified]), collapse = ", ")
       )
     }
-
+    
     posterior <- as.array.stanreg(x, pars = pars, regex_pars = regex_pars)
     if (is.null(pars) && is.null(regex_pars)) {
       # include log-posterior by default
@@ -455,9 +452,10 @@ pairs.stanreg <-
       np = bayesplot::nuts_params(x),  
       lp = bayesplot::log_posterior(x),  
       max_treedepth = .max_treedepth(x),
+      condition = condition,
       ...
     )
-  
+    
   }
 
 
