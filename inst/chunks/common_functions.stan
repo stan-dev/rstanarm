@@ -77,19 +77,19 @@
   // For special MRP structured interactions prior
   vector make_theta_L_int(int interaction_prior, int len_theta_L,
                           int n_multi_way, int n_one_way, vector tau,
-                          real glob_scale, int[] multi_depth,
+                          real sigma_m, int[] multi_depth,
                           int[,] main_multi_map, int[] depth_ind,
                           int[] one_way_ix, int[] multi_way_ix,
-                          vector lambda_multi_way) {
+                          vector lambda_inter) {
     vector[len_theta_L] theta_L;
     if (interaction_prior == 1 && n_multi_way > 0) {
       vector[n_multi_way] multi_way;
       vector[n_one_way] one_way;
-      one_way = glob_scale * tau;
+      one_way = sigma_m * tau;
       for (ix in 1:n_multi_way) {
         multi_way[ix] =
         prod(tau[main_multi_map[ix, 1:multi_depth[ix]]])
-        * glob_scale * lambda_multi_way[depth_ind[ix]];
+        * sigma_m * lambda_inter[depth_ind[ix]];
       }
       theta_L[one_way_ix] = one_way;
       theta_L[multi_way_ix] = multi_way;
@@ -187,14 +187,14 @@
   
   // For special MRP structured interactions prior
   void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
-                      vector lambda_inter, real[] glob_scale,
+                      vector lambda_inter, real[] sigma_m,
                       real[] delta, vector shape, int n_multi_way,
                       int interaction_prior) {
     target += normal_lpdf(z_b | 0, 1);
     target += normal_lpdf(z_T | 0, 1);
     if (interaction_prior == 1) {
       target += normal_lpdf(tau | 0, 1);
-      target += normal_lpdf(glob_scale[1]  | 0, 1);
+      target += normal_lpdf(sigma_m[1]  | 0, 1);
       if (n_multi_way > 0) 
         target += normal_lpdf(lambda_inter | 0, 1);
     } else if (interaction_prior == 2) {

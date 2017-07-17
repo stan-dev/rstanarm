@@ -10,5 +10,5 @@
   vector<lower=0,upper=1>[len_rho] rho;
   vector<lower=0>[len_concentration] zeta;
   vector<lower=0>[t - (special_case && interaction_prior == 1 ? n_multi_way : 0)] tau;
-  vector<lower=0>[len_multi_way_uniq * (interaction_prior == 1) * (n_multi_way > 0)] lambda_multi_way;
-  real<lower=0> glob_scale[n_multi_way > 0 && interaction_prior == 1 && special_case == 1];
+  vector<lower=0>[len_multi_way_uniq * (interaction_prior == 1) * (n_multi_way > 0)] lambda_inter;
+  real<lower=0> sigma_m[n_multi_way > 0 && interaction_prior == 1 && special_case == 1];
