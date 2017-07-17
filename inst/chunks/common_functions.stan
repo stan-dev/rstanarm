@@ -189,12 +189,13 @@
   void decov_inter_lp(vector z_b, vector z_T, vector zeta, vector tau,
                       vector lambda_inter, real[] sigma_m,
                       real[] delta, vector shape, int n_multi_way,
-                      int interaction_prior) {
+                      int interaction_prior, 
+                      real prior_group_level_df) {
     target += normal_lpdf(z_b | 0, 1);
     target += normal_lpdf(z_T | 0, 1);
     if (interaction_prior == 1) {
       target += normal_lpdf(tau | 0, 1);
-      target += normal_lpdf(sigma_m[1]  | 0, 1);
+      target += student_t_lpdf(sigma_m[1] | prior_group_level_df, 0, 1);
       if (n_multi_way > 0) 
         target += normal_lpdf(lambda_inter | 0, 1);
     } else if (interaction_prior == 2) {

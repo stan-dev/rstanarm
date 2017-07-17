@@ -124,7 +124,9 @@ model {
   if (t > 0) {
     if (interaction_prior > 0 && special_case == 1) {
       decov_inter_lp(z_b, z_T, zeta, tau, lambda_inter, sigma_m,
-                     delta, shape, n_multi_way, interaction_prior);
+                     delta, shape, n_multi_way, 
+                     interaction_prior, 
+                     prior_group_level_df);
     } else {
       decov_lp(z_b, z_T, rho, zeta, tau, 
                regularization, delta, shape, t, p);

@@ -275,7 +275,10 @@ stan_glm.fit <- function(x, y,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0),
     # mean,df,scale for aux added below depending on family, 
-    prior_group_level_scale = 1  # changed below iff mrp_structured prior is used
+    #
+    # changed below iff mrp_structured prior is used
+    prior_group_level_scale = 1,  
+    prior_group_level_df = 1
   )
 
   # make a copy of user specification before modifying 'group' (used for keeping
@@ -379,6 +382,7 @@ stan_glm.fit <- function(x, y,
     standata$depth_ind <- as.array(depth_ind)
     
     standata$prior_group_level_scale <- decov$group_level_scale %ORifNULL% 1
+    standata$prior_group_level_df <- decov$group_level_df %ORifNULL% 1
     
     if (length(table(decov$cell_size)) <= 1) {
       standata$use_cell_weights <- 0

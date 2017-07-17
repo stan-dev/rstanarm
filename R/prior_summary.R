@@ -297,6 +297,7 @@ used.sparse <- function(x) {
     cat(paste0("\n", txt, "\n ~"),
         paste0(p$dist, "(",  
                "grp-lev scale = ", .f1(p$group_level_scale), 
+               ", grp-lev df = ", .f1(p$group_level_df), 
                ")"))
   } else { # decov
     p$regularization <- .format_pars(p$regularization, .f1)
