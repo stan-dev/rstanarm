@@ -83,7 +83,7 @@
 #'     \item{\code{last_time}}{a scalar or a character string 
 #'     specifying the last known survival time for each individual for whom
 #'     conditional predictions are being obtained. This is only relevant if
-#'     \code{newdata} is provided, and conditional survival predictions are being
+#'     new data is provided, and conditional survival predictions are being
 #'     obtained. A scalar will use the same last time for each individual in 
 #'     \code{newdataEvent}. A character string will name a column in 
 #'     \code{newdataEvent} in which to look for the last times. If \code{last_time} 
@@ -109,8 +109,8 @@
 #' @param standardise A logical specifying whether the estimated 
 #'   subject-specific survival probabilities should be averaged
 #'   across all individuals for whom the subject-specific predictions are 
-#'   being obtained. This can be used to average over the covariate distribution
-#'   of the individuals used in estimating the model, or the individuals 
+#'   being obtained. This can be used to average over the covariate and random effects
+#'   distributions of the individuals used in estimating the model, or the individuals 
 #'   included in the \code{newdata} arguments. This approach of
 #'   averaging across the observed distribution of the covariates is sometimes
 #'   referred to as a "standardised" survival curve. If \code{standardise = TRUE}, 
@@ -132,9 +132,7 @@
 #'   used to fit the model, then these variables must also be transformed in 
 #'   \code{newdataLong} and \code{newdataEvent}. This only applies if variables  
 #'   were transformed before passing the data to one of the modeling functions and  
-#'   \emph{not} if transformations were specified inside the model formula. Also  
-#'   see the \strong{Note} section in \code{\link{posterior_predict}} for a note  
-#'   about using the \code{newdataLong} argument with binomial models.
+#'   \emph{not} if transformations were specified inside the model formula.
 #'    
 #' @return A data frame of class \code{survfit.stanmvreg}. The data frame includes 
 #'   columns for each of the following: 
@@ -188,42 +186,33 @@
 #'   # is to specify that we want the survival time estimated at time 0
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
-#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times == 0,
+#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times = 0,
 #'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
 #'   ps2
 #'   
-#'   # Instead of estimating survival probabilities for a specific individual 
-#'   # in the estimation dataset, we may want to estimate the marginal 
-#'   # survival probability, that is, marginalising over the individual-level
-#'   # random effects. 
-#'   # Here we will estimate survival between baseline and 5 years, for a 
-#'   # female who received either (i) D-penicillamine or (ii) placebo. 
-#'   # To do this we will need to provide the necessary values  
-#'   # of the predictors via the 'newdata' argument. However, it is important
-#'   # to realise that by marginalising over the random effects 
-#'   # distribution we will introduce a large amount of uncertainty into
-#'   # the estimated survival probabilities. This is because we have no 
-#'   # longitudinal measurements for these "new" individuals and therefore do
-#'   # not have any specific information with which to estimate their random
-#'   # effects. As such, there is a very wide 95% uncertainty interval 
-#'   # associated with the estimated survival probabilities.
-#'   nd <- data.frame(id = c("new1", "new2"),
-#'                    sex = c("f", "f"), 
-#'                    trt = c(1, 0))
-#'   ps3 <- posterior_survfit(example_jm, newdata = nd, times = 0,
-#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   ps3
-#'   
-#'   # We can then plot the estimated survival functions to compare
-#'   # them. To do this, we use the generic plot function.
-#'   plot(ps3, limits = "none")                          
+#'   # Instead we may want to estimate subject-specific survival probabilities 
+#'   # for a set of new individuals. To demonstrate this, we will simply take
+#'   # the first two individuals in the estimation dataset, but pass their data
+#'   # via the newdata arguments so that posterior_survfit will assume we are 
+#'   # predicting survival for new individuals and draw new random effects 
+#'   # under a Monte Carlo scheme (see Rizopoulos (2011)).
+#'   ndL <- pbcLong[pbcLong$id %in% c(1,2),]
+#'   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
+#'   ps3 <- posterior_survfit(example_jm, 
+#'     newdataLong = ndL, newdataEvent = ndE, 
+#'     control = list(last_time = "fuptimeYears"), seed = 12345)
+#'   head(ps3)
+#'   # We can then compare the estimated random effects for these 
+#'   # individuals based on the fitted model and the Monte Carlo scheme
+#'   ranef(example_jm)$Long1$id[1:2,,drop=FALSE] # from fitted model
+#'   colMeans(attr(ps3, "b_new"))                # from Monte Carlo scheme
 #'   
 #'   # Lastly, if we wanted to obtain "standardised" survival probabilities, 
 #'   # (by averaging over the observed distribution of the fixed effect 
 #'   # covariates, as well as averaging over the estimated random effects
-#'   # for individuals in our estimation sample) then we can specify
-#'   # 'standardise = TRUE'. We can then plot the resulting standardised
-#'   # survival curve.
+#'   # for individuals in our estimation sample or new data) then we can 
+#'   # specify 'standardise = TRUE'. We can then plot the resulting 
+#'   # standardised survival curve.
 #'   ps4 <- posterior_survfit(example_jm, standardise = TRUE, 
 #'                            times = 0, extrapolate = TRUE)
 #'   plot(ps4)                         
