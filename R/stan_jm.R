@@ -1632,7 +1632,8 @@ check_for_aux <- function(family) {
 # @param sparse A logical indicating whether to use a sparse design matrix
 handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
                           env = parent.frame()) {
-  
+  if (!requireNamespace("survival"))
+    stop("the 'survival' package must be installed to use this function")
   mc[[1]] <- quote(survival::coxph) 
   mc$x    <- TRUE
   mod <- eval(mc, envir = env)
