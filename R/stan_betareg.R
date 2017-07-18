@@ -115,7 +115,7 @@ stan_betareg <-
            prior_intercept = normal(),
            prior_z = normal(),
            prior_intercept_z = normal(),
-           prior_phi = cauchy(0, 5),
+           prior_phi = exponential(),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL,

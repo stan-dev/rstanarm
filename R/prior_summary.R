@@ -242,7 +242,8 @@ used.sparse <- function(x) {
       }
   )
   if (!is.null(p$adjusted_scale))
-    cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .f2(p$adjusted_scale), 
+        if (p$dist == "exponential") ("(adjusted rate = 1/adjusted scale)"))
 }
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
