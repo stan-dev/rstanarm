@@ -46,6 +46,7 @@ Suggests:
     arm,
     betareg,
     cowplot (>= 0.7.0),
+    data.table,
     digest,
     gridExtra,
     HSAUR3,

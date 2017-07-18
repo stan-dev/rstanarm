@@ -481,7 +481,6 @@
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
 #'  
-#' @import data.table
 #' @importFrom lme4 lmerControl glmerControl glmer
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
@@ -1634,6 +1633,9 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
                           env = parent.frame()) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
   mc[[1]] <- quote(survival::coxph) 
   mc$x    <- TRUE
   mod <- eval(mc, envir = env)
@@ -1685,7 +1687,7 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
   if (tvc) {  # time varying covariates in event model
     
     # Model frame at event times
-    mf2           <- data.table(mf2, key = c(id_var, "start"))
+    mf2           <- data.table::data.table(mf2, key = c(id_var, "start"))
     mf2[["start"]] <- as.numeric(mf2[["start"]])
     mf2_eventtime <- mf2[, .SD[.N], by = get(id_var)]
     mf2_eventtime <- mf2_eventtime[, get := NULL]   

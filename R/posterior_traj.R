@@ -193,6 +193,9 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            interpolate = TRUE, extrapolate = FALSE,
                            prob = 0.95, ids, control = list(), 
                            return_matrix = FALSE, ...) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
   validate_stanmvreg_object(object)
   if (!is.jm(object)) 
     STOP_jm_only("'posterior_traj'")

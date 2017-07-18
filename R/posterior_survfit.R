@@ -731,6 +731,8 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
 # @return A data.table (which will be used in a rolling merge against the
 #   event times and/or quadrature times)
 prepare_data_table <- function(data, id_var, time_var) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   if (!is.data.frame(data))
     stop("'data' should be a data frame.")
   if (!id_var %in% colnames(data))
