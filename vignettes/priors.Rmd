@@ -106,7 +106,7 @@ fr2 <- function(x) format(round(x, 2), nsmall = 2)
 Starting from the bottom up, we can see that:
 
 * __Auxiliary__: `sigma`, the error standard deviation, has a default prior that
-is $\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
+is $\mathsf{exponential}(1)$. However, as a result of the automatic rescaling,
 the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
 
 * __Coefficients__: By default the regression coefficients (in this case the 
@@ -176,7 +176,7 @@ test_no_autoscale <-
     default_prior_test,
     prior = normal(0, 5, autoscale = FALSE),
     prior_intercept = student_t(4, 0, 10, autoscale = FALSE),
-    prior_aux = exponential(1/10, autoscale=FALSE)
+    prior_aux = cauchy(0, 3, autoscale = FALSE)
   )
 ```
 

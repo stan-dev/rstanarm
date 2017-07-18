@@ -26,23 +26,23 @@
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
-stan_glm.fit <- function(x, y, 
-                         weights = rep(1, NROW(y)), 
-                         offset = rep(0, NROW(y)), 
-                         family = gaussian(),
-                         ...,
-                         prior = normal(),
-                         prior_intercept = normal(),
-                         prior_aux = cauchy(0, 5),
-                         prior_smooth = exponential(autoscale = FALSE),
-                         prior_ops = NULL,
-                         group = list(),
-                         prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", 
-                                       "meanfield", "fullrank"), 
-                         adapt_delta = NULL, 
-                         QR = FALSE, 
-                         sparse = FALSE) {
+stan_glm.fit <- 
+  function(x, y, 
+           weights = rep(1, NROW(y)), 
+           offset = rep(0, NROW(y)), 
+           family = gaussian(),
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_ops = NULL,
+           group = list(),
+           prior_PD = FALSE, 
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+           adapt_delta = NULL, 
+           QR = FALSE, 
+           sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -137,7 +137,7 @@ stan_glm.fit <- function(x, y,
     handle_glm_prior(
       prior_aux,
       nvars = 1,
-      default_scale = 5,
+      default_scale = 1,
       link = NULL, # don't need to adjust scale based on logit vs probit
       ok_dists = ok_aux_dists
     )
@@ -158,7 +158,8 @@ stan_glm.fit <- function(x, y,
         nvars = max(smooth_map),
         default_scale = 1,
         link = NULL,
-        ok_dists = ok_aux_dists)
+        ok_dists = ok_aux_dists
+      )
     
     names(prior_smooth_stuff) <- paste0(names(prior_smooth_stuff), "_for_smooth")
     if (is.null(prior_smooth)) {
