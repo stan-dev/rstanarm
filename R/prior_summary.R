@@ -15,8 +15,7 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param digits Number of digits to use for rounding.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
+#' @param ... Currently ignored by the method for stanreg objects.
 #' 
 #' @section Intercept (after predictors centered): 
 #'   For \pkg{rstanarm} modeling functions that accept a \code{prior_intercept} 
