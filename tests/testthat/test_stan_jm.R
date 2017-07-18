@@ -115,10 +115,10 @@ test_that("family argument works", {
   expect_output(ret <- update(jm1, family = gaussian(link = identity)))
   
   expect_output(ret <- update(jm1, formulaLong. = ybern ~ ., family = binomial))
-  expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson))
+  # expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson))
   expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = neg_binomial_2))
   expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = Gamma))
-  expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
+  # expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
   
   expect_error(ret <- update(jm1, formulaLong. = ybino ~ ., family = binomial))
 })
