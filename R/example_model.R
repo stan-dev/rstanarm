@@ -59,7 +59,7 @@ NULL
 #'   example_jm <- 
 #'      stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'              dataLong = pbcLong,
-#'              formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'              formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'              dataEvent = pbcSurv,
 #'              time_var = "year",
 #'              # this next line is only to keep the example small in size!
