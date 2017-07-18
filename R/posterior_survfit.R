@@ -188,7 +188,7 @@
 #'   # is to specify that we want the survival time estimated at time 0
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
-#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times == 0,
+#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times = 0,
 #'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
 #'   ps2
 #'   
@@ -210,13 +210,13 @@
 #'   nd <- data.frame(id = c("new1", "new2"),
 #'                    sex = c("f", "f"), 
 #'                    trt = c(1, 0))
-#'   ps3 <- posterior_survfit(example_jm, newdata = nd, times = 0,
-#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   ps3
+#'   #ps3 <- posterior_survfit(example_jm, newdataLong = nd, times = 0,
+#'     #extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
+#'   #ps3 DOES NOT WORK WITHOUT newdataEvent
 #'   
 #'   # We can then plot the estimated survival functions to compare
 #'   # them. To do this, we use the generic plot function.
-#'   plot(ps3, limits = "none")                          
+#'   # plot(ps3, limits = "none")             
 #'   
 #'   # Lastly, if we wanted to obtain "standardised" survival probabilities, 
 #'   # (by averaging over the observed distribution of the fixed effect 
