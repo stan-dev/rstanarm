@@ -8,8 +8,9 @@ functions {
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
-  int<lower=0> y[N];       // outcome: number of successes
-  int<lower=0> trials[N];  // number of trials
+  int<lower=0,upper=1> is_mlogit;
+  int<lower=is_mlogit> y[N];       // outcome: number of successes or choice
+  int<lower=0> trials[is_mlogit ? 0 : N];  // number of trials in binomial model
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
@@ -63,10 +64,13 @@ model {
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     real dummy;  // irrelevant but useful for testing
-    dummy = ll_binom_lp(y, trials, eta, link);
+    if (mlogit) dummy = ll_mlogit_lp(y, eta);
+    else dummy = ll_binom_lp(y, trials, eta, link);
   }
-  else if (prior_PD == 0) 
-    target += dot_product(weights, pw_binom(y, trials, eta, link));
+  else if (prior_PD == 0) {
+    if (mlogit) target += dot_product(weights, pw_mlogit(y, eta));
+    else target += dot_product(weights, pw_binom(y, trials, eta, link));
+  }
   
   #include "priors_glm.stan" // increments target()
   
@@ -75,7 +79,7 @@ model {
 }
 generated quantities {
   real alpha[has_intercept];
-  real mean_PPD = 0;
+  real mean_PPD = 0; # this needs to be rethought for the mlogit case
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
