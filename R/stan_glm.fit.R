@@ -276,9 +276,22 @@ stan_glm.fit <- function(x, y,
     num_normals_z = integer(0),
     # mean,df,scale for aux added below depending on family, 
     #
-    # changed below iff mrp_structured prior is used
+    # stuff below is changed later iff mrp_structured prior is used
+    interaction_prior = 0,
     prior_group_level_scale = 1,  
-    prior_group_level_df = 1
+    prior_group_level_df = 1,
+    n_one_way = 0,
+    n_multi_way = 0,
+    len_multi_way_uniq = 0,
+    max_way = 0,
+    one_way_ix = numeric(0),
+    multi_way_ix = numeric(0),
+    multi_depth = numeric(0),
+    main_multi_map = matrix(0, 0, 0),
+    depth_ind = numeric(0),
+    use_cell_weights = 0,
+    cell_size = numeric(0),
+    sum_cell_ssr = numeric(0)
   )
 
   # make a copy of user specification before modifying 'group' (used for keeping
@@ -325,9 +338,7 @@ stan_glm.fit <- function(x, y,
         "mrp_structured" = 1,
         "indep_normals" = 2
       )
-    
     if (standata$interaction_prior == 1) {
-      
       # detect interactions in ranef and collect interaction metadata (needed only
       # for mrp_structed prior but passed to stan so needs a value regardless)
       colons <- grepl(":", names(l))
@@ -359,46 +370,33 @@ stan_glm.fit <- function(x, y,
       n_way_uniq <- unique(multi_depth)
       depth_ind <- sapply(multi_depth, function(x) which(n_way_uniq == x))
       len_multi_way_uniq <- length(n_way_uniq)
-    } else {
-      n_one_way <- 0
-      n_multi_way <- 0
-      len_multi_way_uniq <- 0
-      max_way <- 0
-      one_way_ix <- rep(0,0)
-      multi_way_ix <- rep(0,0)
-      multi_depth <- rep(0,0)
-      main_multi_map <- matrix(0, 0, 0)
-      depth_ind <- rep(0,0)
+      
+      standata$n_one_way <- n_one_way
+      standata$n_multi_way <- n_multi_way
+      standata$max_way <- max_way
+      standata$len_multi_way_uniq <- len_multi_way_uniq
+      standata$one_way_ix <- one_way_ix
+      standata$multi_way_ix <- as.array(multi_way_ix)
+      standata$multi_depth <- as.array(multi_depth)
+      standata$main_multi_map <- as.array(main_multi_map)
+      standata$depth_ind <- as.array(depth_ind)
+      
+      standata$prior_group_level_scale <- decov$group_level_scale %ORifNULL% 1
+      standata$prior_group_level_df <- decov$group_level_df %ORifNULL% 1
+      
+      if (length(table(decov$cell_size)) > 1) {
+        if (!is_gaussian || (is_gaussian && standata$link != 1))
+          stop("'cell_size' only allowed for Gaussian models with identity link.", 
+               call. = FALSE)
+        if (standata$N != length(decov$cell_size))
+          stop("'cell_size' must be the same length as the outcome variable.", 
+               call. = FALSE)
+        standata$use_cell_weights <- 1
+        standata$cell_size <- decov$cell_size
+        standata$sum_cell_ssr <- array(sum((decov$cell_size - 1) * decov$cell_sd^2))
+      }
     }
     
-    standata$n_one_way <- n_one_way
-    standata$n_multi_way <- n_multi_way
-    standata$max_way <- max_way
-    standata$len_multi_way_uniq <- len_multi_way_uniq
-    standata$one_way_ix <- one_way_ix
-    standata$multi_way_ix <- as.array(multi_way_ix)
-    standata$multi_depth <- as.array(multi_depth)
-    standata$main_multi_map <- as.array(main_multi_map)
-    standata$depth_ind <- as.array(depth_ind)
-    
-    standata$prior_group_level_scale <- decov$group_level_scale %ORifNULL% 1
-    standata$prior_group_level_df <- decov$group_level_df %ORifNULL% 1
-    
-    if (length(table(decov$cell_size)) <= 1) {
-      standata$use_cell_weights <- 0
-      standata$cell_size <- double(0)
-      standata$sum_cell_ssr <- double(0)
-    } else {
-      if (!is_gaussian || (is_gaussian && standata$link != 1))
-        stop("'cell_size' only allowed for Gaussian models with identity link.", 
-             call. = FALSE)
-      if (standata$N != length(decov$cell_size))
-        stop("'cell_size' must be the same length as the outcome variable.", 
-             call. = FALSE)
-      standata$use_cell_weights <- 1
-      standata$cell_size <- decov$cell_size
-      standata$sum_cell_ssr <- array(sum((decov$cell_size - 1) * decov$cell_sd^2))
-    }
     
     if (is_bernoulli) {
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
