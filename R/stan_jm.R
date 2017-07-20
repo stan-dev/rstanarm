@@ -1635,7 +1635,7 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
     stop("the 'survival' package must be installed to use this function")
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
-  
+
   mc[[1]] <- quote(survival::coxph) 
   mc$x    <- TRUE
   mod <- eval(mc, envir = env)
@@ -1689,8 +1689,10 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
     # Model frame at event times
     mf2           <- data.table::data.table(mf2, key = c(id_var, "start"))
     mf2[["start"]] <- as.numeric(mf2[["start"]])
-    mf2_eventtime <- mf2[, .SD[.N], by = get(id_var)]
-    mf2_eventtime <- mf2_eventtime[, get := NULL]   
+    mf2_eventtime <- mf2[, data.table::.SD[data.table::.N], 
+                         by = get(id_var)]
+    # mf2_eventtime <- mf2_eventtime[, get := NULL]
+    mf2_eventtime$get <- NULL
     
     # Model frame corresponding to observation times which are 
     #   as close as possible to the unstandardised quadrature points                      
@@ -2166,7 +2168,8 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc, 
                             id_var, time_var, eps, auc_quadnodes, 
                             dataAssoc = NULL, env = parent.frame()) {
-  
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   # Obtain a model frame defined as a data.table
   rows <- rownames(model.frame(y_mod_stuff$mod))
   df   <- as.data.frame(dataLong)[rows,]
@@ -2239,6 +2242,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
                              id_list, times, eps = 1E-5, auc_quadnodes = 15L, 
                              dataAssoc = NULL, use_function = handle_glFormula, 
                              ...) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
   dots <- list(...)
   m <- dots$m 
   if (is.null(m)) stop("Argument m must be specified in dots.")
@@ -2367,12 +2373,18 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
 # @return A data.table formed by a merge of ids, times, and the closest 
 #   preceding (in terms of times) rows in data
 rolling_merge <- function(data, ids, times) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   if (is(times, "list")) {
-    return(do.call(rbind, lapply(times, FUN = function(x) 
-      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)])))      
+    lst <- lapply(times, FUN = function(x) {
+      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)]
+    })
+    return(do.call(rbind, args = lst))
   } else 
-    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])     
+    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])
 }
+
+.datatable.aware <- TRUE # necessary for some reason when data.table is in Suggests
 
 # Evaluate a glFormula call and return model components
 # 

@@ -30,7 +30,6 @@ Depends:
     methods
 Imports:
     bayesplot (>= 1.2.0),
-    data.table (>= 1.10.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 1.1.0),
@@ -46,7 +45,7 @@ Suggests:
     arm,
     betareg,
     cowplot (>= 0.7.0),
-    data.table,
+    data.table (>= 1.10.0),
     digest,
     gridExtra,
     HSAUR3,
