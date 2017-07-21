@@ -33,12 +33,13 @@ stan_spatial.fit <- function(x, y, w,
   
   algorithm <- match.arg(algorithm)
   family <- match.arg(family)
-  
+  trials <- ifelse(is.null(trials), rep(0,length(y)), trials)
+  # Replace all this stuff with family = binomial(link = "logit") calls etc.
   if (family == "gaussian") {
     y_real <- y
     y_int <- rep(0, length(y))
     link <- "identity"
-    trials <- rep(0, length(Y))
+    trials <- rep(0, length(y))
     family_num <- 1
   }
   else {
@@ -50,7 +51,7 @@ stan_spatial.fit <- function(x, y, w,
     }
     else {  # poisson
       link <- "log"
-      trials <- rep(0, length(Y))
+      trials <- rep(0, length(y))
       family_num <- 2
     }
   }
@@ -66,10 +67,9 @@ stan_spatial.fit <- function(x, y, w,
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
   
-  # temporarily suppress certain prior options
-  # ok_dists <- nlist("normal", student_t = "t", "cauchy")
-  ok_dists <- nlist("normal")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy")
   ok_intercept_dists <- ok_dists
+  ok_scale_dists <- nlist("normal", student_t = "t", "cauchy", "exponential")
 
   # Deal with prior
   prior_stuff <- handle_glm_prior(prior, nvars, link, default_scale = 2.5, 
@@ -89,29 +89,50 @@ stan_spatial.fit <- function(x, y, w,
   # Deal with prior_tau and prior_sigma
   if (stan_function == "stan_bym") {
     prior_sigma_stuff <- handle_glm_prior(prior_sigma, nvars = 1, link, default_scale = 1, 
-                                          ok_dists = "normal")
+                                          ok_dists = ok_scale_dists)
+    names(prior_sigma_stuff) <- paste0(names(prior_sigma_stuff), 
+                                           "_for_aux")
     for (i in names(prior_sigma_stuff)) # prior_{dist, mean, scale, df, autoscale}
       assign(i, prior_sigma_stuff[[i]])
     
     prior_tau_stuff <- list(alpha = prior_tau$alpha, beta = prior_tau$beta)
+    prior_dist_for_tau <- 0
+    prior_mean_for_tau <- 0
+    prior_scale_for_tau <- 1
+    prior_df_for_tau <- 1
   }
   else if (stan_function == "stan_besag") {
-    prior_tau_stuff <- list(alpha = 0, beta = 0)
-    prior_sigma_stuff <- list(prior_mean = 0, prior_scale = 0)
+    prior_tau_stuff <- handle_glm_prior(prior_tau, nvars = 1, link, default_scale = 1, 
+                                          ok_dists = ok_scale_dists)
+    names(prior_tau_stuff) <- paste0(names(prior_tau_stuff), 
+                                       "_for_tau")
+    for (i in names(prior_tau_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_tau_stuff[[i]])
+    prior_tau_stuff$alpha <- 0
+    prior_tau_stuff$beta <- 0
+    prior_dist_for_aux <- 0
+    prior_mean_for_aux <- 0
+    prior_scale_for_aux <- 1
+    prior_df_for_aux <- 1
   }
-  
-  # Deal with prior_nu
+
+  # Deal with prior_nu... needs more dist options
   if (family == "gaussian") {
     prior_nu_stuff <- handle_glm_prior(prior_nu, nvars = 1, link, default_scale = 1, 
-                                    ok_dists = "normal")
+                                    ok_dists = ok_dists)
+    names(prior_nu_stuff) <- paste0(names(prior_nu_stuff), 
+                                     "_for_nu")
     for (i in names(prior_nu_stuff)) # prior_{dist, mean, scale, df, autoscale}
       assign(i, prior_nu_stuff[[i]])
   }
   else {
-    prior_nu_stuff <- list(prior_mean = 0, prior_scale = 0)
+    prior_dist_for_nu <- 0
+    prior_mean_for_nu <- 0
+    prior_scale_for_nu <- 1
+    prior_df_for_nu <- 1
   }
   
-  # QR decomposition for both x and z
+  # QR decomposition for x
   if (QR) {
     if (nvars <= 1)
       stop("'QR' can only be specified when there are multiple predictors.")
@@ -141,20 +162,35 @@ stan_spatial.fit <- function(x, y, w,
                     edges = edges,
                     E_n = nrow(edges),
                     family = family_num,
+                    link = 0,  # FIX ME!!!
                     X = if (has_intercept) x[,-1] else x ,  # use xtemp
                     y_real = y_real,
                     y_int = y_int,
                     trials = trials,
                     shape1_tau = c(prior_tau_stuff$alpha),
                     shape2_tau = c(prior_tau_stuff$beta),
-                    loc_sigma = c(prior_sigma_stuff$prior_mean),
-                    scale_sigma = c(prior_sigma_stuff$prior_scale),
-                    loc_nu = c(prior_nu_stuff$prior_mean),
-                    scale_nu = c(prior_nu_stuff$prior_scale),
-                    loc_beta = as.array(prior_stuff$prior_mean),
-                    scale_beta = as.array(prior_stuff$prior_scale),
-                    loc_alpha = c(prior_intercept_stuff$prior_mean_for_intercept),
-                    scale_alpha = c(prior_intercept_stuff$prior_scale_for_intercept),
+                    prior_dist_for_intercept = prior_dist_for_intercept,
+                    prior_dist = prior_dist,
+                    prior_dist_tau = prior_dist_for_tau,
+                    prior_dist_aux = prior_dist_for_aux,
+                    prior_dist_nu = prior_dist_for_nu,
+                    prior_mean_for_intercept = c(prior_mean_for_intercept),
+                    prior_scale_for_intercept = c(prior_scale_for_intercept),
+                    prior_df_for_intercept = c(prior_df_for_intercept),
+                    prior_mean = as.array(prior_mean),
+                    prior_scale = as.array(prior_scale),
+                    prior_df = c(prior_df),
+                    prior_mean_aux = c(prior_mean_for_aux),
+                    prior_scale_aux = c(prior_scale_for_aux),
+                    prior_df_aux = c(prior_df_for_aux),
+                    prior_rate_aux = 0,  # FIX ME!!!
+                    prior_mean_tau = c(prior_mean_for_tau),
+                    prior_scale_tau = c(prior_scale_for_tau),
+                    prior_df_tau = c(prior_df_for_tau),
+                    prior_rate_tau = 0,  # FIX ME!!!
+                    prior_mean_nu = c(prior_mean_for_nu),
+                    prior_scale_nu = c(prior_scale_for_nu),
+                    prior_df_nu = c(prior_df_for_nu),
                     has_intercept = has_intercept,
                     mod = mod)
   standata$X <- array(standata$X, dim = c(standata$N, standata$K))
@@ -177,7 +213,7 @@ stan_spatial.fit <- function(x, y, w,
   }
   standata$scaling_factor <- create_scaling_factor(standata, W)
   
-  pars <- c(if (has_intercept) "alpha", "beta", if(mod == 2) c("sigma", "tau"), if(family == "gaussian") "nu",
+  pars <- c(if (has_intercept) "alpha", "beta", "tau", if(mod == 2) c("sigma"), if(family == "gaussian") "nu",
             "mean_PPD", "psi")
   
   stanfit <- stanmodels$spatial
@@ -209,7 +245,7 @@ stan_spatial.fit <- function(x, y, w,
     } 
   }
   new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(xtemp), if(mod == 2) c("tau", "sigma"),
+                 colnames(xtemp), "tau", if(mod == 2) c("sigma"),
                  if(family == "gaussian") "nu", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
   stanfit@sim$fnames_oi <- new_names
   return(structure(stanfit))  # return(structure(stanfit, prior.info = prior_info))
