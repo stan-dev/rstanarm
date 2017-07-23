@@ -46,8 +46,8 @@
 #' @examples
 #' \donttest{
 #'   if (!exists("example_jm")) example(example_jm)
-#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
-#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,16), extrapolate = TRUE)
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
+#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,15), extrapolate = TRUE)
 #'   plot_surv <- plot(ps1) 
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack(plot_traj, plot_surv)

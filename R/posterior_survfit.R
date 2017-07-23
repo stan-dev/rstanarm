@@ -169,9 +169,7 @@
 #'   # survival probabilities, that is, conditional on having survived
 #'   # until the event or censoring time, and then by default will
 #'   # extrapolate the survival predictions forward from there.  
-#'   head(pbcSurv[pbcSurv$status == 0,])
-#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
-#'   head(ps1)
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
 #'   # We can plot the estimated survival probabilities using the
 #'   # associated plot function
 #'   plot(ps1)
@@ -186,7 +184,7 @@
 #'   # is to specify that we want the survival time estimated at time 0
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
-#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times = 0,
+#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
 #'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
 #'   
 #'   # Instead of estimating survival probabilities for a specific individual 
@@ -540,18 +538,18 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   
 #'   # We then plot the conditional survival probabilities for
 #'   # a subset of individuals
-#'   plot(ps1, ids = c(7,13,16))
+#'   plot(ps1, ids = c(7,13,15))
 #'   
 #'   # We can change or add attributes to the plot
-#'   plot(ps1, ids = c(7,13,16), limits = "none")
-#'   plot(ps1, ids = c(7,13,16), xlab = "Follow up time")
-#'   plot(ps1, ids = c(7,13,16), ci_geom_args = list(fill = "red"),
+#'   plot(ps1, ids = c(7,13,15), limits = "none")
+#'   plot(ps1, ids = c(7,13,15), xlab = "Follow up time")
+#'   plot(ps1, ids = c(7,13,15), ci_geom_args = list(fill = "red"),
 #'        color = "blue", linetype = 2)
-#'   plot(ps1, ids = c(7,13,16), facet_scales = "fixed")
+#'   plot(ps1, ids = c(7,13,15), facet_scales = "fixed")
 #'   
 #'   # Since the returned plot is also a ggplot object, we can
 #'   # modify some of its attributes after it has been returned
-#'   plot1 <- plot(ps1, ids = c(7,13,16))
+#'   plot1 <- plot(ps1, ids = c(7,13,15))
 #'   plot1 + 
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::coord_cartesian(xlim = c(0, 15)) +
@@ -561,8 +559,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   # subject-specific survival functions, with plot(s) 
 #'   # of the estimated longitudinal trajectories for the
 #'   # same individuals
-#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
-#'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,16))
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
+#'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,15))
 #'   plot_surv <- plot(ps1) 
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack(plot_traj, plot_surv)
