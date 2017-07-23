@@ -342,12 +342,13 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   # at evenly spaced times between 0 and their event or censoring time.
 #'   pt1 <- posterior_traj(example_jm, ids = c(7,13,15), interpolate = TRUE)
 #'   plot(pt1)                  # credible interval for mean response
+#' \donttest{
 #'   plot(pt1, limits = "pi")   # prediction interval for raw response
 #'   plot(pt1, limits = "none") # no uncertainty interval
 #'   
 #'   # We can also extrapolate the longitudinal trajectories.
 #'   pt2 <- posterior_traj(example_jm, ids = c(7,13,15), interpolate = TRUE,
-#'                            extrapolate = TRUE)
+#'                         extrapolate = TRUE)
 #'   plot(pt2)
 #'   plot(pt2, vline = TRUE)    # add line indicating event or censoring time
 #'   plot(pt2, vline = TRUE, plot_observed = TRUE)  # overlay observed longitudinal data
@@ -364,8 +365,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   plot1 + 
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::labs(title = "Some plotted longitudinal trajectories")
-#' 
-#' 
+#' }
 plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 

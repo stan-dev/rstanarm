@@ -186,7 +186,7 @@
 #'   # do not want to condition on their last known survival time.
 #'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
 #'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   
+#' \donttest{
 #'   # Instead of estimating survival probabilities for a specific individual 
 #'   # in the estimation dataset, we may want to estimate the marginal 
 #'   # survival probability, that is, marginalising over the individual-level
@@ -220,8 +220,8 @@
 #'   # under a Monte Carlo scheme (see Rizopoulos (2011)).
 #'   ndL <- pbcLong[pbcLong$id %in% c(1,2),]
 #'   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-#'   ps3 <- posterior_survfit(example_jm, 
-#'     newdataLong = ndL, newdataEvent = ndE, 
+#'   ps3 <- posterior_survfit(example_jm,
+#'     newdataLong = ndL, newdataEvent = ndE,
 #'     control = list(last_time = "futimeYears"), seed = 12345)
 #'   head(ps3)
 #'   # We can then compare the estimated random effects for these 
@@ -237,8 +237,8 @@
 #'   # standardised survival curve.
 #'   ps4 <- posterior_survfit(example_jm, standardise = TRUE, 
 #'                            times = 0, extrapolate = TRUE)
-#'   plot(ps4)                         
-#' 
+#'   plot(ps4)
+#' }
 #'  
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), prob = 0.95, 
@@ -539,7 +539,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   # We then plot the conditional survival probabilities for
 #'   # a subset of individuals
 #'   plot(ps1, ids = c(7,13,15))
-#'   
+#' \donttest{
 #'   # We can change or add attributes to the plot
 #'   plot(ps1, ids = c(7,13,15), limits = "none")
 #'   plot(ps1, ids = c(7,13,15), xlab = "Follow up time")
@@ -570,7 +570,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   ps2 <- posterior_survfit(example_jm, standardise = TRUE, times = 0,
 #'                           control = list(epoints = 20))
 #'   plot(ps2)   
-#' 
+#' }
 #'    
 plot.survfit.stanmvreg <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
