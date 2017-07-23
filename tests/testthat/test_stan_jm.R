@@ -31,7 +31,7 @@ if (interactive())
   options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
-  lmer_fixef = 0.25,  # how many SEs can stan_jm fixefs be from lmer fixefs
+  lmer_fixef = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
   lmer_ranef = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
   glmer_fixef = 0.3, # how many SEs can stan_jm fixefs be from glmer fixefs
   glmer_ranef = 0.1, # how many SDs can stan_jm ranefs be from glmer ranefs
@@ -114,12 +114,11 @@ test_that("family argument works", {
   expect_output(ret <- update(jm1, family = gaussian))
   expect_output(ret <- update(jm1, family = gaussian(link = identity)))
   
-  expect_output(ret <- update(jm1, formulaLong. = ybern ~ ., family = binomial))
-  # expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson))
+  expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson, init = 0))
   expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = neg_binomial_2))
   expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = Gamma))
-  # expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
-  
+  #expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
+
   expect_error(ret <- update(jm1, formulaLong. = ybino ~ ., family = binomial))
 })
 
