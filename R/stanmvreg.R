@@ -108,6 +108,7 @@ stanmvreg <- function(object) {
     out$data <- if (!jm) object$data else NULL
     out$glmod <- fetch(object$y_mod_stuff, "mod")
     out$glmod_stuff <- object$y_mod_stuff
+    out$clust_stuff <- object$clust_stuff
   }
   if (surv) {
     out$n_subjects <- object$n_subjects

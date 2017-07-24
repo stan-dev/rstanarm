@@ -200,6 +200,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   id_var   <- object$id_var
   time_var <- object$time_var
   validate_positive_scalar(m, not_greater_than = M)
+  clust_stuff <- object$clust_stuff[[m]]
   if (missing(ids)) 
     ids <- NULL
   
@@ -244,12 +245,20 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     eseq <- if (extrapolate) get_time_seq(control$epoints, last_time, last_time + dist) else NULL
     time_seq <- as.data.frame(cbind(iseq, eseq))
     colnames(time_seq) <- paste0("V", 1:NCOL(time_seq))
-    time_seq <- reshape(data.frame(time_seq, id = id_list), 
-                        direction = "long", varying = colnames(time_seq), 
-                        v.names = time_var, timevar = "obs", idvar = id_var)
+    time_seq <- reshape(time_seq, direction = "long", varying = colnames(time_seq), 
+                        v.names = time_var, timevar = "obs", ids = id_list, idvar = id_var)
     newX[[time_var]] <- as.numeric(newX[[time_var]]) # ensures no rounding during data.table merge
-    newX <- data.table::data.table(newX, key = c(id_var, time_var))
-    newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
+    if (clust_stuff$has_clust) {
+      clust_var <- clust_stuff$clust_var
+      time_seq <- merge(time_seq, unique(newX[, c(id_var, clust_var)]), by = id_var)
+      time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[clust_var]]), ]
+      newX[[clust_var]] <- factor(newX[[clust_var]])
+      newX <- data.table::data.table(newX, key = c(id_var, clust_var, time_var))
+      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[clust_var]])
+    } else {
+      newX <- data.table::data.table(newX, key = c(id_var, time_var))
+      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
+    }
   }
   ytilde <- posterior_predict(object, newdata = newX, m = m, ...)
   if (return_matrix) {
@@ -261,17 +270,22 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     mutilde <- t(mutilde)
   ytilde_bounds  <- median_and_bounds(ytilde,  prob) # median and prob% CrI limits
   mutilde_bounds <- median_and_bounds(mutilde, prob) # median and prob% CrI limits
-  out <- data.frame(IDVAR = newX[[id_var]], TIMEVAR = newX[[time_var]], 
+  out <- data.frame(IDVAR = newX[[id_var]], 
+                    if (clust_stuff$has_clust) 
+                      CLUSTVAR = newX[[clust_var]], 
+                    TIMEVAR = newX[[time_var]], 
                     yfit = mutilde_bounds$med,
                     ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
                     pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
-  colnames(out) <- c(id_var, time_var, "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
+  colnames(out) <- c(id_var, if (clust_stuff$has_clust) clust_var, time_var, 
+                     "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
   class(out) <- c("predict.stanmvreg", "data.frame")
   Terms <- terms(formula(object, m = m))
   vars  <- rownames(attr(Terms, "factors"))
   y_var <- vars[[attr(Terms, "response")]]
   structure(out, observed_data = data, last_time = last_time,
             y_var = y_var, id_var = id_var, time_var = time_var,
+            clust_var = if (clust_stuff$has_clust) clust_var else NULL, 
             interpolate = interpolate, extrapolate = extrapolate, 
             control = control, call = match.call())  
 }
@@ -318,6 +332,12 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   is for a single individual.
 #' @param plot_observed A logical. If \code{TRUE} then the observed
 #'   longitudinal measurements are overlaid on the plot.
+#' @param clust_overlay Only relevant if the model had lower level units 
+#'   clustered within an individual. If \code{TRUE}, then the fitted trajectories 
+#'   for the lower level units will be overlaid in the same plot region (that 
+#'   is, all lower level units for a single individual will be shown within a 
+#'   single facet). If \code{FALSE}, then the fitted trajectories for each lower
+#'   level unit will be shown in a separate facet.
 #' @param ... Optional arguments passed to 
 #'   \code{\link[ggplot2]{geom_smooth}} and used to control features
 #'   of the plotted longitudinal trajectory.
@@ -366,23 +386,26 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 
-                                ci_geom_args = NULL, ...) {
+                                ci_geom_args = NULL, clust_overlay = FALSE, ...) {
   
   limits <- match.arg(limits)
   if (!(limits == "none")) ci <- (limits == "ci")
   y_var <- attr(x, "y_var")
   id_var <- attr(x, "id_var")
   time_var <- attr(x, "time_var")
+  clust_var <- attr(x, "clust_var")
   obs_dat <- attr(x, "observed_data")
   if (is.null(ylab)) ylab <- paste0("Long. response (", y_var, ")")
   if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
   if (!id_var %in% colnames(x))
     stop("Bug found: could not find 'id_var' column in the data frame.")
+  if (!is.null(clust_var) && (!clust_var %in% colnames(x)))
+    stop("Bug found: could not find 'clust_var' column in the data frame.")
   if (!is.null(ids)) {
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
       stop("The following 'ids' are not present in the predict.stanmvreg object: ",
-           paste(ids[[ids_missing]], collapse = ", "), call. = FALSE)
+           paste(ids[ids_missing], collapse = ", "), call. = FALSE)
     plot_dat <- x[x[[id_var]] %in% ids, , drop = FALSE]
     obs_dat <- obs_dat[obs_dat[[id_var]] %in% ids, , drop = FALSE]
   } else {
@@ -391,10 +414,13 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   # 'id_list' provides unique IDs sorted in the same order as plotting data
   id_list <- unique(plot_dat[[id_var]])
-  last_time <- attr(x, "last_time")[as.character(id_list)]  # potentially reorder last_time to match plot_dat
-  
-  plot_dat$time <- plot_dat[[time_var]]
+  if (!is.null(clust_var))
+    clust_list <- unique(plot_dat[[clust_var]])
+    
   plot_dat$id <- plot_dat[[id_var]]
+  plot_dat$time <- plot_dat[[time_var]]
+  if (!is.null(clust_var))
+    plot_dat$clust <- plot_dat[[clust_var]]
   
   geom_defaults <- list(color = "black", method = "loess", se = FALSE)
   geom_args <- set_geom_args(geom_defaults, ...)
@@ -404,36 +430,53 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   obs_defaults <- list()
   obs_args <- set_geom_args(obs_defaults)
+
+  if (is.null(clust_var)) { # no lower level clusters
+    group_var <- NULL
+    facet_var <- "id"
+  } else if (clust_overlay) { # overlay lower level clusters
+    group_var <- "clust"
+    facet_var <- "id"
+  } else { # separate facets for lower level clusters
+    group_var <- NULL
+    facet_var <- "clust"
+  }  
+  n_facets <- if (facet_var == "id") length(id_list) else length(clust_list)
   
-  if (length(id_list) > 60L) {
-    stop("Too many individuals to plot for. Perhaps limit the number of ",
-         "individuals by specifying the 'ids' argument.")
-  } else if (length(id_list) > 1L) {
-    geom_mapp <- list(mapping = aes_string(x = "time", y = "yfit"), 
-                      data = plot_dat)
+  if (n_facets > 60L) {
+    stop("Too many facets (ie. individuals) to plot. Perhaps limit the ",
+         "number of individuals by specifying the 'ids' argument.")
+  } else if (n_facets > 1L) {
+    geom_mapp <- list(
+      mapping = aes_string(x = "time", y = "yfit", group = group_var), 
+      data = plot_dat)
     graph <- ggplot() + theme_bw() +
       do.call("geom_smooth", c(geom_mapp, geom_args)) +
-      facet_wrap(~ id, scales = facet_scales)
-    if (!(limits == "none")) {
+      facet_wrap(facet_var, scales = facet_scales)
+    if (!limits == "none") {
       graph_smoothlim <- ggplot(plot_dat) + 
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb"), 
-                    method = "loess", se = FALSE) +
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub"), 
-                    method = "loess", se = FALSE) +
-        facet_wrap(~ id, scales = facet_scales)
+        geom_smooth(
+          aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb", group = group_var),
+          method = "loess", se = FALSE) +
+        geom_smooth(
+          aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub", group = group_var), 
+          method = "loess", se = FALSE) +
+        facet_wrap(facet_var, scales = facet_scales)
       build_smoothlim <- ggplot_build(graph_smoothlim)
       df_smoothlim <- data.frame(PANEL = build_smoothlim$data[[1]]$PANEL,
                                  time = build_smoothlim$data[[1]]$x,
                                  lb = build_smoothlim$data[[1]]$y,
-                                 ub = build_smoothlim$data[[2]]$y)
-      panel_id_map <- build_smoothlim$layout$panel_layout[, c("PANEL", "id"), drop = FALSE]
+                                 ub = build_smoothlim$data[[2]]$y,
+                                 group = build_smoothlim$data[[1]]$group)
+      panel_id_map <- build_smoothlim$layout$panel_layout[, c("PANEL", facet_var), drop = FALSE]
       df_smoothlim <- merge(df_smoothlim, panel_id_map)
-      lim_mapp <- list(mapping = aes_string(x = "time", ymin = "lb", ymax = "ub"), 
-                       data = df_smoothlim)
+      lim_mapp <- list(
+        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
+        data = df_smoothlim)
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
   } else {
-    geom_mapp <- list(mapping = aes_string(x = "time", y = "yfit"), 
+    geom_mapp <- list(mapping = aes_string(x = "time", y = "yfit", group = group_var), 
                       data = plot_dat)
     graph <- ggplot() + theme_bw() + 
       do.call("geom_smooth", c(geom_mapp, geom_args))
@@ -446,9 +489,11 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
       build_smoothlim <- ggplot_build(graph_smoothlim)
       df_smoothlim <- data.frame(time = build_smoothlim$data[[1]]$x,
                                  lb = build_smoothlim$data[[1]]$y,
-                                 ub = build_smoothlim$data[[2]]$y) 
-      lim_mapp <- list(mapping = aes_string(x = "time", ymin = "lb", ymax = "ub"), 
-                       data = df_smoothlim)
+                                 ub = build_smoothlim$data[[2]]$y,
+                                 group = build_smoothlim$data[[1]]$group) 
+      lim_mapp <- list(
+        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
+        data = df_smoothlim)
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
   }    
@@ -461,18 +506,31 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
         stop("Could not find ", y_var, "in observed data, nor able to parse ",
              y_var, "as an expression.")
     }
+    obs_dat$id <- obs_dat[[id_var]]
     obs_dat$time <- obs_dat[[time_var]]
-    obs_dat$id <- obs_dat[[id_var]]    
+    if (!is.null(clust_var))
+      obs_dat$clust <- obs_dat[[clust_var]]
     if (is.null(obs_dat[["y"]]))
       stop("Cannot find observed outcome data to add to plot.")
-    obs_mapp <- list(mapping = aes_string(x = "time", y = "y"), 
-                     data = obs_dat)
+    obs_mapp <- list(
+      mapping = aes_string(x = "time", y = "y", group = group_var), 
+      data = obs_dat)
     graph_obs <- do.call("geom_point", c(obs_mapp, obs_args)) 
   } else graph_obs <- NULL
   if (vline) {
-    graph_vline <- geom_vline(aes_string(xintercept = "last_time"), 
-                              data.frame(id = id_list, last_time = last_time), 
-                              linetype = 2)
+    if (facet_var == "id") {
+      facet_list <- unique(plot_dat[, id_var])
+      last_time <- attr(x, "last_time")[as.character(facet_list)] # potentially reorder last_time to match plot_dat
+    } else {
+      facet_list <- unique(plot_dat[, c(id_var, clust_var)])
+      last_time <- attr(x, "last_time")[as.character(facet_list[[id_var]])] # potentially reorder last_time to match plot_dat
+      facet_list <- facet_list[[clust_var]]
+    }
+    vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
+    colnames(vline_dat) <- c(facet_var, "last_time")
+    graph_vline <- geom_vline(
+      mapping = aes_string(xintercept = "last_time"), 
+      data = vline_dat, linetype = 2)
   } else graph_vline <- NULL
   
   ret <- graph + graph_limits + graph_obs + graph_vline + labs(x = xlab, y = ylab) 
