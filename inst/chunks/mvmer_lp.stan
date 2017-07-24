@@ -27,8 +27,7 @@
 	      dummy = ll_bern_lp(eta0_tmp, eta1_tmp, link[m], N01[m,]);	  
 	    }
 	    else if (family[m] == 5) {  // binomial
-	      real dummy;  // irrelevant but useful for testing
-          dummy = ll_binom_lp(y_int[I1:I2], trials[idx[m,1]:idx[m,2]], eta_tmp, link[m]);	  
+	      // binomial with num trials > 1 has been removed	  
 	    }
 	    else if (family[m] == 6 || family[m] == 8) {  // poisson or poisson-gamma
           if (link[m] == 1) target += poisson_log_lpmf(y_int[I1:I2] | eta_tmp);
@@ -78,9 +77,7 @@
         target += dot_product(weights1_tmp, pw_bern(1, eta1_tmp, link[m]));
   	  }
   	  else if (family[m] == 5) {  // binomial
-    	int trials_tmp[NM[m]];		
-    	trials_tmp = trials[idx[m,1]:idx[m,2]];
-        target += dot_product(weights_tmp, pw_binom(y_int[I1:I2], trials_tmp, eta_tmp, link[m]));
+	      // binomial with num trials > 1 has been removed
   	  }
   	  else if (family[m] == 6 || family[m] == 8) {  // poisson or poisson-gamma
         target += dot_product(weights_tmp, pw_pois(y_int[I1:I2], eta_tmp, link[m]));    		

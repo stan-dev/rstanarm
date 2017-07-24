@@ -247,10 +247,9 @@
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
 #'   estimates of the log baseline hazard.
-#' @param long_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the longitudinal outcome(s).    
-#' @param event_lp A logical scalar (defaulting to TRUE) indicating whether to 
-#'   conditioning on the event outcome.
+#' @param max_treedepth A positive integer specifying the maximum treedepth 
+#'   for the non-U-turn sampler. See the \code{control} argument in 
+#'   \code{\link[rstan]{stan}}.
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
@@ -386,9 +385,9 @@
 #'   There are additional examples in the \strong{Examples} section below.
 #'   }
 #' 
-#' @return A \link[=stanmvreg-object]{stanmvreg} object is returned.
+#' @return A \link[=stanmvreg-objects]{stanmvreg} object is returned.
 #' 
-#' @seealso \code{\link{stanmvreg-object}}, \code{\link{stanmvreg-methods}}, 
+#' @seealso \code{\link{stanmvreg-objects}}, \code{\link{stanmvreg-methods}}, 
 #'   \code{\link{print.stanmvreg}}, \code{\link{summary.stanmvreg}},
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
@@ -512,7 +511,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorAssoc = normal(), prior_covariance = decov(), prior_PD = FALSE, 
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
-                    sparse = FALSE, long_lp = TRUE, event_lp = TRUE) {
+                    sparse = FALSE) {
   
   
   #-----------------------------
@@ -584,7 +583,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     mc$scale <- mc$concentration <- mc$shape <- mc$init <- mc$adapt_delta <- 
     mc$max_treedepth <- mc$... <- mc$QR <- NULL
   mc$weights <- NULL 
-  mc$long_lp <- mc$event_lp <- NULL
 
   # Create call for longitudinal submodel  
   y_mc <- mc
@@ -867,9 +865,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     a_global_prior_df          = a_prior_stuff$global_prior_df,
     
     # flags
-    prior_PD = as.integer(prior_PD),
-    long_lp  = as.integer(long_lp),
-    event_lp = as.integer(event_lp)
+    prior_PD = as.integer(prior_PD)
   )
   
   # prior flag (same prior for all long submodel)
@@ -899,7 +895,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$has_intercept_upb <- fetch_array(y_mod_stuff, "has_intercept_upbound")
   standata$has_aux           <- fetch_array(y_mod_stuff, "has_aux")
   standata$xbar              <- fetch_array(y_mod_stuff, "xbar")
-  standata$trials            <- fetch_array(y_mod_stuff, "trials")
   standata$weights <- 
     if (!is.null(weights)) as.array(unlist(y_weights)) else as.array(numeric(0))
   standata$offset  <- 
@@ -907,7 +902,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$link    <- as.array(link)
   standata$dense_X <- !sparse
   standata$special_case <- as.integer(FALSE)
-
+  
+  # Not used
+  standata$K_smooth   <- 0L
+  standata$S          <- matrix(NA_real_, standata$N, 0L)
+  standata$smooth_map <- integer(0)  
+  
   # Design matrices
   X <- as.matrix(Matrix::bdiag(fetch(y_mod_stuff, "xtemp")))
   if (sparse) {
@@ -1189,7 +1189,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     inits <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)()
     sel <- c("gamma_nob", "gamma_lob", "gamma_upb", "z_beta", "aux_unscaled", 
              "z_b", "z_T", "rho", "zeta", "tau", "global", "local2", "local4", 
-             "S", "ool", "noise")
+             "mix", "ool", "noise")
     for (i in sel) {
       sel_i <- grep(paste0("^", i, "\\."), initnms)
       if (length(sel_i))
@@ -1372,7 +1372,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                standata = NULL, terms = NULL, prior.info = prior_info,
-               modeling_function = "stan_jm")
+               stan_function = "stan_jm")
   out <- stanmvreg(fit)
   return(out)
 }
@@ -1408,14 +1408,11 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   # Response vector
   y <- as.vector(lme4::getME(mod, "y"))
   y <- validate_glm_outcome_support(y, family)
-  if (is.binomial(family$family) && NCOL(y) == 2L) {
-    y      <- as.integer(y[, 1L])
-    trials <- as.integer(y[, 1L] + y[, 2L])
-  } else {
-    trials <- rep(0L, length(y))
-  }
+  if (is.binomial(family$family) && NCOL(y) == 2L)
+    STOP_binomial()
   
   # Design matrix
+  xtemp <- xbar <- has_intercept <- NULL # useless assignments to pass R CMD check
   x <- as.matrix(lme4::getME(mod, "X"))
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -1445,7 +1442,6 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   if (is.binomial(family$family) && all(y %in% 0:1)) {      
     ord    <- order(y)
     y      <- y     [ord]
-    trials <- trials[ord]
     xtemp  <- xtemp [ord, , drop = FALSE]  
     Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
     flist  <- flist[ord, , drop = FALSE] 
@@ -1473,9 +1469,12 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   is_ig <- is.ig(famname)
   is_continuous <- is_gaussian || is_gamma || is_ig
   is_lmer <- is.lmer(family)
+  if (is.binomial(famname) && !is_bernoulli)
+    STOP_binomial()
   
   # Require intercept for certain family and link combinations
   if (!has_intercept) {
+    link <- which(supported_links == family$link)
     linkname <- supported_links[link]
     needs_intercept <- !is_gaussian && linkname == "identity" ||
       is_gamma && linkname == "inverse" ||
@@ -1486,7 +1485,7 @@ handle_glmod <- function(mc, family, supported_families, supported_links,
   }    
     
   # Return list
-  nlist(mod, is_real, y, x, xtemp, xbar, trials, N01, ord, famname,
+  nlist(mod, is_real, y, x, xtemp, xbar, N01, ord, famname,
     offset, Ztlist, cnms, flist, has_intercept, has_intercept_unbound,
     has_intercept_lobound, has_intercept_upbound, has_aux, N, real_N, int_N, K,
     is_bernoulli, is_nb, is_gaussian, is_gamma, is_ig, is_continuous, is_lmer)
@@ -1606,7 +1605,6 @@ unorder_bernoulli <- function(mod_stuff) {
     if (is.null(mod_stuff$ord))
       stop("Bernoulli sorting vector not found.")
     mod_stuff$y       <- mod_stuff$y[order(mod_stuff$ord)]
-    mod_stuff$trials  <- mod_stuff$trials[order(mod_stuff$ord)]
     mod_stuff$weights <- mod_stuff$weights[order(mod_stuff$ord)]
     mod_stuff$xtemp   <- mod_stuff$xtemp[order(mod_stuff$ord), , drop = FALSE]
     mod_stuff$Ztlist  <- lapply(mod_stuff$Ztlist, function(x) x[, order(mod_stuff$ord), drop = FALSE])
@@ -1757,6 +1755,7 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
   }
   
   # Centering of design matrix for event model
+  xtemp <- xbar <- has_intercept <- NULL # useless assignments for R CMD check
   x <- as.matrix(x_quadtime) 
   x_stuff <- center_x(x, sparse)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
@@ -2241,15 +2240,15 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff,
   sel_shared <- grep("^shared", rownames(assoc))
   if (any(unlist(assoc[sel_shared,]))) {
     # flist for long submodel
-    flist_tmp <- getME(y_mod_stuff$mod, "flist")
+    flist_tmp <- lme4::getME(y_mod_stuff$mod, "flist")
     # which grouping factor is id_var
     Gp_sel <- which(names(flist_tmp) == id_var) 
     # grouping factor indices
-    Gp <- getME(y_mod_stuff$mod, "Gp")  
+    Gp <- lme4::getME(y_mod_stuff$mod, "Gp")  
     b_beg <- Gp[[Gp_sel]] + 1
     b_end <- Gp[[Gp_sel + 1]]
     # b vector for grouping factor = id_var
-    b_vec <- getME(y_mod_stuff$mod, "b")[b_beg:b_end]
+    b_vec <- lme4::getME(y_mod_stuff$mod, "b")[b_beg:b_end]
     # convert to Npat * n_re matrix
     b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp[[Gp_sel]])), byrow = TRUE)
   } else b_mat <- NULL
@@ -2476,9 +2475,9 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
   xtemp  <- sweep(xtemp, 2, y_mod_stuff$xbar, FUN = "-")
   group  <- mod$reTrms    
   beta   <- fixef(y_mod_stuff$mod)
-  b      <- getME(y_mod_stuff$mod, "b")
+  b      <- lme4::getME(y_mod_stuff$mod, "b")
   linpred <- linear_predictor.default(beta, x) # offset not accomodated here
-  linpred <- linpred + (t(as.matrix(group$Zt)) %*% getME(y_mod_stuff$mod, "b"))
+  linpred <- linpred + (t(as.matrix(group$Zt)) %*% b)
   nlist(xtemp, group, linpred)
 }   
 
@@ -2732,7 +2731,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_ev <- which(names(K_data_m) == "etavalue_data")
         cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ev   ])
-        val <- eta_m * data_m[, cbeg:cend]
+        val <- as.vector(eta_m) * data_m[, cbeg:cend, drop = FALSE]
         a_X[[mark]] <- val
         mark <- mark + 1
       }
@@ -2766,7 +2765,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_es <- which(names(K_data_m) == "etaslope_data")
         cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
         cend  <- sum(K_data_m[0: idx_es   ])
-        val <- dydt_m * data_m[, cbeg:cend]
+        val <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE]
         a_X[[mark]] <- val
         mark <- mark + 1            
       }
@@ -2791,7 +2790,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_mv <- which(names(K_data_m) == "muvalue_data")
         cbeg  <- sum(K_data_m[0:(idx_mv-1)]) + 1
         cend  <- sum(K_data_m[0: idx_mv   ])
-        val   <- invlink_m(eta_m) * data_m[, cbeg:cend] 
+        val   <- as.vector(invlink_m(eta_m)) * data_m[, cbeg:cend, drop = FALSE] 
         a_X[[mark]] <- val
         mark <- mark + 1           
       }
@@ -2825,7 +2824,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         idx_ms <- which(names(K_data_m) == "muslope_data")
         cbeg  <- sum(K_data_m[0:(idx_ms-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ms   ])
-        val   <- dydt_m * data_m[, cbeg:cend] 
+        val   <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE] 
         a_X[[mark]] <- val
         mark <- mark + 1              
       }    
@@ -3216,7 +3215,7 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   len_global <- sum((2 * (standata$prior_dist == 3)) + (4 * (standata$prior_dist == 4)))
   len_local2 <- sum((standata$prior_dist == 3) * standata$KM) 
   len_local4 <- sum((standata$prior_dist == 4) * standata$KM)
-  len_S   <- sum((standata$prior_dist %in% c(5,6)) * standata$KM)
+  len_mix   <- sum((standata$prior_dist %in% c(5,6)) * standata$KM)
   len_ool <- sum(standata$prior_dist == 6)
   len_noise <- sum((standata$family == 8) * standata$NM)
     
@@ -3239,9 +3238,9 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
     local4   = matrix_of_uniforms(nrow = 4, ncol = len_local4),
     e_local  = matrix_of_uniforms(nrow = get_nvars_for_hs(standata$e_prior_dist), ncol = standata$e_K),
     a_local  = matrix_of_uniforms(nrow = get_nvars_for_hs(standata$a_prior_dist), ncol = standata$a_K),
-    S     = if (len_S > 0) matrix(rep(1, len_S), 1, len_S) else matrix(0,0,0),
-    e_S   = if (standata$e_prior_dist %in% c(5,6)) matrix(rep(1, standata$e_K), 1, standata$e_K) else matrix(0,0,standata$e_K),
-    a_S   = if (standata$a_prior_dist %in% c(5,6)) matrix(rep(1, standata$a_K), 1, standata$a_K) else matrix(0,0,standata$a_K),
+    mix   = if (len_mix > 0) matrix(rep(1, len_mix), 1, len_mix) else matrix(0,0,0),
+    e_mix = if (standata$e_prior_dist %in% c(5,6)) matrix(rep(1, standata$e_K), 1, standata$e_K) else matrix(0,0,standata$e_K),
+    a_mix = if (standata$a_prior_dist %in% c(5,6)) matrix(rep(1, standata$a_K), 1, standata$a_K) else matrix(0,0,standata$a_K),
     ool   = if (len_ool > 0) as.array(len_ool) else as.array(double(0)), 
     e_ool = if (standata$e_prior_dist == 6) as.array(1) else as.array(double(0)), 
     a_ool = if (standata$a_prior_dist == 6) as.array(1) else as.array(double(0)),

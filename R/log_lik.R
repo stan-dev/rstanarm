@@ -106,7 +106,7 @@ log_lik.stanmvreg <- function(object, newdataLong = NULL, newdataEvent = NULL, .
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanmvreg_object(object)
-  if (object$modeling_function == "stan_mvmer")
+  if (object$stan_function == "stan_mvmer")
     STOP_stan_mvmer("'log_lik'")
   M <- get_M(object)
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))

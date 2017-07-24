@@ -25,8 +25,17 @@
 #' 
 #' @export
 #' 
+#' @templateVar stanmvregArg object
 #' @templateVar mArg m
+#' @template args-stanmvreg-object
 #' @template args-m
+#' @param newdata Optionally, a data frame in which to look for variables with
+#'   which to predict. If omitted, the model matrix is used. If \code{newdata}
+#'   is provided and any variables were transformed (e.g. rescaled) in the data
+#'   used to fit the model, then these variables must also be transformed in
+#'   \code{newdata}. This only applies if variables were transformed before
+#'   passing the data to one of the modeling functions and \emph{not} if
+#'   transformations were specified inside the model formula.
 #' @param interpolate A logical specifying whether to interpolate the estimated 
 #'   longitudinal trajectory in between the observation times. This can be used
 #'   to achieve a smooth estimate of the longitudinal trajectory across the 
@@ -207,9 +216,9 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     STOP_no_var(time_var)
   if (!is.null(ids)) # user specified a subset of ids
     data <- subset_ids(object, data, ids)
+  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   if (!is.null(newdata)) # warn if newdata ids are from fit
     check_pp_ids(object, id_list, m = m)
-  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
   
   # Last known survival time for each individual
   if (is.null(newdata)) { # user did not provide newdata

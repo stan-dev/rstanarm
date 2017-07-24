@@ -7,6 +7,7 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
+             person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
                      comment = "R/stan_aov.R"),
              person("Douglas", "Bates", role = "cph", comment = "R/pp_data.R"),
@@ -26,7 +27,6 @@ License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
     Rcpp (>= 0.12.0),
-    survival (>= 2.40.1),
     methods
 Imports:
     bayesplot (>= 1.2.0),
@@ -42,6 +42,7 @@ Imports:
     rstantools (>= 1.2.0),
     shinystan (>= 2.3.0),
     stats,
+    survival (>= 2.40.1),
     utils
 Suggests:
     arm,
@@ -51,7 +52,7 @@ Suggests:
     HSAUR3,
     knitr (>= 1.15.1),
     MASS,
-    mgcv,
+    mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)

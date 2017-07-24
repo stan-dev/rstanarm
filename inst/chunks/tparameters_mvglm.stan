@@ -60,9 +60,9 @@
       else beta[K1:K2] = hsplus_prior(z_beta[K1:K2], global[G1:G2], local4[,L1:L2], global_prior_scale[m], 1);
     }
     else if (prior_dist[m] == 5) // laplace
-      beta[K1:K2] = prior_mean[K1:K2] + prior_scale[K1:K2] .* sqrt(2 * S[1][idx_S[m,1]:idx_S[m,2]]) .* z_beta[K1:K2];
+      beta[K1:K2] = prior_mean[K1:K2] + prior_scale[K1:K2] .* sqrt(2 * mix[1][idx_mix[m,1]:idx_mix[m,2]]) .* z_beta[K1:K2];
     else if (prior_dist[m] == 6) // lasso
-      beta[K1:K2] = prior_mean[K1:K2] + ool[idx_ool[m]] * prior_scale[K1:K2] .* sqrt(2 * S[1][idx_S[m,1]:idx_S[m,2]]) .* z_beta[K1:K2];  
+      beta[K1:K2] = prior_mean[K1:K2] + ool[idx_ool[m]] * prior_scale[K1:K2] .* sqrt(2 * mix[1][idx_mix[m,1]:idx_mix[m,2]]) .* z_beta[K1:K2];  
   }
 						 
   }

@@ -21,7 +21,7 @@ data {
   // declares prior_PD, has_intercept{_nob,_lob,_upb}, family, link, prior_dist, 
   //   prior_dist_for_intercept, prior_dist_for_aux
   #include "data_mvglm.stan"     // same as data_glm.stan, but arrays of size M 
-  #include "data2_mvglm.stan"    // declares y_{real,int}, trials, has_aux 
+  #include "data2_mvglm.stan"    // declares y_{real,int}, has_aux 
   #include "weights_offset.stan" // declares has_weights, weights, has_offset, offset
  
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, 
@@ -37,18 +37,18 @@ data {
 transformed data {          
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);  // not used
   
-  // declares poisson_max, hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool,noise}, {sqrt_,log_,sum_log_}y, 
-  //   len_z_T, len_var_group, delta, is_continuous, pos
+  // declares poisson_max, hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool,noise}, {sqrt_,log_,sum_log_}y, 
+  //   len_z_T, len_var_group, delta, is_continuous, pos, beta_smooth
   #include "tdata_mvglm.stan" 
 
-  // defines hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool}, {sqrt_,log_,sum_log_}y, 
+  // defines hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool}, {sqrt_,log_,sum_log_}y, 
   //   len_z_T, len_var_group, delta, is_continuous, pos  
   #include "tdata2_mvglm.stan" 
 }
 parameters {
-  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, S, 
+  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, mix, 
   //   ool, noise, aux_unscaled, z_b, z_T, rho, zeta, tau
   #include "parameters_mvglm.stan"
 }

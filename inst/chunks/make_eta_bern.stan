@@ -24,6 +24,10 @@
     eta0 = eta0 + offset0;
     eta1 = eta1 + offset1;
   }
+  if (K_smooth) {
+    eta0 = eta0 + S0 * beta_smooth;
+    eta1 = eta1 + S1 * beta_smooth;
+  }
   if (special_case) for (i in 1:t) {
     eta0 = eta0 + b[V0[i]];
     eta1 = eta1 + b[V1[i]];

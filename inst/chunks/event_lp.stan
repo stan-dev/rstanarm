@@ -32,4 +32,4 @@
   }				    
                            
   // Log-likelihoods for event submodel  
-  if (prior_PD == 0 && event_lp == 1) target += ll_event;  
+  if (prior_PD == 0) target += ll_event;  

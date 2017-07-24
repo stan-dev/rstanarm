@@ -21,7 +21,7 @@ data {
   // declares prior_PD, has_intercept{_nob,_lob,_upb}, family, link, prior_dist, 
   //   prior_dist_for_intercept, prior_dist_for_aux
   #include "data_mvglm.stan"     // same as data_glm.stan, but arrays of size M 
-  #include "data2_mvglm.stan"    // declares y_{real,int}, trials, has_aux 
+  #include "data2_mvglm.stan"    // declares y_{real,int}, has_aux 
   #include "weights_offset.stan" // declares has_weights, weights, has_offset, offset
  
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, 
@@ -47,33 +47,29 @@ data {
   #include "hyperparameters_mvglm.stan" // same as hyperparameters.stan, but arrays of size M
   #include "hyperparameters_event.stan" 
   #include "hyperparameters_assoc.stan" 
-  
-  // flag indiciating whether to accumulate lp for each submodel
-  int<lower=0,upper=1> long_lp;  // 1 = yes
-  int<lower=0,upper=1> event_lp; // 1 = yes
 }
 transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);                 
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);                 
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);  // not used
   
-  // declares poisson_max, hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool,noise}, {sqrt_,log_,sum_log_}y, 
-  //   len_z_T, len_var_group, delta, is_continuous, pos
+  // declares poisson_max, hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool,noise}, {sqrt_,log_,sum_log_}y, 
+  //   len_z_T, len_var_group, delta, is_continuous, pos, beta_smooth
   #include "tdata_mvglm.stan" 
 
-  // defines hsM, idx_{global,local2,local4,S,ool,noise}, 
-  //   len_{global,local2,local4,S,ool}, {sqrt_,log_,sum_log_}y, 
+  // defines hsM, idx_{global,local2,local4,mix,ool,noise}, 
+  //   len_{global,local2,local4,mix,ool}, {sqrt_,log_,sum_log_}y, 
   //   len_z_T, len_var_group, delta, is_continuous, pos  
   #include "tdata2_mvglm.stan" 
 }
 parameters {
-  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, S, 
+  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, mix, 
   //   ool, noise, aux_unscaled, z_b, z_T, rho, zeta, tau
   #include "parameters_mvglm.stan"
-  // declares e_{gamma,z_beta,aux_unscaled,global,local,S,ool}  
+  // declares e_{gamma,z_beta,aux_unscaled,global,local,mix,ool}  
   #include "parameters_event.stan"
-  // declares a_{z_beta,global,local,S,ool}
+  // declares a_{z_beta,global,local,mix,ool}
   #include "parameters_assoc.stan"  
 }
 transformed parameters { 
@@ -84,10 +80,10 @@ transformed parameters {
   #include "tparameters_mvglm.stan" // defines aux, beta, b{_not_by_model}, theta_L
   e_beta = generate_beta(e_z_beta, e_prior_dist, e_prior_mean, 
                          e_prior_scale, e_prior_df, e_global, e_local,
-                         e_global_prior_scale, e_ool, e_S);  
+                         e_global_prior_scale, e_ool, e_mix);  
   a_beta = generate_beta(a_z_beta, a_prior_dist, a_prior_mean, 
                          a_prior_scale, a_prior_df, a_global, a_local,
-                         a_global_prior_scale, a_ool, a_S);         
+                         a_global_prior_scale, a_ool, a_mix);         
   e_aux  = generate_aux(e_aux_unscaled, e_prior_dist_for_aux,
                         e_prior_mean_for_aux, e_prior_scale_for_aux);
   if (t > 0) {
@@ -150,9 +146,9 @@ model {
   // increment target with priors for betas and gammas 
   #include "priors_mvglm.stan"  
   beta_lp(e_z_beta, e_prior_dist, e_prior_scale, e_prior_df, 
-          e_global_prior_df, e_local, e_global, e_S, e_ool)
+          e_global_prior_df, e_local, e_global, e_mix, e_ool)
   beta_lp(a_z_beta, a_prior_dist, a_prior_scale, a_prior_df, 
-          a_global_prior_df, a_local, a_global, a_S, a_ool)
+          a_global_prior_df, a_local, a_global, a_mix, a_ool)
   if (e_has_intercept == 1) 
     gamma_lp(e_gamma[1], e_prior_dist_for_intercept, e_prior_mean_for_intercept, 
              e_prior_scale_for_intercept, e_prior_df_for_intercept);  

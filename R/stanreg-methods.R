@@ -232,11 +232,10 @@ ranef.stanreg <- function(object, ...) {
   levs <- lapply(fl, levels)
   asgn <- attr(fl, "assign")
   cnms <- .cnms(object)
-  mark <- !grepl("^Xr", names(cnms))
-  fl <- fl[mark]
-  asgn <- asgn[mark]
-  levs <- levs[mark]
-  cnms <- cnms[mark]
+  fl <- fl
+  asgn <- asgn
+  levs <- levs
+  cnms <- cnms
   nc <- vapply(cnms, length, 1L)
   nb <- nc * vapply(levs, length, 1L)
   nbseq <- rep.int(seq_along(nb), nb)
@@ -317,7 +316,6 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
-  if (inherits(formula, "gamm4")) return(formula$glmod$model)
   if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
@@ -338,7 +336,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' @param object,... See \code{\link[stats]{model.matrix}}.
 #' 
 model.matrix.stanreg <- function(object, ...) {
-  if (inherits(object, "gamm4")) return(object$glmod$raw_X)
+  if (inherits(object, "gamm4")) return(object$jam$X)
   if (is.mer(object)) return(object$glmod$X)
     
   NextMethod("model.matrix")
@@ -353,10 +351,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ...) {
-  if (inherits(x, "gamm4")) return(x$formula)
-  if (is.mer(x)) 
-    return(formula_mer(x, ...))
-  
+  if (is.mer(x)) return(formula_mer(x, ...))
   x$formula
 }
 
