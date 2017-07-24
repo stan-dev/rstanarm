@@ -110,7 +110,7 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
             QR = used.QR(object),
             sparse = used.sparse(object),
             model_name = deparse(substitute(object)), 
-            modeling_function = object$modeling_function,
+            stan_function = object$stan_function,
             print_digits = digits)
   
 }
@@ -127,12 +127,12 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   QR <- attr(x, "QR")
   sparse <- attr(x, "sparse")
   model_name <- attr(x, "model_name")
-  modeling_function <- attr(x, "modeling_function")
+  stan_function <- attr(x, "stan_function")
   
   msg <- paste0("Priors for model '", model_name, "'")
   cat(msg, "\n------")
   
-  if (!modeling_function == "stan_mvmer") {
+  if (!stan_function == "stan_mvmer") {
     if (!is.null(x[["prior_intercept"]]))
       .print_scalar_prior(
         x[["prior_intercept"]], 
@@ -197,7 +197,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
   # unique to stan_jm
-  if (modeling_function == "stan_jm") {
+  if (stan_function == "stan_jm") {
     M <- attr(x, "M")
     for (m in 1:M) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))

@@ -18,7 +18,7 @@
 
 #' Methods for stanmvreg objects
 #' 
-#' S3 methods for \link[=stanmvreg-object]{stanmvreg} objects. There are also 
+#' S3 methods for \link[=stanmvreg-objects]{stanmvreg} objects. There are also 
 #' several methods (listed in \strong{See Also}, below) with their own
 #' individual help pages. 
 #' The main difference between these methods and the 
@@ -29,9 +29,10 @@
 #' with each element of the list containing the result for one of the submodels.
 #' 
 #' @name stanmvreg-methods
-#' @aliases coef VarCorr fixef ranef ngrps sigma
 #' 
+#' @templateVar stanmvregArg object,x
 #' @templateVar mArg m
+#' @template args-stanmvreg-object
 #' @template args-m
 #' @template args-remove-stub
 #' @param ... Ignored, except by the \code{update} method. See
@@ -80,8 +81,7 @@
 #' 
 #' @seealso
 #' Other S3 methods for stanmvreg objects, which have separate documentation, 
-#' including \code{\link{as.matrix.stanmvreg}},  
-#' \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
+#' including \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
 #' 
 #' Also \code{\link{posterior_interval}} for an alternative to \code{confint}, 
 #' and \code{posterior_predict}, \code{posterior_traj} and 
@@ -92,7 +92,6 @@ NULL
 
 #' @rdname stanmvreg-methods
 #' @export
-#' @export coef
 #'    
 coef.stanmvreg <- function(object, m = NULL, ...) {
   M <- get_M(object)
@@ -104,27 +103,28 @@ coef.stanmvreg <- function(object, m = NULL, ...) {
   refnames <- lapply(ref, function(x) unlist(lapply(x, colnames)))
   missnames <- lapply(1:M, function(m) setdiff(refnames[[m]], names(fef[[m]])))
   nmiss <- sapply(missnames, length)
-  if (any(nmiss > 0)) for (m in 1:M) {
-    if (nmiss[m] > 0) {
-      fillvars <- setNames(data.frame(rbind(rep(0, nmiss[m]))), missnames[[m]])
-      fef[[m]] <- cbind(fillvars, fef[[m]])
+  if (any(nmiss > 0)) for (x in 1:M) {
+    if (nmiss[x] > 0) {
+      fillvars <- setNames(data.frame(rbind(rep(0, nmiss[x]))), missnames[[x]])
+      fef[[x]] <- cbind(fillvars, fef[[x]])
     }
   }
   val <- lapply(1:M, function(m) 
     lapply(ref[[m]], function(x) fef[[m]][rep.int(1L, nrow(x)), , drop = FALSE]))
-  for (m in 1:M) {  # loop over number of markers
-    for (i in seq(a = val[[m]])) {  # loop over number of grouping factors
-      refi <- ref[[m]][[i]]
-      row.names(val[[m]][[i]]) <- row.names(refi)
+  for (x in 1:M) {  # loop over number of markers
+    for (i in seq(a = val[[x]])) {  # loop over number of grouping factors
+      refi <- ref[[x]][[i]]
+      row.names(val[[x]][[i]]) <- row.names(refi)
       nmsi <- colnames(refi)
-      if (!all(nmsi %in% names(fef[[m]]))) 
+      if (!all(nmsi %in% names(fef[[x]]))) 
         stop("Unable to align random and fixed effects.", call. = FALSE)
       for (nm in nmsi) 
-        val[[m]][[i]][[nm]] <- val[[m]][[i]][[nm]] + refi[, nm]
+        val[[x]][[i]][[nm]] <- val[[x]][[i]][[nm]] + refi[, nm]
     }
   }
   val <- lapply(val, function(x) structure(x, class = "coef.mer"))
-  val <- c(val, fef[length(fef)])         
+  if (is.jm(object))
+    val <- c(val, list(fixef(object)$Event))        
   if (is.null(m)) list_nms(val, M, stub = get_stub(object)) else val[[m]]       
 }
 
@@ -228,20 +228,50 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
 #' @rdname stanmvreg-methods
 #' @export
 #' @method update stanmvreg
+#' @param formula. An updated formula for the model. For a multivariate model  
+#'   \code{formula.} should be a list of formulas, as described for the 
+#'   \code{formula} argument in \code{\link{stan_mvmer}}.
 #' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
-#'   or event submodel. For a multivariate joint model \code{formulaLong.} 
+#'   or event submodel, when \code{object} was estimated using 
+#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
 #'   should be a list of formulas, as described for the \code{formulaLong}
 #'   argument in \code{\link{stan_jm}}.
 #' @param evaluate See \code{\link[stats]{update}}.
 #'
-update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate = TRUE) {
+update.stanmvreg <- function(object, formula., formulaLong., 
+                             formulaEvent., ..., evaluate = TRUE) {
   call <- getCall(object)
   M <- get_M(object)
   if (is.null(call)) 
     stop("'object' does not contain a 'call' component.", call. = FALSE)
   extras <- match.call(expand.dots = FALSE)$...
   fm <- formula(object)
+  if (!missing(formula.)) {
+    if (is.jm(object))
+      stop("'formula.' should not be specified for joint models estimated ",
+           "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
+    if (M > 1) {
+      if (!is.list(formula.))
+        stop("To update the formula for a multivariate model ",
+             "'formula.' should be a list of formula objects. Use ",
+             "'~ .' if you do not wish to alter the formula for one or ",
+             "more of the submodels.", call. = FALSE)
+      if (length(formula.) != M)
+        stop(paste0("The list provided in 'formula.' appears to be the ",
+                    "incorrect length; should be length ", M), call. = FALSE)     
+    } else {
+      if (!is.list(formula.)) formula. <- list(formula.)
+    }
+    fm_mvmer <- lapply(1:M, function(m) 
+      update.formula(fm[[m]], formula.[[m]]))
+    names(fm_mvmer) <- NULL
+    fm_mvmer <- as.call(c(quote(list), fm_mvmer))
+    call$formula <- fm_mvmer
+  }  
   if (!missing(formulaLong.)) {
+    if (!is.jm(object))
+      stop("'formulaLong.' should only be specified for joint models estimated ",
+           "using stan_jm. Specify 'formula.' instead.")
     if (M > 1) {
       if (!is.list(formulaLong.))
         stop("To update the formula for a multivariate joint model ",
@@ -260,8 +290,12 @@ update.stanmvreg <- function(object, formulaLong., formulaEvent., ..., evaluate 
     fm_long <- as.call(c(quote(list), fm_long))
     call$formulaLong <- fm_long
   }
-  if (!missing(formulaEvent.))
+  if (!missing(formulaEvent.)) {
+    if (!is.jm(object))
+      stop("'formulaEvent.' should only be specified for joint models estimated ",
+           "using stan_jm.")
     call$formulaEvent <- update.formula(fm[[length(fm)]], formulaEvent.)  
+  }
   if (length(extras)) {
     existing <- !is.na(match(names(extras), names(call)))
     for (a in names(extras)[existing]) 
@@ -319,10 +353,11 @@ ngrps.stanmvreg <- function(object, ...) {
 #'
 ranef.stanmvreg <- function(object, m = NULL, ...) {
   M <- get_M(object)
+  stub <- get_stub(object)
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
   ans_list <- lapply(1:M, function(x) { 
-    sel <- b_names_M(all_names, x)
+    sel <- b_names_M(all_names, x, stub = stub)
     ans <- object$stan_summary[sel, select_median(object$algorithm)]
     # avoid returning the extra levels that were included
     ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]

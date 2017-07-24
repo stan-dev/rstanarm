@@ -68,18 +68,25 @@
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
-  cat(x$modeling_function)
-  cat("\n family: ", family_plus_link(x))
-  cat("\n formula:", formula_string(formula(x)))
+  cat(x$stan_function)
+  cat("\n family:  ", family_plus_link(x))
+  cat("\n formula: ", formula_string(formula(x)))
+  cat("\n num. obs:", nobs(x))
   
   cat("\n------\n")
   cat("\nEstimates:\n")
   
   mer <- is.mer(x)
-  ord <- is(x, "polr") && !("(Intercept)" %in% rownames(x$stan_summary))
+  ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+    if (x$stan_function == "stan_gamm4") {
+      smooth_sd_nms <- grep("^smooth_sd\\[", nms, value = TRUE)
+      nms <- setdiff(nms, smooth_sd_nms)
+      smooth_sd_mat <- mat[, smooth_sd_nms, drop = FALSE]
+      smooth_sd_estimates <- .median_and_madsd(smooth_sd_mat)
+    }
     if (mer) 
       nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
     if (ord) {
@@ -100,6 +107,10 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (ord) {
       cat("\nCutpoints:\n")
       .printfr(cut_estimates, digits, ...)
+    }
+    if (x$stan_function == "stan_gamm4") {
+      cat("\nSmoothing terms:\n")
+      .printfr(smooth_sd_estimates, digits, ...)
     }
     if (mer) {
       cat("\nError terms:\n")
@@ -164,7 +175,7 @@ print.stanmvreg <- function(x, digits = 3, ...) {
   surv <- is.surv(x)
   jm <- is.jm(x)
   stubs <- paste0("(", get_stub(x), 1:M, "):")
-  cat(x$modeling_function)
+  cat(x$stan_function)
   if (mvmer) {
     for (m in 1:M) {
       cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
@@ -388,7 +399,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
   structure(out, 
             call = object$call, 
             algorithm = object$algorithm,
-            modeling_function = object$modeling_function,
+            stan_function = object$stan_function,
             family = family_plus_link(object),
             formula = formula(object),
             posterior_sample_size = posterior_sample_size(object),
@@ -408,7 +419,7 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                   ...) {
   atts <- attributes(x)
   cat("\nModel Info:\n")
-  cat("\n function: ", atts$modeling_function)
+  cat("\n function: ", atts$stan_function)
   cat("\n family:   ", atts$family)
   cat("\n formula:  ", formula_string(atts$formula))
   cat("\n algorithm:", atts$algorithm)
@@ -537,7 +548,7 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
       out, id_var = object$id_var, time_var = object$time_var, assoc = assoc)
   structure(
     out, formula = object$formula, algorithm = object$algorithm,
-    modeling_function = object$modeling_function,
+    stan_function = object$stan_function,
     posterior_sample_size = posterior_sample_size(object),
     runtime = object$runtime, print.digits = digits,
     class = c("summary.stanmvreg", "summary.stanreg"))
@@ -549,11 +560,11 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
 print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")), 
                                  ...) {
   atts <- attributes(x)
-  mvmer <- atts$modeling_function %in% c("stan_mvmer", "stan_jm")
-  jm <- atts$modeling_function == "stan_jm"
+  mvmer <- atts$stan_function %in% c("stan_mvmer", "stan_jm")
+  jm <- atts$stan_function == "stan_jm"
   tab <- if (jm) "   " else ""
   cat("\nModel Info:\n")
-  cat("\n function:   ", tab, atts$modeling_function)
+  cat("\n function:   ", tab, atts$stan_function)
   if (mvmer) {
     M <- atts$n_markers
     stubs <- paste0("(", if (jm) "Long" else "y", 1:M, "):") 

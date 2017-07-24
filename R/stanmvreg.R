@@ -93,7 +93,7 @@ stanmvreg <- function(object) {
     prior.info        = object$prior.info,
     algorithm         = object$algorithm,
     call              = object$call,
-    modeling_function = object$modeling_function,
+    stan_function     = object$stan_function,
     runtime           = if (object$algorithm == "sampling") times else NULL,
     stan_summary, 
     stanfit
@@ -108,6 +108,7 @@ stanmvreg <- function(object) {
     out$data <- if (!jm) object$data else NULL
     out$glmod <- fetch(object$y_mod_stuff, "mod")
     out$glmod_stuff <- object$y_mod_stuff
+    out$clust_stuff <- object$clust_stuff
   }
   if (surv) {
     out$n_subjects <- object$n_subjects

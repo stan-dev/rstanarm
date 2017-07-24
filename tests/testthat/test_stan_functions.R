@@ -112,8 +112,7 @@ test_that("pw_binom and ll_binom_lp return expected results", {
     linkinv <- binomial(link = links[i])$linkinv
     ll <- dbinom(y, size = trials, prob = linkinv(eta), log = TRUE)
     expect_true(all.equal(ll,  pw_binom(y, rep(trials, N), eta, i)), info = links[i])
-    expect_true(all.equal(sum(ll), ll_binom_lp(y, rep(trials, N), eta, i) + 
-                ifelse(i > 3, sum(lchoose(trials, y)), 0)), info = links[i])
+    expect_true(all.equal(sum(ll), ll_binom_lp(y, rep(trials, N), eta, i), info = links[i]))
   }
 })
 
@@ -246,7 +245,8 @@ test_that("pw_inv_gaussian returns expected results", {
     linkinv <- inverse.gaussian(link = links[i])$linkinv
     y <- rinvGauss(N, linkinv(eta), lambda)
     expect_true(all.equal(dinvGauss(y, linkinv(eta), lambda, log = TRUE),
-                          pw_inv_gaussian(y, eta, lambda, i, log(y), sqrt(y))), info = links[i])
+                          pw_inv_gaussian(y, eta, lambda, i, log(y), sqrt(y))), 
+                info = links[i])
   }
 })
 test_that("pw_inv_gaussian implies an actual density", {

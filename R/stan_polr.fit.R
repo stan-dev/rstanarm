@@ -108,7 +108,9 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
                     family = 1L, has_intercept = 0L, 
                     prior_dist_for_intercept = 0L, prior_dist_for_aux = 0L, 
                     dense_X = TRUE, # sparse is not a viable option
-                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0))
+                    nnz_X = 0L, w_X = double(0), v_X = integer(0), u_X = integer(0),
+                    prior_dist_for_smooth = 0L,
+                    K_smooth = 0L, S = matrix(NA_real_, N, 0L), smooth_map = integer(0))
   stanfit <- stanmodels$polr
   if (J > 2) {
     pars <- c("beta", "zeta", "mean_PPD")

@@ -24,15 +24,13 @@
   * @return lp__
   */
   real ll_binom_lp(int[] y, int[] trials, vector eta, int link) {
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
     if (link == 1) target += binomial_logit_lpmf(y | trials, eta);
     else if (link <  4) target += binomial_lpmf( y | trials, linkinv_binom(eta, link));
     else if (link == 4) {  // log
       for (n in 1:num_elements(y)) {
         target += y[n] * eta[n];
         target += (trials[n] - y[n]) * log1m_exp(eta[n]);
+        target += lchoose(trials[n], y[n]);
       }
     }
     else if (link == 5) {  // cloglog
@@ -40,8 +38,10 @@
         real neg_exp_eta = -exp(eta[n]);
         target += y[n] * log1m_exp(neg_exp_eta);
         target += (trials[n] - y[n]) * neg_exp_eta;
+        target += lchoose(trials[n], y[n]);
       }
     }
+    else reject("Invalid link");
     return target();
   }
   
@@ -55,15 +55,14 @@
   vector pw_binom(int[] y, int[] trials, vector eta, int link) {
     int N = rows(eta);
     vector[N] ll;
-    if (link < 1 || link > 5) reject("Invalid link");
     if (link == 1) {  // logit
       for (n in 1:N) 
         ll[n] = binomial_logit_lpmf(y[n] | trials[n], eta[n]);
     }
-    else {  // link = probit, cauchit, log, or cloglog (may be numerically unstable)
-      vector[N] pi;
-      pi = linkinv_binom(eta, link);
+    else if (link <= 5) {  // link = probit, cauchit, log, or cloglog
+      vector[N] pi = linkinv_binom(eta, link); // may be unstable
       for (n in 1:N) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
     }
+    else reject("Invalid link");
     return ll;
   }
