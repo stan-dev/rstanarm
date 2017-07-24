@@ -687,10 +687,10 @@ optim_fn <- function(b, object, data, pars) {
 # @param pars Output from extract_pars
 mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
   # New proposal for b vector
-  b_new <- mvtnorm::rmvt(n = 1, delta = delta, sigma = sigma, df = df)
+  b_new <- rmt(mu = delta, Sigma = sigma, df = df)
   # Calculate density for proposal distribution
-  propdens_old <- mvtnorm::dmvt(x = b_old, delta, sigma, df, log = TRUE)
-  propdens_new <- mvtnorm::dmvt(x = b_new, delta, sigma, df, log = TRUE)
+  propdens_old <- dmt(x = b_old, mu = delta, Sigma = sigma, df = df)
+  propdens_new <- dmt(x = b_new, mu = delta, Sigma = sigma, df = df)
   # Calculate density for target distribution
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars_old <- substitute_b_pars(object, data, pars, new_b = b_old, new_Z_names = nms)
