@@ -33,7 +33,8 @@ stan_spatial.fit <- function(x, y, w,
   
   algorithm <- match.arg(algorithm)
   family <- match.arg(family)
-  trials <- ifelse(is.null(trials), rep(0,length(y)), trials)
+  if (is.null(trials))
+    trials <- rep(0,length(y))
   # Replace all this stuff with family = binomial(link = "logit") calls etc.
   if (family == "gaussian") {
     y_real <- y
@@ -215,7 +216,21 @@ stan_spatial.fit <- function(x, y, w,
   
   pars <- c(if (has_intercept) "alpha", "beta", "tau", if(mod == 2) c("sigma"), if(family == "gaussian") "nu",
             "mean_PPD", "psi")
-  
+
+  prior_info <- summarize_spatial_prior(
+    user_prior = prior_stuff,
+    user_prior_intercept = prior_intercept_stuff,
+    user_prior_tau = prior_tau_stuff,
+    user_prior_nu = prior_nu_stuff,
+    user_prior_aux = prior_aux_stuff,
+    has_intercept = has_intercept,
+    has_predictors = nvars > 0,
+    adjusted_prior_scale = prior_scale,
+    adjusted_prior_intercept_scale = prior_scale_for_intercept,
+    adjusted_prior_scale_tau = prior_scale_for_tau,
+    adjusted_prior_scale_nu = prior_scale_for_nu,
+    adjusted_prior_scale_aux = prior_scale_for_aux)
+  browser()
   stanfit <- stanmodels$spatial
 
   if (algorithm == "sampling") {
@@ -248,5 +263,86 @@ stan_spatial.fit <- function(x, y, w,
                  colnames(xtemp), "tau", if(mod == 2) c("sigma"),
                  if(family == "gaussian") "nu", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
   stanfit@sim$fnames_oi <- new_names
-  return(structure(stanfit))  # return(structure(stanfit, prior.info = prior_info))
+  return(structure(stanfit, prior.info = prior_info))
+}
+
+# Summarize spatial prior
+
+summarize_spatial_prior <- function(user_prior,
+                                    user_prior_intercept,
+                                    user_prior_tau,
+                                    user_prior_nu,
+                                    user_prior_aux,
+                                    has_intercept,
+                                    has_predictors,
+                                    adjusted_prior_scale,
+                                    adjusted_prior_intercept_scale,
+                                    adjusted_prior_scale_tau,
+                                    adjusted_prior_scale_nu,
+                                    adjusted_prior_scale_aux) {
+  rescaled_coef <-
+    user_prior$prior_autoscale && has_predictors &&
+    !is.na(user_prior$prior_dist_name) &&
+    !all(user_prior$prior_scale == adjusted_prior_scale)
+  rescaled_int <-
+    user_prior_intercept$prior_autoscale_for_intercept && has_intercept &&
+    !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+    (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
+  
+  if (has_predictors && user_prior$prior_dist_name %in% "t") {
+    if (all(user_prior$prior_df == 1)) {
+      user_prior$prior_dist_name <- "cauchy"
+    } else {
+      user_prior$prior_dist_name <- "student_t"
+    }
+  }
+  if (has_intercept &&
+      user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+    if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
+      user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
+    } else {
+      user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
+    }
+  }
+  prior_list <- list(
+    prior = 
+      if (!has_predictors) NULL else with(user_prior, list(
+        dist = prior_dist_name,
+        location = prior_mean,
+        scale = prior_scale,
+        adjusted_scale = if (rescaled_coef)
+          adjusted_prior_scale else NULL,
+        df = if (prior_dist_name %in% c("student_t", "hs", "hs_plus", 
+                                        "lasso", "product_normal"))
+          prior_df else NULL
+      )),
+    prior_intercept = 
+      if (!has_intercept) NULL else with(user_prior_intercept, list(
+        dist = prior_dist_name_for_intercept,
+        location = prior_mean_for_intercept,
+        scale = prior_scale_for_intercept,
+        adjusted_scale = if (rescaled_int)
+          adjusted_prior_intercept_scale else NULL,
+        df = if (prior_dist_name_for_intercept %in% "student_t")
+          prior_df_for_intercept else NULL
+      ))#,
+    #prior_aux = 
+    #  if (!has_phi) NULL else with(user_prior_aux, list(
+    #    dist = prior_dist_name_for_aux,
+    #    location = if (!is.na(prior_dist_name_for_aux) && 
+    #                   prior_dist_name_for_aux != "exponential")
+    #      prior_mean_for_aux else NULL,
+    #    scale = if (!is.na(prior_dist_name_for_aux) && 
+    #                prior_dist_name_for_aux != "exponential")
+    #      prior_scale_for_aux else NULL,
+    #    df = if (!is.na(prior_dist_name_for_aux) && 
+    #             prior_dist_name_for_aux %in% "student_t")
+    #      prior_df_for_aux else NULL, 
+    #    rate = if (!is.na(prior_dist_name_for_aux) && 
+    #               prior_dist_name_for_aux %in% "exponential")
+    #      1 / prior_scale_for_aux else NULL,
+    #    aux_name = "phi"
+    #  ))
+  )
+  return(prior_list)
 }
