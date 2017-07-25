@@ -73,6 +73,9 @@ ps_check <- function(object, check = "survival",
                      draws = NULL, seed = NULL, 
                      xlab = NULL, ylab = NULL,
                      ci_geom_args = NULL, ...) {
+  if (!requireNamespace("survival"))
+    stop("the 'survival' package must be installed to use this function")
+  
   validate_stanmvreg_object(object)
   limits <- match.arg(limits)
 
