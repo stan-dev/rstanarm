@@ -450,7 +450,7 @@ test_that("posterior_predict compatible with glms", {
   check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)
   check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
   expect_linpred_equal(fit_gaus)
-  expect_linpred_equal(fit2)
+  # expect_linpred_equal(fit2)
   
   check_for_error(fit_pois)
   check_for_error(fit_negbin)
