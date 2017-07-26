@@ -17,7 +17,7 @@
 
 library(rstanarm)
 options(loo.cores = ifelse(.Platform$OS.type == "windows", 1, 2))
-SEED <- 1234
+SEED <- 1234L
 set.seed(SEED)
 CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
@@ -60,7 +60,8 @@ mcmc_only_error <- function(fit) {
 
 test_that("loo & waic throw error for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                      seed = SEED))
+                      seed = 1234L, prior_intercept = NULL,
+                      prior = NULL, prior_aux = NULL))
   SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER))
   SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER))
   mcmc_only_error(fito)
