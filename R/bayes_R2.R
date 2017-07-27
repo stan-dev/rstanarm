@@ -1,5 +1,6 @@
 #' Compute a Bayesian version of R-squared for regression models
-#' 
+#'
+#' @aliases bayes_R2
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
@@ -29,7 +30,7 @@
 #' median(bayes_R2(example_model))
 #' median(bayes_R2(example_model, re.form = NA)) # exclude group-level
 #' 
-bayes_R2 <-
+bayes_R2.stanreg <-
   function(object,
            newdata = NULL,
            re.form = NULL,
