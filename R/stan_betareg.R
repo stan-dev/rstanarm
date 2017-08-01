@@ -165,7 +165,7 @@ stan_betareg <-
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
     
-    if (is.null(link.phi))
+    if (is.null(link.phi) && is.null(Z))
       link_phi <- "identity"
     
     fit <- 
