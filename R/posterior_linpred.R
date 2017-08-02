@@ -88,8 +88,6 @@ posterior_linpred.stanreg <-
     if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
     else colnames(eta) <- rownames(newdata)
     
-    if (!transform)
-      return(eta)
-    
+    if (!transform || is.nlmer(object)) return(eta)
     linkinv(object)(eta)
-  }
+}

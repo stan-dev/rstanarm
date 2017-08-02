@@ -121,7 +121,8 @@ is_polr <- function(object) {
 # test if a stanreg object is a scobit model
 is_scobit <- function(object) {
   validate_stanreg_object(object)
-  if (!is(object, "polr")) return(FALSE)
+  if (!is_polr(object)) 
+    return(FALSE)
   return("alpha" %in% rownames(object$stan_summary))
 }
 
@@ -153,6 +154,12 @@ is.mer <- function(x) {
   isTRUE(check1 && check2)
 }
 
+# Test if stanreg object used stan_nlmer
+#
+# @param x A stanreg object.
+is.nlmer <- function(x) {
+  is.mer(x) && inherits(x, "nlmerMod")
+}
 # Consistent error message to use when something is only available for 
 # models fit using MCMC
 #
@@ -312,6 +319,8 @@ validate_glm_formula <- function(f) {
 
 
 # Check if any variables in a model frame are constants
+# (the exception is that a constant variable of all 1's is allowed)
+# 
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
@@ -319,14 +328,15 @@ check_constant_vars <- function(mf) {
   # don't check if columns are constant for binomial
   mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
   
-  lu <- function(x) length(unique(x))
+  lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
-  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
-  if (any(is_constant)) 
+  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu1)
+  if (any(is_constant)) {
     stop("Constant variable(s) found: ", 
          paste(names(is_constant)[is_constant], collapse = ", "), 
          call. = FALSE)
+  }
   return(mf)
 }
 
