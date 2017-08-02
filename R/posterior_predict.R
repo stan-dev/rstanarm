@@ -171,7 +171,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
       ppargs <- pp_args(object, data)
     }
   } else {
-    if (!is.null(newdata) && is(object, "clogit")) {
+    if (!is.null(newdata) && is_clogit(object)) {
       y <- eval(formula(object)[[2L]], newdata)
       strata <- as.factor(eval(object$call$strata, newdata))
       formals(object$family$linkinv)$g <- strata
@@ -180,12 +180,12 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     }
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   }
-  if (is(object, "clogit")) {
+  if (is_clogit(object)) {
     if (is.null(newdata)) ppargs$strata <- model.frame(object)[,"(weights)"]
     else ppargs$strata <- eval(object$call$strata, newdata)
     ppargs$strata <- as.factor(ppargs$strata)
   }
-  else if (!is(object, "polr") && is.binomial(family(object)$family))
+  else if (!is_polr(object) && is.binomial(family(object)$family))
     ppargs$trials <- pp_binomial_trials(object, newdata)
 
   ppfun <- pp_fun(object)
@@ -207,8 +207,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object) {
-  suffix <- if (is(object, "polr")) "polr" else 
-            if (is(object, "clogit")) "clogit" else 
+  suffix <- if (is_polr(object)) "polr" else 
+            if (is_clogit(object)) "clogit" else 
             family(object)$family
   get(paste0(".pp_", suffix), mode = "function")
 }
@@ -294,14 +294,15 @@ pp_args <- function(object, data) {
   eta <- data$eta
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   inverse_link <- linkinv(object)
-  if (is(object, "polr")) {
+  if (is_polr(object)) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     args <- nlist(eta, zeta, linkinv = inverse_link)
     if ("alpha" %in% colnames(stanmat))
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  else if (is(object, "clogit")) return(list(mu = inverse_link(eta)))
+  else if (is_clogit(object)) 
+    return(list(mu = inverse_link(eta)))
 
   args <- list(mu = inverse_link(eta))
   famname <- family(object)$family

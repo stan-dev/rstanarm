@@ -140,17 +140,18 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  if (is(x, "clogit")) {
+  if (is_clogit(x)) {
     ll <- log_lik.stanreg(x)
     cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
     if (any(cons)) {
       message("The following groups were dropped from the loo calculation:",
               paste(which(cons), collapse = ", "))
-      ll <- ll[,!cons, drop = FALSE]
+      ll <- ll[, !cons, drop = FALSE]
     }
     loo_x <- loo.matrix(ll, ...)
+  } else {
+    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   }
-  else loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
@@ -196,8 +197,11 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  if (is(x, "clogit")) out <- waic.matrix(log_lik(x))
-  else out <- waic.function(ll_fun(x), args = ll_args(x))
+  if (is_clogit(x)) {
+    out <- waic.matrix(log_lik(x))
+  } else {
+    out <- waic.function(ll_fun(x), args = ll_args(x))
+  }
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 

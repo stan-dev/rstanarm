@@ -43,35 +43,39 @@
 #'   \code{data} is specified (and is a data frame) many post-estimation 
 #'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
-#' @param strata A factor indicating the groups in the data where the number of
-#'   successes (possibly one) is fixed by the research design. It may be useful
-#'   to use \code{\link{interaction}} or \code{\link[survival]{strata}} to create
-#'   this factor
+#' @param strata A factor indicating the groups in the data where the number of 
+#'   successes (possibly one) is fixed by the research design. It may be useful 
+#'   to use \code{\link{interaction}} or \code{\link[survival]{strata}} to
+#'   create this factor.
 #' @param prior_covariance Cannot be \code{NULL} when lme4-style group-specific
 #'   terms are included in the \code{formula}. See \code{\link{decov}} for
 #'   more information about the default arguments. Ignored when there are no
 #'   group-specific terms.
 #' 
 #' @details The \code{stan_clogit} function is mostly similar in syntax to 
-#'   \code{\link[survival]{clogit}} but rather than performing maximum likelihood 
-#'   estimation of generalized linear models, full Bayesian estimation is 
-#'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
-#'   model adds priors (independent by default) on the coefficients of the GLM.
+#'   \code{\link[survival]{clogit}} but rather than performing maximum
+#'   likelihood estimation of generalized linear models, full Bayesian
+#'   estimation is performed (if \code{algorithm} is \code{"sampling"}) via
+#'   MCMC. The Bayesian model adds priors (independent by default) on the
+#'   coefficients of the GLM.
 #'   
-#'   The \code{data.frame} passed to the \code{data} argument must be sorted by
-#'   the variable passed to the \code{stratum} argument.
+#'   The \code{data.frame} passed to the \code{data} argument must be sorted by 
+#'   the variable passed to the \code{strata} argument.
 #'   
 #'   The \code{formula} may have group-specific terms like in 
-#'   \code{\link{stan_glmer}} but should not allow the intercept to vary by
-#'   the stratifying variable, since there is no information in the data with
-#'   which to estimate such deviations in the intercept.
+#'   \code{\link{stan_glmer}} but should not allow the intercept to vary by the
+#'   stratifying variable, since there is no information in the data with which
+#'   to estimate such deviations in the intercept.
 #'   
 #' @seealso The vignette for Bernoulli and binomial models.
 #' 
 #' @examples
-#' stan_clogit(case ~ spontaneous + induced, strata = stratum,
-#'             data = infert[order(infert$stratum), ], QR = TRUE,
+#' stan_clogit(case ~ spontaneous + induced, 
+#'             strata = stratum,
+#'             data = infert[order(infert$stratum), ], 
+#'             QR = TRUE,
 #'             iter = 500) # for speed only
+#'             
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
                         strata, prior = normal(), 

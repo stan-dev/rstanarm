@@ -71,27 +71,37 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                   reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                   ...)
   fun <- ll_fun(object)
-  if (is(object, "clogit")) {
-    out <- vapply(seq_len(args$N), FUN.VALUE = numeric(length = args$S), function(i) {
-      as.vector(fun(i = i, draws = args$draws,
-                    data = args$data[args$data$strata == 
-                              levels(args$data$strata)[i],, drop = FALSE]))
-    })
+  if (is_clogit(object)) {
+    out <-
+      vapply(
+        seq_len(args$N),
+        FUN.VALUE = numeric(length = args$S),
+        FUN = function(i) {
+          as.vector(fun(
+            i = i,
+            draws = args$draws,
+            data = args$data[args$data$strata ==
+                               levels(args$data$strata)[i], , drop = FALSE]
+          ))
+        }
+      )
     return(out)
   }
-  else out <- vapply(
+  
+  out <- vapply(
     seq_len(args$N),
     FUN = function(i) {
       as.vector(fun(
         i = i,
-        data = args$data[i,, drop = FALSE],
+        data = args$data[i, , drop = FALSE],
         draws = args$draws
       ))
     },
     FUN.VALUE = numeric(length = args$S)
   )
-  if (is.null(newdata)) colnames(out) <- rownames(model.frame(object))
-  else colnames(out) <- rownames(newdata)
+  colnames(out) <- if (is.null(newdata)) 
+    rownames(model.frame(object)) else rownames(newdata)
+  
   return(out)
 }
 
@@ -106,7 +116,8 @@ ll_fun <- function(x) {
   f <- family(x)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  else if (is(x, "clogit")) return(.ll_clogit_i)
+  else if (is_clogit(x)) 
+    return(.ll_clogit_i)
   
   fun <- paste0(".ll_", f$family, "_i")
   get(fun, mode = "function")
@@ -158,7 +169,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L]
-      } else if (is(object, "clogit")) {
+      } else if (is_clogit(object)) {
         if (has_newdata) strata <- eval(object$call$strata, newdata)
         else strata <- model.frame(object)[,"(weights)"]
         strata <- as.factor(strata)
@@ -236,11 +247,13 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     draws$beta <- cbind(draws$beta, b)
   }
   
-  if (is(object, "clogit")) {
+  if (is_clogit(object)) {
     data$strata <- strata
-    nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
+    out <-nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
+  } else {
+    out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data)) 
   }
-  else nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+  return(out)
 }
 
 

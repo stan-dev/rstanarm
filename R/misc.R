@@ -106,7 +106,6 @@ validate_stanreg_object <- function(x, call. = FALSE) {
 #
 # @param x A character vector (probably x = family(fit)$family)
 is.binomial <- function(x) x == "binomial"
-is.clogit <- function(x) x == "clogit"
 is.gaussian <- function(x) x == "gaussian"
 is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
@@ -114,7 +113,7 @@ is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 is.beta <- function(x) x == "beta" || x == "Beta regression"
 
-# test for clogit
+# test if a stanreg object has class clogit
 is_clogit <- function(object) {
   is(object, "clogit")
 }
