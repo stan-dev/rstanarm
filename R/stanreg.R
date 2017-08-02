@@ -34,8 +34,12 @@ stanreg <- function(object) {
   is_betareg <- is.beta(family$family)
   if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
-    z <- object$z        # pull out betareg z vars so that they can be used in posterior_predict/loo
-    nvars_z <- ncol(z)   # used so that all coefficients are printed with coef()
+    if (is.null(family_phi)) {
+      family_phi <- beta_fam("log")
+      z <- matrix(1, nrow = nobs, ncol = 1, dimnames = list(NULL, "(Intercept)"))
+    }
+    else z <- object$z   # pull out betareg z vars so that they can be used in posterior_predict/loo
+    nvars_z <- NCOL(z)   # used so that all coefficients are printed with coef()
   }
   if (opt) {
     stanmat <- stanfit$theta_tilde

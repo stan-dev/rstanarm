@@ -26,9 +26,6 @@
    * @return lp__
    */
   real ll_bern_lp(vector eta0, vector eta1, int link, int[] N) {
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
     if (link == 1) { // logit
       target += logistic_lccdf(eta0 | 0, 1);
       target += logistic_lcdf( eta1 | 0, 1);
@@ -49,6 +46,7 @@
       target += log1m_exp(-exp(eta1));
       target += -exp(eta0);
     }
+    else reject("Invalid link");
     return target();
   }
 
@@ -64,18 +62,14 @@
   vector pw_bern(int y, vector eta, int link) {
     int N = rows(eta);
     vector[N] ll;
-    if (link < 1 || link > 5) 
-      reject("Invalid link");
-      
     if (link == 1) {  // logit
       for (n in 1:N) ll[n] = bernoulli_logit_lpmf(y | eta[n]);
     }
-    else {  // link = probit, cauchit, log, or cloglog 
-            // Note: this may not be numerically stable
-      vector[N] pi;
-      pi = linkinv_bern(eta, link);
+    else if (link <= 5) {  // link = probit, cauchit, log, or cloglog 
+      vector[N] pi = linkinv_bern(eta, link); // may not be stable
       for (n in 1:N) ll[n] = bernoulli_lpmf(y | pi[n]);
     }
+    else reject("Invalid link");
     return ll;
   }
 

@@ -112,16 +112,28 @@
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 #' 
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
-                       weights = NULL, subset = NULL, na.action, knots = NULL, 
-                       drop.unused.levels = TRUE, ..., 
-                       prior = normal(), prior_intercept = normal(),
-                       prior_smooth = exponential(autoscale = FALSE), 
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-
+stan_gamm4 <-
+  function(formula,
+           random = NULL,
+           family = gaussian(),
+           data,
+           weights = NULL,
+           subset = NULL,
+           na.action,
+           knots = NULL,
+           drop.unused.levels = TRUE,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   
@@ -188,7 +200,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data,
                           prior_aux = prior_aux, prior_smooth = prior_smooth,
                           prior_PD = prior_PD, algorithm = algorithm, 
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
-  
+  if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
   if (is.null(random)) Z <- Matrix::Matrix(nrow = length(y), ncol = 0, sparse = TRUE)
   else {
@@ -292,11 +304,12 @@ plot_nonlinear <- function(x, smooths, ...,
                       seq(from = yrange[1], to = yrange[2], length.out = 100))
     colnames(xz) <- xnames[1:2]
     plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
-    for (i in colnames(original)) {
-      if (i %in% colnames(xz)) next
-      xz[[i]] <- 1
-    }
-    XZ <- predict(x$jam, newdata = xz, type = "lpmatrix")
+    nd <- original
+    nd <- nd[sample(nrow(xz), size = nrow(xz), replace = TRUE), ]
+    nd[[xnames[1]]] <- xz[[xnames[1]]]
+    nd[[xnames[2]]] <- xz[[xnames[2]]]
+    requireNamespace("mgcv", quietly = TRUE)
+    XZ <- predict(x$jam, newdata = nd, type = "lpmatrix")
     incl <- grepl(labels, colnames(B), fixed = TRUE)
     b <- B[, incl, drop = FALSE]
     xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]

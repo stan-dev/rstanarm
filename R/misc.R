@@ -112,7 +112,7 @@ is.gamma <- function(x) x == "Gamma"
 is.ig <- function(x) x == "inverse.gaussian"
 is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
-is.beta <- function(x) x == "beta"
+is.beta <- function(x) x == "beta" || x == "Beta regression"
 
 # test for clogit
 is_clogit <- function(object) {

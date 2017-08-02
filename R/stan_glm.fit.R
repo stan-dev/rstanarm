@@ -26,23 +26,23 @@
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
-stan_glm.fit <- function(x, y, 
-                         weights = rep(1, NROW(y)), 
-                         offset = rep(0, NROW(y)), 
-                         family = gaussian(),
-                         ...,
-                         prior = normal(),
-                         prior_intercept = normal(),
-                         prior_aux = cauchy(0, 5),
-                         prior_smooth = exponential(autoscale = FALSE),
-                         prior_ops = NULL,
-                         group = list(),
-                         prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", 
-                                       "meanfield", "fullrank"), 
-                         adapt_delta = NULL, 
-                         QR = FALSE, 
-                         sparse = FALSE) {
+stan_glm.fit <- 
+  function(x, y, 
+           weights = rep(1, NROW(y)), 
+           offset = rep(0, NROW(y)), 
+           family = gaussian(),
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_ops = NULL,
+           group = list(),
+           prior_PD = FALSE, 
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+           adapt_delta = NULL, 
+           QR = FALSE, 
+           sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -58,7 +58,7 @@ stan_glm.fit <- function(x, y,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "neg_binomial_2")
+                          "poisson", "neg_binomial_2", "Beta regression")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
@@ -137,7 +137,7 @@ stan_glm.fit <- function(x, y,
     handle_glm_prior(
       prior_aux,
       nvars = 1,
-      default_scale = 5,
+      default_scale = 1,
       link = NULL, # don't need to adjust scale based on logit vs probit
       ok_dists = ok_aux_dists
     )
@@ -158,7 +158,8 @@ stan_glm.fit <- function(x, y,
         nvars = max(smooth_map),
         default_scale = 1,
         link = NULL,
-        ok_dists = ok_aux_dists)
+        ok_dists = ok_aux_dists
+      )
     
     names(prior_smooth_stuff) <- paste0(names(prior_smooth_stuff), "_for_smooth")
     if (is.null(prior_smooth)) {
@@ -182,7 +183,8 @@ stan_glm.fit <- function(x, y,
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
   is_ig <- is.ig(famname)
-  is_continuous <- is_gaussian || is_gamma || is_ig
+  is_beta <- is.beta(famname)
+  is_continuous <- is_gaussian || is_gamma || is_ig || is_beta
   
   # require intercept for certain family and link combinations
   if (!has_intercept) {
@@ -258,7 +260,6 @@ stan_glm.fit <- function(x, y,
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
     global_prior_df, global_prior_scale, # for hs priors
-    has_intercept, prior_PD,
     z_dim = 0,  # betareg data
     link_phi = 0,
     betareg_z = array(0, dim = c(nrow(xtemp), 0)),
@@ -400,7 +401,8 @@ stan_glm.fit <- function(x, y,
     standata$family <- switch(family$family, 
                               gaussian = 1L, 
                               Gamma = 2L,
-                              3L)
+                              inverse.gaussian = 3L,
+                              4L) # beta
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_aux <- 
@@ -527,7 +529,8 @@ stan_glm.fit <- function(x, y,
       if (is_gaussian) "sigma" else
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
-            if (is_nb) "reciprocal_dispersion" else NA
+            if (is_nb) "reciprocal_dispersion" else
+              if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
@@ -600,6 +603,7 @@ stan_glm.fit <- function(x, y,
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "reciprocal_dispersion",
+                   if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                    if (!standata$clogit) "mean_PPD", 
@@ -624,6 +628,7 @@ supported_glm_links <- function(famname) {
     inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
     "neg_binomial_2" = , # intentional
     poisson = c("log", "identity", "sqrt"),
+    "Beta regression" = c("logit", "probit", "cloglog", "cauchit"),
     stop("unsupported family")
   )
 }
