@@ -24,13 +24,14 @@ pp_data <-
            ...) {
     validate_stanreg_object(object)
     if (is.mer(object)) {
-      out <- .pp_data_mer(object, newdata = newdata,
-                          re.form = re.form, ...)
+      if (is.nlmer(object))
+        out <- .pp_data_nlmer(object, newdata = newdata, re.form = re.form, ...)
+      else
+        out <- .pp_data_mer(object, newdata = newdata, re.form = re.form, ...)
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
-    else
-      .pp_data(object, newdata = newdata, offset = offset, ...)
+    .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
 # for models without lme4 structure
@@ -87,6 +88,43 @@ pp_data <-
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
 }
 
+# for models fit using stan_nlmer
+.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, ...) {
+  inputs <- parse_nlf_inputs(object$glmod$respMod)
+  if (is.null(newdata)) {
+    arg1 <- arg2 <- NULL
+  } else if (object$family$link == "inv_SSfol") {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- newdata[[inputs[3]]]
+  } else {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- NULL
+  }
+  f <- formula(object)
+  if (!is.null(re.form) && !is.na(re.form)) {
+    f <- as.character(f)
+    f[3] <- as.character(re.form)
+    f <- as.formula(f[-1])
+  }
+  if (is.null(newdata)) newdata <- model.frame(object)
+  else {
+    yname <- names(model.frame(object))[1]
+    newdata[[yname]] <- 0
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
+  mc$data <- newdata
+  mc$formula <- f
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
+  offset <- .pp_data_offset(object, newdata, offset)
+
+  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+    group$Z@x <- 0
+  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
+               Z_names = make_b_nms(group), arg1, arg2))
+}
 
 # the functions below are heavily based on a combination of 
 # lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 

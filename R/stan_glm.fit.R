@@ -240,6 +240,9 @@ stan_glm.fit <-
     xbar <- c(xbar %*% R_inv)
   }
   
+  if (length(weights) > 0 && all(weights == 1)) weights <- double()
+  if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
+  
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp),
@@ -284,6 +287,16 @@ stan_glm.fit <-
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
+    if (is.null(group$SSfun)) {
+      standata$SSfun <- 0L
+      standata$input <- double()
+      standata$Dose <- double()
+    } else {
+      standata$SSfun <- group$SSfun
+      standata$input <- group$input
+      if (group$SSfun == 5) standata$Dose <- group$Dose
+      else standata$Dose <- double()
+    }
     Z <- t(group$Zt)
     group <-
       pad_reTrms(Ztlist = group$Ztlist,
@@ -353,6 +366,9 @@ stan_glm.fit <-
       standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L
     standata$len_regularization <- 0L
+    standata$SSfun <- 0L
+    standata$input <- double()
+    standata$Dose <- double()
   }
   
   if (!is_bernoulli) {
@@ -390,6 +406,7 @@ stan_glm.fit <-
                               Gamma = 2L,
                               inverse.gaussian = 3L,
                               4L) # beta
+    standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_aux <- 

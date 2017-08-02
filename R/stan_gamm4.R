@@ -27,6 +27,7 @@
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_aux
 #' @template args-prior_smooth
