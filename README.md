@@ -44,7 +44,7 @@ please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/iss
 ## Getting help
 
 * [File an issue on GitHub](https://github.com/stan-dev/rstanarm/issues)
-* [Ask a question on the Stan users Google group](https://groups.google.com/forum/#!forum/stan-users)
+* [Ask a question at The Stan Forums](http://discourse.mc-stan.org)
 
 ## Contributing 
 
