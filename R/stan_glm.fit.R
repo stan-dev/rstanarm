@@ -260,7 +260,6 @@ stan_glm.fit <-
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
     global_prior_df, global_prior_scale, # for hs priors
-    has_intercept, prior_PD,
     z_dim = 0,  # betareg data
     link_phi = 0,
     betareg_z = array(0, dim = c(nrow(xtemp), 0)),
