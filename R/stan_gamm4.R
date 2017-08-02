@@ -27,6 +27,7 @@
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_intercept
 #' @template args-prior_aux
@@ -96,6 +97,9 @@
 #' penalized spline regression using WinBUGS. \emph{Journal of Statistical
 #' Software}. \strong{14}(14), 1--22. 
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
+#' 
+#' @seealso The vignette for \code{stan_glmer}, which also discusses
+#'   \code{stan_gamm4}.
 #' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_

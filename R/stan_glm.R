@@ -35,6 +35,7 @@
 #' @template args-same-as
 #' @template args-same-as-rarely
 #' @template args-dots
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_intercept
 #' @template args-prior_aux

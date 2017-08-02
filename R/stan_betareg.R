@@ -36,6 +36,7 @@
 #' @template args-same-as-rarely
 #' @template args-x-y
 #' @template args-dots
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_intercept
 #' @template args-prior_PD
@@ -165,6 +166,10 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
+    
+    if (is.null(link.phi) && is.null(Z))
+      link_phi <- "identity"
+    
     fit <- 
       nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),

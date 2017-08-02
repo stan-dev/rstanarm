@@ -26,3 +26,4 @@
 #'   of the predictors. See the \link[=priors]{priors help page} for details on
 #'   the rescaling and the \code{\link{prior_summary}} function for a summary of
 #'   the priors used for a particular model.
+#'   

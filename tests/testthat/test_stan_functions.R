@@ -59,7 +59,8 @@ functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm
                                "bernoulli_likelihoods.stan",
                                "binomial_likelihoods.stan",
                                "continuous_likelihoods.stan",
-                               "count_likelihoods.stan")), 
+                               "count_likelihoods.stan", 
+                               "SSfunctions.stan")), 
                       FUN = readLines)), unlist(functions))
 model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
@@ -430,6 +431,122 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
   df <- exp(1) / pi
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
+})
+
+context("nlmer")
+test_that("SSasymp works", {
+  example("SSasymp", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, resp0, lrc)
+  expect_true(all.equal(SSasymp( Lob.329$age, Asym, resp0, lrc ),
+                        SS_asymp( Lob.329$age, Phi ), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Lob.329), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSasymp( Lob.329$age, Asym, resp0, lrc ),
+                        SS_asymp( Lob.329$age, Phi ), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSasympOff works", {
+  example("SSasympOff", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, lrc, c0)
+  expect_true(all.equal(SSasympOff(CO2.Qn1$conc, Asym, lrc, c0),
+                        SS_asympOff(CO2.Qn1$conc, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(CO2.Qn1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSasympOff(CO2.Qn1$conc, Asym, lrc, c0),
+                        SS_asympOff(CO2.Qn1$conc, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSasympOrig works", {
+  example("SSasympOrig", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, lrc)
+  expect_true(all.equal(SSasympOrig(Lob.329$age, Asym, lrc),
+                        SS_asympOrig(Lob.329$age, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Lob.329), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSasympOrig(Lob.329$age, Asym, lrc),
+                        SS_asympOrig(Lob.329$age, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSbiexp works", {
+  example("SSbiexp", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(A1, lrc1, A2, lrc2)
+  expect_true(all.equal(SSbiexp( Indo.1$time, A1, lrc1, A2, lrc2 ),
+                        SS_biexp( Indo.1$time, Phi ), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Indo.1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSbiexp( Indo.1$time, A1, lrc1, A2, lrc2 ),
+                        SS_biexp( Indo.1$time, Phi ), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSfol works", {
+  example("SSfol", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(lKe, lKa, lCl)
+  expect_true(all.equal(SSfol(Theoph.1$Dose, Theoph.1$Time, lKe, lKa, lCl),
+                        SS_fol(Theoph.1$Dose, Theoph.1$Time, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Theoph.1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSfol(Theoph.1$Dose, Theoph.1$Time, lKe, lKa, lCl),
+                        SS_fol(Theoph.1$Dose, Theoph.1$Time, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSfpl works", {
+  example("SSfpl", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(A, B, xmid, log(scal))
+  expect_true(all.equal(SSfpl(Chick.1$Time, A, B, xmid, scal),
+                        SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Chick.1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSfpl(Chick.1$Time, A, B, xmid, scal),
+                        SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSgompertz works", {
+  example("SSgompertz", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, b2, b3)
+  expect_true(all.equal(SSgompertz(log(DNase.1$conc), Asym, b2, b3),
+                        SS_gompertz(log(DNase.1$conc), Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(DNase.1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSgompertz(log(DNase.1$conc), Asym, b2, b3),
+                        SS_gompertz(log(DNase.1$conc), Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSlogis works", {
+  example("SSlogis", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, xmid, log(scal))
+  expect_true(all.equal(SSlogis(Chick.1$Time, Asym, xmid, scal),
+                        SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Chick.1), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSlogis(Chick.1$Time, Asym, xmid, scal),
+                        SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSmicmen works", {
+  example("SSmicmen", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Vm, K)
+  expect_true(all.equal(SSmicmen(PurTrt$conc, Vm, K),
+                        SS_micmen(PurTrt$conc, Phi), check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(PurTrt), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSmicmen(PurTrt$conc, Vm, K),
+                        SS_micmen(PurTrt$conc, Phi), check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("SSweibull works", {
+  example("SSweibull", package = "stats", character.only = TRUE, ask = FALSE)
+  Phi <- cbind(Asym, Drop, lrc, pwr)
+  expect_true(all.equal(SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr) ,
+                        SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))
+  Phi <- matrix(Phi, nrow = nrow(Chick.6), ncol = ncol(Phi), byrow = TRUE)
+  expect_true(all.equal(SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr) ,
+                        SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))
+})
+
+context("nlmer")
+test_that("reshape works", {
+  x <- as.double(1:10)
+  expect_true(all(matrix(x, 5, 2) == reshape_vec(x, 5L, 2L)))
 })
 
 # betareg

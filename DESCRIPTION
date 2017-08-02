@@ -35,8 +35,8 @@ Imports:
     Matrix,
     nlme (>= 3.1-124),
     rstan (>= 2.14.2),
-    rstantools (>= 1.2.0),
-    shinystan (>= 2.3.0),
+    rstantools (>= 1.3.0),
+    shinystan (>= 2.4.0),
     stats,
     utils
 Suggests:
@@ -59,4 +59,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

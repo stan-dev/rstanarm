@@ -180,13 +180,14 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     }
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   }
+
   if (is_clogit(object)) {
     if (is.null(newdata)) ppargs$strata <- model.frame(object)[,"(weights)"]
     else ppargs$strata <- eval(object$call$strata, newdata)
     ppargs$strata <- as.factor(ppargs$strata)
-  }
-  else if (!is_polr(object) && is.binomial(family(object)$family))
+  } else if (!is_polr(object) && is.binomial(family(object)$family)) {
     ppargs$trials <- pp_binomial_trials(object, newdata)
+  }
 
   ppfun <- pp_fun(object)
   ytilde <- do.call(ppfun, ppargs)
@@ -194,7 +195,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
-  if (is(object, "polr") && !is_scobit(object))
+  if (is_polr(object) && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   
   if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object))
@@ -210,6 +211,7 @@ pp_fun <- function(object) {
   suffix <- if (is_polr(object)) "polr" else 
             if (is_clogit(object)) "clogit" else 
             family(object)$family
+
   get(paste0(".pp_", suffix), mode = "function")
 }
 
@@ -294,10 +296,12 @@ pp_args <- function(object, data) {
   eta <- data$eta
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   inverse_link <- linkinv(object)
+  if (is.nlmer(object)) inverse_link <- function(x) return(x)
+
   if (is_polr(object)) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     args <- nlist(eta, zeta, linkinv = inverse_link)
-    if ("alpha" %in% colnames(stanmat))
+    if ("alpha" %in% colnames(stanmat)) # scobit
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
@@ -369,6 +373,11 @@ pp_eta <- function(object, data, draws = NULL) {
       b <- pp_b_ord(b, data$Z_names)
     }
     eta <- eta + as.matrix(b %*% data$Zt)
+  }
+  if (is.nlmer(object)) {
+    if (is.null(data$arg1)) eta <- linkinv(object)(eta)
+    else eta <- linkinv(object)(eta, data$arg1, data$arg2)
+    eta <- t(eta)
   }
   nlist(eta, stanmat)
 }

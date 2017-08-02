@@ -5,6 +5,7 @@
 functions {
   #include "common_functions.stan"
   #include "continuous_likelihoods.stan"
+  #include "SSfunctions.stan"
   
   /*
    * Calculate lower bound on intercept
@@ -53,9 +54,10 @@ functions {
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+  int<lower=0> len_y;      // length of y
   real lb_y; // lower bound on y
   real<lower=lb_y> ub_y; // upper bound on y
-  vector<lower=lb_y, upper=ub_y>[N] y; // continuous outcome
+  vector<lower=lb_y, upper=ub_y>[len_y] y; // continuous outcome
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
@@ -64,12 +66,15 @@ data {
   #include "glmer_stuff.stan"  
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
   #include "data_betareg.stan"
+  int<lower=0,upper=10> SSfun; // nonlinear function indicator, 0 for identity
+  vector[SSfun > 0  ? len_y : 0] input;
+  vector[SSfun == 5 ? len_y : 0] Dose;
 }
 transformed data {
-  vector[family == 3 ? N : 0] sqrt_y;
-  vector[family == 3 ? N : 0] log_y;
+  vector[family == 3 ? len_y : 0] sqrt_y;
+  vector[family == 3 ? len_y : 0] log_y;
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
-  int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
+  int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
   #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
   #include "tdata_betareg.stan" // defines hs_z
@@ -128,22 +133,47 @@ model {
     #include "eta_no_intercept.stan" // shifts eta
   }
   
-  #include "make_eta_z.stan"  // linear predictor in stan_betareg 
-  // adjust eta_z according to links
-  if (has_intercept_z == 1) {
-    if (link_phi > 1) {
-      eta_z = eta_z - min(eta_z) + gamma_z[1];
+  if (SSfun > 0) { // nlmer
+    matrix[len_y, K] P;
+    P = reshape_vec(eta, len_y, K);
+    if (SSfun < 5) {
+      if (SSfun <= 2) {
+        if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
+        else target += normal_lpdf(y | SS_asympOff(input, P), aux);
+      }
+      else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), aux);
+      else {
+        for (i in 1:len_y) P[i,1] = P[i,1] + exp(P[i,3]); // ordering constraint
+        target += normal_lpdf(y | SS_biexp(input, P), aux);
+      }
     }
     else {
-      eta_z = eta_z + gamma_z[1];
+      if (SSfun <= 7) {
+        if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), aux);
+        else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), aux);
+        else target += normal_lpdf(y | SS_gompertz(input, P), aux);
+      }
+      else {
+        if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), aux);
+        else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), aux);
+        else target += normal_lpdf(y | SS_weibull(input, P), aux);
+      }
     }
   }
-  else { // has_intercept_z == 0
-    #include "eta_z_no_intercept.stan"
-  }
-
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
+  else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
+    #include "make_eta_z.stan"  // linear predictor in stan_betareg 
+    // adjust eta_z according to links
+    if (has_intercept_z == 1) {
+      if (link_phi > 1) {
+        eta_z = eta_z - min(eta_z) + gamma_z[1];
+      }
+      else {
+        eta_z = eta_z + gamma_z[1];
+      }
+    }
+    else { // has_intercept_z == 0
+      #include "eta_z_no_intercept.stan"
+    }
     if (family == 1) {
       if (link == 1) 
         target += normal_lpdf(y | eta, aux);
@@ -235,7 +265,7 @@ generated quantities {
     else {
       #include "eta_no_intercept.stan" // shifts eta
     }
-    
+
     #include "make_eta_z.stan"
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
@@ -251,17 +281,43 @@ generated quantities {
       #include "eta_z_no_intercept.stan"
     }
     
-    if (family == 1) {
+    if (SSfun > 0) { // nlmer
+      vector[len_y] eta_nlmer;
+      matrix[len_y, K] P;      
+      P = reshape_vec(eta, len_y, K);
+      if (SSfun < 5) {
+        if (SSfun <= 2) {
+          if (SSfun == 1) eta_nlmer = SS_asymp(input, P);
+          else eta_nlmer = SS_asympOff(input, P);
+        }
+        else if (SSfun == 3) eta_nlmer = SS_asympOrig(input, P);
+        else eta_nlmer = SS_biexp(input, P);
+      }
+      else {
+        if (SSfun <= 7) {
+          if (SSfun == 5) eta_nlmer = SS_fol(Dose, input, P);
+          else if (SSfun == 6) eta_nlmer = SS_fpl(input, P);
+          else eta_nlmer = SS_gompertz(input, P);
+        }
+        else {
+          if (SSfun == 8) eta_nlmer = SS_logis(input, P);
+          else if (SSfun == 9) eta_nlmer = SS_micmen(input, P);
+          else eta_nlmer = SS_weibull(input, P);
+        }
+      }
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta_nlmer[n], aux);
+    }
+    else if (family == 1) {
       if (link > 1) eta = linkinv_gauss(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
+      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
     }
     else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
+      for (n in 1:len_y) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
     }
     else if (family == 3) {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
+      for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
     }
     else if (family == 4 && link_phi == 0) { 
       eta = linkinv_beta(eta, link);
@@ -285,6 +341,6 @@ generated quantities {
           mean_PPD = mean_PPD + beta_rng(eta_n * aux_n, (1 - eta_n) * aux_n);
       }
     }
-    mean_PPD = mean_PPD / N;
+    mean_PPD = mean_PPD / len_y;
   }
 }
