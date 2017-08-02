@@ -35,7 +35,11 @@
 #' @template args-sparse
 #' @template args-QR
 #' 
-#' @param formula,data Same as for \code{\link[lme4]{nlmer}}.
+#' @param formula,data Same as for \code{\link[lme4]{nlmer}}. \emph{We strongly
+#'   advise against omitting the \code{data} argument}. Unless \code{data} is
+#'   specified (and is a data frame) many post-estimation functions (including
+#'   \code{update}, \code{loo}, \code{kfold}) are not guaranteed to work
+#'   properly.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
