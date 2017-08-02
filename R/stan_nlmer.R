@@ -48,124 +48,191 @@
 #'
 #' @details The \code{stan_nlmer} function is similar in syntax to 
 #'   \code{\link[lme4]{nlmer}} but rather than performing (approximate) maximum 
-#'   marginal likelihood estimation, Bayesian estimation is by default
-#'   performed via MCMC. The Bayesian model adds independent priors on the 
-#'   "coefficients" --- which are really intercepts --- in the same way as 
+#'   marginal likelihood estimation, Bayesian estimation is by default performed
+#'   via MCMC. The Bayesian model adds independent priors on the "coefficients"
+#'   --- which are really intercepts --- in the same way as 
 #'   \code{\link{stan_nlmer}} and priors on the terms of a decomposition of the 
-#'   covariance matrices of the group-specific parameters. See \code{\link{priors}} 
-#'   for more information about the priors.
+#'   covariance matrices of the group-specific parameters. See
+#'   \code{\link{priors}} for more information about the priors.
 #'   
 #'   The supported transformation functions are limited to the named 
-#'   "self-starting" functions in the stats library: \code{\link[stats]{SSasymp}},
-#'   \code{\link[stats]{SSasympOff}}, \code{\link[stats]{SSasympOrig}},
-#'   \code{\link[stats]{SSbiexp}}, \code{\link[stats]{SSfol}}, 
-#'   \code{\link[stats]{SSfpl}}, \code{\link[stats]{SSgompertz}},
-#'   \code{\link[stats]{SSlogis}}, \code{\link[stats]{SSmicmen}}, and
-#'   \code{\link[stats]{SSweibull}}.
+#'   "self-starting" functions in the \pkg{stats} library:
+#'   \code{\link[stats]{SSasymp}}, \code{\link[stats]{SSasympOff}},
+#'   \code{\link[stats]{SSasympOrig}}, \code{\link[stats]{SSbiexp}},
+#'   \code{\link[stats]{SSfol}}, \code{\link[stats]{SSfpl}},
+#'   \code{\link[stats]{SSgompertz}}, \code{\link[stats]{SSlogis}},
+#'   \code{\link[stats]{SSmicmen}}, and \code{\link[stats]{SSweibull}}.
+#'   
 #' @examples
 #' \donttest{
 #' data("Orange", package = "datasets")
 #' Orange$circumference <- Orange$circumference / 100
 #' Orange$age <- Orange$age / 100
-#' stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
-#'            data = Orange, chains = 1, iter = 1000) # for speed only
+#' fit <- stan_nlmer(
+#'   circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
+#'   data = Orange, 
+#'   # for speed only
+#'   chains = 1, 
+#'   iter = 1000
+#'  ) 
+#' print(fit)
+#' posterior_interval(fit)
+#' plot(fit, regex_pars = "b\\[")
 #' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial
-stan_nlmer <- function (formula, data = NULL, subset, weights, na.action, offset, 
-                        contrasts = NULL, ..., 
-                        prior = normal(), prior_aux = cauchy(0, 5),
-                        prior_covariance = decov(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+stan_nlmer <-
+  function(formula,
+           data = NULL,
+           subset,
+           weights,
+           na.action,
+           offset,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   f <- as.character(formula[-3])
-  SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE)
+  SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE) 
   SSfun <- sapply(SSfunctions, function(ss) 
     grepl(paste0(ss, "("), x = f[2], fixed = TRUE))
-  if (any(SSfun)) SSfun <- which(SSfun)
-  else stop("'stan_nlmer' requires a named self-starting nonlinear function")
+  if (!any(SSfun))
+    stop("'stan_nlmer' requires a named self-starting nonlinear function.")
+  SSfun <- which(SSfun)
+  SSfun_char <- names(SSfun)
+  
   mc <- match.call(expand.dots = FALSE)
   mc$prior <- mc$prior_aux <- mc$prior_covariance <- mc$prior_PD <-
     mc$algorithm <- mc$adapt_delta <- mc$QR <- mc$sparse <- NULL
-  mc$start <- unlist(getInitial(as.formula(f[-1]), data, 
-                                control = list(maxiter = 0, warnOnly = TRUE)))
-  nlf <- nlformula(mc)
-  y <- nlf$respMod$y
-  X <- nlf$X
-  nlf$reTrms$SSfun <- SSfun
-  inputs <- as.character(nlf$respMod$nlmod[2])
-  inputs <- sub("(", ",", inputs, fixed = TRUE)
-  inputs <- sub(")", "", inputs, fixed = TRUE)
-  inputs <- scan(text = inputs, what = character(), sep = ",", 
-                 strip.white = TRUE, quiet = TRUE)
-  if (SSfun == 5) {
-    nlf$reTrms$Dose <- nlf$frame[[inputs[2]]]
-    nlf$reTrms$input <- nlf$frame[[inputs[3]]]
-  }
-  else nlf$reTrms$input <- nlf$frame[[inputs[2]]]
+  mc$start <-
+    unlist(getInitial(
+      object = as.formula(f[-1]),
+      data = data,
+      control = list(maxiter = 0, warnOnly = TRUE)
+    ))
   
-  nlf$reTrms$decov <- prior_covariance
-  algorithm <- match.arg(algorithm)
-  g <- gaussian(link = "identity")
+  nlf <- nlformula(mc)
+  X <- nlf$X
+  y <- nlf$respMod$y
   weights <- nlf$respMod$weights
   offset  <- nlf$respMod$offset
-  stanfit <- stan_glm.fit(x = X, y = y, family = g,
+  
+  nlf$reTrms$SSfun <- SSfun
+  nlf$reTrms$decov <- prior_covariance
+  
+  nlf_inputs <- parse_nlf_inputs(nlf)
+  if (SSfun_char == "SSfol") {
+    nlf$reTrms$Dose <- nlf$frame[[nlf_inputs[2]]]
+    nlf$reTrms$input <- nlf$frame[[nlf_inputs[3]]]
+  } else {
+    nlf$reTrms$input <- nlf$frame[[nlf_inputs[2]]]
+  }
+  
+  
+  algorithm <- match.arg(algorithm)
+  stanfit <- stan_glm.fit(x = X, y = y, family = gaussian(link = "identity"),
                           weights = weights, offset = offset,
                           prior = prior, prior_intercept = NULL,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = QR, sparse = sparse, ...)
-  if (SSfun == 6L) {
+  
+  if (SSfun_char == "SSfpl") { # SSfun = 6
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x[[4L]] <- exp(x[[4L]])
       return(x)
     })
-  }
-  if (SSfun == 8L) {
+  } else if (SSfun_char == "SSlogis") { # SSfun = 8
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x[[3L]] <- exp(x[[3L]])
       return(x)
     })
   }
+  
   Z <- pad_reTrms(Ztlist = nlf$reTrms$Ztlist, cnms = nlf$reTrms$cnms, 
                   flist = nlf$reTrms$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  g$link <- paste("inv", SSfunctions[SSfun], sep = "_")
-  g$linkinv <- function(eta, arg1, arg2 = NULL, FUN = SSfunctions[SSfun]) {
+
+  fit <- nlist(stanfit, 
+               family = make_nlf_family(SSfun_char, nlf), 
+               formula, offset, weights, 
+               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
+               y = y, data, call = match.call(), terms = NULL, model = NULL, 
+               na.action = na.omit, contrasts, algorithm, 
+               glmod = nlf, stan_function = "stan_nlmer")
+  out <- stanreg(fit)
+  class(out) <- c(class(out), "nlmerMod", "lmerMod")
+  return(out)
+}
+
+
+# internal ----------------------------------------------------------------
+
+# @param nlf Object returned by nlformula
+# @return A character vector, the first element of which is the name of the SS
+#   function and the rest of the elements are the names of the arguments to the
+#   SS function
+parse_nlf_inputs <- function(nlf) {
+  inputs <- as.character(nlf$respMod$nlmod[2])
+  inputs <- sub("(", ",", inputs, fixed = TRUE)
+  inputs <- sub(")", "", inputs, fixed = TRUE)
+  scan(
+    text = inputs,
+    what = character(),
+    sep = ",",
+    strip.white = TRUE,
+    quiet = TRUE
+  )
+}
+
+# Make family object 
+# 
+# @param SSfun_char SS function name as a string
+# @param nlf Object returned by nlformula
+# @return A family object
+make_nlf_family <- function(SSfun_char, nlf) {
+  g <- gaussian(link = "identity")
+  g$link <- paste("inv", SSfun_char, sep = "_")
+  g$linkinv <- function(eta, arg1, arg2 = NULL, FUN = SSfun_char) {
     if (is.matrix(eta)) {
       len <- length(arg1)
       nargs <- ncol(eta) / len
       SSargs <- lapply(1:nargs, FUN = function(i) {
         start <- 1 + (i - 1) * len
         end <- i * len
-        t(eta[,start:end, drop = FALSE])
+        t(eta[, start:end, drop = FALSE])
       })
       if (is.null(arg2)) SSargs <- c(list(arg1), SSargs)
       else SSargs <- c(list(arg1, arg2), SSargs)
-    }
-    else {
+    } else {
       SSargs <- as.data.frame(matrix(eta, nrow = length(arg1))) 
       if (is.null(arg2)) SSargs <- cbind(arg1, SSargs)
       else SSargs <- cbind(arg1, arg2, SSargs)
     }
     names(SSargs) <- names(formals(FUN))
-    if (FUN == "SSbiexp") SSargs$A1 <- SSargs$A1 + exp(SSargs$A2)
+    if (FUN == "SSbiexp") 
+      SSargs$A1 <- SSargs$A1 + exp(SSargs$A2)
+    
     do.call(FUN, args = SSargs)
   }
-  if (SSfun == 5) {
-    formals(g$linkinv)$arg1 <- nlf$frame[[inputs[2]]]
-    formals(g$linkinv)$arg2 <- nlf$frame[[inputs[3]]]
+  
+  nlf_inputs <- parse_nlf_inputs(nlf)
+  if (SSfun_char == "SSfol") {
+    formals(g$linkinv)$arg1 <- nlf$frame[[nlf_inputs[2]]]
+    formals(g$linkinv)$arg2 <- nlf$frame[[nlf_inputs[3]]]
+  } else {
+    formals(g$linkinv)$arg1 <- nlf$frame[[nlf_inputs[2]]]
   }
-  else formals(g$linkinv)$arg1 <- nlf$frame[[inputs[2]]]
+  
   g$linkfun  <- function(mu) stop("'linkfun' should not have been called")
   g$variance <- function(mu) stop("'variance' should not have been called")
   g$mu.eta   <- function(mu) stop("'mu.eta' should not have been called")
-  fit <- nlist(stanfit, family = g, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               na.action = na.omit, contrasts, algorithm, glmod = nlf, 
-               stan_function = "stan_nlmer")
-  out <- stanreg(fit)
-  class(out) <- c(class(out), "nlmerMod", "lmerMod")
-  return(out)
+  return(g)
 }
