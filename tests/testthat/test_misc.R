@@ -221,9 +221,7 @@ test_that("check_constant_vars works", {
   expect_equal(check_constant_vars(mf), mf)
   expect_error(check_constant_vars(mf2), "wt")
   mf2$gear <- 1
-  expect_error(check_constant_vars(mf2), "wt") # gear shouldn't trigger it b/c just 1s
-  
-  mf2$gear <- 3
+  expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
   
   capture.output(
