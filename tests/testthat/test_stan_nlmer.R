@@ -52,7 +52,7 @@ test_that("stan_nlmer is similar to nlmer on Orange example", {
   expect_equal(fixef(ml), fixef(fit), tol = threshold)
 })
 
-test_that("stan_polr throws error if formula includes an unknown function", {
+test_that("stan_nlmer throws error if formula includes an unknown function", {
   expect_error(stan_nlmer(circumference ~ SSfoo(age, Asym, xmid, scal) ~ Asym|Tree, 
                           data = Orange),
                regexp = "self-starting nonlinear function")

@@ -27,13 +27,11 @@ pp_data <-
       if (is.nlmer(object))
         out <- .pp_data_nlmer(object, newdata = newdata, re.form = re.form, ...)
       else
-        out <- .pp_data_mer(object, newdata = newdata,
-                            re.form = re.form, ...)
+        out <- .pp_data_mer(object, newdata = newdata, re.form = re.form, ...)
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
-    else
-      .pp_data(object, newdata = newdata, offset = offset, ...)
+    .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
 # for models without lme4 structure
@@ -92,20 +90,13 @@ pp_data <-
 
 # for models fit using stan_nlmer
 .pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, ...) {
-  inputs <- as.character(object$glmod$respMod$nlmod[2])
-  inputs <- sub("(", ",", inputs, fixed = TRUE)
-  inputs <- sub(")", "", inputs, fixed = TRUE)
-  inputs <- scan(text = inputs, what = character(), sep = ",", 
-                 strip.white = TRUE, quiet = TRUE)
-
+  inputs <- parse_nlf_inputs(object$glmod$respMod)
   if (is.null(newdata)) {
     arg1 <- arg2 <- NULL
-  }
-  else if (object$family$link == "inv_SSfol") {
+  } else if (object$family$link == "inv_SSfol") {
     arg1 <- newdata[[inputs[2]]]
     arg2 <- newdata[[inputs[3]]]
-  }
-  else {
+  } else {
     arg1 <- newdata[[inputs[2]]]
     arg2 <- NULL
   }

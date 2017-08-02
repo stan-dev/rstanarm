@@ -95,11 +95,12 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
 # @return a function
 ll_fun <- function(x) {
   validate_stanreg_object(x)
-  f <- family(x)
-  if (!is(f, "family") || is_scobit(x))
+  if (is_polr(x) || is_scobit(x))
     return(.ll_polr_i)
-  if (is.nlmer(x)) return(.ll_nlmer_i)
-  fun <- paste0(".ll_", f$family, "_i")
+  if (is.nlmer(x)) 
+    return(.ll_nlmer_i)
+  
+  fun <- paste0(".ll_", family(x)$family, "_i")
   get(fun, mode = "function")
 }
 
@@ -141,7 +142,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     y <- get_y(object)
   }
   
-  if (is(f, "family") && !is_scobit(object)) {
+  if (!is_polr(object)) { # not polr or scobit model
     fname <- f$family
     if (is.nlmer(object)) {
       draws <- list(mu = posterior_linpred(object, newdata = newdata),
@@ -151,8 +152,8 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       if (model_has_weights(object))
         data$weights <- object$weights
       return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
-    }
-    else if (!is.binomial(fname)) {
+      
+    } else if (!is.binomial(fname)) {
       data <- data.frame(y, x)
     } else {
       if (NCOL(y) == 2L) {
@@ -190,7 +191,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       }
     }
   } else {
-    stopifnot(is(object, "polr"))
+    stopifnot(is_polr(object))
     y <- as.integer(y)
     if (has_newdata) 
       x <- .validate_polr_x(object, x)
@@ -200,7 +201,9 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) {
+    if ("alpha" %in% colnames(stanmat)) { 
+      stopifnot(is_scobit(object))
+      # scobit
       draws$alpha <- stanmat[, "alpha"]
       draws$f <- object$method
     }

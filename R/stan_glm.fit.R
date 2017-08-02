@@ -291,8 +291,7 @@ stan_glm.fit <-
       standata$SSfun <- 0L
       standata$input <- double()
       standata$Dose <- double()
-    }
-    else {
+    } else {
       standata$SSfun <- group$SSfun
       standata$input <- group$input
       if (group$SSfun == 5) standata$Dose <- group$Dose

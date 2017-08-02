@@ -127,7 +127,7 @@ stan_nlmer <-
   nlf$reTrms$SSfun <- SSfun
   nlf$reTrms$decov <- prior_covariance
   
-  nlf_inputs <- parse_nlf_inputs(nlf)
+  nlf_inputs <- parse_nlf_inputs(nlf$respMod)
   if (SSfun_char == "SSfol") {
     nlf$reTrms$Dose <- nlf$frame[[nlf_inputs[2]]]
     nlf$reTrms$input <- nlf$frame[[nlf_inputs[3]]]
@@ -175,12 +175,12 @@ stan_nlmer <-
 
 # internal ----------------------------------------------------------------
 
-# @param nlf Object returned by nlformula
+# @param respMod The respMod slot of the object returned by nlformula
 # @return A character vector, the first element of which is the name of the SS
 #   function and the rest of the elements are the names of the arguments to the
 #   SS function
-parse_nlf_inputs <- function(nlf) {
-  inputs <- as.character(nlf$respMod$nlmod[2])
+parse_nlf_inputs <- function(respMod) {
+  inputs <- as.character(respMod$nlmod[2])
   inputs <- sub("(", ",", inputs, fixed = TRUE)
   inputs <- sub(")", "", inputs, fixed = TRUE)
   scan(
@@ -223,7 +223,7 @@ make_nlf_family <- function(SSfun_char, nlf) {
     do.call(FUN, args = SSargs)
   }
   
-  nlf_inputs <- parse_nlf_inputs(nlf)
+  nlf_inputs <- parse_nlf_inputs(nlf$respMod)
   if (SSfun_char == "SSfol") {
     formals(g$linkinv)$arg1 <- nlf$frame[[nlf_inputs[2]]]
     formals(g$linkinv)$arg2 <- nlf$frame[[nlf_inputs[3]]]
