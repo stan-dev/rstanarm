@@ -18,7 +18,7 @@ software otherwise.
 
 ### Latest Release
 The most recent **rstanarm** release can be installed from CRAN via
-```{r}
+```r
 install.packages("rstanarm")
 ```
 
@@ -29,7 +29,7 @@ package and C++ toolchain by following these
 Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **devtools** package by executing the following in R:
 
-```{r}
+```r
 if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
