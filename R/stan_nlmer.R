@@ -63,6 +63,10 @@
 #'   \code{\link[stats]{SSgompertz}}, \code{\link[stats]{SSlogis}},
 #'   \code{\link[stats]{SSmicmen}}, and \code{\link[stats]{SSweibull}}.
 #'   
+#'   
+#' @seealso The vignette for \code{stan_glmer}, which also discusses 
+#'   \code{stan_nlmer} models.
+#'   
 #' @examples
 #' \donttest{
 #' data("Orange", package = "datasets")
