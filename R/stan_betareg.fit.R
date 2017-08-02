@@ -19,22 +19,22 @@
 #' @export
 #' @param z For \code{stan_betareg.fit}, a regressor matrix for \code{phi}.
 #'   Defaults to an intercept only.
-stan_betareg.fit <- function(x, y, z = NULL, 
-                             weights = rep(1, NROW(x)), 
-                             offset = rep(0, NROW(x)),
-                             link = c("logit", "probit", "cloglog", 
-                                      "cauchit", "log", "loglog"), 
-                             link.phi = NULL, ...,
-                             prior = normal(), 
-                             prior_intercept = normal(),
-                             prior_z = normal(), 
-                             prior_intercept_z = normal(),
-                             prior_phi = cauchy(0, 5),
-                             prior_PD = FALSE, 
-                             algorithm = c("sampling", "optimizing", 
-                                           "meanfield", "fullrank"),
-                             adapt_delta = NULL, 
-                             QR = FALSE) {
+#'   
+stan_betareg.fit <- 
+  function(x, y, z = NULL, 
+           weights = rep(1, NROW(x)), 
+           offset = rep(0, NROW(x)),
+           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
+           link.phi = NULL, ...,
+           prior = normal(), 
+           prior_intercept = normal(),
+           prior_z = normal(), 
+           prior_intercept_z = normal(),
+           prior_phi = exponential(),
+           prior_PD = FALSE, 
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           adapt_delta = NULL, 
+           QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   

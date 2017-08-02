@@ -81,15 +81,25 @@
 #' 
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t cBind
-stan_glmer <- function(formula, data = NULL, family = gaussian, 
-                       subset, weights, 
-                       na.action = getOption("na.action", "na.omit"), 
-                       offset, contrasts = NULL, ...,
-                       prior = normal(), prior_intercept = normal(),
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+stan_glmer <- 
+  function(formula,
+           data = NULL,
+           family = gaussian,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
   
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
@@ -144,22 +154,23 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function(formula,
-                      data = NULL,
-                      subset,
-                      weights,
-                      na.action = getOption("na.action", "na.omit"),
-                      offset,
-                      contrasts = NULL,
-                      ...,
-                      prior = normal(),
-                      prior_intercept = normal(),
-                      prior_aux = cauchy(0, 5),
-                      prior_covariance = decov(),
-                      prior_PD = FALSE,
-                      algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = NULL,
-                      QR = FALSE) {
+stan_lmer <- 
+  function(formula,
+           data = NULL,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
@@ -180,23 +191,25 @@ stan_lmer <- function(formula,
 #' @param link For \code{stan_glmer.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 #' 
-stan_glmer.nb <- function(formula,
-                          data = NULL,
-                          subset,
-                          weights,
-                          na.action = getOption("na.action", "na.omit"),
-                          offset,
-                          contrasts = NULL,
-                          link = "log",
-                          ...,
-                          prior = normal(),
-                          prior_intercept = normal(),
-                          prior_aux = cauchy(0, 5),
-                          prior_covariance = decov(),
-                          prior_PD = FALSE,
-                          algorithm = c("sampling", "meanfield", "fullrank"),
-                          adapt_delta = NULL,
-                          QR = FALSE) {
+stan_glmer.nb <- 
+  function(formula,
+           data = NULL,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           link = "log",
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
+    
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)

@@ -112,16 +112,28 @@
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 #' 
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
-                       weights = NULL, subset = NULL, na.action, knots = NULL, 
-                       drop.unused.levels = TRUE, ..., 
-                       prior = normal(), prior_intercept = normal(),
-                       prior_smooth = exponential(autoscale = FALSE), 
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-
+stan_gamm4 <-
+  function(formula,
+           random = NULL,
+           family = gaussian(),
+           data,
+           weights = NULL,
+           subset = NULL,
+           na.action,
+           knots = NULL,
+           drop.unused.levels = TRUE,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   

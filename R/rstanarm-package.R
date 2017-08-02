@@ -191,7 +191,7 @@
 #'   package used by \pkg{rstanarm} for model fitting.
 #'   \item \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
-#'   \item \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a
+#'   \item \url{http://discourse.mc-stan.org} to ask a
 #'   question about \pkg{rstanarm} on the Stan-users forum.
 #' }
 #'
