@@ -28,8 +28,11 @@
 #' @import stats
 #' @import Rcpp
 #' @import bayesplot
+#' @import shinystan
 #' @import rstantools
-#' @export log_lik posterior_linpred posterior_predict posterior_interval predictive_interval predictive_error prior_summary loo_linpred loo_predict loo_predictive_interval
+#' @export log_lik posterior_linpred posterior_predict posterior_interval 
+#' @export predictive_interval predictive_error prior_summary bayes_R2
+#' @export loo_linpred loo_predict loo_predictive_interval 
 #' @export loo waic
 #' @export launch_shinystan
 #'
@@ -191,7 +194,7 @@
 #'   package used by \pkg{rstanarm} for model fitting.
 #'   \item \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
-#'   \item \url{https://groups.google.com/forum/#!forum/stan-users/} to ask a
+#'   \item \url{http://discourse.mc-stan.org} to ask a
 #'   question about \pkg{rstanarm} on the Stan-users forum.
 #' }
 #'

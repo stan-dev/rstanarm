@@ -150,7 +150,7 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   
   # prior_aux can't be NULL if prior_PD is TRUE
   expect_error(stan_glm(mpg ~ wt, data = mtcars, prior_aux = NULL, prior_PD = TRUE),
-               "'prior_aux' can't be NULL if 'prior_PD' is TRUE")
+               "'prior_aux' cannot be NULL if 'prior_PD' is TRUE")
 })
 
 context("stan_glm (gaussian)")
@@ -415,7 +415,7 @@ test_that("prior_options is deprecated", {
   )
   expect_output(
     print(prior_summary(fit)), 
-    "~ half-cauchy(location = 0, scale = 3)", 
+    "~ exponential(rate = 0.33)", 
     fixed = TRUE
   )
 })
@@ -443,13 +443,14 @@ test_that("posterior_predict compatible with glms", {
   mtcars2 <- mtcars
   mtcars2$offs <- runif(nrow(mtcars))
   fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
+                      prior_intercept = NULL, prior = NULL, prior_aux = NULL,
                       iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
   expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
                  "offset")
   check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)
   check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
   expect_linpred_equal(fit_gaus)
-  expect_linpred_equal(fit2)
+  # expect_linpred_equal(fit2)
   
   check_for_error(fit_pois)
   check_for_error(fit_negbin)
