@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -488,7 +494,7 @@ informative default prior distribution for logistic and other regression
 models. <em>Annals of Applied Statistics</em>. 2(4), 1360--1383.</p>
 <p>Piironen, J., and Vehtari, A. (2015). Projection predictive variable
 selection using Stan+R. <a href = 'http://arxiv.org/abs/1508.02502/'>http://arxiv.org/abs/1508.02502/</a></p>
-<p>Stan Development Team. (2016). <em>Stan Modeling Language Users Guide and
+<p>Stan Development Team. (2017). <em>Stan Modeling Language Users Guide and
 Reference Manual.</em> <a href = 'http://mc-stan.org/documentation/'>http://mc-stan.org/documentation/</a></p>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
@@ -505,110 +511,141 @@ Reference Manual.</em> <a href = 'http://mc-stan.org/documentation/'>http://mc-s
                            <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>250</span>, <span class='co'># for speed only</span>
                            <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'>student_t</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='fl'>0</span>, <span class='fl'>2.5</span>),
                            <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'>cauchy</span>(<span class='fl'>0</span>,<span class='fl'>10</span>),
-                           <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'>exponential</span>(<span class='fl'>1</span>/<span class='fl'>2</span>))</div><div class='output co'>#&gt; 
+                           <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'>exponential</span>(<span class='fl'>1</span>/<span class='fl'>2</span>))</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; WARNING: The initial buffer, adaptation window, and terminal buffer
-#&gt;          overflow the total number of warmup iterations.
-#&gt;          Defaulting to a 15%/75%/10% partition,
+#&gt; 
+#&gt; Gradient evaluation took 3.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; WARNING: There aren't enough warmup iterations to fit the
+#&gt;          three stages of adaptation as currently configured.
+#&gt;          Reducing each adaptation stage to 15%/75%/10% of
+#&gt;          the given number of warmup iterations:
 #&gt;            init_buffer = 18
 #&gt;            adapt_window = 95
 #&gt;            term_buffer = 12
 #&gt; 
+#&gt; Iteration:   1 / 250 [  0%]  (Warmup)
+#&gt; Iteration:  25 / 250 [ 10%]  (Warmup)
+#&gt; Iteration:  50 / 250 [ 20%]  (Warmup)
+#&gt; Iteration:  75 / 250 [ 30%]  (Warmup)
+#&gt; Iteration: 100 / 250 [ 40%]  (Warmup)
+#&gt; Iteration: 125 / 250 [ 50%]  (Warmup)
+#&gt; Iteration: 126 / 250 [ 50%]  (Sampling)
+#&gt; Iteration: 150 / 250 [ 60%]  (Sampling)
+#&gt; Iteration: 175 / 250 [ 70%]  (Sampling)
+#&gt; Iteration: 200 / 250 [ 80%]  (Sampling)
+#&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
+#&gt; Iteration: 250 / 250 [100%]  (Sampling)
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 250 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  25 / 250 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  50 / 250 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  75 / 250 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 250 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 125 / 250 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 126 / 250 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 150 / 250 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 175 / 250 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 200 / 250 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 225 / 250 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 250 / 250 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.052076 seconds (Warm-up)
-#&gt;                0.184071 seconds (Sampling)
-#&gt;                0.236147 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>plot</span>(<span class='no'>prior_pred_fit</span>, <span class='st'>"hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='priors-6.png' alt='' width='540' height='400' /><div class='input'>
+#&gt;  Elapsed Time: 0.094336 seconds (Warm-up)
+#&gt;                0.062335 seconds (Sampling)
+#&gt;                0.156671 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>plot</span>(<span class='no'>prior_pred_fit</span>, <span class='st'>"hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='priors-7.png' alt='' width='540' height='400' /><div class='input'>
 
 <span class='co'># Can assign priors to names</span>
 <span class='no'>N05</span> <span class='kw'>&lt;-</span> <span class='fu'>normal</span>(<span class='fl'>0</span>, <span class='fl'>5</span>)
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>fmla</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>N05</span>, <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='no'>N05</span>)</div><div class='output co'>#&gt; 
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>fmla</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>N05</span>, <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='no'>N05</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.593168 seconds (Warm-up)
-#&gt;                0.105718 seconds (Sampling)
-#&gt;                0.698886 seconds (Total)
+#&gt; Gradient evaluation took 3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.3 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.627542 seconds (Warm-up)
+#&gt;                0.123594 seconds (Sampling)
+#&gt;                0.751136 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.104781 seconds (Warm-up)
-#&gt;                0.091882 seconds (Sampling)
-#&gt;                0.196663 seconds (Total)
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.12095 seconds (Warm-up)
+#&gt;                0.100418 seconds (Sampling)
+#&gt;                0.221368 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.104507 seconds (Warm-up)
-#&gt;                0.093368 seconds (Sampling)
-#&gt;                0.197875 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.122652 seconds (Warm-up)
+#&gt;                0.098414 seconds (Sampling)
+#&gt;                0.221066 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.113088 seconds (Warm-up)
-#&gt;                0.104635 seconds (Sampling)
-#&gt;                0.217723 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.121551 seconds (Warm-up)
+#&gt;                0.107123 seconds (Sampling)
+#&gt;                0.228674 seconds (Total)
 #&gt; </div><div class='input'>
 
 <span class='co'># Visually compare normal, student_t, cauchy, laplace, and product_normal</span>
@@ -638,15 +675,15 @@ Reference Manual.</em> <a href = 'http://mc-stan.org/documentation/'>http://mc-s
               <span class='kw'>args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1</span>))
 }
 <span class='co'># Cauchy has fattest tails, followed by student_t, laplace, and normal</span>
-<span class='fu'>compare_priors</span>()</div><img src='priors-10.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>compare_priors</span>()</div><img src='priors-12.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># The student_t with df = 1 is the same as the cauchy</span>
-<span class='fu'>compare_priors</span>(<span class='kw'>df_t</span> <span class='kw'>=</span> <span class='fl'>1</span>)</div><img src='priors-12.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>compare_priors</span>(<span class='kw'>df_t</span> <span class='kw'>=</span> <span class='fl'>1</span>)</div><img src='priors-14.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Even a scale of 5 is somewhat large. It gives plausibility to rather </span>
 <span class='co'># extreme values</span>
-<span class='fu'>compare_priors</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='fu'>c</span>(-<span class='fl'>20</span>,<span class='fl'>20</span>))</div><img src='priors-14.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>compare_priors</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>5</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='fu'>c</span>(-<span class='fl'>20</span>,<span class='fl'>20</span>))</div><img src='priors-16.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># If you use a prior like normal(0, 1000) to be "non-informative" you are </span>
 <span class='co'># actually saying that a coefficient value of e.g. -500 is quite plausible</span>
-<span class='fu'>compare_priors</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='fu'>c</span>(-<span class='fl'>1000</span>,<span class='fl'>1000</span>))</div><img src='priors-16.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>compare_priors</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='fu'>c</span>(-<span class='fl'>1000</span>,<span class='fl'>1000</span>))</div><img src='priors-18.png' alt='' width='540' height='400' /><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -213,151 +219,187 @@ actual values of the variables. See the <strong>Examples</strong> section, below
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glmer.html'>stan_glmer</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>am</span> + (<span class='fl'>1</span><span class='kw'>|</span><span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>,
-                  <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>) <span class='co'># just to keep example quick</span></div><div class='output co'>#&gt; 
+                  <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>400</span>, <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>) <span class='co'># just to keep example quick</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 400 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  40 / 400 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  80 / 400 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 120 / 400 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 160 / 400 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 400 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 201 / 400 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 240 / 400 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 280 / 400 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 320 / 400 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 360 / 400 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 400 / 400 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.151889 seconds (Warm-up)
-#&gt;                0.056664 seconds (Sampling)
-#&gt;                0.208553 seconds (Total)
+#&gt; Gradient evaluation took 3.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.33 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 400 [  0%]  (Warmup)
+#&gt; Iteration:  40 / 400 [ 10%]  (Warmup)
+#&gt; Iteration:  80 / 400 [ 20%]  (Warmup)
+#&gt; Iteration: 120 / 400 [ 30%]  (Warmup)
+#&gt; Iteration: 160 / 400 [ 40%]  (Warmup)
+#&gt; Iteration: 200 / 400 [ 50%]  (Warmup)
+#&gt; Iteration: 201 / 400 [ 50%]  (Sampling)
+#&gt; Iteration: 240 / 400 [ 60%]  (Sampling)
+#&gt; Iteration: 280 / 400 [ 70%]  (Sampling)
+#&gt; Iteration: 320 / 400 [ 80%]  (Sampling)
+#&gt; Iteration: 360 / 400 [ 90%]  (Sampling)
+#&gt; Iteration: 400 / 400 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.213775 seconds (Warm-up)
+#&gt;                0.11429 seconds (Sampling)
+#&gt;                0.328065 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 400 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  40 / 400 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  80 / 400 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration: 120 / 400 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 160 / 400 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 200 / 400 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 201 / 400 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 240 / 400 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 280 / 400 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 320 / 400 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 360 / 400 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 400 / 400 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.154093 seconds (Warm-up)
-#&gt;                0.058428 seconds (Sampling)
-#&gt;                0.212521 seconds (Total)
+#&gt; Gradient evaluation took 2.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 400 [  0%]  (Warmup)
+#&gt; Iteration:  40 / 400 [ 10%]  (Warmup)
+#&gt; Iteration:  80 / 400 [ 20%]  (Warmup)
+#&gt; Iteration: 120 / 400 [ 30%]  (Warmup)
+#&gt; Iteration: 160 / 400 [ 40%]  (Warmup)
+#&gt; Iteration: 200 / 400 [ 50%]  (Warmup)
+#&gt; Iteration: 201 / 400 [ 50%]  (Sampling)
+#&gt; Iteration: 240 / 400 [ 60%]  (Sampling)
+#&gt; Iteration: 280 / 400 [ 70%]  (Sampling)
+#&gt; Iteration: 320 / 400 [ 80%]  (Sampling)
+#&gt; Iteration: 360 / 400 [ 90%]  (Sampling)
+#&gt; Iteration: 400 / 400 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.165519 seconds (Warm-up)
+#&gt;                0.101238 seconds (Sampling)
+#&gt;                0.266757 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'># Compare distribution of y to distributions of multiple yrep datasets</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>)</div><img src='pp_check.stanreg-4.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"boxplot"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>notch</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><img src='pp_check.stanreg-6.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-9.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>)</div><img src='pp_check.stanreg-5.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"boxplot"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>notch</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><img src='pp_check.stanreg-7.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-10.png' alt='' width='540' height='400' /><div class='input'>
 
 <span class='co'># Same plot (up to RNG noise) using bayesplot package directly</span>
-<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_hist</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>3</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-12.png' alt='' width='540' height='400' /><div class='input'>
+<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_hist</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>3</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-13.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Check histograms of test statistics by level of grouping variable 'cyl'</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"median"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='st'>"cyl"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-15.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"median"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='st'>"cyl"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-16.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Defining a custom test statistic</span>
 <span class='no'>q25</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>y</span>) <span class='fu'>quantile</span>(<span class='no'>y</span>, <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fl'>0.25</span>)
 <span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"q25"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='st'>"cyl"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in get(as.character(FUN), mode = "function", envir = envir): object 'q25' of mode 'function' was not found</span></div><div class='input'>
 <span class='co'># Scatterplot of two test statistics</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_2d"</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"mean"</span>, <span class='st'>"sd"</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: The following arguments were unrecognized and ignored: test</span></div><img src='pp_check.stanreg-20.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_2d"</span>, <span class='kw'>test</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"mean"</span>, <span class='st'>"sd"</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: The following arguments were unrecognized and ignored: test</span></div><img src='pp_check.stanreg-21.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Scatterplot of y vs. average yrep</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"scatter_avg"</span>) <span class='co'># y vs. average yrep</span></div><img src='pp_check.stanreg-22.png' alt='' width='540' height='400' /><div class='input'><span class='co'># Same plot (up to RNG noise) using bayesplot package directly</span>
-<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_scatter_avg</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>))</div><img src='pp_check.stanreg-24.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"scatter_avg"</span>) <span class='co'># y vs. average yrep</span></div><img src='pp_check.stanreg-23.png' alt='' width='540' height='400' /><div class='input'><span class='co'># Same plot (up to RNG noise) using bayesplot package directly</span>
+<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_scatter_avg</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>))</div><img src='pp_check.stanreg-25.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Scatterplots of y vs. several individual yrep datasets</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"scatter"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><img src='pp_check.stanreg-26.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"scatter"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>3</span>)</div><img src='pp_check.stanreg-27.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Same plot (up to RNG noise) using bayesplot package directly</span>
-<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_scatter</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>3</span>))</div><img src='pp_check.stanreg-28.png' alt='' width='540' height='400' /><div class='input'>
+<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_scatter</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>3</span>))</div><img src='pp_check.stanreg-29.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># yrep intervals with y points overlaid</span>
 <span class='co'># by default 1:length(y) used on x-axis but can also specify an x variable</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>)</div><div class='output co'>#&gt; <span class='message'>'x' not specified in '...'. Using x=1:length(y).</span></div><img src='pp_check.stanreg-31.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='st'>"wt"</span>) + <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-33.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>)</div><div class='output co'>#&gt; <span class='message'>'x' not specified in '...'. Using x=1:length(y).</span></div><img src='pp_check.stanreg-32.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='st'>"wt"</span>) + <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-34.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Same plot (up to RNG noise) using bayesplot package directly</span>
 <span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>ppc_intervals</span>(<span class='kw'>y</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>mpg</span>, <span class='kw'>yrep</span> <span class='kw'>=</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>),
-                         <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>wt</span>) + <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-35.png' alt='' width='540' height='400' /><div class='input'>
+                         <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>wt</span>) + <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-36.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># predictive errors</span>
-<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>6</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-38.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_scatter_avg_vs_x"</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='st'>"wt"</span>) +
-  <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-40.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>6</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='pp_check.stanreg-39.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_scatter_avg_vs_x"</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='st'>"wt"</span>) +
+  <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>xlab</span>(<span class='st'>"wt"</span>)</div><img src='pp_check.stanreg-41.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Example of a PPC for ordinal models (stan_polr)</span>
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_polr.html'>stan_polr</a></span>(<span class='no'>tobgp</span> ~ <span class='no'>agegp</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>esoph</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"probit"</span>,
-                  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.2</span>, <span class='st'>"mean"</span>), <span class='kw'>init_r</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)</div><div class='output co'>#&gt; 
+                  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.2</span>, <span class='st'>"mean"</span>), <span class='kw'>init_r</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.804461 seconds (Warm-up)
-#&gt;                0.865677 seconds (Sampling)
-#&gt;                1.67014 seconds (Total)
+#&gt; Gradient evaluation took 7.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.72 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.809194 seconds (Warm-up)
+#&gt;                0.479581 seconds (Sampling)
+#&gt;                1.28878 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.464984 seconds (Warm-up)
-#&gt;                0.500963 seconds (Sampling)
-#&gt;                0.965947 seconds (Total)
+#&gt; Gradient evaluation took 3.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.658534 seconds (Warm-up)
+#&gt;                0.675658 seconds (Sampling)
+#&gt;                1.33419 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.471622 seconds (Warm-up)
-#&gt;                0.531969 seconds (Sampling)
-#&gt;                1.00359 seconds (Total)
+#&gt; Gradient evaluation took 3.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.593395 seconds (Warm-up)
+#&gt;                0.511427 seconds (Sampling)
+#&gt;                1.10482 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'polr' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.492678 seconds (Warm-up)
-#&gt;                0.562453 seconds (Sampling)
-#&gt;                1.05513 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-44.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars_grouped"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='no'>esoph</span>$<span class='no'>agegp</span>,
-         <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-46.png' alt='' width='540' height='400' /><div class='input'>
+#&gt; Gradient evaluation took 4.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.47 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.635158 seconds (Warm-up)
+#&gt;                0.715262 seconds (Sampling)
+#&gt;                1.35042 seconds (Total)
+#&gt; </div><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-46.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>pp_check</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"bars_grouped"</span>, <span class='kw'>group</span> <span class='kw'>=</span> <span class='no'>esoph</span>$<span class='no'>agegp</span>,
+         <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><img src='pp_check.stanreg-48.png' alt='' width='540' height='400' /><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

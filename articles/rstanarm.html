@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>How to Use the rstanarm Package</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -186,26 +192,26 @@ education -0.3 -0.24</code></pre>
 <p>Many of the postestimation methods that are available for a model that is estimated by <code>glm</code> are also available for a model that is estimated by <code>stan_glm</code>. For example,</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">cbind</span>(<span class="dt">Median =</span> <span class="kw">coef</span>(womensrole_bglm_1), <span class="dt">MAD_SD =</span> <span class="kw"><a href="../reference/se.html">se</a></span>(womensrole_bglm_1))</code></pre></div>
 <pre><code>                   Median     MAD_SD
-(Intercept)   2.500737429 0.18424713
-education    -0.269810052 0.01510290
-genderFemale -0.009606861 0.08951722</code></pre>
+(Intercept)   2.511721939 0.19362514
+education    -0.271503131 0.01595837
+genderFemale -0.007969803 0.08154524</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">residuals</span>(womensrole_bglm_1)) <span class="co"># not deviance residuals</span></code></pre></div>
 <pre><code>      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
--0.3055730 -0.0371733 -0.0042197  0.0000191  0.0658278  0.2814299 
+-0.3062319 -0.0354536 -0.0021802  0.0007276  0.0669976  0.2824652 
       NA's 
          1 </code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">cov2cor</span>(<span class="kw">vcov</span>(womensrole_bglm_1))</code></pre></div>
-<pre><code>             (Intercept)    education genderFemale
-(Intercept)    1.0000000 -0.941367098 -0.249637470
-education     -0.9413671  1.000000000 -0.009036805
-genderFemale  -0.2496375 -0.009036805  1.000000000</code></pre>
+<pre><code>             (Intercept)   education genderFemale
+(Intercept)    1.0000000 -0.94264345  -0.22891806
+education     -0.9426435  1.00000000  -0.02283533
+genderFemale  -0.2289181 -0.02283533   1.00000000</code></pre>
 <p><strong>rstanarm</strong> does provide a <code>confint</code> method, although it is reserved for computing confidence intervals in the case that the user elects to estimate a model by (penalized) maximum likelihood. When using full Bayesian inference (the <strong>rstanarm</strong> default) or approximate Bayesian inference the <code>posterior_interval</code> function should be used to obtain Bayesian uncertainty intervals.</p>
 </div>
 <div id="step-3-criticize-the-model" class="section level1">
 <h1 class="hasAnchor">
 <a href="#step-3-criticize-the-model" class="anchor"></a>Step 3: Criticize the model</h1>
 <p>The <code>launch_shinystan</code> function in the <strong>shinystan</strong> package provides almost all the tools you need to visualize the posterior distribution and diagnose any problems with the Markov chains. In this case, the results are fine and to verify that, you can call</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/shinystan.html">launch_shinystan</a></span>(womensrole_bglm_1)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/launch_shinystan.stanreg.html">launch_shinystan</a></span>(womensrole_bglm_1)</code></pre></div>
 <p>which will open a web browser that drives the visualizations.</p>
 <p>For the rest of this subsection, we focus on what users can do programatically to evaluate whether a model is adequate. A minimal requirement for a Bayesian estimates is that the model should fit the data that the estimates conditioned on. The key function here is <code>posterior_predict</code>, which can be passed a new <code>data.frame</code> to predict out-of-sample, but in this case is omitted to obtain in-sample posterior predictions:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y_rep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(womensrole_bglm_1)
@@ -248,7 +254,7 @@ Posterior predictive boxplots vs. observed datapoints
 
 Estimates:
                Median MAD_SD
-(Intercept)     2.0    0.4  
+(Intercept)     2.1    0.4  
 education      -0.2    0.1  
 genderFemale    0.0    0.1  
 I(education^2)  0.0    0.0  
@@ -271,15 +277,15 @@ loo_bglm_2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/
 <p>There are only one or two moderate outliers (whose statistics are greater than <span class="math inline">\(0.5\)</span>), which should not have too much of an effect on the resulting model comparison:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo_bglm_1, loo_bglm_2)</code></pre></div>
 <pre><code>elpd_diff        se 
-     -0.6       1.7 </code></pre>
+     -0.4       1.6 </code></pre>
 <p>In this case, there is little difference in the expected log pointwise deviance between the two models, so we are essentially indifferent between them after taking into account that the second model estimates an additional parameter. The “LOO Information Criterion (LOOIC)”</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">loo_bglm_1</code></pre></div>
 <pre><code>Computed from 2000 by 42 log-likelihood matrix
 
          Estimate   SE
-elpd_loo   -104.9  9.5
-p_loo         4.3  1.7
-looic       209.9 18.9
+elpd_loo   -104.8  9.5
+p_loo         4.1  1.7
+looic       209.6 18.9
 
 Pareto k diagnostic values:
                          Count  Pct 
@@ -305,7 +311,7 @@ newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 y_rep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(womensrole_bglm_2, newdata)
 <span class="kw">summary</span>(<span class="kw">apply</span>(y_rep, <span class="dv">1</span>, diff))</code></pre></div>
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
- -40.00  -23.00  -20.00  -19.73  -16.00    0.00 </code></pre>
+ -37.00  -24.00  -20.00  -19.68  -16.00    3.00 </code></pre>
 <p>As can be seen, out of <span class="math inline">\(100\)</span> women who have a college degree versus <span class="math inline">\(100\)</span> women with only a high school degree, we would expect about <span class="math inline">\(20\)</span> fewer college-educated women to agree with the question. There is an even chance that the difference is between <span class="math inline">\(24\)</span> and <span class="math inline">\(16\)</span>, a one-in-four chance that it is greater, and one-in-four chance that it is less.</p>
 </div>
 <div id="troubleshooting" class="section level1">
@@ -323,7 +329,7 @@ y_rep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/poste
 <p>To illustrate how to check the Rhat values after fitting a model using <strong>rstanarm</strong> we’ll fit two models and run them for different numbers of iterations.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bad_rhat &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(mpg ~<span class="st"> </span>., <span class="dt">data =</span> mtcars, <span class="dt">iter =</span> <span class="dv">20</span>, 
                      <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
-<pre><code>Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+<pre><code>Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
 http://mc-stan.org/misc/warnings.html#bfmi-low</code></pre>
 <pre><code>Warning: Examine the pairs() plot to diagnose sampling problems</code></pre>
 <pre><code>Warning: Markov chains did not converge! Do not analyze results!</code></pre>
@@ -332,8 +338,12 @@ http://mc-stan.org/misc/warnings.html#bfmi-low</code></pre>
 <p>Here the first model leads to the warning message about convergence but the second model does not. Indeed, we can see that not all Rhat values are less than 1.1 for the first model:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rhat &lt;-<span class="st"> </span><span class="kw">summary</span>(bad_rhat)[, <span class="st">"Rhat"</span>]
 rhat[rhat &gt;<span class="st"> </span><span class="fl">1.1</span>]</code></pre></div>
-<pre><code>(Intercept)        qsec 
-   1.207094    1.378077 </code></pre>
+<pre><code>  (Intercept)           cyl          drat            wt          qsec 
+     1.743859      2.368873      2.350389      1.455182      1.629435 
+           vs            am          gear          carb      mean_PPD 
+     2.621104      1.179946      1.706341      1.905054      3.095258 
+log-posterior 
+     1.569076 </code></pre>
 <p>Since we didn’t get a warning for the second model we shouldn’t find any parameters with an Rhat greater than 1.1:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">any</span>(<span class="kw">summary</span>(good_rhat)[, <span class="st">"Rhat"</span>] &gt;<span class="st"> </span><span class="fl">1.1</span>)</code></pre></div>
 <pre><code>[1] FALSE</code></pre>

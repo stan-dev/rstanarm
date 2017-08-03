@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -295,721 +301,1288 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
+<span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.072904 seconds (Warm-up)
-#&gt;                0.059003 seconds (Sampling)
-#&gt;                0.131907 seconds (Total)
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.057294 seconds (Warm-up)
+#&gt;                0.054536 seconds (Sampling)
+#&gt;                0.11183 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.075142 seconds (Warm-up)
-#&gt;                0.053143 seconds (Sampling)
-#&gt;                0.128285 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.048153 seconds (Warm-up)
+#&gt;                0.048867 seconds (Sampling)
+#&gt;                0.09702 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.051645 seconds (Warm-up)
-#&gt;                0.06786 seconds (Sampling)
-#&gt;                0.119505 seconds (Total)
+#&gt; Gradient evaluation took 6.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.62 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.058356 seconds (Warm-up)
+#&gt;                0.050894 seconds (Sampling)
+#&gt;                0.10925 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.064098 seconds (Warm-up)
-#&gt;                0.054378 seconds (Sampling)
-#&gt;                0.118476 seconds (Total)
-#&gt; </div><div class='input'><span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.055578 seconds (Warm-up)
+#&gt;                0.057168 seconds (Sampling)
+#&gt;                0.112746 seconds (Total)
+#&gt; </div><div class='input'><span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.088043 seconds (Warm-up)
-#&gt;                0.085084 seconds (Sampling)
-#&gt;                0.173127 seconds (Total)
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.101569 seconds (Warm-up)
+#&gt;                0.079627 seconds (Sampling)
+#&gt;                0.181196 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.089967 seconds (Warm-up)
-#&gt;                0.0836 seconds (Sampling)
-#&gt;                0.173567 seconds (Total)
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.104045 seconds (Warm-up)
+#&gt;                0.075794 seconds (Sampling)
+#&gt;                0.179839 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.086301 seconds (Warm-up)
-#&gt;                0.081664 seconds (Sampling)
-#&gt;                0.167965 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.083128 seconds (Warm-up)
+#&gt;                0.076572 seconds (Sampling)
+#&gt;                0.1597 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.083475 seconds (Warm-up)
-#&gt;                0.081028 seconds (Sampling)
-#&gt;                0.164503 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.082594 seconds (Warm-up)
+#&gt;                0.081841 seconds (Sampling)
+#&gt;                0.164435 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'># compare on LOOIC</span>
 (<span class='no'>loo1</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>))</div><div class='output co'>#&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
-#&gt; elpd_loo    -83.3 4.2
-#&gt; p_loo         3.0 1.1
-#&gt; looic       166.6 8.4
+#&gt; elpd_loo    -83.5 4.3
+#&gt; p_loo         3.3 1.2
+#&gt; looic       167.0 8.7
 #&gt; 
-#&gt; All Pareto k estimates are good (k &lt; 0.5)
+#&gt; Pareto k diagnostic values:
+#&gt;                          Count  Pct 
+#&gt; (-Inf, 0.5]   (good)     31    96.9%
+#&gt;  (0.5, 0.7]   (ok)        1     3.1%
+#&gt;    (0.7, 1]   (bad)       0     0.0%
+#&gt;    (1, Inf)   (very bad)  0     0.0%
+#&gt; 
+#&gt; All Pareto k estimates are ok (k &lt; 0.7)
 #&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'><span class='no'>loo2</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
-<span class='fu'>plot</span>(<span class='no'>loo2</span>)</div><img src='loo.stanreg-8.png' alt='' width='540' height='400' /><div class='input'>
+<span class='fu'>plot</span>(<span class='no'>loo2</span>)</div><img src='loo.stanreg-10.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># when comparing exactly two models, the reported 'elpd_diff' will be </span>
 <span class='co'># positive if the expected predictive accuracy for the second model is higher</span>
 <span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>) <span class='co'># or compare_models(loos = list(loo1, loo2))</span></div><div class='output co'>#&gt; elpd_diff        se 
-#&gt;       4.8       2.7 </div><div class='input'>
+#&gt;       4.9       2.8 </div><div class='input'>
 <span class='co'># when comparing three or more models they are ordered by expected</span>
 <span class='co'># predictive accuracy</span>
-<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>.</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
+<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>.</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.436742 seconds (Warm-up)
-#&gt;                0.452473 seconds (Sampling)
-#&gt;                0.889215 seconds (Total)
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.437737 seconds (Warm-up)
+#&gt;                0.428741 seconds (Sampling)
+#&gt;                0.866478 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.441705 seconds (Warm-up)
-#&gt;                0.363301 seconds (Sampling)
-#&gt;                0.805006 seconds (Total)
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.359715 seconds (Warm-up)
+#&gt;                0.360766 seconds (Sampling)
+#&gt;                0.720481 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.421385 seconds (Warm-up)
-#&gt;                0.378059 seconds (Sampling)
-#&gt;                0.799444 seconds (Total)
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.408498 seconds (Warm-up)
+#&gt;                0.359495 seconds (Sampling)
+#&gt;                0.767993 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.377305 seconds (Warm-up)
-#&gt;                0.31382 seconds (Sampling)
-#&gt;                0.691125 seconds (Total)
-#&gt; </div><div class='input'><span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; <span class='message'>4 problematic observation(s) found.</span>
-#&gt; <span class='message'>Model will be refit 4 times.</span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 1 out of 4 (leaving out observation 9)</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.407419 seconds (Warm-up)
-#&gt;                0.606888 seconds (Sampling)
-#&gt;                1.01431 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.544547 seconds (Warm-up)
-#&gt;                0.359199 seconds (Sampling)
-#&gt;                0.903746 seconds (Total)
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.36084 seconds (Warm-up)
+#&gt;                0.347783 seconds (Sampling)
+#&gt;                0.708623 seconds (Total)
+#&gt; </div><div class='input'><span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; <span class='message'>2 problematic observation(s) found.</span>
+#&gt; <span class='message'>Model will be refit 2 times.</span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Fitting model 1 out of 2 (leaving out observation 9)</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.42955 seconds (Warm-up)
-#&gt;                0.390273 seconds (Sampling)
-#&gt;                0.819823 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.421419 seconds (Warm-up)
+#&gt;                0.341316 seconds (Sampling)
+#&gt;                0.762735 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.366021 seconds (Warm-up)
-#&gt;                0.291589 seconds (Sampling)
-#&gt;                0.65761 seconds (Total)
+#&gt; Gradient evaluation took 2.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.420925 seconds (Warm-up)
+#&gt;                0.387334 seconds (Sampling)
+#&gt;                0.808259 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.414814 seconds (Warm-up)
+#&gt;                0.371093 seconds (Sampling)
+#&gt;                0.785907 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.426729 seconds (Warm-up)
+#&gt;                0.392369 seconds (Sampling)
+#&gt;                0.819098 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 2 out of 4 (leaving out observation 28)</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.36848 seconds (Warm-up)
-#&gt;                0.349076 seconds (Sampling)
-#&gt;                0.717556 seconds (Total)
+#&gt; <span class='message'>Fitting model 2 out of 2 (leaving out observation 29)</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.59647 seconds (Warm-up)
-#&gt;                0.4646 seconds (Sampling)
-#&gt;                1.06107 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.376424 seconds (Warm-up)
+#&gt;                0.326015 seconds (Sampling)
+#&gt;                0.702439 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.392795 seconds (Warm-up)
-#&gt;                0.368163 seconds (Sampling)
-#&gt;                0.760958 seconds (Total)
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.336793 seconds (Warm-up)
-#&gt;                0.393152 seconds (Sampling)
-#&gt;                0.729945 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 3 out of 4 (leaving out observation 29)</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.407636 seconds (Warm-up)
-#&gt;                0.389602 seconds (Sampling)
-#&gt;                0.797238 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.368312 seconds (Warm-up)
+#&gt;                0.404609 seconds (Sampling)
+#&gt;                0.772921 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.377533 seconds (Warm-up)
-#&gt;                0.43845 seconds (Sampling)
-#&gt;                0.815983 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.406061 seconds (Warm-up)
-#&gt;                0.431466 seconds (Sampling)
-#&gt;                0.837527 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.479795 seconds (Warm-up)
+#&gt;                0.382878 seconds (Sampling)
+#&gt;                0.862673 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.407173 seconds (Warm-up)
-#&gt;                0.430458 seconds (Sampling)
-#&gt;                0.837631 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 4 out of 4 (leaving out observation 31)</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.403935 seconds (Warm-up)
-#&gt;                0.449898 seconds (Sampling)
-#&gt;                0.853833 seconds (Total)
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.474163 seconds (Warm-up)
-#&gt;                0.468894 seconds (Sampling)
-#&gt;                0.943057 seconds (Total)
 #&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.421932 seconds (Warm-up)
-#&gt;                0.508592 seconds (Sampling)
-#&gt;                0.930524 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.488604 seconds (Warm-up)
-#&gt;                0.344447 seconds (Sampling)
-#&gt;                0.833051 seconds (Total)
+#&gt;  Elapsed Time: 0.486843 seconds (Warm-up)
+#&gt;                0.418371 seconds (Sampling)
+#&gt;                0.905214 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt;      looic se_looic elpd_loo se_elpd_loo p_loo se_p_loo
-#&gt; fit2 156.9   9.0    -78.5      4.5         4.0   1.2   
-#&gt; fit1 166.6   8.4    -83.3      4.2         3.0   1.1   
-#&gt; fit3 170.2   7.0    -85.1      3.5        10.9   2.1   </div><div class='input'>
+#&gt; fit2 157.2   9.4    -78.6      4.7         4.2   1.3   
+#&gt; fit1 167.0   8.7    -83.5      4.3         3.3   1.2   
+#&gt; fit3 170.1   7.2    -85.0      3.6        10.9   2.2   </div><div class='input'>
 <span class='co'># 10-fold cross-validation</span>
-(<span class='no'>kfold1</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit1</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>))</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.047613 seconds (Warm-up)
-#&gt;                0.047629 seconds (Sampling)
-#&gt;                0.095242 seconds (Total)
+(<span class='no'>kfold1</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit1</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>))</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 4.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.42 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.05368 seconds (Warm-up)
-#&gt;                0.04462 seconds (Sampling)
-#&gt;                0.0983 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.065388 seconds (Warm-up)
+#&gt;                0.049188 seconds (Sampling)
+#&gt;                0.114576 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.049991 seconds (Warm-up)
-#&gt;                0.047806 seconds (Sampling)
-#&gt;                0.097797 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.053584 seconds (Warm-up)
-#&gt;                0.045532 seconds (Sampling)
-#&gt;                0.099116 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.050597 seconds (Warm-up)
-#&gt;                0.044459 seconds (Sampling)
-#&gt;                0.095056 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.05999 seconds (Warm-up)
+#&gt;                0.046556 seconds (Sampling)
+#&gt;                0.106546 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.054528 seconds (Warm-up)
-#&gt;                0.044386 seconds (Sampling)
-#&gt;                0.098914 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.062593 seconds (Warm-up)
-#&gt;                0.048002 seconds (Sampling)
-#&gt;                0.110595 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.052261 seconds (Warm-up)
+#&gt;                0.045928 seconds (Sampling)
+#&gt;                0.098189 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.048712 seconds (Warm-up)
-#&gt;                0.052575 seconds (Sampling)
-#&gt;                0.101287 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.085062 seconds (Warm-up)
-#&gt;                0.065373 seconds (Sampling)
-#&gt;                0.150435 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.067896 seconds (Warm-up)
-#&gt;                0.062939 seconds (Sampling)
-#&gt;                0.130835 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.053547 seconds (Warm-up)
+#&gt;                0.04479 seconds (Sampling)
+#&gt;                0.098337 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.077762 seconds (Warm-up)
-#&gt;                0.073111 seconds (Sampling)
-#&gt;                0.150873 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.05776 seconds (Warm-up)
+#&gt;                0.04755 seconds (Sampling)
+#&gt;                0.10531 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.072019 seconds (Warm-up)
-#&gt;                0.076369 seconds (Sampling)
-#&gt;                0.148388 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.069683 seconds (Warm-up)
-#&gt;                0.07026 seconds (Sampling)
-#&gt;                0.139943 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.080204 seconds (Warm-up)
-#&gt;                0.06379 seconds (Sampling)
-#&gt;                0.143994 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.056997 seconds (Warm-up)
+#&gt;                0.059775 seconds (Sampling)
+#&gt;                0.116772 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.064439 seconds (Warm-up)
-#&gt;                0.045652 seconds (Sampling)
-#&gt;                0.110091 seconds (Total)
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.06128 seconds (Warm-up)
-#&gt;                0.050719 seconds (Sampling)
-#&gt;                0.111999 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.047448 seconds (Warm-up)
-#&gt;                0.045104 seconds (Sampling)
-#&gt;                0.092552 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.095822 seconds (Warm-up)
+#&gt;                0.048562 seconds (Sampling)
+#&gt;                0.144384 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.048766 seconds (Warm-up)
-#&gt;                0.046799 seconds (Sampling)
-#&gt;                0.095565 seconds (Total)
+#&gt; Gradient evaluation took 1.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.045984 seconds (Warm-up)
-#&gt;                0.04841 seconds (Sampling)
-#&gt;                0.094394 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.057793 seconds (Warm-up)
+#&gt;                0.047782 seconds (Sampling)
+#&gt;                0.105575 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.05109 seconds (Warm-up)
-#&gt;                0.047387 seconds (Sampling)
-#&gt;                0.098477 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.046275 seconds (Warm-up)
-#&gt;                0.044627 seconds (Sampling)
-#&gt;                0.090902 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.0589 seconds (Warm-up)
+#&gt;                0.050188 seconds (Sampling)
+#&gt;                0.109088 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.050226 seconds (Warm-up)
-#&gt;                0.049457 seconds (Sampling)
-#&gt;                0.099683 seconds (Total)
+#&gt; Gradient evaluation took 2.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.047825 seconds (Warm-up)
-#&gt;                0.046329 seconds (Sampling)
-#&gt;                0.094154 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.054746 seconds (Warm-up)
+#&gt;                0.048929 seconds (Sampling)
+#&gt;                0.103675 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.05236 seconds (Warm-up)
-#&gt;                0.048711 seconds (Sampling)
-#&gt;                0.101071 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.050509 seconds (Warm-up)
-#&gt;                0.047231 seconds (Sampling)
-#&gt;                0.09774 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.04736 seconds (Warm-up)
-#&gt;                0.045761 seconds (Sampling)
-#&gt;                0.093121 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.057253 seconds (Warm-up)
+#&gt;                0.067482 seconds (Sampling)
+#&gt;                0.124735 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.049146 seconds (Warm-up)
-#&gt;                0.045494 seconds (Sampling)
-#&gt;                0.09464 seconds (Total)
+#&gt; Gradient evaluation took 7.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.74 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.051054 seconds (Warm-up)
-#&gt;                0.052317 seconds (Sampling)
-#&gt;                0.103371 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.051251 seconds (Warm-up)
-#&gt;                0.04621 seconds (Sampling)
-#&gt;                0.097461 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.068597 seconds (Warm-up)
+#&gt;                0.066104 seconds (Sampling)
+#&gt;                0.134701 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.053702 seconds (Warm-up)
-#&gt;                0.048608 seconds (Sampling)
-#&gt;                0.10231 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.099911 seconds (Warm-up)
+#&gt;                0.063444 seconds (Sampling)
+#&gt;                0.163355 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.054913 seconds (Warm-up)
-#&gt;                0.048297 seconds (Sampling)
-#&gt;                0.10321 seconds (Total)
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.050123 seconds (Warm-up)
-#&gt;                0.045615 seconds (Sampling)
-#&gt;                0.095738 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.059989 seconds (Warm-up)
-#&gt;                0.045729 seconds (Sampling)
-#&gt;                0.105718 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.054116 seconds (Warm-up)
+#&gt;                0.060651 seconds (Sampling)
+#&gt;                0.114767 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.050958 seconds (Warm-up)
-#&gt;                0.046359 seconds (Sampling)
-#&gt;                0.097317 seconds (Total)
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.049902 seconds (Warm-up)
-#&gt;                0.045577 seconds (Sampling)
-#&gt;                0.095479 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.05764 seconds (Warm-up)
+#&gt;                0.051966 seconds (Sampling)
+#&gt;                0.109606 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.047998 seconds (Warm-up)
-#&gt;                0.048486 seconds (Sampling)
-#&gt;                0.096484 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.054159 seconds (Warm-up)
-#&gt;                0.050847 seconds (Sampling)
-#&gt;                0.105006 seconds (Total)
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.048187 seconds (Warm-up)
-#&gt;                0.044145 seconds (Sampling)
-#&gt;                0.092332 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.063063 seconds (Warm-up)
+#&gt;                0.06678 seconds (Sampling)
+#&gt;                0.129843 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.055307 seconds (Warm-up)
-#&gt;                0.04708 seconds (Sampling)
-#&gt;                0.102387 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.063339 seconds (Warm-up)
+#&gt;                0.049894 seconds (Sampling)
+#&gt;                0.113233 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.049253 seconds (Warm-up)
-#&gt;                0.042853 seconds (Sampling)
-#&gt;                0.092106 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.053822 seconds (Warm-up)
+#&gt;                0.046484 seconds (Sampling)
+#&gt;                0.100306 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.054987 seconds (Warm-up)
+#&gt;                0.049797 seconds (Sampling)
+#&gt;                0.104784 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 3.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.059691 seconds (Warm-up)
+#&gt;                0.050607 seconds (Sampling)
+#&gt;                0.110298 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.059189 seconds (Warm-up)
+#&gt;                0.046532 seconds (Sampling)
+#&gt;                0.105721 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.0673 seconds (Warm-up)
+#&gt;                0.068751 seconds (Sampling)
+#&gt;                0.136051 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 3.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.38 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.061547 seconds (Warm-up)
+#&gt;                0.055123 seconds (Sampling)
+#&gt;                0.11667 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.054588 seconds (Warm-up)
+#&gt;                0.054382 seconds (Sampling)
+#&gt;                0.10897 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.062828 seconds (Warm-up)
+#&gt;                0.05346 seconds (Sampling)
+#&gt;                0.116288 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.06051 seconds (Warm-up)
+#&gt;                0.05421 seconds (Sampling)
+#&gt;                0.11472 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.058869 seconds (Warm-up)
+#&gt;                0.052568 seconds (Sampling)
+#&gt;                0.111437 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.060981 seconds (Warm-up)
+#&gt;                0.068842 seconds (Sampling)
+#&gt;                0.129823 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.07475 seconds (Warm-up)
+#&gt;                0.06821 seconds (Sampling)
+#&gt;                0.14296 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.063789 seconds (Warm-up)
+#&gt;                0.049425 seconds (Sampling)
+#&gt;                0.113214 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.063086 seconds (Warm-up)
+#&gt;                0.052793 seconds (Sampling)
+#&gt;                0.115879 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.054952 seconds (Warm-up)
+#&gt;                0.047672 seconds (Sampling)
+#&gt;                0.102624 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.063675 seconds (Warm-up)
+#&gt;                0.049954 seconds (Sampling)
+#&gt;                0.113629 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.057813 seconds (Warm-up)
+#&gt;                0.055898 seconds (Sampling)
+#&gt;                0.113711 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.054679 seconds (Warm-up)
+#&gt;                0.048095 seconds (Sampling)
+#&gt;                0.102774 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.055679 seconds (Warm-up)
+#&gt;                0.052502 seconds (Sampling)
+#&gt;                0.108181 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.061744 seconds (Warm-up)
+#&gt;                0.050341 seconds (Sampling)
+#&gt;                0.112085 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.065977 seconds (Warm-up)
+#&gt;                0.045358 seconds (Sampling)
+#&gt;                0.111335 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.067974 seconds (Warm-up)
+#&gt;                0.049621 seconds (Sampling)
+#&gt;                0.117595 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.059045 seconds (Warm-up)
+#&gt;                0.046999 seconds (Sampling)
+#&gt;                0.106044 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; 
 #&gt;  10-fold cross-validation
 #&gt; 
 #&gt;            Estimate  SE
-#&gt; elpd_kfold    -80.3 3.2</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.074146 seconds (Warm-up)
-#&gt;                0.085182 seconds (Sampling)
-#&gt;                0.159328 seconds (Total)
+#&gt; elpd_kfold    -80.2 3.3</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.071394 seconds (Warm-up)
-#&gt;                0.070598 seconds (Sampling)
-#&gt;                0.141992 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.080556 seconds (Warm-up)
+#&gt;                0.098102 seconds (Sampling)
+#&gt;                0.178658 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.076989 seconds (Warm-up)
-#&gt;                0.068812 seconds (Sampling)
-#&gt;                0.145801 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.074164 seconds (Warm-up)
-#&gt;                0.073353 seconds (Sampling)
-#&gt;                0.147517 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.084516 seconds (Warm-up)
-#&gt;                0.076176 seconds (Sampling)
-#&gt;                0.160692 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.084151 seconds (Warm-up)
+#&gt;                0.076156 seconds (Sampling)
+#&gt;                0.160307 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.082154 seconds (Warm-up)
-#&gt;                0.063974 seconds (Sampling)
-#&gt;                0.146128 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.071505 seconds (Warm-up)
-#&gt;                0.077111 seconds (Sampling)
-#&gt;                0.148616 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.081704 seconds (Warm-up)
+#&gt;                0.077762 seconds (Sampling)
+#&gt;                0.159466 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.075365 seconds (Warm-up)
-#&gt;                0.073697 seconds (Sampling)
-#&gt;                0.149062 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.075814 seconds (Warm-up)
-#&gt;                0.076595 seconds (Sampling)
-#&gt;                0.152409 seconds (Total)
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.089299 seconds (Warm-up)
-#&gt;                0.069662 seconds (Sampling)
-#&gt;                0.158961 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.095775 seconds (Warm-up)
+#&gt;                0.088847 seconds (Sampling)
+#&gt;                0.184622 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.077136 seconds (Warm-up)
-#&gt;                0.076116 seconds (Sampling)
-#&gt;                0.153252 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.105197 seconds (Warm-up)
+#&gt;                0.098806 seconds (Sampling)
+#&gt;                0.204003 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.075335 seconds (Warm-up)
-#&gt;                0.079294 seconds (Sampling)
-#&gt;                0.154629 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.078592 seconds (Warm-up)
-#&gt;                0.079528 seconds (Sampling)
-#&gt;                0.15812 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.076327 seconds (Warm-up)
-#&gt;                0.074911 seconds (Sampling)
-#&gt;                0.151238 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.10315 seconds (Warm-up)
+#&gt;                0.081188 seconds (Sampling)
+#&gt;                0.184338 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.082231 seconds (Warm-up)
-#&gt;                0.073226 seconds (Sampling)
-#&gt;                0.155457 seconds (Total)
+#&gt; Gradient evaluation took 1.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.080033 seconds (Warm-up)
-#&gt;                0.071448 seconds (Sampling)
-#&gt;                0.151481 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.069037 seconds (Warm-up)
-#&gt;                0.075245 seconds (Sampling)
-#&gt;                0.144282 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.087116 seconds (Warm-up)
+#&gt;                0.078847 seconds (Sampling)
+#&gt;                0.165963 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.084075 seconds (Warm-up)
-#&gt;                0.07433 seconds (Sampling)
-#&gt;                0.158405 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.085591 seconds (Warm-up)
-#&gt;                0.087185 seconds (Sampling)
-#&gt;                0.172776 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.079075 seconds (Warm-up)
+#&gt;                0.080911 seconds (Sampling)
+#&gt;                0.159986 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 0.000327 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.27 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.074283 seconds (Warm-up)
-#&gt;                0.072498 seconds (Sampling)
-#&gt;                0.146781 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.069091 seconds (Warm-up)
-#&gt;                0.06898 seconds (Sampling)
-#&gt;                0.138071 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.092134 seconds (Warm-up)
+#&gt;                0.080447 seconds (Sampling)
+#&gt;                0.172581 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.087679 seconds (Warm-up)
-#&gt;                0.085076 seconds (Sampling)
-#&gt;                0.172755 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.078577 seconds (Warm-up)
-#&gt;                0.086519 seconds (Sampling)
-#&gt;                0.165096 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.078973 seconds (Warm-up)
+#&gt;                0.073102 seconds (Sampling)
+#&gt;                0.152075 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.077147 seconds (Warm-up)
-#&gt;                0.079266 seconds (Sampling)
-#&gt;                0.156413 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.075297 seconds (Warm-up)
-#&gt;                0.079877 seconds (Sampling)
-#&gt;                0.155174 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.077091 seconds (Warm-up)
-#&gt;                0.075683 seconds (Sampling)
-#&gt;                0.152774 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.095701 seconds (Warm-up)
+#&gt;                0.077022 seconds (Sampling)
+#&gt;                0.172723 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.084143 seconds (Warm-up)
-#&gt;                0.077719 seconds (Sampling)
-#&gt;                0.161862 seconds (Total)
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.075109 seconds (Warm-up)
-#&gt;                0.083735 seconds (Sampling)
-#&gt;                0.158844 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.077248 seconds (Warm-up)
-#&gt;                0.075264 seconds (Sampling)
-#&gt;                0.152512 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.088008 seconds (Warm-up)
+#&gt;                0.081805 seconds (Sampling)
+#&gt;                0.169813 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.076364 seconds (Warm-up)
-#&gt;                0.07316 seconds (Sampling)
-#&gt;                0.149524 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.099703 seconds (Warm-up)
+#&gt;                0.105475 seconds (Sampling)
+#&gt;                0.205178 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.082633 seconds (Warm-up)
-#&gt;                0.076396 seconds (Sampling)
-#&gt;                0.159029 seconds (Total)
+#&gt; Gradient evaluation took 3.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.078341 seconds (Warm-up)
-#&gt;                0.077786 seconds (Sampling)
-#&gt;                0.156127 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.075555 seconds (Warm-up)
-#&gt;                0.079224 seconds (Sampling)
-#&gt;                0.154779 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.091965 seconds (Warm-up)
+#&gt;                0.097744 seconds (Sampling)
+#&gt;                0.189709 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.084024 seconds (Warm-up)
-#&gt;                0.074595 seconds (Sampling)
-#&gt;                0.158619 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.077122 seconds (Warm-up)
-#&gt;                0.08135 seconds (Sampling)
-#&gt;                0.158472 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.079497 seconds (Warm-up)
+#&gt;                0.080315 seconds (Sampling)
+#&gt;                0.159812 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.078759 seconds (Warm-up)
-#&gt;                0.071825 seconds (Sampling)
-#&gt;                0.150584 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; 
-#&gt;  Elapsed Time: 0.117595 seconds (Warm-up)
-#&gt;                0.090715 seconds (Sampling)
-#&gt;                0.20831 seconds (Total)
+#&gt; Gradient evaluation took 1.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.115004 seconds (Warm-up)
-#&gt;                0.089972 seconds (Sampling)
-#&gt;                0.204976 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.087295 seconds (Warm-up)
+#&gt;                0.081512 seconds (Sampling)
+#&gt;                0.168807 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.076338 seconds (Warm-up)
-#&gt;                0.076969 seconds (Sampling)
-#&gt;                0.153307 seconds (Total)
+#&gt; 
+#&gt;  Elapsed Time: 0.088455 seconds (Warm-up)
+#&gt;                0.074499 seconds (Sampling)
+#&gt;                0.162954 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt;  Elapsed Time: 0.066098 seconds (Warm-up)
-#&gt;                0.081181 seconds (Sampling)
-#&gt;                0.147279 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.085116 seconds (Warm-up)
+#&gt;                0.07001 seconds (Sampling)
+#&gt;                0.155126 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.079934 seconds (Warm-up)
+#&gt;                0.081859 seconds (Sampling)
+#&gt;                0.161793 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.092664 seconds (Warm-up)
+#&gt;                0.081318 seconds (Sampling)
+#&gt;                0.173982 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 1.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.096186 seconds (Warm-up)
+#&gt;                0.076174 seconds (Sampling)
+#&gt;                0.17236 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.100615 seconds (Warm-up)
+#&gt;                0.08199 seconds (Sampling)
+#&gt;                0.182605 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.10128 seconds (Warm-up)
+#&gt;                0.078705 seconds (Sampling)
+#&gt;                0.179985 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.078911 seconds (Warm-up)
+#&gt;                0.083591 seconds (Sampling)
+#&gt;                0.162502 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.0868 seconds (Warm-up)
+#&gt;                0.089025 seconds (Sampling)
+#&gt;                0.175825 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.092465 seconds (Warm-up)
+#&gt;                0.077016 seconds (Sampling)
+#&gt;                0.169481 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.084506 seconds (Warm-up)
+#&gt;                0.081744 seconds (Sampling)
+#&gt;                0.16625 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.084883 seconds (Warm-up)
+#&gt;                0.085617 seconds (Sampling)
+#&gt;                0.1705 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.098456 seconds (Warm-up)
+#&gt;                0.080229 seconds (Sampling)
+#&gt;                0.178685 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.089198 seconds (Warm-up)
+#&gt;                0.090903 seconds (Sampling)
+#&gt;                0.180101 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.146265 seconds (Warm-up)
+#&gt;                0.08335 seconds (Sampling)
+#&gt;                0.229615 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.092842 seconds (Warm-up)
+#&gt;                0.071347 seconds (Sampling)
+#&gt;                0.164189 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.083964 seconds (Warm-up)
+#&gt;                0.072137 seconds (Sampling)
+#&gt;                0.156101 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.087068 seconds (Warm-up)
+#&gt;                0.10768 seconds (Sampling)
+#&gt;                0.194748 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 4.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.49 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.095924 seconds (Warm-up)
+#&gt;                0.107755 seconds (Sampling)
+#&gt;                0.203679 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 3.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.32 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.116238 seconds (Warm-up)
+#&gt;                0.085684 seconds (Sampling)
+#&gt;                0.201922 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; Gradient evaluation took 4.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.090751 seconds (Warm-up)
+#&gt;                0.082935 seconds (Sampling)
+#&gt;                0.173686 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.096805 seconds (Warm-up)
+#&gt;                0.077019 seconds (Sampling)
+#&gt;                0.173824 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.096509 seconds (Warm-up)
+#&gt;                0.078691 seconds (Sampling)
+#&gt;                0.1752 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; Gradient evaluation took 2.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; 
+#&gt;  Elapsed Time: 0.096362 seconds (Warm-up)
+#&gt;                0.085858 seconds (Sampling)
+#&gt;                0.18222 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>kfold1</span>, <span class='no'>kfold2</span>)</div><div class='output co'>#&gt; elpd_diff        se 
-#&gt;       5.8       4.4 </div><div class='input'>
+#&gt;       5.8       4.3 </div><div class='input'>
 
 </div></pre>
   </div>

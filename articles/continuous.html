@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>Estimating Generalized Linear Models for Continuous Data with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -167,16 +173,16 @@ post3 &lt;-<span class="st"> </span><span class="kw">update</span>(post1, <span 
 
 Estimates:
               Median MAD_SD
-(Intercept)   -7.9   14.1  
-mom_hs        46.4   16.4  
-mom_iq         0.9    0.2  
-mom_hs:mom_iq -0.4    0.2  
+(Intercept)   -8.3   12.6  
+mom_hs        46.8   14.3  
+mom_iq         0.9    0.1  
+mom_hs:mom_iq -0.4    0.1  
 sigma         18.0    0.6  
 
 Sample avg. posterior predictive 
 distribution of y (X = xbar):
          Median MAD_SD
-mean_PPD 86.7    1.2  
+mean_PPD 86.9    1.3  
 
 ------
 For info on the priors used see help('prior_summary.stanreg').</code></pre>
@@ -241,21 +247,21 @@ loo3 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.st
 loo4 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(post4)
 (comp &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2, loo3, loo4))</code></pre></div>
 <pre><code>      looic   se_looic elpd_loo se_elpd_loo p_loo   se_p_loo
-post4  3746.0    28.8  -1873.0     14.4         5.3     0.5 
-post3  3751.4    28.4  -1875.7     14.2         3.6     0.3 
-post2  3757.1    29.0  -1878.5     14.5         2.9     0.3 
-post1  3829.4    27.6  -1914.7     13.8         3.0     0.3 </code></pre>
+post4  3745.1    28.8  -1872.5     14.4         4.9     0.5 
+post3  3751.8    28.5  -1875.9     14.3         3.9     0.4 
+post2  3757.4    29.1  -1878.7     14.5         3.0     0.3 
+post1  3829.8    27.7  -1914.9     13.8         3.1     0.3 </code></pre>
 <p>In this case the fourth model is preferred as it has the highest expected log predicted density (<code>elpd</code>) or, equivalently, the lowest value of the LOO Information Criterion (<code>looic</code>). The fourth model is preferred by a lot over the first model</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo4)</code></pre></div>
 <pre><code>elpd_diff        se 
-     41.7       8.6 </code></pre>
+     42.4       8.7 </code></pre>
 <p>because the difference in <code>elpd</code> is so much larger than the standard error. However, the preference of the fourth model over the others isn’t as strong:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo3, loo4)</code></pre></div>
 <pre><code>elpd_diff        se 
-      2.7       2.6 </code></pre>
+      3.4       2.6 </code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo2, loo4)</code></pre></div>
 <pre><code>elpd_diff        se 
-      5.5       3.9 </code></pre>
+      6.2       4.0 </code></pre>
 </div>
 <div id="the-posterior-predictive-distribution" class="section level2">
 <h2 class="hasAnchor">
@@ -329,17 +335,17 @@ fit &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_gl
 ------
 
 Estimates:
-                   Median  MAD_SD 
-(Intercept)         -0.017   0.001
-log_plasma           0.015   0.000
-lot_id2             -0.007   0.002
-log_plasma:lot_id2   0.008   0.001
-shape              389.951 156.415
+                   Median MAD_SD
+(Intercept)        -0.016  0.007
+log_plasma          0.015  0.003
+lot_id2            -0.007  0.013
+log_plasma:lot_id2  0.008  0.006
+shape               7.923  2.676
 
 Sample avg. posterior predictive 
 distribution of y (X = xbar):
          Median MAD_SD
-mean_PPD 32.463  0.704
+mean_PPD 31.850  4.744
 
 ------
 For info on the priors used see help('prior_summary.stanreg').</code></pre>

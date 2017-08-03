@@ -6,8 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bayesian generalized linear additive models with group-specific terms via
-Stan — stan_gamm4 • rstanarm</title>
+<title>Bayesian generalized linear additive models with optional group-specific
+terms via Stan — stan_gamm4 • rstanarm</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -69,19 +69,19 @@ Stan — stan_gamm4 • rstanarm</title>
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -103,6 +103,12 @@ Stan — stan_gamm4 • rstanarm</title>
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -114,8 +120,8 @@ Stan — stan_gamm4 • rstanarm</title>
       <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Bayesian generalized linear additive models with group-specific terms via
-Stan</h1>
+    <h1>Bayesian generalized linear additive models with optional group-specific
+terms via Stan</h1>
     </div>
 
     
@@ -125,10 +131,10 @@ Stan</h1>
     <pre class="usage"><span class='fu'>stan_gamm4</span>(<span class='no'>formula</span>, <span class='kw'>random</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'>gaussian</span>(), <span class='no'>data</span>,
   <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>subset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>na.action</span>, <span class='kw'>knots</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>drop.unused.levels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>),
-  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>,
-  <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_smooth</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>),
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='fu'>plot_nonlinear</span>(<span class='no'>x</span>, <span class='no'>smooths</span>, <span class='no'>...</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(),
   <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>0.75</span>)</pre>
@@ -192,7 +198,16 @@ its default and recommended value of <code>TRUE</code>, then the default or
 user-specified prior scale(s) may be adjusted internally based on the scales
 of the predictors. See the <a href='priors.html'>priors help page</a> for details on
 the rescaling and the <code><a href='prior_summary.stanreg.html'>prior_summary</a></code> function for a summary of
-the priors used for a particular model.</p></td>
+the priors used for a particular model.
+
+<strong>Note:</strong> If using a dense representation of the design matrix 
+---i.e., if the <code>sparse</code> argument is left at its default value of
+<code>FALSE</code>--- then the prior distribution for the intercept is set so it
+applies to the value when all predictors are centered. If you prefer to
+specify a prior on the intercept without the predictors being auto-centered,
+then you have to omit the intercept from the <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code>
+and include a column of ones as a predictor, in which case some element
+of <code>prior</code> specifies the prior on it, rather than <code>prior_intercept</code>.</p></td>
     </tr>
     <tr>
       <th>prior_intercept</th>
@@ -211,6 +226,20 @@ specify a prior on the intercept without the predictors being auto-centered,
 then you have to omit the intercept from the <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code>
 and include a column of ones as a predictor, in which case some element
 of <code>prior</code> specifies the prior on it, rather than <code>prior_intercept</code>.</p></td>
+    </tr>
+    <tr>
+      <th>prior_smooth</th>
+      <td><p>The prior distribution for the hyperparameters in GAMs,
+with lower values yielding less flexible smooth functions.
+ 
+<code>prior_smooth</code> can be a call to <code>exponential</code> to 
+use an exponential distribution, or <code>normal</code>, <code>student_t</code> or 
+<code>cauchy</code>, which results in a half-normal, half-t, or half-Cauchy 
+prior. See <code><a href='priors.html'>priors</a></code> for details on these functions. To omit a 
+prior ---i.e., to use a flat (improper) uniform prior--- set 
+<code>prior_smooth</code> to <code>NULL</code>. The number of hyperparameters depends
+on the model specification but a scalar prior will be recylced as necessary
+to the appropriate length.</p></td>
     </tr>
     <tr>
       <th>prior_aux</th>
@@ -278,7 +307,10 @@ easier. However, because when <code>QR</code> is <code>TRUE</code> the <code>pri
 argument applies to the coefficients relative to \(Q^\ast\) (and
 those are not very interpretable), setting <code>QR=TRUE</code> is only
 recommended if you do not have an informative prior for the regression
-coefficients.</p></td>
+coefficients.</p>
+<p>For more details see the Stan case study 
+<em>The QR Decomposition For Regression Models</em> at 
+<a href = 'http://mc-stan.org/users/documentation/case-studies/qr_regression.html'>http://mc-stan.org/users/documentation/case-studies/qr_regression.html</a>.</p></td>
     </tr>
     <tr>
       <th>sparse</th>
@@ -329,32 +361,29 @@ for <code>stan_gamm4</code>.
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>The <code>stan_gamm4</code> function is similar in syntax to 
-  <code>gamm4</code> in the <span class="pkg">gamm4</span> package, which accepts a syntax 
-  that is similar to (but not quite as extensive as) that for 
-  <code><a href='http://www.rdocumentation.org/packages/mgcv/topics/gamm'>gamm</a></code> in the <span class="pkg">mgcv</span> package and converts 
-  it internally into the syntax accepted by <code><a href='http://www.rdocumentation.org/packages/lme4/topics/glmer'>glmer</a></code> in the
-  <span class="pkg">lme4</span> package. But rather than performing (restricted) maximum likelihood 
-  estimation, the <code>stan_gamm4</code> function utilizes MCMC to perform Bayesian 
+  <code>gamm4</code> in the <span class="pkg">gamm4</span> package. But rather than performing 
+  (restricted) maximum likelihood estimation with the <span class="pkg">lme4</span> package,
+  the <code>stan_gamm4</code> function utilizes MCMC to perform Bayesian 
   estimation. The Bayesian model adds priors on the common regression 
-  coefficients (in the same way as <code><a href='stan_glm.html'>stan_glm</a></code>) and priors on the 
-  terms of a decomposition of the covariance matrices of the group-specific 
-  parameters, including the smooths. Estimating these models via MCMC avoids
+  coefficients (in the same way as <code><a href='stan_glm.html'>stan_glm</a></code>), priors on the 
+  standard deviations of the smooth terms, and a prior on the decomposition
+  of the covariance matrices of any group-specific parameters (as in 
+  <code><a href='stan_glmer.html'>stan_glmer</a></code>). Estimating these models via MCMC avoids
   the optimization issues that often crop up with GAMMs and provides better
   estimates for the uncertainty in the parameter estimates.
     See <code>gamm4</code> for more information about the model
   specicification and <code><a href='priors.html'>priors</a></code> for more information about the
-  priors. If <code>random = NULL</code>, the output is a subset of that produced by
-  <code><a href='http://www.rdocumentation.org/packages/mgcv/topics/gam'>gam</a></code> in the sense that there are several estimated components
-  for each smooth term. However, the parameterization used to estimate the model
-  is different and corresponds to the parameterization in 
-  <code>gamm4</code> where is smooth term is decomposed into a linear
-  and a non-linear part. If <code>prior</code> is not <code>NULL</code>, then the number 
-  of parameters to place priors on is equal to the number of linear terms in
-  the <code>formula</code>. The prior on the non-linear part of each smooth term is
-  handled by the <code><a href='priors.html'>decov</a></code> function. If <code>random</code> is not <code>NULL</code>,
-  then there are additional group-specific terms whose priors are also handled
-  by the <code><a href='priors.html'>decov</a></code> function and whose posterior medians can be extracted
-  by calling <code><a href='http://www.rdocumentation.org/packages/lme4/topics/ranef'>ranef</a></code>.
+  priors on the main coefficients. The <code>formula</code> should include at least
+  one smooth term, which can be specified in any way that is supported by the
+  <code><a href='http://www.rdocumentation.org/packages/mgcv/topics/jagam'>jagam</a></code> function in the <span class="pkg">mgcv</span> package. The 
+  <code>prior_smooth</code> argument should be used to specify a prior on the unknown
+  standard deviations that govern how smooth the smooth function is. The
+  <code>prior_covariance</code> argument can be used to specify the prior on the
+  components of the covariance matrix for any (optional) group-specific terms.
+  The <code>gamm4</code> function in the <span class="pkg">gamm4</span> package uses
+  group-specific terms to implement the departure from linearity in the smooth
+  terms, but that is not the case for <code>stan_gamm4</code> where the group-specific
+  terms are exactly the same as in <code><a href='stan_glmer.html'>stan_glmer</a></code>.
     The <code>plot_nonlinear</code> function creates a ggplot object with one facet for
   each smooth function specified in the call to <code>stan_gamm4</code> in the case
   where all smooths are univariate. A subset of the smooth functions can be 
@@ -380,6 +409,8 @@ Software</em>. <strong>14</strong>(14), 1--22.
 
     <p><code><a href='stanreg-methods.html'>stanreg-methods</a></code> and 
 <code>gamm4</code>.</p>
+<p>The vignette for <code>stan_glmer</code>, which also discusses
+  <code>stan_gamm4</code>.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -390,76 +421,88 @@ Software</em>. <strong>14</strong>(14), 1--22.
 <span class='no'>dat</span>$<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>dat</span>$<span class='no'>y</span> + <span class='fu'>model.matrix</span>(~ <span class='no'>fac</span> - <span class='fl'>1</span>) <span class='kw'>%*%</span> <span class='fu'>rnorm</span>(<span class='fl'>20</span>) * <span class='fl'>.5</span>
 
 <span class='no'>br</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_gamm4</span>(<span class='no'>y</span> ~ <span class='fu'>s</span>(<span class='no'>x0</span>) + <span class='no'>x1</span> + <span class='fu'>s</span>(<span class='no'>x2</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dat</span>, <span class='kw'>random</span> <span class='kw'>=</span> ~ (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>fac</span>),
-                 <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for example speed</span></div><div class='output co'>#&gt; 
+                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for example speed</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; WARNING: The initial buffer, adaptation window, and terminal buffer
-#&gt;          overflow the total number of warmup iterations.
-#&gt;          Defaulting to a 15%/75%/10% partition,
+#&gt; 
+#&gt; Gradient evaluation took 0.000127 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.27 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; WARNING: There aren't enough warmup iterations to fit the
+#&gt;          three stages of adaptation as currently configured.
+#&gt;          Reducing each adaptation stage to 15%/75%/10% of
+#&gt;          the given number of warmup iterations:
 #&gt;            init_buffer = 15
 #&gt;            adapt_window = 75
 #&gt;            term_buffer = 10
 #&gt; 
+#&gt; Iteration:   1 / 200 [  0%]  (Warmup)
+#&gt; Iteration:  20 / 200 [ 10%]  (Warmup)
+#&gt; Iteration:  40 / 200 [ 20%]  (Warmup)
+#&gt; Iteration:  60 / 200 [ 30%]  (Warmup)
+#&gt; Iteration:  80 / 200 [ 40%]  (Warmup)
+#&gt; Iteration: 100 / 200 [ 50%]  (Warmup)
+#&gt; Iteration: 101 / 200 [ 50%]  (Sampling)
+#&gt; Iteration: 120 / 200 [ 60%]  (Sampling)
+#&gt; Iteration: 140 / 200 [ 70%]  (Sampling)
+#&gt; Iteration: 160 / 200 [ 80%]  (Sampling)
+#&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
+#&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 200 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  20 / 200 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  40 / 200 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  60 / 200 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  80 / 200 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 200 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 101 / 200 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 120 / 200 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 140 / 200 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 160 / 200 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 180 / 200 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 200 / 200 [100%]  (Sampling)
-#&gt;  Elapsed Time: 14.3617 seconds (Warm-up)
-#&gt;                14.2084 seconds (Sampling)
-#&gt;                28.5702 seconds (Total)
+#&gt;  Elapsed Time: 2.57391 seconds (Warm-up)
+#&gt;                2.78921 seconds (Sampling)
+#&gt;                5.36312 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>br</span>)</div><div class='output co'>#&gt; stan_gamm4
 #&gt;  family:   gaussian [identity]
-#&gt;  formula:  y ~ s(x0) + x1 + s(x2)
+#&gt;  formula:  y ~ x1 + x0 + x2 + (1 | fac)
 #&gt;  num. obs: 400
 #&gt; ------
 #&gt; 
 #&gt; Estimates:
 #&gt;             Median MAD_SD
-#&gt; (Intercept)  5.0    0.2  
-#&gt; x1           5.8    0.3  
-#&gt; s(x0).1     -0.2    0.5  
-#&gt; s(x0).2      0.3    1.0  
-#&gt; s(x0).3     -0.1    0.3  
-#&gt; s(x0).4     -0.6    0.6  
-#&gt; s(x0).5     -0.2    0.2  
-#&gt; s(x0).6      0.6    0.6  
-#&gt; s(x0).7     -0.1    0.2  
-#&gt; s(x0).8      2.7    1.4  
-#&gt; s(x0).9      0.2    0.6  
-#&gt; s(x2).1      6.8    1.2  
-#&gt; s(x2).2      7.4    2.7  
-#&gt; s(x2).3      4.2    0.9  
-#&gt; s(x2).4      1.0    1.8  
-#&gt; s(x2).5     -1.4    1.0  
-#&gt; s(x2).6      0.0    1.7  
-#&gt; s(x2).7     -0.1    0.7  
-#&gt; s(x2).8      7.6    4.2  
-#&gt; s(x2).9      5.3    2.1  
-#&gt; sigma        2.1    0.1  
+#&gt; (Intercept)   5.1    0.2 
+#&gt; x1            5.8    0.3 
+#&gt; s(x0).1      -0.5    1.7 
+#&gt; s(x0).2       0.4    1.9 
+#&gt; s(x0).3      -0.2    1.9 
+#&gt; s(x0).4       1.3    1.5 
+#&gt; s(x0).5      -0.8    1.4 
+#&gt; s(x0).6      -1.3    1.0 
+#&gt; s(x0).7       0.0    0.6 
+#&gt; s(x0).8       2.0    1.1 
+#&gt; s(x0).9       0.0    0.5 
+#&gt; s(x2).1     -32.9    9.7 
+#&gt; s(x2).2      11.0    9.6 
+#&gt; s(x2).3      33.5    5.3 
+#&gt; s(x2).4     -22.9    4.8 
+#&gt; s(x2).5     -12.8    4.9 
+#&gt; s(x2).6      12.0    2.0 
+#&gt; s(x2).7       9.7    1.0 
+#&gt; s(x2).8     -17.1    4.2 
+#&gt; s(x2).9       2.1    3.3 
+#&gt; sigma         2.0    0.1 
+#&gt; 
+#&gt; Smoothing terms:
+#&gt;                   Median MAD_SD
+#&gt; smooth_sd[s(x0)1]  1.8    0.6  
+#&gt; smooth_sd[s(x0)2]  0.5    0.6  
+#&gt; smooth_sd[s(x2)1] 16.9    2.9  
+#&gt; smooth_sd[s(x2)2]  2.6    2.2  
 #&gt; 
 #&gt; Error terms:
 #&gt;  Groups   Name        Std.Dev.
-#&gt;  fac      (Intercept)  0.32   
-#&gt;  Xr.0     s(x2)       16.04   
-#&gt;  Xr       s(x0)        2.84   
-#&gt;  Residual              2.12   
-#&gt; Num. levels: fac 20, Xr.0 8, Xr 8 
+#&gt;  fac      (Intercept) 0.68    
+#&gt;  Residual             1.99    
+#&gt; Num. levels: fac 20 
 #&gt; 
 #&gt; Sample avg. posterior predictive 
 #&gt; distribution of y (X = xbar):
 #&gt;          Median MAD_SD
-#&gt; mean_PPD 7.9    0.2   
+#&gt; mean_PPD 7.9    0.1   
 #&gt; 
 #&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'>plot_nonlinear</span>(<span class='no'>br</span>)</div><img src='stan_gamm4-8.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot_nonlinear</span>(<span class='no'>br</span>, <span class='kw'>smooths</span> <span class='kw'>=</span> <span class='st'>"s(x0)"</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>2</span>/<span class='fl'>3</span>)</div><img src='stan_gamm4-10.png' alt='' width='540' height='400' /><div class='input'>
+#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'>plot_nonlinear</span>(<span class='no'>br</span>)</div><img src='stan_gamm4-9.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot_nonlinear</span>(<span class='no'>br</span>, <span class='kw'>smooths</span> <span class='kw'>=</span> <span class='st'>"s(x0)"</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>2</span>/<span class='fl'>3</span>)</div><img src='stan_gamm4-11.png' alt='' width='540' height='400' /><div class='input'>
 
 </div></pre>
   </div>

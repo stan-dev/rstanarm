@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -285,81 +291,105 @@ normally-distributed errors but specifies different priors.</p>
     <pre class="examples"><div class='input'>
 <span class='no'>op</span> <span class='kw'>&lt;-</span> <span class='fu'>options</span>(<span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"contr.helmert"</span>, <span class='st'>"contr.poly"</span>))
 <span class='fu'>stan_aov</span>(<span class='no'>yield</span> ~ <span class='no'>block</span> + <span class='no'>N</span>*<span class='no'>P</span>*<span class='no'>K</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>npk</span>,
-         <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.5</span>), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
+         <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.5</span>), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.133796 seconds (Warm-up)
-#&gt;                0.124124 seconds (Sampling)
-#&gt;                0.25792 seconds (Total)
+#&gt; Gradient evaluation took 2.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.176901 seconds (Warm-up)
+#&gt;                0.168573 seconds (Sampling)
+#&gt;                0.345474 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.149901 seconds (Warm-up)
-#&gt;                0.150289 seconds (Sampling)
-#&gt;                0.30019 seconds (Total)
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.162989 seconds (Warm-up)
+#&gt;                0.130987 seconds (Sampling)
+#&gt;                0.293976 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.158266 seconds (Warm-up)
-#&gt;                0.162216 seconds (Sampling)
-#&gt;                0.320482 seconds (Total)
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.193196 seconds (Warm-up)
+#&gt;                0.136932 seconds (Sampling)
+#&gt;                0.330128 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.164313 seconds (Warm-up)
-#&gt;                0.205289 seconds (Sampling)
-#&gt;                0.369602 seconds (Total)
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.192954 seconds (Warm-up)
+#&gt;                0.203916 seconds (Sampling)
+#&gt;                0.39687 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; stan_aov
 #&gt;  family:   gaussian [identity]
 #&gt;  formula:  yield ~ block + N * P * K
@@ -369,15 +399,15 @@ normally-distributed errors but specifies different priors.</p>
 #&gt; Estimates:
 #&gt;               Median MAD_SD
 #&gt; (Intercept)   54.9    0.9  
-#&gt; block1         1.2    1.3  
+#&gt; block1         1.2    1.2  
 #&gt; block2         1.2    0.7  
 #&gt; block3        -1.3    0.5  
 #&gt; block4        -0.7    0.4  
 #&gt; block5         0.2    0.3  
-#&gt; N1             1.9    0.8  
+#&gt; N1             2.0    0.8  
 #&gt; P1            -0.4    0.7  
 #&gt; K1            -1.4    0.7  
-#&gt; N1:P1         -0.7    0.7  
+#&gt; N1:P1         -0.6    0.7  
 #&gt; N1:K1         -0.8    0.7  
 #&gt; P1:K1          0.1    0.7  
 #&gt; sigma          4.2    0.7  
@@ -392,12 +422,12 @@ normally-distributed errors but specifies different priors.</p>
 #&gt; ANOVA-like table:
 #&gt;               Median MAD_SD
 #&gt; Mean Sq block 43.4   20.9  
-#&gt; Mean Sq N     47.7   27.8  
-#&gt; Mean Sq P     14.3   11.7  
-#&gt; Mean Sq K     29.8   20.5  
-#&gt; Mean Sq N:P   12.0   16.0  
-#&gt; Mean Sq N:K   16.6   21.5  
-#&gt; Mean Sq P:K    5.6    7.7  
+#&gt; Mean Sq N     48.4   27.9  
+#&gt; Mean Sq P     13.7   11.4  
+#&gt; Mean Sq K     29.1   20.0  
+#&gt; Mean Sq N:P   11.2   14.6  
+#&gt; Mean Sq N:K   17.7   22.6  
+#&gt; Mean Sq P:K    5.7    7.7  
 #&gt; 
 #&gt; ------
 #&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'>options</span>(<span class='no'>op</span>)
@@ -405,24 +435,30 @@ normally-distributed errors but specifies different priors.</p>
 
 (<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_lm</span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>qsec</span> + <span class='no'>am</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.75</span>),
                 <span class='co'># the next line is only to make the example go fast enough</span>
-                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>))</div><div class='output co'>#&gt; 
+                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>))</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.686005 seconds (Warm-up)
-#&gt;                0.54264 seconds (Sampling)
-#&gt;                1.22864 seconds (Total)
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.890417 seconds (Warm-up)
+#&gt;                0.52233 seconds (Sampling)
+#&gt;                1.41275 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; stan_lm
 #&gt;  family:   gaussian [identity]
 #&gt;  formula:  mpg ~ wt + qsec + am
@@ -431,13 +467,13 @@ normally-distributed errors but specifies different priors.</p>
 #&gt; 
 #&gt; Estimates:
 #&gt;               Median MAD_SD
-#&gt; (Intercept)    8.9    7.7  
+#&gt; (Intercept)   10.0    6.7  
 #&gt; wt            -3.8    0.8  
 #&gt; qsec           1.2    0.3  
-#&gt; am             2.9    1.4  
-#&gt; sigma          2.6    0.4  
+#&gt; am             2.8    1.3  
+#&gt; sigma          2.5    0.4  
 #&gt; log-fit_ratio  0.0    0.1  
-#&gt; R2             0.8    0.0  
+#&gt; R2             0.8    0.1  
 #&gt; 
 #&gt; Sample avg. posterior predictive 
 #&gt; distribution of y (X = xbar):
@@ -445,8 +481,8 @@ normally-distributed errors but specifies different priors.</p>
 #&gt; mean_PPD 20.1    0.7  
 #&gt; 
 #&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><img src='stan_lm-8.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"am"</span>, <span class='st'>"qsec"</span>, <span class='st'>"sigma"</span>),
-     <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='stan_lm-11.png' alt='' width='540' height='400' /><div class='input'>
+#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><img src='stan_lm-10.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"am"</span>, <span class='st'>"qsec"</span>, <span class='st'>"sigma"</span>),
+     <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='stan_lm-13.png' alt='' width='540' height='400' /><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

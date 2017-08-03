@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -124,7 +130,8 @@ render.</p>
     
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>pairs</span>(<span class='no'>x</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>pairs</span>(<span class='no'>x</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>condition</span> <span class='kw'>=</span> <span class='fu'>pairs_condition</span>(<span class='kw'>nuts</span> <span class='kw'>=</span> <span class='st'>"accept_stat__"</span>), <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
     <table class="ref-arguments">
@@ -150,6 +157,23 @@ functions that accept a <code>regex_pars</code> argument ignore it for models fi
 using optimization.</p></td>
     </tr>
     <tr>
+      <th>condition</th>
+      <td><p>Same as the <code>condition</code> argument to 
+<code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code> except the <em>default is different</em>
+for <span class="pkg">rstanarm</span> models. By default, the <code>mcmc_pairs</code> function in
+the <span class="pkg">bayesplot</span> package plots some of the Markov chains (half, in the
+case of an even number of chains) in the panels above the diagonal and the
+other half in the panels below the diagonal. However since we know that 
+<span class="pkg">rstanarm</span> models were fit using Stan (which <span class="pkg">bayesplot</span> doesn't 
+assume) we can make the default more useful by splitting the draws 
+according to the <code>accept_stat__</code> diagnostic. The plots below the 
+diagonal will contain realizations that are below the median 
+<code>accept_stat__</code> and the plots above the diagonal will contain 
+realizations that are above the median <code>accept_stat__</code>. To change this
+behavior see the documentation of the <code>condition</code> argument at 
+<code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code>.</p></td>
+    </tr>
+    <tr>
       <th>...</th>
       <td><p>Optional arguments passed to <code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code>. 
 The <code>np</code>, <code>lp</code>, and <code>max_treedepth</code> arguments to 
@@ -157,31 +181,19 @@ The <code>np</code>, <code>lp</code>, and <code>max_treedepth</code> arguments t
 need to be specified by the user in <code>...</code>. The arguments that can be 
 specified in <code>...</code> include <code>transformations</code>, <code>diag_fun</code>,
 <code>off_diag_fun</code>, <code>diag_args</code>, <code>off_diag_args</code>,
-<code>condition</code>, and <code>np_style</code>. These arguments are
+and <code>np_style</code>. These arguments are
 documented thoroughly on the help page for
 <code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code>.</p></td>
     </tr>
     </table>
     
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>By default, the <code>mcmc_pairs</code> function in the <span class="pkg">bayesplot</span> package 
-plots some of the Markov chains (half, in the case of an even number of
-chains) in the panels above the diagonal and the other half in the panels
-below the diagonal. This can be changed using the <code>condition</code> argument
-along with the <code>pairs_condition</code> helper function. 
-We provide an example in the <span class="pkg">Examples</span> section, below, but 
-for full details see the <code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code> help page. 
-In particular, if when you fit your model <span class="pkg">rstanarm</span> issues warnings 
-about convergence, divergent transitions, or transitions hitting the maximum 
-treedepth, then it can sometimes be useful to use one of the NUTS sampler 
-parameters/diagnostics for <code>condition</code>. The last few examples below
-demonstrate this feature.</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'>
 <span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"purple"</span>)
+
+<span class='co'># see 'condition' argument above for details on the plots below and </span>
+<span class='co'># above the diagonal. default is to split by accept_stat__.</span>
 <span class='fu'>pairs</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"log-posterior"</span>))</div><div class='output co'>#&gt; <span class='error'>Error in pairs(example_model, pars = c("(Intercept)", "log-posterior")): object 'example_model' not found</span></div><div class='input'>
 <span class='fu'>pairs</span>(
   <span class='no'>example_model</span>,
@@ -199,89 +211,114 @@ demonstrate this feature.</p>
   <span class='co'># this combo of prior and adapt_delta should lead to some divergences</span>
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>hs</a></span>(),
   <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='fl'>0.9</span>
-)</div><div class='output co'>#&gt; 
+)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 2.26302 seconds (Warm-up)
-#&gt;                1.00324 seconds (Sampling)
-#&gt;                3.26626 seconds (Total)
+#&gt; Gradient evaluation took 5.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.53 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 2.42774 seconds (Warm-up)
+#&gt;                1.89441 seconds (Sampling)
+#&gt;                4.32215 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 2.24539 seconds (Warm-up)
-#&gt;                1.56894 seconds (Sampling)
-#&gt;                3.81433 seconds (Total)
+#&gt; Gradient evaluation took 3.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 2.14249 seconds (Warm-up)
+#&gt;                0.936603 seconds (Sampling)
+#&gt;                3.07909 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 2.00442 seconds (Warm-up)
-#&gt;                1.89109 seconds (Sampling)
-#&gt;                3.89551 seconds (Total)
+#&gt; Gradient evaluation took 3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.3 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 2.85227 seconds (Warm-up)
+#&gt;                2.02357 seconds (Sampling)
+#&gt;                4.87583 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt;  Elapsed Time: 2.47862 seconds (Warm-up)
-#&gt;                1.53616 seconds (Sampling)
-#&gt;                4.01478 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 283 divergent transitions after warmup. Increasing adapt_delta above 0.9 may help. See</span>
+#&gt; Gradient evaluation took 4.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.46 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 1.93003 seconds (Warm-up)
+#&gt;                1.1688 seconds (Sampling)
+#&gt;                3.09883 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 189 divergent transitions after warmup. Increasing adapt_delta above 0.9 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'>
+<span class='fu'>pairs</span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"sigma"</span>, <span class='st'>"log-posterior"</span>))</div><img src='pairs.stanreg-13.png' alt='' width='540' height='400' /><div class='input'>
 <span class='fu'>pairs</span>(
   <span class='no'>fit</span>,
   <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"sigma"</span>, <span class='st'>"log-posterior"</span>),
   <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>), <span class='co'># show log(sigma) instead of sigma</span>
   <span class='kw'>off_diag_fun</span> <span class='kw'>=</span> <span class='st'>"hex"</span> <span class='co'># use hexagonal heatmaps instead of scatterplots</span>
-)</div><img src='pairs.stanreg-12.png' alt='' width='540' height='400' /><div class='input'>
+)</div><img src='pairs.stanreg-15.png' alt='' width='540' height='400' /><div class='input'>
 
 <span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"brightblue"</span>)
 <span class='fu'>pairs</span>(
@@ -290,22 +327,14 @@ demonstrate this feature.</p>
   <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>),
   <span class='kw'>off_diag_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>3</span>/<span class='fl'>4</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>/<span class='fl'>3</span>), <span class='co'># size and transparency of scatterplot points</span>
   <span class='kw'>np_style</span> <span class='kw'>=</span> <span class='fu'>pairs_style_np</span>(<span class='kw'>div_color</span> <span class='kw'>=</span> <span class='st'>"black"</span>, <span class='kw'>div_shape</span> <span class='kw'>=</span> <span class='fl'>2</span>) <span class='co'># color and shape of the divergences</span>
-)</div><img src='pairs.stanreg-14.png' alt='' width='540' height='400' /><div class='input'>
+)</div><img src='pairs.stanreg-17.png' alt='' width='540' height='400' /><div class='input'>
 <span class='co'># Using the condition argument to show divergences above the diagonal </span>
 <span class='fu'>pairs</span>(
   <span class='no'>fit</span>,
   <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"wt"</span>, <span class='st'>"log-posterior"</span>),
   <span class='kw'>condition</span> <span class='kw'>=</span> <span class='fu'>pairs_condition</span>(<span class='kw'>nuts</span> <span class='kw'>=</span> <span class='st'>"divergent__"</span>)
-)</div><img src='pairs.stanreg-16.png' alt='' width='540' height='400' /><div class='input'>
-<span class='co'># Using the condition argument to divide iterations by whether NUTS</span>
-<span class='co'># accept_stat__ is at least the median accept_stat__ (above diagonal) or less</span>
-<span class='co'># than the median accept_stat__ (below diagonal). divergences are still</span>
-<span class='co'># marked in red.</span>
-<span class='fu'>pairs</span>(
-  <span class='no'>fit</span>,
-  <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"wt"</span>, <span class='st'>"log-posterior"</span>),
-  <span class='kw'>condition</span> <span class='kw'>=</span> <span class='fu'>pairs_condition</span>(<span class='kw'>nuts</span> <span class='kw'>=</span> <span class='st'>"accept_stat__"</span>)
-)</div><img src='pairs.stanreg-18.png' alt='' width='540' height='400' /><div class='input'>
+)</div><img src='pairs.stanreg-19.png' alt='' width='540' height='400' /><div class='input'>
+
 
 </div></pre>
   </div>
@@ -313,9 +342,7 @@ demonstrate this feature.</p>
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#details">Details</a></li>
-      
+            
       <li><a href="#examples">Examples</a></li>
     </ul>
 

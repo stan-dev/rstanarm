@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -143,43 +149,55 @@
   <span class='fu'><a href='stan_glmer.html'>stan_glmer</a></span>(<span class='fu'>cbind</span>(<span class='no'>incidence</span>, <span class='no'>size</span> - <span class='no'>incidence</span>) ~ <span class='no'>size</span> + <span class='no'>period</span> + (<span class='fl'>1</span><span class='kw'>|</span><span class='no'>herd</span>),
              <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>lme4</span><span class='kw'>::</span><span class='no'>cbpp</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>binomial</span>,
              <span class='co'># this next line is only to keep the example small in size!</span>
-             <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>)</div><div class='output co'>#&gt; 
+             <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'binomial' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.338291 seconds (Warm-up)
-#&gt;                0.207229 seconds (Sampling)
-#&gt;                0.54552 seconds (Total)
+#&gt; Gradient evaluation took 7.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.73 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.446315 seconds (Warm-up)
+#&gt;                0.159534 seconds (Sampling)
+#&gt;                0.605849 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'binomial' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.347298 seconds (Warm-up)
-#&gt;                0.151846 seconds (Sampling)
-#&gt;                0.499144 seconds (Total)
+#&gt; Gradient evaluation took 5.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.55 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.382017 seconds (Warm-up)
+#&gt;                0.18094 seconds (Sampling)
+#&gt;                0.562957 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>example_model</span></div><div class='output co'>#&gt; stan_glmer
 #&gt;  family:   binomial [logit]
 #&gt;  formula:  cbind(incidence, size - incidence) ~ size + period + (1 | herd)
@@ -188,15 +206,15 @@
 #&gt; 
 #&gt; Estimates:
 #&gt;             Median MAD_SD
-#&gt; (Intercept) -1.6    0.5  
+#&gt; (Intercept) -1.5    0.6  
 #&gt; size         0.0    0.0  
 #&gt; period2     -0.9    0.3  
 #&gt; period3     -1.1    0.4  
-#&gt; period4     -1.5    0.5  
+#&gt; period4     -1.5    0.4  
 #&gt; 
 #&gt; Error terms:
 #&gt;  Groups Name        Std.Dev.
-#&gt;  herd   (Intercept) 0.8     
+#&gt;  herd   (Intercept) 0.81    
 #&gt; Num. levels: herd 15 
 #&gt; 
 #&gt; Sample avg. posterior predictive 

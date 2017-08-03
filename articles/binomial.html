@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -173,12 +179,12 @@ fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_g
                  <span class="dt">prior =</span> t_prior, <span class="dt">prior_intercept =</span> t_prior,  
                  <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)</code></pre></div>
 <pre><code>(Intercept)     dist100 
-      0.606      -0.624 </code></pre>
+      0.599      -0.611 </code></pre>
 <p>The <code>formula</code>, <code>data</code> and <code>family</code> arguments to <code>stan_glm</code> are specified in exactly the same way as for <code>glm</code>. We’ve also added the optional additional arguments <code>chains</code> (how many chains we want to execute), <code>cores</code> (how many cores we want the computer to utilize) and <code>seed</code> (for reproducibility). You can read about other possible arguments in the <code>stan_glm</code> documentation (<code>help(stan_glm, package = 'rstanarm')</code>).</p>
 <p>To get a sense for the uncertainty in our estimates we can use the <code>posterior_interval</code> function to get Bayesian uncertainty intervals. The uncertainty intervals are computed by finding the relevant quantiles of the draws from the posterior distribution. For example, to compute 50% intervals we use:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw"><a href="../reference/posterior_interval.stanreg.html">posterior_interval</a></span>(fit1, <span class="dt">prob =</span> <span class="fl">0.5</span>), <span class="dv">2</span>)</code></pre></div>
 <pre><code>              25%   75%
-(Intercept)  0.57  0.65
+(Intercept)  0.57  0.64
 dist100     -0.69 -0.56</code></pre>
 <p>For more on <code>posterior_interval</code> and interpreting the parameter estimates from a Bayesian model see Step 2 in the <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a> vignette.</p>
 <p>Using the coefficient estimates we can plot the predicted probability of <code>switch = 1</code> (as a function of <code>dist100</code>) together with the observed outcomes:</p>
@@ -200,7 +206,7 @@ jitt &lt;-<span class="st"> </span>function(...) {
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit2 &lt;-<span class="st"> </span><span class="kw">update</span>(fit1, <span class="dt">formula =</span> switch ~<span class="st"> </span>dist100 +<span class="st"> </span>arsenic) </code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(coef_fit2 &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">coef</span>(fit2), <span class="dv">3</span>))</code></pre></div>
 <pre><code>(Intercept)     dist100     arsenic 
-      0.006      -0.911       0.463 </code></pre>
+      0.003      -0.895       0.460 </code></pre>
 <p>As expected the coefficient on <code>arsenic</code> is positive. The plot below shows distance on the x-axis and arsenic level on the y-axis with the predicted probability of well-switching mapped to the color of the background tiles (the lighter the color the higher the probability). The observed value of <code>switch</code> is indicated by the color of the points.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pr_switch2 &lt;-<span class="st"> </span>function(x, y, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] +<span class="st"> </span>ests[<span class="dv">2</span>] *<span class="st"> </span>x +<span class="st"> </span>ests[<span class="dv">3</span>] *<span class="st"> </span>y)
 grid &lt;-<span class="st"> </span><span class="kw">expand.grid</span>(<span class="dt">dist100 =</span> <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">4</span>, <span class="dt">length.out =</span> <span class="dv">100</span>), 
@@ -238,9 +244,9 @@ grid$prob &lt;-<span class="st"> </span><span class="kw">with</span>(grid, <span
 <pre><code>Computed from 500 by 3020 log-likelihood matrix
 
          Estimate   SE
-elpd_loo  -2040.2 10.5
-p_loo         2.1  0.0
-looic      4080.4 20.9
+elpd_loo  -2040.2 10.3
+p_loo         2.1  0.1
+looic      4080.4 20.6
 
 All Pareto k estimates are good (k &lt; 0.5)
 See help('pareto-k-diagnostic') for details.</code></pre>
@@ -248,15 +254,15 @@ See help('pareto-k-diagnostic') for details.</code></pre>
 <pre><code>Computed from 500 by 3020 log-likelihood matrix
 
          Estimate   SE
-elpd_loo  -1968.3 15.8
-p_loo         3.0  0.1
-looic      3936.5 31.5
+elpd_loo  -1968.4 15.6
+p_loo         3.2  0.1
+looic      3936.8 31.2
 
 All Pareto k estimates are good (k &lt; 0.5)
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
 <pre><code>elpd_diff        se 
-     72.0      12.2 </code></pre>
+     71.8      12.1 </code></pre>
 <p>These results favor <code>fit2</code> over <code>fit1</code>, as the estimated difference in <code>elpd</code> (the expected log pointwise predictive density for a new dataset) is so much larger than its standard error. LOO penalizes models for adding additional predictors (this helps counter overfitting), but in this case <code>fit2</code> represents enough of an improvement over <code>fit1</code> that the penalty for including <code>arsenic</code> is negligible (as it should be if <code>arsenic</code> is an important predictor).</p>
 <p>The <a href="lm.html">vignette</a> for the <code>stan_lm</code> function also has an example of using the <code>loo</code> function where the results are quite a bit different from what we see here and some important additional considerations are discussed.</p>
 </div>

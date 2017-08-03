@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>Modeling Rates/Proportions using Beta Regression with rstanarm</h1>
                         <h4 class="author">Imad Ali, Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -184,7 +190,7 @@ fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_b
 <span class="kw">round</span>(<span class="kw">coef</span>(fit1), <span class="dv">2</span>)
 <span class="kw">round</span>(<span class="kw">coef</span>(fit2), <span class="dv">2</span>)</code></pre></div>
 <pre><code>      (Intercept)                 x (phi)_(Intercept)           (phi)_z 
-             0.93             -0.20              1.83              0.31 </code></pre>
+             0.94             -0.20              1.84              0.32 </code></pre>
 <pre><code>                x (phi)_(Intercept) 
              0.00              1.08 </code></pre>
 <p>For clarity we can use <code>prior_summary</code> to print the information about the prior distributions used to fit the models. The priors used in <code>fit1</code> are provided below.</p>
@@ -222,7 +228,7 @@ See help('prior_summary.stanreg') for more details</code></pre>
 loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
 <pre><code>elpd_diff        se 
-    -79.7      11.8 </code></pre>
+    -80.2      11.8 </code></pre>
 <p>The difference in <code>elpd</code> is negative indicating that the expected predictive accuracy for the first model is higher.</p>
 </div>
 <div id="an-example-using-gasoline-data" class="section level1">
@@ -239,17 +245,17 @@ gas_fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/st
 <span class="kw">round</span>(<span class="kw">coef</span>(gas_fit1), <span class="dv">2</span>)
 <span class="kw">round</span>(<span class="kw">coef</span>(gas_fit2), <span class="dv">2</span>)</code></pre></div>
 <pre><code>(Intercept)        temp      batch1      batch2      batch3      batch4 
-      -6.12        0.01        1.69        1.28        1.54        1.02 
+      -5.10        0.01        1.32        0.86        1.13        0.71 
      batch5      batch6      batch7      batch8      batch9       (phi) 
-       1.09        0.99        0.50        0.46        0.36      251.94 </code></pre>
+       0.81        0.72        0.29        0.26        0.08       11.95 </code></pre>
 <pre><code>      (Intercept)              temp            batch1            batch2 
-            -6.07              0.01              1.69              1.29 
+            -6.09              0.01              1.70              1.29 
            batch3            batch4            batch5            batch6 
-             1.52              1.03              1.11              1.02 
+             1.55              1.04              1.13              1.02 
            batch7            batch8            batch9 (phi)_(Intercept) 
-             0.53              0.47              0.37              5.37 
+             0.52              0.49              0.37              5.39 
    (phi)_pressure 
-             0.05 </code></pre>
+             0.03 </code></pre>
 <p>The plots below illustrate simulated values of gasoline yield. While the first model accounts for variation in batch conditions its predictions looks somewhat uniform rather than resembling the peaked and right-skewed behavior of the true data. The second model does a somewhat better job at capturing the shape of the distribution, however its location is off as it is centered around 0.50 rather than 0.20.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
 <span class="kw">bayesplot_grid</span>(
@@ -264,7 +270,7 @@ gas_fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/st
 gas_loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(gas_fit2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(gas_loo1, gas_loo2)</code></pre></div>
 <pre><code>elpd_diff        se 
-     -0.8       1.0 </code></pre>
+     33.2       3.5 </code></pre>
 <p>Evaluating the expected log predictive distribution using <code>loo</code> reveals that the second of the two models is slightly preferred. That said, in this case the standard error of the difference in <code>elpd</code> is large enough (relative to the difference itself) that we can’t say there is a definitive preference for the second model.</p>
 </div>
 <div id="references" class="section level1">

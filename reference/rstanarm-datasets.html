@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -231,28 +237,34 @@ a trend in proportions. <em>Biometrics</em> <strong>38</strong>(1):215--220.</p>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_lm.html'>stan_lm</a></span>(<span class='no'>kid_score</span> ~ <span class='no'>mom_hs</span> * <span class='no'>mom_iq</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>kidiq</span>,
                <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0.30</span>, <span class='kw'>what</span> <span class='kw'>=</span> <span class='st'>"mean"</span>),
                <span class='co'># the next line is only to make the example go fast enough</span>
-               <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
+               <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.859115 seconds (Warm-up)
-#&gt;                0.42286 seconds (Sampling)
-#&gt;                1.28198 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>20</span>)</div><img src='rstanarm-datasets-4.png' alt='' width='540' height='400' /><div class='input'>
+#&gt; Gradient evaluation took 2.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.926861 seconds (Warm-up)
+#&gt;                0.316516 seconds (Sampling)
+#&gt;                1.24338 seconds (Total)
+#&gt; </div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>20</span>)</div><img src='rstanarm-datasets-5.png' alt='' width='540' height='400' /><div class='input'>
 <span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"brightblue"</span>)
 <span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"median"</span>,
-         <span class='kw'>group</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='no'>kidiq</span>$<span class='no'>mom_hs</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"No HS"</span>, <span class='st'>"HS"</span>)))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='rstanarm-datasets-7.png' alt='' width='540' height='400' /><div class='input'>
+         <span class='kw'>group</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='no'>kidiq</span>$<span class='no'>mom_hs</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"No HS"</span>, <span class='st'>"HS"</span>)))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='rstanarm-datasets-8.png' alt='' width='540' height='400' /><div class='input'>
 
 </div></pre>
   </div>

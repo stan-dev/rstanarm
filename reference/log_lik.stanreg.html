@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -167,81 +173,105 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
     <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>2.5</span>),
     <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>),
     <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span> <span class='co'># to speed up example</span>
- )</div><div class='output co'>#&gt; 
+ )</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.132984 seconds (Warm-up)
-#&gt;                0.122774 seconds (Sampling)
-#&gt;                0.255758 seconds (Total)
+#&gt; Gradient evaluation took 8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.8 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.162099 seconds (Warm-up)
+#&gt;                0.11475 seconds (Sampling)
+#&gt;                0.276849 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.111106 seconds (Warm-up)
-#&gt;                0.151941 seconds (Sampling)
-#&gt;                0.263047 seconds (Total)
+#&gt; Gradient evaluation took 4.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.47 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.172198 seconds (Warm-up)
+#&gt;                0.13063 seconds (Sampling)
+#&gt;                0.302828 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.163223 seconds (Warm-up)
-#&gt;                0.125868 seconds (Sampling)
-#&gt;                0.289091 seconds (Total)
+#&gt; Gradient evaluation took 6.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.66 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.161681 seconds (Warm-up)
+#&gt;                0.13513 seconds (Sampling)
+#&gt;                0.296811 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 500 / 500 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.130265 seconds (Warm-up)
-#&gt;                0.133207 seconds (Sampling)
-#&gt;                0.263472 seconds (Total)
+#&gt; Gradient evaluation took 5.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.51 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Iteration: 500 / 500 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.156652 seconds (Warm-up)
+#&gt;                0.121988 seconds (Sampling)
+#&gt;                0.27864 seconds (Total)
 #&gt; </div><div class='input'> <span class='no'>ll</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>)
  <span class='fu'>dim</span>(<span class='no'>ll</span>)</div><div class='output co'>#&gt; [1] 1000  262</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll</span>), <span class='fu'>nobs</span>(<span class='no'>fit</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
  <span class='co'># using newdata argument</span>
@@ -249,12 +279,12 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
  <span class='no'>nd</span>$<span class='no'>treatment</span>[<span class='fl'>1</span>:<span class='fl'>2</span>] <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='fl'>0</span>, <span class='fl'>1</span>)
  <span class='no'>ll2</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>0</span>, <span class='fl'>0</span>))
  <span class='fu'>head</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt;              1         2
-#&gt; [1,] -7.030876 -3.468675
-#&gt; [2,] -6.693435 -3.398425
-#&gt; [3,] -6.743831 -3.479912
-#&gt; [4,] -8.131682 -3.609733
-#&gt; [5,] -6.158471 -3.342550
-#&gt; [6,] -5.852850 -3.342724</div><div class='input'> <span class='fu'>dim</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll2</span>), <span class='fu'>nrow</span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
+#&gt; [1,] -7.274485 -3.587778
+#&gt; [2,] -6.615934 -3.428933
+#&gt; [3,] -6.982115 -3.552134
+#&gt; [4,] -6.240153 -3.529369
+#&gt; [5,] -7.449999 -3.437282
+#&gt; [6,] -7.008782 -3.416396</div><div class='input'> <span class='fu'>dim</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll2</span>), <span class='fu'>nrow</span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
 
 </div></pre>
   </div>

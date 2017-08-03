@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -123,22 +129,22 @@ unknown covariance matrices with flexible priors.</p>
 
     <pre class="usage"><span class='fu'>stan_glmer</span>(<span class='no'>formula</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>, <span class='no'>subset</span>, <span class='no'>weights</span>,
   <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='fu'>getOption</span>(<span class='st'>"na.action"</span>, <span class='st'>"na.omit"</span>), <span class='no'>offset</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>,
-  <span class='fl'>5</span>), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='fu'>stan_lmer</span>(<span class='no'>formula</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>subset</span>, <span class='no'>weights</span>,
   <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='fu'>getOption</span>(<span class='st'>"na.action"</span>, <span class='st'>"na.omit"</span>), <span class='no'>offset</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>,
-  <span class='fl'>5</span>), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='fu'>stan_glmer.nb</span>(<span class='no'>formula</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>subset</span>, <span class='no'>weights</span>,
   <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='fu'>getOption</span>(<span class='st'>"na.action"</span>, <span class='st'>"na.omit"</span>), <span class='no'>offset</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"log"</span>, <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
@@ -207,7 +213,16 @@ its default and recommended value of <code>TRUE</code>, then the default or
 user-specified prior scale(s) may be adjusted internally based on the scales
 of the predictors. See the <a href='priors.html'>priors help page</a> for details on
 the rescaling and the <code><a href='prior_summary.stanreg.html'>prior_summary</a></code> function for a summary of
-the priors used for a particular model.</p></td>
+the priors used for a particular model.
+
+<strong>Note:</strong> If using a dense representation of the design matrix 
+---i.e., if the <code>sparse</code> argument is left at its default value of
+<code>FALSE</code>--- then the prior distribution for the intercept is set so it
+applies to the value when all predictors are centered. If you prefer to
+specify a prior on the intercept without the predictors being auto-centered,
+then you have to omit the intercept from the <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code>
+and include a column of ones as a predictor, in which case some element
+of <code>prior</code> specifies the prior on it, rather than <code>prior_intercept</code>.</p></td>
     </tr>
     <tr>
       <th>prior_intercept</th>
@@ -293,7 +308,10 @@ easier. However, because when <code>QR</code> is <code>TRUE</code> the <code>pri
 argument applies to the coefficients relative to \(Q^\ast\) (and
 those are not very interpretable), setting <code>QR=TRUE</code> is only
 recommended if you do not have an informative prior for the regression
-coefficients.</p></td>
+coefficients.</p>
+<p>For more details see the Stan case study 
+<em>The QR Decomposition For Regression Models</em> at 
+<a href = 'http://mc-stan.org/users/documentation/case-studies/qr_regression.html'>http://mc-stan.org/users/documentation/case-studies/qr_regression.html</a>.</p></td>
     </tr>
     <tr>
       <th>sparse</th>

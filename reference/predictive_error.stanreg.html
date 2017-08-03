@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -199,81 +205,105 @@ model object.</p></td>
 )
 <span class='no'>err2</span> <span class='kw'>&lt;-</span> <span class='fu'>predictive_error</span>(<span class='no'>example_model</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1234</span>)</div><div class='output co'>#&gt; <span class='error'>Error in predictive_error(example_model, newdata = nd, draws = 10, seed = 1234): object 'example_model' not found</span></div><div class='input'>
 <span class='co'># stanreg vs ppd methods</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>)</div><div class='output co'>#&gt; 
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.016487 seconds (Warm-up)
-#&gt;                0.00654 seconds (Sampling)
-#&gt;                0.023027 seconds (Total)
+#&gt; Gradient evaluation took 9.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.95 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.019201 seconds (Warm-up)
+#&gt;                0.016959 seconds (Sampling)
+#&gt;                0.03616 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.016661 seconds (Warm-up)
-#&gt;                0.007565 seconds (Sampling)
-#&gt;                0.024226 seconds (Total)
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.016725 seconds (Warm-up)
+#&gt;                0.007209 seconds (Sampling)
+#&gt;                0.023934 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.009639 seconds (Warm-up)
-#&gt;                0.006864 seconds (Sampling)
-#&gt;                0.016503 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.021545 seconds (Warm-up)
+#&gt;                0.00696 seconds (Sampling)
+#&gt;                0.028505 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.016294 seconds (Warm-up)
-#&gt;                0.006691 seconds (Sampling)
-#&gt;                0.022985 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.01298 seconds (Warm-up)
+#&gt;                0.009367 seconds (Sampling)
+#&gt;                0.022347 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>preds</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>)
 <span class='fu'>all.equal</span>(
   <span class='fu'>predictive_error</span>(<span class='no'>fit</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>),

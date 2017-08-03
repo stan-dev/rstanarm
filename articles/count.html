@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>Estimating Generalized Linear Models for Count Data with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -177,7 +183,7 @@ stan_glm        3.09    0.7     -0.52  -0.38</code></pre>
             <span class="dt">stan_glm =</span> <span class="kw"><a href="../reference/se.html">se</a></span>(stan_glm1)), <span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
 <pre><code>         (Intercept) roach1 treatment senior
 glm            0.021  0.009     0.025  0.033
-stan_glm       0.021  0.009     0.024  0.034</code></pre>
+stan_glm       0.022  0.009     0.026  0.032</code></pre>
 <p>(Note: the dataset we have is slightly different from the one used in Gelman and Hill (2007), which leads to slightly different parameter estimates than those shown in the book even when copying the <code>glm</code> call verbatim. Also, we have rescaled the <code>roach1</code> predictor. For the purposes of this example, the actual estimates are less important than the process.)</p>
 <p>Gelman and Hill next show how to compare the observed data to replicated datasets from the model to check the quality of the fit. Here we don’t show the original code used by Gelman and Hill because it’s many lines, requiring several loops and some care to get the matrix multiplications right (see pg. 161-162). On the other hand, the <strong>rstanarm</strong> package makes this easy. We can generate replicated datasets with a single line of code using the <code>posterior_predict</code> function:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yrep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(stan_glm1)</code></pre></div>
@@ -204,7 +210,7 @@ stan_glm       0.021  0.009     0.024  0.034</code></pre>
 loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(stan_glm2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
 <pre><code>elpd_diff        se 
-   5352.1     708.9 </code></pre>
+   5363.2     711.9 </code></pre>
 <p>which is not surprising given the better fit we’ve already observed from the posterior predictive checks.</p>
 </div>
 <div id="references" class="section level1">

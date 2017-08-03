@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -150,18 +156,7 @@ vector of length one among <code>"log"</code>, <code>"identity"</code>, and
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>grepl</span>(<span class='st'>"^sparc"</span>,  <span class='no'>R.version</span>$<span class='no'>platform</span>))
 <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>Days</span> ~ <span class='no'>Sex</span>/(<span class='no'>Age</span> + <span class='no'>Eth</span>*<span class='no'>Lrn</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>MASS</span><span class='kw'>::</span><span class='no'>quine</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>,
-         <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>neg_binomial_2</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; STAN OPTIMIZATION COMMAND (LBFGS)
-#&gt; init = random
-#&gt; save_iterations = 1
-#&gt; init_alpha = 0.001
-#&gt; tol_obj = 1e-12
-#&gt; tol_grad = 1e-08
-#&gt; tol_param = 1e-08
-#&gt; tol_rel_obj = 10000
-#&gt; tol_rel_grad = 1e+07
-#&gt; history_size = 5
-#&gt; seed = 123
-#&gt; initial log joint probability = -20703.8
+         <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>neg_binomial_2</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; Initial log joint probability = -6398.01
 #&gt; Optimization terminated normally: 
 #&gt;   Convergence detected: relative gradient magnitude is below tolerance</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:   neg_binomial_2 [log]
@@ -178,15 +173,15 @@ vector of length one among <code>"log"</code>, <code>"identity"</code>, and
 #&gt; SexF:AgeF2            -0.6    0.4  
 #&gt; SexM:AgeF2             0.6    0.3  
 #&gt; SexF:AgeF3            -0.3    0.3  
-#&gt; SexM:AgeF3             1.2    0.3  
+#&gt; SexM:AgeF3             1.1    0.3  
 #&gt; SexF:EthN             -0.1    0.3  
-#&gt; SexM:EthN             -0.7    0.2  
-#&gt; SexF:LrnSL             0.9    0.3  
+#&gt; SexM:EthN             -0.7    0.3  
+#&gt; SexF:LrnSL             1.0    0.3  
 #&gt; SexM:LrnSL             0.2    0.3  
 #&gt; SexF:EthN:LrnSL       -1.4    0.4  
-#&gt; SexM:EthN:LrnSL        0.8    0.4  
+#&gt; SexM:EthN:LrnSL        0.8    0.5  
 #&gt; reciprocal_dispersion  1.6    0.2  
-#&gt; mean_PPD              17.2    2.0  
+#&gt; mean_PPD              17.2    1.9  
 #&gt; 
 #&gt; ------
 #&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>

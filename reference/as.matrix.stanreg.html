@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -186,30 +192,23 @@ using optimization.</p></td>
 <span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'>as.array</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.array(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; <span class='error'>Error in print(dim(draws_array)): object 'draws_array' not found</span></div><div class='input'>
 <span class='co'># Extract draws from asymptotic Gaussian sampling distribution </span>
 <span class='co'># after optimization</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; STAN OPTIMIZATION COMMAND (LBFGS)
-#&gt; init = random
-#&gt; save_iterations = 1
-#&gt; init_alpha = 0.001
-#&gt; tol_obj = 1e-12
-#&gt; tol_grad = 1e-08
-#&gt; tol_param = 1e-08
-#&gt; tol_rel_obj = 10000
-#&gt; tol_rel_grad = 1e+07
-#&gt; history_size = 5
-#&gt; seed = 173409600
-#&gt; initial log joint probability = -181.787
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; Initial log joint probability = -171.224
 #&gt; Optimization terminated normally: 
 #&gt;   Convergence detected: relative gradient magnitude is below tolerance</div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit</span>)
 <span class='fu'>print</span>(<span class='fu'>colnames</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] "(Intercept)" "wt"          "sigma"      </div><div class='input'><span class='fu'>print</span>(<span class='fu'>nrow</span>(<span class='no'>draws</span>)) <span class='co'># 1000 draws are taken</span></div><div class='output co'>#&gt; [1] 1000</div><div class='input'>
 <span class='co'># Extract draws from variational approximation to the posterior distribution</span>
-<span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"meanfield"</span>)</div><div class='output co'>#&gt; 
-#&gt; This is Automatic Differentiation Variational Inference.
+<span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"meanfield"</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; ------------------------------------------------------------
+#&gt; EXPERIMENTAL ALGORITHM:
+#&gt;   This procedure has not been thoroughly tested and may be unstable
+#&gt;   or buggy. The interface is subject to change.
+#&gt; ------------------------------------------------------------
 #&gt; 
-#&gt; (EXPERIMENTAL ALGORITHM: expect frequent updates to the procedure.)
 #&gt; 
-#&gt; Gradient evaluation took 2.4e-05 seconds
-#&gt; 1000 iterations under these settings should take 0.024 seconds.
+#&gt; 
+#&gt; Gradient evaluation took 1.9e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
 #&gt; Adjust your expectations accordingly!
+#&gt; 
 #&gt; 
 #&gt; Begin eta adaptation.
 #&gt; Iteration:   1 / 250 [  0%]  (Adaptation)
@@ -221,13 +220,21 @@ using optimization.</p></td>
 #&gt; 
 #&gt; Begin stochastic gradient ascent.
 #&gt;   iter       ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#&gt;    100     -1e+02             1.000            1.000
-#&gt;    200     -1e+02             0.598            1.000
-#&gt;    300     -9e+01             0.458            0.197
-#&gt;    400     -9e+01             0.344            0.197
-#&gt;    500     -9e+01             0.276            0.178
-#&gt;    600     -9e+01             0.232            0.178
-#&gt;    700     -9e+01             0.200            0.008   MEDIAN ELBO CONVERGED
+#&gt;    100     -2e+02             1.000            1.000
+#&gt;    200     -1e+02             0.600            1.000
+#&gt;    300     -1e+02             0.425            0.200
+#&gt;    400     -1e+02             0.344            0.200
+#&gt;    500     -1e+02             0.298            0.112
+#&gt;    600     -9e+01             0.272            0.144
+#&gt;    700     -9e+01             0.237            0.112
+#&gt;    800     -9e+01             0.207            0.112
+#&gt;    900     -9e+01             0.184            0.100
+#&gt;   1000     -9e+01             0.166            0.100
+#&gt;   1100     -9e+01             0.066            0.076
+#&gt;   1200     -9e+01             0.047            0.024
+#&gt;   1300     -9e+01             0.041            0.018
+#&gt;   1400     -9e+01             0.033            0.016
+#&gt;   1500     -9e+01             0.021            0.006   MEDIAN ELBO CONVERGED
 #&gt; 
 #&gt; Drawing a sample of size 1000 from the approximate posterior... 
 #&gt; COMPLETED.</div><div class='output co'>#&gt; <span class='message'>Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms. See the documentation for the 'QR' argument.</span></div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit2</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"wt"</span>)

@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -145,8 +151,7 @@ conditioning on the outcome) and then plotting the parameters.</p>
     </tr>
     <tr>
       <th>...</th>
-      <td><p>Currently ignored by the method for stanreg objects. The S3
-generic uses <code>...</code> to pass arguments to any defined methods.</p></td>
+      <td><p>Currently ignored by the method for stanreg objects.</p></td>
     </tr>
     </table>
     
@@ -222,26 +227,33 @@ generic uses <code>...</code> to pass arguments to any defined methods.</p></td>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>am</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>,
                 <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fu'>c</span>(<span class='fl'>2.5</span>, <span class='fl'>4</span>)),
                 <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>),
-                <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>) <span class='co'># only for demonstration </span></div><div class='output co'>#&gt; 
+                <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>) <span class='co'># only for demonstration </span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+#&gt; 
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
 #&gt; WARNING: No variance estimation is
 #&gt;          performed for num_warmup &lt; 20
 #&gt; 
+#&gt; Iteration: 1 / 10 [ 10%]  (Warmup)
+#&gt; Iteration: 2 / 10 [ 20%]  (Warmup)
+#&gt; Iteration: 3 / 10 [ 30%]  (Warmup)
+#&gt; Iteration: 4 / 10 [ 40%]  (Warmup)
+#&gt; Iteration: 5 / 10 [ 50%]  (Warmup)
+#&gt; Iteration: 6 / 10 [ 60%]  (Sampling)
+#&gt; Iteration: 7 / 10 [ 70%]  (Sampling)
+#&gt; Iteration: 8 / 10 [ 80%]  (Sampling)
+#&gt; Iteration: 9 / 10 [ 90%]  (Sampling)
+#&gt; Iteration: 10 / 10 [100%]  (Sampling)
 #&gt; 
-#&gt; Chain 1, Iteration: 1 / 10 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 2 / 10 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 3 / 10 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 4 / 10 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 5 / 10 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 6 / 10 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 7 / 10 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 8 / 10 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 9 / 10 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 10 / 10 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.000218 seconds (Warm-up)
-#&gt;                0.00462 seconds (Sampling)
-#&gt;                0.004838 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>prior_summary</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; Priors for model 'fit' 
+#&gt;  Elapsed Time: 0.000105 seconds (Warm-up)
+#&gt;                0.001174 seconds (Sampling)
+#&gt;                0.001279 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bfmi-low</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>prior_summary</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt; Priors for model 'fit' 
 #&gt; ------
 #&gt; Intercept (after predictors centered)
 #&gt;  ~ normal(location = 0, scale = 5)
@@ -252,31 +264,38 @@ generic uses <code>...</code> to pass arguments to any defined methods.</p></td>
 #&gt;      **adjusted scale = [15.40,24.11]
 #&gt; 
 #&gt; Auxiliary (sigma)
-#&gt;  ~ half-cauchy(location = 0, scale = 5)
-#&gt;      **adjusted scale = 30.13
+#&gt;  ~ exponential(rate = 1)
+#&gt;      **adjusted scale = 6.03 (adjusted rate = 1/adjusted scale)
 #&gt; ------
 #&gt; See help('prior_summary.stanreg') for more details</div><div class='input'>
 <span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fu'>c</span>(<span class='fl'>2.5</span>, <span class='fl'>4</span>), <span class='kw'>autoscale</span><span class='kw'>=</span><span class='fl'>FALSE</span>),
-               <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>, <span class='kw'>autoscale</span><span class='kw'>=</span><span class='fl'>FALSE</span>))</div><div class='output co'>#&gt; 
+               <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>, <span class='kw'>autoscale</span><span class='kw'>=</span><span class='fl'>FALSE</span>))</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+#&gt; 
+#&gt; Gradient evaluation took 2.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
 #&gt; WARNING: No variance estimation is
 #&gt;          performed for num_warmup &lt; 20
 #&gt; 
+#&gt; Iteration: 1 / 10 [ 10%]  (Warmup)
+#&gt; Iteration: 2 / 10 [ 20%]  (Warmup)
+#&gt; Iteration: 3 / 10 [ 30%]  (Warmup)
+#&gt; Iteration: 4 / 10 [ 40%]  (Warmup)
+#&gt; Iteration: 5 / 10 [ 50%]  (Warmup)
+#&gt; Iteration: 6 / 10 [ 60%]  (Sampling)
+#&gt; Iteration: 7 / 10 [ 70%]  (Sampling)
+#&gt; Iteration: 8 / 10 [ 80%]  (Sampling)
+#&gt; Iteration: 9 / 10 [ 90%]  (Sampling)
+#&gt; Iteration: 10 / 10 [100%]  (Sampling)
 #&gt; 
-#&gt; Chain 1, Iteration: 1 / 10 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration: 2 / 10 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration: 3 / 10 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 4 / 10 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 5 / 10 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 6 / 10 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 7 / 10 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 8 / 10 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 9 / 10 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 10 / 10 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.000337 seconds (Warm-up)
-#&gt;                0.000333 seconds (Sampling)
-#&gt;                0.00067 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>prior_summary</span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; Priors for model 'fit2' 
+#&gt;  Elapsed Time: 0.002262 seconds (Warm-up)
+#&gt;                0.000571 seconds (Sampling)
+#&gt;                0.002833 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bfmi-low</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>prior_summary</span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; Priors for model 'fit2' 
 #&gt; ------
 #&gt; Intercept (after predictors centered)
 #&gt;  ~ normal(location = 0, scale = 5)
@@ -285,8 +304,8 @@ generic uses <code>...</code> to pass arguments to any defined methods.</p></td>
 #&gt;  ~ normal(location = [0,0], scale = [2.5,4.0])
 #&gt; 
 #&gt; Auxiliary (sigma)
-#&gt;  ~ half-cauchy(location = 0, scale = 5)
-#&gt;      **adjusted scale = 30.13
+#&gt;  ~ exponential(rate = 1)
+#&gt;      **adjusted scale = 6.03 (adjusted rate = 1/adjusted scale)
 #&gt; ------
 #&gt; See help('prior_summary.stanreg') for more details</div><div class='input'>
 </div></pre>

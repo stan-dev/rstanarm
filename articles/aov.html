@@ -45,19 +45,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -78,6 +78,12 @@
      
   </a>
 </li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
+     
+  </a>
+</li>
       </ul>
 </div>
 <!--/.nav-collapse -->
@@ -93,7 +99,7 @@
       <h1>Estimating ANOVA Models with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-06-17</h4>
+            <h4 class="date">2017-08-03</h4>
           </div>
 
     
@@ -154,24 +160,24 @@ post1</code></pre></div>
 
 Estimates:
                      Median MAD_SD
-(Intercept)           99.1    4.4 
-sourceCereal         -13.1    6.4 
-typeLow              -19.3    6.6 
-sourceCereal:typeLow  17.8    8.9 
-sigma                 14.8    1.7 
+(Intercept)           99.2    4.4 
+sourceCereal         -13.2    6.4 
+typeLow              -19.3    6.1 
+sourceCereal:typeLow  17.3    8.6 
+sigma                 14.7    1.7 
 log-fit_ratio          0.0    0.1 
 R2                     0.2    0.1 
 
 Sample avg. posterior predictive 
 distribution of y (X = xbar):
          Median MAD_SD
-mean_PPD 87.5    3.4  
+mean_PPD 87.4    3.3  
 
 ANOVA-like table:
                     Median MAD_SD
-Mean Sq source       591.8  451.1
-Mean Sq type        1044.1  621.8
-Mean Sq source:type  788.0  743.3
+Mean Sq source       571.8  439.2
+Mean Sq type        1023.4  604.0
+Mean Sq source:type  751.2  710.6
 
 ------
 For info on the priors used see help('prior_summary.stanreg').</code></pre>

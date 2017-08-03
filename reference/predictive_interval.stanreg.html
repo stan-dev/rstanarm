@@ -68,19 +68,19 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstan.html">rstan</a>
+      <a href="http://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/bayesplot.html">bayesplot</a>
+      <a href="http://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/shinystan.html">shinystan</a>
+      <a href="http://mc-stan.org/shinystan">shinystan</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/loo.html">loo</a>
+      <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
-      <a href="http://mc-stan.org/users/interfaces/rstantools.html">rstantools</a>
+      <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
 </li>
@@ -99,6 +99,12 @@
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
     <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="http://discourse.mc-stan.org/">
+    <span class="fa fa-users"></span>
      
   </a>
 </li>
@@ -181,117 +187,141 @@ probability mass to include in the intervals. The default is to report
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>)</div><div class='output co'>#&gt; 
+    <pre class="examples"><div class='input'><span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Chain 1, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 1, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 1, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 1, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 1, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 1, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 1, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 1, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 1, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 1, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 1, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 1, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.015534 seconds (Warm-up)
-#&gt;                0.007328 seconds (Sampling)
-#&gt;                0.022862 seconds (Total)
+#&gt; Gradient evaluation took 2.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.018347 seconds (Warm-up)
+#&gt;                0.009595 seconds (Sampling)
+#&gt;                0.027942 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Chain 2, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 2, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 2, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 2, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 2, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 2, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 2, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 2, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 2, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 2, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 2, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 2, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.0166 seconds (Warm-up)
-#&gt;                0.006924 seconds (Sampling)
-#&gt;                0.023524 seconds (Total)
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.019889 seconds (Warm-up)
+#&gt;                0.00848 seconds (Sampling)
+#&gt;                0.028369 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Chain 3, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 3, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 3, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 3, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 3, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 3, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 3, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 3, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 3, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 3, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 3, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 3, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.015757 seconds (Warm-up)
-#&gt;                0.009454 seconds (Sampling)
-#&gt;                0.025211 seconds (Total)
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.015005 seconds (Warm-up)
+#&gt;                0.00736 seconds (Sampling)
+#&gt;                0.022365 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Chain 4, Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Chain 4, Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Chain 4, Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Chain 4, Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Chain 4, Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Chain 4, Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Chain 4, Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Chain 4, Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Chain 4, Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Chain 4, Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Chain 4, Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Chain 4, Iteration: 300 / 300 [100%]  (Sampling)
-#&gt;  Elapsed Time: 0.016723 seconds (Warm-up)
-#&gt;                0.006535 seconds (Sampling)
-#&gt;                0.023258 seconds (Total)
+#&gt; Gradient evaluation took 1.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.016849 seconds (Warm-up)
+#&gt;                0.007486 seconds (Sampling)
+#&gt;                0.024335 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>predictive_interval</span>(<span class='no'>fit</span>)</div><div class='output co'>#&gt;                            5%      95%
-#&gt; Mazda RX4           18.366267 28.78491
-#&gt; Mazda RX4 Wag       16.308554 27.03948
-#&gt; Datsun 710          19.718759 30.21674
-#&gt; Hornet 4 Drive      14.648720 25.86737
-#&gt; Hornet Sportabout   13.800566 24.26061
-#&gt; Valiant             13.571167 24.21148
-#&gt; Duster 360          13.445467 23.23589
-#&gt; Merc 240D           15.141341 25.61888
-#&gt; Merc 230            15.035253 26.61805
-#&gt; Merc 280            13.840674 24.89885
-#&gt; Merc 280C           13.362155 24.54728
-#&gt; Merc 450SE          10.118990 20.31257
-#&gt; Merc 450SL          11.669390 22.89848
-#&gt; Merc 450SLC         11.717262 22.41068
-#&gt; Cadillac Fleetwood   3.765952 15.14795
-#&gt; Lincoln Continental  2.652415 14.21044
-#&gt; Chrysler Imperial    2.984204 14.37833
-#&gt; Fiat 128            19.865395 30.74190
-#&gt; Honda Civic         23.360169 34.63433
-#&gt; Toyota Corolla      21.771495 33.08279
-#&gt; Toyota Corona       18.594855 29.75912
-#&gt; Dodge Challenger    12.979858 23.65048
-#&gt; AMC Javelin         13.996484 24.21028
-#&gt; Camaro Z28          10.976021 22.14573
-#&gt; Pontiac Firebird    11.305823 21.90806
-#&gt; Fiat X1-9           21.543549 32.69983
-#&gt; Porsche 914-2       20.397199 31.33724
-#&gt; Lotus Europa        23.786443 35.26948
-#&gt; Ford Pantera L      14.751207 25.61128
-#&gt; Ferrari Dino        17.481078 27.99494
-#&gt; Maserati Bora       12.767369 23.43407
-#&gt; Volvo 142E          17.132215 27.44806</div><div class='input'><span class='fu'>predictive_interval</span>(<span class='no'>fit</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='fu'>data.frame</span>(<span class='kw'>wt</span> <span class='kw'>=</span> <span class='fu'>range</span>(<span class='no'>mtcars</span>$<span class='no'>wt</span>)),
-                    <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt;        25%      75%
-#&gt; 1 26.67755 31.33654
-#&gt; 2  6.41331 10.83816</div><div class='input'>
+#&gt; Mazda RX4           18.484634 29.02546
+#&gt; Mazda RX4 Wag       16.687102 27.05837
+#&gt; Datsun 710          19.592277 30.37484
+#&gt; Hornet 4 Drive      14.328101 25.87628
+#&gt; Hornet Sportabout   13.461231 23.96949
+#&gt; Valiant             13.182912 23.82432
+#&gt; Duster 360          13.076391 23.28057
+#&gt; Merc 240D           15.079126 25.61700
+#&gt; Merc 230            15.229267 26.24887
+#&gt; Merc 280            13.869871 25.11116
+#&gt; Merc 280C           13.251694 24.43255
+#&gt; Merc 450SE          10.287650 20.47020
+#&gt; Merc 450SL          12.184462 22.55922
+#&gt; Merc 450SLC         11.595785 22.52058
+#&gt; Cadillac Fleetwood   3.882155 15.52670
+#&gt; Lincoln Continental  2.423747 14.01999
+#&gt; Chrysler Imperial    3.062234 14.45498
+#&gt; Fiat 128            19.980282 30.59668
+#&gt; Honda Civic         23.471849 34.14239
+#&gt; Toyota Corolla      21.967879 33.07861
+#&gt; Toyota Corona       18.738518 29.78627
+#&gt; Dodge Challenger    13.120801 23.92288
+#&gt; AMC Javelin         13.968470 24.57885
+#&gt; Camaro Z28          11.080500 22.22849
+#&gt; Pontiac Firebird    11.345720 21.98579
+#&gt; Fiat X1-9           21.605394 32.47980
+#&gt; Porsche 914-2       20.361188 30.95626
+#&gt; Lotus Europa        23.791260 35.10855
+#&gt; Ford Pantera L      15.113103 25.78248
+#&gt; Ferrari Dino        17.415401 27.91878
+#&gt; Maserati Bora       12.600273 23.36783
+#&gt; Volvo 142E          17.240173 27.85937</div><div class='input'><span class='fu'>predictive_interval</span>(<span class='no'>fit</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='fu'>data.frame</span>(<span class='kw'>wt</span> <span class='kw'>=</span> <span class='fu'>range</span>(<span class='no'>mtcars</span>$<span class='no'>wt</span>)),
+                    <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt;         25%      75%
+#&gt; 1 26.627901 31.24743
+#&gt; 2  6.426857 10.67194</div><div class='input'>
 <span class='co'># stanreg vs ppd methods</span>
 <span class='no'>preds</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>123</span>)
 <span class='fu'>all.equal</span>(
