@@ -1,0 +1,157 @@
+---
+title: "Estimating ANOVA Models with rstanarm"
+author: "Jonah Gabry and Ben Goodrich"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{stan_aov: ANOVA Models}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+# Introduction
+
+This vignette explains how to estimate ANalysis Of VAriance (ANOVA) models 
+using the `stan_aov` function in the __rstanarm__ package
+
+```{r, child="children/four_steps.txt"}
+```
+
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use the
+__rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when the likelihood is
+the product of independent normal distributions. We also demonstrate that Step 
+2 is not entirely automatic because it is sometimes necessary to specify some
+additional tuning parameters in order to obtain optimally efficient results.
+
+# Likelihood
+
+The likelihood for one observation under a linear model can be written as a
+conditionally normal PDF
+$$\frac{1}{\sigma_{\epsilon} \sqrt{2 \pi}} 
+  e^{-\frac{1}{2} \left(\frac{y - \mu}{\sigma_{\epsilon}}\right)^2},$$
+where $\mu = \alpha + \mathbf{x}^\top \boldsymbol{\beta}$ is a linear predictor
+and $\sigma_{\epsilon}$ is the standard deviation of the error in predicting
+the outcome, $y$. The likelihood of the entire sample is the product of $N$
+individual likelihood contributions.
+
+An ANOVA model can be considered a special case of the above linear regression
+model where each of the $K$ predictors in $\mathbf{x}$ is a dummy variable 
+indicating membership in a group. An equivalent linear predictor can be written
+as $\mu_j = \alpha + \alpha_j$, which expresses the conditional expectation of
+the outcome in the $j$-th group as the sum of a common mean, $\alpha$, and a
+group-specfic deviation from the common mean, $\alpha_j$.
+
+# Priors
+
+If we view the ANOVA model as a special case of a linear regression model with
+only dummy variables as predictors, then the model could be estimated using the
+prior specification in the `stan_lm` function. In fact, this is exactly how the
+`stan_aov` function is coded. These functions require the user to specify a 
+value for the prior location (by default the mode) of the $R^2$, the proportion
+of variance in the outcome attributable to the predictors under a linear model.
+This prior specification is appealing in an ANOVA context because of the 
+fundamental identity 
+$$SS_{\mbox{total}} = SS_{\mbox{model}} + SS_{\mbox{error}},$$
+where $SS$ stands for sum-of-squares. If we normalize this identity, we obtain 
+the tautology $1 = R^2 + \left(1 - R^2\right)$ but it is reasonable to expect a
+researcher to have a plausible guess for $R^2$ before conducting an ANOVA. See
+the [vignette](lm.html) for the `stan_lm` function (regularized linear models) for more
+information on this approach.
+
+If we view the ANOVA model as a difference of means, then the model could be
+estimated using the prior specification in the `stan_lmer` function. In the
+syntax popularized by the __lme4__ package, `y ~ 1 + (1|group)` represents a
+likelihood where $\mu_j = \alpha + \alpha_j$ and $\alpha_j$ is normally 
+distributed across the $J$ groups with mean zero and some unknown standard
+deviation. The `stan_lmer` function specifies that this standard deviation has
+a Gamma prior with, by default, both its shape and scale parameters equal to
+$1$, which is just an standard exponential distribution. However, the shape
+and scale parameters can be specified as other positive values. This approach
+also requires specifying a prior distribution on the standard deviation of the
+errors that is independent of the prior distribution for each $\alpha_j$. See
+the [vignette](glmer.html) for the `stan_glmer` function (__lme4__-style models using
+__rstanarm__) for more information on this approach.
+
+# Example
+
+We will utilize an example from the __HSAUR3__ package by Brian S. Everitt and
+Torsten Hothorn, which is used in their 2014 book 
+_A Handbook of Statistical Analyses Using R (3rd Edition)_ (Chapman & Hall /
+CRC). This book is frequentist in nature and we will show how to obtain the 
+corresponding Bayesian results.
+
+The model in section 4.3.1 analyzes an experiment where rats were subjected to
+different diets in order to see how much weight they gained. The experimental
+factors were whether their diet had low or high protein and whether the protein
+was derived from beef or cereal. Before seeing the data, one might expect that
+a moderate proportion of the variance in weight gain might be attributed to
+protein (source) in the diet. The frequentist ANOVA estimates can be obtained:
+```{r aov-weightgain-aov}
+data("weightgain", package = "HSAUR3")
+coef(aov(weightgain ~ source * type, data = weightgain))
+```
+To obtain Bayesian estimates we can prepend `stan_` to `aov` and specify the
+prior location of the $R^2$ as well as optionally the number of cores that the
+computer is allowed to utilize:
+```{r aov-weightgain-mcmc, results="hide"}
+library(rstanarm)
+post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
+                  prior = R2(location = 0.5), adapt_delta = 0.999,
+                  chains = CHAINS, cores = CORES, seed = SEED)
+post1
+```
+```{r, echo=FALSE}
+print(post1)
+```
+Here we have specified `adapt_delta = 0.999` to decrease the stepsize and 
+largely prevent divergent transitions. See the Troubleshooting section in the 
+main rstanarm [vignette](rstanarm.html) for more details about `adapt_delta`. Also, our prior 
+guess that $R^2 = 0.5$ was overly optimistic. However, the frequentist estimates presumably overfit the data even more.
+
+Alternatively, we could prepend `stan_` to `lmer` and specify the corresponding
+priors
+```{r, aov-weightgain-stan_lmer, eval=FALSE}
+post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
+                   data = weightgain, prior_intercept = cauchy(),
+                   prior_covariance = decov(shape = 2, scale = 2),
+                   adapt_delta = 0.999, chains = CHAINS, cores = CORES, 
+                   seed = SEED)
+```
+Comparing these two models using the `loo` function in the __loo__ package 
+reveals a negligible preference for the first approach that is almost entirely
+due to its having a smaller number of effective parameters as a result of the
+more regularizing priors. However, the difference is so small that it may seem
+advantageous to present the second results which are more in line with a
+mainstream Bayesian approach to an ANOVA model.
+
+# Conclusion
+
+This vignette has compared and contrasted two approaches to estimating an
+ANOVA model with Bayesian techniques using the __rstanarm__ package. They both
+have the same likelihood, so the (small in this case) differences in the 
+results are attributable to differences in the priors. 
+
+The `stan_aov` approach just calls `stan_lm` and thus only requires a prior 
+location on the $R^2$ of the linear model. This seems rather easy to do in 
+the context of an ANOVA decomposition of the total sum-of-squares in the 
+outcome into model sum-of-squares and residual sum-of-squares.
+
+The `stan_lmer` approach just calls `stan_glm` but specifies a normal prior
+with mean zero for the deviations from $\alpha$ across groups. This is more
+in line with what most Bayesians would do naturally --- particularly if the 
+factors were considered "random" --- but also requires a prior for $\alpha$,
+$\sigma$, and the standard deviation of the normal prior on the group-level
+intercepts. The `stan_lmer` approach is very flexible and might be more
+appropriate for more complicated experimental designs.
