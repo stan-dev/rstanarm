@@ -35,6 +35,7 @@
 #' @template args-same-as
 #' @template args-same-as-rarely
 #' @template args-dots
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_aux
 #' @template args-prior_PD
@@ -136,16 +137,28 @@
 #' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
 #'
-stan_glm <- function(formula, family = gaussian(), data, weights, subset,
-                    na.action = NULL, offset = NULL, model = TRUE, 
-                    x = FALSE, y = TRUE, contrasts = NULL, ..., 
-                    prior = normal(), prior_intercept = normal(),
-                    prior_aux = cauchy(0, 5),
-                    prior_PD = FALSE, 
-                    algorithm = c("sampling", "optimizing", 
-                                  "meanfield", "fullrank"),
-                    adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-  
+stan_glm <-
+  function(formula,
+           family = gaussian(),
+           data,
+           weights,
+           subset,
+           na.action = NULL,
+           offset = NULL,
+           model = TRUE,
+           x = FALSE,
+           y = TRUE,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   validate_glm_formula(formula)
@@ -204,26 +217,27 @@ stan_glm <- function(formula, family = gaussian(), data, weights, subset,
 #' @param link For \code{stan_glm.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 #'   
-stan_glm.nb <- function(formula,
-                        data,
-                        weights,
-                        subset,
-                        na.action = NULL,
-                        offset = NULL,
-                        model = TRUE,
-                        x = FALSE,
-                        y = TRUE,
-                        contrasts = NULL,
-                        link = "log",
-                        ...,
-                        prior = normal(),
-                        prior_intercept = normal(),
-                        prior_aux = cauchy(0, 5),
-                        prior_PD = FALSE,
-                        algorithm = c("sampling", "optimizing", 
-                                      "meanfield", "fullrank"),
-                        adapt_delta = NULL,
-                        QR = FALSE) {
+stan_glm.nb <- 
+  function(formula,
+           data,
+           weights,
+           subset,
+           na.action = NULL,
+           offset = NULL,
+           model = TRUE,
+           x = FALSE,
+           y = TRUE,
+           contrasts = NULL,
+           link = "log",
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
+    
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call()

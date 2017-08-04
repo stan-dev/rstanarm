@@ -357,8 +357,8 @@ allow_special_parnames <- function(object, pars) {
   }
   if ("b" %in% pars) {
     if (is.mer(object)) {
-      pars2 <-
-        c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+      pars2 <- c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+      pars[pars == "b"] <- NA
     } else {
       warning("No group-specific parameters. 'varying' ignored.",
               call. = FALSE)

@@ -27,6 +27,7 @@
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_aux
 #' @template args-prior_smooth
@@ -96,6 +97,9 @@
 #' Software}. \strong{14}(14), 1--22. 
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
 #' 
+#' @seealso The vignette for \code{stan_glmer}, which also discusses
+#'   \code{stan_gamm4}.
+#' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
@@ -111,16 +115,28 @@
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 #' 
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
-                       weights = NULL, subset = NULL, na.action, knots = NULL, 
-                       drop.unused.levels = TRUE, ..., 
-                       prior = normal(), prior_intercept = normal(),
-                       prior_smooth = exponential(autoscale = FALSE), 
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-
+stan_gamm4 <-
+  function(formula,
+           random = NULL,
+           family = gaussian(),
+           data,
+           weights = NULL,
+           subset = NULL,
+           na.action,
+           knots = NULL,
+           drop.unused.levels = TRUE,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   
@@ -291,11 +307,12 @@ plot_nonlinear <- function(x, smooths, ...,
                       seq(from = yrange[1], to = yrange[2], length.out = 100))
     colnames(xz) <- xnames[1:2]
     plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
-    for (i in colnames(original)) {
-      if (i %in% colnames(xz)) next
-      xz[[i]] <- 1
-    }
-    XZ <- predict(x$jam, newdata = xz, type = "lpmatrix")
+    nd <- original
+    nd <- nd[sample(nrow(xz), size = nrow(xz), replace = TRUE), ]
+    nd[[xnames[1]]] <- xz[[xnames[1]]]
+    nd[[xnames[2]]] <- xz[[xnames[2]]]
+    requireNamespace("mgcv", quietly = TRUE)
+    XZ <- predict(x$jam, newdata = nd, type = "lpmatrix")
     incl <- grepl(labels, colnames(B), fixed = TRUE)
     b <- B[, incl, drop = FALSE]
     xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
