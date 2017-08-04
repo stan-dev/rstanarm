@@ -153,17 +153,22 @@ generated quantities {
     else {
       eta = X * beta + psi;
     }
-    for (n in 1:N) {
-      if (family == 1)
-        mean_PPD = mean_PPD + normal_rng(eta[n], nu[1]);
-      else if (family == 2) {
+    if (family == 1) {
+      eta = linkinv_gauss(eta, link);
+      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], nu[1]);
+    }
+    else if (family == 2) {
+      eta = linkinv_count(eta, link);
+      for (n in 1:N) {
         if (eta[n] < poisson_max)
           mean_PPD = mean_PPD + poisson_log_rng(eta[n]);
         else
           mean_PPD = mean_PPD + normal_rng(eta[n], sqrt(eta[n]));
       }
-      else if (family == 3)
-        mean_PPD = mean_PPD + binomial_rng(trials[n], inv_logit(eta[n]));
+    }
+    else if (family == 3) {
+      eta = linkinv_binom(eta, link);
+      for (n in 1:N) mean_PPD = mean_PPD + binomial_rng(trials[n], inv_logit(eta[n]));
     }
   }
   mean_PPD = mean_PPD / N;
