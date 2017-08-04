@@ -55,11 +55,8 @@ S3method(vcov,stanreg)
 S3method(waic,stanreg)
 export(R2)
 export(VarCorr)
-<<<<<<< HEAD
-export(beta)
-=======
 export(bayes_R2)
->>>>>>> master
+export(beta)
 export(cauchy)
 export(compare_models)
 export(decov)

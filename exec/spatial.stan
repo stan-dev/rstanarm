@@ -1,8 +1,14 @@
 // CAR SPATIAL MODELS
+functions {
+  #include "continuous_likelihoods.stan"
+  #include "binomial_likelihoods.stan"
+  #include "count_likelihoods.stan"
+}
 data {
   int<lower=0> N;                 // number of regions
   int<lower=0> K;                 // number of predictors (inc intercept)
   matrix[N,K] X;                  // model matrix
+  vector[K] xbar;
   int<lower=0> trials[N];         // binomial trials (0 1d array if not applicable)
   int y_int[N];                   // outcome
   real y_real[N];                 // outcome
@@ -42,7 +48,7 @@ transformed data {
   real poisson_max = 30 * log(2);
 }
 parameters {
-  real alpha[has_intercept];  // intercept
+  real gamma[has_intercept];  // raw intercept
   vector[K] beta;             // predictors on covariates (including intercept)
   vector[N] theta_raw[mod == 2? 1 : 0];        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)
@@ -63,28 +69,32 @@ transformed parameters {
 }
 model {
   vector[N] eta;   // linear predictor + spatial random effects
-  // model
+  // deal with intercept
   if (has_intercept == 1)
-    eta = alpha[1] + X * beta + psi;
+    eta = gamma[1] + X * beta + psi;
   else
     eta = X * beta + psi;
+  // likelihoods
   if (family == 1) {
+    eta = linkinv_gauss(eta, link);
     target+= normal_lpdf(y_real | eta, nu[1]);
   }
   else if (family == 2) {
+    eta = linkinv_count(eta, link);
     target+= poisson_log_lpmf(y_int | eta);
   }
   else if (family == 3) {
+    eta = linkinv_binom(eta, link);
     target+= binomial_lpmf(y_int | trials, inv_logit(eta));
   }
-  // prior on spatial parameter
+  // prior on spatial parameter vector
   target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
   // priors on coefficients
   if (has_intercept == 1) {
     if (prior_dist_for_intercept == 1)
-      target+= normal_lpdf(alpha | prior_mean_for_intercept, prior_scale_for_intercept);
+      target+= normal_lpdf(gamma | prior_mean_for_intercept, prior_scale_for_intercept);
     else if (prior_dist_for_intercept == 2)
-      target+= student_t_lpdf(alpha | prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
+      target+= student_t_lpdf(gamma | prior_df_for_intercept, prior_mean_for_intercept, prior_scale_for_intercept);
     /* else prior_dist_intercept is 0 and nothing is added */
   }
   if (K > 0) {
@@ -132,6 +142,9 @@ model {
 }
 generated quantities {
   real mean_PPD = 0;
+  real alpha[has_intercept];
+  if (has_intercept)
+    alpha[1] = gamma[1] - dot_product(beta, xbar);
   {
     vector[N] eta;
     if (has_intercept == 1) {
