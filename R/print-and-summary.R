@@ -69,7 +69,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   cat("\n family:      ", family_plus_link(x))
   cat("\n formula:     ", formula_string(formula(x)))
   cat("\n observations:", nobs(x))
-  if (x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm"))
+  if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
     cat("\n predictors:  ", length(coef(x)))
   
   cat("\n------\n")
@@ -278,7 +278,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     formula = formula(object),
     posterior_sample_size = posterior_sample_size(object),
     nobs = nobs(object),
-    npreds = if (object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm"))
+    npreds = if (isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
       length(coef(object)) else NULL,
     ngrps = if (mer) ngrps(object) else NULL,
     print.digits = digits,
