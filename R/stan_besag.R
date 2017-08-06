@@ -36,7 +36,7 @@ stan_besag <- function(formula,
                      QR = FALSE) {
   stan_function <- "stan_besag"
   if (!requireNamespace("INLA", quietly = TRUE))
-    stop(paste("Please install the INLA package before using", stan_function))
+    stop(paste("Please install and load the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)

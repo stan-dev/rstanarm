@@ -23,7 +23,7 @@
 #' 
 
 stan_bym <- function(formula,
-                        family = c("binomial", "poisson", "gaussian"),
+                        family = gaussian(),
                         data,
                         trials = NULL,
                         W,
@@ -39,7 +39,7 @@ stan_bym <- function(formula,
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
-  family <- match.arg(family)
+  family <- validate_family(family)
   mf <- model.frame(mc, data)
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
@@ -64,14 +64,10 @@ stan_bym <- function(formula,
                call = match.call(),
                stan_function = stan_function)
   
-  if (family == "binomial") {
+  if (family$family == "binomial") {
     fit$family <- binomial(link = "logit")
     fit$trials <- trials
   }
-  else if (family == "poisson")
-    fit$family <- poisson(link = "log")
-  else if (family == "gaussian")
-    fit$family <- gaussian(link = "identity")
   out <- stanreg(fit)
   structure(out, class = c("stanreg", "car"))
 }

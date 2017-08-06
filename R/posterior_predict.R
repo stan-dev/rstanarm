@@ -167,7 +167,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   } else {
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws))
   }
-  if (!is_polr(object) && is.binomial(family(object)$family))
+  if (!is_polr(object) && is.binomial(family(object)$family))  # Simplify this
     ppargs$trials <- pp_binomial_trials(object, newdata)
   if (is(object, "car") && is.binomial(family(object)$family))
     ppargs$trials <- object$trials

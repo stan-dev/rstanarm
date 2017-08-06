@@ -31,7 +31,7 @@ data {
   real<lower=0> prior_df_for_intercept;
   vector[K] prior_mean;
   vector<lower=0>[K] prior_scale;
-  real<lower=0> prior_df;
+  real<lower=0> prior_df[K];
   real prior_mean_aux;
   real<lower=0> prior_scale_aux;
   real<lower=0> prior_df_aux;
@@ -52,9 +52,9 @@ parameters {
   vector[K] beta;             // predictors on covariates (including intercept)
   vector[N] theta_raw[mod == 2? 1 : 0];        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)
-  real<lower=0,upper=(mod == 2? 1: positive_infinity())> tau;          // variance i.e. tau^2
-  real<lower=0> sigma[mod == 2? 1 : 0];        // variance i.e. sigma^2
-  real<lower=0> nu[family == 1? 1 : 0];  // applies only if family is gaussian
+  real<lower=0,upper=(mod == 2? 1: positive_infinity())> rho;          // variance i.e. rho^2
+  real<lower=0> tau[mod == 2? 1 : 0];        // variance i.e. tau^2
+  real<lower=0> sigma[family == 1? 1 : 0];  // applies only if family is gaussian
 }
 transformed parameters {
   vector[N] phi;          // non-centered random effect (spatial)
@@ -62,10 +62,10 @@ transformed parameters {
   phi[1:(N - 1)] = phi_raw;
   phi[N] = -sum(phi_raw);
   if (mod == 1)
-    psi = phi * sqrt(inv(tau));
+    psi = phi * sqrt(inv(rho));
   else if (mod == 2)
-    psi = sigma[1]*(sqrt(1-tau)*theta_raw[1] + sqrt(tau/scaling_factor)*phi);
-    // psi = sigma[1]*(sqrt(tau)*theta_raw[1] + sqrt(1-tau)*scaling_factor*phi);
+    psi = tau[1]*(sqrt(1-rho)*theta_raw[1] + sqrt(rho/scaling_factor)*phi);
+    // psi = tau[1]*(sqrt(rho)*theta_raw[1] + sqrt(1-rho)*scaling_factor*phi);
 }
 model {
   vector[N] eta;   // linear predictor + spatial random effects
@@ -77,7 +77,7 @@ model {
   // likelihoods
   if (family == 1) {
     eta = linkinv_gauss(eta, link);
-    target+= normal_lpdf(y_real | eta, nu[1]);
+    target+= normal_lpdf(y_real | eta, sigma[1]);
   }
   else if (family == 2) {
     eta = linkinv_count(eta, link);
@@ -108,35 +108,35 @@ model {
   }
   if (mod == 2) { // BYM
     target+= normal_lpdf(theta_raw[1] | 0, 1);
-    target+= beta_lpdf(tau | shape1_tau, shape2_tau);
+    target+= beta_lpdf(rho | shape1_tau, shape2_tau);
     if (prior_dist_aux == 1)
-      target+= normal_lpdf(sigma | prior_mean_aux, prior_scale_aux);
+      target+= normal_lpdf(tau | prior_mean_aux, prior_scale_aux);
     else if (prior_dist_aux == 2)
-      target+= student_t_lpdf(sigma | prior_df_aux, prior_mean_aux, prior_scale_aux);
+      target+= student_t_lpdf(tau | prior_df_aux, prior_mean_aux, prior_scale_aux);
     else if (prior_dist_aux == 3)
-      target+= cauchy_lpdf(sigma | prior_mean_aux, prior_scale_aux);
+      target+= cauchy_lpdf(tau | prior_mean_aux, prior_scale_aux);
     else if (prior_dist_aux == 4)
-      target+= exponential_lpdf(sigma | prior_rate_aux);
+      target+= exponential_lpdf(tau | prior_rate_aux);
     /* else prior_dist_aux is 0 and nothing is added */
   }
   else {
     if (prior_dist_tau == 1)
-      target+= normal_lpdf(tau | prior_mean_tau, prior_scale_tau);
+      target+= normal_lpdf(rho | prior_mean_tau, prior_scale_tau);
     else if (prior_dist_tau == 2)
-      target+= student_t_lpdf(tau | prior_df_tau, prior_mean_tau, prior_scale_tau);
+      target+= student_t_lpdf(rho | prior_df_tau, prior_mean_tau, prior_scale_tau);
     else if (prior_dist_tau == 3)
-      target+= cauchy_lpdf(tau | prior_mean_tau, prior_scale_tau);
+      target+= cauchy_lpdf(rho | prior_mean_tau, prior_scale_tau);
     else if (prior_dist_tau == 4)
-      target+= exponential_lpdf(tau | prior_rate_tau);
+      target+= exponential_lpdf(rho | prior_rate_tau);
     /* else prior_dist_tau is 0 and nothing is added */
   }
   if (family == 1) { // prior on sd if outcome is gaussian
     if (prior_dist_nu == 1)
-      target+= normal_lpdf(nu[1] | prior_mean_nu, prior_scale_nu);
+      target+= normal_lpdf(sigma[1] | prior_mean_nu, prior_scale_nu);
     else if (prior_dist_nu == 2)
-      target+= student_t_lpdf(nu[1] | prior_df_nu, prior_mean_nu, prior_scale_nu);
+      target+= student_t_lpdf(sigma[1] | prior_df_nu, prior_mean_nu, prior_scale_nu);
     else if (prior_dist_nu == 3)
-      target+= cauchy_lpdf(nu[1] | prior_mean_nu, prior_scale_nu);
+      target+= cauchy_lpdf(sigma[1] | prior_mean_nu, prior_scale_nu);
     /* else prior_dist_nu is 0 and nothing is added */
   }
 }
@@ -155,7 +155,7 @@ generated quantities {
     }
     if (family == 1) {
       eta = linkinv_gauss(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], nu[1]);
+      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], sigma[1]);
     }
     else if (family == 2) {
       eta = linkinv_count(eta, link);

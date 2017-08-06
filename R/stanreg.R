@@ -23,7 +23,6 @@
 stanreg <- function(object) {
   opt <- object$algorithm == "optimizing"
   mer <- !is.null(object$glmod) # used stan_(g)lmer
-  is_car <- object$stan_function %in% c("stan_besag", "stan_bym")
   stanfit <- object$stanfit
   family <- object$family
   y <- object$y
@@ -32,6 +31,7 @@ stanreg <- function(object) {
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
   
+  is_car <- object$stan_function %in% c("stan_besag", "stan_bym")
   is_betareg <- is.beta(family$family)
   if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
@@ -156,9 +156,6 @@ stanreg <- function(object) {
     out$phi <- phi
   }
   if (is_car) {
-    # CARBayes doesn't include the scale parameters in out$coefficients so not sure if we want to.
-    # exclude <- c(1:nvars, psi_indx, which(rownames(stan_summary) %in% c("mean_PPD", "log-posterior")))
-    # out$coefficients = c(coefs, stan_summary[-exclude, select_median(object$algorithm)])
     out$psi <- psi
     out$trials <- object$trials
   }

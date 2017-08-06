@@ -58,11 +58,16 @@ stan_spatial.fit <- function(x, y, w,
     y_int <- y
     if (family$family == "binomial") {
       family_num <- 3
+      if (is.null(trials) | any(y > trials))
+        stop("Outcome values must be less than or equal to the corresponding value in `trials`.")
+        
     }
     else {  # poisson
       trials <- rep(0, length(y))
       family_num <- 2
     }
+    if(!is.integer(y_int))
+      stop("Outcome must an integer for count likelihoods.")
   }
   
   if (stan_function == "stan_besag")
@@ -172,7 +177,7 @@ stan_spatial.fit <- function(x, y, w,
                     E_n = nrow(edges),
                     family = family_num,
                     link = link,
-                    X = if (has_intercept) x[,-1] else x ,  # include decorrelation and use xtemp
+                    X = xtemp,
                     xbar = as.array(xbar),
                     y_real = y_real,
                     y_int = y_int,
@@ -223,7 +228,7 @@ stan_spatial.fit <- function(x, y, w,
   }
   standata$scaling_factor <- create_scaling_factor(standata, W)
   
-  pars <- c(if (has_intercept) "alpha", "beta", "tau", if(mod == 2) c("sigma"), if(family$family == "gaussian") "nu",
+  pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "sigma",
             "mean_PPD", "psi")
 
   prior_info <- summarize_spatial_prior(
@@ -269,8 +274,8 @@ stan_spatial.fit <- function(x, y, w,
     } 
   }
   new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(xtemp), "tau", if(mod == 2) c("sigma"),
-                 if(family$family == "gaussian") "nu", "mean_PPD", "log-posterior", paste0("psi[", 1:standata$N, "]"))
+                 colnames(xtemp), "rho", if(mod == 2) c("tau"),
+                 if(family$family == "gaussian") "sigma", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   return(structure(stanfit, prior.info = prior_info))
 }
