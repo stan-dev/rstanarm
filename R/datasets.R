@@ -20,7 +20,7 @@
 #' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
-#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon
+#' @aliases kidiq roaches wells bball1970 bball2006 mortality tumors radon lattice10
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -137,6 +137,21 @@
 #' \item \code{association} Indicator for member(s) of household participate
 #' in community organizations
 #' \item \code{educ} Years of education (head of household)
+#' }
+#' }
+#' \item{\code{lattice10}}{
+#' The \code{grid_sim} SpatialPolygonsDataFrame object is an artificial lattice
+#' that has been used to simulate spatial dependence as a Gaussian Markov Random
+#' Field (GMRF).
+#' 
+#' Souce: Simulated data
+#' 
+#' 100 obs. of 3 variables
+#' \itemize{
+#' \item \code{gmrf} GMRF data simulated using Cholesky decomposition sampling from
+#' the precision form of the Multivariate Normal distribution centered at zero.
+#' \item \code{r} X-position of a location on the grid (origin is at the bottom-left).
+#' \item \code{c} Y-position of a location on the grid (origin is at the bottom-left).
 #' }
 #' }
 #' }
