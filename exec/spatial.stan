@@ -16,33 +16,31 @@ data {
   int link;
   int E_n;                        // number of adjacency pairs
   int edges[E_n, 2];              // adjacency pairs
-  real<lower=0> shape1_tau;        // priors
-  real<lower=0> shape2_tau;        // priors
+  real<lower=0> shape1_rho;        // priors
+  real<lower=0> shape2_rho;        // priors
   int<lower=0,upper=1> has_intercept;
   int<lower=1,upper=2> mod;       // 1 = besag (icar); 2 = bym
   real scaling_factor;
   int<lower=0> prior_dist_for_intercept;
   int<lower=0> prior_dist;
-  int<lower=0> prior_dist_aux;
   int<lower=0> prior_dist_tau;
-  int<lower=0> prior_dist_nu;
+  int<lower=0> prior_dist_rho;
+  int<lower=0> prior_dist_sigma;
   real prior_mean_for_intercept;
   real<lower=0> prior_scale_for_intercept;
   real<lower=0> prior_df_for_intercept;
   vector[K] prior_mean;
   vector<lower=0>[K] prior_scale;
   real<lower=0> prior_df[K];
-  real prior_mean_aux;
-  real<lower=0> prior_scale_aux;
-  real<lower=0> prior_df_aux;
-  real<lower=0> prior_rate_aux;
   real prior_mean_tau;
   real<lower=0> prior_scale_tau;
   real<lower=0> prior_df_tau;
-  real<lower=0> prior_rate_tau;
-  real prior_mean_nu;
-  real<lower=0> prior_scale_nu;
-  real<lower=0> prior_df_nu;
+  real prior_mean_rho;
+  real<lower=0> prior_scale_rho;
+  real<lower=0> prior_df_rho;
+  real prior_mean_sigma;
+  real<lower=0> prior_scale_sigma;
+  real<lower=0> prior_df_sigma;
 }
 transformed data {
   real poisson_max = 30 * log(2);
@@ -102,42 +100,32 @@ model {
       target+= normal_lpdf(beta | prior_mean, prior_scale);
     else if (prior_dist == 2)
       target+= student_t_lpdf(beta | prior_df, prior_mean, prior_scale);
-    else if (prior_dist == 3)
-      target+= cauchy_lpdf(beta | prior_mean, prior_scale);
     /* else prior_dist is 0 and nothing is added */
   }
   if (mod == 2) { // BYM
-    target+= normal_lpdf(theta_raw[1] | 0, 1);
-    target+= beta_lpdf(rho | shape1_tau, shape2_tau);
-    if (prior_dist_aux == 1)
-      target+= normal_lpdf(tau | prior_mean_aux, prior_scale_aux);
-    else if (prior_dist_aux == 2)
-      target+= student_t_lpdf(tau | prior_df_aux, prior_mean_aux, prior_scale_aux);
-    else if (prior_dist_aux == 3)
-      target+= cauchy_lpdf(tau | prior_mean_aux, prior_scale_aux);
-    else if (prior_dist_aux == 4)
-      target+= exponential_lpdf(tau | prior_rate_aux);
-    /* else prior_dist_aux is 0 and nothing is added */
-  }
-  else {
+    target+= normal_lpdf(theta_raw[1] | 0, 1);  // unstructured (random) effect
+    if (prior_dist_rho == 1)
+      target+= beta_lpdf(rho | shape1_rho, shape2_rho);
+    /* else prior_dist_rho is 0 and nothing is added */
     if (prior_dist_tau == 1)
-      target+= normal_lpdf(rho | prior_mean_tau, prior_scale_tau);
+      target+= normal_lpdf(tau | prior_mean_tau, prior_scale_tau);
     else if (prior_dist_tau == 2)
-      target+= student_t_lpdf(rho | prior_df_tau, prior_mean_tau, prior_scale_tau);
-    else if (prior_dist_tau == 3)
-      target+= cauchy_lpdf(rho | prior_mean_tau, prior_scale_tau);
-    else if (prior_dist_tau == 4)
-      target+= exponential_lpdf(rho | prior_rate_tau);
+      target+= student_t_lpdf(tau | prior_df_tau, prior_mean_tau, prior_scale_tau);
     /* else prior_dist_tau is 0 and nothing is added */
   }
+  else { // besag
+    if (prior_dist_rho == 1)
+      target+= normal_lpdf(rho | prior_mean_rho, prior_scale_rho);
+    else if (prior_dist_rho == 2)
+      target+= student_t_lpdf(rho | prior_df_rho, prior_mean_rho, prior_scale_rho);
+    /* else prior_dist_rho is 0 and nothing is added */
+  }
   if (family == 1) { // prior on sd if outcome is gaussian
-    if (prior_dist_nu == 1)
-      target+= normal_lpdf(sigma[1] | prior_mean_nu, prior_scale_nu);
-    else if (prior_dist_nu == 2)
-      target+= student_t_lpdf(sigma[1] | prior_df_nu, prior_mean_nu, prior_scale_nu);
-    else if (prior_dist_nu == 3)
-      target+= cauchy_lpdf(sigma[1] | prior_mean_nu, prior_scale_nu);
-    /* else prior_dist_nu is 0 and nothing is added */
+    if (prior_dist_sigma == 1)
+      target+= normal_lpdf(sigma[1] | prior_mean_sigma, prior_scale_sigma);
+    else if (prior_dist_sigma == 2)
+      target+= student_t_lpdf(sigma[1] | prior_df_sigma, prior_mean_sigma, prior_scale_sigma);
+    /* else prior_dist_sigma is 0 and nothing is added */
   }
 }
 generated quantities {

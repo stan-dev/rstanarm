@@ -242,7 +242,7 @@ stan_glm.fit <-
   
   if (length(weights) > 0 && all(weights == 1)) weights <- double()
   if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
-  
+
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp),

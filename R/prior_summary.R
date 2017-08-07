@@ -176,6 +176,26 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
                ", rate = ", .fr2(p$rate), ")"))
   }
   
+  # unique to stan_besag/stan_bym
+  if (!is.null(x[["prior_sigma"]]))
+    .print_scalar_prior(
+      x[["prior_sigma"]], 
+      txt = paste0("\nSigma", if (!sparse) " (after predictors centered)"), 
+      formatters
+    )
+  if (!is.null(x[["prior_rho"]]))
+    .print_scalar_prior(
+      x[["prior_rho"]], 
+      txt = paste0("\nRho", if (!sparse) " (after predictors centered)"), 
+      formatters
+    )
+  if (!is.null(x[["prior_tau"]]))
+    .print_scalar_prior(
+      x[["prior_tau"]], 
+      txt = paste0("\nTau", if (!sparse) " (after predictors centered)"), 
+      formatters
+    )
+  
   cat("\n------\n")
   cat("See help('prior_summary.stanreg') for more details")
   invisible(x)
@@ -224,11 +244,15 @@ used.sparse <- function(x) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
   .f2 <- formatters[[2]]
+
   cat(paste0("\n", txt, "\n ~"),
       if (is.na(p$dist)) {
         "flat"
       } else if (p$dist == "exponential") {
         paste0(p$dist,"(rate = ", .f1(p$rate), ")")
+      } else if (p$dist == "beta") {
+        paste0(p$dist,"(shape1 = ", .f1(p$shape1),
+               ", shape2 = ", .f1(p$shape1), ")")
       } else { # normal, student_t, cauchy
         if (is.null(p$df)) {
           paste0(p$dist,"(location = ", .f1(p$location), 

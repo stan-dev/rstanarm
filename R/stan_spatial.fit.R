@@ -24,7 +24,7 @@ stan_spatial.fit <- function(x, y, w,
                              stan_function = c("stan_besag", "stan_bym"),
                              ...,
                              prior = normal(), prior_intercept = normal(),
-                             prior_sigma = NULL, prior_tau = NULL, prior_nu = NULL,
+                             prior_sigma = NULL, prior_rho = NULL, prior_tau = NULL,
                              prior_PD = FALSE,
                              algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
                              adapt_delta = NULL,
@@ -100,50 +100,71 @@ stan_spatial.fit <- function(x, y, w,
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, autoscale}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
   
-  # Deal with prior_tau and prior_sigma
+  # Deal with prior_rho and prior_sigma
   if (stan_function == "stan_bym") {
-    prior_sigma_stuff <- handle_glm_prior(prior_sigma, nvars = 1, family$link, default_scale = 1, 
+    has_tau <- 1
+    prior_tau_stuff <- handle_glm_prior(prior_tau, nvars = 1, family$link, default_scale = 1, 
                                           ok_dists = ok_scale_dists)
-    names(prior_sigma_stuff) <- paste0(names(prior_sigma_stuff), 
-                                           "_for_aux")
-    for (i in names(prior_sigma_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_sigma_stuff[[i]])
-    
-    prior_tau_stuff <- list(alpha = prior_tau$alpha, beta = prior_tau$beta)
+    names(prior_tau_stuff) <- paste0(names(prior_tau_stuff), 
+                                           "_for_tau")
+    for (i in names(prior_tau_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_tau_stuff[[i]])
+    # In BYM rho is constrained so appropriate prior is Beta dist.
+    if (is.null(prior_rho)) {
+      prior_dist_for_rho <- 0
+      prior_rho$alpha <- 1
+      prior_rho$beta <- 1
+      prior_dist_name_for_rho <- NA
+    }
+    else {
+      prior_dist_for_rho <- 1
+      prior_dist_name_for_rho <- "beta"
+    }
+
+    prior_mean_for_rho <- 0
+    prior_scale_for_rho <- 1
+    prior_df_for_rho <- 1
+    prior_rho_stuff <- list(prior_dist_name_for_rho = prior_dist_name_for_rho,
+                            shape1 = prior_rho$alpha,
+                            shape2 = prior_rho$beta,
+                            prior_mean_for_rho = prior_mean_for_rho,
+                            prior_scale_for_rho = prior_scale_for_rho,
+                            prior_df_for_rho = prior_df_for_rho
+                            )
+  }
+  else if (stan_function == "stan_besag") {
+    has_tau <- 0
+    prior_rho_stuff <- handle_glm_prior(prior_rho, nvars = 1, family$link, default_scale = 1, 
+                                          ok_dists = ok_scale_dists)
+    names(prior_rho_stuff) <- paste0(names(prior_rho_stuff), 
+                                       "_for_rho")
+    for (i in names(prior_rho_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_rho_stuff[[i]])
+
+    prior_rho_stuff$shape1 <- 1
+    prior_rho_stuff$shape2 <- 1
     prior_dist_for_tau <- 0
     prior_mean_for_tau <- 0
     prior_scale_for_tau <- 1
     prior_df_for_tau <- 1
   }
-  else if (stan_function == "stan_besag") {
-    prior_tau_stuff <- handle_glm_prior(prior_tau, nvars = 1, family$link, default_scale = 1, 
-                                          ok_dists = ok_scale_dists)
-    names(prior_tau_stuff) <- paste0(names(prior_tau_stuff), 
-                                       "_for_tau")
-    for (i in names(prior_tau_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_tau_stuff[[i]])
-    prior_tau_stuff$alpha <- 0
-    prior_tau_stuff$beta <- 0
-    prior_dist_for_aux <- 0
-    prior_mean_for_aux <- 0
-    prior_scale_for_aux <- 1
-    prior_df_for_aux <- 1
-  }
 
-  # Deal with prior_nu... needs more dist options
+  # Deal with prior_sigma... needs more dist options
   if (family$family == "gaussian") {
-    prior_nu_stuff <- handle_glm_prior(prior_nu, nvars = 1, family$link, default_scale = 1, 
+    has_sigma <- 1
+    prior_sigma_stuff <- handle_glm_prior(prior_sigma, nvars = 1, family$link, default_scale = 1, 
                                     ok_dists = ok_dists)
-    names(prior_nu_stuff) <- paste0(names(prior_nu_stuff), 
-                                     "_for_nu")
-    for (i in names(prior_nu_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_nu_stuff[[i]])
+    names(prior_sigma_stuff) <- paste0(names(prior_sigma_stuff), 
+                                     "_for_sigma")
+    for (i in names(prior_sigma_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_sigma_stuff[[i]])
   }
   else {
-    prior_dist_for_nu <- 0
-    prior_mean_for_nu <- 0
-    prior_scale_for_nu <- 1
-    prior_df_for_nu <- 1
+    has_sigma <- 0
+    prior_dist_for_sigma <- 0
+    prior_mean_for_sigma <- 0
+    prior_scale_for_sigma <- 1
+    prior_df_for_sigma <- 1
   }
   
   # QR decomposition for x
@@ -182,30 +203,28 @@ stan_spatial.fit <- function(x, y, w,
                     y_real = y_real,
                     y_int = y_int,
                     trials = trials,
-                    shape1_tau = c(prior_tau_stuff$alpha),
-                    shape2_tau = c(prior_tau_stuff$beta),
+                    shape1_rho = c(prior_rho_stuff$shape1),
+                    shape2_rho = c(prior_rho_stuff$shape2),
                     prior_dist_for_intercept = prior_dist_for_intercept,
                     prior_dist = prior_dist,
+                    prior_dist_rho = prior_dist_for_rho,
                     prior_dist_tau = prior_dist_for_tau,
-                    prior_dist_aux = prior_dist_for_aux,
-                    prior_dist_nu = prior_dist_for_nu,
+                    prior_dist_sigma = prior_dist_for_sigma,
                     prior_mean_for_intercept = c(prior_mean_for_intercept),
                     prior_scale_for_intercept = c(prior_scale_for_intercept),
                     prior_df_for_intercept = c(prior_df_for_intercept),
                     prior_mean = as.array(prior_mean),
                     prior_scale = as.array(prior_scale),
                     prior_df = c(prior_df),
-                    prior_mean_aux = c(prior_mean_for_aux),
-                    prior_scale_aux = c(prior_scale_for_aux),
-                    prior_df_aux = c(prior_df_for_aux),
-                    prior_rate_aux = 0,  # FIX ME!!!
                     prior_mean_tau = c(prior_mean_for_tau),
                     prior_scale_tau = c(prior_scale_for_tau),
                     prior_df_tau = c(prior_df_for_tau),
-                    prior_rate_tau = 0,  # FIX ME!!!
-                    prior_mean_nu = c(prior_mean_for_nu),
-                    prior_scale_nu = c(prior_scale_for_nu),
-                    prior_df_nu = c(prior_df_for_nu),
+                    prior_mean_rho = c(prior_mean_for_rho),
+                    prior_scale_rho = c(prior_scale_for_rho),
+                    prior_df_rho = c(prior_df_for_rho),
+                    prior_mean_sigma = c(prior_mean_for_sigma),
+                    prior_scale_sigma = c(prior_scale_for_sigma),
+                    prior_df_sigma = c(prior_df_for_sigma),
                     has_intercept = has_intercept,
                     mod = mod)
   standata$X <- array(standata$X, dim = c(standata$N, standata$K))
@@ -234,16 +253,19 @@ stan_spatial.fit <- function(x, y, w,
   prior_info <- summarize_spatial_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,
+    user_prior_rho = prior_rho_stuff,
+    user_prior_sigma = prior_sigma_stuff,
     user_prior_tau = prior_tau_stuff,
-    user_prior_nu = prior_nu_stuff,
-    user_prior_aux = prior_aux_stuff,
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
+    has_sigma = has_sigma,
+    has_rho = 1,
+    has_tau = has_tau,
     adjusted_prior_scale = prior_scale,
     adjusted_prior_intercept_scale = prior_scale_for_intercept,
-    adjusted_prior_scale_tau = prior_scale_for_tau,
-    adjusted_prior_scale_nu = prior_scale_for_nu,
-    adjusted_prior_scale_aux = prior_scale_for_aux)
+    adjusted_prior_scale_rho = prior_scale_for_rho,
+    adjusted_prior_scale_sigma = prior_scale_for_sigma,
+    adjusted_prior_scale_tau = prior_scale_for_tau)
 
   stanfit <- stanmodels$spatial
 
@@ -284,16 +306,19 @@ stan_spatial.fit <- function(x, y, w,
 
 summarize_spatial_prior <- function(user_prior,
                                     user_prior_intercept,
+                                    user_prior_sigma,
+                                    user_prior_rho,
                                     user_prior_tau,
-                                    user_prior_nu,
-                                    user_prior_aux,
                                     has_intercept,
                                     has_predictors,
+                                    has_sigma,
+                                    has_rho,
+                                    has_tau,
                                     adjusted_prior_scale,
                                     adjusted_prior_intercept_scale,
-                                    adjusted_prior_scale_tau,
-                                    adjusted_prior_scale_nu,
-                                    adjusted_prior_scale_aux) {
+                                    adjusted_prior_scale_sigma,
+                                    adjusted_prior_scale_rho,
+                                    adjusted_prior_scale_tau) {
   rescaled_coef <-
     user_prior$prior_autoscale && has_predictors &&
     !is.na(user_prior$prior_dist_name) &&
@@ -318,6 +343,33 @@ summarize_spatial_prior <- function(user_prior,
       user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
     }
   }
+  if (has_sigma &&
+      user_prior_sigma$prior_dist_name_for_sigma %in% "t") {
+    if (all(user_prior_sigma$prior_df_for_sigma == 1)) {
+      user_prior_sigma$prior_dist_name_for_sigma <- "cauchy"
+    } else {
+      user_prior_sigma$prior_dist_name_for_sigma <- "student_t"
+    }
+  }
+
+  if (has_rho &&
+      user_prior_rho$prior_dist_name_for_rho %in% "t") {
+    if (all(user_prior_rho$prior_df_for_rho == 1)) {
+      user_prior_rho$prior_dist_name_for_rho <- "cauchy"
+    } else if (has_rho && user_prior_rho$prior_dist_name_for_rho == "beta") {
+      user_prior_rho$prior_dist_name_for_rho <- "beta"
+    } else {
+      user_prior_rho$prior_dist_name_for_rho <- "student_t"
+    }
+  }
+  if (has_tau &&
+      user_prior_tau$prior_dist_name_for_tau %in% "t") {
+    if (all(user_prior_tau$prior_df_for_tau == 1)) {
+      user_prior_tau$prior_dist_name_for_tau <- "cauchy"
+    } else {
+      user_prior_tau$prior_dist_name_for_tau <- "student_t"
+    }
+  }
   prior_list <- list(
     prior = 
       if (!has_predictors) NULL else with(user_prior, list(
@@ -339,24 +391,39 @@ summarize_spatial_prior <- function(user_prior,
           adjusted_prior_intercept_scale else NULL,
         df = if (prior_dist_name_for_intercept %in% "student_t")
           prior_df_for_intercept else NULL
-      ))#,
-    #prior_aux = 
-    #  if (!has_phi) NULL else with(user_prior_aux, list(
-    #    dist = prior_dist_name_for_aux,
-    #    location = if (!is.na(prior_dist_name_for_aux) && 
-    #                   prior_dist_name_for_aux != "exponential")
-    #      prior_mean_for_aux else NULL,
-    #    scale = if (!is.na(prior_dist_name_for_aux) && 
-    #                prior_dist_name_for_aux != "exponential")
-    #      prior_scale_for_aux else NULL,
-    #    df = if (!is.na(prior_dist_name_for_aux) && 
-    #             prior_dist_name_for_aux %in% "student_t")
-    #      prior_df_for_aux else NULL, 
-    #    rate = if (!is.na(prior_dist_name_for_aux) && 
-    #               prior_dist_name_for_aux %in% "exponential")
-    #      1 / prior_scale_for_aux else NULL,
-    #    aux_name = "phi"
-    #  ))
+      )),
+    prior_sigma = 
+      if (!has_sigma) NULL else with(user_prior_sigma, list(
+        dist = prior_dist_name_for_sigma,
+        location = prior_mean_for_sigma,
+        scale = prior_scale_for_sigma,
+        adjusted_scale = if (rescaled_int)
+          adjusted_prior_sigma_scale else NULL,
+        df = if (prior_dist_name_for_sigma %in% "student_t")
+          prior_df_for_sigma else NULL
+      )),
+    prior_rho = 
+      if (!has_rho) NULL else with(user_prior_rho, list(
+        dist = prior_dist_name_for_rho,
+        location = prior_mean_for_rho,
+        scale = prior_scale_for_rho,
+        shape1 = shape1,
+        shape2 = shape2,
+        adjusted_scale = if (rescaled_int)
+          adjusted_prior_rho_scale else NULL,
+        df = if (prior_dist_name_for_rho %in% "student_t")
+          prior_df_for_rho else NULL
+      )),
+    prior_tau = 
+      if (!has_tau) NULL else with(user_prior_tau, list(
+        dist = prior_dist_name_for_tau,
+        location = prior_mean_for_tau,
+        scale = prior_scale_for_tau,
+        adjusted_scale = if (rescaled_int)
+          adjusted_prior_tau_scale else NULL,
+        df = if (prior_dist_name_for_tau %in% "student_t")
+          prior_df_for_tau else NULL
+      ))
   )
   return(prior_list)
 }
