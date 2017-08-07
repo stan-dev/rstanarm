@@ -50,7 +50,9 @@ pp_data <-
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
   }
-
+  #if (!is.null(newdata) & is(object, "car")) {
+  #  return(nlist(x))
+  #}
   offset <- .pp_data_offset(object, newdata, offset)
   Terms <- delete.response(terms(object))
   m <- model.frame(Terms, newdata, xlev = object$xlevels)
@@ -59,7 +61,7 @@ pp_data <-
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
   if (is(object, "polr") && !is_scobit(object)) 
     x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
-  
+
   nlist(x, offset)
 }
 

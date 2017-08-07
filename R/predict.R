@@ -69,6 +69,14 @@ predict.stanreg <- function(object,
   stanmat <- as.matrix.stanreg(object)
   beta <- stanmat[, seq_len(ncol(dat$x))]
   eta <- linear_predictor(beta, dat$x, dat$offset)
+  if (is(object, "car")) {
+    if (nrow(object$x) > nrow(dat$x))
+      stop("'newdata' is less than the number of spatial regions.")
+    psi_indx <- grep("psi", colnames(as.matrix(object$stanfit)))
+    psi <- as.matrix(object$stanfit)[,psi_indx]
+    psi <- unname(colMeans(psi))
+    eta <- eta + psi
+  }
   if (type == "response") {
     inverse_link <- linkinv(object)
     eta <- inverse_link(eta)

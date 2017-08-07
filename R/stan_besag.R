@@ -99,6 +99,7 @@ stan_besag <- function(formula,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   mf <- model.frame(mc, data)
+  mt <- terms(formula, data = data)
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
   
@@ -120,7 +121,8 @@ stan_besag <- function(formula,
                x = X, y = Y,
                family,
                formula,
-               model = mf, 
+               model = mf,
+               terms = mt,
                call = match.call(),
                stan_function = stan_function)
  

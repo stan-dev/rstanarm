@@ -99,8 +99,15 @@ stan_bym <- function(formula,
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   mf <- model.frame(mc, data)
+  mt <- terms(formula, data = data)
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
+  
+  if (!is.null(prior_rho)) {
+    if (prior_rho$dist != "beta")
+      stop("'prior_rho' must be either beta() or NULL.") 
+  }
+  
   stanfit <- stan_spatial.fit(x = X, y = Y, w = W,
                               trials = trials,
                               family = family,
@@ -119,6 +126,7 @@ stan_bym <- function(formula,
                family,
                formula,
                model = mf, 
+               terms = mt,
                call = match.call(),
                stan_function = stan_function)
   
