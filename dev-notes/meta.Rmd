@@ -1,0 +1,28 @@
+# Meta
+
+Details on how to build the online documentation for the R packages maintained by the Stan Development Team.
+The RStanARM Developer Notes is built with [bookdown](https://bookdown.org/yihui/bookdown/) and the package
+documentation is built with [pkgdown](http://hadley.github.io/pkgdown/).
+
+## Building RStanARM Developer Notes
+
+(If you're including a new chapter then add its file name in the appropriate location in `_bookdown.yml`.)
+
+1. Open the `dev-notes.Rproj` file in RStudio.
+2. Run `bookdown::serve_book("index.Rmd")`, which renders the site live (automatically recompiling as Rmd files are changed).
+3. Once you're happy with the changes, move all the files from the `/dev-notes-output` folder into the root directory. This can be done automatically by runnin `sh cleanup.sh`.
+
+
+## Building Documentation for RStan
+
+1. Update the master branch and merge the new commits into the gh-pages branch.
+2. Change director to where the RStan package files are located.
+3. Open the `.Rproj` file in RStudio.
+4. Render the html files with `pkgdown::build_site(pkg = ".", path = "../..")`.
+
+## Building Documentation for the other R packages
+
+1. Update the master branch and merge the new commits into the gh-pages branch.
+2. Open the `.Rproj` file in RStudio.
+3. Check to make sure that the vignette names in `\vignettes` match the names in `_pkgdown.yml`. Currently, the vignette file names need to have the same naming convention as R package names (i.e. '-' are not permitted). If there are new vignettes, be sure to include them in the yml file under an appropriate section (or new section).
+4. Render the html files with `pkgdown::build_site(pkg = ".", path = ".")`.

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Rstanarm Developer Notes</title>
+  <meta name="description" content="Rstanarm Developer Notes">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Rstanarm Developer Notes" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://mc-stan.org/rstanarm/index.html" />
+  <meta property="og:image" content="https://mc-stan.org/rstanarm/index.htmlimages/logo.png" />
+  
+  <meta name="github-repo" content="stan-dev/rstanarm" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Rstanarm Developer Notes" />
+  
+  
+  <meta name="twitter:image" content="https://mc-stan.org/rstanarm/index.htmlimages/logo.png" />
+
+<meta name="author" content="Stan Development Team">
+
+
+<meta name="date" content="2017-08-07">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  <link rel="shortcut icon" href="images/logo-icon.png" type="image/x-icon">
+<link rel="prev" href="an-outline-of-what-goes-where.html">
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Rstanarm Developer Notes</a></li>
+<li class="chapter" data-level="1" data-path="model-fitting.html"><a href="model-fitting.html"><i class="fa fa-check"></i><b>1</b> Model Fitting</a></li>
+<li class="chapter" data-level="2" data-path="rstanreg-r.html"><a href="rstanreg-r.html"><i class="fa fa-check"></i><b>2</b> <code>R/stanreg.R</code></a></li>
+<li class="chapter" data-level="3" data-path="methods.html"><a href="methods.html"><i class="fa fa-check"></i><b>3</b> Methods</a></li>
+<li class="chapter" data-level="4" data-path="documentation-and-examples.html"><a href="documentation-and-examples.html"><i class="fa fa-check"></i><b>4</b> Documentation and Examples</a></li>
+<li class="chapter" data-level="5" data-path="testing.html"><a href="testing.html"><i class="fa fa-check"></i><b>5</b> Testing</a></li>
+<li class="chapter" data-level="6" data-path="vignettes.html"><a href="vignettes.html"><i class="fa fa-check"></i><b>6</b> Vignettes</a></li>
+<li class="chapter" data-level="7" data-path="an-outline-of-what-goes-where.html"><a href="an-outline-of-what-goes-where.html"><i class="fa fa-check"></i><b>7</b> An outline of what goes where</a></li>
+<li class="chapter" data-level="8" data-path="meta.html"><a href="meta.html"><i class="fa fa-check"></i><b>8</b> Meta</a><ul>
+<li class="chapter" data-level="8.1" data-path="meta.html"><a href="meta.html#building-rstanarm-developer-notes"><i class="fa fa-check"></i><b>8.1</b> Building RStanARM Developer Notes</a></li>
+<li class="chapter" data-level="8.2" data-path="meta.html"><a href="meta.html#building-documentation-for-rstan"><i class="fa fa-check"></i><b>8.2</b> Building Documentation for RStan</a></li>
+<li class="chapter" data-level="8.3" data-path="meta.html"><a href="meta.html#building-documentation-for-the-other-r-packages"><i class="fa fa-check"></i><b>8.3</b> Building Documentation for the other R packages</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Rstanarm Developer Notes</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="meta" class="section level1">
+<h1><span class="header-section-number">8</span> Meta</h1>
+<p>Details on how to build the online documentation for the R packages maintained by the Stan Development Team. The RStanARM Developer Notes is built with <a href="https://bookdown.org/yihui/bookdown/">bookdown</a> and the package documentation is built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+<div id="building-rstanarm-developer-notes" class="section level2">
+<h2><span class="header-section-number">8.1</span> Building RStanARM Developer Notes</h2>
+<p>(If you’re including a new chapter then add its file name in the appropriate location in <code>_bookdown.yml</code>.)</p>
+<ol style="list-style-type: decimal">
+<li>Open the <code>dev-notes.Rproj</code> file in RStudio.</li>
+<li>Run <code>bookdown::serve_book(&quot;index.Rmd&quot;)</code>, which renders the site live (automatically recompiling as Rmd files are changed).</li>
+<li>Once you’re happy with the changes, move all the files from the <code>/dev-notes-output</code> folder into the root directory. This can be done automatically by runnin <code>sh cleanup.sh</code>.</li>
+</ol>
+</div>
+<div id="building-documentation-for-rstan" class="section level2">
+<h2><span class="header-section-number">8.2</span> Building Documentation for RStan</h2>
+<ol style="list-style-type: decimal">
+<li>Update the master branch and merge the new commits into the gh-pages branch.</li>
+<li>Change director to where the RStan package files are located.</li>
+<li>Open the <code>.Rproj</code> file in RStudio.</li>
+<li>Render the html files with <code>pkgdown::build_site(pkg = &quot;.&quot;, path = &quot;../..&quot;)</code>.</li>
+</ol>
+</div>
+<div id="building-documentation-for-the-other-r-packages" class="section level2">
+<h2><span class="header-section-number">8.3</span> Building Documentation for the other R packages</h2>
+<ol style="list-style-type: decimal">
+<li>Update the master branch and merge the new commits into the gh-pages branch.</li>
+<li>Open the <code>.Rproj</code> file in RStudio.</li>
+<li>Check to make sure that the vignette names in <code>\vignettes</code> match the names in <code>_pkgdown.yml</code>. Currently, the vignette file names need to have the same naming convention as R package names (i.e. ‘-’ are not permitted). If there are new vignettes, be sure to include them in the yml file under an appropriate section (or new section).</li>
+<li>Render the html files with <code>pkgdown::build_site(pkg = &quot;.&quot;, path = &quot;.&quot;)</code>.</li>
+</ol>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="an-outline-of-what-goes-where.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": false,
+"twitter": false,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": false
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 ---
 title: "Rstanarm Developer Notes"
 author: "Stan Development Team"
-date: "June 16, 2017"
+date: "August 07, 2017"
 documentclass: book
 output:
   bookdown::gitbook:
