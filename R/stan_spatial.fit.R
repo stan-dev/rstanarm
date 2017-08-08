@@ -32,7 +32,7 @@ stan_spatial.fit <- function(x, y, w,
                              prior = normal(), prior_intercept = normal(),
                              prior_sigma = NULL, prior_rho = NULL, prior_tau = NULL,
                              prior_PD = FALSE,
-                             algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                             algorithm = c("sampling", "meanfield", "fullrank"),
                              adapt_delta = NULL,
                              QR = FALSE) {
   # check that W is appropriate
@@ -283,12 +283,14 @@ stan_spatial.fit <- function(x, y, w,
 
   stanfit <- stanmodels$spatial
   
+  # n.b. optimizing is not supported
   if (algorithm == "optimizing") {
     out <-
       optimizing(stanfit,
                  data = standata,
                  draws = 1000,
                  constrained = TRUE,
+                 hessian = TRUE,
                  ...)
     check_stanfit(out)
     out$par <- out$par[!grepl("(phi_raw|theta_raw)", names(out$par))]

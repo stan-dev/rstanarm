@@ -3,6 +3,8 @@ functions {
   #include "continuous_likelihoods.stan"
   #include "binomial_likelihoods.stan"
   #include "count_likelihoods.stan"
+  // add negative_binomial likelihood
+  // add gamma likelihood
 }
 data {
   int<lower=0> N;                 // number of regions

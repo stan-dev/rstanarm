@@ -15,10 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian CAR Intrinsic Autoregressive models via Stan
+#' Bayesian intrinsic conditional autoregressive (ICAR) models via Stan
 #'
 #' Spatial regression modeling with an intrinsic conditional autoregressive (ICAR) prior.
-
+#' 
 #' @rdname stan_besag
 #' @export
 #' 
@@ -45,11 +45,19 @@
 #' @param prior_rho The prior distribution on the variance of the non-centered structured (spatial) effect.
 #' @param prior_sigma The prior distribution on the standard deviation of the outcome if \code{family = gaussian()} is declared.
 #' 
-#' @details The \code{stan_besag} model is similar to the analogous model in R-INLA. However, instead of using the integrated Laplace approximation (INLA) method, full Bayesian estimation is performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The model includes priors on the intercept, regression coefficients, and the relevant scale parameters. The \code{stan_besag} function calls the workhorse \code{stan_spatial.fit} function, but it is also possible to call the latter directly.
+#' @details The \code{stan_besag} model is similar to the analogous model in
+#'   R-INLA. However, instead of using the integrated Laplace approximation
+#'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm}
+#'   is \code{"sampling"}) via MCMC. The model includes priors on the intercept,
+#'   regression coefficients, and the relevant scale parameters. The
+#'   \code{stan_besag} function calls the workhorse \code{stan_spatial.fit}
+#'   function, but it is also possible to call the latter directly.
 #'   
 #' @seealso The vignette for \code{stan_besag}.
 #' 
-#' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An intuitive Bayesian spatial model for disease mapping that accounts for scaling. arXiv preprint	arXiv:1601.01180.
+#' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An
+#'   intuitive Bayesian spatial model for disease mapping that accounts for
+#'   scaling. arXiv preprint	arXiv:1601.01180.
 #' 
 #' @examples 
 #' ### Simulated Data on a Lattice
@@ -79,7 +87,6 @@
 #' fit_besag <- stan_besag(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
 #' pp_check(fit_besag)
 #'
-
 stan_besag <- function(formula,
                      family = gaussian(),
                      data,
@@ -89,7 +96,7 @@ stan_besag <- function(formula,
                      prior = normal(), prior_intercept = normal(),
                      prior_sigma = NULL, prior_rho = normal(),
                      prior_PD = FALSE,
-                     algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+                     algorithm = c("sampling", "meanfield", "fullrank"),
                      adapt_delta = NULL,
                      QR = FALSE) {
   stan_function <- "stan_besag"
