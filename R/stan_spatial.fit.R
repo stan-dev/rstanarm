@@ -15,6 +15,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#' Workhorse function for CAR spatial models.
+#' 
+#' Both \code{stan_besag} and \code{stan_bym} call \code{stan_spatial.fit} to fit
+#' the appropriate spatial model. See the documentation for either model for further
+#' details on the arguments of \code{stan_spatial.fit}.
+#' 
 #' @export
 #' 
 
