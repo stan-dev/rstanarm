@@ -22,8 +22,9 @@
 #'   family or Laplace family, and if the \code{autoscale} argument to the 
 #'   function used to specify the prior (e.g. \code{\link{normal}}) is left at 
 #'   its default and recommended value of \code{TRUE}, then the default or 
-#'   user-specified prior scale(s) may be adjusted internally based on the scales
-#'   of the predictors. See the \link[=priors]{priors help page} for details on
-#'   the rescaling and the \code{\link{prior_summary}} function for a summary of
-#'   the priors used for a particular model.
-#'   
+#'   user-specified prior scale(s) may be adjusted internally based on the
+#'   scales of the predictors. See the \link[=priors]{priors help page} and the
+#'   \emph{Prior Distributions} vignette for details on the rescaling and the
+#'   \code{\link{prior_summary}} function for a summary of the priors used for a
+#'   particular model.
+#'

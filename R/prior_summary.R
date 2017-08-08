@@ -71,7 +71,8 @@
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
-#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{priors}}
+#' @seealso The \link[=priors]{priors help page} and the \emph{Prior
+#'   Distributions} vignette.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 

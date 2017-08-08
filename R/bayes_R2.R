@@ -7,7 +7,7 @@
 #' @param newdata Similar to the \code{newdata} argument to 
 #'   \code{\link{posterior_linpred}} and \code{\link{posterior_predict}} except,
 #'   in addition to new observations of the predictors, new observations of the
-#'   \emph{outcome} must be also included.
+#'   \emph{outcome} must be also included. See the \strong{Examples} section below.
 #' @param re.form,offset For models with group-level terms, these arguments are 
 #'   passed to \code{\link{posterior_linpred}} if the \code{newdata} argument is
 #'   specified.
@@ -21,10 +21,12 @@
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' 
+#' # specifying newdata (including outcome variable 'mpg')
 #' nd <- data.frame(mpg = c(10, 20, 30), wt = c(4, 3, 2), cyl = c(8, 6, 4))
 #' rsq_new <- bayes_R2(fit, newdata = nd)
 #' print(median(rsq_new))
 #' 
+#' # multilevel binomial model
 #' if (!exists("example_model")) example(example_model)
 #' print(example_model)
 #' median(bayes_R2(example_model))

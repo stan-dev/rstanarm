@@ -324,6 +324,8 @@ validate_glm_formula <- function(f) {
 
 
 # Check if any variables in a model frame are constants
+# (the exception is that a constant variable of all 1's is allowed)
+# 
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
@@ -331,14 +333,15 @@ check_constant_vars <- function(mf) {
   # don't check if columns are constant for binomial
   mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
   
-  lu <- function(x) length(unique(x))
+  lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
-  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu) == 1
-  if (any(is_constant)) 
+  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu1)
+  if (any(is_constant)) {
     stop("Constant variable(s) found: ", 
          paste(names(is_constant)[is_constant], collapse = ", "), 
          call. = FALSE)
+  }
   return(mf)
 }
 
