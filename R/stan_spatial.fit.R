@@ -230,23 +230,31 @@ stan_spatial.fit <- function(x, y, w,
   standata$X <- array(standata$X, dim = c(standata$N, standata$K))
 
   # create scaling_factor a la Dan Simpson
-  create_scaling_factor <- function(dat, W) {
+  create_scaling_factor <- function(dat) {
+    edges <- dat$edges
+    #Build the adjacency matrix
+    adj.matrix <- Matrix::sparseMatrix(i=edges[,1],j=edges[,2],x=1,symmetric=TRUE)
     #The ICAR precision matrix (note! This is singular)
-    Q <-  diag(rowSums(W), dat$N) - W
+    Q <-  Matrix::Diagonal(dat$N, Matrix::rowSums(adj.matrix)) - adj.matrix
+    
     #Add a small jitter to the diagonal for numerical stability (optional but recommended)
-    Q_pert <- Q + diag(dat$N) * max(diag(Q)) * sqrt(.Machine$double.eps)
+    Q_pert <- Q + Matrix::Diagonal(dat$N) * max(Matrix::diag(Q)) * sqrt(.Machine$double.eps)
     
     # Compute the diagonal elements of the covariance matrix subject to the 
     # constraint that the entries of the ICAR sum to zero.
-    #See the function help for further details.
+    # See the function help for further details.
     Q_inv <- inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
-    Q_inv <- as.matrix(Q_inv)
-    #Compute the geometric mean of the variances, which are on the diagonal of Q.inv
-    scaling_factor <- exp(mean(log(diag(Q_inv))))
+    
+    # Compute the geometric mean of the variances, which are on the diagonal of Q.inv
+    scaling_factor <- exp(mean(log(Matrix::diag(Q_inv))))
     return(scaling_factor)
   }
-  standata$scaling_factor <- create_scaling_factor(standata, W)
   
+  if (stan_function == "stan_bym")
+    standata$scaling_factor <- create_scaling_factor(standata)
+  else
+    standata$scaling_factor <- 0
+
   pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "sigma",
             "mean_PPD", "psi")
 
