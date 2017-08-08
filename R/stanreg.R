@@ -45,6 +45,7 @@ stanreg <- function(object) {
   if (opt) {
     stanmat <- stanfit$theta_tilde
     probs <- c(0.025, .975)
+    browser()
     stan_summary <- cbind(Median = apply(stanmat, 2L, median), 
                           MAD_SD = apply(stanmat, 2L, mad),
                           t(apply(stanmat, 2L, quantile, probs)))

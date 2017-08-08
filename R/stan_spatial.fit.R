@@ -268,38 +268,64 @@ stan_spatial.fit <- function(x, y, w,
     adjusted_prior_scale_tau = prior_scale_for_tau)
 
   stanfit <- stanmodels$spatial
-
-  if (algorithm == "sampling") {
-    sampling_args <- set_sampling_args(
-      object = stanfit, 
-      prior = prior, 
-      user_dots = list(...), 
-      user_adapt_delta = adapt_delta, 
-      data = standata, 
-      pars = pars, 
-      show_messages = FALSE)
-    stanfit <- do.call(sampling, sampling_args)
+  
+  if (algorithm == "optimizing") {
+    out <-
+      optimizing(stanfit,
+                 data = standata,
+                 draws = 1000,
+                 constrained = TRUE,
+                 ...)
+    check_stanfit(out)
+    out$par <- out$par[!grepl("(phi_raw|theta_raw)", names(out$par))]
+    new_names <- names(out$par)
+    mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
+    if (QR && ncol(xtemp) > 1) {
+      out$par[mark] <- R_inv %*% out$par[mark]
+      out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
+    }
+    new_names[mark] <- colnames(xtemp)
+    new_names[new_names == "alpha[1]"] <- "(Intercept)"
+    names(out$par) <- new_names
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
+    return(structure(out, prior.info = prior_info))
   }
   else {
-    stop(paste("algorithm", algorithm, "is not supported."))
+    if (algorithm == "sampling") {
+      sampling_args <- set_sampling_args(
+        object = stanfit, 
+        prior = prior, 
+        user_dots = list(...), 
+        user_adapt_delta = adapt_delta, 
+        data = standata, 
+        pars = pars, 
+        show_messages = FALSE)
+      stanfit <- do.call(sampling, sampling_args)
+    }
+    else { # algorithm either "meanfield" or "fullrank"
+      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                           algorithm = algorithm, init = 0.001, ...)
+      if (!QR) 
+        recommend_QR_for_vb()
+    }
+    check_stanfit(stanfit)
+    
+    if (QR) {
+      thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
+                        permuted = FALSE)
+      betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
+      end <- tail(dim(betas), 1L)
+      for (chain in 1:end) for (param in 1:nrow(betas)) {
+        stanfit@sim$samples[[chain]][[has_intercept + param]] <-
+          if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
+      } 
+    }
+    new_names <- c(if (has_intercept) "(Intercept)", 
+                   colnames(xtemp), "rho", if(mod == 2) c("tau"),
+                   if(family$family == "gaussian") "sigma", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
+    stanfit@sim$fnames_oi <- new_names
+    return(structure(stanfit, prior.info = prior_info))
   }
-  check_stanfit(stanfit)
-
-  if (QR) {
-    thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
-                      permuted = FALSE)
-    betas <- apply(thetas, 1:2, FUN = function(theta) R_inv %*% theta)
-    end <- tail(dim(betas), 1L)
-    for (chain in 1:end) for (param in 1:nrow(betas)) {
-      stanfit@sim$samples[[chain]][[has_intercept + param]] <-
-        if (ncol(xtemp) > 1) betas[param, , chain] else betas[param, chain]
-    } 
-  }
-  new_names <- c(if (has_intercept) "(Intercept)", 
-                 colnames(xtemp), "rho", if(mod == 2) c("tau"),
-                 if(family$family == "gaussian") "sigma", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
-  stanfit@sim$fnames_oi <- new_names
-  return(structure(stanfit, prior.info = prior_info))
 }
 
 # Summarize spatial prior
