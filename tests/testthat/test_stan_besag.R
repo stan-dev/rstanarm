@@ -45,10 +45,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   spatial_data$trials <- rep(10, nrow(W))
   spatial_data$y_binom <- rbinom(nrow(W), spatial_data$trials, binomial(link = "logit")$linkinv(1 + 0.4 * x + spatial_data$phi))
   
-  fit_besag <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, W = W, iter = 1e3, chains = 4,
-                          prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
-                          prior_sigma = normal(0,1))
-  
   # test family/link combinations
   test_that("family = 'gaussian' works", {
     SW(fit_gauss_ident <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(),
