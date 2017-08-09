@@ -49,8 +49,6 @@
 #'   relationship on the graph.
 #' @param prior_tau The prior on the marginal variance contribution of the
 #'   structured (spatial) and unstructured (random) effect.
-#' @param prior_sigma The prior distribution on the standard deviation of the
-#'   outcome if \code{family = gaussian()} is declared.
 #'   
 #' @details The \code{stan_bym} model is similar to the analogous model in
 #'   R-INLA. However, instead of using the integrated Laplace approximation
@@ -104,7 +102,7 @@ stan_bym <- function(formula,
                         W,
                         ...,
                         prior = normal(), prior_intercept = normal(),
-                        prior_sigma = NULL, prior_rho = beta(0.5,0.5), prior_tau = normal(),
+                        prior_aux = NULL, prior_rho = beta(0.5,0.5), prior_tau = normal(),
                         prior_PD = FALSE,
                         algorithm = c("sampling", "meanfield", "fullrank"),
                         adapt_delta = NULL,
@@ -132,7 +130,7 @@ stan_bym <- function(formula,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
-                              prior_sigma = prior_sigma, prior_rho = prior_rho, prior_tau = prior_tau,
+                              prior_aux = prior_aux, prior_rho = prior_rho, prior_tau = prior_tau,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)

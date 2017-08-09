@@ -30,7 +30,7 @@ stan_spatial.fit <- function(x, y, w,
                              stan_function = c("stan_besag", "stan_bym"),
                              ...,
                              prior = normal(), prior_intercept = normal(),
-                             prior_sigma = NULL, prior_rho = NULL, prior_tau = NULL,
+                             prior_aux = NULL, prior_rho = NULL, prior_tau = NULL,
                              prior_PD = FALSE,
                              algorithm = c("sampling", "meanfield", "fullrank"),
                              adapt_delta = NULL,
@@ -52,7 +52,7 @@ stan_spatial.fit <- function(x, y, w,
   
   if (is.null(trials))
     trials <- rep(0,length(y))
-  # Replace all this stuff with family = binomial(link = "logit") calls etc.
+
   if (family$family == "gaussian") {
     y_real <- y
     y_int <- rep(0, length(y))
@@ -73,7 +73,7 @@ stan_spatial.fit <- function(x, y, w,
       family_num <- 2
     }
     if(!is.integer(y_int))
-      stop("Outcome must an integer for count likelihoods.")
+      stop("Outcome must be an integer for count likelihoods.")
   }
   
   if (stan_function == "stan_besag")
@@ -87,7 +87,8 @@ stan_spatial.fit <- function(x, y, w,
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
   
-  ok_dists <- nlist("normal", student_t = "t", "cauchy")
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
+                    "laplace", "lasso", "product_normal")
   ok_intercept_dists <- ok_dists
   ok_scale_dists <- nlist("normal", student_t = "t", "cauchy", "exponential")
 
@@ -155,22 +156,21 @@ stan_spatial.fit <- function(x, y, w,
     prior_df_for_tau <- 1
   }
 
-  # Deal with prior_sigma... needs more dist options
-  if (family$family == "gaussian") {
-    has_sigma <- 1
-    prior_sigma_stuff <- handle_glm_prior(prior_sigma, nvars = 1, family$link, default_scale = 1, 
+  if (family$family %in% c("gaussian","Gamma","neg_binomial_2")) {
+    has_aux <- 1
+    prior_aux_stuff <- handle_glm_prior(prior_aux, nvars = 1, family$link, default_scale = 1, 
                                     ok_dists = ok_dists)
-    names(prior_sigma_stuff) <- paste0(names(prior_sigma_stuff), 
-                                     "_for_sigma")
-    for (i in names(prior_sigma_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_sigma_stuff[[i]])
+    names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), 
+                                     "_for_aux")
+    for (i in names(prior_aux_stuff)) # prior_{dist, mean, scale, df, autoscale}
+      assign(i, prior_aux_stuff[[i]])
   }
   else {
-    has_sigma <- 0
-    prior_dist_for_sigma <- 0
-    prior_mean_for_sigma <- 0
-    prior_scale_for_sigma <- 1
-    prior_df_for_sigma <- 1
+    has_aux <- 0
+    prior_dist_for_aux <- 0
+    prior_mean_for_aux <- 0
+    prior_scale_for_aux <- 1
+    prior_df_for_aux <- 1
   }
   
   # QR decomposition for x
@@ -215,7 +215,7 @@ stan_spatial.fit <- function(x, y, w,
                     prior_dist = prior_dist,
                     prior_dist_rho = prior_dist_for_rho,
                     prior_dist_tau = prior_dist_for_tau,
-                    prior_dist_sigma = prior_dist_for_sigma,
+                    prior_dist_for_aux = prior_dist_for_aux,
                     prior_mean_for_intercept = c(prior_mean_for_intercept),
                     prior_scale_for_intercept = c(prior_scale_for_intercept),
                     prior_df_for_intercept = c(prior_df_for_intercept),
@@ -228,12 +228,18 @@ stan_spatial.fit <- function(x, y, w,
                     prior_mean_rho = c(prior_mean_for_rho),
                     prior_scale_rho = c(prior_scale_for_rho),
                     prior_df_rho = c(prior_df_for_rho),
-                    prior_mean_sigma = c(prior_mean_for_sigma),
-                    prior_scale_sigma = c(prior_scale_for_sigma),
-                    prior_df_sigma = c(prior_df_for_sigma),
+                    prior_mean_for_aux = c(prior_mean_for_aux),
+                    prior_scale_for_aux = c(prior_scale_for_aux),
+                    prior_df_for_aux = c(prior_df_for_aux),
                     has_intercept = has_intercept,
-                    mod = mod)
-  standata$X <- array(standata$X, dim = c(standata$N, standata$K))
+                    mod = mod,
+                    global_prior_df,
+                    global_prior_df_for_intercept,
+                    global_prior_scale,
+                    global_prior_scale_for_intercept,
+                    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0))
+  
+  standata$X <- array(standata$X, dim = c(standata$N, standata$K))  # FIX ME!!!
 
   # create scaling_factor a la Dan Simpson
   create_scaling_factor <- function(dat) {
@@ -261,25 +267,26 @@ stan_spatial.fit <- function(x, y, w,
   else
     standata$scaling_factor <- 0
 
-  pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "sigma",
+  pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "aux",
             "mean_PPD", "psi")
-
+browser()
   prior_info <- summarize_spatial_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,
     user_prior_rho = prior_rho_stuff,
-    user_prior_sigma = prior_sigma_stuff,
+    user_prior_aux = if (has_aux == 1) {prior_aux_stuff} else {NULL},
     user_prior_tau = prior_tau_stuff,
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
-    has_sigma = has_sigma,
+    has_aux = has_aux,
     has_rho = 1,
     has_tau = has_tau,
     adjusted_prior_scale = prior_scale,
     adjusted_prior_intercept_scale = prior_scale_for_intercept,
     adjusted_prior_scale_rho = prior_scale_for_rho,
-    adjusted_prior_scale_sigma = prior_scale_for_sigma,
-    adjusted_prior_scale_tau = prior_scale_for_tau)
+    adjusted_prior_aux_scale = prior_scale_for_aux,
+    adjusted_prior_scale_tau = prior_scale_for_tau,
+    family = family)
 
   stanfit <- stanmodels$spatial
   
@@ -338,7 +345,8 @@ stan_spatial.fit <- function(x, y, w,
     }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), "rho", if(mod == 2) c("tau"),
-                   if(family$family == "gaussian") "sigma", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
+                   if(family$family == "gaussian") "aux", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
+
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
   }
@@ -348,19 +356,20 @@ stan_spatial.fit <- function(x, y, w,
 
 summarize_spatial_prior <- function(user_prior,
                                     user_prior_intercept,
-                                    user_prior_sigma,
+                                    user_prior_aux,
                                     user_prior_rho,
                                     user_prior_tau,
                                     has_intercept,
                                     has_predictors,
-                                    has_sigma,
+                                    has_aux,
                                     has_rho,
                                     has_tau,
                                     adjusted_prior_scale,
                                     adjusted_prior_intercept_scale,
-                                    adjusted_prior_scale_sigma,
                                     adjusted_prior_scale_rho,
-                                    adjusted_prior_scale_tau) {
+                                    adjusted_prior_scale_tau,
+                                    adjusted_prior_aux_scale,
+                                    family) {
   rescaled_coef <-
     user_prior$prior_autoscale && has_predictors &&
     !is.na(user_prior$prior_dist_name) &&
@@ -369,6 +378,11 @@ summarize_spatial_prior <- function(user_prior,
     user_prior_intercept$prior_autoscale_for_intercept && has_intercept &&
     !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
     (user_prior_intercept$prior_scale != adjusted_prior_intercept_scale)
+  if (has_aux) {
+    rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
+      !is.na(user_prior_aux$prior_dist_name_for_aux) &&
+      (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale) 
+  }
   
   if (has_predictors && user_prior$prior_dist_name %in% "t") {
     if (all(user_prior$prior_df == 1)) {
@@ -385,12 +399,12 @@ summarize_spatial_prior <- function(user_prior,
       user_prior_intercept$prior_dist_name_for_intercept <- "student_t"
     }
   }
-  if (has_sigma &&
-      user_prior_sigma$prior_dist_name_for_sigma %in% "t") {
-    if (all(user_prior_sigma$prior_df_for_sigma == 1)) {
-      user_prior_sigma$prior_dist_name_for_sigma <- "cauchy"
+  if (has_aux &&
+      user_prior_aux$prior_dist_name_for_aux %in% "t") {
+    if (all(user_prior_aux$prior_df_for_aux == 1)) {
+      user_prior_aux$prior_dist_name_for_aux <- "cauchy"
     } else {
-      user_prior_sigma$prior_dist_name_for_sigma <- "student_t"
+      user_prior_aux$prior_dist_name_for_aux <- "student_t"
     }
   }
 
@@ -434,15 +448,15 @@ summarize_spatial_prior <- function(user_prior,
         df = if (prior_dist_name_for_intercept %in% "student_t")
           prior_df_for_intercept else NULL
       )),
-    prior_sigma = 
-      if (!has_sigma) NULL else with(user_prior_sigma, list(
-        dist = prior_dist_name_for_sigma,
-        location = prior_mean_for_sigma,
-        scale = prior_scale_for_sigma,
+    prior_aux = 
+      if (!has_aux) NULL else with(user_prior_aux, list(
+        dist = prior_dist_name_for_aux,
+        location = prior_mean_for_aux,
+        scale = prior_scale_for_aux,
         adjusted_scale = if (rescaled_int)
-          adjusted_prior_sigma_scale else NULL,
-        df = if (prior_dist_name_for_sigma %in% "student_t")
-          prior_df_for_sigma else NULL
+          adjusted_prior_aux_scale else NULL,
+        df = if (prior_dist_name_for_aux %in% "student_t")
+          prior_df_for_aux else NULL
       )),
     prior_rho = 
       if (!has_rho) NULL else with(user_prior_rho, list(
@@ -467,5 +481,25 @@ summarize_spatial_prior <- function(user_prior,
           prior_df_for_tau else NULL
       ))
   )
+  aux_name <- .rename_aux(family)
+  prior_list$prior_aux <- if (is.na(aux_name)) 
+    NULL else with(user_prior_aux, list(
+      dist = prior_dist_name_for_aux,
+      location = if (!is.na(prior_dist_name_for_aux) && 
+                     prior_dist_name_for_aux != "exponential")
+        prior_mean_for_aux else NULL,
+      scale = if (!is.na(prior_dist_name_for_aux) && 
+                  prior_dist_name_for_aux != "exponential")
+        prior_scale_for_aux else NULL,
+      adjusted_scale = if (rescaled_aux)
+        adjusted_prior_aux_scale else NULL,
+      df = if (!is.na(prior_dist_name_for_aux) && 
+               prior_dist_name_for_aux %in% "student_t")
+        prior_df_for_aux else NULL, 
+      rate = if (!is.na(prior_dist_name_for_aux) && 
+                 prior_dist_name_for_aux %in% "exponential")
+        1 / prior_scale_for_aux else NULL,
+      aux_name = aux_name
+    ))
   return(prior_list)
 }

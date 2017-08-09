@@ -43,7 +43,6 @@
 #' in length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
 #' @param prior_rho The prior distribution on the variance of the non-centered structured (spatial) effect.
-#' @param prior_sigma The prior distribution on the standard deviation of the outcome if \code{family = gaussian()} is declared.
 #' 
 #' @details The \code{stan_besag} model is similar to the analogous model in
 #'   R-INLA. However, instead of using the integrated Laplace approximation
@@ -94,7 +93,7 @@ stan_besag <- function(formula,
                      W,
                      ...,
                      prior = normal(), prior_intercept = normal(),
-                     prior_sigma = NULL, prior_rho = normal(),
+                     prior_aux = NULL, prior_rho = normal(),
                      prior_PD = FALSE,
                      algorithm = c("sampling", "meanfield", "fullrank"),
                      adapt_delta = NULL,
@@ -117,7 +116,7 @@ stan_besag <- function(formula,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
-                              prior_sigma = prior_sigma,
+                              prior_aux = prior_aux,
                               prior_rho = prior_rho,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
