@@ -40,7 +40,7 @@ stan_spatial.fit <- function(x, y, w,
   algorithm <- match.arg(algorithm)
 
   family <- validate_family(family)
-  supported_families <- c("binomial", "gaussian", "poisson")
+  supported_families <- c("binomial", "gaussian", "poisson", "Gamma", "neg_binomial_2")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) 
     stop("'family' must be one of ", paste(supported_families, collapse = ", "))
@@ -50,27 +50,28 @@ stan_spatial.fit <- function(x, y, w,
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
-  if (is.null(trials))
-    trials <- rep(0,length(y))
+  family_num <- switch(family$family,
+                       gaussian = 1,
+                       poisson = 2,
+                       neg_binomial_2 = 3,
+                       binomial = 4,
+                       Gamma = 5)
 
-  if (family$family == "gaussian") {
+  if (family$family %in% c("gaussian", "Gamma")) {
     y_real <- y
     y_int <- rep(0, length(y))
     trials <- rep(0, length(y))
-    family_num <- 1
   }
   else {
     y_real <- rep(0, length(y))
     y_int <- y
     if (family$family == "binomial") {
-      family_num <- 3
       if (is.null(trials) | any(y > trials))
         stop("Outcome values must be less than or equal to the corresponding value in `trials`.")
         
     }
-    else {  # poisson
+    else {  # poisson 
       trials <- rep(0, length(y))
-      family_num <- 2
     }
     if(!is.integer(y_int))
       stop("Outcome must be an integer for count likelihoods.")
@@ -269,7 +270,7 @@ stan_spatial.fit <- function(x, y, w,
 
   pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "aux",
             "mean_PPD", "psi")
-browser()
+
   prior_info <- summarize_spatial_prior(
     user_prior = prior_stuff,
     user_prior_intercept = prior_intercept_stuff,

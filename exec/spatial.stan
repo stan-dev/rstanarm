@@ -14,8 +14,8 @@ data {
   vector[K] xbar;
   int<lower=0> trials[N];         // binomial trials (0 1d array if not applicable)
   int y_int[N];                   // outcome
-  real y_real[N];                 // outcome
-  int<lower=1,upper=3> family;    // family (1 = Gaussian, 2 = Poisson, 3 = Binomial)
+  vector[N] y_real;                 // outcome
+  int<lower=1,upper=5> family;    // family (1 = Gaussian, 2 = Poisson, 3 = Binomial)
   int link;
   int E_n;                        // number of adjacency pairs
   int edges[E_n, 2];              // adjacency pairs
@@ -52,6 +52,7 @@ transformed data {
   real poisson_max = 30 * log(2);
   int<lower=0> hs;
   int<lower=0,upper=1> is_continuous;
+  real sum_log_y = family == 1 ? not_a_number() : sum(log(y_real));
   if (prior_dist <= 2) hs = 0;
   else if (prior_dist == 3) hs = 2;
   else if (prior_dist == 4) hs = 4;
@@ -62,7 +63,7 @@ transformed data {
 parameters {
   real gamma[has_intercept];  // raw intercept
   vector[K] z_beta;
-  vector[N] theta_raw[mod == 2? 1 : 0];        // used for random effect (non-spatial)
+  vector[mod == 2? N : 0] theta_raw;        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)
   real<lower=0,upper=(mod == 2? 1: positive_infinity())> rho;          // variance i.e. rho^2
   real<lower=0> tau[mod == 2? 1 : 0];        // variance i.e. tau^2
@@ -136,8 +137,15 @@ model {
     target+= poisson_log_lpmf(y_int | eta);
   }
   else if (family == 3) {
+    eta = linkinv_count(eta, link);
+    target += neg_binomial_2_lpmf(y_int | eta, aux);
+  }
+  else if (family == 4) {
     eta = linkinv_binom(eta, link);
     target+= binomial_lpmf(y_int | trials, inv_logit(eta));
+  }
+  else if (family == 5) {
+    target += GammaReg(y_real, eta, aux, link, sum_log_y);
   }
   // prior on spatial parameter vector
   target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
@@ -245,8 +253,23 @@ generated quantities {
       }
     }
     else if (family == 3) {
+      eta = linkinv_count(eta, link);
+      for (n in 1:N) {
+          real gamma_temp;
+          if (is_inf(aux)) gamma_temp = eta[n];
+          else gamma_temp = gamma_rng(aux, aux / eta[n]);
+          if (gamma_temp < poisson_max)
+            mean_PPD = mean_PPD + poisson_rng(gamma_temp);
+          else mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+      }
+    }
+    else if (family == 4) {
       eta = linkinv_binom(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + binomial_rng(trials[n], inv_logit(eta[n]));
+    }
+    else if (family == 5) {
+      if (link > 1) eta = linkinv_gamma(eta, link);
+      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
     }
   }
   mean_PPD = mean_PPD / N;
