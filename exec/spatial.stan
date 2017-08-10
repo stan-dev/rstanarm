@@ -1,10 +1,10 @@
+#include "Columbia_copyright.stan"
+#include "license.stan" // GPL3+
 // CAR SPATIAL MODELS
 functions {
   #include "continuous_likelihoods.stan"
   #include "binomial_likelihoods.stan"
   #include "count_likelihoods.stan"
-  // add negative_binomial likelihood
-  // add gamma likelihood
   #include "common_functions.stan"
 }
 data {
@@ -88,37 +88,7 @@ transformed parameters {
   else if (mod == 2)
     psi = tau[1]*(sqrt(1-rho)*theta_raw[1] + sqrt(rho/scaling_factor)*phi);
   // for regression coefficients
-  if      (prior_dist == 0) beta = z_beta;
-  else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
-  else if (prior_dist == 2) for (k in 1:K) {
-    beta[k] = CFt(z_beta[k], prior_df[k]) * prior_scale[k] + prior_mean[k];
-  }
-  else if (prior_dist == 3) {
-    if (is_continuous == 1 && family == 1)
-      beta = hs_prior(z_beta, global, local, global_prior_scale, aux);
-    else beta = hs_prior(z_beta, global, local, global_prior_scale, 1);
-  }
-  else if (prior_dist == 4) {
-    if (is_continuous == 1 && family == 1)
-      beta = hsplus_prior(z_beta, global, local, global_prior_scale, aux);
-    else beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1);
-  }
-  else if (prior_dist == 5) // laplace
-    beta = prior_mean + prior_scale .* sqrt(2 * mix[1]) .* z_beta;
-  else if (prior_dist == 6) // lasso
-    beta = prior_mean + one_over_lambda[1] * prior_scale .* sqrt(2 * mix[1]) .* z_beta;
-  else if (prior_dist == 7) { // product_normal
-    int z_pos = 1;
-    for (k in 1:K) {
-      beta[k] = z_beta[z_pos];
-      z_pos = z_pos + 1;
-      for (n in 2:num_normals[k]) {
-        beta[k] = beta[k] * z_beta[z_pos];
-        z_pos = z_pos + 1;
-      }
-      beta[k] = beta[k] * prior_scale[k] ^ num_normals[k] + prior_mean[k];
-    }
-  }
+  #include "tparameters.stan"
 }
 model {
   vector[N] eta;   // linear predictor + spatial random effects
@@ -134,7 +104,7 @@ model {
   }
   else if (family == 2) {
     eta = linkinv_count(eta, link);
-    target+= poisson_log_lpmf(y_int | eta);
+    target+= poisson_lpmf(y_int | eta);
   }
   else if (family == 3) {
     eta = linkinv_count(eta, link);
@@ -147,56 +117,13 @@ model {
   else if (family == 5) {
     target += GammaReg(y_real, eta, aux, link, sum_log_y);
   }
-  // prior on spatial parameter vector
+  // prior on spatial parameter vector (GMRF)
   target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
   // non-centered parameterization on beta
   target+= normal_lpdf(z_beta | 0, 1);
   // priors on coefficients
-  if (has_intercept == 1) {
-    if (prior_dist_for_intercept == 1)  // normal
-      target += normal_lpdf(gamma | prior_mean_for_intercept, prior_scale_for_intercept);
-    else if (prior_dist_for_intercept == 2)  // student_t
-      target += student_t_lpdf(gamma | prior_df_for_intercept, prior_mean_for_intercept,
-                               prior_scale_for_intercept);
-    /* else prior_dist is 0 and nothing is added */
-  }
-  if (K > 0) {
-    // Log-priors for coefficients
-         if (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
-    else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
-    else if (prior_dist == 3) { // hs
-      real log_half = -0.693147180559945286;
-      target += normal_lpdf(z_beta | 0, 1);
-      target += normal_lpdf(local[1] | 0, 1) - log_half;
-      target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
-      target += normal_lpdf(global[1] | 0, 1) - log_half;
-      target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
-    }
-    else if (prior_dist == 4) { // hs+
-      real log_half = -0.693147180559945286;
-      target += normal_lpdf(z_beta | 0, 1);
-      target += normal_lpdf(local[1] | 0, 1) - log_half;
-      target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
-      target += normal_lpdf(local[3] | 0, 1) - log_half;
-      // unorthodox useage of prior_scale as another df hyperparameter
-      target += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
-      target += normal_lpdf(global[1] | 0, 1) - log_half;
-      target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
-    }
-    else if (prior_dist == 5) { // laplace
-      target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(mix[1] | 1);
-    }
-    else if (prior_dist == 6) { // lasso
-      target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(mix[1] | 1);
-      target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
-    }
-    else if (prior_dist == 7) { // product_normal
-      target += normal_lpdf(z_beta | 0, 1);
-    }
-    /* else prior_dist is 0 and nothing is added */
-  }
+  #include "priors.stan"
+  // model specific priors
   if (mod == 2) { // BYM
     target+= normal_lpdf(theta_raw[1] | 0, 1);  // unstructured (random) effect
     if (prior_dist_rho == 1)
@@ -216,15 +143,7 @@ model {
     /* else prior_dist_rho is 0 and nothing is added */
   }
   // priors on aux
-  if (prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
-    real log_half = -0.693147180559945286;
-    if (prior_dist_for_aux == 1)
-      target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
-    else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
-    else
-     target += exponential_lpdf(aux_unscaled | 1);
-  }
+  #include "priors_aux.stan"
 }
 generated quantities {
   real mean_PPD = 0;
@@ -247,7 +166,7 @@ generated quantities {
       eta = linkinv_count(eta, link);
       for (n in 1:N) {
         if (eta[n] < poisson_max)
-          mean_PPD = mean_PPD + poisson_log_rng(eta[n]);
+          mean_PPD = mean_PPD + poisson_rng(eta[n]);
         else
           mean_PPD = mean_PPD + normal_rng(eta[n], sqrt(eta[n]));
       }

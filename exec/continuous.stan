@@ -6,7 +6,7 @@ functions {
   #include "common_functions.stan"
   #include "continuous_likelihoods.stan"
   #include "SSfunctions.stan"
-  
+
   /*
    * Calculate lower bound on intercept
    *
@@ -34,8 +34,8 @@ functions {
     if (family == 4 && link == 5) return 0;
     return positive_infinity();
   }
-  
-  /** 
+
+  /**
   * test function for csr_matrix_times_vector
   *
   * @param m Integer number of rows
@@ -46,11 +46,11 @@ functions {
   * @param b Vector that is multiplied from the left by the CSR matrix
   * @return A vector that is the product of the CSR matrix and b
   */
-  vector test_csr_matrix_times_vector(int m, int n, vector w, 
+  vector test_csr_matrix_times_vector(int m, int n, vector w,
                                       int[] v, int[] u, vector b) {
-    return csr_matrix_times_vector(m, n, w, v, u, b); 
+    return csr_matrix_times_vector(m, n, w, v, u, b);
   }
-  
+
 }
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
@@ -63,7 +63,7 @@ data {
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
+  #include "glmer_stuff.stan"
   #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
   #include "data_betareg.stan"
   int<lower=0,upper=10> SSfun; // nonlinear function indicator, 0 for identity
@@ -93,10 +93,10 @@ parameters {
 }
 transformed parameters {
   // aux has to be defined first in the hs case
-  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ?
              prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
              prior_scale_for_aux * aux_unscaled);
-  vector[z_dim] omega; // used in tparameters_betareg.stan             
+  vector[z_dim] omega; // used in tparameters_betareg.stan
   #include "tparameters_glm.stan" // defines beta, b, theta_L
   #include "tparameters_betareg.stan"
 
@@ -112,7 +112,7 @@ transformed parameters {
       }
     }
     else {
-      theta_L = make_theta_L(len_theta_L, p, 
+      theta_L = make_theta_L(len_theta_L, p,
                              aux, tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
@@ -122,7 +122,7 @@ model {
   vector[N] eta_z; // beta regression linear predictor for phi
   #include "make_eta.stan" // defines eta
   if (t > 0) {
-    #include "eta_add_Zb.stan"    
+    #include "eta_add_Zb.stan"
   }
   if (has_intercept == 1) {
     if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
@@ -132,7 +132,7 @@ model {
   else {
     #include "eta_no_intercept.stan" // shifts eta
   }
-  
+
   if (SSfun > 0) { // nlmer
     matrix[len_y, K] P;
     P = reshape_vec(eta, len_y, K);
@@ -161,7 +161,7 @@ model {
     }
   }
   else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
-    #include "make_eta_z.stan"  // linear predictor in stan_betareg 
+    #include "make_eta_z.stan"  // linear predictor in stan_betareg
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
       if (link_phi > 1) {
@@ -175,11 +175,11 @@ model {
       #include "eta_z_no_intercept.stan"
     }
     if (family == 1) {
-      if (link == 1) 
+      if (link == 1)
         target += normal_lpdf(y | eta, aux);
-      else if (link == 2) 
+      else if (link == 2)
         target += normal_lpdf(y | exp(eta), aux);
-      else 
+      else
         target += normal_lpdf(y | divide_real_by_vector(1, eta), aux);
       // divide_real_by_vector() is defined in common_functions.stan
     }
@@ -187,7 +187,7 @@ model {
       target += GammaReg(y, eta, aux, link, sum_log_y);
     }
     else if (family == 3) {
-      target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
+      target += inv_gaussian(y, linkinv_inv_gaussian(eta, link),
                              aux, sum_log_y, sqrt_y);
     }
     else if (family == 4 && link_phi == 0) {
@@ -200,7 +200,7 @@ model {
       vector[N] mu_z;
       mu = linkinv_beta(eta, link);
       mu_z = linkinv_beta_z(eta_z, link_phi);
-      target += beta_lpdf(y | rows_dot_product(mu, mu_z), 
+      target += beta_lpdf(y | rows_dot_product(mu, mu_z),
                           rows_dot_product((1 - mu) , mu_z));
     }
   }
@@ -214,20 +214,11 @@ model {
     target += dot_product(weights, summands);
   }
 
-  // Log-priors
-  if (prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
-    real log_half = -0.693147180559945286;
-    if (prior_dist_for_aux == 1)
-      target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
-    else if (prior_dist_for_aux == 2)
-      target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
-    else 
-     target += exponential_lpdf(aux_unscaled | 1);
-  }
-    
+  #include "priors_aux.stan"
+
   #include "priors_glm.stan" // increments target()
   #include "priors_betareg.stan"
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
+  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau,
                       regularization, delta, shape, t, p);
 }
 generated quantities {
@@ -238,8 +229,8 @@ generated quantities {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  if (has_intercept_z == 1) { 
-    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
+  if (has_intercept_z == 1) {
+    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept
   }
   {
     vector[N] eta_z;
@@ -280,10 +271,10 @@ generated quantities {
     else { // has_intercept_z == 0
       #include "eta_z_no_intercept.stan"
     }
-    
+
     if (SSfun > 0) { // nlmer
       vector[len_y] eta_nlmer;
-      matrix[len_y, K] P;      
+      matrix[len_y, K] P;
       P = reshape_vec(eta, len_y, K);
       if (SSfun < 5) {
         if (SSfun <= 2) {
@@ -319,7 +310,7 @@ generated quantities {
       if (link > 1) eta = linkinv_inv_gaussian(eta, link);
       for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
     }
-    else if (family == 4 && link_phi == 0) { 
+    else if (family == 4 && link_phi == 0) {
       eta = linkinv_beta(eta, link);
       for (n in 1:N) {
         real eta_n = eta[n];
