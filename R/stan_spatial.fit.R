@@ -25,12 +25,12 @@
 #' 
 
 stan_spatial.fit <- function(x, y, w,
-                             trials = NULL,
-                             family = gaussian(),
                              stan_function = c("stan_besag", "stan_bym"),
+                             family = NULL,
+                             trials = NULL,
                              ...,
                              prior = normal(), prior_intercept = normal(),
-                             prior_aux = NULL, prior_rho = NULL, prior_tau = NULL,
+                             prior_tau = normal(), prior_aux = NULL, prior_rho = NULL,
                              prior_PD = FALSE,
                              algorithm = c("sampling", "meanfield", "fullrank"),
                              adapt_delta = NULL,
@@ -56,34 +56,37 @@ stan_spatial.fit <- function(x, y, w,
                        neg_binomial_2 = 3,
                        binomial = 4,
                        Gamma = 5)
-
+  
   if (family$family %in% c("gaussian", "Gamma")) {
+    is_continuous <- TRUE
     y_real <- y
-    y_int <- rep(0, length(y))
-    trials <- rep(0, length(y))
+    y_int <- array(0, dim = c(0))
+    trials <- array(0, dim = c(0))
   }
   else {
-    y_real <- rep(0, length(y))
+    is_continuous <- FALSE
+    y_real <- array(0, dim = c(0))
     y_int <- y
-    if (family$family == "binomial") {
-      if (is.null(trials) | any(y > trials))
-        stop("Outcome values must be less than or equal to the corresponding value in `trials`.")
-        
-    }
-    else {  # poisson 
-      trials <- rep(0, length(y))
-    }
+  }
+  
+  if (family$family %in% c("binomial", "poisson"))
+    has_aux <- FALSE
+  else
+    has_aux <- TRUE
+  
+  if (family$family %in% c("binomial", "poisson", "neg_binomial_2")) {
     if(!is.integer(y_int))
       stop("Outcome must be an integer for count likelihoods.")
+    if (family$family == "binomial" & (is.null(trials) | any(y > trials)))
+      stop("Outcome values must be less than or equal to the corresponding value in `trials`.")
   }
   
   if (stan_function == "stan_besag")
-    mod <- 1
+    model_type <- 1
   else if (stan_function == "stan_bym")
-    mod <- 2
+    model_type <- 2
   
-  sparse <- FALSE
-  x_stuff <- center_x(x, sparse)
+  x_stuff <- center_x(x, sparse = FALSE)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
   nvars <- ncol(xtemp)
@@ -92,12 +95,6 @@ stan_spatial.fit <- function(x, y, w,
                     "laplace", "lasso", "product_normal")
   ok_intercept_dists <- ok_dists
   ok_scale_dists <- nlist("normal", student_t = "t", "cauchy", "exponential")
-
-  # Deal with prior
-  prior_stuff <- handle_glm_prior(prior, nvars, family$link, default_scale = 2.5, 
-                                  ok_dists = ok_dists)
-  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df, autoscale}
-    assign(i, prior_stuff[[i]])
   
   # Deal with prior_intercept
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
@@ -107,58 +104,51 @@ stan_spatial.fit <- function(x, y, w,
                                          "_for_intercept")
   for (i in names(prior_intercept_stuff)) # prior_{dist, mean, scale, df, autoscale}_for_intercept
     assign(i, prior_intercept_stuff[[i]])
+
+  # Deal with prior
+  prior_stuff <- handle_glm_prior(prior, nvars, family$link, default_scale = 2.5, 
+                                  ok_dists = ok_dists)
+  for (i in names(prior_stuff)) # prior_{dist, mean, scale, df, autoscale}
+    assign(i, prior_stuff[[i]])
   
-  # Deal with prior_rho and prior_sigma
+  # Deal with prior_tau
+  prior_tau_stuff <- handle_glm_prior(prior_tau, nvars = 1, family$link, default_scale = 1, 
+                                      ok_dists = ok_scale_dists)
+  names(prior_tau_stuff) <- paste0(names(prior_tau_stuff), 
+                                   "_for_tau")
+  for (i in names(prior_tau_stuff)) # prior_{dist, mean, scale, df, autoscale}
+    assign(i, prior_tau_stuff[[i]])
+  
+  # Deal with prior_rho
   if (stan_function == "stan_bym") {
-    has_tau <- 1
-    prior_tau_stuff <- handle_glm_prior(prior_tau, nvars = 1, family$link, default_scale = 1, 
-                                          ok_dists = ok_scale_dists)
-    names(prior_tau_stuff) <- paste0(names(prior_tau_stuff), 
-                                           "_for_tau")
-    for (i in names(prior_tau_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_tau_stuff[[i]])
-    # In BYM rho is constrained so appropriate prior is Beta dist.
+    has_rho <- 1
     if (is.null(prior_rho)) {
       prior_dist_for_rho <- 0
-      prior_rho$alpha <- 1
-      prior_rho$beta <- 1
+      prior_rho$alpha <- 0
+      prior_rho$beta <- 0
       prior_dist_name_for_rho <- NA
     }
     else {
       prior_dist_for_rho <- 1
       prior_dist_name_for_rho <- "beta"
     }
-
-    prior_mean_for_rho <- 0
-    prior_scale_for_rho <- 1
-    prior_df_for_rho <- 1
     prior_rho_stuff <- list(prior_dist_name_for_rho = prior_dist_name_for_rho,
                             shape1 = prior_rho$alpha,
                             shape2 = prior_rho$beta,
-                            prior_mean_for_rho = prior_mean_for_rho,
-                            prior_scale_for_rho = prior_scale_for_rho,
-                            prior_df_for_rho = prior_df_for_rho
-                            )
+                            prior_mean_for_rho = 0,
+                            prior_scale_for_rho = 0,
+                            prior_df_for_rho = 0)
   }
   else if (stan_function == "stan_besag") {
-    has_tau <- 0
-    prior_rho_stuff <- handle_glm_prior(prior_rho, nvars = 1, family$link, default_scale = 1, 
-                                          ok_dists = ok_scale_dists)
-    names(prior_rho_stuff) <- paste0(names(prior_rho_stuff), 
-                                       "_for_rho")
-    for (i in names(prior_rho_stuff)) # prior_{dist, mean, scale, df, autoscale}
-      assign(i, prior_rho_stuff[[i]])
-
-    prior_rho_stuff$shape1 <- 1
-    prior_rho_stuff$shape2 <- 1
-    prior_dist_for_tau <- 0
-    prior_mean_for_tau <- 0
-    prior_scale_for_tau <- 1
-    prior_df_for_tau <- 1
+    has_rho <- 0
+    prior_dist_for_rho <- 0
+    prior_rho_stuff <- list(prior_dist_name_for_rho = NA)
+    prior_scale_for_rho <- 0
+    prior_rho_stuff$shape1 <- 0
+    prior_rho_stuff$shape2 <- 0
   }
 
-  if (family$family %in% c("gaussian","Gamma","neg_binomial_2")) {
-    has_aux <- 1
+  if (has_aux) {
     prior_aux_stuff <- handle_glm_prior(prior_aux, nvars = 1, family$link, default_scale = 1, 
                                     ok_dists = ok_dists)
     names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), 
@@ -167,7 +157,6 @@ stan_spatial.fit <- function(x, y, w,
       assign(i, prior_aux_stuff[[i]])
   }
   else {
-    has_aux <- 0
     prior_dist_for_aux <- 0
     prior_mean_for_aux <- 0
     prior_scale_for_aux <- 1
@@ -205,6 +194,8 @@ stan_spatial.fit <- function(x, y, w,
                     E_n = nrow(edges),
                     family = family_num,
                     link = link,
+                    is_continuous = is_continuous,
+                    has_aux = has_aux,
                     X = xtemp,
                     xbar = as.array(xbar),
                     y_real = y_real,
@@ -214,7 +205,6 @@ stan_spatial.fit <- function(x, y, w,
                     shape2_rho = c(prior_rho_stuff$shape2),
                     prior_dist_for_intercept = prior_dist_for_intercept,
                     prior_dist = prior_dist,
-                    prior_dist_rho = prior_dist_for_rho,
                     prior_dist_tau = prior_dist_for_tau,
                     prior_dist_for_aux = prior_dist_for_aux,
                     prior_mean_for_intercept = c(prior_mean_for_intercept),
@@ -226,21 +216,17 @@ stan_spatial.fit <- function(x, y, w,
                     prior_mean_tau = c(prior_mean_for_tau),
                     prior_scale_tau = c(prior_scale_for_tau),
                     prior_df_tau = c(prior_df_for_tau),
-                    prior_mean_rho = c(prior_mean_for_rho),
-                    prior_scale_rho = c(prior_scale_for_rho),
-                    prior_df_rho = c(prior_df_for_rho),
                     prior_mean_for_aux = c(prior_mean_for_aux),
                     prior_scale_for_aux = c(prior_scale_for_aux),
                     prior_df_for_aux = c(prior_df_for_aux),
                     has_intercept = has_intercept,
-                    mod = mod,
+                    model_type = model_type,
                     global_prior_df,
                     global_prior_df_for_intercept,
                     global_prior_scale,
                     global_prior_scale_for_intercept,
-                    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0))
-  
-  standata$X <- array(standata$X, dim = c(standata$N, standata$K))  # FIX ME!!!
+                    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
+                    prior_dist_rho = prior_dist_for_rho)
 
   # create scaling_factor a la Dan Simpson
   create_scaling_factor <- function(dat) {
@@ -268,7 +254,7 @@ stan_spatial.fit <- function(x, y, w,
   else
     standata$scaling_factor <- 0
 
-  pars <- c(if (has_intercept) "alpha", "beta", "rho", if(mod == 2) c("tau"), if(family$family == "gaussian") "aux",
+  pars <- c(if (has_intercept) "alpha", "beta", if(model_type == 2) "rho", "tau", if(has_aux) "aux",
             "mean_PPD", "psi")
 
   prior_info <- summarize_spatial_prior(
@@ -280,17 +266,16 @@ stan_spatial.fit <- function(x, y, w,
     has_intercept = has_intercept,
     has_predictors = nvars > 0,
     has_aux = has_aux,
-    has_rho = 1,
-    has_tau = has_tau,
+    has_rho = has_rho,
+    has_tau = 1,
     adjusted_prior_scale = prior_scale,
     adjusted_prior_intercept_scale = prior_scale_for_intercept,
-    adjusted_prior_scale_rho = prior_scale_for_rho,
     adjusted_prior_aux_scale = prior_scale_for_aux,
     adjusted_prior_scale_tau = prior_scale_for_tau,
     family = family)
 
   stanfit <- stanmodels$spatial
-  
+
   # n.b. optimizing is not supported
   if (algorithm == "optimizing") {
     out <-
@@ -345,8 +330,8 @@ stan_spatial.fit <- function(x, y, w,
       } 
     }
     new_names <- c(if (has_intercept) "(Intercept)", 
-                   colnames(xtemp), "rho", if(mod == 2) c("tau"),
-                   if(family$family == "gaussian") "aux", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
+                   colnames(xtemp), if(model_type == 2) "rho", "tau",
+                   if(has_aux) "aux", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
 
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))

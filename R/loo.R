@@ -140,6 +140,7 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
+
   loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)

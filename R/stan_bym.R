@@ -71,9 +71,10 @@
 #' @examples 
 #' ### Simulated Data on a Lattice
 #' 
-#' data("lattice10", package = "rstanarm")
+#' data("lattice", package = "rstanarm")
 #' 
 #' # plot GMRF
+#' grid_sim <- grid_sim10
 #' var_range_gmrf <- seq(min(grid_sim@data$gmrf), max(grid_sim@data$gmrf), length = 50)
 #' spplot(grid_sim, "gmrf", at = var_range_gmrf, main = expression(paste(phi, " (GMRF)")),
 #'        col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(50))
@@ -102,7 +103,7 @@ stan_bym <- function(formula,
                         W,
                         ...,
                         prior = normal(), prior_intercept = normal(),
-                        prior_aux = NULL, prior_rho = beta(0.5,0.5), prior_tau = normal(),
+                        prior_tau = normal(), prior_rho = beta(0.5,0.5), prior_aux = NULL,
                         prior_PD = FALSE,
                         algorithm = c("sampling", "meanfield", "fullrank"),
                         adapt_delta = NULL,

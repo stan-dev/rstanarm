@@ -42,7 +42,7 @@
 #' @param trials If \code{family = binomial()} then a vector of trials (equal
 #' in length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_rho The prior distribution on the variance of the non-centered structured (spatial) effect.
+#' @param prior_tau The prior distribution on the variance of the non-centered structured (spatial) effect.
 #' 
 #' @details The \code{stan_besag} model is similar to the analogous model in
 #'   R-INLA. However, instead of using the integrated Laplace approximation
@@ -61,9 +61,10 @@
 #' @examples 
 #' ### Simulated Data on a Lattice
 #' 
-#' data("lattice10", package = "rstanarm")
+#' data("lattice", package = "rstanarm")
 #' 
 #' # plot GMRF
+#' grid_sim <- grid_sim10
 #' var_range_gmrf <- seq(min(grid_sim@data$gmrf), max(grid_sim@data$gmrf), length = 50)
 #' spplot(grid_sim, "gmrf", at = var_range_gmrf, main = expression(paste(phi, " (GMRF)")),
 #'        col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(50))
@@ -87,13 +88,13 @@
 #' pp_check(fit_besag)
 #'
 stan_besag <- function(formula,
-                     family = gaussian(),
+                     family = NULL,
                      data,
                      trials = NULL,
                      W,
                      ...,
                      prior = normal(), prior_intercept = normal(),
-                     prior_aux = NULL, prior_rho = normal(),
+                     prior_tau = normal(), prior_aux = NULL,
                      prior_PD = FALSE,
                      algorithm = c("sampling", "meanfield", "fullrank"),
                      adapt_delta = NULL,
@@ -117,7 +118,7 @@ stan_besag <- function(formula,
                               prior = prior,
                               prior_intercept = prior_intercept,
                               prior_aux = prior_aux,
-                              prior_rho = prior_rho,
+                              prior_tau = prior_tau,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)
