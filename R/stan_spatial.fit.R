@@ -239,7 +239,7 @@ stan_spatial.fit <- function(x, y, w,
   
   standata$order <- order
   if (order == 2) {
-    Q <- diag(rowSums(W) - W)
+    Q <- diag(rowSums(W)) - W
     Q <- Q %*% Q
     sparse_stuff <- rstan::extract_sparse_parts(Q)
     standata$Q_n <- as.array(length(sparse_stuff$w), dim = 1)
