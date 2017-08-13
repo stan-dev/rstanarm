@@ -87,6 +87,9 @@ stan_spatial.fit <- function(x, y, w,
   else if (stan_function == "stan_bym")
     model_type <- 2
   
+  if (!(order %in% c(1,2)))
+    stop("Argument 'order' must be 1 or 2.")
+  
   x_stuff <- center_x(x, sparse = FALSE)
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
@@ -228,33 +231,29 @@ stan_spatial.fit <- function(x, y, w,
                     global_prior_scale_for_intercept,
                     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
                     prior_dist_rho = prior_dist_for_rho)
-
-  # create scaling_factor a la Dan Simpson
-  create_scaling_factor <- function(dat) {
-    edges <- dat$edges
-    #Build the adjacency matrix
-    adj.matrix <- Matrix::sparseMatrix(i=edges[,1],j=edges[,2],x=1,symmetric=TRUE)
-    #The ICAR precision matrix (note! This is singular)
-    Q <-  Matrix::Diagonal(dat$N, Matrix::rowSums(adj.matrix)) - adj.matrix
-    
-    #Add a small jitter to the diagonal for numerical stability (optional but recommended)
-    Q_pert <- Q + Matrix::Diagonal(dat$N) * max(Matrix::diag(Q)) * sqrt(.Machine$double.eps)
-    
-    # Compute the diagonal elements of the covariance matrix subject to the 
-    # constraint that the entries of the ICAR sum to zero.
-    # See the function help for further details.
-    Q_inv <- inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
-    
-    # Compute the geometric mean of the variances, which are on the diagonal of Q.inv
-    scaling_factor <- exp(mean(log(Matrix::diag(Q_inv))))
-    return(scaling_factor)
-  }
   
   if (stan_function == "stan_bym")
     standata$scaling_factor <- create_scaling_factor(standata)
   else
     standata$scaling_factor <- 0
-
+  
+  standata$order <- order
+  if (order == 2) {
+    Q <- diag(rowSums(W) - W)
+    Q <- Q %*% Q
+    sparse_stuff <- rstan::extract_sparse_parts(Q)
+    standata$Q_n <- as.array(length(sparse_stuff$w), dim = 1)
+    standata$w <- sparse_stuff$w
+    standata$v <- sparse_stuff$v
+    standata$u <- sparse_stuff$u
+  }
+  if (order == 1) {
+    standata$Q_n <- array(0, dim = c(0))
+    standata$w <- array(0, dim = c(0))
+    standata$v <- array(0, dim = c(0))
+    standata$u <- array(0, dim = c(0))
+  }
+  
   pars <- c(if (has_intercept) "alpha", "beta", if(model_type == 2) "rho", "tau", if(has_aux) "aux",
             "mean_PPD", "psi")
 
@@ -337,6 +336,27 @@ stan_spatial.fit <- function(x, y, w,
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
   }
+}
+
+# create scaling_factor a la Dan Simpson
+create_scaling_factor <- function(dat) {
+  edges <- dat$edges
+  #Build the adjacency matrix
+  adj.matrix <- Matrix::sparseMatrix(i=edges[,1],j=edges[,2],x=1,symmetric=TRUE)
+  #The ICAR precision matrix (note! This is singular)
+  Q <-  Matrix::Diagonal(dat$N, Matrix::rowSums(adj.matrix)) - adj.matrix
+  
+  #Add a small jitter to the diagonal for numerical stability (optional but recommended)
+  Q_pert <- Q + Matrix::Diagonal(dat$N) * max(Matrix::diag(Q)) * sqrt(.Machine$double.eps)
+  
+  # Compute the diagonal elements of the covariance matrix subject to the 
+  # constraint that the entries of the ICAR sum to zero.
+  # See the function help for further details.
+  Q_inv <- inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
+  
+  # Compute the geometric mean of the variances, which are on the diagonal of Q.inv
+  scaling_factor <- exp(mean(log(Matrix::diag(Q_inv))))
+  return(scaling_factor)
 }
 
 # Summarize spatial prior

@@ -109,7 +109,7 @@ stan_bym <- function(formula,
                         data,
                         trials = NULL,
                         W,
-                        order = c(1,2),
+                        order = 1,
                         ...,
                         prior = normal(), prior_intercept = normal(),
                         prior_tau = normal(), prior_rho = beta(0.5,0.5), prior_aux = NULL,
@@ -122,7 +122,6 @@ stan_bym <- function(formula,
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
-  order <- match.arg(order)
   family <- validate_family(family)
   mf <- model.frame(mc, data)
   mt <- terms(formula, data = data)

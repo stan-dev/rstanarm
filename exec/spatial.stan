@@ -12,20 +12,28 @@ data {
   int<lower=0> K;                 // number of predictors (inc intercept)
   matrix[N,K] X;                  // model matrix
   int<lower=1,upper=5> family;
+  int link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
-  int<lower=1,upper=2> model_type;       // Besag = 1; BYM = 2
+  int<lower=1,upper=2> model_type;       // 0 = 1D RW; Besag = 1; BYM = 2
   int<lower=0,upper=1> has_intercept;
   vector[K] xbar;
-  int<lower=0> trials[family == 4 ? N : 0];         // binomial trials (0 1d array if not applicable)
-  int y_int[is_continuous == 1 ? 0 : N];                   // outcome
-  vector[is_continuous == 1 ? N : 0] y_real;                 // outcome
-  int link;
+  int<lower=0> trials[family == 4 ? N : 0];
+  int y_int[is_continuous == 1 ? 0 : N];
+  vector[is_continuous == 1 ? N : 0] y_real;
+  // pairwise difference version of CAR
   int E_n;                        // number of adjacency pairs
   int edges[E_n, 2];              // adjacency pairs
+  // matrix version of CAR
+  int<lower=1,upper=2> order;
+  int<lower=0> Q_n[order == 2];
+  vector[order == 2 ? Q_n[1] : 0] w;
+  int v[order == 2 ? Q_n[1] : 0];
+  int u[order == 2 ? N+1 : 0];
+  // prior stuff
   int<lower=0,upper=1> prior_dist_rho;
-  real<lower=0> shape1_rho;        // priors
-  real<lower=0> shape2_rho;        // priors
+  real<lower=0> shape1_rho;
+  real<lower=0> shape2_rho;
   real scaling_factor;
   int<lower=0> prior_dist_for_intercept;
   int<lower=0> prior_dist;
@@ -39,8 +47,8 @@ data {
   real prior_mean_tau;
   real<lower=0> prior_scale_tau;
   real<lower=0> prior_df_tau;
-  real<lower=0> global_prior_df;    // for hs priors only
-  real<lower=0> global_prior_scale; // for hs priors only
+  real<lower=0> global_prior_df;
+  real<lower=0> global_prior_scale;
   int<lower=2> num_normals[prior_dist == 7 ? K : 0];
   int<lower=0,upper=3> prior_dist_for_aux;
   real<lower=0> prior_mean_for_aux;
@@ -114,7 +122,10 @@ model {
     target += GammaReg(y_real, eta, aux, link, sum_log_y);
   }
   // prior on spatial parameter vector (GMRF)
-  target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
+  if (order == 1)
+    target += -0.5 * dot_self(phi[edges[,1]] - phi[edges[,2]]);
+  else if (order == 2)
+    target+= -0.5 * dot_product(phi, csr_matrix_times_vector(N, N, w, v, u, phi));
   // priors on coefficients
   #include "priors.stan"
   // model specific priors
