@@ -38,19 +38,24 @@ sp2weightmatrix <- function(spatialpolygon) {
 W <- sp2weightmatrix(grid_sim15)
 spatial_data <- grid_sim15@data
 
-SW(fit_gauss <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(),
+SW(fit_gauss <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
+                           prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                            W = W, iter = 100, chains = 4))
 SW(fit_binom <- stan_besag(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+                           prior_intercept = normal(0,1), prior = normal(0,1),
                            family = binomial(link = "logit"),
                            W = W, iter = 100, chains = 4))
 SW(fit_pois <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
+                          prior_intercept = normal(0,1), prior = normal(0,1),
                           family = poisson(link = "log"),
                           W = W, iter = 100, chains = 4))
 SW(fit_nb2 <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
-                          family = neg_binomial_2(link = "log"),
-                          W = W, iter = 100, chains = 4))
+                         prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
+                         family = neg_binomial_2(link = "log"),
+                         W = W, iter = 100, chains = 4))
 SW(fit_gamma <- stan_besag(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
-                                 W = W, iter = 100, chains = 4))
+                           prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
+                           W = W, iter = 100, chains = 4))
 
 # compare answers with INLA (NB2 reciprocal_dispersion param fails!)
 test_that("stan_besag estimates match INLA", {
@@ -73,7 +78,7 @@ test_that("stan_besag estimates match INLA", {
 
 # test family/link combinations
 test_that("family = 'gaussian' works", {
-  SW(fit_gauss_ident <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(),
+  SW(fit_gauss_ident <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
                                    W = W, iter = ITER, chains = CHAINS))
   SW(fit_gauss_log <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "log"),
                                  W = W, iter = ITER, chains = CHAINS))

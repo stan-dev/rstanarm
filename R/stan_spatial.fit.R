@@ -17,7 +17,7 @@
 
 #' Workhorse function for CAR models.
 #' 
-#' Both \code{stan_besag} and \code{stan_bym} call \code{stan_spatial.fit} to
+#' Both \code{stan_besag} and \code{stan_bym2} call \code{stan_spatial.fit} to
 #' fit the appropriate spatial model. See the documentation for either modeling
 #' function for further details on the arguments of \code{stan_spatial.fit}.
 #' 
@@ -25,7 +25,7 @@
 #' 
 
 stan_spatial.fit <- function(x, y, w,
-                             stan_function = c("stan_besag", "stan_bym"),
+                             stan_function = c("stan_besag", "stan_bym2"),
                              family = NULL,
                              trials = NULL,
                              order = c(1,2),
@@ -86,7 +86,7 @@ stan_spatial.fit <- function(x, y, w,
   
   if (stan_function == "stan_besag")
     model_type <- 1
-  else if (stan_function == "stan_bym")
+  else if (stan_function == "stan_bym2")
     model_type <- 2
   
   if (!(order %in% c(1,2)))
@@ -126,7 +126,7 @@ stan_spatial.fit <- function(x, y, w,
     assign(i, prior_tau_stuff[[i]])
   
   # Deal with prior_rho
-  if (stan_function == "stan_bym") {
+  if (stan_function == "stan_bym2") {
     has_rho <- 1
     if (is.null(prior_rho)) {
       prior_dist_for_rho <- 0
@@ -234,7 +234,7 @@ stan_spatial.fit <- function(x, y, w,
                     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
                     prior_dist_rho = prior_dist_for_rho)
   
-  if (stan_function == "stan_bym")
+  if (stan_function == "stan_bym2")
     standata$scaling_factor <- create_scaling_factor(standata)
   else
     standata$scaling_factor <- 0

@@ -21,7 +21,7 @@
 #' 
 #' @export
 #' 
-#' @templateVar fun stan_bym
+#' @templateVar fun stan_bym2
 #' @templateVar fitfun stan_spatial.fit
 #' @templateVar pkg rstanarm
 #' @templateVar pkgfun stan_glm
@@ -53,16 +53,16 @@
 #' @param order Order of the spatial random walk. Specifying \code{order = 2}
 #'   will smooth the spatial variation. The default is \code{order = 1}.
 #'   
-#' @details The \code{stan_bym} model is similar to the BYM2 model in R-INLA.
+#' @details The \code{stan_bym2} model is similar to the BYM2 model in R-INLA.
 #'   However, instead of using the integrated nested Laplace approximation 
 #'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm} 
 #'   is \code{"sampling"}) via MCMC. The model includes priors on the intercept,
 #'   regression coefficients, spatial mixing parameter, overall spatial
-#'   variation, and any applicable auxiliary parameters. The \code{stan_bym}
+#'   variation, and any applicable auxiliary parameters. The \code{stan_bym2}
 #'   function calls the workhorse \code{stan_spatial.fit} function, but it is
 #'   also possible to call the latter directly.
 #' 
-#' @seealso The vignette for \code{stan_bym}.
+#' @seealso The vignette for \code{stan_bym2}.
 #' 
 #' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An
 #'   intuitive Bayesian spatial model for disease mapping that accounts for
@@ -102,9 +102,9 @@
 #' spatial_data$y_gauss <- rnorm(nrow(W), 0 + 0.4 * x + spatial_data$phi, 1)
 #' 
 #' # fit the model
-#' fit_bym <- stan_bym(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
+#' fit_bym <- stan_bym2(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
 #' pp_check(fit_besag)
-stan_bym <- function(formula,
+stan_bym2 <- function(formula,
                         family = gaussian(),
                         data,
                         trials = NULL,
@@ -117,7 +117,7 @@ stan_bym <- function(formula,
                         algorithm = c("sampling", "meanfield", "fullrank"),
                         adapt_delta = NULL,
                         QR = FALSE) {
-  stan_function <- "stan_bym"
+  stan_function <- "stan_bym2"
   if (!requireNamespace("INLA", quietly = TRUE))
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
