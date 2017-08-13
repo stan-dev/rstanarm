@@ -6,6 +6,37 @@ functions {
   #include "binomial_likelihoods.stan"
   #include "count_likelihoods.stan"
   #include "common_functions.stan"
+  /*
+   * Calculate lower bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real lower bound
+   */
+  real make_lower(int family, int link) {
+    if (family == 1) return negative_infinity(); // Gaussian
+    if (family == 5) { // Gamma
+      if (link == 2) return negative_infinity(); // log
+      return 0; // identity or inverse
+    }
+    if (family == 2 || family == 3) { // Poisson or nb2
+      if (link == 1) return negative_infinity(); // log
+      return 0.0; // identity or sqrt
+    }
+    return negative_infinity();
+  }
+
+  /*
+   * Calculate upper bound on intercept
+   *
+   * @param family Integer family code
+   * @param link Integer link code
+   * @return real upper bound
+   */
+  real make_upper(int family, int link) {
+    if (family == 4 && link == 4) return 0.0;  // binomial; log
+    return positive_infinity();
+  }
 }
 data {
   int<lower=0> N;                 // number of regions
@@ -65,7 +96,7 @@ transformed data {
   else hs = 0;
 }
 parameters {
-  real gamma[has_intercept];  // raw intercept
+  real<lower=make_lower(family, link), upper=make_upper(family,link)> gamma[has_intercept];  // raw intercept
   vector[K] z_beta;  // standard normal term
   vector[model_type == 2? N : 0] theta_raw;        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)

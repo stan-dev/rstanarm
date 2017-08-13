@@ -73,7 +73,7 @@
 #' data("lattice", package = "rstanarm")
 #' 
 #' # plot GMRF
-#' grid_sim <- grid_sim10
+#' grid_sim <- grid_sim15
 #' var_range_gmrf <- seq(min(grid_sim@data$gmrf), max(grid_sim@data$gmrf), length = 50)
 #' spplot(grid_sim, "gmrf", at = var_range_gmrf, main = expression(paste(phi, " (GMRF)")),
 #'        col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(50))

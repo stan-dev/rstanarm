@@ -139,10 +139,12 @@
 #' \item \code{educ} Years of education (head of household)
 #' }
 #' }
-#' \item{\code{lattice}}{ The \code{grid_sim10} and \code{grid_sim30}
-#' SpatialPolygonsDataFrame objects are a simulated lattice of 100 and 900
-#' spatial units, respectively. These objects contain spatially dependent
-#' observations simulated as a Gaussian Markov Random Field (GMRF).
+#' \item{\code{lattice}}{ The \code{grid_sim15} and \code{grid_sim30} 
+#' SpatialPolygonsDataFrame objects are a simulated lattice of 225 and 900 
+#' spatial units, respectively. These objects contain spatially dependent 
+#' observations simulated as a Gaussian Markov Random Field (GMRF). The data 
+#' slot in \code{grid_sim15} contains simulated outcomes using the GMRF and
+#' various supported likelihoods.
 #' 
 #' Source: Simulated data
 #' 

@@ -62,7 +62,6 @@ stan_spatial.fit <- function(x, y, w,
     is_continuous <- TRUE
     y_real <- y
     y_int <- array(0, dim = c(0))
-    trials <- array(0, dim = c(0))
   }
   else {
     is_continuous <- FALSE
@@ -74,6 +73,9 @@ stan_spatial.fit <- function(x, y, w,
     has_aux <- FALSE
   else
     has_aux <- TRUE
+  
+  if (family != "binomial")
+    trials <- array(0, dim = c(0))
   
   if (family$family %in% c("binomial", "poisson", "neg_binomial_2")) {
     if(!is.integer(y_int))
@@ -256,6 +258,13 @@ stan_spatial.fit <- function(x, y, w,
   
   pars <- c(if (has_intercept) "alpha", "beta", if(model_type == 2) "rho", "tau", if(has_aux) "aux",
             "mean_PPD", "psi")
+  
+  switch_aux <- switch(family$family,
+                       gaussian = "sigma",
+                       poisson = NA,
+                       neg_binomial_2 = "reciprocal_dispersion",
+                       binomial = NA,
+                       Gamma = "shape")
 
   prior_info <- summarize_spatial_prior(
     user_prior = prior_stuff,
@@ -331,7 +340,7 @@ stan_spatial.fit <- function(x, y, w,
     }
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp), if(model_type == 2) "rho", "tau",
-                   if(has_aux) "aux", "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
+                   if(has_aux) switch_aux, "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
 
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
