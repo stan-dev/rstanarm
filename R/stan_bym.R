@@ -15,18 +15,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian conditional autoregressive (CAR) BYM models via Stan
+#' Bayesian spatial CAR BYM models via Stan
 #'
-#' Spatial regression modeling with the Besag, York, Mollie conditional autoregressive (CAR) prior.
+#' Spatial regression modeling with a variant of the Besag, York, Mollie (BYM) conditional autoregressive (CAR) prior.
 #' 
 #' @export
 #' 
+#' @templateVar fun stan_bym
+#' @templateVar fitfun stan_spatial.fit
+#' @templateVar pkg rstanarm
+#' @templateVar pkgfun stan_glm
+#' @templateVar sameargs family 
 #' @template return-stanreg-object
 #' @template return-stanfit-object
-#' @template see-also
 #' @template args-formula-data-subset
 #' @template args-same-as
-#' @template args-same-as-rarely
 #' @template args-x-y
 #' @template args-dots
 #' @template args-prior_intercept
@@ -36,33 +39,38 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' 
-#' @param family Distribution associated with the outcome. Gaussian, Binomial,
-#'   and Poisson families are supported.
 #' @param trials If \code{family = binomial()} then a vector of trials (equal in
 #'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_rho The prior on the proportion of the marginal variance that is
-#'   explained by the structured (spatial) effect. The hyperparameter \code{rho}
-#'   is in the unit interval so users have the option of declaring a Beta prior 
-#'   distribution or a flat prior. A prior distribution with more mass around 1 
-#'   is analogous to the prior belief that there exists a strong spatial 
-#'   relationship on the graph.
 #' @param prior_tau The prior on the marginal variance contribution of the
 #'   structured (spatial) and unstructured (random) effect.
+#' @param prior_rho The prior on the proportion of the marginal variance that is
+#'   explained by the structured (spatial) effect. The hyperparameter \code{rho}
+#'   is on the unit interval so users have the option of declaring a Beta prior 
+#'   distribution or a flat prior. A prior distribution with most of the mass
+#'   around 1 is analogous to the prior belief that there exists a strong
+#'   spatial relationship on the graph.
+#' @param order Order of the spatial random walk. Specifying \code{order = 2}
+#'   will smooth the spatial variation. The default is \code{order = 1}.
 #'   
-#' @details The \code{stan_bym} model is similar to the analogous model in
-#'   R-INLA. However, instead of using the integrated Laplace approximation
-#'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm}
+#' @details The \code{stan_bym} model is similar to the BYM2 model in R-INLA.
+#'   However, instead of using the integrated nested Laplace approximation 
+#'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm} 
 #'   is \code{"sampling"}) via MCMC. The model includes priors on the intercept,
-#'   regression coefficients, and the relevant scale/mixing parameters. The
-#'   \code{stan_bym} function calls the workhorse \code{stan_spatial.fit}
-#'   function, but it is also possible to call the latter directly.
+#'   regression coefficients, spatial mixing parameter, overall spatial
+#'   variation, and any applicable auxiliary parameters. The \code{stan_bym}
+#'   function calls the workhorse \code{stan_spatial.fit} function, but it is
+#'   also possible to call the latter directly.
 #' 
 #' @seealso The vignette for \code{stan_bym}.
 #' 
 #' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An
 #'   intuitive Bayesian spatial model for disease mapping that accounts for
 #'   scaling. arXiv preprint	arXiv:1601.01180.
+#'   
+#'   Besag, J., York, J. and Mollié, A. (1991). Bayesian image restoration, with
+#'   two applications in spatial statistics. Annals of the Institute of
+#'   Statistical Mathematics. Vol. 43, No. 01, p1-20.
 #'   
 #'   Simpson, D., Rue, H., Martins, T.G., Riebler, A. and Sorbye, S.H. (2015).
 #'   Penalising model component complexity: A principled, practical approach to
@@ -101,6 +109,7 @@ stan_bym <- function(formula,
                         data,
                         trials = NULL,
                         W,
+                        order = c(1,2),
                         ...,
                         prior = normal(), prior_intercept = normal(),
                         prior_tau = normal(), prior_rho = beta(0.5,0.5), prior_aux = NULL,
@@ -113,6 +122,7 @@ stan_bym <- function(formula,
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
+  order <- match.arg(order)
   family <- validate_family(family)
   mf <- model.frame(mc, data)
   mt <- terms(formula, data = data)
@@ -128,6 +138,7 @@ stan_bym <- function(formula,
                               trials = trials,
                               family = family,
                               stan_function = stan_function,
+                              order = order,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,

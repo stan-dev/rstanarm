@@ -15,19 +15,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian intrinsic conditional autoregressive (ICAR) models via Stan
+#' Bayesian spatial ICAR models via Stan
 #'
 #' Spatial regression modeling with an intrinsic conditional autoregressive (ICAR) prior.
 #' 
 #' @rdname stan_besag
 #' @export
 #' 
+#' @templateVar fun stan_besag
+#' @templateVar fitfun stan_spatial.fit
+#' @templateVar pkg rstanarm
+#' @templateVar pkgfun stan_glm
+#' @templateVar sameargs family 
 #' @template return-stanreg-object
 #' @template return-stanfit-object
-#' @template see-also
 #' @template args-formula-data-subset
 #' @template args-same-as
-#' @template args-same-as-rarely
 #' @template args-x-y
 #' @template args-dots
 #' @template args-prior_intercept
@@ -37,26 +40,32 @@
 #' @template args-adapt_delta
 #' @template args-QR
 #' 
-#' @param family Distribution associated with the outcome. Gaussian, Binomial,
-#' and Poisson families are supported.
-#' @param trials If \code{family = binomial()} then a vector of trials (equal
-#' in length to the outcome) must be declared.
+#' @param trials If \code{family = binomial()} then a vector of trials (equal in
+#'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_tau The prior distribution on the variance of the non-centered structured (spatial) effect.
-#' 
-#' @details The \code{stan_besag} model is similar to the analogous model in
-#'   R-INLA. However, instead of using the integrated Laplace approximation
+#' @param prior_tau The prior distribution on the variance of the non-centered
+#'   structured (spatial) effect.
+#' @param order Order of the spatial random walk. Specifying \code{order = 2}
+#'   will smooth the spatial variation. The default is \code{order = 1}.
+#'   
+#' @details The \code{stan_besag} model is similar to the Besag model in R-INLA.
+#'   However, instead of using the integrated nested Laplace approximation
 #'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm}
 #'   is \code{"sampling"}) via MCMC. The model includes priors on the intercept,
-#'   regression coefficients, and the relevant scale parameters. The
-#'   \code{stan_besag} function calls the workhorse \code{stan_spatial.fit}
-#'   function, but it is also possible to call the latter directly.
+#'   regression coefficients, overall spatial variation, and any applicable
+#'   auxiliary parameters. The \code{stan_besag} function calls the workhorse
+#'   \code{stan_spatial.fit} function, but it is also possible to call the
+#'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_besag}.
 #' 
 #' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An
 #'   intuitive Bayesian spatial model for disease mapping that accounts for
 #'   scaling. arXiv preprint	arXiv:1601.01180.
+#'   
+#'   Besag, J. (1974). Spatial Interaction and the Statistical Analysis of
+#'   Lattice Systems. Journal of the Royal Statistical Society. Vol 36, No 2,
+#'   p192-236.
 #' 
 #' @examples 
 #' ### Simulated Data on a Lattice
@@ -92,6 +101,7 @@ stan_besag <- function(formula,
                      data,
                      trials = NULL,
                      W,
+                     order = c(1,2),
                      ...,
                      prior = normal(), prior_intercept = normal(),
                      prior_tau = normal(), prior_aux = NULL,
@@ -104,6 +114,7 @@ stan_besag <- function(formula,
     stop(paste("Please install and load the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
+  order <- match.arg(order)
   family <- validate_family(family)
   mf <- model.frame(mc, data)
   mt <- terms(formula, data = data)
@@ -114,6 +125,7 @@ stan_besag <- function(formula,
                               trials = trials,
                               family = family,
                               stan_function = stan_function,
+                              order = order,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,

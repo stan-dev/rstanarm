@@ -21,7 +21,7 @@ params:
 ```{r, child="children/SETTINGS-loo.txt"}
 ```
 
-# Introduction
+## Introduction
 
 This vignette explains how to account for spatial variation with conditional autoregressive (CAR) models when modeling discrete or continuous outcomes using the `stan_besag` and `stan_bym` functions in the __rstanarm__ package. The `stan_besag` function allows you to model space as an intrinsic conditional autoregressive model (ICAR) and the `stan_bym` is a variant of the Besag, York, Mollie (YEAR) model where the priors are more interpretable.
 
@@ -32,22 +32,24 @@ Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use
 the __rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when
 the likelihood is the product of beta distributions.
 
-# Likelihood
+## Likelihood
 
-The likelihoods supported in each function include Gaussian, Binomial, Poisson, Negative Binomial, and Gamma. For details on the link functions available and the contribution to the posterior of each of these likelihoods consult the appropriate vignettes. Depending on the choice of likelihood there may or may not be an additional auxilliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data, whereas in a Binomial likelihood this would be omitted from the posterior). So the general form of the likelihood is,
+The likelihoods supported in each function include Gaussian, Binomial, Poisson, Negative Binomial, and Gamma. For details on the link functions available and the contribution to the posterior of each of these likelihoods consult the appropriate [vignette](http://mc-stan.org/rstanarm/articles/index.html). 
+
+The linear predictor takes the following form,
 $$
-\mathcal{L}(\gamma | \mathbf{y}) = \prod_{i=1}^N f(y_i | \gamma)
+\boldsymbol{\eta} = \alpha + \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\psi}
+$$
+where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors, $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect (and $N$ denotes the number of spatial units). The construction of $\boldsymbol{\psi}$ depends on the model, and this is discussed in the relevant sections below.
+
+Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). Thus, for some probability density/mass function $f$ the general form of the likelihood is,
+$$
+\mathcal{L}(\alpha, \boldsymbol{\beta}, \gamma | \mathbf{y}) = \prod_{i=1}^N f(y_i | \alpha, \boldsymbol{\beta}, \gamma )
 $$
 
-Since it is straightforward to apply the modeler's choice of likelihood and link function we focus on the linear predictor. The linear predictor takes the following form,
-$$
-\boldsymbol{\eta} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\psi}
-$$
-where $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors, $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect. Here, $N$ denotes the number of spatial regions. The construction of $\boldsymbol{\psi}$ depends on the model, and this is discussed in the relevant sections below.
+## GMRF Hierarchical Component
 
-# GMRF Hierarchical Component
-
-The core of the CAR models require that you define the spatial component as a Gaussian Markov Random Field (GMRF). The random vector $\boldsymbol{\phi}$ is a GMRF with respect to the graph $\mathcal{G} = (\mathcal{V} = \{1,\ldots,n\},\mathcal{E})$ with mean vector $\boldsymbol{\mu}$ and precision matrix $\mathbf{W}$ if its probability density function takes the precision form of the multivariate normal distribution,
+CAR models require that you define the spatial component as a Gaussian Markov Random Field (GMRF). The random vector $\boldsymbol{\phi}$ is a GMRF with respect to the graph $\mathcal{G} = (\mathcal{V} = \{1,\ldots,n\},\mathcal{E})$ with mean vector $\boldsymbol{\mu}$ and precision matrix $\mathbf{W}$ if its probability density function takes the precision form of the multivariate normal distribution,
 $$
 f(\boldsymbol{\phi} | \boldsymbol{\mu}) = (2\pi)^{-n/2} |\mathbf{W}|^{1/2}
 \exp\bigg( -\frac{1}{2}(\boldsymbol{\phi-\mu})^{\top}\mathbf{W}(\boldsymbol{\phi-\mu}) \bigg)
@@ -56,24 +58,22 @@ and $W_{i,j} \neq 0$ when $\{i,j\}\in\mathcal{E}$ for all $i \neq j$. Here, $\ma
 
 Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\mathbf{Q} = \mbox{diag}(\mathbf{W1}) - W$ (which is guaranteed to be positive semi-definite) is used as the precision matrix.
 
-One interpretation of CAR models is that they are in fact hierarchical models as the spatial component enters hierarchically. This is evident in the description of the model priors below.
-
-# Besag (ICAR) Spatial Priors
+## Besag (ICAR) Spatial Prior
 
 The `stan_besag` function fits the data to an ICAR model. This means that the spatial effect enters the linear predictor as
 $$
 \begin{align}
 \boldsymbol{\psi} = \boldsymbol{\phi} \\
-f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\rho\mathbf{Q}|^{1/2}
-\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\rho\mathbf{Q}\boldsymbol{\phi} \bigg)
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\tau\mathbf{Q}|^{1/2}
+\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\tau\mathbf{Q}\boldsymbol{\phi} \bigg)
 \end{align}
 $$
 
 where $\rho$ is a scalar that controls the overall spatial variation and has an appropriate hyperprior distribution. 
 
-# BYM Spatial Priors
+## Variant of the BYM Spatial Prior
 
-The `stan_bym` model fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and unstructured (random) effect,
+The `stan_bym` model fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and thex unstructured (random) effect,
 $$
 \begin{align}
 \boldsymbol{\psi} &= \tau(\boldsymbol{\theta}\sqrt{1-\rho} + \boldsymbol{\phi}\sqrt{\rho}) \\
@@ -82,13 +82,13 @@ f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
 f(\theta_i) &= (2\pi\sigma^2)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
 \end{align}
 $$
-Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal
+Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal.
 
-# Posterior
+## Posterior
 
 Combining these components yields the following posteriors. For `stan_besag` we have,
 $$
-f(\boldsymbol{\beta},\boldsymbol{\phi}, \rho, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
+f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \rho, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
 \prod_{i=1}^N f(y_i | \gamma) \times 
 \prod_{k=1}^K f(\beta_k) \times
 f(\boldsymbol{\phi} | \mathbf{Q}, \rho) \times
@@ -98,7 +98,7 @@ $$
 
 and for `stan_bym` we have,
 $$
-f(\boldsymbol{\beta},\boldsymbol{\phi}, \boldsymbol{\theta}, \rho, \tau, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
+f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \boldsymbol{\theta}, \rho, \tau, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
 \prod_{i=1}^N f(y_i | \gamma) \times 
 \prod_{k=1}^K f(\beta_k) \times
 f(\boldsymbol{\phi} | \mathbf{Q}, \rho) \times
@@ -108,14 +108,15 @@ f(\tau) \times
 f(\lambda)
 $$
 
-# An Example Using Simulated Data on a Lattice
+## An Example Using Simulated Data on a Lattice
 
 As an example we use spatial units defined on a lattice. Below we plot a GMRF of 100 spatial units available in the rstanarm package.
 
 ```{r load-lattice, fig.align='center', fig.height=5}
 library(spdep)
 # Load the preconstruced lattice/GMRF
-data("lattice30", package = "rstanarm")
+data("lattice", package = "rstanarm")
+grid_sim <- grid_sim30
 # plot the GMRF
 var_range_gmrf <- seq(min(grid_sim@data$gmrf), max(grid_sim@data$gmrf), length = 50)
 spplot(grid_sim, "gmrf", at = var_range_gmrf, main = expression(paste(phi, " (GMRF)")),
@@ -167,7 +168,7 @@ print(fit_besag_bad)
 ```
 
 As a two-dimensional posterior predictive check we can plot the posterior predictions on the lattice using the `posterior_predict` function.
-```{r ppcheck-1d, fig.align='center', fig.height=5}
+```{r ppcheck-2d, fig.align='center', fig.height=5}
 grid_sim@data$y_pred <- colMeans(posterior_predict(fit_besag))
 var_range_y_pred <- seq(min(grid_sim@data$y_pred), max(grid_sim@data$y_pred) + 1, by = 1)
 spplot(grid_sim, "y", at = var_range_y_pred, main = expression(y[pred]),
@@ -177,7 +178,6 @@ spplot(grid_sim, "y", at = var_range_y_pred, main = expression(y[pred]),
 Alternatively we can look at the conventional one-dimensional posterior predictive check with the `pp_check` function.
 ```{r ppcheck-1d, fig.align='center', fig.height=5}
 pp_check(fit_besag)
-
 ```
 
 Compare model predictive performance using the [loo](http://mc-stan.org/loo) package. 
@@ -194,11 +194,17 @@ print(loo_besag_bad)
 compare(loo_besag, loo_besag_bad)
 ```
 
-One way to 
+## Smoothing the Spatial Random Walk
 
-# References
+In some cases modeling the GMRF spatial component with the precsion matrix $\mathbf{Q}$ leads to rough spatial varation. This occurs when dealing with spatial units on a lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation. Below we visually illustrate this result with a random walk in one-dimension using the `stan_rw` function with the argument `smooth = TRUE`.
 
-Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An intuitive Bayesian spatial model for disease mapping that accounts for scaling. _arXiv_ preprint	arXiv:1601.01180.
+## References
+
+Besag, J. (1974). Spatial Interaction and the Statistical Analysis of Lattice Systems. _Journal of the Royal Statistical Society._ Vol. 36, No. 2, p192-236.
+
+Besag, J., York, J. and Mollié, A. (1991). Bayesian image restoration, with two applications in spatial statistics. _Annals of the Institute of Statistical Mathematics._ Vol. 43, No. 01, p1-20.
+
+Riebler, A., Sorbye, S.H., Simpson, D. and Rue, H. (2016). An intuitive Bayesian spatial model for disease mapping that accounts for scaling. _arXiv_ preprint	arXiv:1601.01180.
 
 Rue, H. and Held, L. (2005) _Gaussian Markov Random Fields: Theory And Applications (Monographs on Statistics and Applied Probability)._ Chapman & Hall/CRC, Boca Raton, FL.
 

@@ -15,11 +15,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Workhorse function for CAR spatial models.
+#' Workhorse function for CAR models.
 #' 
-#' Both \code{stan_besag} and \code{stan_bym} call \code{stan_spatial.fit} to fit
-#' the appropriate spatial model. See the documentation for either model for further
-#' details on the arguments of \code{stan_spatial.fit}.
+#' Both \code{stan_besag} and \code{stan_bym} call \code{stan_spatial.fit} to
+#' fit the appropriate spatial model. See the documentation for either modeling
+#' function for further details on the arguments of \code{stan_spatial.fit}.
 #' 
 #' @export
 #' 
@@ -28,6 +28,7 @@ stan_spatial.fit <- function(x, y, w,
                              stan_function = c("stan_besag", "stan_bym"),
                              family = NULL,
                              trials = NULL,
+                             order = c(1,2),
                              ...,
                              prior = normal(), prior_intercept = normal(),
                              prior_tau = normal(), prior_aux = NULL, prior_rho = NULL,
@@ -35,7 +36,7 @@ stan_spatial.fit <- function(x, y, w,
                              algorithm = c("sampling", "meanfield", "fullrank"),
                              adapt_delta = NULL,
                              QR = FALSE) {
-  # check that W is appropriate
+  # convert W to a sparse matrix if not already sparse.
   
   algorithm <- match.arg(algorithm)
 
