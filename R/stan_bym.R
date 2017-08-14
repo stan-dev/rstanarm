@@ -15,14 +15,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian spatial CAR BYM variant models via Stan
+#' Bayesian spatial CAR BYM models via Stan
 #'
 #' Spatial regression modeling with a variant of the Besag, York, Mollie (BYM)
-#' conditional autoregressive (CAR) prior that accounts for scaling.
+#' conditional autoregressive (CAR) prior.
 #' 
 #' @export
 #' 
-#' @templateVar fun stan_bym2
+#' @templateVar fun stan_bym
 #' @templateVar fitfun stan_spatial.fit
 #' @templateVar pkg rstanarm
 #' @templateVar pkgfun stan_glm
@@ -44,26 +44,22 @@
 #'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
 #' @param prior_tau The prior on the marginal variance contribution of the
-#'   structured (spatial) and unstructured (random) effect.
-#' @param prior_rho The prior on the proportion of the marginal variance that is
-#'   explained by the structured (spatial) effect. The hyperparameter \code{rho}
-#'   is on the unit interval so users have the option of declaring a Beta prior 
-#'   distribution or a flat prior. A prior distribution with most of the mass
-#'   around 1 is analogous to the prior belief that there exists a strong
-#'   spatial relationship on the graph.
+#'   unstructured (random) effect.
+#' @param prior_rho The prior on the marginal variance contribution of the
+#'   structured (spatial) effect.
 #' @param order Order of the spatial random walk. Specifying \code{order = 2}
 #'   will smooth the spatial variation. The default is \code{order = 1}.
 #'   
-#' @details The \code{stan_bym2} model is similar to the BYM2 model in R-INLA.
+#' @details The \code{stan_bym} model is similar to the BYM model in R-INLA.
 #'   However, instead of using the integrated nested Laplace approximation 
 #'   (INLA) method, full Bayesian estimation is performed (if \code{algorithm} 
 #'   is \code{"sampling"}) via MCMC. The model includes priors on the intercept,
 #'   regression coefficients, spatial mixing parameter, overall spatial
-#'   variation, and any applicable auxiliary parameters. The \code{stan_bym2}
+#'   variation, and any applicable auxiliary parameters. The \code{stan_bym}
 #'   function calls the workhorse \code{stan_spatial.fit} function, but it is
 #'   also possible to call the latter directly.
 #' 
-#' @seealso The vignette for \code{stan_bym2}.
+#' @seealso The vignette for \code{stan_bym}.
 #' 
 #' @references Riebler, A., Sorbye, S.H., Simpson, D., Rue, H. (2016). An
 #'   intuitive Bayesian spatial model for disease mapping that accounts for
@@ -72,10 +68,6 @@
 #'   Besag, J., York, J. and Mollié, A. (1991). Bayesian image restoration, with
 #'   two applications in spatial statistics. Annals of the Institute of
 #'   Statistical Mathematics. Vol. 43, No. 01, p1-20.
-#'   
-#'   Simpson, D., Rue, H., Martins, T.G., Riebler, A. and Sorbye, S.H. (2015).
-#'   Penalising model component complexity: A principled, practical approach to
-#'   constructing priors. arXiv preprint	arXiv:1403.4630.
 #' 
 #' @examples 
 #' ### Simulated Data on a Lattice
@@ -103,22 +95,22 @@
 #' spatial_data$y_gauss <- rnorm(nrow(W), 0 + 0.4 * x + spatial_data$phi, 1)
 #' 
 #' # fit the model
-#' fit_bym <- stan_bym2(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
+#' fit_bym <- stan_bym(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
 #' pp_check(fit_besag)
-stan_bym2 <- function(formula,
-                        family = gaussian(),
-                        data,
-                        trials = NULL,
-                        W,
-                        order = 1,
-                        ...,
-                        prior = normal(), prior_intercept = normal(),
-                        prior_tau = normal(), prior_rho = beta(0.5,0.5), prior_aux = NULL,
-                        prior_PD = FALSE,
-                        algorithm = c("sampling", "meanfield", "fullrank"),
-                        adapt_delta = NULL,
-                        QR = FALSE) {
-  stan_function <- "stan_bym2"
+stan_bym <- function(formula,
+                      family = gaussian(),
+                      data,
+                      trials = NULL,
+                      W,
+                      order = 1,
+                      ...,
+                      prior = normal(), prior_intercept = normal(),
+                      prior_tau = normal(), prior_rho = normal(), prior_aux = NULL,
+                      prior_PD = FALSE,
+                      algorithm = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta = NULL,
+                      QR = FALSE) {
+  stan_function <- "stan_bym"
   if (!requireNamespace("INLA", quietly = TRUE))
     stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
@@ -128,11 +120,6 @@ stan_bym2 <- function(formula,
   mt <- terms(formula, data = data)
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
-  
-  if (!is.null(prior_rho)) {
-    if (prior_rho$dist != "beta")
-      stop("'prior_rho' must be either beta() or NULL.") 
-  }
   
   stanfit <- stan_spatial.fit(x = X, y = Y, w = W,
                               trials = trials,

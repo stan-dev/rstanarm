@@ -46,7 +46,7 @@ data {
   int link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
-  int<lower=1,upper=2> model_type;       // 0 = 1D RW; Besag = 1; BYM = 2
+  int<lower=1,upper=3> model_type;       // 0 = 1D RW; Besag = 1; BYM = 2
   int<lower=0,upper=1> has_intercept;
   vector[K] xbar;
   int<lower=0> trials[family == 4 ? N : 0];
@@ -63,6 +63,9 @@ data {
   int u[order == 2 ? N+1 : 0];
   // prior stuff
   int<lower=0,upper=1> prior_dist_rho;
+  real prior_mean_rho;
+  real<lower=0> prior_scale_rho;
+  real<lower=0> prior_df_rho;
   real<lower=0> shape1_rho;
   real<lower=0> shape2_rho;
   real scaling_factor;
@@ -98,9 +101,9 @@ transformed data {
 parameters {
   real<lower=make_lower(family, link), upper=make_upper(family,link)> gamma[has_intercept];  // raw intercept
   vector[K] z_beta;  // standard normal term
-  vector[model_type == 2? N : 0] theta_raw;        // used for random effect (non-spatial)
+  vector[model_type == 1? 0 : N] theta_raw;        // used for random effect (non-spatial)
   vector[N-1] phi_raw;        // used for random effect (spatial)
-  real<lower=0,upper=1> rho[model_type == 2];          // variance i.e. rho^2
+  real<lower=0,upper=1> rho[model_type != 1];          // variance i.e. rho^2
   real<lower=0> tau;        // variance i.e. tau^2
   real<lower=0> global[hs];
   vector<lower=0>[K] local[hs];
@@ -121,7 +124,9 @@ transformed parameters {
   if (model_type == 1)
     psi = phi * sqrt(inv(tau));
   else if (model_type == 2)
-    psi = tau*(sqrt(1-rho[1])*theta_raw[1] + sqrt(rho[1]/scaling_factor)*phi);
+    psi = phi * sqrt(inv(rho[1])) + theta_raw * sqrt(inv(tau));
+  else if (model_type == 3)
+    psi = tau*(sqrt(1-rho[1])*theta_raw + sqrt(rho[1]/scaling_factor)*phi);
   // for regression coefficients
   #include "tparameters.stan"
 }
@@ -160,8 +165,17 @@ model {
   // priors on coefficients
   #include "priors.stan"
   // model specific priors
-  if (model_type == 2) {  // BYM
-    target+= normal_lpdf(theta_raw[1] | 0, 1);  // unstructured (random) effect
+  if (model_type == 2) {
+    // prior on overall spatial variation
+    if (prior_dist_rho == 1)
+      target+= normal_lpdf(rho | prior_mean_rho, prior_scale_rho);
+    else if (prior_dist_rho == 2)
+      target+= student_t_lpdf(rho | prior_df_rho, prior_mean_rho, prior_scale_rho);
+    else if (prior_dist_rho == 3)
+      target+= exponential_lpdf(rho | prior_scale_rho);
+  }
+  else if (model_type == 3) {  // BYM
+    target+= normal_lpdf(theta_raw | 0, 1);  // unstructured (random) effect
     if (prior_dist_rho == 1)
       target+= beta_lpdf(rho[1] | shape1_rho, shape2_rho);
     /* else prior_dist_tau is 0 and nothing is added */
