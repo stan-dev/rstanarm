@@ -37,6 +37,8 @@ stan_spatial.fit <- function(x, y, w,
                              adapt_delta = NULL,
                              QR = FALSE) {
   # convert W to a sparse matrix if not already sparse.
+  if(!is(w, "sparseMatrix"))
+    w <- Matrix(w, sparse = TRUE)
   
   algorithm <- match.arg(algorithm)
 
