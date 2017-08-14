@@ -46,7 +46,7 @@ data {
   int link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
-  int<lower=1,upper=3> model_type;       // 0 = 1D RW; Besag = 1; BYM = 2
+  int<lower=1,upper=3> model_type;       // Besag = 0; BYM = 1; BYM = 2
   int<lower=0,upper=1> has_intercept;
   vector[K] xbar;
   int<lower=0> trials[family == 4 ? N : 0];
@@ -99,12 +99,13 @@ transformed data {
   else hs = 0;
 }
 parameters {
-  real<lower=make_lower(family, link), upper=make_upper(family,link)> gamma[has_intercept];  // raw intercept
-  vector[K] z_beta;  // standard normal term
-  vector[model_type == 1? 0 : N] theta_raw;        // used for random effect (non-spatial)
-  vector[N-1] phi_raw;        // used for random effect (spatial)
-  real<lower=0,upper=1> rho[model_type != 1];          // variance i.e. rho^2
-  real<lower=0> tau;        // variance i.e. tau^2
+  real<lower=make_lower(family, link), upper=make_upper(family,link)> gamma[has_intercept];
+  vector[K] z_beta;
+  vector[model_type == 1? 0 : N] theta_raw;
+  vector[N-1] phi_raw;
+  // interpretation of rho and tau depends on model_type!
+  real<lower=0,upper=(model_type == 3 ? 1 : positive_infinity())> rho[model_type != 1];
+  real<lower=0> tau;
   real<lower=0> global[hs];
   vector<lower=0>[K] local[hs];
   vector<lower=0>[K] mix[prior_dist == 5 || prior_dist == 6];
@@ -121,12 +122,20 @@ transformed parameters {
   vector[N] psi;
   phi[1:(N - 1)] = phi_raw;
   phi[N] = -sum(phi_raw);
+  /*
   if (model_type == 1)
     psi = phi * sqrt(inv(tau));
   else if (model_type == 2)
     psi = phi * sqrt(inv(rho[1])) + theta_raw * sqrt(inv(tau));
   else if (model_type == 3)
     psi = tau*(sqrt(1-rho[1])*theta_raw + sqrt(rho[1]/scaling_factor)*phi);
+  */
+  if (model_type == 1)
+     psi = phi * tau;
+  else if (model_type == 2)
+     psi = phi * rho[1] + theta_raw * tau;
+  else if (model_type == 3)
+     psi = tau*(sqrt(1-rho[1])*theta_raw + sqrt(rho[1]/scaling_factor)*phi);
   // for regression coefficients
   #include "tparameters.stan"
 }
@@ -173,6 +182,7 @@ model {
       target+= student_t_lpdf(rho | prior_df_rho, prior_mean_rho, prior_scale_rho);
     else if (prior_dist_rho == 3)
       target+= exponential_lpdf(rho | prior_scale_rho);
+    /* else prior_dist_tau is 0 and nothing is added */
   }
   else if (model_type == 3) {  // BYM
     target+= normal_lpdf(theta_raw | 0, 1);  // unstructured (random) effect

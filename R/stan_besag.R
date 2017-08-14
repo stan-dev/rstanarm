@@ -89,11 +89,14 @@
 #' 
 #' # simulate predictor/outcome
 #' x <- rnorm(nrow(W), 3, 1)
-#' spatial_data <- data.frame(x, phi = grid_sim@data$gmrf)
-#' spatial_data$y_gauss <- rnorm(nrow(W), 0 + 0.4 * x + spatial_data$phi, 1)
+#' phi <- grid_sim@data$gmrf
+#' tau <- 1
+#' y <- rnorm(nrow(W), 0 + 0.4*x + phi*tau, 1)
 #' 
 #' # fit the model
-#' fit_besag <- stan_besag(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
+#' fit_besag <- stan_besag(y_gauss ~ 1 + x + I(x^2), data = data.frame(y=y,x=x),
+#'     W = W, iter = 300, chains = 4)
+#' fit_besag
 #' pp_check(fit_besag)
 #'
 stan_besag <- function(formula,

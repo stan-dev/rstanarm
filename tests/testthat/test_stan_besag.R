@@ -25,7 +25,8 @@ ITER <- 50
 CHAINS <- 2
 
 context("stan_besag")
-
+# source(paste0("tests/testthat/",(file.path("helpers", "expect_stanreg.R"))))
+# source(paste0("tests/testthat/",(file.path("helpers", "SW.R"))))
 source(file.path("helpers", "expect_stanreg.R"))
 source(file.path("helpers", "SW.R"))
 
@@ -48,14 +49,14 @@ SW(fit_binom <- stan_besag(y_binom ~ 1 + x, trials = spatial_data$trials, data =
 SW(fit_pois <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
                           prior_intercept = normal(0,1), prior = normal(0,1),
                           family = poisson(link = "log"),
-                          W = W, iter = 100, chains = 4))
+                          W = W, iter = 500, chains = 4))
 SW(fit_nb2 <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
                          prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                          family = neg_binomial_2(link = "log"),
-                         W = W, iter = 100, chains = 4))
+                         W = W, iter = 500, chains = 4))
 SW(fit_gamma <- stan_besag(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
                            prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                           W = W, iter = 100, chains = 4))
+                           W = W, iter = 500, chains = 4))
 
 # compare answers with INLA (NB2 reciprocal_dispersion param fails!)
 test_that("stan_besag estimates match INLA", {

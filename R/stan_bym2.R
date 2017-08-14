@@ -99,11 +99,17 @@
 #' 
 #' # simulate predictor/outcome
 #' x <- rnorm(nrow(W), 3, 1)
-#' spatial_data <- data.frame(x, phi = grid_sim@data$gmrf)
-#' spatial_data$y_gauss <- rnorm(nrow(W), 0 + 0.4 * x + spatial_data$phi, 1)
+#' phi <- grid_sim@data$gmrf
+#' theta <- rnorm(nrow(W), 0, 1)
+#' tau <- 1
+#' rho <- 0.7
+#' psi <- (1/tau) * (sqrt(1-rho)*theta + sqrt(rho)*phi)
+#' y <- rnorm(nrow(W), 0 + 0.4 * x + psi, 1)
 #' 
 #' # fit the model
-#' fit_bym <- stan_bym2(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
+#' fit_bym2 <- stan_bym2(y ~ 1 + x, data = data.frame(y=y,x=x),
+#'     W = W, iter = 300, chains = 4)
+#' fit_bym2
 #' pp_check(fit_besag)
 stan_bym2 <- function(formula,
                         family = gaussian(),

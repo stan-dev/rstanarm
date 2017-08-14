@@ -371,7 +371,6 @@ stan_spatial.fit <- function(x, y, w,
                    if(model_type == 2) {c("structured", "unstructured")},  # rho, tau
                    if(model_type == 3) {c("mixing", "structured")},  # rho, tau
                    if(has_aux) switch_aux, "mean_PPD", paste0("psi[", 1:standata$N, "]"), "log-posterior")
-
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
   }

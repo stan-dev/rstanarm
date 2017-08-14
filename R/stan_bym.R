@@ -91,11 +91,17 @@
 #' 
 #' # simulate predictor/outcome
 #' x <- rnorm(nrow(W), 3, 1)
-#' spatial_data <- data.frame(x, phi = grid_sim@data$gmrf)
-#' spatial_data$y_gauss <- rnorm(nrow(W), 0 + 0.4 * x + spatial_data$phi, 1)
+#' phi <- grid_sim@data$gmrf
+#' theta <- rnorm(nrow(W), 0, 1)
+#' tau <- 1
+#' rho <- 1
+#' spatial_data <- data.frame(x)
+#' y <- rnorm(nrow(W), 0 + 0.4*x + phi*rho + theta*tau, 1)
 #' 
 #' # fit the model
-#' fit_bym <- stan_bym(y_gauss ~ 1 + x + I(x^2), data = spatial_data, W = W, iter = 300, chains = 4)
+#' fit_bym <- stan_bym(y ~ 1 + x +, data = data.frame(y=y,x=x),
+#'     W = W, iter = 300, chains = 4)
+#' fit_bym
 #' pp_check(fit_besag)
 stan_bym <- function(formula,
                       family = gaussian(),
