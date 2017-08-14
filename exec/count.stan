@@ -9,7 +9,8 @@ functions {
 data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=0> y[N];  // count outcome
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  int<lower=6,upper=7> family; // 6 poisson, 7 neg-binom, (8 poisson with gamma noise at some point?)
+  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"
@@ -25,16 +26,16 @@ transformed data{
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> aux_unscaled[family > 1];
-  vector<lower=0>[N] noise[family == 3]; // do not store this
+  real<lower=0> aux_unscaled[family > 6];
+  vector<lower=0>[N] noise[family == 8]; // do not store this
 }
 transformed parameters {
-  real aux = negative_infinity(); // be careful with this in the family = 1 case
+  real aux = negative_infinity(); // be careful with this in the family = 6 case
   #include "tparameters_glm.stan" // defines beta, b, theta_L
  
-  if (family > 1 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
+  if (family > 6 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
     aux = aux_unscaled[1];
-  else if (family > 1) {
+  else if (family > 6) {
     aux = prior_scale_for_aux * aux_unscaled[1];
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux = aux + prior_mean_for_aux;
@@ -43,7 +44,7 @@ transformed parameters {
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
-      theta_L = scale .* (family == 1 ? tau : tau * aux);
+      theta_L = scale .* (family == 6 ? tau : tau * aux);
       if (t == 1) b = theta_L[1] * z_b;
       else for (i in 1:t) {
         int end = start + l[i] - 1;
@@ -52,7 +53,7 @@ transformed parameters {
       }
     }
     else {
-      if (family == 1)
+      if (family == 6)
         theta_L = make_theta_L(len_theta_L, p, 1.0,
                                tau, scale, zeta, rho, z_T);
       else
@@ -75,7 +76,7 @@ model {
     #include "eta_no_intercept.stan" // shifts eta
   }
   
-  if (family == 3) {
+  if (family == 8) {
     if      (link == 1) eta = eta + log(aux) + log(noise[1]);
     else if (link == 2) eta = eta * aux .* noise[1];
     else                eta = eta + sqrt(aux) + sqrt(noise[1]);
@@ -83,7 +84,7 @@ model {
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    if(family != 2) {
+    if (family != 7) {
       if (link == 1) target += poisson_log_lpmf(y | eta);
       else target += poisson_lpmf(y | linkinv_count(eta, link));
     }
@@ -92,13 +93,13 @@ model {
       else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
     }
   }
-  else if (family != 2 && prior_PD == 0)
+  else if (family != 7 && prior_PD == 0)
     target += dot_product(weights, pw_pois(y, eta, link));
   else if (prior_PD == 0)
     target += dot_product(weights, pw_nb(y, eta, aux, link));
   
   // Log-prior for aux
-  if (family > 1 && 
+  if (family > 6 && 
       prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
     real log_half = -0.693147180559945286;    
     if (prior_dist_for_aux == 1)
@@ -112,7 +113,7 @@ model {
   #include "priors_glm.stan" // increments target()
   
   // Log-prior for noise
-  if (family == 3) target += gamma_lpdf(noise[1] | aux, 1);
+  if (family == 8) target += gamma_lpdf(noise[1] | aux, 1);
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -143,13 +144,13 @@ generated quantities {
       #include "eta_no_intercept.stan" // shifts eta
     }
     
-    if (family == 3) {
+    if (family == 8) {
       if      (link == 1) eta = eta + log(aux) + log(noise[1]);
       else if (link == 2) eta = eta * aux .* noise[1];
       else                eta = eta + sqrt(aux) + sqrt(noise[1]);
     }
     nu = linkinv_count(eta, link);
-    if (family != 2) for (n in 1:N) {
+    if (family != 7) for (n in 1:N) {
         if (nu[n] < poisson_max) mean_PPD = mean_PPD + poisson_rng(nu[n]);
         else mean_PPD = mean_PPD + normal_rng(nu[n], sqrt(nu[n]));
     }

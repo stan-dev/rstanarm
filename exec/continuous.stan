@@ -7,34 +7,6 @@ functions {
   #include "continuous_likelihoods.stan"
   #include "SSfunctions.stan"
   
-  /*
-   * Calculate lower bound on intercept
-   *
-   * @param family Integer family code
-   * @param link Integer link code
-   * @return real lower bound
-   */
-  real make_lower(int family, int link) {
-    if (family == 1) return negative_infinity(); // Gaussian
-    if (family <= 3) { // Gamma or inverse Gaussian
-      if (link == 2) return negative_infinity(); // log
-      return 0;
-    }
-    return negative_infinity();
-  }
-
-  /*
-   * Calculate upper bound on intercept
-   *
-   * @param family Integer family code
-   * @param link Integer link code
-   * @return real upper bound
-   */
-  real make_upper(int family, int link) {
-    if (family == 4 && link == 5) return 0;
-    return positive_infinity();
-  }
-  
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -58,7 +30,8 @@ data {
   real lb_y; // lower bound on y
   real<lower=lb_y> ub_y; // upper bound on y
   vector<lower=lb_y, upper=ub_y>[len_y] y; // continuous outcome
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  int<lower=1,upper=4> family; // 1 gaussian, 2 gamma, 3 inv-gaussian, 4 beta
+  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"

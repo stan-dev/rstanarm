@@ -10,7 +10,8 @@ data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=0> y[N];       // outcome: number of successes
   int<lower=0> trials[N];  // number of trials
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  int<lower=5,upper=5> family;
+  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
   #include "hyperparameters.stan"

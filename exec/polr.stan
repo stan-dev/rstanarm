@@ -127,7 +127,7 @@ data {
   #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   int<lower=2> J;  // number of outcome categories, which typically is > 2
   int<lower=1,upper=J> y[N];  // ordinal outcome
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
 
   # hyperparameter values

@@ -30,7 +30,8 @@ data {
   matrix[N[2], K_smooth] S1;
   int<lower=1> smooth_map[K_smooth];
   
-  #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  int<lower=5,upper=5> family;
+  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes

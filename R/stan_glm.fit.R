@@ -169,8 +169,7 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
-  }
-  else {
+  } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
     prior_scale_for_smooth <- array(NA_real_, dim = 0)
@@ -249,6 +248,7 @@ stan_glm.fit <-
     K = ncol(xtemp),
     xbar = as.array(xbar),
     dense_X = !sparse,
+    family = stan_family_number(famname), 
     link,
     has_weights = length(weights) > 0,
     has_offset = length(offset) > 0,
@@ -275,7 +275,7 @@ stan_glm.fit <-
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_dist_for_aux = prior_dist_for_aux,
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
-    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
+    num_normals = if (prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0)
     # mean,df,scale for aux added below depending on family
   )
@@ -401,11 +401,6 @@ stan_glm.fit <-
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
-    standata$family <- switch(family$family, 
-                              gaussian = 1L, 
-                              Gamma = 2L,
-                              inverse.gaussian = 3L,
-                              4L) # beta
     standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
@@ -414,7 +409,6 @@ stan_glm.fit <-
         0 else prior_scale_for_aux
     standata$prior_mean_for_aux <- 0
     standata$prior_df_for_aux <- 0
-    standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
       y1 <- y == 1
@@ -474,13 +468,11 @@ stan_glm.fit <-
       stanfit <- stanmodels$binomial
     }
   } else if (is.poisson(famname)) {
-    standata$family <- 1L
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_mean_for_aux <- 0
     standata$prior_df_for_aux <- 0
-    stanfit <- stanmodels$count 
+    stanfit <- stanmodels$count
   } else if (is_nb) {
-    standata$family <- 2L
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
@@ -636,6 +628,25 @@ supported_glm_links <- function(famname) {
     stop("unsupported family")
   )
 }
+
+# Family number to pass to Stan
+# @param famname string naming the family
+# @return an integer family code
+stan_family_number <- function(famname) {
+  switch(
+    famname,
+    "gaussian" = 1L,
+    "Gamma" = 2L,
+    "inverse.gaussian" = 3L,
+    "beta" = 4L,
+    "Beta regression" = 4L,
+    "binomial" = 5L,
+    "poisson" = 6L,
+    "neg_binomial_2" = 7L,
+    stop("Family not valid.")
+  )
+}
+
 
 
 # Verify that outcome values match support implied by family object
@@ -895,3 +906,4 @@ summarize_glm_prior <-
       if (is.ig(fam)) "lambda" else 
         if (is.nb(fam)) "reciprocal_dispersion" else NA
 }
+
