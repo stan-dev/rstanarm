@@ -46,7 +46,7 @@ data {
   int link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
-  int<lower=1,upper=3> model_type;       // Besag = 0; BYM = 1; BYM = 2
+  int<lower=1,upper=3> model_type;       // Besag = 1; BYM = 2; BYM2 = 3
   int<lower=0,upper=1> has_intercept;
   vector[K] xbar;
   int<lower=0> trials[family == 4 ? N : 0];
@@ -122,7 +122,7 @@ transformed parameters {
   vector[N] psi;
   phi[1:(N - 1)] = phi_raw;
   phi[N] = -sum(phi_raw);
-  /*
+  /* precision form
   if (model_type == 1)
     psi = phi * sqrt(inv(tau));
   else if (model_type == 2)
@@ -175,13 +175,14 @@ model {
   #include "priors.stan"
   // model specific priors
   if (model_type == 2) {
+    target+= normal_lpdf(theta_raw | 0, 1);  // unstructured (random) effect
     // prior on overall spatial variation
     if (prior_dist_rho == 1)
-      target+= normal_lpdf(rho | prior_mean_rho, prior_scale_rho);
+      target+= normal_lpdf(rho[1] | prior_mean_rho, prior_scale_rho);
     else if (prior_dist_rho == 2)
-      target+= student_t_lpdf(rho | prior_df_rho, prior_mean_rho, prior_scale_rho);
+      target+= student_t_lpdf(rho[1] | prior_df_rho, prior_mean_rho, prior_scale_rho);
     else if (prior_dist_rho == 3)
-      target+= exponential_lpdf(rho | prior_scale_rho);
+      target+= exponential_lpdf(rho[1] | prior_scale_rho);
     /* else prior_dist_tau is 0 and nothing is added */
   }
   else if (model_type == 3) {  // BYM

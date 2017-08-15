@@ -60,6 +60,16 @@ stan_spatial.fit <- function(x, y, w,
                        binomial = 4,
                        Gamma = 5)
   
+  # for when consistent-family-numbers gets merged
+  # family_num <- switch(family$family,
+  #                      gaussian = 1,
+  #                      Gamma = 2,
+  #                      inv_gaussian = 3,
+  #                      beta = 4,
+  #                      binomial = 5,
+  #                      poisson = 6,
+  #                      neg_binomial_2 = 7)
+  
   if (family$family %in% c("gaussian", "Gamma")) {
     is_continuous <- TRUE
     y_real <- y
@@ -392,7 +402,7 @@ create_scaling_factor <- function(dat) {
   # Compute the diagonal elements of the covariance matrix subject to the 
   # constraint that the entries of the ICAR sum to zero.
   # See the function help for further details.
-  Q_inv <- inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
+  Q_inv <- INLA::inla.qinv(Q_pert, constr=list(A = matrix(1,1,dat$N),e=0))
   
   # Compute the geometric mean of the variances, which are on the diagonal of Q.inv
   scaling_factor <- exp(mean(log(Matrix::diag(Q_inv))))

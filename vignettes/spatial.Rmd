@@ -60,7 +60,7 @@ Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\
 
 ## Besag (ICAR) Spatial Prior
 
-The `stan_besag` function fits the data to an ICAR model. This means that the spatial effect enters the linear predictor as
+The `stan_besag` modeling function fits the data to an ICAR model. This means that the spatial effect enters the linear predictor as
 $$
 \begin{align}
 \boldsymbol{\psi} = \boldsymbol{\phi} \\
@@ -71,18 +71,34 @@ $$
 
 where $\rho$ is a scalar that controls the overall spatial variation and has an appropriate hyperprior distribution. 
 
-## Variant of the BYM Spatial Prior
+## BYM
 
-The `stan_bym` model fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and thex unstructured (random) effect,
+The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The BYM model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial component takes the following form,
+$$
+\begin{align}
+\boldsymbol{\psi} &= \rho\phi + \tau\theta \\
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
+\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\mathbf{Q}\boldsymbol{\phi} \bigg) \\
+f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
+\end{align}
+$$
+Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal.
+
+## BYM2 (Variant of the BYM Spatial Prior)
+
+The `stan_bym2` modeling function fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and thex unstructured (random) effect,
 $$
 \begin{align}
 \boldsymbol{\psi} &= \tau(\boldsymbol{\theta}\sqrt{1-\rho} + \boldsymbol{\phi}\sqrt{\rho}) \\
 f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
 \exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\mathbf{Q}\boldsymbol{\phi} \bigg) \\
-f(\theta_i) &= (2\pi\sigma^2)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
+f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
 \end{align}
 $$
-Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal.
+
+As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. Here, the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
+
+Priors on $\rho$ should be chosen wisely as $\rho=0$ reduces to a model that not account for spatial variation and $\rho=1$ reduces to the ICAR model, which does not account for random variation among the spatial units. 
 
 ## Posterior
 
@@ -96,7 +112,8 @@ f(\rho) \times
 f(\lambda)
 $$
 
-and for `stan_bym` we have,
+
+and for both `stan_bym` and `stan_bym2` we have,
 $$
 f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \boldsymbol{\theta}, \rho, \tau, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
 \prod_{i=1}^N f(y_i | \gamma) \times 
@@ -112,7 +129,7 @@ $$
 
 As an example we use spatial units defined on a lattice. Below we plot a GMRF of 100 spatial units available in the rstanarm package.
 
-```{r load-lattice, fig.align='center', fig.height=5}
+```{r load-lattice, fig.align='center', fig.height=8}
 library(spdep)
 # Load the preconstruced lattice/GMRF
 data("lattice", package = "rstanarm")
@@ -155,11 +172,11 @@ Now we can fit the model with `stan_besag`.
 
 ```{r fit-besag, results = "hide"}
 library(rstanarm)
-fit_besag <- stan_besag(y ~ 1 + x + z, data = spatial_data,
+fit_besag <- stan_besag(y ~ 1 + x + z, data = spatial_data, W,
                         prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
                         family = binomial(link="logit"), trials = spatial_data$trials,
                         chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
-fit_besag_bad <- stan_besag(y ~ 1 + x + I(x^2), data = spatial_data,
+fit_besag_bad <- stan_besag(y ~ 1 + x + I(x^2), data = spatial_data, W,
                             prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
                             family = binomial(link="logit"), trials = spatial_data$trials,
                             chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
@@ -168,15 +185,15 @@ print(fit_besag_bad)
 ```
 
 As a two-dimensional posterior predictive check we can plot the posterior predictions on the lattice using the `posterior_predict` function.
-```{r ppcheck-2d, fig.align='center', fig.height=5}
+```{r ppcheck-2d, fig.align='center', fig.height=8}
 grid_sim@data$y_pred <- colMeans(posterior_predict(fit_besag))
 var_range_y_pred <- seq(min(grid_sim@data$y_pred), max(grid_sim@data$y_pred) + 1, by = 1)
-spplot(grid_sim, "y", at = var_range_y_pred, main = expression(y[pred]),
+spplot(grid_sim, "y_pred", at = var_range_y_pred, main = expression(y[pred]),
        col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1))
 ```
 
 Alternatively we can look at the conventional one-dimensional posterior predictive check with the `pp_check` function.
-```{r ppcheck-1d, fig.align='center', fig.height=5}
+```{r ppcheck-1d, fig.align='center', fig.height=8}
 pp_check(fit_besag)
 ```
 
@@ -196,7 +213,29 @@ compare(loo_besag, loo_besag_bad)
 
 ## Smoothing the Spatial Random Walk
 
-In some cases modeling the GMRF spatial component with the precsion matrix $\mathbf{Q}$ leads to rough spatial varation. This occurs when dealing with spatial units on a lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation. Below we visually illustrate this result with a random walk in one-dimension using the `stan_rw` function with the argument `smooth = TRUE`.
+In some cases modeling the GMRF spatial component with the precsion matrix $\mathbf{Q}$ leads to rough spatial varation. This occurs when dealing with spatial units on a lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
+
+```{r smoothing, results="hide"}
+fit_besag_smooth <- stan_besag(y ~ 1 + x + z, data = spatial_data, W, order = 2,
+                               prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
+                               family = binomial(link="logit"), trials = spatial_data$trials,
+                               chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+```
+
+Now we plot the results alongside the first fit with `order = 1`.
+
+```{r plot-smoothing, fig.align='center', fig.height=12}
+grid_sim@data$y_pred_smooth <- colMeans(posterior_predict(fit_besag_smooth))
+
+var_range_y_pred <- seq(min(grid_sim@data$y_pred_smooth), max(grid_sim@data$y_pred_smooth) + 1, by = 1)
+gridExtra::grid.arrange(layout_matrix = matrix(1:2, nrow = 1),
+  spplot(grid_sim, "y_pred_smooth", at = var_range_y_pred, main = expression(y[pred_smooth]),
+         col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1)),
+  spplot(grid_sim, "y_pred", at = var_range_y_pred, main = expression(y[pred]),
+         col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1))
+)
+```
+
 
 ## References
 
