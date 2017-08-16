@@ -390,8 +390,9 @@ pp_b_ord <- function(b, Z_names) {
 
 # Number of trials for binomial models
 pp_binomial_trials <- function(object, newdata = NULL) {
-  y <- if (is.null(newdata))
-    get_y(object) else eval(formula(object)[[2L]], newdata)
+  y <- get_y(object)
+  if (!is.null(newdata) && NCOL(y) == 2)
+    y <- eval(formula(object)[[2L]], newdata)
   if (NCOL(y) == 2L)
     return(rowSums(y))
   rep(1, NROW(y))
