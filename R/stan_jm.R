@@ -1360,6 +1360,12 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Undo ordering of matrices if bernoulli
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
+  # Drop clust_mat from object
+  clust_stuff <- lapply(clust_stuff, function(x) {
+    x$clust_mat <- NULL
+    return(x)
+  })
+  
   fit <- nlist(stanfit, family, formula = list_nms(c(formulaLong, formulaEvent), M), 
                id_var, time_var, offset, weights, quadnodes, basehaz,
                M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
