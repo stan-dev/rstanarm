@@ -60,11 +60,11 @@ SW(fit_gamma <- stan_besag(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(
 
 # compare answers with INLA (NB2 reciprocal_dispersion param fails!)
 test_that("stan_besag estimates match INLA", {
-  inla_gauss_est <- c(-0.0475, 0.4329, 0.9830, 0.8277)
-  inla_binom_est <- c(-1.9444, 0.3340, 0.423)
-  inla_pois_est <- c(0.7801, 0.4366, 0.3448)
-  inla_nb_est <- c(0.8053, 0.4362, 0.3574, 48.6003)
-  inla_gamma_est <- c(0.8119, -1.3407, 0.559, 1.106)
+  inla_gauss_est <- c(-0.0475, 0.4329, 1/0.9830, 1/0.8277)
+  inla_binom_est <- c(-1.9444, 0.3340, 1/0.4229)
+  inla_pois_est <- c(0.7801, 0.4366, 1/0.3448)
+  inla_nb_est <- c(0.8053, 0.4362, 1/0.3574, 48.6003)
+  inla_gamma_est <- c(0.8119, -1.3407, 1/0.559, 1/1.106)
   besag_gauss <- unname(fit_gauss$stan_summary[1:4,"mean"])
   besag_binom <- unname(fit_binom$stan_summary[1:3,"mean"])
   besag_pois <- unname(fit_pois$stan_summary[1:3,"mean"])
