@@ -23,7 +23,7 @@ params:
 
 ## Introduction
 
-This vignette explains how to account for spatial variation with conditional autoregressive (CAR) models when modeling discrete or continuous outcomes using the `stan_besag` and `stan_bym` functions in the __rstanarm__ package. The `stan_besag` function allows you to model space as an intrinsic conditional autoregressive model (ICAR) and the `stan_bym` is a variant of the Besag, York, Mollie (YEAR) model where the priors are more interpretable.
+This vignette explains how to account for spatial variation with conditional autoregressive (CAR) models when modeling discrete or continuous outcomes using the `stan_besag`, `stan_bym`, and `stan_bym2` functions in the __rstanarm__ package. The `stan_besag` function allows you to model space as an intrinsic conditional autoregressive model (ICAR), the `stan_bym` function allows you to fit the Besag, York, Mollie (1991) CAR model, and the `stan_bym2` is a variant of the BYM model where the priors are more interpretable (see Riebler et al (2016) for details).
 
 ```{r, child="children/four_steps.txt"}
 ```
@@ -34,15 +34,15 @@ the likelihood is the product of beta distributions.
 
 ## Likelihood
 
-The likelihoods supported in each function include Gaussian, Binomial, Poisson, Negative Binomial, and Gamma. For details on the link functions available and the contribution to the posterior of each of these likelihoods consult the appropriate [vignette](http://mc-stan.org/rstanarm/articles/index.html). 
+The likelihoods supported in each CAR modeling function include Gaussian, Binomial, Poisson, Negative Binomial, and Gamma. For details on the link functions available and the contribution to the posterior of each of these likelihoods consult the appropriate [vignette](http://mc-stan.org/rstanarm/articles/index.html). 
 
 The linear predictor takes the following form,
 $$
 \boldsymbol{\eta} = \alpha + \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\psi}
 $$
-where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors, $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect (and $N$ denotes the number of spatial units). The construction of $\boldsymbol{\psi}$ depends on the model, and this is discussed in the relevant sections below.
+where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors, $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect (and $N$ denotes the number of spatial units). The construction of $\boldsymbol{\psi}$ depends on the model, which is discussed in the relevant sections below.
 
-Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). Thus, for some probability density/mass function $f$ the general form of the likelihood is,
+Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). Thus, for some probability density/mass function $f$ we can state the general form of the likelihood as,
 $$
 \mathcal{L}(\alpha, \boldsymbol{\beta}, \gamma | \mathbf{y}) = \prod_{i=1}^N f(y_i | \alpha, \boldsymbol{\beta}, \gamma )
 $$
@@ -73,10 +73,10 @@ where $\rho$ is a scalar that controls the overall spatial variation and has an 
 
 ## BYM
 
-The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The BYM model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial component takes the following form,
+The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial component takes the following form,
 $$
 \begin{align}
-\boldsymbol{\psi} &= \rho\phi + \tau\theta \\
+\boldsymbol{\psi} &= \rho\boldsymbol{\phi} + \tau\boldsymbol{\theta} \\
 f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
 \exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\mathbf{Q}\boldsymbol{\phi} \bigg) \\
 f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
@@ -119,7 +119,7 @@ f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \boldsymbol{\theta}, \rho, \tau,
 \prod_{i=1}^N f(y_i | \gamma) \times 
 \prod_{k=1}^K f(\beta_k) \times
 f(\boldsymbol{\phi} | \mathbf{Q}, \rho) \times
-\prod_{k=1}^K f(\theta_i) \times
+\prod_{i=1}^K f(\theta_i) \times
 f(\rho) \times
 f(\tau) \times
 f(\lambda)
@@ -127,7 +127,7 @@ $$
 
 ## An Example Using Simulated Data on a Lattice
 
-As an example we use spatial units defined on a lattice. Below we plot a GMRF of 100 spatial units available in the rstanarm package.
+As an example we use spatial units defined on a lattice. Below we plot a GMRF of 900 spatial units available in the rstanarm package.
 
 ```{r load-lattice, fig.align='center', fig.height=8}
 library(spdep)
@@ -156,7 +156,6 @@ trials <- rep(10, nrow(W))
 spatial_data <- data.frame(x, z, phi = grid_sim@data$gmrf, trials)
 eta <- binomial(link="logit")$linkinv(0.5 + 0.4 * x + 0.8 * z + spatial_data$phi)
 spatial_data$y <- rbinom(nrow(W), trials, eta)
-table(spatial_data$y)
 ```
 
 Plotting the outcome data on the lattice gives us a better understanding of its spatial variation.
@@ -168,7 +167,7 @@ spplot(grid_sim, "y", at = var_range_y, main = expression(y),
        col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y) + 1))
 ```
 
-Now we can fit the model with `stan_besag`.
+Now we can fit the model with `stan_besag` (we also fit a model that does not match that data generating process for model selection purposes).
 
 ```{r fit-besag, results = "hide"}
 library(rstanarm)
@@ -213,7 +212,7 @@ compare(loo_besag, loo_besag_bad)
 
 ## Smoothing the Spatial Random Walk
 
-In some cases modeling the GMRF spatial component with the precsion matrix $\mathbf{Q}$ leads to rough spatial varation. This occurs when dealing with spatial units on a lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
+In some cases modeling the GMRF spatial component with the precision matrix $\mathbf{Q}$ leads to rough spatial varation. This often occurs when dealing with spatial units on a fine lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
 
 ```{r smoothing, results="hide"}
 fit_besag_smooth <- stan_besag(y ~ 1 + x + z, data = spatial_data, W, order = 2,
@@ -236,6 +235,7 @@ gridExtra::grid.arrange(layout_matrix = matrix(1:2, nrow = 1),
 )
 ```
 
+The `stan_bym` and `stan_bym2` functions can be used in a similar way.
 
 ## References
 
