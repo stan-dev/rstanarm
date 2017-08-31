@@ -41,26 +41,26 @@ spatial_data <- grid_sim15@data
 
 SW(fit_gauss <- stan_bym2(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
                           prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                          prior_tau = normal(0,1), prior_rho = beta(0.5,0.5),
+                          prior_structured = normal(0,1), prior_mixing = beta(0.5,0.5),
                           W = W, iter = 100, chains = 4))
 SW(fit_binom <- stan_bym2(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
                           prior_intercept = normal(0,1), prior = normal(0,1),
-                          prior_tau = normal(0,1), prior_rho = beta(0.5,0.5),
+                          prior_structured = normal(0,1), prior_mixing = beta(0.5,0.5),
                           family = binomial(link = "logit"),
                           W = W, iter = 100, chains = 4))
 SW(fit_pois <- stan_bym2(y_pois ~ 1 + x, data = spatial_data,
                          prior_intercept = normal(0,1), prior = normal(0,1),
-                         prior_tau = normal(0,1), prior_rho = beta(0.5,0.5),
+                         prior_structured = normal(0,1), prior_mixing = beta(0.5,0.5),
                          family = poisson(link = "log"),
                          W = W, iter = 500, chains = 4))
 SW(fit_nb2 <- stan_bym2(y_pois ~ 1 + x, data = spatial_data,
                         prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                        prior_tau = normal(0,1), prior_rho = beta(0.5,0.5),
+                        prior_structured = normal(0,1), prior_mixing = beta(0.5,0.5),
                         family = neg_binomial_2(link = "log"),
                         W = W, iter = 500, chains = 4))
 SW(fit_gamma <- stan_bym2(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
                           prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                          prior_tau = normal(0,1), prior_rho = beta(0.5,0.5),
+                          prior_structured = normal(0,1), prior_mixing = beta(0.5,0.5),
                           W = W, iter = 500, chains = 4))
 
 # compare answers with INLA (NB2 reciprocal_dispersion param fails!)

@@ -43,9 +43,9 @@
 #' @param trials If \code{family = binomial()} then a vector of trials (equal in
 #'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_tau The prior on the marginal variance contribution of the
+#' @param prior_structured The prior on the marginal variance contribution of the
 #'   structured (spatial) and unstructured (random) effect.
-#' @param prior_rho The prior on the proportion of the marginal variance that is
+#' @param prior_mixing The prior on the proportion of the marginal variance that is
 #'   explained by the structured (spatial) effect. The hyperparameter \code{rho}
 #'   is on the unit interval so users have the option of declaring a Beta prior 
 #'   distribution or a flat prior. A prior distribution with most of the mass
@@ -119,7 +119,7 @@ stan_bym2 <- function(formula,
                         order = 1,
                         ...,
                         prior = normal(), prior_intercept = normal(),
-                        prior_tau = normal(), prior_rho = beta(0.5,0.5), prior_aux = NULL,
+                        prior_structured = normal(), prior_mixing = beta(0.5,0.5), prior_aux = NULL,
                         prior_PD = FALSE,
                         algorithm = c("sampling", "meanfield", "fullrank"),
                         adapt_delta = NULL,
@@ -135,9 +135,9 @@ stan_bym2 <- function(formula,
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
   
-  if (!is.null(prior_rho)) {
-    if (prior_rho$dist != "beta")
-      stop("'prior_rho' must be either beta() or NULL.") 
+  if (!is.null(prior_mixing)) {
+    if (prior_mixing$dist != "beta")
+      stop("'prior_mixing' must be either beta() or NULL.") 
   }
   
   stanfit <- stan_spatial.fit(x = X, y = Y, w = W,
@@ -148,7 +148,7 @@ stan_bym2 <- function(formula,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
-                              prior_aux = prior_aux, prior_rho = prior_rho, prior_tau = prior_tau,
+                              prior_aux = prior_aux, prior_rho = prior_mixing, prior_tau = prior_structured,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)

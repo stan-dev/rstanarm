@@ -43,9 +43,9 @@
 #' @param trials If \code{family = binomial()} then a vector of trials (equal in
 #'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_tau The prior on the marginal variance contribution of the
+#' @param prior_unstructured The prior on the marginal variance contribution of the
 #'   unstructured (random) effect.
-#' @param prior_rho The prior on the marginal variance contribution of the
+#' @param prior_structured The prior on the marginal variance contribution of the
 #'   structured (spatial) effect.
 #' @param order Order of the spatial random walk. Specifying \code{order = 2}
 #'   will smooth the spatial variation. The default is \code{order = 1}.
@@ -111,7 +111,7 @@ stan_bym <- function(formula,
                       order = 1,
                       ...,
                       prior = normal(), prior_intercept = normal(),
-                      prior_tau = normal(), prior_rho = normal(), prior_aux = NULL,
+                      prior_unstructured = normal(), prior_structured = normal(), prior_aux = NULL,
                       prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
                       adapt_delta = NULL,
@@ -135,7 +135,7 @@ stan_bym <- function(formula,
                               ...,
                               prior = prior,
                               prior_intercept = prior_intercept,
-                              prior_aux = prior_aux, prior_rho = prior_rho, prior_tau = prior_tau,
+                              prior_aux = prior_aux, prior_rho = prior_structured, prior_tau = prior_unstructured,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)

@@ -196,9 +196,9 @@ Alternatively we can look at the conventional one-dimensional posterior predicti
 pp_check(fit_besag)
 ```
 
-Compare model predictive performance using the [loo](http://mc-stan.org/loo) package. 
+We can also compare the model's predictive performance using the [loo](http://mc-stan.org/loo) package. 
 
-```{r loo-besag}
+```{r loo-besag, results='hide'}
 library(loo)
 loo_besag <- loo(fit_besag)
 loo_besag_bad <- loo(fit_besag_bad)
@@ -210,9 +210,12 @@ print(loo_besag_bad)
 compare(loo_besag, loo_besag_bad)
 ```
 
+
+The difference between these two models is negative indicating the correct model has higher predictive accuracy.
+
 ## Smoothing the Spatial Random Walk
 
-In some cases modeling the GMRF spatial component with the precision matrix $\mathbf{Q}$ leads to rough spatial varation. This often occurs when dealing with spatial units on a fine lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
+In some cases modeling the GMRF spatial component with the precision matrix $\mathbf{Q}$ leads to rough spatial varation. This often occurs when dealing with spatial units on a fine lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units using a spatial random walk of order 2. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
 
 ```{r smoothing, results="hide"}
 fit_besag_smooth <- stan_besag(y ~ 1 + x + z, data = spatial_data, W, order = 2,

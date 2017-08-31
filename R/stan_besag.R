@@ -43,7 +43,7 @@
 #' @param trials If \code{family = binomial()} then a vector of trials (equal in
 #'   length to the outcome) must be declared.
 #' @param W An N-by-N spatial weight matrix.
-#' @param prior_tau The prior distribution on the variance of the non-centered
+#' @param prior_structured The prior distribution on the variance of the non-centered
 #'   structured (spatial) effect.
 #' @param order Order of the spatial random walk. Specifying \code{order = 2}
 #'   will smooth the spatial variation. The default is \code{order = 1}.
@@ -107,7 +107,7 @@ stan_besag <- function(formula,
                      order = 1,
                      ...,
                      prior = normal(), prior_intercept = normal(),
-                     prior_tau = normal(), prior_aux = NULL,
+                     prior_structured = normal(), prior_aux = NULL,
                      prior_PD = FALSE,
                      algorithm = c("sampling", "meanfield", "fullrank"),
                      adapt_delta = NULL,
@@ -132,7 +132,7 @@ stan_besag <- function(formula,
                               prior = prior,
                               prior_intercept = prior_intercept,
                               prior_aux = prior_aux,
-                              prior_tau = prior_tau,
+                              prior_tau = prior_structured,
                               prior_PD = prior_PD,
                               algorithm = algorithm, adapt_delta = adapt_delta, 
                               QR = QR)
