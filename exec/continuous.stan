@@ -83,7 +83,7 @@ transformed data {
 parameters {
   real<lower=make_lower(family, link),upper=make_upper(family,link)> gamma[has_intercept];
   #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
-  real<lower=0> aux_unscaled; # interpretation depends on family!
+  real<lower=0> aux_unscaled; // interpretation depends on family!
   #include "parameters_betareg.stan"
 }
 transformed parameters {

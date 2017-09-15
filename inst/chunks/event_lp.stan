@@ -23,10 +23,10 @@
     exp(segment(ll_haz_q, (Npat + 1), Npat_times_quadnodes));        
 
   // Log likelihood for event model
-  if (has_weights == 0) { # unweighted log likelihood
+  if (has_weights == 0) { // unweighted log likelihood
     ll_event = sum(ll_haz_eventtime) - sum(ll_surv_eventtime);
   } 
-  else {  # weighted log likelihood
+  else {  // weighted log likelihood
     ll_event = sum(e_weights .* ll_haz_eventtime) - 
 	  sum(e_weights_rep .* ll_surv_eventtime);
   }				    
