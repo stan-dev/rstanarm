@@ -310,9 +310,9 @@ PPD_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span cl
                     <span class="dt">QR =</span> <span class="ot">TRUE</span>, <span class="dt">init_r =</span> <span class="fl">0.25</span>, <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>)</code></pre></div>
 <p>However, in this case the posterior distribution is bimodal</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"^l"</span>)</code></pre></div>
-<p><img src="glmer_files/figure-html/unnamed-chunk-15-1.png" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="glmer_files/figure-html/unnamed-chunk-15-1.png" width="90%" style="display: block; margin: auto;"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"igma"</span>)</code></pre></div>
-<p><img src="glmer_files/figure-html/unnamed-chunk-15-2.png" width="60%" style="display: block; margin: auto;"> Thus, you should always be running many chains when using Stan, especially <code>stan_nlmer</code>.</p>
+<p><img src="glmer_files/figure-html/unnamed-chunk-15-2.png" width="90%" style="display: block; margin: auto;"> Thus, you should always be running many chains when using Stan, especially <code>stan_nlmer</code>.</p>
 </div>
 <div id="conclusion" class="section level1">
 <h1 class="hasAnchor">
