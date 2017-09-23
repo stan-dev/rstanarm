@@ -2,7 +2,7 @@ Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
 Version: 2.15.4
-Date: 2017-04-27
+Date: 2017-09-23
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
@@ -59,4 +59,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1
