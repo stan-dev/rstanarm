@@ -136,6 +136,8 @@ stan_glmer <-
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
   if (family$family == "Beta regression") family$family <- "beta"
+  sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+  X <- X[ , !sel, drop = FALSE]
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
