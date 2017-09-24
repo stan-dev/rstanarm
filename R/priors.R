@@ -49,7 +49,7 @@
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
 #'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} 
 #'   prior, the degrees of freedom parameter must be an integer (vector) that is
-#'   at least \eqn{2} (the default).
+#'   at least \eqn{1} (and is \eqn{2} by default).
 #' @param global_df,global_scale Optional arguments for the hierarchical
 #'   shrinkage priors. See the \emph{Hierarchical shrinkage family} section
 #'   below.
@@ -464,7 +464,7 @@ lasso <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
 #' @export
 product_normal <- function(df = 2, location = 0, scale = 1) {
   validate_parameter_value(df)
-  stopifnot(all(df >= 2), all(df == as.integer(df)))
+  stopifnot(all(df >= 1), all(df == as.integer(df)))
   validate_parameter_value(scale)
   nlist(dist = "product_normal", df, location, scale)
 }
