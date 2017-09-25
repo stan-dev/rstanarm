@@ -1371,6 +1371,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
                n_subjects = e_mod_stuff$Npat, n_grps, assoc,
                y_mod_stuff, e_mod_stuff, a_mod_stuff, clust_stuff,
+               grp_assoc = if (any(unlist(has_clust))) grp_assoc else NULL,
                fr = list_nms(c(fetch(a_mod_stuff, "model_frame"), 
                                list(e_mod_stuff$model_frame)), M),
                y = list_nms(fetch(y_mod_stuff, "y"), M),
@@ -2307,10 +2308,16 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   
   # Broadcast id_list and times if there is lower level clustering
   if (clust_stuff$has_clust) {
-    id_list <- rep(id_list, clust_stuff$clust_freq)
-    times <- lapply(times, rep, clust_stuff$clust_freq)
-    clust <- clust_stuff$clust_list
     clust_var <- clust_stuff$clust_var
+    if (is(times, "list")) {
+      id_list <- rep(id_list, clust_stuff$clust_freq)
+      times <- lapply(times, rep, clust_stuff$clust_freq)
+      clust <- clust_stuff$clust_list
+    } else {
+      id_list <- rep(rep(id_list, clust_stuff$clust_freq), clust_stuff$quadnodes + 1)
+      times <- rep(times, rep(clust_stuff$clust_freq, clust_stuff$quadnodes + 1))
+      clust <- rep(clust_stuff$clust_list, clust_stuff$quadnodes + 1)
+    }
   } else clust <- NULL
   
   # Identify row in longitudinal data closest to event time or quadrature point
@@ -2420,7 +2427,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   K_data <- sapply(xq_data, ncol)
   xmat_data <- do.call(cbind, xq_data)
   
-  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data)
+  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data, clust_stuff)
   
   structure(ret, times = times, lag = lag, eps = eps, auc_quadnodes = auc_quadnodes,
             auc_quadtimes = auc_quadtimes, auc_quadweights = auc_quadweights)
@@ -2502,7 +2509,7 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
 #   individual
 # @return A named list
 get_clust_info <- function(cnms, flist, id_var, quadnodes, 
-                           grp_assoc, ok_grp_assocs) {
+                           grp_assoc, ok_grp_assocs = c("sum", "mean")) {
   cnms_nms <- names(cnms)
   tally <- sapply(cnms_nms, function(x) 
     # within each ID, count the number of levels for the grouping factor x
@@ -2517,7 +2524,9 @@ get_clust_info <- function(cnms, flist, id_var, quadnodes,
     clust_freq <- tally[[clust_var]]
     clust_list <- unique(flist[[clust_var]])
     clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
-    clust_mat <- model.matrix(~ 0 + id, data = data.frame(id = clust_idlist))
+    clust_mat <- if (length(levels(clust_idlist)) > 1L)
+      model.matrix(~ 0 + id, data = data.frame(id = clust_idlist)) else 
+        matrix(1, length(clust_idlist), 1L)
     if (is.null(grp_assoc)) {
       stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
            "within 'id_var'.", call. = FALSE)       
@@ -2531,7 +2540,7 @@ get_clust_info <- function(cnms, flist, id_var, quadnodes,
   } else {
     clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_mat <- NULL
   }
-  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat)
+  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat, quadnodes)
 }
 
 # Function to calculate the number of association parameters in the model
@@ -2727,10 +2736,17 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       auc_m <- get_element(parts, m = m, "auc", ...)
       data_m <- get_element(parts, m = m, "xmat_data", ...)
       K_data_m <- get_element(parts, m = m, "K_data", ...)
-      
+      has_clust_m <- parts[[m]]$clust_stuff$has_clust
+      if (has_clust_m)
+        clust_mat_m <- parts[[m]]$clust_stuff$clust_mat
+        
       # etavalue and any interactions      
       if (assoc["etavalue",][[m]]) { # etavalue
-        a_X[[mark]] <- eta_m
+        if (has_clust_m) {
+          a_X[[mark]] <- clust_mat_m %*% eta_m
+        } else {
+          a_X[[mark]] <- eta_m
+        }
         mark <- mark + 1
       }
       if (assoc["etavalue_data",][[m]]) { # etavalue*data
@@ -2738,7 +2754,12 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ev   ])
         val <- as.vector(eta_m) * data_m[, cbeg:cend, drop = FALSE]
-        a_X[[mark]] <- val
+        if (has_clust_m) {
+          a_X[[mark]] <- do.call(cbind, lapply(
+            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        } else {
+          a_X[[mark]] <- val
+        }
         mark <- mark + 1
       }
       if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
@@ -2763,7 +2784,11 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       # etaslope and any interactions
       if (assoc["etaslope",][[m]]) { # etaslope
         dydt_m <- (eps_m - eta_m) / eps
-        a_X[[mark]] <- dydt_m
+        if (has_clust_m) {
+          a_X[[mark]] <- clust_mat_m %*% dydt_m
+        } else {
+          a_X[[mark]] <- dydt_m
+        } 
         mark <- mark + 1             
       }
       if (assoc["etaslope_data",][[m]]) { # etaslope*data
@@ -2772,7 +2797,12 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
         cend  <- sum(K_data_m[0: idx_es   ])
         val <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE]
-        a_X[[mark]] <- val
+        if (has_clust_m) {
+          a_X[[mark]] <- do.call(cbind, lapply(
+            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        } else {
+          a_X[[mark]] <- val
+        }
         mark <- mark + 1            
       }
       # etaauc
