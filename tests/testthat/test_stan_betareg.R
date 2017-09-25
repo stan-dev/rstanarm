@@ -28,8 +28,8 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   context("stan_betareg")
   
-  source(file.path("helpers", "expect_stanreg.R"))
-  source(file.path("helpers", "SW.R"))
+  source(test_path("helpers", "expect_stanreg.R"))
+  source(test_path("helpers", "SW.R"))
   
   simple_betareg_data <- function(N, draw_z = FALSE) {
     x <- rnorm(N, 2, 1)
@@ -81,6 +81,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     for (i in 1:length(link1)) {
       SW(fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED,
                              prior = NULL, prior_intercept = NULL,
+                             prior_phi = NULL,
                              data = dat, algorithm = "optimizing"))
       expect_stanreg(fit)
       val <- coef(fit)
@@ -92,6 +93,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("stan_betareg works with QR = TRUE and algorithm = 'optimizing'", {
     SW(fit <- stan_betareg(y ~ x + z, link = "logit", seed = SEED, QR = TRUE,
                            prior = NULL, prior_intercept = NULL,
+                           prior_phi = NULL,
                            data = dat, algorithm = "optimizing"))
     expect_stanreg(fit)
     val <- coef(fit)
@@ -102,6 +104,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("stan_betareg works with QR = TRUE and algorithm = 'sampling'", {
     SW(fit <- stan_betareg(y ~ x + z, link = "logit", QR = TRUE,
                            prior = NULL, prior_intercept = NULL, 
+                           prior_phi = NULL,
                            iter = 100, chains = 2, data = dat))
     expect_stanreg(fit)
     val <- coef(fit)
@@ -175,7 +178,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     phi <- 20
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
     SW(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED,
-                           prior = NULL, prior_intercept = NULL,
+                           prior = NULL, prior_intercept = NULL, prior_phi = NULL,
                            data = dat, weights = weights, offset = offset, 
                            algorithm = "optimizing", iter = 2000))
     expect_stanreg(fit)
@@ -197,7 +200,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("loo/waic for stan_betareg works", {
-    source(file.path("helpers", "expect_equivalent_loo.R"))
+    source(test_path("helpers", "expect_equivalent_loo.R"))
     ll_fun <- rstanarm:::ll_fun
     
     data("GasolineYield", package = "betareg")
@@ -209,8 +212,8 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
   })
 
-  source(file.path("helpers", "check_for_error.R"))
-  source(file.path("helpers", "expect_linpred_equal.R"))
+  source(test_path("helpers", "check_for_error.R"))
+  source(test_path("helpers", "expect_linpred_equal.R"))
   SW <- suppressWarnings
   context("posterior_predict (stan_betareg)")
   test_that("compatible with stan_betareg with z", {

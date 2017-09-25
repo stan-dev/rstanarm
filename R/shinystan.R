@@ -17,20 +17,33 @@
 
 #' Using the ShinyStan GUI with rstanarm models
 #' 
-#' @name shinystan
-#' @aliases launch_shinystan
-#' @importFrom shinystan launch_shinystan
+#' The ShinyStan interface provides visual and numerical summaries of model
+#' parameters and convergence diagnostics.
 #' 
-#' @description The ShinyStan interface provides visual and numerical summaries
-#'   of model parameters and convergence diagnostics.
-#'
+#' @aliases launch_shinystan
+#' @export
+#' 
+#' @templateVar stanregArg object
+#' @template args-stanreg-object
+#' @inheritParams shinystan::launch_shinystan
+#' @param ppd Should \pkg{rstanarm} draw from the posterior predictive 
+#'   distribution before launching ShinyStan? The default is \code{TRUE}, 
+#'   although for very large objects it can be convenient to set it to 
+#'   \code{FALSE} as drawing from the posterior predictive distribution can be 
+#'   time consuming. If \code{ppd} is \code{TRUE} then graphical posterior 
+#'   predictive checks are available when ShinyStan is launched.
+#' @param seed Passed to \code{\link[rstanarm]{pp_check}} (\pkg{rstanarm}) if 
+#'   \code{ppd} is \code{TRUE}.
+#' @param model_name,note Optional arguments passed to
+#'   \code{\link[shinystan]{as.shinystan}}.
+#'   
 #' @details The \code{\link[shinystan]{launch_shinystan}} function will accept a
-#'   \code{\link[=stanreg-objects]{stanreg}} object as input. Currently, almost
-#'   any model fit using one of \pkg{rstanarm}'s model-fitting functions can be
-#'   used with ShinyStan. The only exception is that ShinyStan does not
-#'   currently support \pkg{rstanarm} models fit using
-#'   \code{algorithm='optimizing'}. See the
-#'   \pkg{\link[=shinystan-package]{shinystan}} package documentation for more
+#'   \code{\link[=stanreg-objects]{stanreg}} object as input. Currently, almost 
+#'   any model fit using one of \pkg{rstanarm}'s model-fitting functions can be 
+#'   used with ShinyStan. The only exception is that ShinyStan does not 
+#'   currently support \pkg{rstanarm} models fit using 
+#'   \code{algorithm='optimizing'}. See the 
+#'   \pkg{\link[=shinystan-package]{shinystan}} package documentation for more 
 #'   information.
 #'   
 #' @section Faster launch times:
@@ -88,5 +101,21 @@
 #' if (interactive()) launch_shinystan(sso)
 #' }
 #' 
-#' 
-NULL
+launch_shinystan.stanreg <-
+  function(object,
+           ppd = TRUE, 
+           seed = 1234, 
+           model_name = NULL, 
+           note = NULL, 
+           rstudio = getOption("shinystan.rstudio"), 
+           ...) {
+    sso <-
+      shinystan::as.shinystan(
+        object,
+        ppd = ppd,
+        seed = seed,
+        model_name = model_name,
+        note = note
+      )
+    shinystan::launch_shinystan(sso, rstudio = rstudio, ...)
+  }

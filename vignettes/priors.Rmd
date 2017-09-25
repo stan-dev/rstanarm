@@ -38,20 +38,21 @@ parameters.
 
 | Argument       | Used in  | Applies to |
 | ------------- | ------------- | ------------- |
-| `prior_intercept` | All modeling functions except `stan_polr`| Model intercept, after centering predictors.|
+| `prior_intercept` | All modeling functions except `stan_polr` and `stan_nlmer`| Model intercept, after centering predictors.|
 | `prior` |  All modeling functions| Regression coefficients. Does _not_ include coefficients that vary by group in a multilevel model (see `prior_covariance`).|
-| `prior_aux` | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`| Auxiliary parameter, e.g. error SD (interpretation depends on the GLM).|
-| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`| Covariance matrices in multilevel models with varying slopes and intercepts.|
+| `prior_aux` | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`| Auxiliary parameter, e.g. error SD (interpretation depends on the GLM).|
+| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`| Covariance matrices in multilevel models with varying slopes and intercepts.|
 \* `stan_glm` also implies `stan_glm.nb`. `stan_glmer` implies `stan_lmer` and
 `stan_glmer.nb`.
 
 <br> 
 
-The `stan_polr` and `stan_betareg` functions also provide additional arguments 
-specific only to those models:
+The `stan_polr`, `stan_betareg`, and `stan_gamm4` functions also provide
+additional arguments specific only to those models:
 
 | Argument       | Used only in  | Applies to |
 | ------------- | ------------- | ------------- |
+| `prior_smooth` | `stan_gamm4` | Prior for hyperparameters in GAMs (lower values yield less flexible smooth functions). |
 | `prior_counts` | `stan_polr` | Prior counts of an _ordinal_ outcome (when predictors at sample means). |
 | `prior_z`  |  `stan_betareg`| Coefficients in the model for `phi`.|
 | `prior_intercept_z` | `stan_betareg`| Intercept in the model for `phi`. |
@@ -106,7 +107,7 @@ fr2 <- function(x) format(round(x, 2), nsmall = 2)
 Starting from the bottom up, we can see that:
 
 * __Auxiliary__: `sigma`, the error standard deviation, has a default prior that
-is $\mathsf{halfCauchy}(0, 5)$. However, as a result of the automatic rescaling,
+is $\mathsf{exponential}(1)$. However, as a result of the automatic rescaling,
 the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
 
 * __Coefficients__: By default the regression coefficients (in this case the 
@@ -176,7 +177,7 @@ test_no_autoscale <-
     default_prior_test,
     prior = normal(0, 5, autoscale = FALSE),
     prior_intercept = student_t(4, 0, 10, autoscale = FALSE),
-    prior_aux = exponential(1/10, autoscale=FALSE)
+    prior_aux = cauchy(0, 3, autoscale = FALSE)
   )
 ```
 
@@ -252,7 +253,7 @@ helping to stabilize computations.
 
 A more in-depth discussion of non-informative vs weakly informative priors is 
 available in the case study 
-[_How the Shape of a Weakly Informative Prior Affects  Inferences_](http://mc-stan.org/documentation/case-studies/weakly_informative_shapes.html).
+[_How the Shape of a Weakly Informative Prior Affects  Inferences_](http://mc-stan.org/users/documentation/case-studies/weakly_informative_shapes.html).
 
 
 ### Specifying flat priors

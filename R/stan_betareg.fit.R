@@ -19,22 +19,22 @@
 #' @export
 #' @param z For \code{stan_betareg.fit}, a regressor matrix for \code{phi}.
 #'   Defaults to an intercept only.
-stan_betareg.fit <- function(x, y, z = NULL, 
-                             weights = rep(1, NROW(x)), 
-                             offset = rep(0, NROW(x)),
-                             link = c("logit", "probit", "cloglog", 
-                                      "cauchit", "log", "loglog"), 
-                             link.phi = NULL, ...,
-                             prior = normal(), 
-                             prior_intercept = normal(),
-                             prior_z = normal(), 
-                             prior_intercept_z = normal(),
-                             prior_phi = cauchy(0, 5),
-                             prior_PD = FALSE, 
-                             algorithm = c("sampling", "optimizing", 
-                                           "meanfield", "fullrank"),
-                             adapt_delta = NULL, 
-                             QR = FALSE) {
+#'   
+stan_betareg.fit <- 
+  function(x, y, z = NULL, 
+           weights = rep(1, NROW(x)), 
+           offset = rep(0, NROW(x)),
+           link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
+           link.phi = NULL, ...,
+           prior = normal(), 
+           prior_intercept = normal(),
+           prior_z = normal(), 
+           prior_intercept_z = normal(),
+           prior_phi = exponential(),
+           prior_PD = FALSE, 
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           adapt_delta = NULL, 
+           QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   
@@ -225,10 +225,14 @@ stan_betareg.fit <- function(x, y, z = NULL,
     prior_dist_for_intercept, prior_mean_for_intercept = c(prior_mean_for_intercept), 
     prior_scale_for_intercept = min(.Machine$double.xmax, prior_scale_for_intercept), 
     prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_dist_for_aux <- prior_dist_for_aux,
+    prior_dist_for_aux = prior_dist_for_aux,
     prior_scale_for_aux = prior_scale_for_aux %ORifINF% 0,
-    prior_df_for_aux <- c(prior_df_for_aux),
-    prior_mean_for_aux <- c(prior_mean_for_aux),
+    prior_df_for_aux = c(prior_df_for_aux),
+    prior_mean_for_aux = c(prior_mean_for_aux),
+    prior_dist_for_smooth = 0L, prior_mean_for_smooth = array(NA_real_, dim = 0), 
+    prior_scale_for_smooth = array(NA_real_, dim = 0),
+    prior_df_for_smooth = array(NA_real_, dim = 0), K_smooth = 0L,
+    S = matrix(NA_real_, nrow(xtemp), ncol = 0L), smooth_map = integer(),
     has_weights = length(weights) > 0, weights = weights,
     has_offset = length(offset) > 0, offset = offset,
     t = 0L, 
@@ -260,7 +264,8 @@ stan_betareg.fit <- function(x, y, z = NULL,
     num_normals = if (prior_dist == 7) 
       as.array(as.integer(prior_df)) else integer(0),
     num_normals_z = if (prior_dist_z == 7) 
-      as.array(as.integer(prior_df_z)) else integer(0)
+      as.array(as.integer(prior_df_z)) else integer(0),
+    len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double()  
     )
 
   # call stan() to draw from posterior distribution

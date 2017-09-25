@@ -17,18 +17,20 @@
 
 #' Prior distributions and options
 #' 
-#' The functions described on this page are used to specify the prior-related
+#' The functions described on this page are used to specify the prior-related 
 #' arguments of the various modeling functions in the \pkg{rstanarm} package (to
 #' view the priors used for an existing model see \code{\link{prior_summary}}). 
-#' The default priors used in the various \pkg{rstanarm} modeling functions are
-#' intended to be \emph{weakly informative} in that they provide moderate
-#' regularlization and help stabilize computation. For many applications the
-#' defaults will perform well, but prudent use of more informative priors is
-#' encouraged. Uniform prior distributions are possible (e.g. by setting
-#' \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
-#' the data is very strong, they are not recommended and are \emph{not}
-#' non-informative, giving the same probability mass to implausible values as
-#' plausible ones.
+#' More information on priors is also available in the \emph{Prior 
+#' Distributions} vignette as well as the vignettes for the various modeling 
+#' functions. The default priors used in the various \pkg{rstanarm} modeling
+#' functions are intended to be \emph{weakly informative} in that they provide
+#' moderate regularlization and help stabilize computation. For many
+#' applications the defaults will perform well, but prudent use of more
+#' informative priors is encouraged. Uniform prior distributions are possible
+#' (e.g. by setting \code{\link{stan_glm}}'s \code{prior} argument to
+#' \code{NULL}) but, unless the data is very strong, they are not recommended
+#' and are \emph{not} non-informative, giving the same probability mass to
+#' implausible values as plausible ones.
 #' 
 #' @name priors
 #' @param location Prior location. In most cases, this is the prior mean, but
@@ -47,7 +49,7 @@
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
 #'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} 
 #'   prior, the degrees of freedom parameter must be an integer (vector) that is
-#'   at least \eqn{2} (the default).
+#'   at least \eqn{1} (and is \eqn{2} by default).
 #' @param global_df,global_scale Optional arguments for the hierarchical
 #'   shrinkage priors. See the \emph{Hierarchical shrinkage family} section
 #'   below.
@@ -462,7 +464,7 @@ lasso <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
 #' @export
 product_normal <- function(df = 2, location = 0, scale = 1) {
   validate_parameter_value(df)
-  stopifnot(all(df >= 2), all(df == as.integer(df)))
+  stopifnot(all(df >= 1), all(df == as.integer(df)))
   validate_parameter_value(scale)
   nlist(dist = "product_normal", df, location, scale)
 }

@@ -14,4 +14,4 @@
   vector<lower=0>[z_dim] prior_df_z;
   real<lower=0> prior_df_for_intercept_z;
   real<lower=0> global_prior_scale_z;
-  int<lower=2> num_normals_z[prior_dist_z == 7 ? z_dim : 0];
+  int<lower=1> num_normals_z[prior_dist_z == 7 ? z_dim : 0];

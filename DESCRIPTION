@@ -1,11 +1,12 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.16.1
-Date: 2017-06-24
+Version: 2.17.1
+Date: 2017-09-25
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
+             person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
                      comment = "R/stan_aov.R"),
              person("Douglas", "Bates", role = "cph", comment = "R/pp_data.R"),
@@ -17,10 +18,10 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
-Description: Estimates previously compiled regression models using the 'rstan' package,
-    which provides the R interface to the Stan C++ library for Bayesian estimation.
-    Users specify models via the customary R syntax with a formula and data.frame
-    plus some additional arguments for priors.
+Description: Estimates previously compiled regression models using the 'rstan'
+    package, which provides the R interface to the Stan C++ library for Bayesian
+    estimation. Users specify models via the customary R syntax with a formula and
+    data.frame plus some additional arguments for priors.
 License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
@@ -33,7 +34,7 @@ Imports:
     loo (>= 1.1.0),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.16.1),
+    rstan (>= 2.17.1),
     rstantools (>= 1.2.0),
     shinystan (>= 2.3.0),
     stats,
@@ -46,16 +47,16 @@ Suggests:
     HSAUR3,
     knitr (>= 1.15.1),
     MASS,
-    mgcv,
+    mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.16.0), rstan (>= 2.16.1), BH (>= 1.62.0), Rcpp (>=
+LinkingTo: StanHeaders (>= 2.17.0), rstan (>= 2.17.1), BH (>= 1.65.0), Rcpp (>=
     0.12.0), RcppEigen (>= 0.3.3.3.0)
 SystemRequirements: pandoc    
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
-URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
+URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
 RoxygenNote: 5.0.1
