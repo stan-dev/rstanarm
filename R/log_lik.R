@@ -498,11 +498,17 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (length(pars$abeta)) {
+    M <- object$n_markers
     # Temporary stop, until make_assoc_terms can handle it
     sel_stop <- grep("^shared", rownames(object$assoc))
     if (any(unlist(object$assoc[sel_stop,])))
       stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
-           "association structures.", call. = FALSE) 
+           "association structures.", call. = FALSE)
+    pars$b <- lapply(1:M, function(m) {
+      b_m <- pars$b[[m]]
+      Z_names_m <- data$assoc_parts[[m]][["mod_eta"]][["Z_names"]]
+      pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
+    })
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
@@ -512,7 +518,7 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
       for (s in 1:NROW(e_eta)) {
         abeta_s <- pars$abeta[s,]
         beta_s  <- lapply(pars$beta, function(x) x[s,])
-        b_s     <- lapply(pars$b,    function(x) x[s,])
+        b_s <- lapply(pars$b, function(x) x[s,])
         aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                                     family = family, beta = beta_s, b = b_s)
         e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
