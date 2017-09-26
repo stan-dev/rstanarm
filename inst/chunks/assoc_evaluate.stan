@@ -79,7 +79,7 @@
           }
         }
         
-        // add etaslope and any interactions  to event submodel eta
+        // add etaslope and any interactions to event submodel eta
         mark2 = mark2 + 1;
         if ((has_assoc[2,m] == 1) || (has_assoc[10,m] == 1)) {
           vector[nrow_y_Xq[m]] eta_eps_tmp;

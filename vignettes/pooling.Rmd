@@ -373,7 +373,8 @@ This model can be estimated using the `stan_glmer` function.
 
 ```{r, partial-pooling, results="hide"}
 fit_partialpool <- 
-  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, family = binomial("logit"),
+  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, 
+             family = binomial("logit"),
              prior_intercept = wi_prior, seed = SEED)
 ```
 
