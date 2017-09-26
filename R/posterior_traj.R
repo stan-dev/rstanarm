@@ -271,12 +271,15 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   ytilde_bounds  <- median_and_bounds(ytilde,  prob) # median and prob% CrI limits
   mutilde_bounds <- median_and_bounds(mutilde, prob) # median and prob% CrI limits
   out <- data.frame(IDVAR = newX[[id_var]], 
-                    if (clust_stuff$has_clust) 
-                      CLUSTVAR = newX[[clust_var]], 
                     TIMEVAR = newX[[time_var]], 
                     yfit = mutilde_bounds$med,
                     ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
                     pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
+  if (clust_stuff$has_clust) {
+    out$CLUSTVAR = newX[[clust_var]] # add clust_var and reorder cols
+    out <- out[, c("IDVAR", "CLUSTVAR", "TIMEVAR", 
+                   "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")]
+  }
   colnames(out) <- c(id_var, if (clust_stuff$has_clust) clust_var, time_var, 
                      "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
   class(out) <- c("predict.stanmvreg", "data.frame")
