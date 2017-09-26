@@ -169,9 +169,7 @@
 #'   # survival probabilities, that is, conditional on having survived
 #'   # until the event or censoring time, and then by default will
 #'   # extrapolate the survival predictions forward from there.  
-#'   head(pbcSurv[pbcSurv$status == 0,])
-#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
-#'   head(ps1)
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
 #'   # We can plot the estimated survival probabilities using the
 #'   # associated plot function
 #'   plot(ps1)
@@ -186,10 +184,34 @@
 #'   # is to specify that we want the survival time estimated at time 0
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
-#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,16), times = 0,
+#'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
 #'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   ps2
+#' \donttest{
+#'   # Instead of estimating survival probabilities for a specific individual 
+#'   # in the estimation dataset, we may want to estimate the marginal 
+#'   # survival probability, that is, marginalising over the individual-level
+#'   # random effects. 
+#'   # Here we will estimate survival between baseline and 5 years, for a 
+#'   # female who received either (i) D-penicillamine or (ii) placebo. 
+#'   # To do this we will need to provide the necessary values  
+#'   # of the predictors via the 'newdata' argument. However, it is important
+#'   # to realise that by marginalising over the random effects 
+#'   # distribution we will introduce a large amount of uncertainty into
+#'   # the estimated survival probabilities. This is because we have no 
+#'   # longitudinal measurements for these "new" individuals and therefore do
+#'   # not have any specific information with which to estimate their random
+#'   # effects. As such, there is a very wide 95% uncertainty interval 
+#'   # associated with the estimated survival probabilities.
+#'   nd <- data.frame(id = c("new1", "new2"),
+#'                    sex = c("f", "f"), 
+#'                    trt = c(1, 0))
+#'   #ps3 <- posterior_survfit(example_jm, newdataLong = nd, times = 0,
+#'     #extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
+#'   #ps3 DOES NOT WORK WITHOUT newdataEvent
 #'   
+#'   # We can then plot the estimated survival functions to compare
+#'   # them. To do this, we use the generic plot function.
+#'   # plot(ps3, limits = "none")             
 #'   # Instead we may want to estimate subject-specific survival probabilities 
 #'   # for a set of new individuals. To demonstrate this, we will simply take
 #'   # the first two individuals in the estimation dataset, but pass their data
@@ -198,9 +220,9 @@
 #'   # under a Monte Carlo scheme (see Rizopoulos (2011)).
 #'   ndL <- pbcLong[pbcLong$id %in% c(1,2),]
 #'   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-#'   ps3 <- posterior_survfit(example_jm, 
-#'     newdataLong = ndL, newdataEvent = ndE, 
-#'     control = list(last_time = "fuptimeYears"), seed = 12345)
+#'   ps3 <- posterior_survfit(example_jm,
+#'     newdataLong = ndL, newdataEvent = ndE,
+#'     control = list(last_time = "futimeYears"), seed = 12345)
 #'   head(ps3)
 #'   # We can then compare the estimated random effects for these 
 #'   # individuals based on the fitted model and the Monte Carlo scheme
@@ -215,8 +237,8 @@
 #'   # standardised survival curve.
 #'   ps4 <- posterior_survfit(example_jm, standardise = TRUE, 
 #'                            times = 0, extrapolate = TRUE)
-#'   plot(ps4)                         
-#' 
+#'   plot(ps4)
+#' }
 #'  
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), prob = 0.95, 
@@ -517,18 +539,18 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   
 #'   # We then plot the conditional survival probabilities for
 #'   # a subset of individuals
-#'   plot(ps1, ids = c(7,13,16))
-#'   
+#'   plot(ps1, ids = c(7,13,15))
+#' \donttest{
 #'   # We can change or add attributes to the plot
-#'   plot(ps1, ids = c(7,13,16), limits = "none")
-#'   plot(ps1, ids = c(7,13,16), xlab = "Follow up time")
-#'   plot(ps1, ids = c(7,13,16), ci_geom_args = list(fill = "red"),
+#'   plot(ps1, ids = c(7,13,15), limits = "none")
+#'   plot(ps1, ids = c(7,13,15), xlab = "Follow up time")
+#'   plot(ps1, ids = c(7,13,15), ci_geom_args = list(fill = "red"),
 #'        color = "blue", linetype = 2)
-#'   plot(ps1, ids = c(7,13,16), facet_scales = "fixed")
+#'   plot(ps1, ids = c(7,13,15), facet_scales = "fixed")
 #'   
 #'   # Since the returned plot is also a ggplot object, we can
 #'   # modify some of its attributes after it has been returned
-#'   plot1 <- plot(ps1, ids = c(7,13,16))
+#'   plot1 <- plot(ps1, ids = c(7,13,15))
 #'   plot1 + 
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::coord_cartesian(xlim = c(0, 15)) +
@@ -538,8 +560,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   # subject-specific survival functions, with plot(s) 
 #'   # of the estimated longitudinal trajectories for the
 #'   # same individuals
-#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,16))
-#'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,16))
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
+#'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,15))
 #'   plot_surv <- plot(ps1) 
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack(plot_traj, plot_surv)
@@ -549,7 +571,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   ps2 <- posterior_survfit(example_jm, standardise = TRUE, times = 0,
 #'                           control = list(epoints = 20))
 #'   plot(ps2)   
-#' 
+#' }
 #'    
 plot.survfit.stanmvreg <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
@@ -666,10 +688,10 @@ optim_fn <- function(b, object, data, pars) {
 # @param pars Output from extract_pars
 mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
   # New proposal for b vector
-  b_new <- mvtnorm::rmvt(n = 1, delta = delta, sigma = sigma, df = df)
+  b_new <- rmt(mu = delta, Sigma = sigma, df = df)
   # Calculate density for proposal distribution
-  propdens_old <- mvtnorm::dmvt(x = b_old, delta, sigma, df, log = TRUE)
-  propdens_new <- mvtnorm::dmvt(x = b_new, delta, sigma, df, log = TRUE)
+  propdens_old <- dmt(x = b_old, mu = delta, Sigma = sigma, df = df)
+  propdens_new <- dmt(x = b_new, mu = delta, Sigma = sigma, df = df)
   # Calculate density for target distribution
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars_old <- substitute_b_pars(object, data, pars, new_b = b_old, new_Z_names = nms)
@@ -721,6 +743,8 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
 # @return A data.table (which will be used in a rolling merge against the
 #   event times and/or quadrature times)
 prepare_data_table <- function(data, id_var, time_var) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   if (!is.data.frame(data))
     stop("'data' should be a data frame.")
   if (!id_var %in% colnames(data))

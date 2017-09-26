@@ -603,9 +603,9 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
     nms    <- unlist(lapply(data$assoc_parts, function(x) x$mod_eta$Z_names))
     b      <- do.call("cbind", pars$b)
     b      <- as.vector(pp_b_ord(b, nms))
-    mu     <- rep(0, length(b))
     Sigma  <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
-    ll_b   <- mvtnorm::dmvnorm(b, mean = mu, sigma = Sigma, log = TRUE)
+    ll_b <- -0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) + 
+             (b %*% chol2inv(chol(Sigma)) %*% b)[1] + length(b) * log(2 * pi)
   } else ll_b <- NULL
   # check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices

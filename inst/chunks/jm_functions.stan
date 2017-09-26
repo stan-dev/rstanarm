@@ -509,6 +509,7 @@
         }      
       }
     }
+
     // repeat the temp matrix qnodes times (ie, rbind)
     for (i in 1:(qnodes+1)) {
       start_store = (i - 1) * Npat + 1;
