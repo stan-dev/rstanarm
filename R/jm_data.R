@@ -71,9 +71,9 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     lapply(ndL, function(x) {
       if (!time_var %in% colnames(x)) STOP_no_var(time_var)
       mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
-      if (any(mt > etimes))
-        stop("There appears to be observation times in the longitudinal data that ",
-             "are later than the event time specified in the 'etimes' argument.")      
+      #if (any(mt > etimes))
+      #  stop("There appears to be observation times in the longitudinal data that ",
+      #       "are later than the event time specified in the 'etimes' argument.")      
     }) 
   if (long_parts) {
     y <- lapply(1:M, function(m) eval(formula(object, m = m)[[2L]], ndL[[m]]))
