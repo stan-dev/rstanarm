@@ -15,23 +15,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 options(warn = 3L)
-stan_files <- dir("exec", pattern = "stan$", full.names = TRUE)
-include_files <- dir("src", pattern = "hpp$")
-cat(readLines(file.path("inst", "chunks", "pre", "license.stan")),
-  "#ifndef MODELS_HPP", "#define MODELS_HPP",
-  "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
-  if (length(include_files)) paste0('#include "', include_files, '"'),
-  sapply(stan_files, FUN = function(f) {
-    cppcode <- rstan::stanc_builder(f, allow_undefined = TRUE,
-                 isystem = file.path("inst", "chunks"))$cppcode
-    cppcode <- gsub("typedef.*stan_model.*;", "", cppcode, perl = TRUE)
-    return(cppcode)
-  }), "#endif", file = file.path("src", "include", "models.hpp"), 
-  sep = "\n", append = FALSE)
-
 options("useFancyQuotes" = FALSE)
 
-sapply(sub(".stan", "", basename(stan_files), fixed = TRUE), function(f) {
+make_cc <- function(file) {
+  file <- sub("\\.cc$", ".stan", file)
+  cppcode <- rstan::stanc(file, allow_undefined = TRUE,
+                          obfuscate_model_name = FALSE)$cppcode
+  cppcode <- gsub("typedef.*stan_model.*;", "", cppcode, perl = TRUE)
+  cat(readLines(file.path("stan_files", "pre", "license.stan")),
+      "#ifndef MODELS_HPP", "#define MODELS_HPP",
+      "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
+      cppcode, "#endif", file = sub("\\.stan$", ".hpp", file),
+      sep = "\n", append = FALSE)
+  
+  f <- sub("\\.stan$", "", basename(file))
   Rcpp::exposeClass(class = paste0("model_", f),
                     constructors = list(c("SEXP", "SEXP", "SEXP")), fields = character(),
                     methods = c("call_sampler", 
@@ -40,10 +37,11 @@ sapply(sub(".stan", "", basename(stan_files), fixed = TRUE), function(f) {
                                 "grad_log_prob", "log_prob", 
                                 "unconstrain_pars", "constrain_pars", "num_pars_unconstrained", 
                                 "unconstrained_param_names", "constrained_param_names"), 
-                    file = paste0(f, "Module.cc"), header = '#include "include/models.hpp"', 
+                    file = file.path("stan_files", paste0(f, ".cc")), 
+                    header = paste0('#include "', f, '.hpp"'),
                     module = paste0("stan_fit4", f, "_mod"), 
                     CppClass = paste0("rstan::stan_fit<model_", f, "_namespace::model_", f,
                                       ", boost::random::ecuyer1988> "),
                     Rfile = FALSE)
   return(invisible(NULL))
-})
+}

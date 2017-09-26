@@ -7,6 +7,8 @@ vignettes/_output.yaml
 README.md
 LICENSE$
 ^.*\.o$
+^.*\.cc$
+^.*\.hpp$
 ^\cleanup*
 ^inst/doc/[A-Za-z0-9\-_]+[.]svg$
 ^inst/doc/[A-Za-z0-9\-_]+[.]txt$

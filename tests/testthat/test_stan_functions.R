@@ -20,28 +20,26 @@
 
 set.seed(12345)
 
-MODELS_HOME <- "exec"
+MODELS_HOME <- file.path("src", "stan_files")
 fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) {
   MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
-                     paste0("rstanarm", fsep, "exec"), getwd())
+                     paste0("rstanarm", fsep, "src", fsep, "stan_files"), getwd())
 }
 if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), "exec", getwd())
+  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
+                     file.path("src", "stan_files"), getwd())
 }
 if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- system.file("exec", package = "rstanarm") 
+  MODELS_HOME <- system.file("src", "stan_files", package = "rstanarm")
 }
 
 context("setup")
 test_that("Stan programs are available", {
   message(MODELS_HOME)
   expect_true(file.exists(MODELS_HOME))
-  expect_true(file.exists(file.path(system.file("chunks", package = "rstanarm"), 
-                                    "common_functions.stan")))
-  
 })
-  
+
 library(rstan)
 Sys.unsetenv("R_TESTS")
 
@@ -54,7 +52,7 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   }
   else return(as.character(NULL))
 })
-functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm"), 
+functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
                                "bernoulli_likelihoods.stan",
                                "binomial_likelihoods.stan",

@@ -17,15 +17,14 @@
 
 # This file is only intended to be used during the installation process
 # nocov start
-MODELS_HOME <- "exec"
-if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "exec", getwd())
+MODELS_HOME <- "src"
+if (!file.exists(MODELS_HOME)) MODELS_HOME <- sub("R$", "src", getwd())
 
-stan_files <- dir(MODELS_HOME, pattern = "stan$", full.names = TRUE)
+stan_files <- dir(file.path(MODELS_HOME, "stan_files"),
+                  pattern = "stan$", full.names = TRUE)
 stanmodels <- sapply(stan_files, function(f) {
   model_cppname <- sub("\\.stan$", "", basename(f))
-  isystem <- system.file("chunks", package = methods::getPackageName(environment(), FALSE))
-  if (isystem == "") isystem <- normalizePath(file.path("..", "inst", "chunks"))
-  stanfit <- rstan::stanc(f, isystem = isystem, allow_undefined = TRUE, 
+  stanfit <- rstan::stanc(f, allow_undefined = TRUE, 
                           obfuscate_model_name = FALSE)
   stanfit$model_cpp <- list(model_cppname = stanfit$model_name, 
                             model_cppcode = stanfit$cppcode)
