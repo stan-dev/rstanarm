@@ -2476,7 +2476,7 @@ rolling_merge <- function(data, ids, times, clust = NULL) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   key_length <- if (is.null(clust)) 2L else 3L
-  if (!length(key(data)) == key_length)
+  if (!length(data.table::key(data)) == key_length)
     stop("Bug found: data.table key is not the same length as supplied keylist.")
   
   if (is(times, "list") && is.null(clust)) {
