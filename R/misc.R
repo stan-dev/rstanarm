@@ -1247,3 +1247,17 @@ get_model_data <- function(object, m = NULL) {
   }, w = forms, x = datas, y = row_nms, SIMPLIFY = FALSE)
   if (is.null(m)) return(mfs) else return(mfs[[m]])
 }
+
+# Unlist the result from an lapply call
+#
+# @param X,FUN,... Same as lapply
+uapply <- function(X, FUN, ...) {
+  unlist(lapply(X, FUN, ...))
+}
+
+# Promote a character variable to a factor
+#
+# @param x The variable to potentially promote
+promote_to_factor <- function(x) {
+  if (is.character(x)) as.factor(x) else x
+}
