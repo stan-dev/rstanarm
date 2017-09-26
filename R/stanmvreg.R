@@ -113,9 +113,9 @@ stanmvreg <- function(object) {
   }
   if (surv) {
     out$n_subjects <- object$n_subjects
-    out$n_events <- sum(object$d > 0)
+    out$n_events <- sum(object$status > 0)
     out$eventtime <- object$eventtime
-    out$status <- object$d > 0
+    out$status <- object$status > 0
     out$basehaz <- object$basehaz
     out$data <- if (!jm) object$data else NULL
     out$coxmod <- object$e_mod_stuff$mod    

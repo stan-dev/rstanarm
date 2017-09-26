@@ -9,7 +9,7 @@
     if (assoc_uses[2] == 1) {
       if (K > 0) y_eta_q_eps = y_Xq_eps * beta;
       else y_eta_q_eps = rep_vector(0.0, sum(nrow_y_Xq));
-      //if (has_offset == 1) y_eta_q_eps = y_eta_q_eps + y_offset; # how to handle offset?
+      //if (has_offset == 1) y_eta_q_eps = y_eta_q_eps + y_offset; // how to handle offset?
       y_eta_q_eps = y_eta_q_eps + csr_matrix_times_vector(sum(nrow_y_Xq), q, w_Zq_eps, v_Zq_eps, u_Zq_eps, b);
     }
 
@@ -17,6 +17,6 @@
     if (assoc_uses[3] == 1) {
       if (K > 0) y_eta_q_auc = y_Xq_auc * beta;
       else y_eta_q_auc = rep_vector(0.0, sum(nrow_y_Xq_auc));
-      //if (has_offset == 1) y_eta_q_auc = y_eta_q_auc + y_offset; # how to handle offset?
+      //if (has_offset == 1) y_eta_q_auc = y_eta_q_auc + y_offset; // how to handle offset?
       y_eta_q_auc = y_eta_q_auc + csr_matrix_times_vector(sum(nrow_y_Xq_auc), q, w_Zq_auc, v_Zq_auc, u_Zq_auc, b);
     }
