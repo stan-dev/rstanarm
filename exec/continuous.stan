@@ -5,7 +5,7 @@
 functions {
 #include /functions/common_functions.stan
 #include /functions/continuous_likelihoods.stan
-#include /functions/SS_functions.stan
+#include /functions/SSfunctions.stan
 
   /*
    * Calculate lower bound on intercept

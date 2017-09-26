@@ -17,7 +17,7 @@
 options(warn = 3L)
 stan_files <- dir("exec", pattern = "stan$", full.names = TRUE)
 include_files <- dir("src", pattern = "hpp$")
-cat(readLines(file.path("inst", "chunks", "license.stan")),
+cat(readLines(file.path("inst", "chunks", "pre", "license.stan")),
   "#ifndef MODELS_HPP", "#define MODELS_HPP",
   "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
   if (length(include_files)) paste0('#include "', include_files, '"'),
