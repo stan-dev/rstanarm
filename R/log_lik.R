@@ -585,10 +585,11 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
 #   a logical specifying whether the function calling ll_jm was reloo or kfold.
 # @return Either a matrix, a vector or a scalar, depending on the input types
 #   and whether sum is set to TRUE.
-ll_jm <- function(object, data, pars, include_b = FALSE, sum = FALSE, ...) {
+ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, sum = FALSE, ...) {
   M <- get_M(object)
   # log-lik for longitudinal submodels
-  ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
+  if (include_long)
+    ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
   # log-lik for event submodel
   ll_event <- ll_event(object, data, pars)
   # log-lik for random effects model
@@ -608,23 +609,31 @@ ll_jm <- function(object, data, pars, include_b = FALSE, sum = FALSE, ...) {
   } else ll_b <- NULL
   # check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices
-    mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
-    dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
-    if ((length(dims) > 1L) || (length(mats) > 1L))
-      stop("Bug found: elements of 'll_long' should be same class and ",
-           "dimension as 'll_event'.")
+    if (include_long) {
+      mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
+      dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
+      if ((length(dims) > 1L) || (length(mats) > 1L))
+        stop("Bug found: elements of 'll_long' should be same class and ",
+             "dimension as 'll_event'.")
+    }
     if (include_b && !identical(length(ll_b), ncol(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to the number of ",
            "columns in 'll_event'.")
   } else { # length Npat vectors (ie, log-lik based on a single draw of pars)
-    lens <- unique(sapply(c(ll_long, list(ll_event)), length))
-    if (length(lens) > 1L)
-      stop("Bug found: elements of 'll_long' should be same length as 'll_event'.")
+    if (include_long) {
+      lens <- unique(sapply(c(ll_long, list(ll_event)), length))
+      if (length(lens) > 1L)
+        stop("Bug found: elements of 'll_long' should be same length as 'll_event'.")
+    }
     if (include_b && !identical(length(ll_b), length(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to length of 'll_event'.")
   }  
   # sum the various components (long + event + random effects)
-  val <- Reduce('+', c(ll_long, list(ll_event)))
+  if (include_long) {
+    val <- Reduce('+', c(ll_long, list(ll_event)))
+  } else {
+    val <- ll_event
+  }
   if (include_b && is.matrix(val)) {
     val <- t(apply(val, 1L, function(row) row + ll_b)) 
   } else if (include_b && is.vector(val)) {
