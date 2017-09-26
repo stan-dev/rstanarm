@@ -95,6 +95,20 @@
 #'   types (e.g. \code{"etavalue"}, \code{"etaslope"}, \code{"etaauc"}, 
 #'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
 #'   the \code{assoc} argument.
+#' @param grp_assoc Character string specifying the method for combining information
+#'   across the lower level units clustered within an individual when forming the
+#'   association structure. This is only relevant when a grouping factor is  
+#'   specified in \code{formulaLong} that corresponds to clustering within 
+#'   individuals. Can be \code{"sum"} for specifying which indicates
+#'   the association structure should be based on a summation across the lower
+#'   level units clustered within an individual. Can be \code{"mean"} which
+#'   indicates that the association structure should be based on the mean
+#'   (i.e. average) taken across the lower level units clustered within an
+#'   individual. (As an example, specifying \code{assoc = "muvalue"} 
+#'   and \code{grp_assoc = "sum"} would mean the log hazard 
+#'   for an individual would be linearly related to the sum of
+#'   the expected values for each of the lower level units clustered within
+#'   that individual). 
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a Weibull baseline hazard
 #'   (\code{"weibull"}, the default), a B-splines approximation estimated 
@@ -129,7 +143,7 @@
 #'   for the covariates in the association term interactions when compared with
 #'   the measurement time schedule used for the longitudinal outcomes and  
 #'   covariates provided in \code{dataLong}.
-#' @param quadnodes The number of nodes to use for the Gauss-Kronrod quadrature
+#' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard in the likelihood function. 
 #'   Options are 15 (the default), 11 or 7.
 #' @param weights Experimental and should be used with caution. The 
@@ -298,7 +312,7 @@
 #'   Gauss-Kronrod quadrature is used to numerically evaluate the integral  
 #'   over the cumulative hazard in the likelihood function for the event submodel.
 #'   The accuracy of the numerical approximation can be controlled using the
-#'   number of quadrature nodes, specified through the \code{quadnodes} 
+#'   number of quadrature nodes, specified through the \code{qnodes} 
 #'   argument. Using a higher number of quadrature nodes will result in a more 
 #'   accurate approximation.
 #'   
@@ -485,14 +499,14 @@
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
-                    lag_assoc = 0, dataAssoc,
+                    lag_assoc = 0, grp_assoc, dataAssoc,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
-                    quadnodes = 15, init = "prefit", 
+                    qnodes = 15, init = "prefit", 
                     na.action = getOption("na.action", "na.omit"), weights, 
                     offset, contrasts, ...,				          
                     priorLong = normal(), priorLong_intercept = normal(), 
                     priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
-                    priorEvent_intercept = normal(), priorEvent_aux = cauchy(0, 50),
+                    priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                     priorAssoc = normal(), prior_covariance = decov(), prior_PD = FALSE, 
                     algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
@@ -521,6 +535,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
+  if (missing(grp_assoc))   grp_assoc   <- NULL
   if (missing(dataAssoc))   dataAssoc   <- NULL 
   
   # Validate arguments
@@ -558,9 +573,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   calling_env <- parent.frame()
   call <- match.call(expand.dots = TRUE)    
   mc   <- match.call(expand.dots = FALSE)
-  mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- 
+  mc$time_var <- mc$id_var <- mc$assoc <- mc$lag_assoc <- mc$grp_assoc <- 
     mc$dataAssoc <- mc$basehaz <- mc$basehaz_ops <-
-    mc$df <- mc$knots <- mc$quadnodes <- NULL
+    mc$df <- mc$knots <- mc$qnodes <- NULL
   mc$priorLong <- mc$priorLong_intercept <- mc$priorLong_aux <-
     mc$priorEvent <- mc$priorEvent_intercept <- mc$priorEvent_aux <-
     mc$priorAssoc <- mc$prior_covariance <-  mc$prior_PD <- mc$algorithm <- 
@@ -613,7 +628,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Additional error checks
   id_var <- check_id_var(id_var, fetch(y_mod_stuff, "cnms"), fetch(y_mod_stuff, "flist"))
   unique_id_list <- check_id_list(id_var, fetch(y_mod_stuff, "flist"))
-    
+  
   # Construct prior weights
   has_weights <- (!is.null(weights))
   if (has_weights) check_arg_weights(weights, id_var)
@@ -627,7 +642,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     stop(paste0("Variable '", id_var, "' must be appear in dataEvent"), call. = FALSE)
   
   # Fit separate event submodel
-  e_mod_stuff <- handle_coxmod(e_mc, quadnodes = quadnodes, id_var = id_var, 
+  e_mod_stuff <- handle_coxmod(e_mc, qnodes = qnodes, id_var = id_var, 
                                unique_id_list = unique_id_list, sparse = sparse,
                                env = calling_env)
   
@@ -637,10 +652,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Baseline hazard
   ok_basehaz <- nlist("weibull", "bs", "piecewise")
   basehaz <- handle_basehaz(basehaz, basehaz_ops, ok_basehaz = ok_basehaz, 
-                            eventtime = e_mod_stuff$eventtime, d = e_mod_stuff$d)
+                            eventtime = e_mod_stuff$eventtime, status = e_mod_stuff$status)
   
   # Incorporate intercept term if Weibull baseline hazard
-  e_has_intercept <- e_mod_stuff$has_intercept <- (basehaz$type == 1L)
+  e_has_intercept <- (basehaz$type == 1L)
 
   #--------------------------------
   # Data for association structure
@@ -670,19 +685,44 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
   colnames(assoc) <- paste0("Long", 1:M)
 
+  # For each submodel, identify the index of any grouping factors that are
+  # clustered within id_var (i.e. lower level clustering)
+  ok_grp_assocs <- c("sum", "mean")
+  clust_stuff <- mapply(get_clust_info, 
+                        fetch(y_mod_stuff, "cnms"),
+                        fetch(y_mod_stuff, "flist"),
+                        MoreArgs = list(id_var = id_var, 
+                                        qnodes = qnodes,
+                                        grp_assoc = grp_assoc,
+                                        ok_grp_assocs = ok_grp_assocs),
+                        SIMPLIFY = FALSE)
+  
+  # Check the association structure for lower level clustering
+  has_clust <- fetch_(clust_stuff, "has_clust")
+  if (any(has_clust)) {
+    clust_mat <- unique(fetch(clust_stuff, "clust_mat")[has_clust])
+    if (length(clust_mat) > 1L)
+      stop("Any longitudinal submodels with lower level clustering (i.e. ",
+           "clustering below the patient-level) must use the same clustering ",
+           "variable and have the same number of lower level units.")    
+  } else if (!is.null(grp_assoc)) {
+    stop("'grp_assoc' can only be specified when there is lower level ",
+         "clustering within 'id_var'.", call. = FALSE)  
+  }    
+
   # Return design matrices for evaluating longitudinal submodel quantities
   # at the quadrature points
   eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
-  auc_quadnodes <- 15L
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff, 
-                        SIMPLIFY = FALSE, 
-                        MoreArgs = list(id_list         = e_mod_stuff$flist, 
-                                        times           = e_mod_stuff$quadtimes, 
+  auc_qnodes <- 15L
+  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff,
+                        clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
+                        MoreArgs = list(id_list         = e_mod_stuff$qids, 
+                                        times           = e_mod_stuff$qtimes, 
                                         assoc           = assoc, 
                                         id_var          = id_var, 
                                         time_var        = time_var, 
                                         eps             = eps, 
-                                        auc_quadnodes   = auc_quadnodes,
+                                        auc_qnodes   = auc_qnodes,
                                         dataAssoc       = dataAssoc,
                                         env             = calling_env))
 
@@ -739,7 +779,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     handle_glm_prior(
       priorEvent_intercept,
       nvars = 1,
-      default_scale = 50,
+      default_scale = 20,
       link = NULL,
       ok_dists = ok_intercept_dists
     )  
@@ -748,7 +788,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     handle_glm_prior(
       priorEvent_aux,
       nvars = basehaz$df,
-      default_scale = 50,
+      default_scale = if (basehaz$type == 1L) 2 else 20,
       link = NULL,
       ok_dists = ok_e_aux_dists
     )
@@ -822,7 +862,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     a_prior_df                 = a_prior_stuff$prior_df, 
     a_global_prior_scale       = a_prior_stuff$global_prior_scale,
     a_global_prior_df          = a_prior_stuff$global_prior_df,
-    
+    a_xbar                     = if (a_K) a_prior_stuff$a_xbar else numeric(0),
+	
     # flags
     prior_PD = as.integer(prior_PD)
   )
@@ -981,19 +1022,18 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   #----- Event submodel (including GK quadrature)
   
   # Dimensions, response, design matrix, etc
-  standata$Npat            <- as.integer(e_mod_stuff$Npat)
-  standata$quadnodes       <- as.integer(quadnodes)
-  standata$quadweight      <- as.array(e_mod_stuff$quadweight)
-  standata$Npat_times_quadnodes <- as.integer(e_mod_stuff$Npat * quadnodes)
-  standata$nrow_y_Xq       <- NROW(a_mod_stuff[[1]]$mod_eta$xtemp)
-  standata$nrow_e_Xq       <- NROW(e_mod_stuff$xtemp)
-  standata$e_times         <- c(e_mod_stuff$eventtime, unlist(e_mod_stuff$quadpoint))
-  standata$e_d             <- c(e_mod_stuff$d, rep(1, length(unlist(e_mod_stuff$quadpoint))))
+  standata$Npat      <- as.integer(e_mod_stuff$Npat)
+  standata$Nevents   <- as.integer(e_mod_stuff$Nevents)
+  standata$qnodes    <- as.integer(qnodes)
+  standata$qwts      <- as.array(e_mod_stuff$qwts)
+  standata$Npat_times_qnodes <- as.integer(e_mod_stuff$Npat * qnodes)
+  standata$e_times <- c(e_mod_stuff$eventtime[e_mod_stuff$status == 1], unlist(e_mod_stuff$qpts))
+  standata$nrow_e_Xq <- length(standata$e_times)
   standata$e_has_intercept <- as.integer(e_has_intercept)
-  standata$e_Xq            <- e_mod_stuff$xtemp
-  standata$e_xbar          <- as.array(e_mod_stuff$xbar)
+  standata$e_Xq      <- e_mod_stuff$xtemp
+  standata$e_xbar    <- as.array(e_mod_stuff$xbar)
   standata$e_weights       <- as.array(e_weights)
-  standata$e_weights_rep   <- as.array(rep(e_weights, times = quadnodes))
+  standata$e_weights_rep   <- as.array(rep(e_weights, times = qnodes))
   
   # Baseline hazard
   standata$basehaz_type <- as.integer(basehaz$type)
@@ -1012,6 +1052,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   } else {
     standata$basehaz_X <- matrix(0,0,0)  
   }
+  standata$norm_const <- e_mod_stuff$norm_const
   
   #----- Association structure
   
@@ -1041,7 +1082,26 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   sel <- grep("which|null", rownames(assoc), invert = TRUE)
   standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
   
+  # Data for association structure when there is
+  # clustering below the patient-level
+  standata$has_clust <- as.array(as.integer(has_clust))
+  if (any(has_clust)) { # has lower level clustering
+    parts_clust_mat <- rstan::extract_sparse_parts(clust_mat[[1L]])
+    standata$clust_nnz <- length(parts_clust_mat$w)
+    standata$clust_w <- parts_clust_mat$w
+    standata$clust_v <- parts_clust_mat$v
+    standata$clust_u <- parts_clust_mat$u
+  } else { # no lower level clustering
+    standata$clust_nnz <- 0L
+    standata$clust_w <- double(0)
+    standata$clust_v <- integer(0)
+    standata$clust_u <- integer(0)
+  }
+  
   # Data for calculating value, slope, auc in GK quadrature 
+  standata$nrow_y_Xq <- as.array(as.integer(
+    sapply(a_mod_stuff, function(x) NROW(x$mod_eta$xtemp))))
+  standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
   for (i in c("eta", "eps", "auc")) {
     nm_check <- switch(i,
                        eta = "^eta|^mu",
@@ -1072,23 +1132,24 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   standata$eps <- eps
   
   # Data for auc association structure
-  standata$auc_quadnodes <- 
-    as.integer(auc_quadnodes)
-  standata$Npat_times_auc_quadnodes <- 
-    as.integer(e_mod_stuff$Npat * auc_quadnodes)  
-  standata$nrow_y_Xq_auc <- 
-    as.integer(NROW(a_mod_stuff[[1]]$mod_auc$xtemp))
-  auc_quadweights <- 
-    unlist(lapply(e_mod_stuff$quadtimes, function(x) 
+  standata$auc_qnodes <- 
+    as.integer(auc_qnodes)
+  standata$Npat_times_auc_qnodes <- 
+    as.integer(e_mod_stuff$Npat * auc_qnodes) 
+  standata$nrow_y_Xq_auc <- as.array(as.integer(
+    sapply(a_mod_stuff, function(x) NROW(x$mod_auc$xtemp))))
+  standata$idx_qauc <- get_idx_array(standata$nrow_y_Xq_auc)
+  auc_qwts <- 
+    unlist(lapply(e_mod_stuff$qtimes, function(x) 
       lapply(x, function(y) 
-        lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y)))) 
-  standata$auc_quadweights <- 
-    if (standata$assoc_uses[3]) as.array(auc_quadweights) else double(0)
+        lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, y)))) 
+  standata$auc_qwts <- 
+    if (standata$assoc_uses[3]) as.array(auc_qwts) else double(0)
 
   # Interactions between association terms and data
   # design matrix for the interactions
   standata$y_Xq_data <- 
-    as.array(t(as.matrix(do.call("cbind", fetch(a_mod_stuff, "xmat_data")))))
+    as.array(as.matrix(Matrix::bdiag(fetch(a_mod_stuff, "xmat_data"))))
   # number of columns in y_Xq_data corresponding to each interaction type 
   # (ie, etavalue, etaslope, muvalue, muslope) for each submodel
   standata$a_K_data  <- fetch_array(a_mod_stuff, "K_data")  
@@ -1117,7 +1178,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
   } else if (is.character(init) && (init == "prefit_vb")) {
     cat("Obtaining initial values using variational bayes\n")
-    dropargs <- c("chains", "cores", "iter")
+    dropargs <- c("chains", "cores", "iter", "refresh")
     vbdots <- list(...)
     for (i in dropargs) 
       vbdots[[i]] <- NULL
@@ -1153,7 +1214,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
     user_prior_covariance = prior_covariance,
     y_has_intercept = sapply(y_mod_stuff, `[[`, "has_intercept"),
     y_has_predictors = sapply(y_mod_stuff, function(x) x$K > 0),
-    e_has_intercept = e_mod_stuff$has_intercept,
+    e_has_intercept = e_has_intercept,
     e_has_predictors = e_mod_stuff$K > 0,
     has_assoc = a_K > 0,
     adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
@@ -1300,15 +1361,22 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # Undo ordering of matrices if bernoulli
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
+  # Drop clust_mat from object
+  clust_stuff <- lapply(clust_stuff, function(x) {
+    x$clust_mat <- NULL
+    return(x)
+  })
+  
   fit <- nlist(stanfit, family, formula = list_nms(c(formulaLong, formulaEvent), M), 
-               id_var, time_var, offset, weights, quadnodes, basehaz,
+               id_var, time_var, offset, weights, qnodes, basehaz,
                M, cnms, n_yobs = unlist(list_nms(fetch(y_mod_stuff, "N"), M)), 
                n_subjects = e_mod_stuff$Npat, n_grps, assoc,
-               y_mod_stuff, e_mod_stuff, a_mod_stuff,
+               y_mod_stuff, e_mod_stuff, a_mod_stuff, clust_stuff,
+               grp_assoc = if (any(unlist(has_clust))) grp_assoc else NULL,
                fr = list_nms(c(fetch(a_mod_stuff, "model_frame"), 
                                list(e_mod_stuff$model_frame)), M),
                y = list_nms(fetch(y_mod_stuff, "y"), M),
-               d = e_mod_stuff$d, eventtime = e_mod_stuff$eventtime,
+               status = e_mod_stuff$status, eventtime = e_mod_stuff$eventtime,
                epsilon = if (standata$assoc_uses[2]) eps else NULL,
                dataLong, dataEvent, call, na.action, algorithm, 
                standata = NULL, terms = NULL, prior.info = prior_info,
@@ -1489,26 +1557,8 @@ check_id_var <- function(id_var, y_cnms, y_flist) {
       lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
         stop("'id_var' must be included as a grouping factor in each ",
              "of the longitudinal submodels", call. = FALSE)) 
-      mapply(function(cnms, flist, id_var) { # loop over submodels
-        # If there is more than one grouping factor, then make sure that the id_var 
-        # is the lowest level of clustering, by checking that the observations for 
-        # a given individual don't have more than one level for each other grouping
-        # factor included in the model
-        nms <- grep(id_var, names(cnms), value = TRUE, invert = TRUE)
-        if (length(nms)) { # submodel has additional grouping factors
-          lapply(nms, function(x) { # loop over additional grouping factors
-            # within each ID, count the number of levels for the additional grouping factor 
-            tally <- tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y)))
-            # within each ID, ensure max of 1 level for each other grouping factor
-            if (!all(tally == 1L))
-              stop("The 'id_var' must correspond to the lowest level of clustering. ",
-                   "Yet for some levels of '", id_var, "' there appears to be more ",
-                   "than one level for '", x, "'.", call. = FALSE)
-          }) 
-        }
-      }, cnms = y_cnms, flist = y_flist, MoreArgs = list(id_var = id_var))    
-      return(id_var)
     }
+    return(id_var)
   } else {  # only one grouping factor (assumed to be subject ID)
     only_cnm <- unique(sapply(y_cnms, names))
     if (length(only_cnm) > 1L)
@@ -1624,12 +1674,12 @@ check_for_aux <- function(family) {
 # Fit separate event submodel
 #
 # @param mc The (slightly modified) user specified call for the event submodel
-# @param quadnodes An integer, the user specified number of GK quadrature nodes
+# @param qnodes An integer, the user specified number of GK quadrature nodes
 # @param id_var The name of the ID variable
 # @param unique_id_list A character vector with the unique IDs (factor levels)
 #   that appeared in the longitudinal submodels
 # @param sparse A logical indicating whether to use a sparse design matrix
-handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
+handle_coxmod <- function(mc, qnodes, id_var, unique_id_list, sparse,
                           env = parent.frame()) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
@@ -1647,10 +1697,10 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
   y   <- mod$y
   
   # Entry and exit times
-  entrytime <- rep(0, length(unique_id_list)) # entry times currently assumed to be zero for all individuals, i.e. no delayed entry
+  entrytime <- rep(0, length(unique_id_list)) # delayed entry not handled
   if (attr(y, "type") == "counting") {
     tvc         <- TRUE
-    mf_event    <- do.call(rbind, lapply(split(mf2, mf2[, id_var]), function(d) d[which.max(d[,"stop"]), ]))
+    mf_event    <- do.call(rbind, lapply(split(mf2, mf2[, id_var]), function(status) status[which.max(status[,"stop"]), ]))
     eventtime   <- mf_event[["stop"]]
   } else if (attr(y, "type") == "right") {
     tvc         <- FALSE 
@@ -1660,9 +1710,9 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
                on the LHS of the event submodel formula")
   
   # Event indicator and ID list
-  d     <- mf_event[["status"]]  
+  status     <- mf_event[["status"]]  
   flist <- mf_event[[id_var]]
-  names(eventtime) <- names(d) <- flist
+  names(eventtime) <- names(status) <- flist
   
   # Error checks for the ID variable
   if (!identical(unique_id_list, levels(factor(flist))))
@@ -1677,62 +1727,81 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
          "for the Surv() object.")
   
   # Unstandardised quadrature points
-  quadpoint <- lapply(get_quadpoints(quadnodes)$points, unstandardise_quadpoints, entrytime, eventtime)
-  quadtimes <- c(list(eventtime), quadpoint)
-  names(quadpoint) <- paste0("quadpoint", seq(quadnodes))
-  names(quadtimes) <- c("eventtime", names(quadpoint))
-  
+  qq <- get_quadpoints(qnodes)
+  qpts <- lapply(qq$points, unstandardise_qpts,
+                 entrytime, eventtime)
+  qwts <- lapply(qq$weights, unstandardise_qwts, 
+                 entrytime, eventtime)
+  qtimes <- unlist(c(list(eventtime[status == 1]), qpts))
+  qids <- c(flist[status == 1], rep(flist, qnodes))
+  names(qpts) <- names(qwts) <- paste0("quadpoint", seq(qnodes))
+  #names(qtimes) <- c("eventtime", names(qpts))
+
   # Obtain design matrix at event times and unstandardised quadrature points
-  
-  if (tvc) {  # time varying covariates in event model
+  if (ncol(mod$x)) {
+    if (tvc) {  # time varying covariates in event model
+      
+      # Model frame at event times
+      mf2           <- data.table::data.table(mf2, key = c(id_var, "start"))
+      mf2[["start"]] <- as.numeric(mf2[["start"]])
+      mf2_eventtime <- mf2[, data.table::.SD[data.table::.N], 
+                           by = get(id_var)]
+      mf2_eventtime <- mf2_eventtime[status == 1, , drop = FALSE]
+      # mf2_eventtime <- mf2_eventtime[, get := NULL]
+      mf2_eventtime$get <- NULL
+      
+      # Model frame corresponding to observation times which are 
+      #   as close as possible to the unstandardised quadrature points                      
+      mf2_q  <- do.call(rbind, lapply(qpts, FUN = function(x)
+        mf2[data.table::SJ(flist, x), roll = TRUE, rollends = c(TRUE, TRUE)]))
+      
+      # Model frame evaluated at both event times and quadrature points
+      mf2_q <- rbind(mf2_eventtime, mf2_q)
+      
+      # Design matrix evaluated at event times and quadrature points
+      #   NB Here there are time varying covariates in the event submodel and
+      #   therefore the design matrix differs depending on the quadrature point 
+      fm_RHS <- delete.response(terms(mod))
+      x_q   <- model.matrix(fm_RHS, data = mf2_q)
+      
+    } else {  # no time varying covariates in event model
+      # Design matrix evaluated at event times and quadrature points
+      #   NB Here there are no time varying covariates in the event submodel and
+      #   therefore the design matrix is identical at event time and at all
+      #   quadrature points
+      x_q <- do.call(rbind, rep(list(mod$x), qnodes))
+      x_q <- rbind(mod$x[status == 1, , drop = FALSE], x_q)
+    }
     
-    # Model frame at event times
-    mf2           <- data.table::data.table(mf2, key = c(id_var, "start"))
-    mf2[["start"]] <- as.numeric(mf2[["start"]])
-    mf2_eventtime <- mf2[, data.table::.SD[data.table::.N], 
-                         by = get(id_var)]
-    # mf2_eventtime <- mf2_eventtime[, get := NULL]
-    mf2_eventtime$get <- NULL
-    
-    # Model frame corresponding to observation times which are 
-    #   as close as possible to the unstandardised quadrature points                      
-    mf2_q  <- do.call(rbind, lapply(quadpoint, FUN = function(x)
-      mf2[data.table::SJ(flist, x), roll = TRUE, rollends = c(TRUE, TRUE)]))
-    
-    # Model frame evaluated at both event times and quadrature points
-    mf2_q <- rbind(mf2_eventtime, mf2_q)
-    
-    # Design matrix evaluated at event times and quadrature points
-    #   NB Here there are time varying covariates in the event submodel and
-    #   therefore the design matrix differs depending on the quadrature point 
-    fm_RHS <- delete.response(terms(mod))
-    x_quadtime   <- model.matrix(fm_RHS, data = mf2_q)
-    
-  } else {  # no time varying covariates in event model
-    
-    # Design matrix evaluated at event times and quadrature points
-    #   NB Here there are no time varying covariates in the event submodel and
-    #   therefore the design matrix is identical at event time and at all
-    #   quadrature points
-    x_quadtime   <- do.call(rbind, lapply(1:(quadnodes + 1), FUN = function(x) mod$x))
-    
+    # Centering of design matrix for event model
+    xtemp <- as.matrix(x_q) 
+    xbar <- colMeans(xtemp)
+    xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+    sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
+    if (any(sel)) {
+      # drop any column of x with < 2 unique values (empty interaction levels)
+      warning("Dropped empty interaction levels: ",
+              paste(colnames(xtemp)[sel], collapse = ", "))
+      xtemp <- xtemp[, !sel, drop = FALSE]
+      xbar <- xbar[!sel]
+    }
+    K <- ncol(xtemp)
+  } else {
+    xtemp <- matrix(0,0L,0L)
+    xbar <- rep(0,0L)
   }
-  
-  # Centering of design matrix for event model
-  xtemp <- xbar <- has_intercept <- NULL # useless assignments for R CMD check
-  x <- as.matrix(x_quadtime) 
-  x_stuff <- center_x(x, sparse)
-  for (i in names(x_stuff)) # xtemp, xbar, has_intercept
-    assign(i, x_stuff[[i]])
-  
+  # Mean log incidence rate - used for shifting log baseline hazard
+  norm_const <- log(sum(status) / sum(eventtime))
+     
   # Some additional bits -- NB weights here are quadrature weights, not prior weights
   K <- NCOL(xtemp)
   Npat <- length(eventtime)
-  quadweight <- unlist(lapply(get_quadpoints(quadnodes)$weights, unstandardise_quadweights, entrytime, eventtime))
+  quadweight <- unlist(lapply(get_quadpoints(qnodes)$weights, unstandardise_qwts, entrytime, eventtime))
   
-  # Return list
-  nlist(mod, entrytime, eventtime, d, x, xtemp, xbar, flist, 
-        quadpoint, quadweight, quadtimes, tvc, K, Npat, model_frame = mf1)
+  nlist(mod, entrytime, eventtime, status, Nevents = sum(status), 
+        Npat = length(eventtime), K = ncol(xtemp), xtemp, xbar, flist, 
+        norm_const, qnodes, qpts, qwts = unlist(qwts), qtimes, qids, tvc,
+        model_frame = mf1)
 }
 
 # Deal with the baseline hazard
@@ -1741,11 +1810,11 @@ handle_coxmod <- function(mc, quadnodes, id_var, unique_id_list, sparse,
 # @param basehaz_ops A named list with elements df, knots 
 # @param ok_basehaz A list of admissible baseline hazards
 # @param eventtime A numeric vector with eventtimes for each individual
-# @param d A numeric vector with event indicators for each individual
+# @param status A numeric vector with event indicators for each individual
 handle_basehaz <- function(basehaz, basehaz_ops, 
                            ok_basehaz = nlist("weibull", "bs", "piecewise"),
                            ok_basehaz_ops = nlist("df", "knots"),
-                           eventtime, d) {
+                           eventtime, status) {
 
   if (!basehaz %in% unlist(ok_basehaz))
     stop("The baseline hazard should be one of ", paste(names(ok_basehaz), collapse = ", "))
@@ -1802,11 +1871,11 @@ handle_basehaz <- function(basehaz, basehaz_ops,
   # Evaluate spline basis (knots, df, etc) based on distribution of observed event times
   # or evaluate cut points for piecewise constant baseline hazard
   if (type == 2L) {
-    bs_basis <- splines::bs(eventtime[(d > 0)], df = user_df, knots = knots, 
+    bs_basis <- splines::bs(eventtime[(status > 0)], df = user_df, knots = knots, 
                             Boundary.knots = c(0, max(eventtime)), intercept = TRUE)
   } else if (type == 3L) {
     if (is.null(knots)) {
-      knots <- quantile(eventtime[(d > 0)], probs = seq(0, 1, 1 / df))
+      knots <- quantile(eventtime[(status > 0)], probs = seq(0, 1, 1 / df))
       knots[[1]] <- 0
       knots[[length(knots)]] <- max(eventtime)
     } else {
@@ -1828,7 +1897,7 @@ handle_basehaz <- function(basehaz, basehaz_ops,
 #   quadrature nodes
 get_quadpoints <- function(nodes = 15) {
   if (!is.numeric(nodes) || (length(nodes) > 1L)) {
-    stop("'quadnodes' should be a numeric vector of length 1.")
+    stop("'qnodes' should be a numeric vector of length 1.")
   } else if (nodes == 15) {
     list(
       points = c(
@@ -1907,7 +1976,7 @@ get_quadpoints <- function(nodes = 15) {
         0.401397414775962222905,
         0.268488089868333440729,
         0.104656226026467265194))      
-  } else stop("'quadnodes' must be either 7, 11 or 15.")  
+  } else stop("'qnodes' must be either 7, 11 or 15.")  
 }
 
 
@@ -2165,15 +2234,22 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc, 
-                            id_var, time_var, eps, auc_quadnodes, 
+handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff, 
+                            id_list, times, assoc, 
+                            id_var, time_var, eps, auc_qnodes, 
                             dataAssoc = NULL, env = parent.frame()) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   # Obtain a model frame defined as a data.table
   rows <- rownames(model.frame(y_mod_stuff$mod))
   df   <- as.data.frame(dataLong)[rows,]
-  mf   <- data.table::data.table(df, key = c(id_var, time_var))
+  if (clust_stuff$has_clust) {
+    clust_var <- clust_stuff$clust_var
+    df[[clust_var]] <- factor(df[[clust_var]])
+    mf <- data.table::data.table(df, key = c(id_var, clust_var, time_var))
+  } else {
+    mf <- data.table::data.table(df, key = c(id_var, time_var))
+  }
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
   # Update longitudinal submodel formula to reflect predvars
@@ -2183,8 +2259,9 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
   # in association structure
   mc[[1]] <- quote(lme4::glFormula)
   parts <- make_assoc_parts(newdata = mf, assoc = assoc, m = m, id_var = id_var, 
-                            time_var = time_var, id_list = id_list, times = times, 
-                            eps = eps, auc_quadnodes = auc_quadnodes,
+                            time_var = time_var, clust_stuff = clust_stuff, 
+                            id_list = id_list, times = times, 
+                            eps = eps, auc_qnodes = auc_qnodes,
                             use_function = handle_glFormula, 
                             mc = mc, y_mod_stuff = y_mod_stuff, 
                             dataAssoc = dataAssoc, env = env)
@@ -2232,14 +2309,14 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, id_list, times, assoc,
 #   quadrature times)
 # @param eps A numeric value used as the time shift for numerically evaluating
 #   the slope of the longitudinal submodel using a one-sided difference
-# @param auc_quadnodes An integer specifying the number of quadrature nodes to
+# @param auc_qnodes An integer specifying the number of quadrature nodes to
 #   use when evaluating the area under the curve for the longitudinal submodel
 # @param use_function The function to call which will return the design 
 #   matrices for eta, eps, lag, auc, etc.
 # @param ... Additional arguments passes to use_function
 # @return A named list
-make_assoc_parts <- function(newdata, assoc, id_var, time_var, 
-                             id_list, times, eps = 1E-5, auc_quadnodes = 15L, 
+make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
+                             id_list, times, eps = 1E-5, auc_qnodes = 15L, 
                              dataAssoc = NULL, use_function = handle_glFormula, 
                              ...) {
   if (!requireNamespace("data.table"))
@@ -2259,6 +2336,20 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
     }, lag = lag)  
   }
   
+  # Broadcast id_list and times if there is lower level clustering
+  if (clust_stuff$has_clust) {
+    clust_var <- clust_stuff$clust_var
+    if (is(times, "list")) {
+      id_list <- rep(id_list, clust_stuff$clust_freq)
+      times <- lapply(times, rep, clust_stuff$clust_freq)
+      clust <- clust_stuff$clust_list
+    } else {
+      id_list <- rep(rep(id_list, clust_stuff$clust_freq), clust_stuff$qnodes + 1)
+      times <- rep(times, rep(clust_stuff$clust_freq, clust_stuff$qnodes + 1))
+      clust <- rep(clust_stuff$clust_list, clust_stuff$qnodes + 1)
+    }
+  } else clust <- NULL
+  
   # Identify row in longitudinal data closest to event time or quadrature point
   #   NB if the quadrature point is earlier than the first observation time, 
   #   then covariates values are carried back to avoid missing values.
@@ -2269,7 +2360,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   #   covariate values can be carried). If no time varying covariates are 
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
-  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times)
+  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times, clust = clust)
   mod_eta <- use_function(newdata = dataQ, ...)
   
   # If association structure is based on slope, then calculate design 
@@ -2285,19 +2376,22 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   # calculate design matrices at the subquadrature points
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
   if (any(unlist(assoc[sel_auc,]))) {
-    # Return a design matrix that is (quadnodes * auc_quadnodes * Npat) rows 
-    auc_quadtimes <- 
+    if (clust_stuff$has_clust)
+      stop("'etaauc' and 'muauc' not yet implemented when there is clustering ",
+           "below 'id_var'.", call. = FALSE)
+    # Return a design matrix that is (qnodes * auc_qnodes * Npat) rows 
+    auc_qtimes <- 
       lapply(times, function(x) unlist(
         lapply(x, function(y) 
-          lapply(get_quadpoints(auc_quadnodes)$points, unstandardise_quadpoints, 0, y))))
-    auc_quadweights <- 
+          lapply(get_quadpoints(auc_qnodes)$points, unstandardise_qpts, 0, y))))
+    auc_qwts <- 
       lapply(times, function(x) unlist(
         lapply(x, function(y) 
-          lapply(get_quadpoints(auc_quadnodes)$weights, unstandardise_quadweights, 0, y))))
-    ids2 <- rep(id_list, each = auc_quadnodes)
-    dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = auc_quadtimes)
+          lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, y))))
+    ids2 <- rep(id_list, each = auc_qnodes)
+    dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = auc_qtimes)
     mod_auc <- use_function(newdata = dataQ_auc, ...)
-  } else mod_auc <- auc_quadtimes <- auc_quadweights <- NULL
+  } else mod_auc <- auc_qtimes <- auc_qwts <- NULL
   
   # If association structure is based on interactions with data, then calculate 
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
@@ -2311,7 +2405,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
                           stop(paste0("No variables found in the formula specified for the '", x,
                                       "' association structure.", call. = FALSE))
                         ff <- ~ foo + bar
-                        gg <- parse(text = paste("~", paste(c(id_var, time_var), collapse = "+")))[[1L]]
+                        varlist <- if (clust_stuff$has_clust) 
+                          c(id_var, clust_var, time_var) else c(id_var, time_var)
+                        gg <- parse(text = paste("~", paste(varlist, collapse = "+")))[[1L]]
                         ff[[2L]][[2L]] <- fm[[2L]]
                         ff[[2L]][[3L]] <- gg[[2L]]
                         if ("y_mod_stuff" %in% names(dots)) { # call from stan_jm
@@ -2345,9 +2441,11 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
                           mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
                                            na.action = naa))                          
                         }  
-                        mf2 <- data.table::data.table(mf2, key = c(id_var, time_var))
+                        mf2 <- if (clust_stuff$has_clust)
+                          data.table::data.table(mf2, key = c(id_var, clust_var, time_var)) else 
+                            data.table::data.table(mf2, key = c(id_var, time_var))
                         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times)
+                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times, clust = clust)
                         xq <- stats::model.matrix(fm, data = mf2q)
                         if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
                         if (!ncol(xq))
@@ -2359,29 +2457,45 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var,
   K_data <- sapply(xq_data, ncol)
   xmat_data <- do.call(cbind, xq_data)
   
-  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data)
+  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data, clust_stuff)
   
-  structure(ret, times = times, lag = lag, eps = eps, auc_quadnodes = auc_quadnodes,
-            auc_quadtimes = auc_quadtimes, auc_quadweights = auc_quadweights)
+  structure(ret, times = times, lag = lag, eps = eps, auc_qnodes = auc_qnodes,
+            auc_qtimes = auc_qtimes, auc_qwts = auc_qwts)
 }                              
 
 # Carry out a rolling merge
 #
 # @param data A data.table with a set key corresponding to ids and times
-# @param ids A vector of ids to merge against
+# @param ids A vector of patient ids to merge against
 # @param times A vector of (new) times to merge against
-# @return A data.table formed by a merge of ids, times, and the closest 
+# @param clust A vector of cluster ids to merge against when there is clustering
+#   within patient ids
+# @return A data.table formed by a merge of ids, (clust), times, and the closest 
 #   preceding (in terms of times) rows in data
-rolling_merge <- function(data, ids, times) {
+rolling_merge <- function(data, ids, times, clust = NULL) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
-  if (is(times, "list")) {
-    lst <- lapply(times, FUN = function(x) {
-      data[list(ids, x), roll = TRUE, rollends = c(TRUE, TRUE)]
-    })
-    return(do.call(rbind, args = lst))
-  } else 
-    return(data[list(ids, times), roll = TRUE, rollends = c(TRUE, TRUE)])
+  key_length <- if (is.null(clust)) 2L else 3L
+  if (!length(key(data)) == key_length)
+    stop("Bug found: data.table key is not the same length as supplied keylist.")
+  
+  if (is(times, "list") && is.null(clust)) {
+    return(do.call(rbind, lapply(times, FUN = function(x, ids) {
+      tmp <- data.table::data.table(ids, x)
+      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
+      }, ids = ids)))     
+  } else if (is(times, "list")) {
+    return(do.call(rbind, lapply(times, FUN = function(x, ids, clust) {
+      tmp <- data.table::data.table(ids, clust, x)
+      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
+      }, ids = ids, clust = clust)))
+  } else if (is.null(clust)) {
+    tmp <- data.table::data.table(ids, times)
+    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
+  } else {
+    tmp <- data.table::data.table(ids, clust, times)
+    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
+  }
 }
 
 .datatable.aware <- TRUE # necessary for some reason when data.table is in Suggests
@@ -2413,6 +2527,55 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
   linpred <- linpred + (t(as.matrix(group$Zt)) %*% b)
   nlist(xtemp, group, linpred)
 }   
+
+# Get the information need for combining the information in lower-level units
+# clustered within an individual, when the patient-level is not the only 
+# clustering level in the longitudinal submodel
+#
+#
+# @param cnms The component names for a single longitudinal submodel
+# @param flist The flist for a single longitudinal submodel
+# @param id_var The name of the ID variable
+# @param qnodes Integer specifying the number of qnodes being used for 
+#   the GK quadrature in the stan_jm call
+# @param grp_assoc Character string specifying the association structure used
+#   for combining information in the lower level units clustered within an
+#   individual
+# @return A named list
+get_clust_info <- function(cnms, flist, id_var, qnodes, 
+                           grp_assoc, ok_grp_assocs = c("sum", "mean")) {
+  cnms_nms <- names(cnms)
+  tally <- sapply(cnms_nms, function(x) 
+    # within each ID, count the number of levels for the grouping factor x
+    tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
+    simplify = FALSE)
+  sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
+  has_clust <- as.logical(length(sel) > 0L)
+  if (has_clust) {
+    if (length(sel) > 1L)
+      stop("There can only be one grouping factor clustered within 'id_var'.") 
+    clust_var <- cnms_nms[sel] 
+    clust_freq <- tally[[clust_var]]
+    clust_list <- unique(flist[[clust_var]])
+    clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
+    clust_mat <- if (length(levels(clust_idlist)) > 1L)
+      model.matrix(~ 0 + id, data = data.frame(id = clust_idlist)) else 
+        matrix(1, length(clust_idlist), 1L)
+    if (is.null(grp_assoc)) {
+      stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
+           "within 'id_var'.", call. = FALSE)       
+    } else if (!grp_assoc %in% ok_grp_assocs) {
+      stop("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))      
+    } else if (grp_assoc == "mean") {
+      clust_mat <- clust_mat / rep(clust_freq, clust_freq)
+    }
+    # broadcast clust_mat for each quadnode
+    clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), qnodes + 1))))
+  } else {
+    clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_mat <- NULL
+  }
+  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat, qnodes)
+}
 
 # Function to calculate the number of association parameters in the model
 #
@@ -2550,7 +2713,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     }      
   }
   
-  if (is_assocmod && prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
+  if (is_assocmod) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
@@ -2560,9 +2723,12 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
     if (is.null(assoc) || is.null(family))
       stop("'assoc' and 'family' cannot be NULL when autoscaling association parameters.")
     assoc_terms <- make_assoc_terms(parts = mod_stuff, assoc = assoc, family = family)
-    a_beta_scale <- apply(assoc_terms, 2L, scale_val)
-    prior_stuff$prior_scale <- 
-      pmax(min_prior_scale, prior_stuff$prior_scale / a_beta_scale) 
+    prior_stuff$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
+    if (prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
+      a_beta_scale <- apply(assoc_terms, 2L, scale_val)
+      prior_stuff$prior_scale <- 
+        pmax(min_prior_scale, prior_stuff$prior_scale / a_beta_scale)
+    }
   }
   
   prior_stuff$prior_scale <- 
@@ -2597,8 +2763,8 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
   for (m in 1:M) {
     times  <- attr(parts[[m]], "times")
     eps    <- attr(parts[[m]], "eps")  
-    qnodes <- attr(parts[[m]], "auc_quadnodes")
-    qwts   <- unlist(attr(parts[[m]], "auc_quadweights"))
+    qnodes <- attr(parts[[m]], "auc_qnodes")
+    qwts   <- unlist(attr(parts[[m]], "auc_qwts"))
     
     if (!assoc["null",][[m]]) {
       invlink_m <- family[[m]]$linkinv    
@@ -2607,10 +2773,17 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       auc_m <- get_element(parts, m = m, "auc", ...)
       data_m <- get_element(parts, m = m, "xmat_data", ...)
       K_data_m <- get_element(parts, m = m, "K_data", ...)
-      
+      has_clust_m <- parts[[m]]$clust_stuff$has_clust
+      if (has_clust_m)
+        clust_mat_m <- parts[[m]]$clust_stuff$clust_mat
+        
       # etavalue and any interactions      
       if (assoc["etavalue",][[m]]) { # etavalue
-        a_X[[mark]] <- eta_m
+        if (has_clust_m) {
+          a_X[[mark]] <- clust_mat_m %*% eta_m
+        } else {
+          a_X[[mark]] <- eta_m
+        }
         mark <- mark + 1
       }
       if (assoc["etavalue_data",][[m]]) { # etavalue*data
@@ -2618,7 +2791,12 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ev   ])
         val <- as.vector(eta_m) * data_m[, cbeg:cend, drop = FALSE]
-        a_X[[mark]] <- val
+        if (has_clust_m) {
+          a_X[[mark]] <- do.call(cbind, lapply(
+            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        } else {
+          a_X[[mark]] <- val
+        }
         mark <- mark + 1
       }
       if (assoc["etavalue_etavalue",][[m]]) { # etavalue*etavalue
@@ -2643,7 +2821,11 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       # etaslope and any interactions
       if (assoc["etaslope",][[m]]) { # etaslope
         dydt_m <- (eps_m - eta_m) / eps
-        a_X[[mark]] <- dydt_m
+        if (has_clust_m) {
+          a_X[[mark]] <- clust_mat_m %*% dydt_m
+        } else {
+          a_X[[mark]] <- dydt_m
+        } 
         mark <- mark + 1             
       }
       if (assoc["etaslope_data",][[m]]) { # etaslope*data
@@ -2652,7 +2834,12 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
         cend  <- sum(K_data_m[0: idx_es   ])
         val <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE]
-        a_X[[mark]] <- val
+        if (has_clust_m) {
+          a_X[[mark]] <- do.call(cbind, lapply(
+            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        } else {
+          a_X[[mark]] <- val
+        }
         mark <- mark + 1            
       }
       # etaauc
@@ -2773,8 +2960,7 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
         stop(paste0("Bug found: cannot find x and Zt in object. They are ",
              "required to build the linear predictor for '", which, "'."))          
       beta <- dots$beta[[m]]
-      b <- dots$b[[m]] 
-      b <- pp_b_ord(if (is.matrix(b)) b else t(b), Znames)
+      b <- dots$b[[m]]
       if (is.null(beta) || is.null(b))
         stop("Bug found: beta and b must be provided to construct linpred.")
       return(linear_predictor.default(beta, x) + as.vector(b %*% Zt))
@@ -3057,8 +3243,8 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
   e_aux_unscaled<- standardise_coef(e_aux,        standata$e_prior_mean_for_aux, standata$e_prior_scale_for_aux)
   b_Cov         <- lapply(y_mod_stuff, function(x) lme4::VarCorr(x$mod)[[1L]])
   sel           <- sapply(y_mod_stuff, function(x) length(lme4::VarCorr(x$mod)) > 1L)
-  if (any(sel)) stop("Model-based initial values cannot yet be used with more ",
-                     "than one clustering level.", call. = FALSE)
+  #if (any(sel)) stop("Model-based initial values cannot yet be used with more ",
+  #                   "than one clustering level.", call. = FALSE)
  
   # Initial values for random effects distribution
   scale <- standata$scale
@@ -3199,7 +3385,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
   
   if (!"save_warmup" %in% unms) 
     args$save_warmup <- FALSE  
-  
+
   return(args)
 }  
 

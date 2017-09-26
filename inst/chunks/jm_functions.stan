@@ -63,27 +63,25 @@
   *
   * @param eta Vector of linear predictors for all longitudinal submodels
   * @param m Integer specifying which submodel to return 'eta + intercept' for
-  * @param len_eta_m Integer specifying the length of the returned eta vector
-  *   (this is the same for each longitudinal submodel since it corresponds to 
-  *    the number of quadrature points and individuals in the model, rather than
-  *    the number of longitudinal observations)
-  * @param has_intercept{_unbound,_lobound,_upbound} Integer arrays indicating 
-  *   whether each submodel has (the specific type of) intercept
-  * @param gamma{_unbound,_lobound,_upbound} Vector containing the parameters
-  *   for each type of intercept
+  * @param idx Indices of the first and last rows of eta that correspond to
+  *   submodel m
+  * @param has_intercept{_nob,_lob,_upb} Integer arrays indicating whether
+  *   each submodel has (the specific type of) intercept
+  * @param gamma{_nob,_lob,_upb} Vector containing the parameters for each 
+  *   type of intercept
   * @param xbar Vector of predictor means
   * @param beta Vector of coefficients across all longitudinal submodels
   * @param K Integer array specifying the number of parameters in each
   *   longitudinal submodel
-  * @return A vector of length len_eta_m
+  * @return A vector containing the linear predictor for submodel m
   */
-  vector add_intercept(vector eta, int m, int len_eta_m, int[] has_intercept, 
+  vector add_intercept(vector eta, int m, int[,] idx, int[] has_intercept, 
                        int[] has_intercept_nob, int[] has_intercept_lob, 
                        int[] has_intercept_upb, real[] gamma_nob, 
                        real[] gamma_lob, real[] gamma_upb, 
                        vector xbar, vector beta, int[] K) {
-    vector[len_eta_m] eta_m;
-    eta_m = segment(eta, ((m-1) * len_eta_m) + 1, len_eta_m);
+    vector[idx[m,2] - idx[m,1] + 1] eta_m;
+    eta_m = eta[idx[m,1]:idx[m,2]];
     if (has_intercept[m] == 1) {
       if (has_intercept_nob[m] == 1) 
         eta_m = eta_m + gamma_nob[sum(has_intercept_nob[1:m])];
@@ -343,7 +341,7 @@
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
   *   in vector b
-  * @param quadnodes The number of quadrature nodes
+  * @param qnodes The number of quadrature nodes
   * @param which_b Integer array specifying the indices
   *   of the random effects to use in the association structure
   * @param sum_size_which_b Integer specifying total number of 
@@ -355,16 +353,16 @@
   * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
-  *   repeated (quadnodes + 1) times (bounded by rows)
+  *   repeated (qnodes + 1) times (bounded by rows)
   */  
   matrix make_x_assoc_shared_b(
-    vector b, int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
+    vector b, int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
     int[] which_b, int sum_size_which_b, int[] size_which_b, int t_i, int M) {
     int prior_shift;    // num. ranefs prior to subject-specific ranefs
     int start_store;
     int end_store;	
     matrix[Npat,sum_size_which_b] temp;
-    matrix[(Npat*(quadnodes+1)),sum_size_which_b] x_assoc_shared_b;						  
+    matrix[(Npat*(qnodes+1)),sum_size_which_b] x_assoc_shared_b;						  
     if (t_i == 1) prior_shift = 0;
     else prior_shift = sum(l[1:(t_i-1)]);
     for (i in 1:Npat) {
@@ -393,7 +391,7 @@
         }      
       }
     }
-    for (i in 1:(quadnodes+1)) {
+    for (i in 1:(qnodes+1)) {
       start_store = (i - 1) * Npat + 1;
       end_store   = i * Npat;		
       x_assoc_shared_b[start_store:end_store,] = temp;
@@ -417,7 +415,7 @@
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
   *   in vector b
-  * @param quadnodes The number of quadrature nodes
+  * @param qnodes The number of quadrature nodes
   * @param which_b Integer array specifying the indices
   *   of the random effects to use in the association structure
   * @param sum_size_which_b Integer specifying total number of 
@@ -429,11 +427,11 @@
   * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
-  *   repeated (quadnodes + 1) times (bounded by rows)
+  *   repeated (qnodes + 1) times (bounded by rows)
   */  
   matrix make_x_assoc_shared_coef(
     vector b, vector beta, int[] KM, int M, int t_i,
-    int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
+    int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
     int sum_size_which_coef, int[] size_which_coef,
     int[] which_coef_zindex, int[] which_coef_xindex,
     int[] has_intercept, int[] has_intercept_nob,
@@ -451,7 +449,7 @@
     int start_store;
     int end_store;	
     matrix[Npat,sum_size_which_coef] temp;
-    matrix[(Npat*(quadnodes+1)),sum_size_which_coef] x_assoc_shared_coef;						  
+    matrix[(Npat*(qnodes+1)),sum_size_which_coef] x_assoc_shared_coef;						  
     if (t_i == 1) t_shift = 0;
     else t_shift = sum(l[1:(t_i-1)]);
     for (i in 1:Npat) {
@@ -511,8 +509,9 @@
         }      
       }
     }
-    // repeat the temp matrix quadnode times (ie, rbind)
-    for (i in 1:(quadnodes+1)) {
+
+    // repeat the temp matrix qnodes times (ie, rbind)
+    for (i in 1:(qnodes+1)) {
       start_store = (i - 1) * Npat + 1;
       end_store   = i * Npat;		
       x_assoc_shared_coef[start_store:end_store, ] = temp;

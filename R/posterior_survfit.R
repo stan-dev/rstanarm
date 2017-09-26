@@ -252,6 +252,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   time_var <- object$time_var
   basehaz  <- object$basehaz
   assoc    <- object$assoc
+  clust_stuff <- object$clust_stuff
   family   <- family(object)
   if (!is.null(seed)) 
     set.seed(seed)
@@ -370,7 +371,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Get stanmat parameter matrix for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
-    draws <- if (!is.null(newdataEvent) && S > 200) 200 else S 
+    draws <- if (S > 200) 200 else S 
   if (draws > S)
     stop("'draws' should be <= posterior sample size (", S, ").")
   stanmat <- as.matrix(object$stanfit)

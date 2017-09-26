@@ -71,9 +71,9 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     lapply(ndL, function(x) {
       if (!time_var %in% colnames(x)) STOP_no_var(time_var)
       mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
-      if (any(mt > etimes))
-        stop("There appears to be observation times in the longitudinal data that ",
-             "are later than the event time specified in the 'etimes' argument.")      
+      #if (any(mt > etimes))
+      #  stop("There appears to be observation times in the longitudinal data that ",
+      #       "are later than the event time specified in the 'etimes' argument.")      
     }) 
   if (long_parts) {
     y <- lapply(1:M, function(m) eval(formula(object, m = m)[[2L]], ndL[[m]]))
@@ -100,10 +100,23 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
         eXq <- eXq[, -sel, drop = FALSE]
     }
     assoc_parts <- lapply(1:M, function(m) {
-      ymf <- prepare_data_table(ndL[[m]], id_var, time_var = time_var)
+      ymf <- ndL[[m]]
+      clust_stuff_m <- object$clust_stuff[[m]]
+      if (clust_stuff_m$has_clust) {
+        clust_var <- clust_stuff_m$clust_var
+        clust_flist <- list(factor(ymf[[id_var]]), factor(ymf[[clust_var]]))
+        names(clust_flist) <- c(id_var, clust_var)
+        clust_stuff_m <- get_clust_info( # update clust_info with new data
+          cnms = object$cnms, flist = clust_flist, id_var = id_var, 
+          quadnodes = qnodes, grp_assoc = object$grp_assoc)
+        ymf[[clust_var]] <- factor(ymf[[clust_var]])
+        ymf <- data.table::data.table(ymf, key = c(id_var, clust_var, time_var))
+      } else {
+        ymf <- data.table::data.table(ymf, key = c(id_var, time_var))
+      }
       make_assoc_parts(
-        ymf, assoc = object$assoc, id_var = object$id_var, 
-        time_var = object$time_var, id_list = id_list, times = times, 
+        ymf, assoc = object$assoc, id_var = id_var, time_var = time_var, 
+        id_list = id_list, times = times, clust_stuff = clust_stuff_m,
         use_function = pp_data, object = object, m = m)
     })
     assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)

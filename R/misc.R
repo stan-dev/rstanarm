@@ -767,7 +767,7 @@ array2list <- function(x, nsplits, bycol = TRUE) {
 # @param x An unstandardised quadrature node
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_quadpoints <- function(x, a, b) {
+unstandardise_qpts <- function(x, a, b) {
   if (!identical(length(x), 1L) || !is.numeric(x))
     stop("'x' should be a single numeric value.", call. = FALSE)
   if (!all(is.numeric(a), is.numeric(b)))
@@ -786,7 +786,7 @@ unstandardise_quadpoints <- function(x, a, b) {
 # @param x An unstandardised quadrature weight
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_quadweights <- function(x, a, b) {
+unstandardise_qwts <- function(x, a, b) {
   if (!identical(length(x), 1L) || !is.numeric(x))
     stop("'x' should be a single numeric value.", call. = FALSE)
   if (!all(is.numeric(a), is.numeric(b)))

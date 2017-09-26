@@ -498,11 +498,17 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   # Linear predictor for the event submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   if (length(pars$abeta)) {
+    M <- object$n_markers
     # Temporary stop, until make_assoc_terms can handle it
     sel_stop <- grep("^shared", rownames(object$assoc))
     if (any(unlist(object$assoc[sel_stop,])))
       stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
-           "association structures.", call. = FALSE) 
+           "association structures.", call. = FALSE)
+    pars$b <- lapply(1:M, function(m) {
+      b_m <- pars$b[[m]]
+      Z_names_m <- data$assoc_parts[[m]][["mod_eta"]][["Z_names"]]
+      pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
+    })
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
@@ -512,7 +518,7 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
       for (s in 1:NROW(e_eta)) {
         abeta_s <- pars$abeta[s,]
         beta_s  <- lapply(pars$beta, function(x) x[s,])
-        b_s     <- lapply(pars$b,    function(x) x[s,])
+        b_s <- lapply(pars$b, function(x) x[s,])
         aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                                     family = family, beta = beta_s, b = b_s)
         e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
@@ -579,10 +585,11 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
 #   a logical specifying whether the function calling ll_jm was reloo or kfold.
 # @return Either a matrix, a vector or a scalar, depending on the input types
 #   and whether sum is set to TRUE.
-ll_jm <- function(object, data, pars, include_b = FALSE, sum = FALSE, ...) {
+ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, sum = FALSE, ...) {
   M <- get_M(object)
   # log-lik for longitudinal submodels
-  ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
+  if (include_long)
+    ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
   # log-lik for event submodel
   ll_event <- ll_event(object, data, pars)
   # log-lik for random effects model
@@ -602,23 +609,31 @@ ll_jm <- function(object, data, pars, include_b = FALSE, sum = FALSE, ...) {
   } else ll_b <- NULL
   # check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices
-    mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
-    dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
-    if ((length(dims) > 1L) || (length(mats) > 1L))
-      stop("Bug found: elements of 'll_long' should be same class and ",
-           "dimension as 'll_event'.")
+    if (include_long) {
+      mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
+      dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
+      if ((length(dims) > 1L) || (length(mats) > 1L))
+        stop("Bug found: elements of 'll_long' should be same class and ",
+             "dimension as 'll_event'.")
+    }
     if (include_b && !identical(length(ll_b), ncol(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to the number of ",
            "columns in 'll_event'.")
   } else { # length Npat vectors (ie, log-lik based on a single draw of pars)
-    lens <- unique(sapply(c(ll_long, list(ll_event)), length))
-    if (length(lens) > 1L)
-      stop("Bug found: elements of 'll_long' should be same length as 'll_event'.")
+    if (include_long) {
+      lens <- unique(sapply(c(ll_long, list(ll_event)), length))
+      if (length(lens) > 1L)
+        stop("Bug found: elements of 'll_long' should be same length as 'll_event'.")
+    }
     if (include_b && !identical(length(ll_b), length(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to length of 'll_event'.")
   }  
   # sum the various components (long + event + random effects)
-  val <- Reduce('+', c(ll_long, list(ll_event)))
+  if (include_long) {
+    val <- Reduce('+', c(ll_long, list(ll_event)))
+  } else {
+    val <- ll_event
+  }
   if (include_b && is.matrix(val)) {
     val <- t(apply(val, 1L, function(row) row + ll_b)) 
   } else if (include_b && is.vector(val)) {

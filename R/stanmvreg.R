@@ -108,12 +108,14 @@ stanmvreg <- function(object) {
     out$data <- if (!jm) object$data else NULL
     out$glmod <- fetch(object$y_mod_stuff, "mod")
     out$glmod_stuff <- object$y_mod_stuff
+    out$clust_stuff <- object$clust_stuff
+    out$grp_assoc <- object$grp_assoc
   }
   if (surv) {
     out$n_subjects <- object$n_subjects
-    out$n_events <- sum(object$d > 0)
+    out$n_events <- sum(object$status > 0)
     out$eventtime <- object$eventtime
-    out$status <- object$d > 0
+    out$status <- object$status > 0
     out$basehaz <- object$basehaz
     out$data <- if (!jm) object$data else NULL
     out$coxmod <- object$e_mod_stuff$mod    
