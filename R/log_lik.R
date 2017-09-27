@@ -526,11 +526,13 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
     }    
   }
   # Baseline hazard
+  norm_const <- object$coxmod_stuff$norm_const
   if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
-    log_basehaz <- as.vector(log(pars$bhcoef)) + 
+    log_basehaz <- norm_const + as.vector(log(pars$bhcoef)) + 
       linear_predictor(pars$bhcoef - 1, log(times))
   } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
-    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
+    log_basehaz <- norm_const + 
+      linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
   } else {
     stop("Not yet implemented for basehaz = ", basehaz$type_name)
   }  

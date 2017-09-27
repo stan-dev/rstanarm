@@ -146,6 +146,7 @@ predictive_error.stanmvreg <-
            seed = NULL,
            offset = NULL,
            t, u,
+           lossfn = "square",
            ...) {
     if ("y" %in% names(list(...)))
       stop("Argument 'y' should not be specified if 'object' is a stanmvreg object.")
@@ -155,9 +156,10 @@ predictive_error.stanmvreg <-
       t <- NULL
     if (missing(u))
       u <- NULL
+    M <- get_M(object)
     
     if (m == "Event") { # prediction error for event submodel
-      
+            
       if (!is.surv(object))
         stop("No event submodel was found in the fitted object.")
       if (is.null(t) || is.null(u))
@@ -166,31 +168,94 @@ predictive_error.stanmvreg <-
       if (u <= t)
         stop("'u' must be greater than 't'.")
       
+      # Construct prediction data
+      # ndL: dataLong to be used in predictions
+      # ndE: dataEvent to be used in predictions
+      if (!identical(is.null(newdataLong), is.null(newdataEvent)))
+        stop("Both newdataLong and newdataEvent must be supplied together.")
+      if (is.null(newdataLong)) { # user did not specify newdata
+        dats <- get_model_data(object)
+        ndL <- dats[1:M]
+        ndE <- dats[["Event"]]
+      } else { # user specified newdata
+        newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+        ndL <- newdatas[1:M]
+        ndE <- newdatas[["Event"]]   
+      }
+      
+      # Subset prediction data to only include
+      # observations prior to time t
       fm_LHS <- formula(object, m = "Event")[[2L]]
-      event_dvar <- as.character(fm_LHS[[length(fm_LHS)]])
       event_tvar <- as.character(fm_LHS[[length(fm_LHS) - 1L]])
-      
-      sel <- which(newdataEvent[[event_tvar]] > t)
-      newdataEvent <- newdataEvent[sel, , drop = FALSE]
-      ids <- newdataEvent[[object$id_var]]
-        
-      newdataLong <- lapply(newdataLong, function(x) {
-        sel <- which(x[[object$time_var]] > t && 
-                       x[[object$id_var %in% ids]])
-        x <- x[sel, , drop = FALSE]
+      sel <- which(ndE[[event_tvar]] > t)
+      ndE <- ndE[sel, , drop = FALSE]
+      ndL <- lapply(ndL, function(x) {
+        sel <- which(x[[object$time_var]] > t)
+        x[sel, , drop = FALSE]
       })      
+      id_var <- object$id_var
+      ids <- ndE[[id_var]]
+      for (i in 1:length(ndL))
+        ids <- intersect(ndL[[i]][[id_var]], ids)
+      if (!length(ids))
+        stop("No individuals still at risk at time 't' and ",
+             "with longitudinal measurements prior to 't'.")
+      ndE <- ndE[ndE[[id_var]] %in% ids, , drop = FALSE]
+      ndL <- lapply(ndL, function(x) {
+        x[x[[id_var]] %in% ids, , drop = FALSE]
+      })
       
+      # Observed y: event status at time u
+      event_dvar <- as.character(fm_LHS[[length(fm_LHS)]])
+      y <- ndE[, c(id_var, event_tvar, event_dvar), drop = FALSE]
+
+      # Predicted y: conditional survival probability at time u
       ytilde <- posterior_survfit(
         object, 
-        newdataLong = newdataLong, 
-        newdataEvent = newdataEvent,
+        newdataLong = ndL, 
+        newdataEvent = ndE,
         times = u,
         last_time = t,
         condition = TRUE,
         extrapolate = FALSE,
         draws = draws,
-        seed = seed)$survpred
-
+        seed = seed)
+      ytilde <- ytilde[, c(id_var, "survpred"), drop = FALSE]
+      names(ytilde) <- c(id_var, "survpred_t")
+      
+      # Survival probability for individuals censored 
+      # between times t and u
+      ytilde2 <- posterior_survfit(
+        object, 
+        newdataLong = ndL, 
+        newdataEvent = ndE,
+        times = u,
+        last_time = event_tvar,
+        condition = TRUE,
+        extrapolate = FALSE,
+        draws = draws,
+        seed = seed)
+      ytilde2 <- ytilde2[, c(id_var, "survpred"), drop = FALSE]
+      names(ytilde2) <- c(id_var, "survpred_eventtime")
+      
+      y <- merge(y, ytilde, by = id_var)
+      y <- merge(y, ytilde2, by = id_var)
+    
+      loss <- switch(lossfn,
+                     square = function(x) {x*x},
+                     absolute = function(x) {abs(x)})
+      
+      y$dummy <- as.integer(y[[event_tvar]] > u)
+      y$status <- as.integer(y[[event_dvar]])
+      y$res <- 
+        y$dummy * loss(1 - y$survpred_t) +
+        y$status * (1 - y$dummy) * loss(0 - y$survpred_t) +
+        (1 - y$status) * (1 - y$dummy) * (
+          y$survpred_eventtime * loss(1- y$survpred_t) + 
+            (1 - y$survpred_eventtime) + loss(0- y$survpred_t)
+        )
+      return(list(PE = mean(y$res), N = nrow(y)))
+      
     } else { # prediction error for longitudinal submodel
       
       y <- if (is.null(newdataLong))
