@@ -1260,6 +1260,7 @@ uapply <- function(X, FUN, ...) {
 # @param x The variable to potentially promote
 promote_to_factor <- function(x) {
   if (is.character(x)) as.factor(x) else x
+}
 
 # Draw from a multivariate normal distribution
 # @param mu A mean vector
