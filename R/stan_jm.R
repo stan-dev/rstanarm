@@ -643,7 +643,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   # Fit separate event submodel
   e_mod_stuff <- handle_coxmod(e_mc, qnodes = qnodes, id_var = id_var, 
-                               unique_id_list = unique_id_list, sparse = sparse,
+                               y_idlist = unique_id_list, sparse = sparse,
                                env = calling_env)
   
   # Construct prior weights
@@ -716,13 +716,13 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   auc_qnodes <- 15L
   a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff,
                         clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
-                        MoreArgs = list(id_list         = e_mod_stuff$qids, 
-                                        times           = e_mod_stuff$qtimes, 
+                        MoreArgs = list(id_list         = e_mod_stuff$cids, 
+                                        times           = e_mod_stuff$cpts, 
                                         assoc           = assoc, 
                                         id_var          = id_var, 
                                         time_var        = time_var, 
                                         eps             = eps, 
-                                        auc_qnodes   = auc_qnodes,
+                                        auc_qnodes      = auc_qnodes,
                                         dataAssoc       = dataAssoc,
                                         env             = calling_env))
 
@@ -1676,10 +1676,11 @@ check_for_aux <- function(family) {
 # @param mc The (slightly modified) user specified call for the event submodel
 # @param qnodes An integer, the user specified number of GK quadrature nodes
 # @param id_var The name of the ID variable
-# @param unique_id_list A character vector with the unique IDs (factor levels)
+# @param y_idlist A character vector with the unique subject IDs (factor levels)
 #   that appeared in the longitudinal submodels
 # @param sparse A logical indicating whether to use a sparse design matrix
-handle_coxmod <- function(mc, qnodes, id_var, unique_id_list, sparse,
+# @param env The environment in which to evaluate the matched call
+handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
                           env = parent.frame()) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
@@ -1687,96 +1688,78 @@ handle_coxmod <- function(mc, qnodes, id_var, unique_id_list, sparse,
     stop("the 'data.table' package must be installed to use this function")
 
   mc[[1]] <- quote(survival::coxph) 
-  mc$x    <- TRUE
+  mc$x <- TRUE
   mod <- eval(mc, envir = env)
   mf1 <- expand.model.frame(mod, id_var, na.expand = TRUE)
-  # since lme4 promotes character grouping variables to factors
-  if (is.character(mf1[[id_var]]))
-    mf1[[id_var]] <- as.factor(mf1[[id_var]])
+  mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
   mf2 <- cbind(unclass(mf1[,1]), mf1[, -1, drop = FALSE])
-  y   <- mod$y
+
+  if (attr(mod$y, "type") == "counting") {
+    tvc <- TRUE
+    t0_var <- "start"
+    t1_var <- "stop"
+  } else if (attr(mod$y, "type") == "right") {
+    tvc <- FALSE 
+    t0_var <- "time"
+    t1_var <- "time"
+  } else {
+    stop("Only 'right' or 'counting' type Surv objects are allowed 
+         on the LHS of the event submodel formula.", call. = FALSE)
+  }
+  mf_event <- do.call(rbind, lapply(
+    split(mf2, mf2[, id_var]), function(status) 
+      status[which.max(status[, t1_var]), ]))
+  entrytime <- rep(0, nrow(mf_event)) # delayed entry not handled
+  eventtime <- mf_event[[t1_var]]
+  status    <- mf_event[["status"]]  
+  idlist    <- mf_event[[id_var]]
+  names(eventtime) <- names(status) <- idlist
   
-  # Entry and exit times
-  entrytime <- rep(0, length(unique_id_list)) # delayed entry not handled
-  if (attr(y, "type") == "counting") {
-    tvc         <- TRUE
-    mf_event    <- do.call(rbind, lapply(split(mf2, mf2[, id_var]), function(status) status[which.max(status[,"stop"]), ]))
-    eventtime   <- mf_event[["stop"]]
-  } else if (attr(y, "type") == "right") {
-    tvc         <- FALSE 
-    mf_event    <- mf2
-    eventtime   <- mf_event[["time"]]
-  } else stop("Only 'right' or 'counting' type Surv objects are allowed 
-               on the LHS of the event submodel formula")
-  
-  # Event indicator and ID list
-  status     <- mf_event[["status"]]  
-  flist <- mf_event[[id_var]]
-  names(eventtime) <- names(status) <- flist
+  # Mean log incidence rate - used for shifting log baseline hazard
+  norm_const <- log(sum(status) / sum(eventtime))
   
   # Error checks for the ID variable
-  if (!identical(unique_id_list, levels(factor(flist))))
+  if (!identical(y_idlist, levels(factor(idlist))))
     stop("The patient IDs (levels of the grouping factor) included ",
          "in the longitudinal and event submodels do not match")
-  if (is.unsorted(factor(flist)))
+  if (is.unsorted(factor(idlist)))
     stop("'dataEvent' needs to be sorted by the subject ",
          "ID/grouping variable", call. = FALSE)
-  if (!identical(length(unique_id_list), length(eventtime)))
+  if (!identical(length(y_idlist), length(idlist)))
     stop("The number of patients differs between the longitudinal and ",
          "event submodels. Perhaps you intended to use 'start/stop' notation ",
          "for the Surv() object.")
   
-  # Unstandardised quadrature points
+  # Quadrature weights/times/ids
   qq <- get_quadpoints(qnodes)
-  qpts <- lapply(qq$points, unstandardise_qpts,
-                 entrytime, eventtime)
-  qwts <- lapply(qq$weights, unstandardise_qwts, 
-                 entrytime, eventtime)
-  qtimes <- unlist(c(list(eventtime[status == 1]), qpts))
-  qids <- c(flist[status == 1], rep(flist, qnodes))
-  names(qpts) <- names(qwts) <- paste0("quadpoint", seq(qnodes))
-  #names(qtimes) <- c("eventtime", names(qpts))
+  qwts <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
+  qpts <- uapply(qq$points, unstandardise_qpts, entrytime, eventtime)
+  qids <- rep(idlist, qnodes)
+  
+  # Event times/ids (for failures only)
+  epts <- eventtime[status == 1] # event times (for failures only)
+  eids <- idlist[status == 1]    # subject ids (for failures only)
+  
+  # Both event times/ids and quadrature times/ids
+  cpts <- c(epts, qpts)
+  cids <- c(eids, qids)
 
-  # Obtain design matrix at event times and unstandardised quadrature points
+  # Evaluate design matrix at event and quadrature times
   if (ncol(mod$x)) {
-    if (tvc) {  # time varying covariates in event model
-      
-      # Model frame at event times
-      mf2           <- data.table::data.table(mf2, key = c(id_var, "start"))
-      mf2[["start"]] <- as.numeric(mf2[["start"]])
-      mf2_eventtime <- mf2[, data.table::.SD[data.table::.N], 
-                           by = get(id_var)]
-      mf2_eventtime <- mf2_eventtime[status == 1, , drop = FALSE]
-      # mf2_eventtime <- mf2_eventtime[, get := NULL]
-      mf2_eventtime$get <- NULL
-      
-      # Model frame corresponding to observation times which are 
-      #   as close as possible to the unstandardised quadrature points                      
-      mf2_q  <- do.call(rbind, lapply(qpts, FUN = function(x)
-        mf2[data.table::SJ(flist, x), roll = TRUE, rollends = c(TRUE, TRUE)]))
-      
-      # Model frame evaluated at both event times and quadrature points
-      mf2_q <- rbind(mf2_eventtime, mf2_q)
-      
-      # Design matrix evaluated at event times and quadrature points
-      #   NB Here there are time varying covariates in the event submodel and
-      #   therefore the design matrix differs depending on the quadrature point 
-      fm_RHS <- delete.response(terms(mod))
-      x_q   <- model.matrix(fm_RHS, data = mf2_q)
-      
-    } else {  # no time varying covariates in event model
-      # Design matrix evaluated at event times and quadrature points
-      #   NB Here there are no time varying covariates in the event submodel and
-      #   therefore the design matrix is identical at event time and at all
-      #   quadrature points
-      x_q <- do.call(rbind, rep(list(mod$x), qnodes))
-      x_q <- rbind(mod$x[status == 1, , drop = FALSE], x_q)
-    }
-    
-    # Centering of design matrix for event model
-    xtemp <- as.matrix(x_q) 
-    xbar <- colMeans(xtemp)
-    xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+    # Convert model frame from Cox model into a data.table
+    mf2 <- data.table::data.table(mf2, key = c(id_var, t0_var))
+    mf2[[t0_var]] <- as.numeric(mf2[[t0_var]])
+    # Obtain rows of the model frame that are as close as possible to 
+    # the event times (failures only) and quadrature times                      
+    mf2_q <- mf2[data.table::data.table(cids, cpts), 
+                 roll = TRUE, rollends = c(TRUE, TRUE)]
+    # Construct design matrix evaluated at event and quadrature times
+    fm_RHS <- reformulate(attr(terms(mod), "term.labels"))
+    xq <- model.matrix(fm_RHS, data = mf2_q)
+    xq <- xq[, -1L, drop = FALSE] # drop intercept
+    # Centre the design matrix
+    xbar <- colMeans(xq)
+    xtemp <- sweep(xq, 2, xbar, FUN = "-")
     sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
     if (any(sel)) {
       # drop any column of x with < 2 unique values (empty interaction levels)
@@ -1785,22 +1768,14 @@ handle_coxmod <- function(mc, qnodes, id_var, unique_id_list, sparse,
       xtemp <- xtemp[, !sel, drop = FALSE]
       xbar <- xbar[!sel]
     }
-    K <- ncol(xtemp)
   } else {
     xtemp <- matrix(0,0L,0L)
     xbar <- rep(0,0L)
   }
-  # Mean log incidence rate - used for shifting log baseline hazard
-  norm_const <- log(sum(status) / sum(eventtime))
-     
-  # Some additional bits -- NB weights here are quadrature weights, not prior weights
-  K <- NCOL(xtemp)
-  Npat <- length(eventtime)
-  quadweight <- unlist(lapply(get_quadpoints(qnodes)$weights, unstandardise_qwts, entrytime, eventtime))
-  
-  nlist(mod, entrytime, eventtime, status, Nevents = sum(status), 
-        Npat = length(eventtime), K = ncol(xtemp), xtemp, xbar, flist, 
-        norm_const, qnodes, qpts, qwts = unlist(qwts), qtimes, qids, tvc,
+
+  nlist(mod, entrytime, eventtime, status, Npat = length(eventtime), 
+        Nevents = sum(status), idlist, qnodes, qwts, qpts, qids, 
+        epts, eids, cpts, cids, xtemp, xbar, K = ncol(xtemp), norm_const, 
         model_frame = mf1)
 }
 
@@ -2329,11 +2304,8 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   # Apply lag
   lag <- assoc["which_lag",][[m]]
   if (!lag == 0) {
-    times <- lapply(times, function(x, lag) {
-      newtimes <- x - lag
-      newtimes[newtimes < 0] <- 0.0  # use baseline where lagged t is before baseline
-      newtimes
-    }, lag = lag)  
+    times <- times - lag
+    times[times < 0] <- 0.0  # use baseline where lagged t is before baseline
   }
   
   # Broadcast id_list and times if there is lower level clustering
@@ -3370,7 +3342,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
          "of random effects in the joint model (used for ",
          "determining the default adapt_delta")
   
-  default_adapt_delta <- if (sum_p > 2) 0.85 else 0.80
+  default_adapt_delta <- if (sum_p > 2) 0.99 else 0.95
   default_max_treedepth <- 11L
   
   if (!is.null(user_adapt_delta))

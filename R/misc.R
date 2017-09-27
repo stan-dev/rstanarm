@@ -1248,6 +1248,19 @@ get_model_data <- function(object, m = NULL) {
   if (is.null(m)) return(mfs) else return(mfs[[m]])
 }
 
+# Unlist the result from an lapply call
+#
+# @param X,FUN,... Same as lapply
+uapply <- function(X, FUN, ...) {
+  unlist(lapply(X, FUN, ...))
+}
+
+# Promote a character variable to a factor
+#
+# @param x The variable to potentially promote
+promote_to_factor <- function(x) {
+  if (is.character(x)) as.factor(x) else x
+
 # Draw from a multivariate normal distribution
 # @param mu A mean vector
 # @param Sigma A variance-covariance matrix
