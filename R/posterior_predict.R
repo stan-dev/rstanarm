@@ -407,7 +407,7 @@ pp_b_ord <- function(b, Z_names) {
 pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
   if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
   y <- if (is.null(newdata))
-      get_y(object, m) else eval(formula(object, m)[[2L]], newdata)    
+      get_y(object, m) else eval(formula(object, m = m)[[2L]], newdata)    
   if (NCOL(y) == 2L)
     return(rowSums(y))
   rep(1, NROW(y))

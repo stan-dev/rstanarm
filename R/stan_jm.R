@@ -400,7 +400,7 @@
 #' # current value of the linear predictor
 #' f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               # this next line is only to keep the example small in size!
@@ -412,7 +412,7 @@
 #' # current value and slope of the linear predictor
 #' f2 <- stan_jm(formulaLong = logBili ~ year + (year | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               assoc = c("etavalue", "etaslope"),
 #'               time_var = "year",
@@ -425,7 +425,7 @@
 #' # units (i.e. 2 years in this example)
 #' f3 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               assoc = "etavalue", lag_assoc = 2,
@@ -443,7 +443,7 @@
 #' # hazard of death) for each treatment group
 #' f4 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year", chains = 1,
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"))
@@ -459,7 +459,7 @@
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
-#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
 #'         assoc = list("etavalue", "shared_b(1)"), 
 #'         time_var = "year",
@@ -488,14 +488,13 @@
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
-#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
 #'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"),
 #'         time_var = "year", 
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
 #'  
-#' @import data.table
 #' @importFrom lme4 lmerControl glmerControl glmer
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
@@ -1683,7 +1682,11 @@ check_for_aux <- function(family) {
 # @param env The environment in which to evaluate the matched call
 handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
                           env = parent.frame()) {
-  
+  if (!requireNamespace("survival"))
+    stop("the 'survival' package must be installed to use this function")
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+
   mc[[1]] <- quote(survival::coxph) 
   mc$x <- TRUE
   mod <- eval(mc, envir = env)
@@ -2210,7 +2213,8 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff,
                             id_list, times, assoc, 
                             id_var, time_var, eps, auc_qnodes, 
                             dataAssoc = NULL, env = parent.frame()) {
-  
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   # Obtain a model frame defined as a data.table
   rows <- rownames(model.frame(y_mod_stuff$mod))
   df   <- as.data.frame(dataLong)[rows,]
@@ -2290,6 +2294,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
                              id_list, times, eps = 1E-5, auc_qnodes = 15L, 
                              dataAssoc = NULL, use_function = handle_glFormula, 
                              ...) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
   dots <- list(...)
   m <- dots$m 
   if (is.null(m)) stop("Argument m must be specified in dots.")
@@ -2438,8 +2445,10 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
 # @return A data.table formed by a merge of ids, (clust), times, and the closest 
 #   preceding (in terms of times) rows in data
 rolling_merge <- function(data, ids, times, clust = NULL) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
   key_length <- if (is.null(clust)) 2L else 3L
-  if (!length(key(data)) == key_length)
+  if (!length(data.table::key(data)) == key_length)
     stop("Bug found: data.table key is not the same length as supplied keylist.")
   
   if (is(times, "list") && is.null(clust)) {
@@ -2460,6 +2469,8 @@ rolling_merge <- function(data, ids, times, clust = NULL) {
     return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
   }
 }
+
+.datatable.aware <- TRUE # necessary for some reason when data.table is in Suggests
 
 # Evaluate a glFormula call and return model components
 # 
@@ -3345,8 +3356,8 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
         args$control$max_treedepth <- default_max_treedepth
   
   if (!"save_warmup" %in% unms) 
-    args$save_warmup <- FALSE
-  
+    args$save_warmup <- FALSE  
+
   return(args)
 }  
 

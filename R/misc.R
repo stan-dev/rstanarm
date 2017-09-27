@@ -1260,4 +1260,27 @@ uapply <- function(X, FUN, ...) {
 # @param x The variable to potentially promote
 promote_to_factor <- function(x) {
   if (is.character(x)) as.factor(x) else x
+
+# Draw from a multivariate normal distribution
+# @param mu A mean vector
+# @param Sigma A variance-covariance matrix
+# @param df A degrees of freedom
+rmt <- function(mu, Sigma, df) {
+  y <- c(t(chol(Sigma)) %*% rnorm(length(mu)))
+  u <- rchisq(1, df = df)
+  return(mu + y / sqrt(u / df))
+}
+
+# Evaluate the multivariate t log-density
+# @param x A realization
+# @param mu A mean vector
+# @param Sigma A variance-covariance matrix
+# @param df A degrees of freedom
+dmt <- function(x, mu, Sigma, df) {
+  x_mu <- x - mu
+  p <- length(x)
+  lgamma(0.5 * (df + p)) - lgamma(0.5 * df) - 
+    0.5 * p * log(df) - 0.5 * p * log(pi) -
+    0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) -
+    0.5 * (df + p) * log1p((x_mu %*% chol2inv(chol(Sigma)) %*% x_mu)[1] / df)
 }

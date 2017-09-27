@@ -146,7 +146,6 @@ if(getRversion()>='3.3.0') importFrom(stats, sigma) else
 
 import(Rcpp)
 import(bayesplot)
-import(data.table)
 import(methods)
 import(rstantools)
 import(stats)
