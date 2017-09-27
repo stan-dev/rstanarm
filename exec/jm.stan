@@ -90,7 +90,7 @@ transformed parameters {
     theta_L = make_theta_L(len_theta_L, p, 1.0, tau, scale, zeta, rho, z_T);
     b_not_by_model = make_b(z_b, theta_L, p, l);
     if (M == 1) b = b_not_by_model;
-	else b = reorder_b(b_not_by_model, p, pmat, q1, q2, qmat, l, M);
+    else b = reorder_b(b_not_by_model, p, pmat, q1, q2, qmat, l, M);
   }
 }
 model {
@@ -109,7 +109,7 @@ model {
     #include "eta_intercept_mvmer.stan"	// adds intercept or shifts eta
     if (family[m] == 8) {  // poisson-gamma mixture
 	  #include "eta_add_noise_mvmer.stan"
-    }    
+    }
     #include "mvmer_lp.stan" // increments target with long log-liks
     if (has_aux[m] == 1) aux_mark = aux_mark + 1;
   }
@@ -121,7 +121,7 @@ model {
   else e_eta_q = rep_vector(0.0, nrow_e_Xq);
   if (assoc == 1) { 
     // declares y_eta_q{_eps,_lag,_auc}, y_eta_qwide{_eps,_lag,_auc}, 
-	//   y_q_wide{_eps,_lag,_auc}, mark{2,3}
+	  //   y_q_wide{_eps,_lag,_auc}, mark{2,3}
     #include "assoc_definitions.stan"  
     #include "assoc_prepwork.stan"
     #include "assoc_evaluate.stan"
