@@ -1751,8 +1751,9 @@ handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
     mf2_q <- mf2[data.table::data.table(cids, cpts), 
                  roll = TRUE, rollends = c(TRUE, TRUE)]
     # Construct design matrix evaluated at event and quadrature times
-    fm_RHS <- reformulate(attr(terms(mod), "term.labels"), intercept = FALSE)
+    fm_RHS <- reformulate(attr(terms(mod), "term.labels"))
     xq <- model.matrix(fm_RHS, data = mf2_q)
+    xq <- xq[, -1L, drop = FALSE] # drop intercept
     # Centre the design matrix
     xbar <- colMeans(xq)
     xtemp <- sweep(xq, 2, xbar, FUN = "-")
@@ -1771,7 +1772,7 @@ handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
 
   nlist(mod, entrytime, eventtime, status, Npat = length(eventtime), 
         Nevents = sum(status), idlist, qnodes, qwts, qpts, qids, 
-        epts, eids, xtemp, xbar, K = ncol(xtemp), norm_const, 
+        epts, eids, cpts, cids, xtemp, xbar, K = ncol(xtemp), norm_const, 
         model_frame = mf1)
 }
 
@@ -3330,7 +3331,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
          "of random effects in the joint model (used for ",
          "determining the default adapt_delta")
   
-  default_adapt_delta <- if (sum_p > 2) 0.85 else 0.80
+  default_adapt_delta <- if (sum_p > 2) 0.98 else 0.95
   default_max_treedepth <- 11L
   
   if (!is.null(user_adapt_delta))
@@ -3343,10 +3344,8 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
       if (is.null(args$control$max_treedepth))
         args$control$max_treedepth <- default_max_treedepth
   
-  if (!"iter" %in% unms) args$iter <- 1000
-  if (!"chains" %in% unms) args$chains <- 3
-  if (!"refresh" %in% unms) args$refresh <- args$iter / 25
-  if (!"save_warmup" %in% unms) args$save_warmup <- FALSE
+  if (!"save_warmup" %in% unms) 
+    args$save_warmup <- FALSE
   
   return(args)
 }  
