@@ -85,10 +85,10 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     res <- c(res, nlist(y, yX, yZt, yZ_names, flist))
   }
   if (event_parts) {
-    qnodes <- object$quadnodes
+    qnodes <- object$qnodes
     qq <- get_quadpoints(qnodes)
-    qtimes <- unlist(lapply(qq$points,  unstandardise_quadpoints,  0, etimes))
-    qwts   <- unlist(lapply(qq$weights, unstandardise_quadweights, 0, etimes))
+    qtimes <- unlist(lapply(qq$points,  unstandardise_qpts,  0, etimes))
+    qwts   <- unlist(lapply(qq$weights, unstandardise_qwts, 0, etimes))
     starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
     edat <- prepare_data_table(ndE, id_var, time_var = starttime)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
@@ -108,7 +108,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
         names(clust_flist) <- c(id_var, clust_var)
         clust_stuff_m <- get_clust_info( # update clust_info with new data
           cnms = object$cnms, flist = clust_flist, id_var = id_var, 
-          quadnodes = qnodes, grp_assoc = object$grp_assoc)
+          qnodes = qnodes, grp_assoc = object$grp_assoc)
         ymf[[clust_var]] <- factor(ymf[[clust_var]])
         ymf <- data.table::data.table(ymf, key = c(id_var, clust_var, time_var))
       } else {

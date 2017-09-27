@@ -124,7 +124,7 @@ stanmvreg <- function(object) {
   if (jm) {
     out$time_var <- object$time_var
     out$id_var <- object$id_var
-    out$quadnodes <- object$quadnodes
+    out$qnodes <- object$qnodes
     out$assoc <- object$assoc
     out$epsilon <- object$epsilon    
     out$dataLong <- object$dataLong

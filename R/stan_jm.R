@@ -655,7 +655,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                             eventtime = e_mod_stuff$eventtime, status = e_mod_stuff$status)
   
   # Incorporate intercept term if Weibull baseline hazard
-  e_has_intercept <- (basehaz$type == 1L)
+  e_has_intercept <- e_mod_stuff$has_intercept <- (basehaz$type == 1L)
 
   #--------------------------------
   # Data for association structure
@@ -1742,7 +1742,7 @@ handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
   
   # Both event times/ids and quadrature times/ids
   cpts <- c(epts, qpts)
-  cids <- c(eids, qids)
+  cids <- unlist(list(eids, qids)) # NB using c(.) demotes factors to integers
 
   # Evaluate design matrix at event and quadrature times
   if (ncol(mod$x)) {
@@ -1776,7 +1776,7 @@ handle_coxmod <- function(mc, qnodes, id_var, y_idlist, sparse,
   nlist(mod, entrytime, eventtime, status, Npat = length(eventtime), 
         Nevents = sum(status), idlist, qnodes, qwts, qpts, qids, 
         epts, eids, cpts, cids, xtemp, xbar, K = ncol(xtemp), norm_const, 
-        model_frame = mf1)
+        model_frame = mf1, tvc)
 }
 
 # Deal with the baseline hazard
@@ -3356,7 +3356,7 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
         args$control$max_treedepth <- default_max_treedepth
   
   if (!"save_warmup" %in% unms) 
-    args$save_warmup <- FALSE  
+    args$save_warmup <- TRUE  
 
   return(args)
 }  

@@ -1138,9 +1138,20 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataLong)) {
     if (!is(newdataLong, "list"))
       newdataLong <- rep(list(newdataLong), get_M(object))
+    dfcheck <- sapply(newdataLong, is.data.frame)
+    if (!all(dfcheck))
+      stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
+    nacheck <- sapply(seq_along(newdataLong), function(m)
+      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    if (!all(nacheck))
+      stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
   }
   if (!is.null(newdataEvent)) {
+    if (!is.data.frame(newdataEvent))
+      stop("'newdataEvent' must be a data frame.", call. = FALSE)
+    if (!all(!is.na(get_all_vars(formula(object, m = "Event"), newdataEvent))))
+      stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",
            "time varying covariates are not allowed in the prediction data.")
@@ -1156,7 +1167,6 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("The same subject ids should appear in each new data frame.")
     if (!length(unique(ids)) == 1L) 
       stop("The subject ids should be ordered the same in each new data frame.")  
-    newdatas <- lapply(newdatas, validate_newdata)
     return(newdatas)
   } else return(NULL)
 }

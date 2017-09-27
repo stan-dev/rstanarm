@@ -123,3 +123,94 @@ predictive_error.ppd <- function(object, y, ...) {
   ytilde <- unclass(object)
   rstantools::predictive_error(ytilde, y = y)
 }
+
+#' @rdname predictive_error.stanreg
+#' @export
+#' @param m For \code{stanmvreg} models, the submodel for which to calculate
+#'   the prediction error. Can be an integer, or for \code{\link{stan_mvmer}}
+#'   models it can be \code{"y1"}, \code{"y2"}, etc, or for \code{\link{stan_jm}}
+#'   models it can be \code{"Event"}, \code{"Long1"}, \code{"Long2"}, etc.
+#' @param t,u Only relevant for \code{\link{stan_jm}} models and when \code{m = "Event"}. 
+#'   The argument \code{t} specifies the time up to which individuals must have survived
+#'   as well as being the time up to which the longitudinal data in \code{newdata}
+#'   is available. The argument \code{u} specifies the time at which the 
+#'   prediction error should be calculated (i.e. the time horizon).
+#'   
+predictive_error.stanmvreg <-
+  function(object,
+           newdataLong = NULL,
+           newdataEvent = NULL,
+           m = 1,
+           draws = NULL,
+           re.form = NULL,
+           seed = NULL,
+           offset = NULL,
+           t, u,
+           ...) {
+    if ("y" %in% names(list(...)))
+      stop("Argument 'y' should not be specified if 'object' is a stanmvreg object.")
+    if (!is.jm(object))
+      stop("This function is currently only implemented for stan_jm models.")
+    if (missing(t)) 
+      t <- NULL
+    if (missing(u))
+      u <- NULL
+    
+    if (m == "Event") { # prediction error for event submodel
+      
+      if (!is.surv(object))
+        stop("No event submodel was found in the fitted object.")
+      if (is.null(t) || is.null(u))
+        stop("'t' and 'u' must be specified when calculating the ",
+             "prediction error for the event submodel.")
+      if (u <= t)
+        stop("'u' must be greater than 't'.")
+      
+      fm_LHS <- formula(object, m = "Event")[[2L]]
+      event_dvar <- as.character(fm_LHS[[length(fm_LHS)]])
+      event_tvar <- as.character(fm_LHS[[length(fm_LHS) - 1L]])
+      
+      sel <- which(newdataEvent[[event_tvar]] > t)
+      newdataEvent <- newdataEvent[sel, , drop = FALSE]
+      ids <- newdataEvent[[object$id_var]]
+        
+      newdataLong <- lapply(newdataLong, function(x) {
+        sel <- which(x[[object$time_var]] > t && 
+                       x[[object$id_var %in% ids]])
+        x <- x[sel, , drop = FALSE]
+      })      
+      
+      ytilde <- posterior_survfit(
+        object, 
+        newdataLong = newdataLong, 
+        newdataEvent = newdataEvent,
+        times = u,
+        last_time = t,
+        condition = TRUE,
+        extrapolate = FALSE,
+        draws = draws,
+        seed = seed)$survpred
+
+    } else { # prediction error for longitudinal submodel
+      
+      y <- if (is.null(newdataLong))
+        get_y(object, m = m) else 
+          eval(formula(object, m = m)[[2L]], newdataLong)
+      
+      fam <- family(object, m = m)$family
+      if (is.binomial(fam) && NCOL(y) == 2)
+        y <- y[, 1]      
+      
+      ytilde <- posterior_predict(
+        object,
+        m = m,
+        newdata = newdataLong,
+        draws = draws,
+        offset = offset,
+        seed = seed,
+        re.form = re.form
+      )
+      
+      return(predictive_error.ppd(ytilde, y = y))
+    }
+  }

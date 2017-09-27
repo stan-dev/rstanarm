@@ -555,20 +555,14 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
 # @param control A named list, being the user input to the control argument
 #   in the posterior_predict.stanmvreg or posterior_survfit.stanmvreg call
 # @param ok_control_args A character vector of allowed control arguments
-# @param standardise A logical, being the user input to the standardise
-#   argument in a posterior_survfit.stanmvreg call.
 # @return A named list
-get_extrapolation_control <- function(control = list(), 
-                                      ok_control_args = c("epoints", "edist", "eprop"), 
-                                      standardise = FALSE) {
-  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
-                   condition = TRUE, last_time = NULL)
+get_extrapolation_control <- 
+  function(control = list(), ok_control_args = c("epoints", "edist", "eprop")) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {
     control <- defaults[ok_control_args] 
-    if (("condition" %in% ok_control_args) && standardise) 
-      control$condition <- FALSE
   } else {  # user specified control list
     nms <- names(control)
     if (!length(nms))
@@ -584,12 +578,6 @@ get_extrapolation_control <- function(control = list(),
       control$epoints <- defaults$epoints  
     if (is.null(control$edist) && is.null(control$eprop)) 
       control$eprop <- defaults$eprop
-    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
-      control$condition <- if (!standardise) defaults$condition else FALSE
-    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
-      stop("'condition' cannot be set to TRUE if standardised survival ",
-           "probabilities are requested.")
-    }
   }
   return(control)
 }

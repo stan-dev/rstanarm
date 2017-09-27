@@ -71,25 +71,36 @@
 #'     the maximum event or censoring time (in the original data) then the 
 #'     estimated survival probabilities will be truncated at that point, since
 #'     the estimate for the baseline hazard is not available beyond that time.}
-#'     \item{\code{condition}}{a logical specifying whether the estimated 
+#' }
+#' @param condition A logical specifying whether the estimated 
 #'     subject-specific survival probabilities at time \code{t} should be 
 #'     conditioned on survival up to a fixed time point \code{u}. The default 
-#'     is to condition on the latest observation time for each individual 
-#'     (taken to be the event or censoring time if \code{newdata} is not 
-#'     specified, or the value of the \code{times} argument if \code{newdata} is 
-#'     specified but no \code{last_time} is provided in the \code{control} 
-#'     list, or otherwise the times provided in the \code{last_time} element
-#'     of the \code{control} list).}
-#'     \item{\code{last_time}}{a scalar or a character string 
-#'     specifying the last known survival time for each individual for whom
-#'     conditional predictions are being obtained. This is only relevant if
-#'     new data is provided, and conditional survival predictions are being
-#'     obtained. A scalar will use the same last time for each individual in 
-#'     \code{newdataEvent}. A character string will name a column in 
-#'     \code{newdataEvent} in which to look for the last times. If \code{last_time} 
-#'     is not provided then the default is to use the time of the latest 
-#'     longitudinal observation.} 
-#'   }
+#'     is for \code{condition} to be set to \code{TRUE}, unless standardised survival
+#'     probabilities have been requested (by specifying \code{standardise = TRUE}),
+#'     in which case \code{condition} must (and will) be set to \code{FALSE}.
+#'     When conditional survival probabilities are requested, the fixed
+#'     time point \code{u} will be either: (i) the value specified via the 
+#'     \code{last_time} argument; or if the \code{last_time} argument is 
+#'     \code{NULL} then the latest observation time for each individual 
+#'     (taken to be the value in the \code{times} argument if \code{newdataEvent} 
+#'     is specified, or the observed event or censoring time if \code{newdataEvent} 
+#'     is \code{NULL}.
+#' @param last_time A scalar, character string, or \code{NULL}. This argument 
+#'     specifies the last known survival time for each individual when
+#'     conditional predictions are being obtained. If 
+#'     \code{newdataEvent} is provided and conditional survival predictions are being
+#'     obtained, then the \code{last_time} argument can be one of the following:
+#'     (i) a scalar, this will use the same last time for each individual in 
+#'     \code{newdataEvent}; (ii) a character string, naming a column in 
+#'     \code{newdataEvent} in which to look for the last time for each individual;
+#'     (iii) \code{NULL}, in which case the default is to use the time of the latest 
+#'     longitudinal observation in \code{newdataLong}. If \code{newdataEvent} is
+#'     \code{NULL} then the \code{last_time} argument cannot be specified 
+#'     directly; instead it will be set equal to the event or censoring time for
+#'     each individual in the dataset that was used to estimate the model. 
+#'     If standardised survival probabilities are requested (i.e. 
+#'     \code{standardise = TRUE}) then conditional survival probabilities are
+#'     not allowed and therefore the \code{last_time} argument is ignored.
 #' @param ids An optional vector specifying a subset of IDs for whom the 
 #'   predictions should be obtained. The default is to predict for all individuals
 #'   who were used in estimating the model or, if \code{newdata} is specified,
@@ -98,11 +109,12 @@
 #'   uncertainty interval (sometimes called credible interval) for the predictions. 
 #'   For example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th  
 #'   percentiles will be provided.
-#' @param times A numeric vector of length 1 or a character string. Specifies the  
-#'   times at which to obtain the estimated survival probabilities. 
-#'   If \code{times} is \code{NULL}, then it will default to the last known 
-#'   event or censoring time for each individual. If \code{times} is not \code{NULL} 
-#'   then it must be a numeric vector of length 1, or if \code{newdataEvent} is  
+#' @param times A scalar, a character string, or \code{NULL}. Specifies the  
+#'   times at which the estimated survival probabilities should be calculated. 
+#'   It can be either: (i) \code{NULL}, in which case it will default to the last known 
+#'   survival time for each individual, as determined by the \code{last_time}
+#'   argument; (ii) a scalar, specifying a time to estimate the survival probability
+#'   for each of the individuals; or (iii) if \code{newdataEvent} is  
 #'   provided, it can be the name of a variable in \code{newdataEvent} that 
 #'   indicates the time at which the survival probabilities should be calculated  
 #'   for each individual. 
@@ -241,7 +253,8 @@
 #' }
 #'  
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              extrapolate = TRUE, control = list(), prob = 0.95, 
+                              extrapolate = TRUE, control = list(), 
+                              condition = NULL, last_time = NULL, prob = 0.95, 
                               ids, times = NULL, standardise = FALSE, 
                               draws = NULL, seed = NULL, ...) {
   validate_stanmvreg_object(object)
@@ -288,28 +301,27 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   
   # Last known survival time for each individual
   if (is.null(newdataLong)) { # user did not specify newdata
-    if (!is.null(control$last_time))
+    if (!is.null(last_time))
       stop("'last_time' cannot be provided when newdata is NULL, since times ",
            "are taken to be the event or censoring time for each individual.")
     last_time <- object$eventtime[as.character(id_list)]
   } else { # user specified newdata
-    user_arg <- control$last_time # can be NULL
-    if (is.null(user_arg)) { # use latest longitudinal observation
+    if (is.null(last_time)) { # use latest longitudinal observation
       max_ytimes <- do.call("cbind", lapply(ndL, function(x) 
         tapply(x[[time_var]], x[[id_var]], FUN = max)))
       last_time <- apply(max_ytimes, 1L, max)
       # re-order last-time according to id_list
       last_time <- last_time[as.character(id_list)]
-    } else if (is.character(user_arg) && (length(user_arg) == 1L)) {
-      if (!user_arg %in% colnames(ndE))
+    } else if (is.character(last_time) && (length(last_time) == 1L)) {
+      if (!last_time %in% colnames(ndE))
         stop("Cannot find 'last_time' column named in newdataEvent.")
-      last_time <- ndE[[user_arg]]      
-    } else if (is.numeric(user_arg) && (length(user_arg) == 1L)) {
-      last_time <- rep(user_arg, length(id_list)) 
-    } else if (is.numeric(user_arg) && (length(user_arg) > 1L)) {
-      last_time <- user_arg[as.character(id_list)]
+      last_time <- ndE[[last_time]]      
+    } else if (is.numeric(last_time) && (length(last_time) == 1L)) {
+      last_time <- rep(last_time, length(id_list)) 
+    } else if (is.numeric(last_time) && (length(last_time) > 1L)) {
+      last_time <- last_time[as.character(id_list)]
     } else {
-      stop("Bug found: could not reconcile last_time argument.")
+      stop("Bug found: could not reconcile 'last_time' argument.")
     }
   }   
   
@@ -360,14 +372,21 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   
   # User specified extrapolation
   if (extrapolate) {
-    ok_control_args <- c("epoints", "edist", "condition", "last_time")
-    control <- get_extrapolation_control(control, ok_control_args = ok_control_args,
-                                         standardise = standardise)
+    ok_control_args <- c("epoints", "edist")
+    control <- get_extrapolation_control(control, ok_control_args = ok_control_args)
     endtime <- if (!is.null(control$edist)) times + control$edist else maxtime
     endtime[endtime > maxtime] <- maxtime # nothing beyond end of baseline hazard 
     time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
   } else time_seq <- list(times) # no extrapolation
 
+  # Conditional survival times
+  if (is.null(condition)) {
+    condition <- !standardise
+  } else if (condition && standardise) {
+    stop("'condition' cannot be set to TRUE if standardised survival ",
+         "probabilities are requested.")
+  }
+  
   # Get stanmat parameter matrix for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
@@ -445,7 +464,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   })
   
   # If conditioning, need to obtain matrix of surv probs at last known surv time
-  if (extrapolate && control$condition) {
+  if (condition) {
     cond_dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
                         ids = id_list, etimes = last_time, long_parts = FALSE)
     # matrix of survival probs at last_time 
@@ -480,9 +499,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   rownames(out) <- NULL
   class(out) <- c("survfit.stanmvreg", "data.frame")
   structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
-            control = control, standardise = standardise, ids = id_list, 
-            draws = draws, seed = seed, offset = offset, 
-            b_new = if (!is.null(newdataEvent)) b_new else NULL)
+            control = control, standardise = standardise, condition = condition, 
+            last_time = last_time, ids = id_list, draws = draws, seed = seed, 
+            offset = offset, b_new = if (!is.null(newdataEvent)) b_new else NULL)
 }
 
 #' Plot the estimated subject-specific or marginal survival function
