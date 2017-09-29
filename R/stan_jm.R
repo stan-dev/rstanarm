@@ -688,13 +688,18 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   # For each submodel, identify the index of any grouping factors that are
   # clustered within id_var (i.e. lower level clustering)
   ok_grp_assocs <- c("sum", "mean")
-  clust_stuff <- mapply(get_clust_info, 
+  clust_basic <- mapply(get_basic_clust, 
                         fetch(y_mod_stuff, "cnms"),
                         fetch(y_mod_stuff, "flist"),
-                        MoreArgs = list(id_var = id_var, 
-                                        qnodes = qnodes,
-                                        grp_assoc = grp_assoc,
-                                        ok_grp_assocs = ok_grp_assocs),
+                        MoreArgs = list(id_var = id_var),
+                        SIMPLIFY = FALSE)
+  clust_stuff <- mapply(get_extra_clust, clust_basic,
+                        fetch(y_mod_stuff, "flist"),
+                        MoreArgs = list(
+                          id_var = id_var, 
+                          qnodes = qnodes,
+                          grp_assoc = grp_assoc,
+                          ok_grp_assocs = ok_grp_assocs),
                         SIMPLIFY = FALSE)
   
   # Check the association structure for lower level clustering
@@ -2514,40 +2519,59 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
 #   for combining information in the lower level units clustered within an
 #   individual
 # @return A named list
-get_clust_info <- function(cnms, flist, id_var, qnodes, 
-                           grp_assoc, ok_grp_assocs = c("sum", "mean")) {
-  cnms_nms <- names(cnms)
-  tally <- sapply(cnms_nms, function(x) 
-    # within each ID, count the number of levels for the grouping factor x
-    tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
-    simplify = FALSE)
-  sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
-  has_clust <- as.logical(length(sel) > 0L)
-  if (has_clust) {
-    if (length(sel) > 1L)
-      stop("There can only be one grouping factor clustered within 'id_var'.") 
-    clust_var <- cnms_nms[sel] 
-    clust_freq <- tally[[clust_var]]
-    clust_list <- unique(flist[[clust_var]])
-    clust_idlist <- rep(unique(flist[[id_var]]), clust_freq)
-    clust_mat <- if (length(levels(clust_idlist)) > 1L)
-      model.matrix(~ 0 + id, data = data.frame(id = clust_idlist)) else 
-        matrix(1, length(clust_idlist), 1L)
-    if (is.null(grp_assoc)) {
-      stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
-           "within 'id_var'.", call. = FALSE)       
-    } else if (!grp_assoc %in% ok_grp_assocs) {
-      stop("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))      
-    } else if (grp_assoc == "mean") {
-      clust_mat <- clust_mat / rep(clust_freq, clust_freq)
+get_basic_clust <- 
+  function(cnms, flist, id_var) 
+  {
+    cnms_nms <- names(cnms)
+    tally <- sapply(cnms_nms, function(x) 
+      # within each ID, count the number of levels for the grouping factor x
+      tapply(flist[[x]], flist[[id_var]], function(y) length(unique(y))),
+      simplify = FALSE)
+    sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
+    has_clust <- as.logical(length(sel) > 0L)
+    if (!has_clust) {
+      return(nlist(has_clust))
+    } else {
+      if (length(sel) > 1L)
+        stop("There can only be one grouping factor clustered within 'id_var'.")
+      clust_var <- cnms_nms[sel] 
+      return(nlist(has_clust, clust_var))
     }
-    # broadcast clust_mat for each quadnode
-    clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), qnodes + 1))))
-  } else {
-    clust_var <- clust_freq <- clust_list <- clust_idlist <- clust_mat <- NULL
   }
-  nlist(has_clust, clust_var, clust_freq, clust_list, clust_idlist, clust_mat, qnodes)
-}
+
+get_extra_clust <- 
+  function(basic_info, flist, id_var, qnodes,
+           grp_assoc, ok_grp_assocs = c("sum", "mean"))
+  {
+    has_clust <- basic_info$has_clust
+    if (!has_clust) {
+      return(basic_info)
+    } else {
+      clust_var <- basic_info$clust_var
+      clust_freq <- 
+        tapply(factor(flist[[clust_var]]), 
+               factor(flist[[id_var]]), 
+               function(y) length(unique(y)))
+      clust_list <- unique(factor(flist[[clust_var]]))
+      clust_idlist <- rep(unique(factor(flist[[id_var]])), clust_freq)
+      clust_mat <- if (length(levels(clust_idlist)) > 1L)
+        model.matrix(~ 0 + id, data = data.frame(id = clust_idlist)) else 
+          matrix(1, length(clust_idlist), 1L)
+      if (is.null(grp_assoc)) {
+        stop("'grp_assoc' cannot be NULL when there is lower level clustering ",
+             "within 'id_var'.", call. = FALSE)       
+      } else if (!grp_assoc %in% ok_grp_assocs) {
+        stop("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))      
+      } else if (grp_assoc == "mean") {
+        clust_mat <- clust_mat / rep(clust_freq, clust_freq)
+      }
+      # broadcast clust_mat for each quadnode
+      clust_mat <- as.matrix(t(Matrix::bdiag(rep(list(clust_mat), qnodes + 1))))
+      basic_info <- nlist(has_clust, clust_var)
+      extra_info <- nlist(clust_freq, clust_list, clust_idlist, clust_mat, qnodes)
+      return(c(basic_info, extra_info))
+    }
+  }
 
 # Function to calculate the number of association parameters in the model
 #

@@ -1150,7 +1150,9 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataEvent)) {
     if (!is.data.frame(newdataEvent))
       stop("'newdataEvent' must be a data frame.", call. = FALSE)
-    if (!all(!is.na(get_all_vars(formula(object, m = "Event"), newdataEvent))))
+    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
+    if (any(is.na(dat)))
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",

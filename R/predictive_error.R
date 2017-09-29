@@ -140,7 +140,7 @@ predictive_error.stanmvreg <-
   function(object,
            newdataLong = NULL,
            newdataEvent = NULL,
-           m = 1,
+           m = "Event",
            draws = NULL,
            re.form = NULL,
            seed = NULL,
@@ -216,31 +216,15 @@ predictive_error.stanmvreg <-
         newdataEvent = ndE,
         times = u,
         last_time = t,
+        last_time2 = event_tvar,
         condition = TRUE,
         extrapolate = FALSE,
         draws = draws,
         seed = seed)
-      ytilde <- ytilde[, c(id_var, "survpred"), drop = FALSE]
-      names(ytilde) <- c(id_var, "survpred_t")
-      
-      # Survival probability for individuals censored 
-      # between times t and u
-      ytilde2 <- posterior_survfit(
-        object, 
-        newdataLong = ndL, 
-        newdataEvent = ndE,
-        times = u,
-        last_time = event_tvar,
-        condition = TRUE,
-        extrapolate = FALSE,
-        draws = draws,
-        seed = seed)
-      ytilde2 <- ytilde2[, c(id_var, "survpred"), drop = FALSE]
-      names(ytilde2) <- c(id_var, "survpred_eventtime")
-      
+      ytilde <- ytilde[, c(id_var, "survpred", "survpred_eventtime"), drop = FALSE]
+
       y <- merge(y, ytilde, by = id_var)
-      y <- merge(y, ytilde2, by = id_var)
-    
+
       loss <- switch(lossfn,
                      square = function(x) {x*x},
                      absolute = function(x) {abs(x)})
@@ -248,11 +232,11 @@ predictive_error.stanmvreg <-
       y$dummy <- as.integer(y[[event_tvar]] > u)
       y$status <- as.integer(y[[event_dvar]])
       y$res <- 
-        y$dummy * loss(1 - y$survpred_t) +
-        y$status * (1 - y$dummy) * loss(0 - y$survpred_t) +
+        y$dummy * loss(1 - y$survpred) +
+        y$status * (1 - y$dummy) * loss(0 - y$survpred) +
         (1 - y$status) * (1 - y$dummy) * (
-          y$survpred_eventtime * loss(1- y$survpred_t) + 
-            (1 - y$survpred_eventtime) + loss(0- y$survpred_t)
+          y$survpred_eventtime * loss(1- y$survpred) + 
+            (1 - y$survpred_eventtime) + loss(0- y$survpred)
         )
       return(list(PE = mean(y$res), N = nrow(y)))
       

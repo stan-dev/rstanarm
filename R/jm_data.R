@@ -101,14 +101,12 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     }
     assoc_parts <- lapply(1:M, function(m) {
       ymf <- ndL[[m]]
-      clust_stuff_m <- object$clust_stuff[[m]]
-      if (clust_stuff_m$has_clust) {
-        clust_var <- clust_stuff_m$clust_var
-        clust_flist <- list(factor(ymf[[id_var]]), factor(ymf[[clust_var]]))
-        names(clust_flist) <- c(id_var, clust_var)
-        clust_stuff_m <- get_clust_info( # update clust_info with new data
-          cnms = object$cnms, flist = clust_flist, id_var = id_var, 
+      clust_stuff <- object$clust_stuff[[m]]
+      if (clust_stuff$has_clust) {
+        clust_stuff <- get_extra_clust( # update clust_info with new data
+          clust_stuff, flist = ymf, id_var = id_var, 
           qnodes = qnodes, grp_assoc = object$grp_assoc)
+        clust_var <- clust_stuff$clust_var
         ymf[[clust_var]] <- factor(ymf[[clust_var]])
         ymf <- data.table::data.table(ymf, key = c(id_var, clust_var, time_var))
       } else {
@@ -116,7 +114,7 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
       }
       make_assoc_parts(
         ymf, assoc = object$assoc, id_var = id_var, time_var = time_var, 
-        id_list = id_list, times = times, clust_stuff = clust_stuff_m,
+        id_list = id_list, times = times, clust_stuff = clust_stuff,
         use_function = pp_data, object = object, m = m)
     })
     assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)

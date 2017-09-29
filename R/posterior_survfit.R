@@ -129,6 +129,13 @@
 #'   then the \code{times} argument must be specified and it must be constant across 
 #'   individuals, that is, the survival probabilities must be calculated at the 
 #'   same time for all individuals.
+#' @param scale A scalar, specifying how much to multiply the asymptotic 
+#'   variance-covariance matrix for the random effects by, which is then
+#'   used as the "width" (ie. variance-covariance matrix) of the multivariate
+#'   Student-t proposal distribution in the Metropolis-Hastings algorithm. This
+#'   is only relevant when \code{newdataEvent} is supplied, in which case new
+#'   random effects are simulated for the individuals in the new data using 
+#'   the Metropolis-Hastings algorithm.
 #' @param draws An integer indicating the number of MCMC draws to return. If 
 #'   the \code{newdata} arguments are \code{NULL} then the default
 #'   and maximum number of draws is the size of the posterior sample. However,
@@ -255,7 +262,7 @@
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), 
                               condition = NULL, last_time = NULL, prob = 0.95, 
-                              ids, times = NULL, standardise = FALSE, 
+                              ids, times = NULL, standardise = FALSE, scale = 1.5,
                               draws = NULL, seed = NULL, ...) {
   validate_stanmvreg_object(object)
   if (!is.jm(object)) 
@@ -390,7 +397,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Get stanmat parameter matrix for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
-    draws <- if (S > 200) 200 else S 
+    draws <- if (S > 100L) 100L else S 
   if (draws > S)
     stop("'draws' should be <= posterior sample size (", S, ").")
   stanmat <- as.matrix(object$stanfit)
@@ -404,22 +411,37 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
   # Draw b pars for new ids
   if (!is.null(newdataEvent)) {
-    if (length(object$cnms) > 1L)
-      stop("posterior_survfit not yet implemented for models with more than ",
-           "one grouping factor.")
-    sum_p <- .p(object)[[id_var]] # total num. of b pars for each individual
-    # 'scale' the asymptotic vcov of posterior, such that the scaled vcov can
-    # be used as the width of the proposal distribution in the MH algorithm
-    scale <- 1.6 
     # Empty matrices used to collect draws for the new b pars
-    b_new <- lapply(1:length(id_list), function(x) matrix(NA, nrow(stanmat), sum_p))
+    p <- .p(object) # num b pars for each grouping factor
+    b1_p <- p[[id_var]] # total num. of b pars for each individual
+    use_b2 <- (length(object$cnms) > 1L) 
+    if (use_b2) { # more than one grouping factor
+      if (M > 1)
+        stop("'posterior_survfit' is not yet implemented for multivariate joint ",
+             "models with multiple grouping factors.")
+      if (length(object$cnms) > 2L)
+        stop("'posterior_survfit' is not yet implemented for models with more than ",
+             "two grouping factors.")  
+      b2_var <- grep(glob2rx(id_var), names(p), value = TRUE, invert = TRUE)
+      b2_p <- p[[b2_var]] # total num. of b pars for second grouping factor
+      Ni <- tapply(ndL[[1]][[b2_var]], ndL[[1]][[id_var]], 
+                   function(x) length(unique(x)))
+    }
+    cat("Drawing random effects for", length(id_list), "new individuals.",
+        "Monitoring progress:\n")
+    pb <- txtProgressBar(min = 0, max = length(id_list), style = 3)
+    b_new <- list()
     for (i in 1:length(id_list)) {
+      len_b <- if (use_b2) b1_p + Ni[id_list[[i]]] * b2_p else b1_p
+      mat <- matrix(NA, nrow(stanmat), len_b)
       # Design matrices for individual i only
       dat_i <- jm_data(object, ndL, ndE, etimes = last_time[[i]], ids = id_list[[i]])
+      if (use_b2)
+        dat_i$Ni <- Ni[id_list[[i]]]
       # Obtain mode and var-cov matrix of posterior distribution of new b pars
       # based on asymptotic assumptions, used as center and width of proposal
       # distribution in MH algorithm
-      inits <- rep(0, sum_p)
+      inits <- rep(0, len_b)
       val <- optim(inits, optim_fn, object = object, data = dat_i, 
                    pars = pars_means, method = "BFGS", hessian = TRUE)
       delta_i <- val$par                    # asymptotic mode of posterior
@@ -428,13 +450,16 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       # Run MH algorithm for each individual
       for (s in 1:nrow(stanmat)) {
         pars_s <- extract_pars(object, stanmat[s, , drop = FALSE])
-        b_current <- b_new[[i]][s,] <- 
+        b_current <- mat[s,] <- 
           mh_step(b_old = b_current, delta = delta_i, sigma = Sigma_i, 
                   df = 4, object = object, data = dat_i, pars = pars_s)
       }
       new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))
-      colnames(b_new[[i]]) <- paste0("b[", new_nms, "]")
-    }
+      colnames(mat) <- paste0("b[", new_nms, "]")
+      b_new[[i]] <- mat
+      setTxtProgressBar(pb, i)
+    }  
+    close(pb)
     b_new <- do.call("cbind", b_new)      # cbind new b pars for all individuals
     b_sel <- b_names(colnames(stanmat))   
     stanmat <- stanmat[, -b_sel, drop = FALSE] # drop old b pars from stanmat
@@ -444,7 +469,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
   # Matrix of surv probs at each increment of the extrapolation sequence
   # NB If no extrapolation then length(time_seq) == 1L
-  surv <- lapply(time_seq, function(t) {  
+  surv_t <- lapply(time_seq, function(t) {  
     if (!identical(length(t), length(id_list)))
       stop("Bug found: the vector of prediction times is not the same length ",
            "as the number of individuals.")
@@ -472,12 +497,12 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     if (is.vector(cond_surv) == 1L)
       cond_surv <- t(cond_surv)        # transform if only one individual
     cond_surv[, (last_time == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
-    surv <- lapply(surv, function(x) { # conditional survival probs
+    surv <- lapply(surv_t, function(x) { # conditional survival probs
       vec <- x / cond_surv
       vec[vec > 1] <- 1 # if t was before last_time then surv prob may be > 1
       vec
     })        
-  }
+  } else surv <- surv_t
   
   # Summarise posterior draws to get median and ci
   out <- do.call("rbind", lapply(
@@ -497,6 +522,38 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     out <- out[order(out[, time_var, drop = F]), , drop = F]
   }
   rownames(out) <- NULL
+  
+  # temporary hack so that predictive_error can call posterior_survfit
+  # with two separate conditioning times...
+  fn <- tryCatch(sys.call(-1)[[1]], error = function(e) NULL)
+  dots <- list(...)
+  if (!is.null(fn) && 
+      grepl("predictive_error", deparse(fn), fixed = TRUE) &&
+      "last_time2" %in% names(dots)) {
+    last_time2 <- ndE[[dots$last_time2]]
+    cond_dat2 <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
+                         ids = id_list, etimes = last_time2, long_parts = FALSE)
+    cond_surv2 <- ll_event(object, data = cond_dat2, pars = pars, survprob = TRUE)
+    if (is.vector(cond_surv2) == 1L)
+      cond_surv2 <- t(cond_surv2)        # transform if only one individual
+    cond_surv2[, (last_time2 == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
+    surv2 <- lapply(surv_t, function(x) { # conditional survival probs
+      vec <- x / cond_surv2
+      vec[vec > 1] <- 1 # if t was before last_time then surv prob may be > 1
+      vec
+    })
+    out2 <- do.call("rbind", lapply(
+      seq_along(surv2), function(x, standardise, id_list, time_seq, prob) {
+        val <- median_and_bounds(surv2[[x]], prob)
+        data.frame(IDVAR = id_list, TIMEVAR = time_seq[[x]], val$med) 
+      }, standardise, id_list, time_seq, prob))
+    out2 <- data.frame(out2)
+    colnames(out2) <- c(id_var, time_var, "survpred_eventtime")  
+    out2 <- out2[order(out2[, id_var, drop = F], out2[, time_var, drop = F]), , drop = F]
+    rownames(out2) <- NULL
+    out <- merge(out, out2)
+  }
+  
   class(out) <- c("survfit.stanmvreg", "data.frame")
   structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
             control = control, standardise = standardise, condition = condition, 
@@ -731,13 +788,22 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
 #   being the new b pars for a single submodel.
 # @param new_b A vector, or a list of vectors with the names for the new b pars.
 substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
+  M <- get_M(object)
   if (!is(new_b, "list")) { # split b into submodels
-    len_b <- sapply(object$glmod_stuff, function(m) length(m$cnms[[object$id_var]]))
-    new_b <- split(new_b, rep(1:length(len_b), len_b))
+    if (M == 1) {
+      new_b <- list(new_b)
+    } else {
+      len_b <- sapply(object$glmod_stuff, function(m) length(unlist(m$cnms)))
+      new_b <- split(new_b, rep(1:length(len_b), len_b))
+    }
   }
   if (!is(new_Z_names, "list")) { # split Z_names into submodels
-    len_b <- sapply(object$glmod_stuff, function(m) length(m$cnms[[object$id_var]]))
-    new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
+    if (M == 1) {
+      new_b <- list(new_b)
+    } else {
+      len_b <- sapply(object$glmod_stuff, function(m) length(unlist(m$cnms)))
+      new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
+    }
   }  
   mapply(function(x, y) {
     if (!identical(is.vector(x), is.vector(y)))
