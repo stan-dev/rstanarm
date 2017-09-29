@@ -23,14 +23,17 @@ set.seed(12345)
 MODELS_HOME <- file.path("src", "stan_files")
 fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) {
+  print(getwd())
   MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
                      paste0("rstanarm", fsep, "src", fsep, "stan_files"), getwd())
 }
 if (!file.exists(MODELS_HOME)) {
+  print(MODELS_HOME)
   MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
                      file.path("src", "stan_files"), getwd())
 }
 if (!file.exists(MODELS_HOME)) {
+  print(MODELS_HOME)
   MODELS_HOME <- system.file("src", "stan_files", package = "rstanarm")
 }
 
