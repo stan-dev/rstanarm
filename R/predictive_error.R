@@ -140,7 +140,7 @@ predictive_error.stanmvreg <-
   function(object,
            newdataLong = NULL,
            newdataEvent = NULL,
-           m = 1,
+           m = "Event",
            draws = NULL,
            re.form = NULL,
            seed = NULL,
