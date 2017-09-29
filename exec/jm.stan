@@ -31,7 +31,7 @@ data {
   #include "mvmer_stuff.stan"  // declares pmat, qmat, q1, q2
   int<lower=1,upper=t> t_i;    // index of grouping factor corresponding to patient-level
 
-  // declares e_prior_dist{_for_intercept,_for_aux}, Npat{_times_}quadnodes, quadweight, 
+  // declares e_prior_dist{_for_intercept,_for_aux}, Npat{_times_}qnodes, qwts, 
   //   basehaz_{type,df,X}, nrow_e_Xq, e_{K,Xq,times,d,xbar,weights,weights_rep}  
   #include "data_event.stan"
 
@@ -39,7 +39,7 @@ data {
   //   which_b_zindex, {sum_}size_which_coef, which_coef_{zindex,xindex}, 
   //   {sum_}a_K_data, {sum_,sum_size_}which_interactions, y_Xq_{eta,eps,lag,auc,data},
   //   {nnz,w,v,u}_Zq_{eta,eps,lag,auc}, nrow_y_Xq, nrow_y_Xq_auc, 
-  //   auc_quadnodes, auc_quadweights   
+  //   auc_qnodes, auc_qwts   
   #include "data_assoc.stan"
   
   // declares {e_,a_}{prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, 
@@ -90,7 +90,7 @@ transformed parameters {
     theta_L = make_theta_L(len_theta_L, p, 1.0, tau, scale, zeta, rho, z_T);
     b_not_by_model = make_b(z_b, theta_L, p, l);
     if (M == 1) b = b_not_by_model;
-	else b = reorder_b(b_not_by_model, p, pmat, q1, q2, qmat, l, M);
+    else b = reorder_b(b_not_by_model, p, pmat, q1, q2, qmat, l, M);
   }
 }
 model {
@@ -109,7 +109,7 @@ model {
     #include "eta_intercept_mvmer.stan"	// adds intercept or shifts eta
     if (family[m] == 8) {  // poisson-gamma mixture
 	  #include "eta_add_noise_mvmer.stan"
-    }    
+    }
     #include "mvmer_lp.stan" // increments target with long log-liks
     if (has_aux[m] == 1) aux_mark = aux_mark + 1;
   }
@@ -119,8 +119,6 @@ model {
   // Event submodel: linear predictor at event and quad times
   if (e_K > 0) e_eta_q = e_Xq * e_beta;
   else e_eta_q = rep_vector(0.0, nrow_e_Xq);
-  if (e_has_intercept == 1) e_eta_q = e_eta_q + e_gamma[1];
-  else e_eta_q = e_eta_q + dot_product(e_xbar, e_beta);     
   if (assoc == 1) { 
     // declares y_eta_q{_eps,_lag,_auc}, y_eta_qwide{_eps,_lag,_auc}, 
 	  //   y_q_wide{_eps,_lag,_auc}, mark{2,3}
@@ -129,7 +127,7 @@ model {
     #include "assoc_evaluate.stan"
   }
   { 
-    // declares log_basehaz, ll_{haz_q,haz_eventtime,surv_eventtime,event}
+    // declares log_basehaz, log_{haz_q,haz_etimes,surv_etimes,event}
 	  #include "event_lp.stan" // increments target with event log-lik
   }
   

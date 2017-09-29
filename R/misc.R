@@ -767,7 +767,7 @@ array2list <- function(x, nsplits, bycol = TRUE) {
 # @param x An unstandardised quadrature node
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_quadpoints <- function(x, a, b) {
+unstandardise_qpts <- function(x, a, b) {
   if (!identical(length(x), 1L) || !is.numeric(x))
     stop("'x' should be a single numeric value.", call. = FALSE)
   if (!all(is.numeric(a), is.numeric(b)))
@@ -786,7 +786,7 @@ unstandardise_quadpoints <- function(x, a, b) {
 # @param x An unstandardised quadrature weight
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_quadweights <- function(x, a, b) {
+unstandardise_qwts <- function(x, a, b) {
   if (!identical(length(x), 1L) || !is.numeric(x))
     stop("'x' should be a single numeric value.", call. = FALSE)
   if (!all(is.numeric(a), is.numeric(b)))
@@ -1138,9 +1138,22 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataLong)) {
     if (!is(newdataLong, "list"))
       newdataLong <- rep(list(newdataLong), get_M(object))
+    dfcheck <- sapply(newdataLong, is.data.frame)
+    if (!all(dfcheck))
+      stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
+    nacheck <- sapply(seq_along(newdataLong), function(m)
+      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    if (!all(nacheck))
+      stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
   }
   if (!is.null(newdataEvent)) {
+    if (!is.data.frame(newdataEvent))
+      stop("'newdataEvent' must be a data frame.", call. = FALSE)
+    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
+    if (any(is.na(dat)))
+      stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",
            "time varying covariates are not allowed in the prediction data.")
@@ -1156,7 +1169,6 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("The same subject ids should appear in each new data frame.")
     if (!length(unique(ids)) == 1L) 
       stop("The subject ids should be ordered the same in each new data frame.")  
-    newdatas <- lapply(newdatas, validate_newdata)
     return(newdatas)
   } else return(NULL)
 }
@@ -1246,4 +1258,42 @@ get_model_data <- function(object, m = NULL) {
     get_all_vars(w, x)[y, , drop = FALSE]
   }, w = forms, x = datas, y = row_nms, SIMPLIFY = FALSE)
   if (is.null(m)) return(mfs) else return(mfs[[m]])
+}
+
+# Unlist the result from an lapply call
+#
+# @param X,FUN,... Same as lapply
+uapply <- function(X, FUN, ...) {
+  unlist(lapply(X, FUN, ...))
+}
+
+# Promote a character variable to a factor
+#
+# @param x The variable to potentially promote
+promote_to_factor <- function(x) {
+  if (is.character(x)) as.factor(x) else x
+}
+
+# Draw from a multivariate normal distribution
+# @param mu A mean vector
+# @param Sigma A variance-covariance matrix
+# @param df A degrees of freedom
+rmt <- function(mu, Sigma, df) {
+  y <- c(t(chol(Sigma)) %*% rnorm(length(mu)))
+  u <- rchisq(1, df = df)
+  return(mu + y / sqrt(u / df))
+}
+
+# Evaluate the multivariate t log-density
+# @param x A realization
+# @param mu A mean vector
+# @param Sigma A variance-covariance matrix
+# @param df A degrees of freedom
+dmt <- function(x, mu, Sigma, df) {
+  x_mu <- x - mu
+  p <- length(x)
+  lgamma(0.5 * (df + p)) - lgamma(0.5 * df) - 
+    0.5 * p * log(df) - 0.5 * p * log(pi) -
+    0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) -
+    0.5 * (df + p) * log1p((x_mu %*% chol2inv(chol(Sigma)) %*% x_mu)[1] / df)
 }

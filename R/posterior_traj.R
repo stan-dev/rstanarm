@@ -193,6 +193,9 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            interpolate = TRUE, extrapolate = FALSE,
                            prob = 0.95, ids, control = list(), 
                            return_matrix = FALSE, ...) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
   validate_stanmvreg_object(object)
   if (!is.jm(object)) 
     STOP_jm_only("'posterior_traj'")
@@ -360,20 +363,21 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   # For a subset of individuals in the estimation dataset we will
 #'   # obtain subject-specific predictions for the longitudinal submodel 
 #'   # at evenly spaced times between 0 and their event or censoring time.
-#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE)
+#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,15), interpolate = TRUE)
 #'   plot(pt1)                  # credible interval for mean response
+#' \donttest{
 #'   plot(pt1, limits = "pi")   # prediction interval for raw response
 #'   plot(pt1, limits = "none") # no uncertainty interval
 #'   
 #'   # We can also extrapolate the longitudinal trajectories.
-#'   pt2 <- posterior_traj(example_jm, ids = c(7,13,16), interpolate = TRUE,
-#'                            extrapolate = TRUE)
+#'   pt2 <- posterior_traj(example_jm, ids = c(7,13,15), interpolate = TRUE,
+#'                         extrapolate = TRUE)
 #'   plot(pt2)
 #'   plot(pt2, vline = TRUE)    # add line indicating event or censoring time
 #'   plot(pt2, vline = TRUE, plot_observed = TRUE)  # overlay observed longitudinal data
 #'  
 #'   # We can change or add attributes to the plot
-#'   plot1 <- plot(pt2, ids = c(7,13,16), xlab = "Follow up time",
+#'   plot1 <- plot(pt2, ids = c(7,13,15), xlab = "Follow up time",
 #'                      vline = TRUE, plot_observed = TRUE, 
 #'                      facet_scales = "fixed", color = "blue", linetype = 2,
 #'                      ci_geom_args = list(fill = "red"))
@@ -384,8 +388,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   plot1 + 
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::labs(title = "Some plotted longitudinal trajectories")
-#' 
-#' 
+#' }
 plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 
@@ -552,20 +555,14 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
 # @param control A named list, being the user input to the control argument
 #   in the posterior_predict.stanmvreg or posterior_survfit.stanmvreg call
 # @param ok_control_args A character vector of allowed control arguments
-# @param standardise A logical, being the user input to the standardise
-#   argument in a posterior_survfit.stanmvreg call.
 # @return A named list
-get_extrapolation_control <- function(control = list(), 
-                                      ok_control_args = c("epoints", "edist", "eprop"), 
-                                      standardise = FALSE) {
-  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
-                   condition = TRUE, last_time = NULL)
+get_extrapolation_control <- 
+  function(control = list(), ok_control_args = c("epoints", "edist", "eprop")) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {
     control <- defaults[ok_control_args] 
-    if (("condition" %in% ok_control_args) && standardise) 
-      control$condition <- FALSE
   } else {  # user specified control list
     nms <- names(control)
     if (!length(nms))
@@ -581,12 +578,6 @@ get_extrapolation_control <- function(control = list(),
       control$epoints <- defaults$epoints  
     if (is.null(control$edist) && is.null(control$eprop)) 
       control$eprop <- defaults$eprop
-    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
-      control$condition <- if (!standardise) defaults$condition else FALSE
-    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
-      stop("'condition' cannot be set to TRUE if standardised survival ",
-           "probabilities are requested.")
-    }
   }
   return(control)
 }

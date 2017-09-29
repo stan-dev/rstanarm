@@ -526,11 +526,13 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
     }    
   }
   # Baseline hazard
+  norm_const <- object$coxmod_stuff$norm_const
   if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
-    log_basehaz <- as.vector(log(pars$bhcoef)) + 
+    log_basehaz <- norm_const + as.vector(log(pars$bhcoef)) + 
       linear_predictor(pars$bhcoef - 1, log(times))
   } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
-    log_basehaz <- linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
+    log_basehaz <- norm_const + 
+      linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
   } else {
     stop("Not yet implemented for basehaz = ", basehaz$type_name)
   }  
@@ -594,8 +596,12 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
   ll_event <- ll_event(object, data, pars)
   # log-lik for random effects model
   if (include_b) {
-    if (length(object$cnms) > 1L)
-      stop("Bug found: 'include_b' can only be TRUE when there is one grouping factor.")
+    if (length(object$cnms) > 2L)
+      stop("Bug found: 'include_b' cannot be TRUE when there is more than ",
+           "2 grouping factors.")
+    if (length(object$cnms) == 2L && M > 1)
+      stop("Bug found: 'include_b' cannot be TRUE when there is more than ",
+           "one longitudinal submodel and more than one grouping factor.")
     if ((data$Npat > 1) || (nrow(pars$stanmat) > 1L))
       stop("Bug found: 'include_b' can only be TRUE when 'data' is for one ",
            "individual, and stanmat is for a single draw.")
@@ -603,9 +609,26 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
     nms    <- unlist(lapply(data$assoc_parts, function(x) x$mod_eta$Z_names))
     b      <- do.call("cbind", pars$b)
     b      <- as.vector(pp_b_ord(b, nms))
-    mu     <- rep(0, length(b))
-    Sigma  <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
-    ll_b   <- mvtnorm::dmvnorm(b, mean = mu, sigma = Sigma, log = TRUE)
+    cnms <- object$cnms
+    id_var <- object$id_var
+    Sigma_id <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
+    if (length(cnms) > 1L) {
+      b2_var <- grep(glob2rx(id_var), names(cnms), 
+                     value = TRUE, invert = TRUE)
+      Sigma_b2 <- VarCorr(object, stanmat = pars$stanmat)[[b2_var]]
+      Sigma_list <- rep(list(Sigma_b2), data$Ni)
+      which_slot <- which(names(cnms) == b2_var)
+      if (which_slot == 1L) {
+        Sigma_bind <- c(Sigma_list, list(Sigma_id))
+      } else {
+        Sigma_bind <- c(list(Sigma_id), Sigma_list)
+      }
+      Sigma <- as.matrix(Matrix::bdiag(Sigma_bind))
+    } else {
+      Sigma <- Sigma_id
+    }
+    ll_b <- -0.5 * (c(determinant(Sigma, logarithm = TRUE)$modulus) + 
+             (b %*% chol2inv(chol(Sigma)) %*% b)[1] + length(b) * log(2 * pi))
   } else ll_b <- NULL
   # check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices

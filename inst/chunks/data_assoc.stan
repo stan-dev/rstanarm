@@ -4,6 +4,7 @@
 
   // data for association structure
   int<lower=0> a_K;                     // num. of association parameters
+  vector[a_K] a_xbar;                   // used for centering assoc terms
   int<lower=0,upper=1> assoc;           // 0 = no assoc structure, 1 = any assoc structure
   int<lower=0,upper=1> assoc_uses[6];   // which components required to build association terms
   int<lower=0,upper=1> has_assoc[16,M]; // which association terms does each submodel use
@@ -42,8 +43,8 @@
   // data for calculating auc in GK quadrature
   int<lower=0> nrow_y_Xq_auc[M];     // num. rows in long. predictor matrix at auc quadpoints
   int<lower=0> idx_qauc[M,2];        // indices of first and last row in eta at auc quadpoints corresponding to each submodel
-  int<lower=0> auc_quadnodes;     // num. of nodes for Gauss-Kronrod quadrature for area under marker trajectory 
-  vector[sum(nrow_y_Xq_auc)*(assoc_uses[3]>0)] auc_quadweights;
+  int<lower=0> auc_qnodes;     // num. of nodes for Gauss-Kronrod quadrature for area under marker trajectory 
+  vector[sum(nrow_y_Xq_auc)*(assoc_uses[3]>0)] auc_qwts;
   matrix[sum(nrow_y_Xq_auc)*(assoc_uses[3]>0),K] 
     y_Xq_auc; // predictor matrix (long submodel) at auc quadpoints            
   int<lower=0> nnz_Zq_auc;        // number of non-zero elements in the Zq_lag matrix (at auc quadpoints)

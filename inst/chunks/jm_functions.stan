@@ -263,15 +263,15 @@
   vector reorder_b(vector b, int[] p, int[,] pmat, int[] q1, int[] q2, 
                    int[,] qmat, int[] l, int M) {
     vector[rows(b)] b_new;
-    # in the loops below:
-    #   i = grouping factors, j = levels, m = models
-    #   there are sum(q) random coefficients (ie, values within 
-    #   vector b)
+    // in the loops below:
+    //   i = grouping factors, j = levels, m = models
+    //   there are sum(q) random coefficients (ie, values within 
+    //   vector b)
     
-    # collection is ascending in terms of:
-    #   sum q over 1:(i-1)
-    #   sum q over 1:(j-1) within i 
-    #   sum q over 1:(m-1) within j within i 
+    // collection is ascending in terms of:
+    //   sum q over 1:(i-1)
+    //   sum q over 1:(j-1) within i 
+    //   sum q over 1:(m-1) within j within i 
     for (i in 1:size(p)) { 
       int i_beg;
       int i_end;
@@ -305,10 +305,10 @@
             m_end = sum(pmat[i, 1:m]);
             b_ijm = b_ij[m_beg:m_end];
           
-            # storage is ascending in terms of:
-            #   sum q over 1:(m-1)
-            #   sum q over 1:(i-1) within m 
-            #   sum q over 1:(j-1) within i within m
+            // storage is ascending in terms of:
+            //   sum q over 1:(m-1)
+            //   sum q over 1:(i-1) within m 
+            //   sum q over 1:(j-1) within i within m
             if (m == 1) m_sum = 0;
             else m_sum = sum(q2[1:(m-1)]);
             if (i == 1) i_sum = 0;
@@ -341,7 +341,7 @@
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
   *   in vector b
-  * @param quadnodes The number of quadrature nodes
+  * @param qnodes The number of quadrature nodes
   * @param which_b Integer array specifying the indices
   *   of the random effects to use in the association structure
   * @param sum_size_which_b Integer specifying total number of 
@@ -353,16 +353,16 @@
   * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
-  *   repeated (quadnodes + 1) times (bounded by rows)
+  *   repeated (qnodes + 1) times (bounded by rows)
   */  
   matrix make_x_assoc_shared_b(
-    vector b, int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
+    vector b, int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
     int[] which_b, int sum_size_which_b, int[] size_which_b, int t_i, int M) {
     int prior_shift;    // num. ranefs prior to subject-specific ranefs
     int start_store;
     int end_store;	
     matrix[Npat,sum_size_which_b] temp;
-    matrix[(Npat*(quadnodes+1)),sum_size_which_b] x_assoc_shared_b;						  
+    matrix[(Npat*(qnodes+1)),sum_size_which_b] x_assoc_shared_b;						  
     if (t_i == 1) prior_shift = 0;
     else prior_shift = sum(l[1:(t_i-1)]);
     for (i in 1:Npat) {
@@ -391,7 +391,7 @@
         }      
       }
     }
-    for (i in 1:(quadnodes+1)) {
+    for (i in 1:(qnodes+1)) {
       start_store = (i - 1) * Npat + 1;
       end_store   = i * Npat;		
       x_assoc_shared_b[start_store:end_store,] = temp;
@@ -415,7 +415,7 @@
   *   submodel then the matrix will have one column.
   * @param Npat Integer specifying number of individuals represented 
   *   in vector b
-  * @param quadnodes The number of quadrature nodes
+  * @param qnodes The number of quadrature nodes
   * @param which_b Integer array specifying the indices
   *   of the random effects to use in the association structure
   * @param sum_size_which_b Integer specifying total number of 
@@ -427,29 +427,29 @@
   * @param M An integer specifying the number of longitudinal submodels
   * @return A matrix with the desired random effects represented
   *   in columns, and the individuals on the rows; the matrix is
-  *   repeated (quadnodes + 1) times (bounded by rows)
+  *   repeated (qnodes + 1) times (bounded by rows)
   */  
   matrix make_x_assoc_shared_coef(
     vector b, vector beta, int[] KM, int M, int t_i,
-    int[] l, int[] p, int[,] pmat, int Npat, int quadnodes,
+    int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
     int sum_size_which_coef, int[] size_which_coef,
     int[] which_coef_zindex, int[] which_coef_xindex,
     int[] has_intercept, int[] has_intercept_nob,
     int[] has_intercept_lob, int[] has_intercept_upb,
     real[] gamma_nob, real[] gamma_lob, real[] gamma_upb) {
       
-    # in the loops below:
-    #   t_i should only really ever equal 1 (since shared_coef association
-    #       structure is not allowed if there is more than one clustering level)
-    #   i = levels (ie, individuals)
-    #   j = indices of the shared random effecs 
-    #   m = models
+    // in the loops below:
+    //   t_i should only really ever equal 1 (since shared_coef association
+    //       structure is not allowed if there is more than one clustering level)
+    //   i = levels (ie, individuals)
+    //   j = indices of the shared random effecs 
+    //   m = models
     
     int t_shift;        // skip over group-level coefficients for earlier grouping factors
     int start_store;
     int end_store;	
     matrix[Npat,sum_size_which_coef] temp;
-    matrix[(Npat*(quadnodes+1)),sum_size_which_coef] x_assoc_shared_coef;						  
+    matrix[(Npat*(qnodes+1)),sum_size_which_coef] x_assoc_shared_coef;						  
     if (t_i == 1) t_shift = 0;
     else t_shift = sum(l[1:(t_i-1)]);
     for (i in 1:Npat) {
@@ -458,7 +458,7 @@
       mark = 1;
       i_shift = (i - 1) * p[t_i];
       for (m in 1:M) {
-        if (size_which_coef[m] > 0) {  # if model has shared coefficients
+        if (size_which_coef[m] > 0) {  // if model has shared coefficients
           int j_shift;  // skip over elements of which_coef_zindex vector that are associated with earlier submodels
           int m_shift;  // skip over individual i's group-level coefficients for earlier submodels
           int shift_nb;
@@ -487,7 +487,7 @@
             beta_collect = shift_beta + beta_collect_m;
             coef = b[b_collect];  // start with group-level coefficient
             if ((has_intercept[m] == 1) && (beta_collect == 1)) {
-              # collect intercept
+              // collect intercept
               if (has_intercept_nob[m] == 1)
                 coef = coef + gamma_nob[sum(has_intercept_nob[1:m])];
               else if (has_intercept_lob[m] == 1)
@@ -496,21 +496,22 @@
                 coef = coef + gamma_upb[sum(has_intercept_upb[1:m])];
             } 
             else if (has_intercept[m] == 1) {
-              # collect fixed effect whilst recognising intercept term 
-              # isn't in beta and correcting for that in the indexing
+              // collect fixed effect whilst recognising intercept term 
+              // isn't in beta and correcting for that in the indexing
               coef = coef + beta[(beta_collect - 1)];
             }
             else
               coef = coef + beta[beta_collect];
               
             temp[i, mark] = coef;
-            mark = mark + 1;  # move to next shared coefficient for individual i
+            mark = mark + 1;  // move to next shared coefficient for individual i
           }
         }      
       }
     }
-    # repeat the temp matrix quadnode times (ie, rbind)
-    for (i in 1:(quadnodes+1)) {
+
+    // repeat the temp matrix qnodes times (ie, rbind)
+    for (i in 1:(qnodes+1)) {
       start_store = (i - 1) * Npat + 1;
       end_store   = i * Npat;		
       x_assoc_shared_coef[start_store:end_store, ] = temp;

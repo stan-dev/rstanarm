@@ -283,6 +283,7 @@ is_binomial_ppc <- function(object, ...) {
       stop("Argument 'm' must be provided for stanmvreg objects.")
     dots[["m"]] <- NULL # don't return m as part of bayesplot arguments
   }
+  else m <- NULL
   
   if ("group" %in% argnames) {
     groupvar <- dots[["group"]] %ORifNULL% 
