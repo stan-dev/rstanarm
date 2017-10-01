@@ -1267,6 +1267,14 @@ uapply <- function(X, FUN, ...) {
   unlist(lapply(X, FUN, ...))
 }
 
+# A refactored version of mapply with SIMPLIFY = FALSE
+#
+# @param FUN,... Same as mapply
+# @param arg Passed to MoreArgs
+xapply <- function(..., FUN, arg) {
+  mapply(FUN, ..., MoreArgs = arg, SIMPLIFY = FALSE)
+}
+
 # Promote a character variable to a factor
 #
 # @param x The variable to potentially promote
@@ -1297,3 +1305,64 @@ dmt <- function(x, mu, Sigma, df) {
     0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) -
     0.5 * (df + p) * log1p((x_mu %*% chol2inv(chol(Sigma)) %*% x_mu)[1] / df)
 }
+
+#---- Helpers from brms package
+
+stop2 <- function(...) {
+  stop(..., call. = FALSE)
+}
+
+warning2 <- function(...) {
+  warning(..., call. = FALSE)
+}
+
+SW <- function(expr) {
+  # just a short form for suppressWarnings
+  base::suppressWarnings(expr)
+}
+
+isNULL <- function(x) {
+  # check if an object is NULL
+  is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
+}
+
+rmNULL <- function(x, recursive = TRUE) {
+  # recursively removes NULL entries from an object
+  x <- Filter(Negate(isNULL), x)
+  if (recursive) {
+    x <- lapply(x, function(x) if (is.list(x)) rmNULL(x) else x)
+  }
+  x
+}
+
+first_not_null <- function(...) {
+  # find the first argument that is not NULL
+  dots <- list(...)
+  out <- NULL
+  i <- 1L
+  while(isNULL(out) && i <= length(dots)) {
+    if (!isNULL(dots[[i]])) {
+      out <- dots[[i]]
+    }
+    i <- i + 1L
+  }
+  out
+}
+
+isFALSE <- function(x) {
+  identical(FALSE, x)
+}
+
+isNA <- function(x) {
+  identical(NA, x)
+}
+
+is_equal <- function(x, y, ...) {
+  isTRUE(all.equal(x, y, ...))
+}
+
+is_like_factor <- function(x) {
+  # check if x behaves like a factor in design matrices
+  is.factor(x) || is.character(x) || is.logical(x)
+}
+

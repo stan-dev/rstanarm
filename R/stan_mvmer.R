@@ -106,80 +106,63 @@
 #' @importFrom lme4 lmerControl glmerControl
 #' 
 stan_mvmer <- function(formula, data, family = gaussian,
-                       na.action = getOption("na.action", "na.omit"), weights, 
-                       offset, contrasts, ...,				          
+                       weights, ...,				          
                        prior = normal(), prior_intercept = normal(), 
                        prior_aux = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                       adapt_delta = NULL) {
   
   #-----------------------------
   # Pre-processing of arguments
   #-----------------------------  
   
+  calling_env <- parent.frame()
+  algorithm <- match.arg(algorithm)
+  
   # Check for arguments not yet implemented
   if (!missing(weights)) 
     stop("Weights are not yet implemented for stan_mvmer")
-  if (!missing(offset)) 
-    stop("Offsets are not yet implemented for stan_mvmer")
-  if (QR)               
-    stop("QR decomposition not yet implemented for stan_mvmer")
-  if (sparse)
-    stop("'sparse' option is not yet implemented for stan_mvmer")
   if (missing(weights)) weights <- NULL
-  if (missing(offset))  offset  <- NULL
   
-  algorithm <- match.arg(algorithm)
+  # Formula
+  yF <- formula
+  if (is(yF, "formula"))
+    yF <- list(yF)
+  check_yF <- sapply(yF, FUN = is, "formula")
+  if (!all(check_yF))
+    stop("'formula' should be a formula or list of formulas.")
+  M <- length(yF) # num of submodels
   
-  # Validate arguments
-  formula <- validate_arg(formula, "formula")
-  M <- length(formula)
-  data <- validate_arg(data, "data.frame", null_ok = TRUE, 
-                       validate_length = M, broadcast = TRUE)
-  data <- lapply(data, as.data.frame)
-
-  # Check family and link
-  supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "neg_binomial_2")
-  if (!is(family, "list")) {
-    family <- rep(list(family), M) 
-  } else if (!length(family) == M) {
-    stop("family is a list of the incorrect length.")
-  }
-  family <- lapply(family, validate_family)
-  fam <- lapply(family, function(x) 
-    which(pmatch(supported_families, x$family, nomatch = 0L) == 1L))
-  if (any(lapply(fam, length) == 0L)) 
-    stop("'family' must be one of ", paste(supported_families, collapse = ", "))
-  supported_links <- lapply(fam, function(x) supported_glm_links(supported_families[x]))
-  link <- mapply(function(x, i) which(supported_links[[i]] == x$link),
-                 family, seq_along(family), SIMPLIFY = TRUE)
-  if (any(lapply(link, length) == 0L)) 
-    stop("'link' must be one of ", paste(supported_links, collapse = ", "))
+  # Data
+  yD <- data
+  if (inherits(yD, "data.frame"))
+    yD <- list(yD)
+  if (length(yD) == 1L)
+    yD <- rep(yD, M)
+  if (!length(yD) == M)
+    stop("'data' is a list of the incorrect length.")
+  check_yD <- sapply(yF, FUN = inherits, "data.frame")
+  if (!all(check_yD))
+    stop("'data' should be a data frame or list of data frames.")
+  yD <- lapply(yD, FUN = as.data.frame)
+  yD <- xapply(yF, yD, FUN = get_all_vars) # drop additional vars
   
-  # Matched call
-  calling_env <- parent.frame()
-  call <- match.call(expand.dots = TRUE)    
-  mc   <- match.call(expand.dots = FALSE)
-  mc$prior <- mc$prior_intercept <- mc$prior_covariance <-
-    mc$prior_PD <- mc$algorithm <- mc$adapt_delta <-
-    mc$... <- mc$QR <- mc$weights <- NULL 
-  
-  # Create call for longitudinal submodel  
-  y_mc <- mc
-  
-  # Create call for each longitudinal submodel separately
-  m_mc <- lapply(1:M, function(m, old_call, env) {
-    new_call <- old_call
-    fm     <- eval(old_call$formula, env)
-    data   <- eval(old_call$data, env)
-    family <- eval(old_call$family, env)
-    new_call$formula <- if (is(fm, 'list')) fm[[m]] else fm
-    new_call$data    <- if (is(data, 'list') && !inherits(data, 'data.frame')) data[[m]] else data
-    new_call$family  <- if (is(family, 'list')) family[[m]] else family
-    new_call
-  }, old_call = y_mc, env = calling_env)
+  # Family
+  supported_families <- 
+    c("binomial", "gaussian", "Gamma", "inverse.gaussian",
+      "poisson", "neg_binomial_2")
+  if (is(family, "family") || is.function(family) || is.character(family))
+    family <- list(family)
+  if (length(family) == 1L)
+    family <- rep(family, M)
+  if (!length(family) == M)
+    stop("'family' is a list of the incorrect length.")
+  check_family <- sapply(family, FUN = is, "family")
+  if (!all(check_family))
+    stop("'family' should be a family object or list of family objects.")
+  family <- lapply(family, FUN = validate_family)
+  family <- lapply(family, FUN = validate_famlink, supported_families)
   
   # Is prior* already a list?
   prior           <- maybe_broadcast_priorarg(prior, M)
@@ -191,11 +174,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   #--------------------------------
   
   # Fit separate longitudinal submodels
-  y_mod_stuff <- mapply(handle_glmod, m_mc, family, 
-                        MoreArgs = list(supported_families = supported_families, 
-                                        supported_links = supported_links, 
-                                        sparse = sparse, env = calling_env), 
-                        SIMPLIFY = FALSE)
+  ymod <- xapply(yF, yD, family, FUN = handle_ymod)
   
   # Construct single cnms list for all longitudinal submodels
   cnms <- get_common_cnms(fetch(y_mod_stuff, "cnms"), stub = "y")
@@ -526,6 +505,7 @@ stan_mvmer <- function(formula, data, family = gaussian,
   # Undo ordering of matrices if bernoulli
   y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
   
+  call <- match.call(expand.dots = TRUE)
   fit <- nlist(stanfit, family, formula, offset, weights, 
                M, cnms, n_yobs = 
                  unlist(list_nms(fetch(y_mod_stuff, "N"), M, stub = "y")), 
@@ -538,3 +518,182 @@ stan_mvmer <- function(formula, data, family = gaussian,
   return(out)
 }
 
+
+#------- internal
+
+# Validate the user specified family and link function
+#
+# @param family A family object
+# @param supported_families A character vector of supported family names
+validate_famlink <- function(family, supported_families) {
+  fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
+  if (!length(fam)) 
+    stop("'family' must be one of ", paste(supported_families, collapse = ", "))
+  supported_links <- supported_glm_links(supported_families[fam])
+  link <- which(supported_links == family$link)
+  if (!length(link)) 
+    stop("'link' must be one of ", paste(supported_links, collapse = ", "))
+  return(family)
+}
+
+
+handle_ymod <- function(formula, data, family) {
+
+  X <- make_X(formula, data, family)
+  Zi <- make_Zi()
+  Zg <- make_Zg()
+  int_type <- check_intercept(family)
+  
+  # Response vector
+  y <- as.vector(lme4::getME(mod, "y"))
+  y <- validate_glm_outcome_support(y, family)
+  if (is.binomial(family$family) && NCOL(y) == 2L)
+    STOP_binomial()
+  
+  # Design matrix
+  xtemp <- xbar <- has_intercept <- NULL # useless assignments to pass R CMD check
+  x <- as.matrix(lme4::getME(mod, "X"))
+  x_stuff <- center_x(x, sparse)
+  for (i in names(x_stuff)) # xtemp, xbar, has_intercept
+    assign(i, x_stuff[[i]])
+  if (has_intercept) {
+    check_int <- check_intercept(family$family, family$link)
+    has_intercept_unbound <- check_int$unbound
+    has_intercept_lobound <- check_int$lobound
+    has_intercept_upbound <- check_int$upbound
+  } else {
+    has_intercept_unbound <- 0L
+    has_intercept_lobound <- 0L
+    has_intercept_upbound <- 0L
+  } 
+  offset <- lme4::getME(mod, "offset")
+  
+  # Random effect terms
+  group_call <- mc
+  group_call[[1]] <- quote(lme4::glFormula)
+  group <- eval(group_call, envir = env)$reTrms      	
+  
+  Ztlist <- group$Ztlist
+  cnms   <- group$cnms
+  flist  <- group$flist
+  
+  # Reorder y, X, Z if bernoulli (zeros first)
+  if (is.binomial(family$family) && all(y %in% 0:1)) {      
+    ord    <- order(y)
+    y      <- y     [ord]
+    xtemp  <- xtemp [ord, , drop = FALSE]  
+    Ztlist <- lapply(Ztlist, function(x) x[, ord, drop = FALSE]) 
+    flist  <- flist[ord, , drop = FALSE] 
+    N01    <- sapply(0:1,    function(x) sum(y == x))
+  } else {
+    ord    <- NULL
+    N01    <- rep(0L, 2)  # dud entry if not bernoulli
+  }
+  
+  # Dimensions
+  N       <- NROW(xtemp)
+  is_real <- check_response_real(family$family)
+  real_N  <- if (is_real) N else 0L
+  int_N   <- if (!is_real) N else 0L
+  K       <- ncol(xtemp)	
+  has_aux <- check_for_aux(family$family)
+  
+  # Family indicators
+  fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
+  famname <- supported_families[fam]
+  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
+  is_nb <- is.nb(famname)
+  is_gaussian <- is.gaussian(famname)
+  is_gamma <- is.gamma(famname)
+  is_ig <- is.ig(famname)
+  is_continuous <- is_gaussian || is_gamma || is_ig
+  is_lmer <- is.lmer(family)
+  if (is.binomial(famname) && !is_bernoulli)
+    STOP_binomial()
+  
+  # Require intercept for certain family and link combinations
+  if (!has_intercept) {
+    link <- which(supported_links == family$link)
+    linkname <- supported_links[link]
+    needs_intercept <- !is_gaussian && linkname == "identity" ||
+      is_gamma && linkname == "inverse" ||
+      is.binomial(famname) && linkname == "log"
+    if (needs_intercept)
+      stop("To use the specified combination of family and link (", famname, 
+           ", ", linkname, ") the model must have an intercept.")
+  }    
+  
+  # Return list
+  nlist(mod, is_real, y, x, xtemp, xbar, N01, ord, famname,
+        offset, Ztlist, cnms, flist, has_intercept, has_intercept_unbound,
+        has_intercept_lobound, has_intercept_upbound, has_aux, N, real_N, int_N, K,
+        is_bernoulli, is_nb, is_gaussian, is_gamma, is_ig, is_continuous, is_lmer)
+}
+
+# Return the type of intercept required
+#
+# @param family A family object
+check_intercept <- function(family) {
+  fam <- family$family
+  link <- family$link
+  if (fam == "binomial" && link == "log") { # binomial, log
+    type <- "up_bound" 
+  } else if (fam == "binomial") { # binomial, !log
+    type <- "no_bound"
+  } else if (link == "log") { # gamma/inv-gaus/poisson/nb, log
+    type <- "no_bound"  
+  } else if (family == "gaussian") { # gaussian, !log
+    type <- "no_bound"  
+  } else { # gamma/inv-gaus/poisson/nb, !log 
+    type <- "lo_bound"  
+  }
+  type 
+}
+
+get_lhs <- function(formula) {
+  if (length(formula) == 3L) {
+    lhs <- all.vars(myformula[[2]])
+  }
+  else {
+    NULL
+  }
+}
+
+parse_fmlong <- function(formula) {
+  response <- get_lhs(formula)
+  if (is.null(response))
+    stop2("An outcome variable must be specified.")
+  fe <- 
+  
+  nlist(response, response_formula, fe, re)
+}
+
+make_X <- function(formula, data = NULL, drop_intercept = TRUE, 
+                   centre = TRUE) {
+  terms <- terms(formula)
+  X <- stats::model.matrix(terms, data)
+  has_intercept <- grepl("(Intercept", colnames(X)[1L], fixed = TRUE)
+  if (has_intercept && drop_intercept)
+    X <- X[, -1L, drop = FALSE]
+  cols <- ncol(X)
+  if (cols) {
+    if (centre) {
+      Xbar <- colMeans(X)
+      X <- sweep(X, 2, Xbar, FUN = "-")
+    } else {
+      Xbar <- rep(0, cols)
+    }
+    # drop any column of x with < 2 unique values (empty interaction levels)
+    sel <- (2 > apply(X, 2L, function(x) length(unique(x))))
+    if (any(sel)) {
+      warning("Dropped empty interaction levels: ",
+              paste(colnames(xtemp)[sel], collapse = ", "))
+      xtemp <- xtemp[, !sel, drop = FALSE]
+      xbar <- xbar[!sel]
+    }    
+  } else {
+    X <- matrix(0,0,0)
+    Xbar <- rep(0,0)
+  }
+  nlist(X, Xbar, has_intercept)
+}
