@@ -1049,7 +1049,7 @@ check_submodelopt3 <- function(x) {
 STOP_arg_required_for_stanmvreg <- function(arg) {
   nm <- deparse(substitute(arg))
   msg <- paste0("Argument '", nm, "' required for stanmvreg objects.")
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Error message when a function is not yet implemented for stanmvreg objects
@@ -1059,7 +1059,7 @@ STOP_if_stanmvreg <- function(what) {
   msg <- "not yet implemented for stanmvreg objects."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Error message when a function is not yet implemented for stan_mvmer models
@@ -1069,7 +1069,7 @@ STOP_stan_mvmer <- function(what) {
   msg <- "is not yet implemented for models fit using stan_mvmer."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Consistent error message to use when something that is only available for 
@@ -1080,23 +1080,22 @@ STOP_jm_only <- function(what) {
   msg <- "can only be used with stan_jm models."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Consistent error message when binomial models with greater than
 # one trial are not allowed
 #
 STOP_binomial <- function() {
-  stop("Binomial models with number of trials greater than one ",
-       "are not allowed (i.e. only bernoulli models are allowed).", 
-       call. = FALSE)
+  stop2("Binomial models with number of trials greater than one ",
+        "are not allowed (i.e. only bernoulli models are allowed).")
 }
 
 # Error message when a required variable is missing from the data frame
 #
 # @param var The name of the variable that could not be found
 STOP_no_var <- function(var) {
-  stop("Variable '", var, "' cannot be found in the data frame.", call. = FALSE)
+  stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
 # Check if individuals in ids argument were also used in model estimation
@@ -1271,8 +1270,8 @@ uapply <- function(X, FUN, ...) {
 #
 # @param FUN,... Same as mapply
 # @param arg Passed to MoreArgs
-xapply <- function(..., FUN, arg) {
-  mapply(FUN, ..., MoreArgs = arg, SIMPLIFY = FALSE)
+xapply <- function(..., FUN, args) {
+  mapply(FUN, ..., MoreArgs = args, SIMPLIFY = FALSE)
 }
 
 # Promote a character variable to a factor

@@ -1655,22 +1655,18 @@ check_intercept <- function(family, link) {
 
 # Function to check if the response vector is real or integer
 #
-# @param family A GLM family
+# @param family A family object
 # @return A logical specify whether the response is real (TRUE) or integer (FALSE)
 check_response_real <- function(family) {
-  if (family == "binomial" || 
-      family == "poisson" ||
-      family == "neg_binomial_2") {
-    FALSE
-  } else TRUE
+  !(family$family %in% c("binomial", "poisson", "neg_binomial_2"))
 }
 
 # Function to check if the submodel should include a auxiliary term
 #
-# @param family A GLM family
+# @param family A family object
 # @return A logical specify whether the submodel includes a auxiliary term
 check_for_aux <- function(family) {
-  if (family == "binomial" || family == "poisson") FALSE else TRUE
+  !(family$family %in% c("binomial", "poisson"))
 }
 
 
@@ -3387,49 +3383,65 @@ set_sampling_args_for_jm <- function(object, user_dots = list(),
 
 #--------------- Miscellaneous and helper functions
 
-# Check argument input type is ok, and return as a list
-validate_arg <- function(arg, type, null_ok = FALSE, 
-                         validate_length = NULL, broadcast = TRUE) {
-  if (is.null(arg)) { # input type NULL, check if ok and return list or error
-    if (null_ok) arg <- list(arg) else STOP_arg(arg, type, null_ok = null_ok)
-  } else if (any(sapply(type, function(x) is(arg, x)))) { # input type ok, return as list
+# Check input argument is a valid type, and return as a list
+#
+# @param arg The user input to the argument
+# @param type A character vector of valid classes
+# @param validate_length The required length of the returned list
+# @return A list
+validate_arg <- function(arg, type, validate_length = NULL) {
+  nm <- deparse(substitute(arg))
+  
+  if (inherits(arg, type)) { 
+    # input type is valid, so return as a list
     arg <- list(arg)
-  } else if (is(arg, "list")) { # input list, check each element
-    check <- sapply(arg, function(x) if (null_ok) 
-      (is.null(x) || any(sapply(type, function(y) is(x, y)))) else 
-        (any(sapply(type, function(y) is(x, y)))))
-    if (!all(check)) STOP_arg(deparse(substitute(arg)), type, null_ok = null_ok)
-  } else {
-    STOP_arg(deparse(substitute(arg)), type, null_ok = null_ok)
+  } 
+  else if (is(arg, "list")) { 
+    # input type is a list, check each element
+    check <- sapply(arg, function(x) inherits(x, type))
+    if (!check) 
+      STOP_arg(nm, type)
+  } 
+  else {
+    # input type is not valid
+    STOP_arg(nm, type)
   }
+  
   if (!is.null(validate_length)) {
-    if (length(arg) == 1L && validate_length > 1) {
-      arg <- if (broadcast) rep(arg, times = validate_length) else arg
-    } else if (!length(arg) == validate_length) {
-      stop(paste(deparse(substitute(arg)), "is a list of the incorrect length."),
-           call. = FALSE)
-    }
+    # return list of the specified length
+    if (length(arg) == 1L)
+      arg <- rep(arg, times = validate_length)
+    if (!length(arg) == validate_length)
+      stop2(nm, " is a list of the incorrect length.")
   }
+  
+  if ("data.frame" %in% type)
+    arg <- lapply(arg, as.data.frame)
+  if ("family" %in% type)
+    arg <- lapply(arg, validate_family)
   arg
 }
 
 # Check if the user input a list of priors for the longitudinal
 # submodel, and if not, then return the appropriate list
 #
-# @param priorarg The user input to the priorLong* argument in the stan_jm call
+# @param prior The user input to the prior argument in the stan_mvmer 
+#   or stan_jm call
 # @param M An integer specifying the number of longitudinal submodels
-maybe_broadcast_priorarg <- function(priorarg, M) {
-  if (is.null(priorarg)) {
+broadcast_prior <- function(prior, M) {
+  if (is.null(prior)) {
     return(rep(list(NULL), M))
-  } else if ("dist" %in% names(priorarg)) {
-    return(rep(list(priorarg), M))
-  } else if (is.list(priorarg) && (length(priorarg) == M)) {
-    return(priorarg)
-  } else {
+  } 
+  else if ("dist" %in% names(prior)) {
+    return(rep(list(prior), M))
+  } 
+  else if (is.list(prior) && length(prior) == M) {
+    return(prior)
+  } 
+  else {
     nm <- deparse(substitute(priorarg))
-    stop(nm, "appears to provide prior information separately for the different ",
-         "longitudinal submodels, but the list is of the incorrect length.", 
-         call. = FALSE)
+    stop2(nm, " appears to provide prior information separately for the ",
+          "different submodels, but the list is of the incorrect length.")
   }
 }
 
@@ -3448,9 +3460,9 @@ get_idx_array <- function(x) {
 }
 
 # Error message when the argument contains an object of the incorrect type
-STOP_arg <- function(arg_name, type, null_ok = FALSE) {
-  stop(paste0("'", arg_name, "' should be ", ifelse(null_ok, "NULL, ", ""), "a ", 
-              type, " object or a list of ", type, " objects."), call. = FALSE) 
+STOP_arg <- function(arg_name, type) {
+  stop(paste0("'", arg_name, "' should be a ", paste0(type, collapse = " or "), 
+              " object or a list of those objects."), call. = FALSE) 
 }
 
 # Return error msg if both elements of the object are TRUE
@@ -3462,26 +3474,34 @@ STOP_combination_not_allowed <- function(object, x, y) {
 
 # Return a list (or vector if unlist = TRUE) which
 # contains the embedded elements in list x named y 
-fetch <- function(x, y, unlist = FALSE) {
+fetch <- function(x, y, z = NULL, unlist = FALSE) {
   ret <- lapply(x, `[[`, y)
+  if (!is.null(z))
+    ret <- lapply(ret, `[[`, z)
   if (unlist) unlist(ret) else ret
 }
 # Wrapper for using fetch with unlist = TRUE
-fetch_ <- function(x, y) {
-  fetch(x, y, unlist = TRUE)
+fetch_ <- function(x, y, z = NULL) {
+  fetch(x, y, z, unlist = TRUE)
 }
 # Wrapper for using fetch with unlist = TRUE and 
 # returning array. Also converts logical to integer.
-fetch_array <- function(x, y) {
-  val <- fetch(x, y, unlist = TRUE)
+fetch_array <- function(x, y, z = NULL) {
+  val <- fetch(x, y, z, unlist = TRUE)
   if (is.logical(val)) val <- as.integer(val)
   as.array(val)
 }
 
 # Drop intercept from a vector of named coefficients
 drop_intercept <- function(x) { 
-  sel <- which("(Intercept)" %in% names(x))
-  if (length(sel)) x[-sel] else x
+  sel <- check_for_intercept(x)
+  if (length(sel) && is.matrix(x)) {
+    x[, -sel, drop = FALSE]
+  } else if (length(sel)) {
+    x[-sel]
+  } else {
+    x
+  }
 }
 
 # Return intercept from a vector of named coefficients
@@ -3499,9 +3519,20 @@ array_else_double <- function(x)
   if (!length(x)) double(0) else as.array(unlist(x))
 
 # Return a matrix of uniform random variables or an empty matrix
-matrix_of_uniforms <- function(nrow = 0, ncol = 0)
-  if (nrow == 0 || ncol == 0) matrix(0,0,0) else matrix(runif(nrow * ncol), nrow, ncol)
+matrix_of_uniforms <- function(nrow = 0, ncol = 0) {
+  if (nrow == 0 || ncol == 0) {
+    matrix(0,0,0) 
+  } else {
+    matrix(runif(nrow * ncol), nrow, ncol)
+  } 
+}
 
 
+
+check_for_intercept <- function(x, logical = FALSE) {
+  nms <- if (is.matrix(x)) colnames(x) else names(x)
+  sel <- which("(Intercept)" %in% nms)
+  if (logical) as.logical(length(sel)) else sel
+}
 
 
