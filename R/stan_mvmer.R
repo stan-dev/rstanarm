@@ -108,15 +108,21 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
                        prior_aux = cauchy(0, 5),
                        prior_covariance = decov(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL) {
+                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
   #-----------------------------
   # Pre-processing of arguments
   #-----------------------------  
   
   algorithm <- match.arg(algorithm)
-  if (!missing(weights)) 
+  if (missing(weights))
+    weights <- NULL
+  if (!is.null(weights)) 
     stop("Weights are not yet implemented for stan_mvmer")
+  if (QR)               
+    stop("QR decomposition not yet implemented for stan_jm")
+  if (sparse)
+    stop("'sparse' option is not yet implemented for stan_jm")
   
   # Formula
   yF <- validate_arg(formula, "formula"); M <- length(yF)
@@ -150,11 +156,13 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   #--------------------------------
   
   # Fit separate longitudinal submodels
-  y_mod <- xapply(yF, yD, family, FUN = handle_y_mod, args = list(id_var = id_var))
+  y_mod <- xapply(yF, yD, family, FUN = handle_y_mod)
   
   # Construct single cnms list for all longitudinal submodels
-  cnms <- get_common_cnms(fetch(y_mod_stuff, "cnms"), stub = "y")
+  cnms <- get_common_cnms(fetch(y_mod, "Z", "group_cnms"), stub = "y")
   cnms_nms <- names(cnms)
+  if (length(cnms_nms) > 2L)
+    stop("A maximum of 2 grouping factors are allowed.")
   
   #---------------------
   # Prior distributions
@@ -180,203 +188,199 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     args = list(nvars = 1, default_scale = 5, link = NULL, ok_dists = ok_aux_dists))  
   
   # Minimum scaling of priors
-  y_prior_stuff           <- Map(autoscale_prior, y_prior_stuff, y_mod_stuff, QR = QR, use_x = TRUE)
-  y_prior_intercept_stuff <- Map(autoscale_prior, y_prior_intercept_stuff, y_mod_stuff, QR = QR, use_x = FALSE)
-  y_prior_aux_stuff       <- Map(autoscale_prior, y_prior_aux_stuff, y_mod_stuff, QR = QR, use_x = FALSE)
+  y_prior_stuff <- Map(autoscale_prior, y_prior_stuff, y_mod, QR = QR, use_x = TRUE)
+  y_prior_intercept_stuff <- Map(autoscale_prior, y_prior_intercept_stuff, y_mod, QR = QR, use_x = FALSE)
+  y_prior_aux_stuff <- Map(autoscale_prior, y_prior_aux_stuff, y_mod, QR = QR, use_x = FALSE)
   
   #-------------------------
   # Data for export to Stan
   #-------------------------
   
   standata <- list(  
-    # dimensions
+    M            = as.integer(M),
     dense_X      = !sparse,
     special_case = as.integer(FALSE),
     has_offset   = as.integer(FALSE),
     has_weights  = as.integer(!all(lapply(weights, is.null))),
-    M            = as.integer(M),
-    
-    # data for longitudinal submodel(s)
     family = fetch_array(y_mod, "family", "mvmer_family"),
     link   = fetch_array(y_mod, "family", "mvmer_link"),
-    intercept_type = fetch_array(y_mod, "intercept_type", "number"),
-    has_aux = fetch_array(y_mod_stuff, "has_aux"),
     weights = as.array(numeric(0)), # not yet implemented
 
     # priors
-    prior_dist               = fetch_array(y_prior_stuff, "prior_dist"), 
-    prior_dist_for_intercept = fetch_array(y_prior_intercept_stuff, "prior_dist"),  
-    prior_dist_for_aux       = fetch_array(y_prior_aux_stuff, "prior_dist"),  
-    
-    # hyperparameters for priors
-    prior_mean                = fetch_array(y_prior_stuff,           "prior_mean"), 
-    prior_scale               = fetch_array(y_prior_stuff,           "prior_scale"), 
-    prior_df                  = fetch_array(y_prior_stuff,           "prior_df"), 
-    prior_mean_for_intercept  = fetch_array(y_prior_intercept_stuff, "prior_mean"),
-    prior_scale_for_intercept = fetch_array(y_prior_intercept_stuff, "prior_scale"), 
-    prior_df_for_intercept    = fetch_array(y_prior_intercept_stuff, "prior_df"),  
-    prior_mean_for_aux        = fetch_array(y_prior_aux_stuff,       "prior_mean"),
-    prior_scale_for_aux       = fetch_array(y_prior_aux_stuff,       "prior_scale"),
-    prior_df_for_aux          = fetch_array(y_prior_aux_stuff,       "prior_df"),
-    global_prior_scale        = fetch_array(y_prior_stuff, "global_prior_scale"),
-    global_prior_df           = fetch_array(y_prior_stuff, "global_prior_df"), 
+    y_prior_dist               = fetch_array(y_prior_stuff, "prior_dist", pad_length = 3), 
+    y_prior_dist_for_intercept = fetch_array(y_prior_intercept_stuff, "prior_dist"),  
+    y_prior_dist_for_aux       = fetch_array(y_prior_aux_stuff, "prior_dist"),  
     prior_PD = as.integer(prior_PD)
   )
+  
+  prior_mean <- fetch(y_prior_stuff, "prior_mean")
+  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else as.array(double(0))
+  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else as.array(double(0))
+  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else as.array(double(0))
 
-  # Prior flag (same prior for all long submodel)
-  standata$prior_special_case <- as.integer(
-    (length(unique(standata$prior_dist)) == 1L) && all(standata$prior_dist %in% c(0,1,2)))
+  prior_scale <- fetch(y_prior_stuff, "prior_scale")
+  standata$y_prior_scale1 <- if (M > 0) as.array(prior_scale[[1]]) else as.array(double(0))
+  standata$y_prior_scale2 <- if (M > 1) as.array(prior_scale[[2]]) else as.array(double(0))
+  standata$y_prior_scale3 <- if (M > 2) as.array(prior_scale[[3]]) else as.array(double(0))
+  
+  prior_df <- fetch(y_prior_stuff, "prior_df")
+  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else as.array(double(0))
+  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else as.array(double(0))
+  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else as.array(double(0))
+  
+  standata$y_global_prior_scale <- 
+    fetch_array(y_prior_stuff, "global_prior_scale")
+  standata$y_global_prior_df <- 
+    fetch_array(y_prior_stuff, "global_prior_df")
+  standata$y_prior_mean_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_mean")
+  standata$y_prior_scale_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_scale")
+  standata$y_prior_df_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_df")
+  standata$y_prior_mean_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_mean")
+  standata$y_prior_scale_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_scale")
+  standata$y_prior_df_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_df")
   
   # Dimensions
-  standata$KM     <- fetch_array(y_mod_stuff, "K")
-  standata$NM     <- fetch_array(y_mod_stuff, "N") 
-  standata$NM_real<- fetch_array(y_mod_stuff, "real_N") 
-  standata$NM_int <- fetch_array(y_mod_stuff, "int_N") 
-  standata$K      <- as.integer(sum(standata$KM))
-  standata$N      <- as.integer(sum(standata$NM))  
-  standata$N_real <- as.integer(sum(fetch_(y_mod_stuff, "real_N"))) 
-  standata$N_int  <- as.integer(sum(fetch_(y_mod_stuff, "int_N")))
-  standata$N01    <- as.array(t(sapply(fetch(y_mod_stuff, "N01"), cbind))) 
-  
-  standata$yNobs <- fetch(y_mod, "X", "N")
+  standata$has_aux <- 
+    fetch_array(y_mod, "has_aux", pad_length = 3)
+  standata$resp_type <- 
+    fetch_array(y_mod, "Y", "is_real", pad_length = 3)
+  standata$intercept_type <- 
+    fetch_array(y_mod, "intercept_type", "number", pad_length = 3)
+  standata$yNobs <- 
+    fetch_array(y_mod, "X", "N", pad_length = 3)
+  standata$yNeta <- 
+    fetch_array(y_mod, "X", "N", pad_length = 3) # same as Nobs for stan_mvmer
+  standata$yK <- 
+    fetch_array(y_mod, "X", "K", pad_length = 3)
+
+  # Response vectors
+  Y_integer <- fetch(y_mod, "Y", "integer")
+  standata$yInt1 <- if (M > 0) Y_integer[[1]] else as.array(integer(0))  
+  standata$yInt2 <- if (M > 1) Y_integer[[2]] else as.array(integer(0))  
+  standata$yInt3 <- if (M > 2) Y_integer[[3]] else as.array(integer(0)) 
   
   Y_real <- fetch(y_mod, "Y", "real")
-  standata$yReal1 <- if (M > 0) Y_real[[1]] 
-  standata$yReal2 <- if (M > 1) Y_real[[2]] 
-  standata$yReal3 <- if (M > 2) Y_real[[3]] 
-
-  Y_integer <- fetch(y_mod, "Y", "integer")
-  standata$yInt1 <- if (M > 0) Y_integer[[1]] 
-  standata$yInt2 <- if (M > 1) Y_integer[[2]] 
-  standata$yInt3 <- if (M > 2) Y_integer[[3]] 
+  standata$yReal1 <- if (M > 0) Y_real[[1]] else as.array(double(0)) 
+  standata$yReal2 <- if (M > 1) Y_real[[2]] else as.array(double(0)) 
+  standata$yReal3 <- if (M > 2) Y_real[[3]] else as.array(double(0)) 
   
-  Y_integer <- fetch(y_mod, "Y")
-  standata$yReal1 <- if (M > 0) Y_real[[1]] 
-  standata$yReal2 <- if (M > 1) Y_real[[2]] 
-  standata$yReal3 <- if (M > 2) Y_real[[3]] 
-  
+  # Population level design matrices
   X <- fetch(y_mod, "X", "X")
   standata$yX1 <- if (M > 0) X[[1]] else matrix(0,0,0)
   standata$yX2 <- if (M > 1) X[[2]] else matrix(0,0,0)
   standata$yX3 <- if (M > 2) X[[3]] else matrix(0,0,0)
   
   Xbar <- fetch(y_mod, "X", "Xbar")
-  standata$yXbar1 <- if (M > 0) Xbar[[1]] else double(0)
-  standata$yXbar2 <- if (M > 1) Xbar[[2]] else double(0)
-  standata$yXbar3 <- if (M > 2) Xbar[[3]] else double(0)
+  standata$yXbar1 <- if (M > 0) as.array(Xbar[[1]]) else as.array(double(0))
+  standata$yXbar2 <- if (M > 1) as.array(Xbar[[2]]) else as.array(double(0))
+  standata$yXbar3 <- if (M > 2) as.array(Xbar[[3]]) else as.array(double(0))
   
+  # Data for group specific terms - group factor 1
+  b1_varname <- cnms_nms[[1L]] # name of group factor 1
+  b1_nvars <- fetch_(y_mod, "Z", "nvars", b1_varname, 
+                     null_to_zero = TRUE, pad_length = 3)
+  b1_ngrps <- fetch_(y_mod, "Z", "ngrps", b1_varname)
+  if (!n_distinct(b1_ngrps) == 1L)
+    stop("The number of groups for the grouping factor '", 
+         b1_varname, "' should be the same in all submodels.")
   
-  # Combined response vector
-  y_y <- fetch(y_mod_stuff, "y")
-  y_is_real <- fetch_(y_mod_stuff, "is_real")
-  standata$y_real <- as.array(as.numeric(unlist(y_y[y_is_real])))
-  standata$y_int  <- as.array(as.integer(unlist(y_y[!y_is_real])))
+  standata$bN1 <- b1_ngrps[[1L]]
+  standata$bK1 <- sum(b1_nvars)
+  standata$bK1_len <- as.array(b1_nvars)
+  standata$bK1_idx <- get_idx_array(b1_nvars)
   
-  # Indexing for combined beta vector, response vector, design matrix, weights, etc
-  standata$idx      <- get_idx_array(standata$NM)
-  standata$idx_real <- get_idx_array(standata$NM_real)
-  standata$idx_int  <- get_idx_array(standata$NM_int)
-  standata$idx_K    <- get_idx_array(standata$KM)
+  Z1 <- fetch(y_mod, "Z", "Z", b1_varname)
+  Z1 <- lapply(Z1, transpose)
+  standata$y1_Z1 <- if (M > 0) convert_null(Z1[[1L]], "matrix") else matrix(0,0,0)
+  standata$y2_Z1 <- if (M > 1) convert_null(Z1[[2L]], "matrix") else matrix(0,0,0)
+  standata$y3_Z1 <- if (M > 2) convert_null(Z1[[3L]], "matrix") else matrix(0,0,0)
   
-  # Sum dimensions
-  for (i in c("has_aux", paste0("has_intercept", c("", "_nob", "_lob", "_upb")))) 
-    standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
+  Z1_id <- fetch(y_mod, "Z", "group_list", b1_varname)
+  Z1_id <- lapply(Z1_id, groups)
+  standata$y1_Z1_id <- if (M > 0) convert_null(Z1_id[[1L]], "arraydouble") else as.array(double(0))
+  standata$y2_Z1_id <- if (M > 1) convert_null(Z1_id[[2L]], "arraydouble") else as.array(double(0))
+  standata$y3_Z1_id <- if (M > 2) convert_null(Z1_id[[3L]], "arraydouble") else as.array(double(0))
+
+  standata$b1_prior_scale <- as.array(rep(5, standata$bK1))
+                                
+  # Data for group specific terms - group factor 2
+  if (length(cnms) > 1L) {
+    # model has a second grouping factor
+    b2_varname <- cnms_nms[[2L]] # name of group factor 2
+    b2_nvars <- fetch_(y_mod, "Z", "nvars", b2_varname, 
+                       null_to_zero = TRUE, pad_length = 3)
+    b2_ngrps <- fetch_(y_mod, "Z", "ngrps", b2_varname)
+    if (!n_distinct(b2_ngrps) == 1L)
+      stop("The number of groups for the grouping factor '", 
+           b2_varname, "' should be the same in all submodels.")
+    standata$bN2 <- b2_ngrps[[1L]]
+    standata$bK2 <- sum(b2_nvars)
+    standata$bK2_len <- as.array(b2_nvars)
+    standata$bK2_idx <- get_idx_array(b2_nvars)
+    
+    Z2 <- fetch(y_mod, "Z", "Z", b2_varname)
+    Z2 <- lapply(Z2, transpose)
+    standata$y1_Z2 <- if (M > 0) convert_null(Z2[[1L]], "matrix") else matrix(0,0,0)
+    standata$y2_Z2 <- if (M > 1) convert_null(Z2[[2L]], "matrix") else matrix(0,0,0)
+    standata$y3_Z2 <- if (M > 2) convert_null(Z2[[3L]], "matrix") else matrix(0,0,0)
+    
+    Z2_id <- fetch(y_mod, "Z", "group_list", b2_varname)
+    Z2_id <- lapply(Z2_id, groups)
+    standata$y1_Z2_id <- if (M > 0) convert_null(Z2[[1L]], "arraydouble") else as.array(double(0))
+    standata$y2_Z2_id <- if (M > 1) convert_null(Z2[[2L]], "arraydouble") else as.array(double(0))
+    standata$y3_Z2_id <- if (M > 2) convert_null(Z2[[3L]], "arraydouble") else as.array(double(0))
   
-  # Data for group-specific terms
-  group <- lapply(y_mod_stuff, function(x) {
-    pad_reTrms(Ztlist = x$Ztlist, 
-               cnms   = x$cnms, 
-               flist  = x$flist)})
-  Z              <- fetch(group, "Z")
-  y_cnms         <- fetch(group, "cnms")
-  y_flist_padded <- fetch(group, "flist")
-  t <- length(cnms_nms)   # num of unique grouping factors
-  pmat <- matrix(0, t, M) # num of group-specific terms
-  lmat <- matrix(0, t, M) # num of factor levels
-  l <- c()
-  for (i in 1:t) {
-    for (j in 1:M) {
-      pmat[i,j] <- length(y_cnms[[j]][[cnms_nms[i]]])
-      lmat[i,j] <- nlevels(y_flist_padded[[j]][[cnms_nms[i]]])
-    }
-    l[i] <- max(lmat[i,])
-    if (!all(lmat[i,] %in% c(0, l[i])))
-      stop("The number of factor levels for each of the grouping factors ",
-           "must be the same in each of the longitudinal submodels.")     
+    standata$b2_prior_scale <- as.array(rep(5, standata$bK2))
+  } else {
+    # no second grouping factor
+    standata$bN2 <- 0L
+    standata$bK2 <- 0L
+    standata$bK2_len <- as.array(rep(0,3L))
+    standata$bK2_idx <- get_idx_array(rep(0,3L))
+    standata$y1_Z2 <- matrix(0,0,0)
+    standata$y2_Z2 <- matrix(0,0,0)
+    standata$y3_Z2 <- matrix(0,0,0)
+    standata$y1_Z2_id <- as.array(double(0))
+    standata$y2_Z2_id <- as.array(double(0))
+    standata$y3_Z2_id <- as.array(double(0))
+    standata$b2_prior_scale <- as.array(double(0))
   }
-  qmat <- l * pmat
-  p  <- rowSums(pmat) # num group-specific terms for each grouping factor 
-  q1 <- rowSums(qmat) # num group-specific coefs for each grouping factor
-  q2 <- colSums(qmat) # num group-specific coefs for each submodel
-  q  <- sum(qmat)     # total num group-specific coefs
-  b_nms <- unlist(Map(make_b_nms, group, m = seq(M), stub = "y"))
-  g_nms <- unlist(
-    lapply(1:M, FUN = function(m) {
-      lapply(1:length(group[[m]]$cnms), FUN = function(i) {
-        paste(paste0("y", m), group[[m]]$cnms[[i]], names(group[[m]]$cnms)[i], sep = "|")
-      })
-    })
-  )
-  standata$t    <- as.integer(t)
-  standata$pmat <- as.array(pmat)
-  standata$p    <- as.array(p)
-  standata$l    <- as.array(l)
-  standata$qmat <- as.array(qmat)
-  standata$q1   <- as.array(q1)
-  standata$q2   <- as.array(q2)
-  standata$q    <- as.integer(q)
-  standata$len_theta_L <- sum(choose(p, 2), p)
-  Zmerge <- Matrix::bdiag(Z)
-  parts <- rstan::extract_sparse_parts(Zmerge)
-  standata$num_non_zero <- as.integer(length(parts$w))
-  standata$w <- parts$w
-  standata$v <- parts$v
-  standata$u <- as.array(parts$u)
-  
-  # Hyperparameters for decov prior
-  if (prior_covariance$dist == "decov") {
-    decov_args <- prior_covariance
-    standata$shape <- as.array(maybe_broadcast(decov_args$shape, t))
-    standata$scale <- as.array(maybe_broadcast(decov_args$scale, t))
-    standata$len_concentration <- sum(p[p > 1])
-    standata$concentration <- 
-      as.array(maybe_broadcast(decov_args$concentration, sum(p[p > 1])))
-    standata$len_regularization <- sum(p > 1)
-    standata$regularization <- 
-      as.array(maybe_broadcast(decov_args$regularization, sum(p > 1))) 
-  }
-  
 
   #---------------
   # Prior summary
   #---------------
   
-  prior_info <- summarize_jm_prior(
-    user_priorLong = y_user_prior_stuff,
-    user_priorLong_intercept = y_user_prior_intercept_stuff,
-    user_priorLong_aux = y_user_prior_aux_stuff,
-    user_prior_covariance = prior_covariance,
-    y_has_intercept = sapply(y_mod_stuff, `[[`, "has_intercept"),
-    y_has_predictors = sapply(y_mod_stuff, function(x) x$K > 0),
-    adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
-    adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
-    adjusted_priorLong_aux_scale = fetch(y_prior_aux_stuff, "prior_scale"),
-    family = family, stub_for_names = "y"
-  ) 
-  names(prior_info) <- gsub("Long", "", names(prior_info), fixed = TRUE)
-  
+
   #-----------
   # Fit model
   #-----------
   
   # call stan() to draw from posterior distribution
   stanfit <- stanmodels$mvmer
-  pars <- c(if (standata$sum_has_intercept) "alpha", 
-            if (standata$K) "beta",
-            if (standata$q) "b",
-            if (standata$sum_has_aux) "aux",
-            if (standata$len_theta_L) "theta_L",
-            "mean_PPD")
+  pars <- c(if (M > 0 && standata$intercept_type[1]) "yAlpha1", 
+            if (M > 1 && standata$intercept_type[2]) "yAlpha2", 
+            if (M > 2 && standata$intercept_type[3]) "yAlpha3", 
+            if (M > 0 && standata$yK[1]) "yBeta1",
+            if (M > 1 && standata$yK[2]) "yBeta2",
+            if (M > 2 && standata$yK[3]) "yBeta3",
+            if (M > 0 && standata$has_aux[1]) "yAux1",
+            if (M > 1 && standata$has_aux[2]) "yAux2",
+            if (M > 2 && standata$has_aux[3]) "yAux3",
+            if (standata$bK1 == 1) "bVec1",
+            if (standata$bK1  > 1) "bMat1",
+            if (standata$bK1  > 0) "bSd1",
+            if (standata$bK1  > 1) "bCorr1",
+            if (standata$bK2 == 1) "bVec2",
+            if (standata$bK2  > 1) "bMat2",
+            if (standata$bK2  > 0) "bSd2",
+            if (standata$bK2  > 1) "bCorr2")
+            #"mean_PPD")
   
   cat(paste0(if (M == 1L) "Uni" else "Multi", "variate model specified\n"))
   if (algorithm == "sampling") {
@@ -399,20 +403,24 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   check_stanfit(stanfit)
   
   # Names for pars
-  y_nms <- unlist(lapply(1:M, function(m) 
-    if (ncol(y_mod_stuff[[m]]$xtemp)) paste0("y", m, "|", colnames(y_mod_stuff[[m]]$xtemp))))
-  y_int_nms <- unlist(lapply(1:M, function(m) 
-    if (y_mod_stuff[[m]]$has_intercept) paste0("y", m, "|(Intercept)")))
-  y_aux_nms <- character()  
-  for (m in 1:M) {
-    if (is.gaussian(y_mod_stuff[[m]]$famname))   y_aux_nms <- c(y_aux_nms, paste0("y", m,"|sigma"))
-    else if (is.gamma(y_mod_stuff[[m]]$famname)) y_aux_nms <- c(y_aux_nms, paste0("y", m,"|shape"))
-    else if (is.ig(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("y", m,"|lambda"))
-    else if (is.nb(y_mod_stuff[[m]]$famname))    y_aux_nms <- c(y_aux_nms, paste0("y", m,"|reciprocal_dispersion"))
-  }  
+  y_intercept_nms <- uapply(1:M, function(m) {
+    if (y_mod[[m]]$intercept_type$number > 0) 
+      paste0("y", m, "|(Intercept)") else NULL
+  })
+  y_beta_nms <- uapply(1:M, function(m) {
+    if (!is.null(colnames(X[[m]]))) 
+      paste0("y", m, "|", colnames(X[[m]])) else NULL
+  })
+  y_aux_nms <- uapply(1:M, function(m) {
+    famname_m <- family[[m]]$family
+    if (is.gaussian(famname_m)) paste0("y", m,"|sigma") else
+      if (is.gamma(famname_m)) paste0("y", m,"|shape") else
+        if (is.ig(famname_m)) paste0("y", m,"|lambda") else
+          if (is.nb(famname_m)) paste0("y", m,"|reciprocal_dispersion") else NULL
+  })        
   
   # Sigma values in stanmat, and Sigma names
-  if (standata$len_theta_L) {
+  if (FALSE && standata$len_theta_L) {
     thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
                       permuted = FALSE)
     nc <- sapply(cnms, FUN = length)
@@ -441,31 +449,25 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     Sigma_nms <- unlist(Sigma_nms)
   }
   
-  new_names <- c(y_int_nms,
-                 y_nms,
-                 if (length(group)) c(paste0("b[", b_nms, "]")),
+  new_names <- c(y_intercept_nms,
+                 y_beta_nms,
                  y_aux_nms,
-                 if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
+                 #if (length(group)) c(paste0("b[", b_nms, "]")),
+                 #if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
                  paste0("y", 1:M, "|mean_PPD"), 
                  "log-posterior")
-  stanfit@sim$fnames_oi <- new_names
+  #stanfit@sim$fnames_oi <- new_names
   
-  n_grps <- standata$l - 1
-  names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
-  names(p) <- cnms_nms       # p is num. of variables within each grouping factor
-  
-  # Undo ordering of matrices if bernoulli
-  y_mod_stuff <- lapply(y_mod_stuff, unorder_bernoulli)
-  
+  #n_grps <- standata$l - 1
+  #names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
+  #names(p) <- cnms_nms       # p is num. of variables within each grouping factor
+
   call <- match.call(expand.dots = TRUE)
-  fit <- nlist(stanfit, family, formula, offset, weights, 
-               M, cnms, n_yobs = 
-                 unlist(list_nms(fetch(y_mod_stuff, "N"), M, stub = "y")), 
-               n_grps, y_mod_stuff, y = 
-                 list_nms(fetch(y_mod_stuff, "y"), M, stub = "y"),
-               data, call, na.action, algorithm, glmod = fetch(y_mod_stuff, "mod"),
-               standata = NULL, terms = NULL, prior.info = prior_info,
-               stan_function = "stan_mvmer")
+  fit <- nlist(stanfit, formula, family, weights, M, cnms, ngrps,
+               n_yobs = unlist(list_nms(fetch(y_mod, "X", "N"), M, stub = "y")), 
+               data, algorithm, glmod = y_mod, 
+               standata = NULL, terms = NULL, prior.info = NULL,
+               stan_function = "stan_mvmer", call = match.call(expand.dots = TRUE))
   out <- stanmvreg(fit)
   return(out)
 }
@@ -473,12 +475,11 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
 
 #------- internal
 
-# Validate the user specified family and link function and append the 
-# family object with family and link information to be used by Stan
+# Check the family and link function are supported by stan_{mvmer,jm}
 #
 # @param family A family object
 # @param supported_families A character vector of supported family names
-# @return A family object appended with the numeric family and link used by Stan
+# @return A family object
 validate_famlink <- function(family, supported_families) {
   famname <- family$family
   fam <- which(supported_families == famname)
@@ -491,6 +492,13 @@ validate_famlink <- function(family, supported_families) {
   return(family)
 }
 
+# Append a family object with numeric family and link information used by Stan
+#
+# @param family The existing family object
+# @param is_bernoulli Logical specifying whether the family should be bernoulli
+# @return A family object with two appended elements: 
+#   mvmer_family: an integer telling Stan which family
+#   mvmer_link: an integer telling Stan which link function (varies by family!)
 append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
   famname <- family$family
   family$mvmer_family <- switch(
@@ -509,16 +517,24 @@ append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
   return(family)
 }
 
-
-
-handle_y_mod <- function(formula, data, family, id_var) {
+# Construct a list with information on the glmer submodel
+#
+# @param formula The model formula for the glmer submodel
+# @param data The data for the glmer submodel
+# @param family The family object for the glmer submodel
+# @return A named list with the following elements:
+#   Y: named list with the reponse vector and related info
+#   X: named list with the fe design matrix and related info
+#   Z: named list with the re design matrices and related info
+#   family: the modified family object for the glmer submodel
+#   intercept_type: named list with info about the type of 
+#     intercept required for the glmer submodel
+#   has_aux: logical specifying whether the glmer submodel 
+#     requires an auxiliary parameter
+handle_y_mod <- function(formula, data, family) {
   mf <- stats::model.frame(lme4::subbars(formula), data)
   if (!length(formula) == 3L)
     stop2("An outcome variable must be specified.")
-  if (!id_var %in% colnames(data))
-    stop2("'id_var' must appear in the data frame.")
-  if (!id_var %in% colnames(mf))
-    stop2("'id_var' must appear in the longitudinal submodel formula.")
   
   # Response vector, design matrices
   Y <- make_Y(formula, mf, family) 
@@ -527,7 +543,7 @@ handle_y_mod <- function(formula, data, family, id_var) {
   
   # Binomial with >1 trials not allowed by stan_{mvmver,jm}
   is_binomial <- is.binomial(family$family)
-  is_bernoulli <- is_binomial && (NCOL(Y) == 1L) && all(Y %in% 0:1)
+  is_bernoulli <- is_binomial && NCOL(Y) == 1L && all(Y %in% 0:1)
   if (is_binomial && !is_bernoulli)
     STOP_binomial()
   
@@ -536,93 +552,40 @@ handle_y_mod <- function(formula, data, family, id_var) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
-  nlist(Y, X, Z, family, intercept_type, is_real, has_aux)
+  nlist(Y, X, Z, family, intercept_type, has_aux)
 }
-
-# Return the type of intercept required
-#
-# @param X The model matrix
-# @param family A family object
-# @return A character string specifying the type of bounds 
-#   required for the intercept term
-check_intercept_type <- function(X, family) {
-  fam <- family$family
-  link <- family$link
-  if (!X$has_intercept) { # no intercept
-    type <- "none"
-    needs_intercept <- 
-      (!is.gaussian(fam) && link == "identity") ||
-      (is.gamma(fam) && link == "inverse") ||
-      (is.binomial(fam) && link == "log")
-    if (needs_intercept)
-      stop2("To use the specified combination of family and link (", fam, 
-            ", ", link, ") the model must have an intercept.")
-  } else if (fam == "binomial" && link == "log") { # binomial, log
-    type <- "upper_bound" 
-  } else if (fam == "binomial") { # binomial, !log
-    type <- "no_bound"
-  } else if (link == "log") { # gamma/inv-gaus/poisson/nb, log
-    type <- "no_bound"  
-  } else if (family == "gaussian") { # gaussian, !log
-    type <- "no_bound"  
-  } else { # gamma/inv-gaus/poisson/nb, !log 
-    type <- "lower_bound"  
-  }
-  number <- switch(type, none = 0L, no_bound = 1L,
-                   lower_bound = 2L, upper_bound = 3L)
-  nlist(type, number) 
-}
-
-# Reformulate an expression as the LHS of a model formula
-# 
-# @param x The expression to reformulate
-# @return A model formula
-reformulate_lhs <- function(x) {
-  formula(substitute(LHS ~ 1, list(LHS = x)))
-}
-
-# Reformulate an expression as the RHS of a model formula
-# 
-# @param x The expression to reformulate
-# @param subbars A logical specifying whether to call lme4::subbars
-#   on the result
-# @return A model formula
-reformulate_rhs <- function(x, subbars = FALSE) {
-  fm <- formula(substitute(~ RHS, list(RHS = x)))
-  if (subbars) lme4::subbars(fm) else fm
-}
-
 
 # Return the response vector
 #
 # @param formula The model formula
-# @param data A data frame or model frame
+# @param model_frame The model frame
 # @param family A family object
-# @return A named list with:
-make_Y <- function(formula, data, family) {
-  Y <- as.vector(model.response(mf))
+# @return A named list with: the outcome vector (Y), the outcome vector
+#   if real or if integer, and a flag of whether the outcome type is real
+make_Y <- function(formula, model_frame, family) {
+  Y <- as.vector(model.response(model_frame))
   Y <- validate_glm_outcome_support(Y, family)
   is_real <- check_response_real(family)
   real <- if (is_real) Y else numeric(0) 
-  int <- if (!is_real) Y else integer(0) 
-  nlist(Y, real, int, is_real)
+  integer <- if (!is_real) Y else integer(0) 
+  nlist(Y, real, integer, is_real)
 }
 
 # Return the design matrix, possibly centred
 #
 # @param formula The model formula
-# @param data A data frame or model frame
+# @param model_frame The model frame
 # @param drop_intercept Logical specifying whether to drop the intercept
 #   from the returned model matrix
 # @param centre Logical specifying whether to centre the predictors
 # @return A named list with: the model matrix (possibly centred), the
 #   predictor means, and a logical specifying whether the model formula 
 #   included an intercept
-make_X <- function(formula, data = NULL, drop_intercept = TRUE, 
+make_X <- function(formula, model_frame = NULL, drop_intercept = TRUE, 
                    centre = TRUE) {
   fixed_form <- lme4::nobars(formula)
   fixed_terms <- terms(fixed_form)
-  X <- model.matrix(fixed_terms, data)
+  X <- model.matrix(fixed_terms, model_frame)
   has_intercept <- check_for_intercept(X, logical = TRUE)
   if (drop_intercept)
     X <- drop_intercept(X)
@@ -648,41 +611,101 @@ make_X <- function(formula, data = NULL, drop_intercept = TRUE,
 # Return the design matrices for the group level terms
 #
 # @param formula The model formula
-# @param A data frame or model frame
+# @param model_frame The model frame
 # @return A named list with: a list of design matrices for each of the 
 #   grouping factors, a character vector with the name of each of the
 #   grouping factors, and a list of list of vector giving the group IDs
 #   corresponding to each row of the design matrices
-make_Z <- function(formula, data = NULL) {
-  re_parts <- lme4::findbars(formula)
-  re_forms <- lapply(re_parts, reformulate_rhs, subbars = TRUE)
-  if (length(re_forms) > 2L)
+make_Z <- function(formula, model_frame = NULL) {
+  bars <- lme4::findbars(formula)
+  if (length(bars) > 2L)
     stop2("A maximum of 2 grouping factors are allowed.")
-  group_mat  <- lapply(re_forms, model.matrix, data)
-  group_vars <- sapply(re_forms, get_group_factor)
-  group_col  <- xapply(group_mat, group_vars,
-    FUN = function(x, y) which(y %in% colnames(x)))
-  group_list <- xapply(group_mat, group_col,
-    FUN = function(x, y) x[, y])
-  Z <- xapply(group_mat, group_col, 
-    FUN = function(x, y) x[, -y, drop = FALSE])
+  re_parts <- lapply(bars, split_at_bars)
+  re_forms <- fetch(re_parts, "re_form")
+  Z <- lapply(re_forms, model.matrix, model_frame)
   group_cnms <- lapply(Z, colnames)
-  names(group_cnms) <- group_vars
-  nlist(Z, group_list, group_vars, group_cnms)
+  group_vars <- fetch(re_parts, "group_var")
+  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  nvars <- sapply(group_cnms, length)
+  ngrps <- sapply(group_list, n_distinct)
+  names(Z) <- names(group_cnms) <- names(group_list) <- 
+    names(nvars) <- names(ngrps) <- group_vars
+  nlist(Z, group_vars, group_cnms, group_list, nvars, ngrps)
 }
 
-# Return the name of the grouping factor in a random
-# effects formula (ie. the variable on the RHS of "|")
+# Return info on the required type of intercept
 #
-# @param x The random effects formula (for one grouping factor)
-# @return A character string, the name of the grouping factor
-get_group_factor <- function(x) {
-  terms <- strsplit(deparse(x), "\\s\\|\\s")
+# @param X The model matrix
+# @param family A family object
+# @return A character string specifying the type of bounds 
+#   required for the intercept term
+check_intercept_type <- function(X, family) {
+  fam <- family$family
+  link <- family$link
+  if (!X$has_intercept) { # no intercept
+    type <- "none"
+    needs_intercept <- 
+      (!is.gaussian(fam) && link == "identity") ||
+      (is.gamma(fam) && link == "inverse") ||
+      (is.binomial(fam) && link == "log")
+    if (needs_intercept)
+      stop2("To use the specified combination of family and link (", fam, 
+            ", ", link, ") the model must have an intercept.")
+  } else if (fam == "binomial" && link == "log") { # binomial, log
+    type <- "upper_bound" 
+  } else if (fam == "binomial") { # binomial, !log
+    type <- "no_bound"
+  } else if (link == "log") { # gamma/inv-gaus/poisson/nb, log
+    type <- "no_bound"  
+  } else if (fam == "gaussian") { # gaussian, !log
+    type <- "no_bound"  
+  } else { # gamma/inv-gaus/poisson/nb, !log 
+    type <- "lower_bound"  
+  }
+  number <- switch(type, none = 0L, no_bound = 1L,
+                   lower_bound = 2L, upper_bound = 3L)
+  nlist(type, number) 
+}
+
+# Split the random effects part of a model formula into
+#   - the formula part (ie. the formula on the LHS of "|"), and 
+#   - the name of the grouping factor (ie. the variable on the RHS of "|")
+#
+# @param x Random effects part of a model formula, as returned by lme4::findbars
+# @return A named list with two elements: 
+#   re_form: a formula specifying the random effects structure
+#   group_var: the name of the grouping factor
+split_at_bars <- function(x) {
+  terms <- strsplit(deparse(x), "\\s\\|\\s")[[1L]]
   if (!length(terms) == 2L)
     stop2("Could not parse the random effects formula.")
-  terms[[2L]]
+  re_form <- formula(paste("~", terms[[1L]]))
+  group_var <- terms[[2L]]
+  nlist(re_form, group_var)
 }
 
+# Reformulate an expression as the LHS of a model formula
+# 
+# @param x The expression to reformulate
+# @return A model formula
+reformulate_lhs <- function(x) {
+  formula(substitute(LHS ~ 1, list(LHS = x)))
+}
+
+# Reformulate an expression as the RHS of a model formula
+# 
+# @param x The expression to reformulate
+# @param subbars A logical specifying whether to call lme4::subbars
+#   on the result
+# @return A model formula
+reformulate_rhs <- function(x, subbars = FALSE) {
+  fm <- formula(substitute(~ RHS, list(RHS = x)))
+  if (subbars) {
+    lme4::subbars(fm)
+  } else {
+    fm
+  }
+}
 
 
 

@@ -1270,7 +1270,7 @@ uapply <- function(X, FUN, ...) {
 #
 # @param FUN,... Same as mapply
 # @param arg Passed to MoreArgs
-xapply <- function(..., FUN, args) {
+xapply <- function(..., FUN, args = NULL) {
   mapply(FUN, ..., MoreArgs = args, SIMPLIFY = FALSE)
 }
 
@@ -1303,6 +1303,32 @@ dmt <- function(x, mu, Sigma, df) {
     0.5 * p * log(df) - 0.5 * p * log(pi) -
     0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) -
     0.5 * (df + p) * log1p((x_mu %*% chol2inv(chol(Sigma)) %*% x_mu)[1] / df)
+}
+
+# Count the number of unique values
+#
+# @param x A vector or list
+n_distinct <- function(x) {
+  length(unique(x))
+}
+
+# Transpose function that can handle NULL objects
+#
+# @param x A matrix, a vector, or otherwise (e.g. NULL)
+transpose <- function(x) {
+  if (is.matrix(x) || is.vector(x)) {
+    t(x)
+  } else {
+    x
+  }
+}
+
+groups <- function(x) {
+  if (!is.null(x)) {
+    as.integer(as.factor(x)) 
+  } else {
+    x
+  }
 }
 
 #---- Helpers from brms package

@@ -2679,12 +2679,12 @@ handle_weights <- function(mod_stuff, weights, id_var) {
 autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, 
                             min_prior_scale = 1e-12, assoc = NULL, family = NULL) {
   
-  is_glmod    <- ("y"         %in% names(mod_stuff))
-  is_coxmod   <- ("eventtime" %in% names(mod_stuff))
+  is_glmod <- ("Y" %in% names(mod_stuff))
+  is_coxmod <- ("eventtime" %in% names(mod_stuff))
   is_assocmod <- (!any(is_glmod, is_coxmod))
   
-  if (is_glmod && mod_stuff$is_gaussian) {
-    ss <- sd(mod_stuff$y)
+  if (is_glmod && is.gaussian(mod_stuff$family)) {
+    ss <- sd(mod_stuff$Y$Y)
     if (prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale)
       prior_stuff$prior_scale <- ss * prior_stuff$prior_scale
   }
@@ -2692,7 +2692,7 @@ autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE,
   if (use_x) {
     if (!QR && prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
       prior_stuff$prior_scale <- pmax(min_prior_scale, prior_stuff$prior_scale / 
-                                        apply(mod_stuff$xtemp, 2L, FUN = function(x) {
+                                        apply(mod_stuff$X$X, 2L, FUN = function(x) {
                                           num.categories <- length(unique(x))
                                           x.scale <- 1
                                           if (num.categories == 2) {
@@ -3474,21 +3474,35 @@ STOP_combination_not_allowed <- function(object, x, y) {
 
 # Return a list (or vector if unlist = TRUE) which
 # contains the embedded elements in list x named y 
-fetch <- function(x, y, z = NULL, unlist = FALSE) {
+fetch <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                  pad_length = NULL, unlist = FALSE) {
   ret <- lapply(x, `[[`, y)
   if (!is.null(z))
     ret <- lapply(ret, `[[`, z)
+  if (!is.null(zz))
+    ret <- lapply(ret, `[[`, zz)
+  if (null_to_zero) 
+    lapply(ret, function(i) ifelse(is.null(i), 0L, i))
+  if (!is.null(pad_length)) {
+    padding <- rep(list(0L), pad_length - length(ret))
+    ret <- c(ret, padding)
+  }
   if (unlist) unlist(ret) else ret
 }
 # Wrapper for using fetch with unlist = TRUE
-fetch_ <- function(x, y, z = NULL) {
-  fetch(x, y, z, unlist = TRUE)
+fetch_ <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                   pad_length = NULL) {
+  fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+        pad_length = pad_length, unlist = TRUE)
 }
 # Wrapper for using fetch with unlist = TRUE and 
 # returning array. Also converts logical to integer.
-fetch_array <- function(x, y, z = NULL) {
-  val <- fetch(x, y, z, unlist = TRUE)
-  if (is.logical(val)) val <- as.integer(val)
+fetch_array <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE,
+                        pad_length = NULL) {
+  val <- fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+               pad_length = pad_length, unlist = TRUE)
+  if (is.logical(val)) 
+    val <- as.integer(val)
   as.array(val)
 }
 
@@ -3525,6 +3539,25 @@ matrix_of_uniforms <- function(nrow = 0, ncol = 0) {
   } else {
     matrix(runif(nrow * ncol), nrow, ncol)
   } 
+}
+
+convert_null <- function(x, type = c("double", "integer", "matrix",
+                                     "arraydouble", "arrayinteger")) {
+  if (!is.null(x)) {
+    return(x)
+  } else if (type == "double") {
+    return(double(0))
+  } else if (type == "integer") {
+    return(integer(0))
+  } else if (type == "matrix") {
+    return(matrix(0,0,0))
+  } else if (type == "arraydouble") {
+    return(as.array(double(0)))
+  } else if (type == "arrayinteger") {
+    return(as.array(integer(0)))
+  } else {
+    stop("Input type not valid.")
+  }
 }
 
 

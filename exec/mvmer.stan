@@ -139,9 +139,9 @@ data {
   
   // population level dimensions and data
   int<lower=1,upper=3> M; // num submodels with data (limit of 3)
+  int<lower=0,upper=1> has_aux[3]; // has auxiliary param
   int<lower=0,upper=2> resp_type[3]; // 1=real,2=integer,0=none
   int<lower=0,upper=3> intercept_type[3]; // 1=unbounded,2=lob,3=upb,0=none
-  int<lower=0,upper=1> has_aux[3]; // has auxiliary param
   int<lower=0> yNobs[3]; // num observations
   int<lower=0> yNeta[3]; // required length of eta
   int<lower=0> yK[3]; // num predictors
@@ -158,29 +158,29 @@ data {
   vector[yK[2]] yXbar2;
   vector[yK[3]] yXbar3;
   
-  // group level dimensions and data
-  int<lower=0> bN1; // num groups for group factor 1
-  int<lower=0> bK1; // total num params for group factor 1
-  int<lower=0> bK1_len[3]; // num params in each submodel for group factor 1
-  int<lower=0> bK1_beg[3]; // beg index for group params for group factor 1
-  int<lower=0> bK1_end[3]; // end index for group params for group factor 1
-  vector[yNeta[1]] y1_Z1[bK1_len[1]]; // re design matrix, group factor 1
-  vector[yNeta[2]] y2_Z1[bK1_len[2]];
-  vector[yNeta[3]] y3_Z1[bK1_len[3]];
-  int<lower=0> y1_Z1_id[yNeta[1]]; // group indexing for y1_Z1
-  int<lower=0> y2_Z1_id[yNeta[2]]; // group indexing for y2_Z1
-  int<lower=0> y3_Z1_id[yNeta[3]]; // group indexing for y3_Z1
-  int<lower=0> bN2; // num groups for group factor 2
-  int<lower=0> bK2; // total num params for group factor 2
-  int<lower=0> bK2_len[3]; // num params in each submodel for group factor 2
-  int<lower=0> bK2_beg[3]; // beg index for group params for group factor 2
-  int<lower=0> bK2_end[3]; // end index for group params for group factor 2
-  vector[yNeta[1]] y1_Z2[bK1_len[1]]; // re design matrix, group factor 2
-  vector[yNeta[2]] y2_Z2[bK1_len[2]];
-  vector[yNeta[3]] y3_Z2[bK1_len[3]];
-  int<lower=0> y1_Z2_id[yNeta[1]]; // group indexing for y1_Z2
-  int<lower=0> y2_Z2_id[yNeta[2]]; // group indexing for y2_Z2
-  int<lower=0> y3_Z2_id[yNeta[3]]; // group indexing for y3_Z2
+  // group level dimensions and data, group factor 1
+  int<lower=0> bN1; // num groups
+  int<lower=0> bK1; // total num params
+  int<lower=0> bK1_len[3]; // num params in each submodel
+  int<lower=0> bK1_idx[3,2]; // beg/end index for group params
+  vector[bK1_len[1] > 0 ? yNeta[1] : 0] y1_Z1[bK1_len[1]]; // re design matrix
+  vector[bK1_len[2] > 0 ? yNeta[2] : 0] y2_Z1[bK1_len[2]];
+  vector[bK1_len[3] > 0 ? yNeta[3] : 0] y3_Z1[bK1_len[3]];
+  int<lower=0> y1_Z1_id[bK1_len[1] > 0 ? yNeta[1] : 0]; // group indexing for y1_Z1
+  int<lower=0> y2_Z1_id[bK1_len[2] > 0 ? yNeta[2] : 0]; // group indexing for y2_Z1
+  int<lower=0> y3_Z1_id[bK1_len[3] > 0 ? yNeta[3] : 0]; // group indexing for y3_Z1
+  
+	// group level dimensions and data, group factor 2
+	int<lower=0> bN2; // num groups
+  int<lower=0> bK2; // total num params
+  int<lower=0> bK2_len[3]; // num params in each submodel
+  int<lower=0> bK2_idx[3,2]; // beg/end index for group params
+  vector[bK2_len[1] > 0 ? yNeta[1] : 0] y1_Z2[bK2_len[1]]; // re design matrix
+  vector[bK2_len[2] > 0 ? yNeta[2] : 0] y2_Z2[bK2_len[2]];
+  vector[bK2_len[3] > 0 ? yNeta[3] : 0] y3_Z2[bK2_len[3]];
+  int<lower=0> y1_Z2_id[bK2_len[1] > 0 ? yNeta[1] : 0]; // group indexing for y1_Z2
+  int<lower=0> y2_Z2_id[bK2_len[2] > 0 ? yNeta[2] : 0]; // group indexing for y2_Z2
+  int<lower=0> y3_Z2_id[bK2_len[3] > 0 ? yNeta[3] : 0]; // group indexing for y3_Z2
 
   // family and link
   int<lower=0> family[M];
@@ -188,7 +188,7 @@ data {
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus, 
   //   5 = laplace, 6 = lasso, 7 = product_normal
-  int<lower=0,upper=7> y_prior_dist[M];
+  int<lower=0,upper=7> y_prior_dist[3];
   int<lower=0,upper=2> y_prior_dist_for_intercept[M]; 
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
@@ -220,27 +220,35 @@ data {
 }
 transformed data {
   // dimensions for hs priors
-  int<lower=0> yHs1 = get_nvars_for_hs(y_prior_dist[1]);
-  int<lower=0> yHs2 = get_nvars_for_hs(y_prior_dist[2]);
-  int<lower=0> yHs3 = get_nvars_for_hs(y_prior_dist[3]);
+  int<lower=0> yHs1 = get_nvars_for_hs(M > 0 ? y_prior_dist[1] : 0);
+  int<lower=0> yHs2 = get_nvars_for_hs(M > 1 ? y_prior_dist[2] : 0);
+  int<lower=0> yHs3 = get_nvars_for_hs(M > 2 ? y_prior_dist[3] : 0);
   
   // transformations of data
-  real sum_log_y1 = (family[1] == 2 || family[1] == 3) ? 
+  real sum_log_y1 = M > 0 && (family[1] == 2 || family[1] == 3) ? 
     sum(log(yReal1)) : not_a_number();
-  real sum_log_y2 = (family[2] == 2 || family[2] == 3) ? 
+  real sum_log_y2 = M > 1 && (family[2] == 2 || family[2] == 3) ? 
     sum(log(yReal2)) : not_a_number();
-  real sum_log_y3 = (family[3] == 2 || family[3] == 3) ? 
+  real sum_log_y3 = M > 2 && (family[3] == 2 || family[3] == 3) ? 
     sum(log(yReal3)) : not_a_number();
-  vector[family[1] == 3 ? yNobs[1] : 0] sqrt_y1;
-  vector[family[2] == 3 ? yNobs[2] : 0] sqrt_y2;
-  vector[family[3] == 3 ? yNobs[3] : 0] sqrt_y3;
-  vector[family[1] == 3 ? yNobs[1] : 0] log_y1;
-  vector[family[2] == 3 ? yNobs[2] : 0] log_y2;
-  vector[family[3] == 3 ? yNobs[3] : 0] log_y3;
-  if (family[1] == 3) { sqrt_y1 = sqrt(yReal1); log_y1 = log(yReal1); } 
-  if (family[2] == 3) { sqrt_y2 = sqrt(yReal2); log_y2 = log(yReal2); }  
-  if (family[3] == 3) { sqrt_y3 = sqrt(yReal3); log_y3 = log(yReal3); }  
-  
+  vector[M > 0 && family[1] == 3 ? yNobs[1] : 0] sqrt_y1;
+  vector[M > 1 && family[2] == 3 ? yNobs[2] : 0] sqrt_y2;
+  vector[M > 2 && family[3] == 3 ? yNobs[3] : 0] sqrt_y3;
+  vector[M > 0 && family[1] == 3 ? yNobs[1] : 0] log_y1;
+  vector[M > 1 && family[2] == 3 ? yNobs[2] : 0] log_y2;
+  vector[M > 2 && family[3] == 3 ? yNobs[3] : 0] log_y3;
+  if (M > 0 && family[1] == 3) { 
+		sqrt_y1 = sqrt(yReal1); 
+		log_y1 = log(yReal1);
+	} 
+  if (M > 1 && family[2] == 3) { 
+		sqrt_y2 = sqrt(yReal2); 
+		log_y2 = log(yReal2); 
+	}  
+  if (M > 2 && family[3] == 3) { 
+		sqrt_y3 = sqrt(yReal3); 
+		log_y3 = log(yReal3); 
+	} 
 }
 parameters {
   // intercepts
@@ -294,23 +302,23 @@ parameters {
   vector<lower=0>[yK[3]] yMix3[y_prior_dist[3] == 5 || y_prior_dist[3] == 6];
 }
 transformed parameters { 
-  // group-level params for first grouping factor
-  vector[bK1 == 1 ? bN1 : 0] bVec1 = bSd1[1] * (z_bVec1); 
-  matrix[bK1 >  1 ? bN1 : 0, bK1 >  1 ? bK1 : 0] 
-    bMat1 = (diag_pre_multiply(bSd1, bCholesky1) * z_bMat1); 
- 
-  // group level params for second grouping factor
-  vector[bK2 == 1 ? bN2 : 0] bVec2 = bSd2[1] * (z_bVec2); 
-  matrix[bK2 >  1 ? bN2 : 0, bK2 >  1 ? bK2 : 0] 
-    bMat2 = (diag_pre_multiply(bSd2, bCholesky2) * z_bMat2); 
-
   // population level params, auxiliary params
   vector[yK[1]] yBeta1;
   vector[yK[2]] yBeta2;
   vector[yK[3]] yBeta3;
   real yAux1[has_aux[1]];  
   real yAux2[has_aux[2]];  
-  real yAux3[has_aux[3]];  
+  real yAux3[has_aux[3]];
+	
+  // group-level params for first grouping factor
+  vector[bK1 == 1 ? bN1 : 0] bVec1; 
+  matrix[bK1 >  1 ? bN1 : 0, bK1 >  1 ? bK1 : 0] bMat1;  
+ 
+  // group level params for second grouping factor
+  vector[bK2 == 1 ? bN2 : 0] bVec2;
+  matrix[bK2 >  1 ? bN2 : 0, bK2 >  1 ? bK2 : 0] bMat2; 
+  
+  // population level params, auxiliary params
   if (has_aux[1] == 1)
     yAux1[1] = make_aux(yAux1_unscaled[1], y_prior_dist_for_aux[1], 
                         y_prior_mean_for_aux[1], y_prior_scale_for_aux[1]);
@@ -320,7 +328,7 @@ transformed parameters {
                        yGlobal1, yLocal1, yOol1, yMix1, yAux1, family[1]);
   if (M > 1) {
     if (has_aux[2] == 1)
-      yAux2[1] = make_aux(yAux2_unscaled[2], y_prior_dist_for_aux[2], 
+      yAux2[1] = make_aux(yAux2_unscaled[1], y_prior_dist_for_aux[2], 
                           y_prior_mean_for_aux[2], y_prior_scale_for_aux[2]);
     if (yK[2] > 0)
       yBeta2 = make_beta(z_yBeta2, y_prior_dist[2], y_prior_mean2, 
@@ -329,19 +337,28 @@ transformed parameters {
   } 
   if (M > 2) {
     if (has_aux[3] == 1)
-      yAux3[1] = make_aux(yAux3_unscaled[3], y_prior_dist_for_aux[3], 
+      yAux3[1] = make_aux(yAux3_unscaled[1], y_prior_dist_for_aux[3], 
                           y_prior_mean_for_aux[3], y_prior_scale_for_aux[3]);
     if (yK[3] > 0)
       yBeta3 = make_beta(z_yBeta3, y_prior_dist[3], y_prior_mean3, 
                          y_prior_scale3, y_prior_df3, y_global_prior_scale[3],  
                          yGlobal3, yLocal3, yOol3, yMix3, yAux3, family[3]);
-  }  
+  }
+
+  // group-level params for first grouping factor
+  if (bK1 == 1) bVec1 = bSd1[1] * (z_bVec1); 
+	else if (bK1 > 1) bMat1 = (diag_pre_multiply(bSd1, bCholesky1) * z_bMat1)';
+	
+	// group level params for second grouping factor
+	if (bK2 == 1) bVec2 = bSd2[1] * (z_bVec2); 
+	else if (bK2 > 1) bMat2 = (diag_pre_multiply(bSd2, bCholesky2) * z_bMat2)'; 
+	
 }
 model {
   vector[yNeta[1]] yEta1; // linear predictor
   vector[yNeta[2]] yEta2;
   vector[yNeta[3]] yEta3;
-  
+
   // Linear predictor for submodel 1
   if (yK[1] > 0) yEta1 = yX1 * yBeta1;
   else yEta1 = rep_vector(0.0, yNeta[1]);
@@ -354,7 +371,7 @@ model {
         yEta1[n] = yEta1[n] + (bVec1[y1_Z1_id[n]]) * y1_Z1[1,n];
     }
     else if (bK1 > 1) {// more than one group level param
-      for (k in bK1_beg[1]:bK1_end[1])
+      for (k in bK1_idx[1,1]:bK1_idx[1,2])
         for (n in 1:yNeta[1])
           yEta1[n] = yEta1[n] + (bMat1[y1_Z1_id[n],k]) * y1_Z1[k,n];
     }
@@ -365,7 +382,7 @@ model {
         yEta1[n] = yEta1[n] + (bVec2[y1_Z2_id[n]]) * y1_Z2[1,n];
     }
     else if (bK2 > 1) { // more than one group level param
-      for (k in bK1_beg[1]:bK1_end[1])
+      for (k in bK1_idx[1,1]:bK1_idx[1,2])
         for (n in 1:yNeta[1])
           yEta1[n] = yEta1[n] + (bMat2[y1_Z2_id[n],k]) * y1_Z2[k,n];
     }
@@ -385,7 +402,7 @@ model {
       }
       else if (bK1 > 1) { // more than one group level param
         int k_shift = bK1_len[1];
-        for (k in bK1_beg[2]:bK1_end[2])
+        for (k in bK1_idx[2,1]:bK1_idx[2,2])
           for (n in 1:yNeta[2])
             yEta2[n] = yEta2[n] + (bMat1[y2_Z1_id[n],k]) * y2_Z1[k-k_shift,n];
       }
@@ -397,7 +414,7 @@ model {
       }
       else if (bK2 > 1) { // more than one group level param
         int k_shift = bK2_len[1];
-        for (k in bK2_beg[2]:bK2_end[2])
+        for (k in bK2_idx[2,1]:bK2_idx[2,2])
           for (n in 1:yNeta[1])
             yEta1[n] = yEta1[n] + (bMat2[y2_Z2_id[n],k]) * y2_Z2[k-k_shift,n];
       }
@@ -418,7 +435,7 @@ model {
       }
       else if (bK1 > 1) { // more than one group level param
         int k_shift = sum(bK1_len[1:2]);
-        for (k in bK1_beg[3]:bK1_end[3])
+        for (k in bK1_idx[3,1]:bK1_idx[3,2])
           for (n in 1:yNeta[3])
             yEta3[n] = yEta3[n] + (bMat1[y3_Z1_id[n],k]) * y3_Z1[k-k_shift,n];
       }
@@ -430,7 +447,7 @@ model {
       }
       else if (bK2 > 1) { // more than one group level param
         int k_shift = sum(bK2_len[1:2]);
-        for (k in bK2_beg[3]:bK2_end[3])
+        for (k in bK2_idx[3,1]:bK2_idx[3,2])
           for (n in 1:yNeta[3])
             yEta3[n] = yEta3[n] + (bMat2[y3_Z2_id[n],k]) * y3_Z2[k-k_shift,n];
       }
@@ -462,10 +479,10 @@ model {
     gamma_lp(yGamma1[1], y_prior_dist_for_intercept[1], y_prior_mean_for_intercept[1], 
              y_prior_scale_for_intercept[1], y_prior_df_for_intercept[1]);  
   if (M > 1 && intercept_type[2] > 0) 
-    gamma_lp(yGamma1[2], y_prior_dist_for_intercept[2], y_prior_mean_for_intercept[2], 
+    gamma_lp(yGamma2[1], y_prior_dist_for_intercept[2], y_prior_mean_for_intercept[2], 
              y_prior_scale_for_intercept[2], y_prior_df_for_intercept[2]);  
   if (M > 2 && intercept_type[3] > 0) 
-    gamma_lp(yGamma1[3], y_prior_dist_for_intercept[3], y_prior_mean_for_intercept[3], 
+    gamma_lp(yGamma3[1], y_prior_dist_for_intercept[3], y_prior_mean_for_intercept[3], 
              y_prior_scale_for_intercept[3], y_prior_df_for_intercept[3]);  
 
   // Log priors, population level params
@@ -505,15 +522,22 @@ generated quantities {
   real yAlpha1[intercept_type[1] > 0];
   real yAlpha2[intercept_type[2] > 0];
   real yAlpha3[intercept_type[3] > 0];
-  corr_matrix[bK1 > 1 ? bK1 : 0] 
-    bCorr1 = multiply_lower_tri_self_transpose(bCholesky1); 
-  corr_matrix[bK2 > 1 ? bK2 : 0] 
-    bCorr2 = multiply_lower_tri_self_transpose(bCholesky2); 
-  if (intercept_type[1] > 0) 
+  corr_matrix[bK1 > 1 ? bK1 : 1] bCorr1;
+  corr_matrix[bK2 > 1 ? bK2 : 1] bCorr2; 
+  
+	if (intercept_type[1] > 0) 
     yAlpha1[1] = yGamma1[1] - dot_product(yXbar1, yBeta1);
   if (M > 1 && intercept_type[2] > 0) 
     yAlpha2[1] = yGamma2[1] - dot_product(yXbar2, yBeta2);
   if (M > 2 && intercept_type[3] > 0) 
     yAlpha3[1] = yGamma3[1] - dot_product(yXbar3, yBeta3);
-  
+		
+	if (bK1 > 1)
+	  bCorr1 = multiply_lower_tri_self_transpose(bCholesky1);
+  else
+	  bCorr1[1,1] = 1.0;
+	if (bK2 > 1) 
+	  bCorr2 = multiply_lower_tri_self_transpose(bCholesky2); 
+  else 
+	  bCorr2[1,1] = 1.0;
 }
