@@ -242,6 +242,7 @@
 #'   Family members:
 #'   \itemize{
 #'   \item \code{decov(regularization, concentration, shape, scale)}
+#'   \item \code{lkj(regularization, scale, df)}
 #'   }
 #'   (Also see vignette for \code{stan_glmer})
 #'   
@@ -484,8 +485,8 @@ exponential <- function(rate = 1, autoscale = TRUE) {
 #' @rdname priors
 #' @export
 #' @param regularization Exponent for an LKJ prior on the correlation matrix in
-#'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
-#'   prior.
+#'   the \code{decov} or \code{lkj} prior. The default is \eqn{1}, implying a 
+#'   joint uniform prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
 #'   distribution. The default is \eqn{1}, implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale parameter in the
@@ -499,6 +500,15 @@ decov <- function(regularization = 1, concentration = 1,
   validate_parameter_value(shape)
   validate_parameter_value(scale)
   nlist(dist = "decov", regularization, concentration, shape, scale)
+}
+
+#' @rdname priors
+#' @export
+lkj <- function(regularization = 1, scale = 10, df = 1, autoscale = TRUE) {
+  validate_parameter_value(regularization)
+  validate_parameter_value(scale)
+  validate_parameter_value(df)
+  nlist(dist = "lkj", regularization, scale, df, autoscale)
 }
 
 #' @rdname priors

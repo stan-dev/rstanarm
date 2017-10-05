@@ -2666,67 +2666,69 @@ handle_weights <- function(mod_stuff, weights, id_var) {
 # Autoscaling of priors
 #
 # @param prior_stuff A named list returned by a call to handle_glm_prior
-# @param mod_stuff A named list returned by a call to either handle_glmod,
-#   handle_coxmod, or handle_assocmod
-# @param QR A logical specifying whether QR decomposition is used for the x matrix
-# @param use_x A logical specifying whether to autoscale the priors based on
-#   the standard deviations of the predictor variables
+# @param response A vector containing the response variable, only required if
+#   the priors are to be scaled by the standard deviation of the response (for
+#   gaussian reponse variables only)
+# @param predictors The predictor matrix, only required if the priors are to be
+#   scaled by the range/sd of the predictors
+# @param family A family object
+# @param QR A logical specifying whether QR decomposition is used for the 
+#   predictor matrix
 # @param assoc A two dimensional array with information about desired association
 #   structure for the joint model (returned by a call to validate_assoc). Cannot
 #   be NULL if autoscaling priors for the association parameters.
 # @param min_prior_scale The minimum allowed for prior scales
-# @return A named list of the same structure as returned by handle_glm_prior
-autoscale_prior <- function(prior_stuff, mod_stuff, QR, use_x = FALSE, 
-                            min_prior_scale = 1e-12, assoc = NULL, family = NULL) {
+# @return A named list with the same structure as returned by handle_glm_prior
+autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL, 
+                            family = NULL, QR = FALSE, min_prior_scale = 1e-12, 
+                            assoc = NULL) {
+  ps <- prior_stuff
   
-  is_glmod <- ("Y" %in% names(mod_stuff))
-  is_coxmod <- ("eventtime" %in% names(mod_stuff))
-  is_assocmod <- (!any(is_glmod, is_coxmod))
-  
-  if (is_glmod && is.gaussian(mod_stuff$family)) {
-    ss <- sd(mod_stuff$Y$Y)
-    if (prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale)
-      prior_stuff$prior_scale <- ss * prior_stuff$prior_scale
+  if (!is.null(response) && is.gaussian(family)) { 
+    # use response variable for scaling priors
+    if (ps$prior_dist > 0L && ps$prior_autoscale) {
+      ss <- sd(response)
+      ps$prior_scale <- ss * ps$prior_scale
+    }
   }
   
-  if (use_x) {
-    if (!QR && prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
-      prior_stuff$prior_scale <- pmax(min_prior_scale, prior_stuff$prior_scale / 
-                                        apply(mod_stuff$X$X, 2L, FUN = function(x) {
-                                          num.categories <- length(unique(x))
-                                          x.scale <- 1
-                                          if (num.categories == 2) {
-                                            x.scale <- diff(range(x))
-                                          } else if (num.categories > 2) {
-                                            x.scale <- sd(x)
-                                          }
-                                          return(x.scale)
-                                        }))
+  if (!is.null(predictors) && !QR) {
+    # use predictors for scaling priors
+    if (ps$prior_dist > 0L && ps$prior_autoscale) {
+      ps$prior_scale <- pmax(
+        min_prior_scale, ps$prior_scale / 
+          apply(predictors, 2L, FUN = function(x) {
+            num.categories <- length(unique(x))
+            x.scale <- 1
+            if (num.categories == 2) {
+              x.scale <- diff(range(x))
+            } else if (num.categories > 2) {
+              x.scale <- sd(x)
+            }
+            return(x.scale)
+          }))
     }      
   }
   
-  if (is_assocmod) {
+  if (!is.null(assoc)) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
     # from the separate longitudinal submodels estimated using glmer).
     # The mean will be used for centering each association term.
     # The SD will be used for autoscaling the prior for each association parameter.
-    if (is.null(assoc) || is.null(family))
-      stop("'assoc' and 'family' cannot be NULL when autoscaling association parameters.")
+    if (is.null(family))
+      stop("'family' cannot be NULL when autoscaling association parameters.")
     assoc_terms <- make_assoc_terms(parts = mod_stuff, assoc = assoc, family = family)
-    prior_stuff$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
-    if (prior_stuff$prior_dist > 0L && prior_stuff$prior_autoscale) {
+    ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
+    if (ps$prior_dist > 0L && ps$prior_autoscale) {
       a_beta_scale <- apply(assoc_terms, 2L, scale_val)
-      prior_stuff$prior_scale <- 
-        pmax(min_prior_scale, prior_stuff$prior_scale / a_beta_scale)
+      ps$prior_scale <- pmax(min_prior_scale, ps$prior_scale / a_beta_scale)
     }
   }
   
-  prior_stuff$prior_scale <- 
-    as.array(pmin(.Machine$double.xmax, prior_stuff$prior_scale))
-  
-  prior_stuff
+  ps$prior_scale <- as.array(pmin(.Machine$double.xmax, ps$prior_scale))
+  ps
 }
 
 

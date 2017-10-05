@@ -106,7 +106,7 @@
 stan_mvmer <- function(formula, data, family = gaussian, weights, ...,				          
                        prior = normal(), prior_intercept = normal(), 
                        prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
+                       prior_covariance = lkj(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
   
@@ -172,6 +172,7 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
                     "laplace", "lasso")  # disallow product normal
   ok_intercept_dists <- ok_dists[1:3]
   ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_covariance_dists <- c("decov", "lkj")
   
   # Note: y_user_prior_*_stuff objects are stored unchanged for constructing 
   # prior_summary, while y_prior_*_stuff objects are autoscaled
@@ -187,11 +188,23 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     prior_aux, FUN = handle_glm_prior, 
     args = list(nvars = 1, default_scale = 5, link = NULL, ok_dists = ok_aux_dists))  
   
-  # Minimum scaling of priors
-  y_prior_stuff <- Map(autoscale_prior, y_prior_stuff, y_mod, QR = QR, use_x = TRUE)
-  y_prior_intercept_stuff <- Map(autoscale_prior, y_prior_intercept_stuff, y_mod, QR = QR, use_x = FALSE)
-  y_prior_aux_stuff <- Map(autoscale_prior, y_prior_aux_stuff, y_mod, QR = QR, use_x = FALSE)
-  
+  b_user_prior_stuff <- b_prior_stuff <- handle_cov_prior(
+      prior_covariance, cnms = cnms, ok_dists = ok_covariance_dists)
+
+  # Autoscaling of priors
+  response <- fetch(y_mod, "Y", "Y")
+  predictors <- fetch(y_mod, "X", "X")
+  y_prior_stuff <- xapply(
+    y_prior_stuff, response = response,
+    predictors = predictors, family = family,
+    FUN = autoscale_prior)
+  y_prior_intercept_stuff <- xapply(
+    y_prior_intercept_stuff, response = response,
+    family = family, FUN = autoscale_prior)
+  y_prior_aux_stuff <- xapply(
+    y_prior_aux_stuff, response = response,
+    family = family, FUN = autoscale_prior)
+
   #-------------------------
   # Data for export to Stan
   #-------------------------
@@ -205,46 +218,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     family = fetch_array(y_mod, "family", "mvmer_family"),
     link   = fetch_array(y_mod, "family", "mvmer_link"),
     weights = as.array(numeric(0)), # not yet implemented
-
-    # priors
-    y_prior_dist               = fetch_array(y_prior_stuff, "prior_dist", pad_length = 3), 
-    y_prior_dist_for_intercept = fetch_array(y_prior_intercept_stuff, "prior_dist"),  
-    y_prior_dist_for_aux       = fetch_array(y_prior_aux_stuff, "prior_dist"),  
     prior_PD = as.integer(prior_PD)
   )
-  
-  prior_mean <- fetch(y_prior_stuff, "prior_mean")
-  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else as.array(double(0))
-  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else as.array(double(0))
-  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else as.array(double(0))
 
-  prior_scale <- fetch(y_prior_stuff, "prior_scale")
-  standata$y_prior_scale1 <- if (M > 0) as.array(prior_scale[[1]]) else as.array(double(0))
-  standata$y_prior_scale2 <- if (M > 1) as.array(prior_scale[[2]]) else as.array(double(0))
-  standata$y_prior_scale3 <- if (M > 2) as.array(prior_scale[[3]]) else as.array(double(0))
-  
-  prior_df <- fetch(y_prior_stuff, "prior_df")
-  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else as.array(double(0))
-  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else as.array(double(0))
-  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else as.array(double(0))
-  
-  standata$y_global_prior_scale <- 
-    fetch_array(y_prior_stuff, "global_prior_scale")
-  standata$y_global_prior_df <- 
-    fetch_array(y_prior_stuff, "global_prior_df")
-  standata$y_prior_mean_for_intercept <- 
-    fetch_array(y_prior_intercept_stuff, "prior_mean")
-  standata$y_prior_scale_for_intercept <- 
-    fetch_array(y_prior_intercept_stuff, "prior_scale")
-  standata$y_prior_df_for_intercept <- 
-    fetch_array(y_prior_intercept_stuff, "prior_df")
-  standata$y_prior_mean_for_aux <- 
-    fetch_array(y_prior_aux_stuff, "prior_mean")
-  standata$y_prior_scale_for_aux <- 
-    fetch_array(y_prior_aux_stuff, "prior_scale")
-  standata$y_prior_df_for_aux <- 
-    fetch_array(y_prior_aux_stuff, "prior_df")
-  
   # Dimensions
   standata$has_aux <- 
     fetch_array(y_mod, "has_aux", pad_length = 3)
@@ -297,18 +273,18 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   
   Z1 <- fetch(y_mod, "Z", "Z", b1_varname)
   Z1 <- lapply(Z1, transpose)
-  standata$y1_Z1 <- if (M > 0) convert_null(Z1[[1L]], "matrix") else matrix(0,0,0)
-  standata$y2_Z1 <- if (M > 1) convert_null(Z1[[2L]], "matrix") else matrix(0,0,0)
-  standata$y3_Z1 <- if (M > 2) convert_null(Z1[[3L]], "matrix") else matrix(0,0,0)
+  Z1 <- lapply(Z1, convert_null, "matrix")
+  standata$y1_Z1 <- if (M > 0) Z1[[1L]] else matrix(0,0,0)
+  standata$y2_Z1 <- if (M > 1) Z1[[2L]] else matrix(0,0,0)
+  standata$y3_Z1 <- if (M > 2) Z1[[3L]] else matrix(0,0,0)
   
   Z1_id <- fetch(y_mod, "Z", "group_list", b1_varname)
   Z1_id <- lapply(Z1_id, groups)
-  standata$y1_Z1_id <- if (M > 0) convert_null(Z1_id[[1L]], "arraydouble") else as.array(double(0))
-  standata$y2_Z1_id <- if (M > 1) convert_null(Z1_id[[2L]], "arraydouble") else as.array(double(0))
-  standata$y3_Z1_id <- if (M > 2) convert_null(Z1_id[[3L]], "arraydouble") else as.array(double(0))
+  Z1_id <- lapply(Z1_id, convert_null, "arraydouble")
+  standata$y1_Z1_id <- if (M > 0) Z1_id[[1L]] else as.array(double(0))
+  standata$y2_Z1_id <- if (M > 1) Z1_id[[2L]] else as.array(double(0))
+  standata$y3_Z1_id <- if (M > 2) Z1_id[[3L]] else as.array(double(0))
 
-  standata$b1_prior_scale <- as.array(rep(5, standata$bK1))
-                                
   # Data for group specific terms - group factor 2
   if (length(cnms) > 1L) {
     # model has a second grouping factor
@@ -326,17 +302,18 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     
     Z2 <- fetch(y_mod, "Z", "Z", b2_varname)
     Z2 <- lapply(Z2, transpose)
-    standata$y1_Z2 <- if (M > 0) convert_null(Z2[[1L]], "matrix") else matrix(0,0,0)
-    standata$y2_Z2 <- if (M > 1) convert_null(Z2[[2L]], "matrix") else matrix(0,0,0)
-    standata$y3_Z2 <- if (M > 2) convert_null(Z2[[3L]], "matrix") else matrix(0,0,0)
+    Z2 <- lapply(Z2, convert_null, "matrix")
+    standata$y1_Z2 <- if (M > 0) Z2[[1L]] else matrix(0,0,0)
+    standata$y2_Z2 <- if (M > 1) Z2[[2L]] else matrix(0,0,0)
+    standata$y3_Z2 <- if (M > 2) Z2[[3L]] else matrix(0,0,0)
     
     Z2_id <- fetch(y_mod, "Z", "group_list", b2_varname)
     Z2_id <- lapply(Z2_id, groups)
-    standata$y1_Z2_id <- if (M > 0) convert_null(Z2[[1L]], "arraydouble") else as.array(double(0))
-    standata$y2_Z2_id <- if (M > 1) convert_null(Z2[[2L]], "arraydouble") else as.array(double(0))
-    standata$y3_Z2_id <- if (M > 2) convert_null(Z2[[3L]], "arraydouble") else as.array(double(0))
+    Z2_id <- lapply(Z2_id, convert_null, "arraydouble")
+    standata$y1_Z2_id <- if (M > 0) Z2[[1L]] else as.array(double(0))
+    standata$y2_Z2_id <- if (M > 1) Z2[[2L]] else as.array(double(0))
+    standata$y3_Z2_id <- if (M > 2) Z2[[3L]] else as.array(double(0))
   
-    standata$b2_prior_scale <- as.array(rep(5, standata$bK2))
   } else {
     # no second grouping factor
     standata$bN2 <- 0L
@@ -349,9 +326,75 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     standata$y1_Z2_id <- as.array(double(0))
     standata$y2_Z2_id <- as.array(double(0))
     standata$y3_Z2_id <- as.array(double(0))
-    standata$b2_prior_scale <- as.array(double(0))
   }
 
+  # Priors for population level params
+  standata$y_prior_dist <- 
+    fetch_array(y_prior_stuff, "prior_dist", pad_length = 3)
+  
+  prior_mean <- fetch(y_prior_stuff, "prior_mean")
+  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else as.array(double(0))
+  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else as.array(double(0))
+  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else as.array(double(0))
+  
+  prior_scale <- fetch(y_prior_stuff, "prior_scale")
+  standata$y_prior_scale1 <- if (M > 0) as.array(prior_scale[[1]]) else as.array(double(0))
+  standata$y_prior_scale2 <- if (M > 1) as.array(prior_scale[[2]]) else as.array(double(0))
+  standata$y_prior_scale3 <- if (M > 2) as.array(prior_scale[[3]]) else as.array(double(0))
+  
+  prior_df <- fetch(y_prior_stuff, "prior_df")
+  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else as.array(double(0))
+  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else as.array(double(0))
+  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else as.array(double(0))
+  
+  standata$y_global_prior_scale <- 
+    fetch_array(y_prior_stuff, "global_prior_scale") # hs priors only
+  standata$y_global_prior_df <- 
+    fetch_array(y_prior_stuff, "global_prior_df") # hs priors only
+  
+  # Priors for intercepts 
+  standata$y_prior_dist_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_dist")  
+  standata$y_prior_mean_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_mean")
+  standata$y_prior_scale_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_scale")
+  standata$y_prior_df_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_df")
+  
+  # Priors for auxiliary params
+  standata$y_prior_dist_for_aux <-
+    fetch_array(y_prior_aux_stuff, "prior_dist")
+  standata$y_prior_mean_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_mean")
+  standata$y_prior_scale_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_scale")
+  standata$y_prior_df_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_df")
+  
+  # Priors for group specific terms
+  standata$prior_dist_for_covariance <- b_prior_stuff$prior_dist
+  if (b_prior_stuff$prior_dist == 1L) {
+    # decov prior
+  } else if (b_prior_stuff$prior_dist == 2L) {
+    # lkj prior
+    b_prior_scale <- b_prior_stuff$prior_scale
+    b_prior_df <- b_prior_stuff$prior_df
+    b_prior_regularization <- b_prior_stuff$prior_regularization
+    standata$b1_prior_scale <- if (standata$bK1 > 0) 
+      b_prior_scale[[1L]] else 1.0
+    standata$b2_prior_scale <- if (standata$bK2 > 0) 
+      b_prior_scale[[2L]] else 1.0
+    standata$b1_prior_df <- if (standata$bK1 > 0) 
+      b_prior_df[[1L]] else 1L
+    standata$b2_prior_df <- if (standata$bK2 > 0) 
+      b_prior_df[[2L]] else 1L
+    standata$b1_prior_regularization <- if (standata$bK1 > 0) 
+      b_prior_regularization[[1L]] else 1.0
+    standata$b2_prior_regularization <- if (standata$bK2 > 0) 
+      b_prior_regularization[[2L]] else 1.0
+  }
+  
   #---------------
   # Prior summary
   #---------------
@@ -516,6 +559,48 @@ append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
   family$mvmer_link <- link
   return(family)
 }
+
+# Deal with covariance prior
+#
+# @param prior A list
+# @param cnms A list of lists, with names of the group specific 
+#   terms for each grouping factor
+# @param ok_dists A list of admissible distributions
+handle_cov_prior <- function(prior, cnms, ok_dists = nlist("decov", "lkj")) {
+  if (!is.list(prior)) 
+    stop(sQuote(deparse(substitute(prior))), " should be a named list")
+  t <- length(unique(cnms)) # num grouping factors
+  p <- sapply(cnms, length) # num terms for each grouping factor
+  
+  prior_dist_name <- prior$dist
+  if (!prior_dist_name %in% unlist(ok_dists)) {
+    stop("The prior distribution should be one of ",
+         paste(names(ok_dists), collapse = ", "))
+  } else if (prior_dist_name == "decov") {
+    decov_args <- prior
+    prior_dist <- 1L
+    prior_shape <- as.array(maybe_broadcast(decov_args$shape, t))
+    prior_scale <- as.array(maybe_broadcast(decov_args$scale, t))
+    prior_concentration <- 
+      as.array(maybe_broadcast(decov_args$concentration, sum(p[p > 1])))
+    prior_regularization <- 
+      as.array(maybe_broadcast(decov_args$regularization, sum(p > 1)))
+    prior_df <- NULL
+  } else if (prior_dist_name == "lkj") {
+    lkj_args <- prior
+    prior_dist <- 2L
+    prior_shape <- NULL
+    prior_scale <- as.array(maybe_broadcast(lkj_args$scale, t))
+    prior_concentration <- NULL
+    prior_regularization <- 
+      as.array(maybe_broadcast(lkj_args$regularization, sum(p > 1)))
+    prior_df <- lkj_args$df
+  } 
+  
+  nlist(prior_dist, prior_shape, prior_scale, prior_concentration, 
+        prior_regularization, prior_df,
+        prior_autoscale = isTRUE(prior$autoscale))
+}  
 
 # Construct a list with information on the glmer submodel
 #

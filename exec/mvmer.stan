@@ -193,6 +193,9 @@ data {
   
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
   int<lower=0,upper=3> y_prior_dist_for_aux[M];
+  
+  // prior family: 1 = decov, 2 = lkj
+  int<lower=1,upper=2> prior_dist_for_covariance;
 
   // hyperparameters, values are set to 0 if there is no prior
   vector<lower=0>[yK[1]] y_prior_scale1;
@@ -212,8 +215,12 @@ data {
   vector<lower=0>[M] y_prior_df_for_aux;
   vector<lower=0>[M] y_global_prior_df;    // for hs priors only 
   vector<lower=0>[M] y_global_prior_scale; // for hs priors only
-  vector<lower=0>[bK1] b1_prior_scale;
-  vector<lower=0>[bK2] b2_prior_scale;
+  real<lower=0> b1_prior_scale;
+  real<lower=0> b2_prior_scale;
+  real<lower=0> b1_prior_df;
+  real<lower=0> b2_prior_df;
+  real<lower=0> b1_prior_regularization;
+  real<lower=0> b2_prior_regularization;
   
   // flag indicating whether to draw from the prior
   int<lower=0,upper=1> prior_PD;  // 1 = yes
@@ -498,9 +505,9 @@ model {
   
   // Log priors, group level terms
   if (bK1 > 0) // sds for group factor 1
-    target += student_t_lpdf(bSd1 | 3, 0, b1_prior_scale);
+    target += student_t_lpdf(bSd1 | b1_prior_df, 0, b1_prior_scale);
   if (bK2 > 0) // sds for group factor 2
-    target += student_t_lpdf(bSd2 | 3, 0, b2_prior_scale);
+    target += student_t_lpdf(bSd2 | b2_prior_df, 0, b2_prior_scale);
   if (bK1 == 1) // primitive group level params for group factor 1
     target += normal_lpdf(z_bVec1 | 0, 1); 
   if (bK2 == 1) // primitive group level params for group factor 2
@@ -509,13 +516,13 @@ model {
     // primitive group level params for group factor 1
     target += normal_lpdf(to_vector(z_bMat1) | 0, 1); 
     // corr matrix for group factor 1 
-    target += lkj_corr_cholesky_lpdf(bCholesky1 | 1);
+    target += lkj_corr_cholesky_lpdf(bCholesky1 | b1_prior_regularization);
   }  
   if (bK2 > 1) {
     // primitive group level params for group factor 2
     target += normal_lpdf(to_vector(z_bMat2) | 0, 1); 
     // corr matrix for group factor 2
-    target += lkj_corr_cholesky_lpdf(bCholesky2 | 1);
+    target += lkj_corr_cholesky_lpdf(bCholesky2 | b2_prior_regularization);
   }
 }
 generated quantities {
