@@ -120,9 +120,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   if (!is.null(weights)) 
     stop("Weights are not yet implemented for stan_mvmer")
   if (QR)               
-    stop("QR decomposition not yet implemented for stan_jm")
+    stop("QR decomposition not yet implemented for stan_mvmer")
   if (sparse)
-    stop("'sparse' option is not yet implemented for stan_jm")
+    stop("'sparse' option is not yet implemented for stan_mvmer")
   
   # Formula
   yF <- validate_arg(formula, "formula"); M <- length(yF)
