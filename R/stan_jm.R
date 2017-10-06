@@ -3401,7 +3401,7 @@ validate_arg <- function(arg, type, validate_length = NULL) {
   else if (is(arg, "list")) { 
     # input type is a list, check each element
     check <- sapply(arg, function(x) inherits(x, type))
-    if (!check) 
+    if (!all(check))
       STOP_arg(nm, type)
   } 
   else {

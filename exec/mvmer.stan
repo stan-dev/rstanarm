@@ -215,10 +215,10 @@ data {
   vector<lower=0>[M] y_prior_df_for_aux;
   vector<lower=0>[M] y_global_prior_df;    // for hs priors only 
   vector<lower=0>[M] y_global_prior_scale; // for hs priors only
-  real<lower=0> b1_prior_scale;
-  real<lower=0> b2_prior_scale;
-  real<lower=0> b1_prior_df;
-  real<lower=0> b2_prior_df;
+  vector<lower=0>[bK1] b1_prior_scale;
+  vector<lower=0>[bK2] b2_prior_scale;
+  vector<lower=0>[bK1] b1_prior_df;
+  vector<lower=0>[bK2] b2_prior_df;
   real<lower=0> b1_prior_regularization;
   real<lower=0> b2_prior_regularization;
   

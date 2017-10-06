@@ -190,13 +190,16 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   
   b_user_prior_stuff <- b_prior_stuff <- handle_cov_prior(
       prior_covariance, cnms = cnms, ok_dists = ok_covariance_dists)
-
+  b_prior_stuff <- split_cov_prior(
+    b_prior_stuff, cnms = cnms, submodel_cnms = fetch(y_mod, "Z", "group_cnms"))
+  
   # Autoscaling of priors
   response <- fetch(y_mod, "Y", "Y")
-  predictors <- fetch(y_mod, "X", "X")
+  Xpredictors <- fetch(y_mod, "X", "X")
+  Zpredictors <- xapply(cnms_nms, FUN = function(nm) fetch(y_mod, "Z", "Z", nm))
   y_prior_stuff <- xapply(
     y_prior_stuff, response = response,
-    predictors = predictors, family = family,
+    predictors = Xpredictors, family = family,
     FUN = autoscale_prior)
   y_prior_intercept_stuff <- xapply(
     y_prior_intercept_stuff, response = response,
@@ -204,7 +207,10 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   y_prior_aux_stuff <- xapply(
     y_prior_aux_stuff, response = response,
     family = family, FUN = autoscale_prior)
-
+  b_prior_stuff <- xapply(cnms_nms, FUN = function(nm) {
+    xapply(b_prior_stuff[[nm]], predictors = Zpredictors[[nm]], 
+           response = response, family = family, FUN = autoscale_prior)})
+  
   #-------------------------
   # Data for export to Stan
   #-------------------------
@@ -373,26 +379,42 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     fetch_array(y_prior_aux_stuff, "prior_df")
   
   # Priors for group specific terms
-  standata$prior_dist_for_covariance <- b_prior_stuff$prior_dist
-  if (b_prior_stuff$prior_dist == 1L) {
+  b1_prior_stuff <- b_prior_stuff[[b1_varname]]
+  b_prior_dist <- unique(fetch_(b1_prior_stuff, "prior_dist"))
+  if (!n_distinct(b_prior_dist) == 1L)
+    stop2("Bug found: covariance prior should be the same for all submodels.")
+  standata$prior_dist_for_covariance <- b_prior_dist
+  
+  if (b_prior_dist == 1L) {
     # decov prior
-  } else if (b_prior_stuff$prior_dist == 2L) {
+    
+  } else if (b_prior_dist == 2L) {
     # lkj prior
-    b_prior_scale <- b_prior_stuff$prior_scale
-    b_prior_df <- b_prior_stuff$prior_df
-    b_prior_regularization <- b_prior_stuff$prior_regularization
-    standata$b1_prior_scale <- if (standata$bK1 > 0) 
-      b_prior_scale[[1L]] else 1.0
-    standata$b2_prior_scale <- if (standata$bK2 > 0) 
-      b_prior_scale[[2L]] else 1.0
-    standata$b1_prior_df <- if (standata$bK1 > 0) 
-      b_prior_df[[1L]] else 1L
-    standata$b2_prior_df <- if (standata$bK2 > 0) 
-      b_prior_df[[2L]] else 1L
-    standata$b1_prior_regularization <- if (standata$bK1 > 0) 
-      b_prior_regularization[[1L]] else 1.0
-    standata$b2_prior_regularization <- if (standata$bK2 > 0) 
-      b_prior_regularization[[2L]] else 1.0
+    b1_prior_scale <- fetch_array(b1_prior_stuff, "prior_scale")
+    b1_prior_df    <- fetch_array(b1_prior_stuff, "prior_df")
+    b1_prior_regularization <- fetch_(b1_prior_stuff, "prior_regularization")
+    standata$b1_prior_scale <- b1_prior_scale
+    standata$b1_prior_df    <- b1_prior_df
+    standata$b1_prior_regularization <- unique(b1_prior_regularization)
+    if (!n_distinct(b1_prior_regularization) == 1L) {
+      stop2("Bug found: prior_regularization should be the same in all ",
+            "submodels with the b1 grouping factor.")
+    }
+    if (standata$bK2 > 0) {
+      # model has a second grouping factor
+      b2_prior_stuff <- b_prior_stuff[[b2_varname]]
+      b2_prior_scale <- fetch_array(b2_prior_stuff, "prior_scale")
+      b2_prior_df    <- fetch_array(b2_prior_stuff, "prior_df")
+      b2_prior_regularization <- fetch_(b2_prior_stuff, "prior_regularization")
+      standata$b2_prior_scale <- b2_prior_scale
+      standata$b2_prior_df    <- b2_prior_df
+      standata$b2_prior_regularization <- unique(b2_prior_regularization)
+    } else {
+      # model does not have a second grouping factor
+      standata$b2_prior_scale <- as.array(double(0))
+      standata$b2_prior_df <- as.array(double(0))
+      standata$b2_prior_regularization <- 1.0
+    }
   }
   
   #---------------
@@ -590,11 +612,11 @@ handle_cov_prior <- function(prior, cnms, ok_dists = nlist("decov", "lkj")) {
     lkj_args <- prior
     prior_dist <- 2L
     prior_shape <- NULL
-    prior_scale <- as.array(maybe_broadcast(lkj_args$scale, t))
+    prior_scale <- as.array(maybe_broadcast(lkj_args$scale, sum(p)))
     prior_concentration <- NULL
     prior_regularization <- 
       as.array(maybe_broadcast(lkj_args$regularization, sum(p > 1)))
-    prior_df <- lkj_args$df
+    prior_df <- as.array(maybe_broadcast(lkj_args$df, sum(p)))
   } 
   
   nlist(prior_dist, prior_shape, prior_scale, prior_concentration, 
@@ -792,5 +814,28 @@ reformulate_rhs <- function(x, subbars = FALSE) {
   }
 }
 
-
+split_cov_prior <- function(prior_stuff, cnms, submodel_cnms) {
+  M <- length(submodel_cnms) # number of submodels
+  cnms_nms <- names(cnms) # names of grouping factors
+  mark <- 0
+  new_prior_stuff <- list()
+  for (nm in cnms_nms) {
+    for (m in 1:M) {
+      len <- length(submodel_cnms[[m]][[nm]])
+      new_prior_stuff[[nm]][[m]] <- prior_stuff 
+      if (len) {
+        # submodel 'm' has group level terms for group factor 'nm'
+        beg <- mark + 1; end <- mark + len
+        new_prior_stuff[[nm]][[m]]$prior_scale <- prior_stuff$prior_scale[beg:end]
+        new_prior_stuff[[nm]][[m]]$prior_df <- prior_stuff$prior_df[beg:end]
+        mark <- mark + len
+      } else {
+        new_prior_stuff[[nm]][[m]]$prior_scale <- NULL
+        new_prior_stuff[[nm]][[m]]$prior_df <- NULL
+        new_prior_stuff[[nm]][[m]]$prior_regularization <- NULL
+      }
+    }
+  }
+  new_prior_stuff
+}
 
