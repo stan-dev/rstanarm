@@ -132,7 +132,53 @@ functions {
     else reject("Invalid family.");
   }  
 
-
+  /** 
+  * Create group-specific coefficients, see section 2 of
+  * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+  *
+  * @param z_b Vector whose elements are iid normal(0,sigma) a priori
+  * @param theta Vector with covariance parameters as defined in lme4
+  * @param p An integer array with the number variables on the LHS of each |
+  * @param l An integer array with the number of levels for the factor(s) on 
+  *   the RHS of each |
+  * @param i The index of the grouping factor for which you want to return
+  *   the group-specific coefficients for
+  * @return An array of group-specific coefficients for grouping factor i
+  */
+  vector[] make_b_array(vector z_b, vector theta_L, int[] p, int[] l, int i) {
+    vector[p[i]] b_array[l[i]];
+    int nc = p[i];
+    int b_mark = 1;
+    int theta_L_mark = 1;
+    if (i > 1) {
+      for (j in 1:(i-1)) {
+        theta_L_mark = theta_L_mark + p[j] + choose(p[j], 2);
+        b_mark = b_mark + p[j] * l[j];
+      }
+    }
+    if (nc == 1) {
+      real theta_L_start = theta_L[theta_L_mark];
+      for (s in b_mark:(b_mark + l[i] - 1)) 
+        b_array[s,nc] = theta_L_start * z_b[s];
+    }
+    else {
+      matrix[nc,nc] T_i = rep_matrix(0, nc, nc);
+      for (c in 1:nc) {
+        T_i[c,c] = theta_L[theta_L_mark];
+        theta_L_mark = theta_L_mark + 1;
+        for(r in (c+1):nc) {
+          T_i[r,c] = theta_L[theta_L_mark];
+          theta_L_mark = theta_L_mark + 1;
+        }
+      }
+      for (j in 1:l[i]) {
+        vector[nc] temp = T_i * segment(z_b, b_mark, nc);
+        b_array[j,] = temp;
+        b_mark = b_mark + nc;
+      }
+    }
+    return b_array;
+  }
  
 }
 data {
@@ -158,14 +204,20 @@ data {
   vector[yK[2]] yXbar2;
   vector[yK[3]] yXbar3;
   
+  // prior family: 1 = decov, 2 = lkj
+  int<lower=1,upper=2> prior_dist_for_cov;
+  
   // group level dimensions and data, group factor 1
   int<lower=0> bN1; // num groups
   int<lower=0> bK1; // total num params
   int<lower=0> bK1_len[3]; // num params in each submodel
   int<lower=0> bK1_idx[3,2]; // beg/end index for group params
-  vector[bK1_len[1] > 0 ? yNeta[1] : 0] y1_Z1[bK1_len[1]]; // re design matrix
-  vector[bK1_len[2] > 0 ? yNeta[2] : 0] y2_Z1[bK1_len[2]];
-  vector[bK1_len[3] > 0 ? yNeta[3] : 0] y3_Z1[bK1_len[3]];
+  vector[bK1_len[1] > 0 ? (prior_dist_for_cov == 1 ? bK1_len[1] : yNeta[1]) : 0] 
+    y1_Z1[bK1_len[1] > 0 && prior_dist_for_cov == 1 ? yNeta[1] : bK1_len[1]]; // re design matrix
+  vector[bK1_len[2] > 0 ? (prior_dist_for_cov == 1 ? bK1_len[2] : yNeta[2]) : 0] 
+    y2_Z1[bK1_len[2] > 0 && prior_dist_for_cov == 1 ? yNeta[2] : bK1_len[2]];
+  vector[bK1_len[3] > 0 ? (prior_dist_for_cov == 1 ? bK1_len[3] : yNeta[3]) : 0] 
+    y3_Z1[bK1_len[3] > 0 && prior_dist_for_cov == 1 ? yNeta[3] : bK1_len[3]];
   int<lower=0> y1_Z1_id[bK1_len[1] > 0 ? yNeta[1] : 0]; // group indexing for y1_Z1
   int<lower=0> y2_Z1_id[bK1_len[2] > 0 ? yNeta[2] : 0]; // group indexing for y2_Z1
   int<lower=0> y3_Z1_id[bK1_len[3] > 0 ? yNeta[3] : 0]; // group indexing for y3_Z1
@@ -194,8 +246,6 @@ data {
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
   int<lower=0,upper=3> y_prior_dist_for_aux[M];
   
-  // prior family: 1 = decov, 2 = lkj
-  int<lower=1,upper=2> prior_dist_for_cov;
 
   // hyperparameters, values are set to 0 if there is no prior
   
@@ -364,40 +414,56 @@ transformed parameters {
   real yAux1[has_aux[1]];  
   real yAux2[has_aux[2]];  
   real yAux3[has_aux[3]];
+  real yAuxMaximum = 1.0;
 	
 	// group-level params, under decov prior
-  vector[prior_dist_for_cov == 1 ? q : 0] b;
 	vector[len_theta_L] theta_L; 
+  vector[prior_dist_for_cov == 1 && bK1 > 0 ? bK1 : 0] 
+    bArray1[prior_dist_for_cov == 1 && bK1 > 0 ? bN1 : 0];
+  vector[prior_dist_for_cov == 1 && bK1 > 0 ? bK2 : 0] 
+    bArray2[prior_dist_for_cov == 1 && bK2 > 0 ? bN2 : 0];
 	
   // group-level params for first grouping factor
-  vector[bK1 == 1 ? bN1 : 0] bVec1; 
-  matrix[bK1 >  1 ? bN1 : 0, bK1 >  1 ? bK1 : 0] bMat1;  
+  vector[prior_dist_for_cov == 2 && bK1 == 1 ? bN1 : 0] bVec1; 
+  matrix[prior_dist_for_cov == 2 && bK1 >  1 ? bN1 : 0, 
+    prior_dist_for_cov == 2 && bK1 >  1 ? bK1 : 0] bMat1;  
  
   // group level params for second grouping factor
-  vector[bK2 == 1 ? bN2 : 0] bVec2;
-  matrix[bK2 >  1 ? bN2 : 0, bK2 >  1 ? bK2 : 0] bMat2; 
+  vector[prior_dist_for_cov == 2 && bK2 == 1 ? bN2 : 0] bVec2;
+  matrix[prior_dist_for_cov == 2 && bK2 >  1 ? bN2 : 0, 
+    prior_dist_for_cov == 2 && bK2 >  1 ? bK2 : 0] bMat2; 
   
   // population level params, auxiliary params
-  if (has_aux[1] == 1)
+  if (has_aux[1] == 1) {
     yAux1[1] = make_aux(yAux1_unscaled[1], y_prior_dist_for_aux[1], 
                         y_prior_mean_for_aux[1], y_prior_scale_for_aux[1]);
+    if (yAux1[1] > yAuxMaximum)
+      yAuxMaximum = yAux1[1];
+  }
+
   if (yK[1] > 0)
     yBeta1 = make_beta(z_yBeta1, y_prior_dist[1], y_prior_mean1, 
                        y_prior_scale1, y_prior_df1, y_global_prior_scale[1],  
                        yGlobal1, yLocal1, yOol1, yMix1, yAux1, family[1]);
   if (M > 1) {
-    if (has_aux[2] == 1)
+    if (has_aux[2] == 1) {
       yAux2[1] = make_aux(yAux2_unscaled[1], y_prior_dist_for_aux[2], 
                           y_prior_mean_for_aux[2], y_prior_scale_for_aux[2]);
+      if (yAux2[1] > yAuxMaximum)
+        yAuxMaximum = yAux2[1];
+    }
     if (yK[2] > 0)
       yBeta2 = make_beta(z_yBeta2, y_prior_dist[2], y_prior_mean2, 
                          y_prior_scale2, y_prior_df2, y_global_prior_scale[2],  
                          yGlobal2, yLocal2, yOol2, yMix2, yAux2, family[2]);
   } 
   if (M > 2) {
-    if (has_aux[3] == 1)
+    if (has_aux[3] == 1) {
       yAux3[1] = make_aux(yAux3_unscaled[1], y_prior_dist_for_aux[3], 
                           y_prior_mean_for_aux[3], y_prior_scale_for_aux[3]);
+      if (yAux3[1] > yAuxMaximum)
+        yAuxMaximum = yAux3[1];
+    }
     if (yK[3] > 0)
       yBeta3 = make_beta(z_yBeta3, y_prior_dist[3], y_prior_mean3, 
                          y_prior_scale3, y_prior_df3, y_global_prior_scale[3],  
@@ -407,28 +473,13 @@ transformed parameters {
   // group level params, under decov prior
   if (prior_dist_for_cov == 1) {
     int mark = 1;
-    theta_L = make_theta_L(len_theta_L, p, 1.0, tau, b_prior_scale, zeta, rho, z_T);
-    b = make_b(z_b, theta_L, p, l);
+    theta_L = make_theta_L(len_theta_L, p, yAuxMaximum, tau, 
+                           b_prior_scale, zeta, rho, z_T);
     // group-level params for first grouping factor
-    if (bK1 == 1) {
-      bVec1 = segment(b, mark, bN1);
-      mark = mark + bN1;
-    } else if (bK1 > 1) {
-      for (i in 1:bK1) {
-        bMat1[,i] = segment(b, mark, bN1);
-        mark = mark + bN1;
-      }
-    }
+    bArray1 = make_b_array(z_b, theta_L, p, l, 1);
  	  // group level params for second grouping factor
-    if (bK2 == 1) {
-      bVec2 = segment(b, mark, bN2);
-      mark = mark + bN2;
-    } else if (bK2 > 1) {
-      for (i in 1:bK2) {
-        bMat2[,i] = segment(b, mark, bN2);
-        mark = mark + bN2;
-      }
-    }
+    if (bK2 > 0) 
+      bArray2 = make_b_array(z_b, theta_L, p, l, 2);
   }
   
   // group-level params, under lkj prior
@@ -453,28 +504,42 @@ model {
   if (intercept_type[1] == 1) yEta1 = yEta1 + yGamma1[1];
   else if (intercept_type[1] == 2) yEta1 = yEta1 + yGamma1[1] - max(yEta1);
   else if (intercept_type[1] == 3) yEta1 = yEta1 + yGamma1[1] - min(yEta1);
-  if (bK1_len[1] > 0) { // includes group factor 1
-    if (bK1 == 1) { // one group level param
+  if (prior_dist_for_cov == 1) {
+    if (bK1_len[1] > 0) { // includes group factor 1
       for (n in 1:yNeta[1])
-        yEta1[n] = yEta1[n] + (bVec1[y1_Z1_id[n]]) * y1_Z1[1,n];
+        for (k in bK1_idx[1,1]:bK1_idx[1,2])
+          yEta1[n] = yEta1[n] + (bArray1[y1_Z1_id[n],k]) * y1_Z1[n,k];
     }
-    else if (bK1 > 1) {// more than one group level param
-      for (k in bK1_idx[1,1]:bK1_idx[1,2])
-        for (n in 1:yNeta[1])
-          yEta1[n] = yEta1[n] + (bMat1[y1_Z1_id[n],k]) * y1_Z1[k,n];
-    }
-  }
-  if (bK2_len[1] > 0) { // includes group factor 2
-    if (bK2 == 1) { // one group level param
+    if (bK2_len[1] > 0) { // includes group factor 2
       for (n in 1:yNeta[1])
-        yEta1[n] = yEta1[n] + (bVec2[y1_Z2_id[n]]) * y1_Z2[1,n];
+        for (k in bK2_idx[1,1]:bK2_idx[1,2])
+          yEta1[n] = yEta1[n] + (bArray2[y1_Z2_id[n],k]) * y1_Z2[n,k];
     }
-    else if (bK2 > 1) { // more than one group level param
-      for (k in bK1_idx[1,1]:bK1_idx[1,2])
+  } else if (prior_dist_for_cov == 2) {
+    if (bK1_len[1] > 0) { // includes group factor 1
+      if (bK1 == 1) { // one group level param
         for (n in 1:yNeta[1])
-          yEta1[n] = yEta1[n] + (bMat2[y1_Z2_id[n],k]) * y1_Z2[k,n];
+          yEta1[n] = yEta1[n] + (bVec1[y1_Z1_id[n]]) * y1_Z1[1,n];
+      }
+      else if (bK1 > 1) {// more than one group level param
+        for (k in bK1_idx[1,1]:bK1_idx[1,2])
+          for (n in 1:yNeta[1])
+            yEta1[n] = yEta1[n] + (bMat1[y1_Z1_id[n],k]) * y1_Z1[k,n];
+      }
     }
+    if (bK2_len[1] > 0) { // includes group factor 2
+      if (bK2 == 1) { // one group level param
+        for (n in 1:yNeta[1])
+          yEta1[n] = yEta1[n] + (bVec2[y1_Z2_id[n]]) * y1_Z2[1,n];
+      }
+      else if (bK2 > 1) { // more than one group level param
+        for (k in bK2_idx[1,1]:bK2_idx[1,2])
+          for (n in 1:yNeta[1])
+            yEta1[n] = yEta1[n] + (bMat2[y1_Z2_id[n],k]) * y1_Z2[k,n];
+      }
+    }    
   }
+
   
   // Linear predictor for submodel 2
   if (M > 1) {
@@ -504,7 +569,7 @@ model {
         int k_shift = bK2_len[1];
         for (k in bK2_idx[2,1]:bK2_idx[2,2])
           for (n in 1:yNeta[1])
-            yEta1[n] = yEta1[n] + (bMat2[y2_Z2_id[n],k]) * y2_Z2[k-k_shift,n];
+            yEta2[n] = yEta2[n] + (bMat2[y2_Z2_id[n],k]) * y2_Z2[k-k_shift,n];
       }
     }
   }

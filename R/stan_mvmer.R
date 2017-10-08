@@ -282,7 +282,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   standata$bK1_idx <- get_idx_array(b1_nvars)
   
   Z1 <- fetch(y_mod, "Z", "Z", b1_varname)
-  Z1 <- lapply(Z1, transpose)
+  if (prior_covariance$dist == "lkj") {
+    Z1 <- lapply(Z1, transpose)
+  }
   Z1 <- lapply(Z1, convert_null, "matrix")
   standata$y1_Z1 <- if (M > 0) Z1[[1L]] else matrix(0,0,0)
   standata$y2_Z1 <- if (M > 1) Z1[[2L]] else matrix(0,0,0)
@@ -311,7 +313,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     standata$bK2_idx <- get_idx_array(b2_nvars)
     
     Z2 <- fetch(y_mod, "Z", "Z", b2_varname)
-    Z2 <- lapply(Z2, transpose)
+    if (prior_covariance$dist == "lkj") {
+      Z2 <- lapply(Z2, transpose)
+    }
     Z2 <- lapply(Z2, convert_null, "matrix")
     standata$y1_Z2 <- if (M > 0) Z2[[1L]] else matrix(0,0,0)
     standata$y2_Z2 <- if (M > 1) Z2[[2L]] else matrix(0,0,0)
@@ -481,7 +485,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
             if (standata$prior_dist_for_cov == 2 && standata$bK1  > 1) "bCorr1",
             if (standata$prior_dist_for_cov == 2 && standata$bK2  > 1) "bCorr2",
             if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "theta_L",
-            if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "b")
+            if (standata$prior_dist_for_cov == 1 && standata$bK1  > 0) "bArray1",
+            if (standata$prior_dist_for_cov == 1 && standata$bK2  > 0) "bArray2")
             #"mean_PPD")
   
   cat(paste0(if (M == 1L) "Uni" else "Multi", "variate model specified\n"))
