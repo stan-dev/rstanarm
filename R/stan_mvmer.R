@@ -159,7 +159,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   y_mod <- xapply(yF, yD, family, FUN = handle_y_mod)
   
   # Construct single cnms list for all longitudinal submodels
-  cnms <- get_common_cnms(fetch(y_mod, "Z", "group_cnms"), stub = "y")
+  y_cnms <- fetch(y_mod, "Z", "group_cnms")
+  cnms <- get_common_cnms(y_cnms, stub = "y")
   cnms_nms <- names(cnms)
   if (length(cnms_nms) > 2L)
     stop("A maximum of 2 grouping factors are allowed.")
@@ -192,27 +193,25 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
       prior_covariance, cnms = cnms, ok_dists = ok_covariance_dists)
   
   # Autoscaling of priors
-  response <- fetch(y_mod, "Y", "Y")
-  Xpredictors <- fetch(y_mod, "X", "X")
+  Y_vecs <- fetch(y_mod, "Y", "Y")
+  X_mats <- fetch(y_mod, "X", "X")
   y_prior_stuff <- xapply(
-    y_prior_stuff, response = response,
-    predictors = Xpredictors, family = family,
-    FUN = autoscale_prior)
+    y_prior_stuff, response = Y_vecs, predictors = X_mats, 
+    family = family, FUN = autoscale_prior)
   y_prior_intercept_stuff <- xapply(
-    y_prior_intercept_stuff, response = response,
+    y_prior_intercept_stuff, response = Y_vecs,
     family = family, FUN = autoscale_prior)
   y_prior_aux_stuff <- xapply(
-    y_prior_aux_stuff, response = response,
+    y_prior_aux_stuff, response = Y_vecs,
     family = family, FUN = autoscale_prior)
-  if (b_prior_stuff$prior_dist_name == "lkj") {
-    b_prior_stuff <- split_cov_prior(b_prior_stuff, cnms = cnms, 
-                                     submodel_cnms = fetch(y_mod, "Z", "group_cnms"))
+  
+  if (b_prior_stuff$prior_dist_name == "lkj") { # autoscale priors for random effect sds
+    b_prior_stuff <- split_cov_prior(b_prior_stuff, cnms = cnms, submodel_cnms = y_cnms)
     b_prior_stuff <- xapply(cnms_nms, 
       FUN = function(nm) {
-        Zpredictors <- fetch(y_mod, "Z", "Z", nm)
-        xapply(b_prior_stuff[[nm]], predictors = Zpredictors, 
-               response = response, family = family, FUN = autoscale_prior)
-      })
+        Z_mats <- fetch(y_mod, "Z", "Z", nm)
+        xapply(b_prior_stuff[[nm]], response = Y_vecs, predictors = Z_mats, 
+               family = family, FUN = autoscale_prior)})
   }
   
   #-------------------------
@@ -282,9 +281,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   standata$bK1_idx <- get_idx_array(b1_nvars)
   
   Z1 <- fetch(y_mod, "Z", "Z", b1_varname)
-  if (prior_covariance$dist == "lkj") {
+  #if (prior_covariance$dist == "lkj") {
     Z1 <- lapply(Z1, transpose)
-  }
+  #}
   Z1 <- lapply(Z1, convert_null, "matrix")
   standata$y1_Z1 <- if (M > 0) Z1[[1L]] else matrix(0,0,0)
   standata$y2_Z1 <- if (M > 1) Z1[[2L]] else matrix(0,0,0)
@@ -313,9 +312,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     standata$bK2_idx <- get_idx_array(b2_nvars)
     
     Z2 <- fetch(y_mod, "Z", "Z", b2_varname)
-    if (prior_covariance$dist == "lkj") {
+    #if (prior_covariance$dist == "lkj") {
       Z2 <- lapply(Z2, transpose)
-    }
+    #}
     Z2 <- lapply(Z2, convert_null, "matrix")
     standata$y1_Z2 <- if (M > 0) Z2[[1L]] else matrix(0,0,0)
     standata$y2_Z2 <- if (M > 1) Z2[[2L]] else matrix(0,0,0)
@@ -420,15 +419,16 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     b1_prior_scale <- fetch_array(b1_prior_stuff, "prior_scale")
     b1_prior_df <- fetch_array(b1_prior_stuff, "prior_df")
     b1_prior_regularization <- fetch_(b1_prior_stuff, "prior_regularization")
+    if (n_distinct(b1_prior_dist) > 1L)
+      stop2("Bug found: covariance prior should be the same for all submodels.")
+    if (n_distinct(b1_prior_regularization) > 1L) {
+      stop2("Bug found: prior_regularization should be the same for all submodels.")
+    }
     standata$prior_dist_for_cov <- unique(b1_prior_dist)
     standata$b1_prior_scale <- b1_prior_scale
     standata$b1_prior_df <- b1_prior_df
-    standata$b1_prior_regularization <- unique(b1_prior_regularization)
-    if (!n_distinct(b1_prior_dist) == 1L)
-      stop2("Bug found: covariance prior should be the same for all submodels.")
-    if (!n_distinct(b1_prior_regularization) == 1L) {
-      stop2("Bug found: prior_regularization should be the same for all submodels.")
-    }
+    standata$b1_prior_regularization <- if (length(b1_prior_regularization))
+      unique(b1_prior_regularization) else 1.0
     
     if (standata$bK2 > 0) {
       # model has a second grouping factor
@@ -476,17 +476,11 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
             if (M > 0 && standata$has_aux[1]) "yAux1",
             if (M > 1 && standata$has_aux[2]) "yAux2",
             if (M > 2 && standata$has_aux[3]) "yAux3",
-            if (standata$bK1 == 1) "bVec1",
-            if (standata$bK1  > 1) "bMat1",
-            if (standata$bK2 == 1) "bVec2",
-            if (standata$bK2  > 1) "bMat2",
-            if (standata$prior_dist_for_cov == 2 && standata$bK1  > 0) "bSd1",
-            if (standata$prior_dist_for_cov == 2 && standata$bK2  > 0) "bSd2",
-            if (standata$prior_dist_for_cov == 2 && standata$bK1  > 1) "bCorr1",
-            if (standata$prior_dist_for_cov == 2 && standata$bK2  > 1) "bCorr2",
-            if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "theta_L",
-            if (standata$prior_dist_for_cov == 1 && standata$bK1  > 0) "bArray1",
-            if (standata$prior_dist_for_cov == 1 && standata$bK2  > 0) "bArray2")
+            #if (standata$bK1 > 0) "bMat1",
+            #if (standata$bK2 > 0) "bMat2",
+            if (standata$prior_dist_for_cov == 2 && standata$bK1 > 0) "bCov1",
+            if (standata$prior_dist_for_cov == 2 && standata$bK2 > 0) "bCov2",
+            if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "theta_L")
             #"mean_PPD")
   
   cat(paste0(if (M == 1L) "Uni" else "Multi", "variate model specified\n"))
@@ -527,11 +521,20 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   })        
   
   # Sigma values in stanmat, and Sigma names
-  if (FALSE && standata$len_theta_L) {
+  nc <- sapply(cnms, FUN = length)
+  nms <- names(cnms) 
+  Sigma_nms <- lapply(cnms, FUN = function(grp) {
+    nm <- outer(grp, grp, FUN = paste, sep = ",")
+    nm[lower.tri(nm, diag = TRUE)]
+  })
+  for (j in seq_along(Sigma_nms)) {
+    Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+  }
+  Sigma_nms <- unlist(Sigma_nms)
+  
+  if (prior_covariance$dist == "decov" && standata$len_theta_L) {
     thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
                       permuted = FALSE)
-    nc <- sapply(cnms, FUN = length)
-    nms <- names(cnms)
     Sigma <- apply(thetas, 1:2, FUN = function(theta) {
       Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
       unlist(sapply(Sigma, simplify = FALSE, 
@@ -546,24 +549,16 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     else for (chain in 1:end) {
       stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
     }
-    Sigma_nms <- lapply(cnms, FUN = function(grp) {
-      nm <- outer(grp, grp, FUN = paste, sep = ",")
-      nm[lower.tri(nm, diag = TRUE)]
-    })
-    for (j in seq_along(Sigma_nms)) {
-      Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
-    }
-    Sigma_nms <- unlist(Sigma_nms)
-  }
+  }  
   
   new_names <- c(y_intercept_nms,
                  y_beta_nms,
                  y_aux_nms,
                  #if (length(group)) c(paste0("b[", b_nms, "]")),
-                 #if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
+                 paste0("Sigma[", Sigma_nms, "]"),
                  paste0("y", 1:M, "|mean_PPD"), 
                  "log-posterior")
-  #stanfit@sim$fnames_oi <- new_names
+  stanfit@sim$fnames_oi <- new_names
   
   #n_grps <- standata$l - 1
   #names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
