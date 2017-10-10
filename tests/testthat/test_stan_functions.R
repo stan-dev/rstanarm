@@ -22,19 +22,8 @@ set.seed(12345)
 
 MODELS_HOME <- file.path("src", "stan_files")
 fsep <- .Platform$file.sep
-if (!file.exists(MODELS_HOME)) {
-  print(getwd())
-  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
-                     paste0("rstanarm", fsep, "src", fsep, "stan_files"), getwd())
-}
-if (!file.exists(MODELS_HOME)) {
-  print(MODELS_HOME)
-  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
-                     file.path("src", "stan_files"), getwd())
-}
-if (!file.exists(MODELS_HOME)) {
-  print(MODELS_HOME)
-  MODELS_HOME <- system.file("src", "stan_files", package = "rstanarm")
+if (!file.exists(MODELS_HOME)) { # R CMD check
+  MODELS_HOME <- file.path("..", "..", "00_pkg_src", "rstanarm", "src", "stan_files")
 }
 
 context("setup")
@@ -48,12 +37,13 @@ Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
+  mc <- grep("^#include", mc, invert = TRUE, value = TRUE)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
     end <- grep("^}[[:blank:]]*$", mc)[1]
+    if (end == (start + 1L)) return(as.character(NULL))
     return(mc[(start + 1L):(end - 1L)])
-  }
-  else return(as.character(NULL))
+  } else return(as.character(NULL))
 })
 functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
@@ -63,7 +53,7 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
                                "count_likelihoods.stan", 
                                "SSfunctions.stan")), 
                       FUN = readLines)), unlist(functions))
-model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
+model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
 N <- 99L
 
@@ -373,7 +363,7 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attr(group$flist, "assign"), function(i) nlevels(group$flist[,i]))
+    l <- sapply(attr(group$flist, "assign"), function(i) nlevels(group$flist[[i]]))
     
     len_theta_L <- sum(choose(p,2), p)
     expect_true(len_theta_L == length(theta))
