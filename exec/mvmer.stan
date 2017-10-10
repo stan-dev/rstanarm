@@ -11,6 +11,25 @@ functions {
   #include "count_likelihoods.stan"
   #include "jm_functions.stan"
   
+  
+  /** 
+  * Get the indices corresponding to the lower tri of a square matrix
+  *
+  * @param dim The number of rows in the square matrix
+  * @return A vector of indices
+  */ 
+  int[] lower_tri_indices(int dim) {
+    int indices[dim + choose(dim, 2)];
+    int mark = 1;
+    for (r in 1:dim) {
+      for (c in r:dim) {
+        indices[mark] = (r - 1) * dim + c;
+        mark = mark + 1;
+      }
+    }
+    return indices;
+  }
+  
   /** 
   * Return the lower/upper bound for the specified intercept type
   *
@@ -92,6 +111,57 @@ functions {
   }
 
   /** 
+  * Evaluate the linear predictor for the glmer submodel
+  *
+  * @param X Design matrix for fe
+  * @param Z1 Design matrix for re, for first grouping factor
+  * @param Z2 Design matrix for re, for second grouping factor
+  * @param Z1_id Group indexing for Z1
+  * @param Z2_id Group indexing for Z2
+  * @param gamma The intercept parameter
+  * @param beta Vector of population level parameters
+  * @param b1Mat Matrix of group level params for first grouping factor
+  * @param b2Mat Matrix of group level params for second grouping factor
+  * @param b1Mat_colshift,b2Mat_colshift Number of columns in b1Mat/b2Mat
+  *   that correpond to group level params from prior glmer submodels
+  * @param intercept_type The type of intercept parameter (0 = none,
+  *   1 = unbounded, 2 = lower bound, 3 = upper bound)
+  * @return A vector containing the linear predictor for the glmer submodel
+  */  
+  vector evaluate_eta(matrix X, vector[] Z1, vector[] Z2, int[] Z1_id, int[] Z2_id, 
+                      real[] gamma, vector beta, matrix b1Mat, matrix b2Mat, 
+                      int b1Mat_colshift, int b2Mat_colshift, 
+                      int intercept_type) {
+    int N = rows(X);    // num rows in design matrix
+    int K = rows(beta); // num predictors
+    int p1 = size(Z1);  // num group level params for group factor 1
+    int p2 = size(Z2);  // num group level params for group factor 2
+    vector[N] eta;
+    
+    if (K > 0) eta = X * beta;
+    else eta = rep_vector(0.0, N);
+    
+    if (intercept_type > 0) { // submodel has an intercept
+      if (intercept_type == 1) eta = eta + gamma[1];
+      else if (intercept_type == 2) eta = eta + gamma[1] - max(eta);
+      else if (intercept_type == 3) eta = eta + gamma[1] - min(eta);
+    }
+    
+    if (p1 > 0) { // submodel includes group factor 1
+      for (k in 1:p1)
+        for (n in 1:N)
+          eta[n] = eta[n] + (b1Mat[Z1_id[n], k+b1Mat_colshift]) * Z1[k,n];
+    }
+    if (p2 > 0) { // submodel includes group factor 2
+      for (k in 1:p2)
+        for (n in 1:N)
+          eta[n] = eta[n] + (b2Mat[Z2_id[n], k+b2Mat_colshift]) * Z2[k,n];
+    }
+    
+    return eta;
+  }
+
+  /** 
   * Increment the target with the log-likelihood for the glmer submodel
   *
   * @param z_beta A vector of primitive parameters
@@ -132,8 +202,113 @@ functions {
     else reject("Invalid family.");
   }  
 
+  /** 
+  * Create group-specific coefficients, see section 2 of
+  * https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+  *
+  * @param z_b Vector whose elements are iid normal(0,sigma) a priori
+  * @param theta Vector with covariance parameters as defined in lme4
+  * @param p An integer array with the number variables on the LHS of each |
+  * @param l An integer array with the number of levels for the factor(s) on 
+  *   the RHS of each |
+  * @param i The index of the grouping factor for which you want to return
+  *   the group-specific coefficients for
+  * @return An array of group-specific coefficients for grouping factor i
+  */
+  matrix make_b_matrix(vector z_b, vector theta_L, int[] p, int[] l, int i) {
+    matrix[p[i],l[i]] b_matrix;
+    int nc = p[i];
+    int b_mark = 1;
+    int theta_L_mark = 1;
+    if (i > 1) {
+      for (j in 1:(i-1)) {
+        theta_L_mark = theta_L_mark + p[j] + choose(p[j], 2);
+        b_mark = b_mark + p[j] * l[j];
+      }
+    }
+    if (nc == 1) {
+      real theta_L_start = theta_L[theta_L_mark];
+      for (s in b_mark:(b_mark + l[i] - 1)) 
+        b_matrix[nc,s] = theta_L_start * z_b[s];
+    }
+    else {
+      matrix[nc,nc] T_i = rep_matrix(0, nc, nc);
+      for (c in 1:nc) {
+        T_i[c,c] = theta_L[theta_L_mark];
+        theta_L_mark = theta_L_mark + 1;
+        for(r in (c+1):nc) {
+          T_i[r,c] = theta_L[theta_L_mark];
+          theta_L_mark = theta_L_mark + 1;
+        }
+      }
+      for (j in 1:l[i]) {
+        vector[nc] temp = T_i * segment(z_b, b_mark, nc);
+        b_matrix[,j] = temp;
+        b_mark = b_mark + nc;
+      }
+    }
+    return b_matrix';
+  }
 
- 
+  /** 
+  * Evaluate the mean of the posterior predictive distribution
+  *
+  * @param mu Vector containing the mean of the posterior predictive 
+  *   distribution for each observation (ie. the linear predictor after
+  *   applying the inverse link function).
+  * @param real The auxiliary parameter for the glmer submodel. This will be
+  *   an empty array if the submodel does not have an auxiliary parameter
+  * @param family An integer specifying the family
+  * @return A real, the mean of the posterior predictive distribution
+  */ 
+  real mean_PPD_rng(vector mu, real[] aux, int family) {
+    int N = rows(mu);
+    real mean_PPD = 0;	
+    if (family == 1) { // gaussian
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + normal_rng(mu[n], aux[1]);
+    }
+    else if (family == 2) {  // gamma
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + gamma_rng(aux[1], aux[1] / mu[n]);
+    }
+    else if (family == 3) {  // inverse gaussian
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + inv_gaussian_rng(mu[n], aux[1]);
+    }
+    else if (family == 4) {  // bernoulli
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + bernoulli_rng(mu[n]);
+    } 
+    else if (family == 5) {  // binomial
+      reject("Binomial with >1 trials not allowed.");
+    }
+    else if (family == 6 || family == 8) { 
+      real poisson_max = pow(2.0, 30.0);
+      for (n in 1:N) {  // poisson or poisson-gamma
+        if (mu[n] < poisson_max) 
+          mean_PPD = mean_PPD + poisson_rng(mu[n]);
+        else 
+          mean_PPD = mean_PPD + normal_rng(mu[n], sqrt(mu[n]));
+      }
+    }
+    else if (family == 7) {
+      real poisson_max = pow(2.0, 30.0);
+      for (n in 1:N) {  // negative binomial
+        real gamma_temp;
+        if (is_inf(aux[1])) 
+          gamma_temp = mu[n];
+        else 
+          gamma_temp = gamma_rng(aux[1], aux[1] / mu[n]);
+        if (gamma_temp < poisson_max) 
+          mean_PPD = mean_PPD + poisson_rng(gamma_temp);
+        else 
+          mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+      }
+    }		  
+    return mean_PPD / N;
+  }
+  
 }
 data {
   
@@ -157,6 +332,9 @@ data {
   vector[yK[1]] yXbar1; // predictor means
   vector[yK[2]] yXbar2;
   vector[yK[3]] yXbar3;
+  
+  // prior family: 1 = decov, 2 = lkj
+  int<lower=1,upper=2> prior_dist_for_cov;
   
   // group level dimensions and data, group factor 1
   int<lower=0> bN1; // num groups
@@ -194,42 +372,72 @@ data {
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
   int<lower=0,upper=3> y_prior_dist_for_aux[M];
   
-  // prior family: 1 = decov, 2 = lkj
-  int<lower=1,upper=2> prior_dist_for_covariance;
 
   // hyperparameters, values are set to 0 if there is no prior
-  vector<lower=0>[yK[1]] y_prior_scale1;
-  vector<lower=0>[yK[2]] y_prior_scale2;
-  vector<lower=0>[yK[3]] y_prior_scale3;
-  vector<lower=0>[M] y_prior_scale_for_intercept;
-  vector<lower=0>[M] y_prior_scale_for_aux;
-  vector[yK[1]] y_prior_mean1;
-  vector[yK[2]] y_prior_mean2;
-  vector[yK[3]] y_prior_mean3;
-  vector[M] y_prior_mean_for_intercept;
-  vector<lower=0>[M] y_prior_mean_for_aux;
-  vector<lower=0>[yK[1]] y_prior_df1;
-  vector<lower=0>[yK[2]] y_prior_df2;
-  vector<lower=0>[yK[3]] y_prior_df3;
-  vector<lower=0>[M] y_prior_df_for_intercept;
-  vector<lower=0>[M] y_prior_df_for_aux;
-  vector<lower=0>[M] y_global_prior_df;    // for hs priors only 
-  vector<lower=0>[M] y_global_prior_scale; // for hs priors only
-  vector<lower=0>[bK1] b1_prior_scale;
-  vector<lower=0>[bK2] b2_prior_scale;
-  vector<lower=0>[bK1] b1_prior_df;
-  vector<lower=0>[bK2] b2_prior_df;
-  real<lower=0> b1_prior_regularization;
-  real<lower=0> b2_prior_regularization;
   
-  // flag indicating whether to draw from the prior
-  int<lower=0,upper=1> prior_PD;  // 1 = yes
+    // coefficients
+    vector[yK[1]] y_prior_mean1;
+    vector[yK[2]] y_prior_mean2;
+    vector[yK[3]] y_prior_mean3;
+    vector<lower=0>[yK[1]] y_prior_scale1;
+    vector<lower=0>[yK[2]] y_prior_scale2;
+    vector<lower=0>[yK[3]] y_prior_scale3;
+    vector<lower=0>[yK[1]] y_prior_df1;
+    vector<lower=0>[yK[2]] y_prior_df2;
+    vector<lower=0>[yK[3]] y_prior_df3;
+    vector<lower=0>[M] y_global_prior_df;    // for hs priors only 
+    vector<lower=0>[M] y_global_prior_scale; // for hs priors only
+  
+    // intercepts  
+    vector[M] y_prior_mean_for_intercept;
+    vector<lower=0>[M] y_prior_scale_for_intercept;
+    vector<lower=0>[M] y_prior_df_for_intercept;
+    
+    // auxiliary params
+    vector<lower=0>[M] y_prior_mean_for_aux;
+    vector<lower=0>[M] y_prior_scale_for_aux;
+    vector<lower=0>[M] y_prior_df_for_aux;
+    
+    // group level effects, decov prior
+    int<lower=0> t;    // num. terms (maybe 0) with a | in the glmer formula
+    int<lower=1> p[t]; // num. variables on the LHS of each |
+    int<lower=1> l[t]; // num. levels for the factor(s) on the RHS of each |
+    int<lower=0> q;    // conceptually equals \sum_{i=1}^t p_i \times l_i
+    int<lower=0> len_theta_L; // length of the theta_L vector
+    int<lower=0> len_concentration;
+    int<lower=0> len_regularization;
+    vector<lower=0>[t] b_prior_shape; 
+    vector<lower=0>[t] b_prior_scale;
+    real<lower=0> b_prior_concentration[len_concentration];
+    real<lower=0> b_prior_regularization[len_regularization];
+    
+    // group level effects, lkj prior
+    vector<lower=0>[bK1] b1_prior_scale;
+    vector<lower=0>[bK2] b2_prior_scale;
+    vector<lower=0>[bK1] b1_prior_df;
+    vector<lower=0>[bK2] b2_prior_df;
+    real<lower=0> b1_prior_regularization;
+    real<lower=0> b2_prior_regularization;
+    
+    // flag indicating whether to draw from the prior
+    int<lower=0,upper=1> prior_PD;  // 1 = yes
 }
 transformed data {
   // dimensions for hs priors
   int<lower=0> yHs1 = get_nvars_for_hs(M > 0 ? y_prior_dist[1] : 0);
   int<lower=0> yHs2 = get_nvars_for_hs(M > 1 ? y_prior_dist[2] : 0);
   int<lower=0> yHs3 = get_nvars_for_hs(M > 2 ? y_prior_dist[3] : 0);
+ 
+	// data for decov prior
+  int<lower=0> len_z_T = 0;
+  int<lower=0> len_var_group = sum(p) * (t > 0);
+  int<lower=0> len_rho = sum(p) - t;
+  int<lower=1> pos = 1;
+  real<lower=0> delta[len_concentration]; 
+  
+  // data for lkj prior
+  int bCov1_idx[prior_dist_for_cov == 2 ? (bK1 + choose(bK1, 2)) : 0];
+  int bCov2_idx[prior_dist_for_cov == 2 ? (bK2 + choose(bK2, 2)) : 0];
   
   // transformations of data
   real sum_log_y1 = M > 0 && (family[1] == 2 || family[1] == 3) ? 
@@ -256,6 +464,27 @@ transformed data {
 		sqrt_y3 = sqrt(yReal3); 
 		log_y3 = log(yReal3); 
 	} 
+
+  // data for decov prior
+  if (prior_dist_for_cov == 1) {
+    for (i in 1:t) {
+      if (p[i] > 1) {
+        for (j in 1:p[i]) {
+          delta[pos] = b_prior_concentration[j];
+          pos = pos + 1;
+        }
+      }
+      for (j in 3:p[i]) len_z_T = len_z_T + p[i] - 1;
+    }	  
+  }
+  
+  // data for lkj prior
+  if (prior_dist_for_cov == 2) {
+    if (bK1 > 0) 
+      bCov1_idx = lower_tri_indices(bK1);
+    if (bK2 > 0) 
+      bCov2_idx = lower_tri_indices(bK2); 
+  }
 }
 parameters {
   // intercepts
@@ -271,23 +500,28 @@ parameters {
   vector[yK[2]] z_yBeta2;
   vector[yK[3]] z_yBeta3;
 
+  // group level params, decov prior
+  vector[prior_dist_for_cov == 1 ? q : 0] z_b;
+  vector[prior_dist_for_cov == 1 ? len_z_T : 0] z_T;
+  vector<lower=0,upper=1>[prior_dist_for_cov == 1 ? len_rho : 0] rho;
+  vector<lower=0>[prior_dist_for_cov == 1 ? len_concentration : 0] zeta;
+  vector<lower=0>[prior_dist_for_cov == 1 ? t : 0] tau;
+
   // group level params for first grouping factor
     // group-level sds
-    vector<lower=0>[bK1] bSd1; 
+    vector<lower=0>[prior_dist_for_cov == 2 ? bK1 : 0] bSd1; 
     // unscaled group-level params 
-    vector[bK1 == 1 ? bN1 : 0] z_bVec1; 
-    matrix[bK1 >  1 ? bK1 : 0, bK1 >  1 ? bN1 : 0] z_bMat1; 
+    matrix[prior_dist_for_cov == 2 && bK1 >  0 ? bK1 : 0, bK1 >  0 ? bN1 : 0] z_bMat1; 
     // cholesky factor of corr matrix (if > 1 random effect)
-    cholesky_factor_corr[bK1 > 1 ? bK1 : 0] bCholesky1;  
+    cholesky_factor_corr[prior_dist_for_cov == 2 && bK1 > 1 ? bK1 : 0] bCholesky1;  
   
   // group level params for second grouping factor
     // group-level sds
-    vector<lower=0>[bK2] bSd2; 
+    vector<lower=0>[prior_dist_for_cov == 2 ? bK2 : 0] bSd2; 
     // unscaled group-level params 
-    vector[bK2 == 1 ? bN2 : 0] z_bVec2; 
-    matrix[bK2 >  1 ? bK2 : 0, bK2 >  1 ? bN2 : 0] z_bMat2;
+    matrix[prior_dist_for_cov == 2 && bK2 >  0 ? bK2 : 0, bK2 >  0 ? bN2 : 0] z_bMat2;
     // cholesky factor of corr matrix (if > 1 random effect)
-    cholesky_factor_corr[bK2 > 1 ? bK2 : 0] bCholesky2;  
+    cholesky_factor_corr[prior_dist_for_cov == 2 && bK2 > 1 ? bK2 : 0] bCholesky2;  
   
   // auxiliary params, interpretation depends on family
   real<lower=0> yAux1_unscaled[has_aux[1]]; 
@@ -309,157 +543,111 @@ parameters {
   vector<lower=0>[yK[3]] yMix3[y_prior_dist[3] == 5 || y_prior_dist[3] == 6];
 }
 transformed parameters { 
-  // population level params, auxiliary params
-  vector[yK[1]] yBeta1;
+  vector[yK[1]] yBeta1; // population level params
   vector[yK[2]] yBeta2;
   vector[yK[3]] yBeta3;
-  real yAux1[has_aux[1]];  
+  real yAux1[has_aux[1]]; // auxiliary params 
   real yAux2[has_aux[2]];  
   real yAux3[has_aux[3]];
-	
-  // group-level params for first grouping factor
-  vector[bK1 == 1 ? bN1 : 0] bVec1; 
-  matrix[bK1 >  1 ? bN1 : 0, bK1 >  1 ? bK1 : 0] bMat1;  
- 
-  // group level params for second grouping factor
-  vector[bK2 == 1 ? bN2 : 0] bVec2;
-  matrix[bK2 >  1 ? bN2 : 0, bK2 >  1 ? bK2 : 0] bMat2; 
+	vector[len_theta_L] theta_L; // cov matrix for decov prior
+  real yAuxMaximum = 1.0; // used for scaling in theta_L
+
+  // group level params 
+  matrix[bK1 >  0 ? bN1 : 0, bK1] bMat1; // for grouping factor 1
+  matrix[bK2 >  0 ? bN2 : 0, bK2] bMat2; // for grouping factor 2
   
   // population level params, auxiliary params
-  if (has_aux[1] == 1)
+  if (has_aux[1] == 1) {
     yAux1[1] = make_aux(yAux1_unscaled[1], y_prior_dist_for_aux[1], 
                         y_prior_mean_for_aux[1], y_prior_scale_for_aux[1]);
+    if (yAux1[1] > yAuxMaximum)
+      yAuxMaximum = yAux1[1];
+  }
+
   if (yK[1] > 0)
     yBeta1 = make_beta(z_yBeta1, y_prior_dist[1], y_prior_mean1, 
                        y_prior_scale1, y_prior_df1, y_global_prior_scale[1],  
                        yGlobal1, yLocal1, yOol1, yMix1, yAux1, family[1]);
   if (M > 1) {
-    if (has_aux[2] == 1)
+    if (has_aux[2] == 1) {
       yAux2[1] = make_aux(yAux2_unscaled[1], y_prior_dist_for_aux[2], 
                           y_prior_mean_for_aux[2], y_prior_scale_for_aux[2]);
+      if (yAux2[1] > yAuxMaximum)
+        yAuxMaximum = yAux2[1];
+    }
     if (yK[2] > 0)
       yBeta2 = make_beta(z_yBeta2, y_prior_dist[2], y_prior_mean2, 
                          y_prior_scale2, y_prior_df2, y_global_prior_scale[2],  
                          yGlobal2, yLocal2, yOol2, yMix2, yAux2, family[2]);
   } 
   if (M > 2) {
-    if (has_aux[3] == 1)
+    if (has_aux[3] == 1) {
       yAux3[1] = make_aux(yAux3_unscaled[1], y_prior_dist_for_aux[3], 
                           y_prior_mean_for_aux[3], y_prior_scale_for_aux[3]);
+      if (yAux3[1] > yAuxMaximum)
+        yAuxMaximum = yAux3[1];
+    }
     if (yK[3] > 0)
       yBeta3 = make_beta(z_yBeta3, y_prior_dist[3], y_prior_mean3, 
                          y_prior_scale3, y_prior_df3, y_global_prior_scale[3],  
                          yGlobal3, yLocal3, yOol3, yMix3, yAux3, family[3]);
   }
 
-  // group-level params for first grouping factor
-  if (bK1 == 1) bVec1 = bSd1[1] * (z_bVec1); 
-	else if (bK1 > 1) bMat1 = (diag_pre_multiply(bSd1, bCholesky1) * z_bMat1)';
-	
-	// group level params for second grouping factor
-	if (bK2 == 1) bVec2 = bSd2[1] * (z_bVec2); 
-	else if (bK2 > 1) bMat2 = (diag_pre_multiply(bSd2, bCholesky2) * z_bMat2)'; 
-	
+  // group level params, under decov prior
+  if (prior_dist_for_cov == 1) {
+    int mark = 1;
+    // cov matrix
+    theta_L = make_theta_L(len_theta_L, p, yAuxMaximum, tau, 
+                           b_prior_scale, zeta, rho, z_T);
+    // group-level params for first grouping factor
+    if (bK1 > 0)
+      bMat1 = make_b_matrix(z_b, theta_L, p, l, 1);
+ 	  // group level params for second grouping factor
+    if (bK2 > 0) 
+      bMat2 = make_b_matrix(z_b, theta_L, p, l, 2);
+  }
+  
+  // group-level params, under lkj prior
+  else if (prior_dist_for_cov == 2) {
+    // group-level params for first grouping factor
+    if (bK1 == 1) 
+      bMat1 = (bSd1[1] * z_bMat1)'; 
+  	else if (bK1 > 1) 
+  	  bMat1 = (diag_pre_multiply(bSd1, bCholesky1) * z_bMat1)';
+  	// group level params for second grouping factor
+  	if (bK2 == 1) 
+  	  bMat2 = (bSd2[1] * z_bMat2)'; 
+  	else if (bK2 > 1) 
+  	  bMat2 = (diag_pre_multiply(bSd2, bCholesky2) * z_bMat2)'; 
+  }
+  
 }
 model {
   vector[yNeta[1]] yEta1; // linear predictor
   vector[yNeta[2]] yEta2;
   vector[yNeta[3]] yEta3;
+  int bMat1_colshift = 0; // column shift in bMat1
+  int bMat2_colshift = 0; // column shift in bMat2
 
   // Linear predictor for submodel 1
-  if (yK[1] > 0) yEta1 = yX1 * yBeta1;
-  else yEta1 = rep_vector(0.0, yNeta[1]);
-  if (intercept_type[1] == 1) yEta1 = yEta1 + yGamma1[1];
-  else if (intercept_type[1] == 2) yEta1 = yEta1 + yGamma1[1] - max(yEta1);
-  else if (intercept_type[1] == 3) yEta1 = yEta1 + yGamma1[1] - min(yEta1);
-  if (bK1_len[1] > 0) { // includes group factor 1
-    if (bK1 == 1) { // one group level param
-      for (n in 1:yNeta[1])
-        yEta1[n] = yEta1[n] + (bVec1[y1_Z1_id[n]]) * y1_Z1[1,n];
-    }
-    else if (bK1 > 1) {// more than one group level param
-      for (k in bK1_idx[1,1]:bK1_idx[1,2])
-        for (n in 1:yNeta[1])
-          yEta1[n] = yEta1[n] + (bMat1[y1_Z1_id[n],k]) * y1_Z1[k,n];
-    }
-  }
-  if (bK2_len[1] > 0) { // includes group factor 2
-    if (bK2 == 1) { // one group level param
-      for (n in 1:yNeta[1])
-        yEta1[n] = yEta1[n] + (bVec2[y1_Z2_id[n]]) * y1_Z2[1,n];
-    }
-    else if (bK2 > 1) { // more than one group level param
-      for (k in bK1_idx[1,1]:bK1_idx[1,2])
-        for (n in 1:yNeta[1])
-          yEta1[n] = yEta1[n] + (bMat2[y1_Z2_id[n],k]) * y1_Z2[k,n];
-    }
-  }
-  
+  yEta1 = evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1, 
+                       bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]);
+
   // Linear predictor for submodel 2
   if (M > 1) {
-    if (yK[2] > 0) yEta2 = yX2 * yBeta2;
-    else yEta2 = rep_vector(0.0, yNeta[2]);
-    if (intercept_type[2] == 1) yEta2 = yEta2 + yGamma2[1];
-    else if (intercept_type[2] == 2) yEta2 = yEta2 + yGamma2[1] - max(yEta2);
-    else if (intercept_type[2] == 3) yEta2 = yEta2 + yGamma2[1] - min(yEta2);
-    if (bK1_len[2] > 0) { // includes group factor 1
-      if (bK1 == 1) { // one group level param
-        for (n in 1:yNeta[2])
-          yEta2[n] = yEta2[n] + (bVec1[y2_Z1_id[n]]) * y2_Z1[1,n];
-      }
-      else if (bK1 > 1) { // more than one group level param
-        int k_shift = bK1_len[1];
-        for (k in bK1_idx[2,1]:bK1_idx[2,2])
-          for (n in 1:yNeta[2])
-            yEta2[n] = yEta2[n] + (bMat1[y2_Z1_id[n],k]) * y2_Z1[k-k_shift,n];
-      }
-    }
-    if (bK2_len[2] > 0) { // includes group factor 2
-      if (bK2 == 1) { // one group level param
-        for (n in 1:yNeta[2])
-          yEta2[n] = yEta2[n] + (bVec2[y2_Z2_id[n]]) * y2_Z2[1,n];
-      }
-      else if (bK2 > 1) { // more than one group level param
-        int k_shift = bK2_len[1];
-        for (k in bK2_idx[2,1]:bK2_idx[2,2])
-          for (n in 1:yNeta[1])
-            yEta1[n] = yEta1[n] + (bMat2[y2_Z2_id[n],k]) * y2_Z2[k-k_shift,n];
-      }
-    }
+    bMat1_colshift = bMat1_colshift + bK1_len[1];
+    bMat2_colshift = bMat2_colshift + bK2_len[1];
+    yEta2 = evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2, 
+                         bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]);
   }
   
   // Linear predictor for submodel 3
   if (M > 2) {
-    if (yK[3] > 0) yEta3 = yX3 * yBeta3;
-    else yEta3 = rep_vector(0.0, yNeta[3]);
-    if (intercept_type[3] == 1) yEta3 = yEta3 + yGamma3[1];
-    else if (intercept_type[3] == 2) yEta3 = yEta3 + yGamma3[1] - max(yEta3);
-    else if (intercept_type[3] == 3) yEta3 = yEta3 + yGamma3[1] - min(yEta3);
-    if (bK1_len[3] > 0) { // includes group factor 1
-      if (bK1 == 1) { // one group level param
-        for (n in 1:yNeta[3])
-          yEta3[n] = yEta3[n] + (bVec1[y3_Z1_id[n]]) * y3_Z1[1,n];
-      }
-      else if (bK1 > 1) { // more than one group level param
-        int k_shift = sum(bK1_len[1:2]);
-        for (k in bK1_idx[3,1]:bK1_idx[3,2])
-          for (n in 1:yNeta[3])
-            yEta3[n] = yEta3[n] + (bMat1[y3_Z1_id[n],k]) * y3_Z1[k-k_shift,n];
-      }
-    }
-    if (bK2_len[3] > 0) { // includes group factor 2
-      if (bK2 == 1) { // one group level param
-        for (n in 1:yNeta[3])
-          yEta3[n] = yEta3[n] + (bVec2[y3_Z2_id[n]]) * y3_Z2[1,n];
-      }
-      else if (bK2 > 1) { // more than one group level param
-        int k_shift = sum(bK2_len[1:2]);
-        for (k in bK2_idx[3,1]:bK2_idx[3,2])
-          for (n in 1:yNeta[3])
-            yEta3[n] = yEta3[n] + (bMat2[y3_Z2_id[n],k]) * y3_Z2[k-k_shift,n];
-      }
-    }
-  }
+    bMat1_colshift = bMat1_colshift + bK1_len[2];
+    bMat2_colshift = bMat2_colshift + bK2_len[2];
+    yEta3 = evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3, 
+                         bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]);
+  }  
   
   // Log-likelihoods
   if (prior_PD == 0) {
@@ -504,47 +692,102 @@ model {
             y_global_prior_df[3], yLocal3, yGlobal3, yMix3, yOol3)
   
   // Log priors, group level terms
-  if (bK1 > 0) // sds for group factor 1
-    target += student_t_lpdf(bSd1 | b1_prior_df, 0, b1_prior_scale);
-  if (bK2 > 0) // sds for group factor 2
-    target += student_t_lpdf(bSd2 | b2_prior_df, 0, b2_prior_scale);
-  if (bK1 == 1) // primitive group level params for group factor 1
-    target += normal_lpdf(z_bVec1 | 0, 1); 
-  if (bK2 == 1) // primitive group level params for group factor 2
-    target += normal_lpdf(z_bVec2 | 0, 1); 
-  if (bK1 > 1) {
-    // primitive group level params for group factor 1
-    target += normal_lpdf(to_vector(z_bMat1) | 0, 1); 
-    // corr matrix for group factor 1 
-    target += lkj_corr_cholesky_lpdf(bCholesky1 | b1_prior_regularization);
-  }  
-  if (bK2 > 1) {
-    // primitive group level params for group factor 2
-    target += normal_lpdf(to_vector(z_bMat2) | 0, 1); 
-    // corr matrix for group factor 2
-    target += lkj_corr_cholesky_lpdf(bCholesky2 | b2_prior_regularization);
+  if (prior_dist_for_cov == 1) { // decov
+    decov_lp(z_b, z_T, rho, zeta, tau, b_prior_regularization, 
+             delta, b_prior_shape, t, p);    
   }
+  else if (prior_dist_for_cov == 2) { // lkj
+    if (bK1 > 0) { 
+      // sds for group factor 1
+      target += student_t_lpdf(bSd1 | b1_prior_df, 0, b1_prior_scale);
+      // primitive coefs for group factor 1
+      target += normal_lpdf(to_vector(z_bMat1) | 0, 1); 
+      // corr matrix for group factor 1 
+      if (bK1 > 1) 
+        target += lkj_corr_cholesky_lpdf(bCholesky1 | b1_prior_regularization);
+    }
+    if (bK2 > 0) { 
+      // sds for group factor 2
+      target += student_t_lpdf(bSd2 | b2_prior_df, 0, b2_prior_scale);
+      // primitive coefs for group factor 2
+      target += normal_lpdf(to_vector(z_bMat2) | 0, 1); 
+      // corr matrix for group factor 2
+      if (bK2 > 1) 
+        target += lkj_corr_cholesky_lpdf(bCholesky2 | b2_prior_regularization);
+    }  
+  }
+
 }
 generated quantities {
+  real mean_PPD[M];
   real yAlpha1[intercept_type[1] > 0];
   real yAlpha2[intercept_type[2] > 0];
   real yAlpha3[intercept_type[3] > 0];
-  corr_matrix[bK1 > 1 ? bK1 : 1] bCorr1;
-  corr_matrix[bK2 > 1 ? bK2 : 1] bCorr2; 
+  vector[prior_dist_for_cov == 2 && bK1 > 0 ? size(bCov1_idx) : 0] bCov1;
+  vector[prior_dist_for_cov == 2 && bK2 > 0 ? size(bCov2_idx) : 0] bCov2; 
   
+  // Evaluate mean_PPD
+  {
+    int bMat1_colshift = 0; // column shift in bMat1
+    int bMat2_colshift = 0; // column shift in bMat2
+
+    // Linear predictor for submodel 1
+    if (M > 0) {
+      vector[yNeta[1]] yEta1; // linear predictor
+      yEta1 = evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]);
+      yEta1 = evaluate_mu(yEta1, family[1], link[1]);
+      mean_PPD[1] = mean_PPD_rng(yEta1, yAux1, family[1]);
+    }
+    
+    // Linear predictor for submodel 2
+    if (M > 1) {
+      vector[yNeta[2]] yEta2;
+      bMat1_colshift = bMat1_colshift + bK1_len[1];
+      bMat2_colshift = bMat2_colshift + bK2_len[1];
+      yEta2 = evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]);
+      yEta2 = evaluate_mu(yEta2, family[2], link[2]);
+      mean_PPD[2] = mean_PPD_rng(yEta2, yAux2, family[2]);
+    }
+    
+    // Linear predictor for submodel 3
+    if (M > 2) {
+      vector[yNeta[3]] yEta3;
+      bMat1_colshift = bMat1_colshift + bK1_len[2];
+      bMat2_colshift = bMat2_colshift + bK2_len[2];
+      yEta3 = evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]);
+      yEta3 = evaluate_mu(yEta3, family[3], link[3]);
+      mean_PPD[3] = mean_PPD_rng(yEta3, yAux3, family[3]);
+    } 
+  }  
+  
+  // Transform intercept parameters
 	if (intercept_type[1] > 0) 
     yAlpha1[1] = yGamma1[1] - dot_product(yXbar1, yBeta1);
   if (M > 1 && intercept_type[2] > 0) 
     yAlpha2[1] = yGamma2[1] - dot_product(yXbar2, yBeta2);
   if (M > 2 && intercept_type[3] > 0) 
     yAlpha3[1] = yGamma3[1] - dot_product(yXbar3, yBeta3);
-		
-	if (bK1 > 1)
-	  bCorr1 = multiply_lower_tri_self_transpose(bCholesky1);
-  else
-	  bCorr1[1,1] = 1.0;
-	if (bK2 > 1) 
-	  bCorr2 = multiply_lower_tri_self_transpose(bCholesky2); 
-  else 
-	  bCorr2[1,1] = 1.0;
+	
+	// Transform variance-covariance matrices
+	
+	  // Grouping factor 1
+  	if (prior_dist_for_cov == 2 && bK1 == 1) {
+  	  bCov1[1] = bSd1[1] * bSd1[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK1 > 1) {
+  	  bCov1 = to_vector(quad_form_diag(
+  	    multiply_lower_tri_self_transpose(bCholesky1), bSd1))[bCov1_idx];
+    }
+    
+    // Grouping factor 2
+    if (prior_dist_for_cov == 2 && bK2 == 1) {
+  	  bCov2[1] = bSd2[1] * bSd2[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK2 > 1) {
+    	bCov2 = to_vector(quad_form_diag(
+    	   multiply_lower_tri_self_transpose(bCholesky2), bSd2))[bCov2_idx]; 
+    }
 }

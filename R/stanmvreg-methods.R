@@ -166,20 +166,17 @@ formula.stanmvreg <- function (x, fixed.only = FALSE, random.only = FALSE, m = N
     fixed.only <- FALSE
   if (fixed.only && random.only) 
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
-  
   M <- get_M(x)
-  fr <- lapply(x$glmod, model.frame) 
-  form <- lapply(x$formula, as.formula, ...) # includes Event submodel formula
-  glmod_form <- lapply(seq(M), function(i) attr(fr[[i]], "formula")) 
-  if (!is.null(glmod_form)) form[1:M] <- glmod_form[1:M]
-  if (any(fixed.only, random.only)) {
-    if (fixed.only) {
-      for (i in 1:M)
-        form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
-    }
-    if (random.only)
-      for (i in 1:M)
-        form[[i]] <- justRE(form[[i]], response = TRUE)
+  form <- x$formula
+  if (is.null(form))
+    stop2("Could not find formula in stanmvreg object.")
+  if (fixed.only) {
+    for (i in 1:M)
+      form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
+  }
+  if (random.only) {
+    for (i in 1:M)
+      form[[i]] <- justRE(form[[i]], response = TRUE)
   }
   if (is.null(m)) return(list_nms(form, M, stub = get_stub(x))) else return(form[[m]])
 }
@@ -201,23 +198,25 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
   Terms <- list()
   if (is.mvmer(x)) {
     M <- get_M(x)
-    fr <- lapply(x$glmod, model.frame)
-    Terms[1:M] <- lapply(fr, function(i) attr(i, "terms"))
+    mvmer_terms <- fetch(x$glmod, "terms")
     if (fixed.only) {
       Terms <- lapply(seq(M), function(i) {
-        Terms <- terms.formula(formula(x, fixed.only = TRUE, m = i))
-        attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.fixed")
-        Terms
+        fe_form <- formula.stanmvreg(x, fixed.only = TRUE, m = i)
+        tt <- terms.formula(fe_form)
+        attr(tt, "predvars") <- attr(mvmer_terms[[i]], "predvars.fixed")
+        tt
       })     
-    } 
-    if (random.only) {
+    } else if (random.only) {
       Terms <- lapply(seq(M), function(i) {
-        Terms <- terms.formula(lme4::subbars(formula.stanmvreg(x, random.only = TRUE, m = i)))
-        attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.random")
-        Terms
+        re_form <- formula.stanmvreg(x, random.only = TRUE, m = i) 
+        tt <- terms.formula(lme4::subbars(re_form))
+        attr(tt, "predvars") <- attr(mvmer_terms[[i]], "predvars.random")
+        tt
       })      
+    } else {
+      Terms[1:M] <- mvmer_terms
     }
-    list_nms(Terms, M, stub = get_stub(x))
+    Terms <- list_nms(Terms, M, stub = get_stub(x))
   }
   if (is.surv(x)) {
     Terms$Event <- terms(x$coxmod)

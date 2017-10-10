@@ -1003,11 +1003,16 @@ get_M <- function(object) {
 # @param stub The character string to use at the start of the names for
 #   list items related to the longitudinal/GLM submodels
 list_nms <- function(object, M = NULL, stub = "Long") {
-  if (!is.list(object)) 
-    stop("'object' argument should be a list")
-  if (is.null(M)) M <- length(object)
+  ok_type <- is.null(object) || is.list(object) || is.vector(object)
+  if (!ok_type) 
+    stop("'object' argument should be a list or vector.")
+  if (is.null(object))
+    return(object)
+  if (is.null(M)) 
+    M <- length(object)
   nms <- paste0(stub, 1:M)
-  if (length(object) > M) nms <- c(nms, "Event")
+  if (length(object) > M) 
+    nms <- c(nms, "Event")
   names(object) <- nms
   object
 }
@@ -1331,6 +1336,32 @@ groups <- function(x) {
   }
 }
 
+drop_attributes <- function(x, ...) {
+  dots <- list(...)
+  if (length(dots)) {
+    for (i in dots) {
+      attr(x, i) <- NULL
+    }
+  }
+  x
+}
+
+supplied_together <- function(x, ..., error = FALSE) {
+  dots <- list(...)
+  for (i in dots) {
+    if (!identical(is.null(x), is.null(i))) {
+      if (error) {
+        nm_x <- deparse(substitute(x))
+        nm_i <- deparse(substitute(i))
+        stop2(nm_x, " and ", nm_i, " must be supplied together.")
+      } else {
+        return(FALSE) # not supplied together, ie. one NULL and one not NULL
+      }
+    }
+  }
+  return(TRUE) # supplied together, ie. all NULL or all not NULL
+}
+
 #---- Helpers from brms package
 
 stop2 <- function(...) {
@@ -1346,16 +1377,16 @@ SW <- function(expr) {
   base::suppressWarnings(expr)
 }
 
-isNULL <- function(x) {
+is_null <- function(x) {
   # check if an object is NULL
   is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
 }
 
-rmNULL <- function(x, recursive = TRUE) {
+rm_null <- function(x, recursive = TRUE) {
   # recursively removes NULL entries from an object
-  x <- Filter(Negate(isNULL), x)
+  x <- Filter(Negate(is_null), x)
   if (recursive) {
-    x <- lapply(x, function(x) if (is.list(x)) rmNULL(x) else x)
+    x <- lapply(x, function(x) if (is.list(x)) rm_null(x) else x)
   }
   x
 }
@@ -1376,10 +1407,6 @@ first_not_null <- function(...) {
 
 isFALSE <- function(x) {
   identical(FALSE, x)
-}
-
-isNA <- function(x) {
-  identical(NA, x)
 }
 
 is_equal <- function(x, y, ...) {

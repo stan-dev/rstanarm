@@ -3337,34 +3337,33 @@ generate_init_function <- function(y_mod_stuff, e_mod_stuff, standata) {
 # hit the maximum treedepth).
 #
 # @param object The stanfit object to use for sampling.
+# @param cnms The component names for the group level parameters combined
+#   across all glmer submodels. This is used to determine the maximum number
+#   of parameters for any one grouping factor in the model, which in turn is
+#   used to determine the default adapt_delta.
 # @param user_dots The contents of \code{...} from the user's call to
 #   the \code{stan_jm} modeling function.
 # @param user_adapt_delta The value for \code{adapt_delta} specified by the
 #   user.
 # @param user_max_treedepth The value for \code{max_treedepth} specified by the
 #   user.
-# @param sum_p The total number of random effects in the joint model. Should
-#   likely be passed as sum(standata$p)
 # @param ... Other arguments to \code{\link[rstan]{sampling}} not coming from
 #   \code{user_dots} (e.g. \code{pars}, \code{init}, etc.)
 # @return A list of arguments to use for the \code{args} argument for 
 #   \code{do.call(sampling, args)}.
-set_sampling_args_for_jm <- function(object, user_dots = list(), 
-                                     user_adapt_delta = NULL, 
-                                     user_max_treedepth = NULL, 
-                                     sum_p = NULL, ...) {
+set_jm_sampling_args <- function(object, cnms, user_dots = list(), 
+                                 user_adapt_delta = NULL, 
+                                 user_max_treedepth = NULL, 
+                                 ...) {
   args <- list(object = object, ...)
   unms <- names(user_dots)
   for (j in seq_along(user_dots)) {
     args[[unms[j]]] <- user_dots[[j]]
   }
   
-  if (is.null(sum_p) || (sum_p <= 0))
-    stop("Bug found: sum_p should specify the total number ",
-         "of random effects in the joint model (used for ",
-         "determining the default adapt_delta")
+  max_p <- max(sapply(cnms, length))
   
-  default_adapt_delta <- if (sum_p > 2) 0.99 else 0.95
+  default_adapt_delta <- if (max_p > 2) 0.99 else 0.95
   default_max_treedepth <- 11L
   
   if (!is.null(user_adapt_delta))
