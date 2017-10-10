@@ -1,0 +1,854 @@
+# Part of the rstanarm package for estimating model parameters
+# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
+# Copyright (C) 2016, 2017 Sam Brilleman
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# Internal model fitting function for models estimated using 
+# \code{stan_mvmer} or \code{stan_jm}.
+# 
+# See \code{stan_jm} for a description of the arguments to the 
+# \code{stan_jm.fit} function call.
+#
+stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, 
+                        formulaEvent = NULL, dataEvent = NULL, 
+                        family = gaussian, weights, ...,				          
+                        prior = normal(), prior_intercept = normal(), 
+                        prior_aux = cauchy(0, 5),
+                        prior_covariance = lkj(), prior_PD = FALSE, 
+                        algorithm = c("sampling", "meanfield", "fullrank"), 
+                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+  
+  #-----------------------------
+  # Pre-processing of arguments
+  #-----------------------------  
+  
+  algorithm <- match.arg(algorithm)
+  if (missing(weights))
+    weights <- NULL
+  if (!is.null(weights)) 
+    stop("Weights are not yet implemented.")
+  if (QR)               
+    stop("QR decomposition not yet implemented.")
+  if (sparse)
+    stop("'sparse' option is not yet implemented.")
+  
+  # Formula
+  yF <- validate_arg(formulaLong, "formula"); M <- length(yF)
+  
+  # Data
+  yD <- validate_arg(dataLong, "data.frame", validate_length = M)  
+  yD <- xapply(yF, yD, FUN = get_all_vars) # drop additional vars
+  
+  # Family
+  ok_classes <- c("function", "family", "character")
+  ok_families <- c("binomial", "gaussian", "Gamma", 
+                   "inverse.gaussian", "poisson", "neg_binomial_2")
+  family <- validate_arg(family, ok_classes, validate_length = M)
+  family <- lapply(family, validate_famlink, ok_families)
+  family <- lapply(family, append_mvmer_famlink)
+  
+  # Observation weights
+  if (!is.null(weights)) {
+    if (!is(weights, "list")) 
+      weights <- rep(list(weights), M)
+    weights <- lapply(weights, validate_weights)
+  }
+  
+  # Priors
+  prior <- broadcast_prior(prior, M)
+  prior_intercept <- broadcast_prior(prior_intercept, M)
+  prior_aux <- broadcast_prior(prior_aux, M)
+  
+  # Error if args not supplied together
+  supplied_together(formulaLong, dataLong, error = TRUE)
+  supplied_together(formulaEvent, dataEvent, error = TRUE)
+  
+  # Determine whether a joint longitudinal-survival model was specified
+  is_jm <- supplied_together(formulaLong, formulaEvent)
+  stub <- if (is_jm) "Long" else "y"
+  
+  #--------------------------------
+  # Data for longitudinal submodel
+  #--------------------------------
+  
+  # Fit separate longitudinal submodels
+  y_mod <- xapply(yF, yD, family, FUN = handle_y_mod)
+  
+  # Construct single cnms list for all longitudinal submodels
+  y_cnms <- fetch(y_mod, "Z", "group_cnms")
+  cnms <- get_common_cnms(y_cnms, stub = stub)
+  cnms_nms <- names(cnms)
+  if (length(cnms_nms) > 2L)
+    stop("A maximum of 2 grouping factors are allowed.")
+  
+  #---------------------
+  # Prior distributions
+  #---------------------
+  
+  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
+                    "laplace", "lasso")  # disallow product normal
+  ok_intercept_dists <- ok_dists[1:3]
+  ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_covariance_dists <- c("decov", "lkj")
+  
+  # Note: y_user_prior_*_stuff objects are stored unchanged for constructing 
+  # prior_summary, while y_prior_*_stuff objects are autoscaled
+  y_user_prior_stuff <- y_prior_stuff <- xapply(
+    prior, nvars = fetch(y_mod, "X", "K"), link = fetch(y_mod, "family", "link"),
+    FUN = handle_glm_prior, args = list(default_scale = 2.5, ok_dists = ok_dists))
+  
+  y_user_prior_intercept_stuff <- y_prior_intercept_stuff <- xapply(
+    prior_intercept, link = fetch(y_mod, "family", "link"), FUN = handle_glm_prior,
+    args = list(nvars = 1, default_scale = 10, ok_dists = ok_intercept_dists))
+  
+  y_user_prior_aux_stuff <- y_prior_aux_stuff <- xapply(
+    prior_aux, FUN = handle_glm_prior, 
+    args = list(nvars = 1, default_scale = 5, link = NULL, ok_dists = ok_aux_dists))  
+  
+  b_user_prior_stuff <- b_prior_stuff <- handle_cov_prior(
+    prior_covariance, cnms = cnms, ok_dists = ok_covariance_dists)
+  
+  # Autoscaling of priors
+  Y_vecs <- fetch(y_mod, "Y", "Y")
+  X_mats <- fetch(y_mod, "X", "X")
+  y_prior_stuff <- xapply(
+    y_prior_stuff, response = Y_vecs, predictors = X_mats, 
+    family = family, FUN = autoscale_prior)
+  y_prior_intercept_stuff <- xapply(
+    y_prior_intercept_stuff, response = Y_vecs,
+    family = family, FUN = autoscale_prior)
+  y_prior_aux_stuff <- xapply(
+    y_prior_aux_stuff, response = Y_vecs,
+    family = family, FUN = autoscale_prior)
+  
+  if (b_prior_stuff$prior_dist_name == "lkj") { # autoscale priors for random effect sds
+    b_prior_stuff <- split_cov_prior(b_prior_stuff, cnms = cnms, submodel_cnms = y_cnms)
+    b_prior_stuff <- xapply(cnms_nms, 
+                            FUN = function(nm) {
+                              Z_mats <- fetch(y_mod, "Z", "Z", nm)
+                              xapply(b_prior_stuff[[nm]], response = Y_vecs, predictors = Z_mats, 
+                                     family = family, FUN = autoscale_prior)})
+  }
+  
+  #-------------------------
+  # Data for export to Stan
+  #-------------------------
+  
+  standata <- list(  
+    M            = as.integer(M),
+    dense_X      = !sparse,
+    special_case = as.integer(FALSE),
+    has_offset   = as.integer(FALSE),
+    has_weights  = as.integer(!all(lapply(weights, is.null))),
+    family = fetch_array(y_mod, "family", "mvmer_family"),
+    link   = fetch_array(y_mod, "family", "mvmer_link"),
+    weights = as.array(numeric(0)), # not yet implemented
+    prior_PD = as.integer(prior_PD)
+  )
+  
+  # Dimensions
+  standata$has_aux <- 
+    fetch_array(y_mod, "has_aux", pad_length = 3)
+  standata$resp_type <- 
+    fetch_array(y_mod, "Y", "is_real", pad_length = 3)
+  standata$intercept_type <- 
+    fetch_array(y_mod, "intercept_type", "number", pad_length = 3)
+  standata$yNobs <- 
+    fetch_array(y_mod, "X", "N", pad_length = 3)
+  standata$yNeta <- 
+    fetch_array(y_mod, "X", "N", pad_length = 3) # same as Nobs for stan_mvmer
+  standata$yK <- 
+    fetch_array(y_mod, "X", "K", pad_length = 3)
+  
+  # Response vectors
+  Y_integer <- fetch(y_mod, "Y", "integer")
+  standata$yInt1 <- if (M > 0) Y_integer[[1]] else as.array(integer(0))  
+  standata$yInt2 <- if (M > 1) Y_integer[[2]] else as.array(integer(0))  
+  standata$yInt3 <- if (M > 2) Y_integer[[3]] else as.array(integer(0)) 
+  
+  Y_real <- fetch(y_mod, "Y", "real")
+  standata$yReal1 <- if (M > 0) Y_real[[1]] else as.array(double(0)) 
+  standata$yReal2 <- if (M > 1) Y_real[[2]] else as.array(double(0)) 
+  standata$yReal3 <- if (M > 2) Y_real[[3]] else as.array(double(0)) 
+  
+  # Population level design matrices
+  X <- fetch(y_mod, "X", "X")
+  standata$yX1 <- if (M > 0) X[[1]] else matrix(0,0,0)
+  standata$yX2 <- if (M > 1) X[[2]] else matrix(0,0,0)
+  standata$yX3 <- if (M > 2) X[[3]] else matrix(0,0,0)
+  
+  X_bar <- fetch(y_mod, "X", "X_bar")
+  standata$yXbar1 <- if (M > 0) as.array(X_bar[[1]]) else as.array(double(0))
+  standata$yXbar2 <- if (M > 1) as.array(X_bar[[2]]) else as.array(double(0))
+  standata$yXbar3 <- if (M > 2) as.array(X_bar[[3]]) else as.array(double(0))
+  
+  # Data for group specific terms - group factor 1
+  b1_varname <- cnms_nms[[1L]] # name of group factor 1
+  b1_nvars <- fetch_(y_mod, "Z", "nvars", b1_varname, 
+                     null_to_zero = TRUE, pad_length = 3)
+  b1_ngrps <- fetch_(y_mod, "Z", "ngrps", b1_varname)
+  if (!n_distinct(b1_ngrps) == 1L)
+    stop("The number of groups for the grouping factor '", 
+         b1_varname, "' should be the same in all submodels.")
+  
+  standata$bN1 <- b1_ngrps[[1L]]
+  standata$bK1 <- sum(b1_nvars)
+  standata$bK1_len <- as.array(b1_nvars)
+  standata$bK1_idx <- get_idx_array(b1_nvars)
+  
+  Z1 <- fetch(y_mod, "Z", "Z", b1_varname)
+  #if (prior_covariance$dist == "lkj") {
+  Z1 <- lapply(Z1, transpose)
+  #}
+  Z1 <- lapply(Z1, convert_null, "matrix")
+  standata$y1_Z1 <- if (M > 0) Z1[[1L]] else matrix(0,0,0)
+  standata$y2_Z1 <- if (M > 1) Z1[[2L]] else matrix(0,0,0)
+  standata$y3_Z1 <- if (M > 2) Z1[[3L]] else matrix(0,0,0)
+  
+  Z1_id <- fetch(y_mod, "Z", "group_list", b1_varname)
+  Z1_id <- lapply(Z1_id, groups)
+  Z1_id <- lapply(Z1_id, convert_null, "arraydouble")
+  standata$y1_Z1_id <- if (M > 0) Z1_id[[1L]] else as.array(double(0))
+  standata$y2_Z1_id <- if (M > 1) Z1_id[[2L]] else as.array(double(0))
+  standata$y3_Z1_id <- if (M > 2) Z1_id[[3L]] else as.array(double(0))
+  
+  # Data for group specific terms - group factor 2
+  if (length(cnms) > 1L) {
+    # model has a second grouping factor
+    b2_varname <- cnms_nms[[2L]] # name of group factor 2
+    b2_nvars <- fetch_(y_mod, "Z", "nvars", b2_varname, 
+                       null_to_zero = TRUE, pad_length = 3)
+    b2_ngrps <- fetch_(y_mod, "Z", "ngrps", b2_varname)
+    if (!n_distinct(b2_ngrps) == 1L)
+      stop("The number of groups for the grouping factor '", 
+           b2_varname, "' should be the same in all submodels.")
+    standata$bN2 <- b2_ngrps[[1L]]
+    standata$bK2 <- sum(b2_nvars)
+    standata$bK2_len <- as.array(b2_nvars)
+    standata$bK2_idx <- get_idx_array(b2_nvars)
+    
+    Z2 <- fetch(y_mod, "Z", "Z", b2_varname)
+    #if (prior_covariance$dist == "lkj") {
+    Z2 <- lapply(Z2, transpose)
+    #}
+    Z2 <- lapply(Z2, convert_null, "matrix")
+    standata$y1_Z2 <- if (M > 0) Z2[[1L]] else matrix(0,0,0)
+    standata$y2_Z2 <- if (M > 1) Z2[[2L]] else matrix(0,0,0)
+    standata$y3_Z2 <- if (M > 2) Z2[[3L]] else matrix(0,0,0)
+    
+    Z2_id <- fetch(y_mod, "Z", "group_list", b2_varname)
+    Z2_id <- lapply(Z2_id, groups)
+    Z2_id <- lapply(Z2_id, convert_null, "arraydouble")
+    standata$y1_Z2_id <- if (M > 0) Z2[[1L]] else as.array(double(0))
+    standata$y2_Z2_id <- if (M > 1) Z2[[2L]] else as.array(double(0))
+    standata$y3_Z2_id <- if (M > 2) Z2[[3L]] else as.array(double(0))
+    
+  } else {
+    # no second grouping factor
+    standata$bN2 <- 0L
+    standata$bK2 <- 0L
+    standata$bK2_len <- as.array(rep(0,3L))
+    standata$bK2_idx <- get_idx_array(rep(0,3L))
+    standata$y1_Z2 <- matrix(0,0,0)
+    standata$y2_Z2 <- matrix(0,0,0)
+    standata$y3_Z2 <- matrix(0,0,0)
+    standata$y1_Z2_id <- as.array(double(0))
+    standata$y2_Z2_id <- as.array(double(0))
+    standata$y3_Z2_id <- as.array(double(0))
+  }
+  
+  # Priors for population level params
+  standata$y_prior_dist <- 
+    fetch_array(y_prior_stuff, "prior_dist", pad_length = 3)
+  
+  prior_mean <- fetch(y_prior_stuff, "prior_mean")
+  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else as.array(double(0))
+  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else as.array(double(0))
+  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else as.array(double(0))
+  
+  prior_scale <- fetch(y_prior_stuff, "prior_scale")
+  standata$y_prior_scale1 <- if (M > 0) as.array(prior_scale[[1]]) else as.array(double(0))
+  standata$y_prior_scale2 <- if (M > 1) as.array(prior_scale[[2]]) else as.array(double(0))
+  standata$y_prior_scale3 <- if (M > 2) as.array(prior_scale[[3]]) else as.array(double(0))
+  
+  prior_df <- fetch(y_prior_stuff, "prior_df")
+  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else as.array(double(0))
+  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else as.array(double(0))
+  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else as.array(double(0))
+  
+  standata$y_global_prior_scale <- 
+    fetch_array(y_prior_stuff, "global_prior_scale") # hs priors only
+  standata$y_global_prior_df <- 
+    fetch_array(y_prior_stuff, "global_prior_df") # hs priors only
+  
+  # Priors for intercepts 
+  standata$y_prior_dist_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_dist")  
+  standata$y_prior_mean_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_mean")
+  standata$y_prior_scale_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_scale")
+  standata$y_prior_df_for_intercept <- 
+    fetch_array(y_prior_intercept_stuff, "prior_df")
+  
+  # Priors for auxiliary params
+  standata$y_prior_dist_for_aux <-
+    fetch_array(y_prior_aux_stuff, "prior_dist")
+  standata$y_prior_mean_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_mean")
+  standata$y_prior_scale_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_scale")
+  standata$y_prior_df_for_aux <- 
+    fetch_array(y_prior_aux_stuff, "prior_df")
+  
+  # Priors for group specific terms
+  standata$t <- length(cnms)
+  standata$p <- as.array(sapply(cnms, length))
+  standata$l <- as.array(sapply(cnms_nms, 
+                                FUN = function(nm) unique(fetch_(y_mod, "Z", "ngrps", nm))))
+  standata$q <- sum(standata$p * standata$l)
+  if (prior_covariance$dist == "decov") {
+    
+    # data for decov prior
+    standata$prior_dist_for_cov <- b_prior_stuff$prior_dist
+    standata$b_prior_shape <- b_prior_stuff$prior_shape
+    standata$b_prior_scale <- b_prior_stuff$prior_scale
+    standata$b_prior_concentration <- b_prior_stuff$prior_concentration
+    standata$b_prior_regularization <- b_prior_stuff$prior_regularization
+    standata$len_concentration <- length(standata$b_prior_concentration)
+    standata$len_regularization <- length(standata$b_prior_regularization)
+    standata$len_theta_L <- sum(choose(standata$p, 2), standata$p)
+    
+    # pass empty lkj data
+    standata$b1_prior_scale <- as.array(rep(0L, standata$bK1))
+    standata$b2_prior_scale <- as.array(rep(0L, standata$bK2))
+    standata$b1_prior_df <- as.array(rep(0L, standata$bK1))
+    standata$b2_prior_df <- as.array(rep(0L, standata$bK2))
+    standata$b1_prior_regularization <- 1.0
+    standata$b2_prior_regularization <- 1.0   
+    
+  } else if (prior_covariance$dist == "lkj") {
+    
+    # data for lkj prior
+    b1_prior_stuff <- b_prior_stuff[[b1_varname]]
+    b1_prior_dist <- fetch_(b1_prior_stuff, "prior_dist")
+    b1_prior_scale <- fetch_array(b1_prior_stuff, "prior_scale")
+    b1_prior_df <- fetch_array(b1_prior_stuff, "prior_df")
+    b1_prior_regularization <- fetch_(b1_prior_stuff, "prior_regularization")
+    if (n_distinct(b1_prior_dist) > 1L)
+      stop2("Bug found: covariance prior should be the same for all submodels.")
+    if (n_distinct(b1_prior_regularization) > 1L) {
+      stop2("Bug found: prior_regularization should be the same for all submodels.")
+    }
+    standata$prior_dist_for_cov <- unique(b1_prior_dist)
+    standata$b1_prior_scale <- b1_prior_scale
+    standata$b1_prior_df <- b1_prior_df
+    standata$b1_prior_regularization <- if (length(b1_prior_regularization))
+      unique(b1_prior_regularization) else 1.0
+    
+    if (standata$bK2 > 0) {
+      # model has a second grouping factor
+      b2_prior_stuff <- b_prior_stuff[[b2_varname]]
+      b2_prior_scale <- fetch_array(b2_prior_stuff, "prior_scale")
+      b2_prior_df    <- fetch_array(b2_prior_stuff, "prior_df")
+      b2_prior_regularization <- fetch_(b2_prior_stuff, "prior_regularization")
+      standata$b2_prior_scale <- b2_prior_scale
+      standata$b2_prior_df    <- b2_prior_df
+      standata$b2_prior_regularization <- unique(b2_prior_regularization)
+    } else {
+      # model does not have a second grouping factor
+      standata$b2_prior_scale <- as.array(double(0))
+      standata$b2_prior_df <- as.array(double(0))
+      standata$b2_prior_regularization <- 1.0
+    }
+    
+    # pass empty decov data
+    standata$len_theta_L <- 0L
+    standata$b_prior_shape <- as.array(rep(0L, standata$t))
+    standata$b_prior_scale <- as.array(rep(0L, standata$t))
+    standata$len_concentration <- 0L
+    standata$len_regularization <- 0L
+    standata$b_prior_concentration <- as.array(rep(0L, standata$len_concentration))
+    standata$b_prior_regularization <- as.array(rep(0L, standata$len_regularization))   
+  }
+  
+  #---------------
+  # Prior summary
+  #---------------
+  
+  
+  #-----------
+  # Fit model
+  #-----------
+  
+  # call stan() to draw from posterior distribution
+  stanfit <- if (is_jm) stanmodel$jm else stanmodels$mvmer
+  pars <- c(if (M > 0 && standata$intercept_type[1]) "yAlpha1", 
+            if (M > 1 && standata$intercept_type[2]) "yAlpha2", 
+            if (M > 2 && standata$intercept_type[3]) "yAlpha3", 
+            if (M > 0 && standata$yK[1]) "yBeta1",
+            if (M > 1 && standata$yK[2]) "yBeta2",
+            if (M > 2 && standata$yK[3]) "yBeta3",
+            if (M > 0 && standata$has_aux[1]) "yAux1",
+            if (M > 1 && standata$has_aux[2]) "yAux2",
+            if (M > 2 && standata$has_aux[3]) "yAux3",
+            #if (standata$bK1 > 0) "bMat1",
+            #if (standata$bK2 > 0) "bMat2",
+            if (standata$prior_dist_for_cov == 2 && standata$bK1 > 0) "bCov1",
+            if (standata$prior_dist_for_cov == 2 && standata$bK2 > 0) "bCov2",
+            if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "theta_L",
+            "mean_PPD")
+  
+  if (M == 1L) cat("Univariate", if (is_jm) "joint", "model specified\n") else 
+  if (M  > 1L) cat("Multivariate", if (is_jm) "joint", "model specified\n")
+  if (algorithm == "sampling") {
+    cat("\nPlease note the warmup may be much slower than later iterations!\n")             
+    sampling_args <- set_jm_sampling_args(
+      object = stanfit,
+      cnms = cnms,
+      user_dots = list(...), 
+      user_adapt_delta = adapt_delta,
+      data = standata, 
+      pars = pars, 
+      show_messages = FALSE)
+    stanfit <- do.call(sampling, sampling_args)
+  } else {
+    # meanfield or fullrank vb
+    stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
+                         algorithm = algorithm, ...)    
+  }
+  check_stanfit(stanfit)
+  
+  # Names for pars
+  y_intercept_nms <- uapply(1:M, function(m) {
+    if (y_mod[[m]]$intercept_type$number > 0) 
+      paste0(stub, m, "|(Intercept)") else NULL
+  })
+  y_beta_nms <- uapply(1:M, function(m) {
+    if (!is.null(colnames(X[[m]]))) 
+      paste0(stub, m, "|", colnames(X[[m]])) else NULL
+  })
+  y_aux_nms <- uapply(1:M, function(m) {
+    famname_m <- family[[m]]$family
+    if (is.gaussian(famname_m)) paste0(stub, m,"|sigma") else
+      if (is.gamma(famname_m)) paste0(stub, m,"|shape") else
+        if (is.ig(famname_m)) paste0(stub, m,"|lambda") else
+          if (is.nb(famname_m)) paste0(stub, m,"|reciprocal_dispersion") else NULL
+  })        
+  
+  # Sigma values in stanmat, and Sigma names
+  nc <- sapply(cnms, FUN = length)
+  nms <- names(cnms) 
+  Sigma_nms <- lapply(cnms, FUN = function(grp) {
+    nm <- outer(grp, grp, FUN = paste, sep = ",")
+    nm[lower.tri(nm, diag = TRUE)]
+  })
+  for (j in seq_along(Sigma_nms)) {
+    Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
+  }
+  Sigma_nms <- unlist(Sigma_nms)
+  
+  if (prior_covariance$dist == "decov" && standata$len_theta_L) {
+    thetas <- extract(stanfit, pars = "theta_L", inc_warmup = TRUE, 
+                      permuted = FALSE)
+    Sigma <- apply(thetas, 1:2, FUN = function(theta) {
+      Sigma <- mkVarCorr(sc = 1, cnms, nc, theta, nms)
+      unlist(sapply(Sigma, simplify = FALSE, 
+                    FUN = function(x) x[lower.tri(x, TRUE)]))
+    })
+    l <- length(dim(Sigma))
+    end <- tail(dim(Sigma), 1L)
+    shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
+    if (l == 3) for (chain in 1:end) for (param in 1:nrow(Sigma)) {
+      stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain] 
+    }
+    else for (chain in 1:end) {
+      stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
+    }
+  }  
+  
+  new_names <- c(y_intercept_nms,
+                 y_beta_nms,
+                 y_aux_nms,
+                 #if (length(group)) c(paste0("b[", b_nms, "]")),
+                 paste0("Sigma[", Sigma_nms, "]"),
+                 paste0(stub, 1:M, "|mean_PPD"), 
+                 "log-posterior")
+  stanfit@sim$fnames_oi <- new_names
+  structure(stanfit, y_mod = y_mod, cnms = cnms)
+}
+
+
+#------- internal
+
+# Check the family and link function are supported by stan_{mvmer,jm}
+#
+# @param family A family object
+# @param supported_families A character vector of supported family names
+# @return A family object
+validate_famlink <- function(family, supported_families) {
+  famname <- family$family
+  fam <- which(supported_families == famname)
+  if (!length(fam)) 
+    stop2("'family' must be one of ", paste(supported_families, collapse = ", "))
+  supported_links <- supported_glm_links(famname)
+  link <- which(supported_links == family$link)
+  if (!length(link)) 
+    stop("'link' must be one of ", paste(supported_links, collapse = ", "))
+  return(family)
+}
+
+# Append a family object with numeric family and link information used by Stan
+#
+# @param family The existing family object
+# @param is_bernoulli Logical specifying whether the family should be bernoulli
+# @return A family object with two appended elements: 
+#   mvmer_family: an integer telling Stan which family
+#   mvmer_link: an integer telling Stan which link function (varies by family!)
+append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
+  famname <- family$family
+  family$mvmer_family <- switch(
+    famname, 
+    gaussian = 1L, 
+    Gamma = 2L,
+    inverse.gaussian = 3L,
+    binomial = 5L, # bernoulli = 4L changed later
+    poisson = 6L,
+    "neg_binomial_2" = 7L)
+  if (is_bernoulli)
+    family$mvmer_family <- 4L
+  supported_links <- supported_glm_links(famname)
+  link <- which(supported_links == family$link)
+  family$mvmer_link <- link
+  return(family)
+}
+
+# Deal with covariance prior
+#
+# @param prior A list
+# @param cnms A list of lists, with names of the group specific 
+#   terms for each grouping factor
+# @param ok_dists A list of admissible distributions
+handle_cov_prior <- function(prior, cnms, ok_dists = nlist("decov", "lkj")) {
+  if (!is.list(prior)) 
+    stop(sQuote(deparse(substitute(prior))), " should be a named list")
+  t <- length(unique(cnms)) # num grouping factors
+  p <- sapply(cnms, length) # num terms for each grouping factor
+  prior_dist_name <- prior$dist
+  if (!prior_dist_name %in% unlist(ok_dists)) {
+    stop("The prior distribution should be one of ",
+         paste(names(ok_dists), collapse = ", "))
+  } else if (prior_dist_name == "decov") {
+    prior_shape <- as.array(maybe_broadcast(prior$shape, t))
+    prior_scale <- as.array(maybe_broadcast(prior$scale, t))
+    prior_concentration <- 
+      as.array(maybe_broadcast(prior$concentration, sum(p[p > 1])))
+    prior_regularization <- 
+      as.array(maybe_broadcast(prior$regularization, sum(p > 1)))
+    prior_df <- NULL
+  } else if (prior_dist_name == "lkj") {
+    prior_shape <- NULL
+    prior_scale <- as.array(maybe_broadcast(prior$scale, sum(p)))
+    prior_concentration <- NULL
+    prior_regularization <- 
+      as.array(maybe_broadcast(prior$regularization, sum(p > 1)))
+    prior_df <- as.array(maybe_broadcast(prior$df, sum(p)))
+  }
+  prior_dist <- switch(prior_dist_name, decov = 1L, lkj = 2L)
+  
+  nlist(prior_dist_name, prior_dist, prior_shape, prior_scale, 
+        prior_concentration, prior_regularization, prior_df, t, p,
+        prior_autoscale = isTRUE(prior$autoscale))
+}  
+
+# Seperate the information about the covariance prior into a list
+# of lists. At the top level of the returned list the elements 
+# correpond to each of the grouping factors, and on the second level
+# of the returned list the elements correpsond to the separate glmer
+# submodels. This separation is required for autoscaling the priors 
+# on the sds of group level effects, since these are autoscaled based
+# on the separate Z matrices (design matrices for the random effects).
+#
+# @param prior_stuff The named list returned by handle_cov_prior
+# @param cnms The component names for group level terms, combined across
+#   all glmer submodels
+# @param submodel_cnms The component names for the group level terms, 
+#   separately for each glmer submodel (stored as a list of length M)
+# @return A list with each element containing the covariance prior
+#   information for one grouping factor
+split_cov_prior <- function(prior_stuff, cnms, submodel_cnms) {
+  if (!prior_stuff$prior_dist_name == "lkj") {
+    return(prior_stuff) # nothing to be done for decov prior
+  } else {
+    M <- length(submodel_cnms) # number of submodels
+    cnms_nms <- names(cnms) # names of grouping factors
+    mark <- 0
+    new_prior_stuff <- list()
+    for (nm in cnms_nms) {
+      for (m in 1:M) {
+        len <- length(submodel_cnms[[m]][[nm]])
+        new_prior_stuff[[nm]][[m]] <- prior_stuff 
+        if (len) {
+          # submodel 'm' has group level terms for group factor 'nm'
+          beg <- mark + 1; end <- mark + len
+          new_prior_stuff[[nm]][[m]]$prior_scale <- prior_stuff$prior_scale[beg:end]
+          new_prior_stuff[[nm]][[m]]$prior_df <- prior_stuff$prior_df[beg:end]
+          mark <- mark + len
+        } else {
+          new_prior_stuff[[nm]][[m]]$prior_scale <- NULL
+          new_prior_stuff[[nm]][[m]]$prior_df <- NULL
+          new_prior_stuff[[nm]][[m]]$prior_regularization <- NULL
+        }
+      }
+    }    
+  }
+  new_prior_stuff
+}
+
+# Construct a list with information on the glmer submodel
+#
+# @param formula The model formula for the glmer submodel
+# @param data The data for the glmer submodel
+# @param family The family object for the glmer submodel
+# @return A named list with the following elements:
+#   Y: named list with the reponse vector and related info
+#   X: named list with the fe design matrix and related info
+#   Z: named list with the re design matrices and related info
+#   terms: the model.frame terms object with bars "|" replaced by "+".
+#   family: the modified family object for the glmer submodel
+#   intercept_type: named list with info about the type of 
+#     intercept required for the glmer submodel
+#   has_aux: logical specifying whether the glmer submodel 
+#     requires an auxiliary parameter
+handle_y_mod <- function(formula, data, family) {
+  mf <- stats::model.frame(lme4::subbars(formula), data)
+  if (!length(formula) == 3L)
+    stop2("An outcome variable must be specified.")
+  
+  # Response vector, design matrices
+  Y <- make_Y(formula, mf, family) 
+  X <- make_X(formula, mf, drop_intercept = TRUE, centre = TRUE)
+  Z <- make_Z(formula, mf) 
+  
+  # Terms
+  terms <- attr(mf, "terms")
+  terms <- append_predvars_attribute(terms, formula, data)
+
+  # Binomial with >1 trials not allowed by stan_{mvmver,jm}
+  is_binomial <- is.binomial(family$family)
+  is_bernoulli <- is_binomial && NCOL(Y) == 1L && all(Y %in% 0:1)
+  if (is_binomial && !is_bernoulli)
+    STOP_binomial()
+  
+  # Various flags
+  intercept_type <- check_intercept_type(X, family)
+  has_aux <- check_for_aux(family)
+  family <- append_mvmer_famlink(family, is_bernoulli)
+  
+  nlist(Y, X, Z, terms, family, intercept_type, has_aux)
+}
+
+# Return the response vector
+#
+# @param formula The model formula
+# @param model_frame The model frame
+# @param family A family object
+# @return A named list with the following elements:
+#   Y: the response vector
+#   real: the response vector if real, else numeric(0) 
+#   integer: the response vector if integer, else integer(0)
+#   is_real: a logical indicating whether the response is real
+make_Y <- function(formula, model_frame, family) {
+  Y <- as.vector(model.response(model_frame))
+  Y <- validate_glm_outcome_support(Y, family)
+  is_real <- check_response_real(family)
+  real <- if (is_real) Y else numeric(0) 
+  integer <- if (!is_real) Y else integer(0) 
+  nlist(Y, real, integer, is_real)
+}
+
+# Return the design matrix, possibly centred
+#
+# @param formula The model formula
+# @param model_frame The model frame
+# @param drop_intercept Logical specifying whether to drop the intercept
+#   from the returned model matrix
+# @param centre Logical specifying whether to centre the predictors
+# @return A named list with the following elements:
+#   X: the fixed effects model matrix, possibly centred
+#   X_bar: The column means of the model matrix
+#   has_intercept: Logical flag for whether the submodel has an intercept
+#   N,K: number of rows (observations) and columns (predictors) in the
+#     fixed effects model matrix
+make_X <- function(formula, model_frame = NULL, drop_intercept = TRUE, 
+                   centre = TRUE) {
+  X_formula <- lme4::nobars(formula)
+  X <- model.matrix(X_formula, model_frame)
+  has_intercept <- check_for_intercept(X, logical = TRUE)
+  if (drop_intercept)
+    X <- drop_intercept(X)
+  if (centre) {
+    if (!drop_intercept)
+      stop2("Cannot centre 'x' without dropping the intercept.")
+    X_bar <- colMeans(X)
+    X <- sweep(X, 2, X_bar, FUN = "-")
+  } else {
+    X_bar <- rep(0, ncol(X))
+  }
+  # drop any column of x with < 2 unique values (empty interaction levels)
+  sel <- (2 > apply(X, 2L, function(x) length(unique(x))))
+  if (any(sel)) {
+    warning("Dropped empty interaction levels: ",
+            paste(colnames(X)[sel], collapse = ", "))
+    X <- X[, !sel, drop = FALSE]
+    X_bar <- X_bar[!sel]
+  }    
+  nlist(X, X_bar, has_intercept, N = NROW(X), K = NCOL(X))
+}
+
+# Return the design matrices for the group level terms
+#
+# @param formula The model formula
+# @param model_frame The model frame
+# @return A named list with the following elements:
+#   Z: a list with each element containing the random effects model 
+#     matrix for one grouping factor
+#   group_vars: a character vector with the name of each of the
+#     grouping factors
+#   group_cnms: a list with each element containing the names of the
+#     group level parameters for one grouping factor
+#   group_list: a list with each element containing the vector of group 
+#     IDs for the rows of Z
+#   nvars: a vector with the number of group level parameters for each
+#     grouping factor
+#   ngrps: a vector with the number of groups for each grouping factor 
+make_Z <- function(formula, model_frame = NULL) {
+  bars <- lme4::findbars(formula)
+  if (length(bars) > 2L)
+    stop2("A maximum of 2 grouping factors are allowed.")
+  Z_parts <- lapply(bars, split_at_bars)
+  Z_forms <- fetch(Z_parts, "re_form")
+  Z <- lapply(Z_forms, model.matrix, model_frame)
+  group_cnms <- lapply(Z, colnames)
+  group_vars <- fetch(Z_parts, "group_var")
+  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  nvars <- sapply(group_cnms, length)
+  ngrps <- sapply(group_list, n_distinct)
+  names(Z) <- names(group_cnms) <- names(group_list) <- 
+    names(nvars) <- names(ngrps) <- group_vars
+  nlist(Z, group_vars, group_cnms, group_list, nvars, ngrps)
+}
+
+# Return info on the required type of intercept
+#
+# @param X The model matrix
+# @param family A family object
+# @return A character string specifying the type of bounds 
+#   required for the intercept term
+check_intercept_type <- function(X, family) {
+  fam <- family$family
+  link <- family$link
+  if (!X$has_intercept) { # no intercept
+    type <- "none"
+    needs_intercept <- 
+      (!is.gaussian(fam) && link == "identity") ||
+      (is.gamma(fam) && link == "inverse") ||
+      (is.binomial(fam) && link == "log")
+    if (needs_intercept)
+      stop2("To use the specified combination of family and link (", fam, 
+            ", ", link, ") the model must have an intercept.")
+  } else if (fam == "binomial" && link == "log") { # binomial, log
+    type <- "upper_bound" 
+  } else if (fam == "binomial") { # binomial, !log
+    type <- "no_bound"
+  } else if (link == "log") { # gamma/inv-gaus/poisson/nb, log
+    type <- "no_bound"  
+  } else if (fam == "gaussian") { # gaussian, !log
+    type <- "no_bound"  
+  } else { # gamma/inv-gaus/poisson/nb, !log 
+    type <- "lower_bound"  
+  }
+  number <- switch(type, none = 0L, no_bound = 1L,
+                   lower_bound = 2L, upper_bound = 3L)
+  nlist(type, number) 
+}
+
+# Split the random effects part of a model formula into
+#   - the formula part (ie. the formula on the LHS of "|"), and 
+#   - the name of the grouping factor (ie. the variable on the RHS of "|")
+#
+# @param x Random effects part of a model formula, as returned by lme4::findbars
+# @return A named list with the following elements:
+#   re_form: a formula specifying the random effects structure
+#   group_var: the name of the grouping factor
+split_at_bars <- function(x) {
+  terms <- strsplit(deparse(x), "\\s\\|\\s")[[1L]]
+  if (!length(terms) == 2L)
+    stop2("Could not parse the random effects formula.")
+  re_form <- formula(paste("~", terms[[1L]]))
+  group_var <- terms[[2L]]
+  nlist(re_form, group_var)
+}
+
+# Take the model frame terms object and append with attributes
+# that provide the predvars for the fixed and random effects 
+# parts, based on the model formula and data
+#
+# @param terms The existing model frame terms object
+# @param formula The formula that was used to build the model frame
+#   (but prior to having called lme4::subbars on it!)
+# @param data The data frame that was used to build the model frame
+# @return A terms object with predvars.fixed and predvars.random as
+#   additional attributes
+append_predvars_attribute <- function(terms, formula, data) {
+  fe_form <- lme4::nobars(formula)
+  re_form <- lme4::subbars(justRE(formula, response = TRUE))
+  fe_frame <- stats::model.frame(fe_form, data)
+  re_frame <- stats::model.frame(re_form, data)
+  fe_terms <- attr(fe_frame, "terms")
+  re_terms <- attr(re_frame, "terms")
+  fe_predvars <- attr(fe_terms, "predvars")
+  re_predvars <- attr(re_terms, "predvars")
+  attr(terms, "predvars.fixed")  <- attr(fe_terms, "predvars")
+  attr(terms, "predvars.random") <- attr(re_terms, "predvars")
+  terms
+}
+
+# Reformulate an expression as the LHS of a model formula
+# 
+# @param x The expression to reformulate
+# @return A model formula
+reformulate_lhs <- function(x) {
+  formula(substitute(LHS ~ 1, list(LHS = x)))
+}
+
+# Reformulate an expression as the RHS of a model formula
+# 
+# @param x The expression to reformulate
+# @param subbars A logical specifying whether to call lme4::subbars
+#   on the result
+# @return A model formula
+reformulate_rhs <- function(x, subbars = FALSE) {
+  fm <- formula(substitute(~ RHS, list(RHS = x)))
+  if (subbars) {
+    lme4::subbars(fm)
+  } else {
+    fm
+  }
+}
+
+
+

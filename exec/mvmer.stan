@@ -249,7 +249,66 @@ functions {
     }
     return b_matrix';
   }
- 
+
+  /** 
+  * Evaluate the mean of the posterior predictive distribution
+  *
+  * @param mu Vector containing the mean of the posterior predictive 
+  *   distribution for each observation (ie. the linear predictor after
+  *   applying the inverse link function).
+  * @param real The auxiliary parameter for the glmer submodel. This will be
+  *   an empty array if the submodel does not have an auxiliary parameter
+  * @param family An integer specifying the family
+  * @return A real, the mean of the posterior predictive distribution
+  */ 
+  real mean_PPD_rng(vector mu, real[] aux, int family) {
+    int N = rows(mu);
+    real mean_PPD = 0;	
+    if (family == 1) { // gaussian
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + normal_rng(mu[n], aux[1]);
+    }
+    else if (family == 2) {  // gamma
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + gamma_rng(aux[1], aux[1] / mu[n]);
+    }
+    else if (family == 3) {  // inverse gaussian
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + inv_gaussian_rng(mu[n], aux[1]);
+    }
+    else if (family == 4) {  // bernoulli
+      for (n in 1:N) 
+        mean_PPD = mean_PPD + bernoulli_rng(mu[n]);
+    } 
+    else if (family == 5) {  // binomial
+      reject("Binomial with >1 trials not allowed.");
+    }
+    else if (family == 6 || family == 8) { 
+      real poisson_max = pow(2.0, 30.0);
+      for (n in 1:N) {  // poisson or poisson-gamma
+        if (mu[n] < poisson_max) 
+          mean_PPD = mean_PPD + poisson_rng(mu[n]);
+        else 
+          mean_PPD = mean_PPD + normal_rng(mu[n], sqrt(mu[n]));
+      }
+    }
+    else if (family == 7) {
+      real poisson_max = pow(2.0, 30.0);
+      for (n in 1:N) {  // negative binomial
+        real gamma_temp;
+        if (is_inf(aux[1])) 
+          gamma_temp = mu[n];
+        else 
+          gamma_temp = gamma_rng(aux[1], aux[1] / mu[n]);
+        if (gamma_temp < poisson_max) 
+          mean_PPD = mean_PPD + poisson_rng(gamma_temp);
+        else 
+          mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+      }
+    }		  
+    return mean_PPD / N;
+  }
+  
 }
 data {
   
@@ -660,32 +719,75 @@ model {
 
 }
 generated quantities {
+  real mean_PPD[M];
   real yAlpha1[intercept_type[1] > 0];
   real yAlpha2[intercept_type[2] > 0];
   real yAlpha3[intercept_type[3] > 0];
   vector[prior_dist_for_cov == 2 && bK1 > 0 ? size(bCov1_idx) : 0] bCov1;
   vector[prior_dist_for_cov == 2 && bK2 > 0 ? size(bCov2_idx) : 0] bCov2; 
   
+  // Evaluate mean_PPD
+  {
+    int bMat1_colshift = 0; // column shift in bMat1
+    int bMat2_colshift = 0; // column shift in bMat2
+
+    // Linear predictor for submodel 1
+    if (M > 0) {
+      vector[yNeta[1]] yEta1; // linear predictor
+      yEta1 = evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]);
+      yEta1 = evaluate_mu(yEta1, family[1], link[1]);
+      mean_PPD[1] = mean_PPD_rng(yEta1, yAux1, family[1]);
+    }
+    
+    // Linear predictor for submodel 2
+    if (M > 1) {
+      vector[yNeta[2]] yEta2;
+      bMat1_colshift = bMat1_colshift + bK1_len[1];
+      bMat2_colshift = bMat2_colshift + bK2_len[1];
+      yEta2 = evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]);
+      yEta2 = evaluate_mu(yEta2, family[2], link[2]);
+      mean_PPD[2] = mean_PPD_rng(yEta2, yAux2, family[2]);
+    }
+    
+    // Linear predictor for submodel 3
+    if (M > 2) {
+      vector[yNeta[3]] yEta3;
+      bMat1_colshift = bMat1_colshift + bK1_len[2];
+      bMat2_colshift = bMat2_colshift + bK2_len[2];
+      yEta3 = evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]);
+      yEta3 = evaluate_mu(yEta3, family[3], link[3]);
+      mean_PPD[3] = mean_PPD_rng(yEta3, yAux3, family[3]);
+    } 
+  }  
+  
+  // Transform intercept parameters
 	if (intercept_type[1] > 0) 
     yAlpha1[1] = yGamma1[1] - dot_product(yXbar1, yBeta1);
   if (M > 1 && intercept_type[2] > 0) 
     yAlpha2[1] = yGamma2[1] - dot_product(yXbar2, yBeta2);
   if (M > 2 && intercept_type[3] > 0) 
     yAlpha3[1] = yGamma3[1] - dot_product(yXbar3, yBeta3);
-		
-	if (prior_dist_for_cov == 2 && bK1 == 1) {
-	  bCov1[1] = bSd1[1] * bSd1[1];
-	} 
-	else if (prior_dist_for_cov == 2 && bK1 > 1) {
-	  bCov1 = to_vector(quad_form_diag(
-	    multiply_lower_tri_self_transpose(bCholesky1), bSd1))[bCov1_idx];
-  }
-  
-  if (prior_dist_for_cov == 2 && bK2 == 1) {
-	  bCov2[1] = bSd2[1] * bSd2[1];
-	} 
-	else if (prior_dist_for_cov == 2 && bK2 > 1) {
-  	bCov2 = to_vector(quad_form_diag(
-  	   multiply_lower_tri_self_transpose(bCholesky2), bSd2))[bCov2_idx]; 
-  }
+	
+	// Transform variance-covariance matrices
+	
+	  // Grouping factor 1
+  	if (prior_dist_for_cov == 2 && bK1 == 1) {
+  	  bCov1[1] = bSd1[1] * bSd1[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK1 > 1) {
+  	  bCov1 = to_vector(quad_form_diag(
+  	    multiply_lower_tri_self_transpose(bCholesky1), bSd1))[bCov1_idx];
+    }
+    
+    // Grouping factor 2
+    if (prior_dist_for_cov == 2 && bK2 == 1) {
+  	  bCov2[1] = bSd2[1] * bSd2[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK2 > 1) {
+    	bCov2 = to_vector(quad_form_diag(
+    	   multiply_lower_tri_self_transpose(bCholesky2), bSd2))[bCov2_idx]; 
+    }
 }

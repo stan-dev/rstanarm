@@ -26,10 +26,10 @@ stanmvreg <- function(object) {
   opt        <- object$algorithm == "optimizing"
   stanfit    <- object$stanfit
   M          <- object$M
-  mvmer      <- is.mvmer(object)
-  surv       <- is.surv(object)
-  jm         <- is.jm(object)
-  stub       <- if (jm) "Long" else "y"
+  is_mvmer   <- is.mvmer(object)
+  is_surv    <- is.surv(object)
+  is_jm      <- is.jm(object)
+  stub       <- if (is_jm) "Long" else "y"
   
   if (opt) {
     stop("Optimisation not implemented for stanmvreg objects.")
@@ -40,7 +40,7 @@ stanmvreg <- function(object) {
     ses <- list()
     
     # Coefs and SEs for longitudinal submodel(s)                    
-    if (!is.null(object$y_mod_stuff)) {
+    if (is_mvmer) {
       y_coefs <- lapply(1:M, function(m)
         stan_summary[c(nms$y[[m]], nms$y_b[[m]]), select_median(object$algorithm)])
       y_stanmat <- lapply(1:M, function(m) 
@@ -57,7 +57,7 @@ stanmvreg <- function(object) {
     }
 
     # Coefs and SEs for event submodel    
-    if (!is.null(object$e_mod_stuff)) {
+    if (is_surv) {
       e_coefs <- stan_summary[c(nms$e, nms$a), select_median(object$algorithm)]        
       if (length(e_coefs) == 1L) 
         names(e_coefs) <- rownames(stan_summary)[c(nms$e, nms$a)[1L]]
@@ -84,54 +84,55 @@ stanmvreg <- function(object) {
   }
 
   out <- nlist(
-    coefficients      = coefs, 
-    ses               = ses,
-    covmat            = covmat,
-    formula           = object$formula,
-    prior.weights     = object$weights, 
-    na.action         = object$na.action,
-    prior.info        = object$prior.info,
-    algorithm         = object$algorithm,
-    call              = object$call,
-    stan_function     = object$stan_function,
-    runtime           = if (object$algorithm == "sampling") times else NULL,
-    stan_summary, 
-    stanfit
+    coefficients  = coefs, 
+    ses           = ses,
+    covmat        = covmat,
+    formula       = object$formula,
+    prior.weights = object$weights, 
+    na.action     = object$na.action,
+    prior.info    = object$prior.info,
+    algorithm     = object$algorithm,
+    call          = object$call,
+    stan_function = object$stan_function,
+    runtime       = if (object$algorithm == "sampling") times else NULL,
+    stan_summary, stanfit
   )
-  if (mvmer) {
-    out$family <- object$family
-    out$cnms <- object$cnms
+  if (is_mvmer) {
+    out$cnms      <- object$cnms
     out$n_markers <- object$M
-    out$n_yobs <- object$n_yobs
-    out$n_grps <- object$n_grps
-    out$y <- object$y
-    out$data <- if (!jm) object$data else NULL
-    out$glmod <- fetch(object$y_mod_stuff, "mod")
-    out$glmod_stuff <- object$y_mod_stuff
-    out$clust_stuff <- object$clust_stuff
-    out$grp_assoc <- object$grp_assoc
+    out$n_yobs    <- list_nms(object$n_yobs, M, stub)
+    out$n_grps    <- list_nms(object$n_grps, M, stub)
+    out$family    <- list_nms(object$family, M, stub)
+    out$glmod     <- list_nms(object$glmod, M, stub)
+    if (!is_jm) {
+      out$model_data <- list_nms(object$model_data, M, stub)
+    }
   }
-  if (surv) {
+  if (is_surv) {
     out$n_subjects <- object$n_subjects
     out$n_events <- sum(object$status > 0)
     out$eventtime <- object$eventtime
     out$status <- object$status > 0
     out$basehaz <- object$basehaz
-    out$data <- if (!jm) object$data else NULL
     out$coxmod <- object$e_mod_stuff$mod    
-    out$coxmod_stuff <- object$e_mod_stuff    
+    out$coxmod_stuff <- object$e_mod_stuff 
+    if (!is_jm) {
+      out$model_data <- object$model_data
+    }  
   }
-  if (jm) {
-    out$time_var <- object$time_var
-    out$id_var <- object$id_var
-    out$qnodes <- object$qnodes
-    out$assoc <- object$assoc
-    out$epsilon <- object$epsilon    
-    out$dataLong <- object$dataLong
+  if (is_jm) {
+    out$time_var  <- object$time_var
+    out$id_var    <- object$id_var
+    out$qnodes    <- object$qnodes
+    out$assoc     <- object$assoc
+    out$epsilon   <- object$epsilon    
+    out$dataLong  <- object$dataLong
     out$dataEvent <- object$dataEvent
     out$assocmod_stuff <- object$a_mod_stuff  
     out$fr <- object$fr
+    out$clust_stuff <- object$clust_stuff
+    out$grp_assoc <- object$grp_assoc
   }
-  out <- Filter(function(x) !is.null(x), out)
+  out <- rm_null(out, recursive = FALSE)
   structure(out, class = c("stanmvreg", "stanreg", "lmerMod"))
 }
