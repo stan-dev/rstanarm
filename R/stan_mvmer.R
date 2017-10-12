@@ -115,12 +115,13 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   #-----------------------------  
   
   algorithm <- match.arg(algorithm)
-  if (missing(weights))
-    weights <- NULL
+  
+  if (missing(weights)) weights <- NULL
+  
   if (!is.null(weights)) 
-    stop("Weights are not yet implemented.")
+    stop("'weights' are not yet implemented.")
   if (QR)               
-    stop("QR decomposition not yet implemented.")
+    stop("'QR' decomposition is not yet implemented.")
   if (sparse)
     stop("'sparse' option is not yet implemented.")
   
@@ -145,7 +146,7 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
     weights <- lapply(weights, validate_weights)
   }
   
-  # Priors
+  # Is prior* already a list?
   prior <- broadcast_prior(prior, M)
   prior_intercept <- broadcast_prior(prior_intercept, M)
   prior_aux <- broadcast_prior(prior_aux, M)
@@ -155,8 +156,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   #----------- 
   
   stanfit <- stan_jm.fit(formulaLong = formula, dataLong = data, family = family,
-                         weights = weights, ..., prior = prior, 
-                         prior_intercept = prior_intercept, prior_aux = prior_aux, 
+                         weights = weights, ..., priorLong = prior, 
+                         priorLong_intercept = prior_intercept, priorLong_aux = prior_aux, 
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, QR = QR, 
                          sparse = sparse)
@@ -165,13 +166,13 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
   cnms  <- attr(stanfit, "cnms")
   stanfit <- drop_attributes(stanfit, "y_mod", "cnms")
   
-  n_yobs <- list_nms(fetch_(y_mod, "X", "N"), M, stub = "y")
-  terms <- list_nms(fetch(y_mod, "terms"), M, stub = "y")
+  n_yobs <- fetch_(y_mod, "X", "N")
+  terms <- fetch(y_mod, "terms")
   #n_grps <- standata$l - 1
   #names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
   #names(p) <- cnms_nms       # p is num. of variables within each grouping factor
   
-  fit <- nlist(stanfit, formula, family, weights, M, cnms, ngrps, n_yobs, 
+  fit <- nlist(stanfit, formula, family, weights, M, cnms, n_grps, n_yobs, 
                algorithm, terms, glmod = y_mod, model_data = data,
                prior.info = NULL, stan_function = "stan_mvmer", 
                call = match.call(expand.dots = TRUE))

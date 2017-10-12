@@ -733,7 +733,56 @@ warn_data_arg_missing <- function() {
 }
 
 
-#---------------------- for stan_jm only -----------------------------
+#---------------------- for stan_{mvmer,jm} only -----------------------------
+
+# Return a list (or vector if unlist = TRUE) which
+# contains the embedded elements in list x named y 
+fetch <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                  pad_length = NULL, unlist = FALSE) {
+  ret <- lapply(x, `[[`, y)
+  if (!is.null(z))
+    ret <- lapply(ret, `[[`, z)
+  if (!is.null(zz))
+    ret <- lapply(ret, `[[`, zz)
+  if (null_to_zero) 
+    lapply(ret, function(i) ifelse(is.null(i), 0L, i))
+  if (!is.null(pad_length)) {
+    padding <- rep(list(0L), pad_length - length(ret))
+    ret <- c(ret, padding)
+  }
+  if (unlist) unlist(ret) else ret
+}
+# Wrapper for using fetch with unlist = TRUE
+fetch_ <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                   pad_length = NULL) {
+  fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+        pad_length = pad_length, unlist = TRUE)
+}
+# Wrapper for using fetch with unlist = TRUE and 
+# returning array. Also converts logical to integer.
+fetch_array <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE,
+                        pad_length = NULL) {
+  val <- fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+               pad_length = pad_length, unlist = TRUE)
+  if (is.logical(val)) 
+    val <- as.integer(val)
+  as.array(val)
+}
+
+# Unlist the result from an lapply call
+#
+# @param X,FUN,... Same as lapply
+uapply <- function(X, FUN, ...) {
+  unlist(lapply(X, FUN, ...))
+}
+
+# A refactored version of mapply with SIMPLIFY = FALSE
+#
+# @param FUN,... Same as mapply
+# @param arg Passed to MoreArgs
+xapply <- function(..., FUN, args = NULL) {
+  mapply(FUN, ..., MoreArgs = args, SIMPLIFY = FALSE)
+}
 
 # Test if family object corresponds to a linear mixed model
 #
@@ -1048,6 +1097,19 @@ check_submodelopt3 <- function(x) {
     stop("submodel option must be 'long', 'event' or 'both'") 
 }
 
+# Error message when the argument contains an object of the incorrect type
+STOP_arg <- function(arg_name, type) {
+  stop(paste0("'", arg_name, "' should be a ", paste0(type, collapse = " or "), 
+              " object or a list of those objects."), call. = FALSE) 
+}
+
+# Return error msg if both elements of the object are TRUE
+STOP_combination_not_allowed <- function(object, x, y) {
+  if (object[[x]] && object[[y]])
+    stop("In ", deparse(substitute(object)), ", '", x, "' and '", y,
+         "' cannot be specified together", call. = FALSE)
+}
+
 # Error message when not specifying an argument required for stanmvreg objects
 #
 # @param arg The argument
@@ -1264,21 +1326,6 @@ get_model_data <- function(object, m = NULL) {
   if (is.null(m)) return(mfs) else return(mfs[[m]])
 }
 
-# Unlist the result from an lapply call
-#
-# @param X,FUN,... Same as lapply
-uapply <- function(X, FUN, ...) {
-  unlist(lapply(X, FUN, ...))
-}
-
-# A refactored version of mapply with SIMPLIFY = FALSE
-#
-# @param FUN,... Same as mapply
-# @param arg Passed to MoreArgs
-xapply <- function(..., FUN, args = NULL) {
-  mapply(FUN, ..., MoreArgs = args, SIMPLIFY = FALSE)
-}
-
 # Promote a character variable to a factor
 #
 # @param x The variable to potentially promote
@@ -1328,6 +1375,9 @@ transpose <- function(x) {
   }
 }
 
+# Translate group/factor IDs into integer values
+#
+# @param x A vector of group/factor IDs
 groups <- function(x) {
   if (!is.null(x)) {
     as.integer(as.factor(x)) 
@@ -1336,6 +1386,10 @@ groups <- function(x) {
   }
 }
 
+# Drop named attributes listed in ... from the object x
+#
+# @param x Any object with attributes
+# @param ... The named attributes to drop
 drop_attributes <- function(x, ...) {
   dots <- list(...)
   if (length(dots)) {
@@ -1346,6 +1400,16 @@ drop_attributes <- function(x, ...) {
   x
 }
 
+# Check if x and any objects in ... were all NULL or not
+#
+# @param x The first object to use in the comparison
+# @param ... Any additional objects to include in the comparison
+# @param error If TRUE then return an error if all objects aren't
+#   equal with regard to the 'is.null' test. 
+# @return If error = TRUE, then an error if all objects aren't
+#   equal with regard to the 'is.null' test. Otherwise, a logical 
+#   specifying whether all objects were equal with regard to the 
+#   'is.null' test.
 supplied_together <- function(x, ..., error = FALSE) {
   dots <- list(...)
   for (i in dots) {
@@ -1362,7 +1426,88 @@ supplied_together <- function(x, ..., error = FALSE) {
   return(TRUE) # supplied together, ie. all NULL or all not NULL
 }
 
-#---- Helpers from brms package
+# Check variables specified in ... are in the data frame
+#
+# @param data A data frame
+# @param ... The names of the variables
+check_vars_are_included <- function(data, ...) {
+  nms <- names(data)
+  vars <- list(...)
+  for (i in vars) {
+    if (!i %in% nms) {
+      arg_nm <- deparse(substitute(data))
+      stop2("Variable '", i, "' is not present in ", arg_nm, ".")
+    }
+  }
+  data
+}
+
+# Check whether a vector/matrix/array contains an "(Intercept)"
+check_for_intercept <- function(x, logical = FALSE) {
+  nms <- if (is.matrix(x)) colnames(x) else names(x)
+  sel <- which("(Intercept)" %in% nms)
+  if (logical) as.logical(length(sel)) else sel
+}
+
+# Drop intercept from a vector/matrix/array of named coefficients
+drop_intercept <- function(x) { 
+  sel <- check_for_intercept(x)
+  if (length(sel) && is.matrix(x)) {
+    x[, -sel, drop = FALSE]
+  } else if (length(sel)) {
+    x[-sel]
+  } else {
+    x
+  }
+}
+
+# Return intercept from a vector/matrix/array of named coefficients
+return_intercept <- function(x) {
+  sel <- which("(Intercept)" %in% names(x))
+  if (length(sel)) x[sel] else NULL
+}
+
+# Standardise a coefficient
+standardise_coef <- function(x, location = 0, scale = 1)
+  (x - location) / scale
+
+# Return a one-dimensional array or an empty numeric
+array_else_double <- function(x)
+  if (!length(x)) double(0) else as.array(unlist(x))
+
+# Return a matrix of uniform random variables or an empty matrix
+matrix_of_uniforms <- function(nrow = 0, ncol = 0) {
+  if (nrow == 0 || ncol == 0) {
+    matrix(0,0,0) 
+  } else {
+    matrix(runif(nrow * ncol), nrow, ncol)
+  } 
+}
+
+# If x is NULL then return an empty object of the specified 'type'
+#
+# @param x An object to test whether it is null.
+# @param type The type of empty object to return if x is null.
+convert_null <- function(x, type = c("double", "integer", "matrix",
+                                     "arraydouble", "arrayinteger")) {
+  if (!is.null(x)) {
+    return(x)
+  } else if (type == "double") {
+    return(double(0))
+  } else if (type == "integer") {
+    return(integer(0))
+  } else if (type == "matrix") {
+    return(matrix(0,0,0))
+  } else if (type == "arraydouble") {
+    return(as.array(double(0)))
+  } else if (type == "arrayinteger") {
+    return(as.array(integer(0)))
+  } else {
+    stop("Input type not valid.")
+  }
+}
+
+#------- helpers from brms package
 
 stop2 <- function(...) {
   stop(..., call. = FALSE)
@@ -1389,20 +1534,6 @@ rm_null <- function(x, recursive = TRUE) {
     x <- lapply(x, function(x) if (is.list(x)) rm_null(x) else x)
   }
   x
-}
-
-first_not_null <- function(...) {
-  # find the first argument that is not NULL
-  dots <- list(...)
-  out <- NULL
-  i <- 1L
-  while(isNULL(out) && i <= length(dots)) {
-    if (!isNULL(dots[[i]])) {
-      out <- dots[[i]]
-    }
-    i <- i + 1L
-  }
-  out
 }
 
 isFALSE <- function(x) {

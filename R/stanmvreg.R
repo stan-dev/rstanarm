@@ -84,12 +84,12 @@ stanmvreg <- function(object) {
   }
 
   out <- nlist(
+    formula       = list_nms(object$formula, M, stub),
+    terms         = list_nms(object$terms, M, stub),
     coefficients  = coefs, 
     ses           = ses,
     covmat        = covmat,
-    formula       = object$formula,
     prior.weights = object$weights, 
-    na.action     = object$na.action,
     prior.info    = object$prior.info,
     algorithm     = object$algorithm,
     call          = object$call,
