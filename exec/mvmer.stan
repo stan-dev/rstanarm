@@ -23,7 +23,7 @@ data {
 }
 transformed data {
   // declares
-  #include "tdata_mvglm.stan" 
+  #include "tdata_mvmer.stan" 
 }
 parameters {
   // declares

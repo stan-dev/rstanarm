@@ -42,14 +42,15 @@ transformed data {
   //   len_{global,local2,local4,mix,ool,noise}, {sqrt_,log_,sum_log_}y, 
   //   len_z_T, len_var_group, delta, is_continuous, pos, beta_smooth
   #include "tdata_mvmer.stan" 
-
 }
 parameters {
   // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, mix, 
   //   ool, noise, aux_unscaled, z_b, z_T, rho, zeta, tau
   #include "parameters_mvmer.stan"
+  
   // declares e_{gamma,z_beta,aux_unscaled,global,local,mix,ool}  
   #include "parameters_event.stan"
+  
   // declares a_{z_beta,global,local,mix,ool}
   #include "parameters_assoc.stan"  
 }
@@ -60,13 +61,13 @@ transformed parameters {
   vector[basehaz_df] e_aux;         // basehaz params  
   #include "tparameters_mvmer.stan" // defines aux, beta, b, theta_L
   e_beta = make_beta(e_z_beta, e_prior_dist, e_prior_mean, 
-                         e_prior_scale, e_prior_df, e_global_prior_scale, 
-                         e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0);  
+                     e_prior_scale, e_prior_df, e_global_prior_scale, 
+                     e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0);  
   a_beta = make_beta(a_z_beta, a_prior_dist, a_prior_mean, 
-                         a_prior_scale, a_prior_df, a_global_prior_scale, 
-                         a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0);         
+                     a_prior_scale, a_prior_df, a_global_prior_scale, 
+                     a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0);         
   e_aux  = make_aux(e_aux_unscaled, e_prior_dist_for_aux,
-                        e_prior_mean_for_aux, e_prior_scale_for_aux);
+                    e_prior_mean_for_aux, e_prior_scale_for_aux);
 }
 model {
 

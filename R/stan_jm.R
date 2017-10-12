@@ -631,36 +631,6 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   return(out)
 }
 
-
-  #--------------------------------
-  # Data for longitudinal submodel
-  #--------------------------------
-
-  unique_id_list <- check_id_list(id_var, fetch(y_mod_stuff, "flist"))
-  
-  #-------------------------
-  # Data for event submodel
-  #-------------------------
-  
-  if (!id_var %in% colnames(dataEvent))
-    stop(paste0("Variable '", id_var, "' must be appear in dataEvent"), call. = FALSE)
-  
-  # Fit separate event submodel
-  e_mod_stuff <- handle_coxmod(e_mc, qnodes = qnodes, id_var = id_var, 
-                               y_idlist = unique_id_list, sparse = sparse,
-                               env = calling_env)
-  
-  # Construct prior weights
-  e_weights <- handle_weights(e_mod_stuff, weights, id_var)
-
-  # Baseline hazard
-  ok_basehaz <- nlist("weibull", "bs", "piecewise")
-  basehaz <- handle_basehaz(basehaz, basehaz_ops, ok_basehaz = ok_basehaz, 
-                            eventtime = e_mod_stuff$eventtime, status = e_mod_stuff$status)
-  
-  # Incorporate intercept term if Weibull baseline hazard
-  e_has_intercept <- e_mod_stuff$has_intercept <- (basehaz$type == 1L)
-
   #--------------------------------
   # Data for association structure
   #--------------------------------

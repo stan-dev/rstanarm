@@ -635,9 +635,9 @@ make_Z <- function(formula, model_frame = NULL) {
   group_list <- lapply(group_vars, function(x) model_frame[[x]])
   nvars <- sapply(group_cnms, length)
   ngrps <- sapply(group_list, n_distinct)
-  names(Z) <- names(group_cnms) <- names(group_list) <- 
-    names(nvars) <- names(ngrps) <- group_vars
-  nlist(Z, group_vars, group_cnms, group_list, nvars, ngrps)
+  names(Z) <- names(Z_forms) <- names(group_cnms) <- 
+    names(group_list) <- names(nvars) <- names(ngrps) <- group_vars
+  nlist(Z, Z_forms, group_vars, group_cnms, group_list, nvars, ngrps)
 }
 
 # Return info on the required type of intercept
@@ -1408,26 +1408,23 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff, 
+handle_assocmod <- function(m, mc, dataLong, y_mod, clust_stuff, 
                             id_list, times, assoc, 
                             id_var, time_var, eps, auc_qnodes, 
-                            dataAssoc = NULL, env = parent.frame()) {
+                            dataAssoc = NULL) {
   if (!requireNamespace("data.table"))
-    stop("the 'data.table' package must be installed to use this function")
+    stop2("the 'data.table' package must be installed to use this function.")
   # Obtain a model frame defined as a data.table
-  rows <- rownames(model.frame(y_mod_stuff$mod))
-  df   <- as.data.frame(dataLong)[rows,]
   if (clust_stuff$has_clust) {
     clust_var <- clust_stuff$clust_var
     df[[clust_var]] <- factor(df[[clust_var]])
-    mf <- data.table::data.table(df, key = c(id_var, clust_var, time_var))
+    mf <- data.table::data.table(
+      dataLong, key = c(id_var, clust_var, time_var))
   } else {
-    mf <- data.table::data.table(df, key = c(id_var, time_var))
+    mf <- data.table::data.table(
+      dataLong, key = c(id_var, time_var))
   }
   mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
-  
-  # Update longitudinal submodel formula to reflect predvars
-  mc$formula <- use_predvars(y_mod_stuff$mod)
   
   # Design matrices for calculating eta, eps, lag, auc and data interactions
   # in association structure
@@ -1465,6 +1462,22 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff,
   return(parts)
 }
 
+
+# Return the design matrices 
+assoc_parts <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
+  model_frame <- stats::model.frame(terms, data)
+  X <- model.matrix(X_form, model_frame)
+  if (!is.null(X_bar)) { # assoc parts are for passing to jm.stan
+    X <- drop_intercept(X)
+    X <- sweep(X, 2, X_bar, FUN = "-")
+  }
+  group_vars <- names(Z_forms)
+  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  Z <- lapply(Z_forms, model.matrix, model_frame)
+  names(Z) <- names(group_list) <- group_vars
+  nlist(X, Z, group_list, group_vars)
+}
+
 # Function to construct quantities, primarily design matrices (X, Zt), that
 # will be used to evaluate the longitudinal submodel contributions to the 
 # association structure in the event submodel. For example, the design matrices
@@ -1490,7 +1503,7 @@ handle_assocmod <- function(m, mc, dataLong, y_mod_stuff, clust_stuff,
 # @param ... Additional arguments passes to use_function
 # @return A named list
 make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
-                             id_list, times, eps = 1E-5, auc_qnodes = 15L, 
+                             ids, times, eps = 1E-5, auc_qnodes = 15L, 
                              dataAssoc = NULL, use_function = handle_glFormula, 
                              ...) {
   if (!requireNamespace("data.table"))
@@ -1507,15 +1520,15 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
     times[times < 0] <- 0.0  # use baseline where lagged t is before baseline
   }
   
-  # Broadcast id_list and times if there is lower level clustering
+  # Broadcast ids and times if there is lower level clustering
   if (clust_stuff$has_clust) {
     clust_var <- clust_stuff$clust_var
     if (is(times, "list")) {
-      id_list <- rep(id_list, clust_stuff$clust_freq)
+      ids <- rep(ids, clust_stuff$clust_freq)
       times <- lapply(times, rep, clust_stuff$clust_freq)
       clust <- clust_stuff$clust_list
     } else {
-      id_list <- rep(rep(id_list, clust_stuff$clust_freq), clust_stuff$qnodes + 1)
+      ids <- rep(rep(ids, clust_stuff$clust_freq), clust_stuff$qnodes + 1)
       times <- rep(times, rep(clust_stuff$clust_freq, clust_stuff$qnodes + 1))
       clust <- rep(clust_stuff$clust_list, clust_stuff$qnodes + 1)
     }
@@ -1531,7 +1544,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   #   covariate values can be carried). If no time varying covariates are 
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
-  dataQ <- rolling_merge(data = newdata, ids = id_list, times = times, clust = clust)
+  dataQ <- rolling_merge(data = newdata, ids = ids, times = times, clust = clust)
   mod_eta <- use_function(newdata = dataQ, ...)
   
   # If association structure is based on slope, then calculate design 
@@ -1559,7 +1572,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
       lapply(times, function(x) unlist(
         lapply(x, function(y) 
           lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, y))))
-    ids2 <- rep(id_list, each = auc_qnodes)
+    ids2 <- rep(ids, each = auc_qnodes)
     dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = auc_qtimes)
     mod_auc <- use_function(newdata = dataQ_auc, ...)
   } else mod_auc <- auc_qtimes <- auc_qwts <- NULL
@@ -1616,7 +1629,7 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
                           data.table::data.table(mf2, key = c(id_var, clust_var, time_var)) else 
                             data.table::data.table(mf2, key = c(id_var, time_var))
                         mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-                        mf2q <- rolling_merge(data = mf2, ids = id_list, times = times, clust = clust)
+                        mf2q <- rolling_merge(data = mf2, ids = ids, times = times, clust = clust)
                         xq <- stats::model.matrix(fm, data = mf2q)
                         if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
                         if (!ncol(xq))
@@ -1697,6 +1710,8 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
   linpred <- linpred + (t(as.matrix(group$Zt)) %*% b)
   nlist(xtemp, group, linpred)
 }   
+
+
 
 # Get the information need for combining the information in lower-level units
 # clustered within an individual, when the patient-level is not the only 
