@@ -131,18 +131,6 @@
 #'     placed at equally spaced percentiles of the distribution of
 #'     observed event times.}
 #'   }
-#' @param dataAssoc A data frame containing observed covariates used in the
-#'   interactions between association terms and observed data. See the
-#'   \strong{Details} and \strong{Examples} sections for details on how to 
-#'   specify the formulas for the interactions as part of the \code{assoc}  
-#'   argument. If interactions between association terms and observed data are
-#'   specified as part of the \code{assoc} argument, but \code{dataAssoc} is 
-#'   not specified, then the values for the covariates will be taken from the 
-#'   data frame(s) provided in \code{dataLong}. (Specifying \code{dataAssoc}
-#'   directly means that a different measurement time schedule could be used 
-#'   for the covariates in the association term interactions when compared with
-#'   the measurement time schedule used for the longitudinal outcomes and  
-#'   covariates provided in \code{dataLong}.
 #' @param epsilon The half-width of the central difference used to numerically
 #'   calculate the derivate when the \code{"etaslope"} association structure 
 #'   is used.   
@@ -502,7 +490,7 @@
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
-                    lag_assoc = 0, grp_assoc, dataAssoc, epsilon = 1E-5,
+                    lag_assoc = 0, grp_assoc, epsilon = 1E-5,
                     basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
                     qnodes = 15, init = "prefit", weights, ...,	
                     priorLong = normal(), priorLong_intercept = normal(), 
@@ -526,18 +514,14 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   algorithm <- match.arg(algorithm)
   basehaz   <- match.arg(basehaz)
   
-  if (missing(offset))      offset      <- NULL 
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
   if (missing(time_var))    time_var    <- NULL
   if (missing(grp_assoc))   grp_assoc   <- NULL
-  if (missing(dataAssoc))   dataAssoc   <- NULL 
-  
+
   if (!is.null(weights)) 
     stop("'weights' are not yet implemented.")
-  if (!is.null(dataAssoc))
-    stop("'dataAssoc' argument not yet implemented.")
   if (QR)               
     stop("'QR' decomposition is not yet implemented.")
   if (sparse)
@@ -589,13 +573,15 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          formulaEvent = formulaEvent, dataEvent = dataEvent, 
                          time_var = time_var, id_var = id_var, family = family,
                          assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
-                         dataAssoc = dataAssoc, epsilon = epsilon, basehaz = basehaz, 
-                         basehaz_ops = basehaz_ops, qnodes = qnodes, init = init, 
-                         weights = weights, ..., priorLong = priorLong, 
+                         epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
+                         qnodes = qnodes, init = init, weights = weights, ..., 
+                         priorLong = priorLong, 
                          priorLong_intercept = priorLong_intercept, 
-                         priorLong_aux = priorLong_aux, priorEvent = priorEvent, 
+                         priorLong_aux = priorLong_aux, 
+                         priorEvent = priorEvent, 
                          priorEvent_intercept = priorEvent_intercept, 
-                         priorEvent_aux = priorEvent_aux, priorEvent_assoc = priorEvent_assoc, 
+                         priorEvent_aux = priorEvent_aux, 
+                         priorEvent_assoc = priorEvent_assoc, 
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse)
@@ -630,416 +616,4 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   out <- stanmvreg(fit)
   return(out)
 }
-
-  #--------------------------------
-  # Data for association structure
-  #--------------------------------
-  
- 
-
-  # Return design matrices for evaluating longitudinal submodel quantities
-  # at the quadrature points
-  eps <- 1E-5 # time shift for numerically calculating deriv using one-sided diff
-  auc_qnodes <- 15L
-  a_mod_stuff <- mapply(handle_assocmod, 1:M, m_mc, dataLong, y_mod_stuff,
-                        clust_stuff = clust_stuff, SIMPLIFY = FALSE, 
-                        MoreArgs = list(id_list         = e_mod_stuff$cids, 
-                                        times           = e_mod_stuff$cpts, 
-                                        assoc           = assoc, 
-                                        id_var          = id_var, 
-                                        time_var        = time_var, 
-                                        eps             = eps, 
-                                        auc_qnodes      = auc_qnodes,
-                                        dataAssoc       = dataAssoc,
-                                        env             = calling_env))
-
-  #-------------------------
-  # Data for export to Stan
-  #-------------------------
-  
-  #----- Priors
-  
-  standata <- list(
-    prior_dist                = fetch_array(y_prior_stuff, "prior_dist"), 
-    prior_dist_for_intercept  = fetch_array(y_prior_intercept_stuff, "prior_dist"),  
-    prior_dist_for_aux        = fetch_array(y_prior_aux_stuff, "prior_dist"),
-    e_prior_dist              = e_prior_stuff$prior_dist,
-    e_prior_dist_for_intercept= e_prior_intercept_stuff$prior_dist,
-    e_prior_dist_for_aux      = e_prior_aux_stuff$prior_dist,
-    a_prior_dist              = a_prior_stuff$prior_dist,    
- 
-    # hyperparameters for longitudinal submodel priors
-    prior_mean                 = fetch_array(y_prior_stuff,           "prior_mean"), 
-    prior_scale                = fetch_array(y_prior_stuff,           "prior_scale"), 
-    prior_df                   = fetch_array(y_prior_stuff,           "prior_df"), 
-    prior_mean_for_intercept   = fetch_array(y_prior_intercept_stuff, "prior_mean"),
-    prior_scale_for_intercept  = fetch_array(y_prior_intercept_stuff, "prior_scale"), 
-    prior_df_for_intercept     = fetch_array(y_prior_intercept_stuff, "prior_df"),  
-    prior_mean_for_aux         = fetch_array(y_prior_aux_stuff,       "prior_mean"),
-    prior_scale_for_aux        = fetch_array(y_prior_aux_stuff,       "prior_scale"),
-    prior_df_for_aux           = fetch_array(y_prior_aux_stuff,       "prior_df"),
-    global_prior_scale         = fetch_array(y_prior_stuff, "global_prior_scale"),
-    global_prior_df            = fetch_array(y_prior_stuff, "global_prior_df"), 
-    
-    # hyperparameters for event submodel priors
-    e_prior_mean               = e_prior_stuff$prior_mean, 
-    e_prior_scale              = e_prior_stuff$prior_scale, 
-    e_prior_df                 = e_prior_stuff$prior_df, 
-    e_prior_mean_for_intercept = c(e_prior_intercept_stuff$prior_mean),
-    e_prior_scale_for_intercept= c(e_prior_intercept_stuff$prior_scale), 
-    e_prior_df_for_intercept   = c(e_prior_intercept_stuff$prior_df),
-    e_prior_mean_for_aux       = if (basehaz$type == 1L) as.array(0) else 
-                                   as.array(e_prior_aux_stuff$prior_mean),  
-    e_prior_scale_for_aux      = e_prior_aux_stuff$prior_scale, 
-    e_prior_df_for_aux         = e_prior_aux_stuff$prior_df,
-    e_global_prior_scale       = e_prior_stuff$global_prior_scale,
-    e_global_prior_df          = e_prior_stuff$global_prior_df,
-    
-    # hyperparameters for assoc parameter priors
-    a_prior_mean               = a_prior_stuff$prior_mean, 
-    a_prior_scale              = a_prior_stuff$prior_scale, 
-    a_prior_df                 = a_prior_stuff$prior_df, 
-    a_global_prior_scale       = a_prior_stuff$global_prior_scale,
-    a_global_prior_df          = a_prior_stuff$global_prior_df,
-    a_xbar                     = if (a_K) a_prior_stuff$a_xbar else numeric(0),
-	
-    # flags
-    prior_PD = as.integer(prior_PD)
-  )
-  
-  # prior flag (same prior for all long submodel)
-  standata$prior_special_case <- as.integer(
-    (length(unique(standata$prior_dist)) == 1L) && all(standata$prior_dist %in% c(0,1,2)))
-  
-  #----- Longitudinal submodels
-  
-  # Dimensions and other stuff
-  standata$M      <- as.integer(M)
-  standata$KM     <- fetch_array(y_mod_stuff, "K")
-  standata$NM     <- fetch_array(y_mod_stuff, "N") 
-  standata$NM_real<- fetch_array(y_mod_stuff, "real_N") 
-  standata$NM_int <- fetch_array(y_mod_stuff, "int_N") 
-  standata$K      <- as.integer(sum(standata$KM))
-  standata$e_K    <- as.integer(e_mod_stuff$K)
-  standata$a_K    <- as.integer(a_K)  
-  standata$N      <- as.integer(sum(standata$NM))  
-  standata$N_real <- as.integer(sum(fetch_(y_mod_stuff, "real_N"))) 
-  standata$N_int  <- as.integer(sum(fetch_(y_mod_stuff, "int_N")))
-  standata$N01    <- as.array(t(sapply(fetch(y_mod_stuff, "N01"), cbind))) 
-  standata$has_weights       <- as.integer(!is.null(weights))
-  standata$has_offset        <- as.integer(!is.null(offset))
-  standata$has_intercept     <- fetch_array(y_mod_stuff, "has_intercept")
-  standata$has_intercept_nob <- fetch_array(y_mod_stuff, "has_intercept_unbound")
-  standata$has_intercept_lob <- fetch_array(y_mod_stuff, "has_intercept_lobound")
-  standata$has_intercept_upb <- fetch_array(y_mod_stuff, "has_intercept_upbound")
-  standata$has_aux           <- fetch_array(y_mod_stuff, "has_aux")
-  standata$xbar              <- fetch_array(y_mod_stuff, "xbar")
-  standata$weights <- 
-    if (!is.null(weights)) as.array(unlist(y_weights)) else as.array(numeric(0))
-  standata$offset  <- 
-    if (!is.null(offset)) stop("bug found. offset not yet implemented.") else double(0)
-  standata$link    <- as.array(link)
-  standata$dense_X <- !sparse
-  standata$special_case <- as.integer(FALSE)
-  
-  # Not used
-  standata$K_smooth   <- 0L
-  standata$S          <- matrix(NA_real_, standata$N, 0L)
-  standata$smooth_map <- integer(0)  
-  
-  # Design matrices
-  X <- as.matrix(Matrix::bdiag(fetch(y_mod_stuff, "xtemp")))
-  if (sparse) {
-    parts <- extract_sparse_parts(X)
-    standata$nnz_X <- length(parts$w)
-    standata$w_X <- parts$w
-    standata$v_X <- parts$v
-    standata$u_X <- parts$u
-    standata$X <- array(0, dim = c(0L, dim(X)))
-  } else {
-    standata$X <- array(X, dim = c(1L, dim(X)))
-    standata$nnz_X <- 0L
-    standata$w_X <- double(0)
-    standata$v_X <- integer(0)
-    standata$u_X <- integer(0)
-  }  
-  
-  # Combined response vector
-  y_y <- fetch(y_mod_stuff, "y")
-  y_is_real <- fetch_(y_mod_stuff, "is_real")
-  standata$y_real <- as.array(as.numeric(unlist(y_y[y_is_real])))
-  standata$y_int  <- as.array(as.integer(unlist(y_y[!y_is_real])))
-  
-  # Indexing for combined beta vector, response vector, design matrix, weights, etc
-  standata$idx      <- get_idx_array(standata$NM)
-  standata$idx_real <- get_idx_array(standata$NM_real)
-  standata$idx_int  <- get_idx_array(standata$NM_int)
-  standata$idx_K    <- get_idx_array(standata$KM)
-  
-  # Sum dimensions
-  for (i in c("has_aux", paste0("has_intercept", c("", "_nob", "_lob", "_upb")))) 
-    standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
-  
-  # Data for group-specific terms
-  group <- lapply(y_mod_stuff, function(x) {
-    pad_reTrms(Ztlist = x$Ztlist, 
-               cnms   = x$cnms, 
-               flist  = x$flist)})
-  Z              <- fetch(group, "Z")
-  y_cnms         <- fetch(group, "cnms")
-  y_flist_padded <- fetch(group, "flist")
-  t <- length(cnms_nms)   # num of unique grouping factors
-  t_i <- which(cnms_nms == id_var) # index of patient-level grouping factor
-  pmat <- matrix(0, t, M) # num of group-specific terms
-  lmat <- matrix(0, t, M) # num of factor levels
-  l <- c()
-  for (i in 1:t) {
-    for (j in 1:M) {
-      pmat[i,j] <- length(y_cnms[[j]][[cnms_nms[i]]])
-      lmat[i,j] <- nlevels(y_flist_padded[[j]][[cnms_nms[i]]])
-    }
-    l[i] <- max(lmat[i,])
-    if (!all(lmat[i,] %in% c(0, l[i])))
-      stop("The number of factor levels for each of the grouping factors ",
-           "must be the same in each of the longitudinal submodels.")     
-  }
-  qmat <- l * pmat
-  p  <- rowSums(pmat) # num group-specific terms for each grouping factor 
-  q1 <- rowSums(qmat) # num group-specific coefs for each grouping factor
-  q2 <- colSums(qmat) # num group-specific coefs for each submodel
-  q  <- sum(qmat)     # total num group-specific coefs
-  b_nms <- unlist(Map(make_b_nms, group, m = seq(M)))
-  g_nms <- unlist(
-    lapply(1:M, FUN = function(m) {
-      lapply(1:length(group[[m]]$cnms), FUN = function(i) {
-        paste(paste0("Long", m), group[[m]]$cnms[[i]], names(group[[m]]$cnms)[i], sep = "|")
-      })
-    })
-  )
-  standata$t    <- as.integer(t)
-  standata$t_i  <- as.integer(t_i)
-  standata$pmat <- as.array(pmat)
-  standata$p    <- as.array(p)
-  standata$l    <- as.array(l)
-  standata$qmat <- as.array(qmat)
-  standata$q1   <- as.array(q1)
-  standata$q2   <- as.array(q2)
-  standata$q    <- as.integer(q)
-  standata$len_theta_L <- sum(choose(p, 2), p)
-  Zmerge <- Matrix::bdiag(Z)
-  parts <- rstan::extract_sparse_parts(Zmerge)
-  standata$num_non_zero <- as.integer(length(parts$w))
-  standata$w <- parts$w
-  standata$v <- parts$v
-  standata$u <- as.array(parts$u)
-  
-  # Hyperparameters for decov prior
-  if (prior_covariance$dist == "decov") {
-    decov_args <- prior_covariance
-    standata$shape <- as.array(maybe_broadcast(decov_args$shape, t))
-    standata$scale <- as.array(maybe_broadcast(decov_args$scale, t))
-    standata$len_concentration <- sum(p[p > 1])
-    standata$concentration <- 
-      as.array(maybe_broadcast(decov_args$concentration, sum(p[p > 1])))
-    standata$len_regularization <- sum(p > 1)
-    standata$regularization <- 
-      as.array(maybe_broadcast(decov_args$regularization, sum(p > 1))) 
-  }  
-  
-  # Families
-  standata$family <- as.array(sapply(1:M, function(x) {
-    return_fam <- switch(family[[x]]$family, 
-                         gaussian = 1L, 
-                         Gamma = 2L,
-                         inverse.gaussian = 3L,
-                         binomial = 5L,
-                         poisson = 6L,
-                         "neg_binomial_2" = 7L)
-    if (y_mod_stuff[[x]]$is_bernoulli) return_fam <- 4L
-    return_fam}))
-  
-  #----- Event submodel (including GK quadrature)
-  
-  # Dimensions, response, design matrix, etc
-  standata$Npat      <- as.integer(e_mod_stuff$Npat)
-  standata$Nevents   <- as.integer(e_mod_stuff$Nevents)
-  standata$qnodes    <- as.integer(qnodes)
-  standata$qwts      <- as.array(e_mod_stuff$qwts)
-  standata$Npat_times_qnodes <- as.integer(e_mod_stuff$Npat * qnodes)
-  standata$e_times <- c(e_mod_stuff$eventtime[e_mod_stuff$status == 1], unlist(e_mod_stuff$qpts))
-  standata$nrow_e_Xq <- length(standata$e_times)
-  standata$e_has_intercept <- as.integer(e_has_intercept)
-  standata$e_Xq      <- e_mod_stuff$xtemp
-  standata$e_xbar    <- as.array(e_mod_stuff$xbar)
-  standata$e_weights       <- as.array(e_weights)
-  standata$e_weights_rep   <- as.array(rep(e_weights, times = qnodes))
-  
-  # Baseline hazard
-  standata$basehaz_type <- as.integer(basehaz$type)
-  standata$basehaz_df   <- as.integer(basehaz$df)
-  if (basehaz$type_name == "weibull") {
-    standata$basehaz_X <- matrix(log(standata$e_times), length(standata$e_times), 1) 
-  } else if (basehaz$type_name == "bs") {
-    standata$basehaz_X <- as.array(predict(basehaz$bs_basis, standata$e_times)) 
-  } else if (basehaz$type_name == "piecewise") {
-    e_times_quantiles <- cut(standata$e_times, basehaz$knots, 
-                             include.lowest = TRUE, labels = FALSE)
-    tmp <- matrix(NA, length(e_times_quantiles), basehaz$df)
-    for (i in 1:basehaz$df) 
-      tmp[, i] <- ifelse(e_times_quantiles == i, 1, 0)
-    standata$basehaz_X <- as.array(tmp)
-  } else {
-    standata$basehaz_X <- matrix(0,0,0)  
-  }
-  standata$norm_const <- e_mod_stuff$norm_const
-  
-  #----- Association structure
-  
-  standata$assoc <- as.integer(a_K > 0L) # any association structure, 1 = yes
-
-  # Indicator for which components are required to build the association terms
-  standata$assoc_uses <- sapply(
-    c("etavalue", "etaslope", "etaauc", "muvalue", "muslope", "muauc"), 
-    function(x, assoc) {
-      nm_check <- switch(x,
-                         etavalue = "^eta|^mu",
-                         etaslope = "etaslope|muslope",
-                         etaauc   = "etaauc|muauc",
-                         muvalue  = "muvalue|muslope",
-                         muslope  = "muslope",
-                         muauc    = "muauc")
-      sel <- grep(nm_check, rownames(assoc))
-      as.integer(any(unlist(assoc[sel,])))
-    }, assoc = assoc)  
-    
-  # Indexing for desired association types
-  # !!! must be careful with corresponding use of indexing in Stan code
-  # 1 = ev; 2 = es; 3 = ea; 4 = mv; 5 = ms; 6 = ma;
-  # 7 = shared_b; 8 = shared_coef;
-  # 9 = ev_data; 10 = es_data; 11 = mv_data; 12 = ms_data;
-  # 13 = evev; 14 = evmv; 15 = mvev; 16 = mvmv;
-  sel <- grep("which|null", rownames(assoc), invert = TRUE)
-  standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
-  
-  # Data for association structure when there is
-  # clustering below the patient-level
-  standata$has_clust <- as.array(as.integer(has_clust))
-  if (any(has_clust)) { # has lower level clustering
-    parts_clust_mat <- rstan::extract_sparse_parts(clust_mat[[1L]])
-    standata$clust_nnz <- length(parts_clust_mat$w)
-    standata$clust_w <- parts_clust_mat$w
-    standata$clust_v <- parts_clust_mat$v
-    standata$clust_u <- parts_clust_mat$u
-  } else { # no lower level clustering
-    standata$clust_nnz <- 0L
-    standata$clust_w <- double(0)
-    standata$clust_v <- integer(0)
-    standata$clust_u <- integer(0)
-  }
-  
-  # Data for calculating value, slope, auc in GK quadrature 
-  standata$nrow_y_Xq <- as.array(as.integer(
-    sapply(a_mod_stuff, function(x) NROW(x$mod_eta$xtemp))))
-  standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
-  for (i in c("eta", "eps", "auc")) {
-    nm_check <- switch(i,
-                       eta = "^eta|^mu",
-                       eps = "slope",
-                       auc = "auc")
-    sel <- grep(nm_check, rownames(assoc))
-    if (any(unlist(assoc[sel,]))) {
-      tmp_stuff <- fetch(a_mod_stuff, paste0("mod_", i))
-      X_tmp <- as.matrix(Matrix::bdiag(fetch(tmp_stuff, "xtemp")))
-      group_tmp <- lapply(tmp_stuff, function(x) {
-        pad_reTrms(Ztlist = x[["group"]][["Ztlist"]], 
-                   cnms   = x[["group"]][["cnms"]], 
-                   flist  = x[["group"]][["flist"]])})
-      Z_tmp <- Matrix::bdiag(fetch(group_tmp, "Z"))      
-    } else {
-      X_tmp <- matrix(0,0,standata$K)
-      Z_tmp <- matrix(0,0,0) 
-    }
-    parts_Z_tmp <- rstan::extract_sparse_parts(Z_tmp)
-    standata[[paste0("y_Xq_", i)]] <- as.array(X_tmp)
-    standata[[paste0("nnz_Zq_", i)]] <- as.integer(length(parts_Z_tmp$w))
-    standata[[paste0("w_Zq_", i)]] <- parts_Z_tmp$w
-    standata[[paste0("v_Zq_", i)]] <- parts_Z_tmp$v
-    standata[[paste0("u_Zq_", i)]] <- as.array(parts_Z_tmp$u)    
-  }  
-  
-  # Data for slope association structure
-  standata$eps <- eps
-  
-  # Data for auc association structure
-  standata$auc_qnodes <- 
-    as.integer(auc_qnodes)
-  standata$Npat_times_auc_qnodes <- 
-    as.integer(e_mod_stuff$Npat * auc_qnodes) 
-  standata$nrow_y_Xq_auc <- as.array(as.integer(
-    sapply(a_mod_stuff, function(x) NROW(x$mod_auc$xtemp))))
-  standata$idx_qauc <- get_idx_array(standata$nrow_y_Xq_auc)
-  auc_qwts <- 
-    unlist(lapply(e_mod_stuff$qtimes, function(x) 
-      lapply(x, function(y) 
-        lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, y)))) 
-  standata$auc_qwts <- 
-    if (standata$assoc_uses[3]) as.array(auc_qwts) else double(0)
-
-  # Interactions between association terms and data
-  # design matrix for the interactions
-  standata$y_Xq_data <- 
-    as.array(as.matrix(Matrix::bdiag(fetch(a_mod_stuff, "xmat_data"))))
-  # number of columns in y_Xq_data corresponding to each interaction type 
-  # (ie, etavalue, etaslope, muvalue, muslope) for each submodel
-  standata$a_K_data  <- fetch_array(a_mod_stuff, "K_data")  
-  
-  # Interactions between association terms
-  standata$which_interactions      <- as.array(unlist(assoc["which_interactions",]))
-  standata$size_which_interactions <- c(sapply(assoc["which_interactions",], sapply, length))
-   
-  # Shared random effects
-  standata$which_b_zindex    <- as.array(unlist(assoc["which_b_zindex",]))
-  standata$which_coef_zindex <- as.array(unlist(assoc["which_coef_zindex",]))
-  standata$which_coef_xindex <- as.array(unlist(assoc["which_coef_xindex",]))
-  standata$size_which_b      <- as.array(sapply(assoc["which_b_zindex",    ], length))
-  standata$size_which_coef   <- as.array(sapply(assoc["which_coef_zindex", ], length))
-
-  # Sum dimensions
-  for (i in c("a_K_data", paste0("size_which_", c("b", "coef", "interactions")))) {
-    standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
-  }
-  
-  #----------------
-  # Initial values
-  #----------------
-  
-  if (is.character(init) && (init =="prefit")) {
-    init <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)
-  } else if (is.character(init) && (init == "prefit_vb")) {
-    cat("Obtaining initial values using variational bayes\n")
-    dropargs <- c("chains", "cores", "iter", "refresh")
-    vbdots <- list(...)
-    for (i in dropargs) 
-      vbdots[[i]] <- NULL
-    vbargs <- c(list(stanmodels$mvmer, pars = "mean_PPD", data = standata, 
-                     algorithm = "meanfield"), vbdots)
-    initfit <- do.call(rstan::vb, vbargs)
-    initmeans <- rstan::get_posterior_mean(initfit)
-    initnms <- rownames(initmeans)
-    inits <- generate_init_function(y_mod_stuff, e_mod_stuff, standata)()
-    sel <- c("gamma_nob", "gamma_lob", "gamma_upb", "z_beta", "aux_unscaled", 
-             "z_b", "z_T", "rho", "zeta", "tau", "global", "local2", "local4", 
-             "mix", "ool", "noise")
-    for (i in sel) {
-      sel_i <- grep(paste0("^", i, "\\."), initnms)
-      if (length(sel_i))
-        inits[[i]] <- as.array(initmeans[sel_i,])
-    }
-    init <- function() inits
-  }
-  
-
-
-
-
 

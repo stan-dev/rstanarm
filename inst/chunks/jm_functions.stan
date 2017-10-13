@@ -72,6 +72,28 @@
   }
 
   /** 
+  * Scale the auxiliary parameter based on prior information
+  *
+  * @param aux_unscaled A real, the unscaled auxiliary parameter
+  * @param prior_dist Integer, the type of prior distribution
+  * @param prior_mean,prior_scale Real scalars, the mean and scale
+  *   of the prior distribution
+  * @return A real, corresponding to the scaled auxiliary parameter
+  */  
+  vector make_basehaz_coef(vector aux_unscaled, int prior_dist, 
+                           vector prior_mean, vector prior_scale) {
+    vector[rows(aux_unscaled)] aux;
+    if (prior_dist == 0) // none
+      aux = aux_unscaled;
+    else {
+      aux = prior_scale .* aux_unscaled;
+      if (prior_dist <= 2) // normal or student_t
+        aux = aux + prior_mean;
+    }
+    return aux;
+  }
+	
+  /** 
   * Scale the primitive population level parameters based on prior information
   *
   * @param z_beta A vector of primitive parameters
@@ -443,7 +465,44 @@
     }		  
     return mean_PPD / N;
   }
-  	
+ 
+  /** 
+  * Take the linear predictor and collapse across lower level
+  * units of the grouping factor clustered within patients, using
+	* the function specified by 'grp_assoc'
+	*
+	* @param eta The linear predictor evaluated for all the lower
+	*   level units, having some length greater than N.
+	* @param clust_idx An N-by-2 two dimensional array providing the
+	*   beginning and ending index of the lower level units in eta that
+	*   correspond to patient n (where n = 1,...,N).
+	* @param grp_assoc The method for collapsing across the lower 
+	*   level units; 1=sum, 2=mean, 3=min, 4=max.
+	* @return A vector
+	*/
+	vector collapse_within_groups(vector eta, int[,] clust_idx, 
+	                              int grp_assoc) {
+		int N = size(clust_idx);
+		vector[N] val;
+		if (grp_assoc == 1) { // sum of lower level clusters
+			for (n in 1:N)
+				val[n] = sum(eta[clust_idx[n,1]:clust_idx[n,2]]);
+		}
+		else if (grp_assoc == 2) { // mean of lower level clusters
+			for (n in 1:N)
+				val[n] = mean(eta[clust_idx[n,1]:clust_idx[n,2]]);
+		}
+		else if (grp_assoc == 3) { // min of lower level clusters
+			for (n in 1:N)
+				val[n] = min(eta[clust_idx[n,1]:clust_idx[n,2]]);
+		}
+		else if (grp_assoc == 4) { // max of lower level clusters
+			for (n in 1:N)
+				val[n] = max(eta[clust_idx[n,1]:clust_idx[n,2]]);
+		}
+		return val;
+	}
+
   /** 
   * Create a design matrix for a shared random effects association
   * structure in the joint model

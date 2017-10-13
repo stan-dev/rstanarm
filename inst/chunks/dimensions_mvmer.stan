@@ -1,6 +1,7 @@
   // population level dimensions
   int<lower=1,upper=3> M; // num submodels with data (limit of 3)
   int<lower=0,upper=1> has_aux[3]; // has auxiliary param
+  int<lower=0,upper=1> has_weights; // has observation weights
   int<lower=0,upper=2> resp_type[3]; // 1=real,2=integer,0=none
   int<lower=0,upper=3> intercept_type[3]; // 1=unbounded,2=lob,3=upb,0=none
   int<lower=0> yNobs[3]; // num observations

@@ -111,6 +111,17 @@ get_scale_value <- function(x) {
   return(x.scale)
 }
 
+# Apply a lag to a vector of times
+#
+# @param x A numeric vector (e.g. observation times)
+# @param lag A scalar (the lag time)
+# @return A numeric vector
+set_lag <- function(x, lag) {
+  x <- x - lag
+  x[x < 0] <- 0.0  # use baseline for lag times prior to baseline
+  x
+}
+
 # Get the required number of (local) horseshoe parameters for a specified prior type
 #
 # @param prior_dist An integer indicating the type of prior distribution: 
@@ -914,7 +925,7 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   
   # Event times/ids (for failures only)
   epts <- eventtime[status == 1] # event times (for failures only)
-  eids <- id_list[status == 1]       # subject ids (for failures only)
+  eids <- id_list[status == 1]   # subject ids (for failures only)
   
   # Both event times/ids and quadrature times/ids
   cpts <- c(epts, qpts)
@@ -1037,6 +1048,36 @@ handle_basehaz <- function(basehaz, basehaz_ops,
   }  
   
   nlist(type, type_name, user_df, df, knots, bs_basis)   
+}
+
+# Return the design matrix for the baseline hazard
+#
+# @param times A vector of times at which to evaluate the baseline hazard
+# @param basehaz A named list with info about the baseline hazard,
+#   returned by a call to handle_basehaz
+# @return A matrix
+make_basehaz_X <- function(times, basehaz_info) {
+  if (basehaz$type_name == "weibull") {
+    X <- matrix(log(times), nrow = length(times), ncol = 1) 
+  } else if (basehaz$type_name == "bs") {
+    basis <- basehaz$bs_basis
+    if (is.null(basis))
+      stop2("Bug found: could not find info on B-splines basis terms.")
+    X <- as.array(predict(basis, times)) 
+  } else if (basehaz$type_name == "piecewise") {
+    knots <- basehaz$knots
+    df <- basehaz$df
+    if (is.null(knots) || is.null(df))
+      stop2("Bug found: could not find info on basehaz df and knot locations.")
+    times_quantiles <- cut(times, knots, include.lowest = TRUE, labels = FALSE)
+    X <- matrix(NA, length(times_quantiles), df)
+    for (i in 1:df) 
+      X[, i] <- ifelse(times_quantiles == i, 1, 0)
+    X <- as.array(X)
+  } else {
+    stop2("Bug found: type of baseline hazard unknown.") 
+  }
+  X
 }
 
 # Function to return standardised GK quadrature points and weights
@@ -1408,34 +1449,26 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, mc, dataLong, y_mod, clust_stuff, 
-                            id_list, times, assoc, 
-                            id_var, time_var, eps, auc_qnodes, 
-                            dataAssoc = NULL) {
+handle_assocmod <- function(m, data, assoc, ids, times, id_var, time_var,  
+                            clust_stuff, epsilon, auc_qnodes) {
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
-  # Obtain a model frame defined as a data.table
-  if (clust_stuff$has_clust) {
-    clust_var <- clust_stuff$clust_var
-    df[[clust_var]] <- factor(df[[clust_var]])
-    mf <- data.table::data.table(
-      dataLong, key = c(id_var, clust_var, time_var))
-  } else {
-    mf <- data.table::data.table(
-      dataLong, key = c(id_var, time_var))
-  }
-  mf[[time_var]] <- as.numeric(mf[[time_var]]) # ensure no rounding on merge
   
-  # Design matrices for calculating eta, eps, lag, auc and data interactions
-  # in association structure
-  mc[[1]] <- quote(lme4::glFormula)
-  parts <- make_assoc_parts(newdata = mf, assoc = assoc, m = m, id_var = id_var, 
+  # Declare data as a data.table for merging with quadrature points
+  if (clust_stuff$has_clust) {
+    key_vars <- c(id_var, clust_stuff$clust_var, time_var)
+  } else {
+    key_vars <- c(id_var, time_var)
+  }
+  df <- data.table::data.table(data, key = key_vars)
+  df[[time_var]] <- as.numeric(df[[time_var]]) # ensures no rounding on merge
+  
+  # Design matrices for calculating association structure based on 
+  # (possibly lagged) eta, slope, auc and any interactions with data
+  parts <- make_assoc_parts(newdata = df, assoc = assoc, ids = ids, 
+                            times = times, id_var = id_var, 
                             time_var = time_var, clust_stuff = clust_stuff, 
-                            id_list = id_list, times = times, 
-                            eps = eps, auc_qnodes = auc_qnodes,
-                            use_function = handle_glFormula, 
-                            mc = mc, y_mod_stuff = y_mod_stuff, 
-                            dataAssoc = dataAssoc, env = env)
+                            epsilon = epsilon, auc_qnodes = auc_qnodes)
   
   # If association structure is based on shared random effects or shared 
   # coefficients then construct a matrix with the estimated b parameters
@@ -1462,22 +1495,6 @@ handle_assocmod <- function(m, mc, dataLong, y_mod, clust_stuff,
   return(parts)
 }
 
-
-# Return the design matrices 
-assoc_parts <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
-  model_frame <- stats::model.frame(terms, data)
-  X <- model.matrix(X_form, model_frame)
-  if (!is.null(X_bar)) { # assoc parts are for passing to jm.stan
-    X <- drop_intercept(X)
-    X <- sweep(X, 2, X_bar, FUN = "-")
-  }
-  group_vars <- names(Z_forms)
-  group_list <- lapply(group_vars, function(x) model_frame[[x]])
-  Z <- lapply(Z_forms, model.matrix, model_frame)
-  names(Z) <- names(group_list) <- group_vars
-  nlist(X, Z, group_list, group_vars)
-}
-
 # Function to construct quantities, primarily design matrices (X, Zt), that
 # will be used to evaluate the longitudinal submodel contributions to the 
 # association structure in the event submodel. For example, the design matrices
@@ -1502,10 +1519,8 @@ assoc_parts <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
 #   matrices for eta, eps, lag, auc, etc.
 # @param ... Additional arguments passes to use_function
 # @return A named list
-make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
-                             ids, times, eps = 1E-5, auc_qnodes = 15L, 
-                             dataAssoc = NULL, use_function = handle_glFormula, 
-                             ...) {
+make_assoc_parts <- function(newdata, assoc, ids, times, id_var, time_var, 
+                             clust_stuff, epsilon = 1E-5, auc_qnodes = 15L) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
@@ -1515,11 +1530,9 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   
   # Apply lag
   lag <- assoc["which_lag",][[m]]
-  if (!lag == 0) {
-    times <- times - lag
-    times[times < 0] <- 0.0  # use baseline where lagged t is before baseline
-  }
-  
+  if (!lag == 0)
+    times <- set_lag(times, lag)
+
   # Broadcast ids and times if there is lower level clustering
   if (clust_stuff$has_clust) {
     clust_var <- clust_stuff$clust_var
@@ -1545,15 +1558,21 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
   dataQ <- rolling_merge(data = newdata, ids = ids, times = times, clust = clust)
-  mod_eta <- use_function(newdata = dataQ, ...)
+  mod_eta <- make_X_and_Z_fast(terms, data = dataQ, X_form, Z_forms, X_bar)
   
   # If association structure is based on slope, then calculate design 
   # matrices under a time shift of epsilon
-  sel_slope <- grep("etaslope|muslope", rownames(assoc))
+  sel_slope <- grep("etaslope", rownames(assoc))
   if (any(unlist(assoc[sel_slope,]))) {
-    dataQ_eps <- dataQ
-    dataQ_eps[[time_var]] <- dataQ_eps[[time_var]] + eps
-    mod_eps <- use_function(newdata = dataQ_eps, ...)
+    dataQ_pos <- dataQ_neg <- dataQ
+    dataQ_neg[[time_var]] <- dataQ_neg[[time_var]] - epsilon
+    dataQ_pos[[time_var]] <- dataQ_pos[[time_var]] + epsilon
+    mod_neg <- make_X_and_Z_fast(terms, data = dataQ_neg, X_form, Z_forms)
+    mod_pos <- make_X_and_Z_fast(terms, data = dataQ_pos, X_form, Z_forms)
+    mod_eps <- mod_pos
+    mod_eps$X <- (mod_pos$X - mod_neg$X) / epsilon # derivative of X
+    mod_eps$Z <- xapply(mod_pos$Z, mod_neg$Z,      # derivative of Z
+                        FUN = function(x, y) (x - y) / epsilon)
   } else mod_eps <- NULL 
   
   # If association structure is based on area under the marker trajectory, then 
@@ -1561,8 +1580,8 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
   if (any(unlist(assoc[sel_auc,]))) {
     if (clust_stuff$has_clust)
-      stop("'etaauc' and 'muauc' not yet implemented when there is clustering ",
-           "below 'id_var'.", call. = FALSE)
+      stop2("'etaauc' and 'muauc' not yet implemented when there is a grouping ",
+            "factor clustered within patients.")
     # Return a design matrix that is (qnodes * auc_qnodes * Npat) rows 
     auc_qtimes <- 
       lapply(times, function(x) unlist(
@@ -1580,70 +1599,35 @@ make_assoc_parts <- function(newdata, assoc, id_var, time_var, clust_stuff,
   # If association structure is based on interactions with data, then calculate 
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
   sel_data <- grep("_data", rownames(assoc), value = TRUE)
-  xq_data <- sapply(sel_data,
-                    function(x) { 
-                      fm <- assoc["which_formulas",][[m]][[x]]
-                      if (length(fm)) {
-                        vars <- rownames(attr(terms.formula(fm), "factors"))
-                        if (is.null(vars))
-                          stop(paste0("No variables found in the formula specified for the '", x,
-                                      "' association structure.", call. = FALSE))
-                        ff <- ~ foo + bar
-                        varlist <- if (clust_stuff$has_clust) 
-                          c(id_var, clust_var, time_var) else c(id_var, time_var)
-                        gg <- parse(text = paste("~", paste(varlist, collapse = "+")))[[1L]]
-                        ff[[2L]][[2L]] <- fm[[2L]]
-                        ff[[2L]][[3L]] <- gg[[2L]]
-                        if ("y_mod_stuff" %in% names(dots)) { # call from stan_jm
-                          y_mod_stuff <- dots$y_mod_stuff
-                          oldcall <- getCall(y_mod_stuff$mod)
-                          naa <- oldcall$na.action
-                          subset <- if (is.null(dataAssoc)) eval(oldcall$subset) else NULL 
-                          df <- if (is.null(dataAssoc)) eval(oldcall$data) else dataAssoc
-                          sel <- which(!vars %in% colnames(df))
-                          if (length(sel))
-                            stop(paste0("The following variables were specified in the formula for the '", x,
-                                        "' association structure, but they cannot be found in the data: ", 
-                                        paste0(vars, collapse = ", ")))
-                          mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
-                                           na.action = naa), envir = environment(y_mod_stuff$mod))
-                        } else { # call from posterior_survfit
-                          object <- dots$object
-                          oldcall <- getCall(object$glmod_stuff[[m]]$mod)
-                          naa <- oldcall$na.action
-                          subset <- eval(oldcall$subset) 
-                          if (is.null(dataAssoc)) {
-                            df <- 
-                              tryCatch(eval(oldcall$data), error = function(e) {
-                                tryCatch(if (is(object$dataLong, "list")) 
-                                  object$dataLong[[m]] else object$dataLong, error = function(e) {
-                                    stop("Bug found: cannot find data frame to use for ",
-                                         "assoc data interactions, please report bug.")
-                                  })
-                              })
-                          } else df <- dataAssoc
-                          mf2 <- eval(call("model.frame", ff, data = df, subset = subset, 
-                                           na.action = naa))                          
-                        }  
-                        mf2 <- if (clust_stuff$has_clust)
-                          data.table::data.table(mf2, key = c(id_var, clust_var, time_var)) else 
-                            data.table::data.table(mf2, key = c(id_var, time_var))
-                        mf2[[time_var]] <- as.numeric(mf2[[time_var]])
-                        mf2q <- rolling_merge(data = mf2, ids = ids, times = times, clust = clust)
-                        xq <- stats::model.matrix(fm, data = mf2q)
-                        if ("(Intercept)" %in% colnames(xq)) xq <- xq[, -1L, drop = FALSE]
-                        if (!ncol(xq))
-                          stop(paste0("Bug found: A formula was specified for the '", x, "' association ", 
-                                      "structure, but the resulting design matrix has no columns."), call. = FALSE)
-                      } else xq <- matrix(0, length(unlist(times)), 0)
-                      xq
-                    }, simplify = FALSE, USE.NAMES = TRUE)
-  K_data <- sapply(xq_data, ncol)
-  xmat_data <- do.call(cbind, xq_data)
+  X_data <- xapply(sel_data, FUN = function(i) { 
+    form <- assoc["which_formulas",][[m]][[i]]
+    if (length(form)) {
+      form <- as.formula(form)
+      vars <- rownames(attr(terms.formula(form), "factors"))
+      if (is.null(vars))
+        stop2("No variables found in the formula for the '", i, "' association structure.")
+      sel <- which(!vars %in% colnames(dataQ))
+      if (length(sel))
+        stop2("The following variables were specified in the formula for the '", i,
+              "' association structure, but they cannot be found in the data: ", 
+              paste0(sel, collapse = ", "))
+      mf <- stats::model.frame(form, data = dataQ)
+      X <- stats::model.matrix(form, data = mf)
+      X <- drop_intercept(X)
+      if (!ncol(X))
+        stop2("Bug found: A formula was specified for the '", i, "' association ", 
+              "structure, but the resulting design matrix has no columns.")
+    } else {
+      X <- matrix(0, length(unlist(times)), 0)
+    }
+    X
+  })
+  K_data <- sapply(X_data, ncol)
+  X_bind_data <- do.call(cbind, X_data)
   
-  ret <- nlist(times, mod_eta, mod_eps, mod_auc, xq_data, xmat_data, K_data, clust_stuff)
+  ret <- nlist(times, mod_eta, mod_eps, mod_auc, X_data, K_data, X_bind_data, clust_stuff)
   
-  structure(ret, times = times, lag = lag, eps = eps, auc_qnodes = auc_qnodes,
+  structure(ret, times = times, lag = lag, epsilon = epsilon, auc_qnodes = auc_qnodes,
             auc_qtimes = auc_qtimes, auc_qwts = auc_qwts)
 }                              
 
@@ -1682,41 +1666,41 @@ rolling_merge <- function(data, ids, times, clust = NULL) {
   }
 }
 
-
-# Evaluate a glFormula call and return model components
-# 
-# @param mc A glFormula call
-# @param newdata A data frame to substitute into the data argument of the call
-# @param y_mod_stuff A named list, returned by a call to handle_glmod (and
-#   containing an indicator of whether the original longitudinal submodel had
-#   an intercept term)
-# @param m Argument ignored (included to avoid error when passing m to 
-#   make_assoc_Xparts function)
-# @param env The environment in which to evaluate the glFormula call (note that
-#   although the formula and data have been substituted, there may be additional
-#   arugments (for example family) that need to be evaluated in the environment
-#   of the original stan_jm call).
-handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL, 
-                             env = parent.frame()) { 
-  mc$data <- newdata
-  mod    <- eval(mc, env)
-  x      <- as.matrix(mod$X)
-  xtemp  <- if (y_mod_stuff$has_intercept) x[, -1L, drop = FALSE] else x  
-  xtemp  <- sweep(xtemp, 2, y_mod_stuff$xbar, FUN = "-")
-  group  <- mod$reTrms    
-  beta   <- fixef(y_mod_stuff$mod)
-  b      <- lme4::getME(y_mod_stuff$mod, "b")
-  linpred <- linear_predictor.default(beta, x) # offset not accomodated here
-  linpred <- linpred + (t(as.matrix(group$Zt)) %*% b)
-  nlist(xtemp, group, linpred)
-}   
-
-
+# Return design matrices for the longitudinal submodel. This is 
+# designed to generate the design matrices evaluated at the GK
+# quadrature points, because it uses a 'terms' object to generate
+# the model frame, and that terms object should have been generated
+# from the longitudinal submodel's model frame when it was evaluated
+# at the observation times; i.e. the predvars and X_bar would have
+# come from the design matrices at the observation times, not the 
+# quadrature points.
+#
+# @param terms A terms object corresponding to the model frame for the
+#   longitudinal submodel evaluated at the longitudinal observation times.
+# @param data A data frame; the data for the longitudinal submodel 
+#   at the quadrature points.
+# @param X_form The formula for the fe design matrix.
+# @param Z_forms A list of formulas for the re design matrices for each
+#   grouping factor
+# @param X_bar An optional vector of column means used for centering X.
+#   Only relevant if the design matrices are going to be used in the stan code.
+make_X_and_Z_fast <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
+  model_frame <- stats::model.frame(terms, data)
+  X <- model.matrix(X_form, model_frame)
+  if (!is.null(X_bar)) { # assoc parts are for passing to jm.stan
+    X <- drop_intercept(X)
+    X <- sweep(X, 2, X_bar, FUN = "-")
+  }
+  group_vars <- names(Z_forms)
+  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  Z <- lapply(Z_forms, model.matrix, model_frame)
+  names(Z) <- names(group_list) <- group_vars
+  nlist(X, Z, group_list, group_vars)
+}
 
 # Get the information need for combining the information in lower-level units
 # clustered within an individual, when the patient-level is not the only 
 # clustering level in the longitudinal submodel
-#
 #
 # @param cnms The component names for a single longitudinal submodel
 # @param flist The flist for a single longitudinal submodel
@@ -1726,7 +1710,18 @@ handle_glFormula <- function(mc, newdata, y_mod_stuff, m = NULL,
 # @param grp_assoc Character string specifying the association structure used
 #   for combining information in the lower level units clustered within an
 #   individual
-# @return A named list
+# @return A named list with the following elements:
+#   has_clust: logical specifying whether the submodel has a grouping factor
+#     that is clustered with patients
+#   clust_var: the name of any grouping factor that is clustered with patients
+#   clust_list: a vector of unique group ids for the clust_var grouping 
+#     factor; this is in the same order as the original data.
+#   clust_ids: a vector of patient ids that provides the patient that each
+#     unique level of clust_list is clustered within.
+#   clust_ids_q: the clust_ids vector repeated qnodes+1 times. This is used
+#     in the stan code, to identify which elements of the longitudinal 
+#     linear predictor need to be collapsed across for each patient.
+#   qnodes: integer specifying the number of GK quadrature nodes.
 get_basic_clust <- function(cnms, flist, id_var) {
   cnms_nms <- names(cnms)
   tally <- xapply(cnms_nms, FUN = function(x) 

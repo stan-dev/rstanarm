@@ -36,6 +36,7 @@ data {
   #include "hyperparameters_assoc.stan" 
 }
 transformed data {
+  int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);                 
 
   // declares poisson_max, hsM, idx_{global,local2,local4,mix,ool,noise}, 
@@ -66,8 +67,8 @@ transformed parameters {
   a_beta = make_beta(a_z_beta, a_prior_dist, a_prior_mean, 
                      a_prior_scale, a_prior_df, a_global_prior_scale, 
                      a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0);         
-  e_aux  = make_aux(e_aux_unscaled, e_prior_dist_for_aux,
-                    e_prior_mean_for_aux, e_prior_scale_for_aux);
+  e_aux  = make_basehaz_coef(e_aux_unscaled, e_prior_dist_for_aux,
+                             e_prior_mean_for_aux, e_prior_scale_for_aux);
 }
 model {
 
@@ -84,15 +85,15 @@ model {
 		if (assoc == 1) { 
 			// declares y_eta_q{_eps,_lag,_auc}, y_eta_qwide{_eps,_lag,_auc}, 
 			//   y_q_wide{_eps,_lag,_auc}, mark{2,3}
-			#include "assoc_definitions.stan"  
-			#include "assoc_prepwork.stan"
 			#include "assoc_evaluate.stan"
 		}
 		
-    // declares log_basehaz, log_{haz_q,haz_etimes,surv_etimes,event}
-	  #include "event_lp.stan" // increments target with event log-lik
+    {
+		  // declares log_basehaz, log_{haz_q,haz_etimes,surv_etimes,event}
+	    #include "event_lp.stan" // increments target with event log-lik
+    }
   }
-  
+	
   //---- Log priors
 
 	#include "priors_mvmer.stan" // increments target with mvmer priors
