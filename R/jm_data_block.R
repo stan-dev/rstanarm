@@ -685,6 +685,42 @@ check_intercept_type <- function(X, family) {
   nlist(type, number) 
 }
 
+# Check the id_var argument is valid and is included appropriately in the
+# formulas for each of the longitudinal submodels
+#
+# @param id_var The character string that the user specified for the id_var
+#   argument -- will have been set to NULL if the argument was missing.
+# @param y_cnms A list of length M with the cnms for each longitudinal submodel
+# @param y_flist A list of length M with the flist for each longitudinal submodel
+# @return Returns the character string corresponding to the appropriate id_var.
+#   This will either be the user specified id_var argument or the only grouping
+#   factor.
+check_id_var <- function(id_var, y_cnms, y_flist) {
+  len_cnms <- sapply(y_cnms, length)
+  if (any(len_cnms > 1L)) {  # more than one grouping factor
+    if (is.null(id_var)) {
+      stop("'id_var' must be specified when using more than one grouping factor",
+           call. = FALSE)
+    } else {
+      lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
+        stop("'id_var' must be included as a grouping factor in each ",
+             "of the longitudinal submodels", call. = FALSE)) 
+    }
+    return(id_var)
+  } else {  # only one grouping factor (assumed to be subject ID)
+    only_cnm <- unique(sapply(y_cnms, names))
+    if (length(only_cnm) > 1L)
+      stop("The grouping factor (ie, subject ID variable) is not the ",
+           "same in all longitudinal submodels", call. = FALSE)
+    if ((!is.null(id_var)) && (!identical(id_var, only_cnm)))
+      warning("The user specified 'id_var' (", paste(id_var), 
+              ") and the assumed ID variable based on the single ",
+              "grouping factor (", paste(only_cnm), ") are not the same; ", 
+              "'id_var' will be ignored", call. = FALSE, immediate. = TRUE)
+    return(only_cnm)
+  }
+}
+
 # Check the family and link function are supported by stan_{mvmer,jm}
 #
 # @param family A family object

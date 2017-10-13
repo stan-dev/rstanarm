@@ -529,21 +529,21 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   if (is.null(time_var))
     stop("'time_var' must be specified.")
-  if (is.null(id_var))
-    stop("'id_var' must be specified.")
+  #if (is.null(id_var))
+  #  stop("'id_var' must be specified.")
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
-  dataLong <- check_vars_are_included(dataLong, id_var, time_var)
-  dataLong <- xapply(formulaLong, dataLong, FUN = get_all_vars)
+  #dataLong <- check_vars_are_included(dataLong, id_var, time_var)
+  #dataLong <- xapply(formulaLong, dataLong, FUN = get_all_vars)
   
   dataEvent <- as.data.frame(dataEvent)
-  dataEvent <- check_vars_are_included(dataEvent, id_var)
-  dataEvent <- get_all_vars(formulaEvent, dataEvent, dataEvent[[id_var]])
-  names(dataEvent) <- c(names(dataEvent), id_var)
+  #dataEvent <- check_vars_are_included(dataEvent, id_var)
+  #dataEvent <- get_all_vars(formulaEvent, dataEvent, dataEvent[[id_var]])
+  #names(dataEvent) <- c(names(dataEvent), id_var)
     
   # Family
   ok_family_classes <- c("function", "family", "character")
@@ -562,8 +562,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   priorLong_aux <- broadcast_prior(priorLong_aux, M)
  
   # Observation weights
-  if (!is.null(weights)) 
-    weights <- check_weights(weights, id_var)
+  #if (!is.null(weights)) 
+  #  weights <- check_weights(weights, id_var)
   
   #-----------
   # Fit model

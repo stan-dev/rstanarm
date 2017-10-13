@@ -49,7 +49,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   algorithm <- match.arg(algorithm)
   basehaz   <- match.arg(basehaz)
   
-  if (missing(offset))      offset      <- NULL 
   if (missing(basehaz_ops)) basehaz_ops <- NULL
   if (missing(weights))     weights     <- NULL
   if (missing(id_var))      id_var      <- NULL
@@ -73,20 +72,20 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
 
   if (is_jm && is.null(time_var))
     stop("'time_var' must be specified.")
-  if (is_jm && is.null(id_var))
-    stop("'id_var' must be specified.")
+  #if (is_jm && is.null(id_var))
+  #  stop("'id_var' must be specified.")
     
   # Formula & Data
   yF <- validate_arg(formulaLong, "formula"); M <- length(yF)
   yD <- validate_arg(dataLong, "data.frame", validate_length = M)  
-  yD <- xapply(yF, yD, FUN = get_all_vars)
+  #yD <- xapply(yF, yD, FUN = get_all_vars)
   if (is_jm) {
-    yD <- check_vars_are_included(yD, id_var, time_var)
+    #yD <- check_vars_are_included(yD, id_var, time_var)
     eF <- formulaEvent
     eD <- as.data.frame(dataEvent)
-    eD <- check_vars_are_included(eD, id_var)
-    eD <- get_all_vars(eF, eD, dataEvent[[id_var]])
-    names(eD) <- c(names(eD), id_var)
+    #eD <- check_vars_are_included(eD, id_var)
+    #eD <- get_all_vars(eF, eD, dataEvent[[id_var]])
+    #names(eD) <- c(names(eD), id_var)
   }
   
   # Family
@@ -101,9 +100,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   has_weights <- !is.null(weights)
   
   # Priors
-  prior <- broadcast_prior(prior, M)
-  prior_intercept <- broadcast_prior(prior_intercept, M)
-  prior_aux <- broadcast_prior(prior_aux, M)
+  priorLong <- broadcast_prior(priorLong, M)
+  priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
+  priorLong_aux <- broadcast_prior(priorLong_aux, M)
   
   #--------------------------------
   # Data for longitudinal submodel
@@ -122,8 +121,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   # Ensure id_var is a valid grouping factor in all submodels
   if (is_jm) {
-    id_var <- validate_grouping_factor(y_cnms, id_var)
+    id_var <- check_id_var(id_var, y_cnms, y_flist)
     id_list <- check_id_list(id_var, y_flist)
+    if (!is.null(weights))
+      weights <- check_weights(weights, id_var)
   }
     
   #-------------------------
