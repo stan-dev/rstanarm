@@ -163,7 +163,7 @@
 #'   set of initial values; this can be obtained by setting
 #'   \code{init = "random"}. Other possibilities for specifying \code{init}
 #'   are those described for \code{\link[rstan]{stan}}.  
-#' @param priorLong,priorEvent,priorAssoc The prior distributions for the 
+#' @param priorLong,priorEvent,priorEvent_assoc The prior distributions for the 
 #'   regression coefficients in the longitudinal submodel(s), event submodel,
 #'   and the association parameter(s). Can be a call to one of the various functions 
 #'   provided by \pkg{rstanarm} for specifying priors. The subset of these functions 
@@ -498,7 +498,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                     priorEvent_assoc = normal(), prior_covariance = decov(), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
-                    adapt_delta = NULL, max_treedepth = NULL, QR = FALSE, 
+                    adapt_delta = NULL, max_treedepth = 11L, QR = FALSE, 
                     sparse = FALSE) {
   
   

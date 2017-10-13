@@ -287,7 +287,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     # The SD will be used for autoscaling the prior for each association parameter.
     if (is.null(family))
       stop("'family' cannot be NULL when autoscaling association parameters.")
-    assoc_terms <- make_assoc_terms(parts = mod_stuff, assoc = assoc, family = family)
+    assoc_terms <- make_assoc_terms(parts = assoc_parts, assoc = assoc, family = family)
     ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       a_beta_scale <- apply(assoc_terms, 2L, get_scale_value)
@@ -594,8 +594,8 @@ make_Y <- function(formula, model_frame, family) {
 #     fixed effects model matrix
 make_X <- function(formula, model_frame = NULL, drop_intercept = TRUE, 
                    centre = TRUE) {
-  X_formula <- lme4::nobars(formula)
-  X <- model.matrix(X_formula, model_frame)
+  X_form <- lme4::nobars(formula)
+  X <- model.matrix(X_form, model_frame)
   has_intercept <- check_for_intercept(X, logical = TRUE)
   if (drop_intercept)
     X <- drop_intercept(X)
@@ -615,7 +615,7 @@ make_X <- function(formula, model_frame = NULL, drop_intercept = TRUE,
     X <- X[, !sel, drop = FALSE]
     X_bar <- X_bar[!sel]
   }    
-  nlist(X, X_bar, has_intercept, N = NROW(X), K = NCOL(X))
+  nlist(X, X_form, X_bar, has_intercept, N = NROW(X), K = NCOL(X))
 }
 
 # Return the design matrices for the group level terms
@@ -643,7 +643,7 @@ make_Z <- function(formula, model_frame = NULL) {
   Z <- lapply(Z_forms, model.matrix, model_frame)
   group_cnms <- lapply(Z, colnames)
   group_vars <- fetch(Z_parts, "group_var")
-  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  group_list <- lapply(group_vars, function(x) factor(model_frame[[x]]))
   nvars <- sapply(group_cnms, length)
   ngrps <- sapply(group_list, n_distinct)
   names(Z) <- names(Z_forms) <- names(group_cnms) <- 
@@ -910,8 +910,10 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
     stop("the 'data.table' package must be installed to use this function")
   
   mod <- survival::coxph(formula, data = data, x = TRUE)
-  mf1 <- expand.model.frame(mod, id_var, na.expand = TRUE)
-  #mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
+  RHS_with_id <- paste(deparse(formula[[3L]]), "+", id_var)
+  formula_with_id <- reformulate(RHS_with_id, response = formula[[2L]])
+  mf1 <- model.frame(formula_with_id, data = data)
+  mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
   mf2 <- unclass_Surv_column(mf1) 
   if (attr(mod$y, "type") == "counting") {
     tvc <- TRUE; t0_var <- "start"; t1_var <- "stop"
@@ -935,8 +937,8 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   entrytime <- rep(0, length(entrytime)) # no delayed entry
   eventtime <- mf_event[[t1_var]]
   status    <- mf_event[["status"]]  
-  id_list   <- mf_event[[id_var]]
-  names(entrytime) <- names(eventtime) <- names(status) <- ids
+  id_list   <- factor(mf_event[[id_var]])
+  names(entrytime) <- names(eventtime) <- names(status) <- id_list
   
   # Mean log incidence rate - used for shifting log baseline hazard
   norm_const <- log(sum(status) / sum(eventtime))
@@ -1092,7 +1094,7 @@ handle_basehaz <- function(basehaz, basehaz_ops,
 # @param basehaz A named list with info about the baseline hazard,
 #   returned by a call to handle_basehaz
 # @return A matrix
-make_basehaz_X <- function(times, basehaz_info) {
+make_basehaz_X <- function(times, basehaz) {
   if (basehaz$type_name == "weibull") {
     X <- matrix(log(times), nrow = length(times), ncol = 1) 
   } else if (basehaz$type_name == "bs") {
@@ -1211,7 +1213,7 @@ get_quadpoints <- function(nodes = 15) {
 #
 # @param data A model frame with the first column being the Surv() response
 unclass_Surv_column <- function(data) {
-  cbind(unclass(mf1[,1]), mf1[, -1, drop = FALSE], stringsAsFactors = FALSE)
+  cbind(unclass(data[,1]), data[, -1, drop = FALSE], stringsAsFactors = FALSE)
 }
 
 #--------------- Functions related to association structure
@@ -1256,9 +1258,12 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   }
   
   # Parse suffix specifying indices for shared random effects
-  cnms <- y_mod_stuff$cnms[[id_var]] # names of random effect terms
-  assoc$which_b_zindex    <- parse_assoc_sharedRE("shared_b",    user_x, max_index = length(cnms), cnms)
-  assoc$which_coef_zindex <- parse_assoc_sharedRE("shared_coef", user_x, max_index = length(cnms), cnms)
+  cnms <- y_mod_stuff$Z$group_cnms
+  cnms_id <- cnms[[id_var]] # names of random effect terms
+  assoc$which_b_zindex <- parse_assoc_sharedRE("shared_b",    user_x, 
+                                                  max_index = length(cnms_id), cnms_id)
+  assoc$which_coef_zindex <- parse_assoc_sharedRE("shared_coef", user_x, 
+                                                  max_index = length(cnms_id), cnms_id)
   
   if (length(intersect(assoc$which_b_zindex, assoc$which_coef_zindex)))
     stop("The same random effects indices should not be specified in both ",
@@ -1266,7 +1271,7 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
          "will include both the fixed and random components.", call. = FALSE)
   
   if (length(assoc$which_coef_zindex)) {
-    if (length(y_mod_stuff$cnms) > 1L)
+    if (length(cnms) > 1L)
       stop("'shared_coef' association structure cannot be used when there is ",
            "clustering at levels other than the individual-level.", call. = FALSE)
     b_nms <- names(assoc$which_coef_zindex)
@@ -1282,7 +1287,7 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
              "random effect: ", y)
       }  
       beta_match
-    }, beta_nms = colnames(y_mod_stuff$x))
+    }, beta_nms = colnames(y_mod_stuff$X$X))
   } else assoc$which_coef_xindex <- numeric(0)
   
   if (!identical(length(assoc$which_coef_zindex), length(assoc$which_coef_xindex)))
@@ -1308,7 +1313,6 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
 #
 # @param lag_assoc The user input to the lag_assoc argument
 # @param M Integer specifying the number of longitudinal submodels
-# @return Nothing
 validate_lag_assoc <- function(lag_assoc, M) {
   if (length(lag_assoc) == 1L)
     lag_assoc <- rep(lag_assoc, M)
@@ -1319,6 +1323,7 @@ validate_lag_assoc <- function(lag_assoc, M) {
     stop2("'lag_assoc' must be numeric.")
   if (any(lag_assoc < 0))
     stop2("'lag_assoc' must be non-negative.")
+  lag_assoc
 }
 
 # Remove suffixes from the user inputted assoc argument
@@ -1485,10 +1490,16 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(m, data, assoc, ids, times, id_var, time_var,  
-                            clust_stuff, epsilon, auc_qnodes) {
+handle_assocmod <- function(data, assoc, y_mod, clust_stuff, ids, times,  
+                            id_var, time_var, epsilon, auc_qnodes) {
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
+  
+  # Obtain the formulas for the longitudinal design matrices
+  terms   <- y_mod$terms
+  X_bar   <- y_mod$X$X_bar
+  X_form  <- y_mod$X$X_form
+  Z_forms <- y_mod$Z$Z_forms
   
   # Declare data as a data.table for merging with quadrature points
   if (clust_stuff$has_clust) {
@@ -1501,8 +1512,9 @@ handle_assocmod <- function(m, data, assoc, ids, times, id_var, time_var,
   
   # Design matrices for calculating association structure based on 
   # (possibly lagged) eta, slope, auc and any interactions with data
-  parts <- make_assoc_parts(newdata = df, assoc = assoc, ids = ids, 
-                            times = times, id_var = id_var, 
+  parts <- make_assoc_parts(newdata = df, assoc = assoc, terms = terms, 
+                            X_form = X_form, Z_forms = Z_forms, X_bar = X_bar,
+                            ids = ids, times = times, id_var = id_var, 
                             time_var = time_var, clust_stuff = clust_stuff, 
                             epsilon = epsilon, auc_qnodes = auc_qnodes)
   
@@ -1512,7 +1524,7 @@ handle_assocmod <- function(m, data, assoc, ids, times, id_var, time_var,
   # matrix is not passed to standata, but just used for autoscaling the 
   # priors for association parameters.
   sel_shared <- grep("^shared", rownames(assoc))
-  if (any(unlist(assoc[sel_shared,]))) {
+  if (any(unlist(assoc[sel_shared]))) {
     # flist for long submodel
     flist_tmp <- lme4::getME(y_mod_stuff$mod, "flist")
     # which grouping factor is id_var
@@ -1555,17 +1567,14 @@ handle_assocmod <- function(m, data, assoc, ids, times, id_var, time_var,
 #   matrices for eta, eps, lag, auc, etc.
 # @param ... Additional arguments passes to use_function
 # @return A named list
-make_assoc_parts <- function(newdata, assoc, ids, times, id_var, time_var, 
-                             clust_stuff, epsilon = 1E-5, auc_qnodes = 15L) {
+make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
+                             X_bar, clust_stuff, ids, times, 
+                             id_var, time_var, epsilon = 1E-5, auc_qnodes = 15L) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
-  dots <- list(...)
-  m <- dots$m 
-  if (is.null(m)) stop("Argument m must be specified in dots.")
-  
   # Apply lag
-  lag <- assoc["which_lag",][[m]]
+  lag <- assoc[["which_lag"]]
   if (!lag == 0)
     times <- set_lag(times, lag)
 
@@ -1599,7 +1608,7 @@ make_assoc_parts <- function(newdata, assoc, ids, times, id_var, time_var,
   # If association structure is based on slope, then calculate design 
   # matrices under a time shift of epsilon
   sel_slope <- grep("etaslope", rownames(assoc))
-  if (any(unlist(assoc[sel_slope,]))) {
+  if (any(unlist(assoc[sel_slope]))) {
     dataQ_pos <- dataQ_neg <- dataQ
     dataQ_neg[[time_var]] <- dataQ_neg[[time_var]] - epsilon
     dataQ_pos[[time_var]] <- dataQ_pos[[time_var]] + epsilon
@@ -1614,7 +1623,7 @@ make_assoc_parts <- function(newdata, assoc, ids, times, id_var, time_var,
   # If association structure is based on area under the marker trajectory, then 
   # calculate design matrices at the subquadrature points
   sel_auc <- grep("etaauc|muauc", rownames(assoc))
-  if (any(unlist(assoc[sel_auc,]))) {
+  if (any(unlist(assoc[sel_auc]))) {
     if (clust_stuff$has_clust)
       stop2("'etaauc' and 'muauc' not yet implemented when there is a grouping ",
             "factor clustered within patients.")
@@ -1636,7 +1645,7 @@ make_assoc_parts <- function(newdata, assoc, ids, times, id_var, time_var,
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
   sel_data <- grep("_data", rownames(assoc), value = TRUE)
   X_data <- xapply(sel_data, FUN = function(i) { 
-    form <- assoc["which_formulas",][[m]][[i]]
+    form <- assoc[["which_formulas"]][[i]]
     if (length(form)) {
       form <- as.formula(form)
       vars <- rownames(attr(terms.formula(form), "factors"))
@@ -1721,14 +1730,14 @@ rolling_merge <- function(data, ids, times, clust = NULL) {
 # @param X_bar An optional vector of column means used for centering X.
 #   Only relevant if the design matrices are going to be used in the stan code.
 make_X_and_Z_fast <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
-  model_frame <- stats::model.frame(terms, data)
+  model_frame <- stats::model.frame(terms, as.data.frame(data))
   X <- model.matrix(X_form, model_frame)
   if (!is.null(X_bar)) { # assoc parts are for passing to jm.stan
     X <- drop_intercept(X)
     X <- sweep(X, 2, X_bar, FUN = "-")
   }
   group_vars <- names(Z_forms)
-  group_list <- lapply(group_vars, function(x) model_frame[[x]])
+  group_list <- lapply(group_vars, function(x) factor(model_frame[[x]]))
   Z <- lapply(Z_forms, model.matrix, model_frame)
   names(Z) <- names(group_list) <- group_vars
   nlist(X, Z, group_list, group_vars)
@@ -2285,13 +2294,13 @@ handle_weights <- function(mod_stuff, weights, id_var) {
   
   # No weights provided by user
   if (is.null(weights)) {
-    len <- if (is_glmod) length(mod_stuff$y) else length(mod_stuff$eventtime)
+    len <- if (is_glmod) length(mod_stuff$Y$Y) else length(mod_stuff$eventtime)
     return(rep(0.0, len)) 
   }
   
   # Check for IDs with no weight supplied
   weights[[id_var]] <- factor(weights[[id_var]])
-  ids <- if (is_glmod) mod_stuff$flist[[id_var]] else factor(mod_stuff$flist)
+  ids <- if (is_glmod) mod_stuff$Z$group_list[[id_var]] else factor(mod_stuff$id_list)
   sel <- which(!ids %in% weights[[id_var]])
   if (length(sel)) {
     if (length(sel) > 30L) sel <- sel[1:30]

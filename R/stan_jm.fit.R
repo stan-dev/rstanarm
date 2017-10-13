@@ -30,9 +30,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                         priorLong = normal(), priorLong_intercept = normal(), 
                         priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                         priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                        priorAssoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
+                        priorEvent_assoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                        adapt_delta = NULL, max_treedepth = 11L, 
+                        QR = FALSE, sparse = FALSE) {
   
   #-----------------------------
   # Pre-processing of arguments
@@ -126,6 +127,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (!is.null(weights))
       weights <- check_weights(weights, id_var)
   }
+  
+  y_weights <- lapply(y_mod, handle_weights, weights, id_var)
     
   #-------------------------
   # Data for event submodel
@@ -144,10 +147,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     e_mod$has_intercept <- (basehaz$type_name == "weibull")
     
     # Observation weights
-    if (has_weights) {
-      y_weights <- lapply(y_mod_stuff, handle_weights, weights, id_var)
-      e_weights <- handle_weights(e_mod_stuff, weights, id_var)
-    }
+    e_weights <- handle_weights(e_mod, weights, id_var)
     
   } # end jm block
   
@@ -166,7 +166,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     lag_assoc <- validate_lag_assoc(lag_assoc, M)
     
-    assoc <- mapply(assoc = assoc, y_mod = y_mod, lag = lag_assoc, 
+    assoc <- mapply(assoc, y_mod = y_mod, lag = lag_assoc, 
                     FUN = validate_assoc, 
                     MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
                                     ok_assoc_interactions = ok_assoc_interactions, 
@@ -201,12 +201,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Return design matrices for evaluating longitudinal submodel quantities
     # at the quadrature points
     auc_qnodes <- 15L
-    a_mod_stuff <- xapply(m = 1:M, data = dataLong,
-                          clust_stuff = clust_stuff, 
-                          FUN = handle_assocmod, 
+    assoc_as_list <- apply(assoc, 2L, c)
+    a_mod_stuff <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
+                          clust_stuff = clust_stuff, FUN = handle_assocmod, 
                           args = list(ids = e_mod$cids, times = e_mod$cpts, 
-                                      assoc = assoc, id_var = id_var, 
-                                      time_var = time_var, epsilon = epsilon, 
+                                      id_var = id_var, time_var = time_var, 
+                                      epsilon = epsilon, 
                                       auc_qnodes = auc_qnodes))
     
     # Number of association parameters
@@ -221,9 +221,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
                     "laplace", "lasso")  # disallow product normal
   ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_y_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_e_aux_dists <- ok_dists[1:3]
   ok_covariance_dists <- c("decov", "lkj")
-
+  
   Y_vecs <- fetch(y_mod, "Y", "Y") # used in autoscaling
   X_mats <- fetch(y_mod, "X", "X") # used in autoscaling
     
@@ -233,20 +234,20 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   # Priors for longitudinal submodel(s)
   y_links <- fetch(y_mod, "family", "link")
   y_user_prior_stuff <- y_prior_stuff <- 
-    xapply(prior, nvars = fetch(y_mod, "X", "K"), link = y_links,
+    xapply(priorLong, nvars = fetch(y_mod, "X", "K"), link = y_links,
            FUN = handle_glm_prior, 
            args = list(default_scale = 2.5, ok_dists = ok_dists))
   
   y_user_prior_intercept_stuff <- y_prior_intercept_stuff <- 
-    xapply(prior_intercept, link = y_links, 
+    xapply(priorLong_intercept, link = y_links, 
            FUN = handle_glm_prior,
            args = list(nvars = 1, default_scale = 10, 
                        ok_dists = ok_intercept_dists))
   
   y_user_prior_aux_stuff <- y_prior_aux_stuff <- 
-    xapply(prior_aux, FUN = handle_glm_prior, 
+    xapply(priorLong_aux, FUN = handle_glm_prior, 
            args = list(nvars = 1, default_scale = 5, link = NULL, 
-                       ok_dists = ok_aux_dists))  
+                       ok_dists = ok_y_aux_dists))  
 
   y_prior_stuff <- 
     xapply(y_prior_stuff, response = Y_vecs, predictors = X_mats, 
@@ -297,11 +298,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       autoscale_prior(e_prior_intercept_stuff)
     e_prior_aux_stuff <- 
       autoscale_prior(e_prior_aux_stuff)
-    if (a_K) {
-      e_prior_assoc_stuff <- 
-        autoscale_prior(e_prior_assoc_stuff, a_mod_stuff, 
-                        assoc = assoc, family = family)
-    }
+    #if (a_K) {
+    #  e_prior_assoc_stuff <- 
+    #    autoscale_prior(e_prior_assoc_stuff, a_mod_stuff, 
+    #                    assoc = assoc, family = family)
+    #}
     
   } # end jm block
   
@@ -566,14 +567,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Baseline hazard
     standata$basehaz_type <- as.integer(basehaz$type)
     standata$basehaz_df   <- as.integer(basehaz$df)
-    standata$basehaz_X <- make_basehaz_X(e_mod$cpts, basehaz_info = basehaz)
+    standata$basehaz_X <- make_basehaz_X(e_mod$cpts, basehaz)
     standata$norm_const <- e_mod$norm_const    
         
     # Priors
     standata$e_prior_dist              <- e_prior_stuff$prior_dist
     standata$e_prior_dist_for_intercept<- e_prior_intercept_stuff$prior_dist
     standata$e_prior_dist_for_aux      <- e_prior_aux_stuff$prior_dist
-    standata$a_prior_dist              <- a_prior_stuff$prior_dist 
+    standata$a_prior_dist              <- e_prior_assoc_stuff$prior_dist 
         
     # hyperparameters for event submodel priors
     standata$e_prior_mean               <- e_prior_stuff$prior_mean
@@ -590,19 +591,19 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$e_global_prior_df          <- e_prior_stuff$global_prior_df
     
     # hyperparameters for assoc parameter priors
-    standata$a_prior_mean               <- a_prior_stuff$prior_mean
-    standata$a_prior_scale              <- a_prior_stuff$prior_scale
-    standata$a_prior_df                 <- a_prior_stuff$prior_df
-    standata$a_global_prior_scale       <- a_prior_stuff$global_prior_scale
-    standata$a_global_prior_df          <- a_prior_stuff$global_prior_df
-    standata$a_xbar                     <- if (a_K) a_prior_stuff$a_xbar else numeric(0)    
+    standata$a_prior_mean               <- e_prior_assoc_stuff$prior_mean
+    standata$a_prior_scale              <- e_prior_assoc_stuff$prior_scale
+    standata$a_prior_df                 <- e_prior_assoc_stuff$prior_df
+    standata$a_global_prior_scale       <- e_prior_assoc_stuff$global_prior_scale
+    standata$a_global_prior_df          <- e_prior_assoc_stuff$global_prior_df
+    standata$a_xbar                     <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
     
     #----------- Association structure -----------# 
     
     standata$assoc <- as.integer(a_K > 0L) # any association structure, 1 = yes
     
     # Indicator for which components are required to build the association terms
-    standata$assoc_uses <- sapply(
+    assoc_uses <- sapply(
       c("etavalue", "etaslope", "etaauc", "muvalue", "muslope", "muauc"), 
       function(x, assoc) {
         nm_check <- switch(x,
@@ -613,9 +614,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                            muslope  = "muslope",
                            muauc    = "muauc")
         sel <- grep(nm_check, rownames(assoc))
-        as.integer(any(unlist(assoc[sel,])))
-      }, assoc = assoc)  
-
+        isTRUE(colSums(assoc[sel, , drop = FALSE] > 0))
+      }, assoc = assoc)
+    standata$assoc_uses <- if (M == 1) 
+      matrix(assoc_uses, 6, 1) else t(assoc_uses)
+    
     # Indexing for desired association types
     # !! Must be careful with corresponding use of indexing in Stan code !!
     # 1 = ev; 2 = es; 3 = ea; 4 = mv; 5 = ms; 6 = ma;
@@ -644,7 +647,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     }
     
     # Data for calculating eta, slope, auc in GK quadrature 
-    
     N_tmp <- sapply(a_mod_stuff, function(x) NROW(x$mod_eta$X))
     N_tmp <- c(N_tmp, rep(0, 3 - length(N_tmp)))
     standata$nrow_y_Xq <- as.array(as.integer(N_tmp))
@@ -655,27 +657,28 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                            eps = "slope",
                            auc = "auc")
         sel <- grep(nm_check, rownames(assoc))
-        if (m <= M && any(unlist(assoc[sel,]))) {
+        if (m <= M && any(unlist(assoc[sel,m]))) {
           tmp_stuff <- a_mod_stuff[[m]][[paste0("mod_", i)]]
           # fe design matrix at quadpoints
           X_tmp <- tmp_stuff$X
           # re design matrix at quadpoints, group factor 1
-          if (length(cnms_nms) >= 1L) {
-            Z1_tmp <- tmp_stuff$Z[[cnms_nms[1L]]]
-            Z1_tmp <- transpose(Z1_tmp)
-            Z1_tmp <- convert_null(Z1_tmp, "matrix")
-            Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
-            Z1_tmp_id <- groups(Z1_tmp_id)
-            Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
-          }
+          Z1_tmp <- tmp_stuff$Z[[cnms_nms[1L]]]
+          Z1_tmp <- transpose(Z1_tmp)
+          Z1_tmp <- convert_null(Z1_tmp, "matrix")
+          Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
+          Z1_tmp_id <- groups(Z1_tmp_id)
+          Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
           # re design matrix at quadpoints, group factor 1
-          if (length(cnms_nms) >= 2L) {
+          if (length(cnms_nms) > 1L) {
             Z2_tmp <- tmp_stuff$Z[[cnms_nms[2L]]]
             Z2_tmp <- transpose(Z2_tmp)
             Z2_tmp <- convert_null(Z2_tmp, "matrix")
             Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
             Z2_tmp_id <- groups(Z2_tmp_id)
             Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
+          } else {
+            Z2_tmp <- matrix(0,0,standata$bK2_len[m]) 
+            Z2_tmp_id <- as.array(integer(0))
           }
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
@@ -693,21 +696,16 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     }
   
     # Data for auc association structure
-    
-    standata$auc_qnodes <- 
-      as.integer(auc_qnodes)
-    standata$Npat_times_auc_qnodes <- 
-      as.integer(e_mod_stuff$Npat * auc_qnodes) 
+    standata$auc_qnodes <- as.integer(auc_qnodes)
+    standata$Npat_times_auc_qnodes <- as.integer(e_mod$Npat * auc_qnodes) 
     nrow_y_Xq_auc <- sapply(a_mod_stuff, function(x) NROW(x$mod_auc$X))
     if (n_distinct(nrow_y_Xq_auc) > 1L)
       stop2("Bug found: nrows for auc should be the same for all submodels.")
     standata$nrow_y_Xq_auc <- unique(nrow_y_Xq_auc)
-    auc_qwts <- 
-      unlist(lapply(e_mod_stuff$qtimes, function(x) 
-        lapply(x, function(y) 
-          lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, y)))) 
+    auc_qwts <- uapply(e_mod$cpts, function(x)
+      lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, x))
     standata$auc_qwts <- 
-      if (standata$assoc_uses[3]) as.array(auc_qwts) else double(0)    
+      if (any(standata$assoc_uses[3,] > 0)) as.array(auc_qwts) else double(0)    
 
     # Interactions between association terms and data, with the following objects:
     #   a_K_data: number of columns in y_Xq_data corresponding to each interaction 
@@ -779,24 +777,25 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     user_priorLong = y_user_prior_stuff,
     user_priorLong_intercept = y_user_prior_intercept_stuff,
     user_priorLong_aux = y_user_prior_aux_stuff,
-    user_priorEvent = e_user_prior_stuff,
-    user_priorEvent_intercept = e_user_prior_intercept_stuff,
-    user_priorEvent_aux = e_user_prior_aux_stuff,
-    user_priorEvent_assoc = e_user_prior_assoc_stuff,
+    if (is_jm) user_priorEvent = e_user_prior_stuff,
+    if (is_jm) user_priorEvent_intercept = e_user_prior_intercept_stuff,
+    if (is_jm) user_priorEvent_aux = e_user_prior_aux_stuff,
+    if (is_jm) user_priorEvent_assoc = e_user_prior_assoc_stuff,
     user_prior_covariance = prior_covariance,
     y_has_intercept = fetch_(y_mod, "X", "has_intercept"),
     y_has_predictors = fetch_(y_mod, "X", "K") > 0,
-    e_has_intercept = e_mod$has_intercept,
-    e_has_predictors = e_mod$K > 0,
-    has_assoc = a_K > 0,
+    if (is_jm) e_has_intercept = e_mod$has_intercept,
+    if (is_jm) e_has_predictors = e_mod$K > 0,
+    if (is_jm) has_assoc = a_K > 0,
     adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
     adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
     adjusted_priorLong_aux_scale = fetch(y_prior_aux_stuff, "prior_scale"),
-    adjusted_priorEvent_scale = e_prior_stuff$prior_scale,
-    adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
-    adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
-    adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
-    family = family, basehaz = basehaz
+    if (is_jm) adjusted_priorEvent_scale = e_prior_stuff$prior_scale,
+    if (is_jm) adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
+    if (is_jm) adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
+    if (is_jm) adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
+    family = family, 
+    if (is_jm) basehaz = basehaz
   )  
   
   #-----------
@@ -811,15 +810,15 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             if (M > 0 && standata$yK[1]) "yBeta1",
             if (M > 1 && standata$yK[2]) "yBeta2",
             if (M > 2 && standata$yK[3]) "yBeta3",
-            if (standata$e_has_intercept) "e_alpha",
-            if (standata$e_K) "e_beta",
-            if (standata$a_K) "a_beta",
+            if (is_jm && standata$e_has_intercept) "e_alpha",
+            if (is_jm && standata$e_K) "e_beta",
+            if (is_jm && standata$a_K) "a_beta",
             #if (standata$bK1 > 0) "bMat1",
             #if (standata$bK2 > 0) "bMat2",
             if (M > 0 && standata$has_aux[1]) "yAux1",
             if (M > 1 && standata$has_aux[2]) "yAux2",
             if (M > 2 && standata$has_aux[3]) "yAux3",
-            if (length(standata$basehaz_X)) "e_aux",
+            if (is_jm && length(standata$basehaz_X)) "e_aux",
             if (standata$prior_dist_for_cov == 2 && standata$bK1 > 0) "bCov1",
             if (standata$prior_dist_for_cov == 2 && standata$bK2 > 0) "bCov2",
             if (standata$prior_dist_for_cov == 1 && standata$len_theta_L) "theta_L",
@@ -900,7 +899,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|", unlist(temp_g_nms)))
     }
     
-  } # end jm block
+  } else {
+    e_intercept_nms <- e_beta_nms <- 
+      e_assoc_nms <- e_aux_nms <- NULL
+  }
   
   # Sigma values in stanmat, and Sigma names
   nc <- sapply(cnms, FUN = length)

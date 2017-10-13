@@ -108,7 +108,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
                        prior_aux = cauchy(0, 5),
                        prior_covariance = lkj(), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+                       adapt_delta = NULL, max_treedepth = 11L, 
+                       init = "random", QR = FALSE, sparse = FALSE) {
   
   #-----------------------------
   # Pre-processing of arguments
@@ -159,8 +160,9 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
                          weights = weights, ..., priorLong = prior, 
                          priorLong_intercept = prior_intercept, priorLong_aux = prior_aux, 
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
-                         algorithm = algorithm, adapt_delta = adapt_delta, QR = QR, 
-                         sparse = sparse)
+                         algorithm = algorithm, adapt_delta = adapt_delta, 
+                         max_treedepth = max_treedepth, init = init, 
+                         QR = QR, sparse = sparse)
 
   y_mod <- attr(stanfit, "y_mod")
   cnms  <- attr(stanfit, "cnms")
