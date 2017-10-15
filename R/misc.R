@@ -1507,6 +1507,29 @@ convert_null <- function(x, type = c("double", "integer", "matrix",
   }
 }
 
+# Expand/pad a matrix to the specified number of cols/rows
+#
+# @param x A matrix or 2D array
+# @param cols,rows Integer specifying the desired number
+#   of columns/rows
+# @param value The value to use for the padded cells
+# @return A matrix
+pad_matrix <- function(x, cols = NULL, rows = NULL, 
+                       value = 0L) {
+  nc <- ncol(x)
+  nr <- nrow(x)
+  if (!is.null(cols) && nc < cols) {
+    pad_mat <- matrix(value, nr, cols - nc)
+    x <- cbind(x, pad_mat)
+    nc <- ncol(x) # update nc to reflect new num cols
+  }
+  if (!is.null(rows) && nr < rows) {
+    pad_mat <- matrix(value, rows - nr, nc)
+    x <- rbind(x, pad_mat)    
+  }
+  x
+}
+
 #------- helpers from brms package
 
 stop2 <- function(...) {

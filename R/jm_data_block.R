@@ -811,6 +811,26 @@ get_common_cnms <- function(x, stub = "Long") {
   cnms
 }
 
+# Function to return a single flist across all longitudinal
+# submodels for each grouping factor
+# 
+# @param x A list, the flist object for each submodel
+get_common_flist <- function(x) {
+  nms <- lapply(x, names)
+  unique_nms <- unique(unlist(nms))
+  flist <- lapply(seq_along(unique_nms), function(i) {
+    nm <- unique_nms[i]
+    flist_nm <- lapply(1:length(x), function(m) 
+      if (nm %in% nms[[m]]) x[[m]][[nm]])
+    flist_nm <- rm_null(unique(flist_nm))
+    if (length(flist_nm) > 1L)
+      stop2("Bug found: flist should be unique across submodels.")
+    flist_nm[[1L]]
+  })
+  names(flist) <- unique_nms
+  flist
+}
+
 # Take a list of cnms objects (each element containing the cnms for one 
 # submodel) and assess whether the specified variable is included as a 
 # grouping factor in all of the submodels
@@ -1607,7 +1627,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   
   # If association structure is based on slope, then calculate design 
   # matrices under a time shift of epsilon
-  sel_slope <- grep("etaslope", rownames(assoc))
+  sel_slope <- grep("etaslope", names(assoc))
   if (any(unlist(assoc[sel_slope]))) {
     dataQ_pos <- dataQ_neg <- dataQ
     dataQ_neg[[time_var]] <- dataQ_neg[[time_var]] - epsilon
@@ -1622,7 +1642,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   
   # If association structure is based on area under the marker trajectory, then 
   # calculate design matrices at the subquadrature points
-  sel_auc <- grep("etaauc|muauc", rownames(assoc))
+  sel_auc <- grep("etaauc|muauc", names(assoc))
   if (any(unlist(assoc[sel_auc]))) {
     if (clust_stuff$has_clust)
       stop2("'etaauc' and 'muauc' not yet implemented when there is a grouping ",
@@ -1643,7 +1663,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   
   # If association structure is based on interactions with data, then calculate 
   # the design matrix which will be multiplied by etavalue, etaslope, muvalue or muslope
-  sel_data <- grep("_data", rownames(assoc), value = TRUE)
+  sel_data <- grep("_data", names(assoc), value = TRUE)
   X_data <- xapply(sel_data, FUN = function(i) { 
     form <- assoc[["which_formulas"]][[i]]
     if (length(form)) {

@@ -116,6 +116,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   y_cnms  <- fetch(y_mod, "Z", "group_cnms")
   y_flist <- fetch(y_mod, "Z", "group_list")
   cnms <- get_common_cnms(y_cnms, stub = stub)
+  flist <- get_common_flist(y_flist)
   cnms_nms <- names(cnms)
   if (length(cnms_nms) > 2L)
     stop("A maximum of 2 grouping factors are allowed.")
@@ -592,11 +593,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     # hyperparameters for assoc parameter priors
     standata$a_prior_mean               <- e_prior_assoc_stuff$prior_mean
-    standata$a_prior_scale              <- e_prior_assoc_stuff$prior_scale
+    standata$a_prior_scale              <- as.array(e_prior_assoc_stuff$prior_scale)
     standata$a_prior_df                 <- e_prior_assoc_stuff$prior_df
     standata$a_global_prior_scale       <- e_prior_assoc_stuff$global_prior_scale
     standata$a_global_prior_df          <- e_prior_assoc_stuff$global_prior_df
-    standata$a_xbar                     <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
+    #standata$a_xbar                     <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
+    standata$a_xbar <- as.array(rep(0.0, a_K))
     
     #----------- Association structure -----------# 
     
@@ -614,10 +616,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                            muslope  = "muslope",
                            muauc    = "muauc")
         sel <- grep(nm_check, rownames(assoc))
-        isTRUE(colSums(assoc[sel, , drop = FALSE] > 0))
+        tmp <- assoc[sel, , drop = FALSE]
+        tmp <- pad_matrix(tmp, cols = 3L, value = FALSE)
+        as.integer(as.logical(colSums(tmp > 0)))
       }, assoc = assoc)
-    standata$assoc_uses <- if (M == 1) 
-      matrix(assoc_uses, 6, 1) else t(assoc_uses)
+    standata$assoc_uses <- t(assoc_uses)
     
     # Indexing for desired association types
     # !! Must be careful with corresponding use of indexing in Stan code !!
@@ -677,13 +680,13 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp_id <- groups(Z2_tmp_id)
             Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
           } else {
-            Z2_tmp <- matrix(0,0,standata$bK2_len[m]) 
+            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
             Z2_tmp_id <- as.array(integer(0))
           }
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
-          Z1_tmp <- matrix(0,0,standata$bK1_len[m]) 
-          Z2_tmp <- matrix(0,0,standata$bK2_len[m]) 
+          Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
+          Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
           Z1_tmp_id <- as.array(integer(0)) 
           Z2_tmp_id <- as.array(integer(0)) 
         }
@@ -713,7 +716,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
     #     since it is formed as a block diagonal matrix
     Xq_data <- fetch(a_mod_stuff, "X_bind_data") # design mat for the interactions
-    standata$Xq_data <- as.array(as.matrix(Matrix::bdiag(Xq_data)))
+    standata$y_Xq_data <- as.array(as.matrix(Matrix::bdiag(Xq_data)))
     standata$a_K_data <- fetch_array(a_mod_stuff, "K_data")
     standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
     
@@ -803,7 +806,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #-----------
   
   # call stan() to draw from posterior distribution
-  stanfit <- if (is_jm) stanmodel$jm else stanmodels$mvmer
+  stanfit <- if (is_jm) stanmodels$jm else stanmodels$mvmer
   pars <- c(if (M > 0 && standata$intercept_type[1]) "yAlpha1", 
             if (M > 1 && standata$intercept_type[2]) "yAlpha2", 
             if (M > 2 && standata$intercept_type[3]) "yAlpha3", 
@@ -902,7 +905,21 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   } else {
     e_intercept_nms <- e_beta_nms <- 
       e_assoc_nms <- e_aux_nms <- NULL
-  }
+  } # end jm block
+  
+  # Names for group specific coefficients ("b pars")
+  b_nms <- xapply(seq_along(cnms), FUN = function(i) {
+    nm <- cnms_nms[i]
+    nms_i <- paste(cnms[[i]], nm)
+    levels(flist[[nm]]) <- gsub(" ", "_", levels(flist[[nm]]))
+    if (length(nms_i) == 1) {
+      paste0(nms_i, ":", levels(flist[[nm]]))
+    } else {
+      c(t(sapply(nms_i, paste0, ":", levels(flist[[nm]]))))
+    }
+  })
+  b1_nms <- if (length(cnms) > 0L) b_nms[[1L]] else NULL
+  b2_nms <- if (length(cnms) > 1L) b_nms[[2L]] else NULL
   
   # Sigma values in stanmat, and Sigma names
   nc <- sapply(cnms, FUN = length)
@@ -947,6 +964,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                  paste0(stub, 1:M, "|mean_PPD"), 
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
-  structure(stanfit, y_mod = y_mod, cnms = cnms)
+  mvmer_attr <- nlist(y_mod, cnms, flist)
+  jm_attr <- if (is_jm) nlist(e_mod, a_mod_stuff, assoc, basehaz) else list()
+  stanfit_structure <- c(list(.Data = stanfit), mvmer_attr, jm_attr)
+  do.call("structure", stanfit_structure)
 }
 

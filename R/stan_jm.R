@@ -586,29 +586,29 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse)
 
+  cnms  <- attr(stanfit, "cnms")
+  flist <- attr(stanfit, "flist")
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")
-  cnms  <- attr(stanfit, "cnms")
+  a_mod <- attr(stanfit, "a_mod")
+  assoc <- attr(stanfit, "assoc")
   basehaz <- attr(stanfit, "basehaz")
-  stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "cnms", "basehaz")
+  clust_stuff <- attr(stanfit, "clust_stuff")
+  stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
+                             "flist", "assoc", "basehaz", "Clust_stuff")
   
   terms <- c(fetch(y_mod, "terms"), list(e_mod$terms))
   n_yobs <- fetch_(y_mod, "X", "N")
   n_pats <- e_mod$Npat
-  #n_grps <- standata$l - 1
-  #names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
-  #names(p) <- cnms_nms       # p is num. of variables within each grouping factor
+  n_grps <- sapply(flist, n_distinct)
 
   fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family, terms,
-               id_var, time_var, weights, qnodes, basehaz,
+               id_var, time_var, weights, qnodes, basehaz, assoc,
                M, cnms, n_grps, n_pats, n_yobs, 
-               
-               assoc, a_mod_stuff, clust_stuff,
-               grp_assoc = if (any(unlist(has_clust))) grp_assoc else NULL,
-               fr = list_nms(c(fetch(a_mod_stuff, "model_frame"), 
-                               list(e_mod_stuff$model_frame)), M),
-               
-               algorithm, terms, glmod = y_mod, survmod = e_mod,
+               fr = list_nms(c(fetch(a_mod, "model_frame"), 
+                               list(e_mod$model_frame)), M),
+               algorithm, terms, glmod = y_mod, survmod = e_mod, 
+               assocmod = a_mod, clust_stuff, grp_assoc,
                model_dataLong = dataLong, model_dataEvent = dataEvent,
                prior.info = NULL, stan_function = "stan_jm", 
                call = match.call(expand.dots = TRUE))

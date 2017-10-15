@@ -6,7 +6,7 @@
   int<lower=0> a_K;                     // num. of association parameters
   vector[a_K] a_xbar;                   // used for centering assoc terms
   int<lower=0,upper=1> assoc;           // 0 = no assoc structure, 1 = any assoc structure
-  int<lower=0,upper=1> assoc_uses[6,M]; // which components are required to build association terms
+  int<lower=0,upper=1> assoc_uses[6,3]; // which components are required to build association terms
   int<lower=0,upper=1> has_assoc[16,M]; // which association terms does each submodel use
   int<lower=0> sum_size_which_b;        // num. of shared random effects
   int<lower=0> size_which_b[M];         // num. of shared random effects for each long submodel
@@ -105,7 +105,7 @@
   
 		// indexing specifying the rows of y_Xq_data that correspond to
 		// each submodel
-		int<lower=0> idx_q[M,2];
+		int<lower=0> idx_q[3,2];
 		
   //---- data for combining lower level units clustered within patients
   
