@@ -21,10 +21,9 @@ make_cc <- function(file) {
   file <- sub("\\.cc$", ".stan", file)
   cppcode <- rstan::stanc(file, allow_undefined = TRUE,
                           obfuscate_model_name = FALSE)$cppcode
-  cppcode <- gsub("typedef.*stan_model.*;", "", cppcode, perl = TRUE)
   cat(readLines(file.path("stan_files", "pre", "license.stan")),
-      "#ifndef MODELS_HPP", "#define MODELS_HPP",
-      "#define STAN__SERVICES__COMMAND_HPP", "#include <rstan/rstaninc.hpp>",
+      "#ifndef MODELS_HPP", "#define MODELS_HPP", "#define STAN__SERVICES__COMMAND_HPP",
+      "#include <rstan/rstaninc.hpp>",
       cppcode, "#endif", file = sub("\\.stan$", ".hpp", file),
       sep = "\n", append = FALSE)
   
@@ -40,8 +39,7 @@ make_cc <- function(file) {
                     file = file.path("stan_files", paste0(f, ".cc")), 
                     header = paste0('#include "', f, '.hpp"'),
                     module = paste0("stan_fit4", f, "_mod"), 
-                    CppClass = paste0("rstan::stan_fit<model_", f, "_namespace::model_", f,
-                                      ", boost::random::ecuyer1988> "),
+                    CppClass = "rstan::stan_fit<stan_model, boost::random::ecuyer1988> ",
                     Rfile = FALSE)
   return(invisible(NULL))
 }
