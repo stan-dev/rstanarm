@@ -181,8 +181,7 @@ model {
       else if (link == 2) 
         target += normal_lpdf(y | exp(eta), aux);
       else 
-        target += normal_lpdf(y | divide_real_by_vector(1, eta), aux);
-      // divide_real_by_vector() is defined in common_functions.stan
+        target += normal_lpdf(y | inv(eta), aux);
     }
     else if (family == 2) {
       target += GammaReg(y, eta, aux, link, sum_log_y);

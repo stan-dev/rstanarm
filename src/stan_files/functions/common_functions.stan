@@ -198,20 +198,6 @@
   }
   
   /** 
-   * Divide a scalar by a vector
-   *
-   * @param x The scalar in the numerator
-   * @param y The vector in the denominator
-   * @return An elementwise vector
-   */
-  vector divide_real_by_vector(real x, vector y) {
-    int K = rows(y); 
-    vector[K] ret;
-    for (k in 1:K) ret[k] = x / y[k];
-    return ret;
-  }
-
-  /** 
    * Cornish-Fisher expansion for standard normal to Student t
    *
    * See result 26.7.5 of
