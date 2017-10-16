@@ -496,11 +496,10 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorLong = normal(), priorLong_intercept = normal(), 
                     priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                     priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                    priorEvent_assoc = normal(), prior_covariance = decov(), 
+                    priorEvent_assoc = normal(), prior_covariance = lkj(), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = 11L, QR = FALSE, 
                     sparse = FALSE) {
-  
   
   #-----------------------------
   # Pre-processing of arguments
@@ -580,22 +579,24 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   cnms  <- attr(stanfit, "cnms")
   flist <- attr(stanfit, "flist")
   assoc <- attr(stanfit, "assoc")
-  basehaz <- attr(stanfit, "basehaz")
-  grp_stuff <- attr(stanfit, "grp_stuff")
+  basehaz    <- attr(stanfit, "basehaz")
+  grp_stuff  <- attr(stanfit, "grp_stuff")
+  prior_info <- attr(stanfit, "prior_info")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
-                             "flist", "assoc", "basehaz", "grp_stuff")
+                             "flist", "assoc", "basehaz", "grp_stuff", 
+                             "prior_info")
   
   terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
-  n_yobs <- fetch_(y_mod, "X", "N")
-  n_pats <- e_mod$Npat
+  n_yobs <- fetch_(y_mod, "x", "N")
   n_grps <- sapply(flist, n_distinct)
+  n_subjects <- e_mod$Npat
 
   fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
                id_var, time_var, weights, qnodes, basehaz, assoc,
-               M, cnms, flist, n_grps, n_pats, n_yobs, epsilon,
+               M, cnms, flist, n_grps, n_subjects, n_yobs, epsilon,
                algorithm, terms, glmod = y_mod, survmod = e_mod, 
                assocmod = a_mod, grp_stuff, dataLong, dataEvent,
-               prior.info = NULL, stan_function = "stan_jm", 
+               prior.info = prior_info, stan_function = "stan_jm", 
                call = match.call(expand.dots = TRUE))
   
   out <- stanmvreg(fit)

@@ -166,18 +166,17 @@ stan_mvmer <- function(formula, data, family = gaussian, weights, ...,
 
   y_mod <- attr(stanfit, "y_mod")
   cnms  <- attr(stanfit, "cnms")
-  stanfit <- drop_attributes(stanfit, "y_mod", "cnms")
+  flist <- attr(stanfit, "flist")
+  prior_info <- attr(stanfit, "prior_info")
+  stanfit <- drop_attributes(stanfit, "y_mod", "cnms", "flist", "prior_info")
   
-  n_yobs <- fetch_(y_mod, "X", "N")
   terms <- fetch(y_mod, "terms")
-  #n_grps <- standata$l - 1
-  #names(n_grps) <- cnms_nms  # n_grps is num. of levels within each grouping factor
-  #names(p) <- cnms_nms       # p is num. of variables within each grouping factor
+  n_yobs <- fetch_(y_mod, "x", "N")
+  n_grps <- sapply(flist, n_distinct)
   
-  fit <- nlist(stanfit, formula, family, weights, M, cnms, n_grps, n_yobs, 
-               algorithm, terms, glmod = y_mod, model_data = data,
-               prior.info = NULL, stan_function = "stan_mvmer", 
-               call = match.call(expand.dots = TRUE))
+  fit <- nlist(stanfit, formula, family, weights, M, cnms, flist, n_grps, n_yobs, 
+               algorithm, terms, glmod = y_mod, data, prior.info = prior_info, 
+               stan_function = "stan_mvmer", call = match.call(expand.dots = TRUE))
   
   out <- stanmvreg(fit)
   return(out)

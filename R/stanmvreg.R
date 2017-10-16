@@ -100,8 +100,8 @@ stanmvreg <- function(object) {
   if (is_mvmer) {
     out$cnms      <- object$cnms
     out$n_markers <- object$M
+    out$n_grps    <- object$n_grps
     out$n_yobs    <- list_nms(object$n_yobs, M, stub)
-    out$n_grps    <- list_nms(object$n_grps, M, stub)
     out$family    <- list_nms(object$family, M, stub)
     out$glmod     <- list_nms(object$glmod, M, stub)
     if (!is_jm)
