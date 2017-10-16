@@ -28,11 +28,11 @@
         // add etavalue and any interactions to event submodel eta
         if (has_assoc[1,m] == 1) { // etavalue
 					vector[nrow_e_Xq] val;    
-					if (has_clust[m] == 0) { // no grouping factor clustered within patients
+					if (has_grp[m] == 0) { // no grouping factor clustered within patients
 						val = eta_tmp;
 					} 
 					else { // submodel has a grouping factor clustered within patients
-					  val = collapse_within_groups(eta_tmp, clust_idx, grp_assoc);		
+					  val = collapse_within_groups(eta_tmp, grp_idx, grp_assoc);		
 					}				
           mark = mark + 1;
   	      e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -44,13 +44,13 @@
           for (j in 1:J) {
             vector[nrow_e_Xq] val;
             int sel = j_shift + j;
-            if (has_clust[m] == 0) {
+            if (has_grp[m] == 0) {
 						  val = eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];
 						}
 						else {
 						  val = collapse_within_groups(
 							  eta_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel],
-								clust_idx, grp_assoc);
+								grp_idx, grp_assoc);
             } 
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -122,11 +122,11 @@
         // add etaslope and any interactions to event submodel eta				
 				if (has_assoc[2,m] == 1) { // etaslope
 					vector[nrow_e_Xq] val;    
-					if (has_clust[m] == 0) {
+					if (has_grp[m] == 0) {
 						val = dydt_eta_q;
 					} 
 					else {
-						val = collapse_within_groups(dydt_eta_q, clust_idx, grp_assoc);		
+						val = collapse_within_groups(dydt_eta_q, grp_idx, grp_assoc);		
 					}          
 					mark = mark + 1;
 					e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -137,13 +137,13 @@
 					for (j in 1:J) {
 						vector[nrow_e_Xq] val;    
 						int sel = j_shift + j;
-						if (has_clust[m] == 0) {
+						if (has_grp[m] == 0) {
 							val = dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];
 						}
 						else {
 							val = collapse_within_groups(
 								dydt_eta_q .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel],
-								clust_idx, grp_assoc);
+								grp_idx, grp_assoc);
 						}           
 						mark = mark + 1;
 						e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -208,11 +208,11 @@
         // add muvalue and any interactions to event submodel eta   
         if (has_assoc[4,m] == 1) { // muvalue
           vector[nrow_e_Xq] val;    
-          if (has_clust[m] == 0) {
+          if (has_grp[m] == 0) {
 					  val = mu_tmp;      
 					}
           else {
-					  val = collapse_within_groups(mu_tmp, clust_idx, grp_assoc);
+					  val = collapse_within_groups(mu_tmp, grp_idx, grp_assoc);
 					}  
           mark = mark + 1;
           e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]); 
@@ -223,13 +223,13 @@
           for (j in 1:tmp) {
             vector[nrow_e_Xq] val;    
             int sel = j_shift + j;
-            if (has_clust[m] == 0) {
+            if (has_grp[m] == 0) {
 						  val = mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel];
 						}
 						else {
 						  val = collapse_within_groups(
 							  mu_tmp .* y_Xq_data[idx_q[m,1]:idx_q[m,2], sel],
-								clust_idx, grp_assoc);
+								grp_idx, grp_assoc);
 						}
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);

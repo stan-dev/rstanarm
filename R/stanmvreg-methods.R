@@ -219,7 +219,7 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
     Terms <- list_nms(Terms, M, stub = get_stub(x))
   }
   if (is.surv(x)) {
-    Terms$Event <- terms(x$coxmod)
+    Terms$Event <- terms(x$terms$Event)
   }
   if (is.null(m)) Terms else Terms[[m]]
 }

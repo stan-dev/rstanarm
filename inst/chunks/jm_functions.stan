@@ -473,32 +473,32 @@
 	*
 	* @param eta The linear predictor evaluated for all the lower
 	*   level units, having some length greater than N.
-	* @param clust_idx An N-by-2 two dimensional array providing the
+	* @param grp_idx An N-by-2 two dimensional array providing the
 	*   beginning and ending index of the lower level units in eta that
 	*   correspond to patient n (where n = 1,...,N).
 	* @param grp_assoc The method for collapsing across the lower 
 	*   level units; 1=sum, 2=mean, 3=min, 4=max.
 	* @return A vector
 	*/
-	vector collapse_within_groups(vector eta, int[,] clust_idx, 
+	vector collapse_within_groups(vector eta, int[,] grp_idx, 
 	                              int grp_assoc) {
-		int N = size(clust_idx);
+		int N = size(grp_idx);
 		vector[N] val;
 		if (grp_assoc == 1) { // sum of lower level clusters
 			for (n in 1:N)
-				val[n] = sum(eta[clust_idx[n,1]:clust_idx[n,2]]);
+				val[n] = sum(eta[grp_idx[n,1]:grp_idx[n,2]]);
 		}
 		else if (grp_assoc == 2) { // mean of lower level clusters
 			for (n in 1:N)
-				val[n] = mean(eta[clust_idx[n,1]:clust_idx[n,2]]);
+				val[n] = mean(eta[grp_idx[n,1]:grp_idx[n,2]]);
 		}
 		else if (grp_assoc == 3) { // min of lower level clusters
 			for (n in 1:N)
-				val[n] = min(eta[clust_idx[n,1]:clust_idx[n,2]]);
+				val[n] = min(eta[grp_idx[n,1]:grp_idx[n,2]]);
 		}
 		else if (grp_assoc == 4) { // max of lower level clusters
 			for (n in 1:N)
-				val[n] = max(eta[clust_idx[n,1]:clust_idx[n,2]]);
+				val[n] = max(eta[grp_idx[n,1]:grp_idx[n,2]]);
 		}
 		return val;
 	}

@@ -104,34 +104,30 @@ stanmvreg <- function(object) {
     out$n_grps    <- list_nms(object$n_grps, M, stub)
     out$family    <- list_nms(object$family, M, stub)
     out$glmod     <- list_nms(object$glmod, M, stub)
-    if (!is_jm) {
-      out$model_data <- list_nms(object$model_data, M, stub)
-    }
+    if (!is_jm)
+      out$data <- list_nms(object$data, M, stub)
   }
   if (is_surv) {
     out$n_subjects <- object$n_subjects
-    out$n_events <- sum(object$status > 0)
-    out$eventtime <- object$eventtime
-    out$status <- object$status > 0
-    out$basehaz <- object$basehaz
-    out$coxmod <- object$e_mod_stuff$mod    
-    out$coxmod_stuff <- object$e_mod_stuff 
-    if (!is_jm) {
-      out$model_data <- object$model_data
-    }  
+    out$n_events   <- sum(object$status > 0)
+    out$eventtime  <- object$eventtime
+    out$status     <- object$status > 0
+    out$basehaz    <- object$basehaz
+    out$survmod     <- object$survmod
+    if (!is_jm)
+      out$data <- object$data
   }
   if (is_jm) {
     out$time_var  <- object$time_var
     out$id_var    <- object$id_var
     out$qnodes    <- object$qnodes
     out$assoc     <- object$assoc
+    out$assocmod  <- object$assocmod  
     out$epsilon   <- object$epsilon    
     out$dataLong  <- object$dataLong
     out$dataEvent <- object$dataEvent
-    out$assocmod_stuff <- object$a_mod_stuff  
     out$fr <- object$fr
-    out$clust_stuff <- object$clust_stuff
-    out$grp_assoc <- object$grp_assoc
+    out$grp_stuff <- object$grp_stuff
   }
   out <- rm_null(out, recursive = FALSE)
   structure(out, class = c("stanmvreg", "stanreg", "lmerMod"))

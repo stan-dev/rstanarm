@@ -109,6 +109,6 @@
 		
   //---- data for combining lower level units clustered within patients
   
-    int<lower=0,upper=1> has_clust[M]; // 1 = has clustering below patient level
+    int<lower=0,upper=1> has_grp[M]; // 1 = has clustering below patient level
     int<lower=0,upper=4> grp_assoc; // 1=sum, 2=mean, 3=min, 4=max
-		int<lower=0> clust_idx[nrow_e_Xq,2]; 
+		int<lower=0> grp_idx[nrow_e_Xq,2]; 

@@ -529,22 +529,14 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   
   if (is.null(time_var))
     stop("'time_var' must be specified.")
-  #if (is.null(id_var))
-  #  stop("'id_var' must be specified.")
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
-  #dataLong <- check_vars_are_included(dataLong, id_var, time_var)
-  #dataLong <- xapply(formulaLong, dataLong, FUN = get_all_vars)
-  
   dataEvent <- as.data.frame(dataEvent)
-  #dataEvent <- check_vars_are_included(dataEvent, id_var)
-  #dataEvent <- get_all_vars(formulaEvent, dataEvent, dataEvent[[id_var]])
-  #names(dataEvent) <- c(names(dataEvent), id_var)
-    
+
   # Family
   ok_family_classes <- c("function", "family", "character")
   ok_families <- c("binomial", "gaussian", "Gamma", 
@@ -561,13 +553,9 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
   priorLong_aux <- broadcast_prior(priorLong_aux, M)
  
-  # Observation weights
-  #if (!is.null(weights)) 
-  #  weights <- check_weights(weights, id_var)
-  
   #-----------
   # Fit model
-  #----------- 
+  #-----------
   
   stanfit <- stan_jm.fit(formulaLong = formulaLong, dataLong = dataLong, 
                          formulaEvent = formulaEvent, dataEvent = dataEvent, 
@@ -586,30 +574,27 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse)
 
-  cnms  <- attr(stanfit, "cnms")
-  flist <- attr(stanfit, "flist")
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")
   a_mod <- attr(stanfit, "a_mod")
+  cnms  <- attr(stanfit, "cnms")
+  flist <- attr(stanfit, "flist")
   assoc <- attr(stanfit, "assoc")
   basehaz <- attr(stanfit, "basehaz")
-  clust_stuff <- attr(stanfit, "clust_stuff")
+  grp_stuff <- attr(stanfit, "grp_stuff")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
-                             "flist", "assoc", "basehaz", "Clust_stuff")
+                             "flist", "assoc", "basehaz", "grp_stuff")
   
-  terms <- c(fetch(y_mod, "terms"), list(e_mod$terms))
+  terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
   n_yobs <- fetch_(y_mod, "X", "N")
   n_pats <- e_mod$Npat
   n_grps <- sapply(flist, n_distinct)
 
-  fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family, terms,
+  fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
                id_var, time_var, weights, qnodes, basehaz, assoc,
-               M, cnms, n_grps, n_pats, n_yobs, 
-               fr = list_nms(c(fetch(a_mod, "model_frame"), 
-                               list(e_mod$model_frame)), M),
+               M, cnms, flist, n_grps, n_pats, n_yobs, epsilon,
                algorithm, terms, glmod = y_mod, survmod = e_mod, 
-               assocmod = a_mod, clust_stuff, grp_assoc,
-               model_dataLong = dataLong, model_dataEvent = dataEvent,
+               assocmod = a_mod, grp_stuff, dataLong, dataEvent,
                prior.info = NULL, stan_function = "stan_jm", 
                call = match.call(expand.dots = TRUE))
   

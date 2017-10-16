@@ -178,18 +178,18 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # For each submodel, identify any grouping factors that are
     # clustered within id_var (i.e. lower level clustering)
     ok_grp_assocs <- c("sum", "mean", "min", "max")
-    clust_basic <- xapply(FUN = get_basic_clust, 
+    grp_basic <- xapply(FUN = get_basic_grp_info, 
                           cnms  = y_cnms, flist = y_flist,
                           args = list(id_var = id_var))
-    clust_stuff <- xapply(FUN = get_extra_clust, 
-                          basic_info = clust_basic, flist = y_flist,
+    grp_stuff <- xapply(FUN = get_extra_grp_info, 
+                          basic_info = grp_basic, flist = y_flist,
                           args = list(id_var = id_var, qnodes = qnodes, 
                                       grp_assoc = grp_assoc, 
                                       ok_grp_assocs = ok_grp_assocs))
-    has_clust <- fetch_(clust_stuff, "has_clust")
-    if (any(has_clust)) {
-      clust_structure <- fetch(clust_stuff, "clust_ids")[has_clust]
-      if (n_distinct(clust_structure) > 1L)
+    has_grp <- fetch_(grp_stuff, "has_grp")
+    if (any(has_grp)) {
+      grp_structure <- fetch(grp_stuff, "grp_ids")[has_grp]
+      if (n_distinct(grp_structure) > 1L)
         stop("Any longitudinal submodels with a grouping factor clustered within ",
              "patients must use the same clustering structure; that is, the same ",
              "clustering variable and the same number of units clustered within a ",
@@ -203,15 +203,15 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # at the quadrature points
     auc_qnodes <- 15L
     assoc_as_list <- apply(assoc, 2L, c)
-    a_mod_stuff <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
-                          clust_stuff = clust_stuff, FUN = handle_assocmod, 
-                          args = list(ids = e_mod$cids, times = e_mod$cpts, 
-                                      id_var = id_var, time_var = time_var, 
-                                      epsilon = epsilon, 
-                                      auc_qnodes = auc_qnodes))
+    a_mod <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
+                    grp_stuff = grp_stuff, FUN = handle_assocmod, 
+                    args = list(ids = e_mod$cids, times = e_mod$cpts, 
+                                id_var = id_var, time_var = time_var, 
+                                epsilon = epsilon, 
+                                auc_qnodes = auc_qnodes))
     
     # Number of association parameters
-    a_K <- get_num_assoc_pars(assoc, a_mod_stuff)
+    a_K <- get_num_assoc_pars(assoc, a_mod)
     
   } # end jm block
   
@@ -301,7 +301,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       autoscale_prior(e_prior_aux_stuff)
     #if (a_K) {
     #  e_prior_assoc_stuff <- 
-    #    autoscale_prior(e_prior_assoc_stuff, a_mod_stuff, 
+    #    autoscale_prior(e_prior_assoc_stuff, a_mod, 
     #                    assoc = assoc, family = family)
     #}
     
@@ -634,10 +634,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Data for association structure when there is
     # clustering below the patient-level
     
-    standata$has_clust <- as.array(as.integer(has_clust))
-    if (any(has_clust)) { # has lower level clustering
-      sel <- which(has_clust)
-      standata$clust_idx <- get_idx_array(clust_stuff[[sel]]$clust_freq)
+    standata$has_grp <- as.array(as.integer(has_grp))
+    if (any(has_grp)) { # has lower level clustering
+      sel <- which(has_grp)
+      standata$grp_idx <- get_idx_array(grp_stuff[[sel]]$grp_freq)
       standata$grp_assoc <- switch(grp_assoc, 
                                    sum = 1L,
                                    mean = 2L,
@@ -645,12 +645,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                                    max = 4L,
                                    0L)
     } else { # no lower level clustering
-      standata$clust_idx <- matrix(0L, standata$nrow_e_Xq, 2L)
+      standata$grp_idx <- matrix(0L, standata$nrow_e_Xq, 2L)
       standata$grp_assoc <- 0L
     }
     
     # Data for calculating eta, slope, auc in GK quadrature 
-    N_tmp <- sapply(a_mod_stuff, function(x) NROW(x$mod_eta$X))
+    N_tmp <- sapply(a_mod, function(x) NROW(x$mod_eta$X))
     N_tmp <- c(N_tmp, rep(0, 3 - length(N_tmp)))
     standata$nrow_y_Xq <- as.array(as.integer(N_tmp))
     for (m in 1:3) {
@@ -661,7 +661,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                            auc = "auc")
         sel <- grep(nm_check, rownames(assoc))
         if (m <= M && any(unlist(assoc[sel,m]))) {
-          tmp_stuff <- a_mod_stuff[[m]][[paste0("mod_", i)]]
+          tmp_stuff <- a_mod[[m]][[paste0("mod_", i)]]
           # fe design matrix at quadpoints
           X_tmp <- tmp_stuff$X
           # re design matrix at quadpoints, group factor 1
@@ -701,7 +701,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Data for auc association structure
     standata$auc_qnodes <- as.integer(auc_qnodes)
     standata$Npat_times_auc_qnodes <- as.integer(e_mod$Npat * auc_qnodes) 
-    nrow_y_Xq_auc <- sapply(a_mod_stuff, function(x) NROW(x$mod_auc$X))
+    nrow_y_Xq_auc <- sapply(a_mod, function(x) NROW(x$mod_auc$X))
     if (n_distinct(nrow_y_Xq_auc) > 1L)
       stop2("Bug found: nrows for auc should be the same for all submodels.")
     standata$nrow_y_Xq_auc <- unique(nrow_y_Xq_auc)
@@ -715,9 +715,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     #     type (ie, etavalue, etaslope, muvalue, muslope) for each submodel
     #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
     #     since it is formed as a block diagonal matrix
-    Xq_data <- fetch(a_mod_stuff, "X_bind_data") # design mat for the interactions
+    Xq_data <- fetch(a_mod, "X_bind_data") # design mat for the interactions
     standata$y_Xq_data <- as.array(as.matrix(Matrix::bdiag(Xq_data)))
-    standata$a_K_data <- fetch_array(a_mod_stuff, "K_data")
+    standata$a_K_data <- fetch_array(a_mod, "K_data")
     standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
     
     # Interactions between association terms
@@ -875,18 +875,18 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     e_assoc_nms <- character()  
     for (m in 1:M) {
       if (assoc["etavalue",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue"))
-      if (assoc["etavalue_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:", colnames(a_mod_stuff[[m]][["xq_data"]][["etavalue_data"]])))
+      if (assoc["etavalue_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:", colnames(a_mod[[m]][["xq_data"]][["etavalue_data"]])))
       if (assoc["etavalue_etavalue",][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_etavalue"]], "|etavalue"))
       if (assoc["etavalue_muvalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_muvalue"]],  "|muvalue"))
       if (assoc["etaslope",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope"))
-      if (assoc["etaslope_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod_stuff[[m]][["xq_data"]][["etaslope_data"]])))    
+      if (assoc["etaslope_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod[[m]][["xq_data"]][["etaslope_data"]])))    
       if (assoc["etaauc",           ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaauc"))
       if (assoc["muvalue",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue"))
-      if (assoc["muvalue_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod_stuff[[m]][["xq_data"]][["muvalue_data"]])))    
+      if (assoc["muvalue_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod[[m]][["xq_data"]][["muvalue_data"]])))    
       if (assoc["muvalue_etavalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_etavalue"]], "|etavalue"))
       if (assoc["muvalue_muvalue",  ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_muvalue"]],  "|muvalue"))
       if (assoc["muslope",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope"))
-      if (assoc["muslope_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod_stuff[[m]][["xq_data"]][["muslope_data"]])))    
+      if (assoc["muslope_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod[[m]][["xq_data"]][["muslope_data"]])))    
       if (assoc["muauc",            ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muauc"))
     }
     if (sum(standata$size_which_b)) {
@@ -964,9 +964,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                  paste0(stub, 1:M, "|mean_PPD"), 
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
-  mvmer_attr <- nlist(y_mod, cnms, flist)
-  jm_attr <- if (is_jm) nlist(e_mod, a_mod_stuff, assoc, basehaz) else list()
-  stanfit_structure <- c(list(.Data = stanfit), mvmer_attr, jm_attr)
-  do.call("structure", stanfit_structure)
+  
+  stanfit_str <- nlist(.Data = stanfit)
+  if (is_mvmer)
+    stanfit_str <- c(stanfit_str, nlist(y_mod, cnms, flist))
+  if (is_jm)
+    stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, 
+                                        basehaz, grp_stuff))
+  
+  do.call("structure", stanfit_str)
 }
 

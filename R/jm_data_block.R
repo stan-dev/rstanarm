@@ -1510,7 +1510,7 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   based on a one-sided different
 # @param dataAssoc An optional data frame containing data for interactions within
 #   the association terms
-handle_assocmod <- function(data, assoc, y_mod, clust_stuff, ids, times,  
+handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,  
                             id_var, time_var, epsilon, auc_qnodes) {
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
@@ -1522,8 +1522,8 @@ handle_assocmod <- function(data, assoc, y_mod, clust_stuff, ids, times,
   Z_forms <- y_mod$Z$Z_forms
   
   # Declare data as a data.table for merging with quadrature points
-  if (clust_stuff$has_clust) {
-    key_vars <- c(id_var, clust_stuff$clust_var, time_var)
+  if (grp_stuff$has_grp) {
+    key_vars <- c(id_var, grp_stuff$grp_var, time_var)
   } else {
     key_vars <- c(id_var, time_var)
   }
@@ -1535,7 +1535,7 @@ handle_assocmod <- function(data, assoc, y_mod, clust_stuff, ids, times,
   parts <- make_assoc_parts(newdata = df, assoc = assoc, terms = terms, 
                             X_form = X_form, Z_forms = Z_forms, X_bar = X_bar,
                             ids = ids, times = times, id_var = id_var, 
-                            time_var = time_var, clust_stuff = clust_stuff, 
+                            time_var = time_var, grp_stuff = grp_stuff, 
                             epsilon = epsilon, auc_qnodes = auc_qnodes)
   
   # If association structure is based on shared random effects or shared 
@@ -1588,7 +1588,7 @@ handle_assocmod <- function(data, assoc, y_mod, clust_stuff, ids, times,
 # @param ... Additional arguments passes to use_function
 # @return A named list
 make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
-                             X_bar, clust_stuff, ids, times, 
+                             X_bar, grp_stuff, ids, times, 
                              id_var, time_var, epsilon = 1E-5, auc_qnodes = 15L) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
@@ -1599,18 +1599,18 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
     times <- set_lag(times, lag)
 
   # Broadcast ids and times if there is lower level clustering
-  if (clust_stuff$has_clust) {
-    clust_var <- clust_stuff$clust_var
+  if (grp_stuff$has_grp) {
+    grp_var <- grp_stuff$grp_var
     if (is(times, "list")) {
-      ids <- rep(ids, clust_stuff$clust_freq)
-      times <- lapply(times, rep, clust_stuff$clust_freq)
-      clust <- clust_stuff$clust_list
+      ids <- rep(ids, grp_stuff$grp_freq)
+      times <- lapply(times, rep, grp_stuff$grp_freq)
+      grps <- grp_stuff$grp_list
     } else {
-      ids <- rep(rep(ids, clust_stuff$clust_freq), clust_stuff$qnodes + 1)
-      times <- rep(times, rep(clust_stuff$clust_freq, clust_stuff$qnodes + 1))
-      clust <- rep(clust_stuff$clust_list, clust_stuff$qnodes + 1)
+      ids <- rep(rep(ids, grp_stuff$grp_freq), grp_stuff$qnodes + 1)
+      times <- rep(times, rep(grp_stuff$grp_freq, grp_stuff$qnodes + 1))
+      grps <- rep(grp_stuff$grp_list, grp_stuff$qnodes + 1)
     }
-  } else clust <- NULL
+  } else grps <- NULL
   
   # Identify row in longitudinal data closest to event time or quadrature point
   #   NB if the quadrature point is earlier than the first observation time, 
@@ -1622,7 +1622,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   #   covariate values can be carried). If no time varying covariates are 
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
-  dataQ <- rolling_merge(data = newdata, ids = ids, times = times, clust = clust)
+  dataQ <- rolling_merge(data = newdata, ids = ids, times = times, grps = grps)
   mod_eta <- make_X_and_Z_fast(terms, data = dataQ, X_form, Z_forms, X_bar)
   
   # If association structure is based on slope, then calculate design 
@@ -1644,7 +1644,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   # calculate design matrices at the subquadrature points
   sel_auc <- grep("etaauc|muauc", names(assoc))
   if (any(unlist(assoc[sel_auc]))) {
-    if (clust_stuff$has_clust)
+    if (grp_stuff$has_grp)
       stop2("'etaauc' and 'muauc' not yet implemented when there is a grouping ",
             "factor clustered within patients.")
     # Return a design matrix that is (qnodes * auc_qnodes * Npat) rows 
@@ -1690,7 +1690,7 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
   K_data <- sapply(X_data, ncol)
   X_bind_data <- do.call(cbind, X_data)
   
-  ret <- nlist(times, mod_eta, mod_eps, mod_auc, X_data, K_data, X_bind_data, clust_stuff)
+  ret <- nlist(times, mod_eta, mod_eps, mod_auc, X_data, K_data, X_bind_data, grp_stuff)
   
   structure(ret, times = times, lag = lag, epsilon = epsilon, auc_qnodes = auc_qnodes,
             auc_qtimes = auc_qtimes, auc_qwts = auc_qwts)
@@ -1701,32 +1701,32 @@ make_assoc_parts <- function(newdata, assoc, terms, X_form, Z_forms,
 # @param data A data.table with a set key corresponding to ids and times
 # @param ids A vector of patient ids to merge against
 # @param times A vector of (new) times to merge against
-# @param clust A vector of cluster ids to merge against when there is clustering
+# @param grps A vector of cluster ids to merge against when there is clustering
 #   within patient ids
-# @return A data.table formed by a merge of ids, (clust), times, and the closest 
+# @return A data.table formed by a merge of ids, (grps), times, and the closest 
 #   preceding (in terms of times) rows in data
-rolling_merge <- function(data, ids, times, clust = NULL) {
+rolling_merge <- function(data, ids, times, grps = NULL) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
-  key_length <- if (is.null(clust)) 2L else 3L
+  key_length <- if (is.null(grps)) 2L else 3L
   if (!length(data.table::key(data)) == key_length)
     stop("Bug found: data.table key is not the same length as supplied keylist.")
   
-  if (is(times, "list") && is.null(clust)) {
+  if (is(times, "list") && is.null(grps)) {
     return(do.call(rbind, lapply(times, FUN = function(x, ids) {
       tmp <- data.table::data.table(ids, x)
       data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
     }, ids = ids)))     
   } else if (is(times, "list")) {
-    return(do.call(rbind, lapply(times, FUN = function(x, ids, clust) {
-      tmp <- data.table::data.table(ids, clust, x)
+    return(do.call(rbind, lapply(times, FUN = function(x, ids, grps) {
+      tmp <- data.table::data.table(ids, grps, x)
       data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
-    }, ids = ids, clust = clust)))
-  } else if (is.null(clust)) {
+    }, ids = ids, grps = grps)))
+  } else if (is.null(grps)) {
     tmp <- data.table::data.table(ids, times)
     return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
   } else {
-    tmp <- data.table::data.table(ids, clust, times)
+    tmp <- data.table::data.table(ids, grps, times)
     return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
   }
 }
@@ -1776,43 +1776,43 @@ make_X_and_Z_fast <- function(terms, data, X_form, Z_forms, X_bar = NULL) {
 #   for combining information in the lower level units clustered within an
 #   individual
 # @return A named list with the following elements:
-#   has_clust: logical specifying whether the submodel has a grouping factor
+#   has_grp: logical specifying whether the submodel has a grouping factor
 #     that is clustered with patients
-#   clust_var: the name of any grouping factor that is clustered with patients
-#   clust_list: a vector of unique group ids for the clust_var grouping 
+#   grp_var: the name of any grouping factor that is clustered with patients
+#   grp_list: a vector of unique group ids for the grp_var grouping 
 #     factor; this is in the same order as the original data.
-#   clust_ids: a vector of patient ids that provides the patient that each
-#     unique level of clust_list is clustered within.
-#   clust_ids_q: the clust_ids vector repeated qnodes+1 times. This is used
+#   grp_ids: a vector of patient ids that provides the patient that each
+#     unique level of grp_list is clustered within.
+#   grp_ids_q: the grp_ids vector repeated qnodes+1 times. This is used
 #     in the stan code, to identify which elements of the longitudinal 
 #     linear predictor need to be collapsed across for each patient.
 #   qnodes: integer specifying the number of GK quadrature nodes.
-get_basic_clust <- function(cnms, flist, id_var) {
+get_basic_grp_info <- function(cnms, flist, id_var) {
   cnms_nms <- names(cnms)
   tally <- xapply(cnms_nms, FUN = function(x) 
     # within each ID, count the number of levels for the grouping factor x
     tapply(flist[[x]], flist[[id_var]], FUN = n_distinct))
   sel <- which(sapply(tally, function(x) !all(x == 1L)) == TRUE)
-  has_clust <- as.logical(length(sel))
-  if (!has_clust) {
-    return(nlist(has_clust))
+  has_grp <- as.logical(length(sel))
+  if (!has_grp) {
+    return(nlist(has_grp))
   } else {
     if (length(sel) > 1L)
       stop("There can only be one grouping factor clustered within 'id_var'.")
-    clust_var <- cnms_nms[sel] 
-    return(nlist(has_clust, clust_var))
+    grp_var <- cnms_nms[sel] 
+    return(nlist(has_grp, grp_var))
   }
 }
 
-get_extra_clust <- function(basic_info, flist, id_var, qnodes, grp_assoc, 
+get_extra_grp_info <- function(basic_info, flist, id_var, qnodes, grp_assoc, 
                             ok_grp_assocs = c("sum", "mean", "min", "max")) {
-  has_clust <- basic_info$has_clust
-  clust_var <- basic_info$clust_var
-  if (!has_clust) { # no grouping factor clustered within patients
+  has_grp <- basic_info$has_grp
+  grp_var <- basic_info$grp_var
+  if (!has_grp) { # no grouping factor clustered within patients
     return(basic_info)
   } else { # submodel has a grouping factor clustered within patients
-    if (is.null(clust_var))
-      stop2("Bug found: could not find 'clust_var' in basic_info.")
+    if (is.null(grp_var))
+      stop2("Bug found: could not find 'grp_var' in basic_info.")
     if (is.null(grp_assoc))
       stop2("'grp_assoc' cannot be NULL when there is a grouping factor ",
             "clustered within patients.")       
@@ -1820,23 +1820,24 @@ get_extra_clust <- function(basic_info, flist, id_var, qnodes, grp_assoc,
       stop2("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))
     
     # cluster and patient ids for each row of the Z matrix
-    factor_clust <- factor(flist[[clust_var]]) 
+    factor_grp <- factor(flist[[grp_var]]) 
     factor_ids <- factor(flist[[id_var]])
     
     # num clusters within each patient
-    clust_freq <- tapply(factor_clust, factor_ids, FUN = n_distinct)
+    grp_freq <- tapply(factor_grp, factor_ids, FUN = n_distinct)
     
     # a vector of unique cluster ids
-    clust_list <- unique(factor_clust)
+    grp_list <- unique(factor_grp)
     
-    # a vector of patient ids indexed alongside clust_list
-    clust_ids <- rep(unique(factor_ids), clust_freq) 
+    # a vector of patient ids indexed alongside grp_list
+    grp_ids <- rep(unique(factor_ids), grp_freq) 
     
-    # broadcast clust_ids for each quadnode
-    clust_ids_q <- rep(clust_ids, qnodes + 1)
+    # broadcast grp_ids for each quadnode
+    grp_ids_q <- rep(grp_ids, qnodes + 1)
     
-    basic_info <- nlist(has_clust, clust_var)
-    extra_info <- nlist(clust_freq, clust_list, clust_ids, clust_ids_q, qnodes)
+    basic_info <- nlist(has_grp, grp_var)
+    extra_info <- nlist(grp_assoc, grp_freq, grp_list, 
+                        grp_ids, grp_ids_q, qnodes)
     return(c(basic_info, extra_info))
   }
 }
@@ -1898,14 +1899,14 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       auc_m <- get_element(parts, m = m, "auc", ...)
       data_m <- get_element(parts, m = m, "xmat_data", ...)
       K_data_m <- get_element(parts, m = m, "K_data", ...)
-      has_clust_m <- parts[[m]]$clust_stuff$has_clust
-      if (has_clust_m)
-        clust_mat_m <- parts[[m]]$clust_stuff$clust_mat
+      has_grp_m <- parts[[m]]$grp_stuff$has_grp
+      if (has_grp_m)
+        grp_ids_q_m <- parts[[m]]$grp_stuff$grp_ids_q
       
       # etavalue and any interactions      
       if (assoc["etavalue",][[m]]) { # etavalue
-        if (has_clust_m) {
-          a_X[[mark]] <- clust_mat_m %*% eta_m
+        if (has_grp_m) {
+          stop2("not implemented")
         } else {
           a_X[[mark]] <- eta_m
         }
@@ -1916,9 +1917,10 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_ev-1)]) + 1
         cend  <- sum(K_data_m[0: idx_ev   ])
         val <- as.vector(eta_m) * data_m[, cbeg:cend, drop = FALSE]
-        if (has_clust_m) {
-          a_X[[mark]] <- do.call(cbind, lapply(
-            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        if (has_grp_m) {
+          stop2("not implemented")
+          #a_X[[mark]] <- do.call(cbind, lapply(
+          #  1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
         } else {
           a_X[[mark]] <- val
         }
@@ -1946,8 +1948,9 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       # etaslope and any interactions
       if (assoc["etaslope",][[m]]) { # etaslope
         dydt_m <- (eps_m - eta_m) / eps
-        if (has_clust_m) {
-          a_X[[mark]] <- clust_mat_m %*% dydt_m
+        if (has_grp_m) {
+          stop2("not implemented")
+          #a_X[[mark]] <- clust_mat_m %*% dydt_m
         } else {
           a_X[[mark]] <- dydt_m
         } 
@@ -1959,9 +1962,10 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         cbeg  <- sum(K_data_m[0:(idx_es-1)]) + 1
         cend  <- sum(K_data_m[0: idx_es   ])
         val <- as.vector(dydt_m) * data_m[, cbeg:cend, drop = FALSE]
-        if (has_clust_m) {
-          a_X[[mark]] <- do.call(cbind, lapply(
-            1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
+        if (has_grp_m) {
+          stop2("not implemented")
+          #a_X[[mark]] <- do.call(cbind, lapply(
+          #  1:ncol(val), function(i) clust_mat_m %*% as.vector(val[,i])))
         } else {
           a_X[[mark]] <- val
         }
