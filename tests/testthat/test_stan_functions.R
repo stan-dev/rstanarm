@@ -21,9 +21,11 @@
 set.seed(12345)
 
 MODELS_HOME <- file.path("src", "stan_files")
-fsep <- .Platform$file.sep
 if (!file.exists(MODELS_HOME)) { # R CMD check
   MODELS_HOME <- file.path("..", "..", "00_pkg_src", "rstanarm", "src", "stan_files")
+  INCLUDE_DIR <- file.path("..", "..", "00_pkg_src", "rstanarm", "inst", "include")
+} else {
+  INCLUDE_DIR <- file.path("inst", "include")
 }
 
 context("setup")
@@ -45,6 +47,10 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
     return(mc[(start + 1L):(end - 1L)])
   } else return(as.character(NULL))
 })
+names(functions) <- basename(names(functions))
+functions$polr.stan <- grep("csr_matrix_times_vector2", 
+                            functions$polr.stan, 
+                            value = TRUE, fixed = TRUE, invert = TRUE)
 functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
                                "bernoulli_likelihoods.stan",
@@ -54,7 +60,10 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
                                "SSfunctions.stan")), 
                       FUN = readLines)), unlist(functions))
 model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
-expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
+stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
+                   allow_undefined = TRUE)
+expose_stan_functions(stanc_ret)
+Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"))
 N <- 99L
 
 # bernoulli
@@ -385,15 +394,15 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                  tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
-    Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
-                                       parts$v, parts$u, b)
+    Zb <- csr_matrix_times_vector2_test(nrow(Z), ncol(Z), parts$w, 
+                                        parts$v - 1L, parts$u - 1L, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
     if (all(sapply(group$cnms, FUN = function(x) {
         length(x) == 1 && x == "(Intercept)"
       })) ) {
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
-                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+                      t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v - 1L))))))
       expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }

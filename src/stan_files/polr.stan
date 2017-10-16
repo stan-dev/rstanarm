@@ -122,6 +122,20 @@ functions {
     else reject("invalid link");
     return ystar;
   }
+  
+  /** 
+  * faster version of csr_matrix_times_vector
+  * declared here and defined in C++
+  *
+  * @param m Integer number of rows
+  * @param n Integer number of columns
+  * @param w Vector (see reference manual)
+  * @param v Integer array (see reference manual)
+  * @param u Integer array (see reference manual)
+  * @param b Vector that is multiplied from the left by the CSR matrix
+  * @return A vector that is the product of the CSR matrix and b
+  */
+  vector csr_matrix_times_vector2(int m, int n, vector w, int[] v, int[] u, vector b);
 }
 data {
   // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x

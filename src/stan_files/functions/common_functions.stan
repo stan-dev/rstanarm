@@ -240,15 +240,30 @@
    *
    * @param N An integer indicating the number of observations
    * @param t An integer indicating the number of grouping variables
+   * @param v An integer array with the indices of group membership
    * @return An two-dimensional integer array of group membership
    */
   int[,] make_V(int N, int t, int[] v) {
     int V[t,N];
     int pos = 1;
     if (t > 0) for (j in 1:N) for (i in 1:t) {
-      V[i,j] = v[pos];
+      V[i,j] = v[pos] + 1;
       pos = pos + 1;
     }
     return V;
   }
 
+  /** 
+  * faster version of csr_matrix_times_vector
+  * declared here and defined in C++
+  *
+  * @param m Integer number of rows
+  * @param n Integer number of columns
+  * @param w Vector (see reference manual)
+  * @param v Integer array (see reference manual)
+  * @param u Integer array (see reference manual)
+  * @param b Vector that is multiplied from the left by the CSR matrix
+  * @return A vector that is the product of the CSR matrix and b
+  */
+  vector csr_matrix_times_vector2(int m, int n, vector w, 
+                                  int[] v, int[] u, vector b);
