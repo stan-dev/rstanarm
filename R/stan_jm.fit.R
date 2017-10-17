@@ -32,7 +32,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                         priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                         priorEvent_assoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL, max_treedepth = 11L, 
+                        adapt_delta = NULL, max_treedepth = 10L, 
                         QR = FALSE, sparse = FALSE) {
   
   #-----------------------------

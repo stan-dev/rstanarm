@@ -1728,8 +1728,8 @@ set_jm_sampling_args <- function(object, cnms, user_dots = list(),
   
   max_p <- max(sapply(cnms, length))
   
-  default_adapt_delta <- if (max_p > 2) 0.99 else 0.95
-  default_max_treedepth <- 11L
+  default_adapt_delta <- if (max_p > 2) 0.85 else 0.80
+  default_max_treedepth <- 10L
   
   if (!is.null(user_adapt_delta))
     args$control$adapt_delta <- user_adapt_delta else 
@@ -1762,8 +1762,8 @@ pars_to_monitor <- function(standata, is_jm = FALSE) {
     if (is_jm && standata$e_has_intercept) "e_alpha",
     if (is_jm && standata$e_K) "e_beta",
     if (is_jm && standata$a_K) "a_beta",
-    if (standata$bK1 > 0) "bMat1",
-    if (standata$bK2 > 0) "bMat2",
+    if (standata$bK1 > 0) "b1",
+    if (standata$bK2 > 0) "b2",
     if (standata$M > 0 && standata$has_aux[1]) "yAux1",
     if (standata$M > 1 && standata$has_aux[2]) "yAux2",
     if (standata$M > 2 && standata$has_aux[3]) "yAux3",

@@ -4,6 +4,8 @@
   real yAlpha3[intercept_type[3] > 0];
   vector[prior_dist_for_cov == 2 && bK1 > 0 ? size(bCov1_idx) : 0] bCov1;
   vector[prior_dist_for_cov == 2 && bK2 > 0 ? size(bCov2_idx) : 0] bCov2; 
+  vector[bN1 * bK1] b1 = to_vector(bMat1'); // ensures same order as stan_glmer (make_b)
+  vector[bN2 * bK2] b2 = to_vector(bMat2');
   
   // Evaluate mean_PPD
   {

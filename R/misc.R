@@ -551,13 +551,13 @@ get_z.lmerMod <- function(object, ...) {
 }
 #' @export
 get_y.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- fetch(object$glmod, "y") %ORifNULL% stop("y not found")
+  ret <- fetch(object$glmod, "y", "y") %ORifNULL% stop("y not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_x.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- fetch(object$glmod, "x") %ORifNULL% stop("X not found")
+  ret <- fetch(object$glmod, "x", "x") %ORifNULL% stop("X not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
@@ -1305,22 +1305,6 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
   bhcoef <- stanmat[, nms$e_extra, drop = FALSE]
   b     <- lapply(1:M, function(m) stanmat[, nms$y_b[[m]], drop = FALSE])
   nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
-}
-
-# Return a data frame for each submodel that only includes 
-# rows contained in the actual glmod/coxmod model frames
-#
-# @param object A stanmvreg object
-# @param m Integer specifying which submodel
-get_model_data <- function(object, m = NULL) {
-  validate_stanmvreg_object(object)
-  M <- get_M(object)
-  datas <- c(object$dataLong, list(object$dataEvent))
-  row_nms <- lapply(model.frame(object), rownames)
-  mfs <- xapply(x = datas, y = row_nms,
-                FUN = function(x, y) x[y, , drop = FALSE])
-  mfs <- list_nms(mfs, M, stub = get_stub(object))
-  if (is.null(m)) return(mfs) else return(mfs[[m]])
 }
 
 # Promote a character variable to a factor

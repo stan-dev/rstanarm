@@ -498,7 +498,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                     priorEvent_assoc = normal(), prior_covariance = lkj(), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
-                    adapt_delta = NULL, max_treedepth = 11L, QR = FALSE, 
+                    adapt_delta = NULL, max_treedepth = 10L, QR = FALSE, 
                     sparse = FALSE) {
   
   #-----------------------------

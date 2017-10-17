@@ -123,8 +123,19 @@ pp_data <-
                    identical(re.form[[2]], 0))
   if (NAcheck || fmla0check) return(list())
   if (is.null(newdata) && is.null(re.form)) {
-    Z <- get_z(object, m = m)
-    return(list(Zt = t(Z)))
+    Z <- get_z(object, m = m) 
+    if (!is.stanmvreg(object)) {
+      # Z_names not needed for stanreg with no newdata
+      return(list(Zt = t(Z)))
+    } else {
+      # must supply Z_names for stanmvreg since b pars
+      # might be for multiple submodels and Zt will only
+      # be for one submodel, so their elements may not 
+      # correspond exactly
+      ReTrms <- object$glmod[[m]]$reTrms
+      Z_names <- make_b_nms(ReTrms, m = m, stub = get_stub(object))
+      return(nlist(Zt = ReTrms$Zt, Z_names))
+    }
   }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object, m = m)
@@ -165,7 +176,7 @@ pp_data <-
     stop("Grouping factors specified in re.form that were not present in original model.")
   new_levels <- lapply(ReTrms$flist, function(x) levels(factor(x)))
   Zt <- ReTrms$Zt
-  Z_names <- make_b_nms(ReTrms, m = m)
+  Z_names <- make_b_nms(ReTrms, m = m, stub = get_stub(object))
   z <- nlist(Zt = ReTrms$Zt, Z_names)
   return(z)
 }

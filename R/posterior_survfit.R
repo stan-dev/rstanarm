@@ -750,7 +750,7 @@ print.survfit.stanmvreg <- function(x, digits = 4, ...) {
 optim_fn <- function(b, object, data, pars) {
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars <- substitute_b_pars(object, data, pars, new_b = b, new_Z_names = nms)
-  ll <- ll_jm(object, data, pars, include_b = TRUE)
+  ll <- .ll_jm(object, data, pars, include_b = TRUE)
   return(-ll) # optimise -ll for full joint model 
 }    
 
@@ -772,8 +772,8 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars_old <- substitute_b_pars(object, data, pars, new_b = b_old, new_Z_names = nms)
   pars_new <- substitute_b_pars(object, data, pars, new_b = b_new, new_Z_names = nms)
-  targdens_old <- ll_jm(object, data, pars_old, include_b = TRUE)
-  targdens_new <- ll_jm(object, data, pars_new, include_b = TRUE)
+  targdens_old <- .ll_jm(object, data, pars_old, include_b = TRUE)
+  targdens_new <- .ll_jm(object, data, pars_new, include_b = TRUE)
   # MH accept/reject step
   accept_ratio <- exp(targdens_new - targdens_old - propdens_new + propdens_old)
   if (accept_ratio >= runif(1)) return(b_new) else return(b_old)
