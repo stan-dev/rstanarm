@@ -544,7 +544,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       
     cat("Obtaining initial values and/or prior scaling using variational bayes\n")
     vbdots <- list(...)
-    dropargs <- c("chains", "cores", "iter", "refresh")
+    dropargs <- c("chains", "cores", "iter", "refresh", "test_grad")
     for (i in dropargs) 
       vbdots[[i]] <- NULL
     vbpars <- pars_to_monitor(standata, is_jm = FALSE)
@@ -882,17 +882,18 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   }
   check_stanfit(stanfit)
 
-  
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)
     stanfit <- evaluate_Sigma(stanfit, cnms)
   
   if (is_jm) { # begin jm block
     
-    e_intercept_nms <- if (e_mod$has_intercept) "Event|(Intercept)" else NULL
+    e_intercept_nms <- "Event|(Intercept)"
     e_beta_nms <- if (e_mod$K) paste0("Event|", colnames(e_mod$Xq)) else NULL  
-    e_aux_nms <- if (basehaz$type == 1L) "Event|weibull-shape" else 
-      paste0("Event|basehaz-coef", seq(basehaz$df))               
+    e_aux_nms <- 
+      if (basehaz$type_name == "weibull") "Event|weibull-shape" else 
+        if (basehaz$type_name == "bs") paste0("Event|b-splines-coef", seq(basehaz$df)) else
+          if (basehaz$type_name == "piecewise") paste0("Event|piecewise-coef", seq(basehaz$df)) 
     e_assoc_nms <- character()  
     for (m in 1:M) {
       if (assoc["etavalue",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue"))

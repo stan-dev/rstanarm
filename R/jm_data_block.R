@@ -1759,7 +1759,7 @@ pars_to_monitor <- function(standata, is_jm = FALSE) {
     if (standata$M > 0 && standata$yK[1]) "yBeta1",
     if (standata$M > 1 && standata$yK[2]) "yBeta2",
     if (standata$M > 2 && standata$yK[3]) "yBeta3",
-    if (is_jm && standata$e_has_intercept) "e_alpha",
+    if (is_jm) "e_alpha",
     if (is_jm && standata$e_K) "e_beta",
     if (is_jm && standata$a_K) "a_beta",
     if (standata$bK1 > 0) "b1",

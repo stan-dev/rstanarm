@@ -961,7 +961,7 @@ collect_nms <- function(x, M, stub = "Long", ...) {
       grep(paste0("^", stub, m, "\\|reciprocal_dispersion"), x, ...)))             
   y <- lapply(1:M, function(m) setdiff(y[[m]], c(y_extra[[m]], ppd[m])))
   e <- grep(mod2rx("^Event"), x, ...)     
-  e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
+  e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|b-splines-coef|^Event\\|piecewise-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
