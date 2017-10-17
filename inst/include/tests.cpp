@@ -15,7 +15,4 @@ csr_matrix_times_vector2_test(const int& m,
                               const std::vector<int>& u,
                               const Eigen::VectorXd& b) {
   return csr_matrix_times_vector2(m,n,w,v,u,b,0);
-  // Eigen::Map<const Eigen::SparseMatrix<double,Eigen::RowMajor> >
-  // sm(m, n, w.size(), &u[0], &v[0], &w[0]);
-  // return sm * b;
 }
