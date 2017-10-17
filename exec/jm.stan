@@ -120,7 +120,9 @@ generated quantities {
     
   // norm_const is a constant shift in log baseline hazard
   if (e_has_intercept == 1) 
-    e_alpha = e_gamma[1] + norm_const - dot_product(e_xbar, e_beta);
+    e_alpha = e_gamma[1] + norm_const - 
+      dot_product(e_xbar, e_beta) - dot_product(a_xbar, a_beta);
   else
-    e_alpha = norm_const - dot_product(e_xbar, e_beta);
+    e_alpha = norm_const - 
+      dot_product(e_xbar, e_beta) - dot_product(a_xbar, a_beta);
 }

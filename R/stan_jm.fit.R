@@ -460,7 +460,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Baseline hazard
     ok_basehaz <- nlist("weibull", "bs", "piecewise")
     basehaz <- handle_basehaz(basehaz, basehaz_ops, ok_basehaz = ok_basehaz, 
-                              eventtime = e_mod$eventtime, status = e_mod_$status)
+                              eventtime = e_mod$eventtime, status = e_mod$status)
     e_mod$has_intercept <- (basehaz$type_name == "weibull")
     
     # Observation weights

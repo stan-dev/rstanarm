@@ -475,7 +475,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
            "as the number of individuals.")
     dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
                    ids = id_list, etimes = t, long_parts = FALSE)
-    surv_t <- ll_event(object, data = dat, pars = pars, survprob = TRUE)
+    surv_t <- .ll_survival(object, data = dat, pars = pars, survprob = TRUE)
     if (is.vector(surv_t) == 1L) 
       surv_t <- t(surv_t)   # transform if only one individual
     surv_t[, (t == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
@@ -493,7 +493,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     cond_dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
                         ids = id_list, etimes = last_time, long_parts = FALSE)
     # matrix of survival probs at last_time 
-    cond_surv <- ll_event(object, data = cond_dat, pars = pars, survprob = TRUE)
+    cond_surv <- .ll_survival(object, data = cond_dat, pars = pars, survprob = TRUE)
     if (is.vector(cond_surv) == 1L)
       cond_surv <- t(cond_surv)        # transform if only one individual
     cond_surv[, (last_time == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
@@ -533,7 +533,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     last_time2 <- ndE[[dots$last_time2]]
     cond_dat2 <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
                          ids = id_list, etimes = last_time2, long_parts = FALSE)
-    cond_surv2 <- ll_event(object, data = cond_dat2, pars = pars, survprob = TRUE)
+    cond_surv2 <- .ll_survival(object, data = cond_dat2, pars = pars, survprob = TRUE)
     if (is.vector(cond_surv2) == 1L)
       cond_surv2 <- t(cond_surv2)        # transform if only one individual
     cond_surv2[, (last_time2 == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies

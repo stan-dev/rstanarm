@@ -769,7 +769,7 @@ append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
 #   re_form: a formula specifying the random effects structure
 #   group_var: the name of the grouping factor
 split_at_bars <- function(x) {
-  terms <- strsplit(deparse(x), "\\s\\|\\s")[[1L]]
+  terms <- strsplit(deparse(x, 500), "\\s\\|\\s")[[1L]]
   if (!length(terms) == 2L)
     stop2("Could not parse the random effects formula.")
   re_form <- formula(paste("~", terms[[1L]]))
