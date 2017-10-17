@@ -99,6 +99,7 @@ stanmvreg <- function(object) {
   )
   if (is_mvmer) {
     out$cnms      <- object$cnms
+    out$flist     <- object$flist
     out$n_markers <- object$M
     out$n_grps    <- object$n_grps
     out$n_yobs    <- list_nms(object$n_yobs, M, stub)
@@ -109,11 +110,11 @@ stanmvreg <- function(object) {
   }
   if (is_surv) {
     out$n_subjects <- object$n_subjects
-    out$n_events   <- sum(object$status > 0)
-    out$eventtime  <- object$eventtime
-    out$status     <- object$status > 0
+    out$n_events   <- sum(object$survmod$status > 0)
+    out$eventtime  <- object$survmod$eventtime
+    out$status     <- object$survmod$status > 0
     out$basehaz    <- object$basehaz
-    out$survmod     <- object$survmod
+    out$survmod    <- object$survmod
     if (!is_jm)
       out$data <- object$data
   }
@@ -121,10 +122,10 @@ stanmvreg <- function(object) {
     out$time_var  <- object$time_var
     out$id_var    <- object$id_var
     out$qnodes    <- object$qnodes
-    out$assoc     <- object$assoc
-    out$assocmod  <- object$assocmod  
     out$epsilon   <- object$epsilon    
-    out$dataLong  <- object$dataLong
+    out$assoc     <- object$assoc
+    out$assocmod  <- list_nms(object$assocmod, M, stub) 
+    out$dataLong  <- list_nms(object$dataLong, M, stub) 
     out$dataEvent <- object$dataEvent
     out$fr <- object$fr
     out$grp_stuff <- object$grp_stuff

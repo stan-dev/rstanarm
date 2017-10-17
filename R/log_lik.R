@@ -120,7 +120,7 @@ log_lik.stanmvreg <- function(object, newdataLong = NULL, newdataEvent = NULL, .
   data <- jm_data(object, newdataLong, newdataEvent) 
   calling_fun <- as.character(sys.call(-1))[1]
   reloo_or_kfold <- calling_fun %in% c("kfold", "reloo")
-  val <- ll_jm(object, data, pars, reloo_or_kfold = reloo_or_kfold, ...)
+  val <- .ll_jm(object, data, pars, reloo_or_kfold = reloo_or_kfold, ...)
   return(val)
 }
 
@@ -443,133 +443,7 @@ ll_args.stanmvreg <- function(object, data, pars, m = 1,
   .weighted(val, data$weights)
 }
 
-# for stanmvreg objects only ------------------------------------------------
-
-# Return log-likelihood for longitudinal submodel m
-#
-# @param object A stanmvreg object, or (when used in stan_jm function) a named list
-#   with elements $basehaz, $family, $assoc
-# @param data Output from jm_data
-# @param pars Output from extract_pars
-# @param m Integer specifying the longitudinal submodel
-# @param user_b Parameters passed to ll_args and used to overide the selection
-#   of b parameters which are normally taken from the stanmat draws
-ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
-  args <- ll_args(object, data, pars, m = m, reloo_or_kfold = reloo_or_kfold)
-  fun  <- ll_fun(object, m = m)
-  ll <- lapply(seq_len(args$N), function(j) as.vector(
-    fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
-  ll <- do.call("cbind", ll)
-  # return S * npat array by summing log-lik for y within each individual
-  res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
-  res <- if (is.vector(res) & (args$S > 1L)) cbind(res) else t(res)
-  return(res) 
-}
-
-# Return survival probability or log-likelihood for event submodel
-#
-# @param object A stanmvreg object, or (when used in stan_jm function) a named list
-#   with elements $basehaz, $family, $assoc
-# @param data Output from jm_data
-# @param pars Output from extract_pars
-# @param one_draw A logical specifying whether the parameters provided in the 
-#   pars argument are vectors for a single realisation of the parameter (e.g.
-#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE)
-# @param survprob A logical specifying whether to return the survival probability 
-#   (TRUE) or the log likelihood for the event submodel (FALSE)
-# @param An S by Npat matrix, or a length Npat vector, depending on the inputs
-#   (where S is the size of the posterior sample and Npat is the number of 
-#   individuals).
-ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
-  basehaz <- object$basehaz
-  family  <- object$family
-  assoc   <- object$assoc          
-  etimes  <- attr(data$assoc_parts, "etimes")
-  estatus <- attr(data$assoc_parts, "estatus")
-  qnodes  <- attr(data$assoc_parts, "qnodes")
-  qtimes  <- attr(data$assoc_parts, "qtimes")
-  qwts    <- attr(data$assoc_parts, "qwts") 
-  times   <- c(etimes, qtimes)
-  # To avoid an error in log(times) replace times equal to zero with a small 
-  # non-zero value. Note that these times correspond to individuals where the,
-  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
-  # be forced to zero for these individuals further down in the code anyhow.  
-  times[times == 0] <- 1E-10 
-  # Linear predictor for the event submodel
-  e_eta <- linear_predictor(pars$ebeta, data$eXq) 
-  if (length(pars$abeta)) {
-    M <- object$n_markers
-    # Temporary stop, until make_assoc_terms can handle it
-    sel_stop <- grep("^shared", rownames(object$assoc))
-    if (any(unlist(object$assoc[sel_stop,])))
-      stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
-           "association structures.", call. = FALSE)
-    pars$b <- lapply(1:M, function(m) {
-      b_m <- pars$b[[m]]
-      Z_names_m <- data$assoc_parts[[m]][["mod_eta"]][["Z_names"]]
-      pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
-    })
-    if (one_draw) {
-      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
-                              family = family, beta = pars$beta, b = pars$b)
-      e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
-    } else {
-      aXq <- matrix(NA, NROW(data$eXq), NCOL(pars$abeta))
-      for (s in 1:NROW(e_eta)) {
-        abeta_s <- pars$abeta[s,]
-        beta_s  <- lapply(pars$beta, function(x) x[s,])
-        b_s <- lapply(pars$b, function(x) x[s,])
-        aXq_s   <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
-                                    family = family, beta = beta_s, b = b_s)
-        e_eta[s,] <- e_eta[s,] + linear_predictor.default(abeta_s, aXq_s)
-      }
-    }    
-  }
-  # Baseline hazard
-  norm_const <- object$coxmod_stuff$norm_const
-  if (basehaz$type_name == "weibull") { # pars$bhcoef == weibull shape
-    log_basehaz <- norm_const + as.vector(log(pars$bhcoef)) + 
-      linear_predictor(pars$bhcoef - 1, log(times))
-  } else if (basehaz$type_name == "bs") { # pars$bhcoef == spline coefs
-    log_basehaz <- norm_const + 
-      linear_predictor(pars$bhcoef, predict(basehaz$bs_basis, times))
-  } else {
-    stop("Not yet implemented for basehaz = ", basehaz$type_name)
-  }  
-  loghaz <- log_basehaz + e_eta # log haz at etimes (if not NULL) and qtimes  
-  # Calculate survival prob or log_lik  
-  if (one_draw) {
-    qhaz <- tail(exp(loghaz), length(qtimes)) # haz at qtimes
-    qwhaz <- qwts * qhaz
-    splitting_vec <- rep(1:qnodes, each = data$Npat)
-    cumhaz <- Reduce('+', split(qwhaz, splitting_vec))
-    cumhaz[etimes == 0] <- 0 # force cumhaz to zero if last_time is zero
-  } else {
-    qhaz <- exp(loghaz[, tail(1:ncol(loghaz), length(qtimes)), drop = FALSE])
-    qwhaz <- t(apply(qhaz, 1L, function(row) qwts * row))
-    cumhaz <- Reduce('+', array2list(qwhaz, nsplits = qnodes))  
-    cumhaz[, etimes == 0] <- 0 # force cumhaz to zero if last_time is zero
-  }
-  ll_survt <- -cumhaz
-  if (survprob) { # return surv prob at time t (upper limit of integral)
-    return(exp(ll_survt)) 
-  } else { # return log_lik at event time
-    if (is.null(etimes) || is.null(estatus))
-      stop("'etimes' and 'estatus' cannot be NULL if 'survprob = FALSE'.")
-    if (one_draw) { # return vector of length npat
-      if (!length(loghaz) == (length(c(etimes, qtimes))))
-        stop("Bug found: length of loghaz vector appears to be incorrect.")
-      return(estatus * head(loghaz, length(etimes)) + ll_survt)
-    } else { # return S * npat matrix
-      if (!ncol(loghaz) == (length(c(etimes, qtimes))))
-        stop("Bug found: number of cols in loghaz matrix appears to be incorrect.")
-      eloghaz <- loghaz[, 1:length(etimes), drop = FALSE]
-      ll_hazt <- apply(eloghaz, 1L, function(row) estatus * row)
-      ll_hazt <- if (length(estatus) == 1L) cbind(ll_hazt) else t(ll_hazt)
-      return(ll_hazt + ll_survt)
-    }
-  }
-} 
+# log-likelihood functions for stanmvreg objects only ----------------------
 
 # Return log likelihood for full joint model
 #
@@ -577,24 +451,36 @@ ll_event <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
 #   with elements $basehaz, $family, $assoc
 # @param data Output from jm_data
 # @param pars Output from extract_pars
+# @param include_long A logical, if TRUE then the log likelihood for the  
+#   longitudinal submodels are included in the log likelihood calculation.
 # @param include_b A logical, if TRUE then the log likelihood for the random 
 #   effects distribution is also included in the log likelihood calculation.
 # @param sum A logical. If TRUE then the log likelihood is summed across all
 #   individuals. If FALSE then the log likelihood is returned for each
 #   individual (either as an S * Npat matrix, or a length Npat vector, depending
 #   on the type of inputs to the pars argument).
-# @param ... Arguments passed to ll_long. Can include 'reloo_or_kfold' which is
+# @param ... Arguments passed to .ll_mvmer. Can include 'reloo_or_kfold' which is
 #   a logical specifying whether the function calling ll_jm was reloo or kfold.
 # @return Either a matrix, a vector or a scalar, depending on the input types
 #   and whether sum is set to TRUE.
-ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, sum = FALSE, ...) {
+.ll_jm <- function(object, data, pars, include_long = TRUE, 
+                   include_b = FALSE, sum = FALSE, ...) {
+  
   M <- get_M(object)
-  # log-lik for longitudinal submodels
-  if (include_long)
-    ll_long <- lapply(1:M, function(m) ll_long(object, data, pars, m = m, ...))
-  # log-lik for event submodel
-  ll_event <- ll_event(object, data, pars)
-  # log-lik for random effects model
+  
+  # Log likelihood for event submodel
+  ll_event <- .ll_survival(object, data, pars)
+  
+  # Log likelihoods for longitudinal submodels
+  if (include_long) {
+    ll_long <- lapply(1:M, function(m) 
+      .ll_mvmer(object, data, pars, m = m, ...))
+  }
+  
+  # Log likelihood for random effects submodel
+  # NB this is only used in the Metropolis algorithm in 'posterior_survfit'
+  #   when drawing random effects for new individuals. But it is not used
+  #   in generating the pointwise log likelihood matrix under log_lik or loo.
   if (include_b) {
     if (length(object$cnms) > 2L)
       stop("Bug found: 'include_b' cannot be TRUE when there is more than ",
@@ -606,11 +492,10 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
       stop("Bug found: 'include_b' can only be TRUE when 'data' is for one ",
            "individual, and stanmat is for a single draw.")
     id_var <- object$id_var
-    nms    <- unlist(lapply(data$assoc_parts, function(x) x$mod_eta$Z_names))
-    b      <- do.call("cbind", pars$b)
-    b      <- as.vector(pp_b_ord(b, nms))
-    cnms <- object$cnms
-    id_var <- object$id_var
+    cnms   <- object$cnms
+    Z_names <- fetch_(data$assoc_parts, "mod_eta", "Z_names")
+    b <- do.call("cbind", pars$b)
+    b <- as.vector(pp_b_ord(b, Z_names))
     Sigma_id <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
     if (length(cnms) > 1L) {
       b2_var <- grep(glob2rx(id_var), names(cnms), 
@@ -628,9 +513,12 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
       Sigma <- Sigma_id
     }
     ll_b <- -0.5 * (c(determinant(Sigma, logarithm = TRUE)$modulus) + 
-             (b %*% chol2inv(chol(Sigma)) %*% b)[1] + length(b) * log(2 * pi))
-  } else ll_b <- NULL
-  # check the dimensions of the various components
+      (b %*% chol2inv(chol(Sigma)) %*% b)[1] + length(b) * log(2 * pi))
+  } else {
+    ll_b <- NULL
+  }
+  
+  # Check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices
     if (include_long) {
       mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
@@ -651,18 +539,20 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
     if (include_b && !identical(length(ll_b), length(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to length of 'll_event'.")
   }  
-  # sum the various components (long + event + random effects)
+  
+  # Sum the various components (long + event + random effects)
   if (include_long) {
     val <- Reduce('+', c(ll_long, list(ll_event)))
   } else {
     val <- ll_event
   }
   if (include_b && is.matrix(val)) {
-    val <- t(apply(val, 1L, function(row) row + ll_b)) 
+    val <- sweep(val, 2L, ll_b, `+`) 
   } else if (include_b && is.vector(val)) {
     val <- val + ll_b
-  } 
-  # return log-lik for joint model
+  }
+  
+  # Return log likelihood for joint model
   if (!sum) 
     return(val)             # S * Npat matrix or length Npat vector
   else if (is.matrix(val)) 
@@ -670,3 +560,202 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
   else 
     return(sum(val))        # scalar 
 }
+
+# Return log-likelihood for longitudinal submodel m
+#
+# @param object A stanmvreg object, or (when used in stan_jm function) a named list
+#   with elements $basehaz, $family, $assoc.
+# @param data Output from jm_data.
+# @param pars Output from extract_pars.
+# @param m Integer specifying the longitudinal submodel.
+# @param sum_individuals A logical, if TRUE then the log likelihoods for
+#   observations on the same individual will be summed. That is the returned
+#   pointwise log likelihood matrix will have have a number of columns equal
+#   to the number of individuals in the 'data', not the number of observations.
+# @return An S*Npat matrix if sum_individuals = TRUE, otherwise an S*N matrix.
+.ll_mvmer <- function(object, data, pars, m = 1, sum_individuals = TRUE, 
+                      reloo_or_kfold = FALSE) {
+  args <- ll_args(object, data, pars, m = m, reloo_or_kfold = reloo_or_kfold)
+  fun  <- ll_fun(object, m = m)
+  ll <- lapply(seq_len(args$N), function(j) as.vector(
+    fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
+  ll <- do.call("cbind", ll)
+  if (!sum_individuals) {
+    # return an S*N matrix
+    return(ll)
+  } else {
+    # return S*Npat matrix by summing log-lik for y within each individual
+    res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
+    res <- if (is.vector(res) & (args$S > 1L)) cbind(res) else t(res)
+    return(res) 
+  }
+}
+
+# Return survival probability or log-likelihood for event submodel
+#
+# @param object A stanmvreg object, or (when used in stan_jm function) a named list
+#   with elements $basehaz, $family, $assoc
+# @param data Output from jm_data
+# @param pars Output from extract_pars
+# @param one_draw A logical specifying whether the parameters provided in the 
+#   pars argument are vectors for a single realisation of the parameter (e.g.
+#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE)
+# @param survprob A logical specifying whether to return the survival probability 
+#   (TRUE) or the log likelihood for the event submodel (FALSE)
+# @param An S by Npat matrix, or a length Npat vector, depending on the inputs
+#   (where S is the size of the posterior sample and Npat is the number of 
+#   individuals).
+.ll_survival <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
+  basehaz <- object$basehaz
+  family  <- object$family
+  assoc   <- object$assoc          
+  etimes  <- attr(data$assoc_parts, "etimes")
+  estatus <- attr(data$assoc_parts, "estatus")
+  qnodes  <- attr(data$assoc_parts, "qnodes")
+  qtimes  <- attr(data$assoc_parts, "qtimes")
+  qwts    <- attr(data$assoc_parts, "qwts") 
+  times   <- c(etimes, qtimes)
+  
+  # To avoid an error in log(times) replace times equal to zero with a small 
+  # non-zero value. Note that these times correspond to individuals where the,
+  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
+  # be forced to zero for these individuals further down in the code anyhow.  
+  times[times == 0] <- 1E-10 
+  
+  # Linear predictor for the survival submodel
+  e_eta <- linear_predictor(pars$ebeta, data$eXq) 
+  
+  # Add on contribution from assoc structure
+  if (length(pars$abeta)) {
+    M <- get_M(object)
+    # Temporary stop, until make_assoc_terms can handle it
+    sel_stop <- grep("^shared", rownames(object$assoc))
+    if (any(unlist(object$assoc[sel_stop,])))
+      stop("'log_lik' cannot yet be used with shared_b or shared_coef ",
+           "association structures.", call. = FALSE)
+    pars$b <- lapply(1:M, function(m) {
+      b_m <- pars$b[[m]]
+      Z_names_m <- data$assoc_parts[[m]][["mod_eta"]][["Z_names"]]
+      pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
+    })
+    if (one_draw) {
+      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                              family = family, beta = pars$beta, b = pars$b)
+      e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
+    } else {
+      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+                              family = family, beta = pars$beta, b = pars$b)
+      for (k in 1:length(aXq)) {
+        e_eta <- e_eta + sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
+      }
+    }    
+  }
+  
+  # Log baseline hazard at etimes (if not NULL) and qtimes
+  log_basehaz <- evaluate_log_basehaz(times = times, 
+                                      basehaz = basehaz, 
+                                      coefs = pars$bhcoef)
+  
+  # Log hazard at etimes (if not NULL) and qtimes
+  log_haz <- log_basehaz + e_eta  
+  
+  # Extract log hazard at qtimes only
+  if (is.vector(log_haz)) {
+    q_log_haz <- tail(log_haz, length(qtimes))
+  } else {
+    sel_cols <- tail(1:ncol(log_haz), length(qtimes))
+    q_log_haz <- log_haz[, sel_cols, drop = FALSE]
+  }
+  
+  # Evaluate log survival
+  log_surv <- evaluate_log_survival(log_haz = q_log_haz,
+                                    qnodes = qnodes, qwts = qwts)
+  
+  # Force surv prob to 1 (ie. log surv prob to 0) if evaluating
+  # at time t = 0; this avoids possible numerical errors
+  log_surv[etimes == 0] <- 0
+  
+  # Possibly return surv prob at time t (upper limit of integral)
+  if (survprob)
+    return(exp(log_surv)) 
+  
+  # Otherwise return log likelihood at time t
+  if (is.null(etimes) || is.null(estatus))
+    stop("'etimes' and 'estatus' cannot be NULL if 'survprob = FALSE'.")
+  times_length <- length(c(etimes, qtimes))
+  if (one_draw) { # return vector of length npat
+    if (!length(log_haz) == times_length)
+      stop2("Bug found: length of log_haz vector is incorrect.")
+    e_log_haz <- log_haz[1:length(etimes)]
+    return(estatus * e_log_haz + log_surv)
+  } else { # return S * npat matrix
+    if (!ncol(log_haz) == times_length)
+      stop2("Bug found: number of cols in log_haz matrix is incorrect.")
+    e_log_haz <- log_haz[, 1:length(etimes), drop = FALSE]
+    return(sweep(e_log_haz, 2L, estatus, `*`) + log_surv)
+  }
+} 
+
+# Evaluate the log baseline hazard at the specified times
+# given the vector or matrix of MCMC draws for the baseline
+# hazard coeffients / parameters
+#
+# @param times A vector of times.
+# @param basehaz A list with info about the baseline hazard.
+# @param coefs A vector or matrix of parameter estimates (MCMC draws).
+# @return A vector or matrix, depending on the input type of coefs.
+evaluate_log_basehaz <- function(times, basehaz, coefs) {
+  type <- basehaz$type_name
+  if (type == "weibull") { 
+    X  <- log(times) # log times
+    B1 <- log(coefs) # log shape
+    B2 <- coefs - 1  # shape - 1
+    log_basehaz <- as.vector(B1) + linear_predictor(B2,X)
+  } else if (type == "bs") { 
+    X <- predict(basehaz$bs_basis, times) # b-spline basis
+    B <- coefs                            # b-spline coefs
+    log_basehaz <- linear_predictor(B,X)
+  } else {
+    stop2("Not yet implemented for basehaz = ", type)
+  }
+  log_basehaz
+}
+
+# Evaluate the log baseline hazard at the specified times
+# given the vector or matrix of MCMC draws for the baseline
+# hazard coeffients / parameters
+#
+# @param log_haz A vector containing the log hazard for each
+#   individual, evaluated at each of the quadrature points. The
+#   vector should be ordered such that the first N elements contain
+#   the log_haz evaluated for each individual at quadrature point 1,
+#   then the next N elements are the log_haz evaluated for each 
+#   individual at quadrature point 2, and so on.
+# @param qnodes Integer specifying the number of quadrature nodes
+#   at which the log hazard was evaluated for each individual.
+# @param qwts A vector of unstandardised GK quadrature weights.
+# @return A vector or matrix of log survival probabilities
+evaluate_log_survival <- function(log_haz, qnodes, qwts) {
+  UseMethod("evaluate_log_survival")
+}
+evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
+  # convert log hazard to hazard
+  haz <- exp(log_haz)
+  # apply GK quadrature weights
+  weighted_haz <- qwts * haz 
+  # sum quadrature points for each individual to get cum_haz
+  splitting_vec <- rep(1:qnodes, each = length(haz) / qnodes)
+  cum_haz <- Reduce('+', split(weighted_haz, splitting_vec))
+  # return: -cum_haz == log survival probability
+  -cum_haz
+}
+evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
+  # convert log hazard to hazard
+  haz <- exp(log_haz)
+  # apply GK quadrature weights
+  weighted_haz <- sweep(haz, 2L, qwts, `*`)
+  # sum quadrature points for each individual to get cum_haz
+  cum_haz <- Reduce('+', array2list(weighted_haz, nsplits = qnodes))
+  # return: -cum_haz == log survival probability
+  -cum_haz
+}  

@@ -81,15 +81,15 @@ ps_check <- function(object, check = "survival",
 
   # Predictions for plotting the estimated survival function
   dat <- posterior_survfit(object, standardise = TRUE, 
-                           control = list(condition = FALSE), 
+                           condition = FALSE, 
                            times = 0, extrapolate = TRUE, 
                            draws = draws, seed = seed)
   
   # Estimate KM curve based on response from the event submodel
   form <- reformulate("1", response = formula(object)$Event[[2]])
-  coxdat <- object$coxmod$y
+  coxdat <- object$survmod$mod$y
   if (is.null(coxdat)) 
-    stop("Bug found: no response y found in the 'coxmod' component of the ", 
+    stop("Bug found: no response y found in the 'survmod' component of the ", 
          "fitted joint model.")
   resp <- attr(coxdat, "type")
   if (resp == "right") {

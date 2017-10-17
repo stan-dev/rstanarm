@@ -73,21 +73,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
 
   if (is_jm && is.null(time_var))
     stop("'time_var' must be specified.")
-  #if (is_jm && is.null(id_var))
-  #  stop("'id_var' must be specified.")
-    
-  # Formula & Data
-  yF <- validate_arg(formulaLong, "formula"); M <- length(yF)
-  yD <- validate_arg(dataLong, "data.frame", validate_length = M)  
-  #yD <- xapply(yF, yD, FUN = get_all_vars)
-  if (is_jm) {
-    #yD <- check_vars_are_included(yD, id_var, time_var)
-    eF <- formulaEvent
-    eD <- as.data.frame(dataEvent)
-    #eD <- check_vars_are_included(eD, id_var)
-    #eD <- get_all_vars(eF, eD, dataEvent[[id_var]])
-    #names(eD) <- c(names(eD), id_var)
-  }
+
+  # Formula
+  formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
+  
+  # Data
+  dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
+  if (is_jm)
+    dataEvent <- as.data.frame(dataEvent)
   
   # Family
   ok_classes <- c("function", "family", "character")
@@ -110,7 +103,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #--------------------------
   
   # Info for separate longitudinal submodels
-  y_mod <- xapply(yF, yD, family, FUN = handle_y_mod)
+  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
   
   # Construct single cnms list for all longitudinal submodels
   y_cnms  <- fetch(y_mod, "z", "group_cnms")
@@ -460,8 +453,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   if (is_jm) { # begin jm block
 
     # Fit separate event submodel
-    e_mod <- handle_e_mod(formula = eF, data = eD, qnodes = qnodes, 
-                          id_var = id_var, y_id_list = id_list)
+    e_mod <- handle_e_mod(formula = formulaEvent, data = dataEvent, 
+                          qnodes = qnodes, id_var = id_var, 
+                          y_id_list = id_list)
     
     # Baseline hazard
     ok_basehaz <- nlist("weibull", "bs", "piecewise")
@@ -564,27 +558,48 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     init_fit@sim$fnames_oi <- init_new_nms
     init_mat <- t(colMeans(as.matrix(init_fit))) # posterior means
     init_nms <- collect_nms(colnames(init_mat), M, stub = "Long")
-    init_beta  <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]], drop = FALSE])
-    init_b     <- lapply(1:M, function(m) init_mat[, init_nms$y_b[[m]], drop = FALSE])
+    init_beta  <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]]])
+    init_b     <- lapply(1:M, function(m) init_mat[, init_nms$y_b[[m]]])
+    
     if (is.character(init) && (init =="prefit")) {
       init_means2 <- rstan::get_posterior_mean(init_fit)
       init_nms2 <- rownames(init_means2)
       inits <- generate_init_function(e_mod, standata)()
+      
+      sel_b1 <- grep(paste0("^z_bMat1\\."), init_nms2)
+      if (length(sel_b1))
+        inits[["z_bMat1"]] <- matrix(init_means2[sel_b1,], nrow = standata$bK1)
+      
+      sel_b2 <- grep(paste0("^z_bMat2\\."), init_nms2)
+      if (length(sel_b2))
+        inits[["z_bMat2"]] <- matrix(init_means2[sel_b2,], nrow = standata$bK2)
+      
+      sel_bC1 <- grep(paste0("^bCholesky1\\."), init_nms2)
+      if (length(sel_bC1) > 1) {
+        inits[["bCholesky1"]] <- matrix(init_means2[sel_bC1,], nrow = standata$bK1)
+      } else if (length(sel_bC1) == 1) {
+        inits[["bCholesky1"]] <- as.array(init_means2[sel_bC1,])
+      }
+      
+      sel_bC2 <- grep(paste0("^bCholesky2\\."), init_nms2)
+      if (length(sel_bC2) > 1) {
+        inits[["bCholesky2"]] <- matrix(init_means2[sel_bC2,], nrow = standata$bK2)
+      } else if (length(sel_bC1) == 1) {
+        inits[["bCholesky2"]] <- as.array(init_means2[sel_bC2,])
+      }      
+      
       sel <- c("yGamma1", "yGamma2", "yGamma3", 
                "z_yBeta1", "z_yBeta2", "z_yBeta3",
                "yAux1_unscaled", "yAux2_unscaled", "yAux3_unscaled", 
-               "bSd1", "bSd2", "bCholesky1", "bCholesky2",
-               "z_bMat1", "z_bMat2",
-               "z_b", "z_T", "rho", "zeta", "tau", 
+               "bSd1", "bSd2", "z_b", "z_T", "rho", "zeta", "tau", 
                "yGlobal1", "yGlobal2", "yGlobal3", 
                "yLocal1", "yLocal2", "yLocal3", 
                "yMix1", "yMix2", "yMix3", 
                "yOol1", "yOol2", "yOol3")
       for (i in sel) {
         sel_i <- grep(paste0("^", i, "\\."), init_nms2)
-        if (length(sel_i)) {
+        if (length(sel_i))
           inits[[i]] <- as.array(init_means2[sel_i,])
-        }
       }
       init <- function() inits
     }
@@ -653,7 +668,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     # Autoscaling of priors
     if (a_K) {
-      collect_pars(as.matrix(init_fit))
       e_prior_assoc_stuff <- autoscale_prior(e_prior_assoc_stuff, family = family, 
                                              assoc = assoc, parts = a_mod,
                                              beta = init_beta, b = init_b)
@@ -661,7 +675,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     #----------- Data for export to Stan -----------# 
  
-    
     # Dimensions   
     standata$assoc <- as.integer(a_K > 0L) # any association structure, 1 = yes
     standata$a_K   <- as.integer(a_K)      # num association parameters
@@ -883,18 +896,18 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     e_assoc_nms <- character()  
     for (m in 1:M) {
       if (assoc["etavalue",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue"))
-      if (assoc["etavalue_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:", colnames(a_mod[[m]][["xq_data"]][["etavalue_data"]])))
+      if (assoc["etavalue_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:", colnames(a_mod[[m]][["X_data"]][["etavalue_data"]])))
       if (assoc["etavalue_etavalue",][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_etavalue"]], "|etavalue"))
       if (assoc["etavalue_muvalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_muvalue"]],  "|muvalue"))
       if (assoc["etaslope",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope"))
-      if (assoc["etaslope_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod[[m]][["xq_data"]][["etaslope_data"]])))    
+      if (assoc["etaslope_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod[[m]][["X_data"]][["etaslope_data"]])))    
       if (assoc["etaauc",           ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaauc"))
       if (assoc["muvalue",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue"))
-      if (assoc["muvalue_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod[[m]][["xq_data"]][["muvalue_data"]])))    
+      if (assoc["muvalue_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod[[m]][["X_data"]][["muvalue_data"]])))    
       if (assoc["muvalue_etavalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_etavalue"]], "|etavalue"))
       if (assoc["muvalue_muvalue",  ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_muvalue"]],  "|muvalue"))
       if (assoc["muslope",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope"))
-      if (assoc["muslope_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod[[m]][["xq_data"]][["muslope_data"]])))    
+      if (assoc["muslope_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod[[m]][["X_data"]][["muslope_data"]])))    
       if (assoc["muauc",            ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muauc"))
     }
     if (sum(standata$size_which_b)) {
@@ -927,7 +940,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flist)
   if (is_jm)
-    stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, grp_stuff))
+    stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, 
+                                        id_var, grp_stuff))
   
   do.call("structure", stanfit_str)
 }

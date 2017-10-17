@@ -94,27 +94,22 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     times <- c(etimes, qtimes) # times used to design event submodel matrices
     edat <- rolling_merge(edat, ids = rep(id_list, qnodes + 1), times = times)
     eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")
-    if (!object$coxmod_stuff$has_intercept) {
-      sel <- grep("^\\(Intercept\\)$", colnames(eXq))
-      if (length(sel))
-        eXq <- eXq[, -sel, drop = FALSE]
-    }
     assoc_parts <- lapply(1:M, function(m) {
       ymf <- ndL[[m]]
-      clust_stuff <- object$clust_stuff[[m]]
-      if (clust_stuff$has_clust) {
-        clust_stuff <- get_extra_clust( # update clust_info with new data
-          clust_stuff, flist = ymf, id_var = id_var, 
+      grp_stuff <- object$grp_stuff[[m]]
+      if (grp_stuff$has_grp) {
+        grp_stuff <- get_extra_grp_info( # update grp_info with new data
+          grp_stuff, flist = ymf, id_var = id_var, 
           qnodes = qnodes, grp_assoc = object$grp_assoc)
-        clust_var <- clust_stuff$clust_var
-        ymf[[clust_var]] <- factor(ymf[[clust_var]])
-        ymf <- data.table::data.table(ymf, key = c(id_var, clust_var, time_var))
+        grp_var <- grp_stuff$grp_var
+        ymf[[grp_var]] <- factor(ymf[[grp_var]])
+        ymf <- data.table::data.table(ymf, key = c(id_var, grp_var, time_var))
       } else {
         ymf <- data.table::data.table(ymf, key = c(id_var, time_var))
       }
       make_assoc_parts(
-        ymf, assoc = object$assoc, id_var = id_var, time_var = time_var, 
-        id_list = id_list, times = times, clust_stuff = clust_stuff,
+        ymf, assoc = object$assoc[,m], id_var = id_var, time_var = time_var, 
+        ids = id_list, times = times, grp_stuff = grp_stuff,
         use_function = pp_data, object = object, m = m)
     })
     assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)

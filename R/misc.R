@@ -551,19 +551,20 @@ get_z.lmerMod <- function(object, ...) {
 }
 #' @export
 get_y.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "y") %ORifNULL% stop("y not found")
+  ret <- fetch(object$glmod, "y") %ORifNULL% stop("y not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_x.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "X") %ORifNULL% stop("X not found")
+  ret <- fetch(object$glmod, "x") %ORifNULL% stop("X not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_z.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "Z") %ORifNULL% stop("Z not found")
+  Zt <- fetch(object$glmod, "reTrms", "Zt") %ORifNULL% stop("Z not found")
+  ret <- lapply(Zt, t)
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
@@ -1306,23 +1307,19 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
   nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
 }
 
-# Return a data frame for each submodel that:
-# (1) only includes variables used in the model formula
-# (2) only includes rows contained in the actual glmod/coxmod model frames
-# (3) ensures the ID variable is included in every model frame
+# Return a data frame for each submodel that only includes 
+# rows contained in the actual glmod/coxmod model frames
 #
 # @param object A stanmvreg object
 # @param m Integer specifying which submodel
 get_model_data <- function(object, m = NULL) {
   validate_stanmvreg_object(object)
-  forms <- formula(object)
-  RHS <- paste(deparse(forms$Event[[3L]]), "+", object$id_var)
-  forms$Event <- reformulate(RHS, response = forms$Event[[2L]])
+  M <- get_M(object)
   datas <- c(object$dataLong, list(object$dataEvent))
   row_nms <- lapply(model.frame(object), rownames)
-  mfs <- mapply(function(w, x, y) {
-    get_all_vars(w, x)[y, , drop = FALSE]
-  }, w = forms, x = datas, y = row_nms, SIMPLIFY = FALSE)
+  mfs <- xapply(x = datas, y = row_nms,
+                FUN = function(x, y) x[y, , drop = FALSE])
+  mfs <- list_nms(mfs, M, stub = get_stub(object))
   if (is.null(m)) return(mfs) else return(mfs[[m]])
 }
 

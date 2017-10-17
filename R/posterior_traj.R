@@ -203,7 +203,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   id_var   <- object$id_var
   time_var <- object$time_var
   validate_positive_scalar(m, not_greater_than = M)
-  clust_stuff <- object$clust_stuff[[m]]
+  grp_stuff <- object$grp_stuff[[m]]
   if (missing(ids)) 
     ids <- NULL
   
@@ -251,13 +251,13 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     time_seq <- reshape(time_seq, direction = "long", varying = colnames(time_seq), 
                         v.names = time_var, timevar = "obs", ids = id_list, idvar = id_var)
     newX[[time_var]] <- as.numeric(newX[[time_var]]) # ensures no rounding during data.table merge
-    if (clust_stuff$has_clust) {
-      clust_var <- clust_stuff$clust_var
-      time_seq <- merge(time_seq, unique(newX[, c(id_var, clust_var)]), by = id_var)
-      time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[clust_var]]), ]
-      newX[[clust_var]] <- factor(newX[[clust_var]])
-      newX <- data.table::data.table(newX, key = c(id_var, clust_var, time_var))
-      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[clust_var]])
+    if (grp_stuff$has_grp) {
+      grp_var <- grp_stuff$grp_var
+      time_seq <- merge(time_seq, unique(newX[, c(id_var, grp_var)]), by = id_var)
+      time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[grp_var]]), ]
+      newX[[grp_var]] <- factor(newX[[grp_var]])
+      newX <- data.table::data.table(newX, key = c(id_var, grp_var, time_var))
+      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[grp_var]])
     } else {
       newX <- data.table::data.table(newX, key = c(id_var, time_var))
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
@@ -278,12 +278,12 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                     yfit = mutilde_bounds$med,
                     ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
                     pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
-  if (clust_stuff$has_clust) {
-    out$CLUSTVAR = newX[[clust_var]] # add clust_var and reorder cols
-    out <- out[, c("IDVAR", "CLUSTVAR", "TIMEVAR", 
+  if (grp_stuff$has_grp) {
+    out$GRPVAR = newX[[grp_var]] # add grp_var and reorder cols
+    out <- out[, c("IDVAR", "GRPVAR", "TIMEVAR", 
                    "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")]
   }
-  colnames(out) <- c(id_var, if (clust_stuff$has_clust) clust_var, time_var, 
+  colnames(out) <- c(id_var, if (grp_stuff$has_grp) grp_var, time_var, 
                      "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
   class(out) <- c("predict.stanmvreg", "data.frame")
   Terms <- terms(formula(object, m = m))
@@ -291,7 +291,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   y_var <- vars[[attr(Terms, "response")]]
   structure(out, observed_data = data, last_time = last_time,
             y_var = y_var, id_var = id_var, time_var = time_var,
-            clust_var = if (clust_stuff$has_clust) clust_var else NULL, 
+            grp_var = if (grp_stuff$has_grp) grp_var else NULL, 
             interpolate = interpolate, extrapolate = extrapolate, 
             control = control, call = match.call())  
 }
@@ -338,7 +338,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   is for a single individual.
 #' @param plot_observed A logical. If \code{TRUE} then the observed
 #'   longitudinal measurements are overlaid on the plot.
-#' @param clust_overlay Only relevant if the model had lower level units 
+#' @param grp_overlay Only relevant if the model had lower level units 
 #'   clustered within an individual. If \code{TRUE}, then the fitted trajectories 
 #'   for the lower level units will be overlaid in the same plot region (that 
 #'   is, all lower level units for a single individual will be shown within a 
@@ -392,21 +392,21 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 
-                                ci_geom_args = NULL, clust_overlay = FALSE, ...) {
+                                ci_geom_args = NULL, grp_overlay = FALSE, ...) {
   
   limits <- match.arg(limits)
   if (!(limits == "none")) ci <- (limits == "ci")
   y_var <- attr(x, "y_var")
   id_var <- attr(x, "id_var")
   time_var <- attr(x, "time_var")
-  clust_var <- attr(x, "clust_var")
+  grp_var <- attr(x, "grp_var")
   obs_dat <- attr(x, "observed_data")
   if (is.null(ylab)) ylab <- paste0("Long. response (", y_var, ")")
   if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
   if (!id_var %in% colnames(x))
     stop("Bug found: could not find 'id_var' column in the data frame.")
-  if (!is.null(clust_var) && (!clust_var %in% colnames(x)))
-    stop("Bug found: could not find 'clust_var' column in the data frame.")
+  if (!is.null(grp_var) && (!grp_var %in% colnames(x)))
+    stop("Bug found: could not find 'grp_var' column in the data frame.")
   if (!is.null(ids)) {
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
@@ -420,13 +420,13 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   # 'id_list' provides unique IDs sorted in the same order as plotting data
   id_list <- unique(plot_dat[[id_var]])
-  if (!is.null(clust_var))
-    clust_list <- unique(plot_dat[[clust_var]])
+  if (!is.null(grp_var))
+    grp_list <- unique(plot_dat[[grp_var]])
     
   plot_dat$id <- plot_dat[[id_var]]
   plot_dat$time <- plot_dat[[time_var]]
-  if (!is.null(clust_var))
-    plot_dat$clust <- plot_dat[[clust_var]]
+  if (!is.null(grp_var))
+    plot_dat$grp <- plot_dat[[grp_var]]
   
   geom_defaults <- list(color = "black", method = "loess", se = FALSE)
   geom_args <- set_geom_args(geom_defaults, ...)
@@ -437,17 +437,17 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   obs_defaults <- list()
   obs_args <- set_geom_args(obs_defaults)
 
-  if (is.null(clust_var)) { # no lower level clusters
+  if (is.null(grp_var)) { # no lower level clusters
     group_var <- NULL
     facet_var <- "id"
-  } else if (clust_overlay) { # overlay lower level clusters
-    group_var <- "clust"
+  } else if (grp_overlay) { # overlay lower level clusters
+    group_var <- "grp"
     facet_var <- "id"
   } else { # separate facets for lower level clusters
     group_var <- NULL
-    facet_var <- "clust"
+    facet_var <- "grp"
   }  
-  n_facets <- if (facet_var == "id") length(id_list) else length(clust_list)
+  n_facets <- if (facet_var == "id") length(id_list) else length(grp_list)
   
   if (n_facets > 60L) {
     stop("Too many facets (ie. individuals) to plot. Perhaps limit the ",
@@ -514,8 +514,8 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
     }
     obs_dat$id <- obs_dat[[id_var]]
     obs_dat$time <- obs_dat[[time_var]]
-    if (!is.null(clust_var))
-      obs_dat$clust <- obs_dat[[clust_var]]
+    if (!is.null(grp_var))
+      obs_dat$grp <- obs_dat[[grp_var]]
     if (is.null(obs_dat[["y"]]))
       stop("Cannot find observed outcome data to add to plot.")
     obs_mapp <- list(
@@ -528,9 +528,9 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
       facet_list <- unique(plot_dat[, id_var])
       last_time <- attr(x, "last_time")[as.character(facet_list)] # potentially reorder last_time to match plot_dat
     } else {
-      facet_list <- unique(plot_dat[, c(id_var, clust_var)])
+      facet_list <- unique(plot_dat[, c(id_var, grp_var)])
       last_time <- attr(x, "last_time")[as.character(facet_list[[id_var]])] # potentially reorder last_time to match plot_dat
-      facet_list <- facet_list[[clust_var]]
+      facet_list <- facet_list[[grp_var]]
     }
     vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
     colnames(vline_dat) <- c(facet_var, "last_time")

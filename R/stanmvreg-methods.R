@@ -433,7 +433,7 @@ family.stanmvreg <- function(object, m = NULL, ...) {
 model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanmvreg(formula)) {
     M <- get_M(formula)
-    fr <- lapply(formula$glmod, model.frame)
+    fr <- fetch(formula$glmod, "model_frame")
     if (fixed.only) {
       fr <- lapply(seq(M), function(i) {
         ff <- formula(formula, fixed.only = TRUE, m = i)
@@ -441,7 +441,7 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
         fr[[i]][vars]
       })
     }
-    fr$Event <- formula$coxmod_stuff$model_frame
+    fr$Event <- formula$survmod$model_frame
     if (is.null(m)) 
       return(list_nms(fr, M, stub = get_stub(formula))) else return(fr[[m]])
   } 
@@ -457,14 +457,14 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
 }
 .cnms.stanmvreg <- function(object, m = NULL, remove_stub = FALSE, ...) {
   .stanmvreg_check(object)
-  cnms <- if (is.null(m)) object$cnms else object$glmod[[m]]@cnms
+  cnms <- if (is.null(m)) object$cnms else object$glmod[[m]]$reTrms$cnms
   if (remove_stub) lapply(cnms, rm_stub) else cnms
 }
 .flist.stanmvreg <- function(object, m = NULL, ...) {
   .stanmvreg_check(object)
   if (is.null(m)) {
     stop("'m = NULL' cannot currently be handled by .flist.stanmvreg method.")
-  } else as.list(object$glmod[[m]]@flist)
+  } else as.list(fetch(object$glmod, "reTrms", "flist")[[m]])
 }
 .p <- function(object) {
   .stanmvreg_check(object)

@@ -579,12 +579,13 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   cnms  <- attr(stanfit, "cnms")
   flist <- attr(stanfit, "flist")
   assoc <- attr(stanfit, "assoc")
+  id_var <- attr(stanfit, "id_var")
   basehaz    <- attr(stanfit, "basehaz")
   grp_stuff  <- attr(stanfit, "grp_stuff")
   prior_info <- attr(stanfit, "prior_info")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
-                             "flist", "assoc", "basehaz", "grp_stuff", 
-                             "prior_info")
+                             "flist", "assoc", "id_var", "basehaz", 
+                             "grp_stuff", "prior_info")
   
   terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
   n_yobs <- fetch_(y_mod, "x", "N")

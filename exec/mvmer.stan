@@ -2,7 +2,7 @@
 #include "Brilleman_copyright.stan"
 #include "license.stan" // GPL3+
 
-// Multivariate GLM with group-specific terms
+// Multivariate GLM with correlated group-specific terms
 functions {
   #include "common_functions.stan"
   #include "bernoulli_likelihoods.stan"
@@ -14,11 +14,11 @@ functions {
 data {
   // declares
   #include "dimensions_mvmer.stan"
-  
-	// declares
-	#include "data_mvmer.stan" 
 
-	// declares y_{,global_}prior_{mean,scale,df}{,_for_intercept,_for_aux}
+  // declares
+  #include "data_mvmer.stan"
+  
+  // declares y_{,global_}prior_{mean,scale,df}{,_for_intercept,_for_aux}
   #include "hyperparameters_mvmer.stan"
 }
 transformed data {
