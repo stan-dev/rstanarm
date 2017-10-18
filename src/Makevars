@@ -1,6 +1,6 @@
 STANHEADERS_SRC = `"$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" --vanilla -e "cat(system.file('include', 'src', package = 'StanHeaders'))"`
 PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_RESULT_OF_USE_TR1 -DBOOST_NO_DECLTYPE -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG -DBOOST_MATH_OVERFLOW_ERROR_POLICY=ignore_error
-SOURCES = `ls stan_files/*.stan`
+SOURCES = stan_files/bernoulli.stan stan_files/binomial.stan stan_files/continuous.stan stan_files/count.stan stan_files/lm.stan stan_files/polr.stan
 OBJECTS = $(SOURCES:.stan=.o) init.o
 
 all: $(SHLIB)
