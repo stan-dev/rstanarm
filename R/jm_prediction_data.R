@@ -82,13 +82,16 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
   res <- nlist(M, Npat = length(id_list), ndL, ndE)
   
-  if (long_parts && event_parts) 
+  if (long_parts && event_parts)
     lapply(ndL, function(x) {
-      if (!time_var %in% colnames(x)) STOP_no_var(time_var)
+      if (!time_var %in% colnames(x)) 
+        STOP_no_var(time_var)
+      if (any(x[[time_var]] < 0))
+        stop2("Values for the time variable (", time_var, ") should not be negative.")
       mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
       if (any(mt > etimes))
-        stop("There appears to be observation times in the longitudinal data that ",
-             "are later than the event time specified in the 'etimes' argument.")      
+        stop2("There appears to be observation times in the longitudinal data that ",
+              "are later than the event time specified in the 'etimes' argument.")      
     }) 
   
   # response and design matrices for longitudinal submodels

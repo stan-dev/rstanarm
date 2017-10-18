@@ -908,6 +908,20 @@ use_predvars <- function(mod) {
   fm
 }
 
+validate_observation_times <-function(data, eventtimes, id_var, time_var) {
+  if (any(data[[time_var]] < 0))
+    stop2("Values for the time variable (", time_var, ") should not be negative.")
+  mt <- tapply(data[[time_var]], factor(data[[id_var]]), max)  # max observation time
+  nms <- names(eventtimes)                                     # patient IDs
+  if (is.null(nms))
+    stop2("Bug found: cannot find names in the vector of event times.")
+  sel <- which(sapply(nms, FUN = function(i) mt[i] > et[i]))
+  if (length(sel))
+    stop2("The following individuals have observation times in the longitudinal data ",
+          "are later than their event time: ", paste(nms[sel], collapse = ", "))      
+}
+
+
 #--------------- Functions related to event submodel
 
 # Construct a list with information on the event submodel
