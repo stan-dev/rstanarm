@@ -491,15 +491,15 @@
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, grp_assoc, epsilon = 1E-5,
-                    basehaz = c("weibull", "bs", "piecewise"), basehaz_ops, 
-                    qnodes = 15, init = "prefit", weights, ...,	
+                    basehaz = c("bs", "weibull", "piecewise"), basehaz_ops, 
+                    qnodes = 15, init = "prefit", weights,	
                     priorLong = normal(), priorLong_intercept = normal(), 
                     priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                     priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                     priorEvent_assoc = normal(), prior_covariance = lkj(), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = 10L, QR = FALSE, 
-                    sparse = FALSE) {
+                    sparse = FALSE, ...) {
   
   #-----------------------------
   # Pre-processing of arguments
@@ -561,7 +561,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          time_var = time_var, id_var = id_var, family = family,
                          assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
                          epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
-                         qnodes = qnodes, init = init, weights = weights, ..., 
+                         qnodes = qnodes, init = init, weights = weights, 
                          priorLong = priorLong, 
                          priorLong_intercept = priorLong_intercept, 
                          priorLong_aux = priorLong_aux, 
@@ -571,7 +571,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          priorEvent_assoc = priorEvent_assoc, 
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, 
-                         max_treedepth = max_treedepth, QR = QR, sparse = sparse)
+                         max_treedepth = max_treedepth, QR = QR, sparse = sparse, ...)
 
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")

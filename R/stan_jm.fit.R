@@ -25,15 +25,15 @@
 stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL, 
                         dataEvent = NULL, time_var, id_var,  family = gaussian, 
                         assoc = "etavalue", lag_assoc = 0, grp_assoc, 
-                        epsilon = 1E-5, basehaz = c("weibull", "bs", "piecewise"), 
-                        basehaz_ops, qnodes = 15, init = "prefit", weights, ...,					          
+                        epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"), 
+                        basehaz_ops, qnodes = 15, init = "prefit", weights,					          
                         priorLong = normal(), priorLong_intercept = normal(), 
                         priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                         priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
                         priorEvent_assoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
                         algorithm = c("sampling", "meanfield", "fullrank"), 
                         adapt_delta = NULL, max_treedepth = 10L, 
-                        QR = FALSE, sparse = FALSE) {
+                        QR = FALSE, sparse = FALSE, ...) {
   
   #-----------------------------
   # Pre-processing of arguments
@@ -461,11 +461,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     ok_basehaz <- nlist("weibull", "bs", "piecewise")
     basehaz <- handle_basehaz(basehaz, basehaz_ops, ok_basehaz = ok_basehaz, 
                               eventtime = e_mod$eventtime, status = e_mod$status)
-    e_mod$has_intercept <- (basehaz$type_name == "weibull")
     
     # Observation weights
     e_weights <- handle_weights(e_mod, weights, id_var)
   
+    # Check longitudinal observation times are not later than the event time
+    lapply(dataLong, FUN = validate_observation_times,  
+           eventtime = e_mod$eventtime, id_var = id_var, time_var = time_var)
+    
     #----------- Prior distributions -----------# 
     
     # Valid prior distributions
@@ -507,7 +510,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$Npat_times_qnodes <- as.integer(e_mod$Npat * qnodes)
     standata$e_times <- as.array(e_mod$cpts)
     standata$nrow_e_Xq <- length(standata$e_times)
-    standata$e_has_intercept <- as.integer(e_mod$has_intercept)
+    standata$e_has_intercept <- as.integer(basehaz$type_name == "weibull")
     standata$e_Xq    <- e_mod$Xq
     standata$e_xbar  <- as.array(e_mod$Xbar)
     standata$e_weights <- as.array(e_weights)
@@ -839,8 +842,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     user_prior_covariance = prior_covariance,
     y_has_intercept = fetch_(y_mod, "x", "has_intercept"),
     y_has_predictors = fetch_(y_mod, "x", "K") > 0,
-    if (is_jm) e_has_intercept = e_mod$has_intercept,
-    if (is_jm) e_has_predictors = e_mod$K > 0,
+    if (is_jm) e_has_intercept = standata$e_has_intercept,
+    if (is_jm) e_has_predictors = standata$e_K > 0,
     if (is_jm) has_assoc = a_K > 0,
     adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
     adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
