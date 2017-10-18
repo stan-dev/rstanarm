@@ -17,7 +17,7 @@
 #'   posterior sample size.
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' 
