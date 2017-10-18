@@ -6,6 +6,8 @@ CXX_STD = CXX11
 SOURCES = `ls stan_files/*.stan`
 OBJECTS = $(SOURCES:.stan=.o) init.o
 
+all: $(SHLIB)
+
 clean:
 				rm stan_files/*.o
 				rm stan_files/*.so
