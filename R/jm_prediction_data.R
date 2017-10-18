@@ -86,6 +86,8 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
     lapply(ndL, function(x) {
       if (!time_var %in% colnames(x)) 
         STOP_no_var(time_var)
+      if (!id_var %in% colnames(x)) 
+        STOP_no_var(id_var)
       if (any(x[[time_var]] < 0))
         stop2("Values for the time variable (", time_var, ") should not be negative.")
       mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
@@ -123,12 +125,9 @@ jm_data <- function(object, newdataLong = NULL, newdataEvent = NULL,
         grp_stuff <- get_extra_grp_info( # update grp_info with new data
           grp_stuff, flist = ymf, id_var = id_var, 
           qnodes = qnodes, grp_assoc = object$grp_assoc)
-        grp_var <- grp_stuff$grp_var
-        ymf[[grp_var]] <- factor(ymf[[grp_var]])
-        ymf <- data.table::data.table(ymf, key = c(id_var, grp_var, time_var))
-      } else {
-        ymf <- data.table::data.table(ymf, key = c(id_var, time_var))
       }
+      ymf <- prepare_data_table(ymf, id_var = id_var, time_var = time_var,
+                                grp_var = grp_stuff$grp_var)
       make_assoc_parts(
         ymf, assoc = object$assoc[,m], id_var = id_var, time_var = time_var, 
         ids = id_list, times = times, grp_stuff = grp_stuff,

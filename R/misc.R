@@ -1264,6 +1264,79 @@ subset_ids <- function(object, data, ids) {
   if (is_list) return(data) else return(data[[1]])
 }
 
+# Return a data.table with a key set using the appropriate id/time/grp variables
+# 
+# @param data A data frame.
+# @param id_var The name of the ID variable.
+# @param grp_var The name of the variable identifying groups clustered within
+#   individuals.
+# @param time_var The name of the time variable.
+# @return A data.table (which will be used in a rolling merge against the
+#   event times and/or quadrature times).
+prepare_data_table <- function(data, id_var, time_var, grp_var = NULL) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  if (!is.data.frame(data))
+    stop("'data' should be a data frame.")
+  
+  # check required vars are in the data
+  if (!id_var %in% colnames(data))
+    STOP_no_var(id_var)
+  if (!time_var %in% colnames(data))
+    STOP_no_var(time_var)
+  if (!is.null(grp_var) && (!grp_var %in% colnames(data)))
+    STOP_no_var(grp_var)
+  
+  # define and set the key for the data.table
+  key_vars <- if (!is.null(grp_var)) 
+    c(id_var, grp_var, time_var) else c(id_var, time_var)
+  dt <- data.table::data.table(data, key = key_vars)
+  
+  dt[[time_var]] <- as.numeric(dt[[time_var]]) # ensures no rounding on merge
+  dt[[id_var]]   <- factor(dt[[id_var]])       # ensures matching of ids
+  if (!is.null(grp_var))
+    dt[[grp_var]]   <- factor(dt[[grp_var]])   # ensures matching of grps
+  dt
+}
+
+# Carry out a rolling merge
+#
+# @param data A data.table with a set key corresponding to ids, times (and
+#   possibly also grps).
+# @param ids A vector of patient ids to merge against.
+# @param times A vector of times to (rolling) merge against.
+# @param grps An optional vector of groups clustered within patients to
+#   merge against. Only relevant when there is clustering within patient ids.
+# @return A data.table formed by a merge of ids, (grps), times, and the closest 
+#   preceding (in terms of times) rows in data.
+rolling_merge <- function(data, ids, times, grps = NULL) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
+  # check data.table is keyed
+  key_length <- length(data.table::key(data))
+  val_length <- if (is.null(grps)) 2L else 3L
+  if (key_length == 0L)
+    stop2("Bug found: data.table should have a key.")
+  if (!key_length == val_length)
+    stop2("Bug found: data.table key is not the same length as supplied keylist.")
+  
+  # ensure data types are same as returned by the prepare_data_table function
+  ids   <- factor(ids)       # ensures matching of ids
+  times <- as.numeric(times) # ensures no rounding on merge
+  
+  # carry out the rolling merge against the specified times
+  if (is.null(grps)) {
+    tmp <- data.table::data.table(ids, times)
+    val <- data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]       
+  } else {
+    grps <- factor(grps)
+    tmp <- data.table::data.table(ids, grps, times)
+    val <- data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]       
+  }
+  val
+}
+
 # Return an array or list with the time sequence used for posterior predictions
 #
 # @param increments An integer with the number of increments (time points) at

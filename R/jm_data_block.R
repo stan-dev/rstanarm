@@ -18,6 +18,9 @@
 
 .datatable.aware <- TRUE # necessary for some reason when data.table is in Suggests
 
+#' @export
+Surv <- survival::Surv # re-export Surv function
+
 #--------------- Miscellaneous and helper functions
 
 # Check input argument is a valid type, and return as a list
@@ -908,14 +911,19 @@ use_predvars <- function(mod) {
   fm
 }
 
+
 validate_observation_times <-function(data, eventtimes, id_var, time_var) {
+  if (!time_var %in% colnames(data)) 
+    STOP_no_var(time_var)
+  if (!id_var %in% colnames(data)) 
+    STOP_no_var(id_var)
   if (any(data[[time_var]] < 0))
     stop2("Values for the time variable (", time_var, ") should not be negative.")
   mt <- tapply(data[[time_var]], factor(data[[id_var]]), max)  # max observation time
   nms <- names(eventtimes)                                     # patient IDs
   if (is.null(nms))
     stop2("Bug found: cannot find names in the vector of event times.")
-  sel <- which(sapply(nms, FUN = function(i) mt[i] > et[i]))
+  sel <- which(sapply(nms, FUN = function(i) mt[i] > eventtimes[i]))
   if (length(sel))
     stop2("The following individuals have observation times in the longitudinal data ",
           "are later than their event time: ", paste(nms[sel], collapse = ", "))      
@@ -1003,15 +1011,13 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   # Evaluate design matrix at event and quadrature times
   if (ncol(mod$x)) {
     # Convert model frame from Cox model into a data.table
-    mf2 <- data.table::data.table(mf2, key = c(id_var, t0_var))
-    mf2[[t0_var]] <- as.numeric(mf2[[t0_var]])
+    dt <- prepare_data_table(mf2, id_var = id_var, time_var = t0_var)
     # Obtain rows of the model frame that are as close as possible to 
     # the event times (failures only) and quadrature times                      
-    mf2_q <- mf2[data.table::data.table(cids, cpts), 
-                 roll = TRUE, rollends = c(TRUE, TRUE)]
+    mf2 <- rolling_merge(dt, ids = cids, times = cpts)
     # Construct design matrix evaluated at event and quadrature times
     fm_RHS <- reformulate(attr(terms(mod), "term.labels"))
-    Xq <- model.matrix(fm_RHS, data = mf2_q)
+    Xq <- model.matrix(fm_RHS, data = mf2)
     Xq <- Xq[, -1L, drop = FALSE] # drop intercept
     # Centre the design matrix
     Xbar <- colMeans(Xq)
@@ -1266,6 +1272,13 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   # Check user input to assoc argument
   trimmed_x <- trim_assoc(user_x, ok_assoc_data, ok_assoc_interactions)
   if (is.null(user_x) || all(trimmed_x %in% ok_inputs)) {
+    
+    temporarily_disallowed <- c("muslope", "shared_b", "shared_coef")
+    if (any(trimmed_x %in% temporarily_disallowed))
+      stop2("The following association structures have been temporarily disallowed ",
+            "and will be reinstated in a future release: ", 
+            paste(temporarily_disallowed, collapse = ", "))
+    
     assoc <- sapply(ok_inputs, `%in%`, trimmed_x, simplify = FALSE)
     if (is.null(user_x)) {
       assoc$null <- TRUE
@@ -1338,6 +1351,28 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   assoc$which_lag <- lag
   
   assoc
+}
+
+# Check whether an association structure was specified that is not allowed
+# when there is an additional grouping factor clustered within patients
+#
+# @param has_grp Logical vector specifying where each of the 1:M submodels
+#   has a grp factor clustered within patients or not.
+# @param assoc The array with information about the association structure
+#   for each submodel, returned by validate_assoc.
+# @param ok_assocs_with_grp A character vector with the rownames in assoc
+#   that are allowed association structures when there is a grp factor 
+#   clustered within patients.
+validate_assoc_with_grp <- function(has_grp, assoc, ok_assocs_with_grp) {
+  all_rownames <- grep("which|null", rownames(assoc), 
+                       invert = TRUE, value = TRUE)
+  disallowed_rows <- setdiff(all_rownames, ok_assocs_with_grp)
+  sel <- which(has_grp)
+  check <- unlist(assoc[disallowed_rows, sel])
+  if (any(check))
+    stop2("Only the following association structures are allowed when ",
+          "there is a grouping factor clustered within individuals: ",
+          paste(ok_assocs_with_grp, collapse = ", "))
 }
 
 # Validate the user input to the lag_assoc argument of stan_jm
@@ -1523,6 +1558,7 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 #   the association terms
 handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,  
                             id_var, time_var, epsilon, auc_qnodes) {
+  
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
   
@@ -1530,18 +1566,13 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   formula <- use_predvars(y_mod)
 
   # Declare data as a data.table for merging with quadrature points
-  if (grp_stuff$has_grp) {
-    key_vars <- c(id_var, grp_stuff$grp_var, time_var)
-  } else {
-    key_vars <- c(id_var, time_var)
-  }
-  df <- data.table::data.table(data, key = key_vars)
-  df[[time_var]] <- as.numeric(df[[time_var]]) # ensures no rounding on merge
-  
+  dt <- prepare_data_table(data, id_var = id_var, time_var = time_var, 
+                           grp_var = grp_stuff$grp_var) # NB grp_var may be NULL
+
   # Design matrices for calculating association structure based on 
   # (possibly lagged) eta, slope, auc and any interactions with data
   parts <- make_assoc_parts(use_function = make_assoc_parts_for_stan,
-                            newdata = df, assoc = assoc, id_var = id_var, 
+                            newdata = dt, assoc = assoc, id_var = id_var, 
                             time_var = time_var, grp_stuff = grp_stuff, 
                             ids = ids, times = times, epsilon = epsilon, 
                             auc_qnodes = auc_qnodes, y_mod = y_mod)
@@ -1594,7 +1625,6 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
 #   grp_ids_q: the grp_ids vector repeated qnodes+1 times. This is used
 #     in the stan code, to identify which elements of the longitudinal 
 #     linear predictor need to be collapsed across for each patient.
-#   qnodes: integer specifying the number of GK quadrature nodes.
 get_basic_grp_info <- function(cnms, flist, id_var) {
   cnms_nms <- names(cnms)
   tally <- xapply(cnms_nms, FUN = function(x) 
@@ -1612,7 +1642,7 @@ get_basic_grp_info <- function(cnms, flist, id_var) {
   }
 }
 
-get_extra_grp_info <- function(basic_info, flist, id_var, qnodes, grp_assoc,
+get_extra_grp_info <- function(basic_info, flist, id_var, grp_assoc,
                                ok_grp_assocs = c("sum", "mean", "min", "max")) {
   has_grp <- basic_info$has_grp
   grp_var <- basic_info$grp_var
@@ -1634,18 +1664,11 @@ get_extra_grp_info <- function(basic_info, flist, id_var, qnodes, grp_assoc,
     # num clusters within each patient
     grp_freq <- tapply(factor_grp, factor_ids, FUN = n_distinct)
     
-    # a vector of unique cluster ids
-    grp_list <- unique(factor_grp)
-    
-    # a vector of patient ids indexed alongside grp_list
-    grp_ids <- rep(unique(factor_ids), grp_freq) 
-    
-    # broadcast grp_ids for each quadnode
-    grp_ids_q <- rep(grp_ids, qnodes + 1)
-    
+    # unique cluster ids for each patient id
+    grp_list <- tapply(factor_grp, factor_ids, FUN = unique)
+
     basic_info <- nlist(has_grp, grp_var)
-    extra_info <- nlist(grp_assoc, grp_freq, grp_list, 
-                        grp_ids, grp_ids_q, qnodes)
+    extra_info <- nlist(grp_assoc, grp_freq, grp_list)
     return(c(basic_info, extra_info))
   }
 }

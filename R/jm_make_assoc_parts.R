@@ -49,6 +49,8 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
+  eps_uses_derivative_of_x <- TRUE # experimental
+  
   # Apply lag
   lag <- assoc[["which_lag"]]
   if (!lag == 0)
@@ -56,13 +58,13 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   
   # Broadcast ids and times if there is lower level clustering
   if (grp_stuff$has_grp) {
-    len  <- grp_stuff$qnodes + 1 # num GK quadnodes + 1
-    freq <- grp_stuff$grp_freq   # num grps within each patient
-    grps <- grp_stuff$grp_list   # unique grp ids
-    ids   <- rep(rep(ids, freq), len)   # rep patient id sequence alongside grp ids
-    times <- rep(times, rep(freq, len)) # rep time sequence alongside grp ids
-    grps  <- rep(grps, len)             # rep grp ids for each quadnode
-  } else grps <- NULL
+    grps <- grp_stuff$grp_list[ids] # obtain the grps corresponding to each element of ids
+    grps <- as.vector(unlist(grps))
+    freq_seq <- grp_stuff$grp_freq[ids] # freq by which to expand each ids and times element
+    ids   <- rep(ids,   freq_seq)       # rep each patient id the required num of times
+    times <- rep(times, freq_seq)       # rep each prediction time the required num of times
+    grp_idx <- get_idx_array(freq_seq)  # indices for collapsing across clusters within patients
+  } else grps <- grp_idx <- NULL
   
   # Identify row in longitudinal data closest to event time or quadrature point
   #   NB if the quadrature point is earlier than the first observation time, 
@@ -81,17 +83,31 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   # matrices under a time shift of epsilon
   sel_slope <- grep("etaslope", names(assoc))
   if (any(unlist(assoc[sel_slope]))) {
-    dataQ_pos <- dataQ_neg <- dataQ
-    dataQ_neg[[time_var]] <- dataQ_neg[[time_var]] - epsilon
-    dataQ_pos[[time_var]] <- dataQ_pos[[time_var]] + epsilon
-    mod_neg <- use_function(newdata = dataQ_neg, ...)
-    mod_pos <- use_function(newdata = dataQ_pos, ...)
-    mod_eps <- mod_pos
-    mod_eps$x     <- (mod_pos$x     - mod_neg$x    ) / epsilon # derivative of X
-    mod_eps$xtemp <- (mod_pos$xtemp - mod_neg$xtemp) / epsilon
-    mod_eps$z <- xapply(mod_pos$z, mod_neg$z,                  # derivative of z
-                        FUN = function(x, y) (x - y) / epsilon)
-  } else mod_eps <- NULL 
+    if (eps_uses_derivative_of_x) {
+      # slope is evaluated by passing Stan the derivatives of the X and Z
+      # design matrices directly, each evaluated using central differences 
+      # with a half-width equal to epsilon
+      dataQ_pos <- dataQ_neg <- dataQ
+      dataQ_neg[[time_var]] <- dataQ_neg[[time_var]] - epsilon
+      dataQ_pos[[time_var]] <- dataQ_pos[[time_var]] + epsilon
+      mod_neg <- use_function(newdata = dataQ_neg, ...)
+      mod_pos <- use_function(newdata = dataQ_pos, ...)
+      mod_eps <- mod_pos
+      mod_eps$x     <- (mod_pos$x     - mod_neg$x    ) / (2 * epsilon) # derivative of X
+      mod_eps$xtemp <- (mod_pos$xtemp - mod_neg$xtemp) / (2 * epsilon)
+      mod_eps$z <- xapply(mod_pos$z, mod_neg$z,                  # derivative of z
+                          FUN = function(x, y) (x - y) / (2 * epsilon))
+      if (!is.null(mod_eps$Zt))
+        mod_eps$Zt <- (mod_pos$Zt - mod_neg$Zt) / (2 * epsilon)
+    } else {
+      # slope is evaluated by passing Stan the X and Z design matrices under
+      # a time shift of epsilon and then evaluating the derivative of the
+      # linear predictor in Stan using a one-sided difference
+      dataQ_eps <- dataQ
+      dataQ_eps[[time_var]] <- dataQ_eps[[time_var]] + epsilon
+      mod_eps <- use_function(newdata = dataQ_eps, ...)
+    }
+  } else mod_eps <- NULL
   
   # If association structure is based on area under the marker trajectory, then 
   # calculate design matrices at the subquadrature points
@@ -141,44 +157,10 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   
   ret <- nlist(times, mod_eta, mod_eps, mod_auc, K_data, X_data, X_bind_data, grp_stuff)
   
-  structure(ret, times = times, lag = lag, epsilon = epsilon, auc_qnodes = auc_qnodes,
-            auc_qpts = auc_qpts, auc_qwts = auc_qwts)
+  structure(ret, times = times, lag = lag, epsilon = epsilon, grp_idx = grp_idx,
+            auc_qnodes = auc_qnodes, auc_qpts = auc_qpts, auc_qwts = auc_qwts, 
+            eps_uses_derivative_of_x = eps_uses_derivative_of_x)
 }                              
-
-# Carry out a rolling merge
-#
-# @param data A data.table with a set key corresponding to ids and times
-# @param ids A vector of patient ids to merge against
-# @param times A vector of (new) times to merge against
-# @param grps A vector of cluster ids to merge against when there is clustering
-#   within patient ids
-# @return A data.table formed by a merge of ids, (grps), times, and the closest 
-#   preceding (in terms of times) rows in data
-rolling_merge <- function(data, ids, times, grps = NULL) {
-  if (!requireNamespace("data.table"))
-    stop("the 'data.table' package must be installed to use this function")
-  key_length <- if (is.null(grps)) 2L else 3L
-  if (!length(data.table::key(data)) == key_length)
-    stop("Bug found: data.table key is not the same length as supplied keylist.")
-  
-  if (is(times, "list") && is.null(grps)) {
-    return(do.call(rbind, lapply(times, FUN = function(x, ids) {
-      tmp <- data.table::data.table(ids, x)
-      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
-    }, ids = ids)))     
-  } else if (is(times, "list")) {
-    return(do.call(rbind, lapply(times, FUN = function(x, ids, grps) {
-      tmp <- data.table::data.table(ids, grps, x)
-      data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]
-    }, ids = ids, grps = grps)))
-  } else if (is.null(grps)) {
-    tmp <- data.table::data.table(ids, times)
-    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
-  } else {
-    tmp <- data.table::data.table(ids, grps, times)
-    return(data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)])       
-  }
-}
 
 # Return design matrices for the longitudinal submodel. This is 
 # designed to generate the design matrices evaluated at the GK

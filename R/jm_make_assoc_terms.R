@@ -44,6 +44,9 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
     qnodes  <- attr(parts[[m]], "auc_qnodes")
     qwts    <- attr(parts[[m]], "auc_qwts")
     
+    eps_uses_derivative_of_x <- 
+      attr(parts[[m]], "eps_uses_derivative_of_x") # experimental
+    
     has_assoc <- !assoc["null",][[m]]
     
     if (has_assoc) {
@@ -58,10 +61,13 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       
       has_grp   <- grp_m$has_grp # TRUE/FALSE
       if (has_grp) {
+        # method for collapsing information across clusters within patients 
         grp_assoc <- grp_m$grp_assoc
-        grp_freq  <- rep(grp_m$grp_freq, qnodes + 1)
-        grp_idx   <- get_idx_array(grp_freq)
+        # indexing for collapsing across grps (based on the ids and times
+        # used to generate the design matrices in make_assoc_parts)
+        grp_idx <- attr(parts[[m]], "grp_idx") 
       }
+      
       
       #---  etavalue and any interactions  ---#
       
@@ -118,28 +124,34 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       }
       
       #---  etaslope and any interactions  ---#
-      
+    
+      if (assoc_m[["etaslope"]] || assoc_m[["etaslope_data"]]) {
+        if (eps_uses_derivative_of_x) {
+          deta_m <- eps_m
+        } else {
+          deta_m <- (eps_m - eta_m) / epsilon
+        }
+      }
+        
       # etaslope
       if (assoc_m[["etaslope"]]) {
-        dydt_m <- (eps_m - eta_m) / eps
         if (has_grp) {
-          a_X[[mark]] <- collapse_within_groups(dydt_m, grp_idx, grp_assoc)
+          a_X[[mark]] <- collapse_within_groups(deta_m, grp_idx, grp_assoc)
         } else {
-          a_X[[mark]] <- dydt_m
+          a_X[[mark]] <- deta_m
         } 
         mark <- mark + 1             
       }
       
       # etaslope * data interactions
       if (assoc_m[["etaslope_data"]]) { 
-        dydt_m <- (eps_m - eta_m) / eps
         X_temp <- X_data_m[["etaslope_data"]]
         K_temp <- K_data_m[["etaslope_data"]]
         for (i in 1:K_temp) {
-          if (is.matrix(dydt_m)) {
-            val <- sweep(dydt_m, 2L, X_temp[, i], `*`)
+          if (is.matrix(deta_m)) {
+            val <- sweep(deta_m, 2L, X_temp[, i], `*`)
           } else {
-            val <- as.vector(dydt_m) * X_temp[, i]
+            val <- as.vector(deta_m) * X_temp[, i]
           }
           if (has_grp) {
             a_X[[mark]] <- collapse_within_groups(val, grp_idx, grp_assoc)
@@ -217,23 +229,29 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       
       #---  muslope and any interactions  ---#
       
+      if (assoc_m[["muslope"]] || assoc_m[["muslope_data"]]) {
+        if (eps_uses_derivative_of_x) {
+          stop2("Cannot currently use muslope interaction structure.")
+        } else {
+          dmu_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / epsilon
+        }
+      }
+      
       # muslope
-      if (assoc_m[["muslope"]][[m]]) {
-        val <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
-        a_X[[mark]] <- val
+      if (assoc_m[["muslope"]]) {
+        a_X[[mark]] <- dmu_m
         mark <- mark + 1                   
       }
       
       # muslope * data interactions
       if (assoc_m[["muslope_data"]]) {
-        dydt_m <- (invlink_m(eps_m) - invlink_m(eta_m)) / eps
         X_temp <- X_data_m[["muslope_data"]]
         K_temp <- K_data_m[["muslope_data"]]
         for (i in 1:K_temp) {
-          if (is.matrix(dydt_m)) {
-            val <- sweep(dydt_m, 2L, X_temp[, i], `*`)
+          if (is.matrix(dmu_m)) {
+            val <- sweep(dmu_m, 2L, X_temp[, i], `*`)
           } else {
-            val <- as.vector(dydt_m) * X_temp[, i]
+            val <- as.vector(dmu_m) * X_temp[, i]
           }
           if (has_grp) {
             a_X[[mark]] <- collapse_within_groups(val, grp_idx, grp_assoc)
@@ -247,7 +265,7 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       #---  muauc  ---#
       
       if (assoc_m[["muauc"]]) {
-        val   <- c()
+        val <- c()
         for (j in 1:length(eta_m)) {
           wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
           auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])

@@ -283,9 +283,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     Z2_id <- fetch(y_mod, "z", "group_list", b2_varname)
     Z2_id <- lapply(Z2_id, groups)
     Z2_id <- lapply(Z2_id, convert_null, "arrayinteger")
-    standata$y1_Z2_id <- if (M > 0) Z2[[1L]] else as.array(integer(0))
-    standata$y2_Z2_id <- if (M > 1) Z2[[2L]] else as.array(integer(0))
-    standata$y3_Z2_id <- if (M > 2) Z2[[3L]] else as.array(integer(0))
+    standata$y1_Z2_id <- if (M > 0) Z2_id[[1L]] else as.array(integer(0))
+    standata$y2_Z2_id <- if (M > 1) Z2_id[[2L]] else as.array(integer(0))
+    standata$y3_Z2_id <- if (M > 2) Z2_id[[3L]] else as.array(integer(0))
     
   } else {
     # no second grouping factor
@@ -545,7 +545,66 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Association structure
     #-----------------------
       
-    cat("Obtaining initial values and/or prior scaling using variational bayes\n")
+    # Handle association structure
+    # !! If order is changed here, then must also change standata$has_assoc !!
+    ok_assoc <- c("null", "etavalue","etaslope", "etaauc", "muvalue", 
+                  "muslope", "muauc", "shared_b", "shared_coef")
+    ok_assoc_data <- ok_assoc[c(2:3,5:6)]
+    ok_assoc_interactions <- ok_assoc[c(2,5)]
+    
+    lag_assoc <- validate_lag_assoc(lag_assoc, M)
+    
+    assoc <- mapply(assoc, y_mod = y_mod, lag = lag_assoc, FUN = validate_assoc, 
+                    MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
+                                    ok_assoc_interactions = ok_assoc_interactions, 
+                                    id_var = id_var, M = M))
+    assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
+    colnames(assoc) <- paste0("Long", 1:M)
+    
+    # For each submodel, identify any grouping factors that are
+    # clustered within id_var (i.e. lower level clustering)
+    ok_grp_assocs <- c("sum", "mean", "min", "max")
+    grp_basic <- xapply(FUN = get_basic_grp_info, 
+                        cnms  = y_cnms, flist = y_flist,
+                        args = list(id_var = id_var))
+    grp_stuff <- xapply(FUN = get_extra_grp_info,
+                        basic_info = grp_basic, flist = y_flist,
+                        args = list(id_var = id_var, grp_assoc = grp_assoc, 
+                                    ok_grp_assocs = ok_grp_assocs))
+    has_grp <- fetch_(grp_stuff, "has_grp")
+    if (any(has_grp)) {
+      grp_structure <- fetch(grp_stuff, "grp_list")[has_grp]
+      if (n_distinct(grp_structure) > 1L)
+        stop2("Any longitudinal submodels with a grouping factor clustered within ",
+              "patients must use the same clustering structure; that is, the same ",
+              "clustering variable and the same number of units clustered within a ",
+              "given patient.")
+      ok_assocs_with_grp <- c("etavalue", "etavalue_data", "etaslope", "etaslope_data", 
+                              "muvalue", "muvalue_data")
+      validate_assoc_with_grp(has_grp = has_grp, assoc = assoc, 
+                              ok_assocs_with_grp = ok_assocs_with_grp)
+    } else if (!is.null(grp_assoc)) {
+      stop2("'grp_assoc' can only be specified when there is a grouping factor ",
+            "clustered within patients.")  
+    }    
+    
+    # Return design matrices for evaluating longitudinal submodel quantities
+    # at the quadrature points
+    auc_qnodes <- 15L
+    assoc_as_list <- apply(assoc, 2L, c)
+    a_mod <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
+                    grp_stuff = grp_stuff, FUN = handle_assocmod, 
+                    args = list(ids = e_mod$cids, times = e_mod$cpts, 
+                                id_var = id_var, time_var = time_var, 
+                                epsilon = epsilon, auc_qnodes = auc_qnodes))
+    
+    # Number of association parameters
+    a_K <- get_num_assoc_pars(assoc, a_mod)
+    
+    # Use a stan_mvmer variational bayes model fit for:
+    # - obtaining initial values for joint model parameters
+    # - obtaining appropriate scaling for priors on association parameters
+    cat("Obtaining initial values and/or prior scaling using variational bayes.\n\n")
     vbdots <- list(...)
     dropargs <- c("chains", "cores", "iter", "refresh", "test_grad")
     for (i in dropargs) 
@@ -607,61 +666,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       init <- function() inits
     }
     
-    # Handle association structure
-    # !! If order is changed here, then must also change standata$has_assoc !!
-    ok_assoc <- c("null", "etavalue","etaslope", "etaauc", "muvalue", 
-                  "muslope", "muauc", "shared_b", "shared_coef")
-    ok_assoc_data <- ok_assoc[c(2:3,5:6)]
-    ok_assoc_interactions <- ok_assoc[c(2,5)]
-    
-    lag_assoc <- validate_lag_assoc(lag_assoc, M)
-    
-    assoc <- mapply(assoc, y_mod = y_mod, lag = lag_assoc, 
-                    FUN = validate_assoc, 
-                    MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
-                                    ok_assoc_interactions = ok_assoc_interactions, 
-                                    id_var = id_var, M = M))
-    assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
-    colnames(assoc) <- paste0("Long", 1:M)
-    
-    # For each submodel, identify any grouping factors that are
-    # clustered within id_var (i.e. lower level clustering)
-    ok_grp_assocs <- c("sum", "mean", "min", "max")
-    grp_basic <- xapply(FUN = get_basic_grp_info, 
-                          cnms  = y_cnms, flist = y_flist,
-                          args = list(id_var = id_var))
-    grp_stuff <- xapply(FUN = get_extra_grp_info, 
-                          basic_info = grp_basic, flist = y_flist,
-                          args = list(id_var = id_var, qnodes = qnodes, 
-                                      grp_assoc = grp_assoc, 
-                                      ok_grp_assocs = ok_grp_assocs))
-    has_grp <- fetch_(grp_stuff, "has_grp")
-    if (any(has_grp)) {
-      grp_structure <- fetch(grp_stuff, "grp_ids")[has_grp]
-      if (n_distinct(grp_structure) > 1L)
-        stop("Any longitudinal submodels with a grouping factor clustered within ",
-             "patients must use the same clustering structure; that is, the same ",
-             "clustering variable and the same number of units clustered within a ",
-             "given patient.")    
-    } else if (!is.null(grp_assoc)) {
-      stop("'grp_assoc' can only be specified when there is a grouping factor ",
-           "clustered within patients.")  
-    }    
-    
-    # Return design matrices for evaluating longitudinal submodel quantities
-    # at the quadrature points
-    auc_qnodes <- 15L
-    assoc_as_list <- apply(assoc, 2L, c)
-    a_mod <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
-                    grp_stuff = grp_stuff, FUN = handle_assocmod, 
-                    args = list(ids = e_mod$cids, times = e_mod$cpts, 
-                                id_var = id_var, time_var = time_var, 
-                                epsilon = epsilon, 
-                                auc_qnodes = auc_qnodes))
-    
-    # Number of association parameters
-    a_K <- get_num_assoc_pars(assoc, a_mod)
-  
     #----------- Prior distributions -----------# 
 
     # Priors for association parameters
@@ -711,11 +715,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     # Data for association structure when there is
     # clustering below the patient-level
-    
     standata$has_grp <- as.array(as.integer(has_grp))
     if (any(has_grp)) { # has lower level clustering
-      sel <- which(has_grp)
-      standata$grp_idx <- get_idx_array(grp_stuff[[sel]]$grp_freq)
+      sel <- which(has_grp)[[1L]]
+      standata$grp_idx <- attr(a_mod[[sel]], "grp_idx")
       standata$grp_assoc <- switch(grp_assoc, 
                                    sum = 1L,
                                    mean = 2L,
@@ -863,10 +866,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   # call stan() to draw from posterior distribution
   stanfit <- if (is_jm) stanmodels$jm else stanmodels$mvmer
   pars <- pars_to_monitor(standata, is_jm = is_jm)
-  if (M == 1L) cat("Univariate", if (is_jm) "joint", "model specified\n") else 
-  if (M  > 1L) cat("Multivariate", if (is_jm) "joint", "model specified\n")
+  if (M == 1L) 
+    cat("Fitting a univariate", if (is_jm) "joint" else "glmer", "model.\n\n")
+  if (M  > 1L) 
+    cat("Fitting a multivariate", if (is_jm) "joint" else "glmer", "model.\n\n")
   if (algorithm == "sampling") {
-    cat("\nPlease note the warmup may be much slower than later iterations!\n")             
+    cat("Please note the warmup may be much slower than later iterations!\n")             
     sampling_args <- set_jm_sampling_args(
       object = stanfit,
       cnms = cnms,

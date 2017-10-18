@@ -272,7 +272,6 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   time_var <- object$time_var
   basehaz  <- object$basehaz
   assoc    <- object$assoc
-  clust_stuff <- object$clust_stuff
   family   <- family(object)
   if (!is.null(seed)) 
     set.seed(seed)
@@ -818,28 +817,6 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
   pars$stanmat <- pars$stanmat[, -b_names(colnames(pars$stanmat)), drop = FALSE]
   pars$stanmat <- do.call("cbind", c(list(pars$stanmat), pars$b))
   return(pars)
-}
-
-# Return a data.table with the key set using the appropriate time variable
-# 
-# @param data A data frame
-# @param id_var The name of the ID variable 
-# @param time_var The name of the time variable
-# @return A data.table (which will be used in a rolling merge against the
-#   event times and/or quadrature times)
-prepare_data_table <- function(data, id_var, time_var) {
-  if (!requireNamespace("data.table"))
-    stop("the 'data.table' package must be installed to use this function")
-  if (!is.data.frame(data))
-    stop("'data' should be a data frame.")
-  if (!id_var %in% colnames(data))
-    STOP_no_var(id_var)
-  if (!time_var %in% colnames(data))
-    STOP_no_var(time_var)
-  # ensure no rounding in data.table merge 
-  data[[time_var]] <- as.numeric(data[[time_var]]) 
-  data <- data.table::data.table(data, key = c(id_var, time_var))
-  return(data)
 }
 
 # default plotting attributes
