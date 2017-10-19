@@ -46,7 +46,8 @@
 #' @param strata A factor indicating the groups in the data where the number of 
 #'   successes (possibly one) is fixed by the research design. It may be useful 
 #'   to use \code{\link{interaction}} or \code{\link[survival]{strata}} to
-#'   create this factor.
+#'   create this factor. However, the \code{strata} argument must not rely on
+#'   any object besides the \code{data} \code{\link{data.frame}}.
 #' @param prior_covariance Cannot be \code{NULL} when lme4-style group-specific
 #'   terms are included in the \code{formula}. See \code{\link{decov}} for
 #'   more information about the default arguments. Ignored when there are no
@@ -70,11 +71,18 @@
 #' @seealso The vignette for Bernoulli and binomial models.
 #' 
 #' @examples
-#' stan_clogit(case ~ spontaneous + induced, 
-#'             strata = stratum,
-#'             data = infert[order(infert$stratum), ], 
-#'             QR = TRUE,
-#'             iter = 500) # for speed only
+#' post <- stan_clogit(case ~ spontaneous + induced + (1 | education), 
+#'                     strata = stratum,
+#'                     data = infert[order(infert$stratum), ],
+#'                     subset = parity <= 2,
+#'                     QR = TRUE,
+#'                     chains = 2, iter = 500) # for speed only
+#'
+#' nd <- infert[infert$parity > 2, c("case", "spontaneous", "induced", 
+#'                                   "education", "stratum")]
+#' # next line would fail without case and stratum variables                                 
+#' pr <- posterior_linpred(post, newdata = nd, transform = TRUE)
+#' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) # not a random variable
 #'             
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
@@ -92,6 +100,10 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
              table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   names(mf)[length(mf)] <- "weights"
+  err <- try(eval(mf$weights, data, enclos = NULL), silent = TRUE)
+  if (inherits(err, "try-error")) {
+    stop("the 'stratum' argument must be evaluatable solely within 'data'")
+  }
   has_bars <- length(findbars(formula)) > 0
   if (has_bars) {
     if (is.null(prior_covariance))
@@ -123,7 +135,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   mf <- check_constant_vars(mf)
   mt <- attr(mf, "terms")
   if (is.empty.model(mt))
-    stop("No intercept or predictors specified.", call. = FALSE)
+    stop("Predictors specified.", call. = FALSE)
   xint <- match("(Intercept)", colnames(X), nomatch = 0L)
   if (xint > 0L) {
     X <- X[, -xint, drop = FALSE]
