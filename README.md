@@ -14,22 +14,32 @@ estimation. The primary target audience is people who would be open to Bayesian
 inference if using Bayesian software were easier but would use frequentist
 software otherwise.
 
-## Installation
+### Resources
 
-### Latest Release
+* [mc-stan.org/rstanarm](http://mc-stan.org/rstanarm) (online documentation, vignettes)
+* [Ask a question](http://discourse.mc-stan.org) (Stan Forums on Discourse)
+* [Open an issue](https://github.com/stan-dev/rstanarm/issues) (GitHub issues for bug reports, feature requests)
+
+
+### Installation
+
+#### Latest Release
+
 The most recent **rstanarm** release can be installed from CRAN via
-```{r}
+
+```r
 install.packages("rstanarm")
 ```
 
-### Development Version
+#### Development Version
+
 To install from GitHub, first make sure that you can install the **rstan**
 package and C++ toolchain by following these
 [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started).
 Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **devtools** package by executing the following in R:
 
-```{r}
+```r
 if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
@@ -41,12 +51,7 @@ Make sure to include the `args = "--preclean"` and `build_vignettes = FALSE` arg
 or the development version of package will not install properly. If installation fails, 
 please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
-## Getting help
-
-* [File an issue on GitHub](https://github.com/stan-dev/rstanarm/issues)
-* [Ask a question on the Stan users Google group](https://groups.google.com/forum/#!forum/stan-users)
-
-## Contributing 
+### Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please 
 see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)

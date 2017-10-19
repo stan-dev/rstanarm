@@ -197,7 +197,7 @@ waic.stanreg <- function(x, ...) {
   out <- if (is.stanmvreg(x)) waic.matrix(log_lik(x)) else 
     waic.function(ll_fun(x), args = ll_args(x))
   structure(out, 
-            class = c("loo", "waic"),
+            class = c("waic", "loo"),
             name = deparse(substitute(x)), 
             discrete = is_discrete(x), 
             yhash = hash_y(x))

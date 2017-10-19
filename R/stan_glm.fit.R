@@ -26,23 +26,23 @@
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
 #' @importFrom lme4 mkVarCorr
-stan_glm.fit <- function(x, y, 
-                         weights = rep(1, NROW(y)), 
-                         offset = rep(0, NROW(y)), 
-                         family = gaussian(),
-                         ...,
-                         prior = normal(),
-                         prior_intercept = normal(),
-                         prior_aux = cauchy(0, 5),
-                         prior_smooth = exponential(autoscale = FALSE),
-                         prior_ops = NULL,
-                         group = list(),
-                         prior_PD = FALSE, 
-                         algorithm = c("sampling", "optimizing", 
-                                       "meanfield", "fullrank"), 
-                         adapt_delta = NULL, 
-                         QR = FALSE, 
-                         sparse = FALSE) {
+stan_glm.fit <- 
+  function(x, y, 
+           weights = rep(1, NROW(y)), 
+           offset = rep(0, NROW(y)), 
+           family = gaussian(),
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_ops = NULL,
+           group = list(),
+           prior_PD = FALSE, 
+           algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+           adapt_delta = NULL, 
+           QR = FALSE, 
+           sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -137,7 +137,7 @@ stan_glm.fit <- function(x, y,
     handle_glm_prior(
       prior_aux,
       nvars = 1,
-      default_scale = 5,
+      default_scale = 1,
       link = NULL, # don't need to adjust scale based on logit vs probit
       ok_dists = ok_aux_dists
     )
@@ -158,7 +158,8 @@ stan_glm.fit <- function(x, y,
         nvars = max(smooth_map),
         default_scale = 1,
         link = NULL,
-        ok_dists = ok_aux_dists)
+        ok_dists = ok_aux_dists
+      )
     
     names(prior_smooth_stuff) <- paste0(names(prior_smooth_stuff), "_for_smooth")
     if (is.null(prior_smooth)) {
@@ -239,6 +240,9 @@ stan_glm.fit <- function(x, y,
     xbar <- c(xbar %*% R_inv)
   }
   
+  if (length(weights) > 0 && all(weights == 1)) weights <- double()
+  if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
+  
   # create entries in the data block of the .stan file
   standata <- nlist(
     N = nrow(xtemp),
@@ -259,7 +263,6 @@ stan_glm.fit <- function(x, y,
     prior_mean_for_intercept = c(prior_mean_for_intercept),
     prior_df_for_intercept = c(prior_df_for_intercept), 
     global_prior_df, global_prior_scale, # for hs priors
-    has_intercept, prior_PD,
     z_dim = 0,  # betareg data
     link_phi = 0,
     betareg_z = array(0, dim = c(nrow(xtemp), 0)),
@@ -284,6 +287,16 @@ stan_glm.fit <- function(x, y,
   if (length(group)) {
     check_reTrms(group)
     decov <- group$decov
+    if (is.null(group$SSfun)) {
+      standata$SSfun <- 0L
+      standata$input <- double()
+      standata$Dose <- double()
+    } else {
+      standata$SSfun <- group$SSfun
+      standata$input <- group$input
+      if (group$SSfun == 5) standata$Dose <- group$Dose
+      else standata$Dose <- double()
+    }
     Z <- t(group$Zt)
     group <-
       pad_reTrms(Ztlist = group$Ztlist,
@@ -353,6 +366,9 @@ stan_glm.fit <- function(x, y,
       standata$regularization <- rep(0, 0)
     standata$len_concentration <- 0L
     standata$len_regularization <- 0L
+    standata$SSfun <- 0L
+    standata$input <- double()
+    standata$Dose <- double()
   }
   
   if (!is_bernoulli) {
@@ -390,6 +406,7 @@ stan_glm.fit <- function(x, y,
                               Gamma = 2L,
                               inverse.gaussian = 3L,
                               4L) # beta
+    standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
     standata$prior_scale_for_aux <- 

@@ -134,8 +134,10 @@ ll_fun <- function(x, m = NULL) {
   f <- family(x, m = m)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
+  if (is.nlmer(x)) 
+    return(.ll_nlmer_i)
   
-  fun <- paste0(".ll_", f$family, "_i")
+  fun <- paste0(".ll_", family(x)$family, "_i")
   get(fun, mode = "function")
 }
 
@@ -184,9 +186,18 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     stanmat <- dots$stanmat # potentially use a stanmat with a single draw
   }  
   
-  if (is(f, "family") && !is_scobit(object)) {
+  if (!is_polr(object)) { # not polr or scobit model
     fname <- f$family
-    if (!is.binomial(fname)) {
+    if (is.nlmer(object)) {
+      draws <- list(mu = posterior_linpred(object, newdata = newdata),
+                    sigma = stanmat[,"sigma"])
+      data <- data.frame(y)
+      data$offset <- if (has_newdata) offset else object$offset
+      if (model_has_weights(object))
+        data$weights <- object$weights
+      return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
+      
+    } else if (!is.binomial(fname)) {
       data <- data.frame(y, x)
     } else {
       if (NCOL(y) == 2L) {
@@ -228,7 +239,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       }
     }
   } else {
-    stopifnot(is(object, "polr"))
+    stopifnot(is_polr(object))
     y <- as.integer(y)
     if (has_newdata) 
       x <- .validate_polr_x(object, x)
@@ -238,7 +249,9 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) {
+    if ("alpha" %in% colnames(stanmat)) { 
+      stopifnot(is_scobit(object))
+      # scobit
       draws$alpha <- stanmat[, "alpha"]
       draws$f <- object$method
     }
@@ -266,7 +279,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     } else {
       z <- get_z(object, m = m)
     }
-    data <- cbind(data, as.matrix(z))
+    data <- cbind(data, as.matrix(z)[1:NROW(x),, drop = FALSE])
     draws$beta <- cbind(draws$beta, b)
   }
   
@@ -646,4 +659,9 @@ ll_jm <- function(object, data, pars, include_long = TRUE, include_b = FALSE, su
     return(rowSums(val))    # length S vector
   else 
     return(sum(val))        # scalar 
+}
+                   
+.ll_nlmer_i <- function(i, data, draws) {
+  val <- dnorm(data$y, mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
+  .weighted(val, data$weights)
 }

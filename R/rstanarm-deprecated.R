@@ -1,7 +1,7 @@
 #' Deprecated functions
 #' 
 #' These functions are deprecated and will be removed in a future release. The 
-#' \strong{Arguments} section below provides details on how the functionliaty 
+#' \strong{Arguments} section below provides details on how the functionality 
 #' obtained via each of the arguments has been replaced.
 #' 
 #' @name rstanarm-deprecated
