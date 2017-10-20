@@ -106,7 +106,7 @@
 #'   Family members:
 #'   \itemize{
 #'   \item \code{hs(df, global_df, global_scale, slab_df, slab_scale)}
-#'   \item \code{hs_plus(df1, df2, global_df, global_scale)}
+#'   \item \code{hs_plus(df1, df2, global_df, global_scale, slab_df, slab_scale)}
 #'   }
 #'   
 #'   The hierarchical shrinkage priors are normal with a mean of zero and a 
@@ -120,11 +120,10 @@
 #'   of the expected number of non-zero coefficients to the expected number of
 #'   zero coefficients, divided by the square root of the number of observations.
 #'   
-#'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is a normal with a 
-#'   mean of zero and a standard deviation that is distributed as the product of
-#'   two independent half Student t parameters (both with \eqn{3} degrees of
-#'   freedom (\code{df1}, \code{df2}) by default) that are each scaled in a
-#'   similar way to the \code{hs} prior.
+#'   The hierarhical shrinkpage plus (\code{hs_plus}) prior is similar except 
+#'   that the standard deviation that is distributed as the product of two 
+#'   independent half Cauchy parameters that are each scaled in a similar way
+#'   to the \code{hs} prior.
 #'   
 #'   The hierarchical shrinkage priors have very tall modes and very fat tails.
 #'   Consequently, they tend to produce posterior distributions that are very
@@ -436,13 +435,17 @@ hs <- function(df = 1, global_df = 1, global_scale = 0.01,
 
 #' @rdname priors
 #' @export
-hs_plus <- function(df1 = 3, df2 = 3, global_df = 1, global_scale = 1) {
+hs_plus <- function(df1 = 1, df2 = 1, global_df = 1, global_scale = 0.01,
+                    slab_df = 4, slab_scale = 2.5) {
   validate_parameter_value(df1)
   validate_parameter_value(df2)
   validate_parameter_value(global_df)
   validate_parameter_value(global_scale)
+  validate_parameter_value(slab_df)
+  validate_parameter_value(slab_scale)
   # scale gets used as a second df hyperparameter
-  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2, global_df, global_scale)
+  nlist(dist = "hs_plus", df = df1, location = 0, scale = df2, global_df, 
+        global_scale, slab_df, slab_scale)
 }
 
 #' @rdname priors

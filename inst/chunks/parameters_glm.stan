@@ -3,7 +3,7 @@
   vector<lower=0>[K_smooth > 0 ? smooth_map[K_smooth] : 0] smooth_sd_raw;
   real<lower=0> global[hs];
   vector<lower=0>[K] local[hs];
-  real<lower=0> caux[hs == 2];
+  real<lower=0> caux[hs > 0];
   vector<lower=0>[K] mix[prior_dist == 5 || prior_dist == 6];
   real<lower=0> one_over_lambda[prior_dist == 6];
   vector[q] z_b;

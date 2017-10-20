@@ -20,6 +20,7 @@
     target += inv_gamma_lpdf(local_z[4] | 0.5 * prior_scale_z, 0.5 * prior_scale_z);
     target += normal_lpdf(global_z[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(global_z[2] | 0.5, 0.5);
+    target += inv_gamma_lpdf(caux_z | 0.5 * slab_df_z, 0.5 * slab_df_z);
   }
   else if (prior_dist_z == 5) { // laplace
     target += normal_lpdf(z_omega | 0, 1);
