@@ -71,19 +71,37 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                   reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                   ...)
   fun <- ll_fun(object)
+  if (is_clogit(object)) {
+    out <-
+      vapply(
+        seq_len(args$N),
+        FUN.VALUE = numeric(length = args$S),
+        FUN = function(i) {
+          as.vector(fun(
+            i = i,
+            draws = args$draws,
+            data = args$data[args$data$strata ==
+                               levels(args$data$strata)[i], , drop = FALSE]
+          ))
+        }
+      )
+    return(out)
+  }
+  
   out <- vapply(
     seq_len(args$N),
     FUN = function(i) {
       as.vector(fun(
         i = i,
-        data = args$data[i,, drop = FALSE],
+        data = args$data[i, , drop = FALSE],
         draws = args$draws
       ))
     },
     FUN.VALUE = numeric(length = args$S)
   )
-  if (is.null(newdata)) colnames(out) <- rownames(model.frame(object))
-  else colnames(out) <- rownames(newdata)
+  colnames(out) <- if (is.null(newdata)) 
+    rownames(model.frame(object)) else rownames(newdata)
+  
   return(out)
 }
 
@@ -97,7 +115,9 @@ ll_fun <- function(x) {
   validate_stanreg_object(x)
   if (is_polr(x) || is_scobit(x))
     return(.ll_polr_i)
-  if (is.nlmer(x)) 
+  else if (is_clogit(x)) 
+    return(.ll_clogit_i)
+  else if (is.nlmer(x)) 
     return(.ll_nlmer_i)
   
   fun <- paste0(".ll_", family(x)$family, "_i")
@@ -159,6 +179,14 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L]
+      } else if (is_clogit(object)) {
+        if (has_newdata) strata <- eval(object$call$strata, newdata)
+        else strata <- model.frame(object)[,"(weights)"]
+        strata <- as.factor(strata)
+        successes <- aggregate(y, by = list(strata), FUN = sum)$x
+        formals(draws$f$linkinv)$g <- strata
+        formals(draws$f$linkinv)$successes <- successes
+        trials <- 1L
       } else {
         trials <- 1
         if (is.factor(y)) 
@@ -231,7 +259,13 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
     draws$beta <- cbind(draws$beta, b)
   }
   
-  nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+  if (is_clogit(object)) {
+    data$strata <- strata
+    out <-nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
+  } else {
+    out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data)) 
+  }
+  return(out)
 }
 
 
@@ -259,7 +293,7 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 }
 
 .xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials")
+  sel <- c("y", "weights","offset", "trials","strata")
   data[, -which(colnames(data) %in% sel)]
 }
 .mu <- function(data, draws) {
@@ -293,6 +327,11 @@ ll_args <- function(object, newdata = NULL, offset = NULL,
 .ll_binomial_i <- function(i, data, draws) {
   val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
   .weighted(val, data$weights)
+}
+.ll_clogit_i <- function(i, data, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
+  denoms <- apply(eta, 1, log_clogit_denom, N_j = NCOL(eta), D_j = sum(data$y))
+  rowSums(eta[,data$y == 1, drop = FALSE] - denoms)
 }
 .ll_poisson_i <- function(i, data, draws) {
   val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)

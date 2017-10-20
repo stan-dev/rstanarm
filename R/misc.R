@@ -113,9 +113,14 @@ is.nb <- function(x) x == "neg_binomial_2"
 is.poisson <- function(x) x == "poisson"
 is.beta <- function(x) x == "beta" || x == "Beta regression"
 
+# test if a stanreg object has class clogit
+is_clogit <- function(object) {
+  is(object, "clogit")
+}
+
 # test if a stanreg object has class polr 
 is_polr <- function(object) {
-  inherits(object, "polr")
+  is(object, "polr")
 }
 
 # test if a stanreg object is a scobit model
