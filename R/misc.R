@@ -746,7 +746,7 @@ fetch <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE,
   if (!is.null(zz))
     ret <- lapply(ret, `[[`, zz)
   if (null_to_zero) 
-    lapply(ret, function(i) ifelse(is.null(i), 0L, i))
+    ret <- lapply(ret, function(i) ifelse(is.null(i), 0L, i))
   if (!is.null(pad_length)) {
     padding <- rep(list(0L), pad_length - length(ret))
     ret <- c(ret, padding)

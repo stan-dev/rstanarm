@@ -229,11 +229,11 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     last_time <- object$eventtime[as.character(id_list)]
   } else {
     if ("last_time" %in% names(data)) { # user provided newdata with last_time column
-      if (!all(tapply(data[["last_time"]], data[[id_var]], FUN = sd) == 0))
+      if (!all(tapply(data[["last_time"]], factor(data[[id_var]]), FUN = sd) == 0))
         stop("'last_time' column in 'newdata' should be constant within individuals")
-      last_time <- tapply(data[["last_time"]], data[[id_var]], FUN = max)
+      last_time <- tapply(data[["last_time"]], factor(data[[id_var]]), FUN = max)
     } else { # user provided newdata but no last_time column, last_time inferred from time_var
-      last_time <- tapply(data[[time_var]], data[[id_var]], FUN = max)
+      last_time <- tapply(data[[time_var]], factor(data[[id_var]]), FUN = max)
     }
   }
   

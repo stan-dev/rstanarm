@@ -166,15 +166,15 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
 
   y_mod <- attr(stanfit, "y_mod")
   cnms  <- attr(stanfit, "cnms")
-  flist <- attr(stanfit, "flist")
+  flevels <- attr(stanfit, "flevels")
   prior_info <- attr(stanfit, "prior_info")
-  stanfit <- drop_attributes(stanfit, "y_mod", "cnms", "flist", "prior_info")
+  stanfit <- drop_attributes(stanfit, "y_mod", "cnms", "flevels", "prior_info")
   
   terms <- fetch(y_mod, "terms")
   n_yobs <- fetch_(y_mod, "x", "N")
-  n_grps <- sapply(flist, n_distinct)
+  n_grps <- sapply(flevels, n_distinct)
   
-  fit <- nlist(stanfit, formula, family, weights, M, cnms, flist, n_grps, n_yobs, 
+  fit <- nlist(stanfit, formula, family, weights, M, cnms, flevels, n_grps, n_yobs, 
                algorithm, terms, glmod = y_mod, data, prior.info = prior_info, 
                stan_function = "stan_mvmer", call = match.call(expand.dots = TRUE))
   

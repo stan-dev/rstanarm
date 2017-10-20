@@ -577,24 +577,24 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   e_mod <- attr(stanfit, "e_mod")
   a_mod <- attr(stanfit, "a_mod")
   cnms  <- attr(stanfit, "cnms")
-  flist <- attr(stanfit, "flist")
+  flevels <- attr(stanfit, "flevels")
   assoc <- attr(stanfit, "assoc")
   id_var <- attr(stanfit, "id_var")
   basehaz    <- attr(stanfit, "basehaz")
   grp_stuff  <- attr(stanfit, "grp_stuff")
   prior_info <- attr(stanfit, "prior_info")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
-                             "flist", "assoc", "id_var", "basehaz", 
+                             "flevels", "assoc", "id_var", "basehaz", 
                              "grp_stuff", "prior_info")
   
   terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
   n_yobs <- fetch_(y_mod, "x", "N")
-  n_grps <- sapply(flist, n_distinct)
+  n_grps <- sapply(flevels, n_distinct)
   n_subjects <- e_mod$Npat
 
   fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
                id_var, time_var, weights, qnodes, basehaz, assoc,
-               M, cnms, flist, n_grps, n_subjects, n_yobs, epsilon,
+               M, cnms, flevels, n_grps, n_subjects, n_yobs, epsilon,
                algorithm, terms, glmod = y_mod, survmod = e_mod, 
                assocmod = a_mod, grp_stuff, dataLong, dataEvent,
                prior.info = prior_info, stan_function = "stan_jm", 

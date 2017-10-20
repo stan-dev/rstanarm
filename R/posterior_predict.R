@@ -147,6 +147,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     m <- dots[["m"]]
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
+    if (!is.null(offset))
+      stop2("'offset' cannot be specified for stanmvreg objects.")
   } else m <- NULL
   
   newdata <- validate_newdata(newdata)

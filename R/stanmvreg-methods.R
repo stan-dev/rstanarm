@@ -132,6 +132,7 @@ coef.stanmvreg <- function(object, m = NULL, ...) {
 #' @export
 #' 
 fitted.stanmvreg <- function(object, m = NULL, ...)  {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) 
@@ -141,6 +142,7 @@ fitted.stanmvreg <- function(object, m = NULL, ...)  {
 #' @rdname stanmvreg-methods
 #' @export 
 residuals.stanmvreg <- function(object, m = NULL, ...) {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) 
@@ -150,6 +152,7 @@ residuals.stanmvreg <- function(object, m = NULL, ...) {
 #' @rdname stanmvreg-methods
 #' @export
 se.stanmvreg <- function(object, m = NULL, ...) {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) list_nms(object$ses, M, stub = stub) else object$ses[[m]]
@@ -242,25 +245,29 @@ update.stanmvreg <- function(object, formula., formulaLong.,
   call <- getCall(object)
   M <- get_M(object)
   if (is.null(call)) 
-    stop("'object' does not contain a 'call' component.", call. = FALSE)
+    stop2("'object' does not contain a 'call' component.")
   extras <- match.call(expand.dots = FALSE)$...
   fm <- formula(object)
   if (!missing(formula.)) {
     if (is.jm(object))
-      stop("'formula.' should not be specified for joint models estimated ",
-           "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
+      stop2("'formula.' should not be specified for joint models estimated ",
+            "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
     if (M > 1) {
       if (!is.list(formula.))
-        stop("To update the formula for a multivariate model ",
-             "'formula.' should be a list of formula objects. Use ",
-             "'~ .' if you do not wish to alter the formula for one or ",
-             "more of the submodels.", call. = FALSE)
+        stop2("To update the formula for a multivariate model ",
+              "'formula.' should be a list of formula objects. Use ",
+              "'~ .' if you do not wish to alter the formula for one or ",
+              "more of the submodels.")
       if (length(formula.) != M)
-        stop(paste0("The list provided in 'formula.' appears to be the ",
-                    "incorrect length; should be length ", M), call. = FALSE)     
+        stop2(paste0("The list provided in 'formula.' appears to be the ",
+                     "incorrect length; should be length ", M))     
     } else {
-      if (!is.list(formula.)) formula. <- list(formula.)
+      if (!is.list(formula.)) 
+        formula. <- list(formula.)
     }
+    if (length(formula.) != M)
+      stop2("The length of 'formula.' must be equal to the number of ",
+            "glmer submodels in the original model, which was ", M, ".")
     fm_mvmer <- lapply(1:M, function(m) 
       update.formula(fm[[m]], formula.[[m]]))
     names(fm_mvmer) <- NULL
@@ -281,8 +288,12 @@ update.stanmvreg <- function(object, formula., formulaLong.,
         stop(paste0("The list provided in 'formulaLong.' appears to be the ",
              "incorrect length; should be length ", M), call. = FALSE)     
     } else {
-      if (!is.list(formulaLong.)) formulaLong. <- list(formulaLong.)
+      if (!is.list(formulaLong.)) 
+        formulaLong. <- list(formulaLong.)
     }
+    if (length(formulaLong.) != M)
+      stop2("The length of 'formulaLong.' must be equal to the number of ",
+            "longitudinal submodels in the original model, which was ", M, ".")
     fm_long <- lapply(1:M, function(m) 
       update.formula(fm[[m]], formulaLong.[[m]]))
     names(fm_long) <- NULL
@@ -390,17 +401,22 @@ ranef.stanmvreg <- function(object, m = NULL, ...) {
 #'   importFrom(lme4,sigma)
 #'
 sigma.stanmvreg <- function(object, m = NULL, ...) {
-  stub <- if (is.null(m)) "Long[1-9]" else if 
-    (is.numeric(m)) paste0("Long", m) else if (is.character(m)) m else
-      stop("Could not reconcile 'm' argument.")
-  nms <- grep("^", stub, "\\|sigma", rownames(object$stan_summary), value = TRUE)
-  if (!length(nms)) 
-    return(1)
-  sigma <- object$stan_summary[nms, select_median(object$algorithm)]
-  if (length(sigma) > 1L) {
-    new_nms <- gsub("\\|sigma", "", nms)
-    names(sigma) <- new_nms
+  stub <- get_stub(object)
+  if (is.null(m)) {
+    nms <- paste0("^", stub, "[1-9]\\|sigma")
+  } else if (is.numeric(m)) {
+    nms <- paste0("^", stub, m, "\\|sigma")
+  } else if (is.character(m)) {
+    nms <- paste0(m, "\\|sigma")
+  } else {
+    stop("Invalid 'm' argument.")
   }
+  sel <- sapply(nms, grep, rownames(object$stan_summary), value = TRUE)
+  if (!length(sel)) 
+    return(1)
+  sigma <- object$stan_summary[sel, select_median(object$algorithm)]
+  new_nms <- gsub("\\|sigma", "", sel)
+  names(sigma) <- new_nms
   return(sigma)
 }
 

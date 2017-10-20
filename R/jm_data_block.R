@@ -558,7 +558,7 @@ handle_y_mod <- function(formula, data, family) {
   
   # Binomial with >1 trials not allowed by stan_{mvmver,jm}
   is_binomial <- is.binomial(family$family)
-  is_bernoulli <- is_binomial && NCOL(y) == 1L && all(y %in% 0:1)
+  is_bernoulli <- is_binomial && NCOL(y$y) == 1L && all(y$y %in% 0:1)
   if (is_binomial && !is_bernoulli)
     STOP_binomial()
   
@@ -584,10 +584,10 @@ handle_y_mod <- function(formula, data, family) {
 make_y_for_stan <- function(formula, model_frame, family) {
   y <- as.vector(model.response(model_frame))
   y <- validate_glm_outcome_support(y, family)
-  is_real <- check_response_real(family)
-  real <- if (is_real) y else numeric(0) 
-  integer <- if (!is_real) y else integer(0) 
-  nlist(y, real, integer, is_real)
+  resp_type <- if (check_response_real(family)) 1L else 2L
+  real    <- if (resp_type == 1L) y else numeric(0) 
+  integer <- if (resp_type == 2L) y else integer(0) 
+  nlist(y, real, integer, resp_type)
 }
 
 # Return the design matrix for passing to Stan
@@ -644,8 +644,8 @@ make_z_for_stan <- function(formula, model_frame) {
   group_cnms <- lapply(z, colnames)
   group_vars <- fetch(z_parts, "group_var")
   group_list <- lapply(group_vars, function(x) factor(model_frame[[x]]))
-  nvars <- sapply(group_cnms, length)
-  ngrps <- sapply(group_list, n_distinct)
+  nvars <- lapply(group_cnms, length)
+  ngrps <- lapply(group_list, n_distinct)
   names(z) <- names(z_forms) <- names(group_cnms) <- 
     names(group_list) <- names(nvars) <- names(ngrps) <- group_vars
   nlist(z, z_forms, group_vars, group_cnms, group_list, nvars, ngrps)
@@ -811,24 +811,24 @@ get_common_cnms <- function(x, stub = "Long") {
   cnms
 }
 
-# Function to return a single flist across all longitudinal
-# submodels for each grouping factor
+# Function to return a single list with the factor levels for each
+# grouping factor, but collapsed across all longitudinal submodels
 # 
-# @param x A list, the flist object for each submodel
-get_common_flist <- function(x) {
+# @param x A list containing the flist object for each of the submodels
+get_common_flevels <- function(x) {
   nms <- lapply(x, names)
   unique_nms <- unique(unlist(nms))
-  flist <- lapply(seq_along(unique_nms), function(i) {
+  flevels <- lapply(seq_along(unique_nms), function(i) {
     nm <- unique_nms[i]
-    flist_nm <- lapply(1:length(x), function(m) 
-      if (nm %in% nms[[m]]) x[[m]][[nm]])
-    flist_nm <- rm_null(unique(flist_nm))
-    if (length(flist_nm) > 1L)
-      stop2("Bug found: flist should be unique across submodels.")
-    flist_nm[[1L]]
+    flevels_nm <- lapply(1:length(x), function(m) 
+      if (nm %in% nms[[m]]) levels(x[[m]][[nm]]))
+    flevels_nm <- rm_null(unique(flevels_nm))
+    if (length(flevels_nm) > 1L)
+      stop2("The group factor levels must be the same for all submodels.")
+    flevels_nm[[1L]]
   })
-  names(flist) <- unique_nms
-  flist
+  names(flevels) <- unique_nms
+  flevels
 }
 
 # Take a list of cnms objects (each element containing the cnms for one 
@@ -907,13 +907,14 @@ use_predvars <- function(mod, keep_response = TRUE) {
     for (j in 1:length(fr))
       fm <- gsub(fr[[j]], pr[[j]], fm, fixed = TRUE)    
   }
+  rhs <- deparse(fm[[length(fm)]], 500L)
   if (keep_response && length(fm) == 3L) {
-    fm <- reformulate(fm[[3L]], response = formula(mod)[[2L]])
+    fm <- reformulate(rhs, response = formula(mod)[[2L]])
   } else if (keep_response && length(fm) == 2L) {
     warning2("No response variable found, reformulating RHS only.")
-    fm <- reformulate(fm[[length(fm)]], response = NULL)
+    fm <- reformulate(rhs, response = NULL)
   } else {
-    fm <- reformulate(fm[[length(fm)]], response = NULL)
+    fm <- reformulate(rhs, response = NULL)
   }
   fm
 }

@@ -99,7 +99,7 @@ stanmvreg <- function(object) {
   )
   if (is_mvmer) {
     out$cnms      <- object$cnms
-    out$flist     <- object$flist
+    out$flevels   <- object$flevels
     out$n_markers <- object$M
     out$n_grps    <- object$n_grps
     out$n_yobs    <- list_nms(object$n_yobs, M, stub)

@@ -112,9 +112,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   if (length(cnms_nms) > 2L)
     stop("A maximum of 2 grouping factors are allowed.")
   
-  # Construct single flist with unique levels for each grouping factor
+  # Construct single list with unique levels for each grouping factor
   y_flist <- fetch(y_mod, "z", "group_list")
-  flist <- get_common_flist(y_flist)
+  flevels <- get_common_flevels(y_flist)
   
   # Ensure id_var is a valid grouping factor in all submodels
   if (is_jm) {
@@ -198,7 +198,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   standata$has_aux <- 
     fetch_array(y_mod, "has_aux", pad_length = 3)
   standata$resp_type <- 
-    fetch_array(y_mod, "y", "is_real", pad_length = 3)
+    fetch_array(y_mod, "y", "resp_type", pad_length = 3)
   standata$intercept_type <- 
     fetch_array(y_mod, "intercept_type", "number", pad_length = 3)
   standata$yNobs <- 
@@ -435,11 +435,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   b_nms <- uapply(seq_along(cnms), FUN = function(i) {
     nm <- cnms_nms[i]
     nms_i <- paste(cnms[[i]], nm)
-    levels(flist[[nm]]) <- gsub(" ", "_", levels(flist[[nm]]))
+    flevels[[nm]] <- gsub(" ", "_", flevels[[nm]])
     if (length(nms_i) == 1) {
-      paste0(nms_i, ":", levels(flist[[nm]]))
+      paste0(nms_i, ":", flevels[[nm]])
     } else {
-      c(t(sapply(nms_i, paste0, ":", levels(flist[[nm]]))))
+      c(t(sapply(nms_i, paste0, ":", flevels[[nm]])))
     }
   })
   
@@ -947,7 +947,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                  "log-posterior")
   stanfit@sim$fnames_oi <- new_names
   
-  stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flist)
+  stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flevels)
   if (is_jm)
     stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, 
                                         id_var, grp_stuff))
