@@ -895,7 +895,7 @@ append_predvars_attribute <- function(terms, formula, data) {
 #
 # @param mod A (g)lmer model object from which to extract the formula and terms
 # @return A reformulated model formula with variables replaced by predvars
-use_predvars <- function(mod) {
+use_predvars <- function(mod, keep_response = TRUE) {
   fm <- formula(mod)
   ff <- grep("", attr(terms(mod, fixed.only = TRUE), "variables"), value = TRUE)[-1]
   fr <- grep("", attr(terms(mod, random.only = TRUE), "variables"), value = TRUE)[-1]
@@ -906,7 +906,14 @@ use_predvars <- function(mod) {
       fm <- gsub(ff[[j]], pf[[j]], fm, fixed = TRUE)    
     for (j in 1:length(fr))
       fm <- gsub(fr[[j]], pr[[j]], fm, fixed = TRUE)    
+  }
+  if (keep_response && length(fm) == 3L) {
     fm <- reformulate(fm[[3L]], response = formula(mod)[[2L]])
+  } else if (keep_response && length(fm) == 2L) {
+    warning2("No response variable found, reformulating RHS only.")
+    fm <- reformulate(fm[[length(fm)]], response = NULL)
+  } else {
+    fm <- reformulate(fm[[length(fm)]], response = NULL)
   }
   fm
 }
@@ -1562,11 +1569,27 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
   
-  # Update longitudinal submodel formula to reflect predvars
-  formula <- use_predvars(y_mod)
+  # Before turning data into a data.table (for a rolling merge
+  # against the quadrature points) we want to make sure that the 
+  # data does not include any NAs for the predictors or assoc formula variables
+  tt <- y_mod$terms
+  assoc_interaction_forms <- assoc[["which_formulas"]]
+  extra_vars <- uapply(assoc_interaction_forms, function(i) {
+    # loop over the four possible assoc interaction formulas and 
+    # collect any variables used
+    if (length(i)) {
+      rownames(attr(terms.formula(i), "factors")) 
+    } else NULL
+  })
+  rhs <- deparse(tt[[3L]], 500L)
+  if (!is.null(extra_vars))
+    rhs <- c(rhs, extra_vars)
+  form_new <- reformulate(rhs, response = NULL)
+  df <- get_all_vars(form_new, data)
+  df <- df[complete.cases(df), , drop = FALSE]
 
-  # Declare data as a data.table for merging with quadrature points
-  dt <- prepare_data_table(data, id_var = id_var, time_var = time_var, 
+  # Declare df as a data.table for merging with quadrature points
+  dt <- prepare_data_table(df, id_var = id_var, time_var = time_var, 
                            grp_var = grp_stuff$grp_var) # NB grp_var may be NULL
 
   # Design matrices for calculating association structure based on 

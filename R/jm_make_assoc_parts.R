@@ -182,7 +182,7 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
 make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
   
   # construct model frame using predvars
-  formula <- use_predvars(y_mod)
+  formula <- use_predvars(y_mod, keep_response = FALSE)
   data <- as.data.frame(newdata)
   model_frame <- stats::model.frame(lme4::subbars(formula), data)
   
