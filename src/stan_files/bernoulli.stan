@@ -18,12 +18,14 @@ data {
   // stuff for the sparse case
   int<lower=0> nnz_X0;                       // number of non-zero elements in the implicit X0 matrix
   vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
-  int<lower=0> v_X0[nnz_X0];                 // column indices for w_X0
-  int<lower=0> u_X0[dense_X ? 0 : N[1] + 1]; // where the non-zeros start in each row of X0
+  int<lower=0, upper = K - 1> v_X0[nnz_X0];  // column indices for w_X0
+  // where the non-zeros start in each row of X0
+  int<lower=0, upper = rows(w_X0) + 1> u_X0[dense_X ? 0 : N[1] + 1]; 
   int<lower=0> nnz_X1;                       // number of non-zero elements in the implicit X1 matrix
   vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
-  int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
-  int<lower=0> u_X1[dense_X ? 0 : N[2] + 1]; // where the non-zeros start in each row of X1
+  int<lower=0, upper = K - 1> v_X1[nnz_X1];  // column indices for w_X1
+  // where the non-zeros start in each row of X1
+  int<lower=0, upper = rows(w_X1) + 1> u_X1[dense_X ? 0 : N[2] + 1]; 
   // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
 #include /data/data_glm.stan
 
@@ -51,10 +53,12 @@ data {
   int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
   vector[num_non_zero[1]] w0;       // non-zero elements in the implicit Z0 matrix
   vector[num_non_zero[2]] w1;       // non-zero elements in the implicit Z1 matrix
-  int<lower=0> v0[num_non_zero[1]]; // column indices for w0
-  int<lower=0> v1[num_non_zero[2]]; // column indices for w1
-  int<lower=0> u0[t > 0 ? N[1] + 1 : 0];  // where the non-zeros start in each row of Z0
-  int<lower=0> u1[t > 0 ? N[2] + 1 : 0];  // where the non-zeros start in each row of Z1
+  int<lower=0, upper = q - 1> v0[num_non_zero[1]]; // column indices for w0
+  int<lower=0, upper = q - 1> v1[num_non_zero[2]]; // column indices for w1
+  // where the non-zeros start in each row of Z0
+  int<lower=0, upper = rows(w0) + 1> u0[t > 0 ? N[1] + 1 : 0];  
+  // where the non-zeros start in each row of Z1
+  int<lower=0, upper = rows(w1) + 1> u1[t > 0 ? N[2] + 1 : 0];  
   int<lower=0, upper=1> special_case;     // whether we only have to deal with (1|group)
 }
 transformed data {
