@@ -20,8 +20,9 @@
 #' For models fit using MCMC only, the \code{log_lik} method returns the
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
 #' of the posterior sample and \eqn{N} is the number of data points, or in the
-#' case of the \code{stanmvreg} method an \eqn{S} by \eqn{Npat} matrix where 
-#' \eqn{Npat} is the number of individuals.
+#' case of the \code{stanmvreg} method (when called on \code{\link{stan_jm}}
+#' model objects) an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number 
+#' of individuals.
 #'
 #' @aliases log_lik
 #' @export
@@ -99,10 +100,12 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
 #'   was a multivariate joint model (i.e. more than one longitudinal outcome),
 #'   then \code{newdataLong} is allowed to be a list of data frames. If supplying 
 #'   new data, then \code{newdataEvent} should also include variables corresponding
-#'   to the event time and event indicator. For more details, see the description 
+#'   to the event time and event indicator as these are required for evaluating the
+#'   log likelihood for the event submodel. For more details, see the description 
 #'   of \code{newdataLong} and \code{newdataEvent} for \code{\link{posterior_survfit}}.
 #' 
-log_lik.stanmvreg <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
+log_lik.stanmvreg <- function(object, newdata = NULL, newdataLong = NULL, 
+                              newdataEvent = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanmvreg_object(object)

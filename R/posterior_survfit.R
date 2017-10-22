@@ -48,9 +48,11 @@
 #'   that is, time-varying covariates are not allowed in the prediction data for
 #'   the event submodel. Also, \code{newdataEvent} can optionally include a 
 #'   variable with information about the last known survival time for the new
-#'   individuals -- see the description for the \code{control} argument below
-#'   -- however also note that it is assumed that all individuals in
-#'   \code{newdataEvent} have not yet experienced the event.
+#'   individuals -- see the description for the \code{last_time} argument below
+#'   -- however also note that when generating the survival probabilities it 
+#'   is of course assumed that all individuals in \code{newdataEvent} have not 
+#'   yet experienced the event (that is, any variable in \code{newdataEvent} that
+#'   corresponds to the event indicator will be ignored).
 #' @param extrapolate A logical specifying whether to extrapolate the estimated 
 #'   survival probabilities beyond the times specified in the \code{times} argument.
 #'   If \code{TRUE} then the extrapolation can be further controlled using
@@ -67,8 +69,8 @@
 #'     in units of the time variable \code{time_var} (from fitting the model). 
 #'     The default is to extrapolate between the times specified in the 
 #'     \code{times} argument and the maximum event or censoring time in the 
-#'     original data. If \code{ext_distance} leads to times that are beyond
-#'     the maximum event or censoring time (in the original data) then the 
+#'     original data. If \code{edist} leads to times that are beyond
+#'     the maximum event or censoring time in the original data then the 
 #'     estimated survival probabilities will be truncated at that point, since
 #'     the estimate for the baseline hazard is not available beyond that time.}
 #' }
@@ -103,8 +105,9 @@
 #'     not allowed and therefore the \code{last_time} argument is ignored.
 #' @param ids An optional vector specifying a subset of IDs for whom the 
 #'   predictions should be obtained. The default is to predict for all individuals
-#'   who were used in estimating the model or, if \code{newdata} is specified,
-#'   then all individuals contained in \code{newdata}.
+#'   who were used in estimating the model or, if \code{newdataLong} and 
+#'   \code{newdataEvent} are specified, then all individuals contained in 
+#'   the new data.
 #' @param prob A scalar between 0 and 1 specifying the width to use for the 
 #'   uncertainty interval (sometimes called credible interval) for the predictions. 
 #'   For example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th  
@@ -137,10 +140,11 @@
 #'   random effects are simulated for the individuals in the new data using 
 #'   the Metropolis-Hastings algorithm.
 #' @param draws An integer indicating the number of MCMC draws to return. If 
-#'   the \code{newdata} arguments are \code{NULL} then the default
-#'   and maximum number of draws is the size of the posterior sample. However,
-#'   if \code{newdata} is provided, then the default is to set the number of 
-#'   draws equal to 200 (or equal to the size of the posterior sample if that
+#'   \code{newdataLong} and \code{newdataEvent} are \code{NULL} then the default
+#'   and maximum number of draws is the size of the posterior sample. If 
+#'   \code{newdataLong} and \code{newdataEvent} are provided, then the default 
+#'   is to set the number of draws equal to 200 (or equal to the size of the 
+#'   posterior sample if that
 #'   is less than 200). This ensures that the Monte Carlo algorithm for drawing 
 #'   the new group-specific coefficients doesn't take an excessive amount of time. 
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
@@ -169,7 +173,9 @@
 #' @seealso \code{\link{plot.survfit.stanmvreg}} for plotting the estimated survival  
 #'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
 #'   survival function, and \code{\link{posterior_traj}} for estimating the
-#'   marginal or subject-specific longitudinal trajectories.
+#'   marginal or subject-specific longitudinal trajectories, and 
+#'   \code{\link{plot_stack}} for combining plots of the estimated subject-specific
+#'   longitudinal trajectory and survival function.
 #'   
 #' @references 
 #'   Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in 
