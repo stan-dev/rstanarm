@@ -210,33 +210,9 @@
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
 #'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
-#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
+#'     extrapolate = TRUE, condition = FALSE, control = list(edist = 5))
+#'     
 #' \donttest{
-#'   # Instead of estimating survival probabilities for a specific individual 
-#'   # in the estimation dataset, we may want to estimate the marginal 
-#'   # survival probability, that is, marginalising over the individual-level
-#'   # random effects. 
-#'   # Here we will estimate survival between baseline and 5 years, for a 
-#'   # female who received either (i) D-penicillamine or (ii) placebo. 
-#'   # To do this we will need to provide the necessary values  
-#'   # of the predictors via the 'newdata' argument. However, it is important
-#'   # to realise that by marginalising over the random effects 
-#'   # distribution we will introduce a large amount of uncertainty into
-#'   # the estimated survival probabilities. This is because we have no 
-#'   # longitudinal measurements for these "new" individuals and therefore do
-#'   # not have any specific information with which to estimate their random
-#'   # effects. As such, there is a very wide 95% uncertainty interval 
-#'   # associated with the estimated survival probabilities.
-#'   nd <- data.frame(id = c("new1", "new2"),
-#'                    sex = c("f", "f"), 
-#'                    trt = c(1, 0))
-#'   #ps3 <- posterior_survfit(example_jm, newdataLong = nd, times = 0,
-#'     #extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   #ps3 DOES NOT WORK WITHOUT newdataEvent
-#'   
-#'   # We can then plot the estimated survival functions to compare
-#'   # them. To do this, we use the generic plot function.
-#'   # plot(ps3, limits = "none")             
 #'   # Instead we may want to estimate subject-specific survival probabilities 
 #'   # for a set of new individuals. To demonstrate this, we will simply take
 #'   # the first two individuals in the estimation dataset, but pass their data
@@ -247,7 +223,7 @@
 #'   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
 #'   ps3 <- posterior_survfit(example_jm,
 #'     newdataLong = ndL, newdataEvent = ndE,
-#'     control = list(last_time = "futimeYears"), seed = 12345)
+#'     last_time = "futimeYears", seed = 12345)
 #'   head(ps3)
 #'   # We can then compare the estimated random effects for these 
 #'   # individuals based on the fitted model and the Monte Carlo scheme
