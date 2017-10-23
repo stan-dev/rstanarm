@@ -297,6 +297,27 @@
 #'   \code{concentration} parameters, but does have \code{shape} and 
 #'   \code{scale} parameters for the prior standard deviation of that 
 #'   variable.
+#'   
+#'   Note that for \code{\link{stan_mvmer}} and \code{\link{stan_jm}} models an
+#'   additional prior distribution is provided through the \code{lkj} function.
+#'   This prior is in fact currently used as the default for those modelling
+#'   functions (although \code{decov} is still available as an option if the user
+#'   wishes to specify it through the \code{prior_covariance} argument). The
+#'   \code{lkj} prior uses the same decomposition of the covariance matrices
+#'   into correlation matrices and variances, however, the variances are not
+#'   further decomposed into a simplex vector and the trace; instead the 
+#'   standard deviations (square root of the variances) for each of the group
+#'   specific parameters are given a half Student t distribution with the 
+#'   scale and df parameters specified through the \code{scale} and \code{df}
+#'   arguments to the \code{lkj} function. The scale parameter default is 10
+#'   which is then autoscaled, whilst the df parameter default is 1 
+#'   (therefore equivalent to a half Cauchy prior distribution for the 
+#'   standard deviation of each group specific parameter). This prior generally
+#'   leads to similar results as the \code{decov} prior, but it is also likely
+#'   to be **less** diffuse compared with the \code{decov} prior; therefore it 
+#'   sometimes seems to lead to faster estimation times, hence why it has
+#'   been chosen as the default prior for \code{\link{stan_mvmer}} and 
+#'   \code{\link{stan_jm}} where estimation times can be long.
 #' }
 #' \subsection{R2 family}{
 #'   Family members:

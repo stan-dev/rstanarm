@@ -25,9 +25,9 @@
 #' 
 #' @export
 #' 
-#' @templateVar stanmvregArg object
+#' @templateVar stanjmArg object
 #' @templateVar mArg m
-#' @template args-stanmvreg-object
+#' @template args-stanjm-object
 #' @template args-m
 #' @param newdata Optionally, a data frame in which to look for variables with
 #'   which to predict. If omitted, the model matrix is used. If \code{newdata}
@@ -101,14 +101,14 @@
 #' between time zero (baseline) and the last known survival time for the 
 #' individual, thereby providing predictions that correspond to a smooth estimate
 #' of the longitudinal trajectory (useful for the plotting via the associated
-#' \code{\link{plot.predict.stanmvreg}} method). In addition it returns a data 
+#' \code{\link{plot.predict.stanjm}} method). In addition it returns a data 
 #' frame by default, whereas the \code{\link{posterior_predict}} function 
 #' returns a matrix; see the \strong{Value} section below for details. Also,
 #' \code{posterior_traj} allows predictions to only be generated for a subset
 #' of individuals, via the \code{ids} argument. 
 #' 
 #' @return When \code{return_matrix = FALSE}, a data frame 
-#'   of class \code{predict.stanmvreg}. The data frame includes a column for the median 
+#'   of class \code{predict.stanjm}. The data frame includes a column for the median 
 #'   of the posterior predictions of the mean longitudinal response (\code{yfit}),
 #'   a column for each of the lower and upper limits of the uncertainty interval
 #'   corresponding to the posterior predictions of the mean longitudinal response 
@@ -121,7 +121,7 @@
 #'   When \code{return_matrix = TRUE}, the returned object is the same as that 
 #'   described for \code{\link{posterior_predict}}.
 #'   
-#' @seealso \code{\link{plot.predict.stanmvreg}}, \code{\link{posterior_predict}},
+#' @seealso \code{\link{plot.predict.stanjm}}, \code{\link{posterior_predict}},
 #'   \code{\link{posterior_survfit}}
 #' 
 #' @examples
@@ -195,10 +195,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            return_matrix = FALSE, ...) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
-  
-  validate_stanmvreg_object(object)
-  if (!is.jm(object)) 
-    STOP_jm_only("'posterior_traj'")
+  validate_stanjm_object(object)
   M <- get_M(object)
   id_var   <- object$id_var
   time_var <- object$time_var
@@ -285,7 +282,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   }
   colnames(out) <- c(id_var, if (grp_stuff$has_grp) grp_var, time_var, 
                      "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
-  class(out) <- c("predict.stanmvreg", "data.frame")
+  class(out) <- c("predict.stanjm", "data.frame")
   Terms <- terms(formula(object, m = m))
   vars  <- rownames(attr(Terms, "factors"))
   y_var <- vars[[attr(Terms, "response")]]
@@ -299,7 +296,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 
 #' Plot the estimated subject-specific or marginal longitudinal trajectory
 #' 
-#' This generic \code{plot} method for \code{predict.stanmvreg} objects will
+#' This generic \code{plot} method for \code{predict.stanjm} objects will
 #' plot the estimated subject-specific or marginal longitudinal trajectory
 #' using the data frame returned by a call to \code{\link{posterior_traj}}.
 #' To ensure that enough data points are available to plot the longitudinal
@@ -309,7 +306,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' whether or not the user wants to see extrapolation of the longitudinal 
 #' trajectory beyond the last observation time).
 #' 
-#' @method plot predict.stanmvreg
+#' @method plot predict.stanjm
 #' @export
 #' @importFrom ggplot2 ggplot aes aes_string geom_line geom_smooth geom_ribbon 
 #'   geom_point facet_wrap geom_vline labs ggplot_build theme_bw
@@ -322,7 +319,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' @template args-scales
 #' @template args-ci-geom-args
 #' 
-#' @param x A data frame and object of class \code{predict.stanmvreg}
+#' @param x A data frame and object of class \code{predict.stanjm}
 #'   returned by a call to the function \code{\link{posterior_traj}}.
 #'   The object contains point estimates and uncertainty interval limits
 #'   for the fitted values of the longitudinal response.
@@ -348,12 +345,12 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   \code{\link[ggplot2]{geom_smooth}} and used to control features
 #'   of the plotted longitudinal trajectory.
 #'   
-#' @return A \code{ggplot} object, also of class \code{plot.predict.stanmvreg}.
+#' @return A \code{ggplot} object, also of class \code{plot.predict.stanjm}.
 #'   This object can be further customised using the \pkg{ggplot2} package.
 #'   It can also be passed to the function \code{\link{plot_stack}}.
 #'   
 #' @seealso \code{\link{posterior_traj}}, \code{\link{plot_stack}},
-#'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanmvreg}}   
+#'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanjm}}   
 #'     
 #' @examples 
 #' 
@@ -389,7 +386,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::labs(title = "Some plotted longitudinal trajectories")
 #' }
-plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
+plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 
                                 ci_geom_args = NULL, grp_overlay = FALSE, ...) {
@@ -410,7 +407,7 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   if (!is.null(ids)) {
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
-      stop("The following 'ids' are not present in the predict.stanmvreg object: ",
+      stop("The following 'ids' are not present in the predict.stanjm object: ",
            paste(ids[ids_missing], collapse = ", "), call. = FALSE)
     plot_dat <- x[x[[id_var]] %in% ids, , drop = FALSE]
     obs_dat <- obs_dat[obs_dat[[id_var]] %in% ids, , drop = FALSE]
@@ -541,7 +538,7 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   ret <- graph + graph_limits + graph_obs + graph_vline + labs(x = xlab, y = ylab) 
   class_ret <- class(ret)
-  class(ret) <- c("plot.predict.stanmvreg", class_ret)
+  class(ret) <- c("plot.predict.stanjm", class_ret)
   ret
   
 }
@@ -550,10 +547,10 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
 # internal ----------------------------------------------------------------
 
 # Return a list with the control arguments for interpolation and/or
-# extrapolation in posterior_predict.stanmvreg and posterior_survfit.stanmvreg
+# extrapolation in posterior_predict.stanmvreg and posterior_survfit.stanjm
 #
 # @param control A named list, being the user input to the control argument
-#   in the posterior_predict.stanmvreg or posterior_survfit.stanmvreg call
+#   in the posterior_predict.stanmvreg or posterior_survfit.stanjm call
 # @param ok_control_args A character vector of allowed control arguments
 # @return A named list
 get_extrapolation_control <- 

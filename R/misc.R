@@ -853,7 +853,14 @@ unstandardise_qwts <- function(x, a, b) {
 #
 # @param x An object to be tested.
 is.stanmvreg <- function(x) {
-  is(x, "stanmvreg")
+  inherits(x, "stanmvreg")
+}
+
+# Test if object is stanjm class
+#
+# @param x An object to be tested.
+is.stanjm <- function(x) {
+  inherits(x, "stanjm")
 }
 
 # Test if object is a joint longitudinal and survival model
@@ -883,6 +890,14 @@ is.surv <- function(x) {
 validate_stanmvreg_object <- function(x, call. = FALSE) {
   if (!is.stanmvreg(x))
     stop("Object is not a stanmvreg object.", call. = call.) 
+}
+
+# Throw error if object isn't a stanjm object
+# 
+# @param x The object to test.
+validate_stanjm_object <- function(x, call. = FALSE) {
+  if (!is.stanjm(x))
+    stop("Object is not a stanjm object.", call. = call.) 
 }
 
 # Throw error if parameter isn't a positive scalar
@@ -937,7 +952,7 @@ get_m_stub <- function(m, stub = "Long") {
 #
 # @param object A stanmvreg object
 get_stub <- function(object) {
-  if (is.jm(object)) "Long" else "y"  
+  if (is.jm(object)) "Long" else if (is.mvmer(object)) "y" else NULL  
 } 
 
 # Separates a names object into separate parts based on the longitudinal, 
@@ -1073,9 +1088,9 @@ list_nms <- function(object, M = NULL, stub = "Long") {
 # @param x Character vector (often rownames(fit$stan_summary)) from which
 #   the stub should be removed
 rm_stub <- function(x) {
-  x <- gsub(mod2rx("y"), "", x)
-  x <- gsub(mod2rx("Long"), "", x)
-  x <- gsub(mod2rx("Event"), "", x)
+  x <- gsub(mod2rx("^y"), "", x)
+  x <- gsub(mod2rx("^Long"), "", x)
+  x <- gsub(mod2rx("^Event"), "", x)
 }
 
 # Removes a specified character string from the names of an

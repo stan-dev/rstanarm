@@ -105,31 +105,28 @@ stanmvreg <- function(object) {
     out$n_yobs    <- list_nms(object$n_yobs, M, stub)
     out$family    <- list_nms(object$family, M, stub)
     out$glmod     <- list_nms(object$glmod, M, stub)
-    if (!is_jm)
-      out$data <- list_nms(object$data, M, stub)
-  }
-  if (is_surv) {
-    out$n_subjects <- object$n_subjects
-    out$n_events   <- sum(object$survmod$status > 0)
-    out$eventtime  <- object$survmod$eventtime
-    out$status     <- object$survmod$status > 0
-    out$basehaz    <- object$basehaz
-    out$survmod    <- object$survmod
-    if (!is_jm)
-      out$data <- object$data
+    out$data      <- if (!is_jm) list_nms(object$data, M, stub) else NULL
+    classes <- c("stanmvreg", "stanreg", "lmerMod")
   }
   if (is_jm) {
-    out$time_var  <- object$time_var
     out$id_var    <- object$id_var
+    out$time_var  <- object$time_var
+    out$n_subjects<- object$n_subjects
+    out$n_events  <- sum(object$survmod$status > 0)
+    out$eventtime <- object$survmod$eventtime
+    out$status    <- object$survmod$status > 0
+    out$basehaz   <- object$basehaz
+    out$survmod   <- object$survmod
     out$qnodes    <- object$qnodes
     out$epsilon   <- object$epsilon    
     out$assoc     <- object$assoc
     out$assocmod  <- list_nms(object$assocmod, M, stub) 
     out$dataLong  <- list_nms(object$dataLong, M, stub) 
     out$dataEvent <- object$dataEvent
-    out$fr <- object$fr
     out$grp_stuff <- object$grp_stuff
+    out$fr        <- object$fr
+    classes <- c("stanjm", classes)
   }
   out <- rm_null(out, recursive = FALSE)
-  structure(out, class = c("stanmvreg", "stanreg", "lmerMod"))
+  structure(out, class = classes)
 }

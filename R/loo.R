@@ -131,8 +131,6 @@
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
-  if (x$stan_function == "stan_mvmer")
-    STOP_stan_mvmer("'loo'")
   if (model_has_weights(x))
     recommend_exact_loo(reason = "model has weights")
   
@@ -142,9 +140,14 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  if (is.stanmvreg(x)) {
+  
+  if (is.stanjm(x)) { # stan_jm models
     loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
-  } else {
+  } else if (is.stanmvreg(x)) { # stan_mvmer models
+    M <- get_M(x)
+    ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
+    loo_x <- suppressWarnings(loo.matrix(ll, ...))
+  } else { # all other models
     loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   }
   
@@ -192,10 +195,15 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  if (x$stan_function == "stan_mvmer")
-    STOP_stan_mvmer("'waic'")
-  out <- if (is.stanmvreg(x)) waic.matrix(log_lik(x)) else 
-    waic.function(ll_fun(x), args = ll_args(x))
+  if (is.stanjm(x)) { # stan_jm models
+    out <- waic.matrix(log_lik(x))
+  } else if (is.stanmvreg(x)) { # stan_mvmer models
+    M <- get_M(x)
+    ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
+    out <- waic.matrix(ll)
+  } else { # all other models
+    out <- waic.function(ll_fun(x), args = ll_args(x))
+  }
   structure(out, 
             class = c("loo", "waic"),
             name = deparse(substitute(x)), 

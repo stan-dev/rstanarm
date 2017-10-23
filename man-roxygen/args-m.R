@@ -1,1 +1,1 @@
-#' @param <%= mArg %> Integer specifying the number of the longitudinal submodel
+#' @param <%= mArg %> Integer specifying the number or name of the submodel

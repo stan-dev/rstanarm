@@ -43,7 +43,6 @@ source(file.path("helpers", "expect_survfit.R"))
 source(file.path("helpers", "expect_ppd.R"))
 source(file.path("helpers", "expect_identical_sorted_stanmats.R"))
 source(file.path("helpers", "SW.R"))
-source(file.path("helpers", "CO.R"))
 source(file.path("helpers", "get_tols.R"))
 source(file.path("helpers", "recover_pars.R"))
 
@@ -165,7 +164,7 @@ test_that("multiple grouping factors are ok", {
   expect_identical_sorted_stanmats(ok_mod3, ok_mod6)
 })
 
-#----  Compare parameter estimates: univariate stan_mvmer vs stan_glmer
+#----  Compare estimates: univariate stan_mvmer vs stan_glmer
 
 if (interactive()) {
   compare_glmer <- function(fmLong, fam = gaussian, ...) {
@@ -178,6 +177,11 @@ if (interactive()) {
       expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
     for (i in names(tols$ranef))
       expect_equal(pars$ranef[[i]], pars2$ranef[[i]], tol = tols$ranef[[i]])
+    expect_equal(colMeans(log_lik(y1)), 
+                 colMeans(log_lik(y2)), tol = 0.15)
+    nd <- pbcLong[stats::complete.cases(pbcLong), , drop = FALSE]
+    expect_equal(colMeans(log_lik(y1, newdata = nd)), 
+                 colMeans(log_lik(y2, newdata = nd)), tol = 0.15)
   }
   test_that("coefs same for stan_jm and stan_lmer/coxph", {
     compare_glmer(logBili ~ year + (1 | id), gaussian)})
@@ -212,48 +216,69 @@ for (j in 1:5) {
   mod <- get(paste0("f", j))
   cat("Checking model:", paste0("f", j), "\n")
 
-  expect_error(log_lik(mod), "not yet implemented")
-  expect_error(loo(mod), "not yet implemented")
-  expect_error(waic(mod), "not yet implemented")
-  expect_error(posterior_traj(mod), "can only be used")
-  expect_error(posterior_survfit(mod), "can only be used")
+  expect_error(posterior_traj(mod), "stanjm")
+  expect_error(posterior_survfit(mod), "stanjm")
      
   test_that("posterior_predict works with estimation data", {
     pp <- posterior_predict(mod, m = 1)
     expect_ppd(pp)
-  }) 
-  
-  test_that("posterior_predict works with estimation data for second submodel", {
     if (mod$n_markers > 1L) {
       pp <- posterior_predict(mod, m = 2)
       expect_ppd(pp)
     }
-  })     
+  })  
+  test_that("log_lik works with estimation data", {
+    ll <- log_lik(mod)
+    expect_matrix(ll)
+    expect_identical(ll, log_lik(mod, m = 1))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2))
+  })   
   
   nd <- tmpdat[tmpdat$id == 2,]
   test_that("posterior_predict works with new data (one individual)", {
     pp <- posterior_predict(mod, m = 1, newdata = nd)
     expect_ppd(pp)
-  })
-  
-  test_that("posterior_predict works with new data (one individual) for second submodel", {
     if (mod$n_markers > 1L) {
       pp <- posterior_predict(mod, m = 2, newdata = nd)
       expect_ppd(pp)
     }
   })     
+  test_that("log_lik works with new data (one individual)", {
+    ll <- log_lik(mod, newdata = nd)
+    expect_matrix(ll)
+    expect_identical(ll, log_lik(mod, m = 1, newdata = nd))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2, newdata = nd))
+    # log_lik is only designed for one submodel at a time so passing
+    # newdata as a list should generate an error in validate_newdata
+    expect_error(log_lik(mod, newdata = list(nd)), "data frame") 
+  }) 
   
   nd <- tmpdat[tmpdat$id %in% c(1,2),]
   test_that("posterior_predict works with new data (multiple individuals)", {
     pp <- posterior_predict(mod, m = 1, newdata = nd)
     expect_ppd(pp)
-  })
-  
-  test_that("posterior_predict works with new data (multiple individuals) for second submodel", {
     if (mod$n_markers > 1L) {
       pp <- posterior_predict(mod, m = 2, newdata = nd)
       expect_ppd(pp)
     }
+  })
+  test_that("log_lik works with estimation data", {
+    expect_matrix(log_lik(mod, newdata = nd))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2, newdata = nd))
+  }) 
+  
+  test_that("loo and waic work", {
+    l <- suppressWarnings(loo(mod))
+    w <- suppressWarnings(waic(mod))
+    expect_s3_class(l, "loo")
+    expect_s3_class(w, "loo")
+    expect_s3_class(w, "waic")
+    att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
+    expect_named(attributes(l), att_names)
+    expect_named(attributes(w), att_names)
   })
   
   test_that("extraction methods work", {
@@ -276,7 +301,7 @@ for (j in 1:5) {
     expect_is(sig, "numeric");
   })
   
-  test_that("these extraction methods are current disallowed", {
+  test_that("these extraction methods are currently disallowed", {
     expect_error(se(mod), "Not currently implemented")
     expect_error(fitted(mod), "Not currently implemented")
     expect_error(residuals(mod), "Not currently implemented")

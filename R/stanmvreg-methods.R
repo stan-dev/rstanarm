@@ -66,20 +66,37 @@
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
 #' residuals or any other type).
 #' }
-#' \item{\code{log_lik}}{
-#' Returns the \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
-#' where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
-#' of individuals in the fitted model. The likelihood for a single individual 
-#' is therefore the sum of the likelihood contributions from their observed
-#' longitudinal measurements and their event time data.
-#' Note: we use \code{log_lik} rather than defining a
-#' \code{\link[stats]{logLik}} method because (in addition to the conceptual
-#' difference) the documentation for \code{logLik} states that the return value
-#' will be a single number, whereas we return a matrix.
-#' }
 #' }
 #' 
 #' @seealso
+#' \itemize{
+#'  \item The \code{\link[=print.stanmvreg]{print}},
+#'    \code{\link[=summary.stanmvreg]{summary}}, and \code{\link{prior_summary}} 
+#'    methods for \code{stanmvreg} objects for information on the fitted model.
+#'  \item The \code{\link[=plot.stanreg]{plot}} method to plot estimates and
+#'    diagnostics.
+#'  \item The \code{\link{pp_check}} method for graphical posterior predictive
+#'    checking of the longitudinal or glmer submodels.
+#'  \item The \code{\link{ps_check}} method for graphical posterior predictive
+#'    checking of the event submodel.
+#'  \item The \code{\link{posterior_traj}} for predictions for the longitudinal
+#'    submodel (for models estimated using \code{\link{stan_jm}}), as well as
+#'    it's associated \code{\link[=plot.predict.stanjm]{plot}} method.
+#'  \item The \code{\link{posterior_survfit}} for predictions for the event
+#'    submodel, including so-called "dynamic" predictions (for models estimated 
+#'    using \code{\link{stan_jm}}), as well as
+#'    it's associated \code{\link[=plot.survfit.stanjm]{plot}} method.
+#'  \item The \code{\link{posterior_predict}} for predictions for the glmer
+#'    submodel (for models estimated using \code{\link{stan_mvmer}}).
+#'  \item The \code{\link{posterior_interval}} for uncertainty intervals for 
+#'    model parameters.
+#'  \item The \code{\link[=loo.stanreg]{loo}}, 
+#'    and \code{\link[=log_lik.stanmvreg]{log_lik}} methods for leave-one-out 
+#'    model comparison, and computing the log-likelihood of (possibly new) data.
+#'  \item The \code{\link[=as.matrix.stanmvreg]{as.matrix}}, \code{as.data.frame}, 
+#'    and \code{as.array} methods to access posterior draws.
+#' } 
+#' 
 #' Other S3 methods for stanmvreg objects, which have separate documentation, 
 #' including \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
 #' 
@@ -233,15 +250,9 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
 #' @param formula. An updated formula for the model. For a multivariate model  
 #'   \code{formula.} should be a list of formulas, as described for the 
 #'   \code{formula} argument in \code{\link{stan_mvmer}}.
-#' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
-#'   or event submodel, when \code{object} was estimated using 
-#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
-#'   should be a list of formulas, as described for the \code{formulaLong}
-#'   argument in \code{\link{stan_jm}}.
 #' @param evaluate See \code{\link[stats]{update}}.
 #'
-update.stanmvreg <- function(object, formula., formulaLong., 
-                             formulaEvent., ..., evaluate = TRUE) {
+update.stanmvreg <- function(object, formula., ..., evaluate = TRUE) {
   call <- getCall(object)
   M <- get_M(object)
   if (is.null(call)) 
@@ -249,9 +260,6 @@ update.stanmvreg <- function(object, formula., formulaLong.,
   extras <- match.call(expand.dots = FALSE)$...
   fm <- formula(object)
   if (!missing(formula.)) {
-    if (is.jm(object))
-      stop2("'formula.' should not be specified for joint models estimated ",
-            "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
     if (M > 1) {
       if (!is.list(formula.))
         stop2("To update the formula for a multivariate model ",
@@ -274,6 +282,51 @@ update.stanmvreg <- function(object, formula., formulaLong.,
     fm_mvmer <- as.call(c(quote(list), fm_mvmer))
     call$formula <- fm_mvmer
   }  
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) 
+      call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  
+  if (!evaluate) 
+    return(call)
+  
+  # do this like lme4 update.merMod instead of update.default
+  ff <- environment(formula(object))
+  pf <- parent.frame()
+  sf <- sys.frames()[[1L]]
+  tryCatch(eval(call, envir = ff),
+           error = function(e) {
+             tryCatch(eval(call, envir = sf),
+                      error = function(e) {
+                        eval(call, pf)
+                      })
+           })
+}
+
+#' @rdname stanmvreg-methods
+#' @export
+#' @method update stanjm
+#' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
+#'   or event submodel, when \code{object} was estimated using 
+#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
+#'   should be a list of formulas, as described for the \code{formulaLong}
+#'   argument in \code{\link{stan_jm}}.
+#'
+update.stanjm <- function(object, formulaLong., formulaEvent., ..., evaluate = TRUE) {
+  call <- getCall(object)
+  M <- get_M(object)
+  if (is.null(call)) 
+    stop2("'object' does not contain a 'call' component.")
+  if ("formula." %in% names(list(...)))
+    stop2("'formula.' should not be specified for joint models. ",
+          "Specify 'formulaLong.' and 'formulaEvent' instead.")
+  extras <- match.call(expand.dots = FALSE)$...
+  fm <- formula(object)
   if (!missing(formulaLong.)) {
     if (!is.jm(object))
       stop("'formulaLong.' should only be specified for joint models estimated ",
@@ -286,7 +339,7 @@ update.stanmvreg <- function(object, formula., formulaLong.,
              "more of the longitudinal submodels.", call. = FALSE)
       if (length(formulaLong.) != M)
         stop(paste0("The list provided in 'formulaLong.' appears to be the ",
-             "incorrect length; should be length ", M), call. = FALSE)     
+                    "incorrect length; should be length ", M), call. = FALSE)     
     } else {
       if (!is.list(formulaLong.)) 
         formulaLong. <- list(formulaLong.)
