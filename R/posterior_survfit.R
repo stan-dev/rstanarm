@@ -772,7 +772,8 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
     if (M == 1) {
       new_b <- list(new_b)
     } else {
-      len_b <- sapply(object$glmod_stuff, function(m) length(unlist(m$cnms)))
+      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
+      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
       new_b <- split(new_b, rep(1:length(len_b), len_b))
     }
   }
@@ -780,7 +781,8 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
     if (M == 1) {
       new_b <- list(new_b)
     } else {
-      len_b <- sapply(object$glmod_stuff, function(m) length(unlist(m$cnms)))
+      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
+      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
       new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
     }
   }  
