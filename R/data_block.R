@@ -31,9 +31,10 @@ center_x <- function(x, sparse) {
   }
   else xbar <- rep(0, ncol(xtemp))
   
-  sel <- (2 > apply(xtemp, 2L, function(x) length(unique(x))))
+  sel <- apply(xtemp, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   if (any(sel)) {
     # drop any column of x with < 2 unique values (empty interaction levels)
+    # exception is column of 1s isn't dropped 
     warning("Dropped empty interaction levels: ",
             paste(colnames(xtemp)[sel], collapse = ", "))
     xtemp <- xtemp[, !sel, drop = FALSE]

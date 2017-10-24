@@ -1,3 +1,5 @@
+* prior_aux now defaults to exponential rather than Cauchy
+
 Sat April 29 2017 (2.15.3)
 1. Bug fixes
   * Fix to stan_glmer() Bernoulli models with multiple group-specific intercept terms that

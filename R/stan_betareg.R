@@ -36,6 +36,7 @@
 #' @template args-same-as-rarely
 #' @template args-x-y
 #' @template args-dots
+#' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
@@ -115,7 +116,7 @@ stan_betareg <-
            prior_intercept = normal(),
            prior_z = normal(),
            prior_intercept_z = normal(),
-           prior_phi = cauchy(0, 5),
+           prior_phi = exponential(),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL,
@@ -164,6 +165,10 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
+    
+    if (is.null(link.phi) && is.null(Z))
+      link_phi <- "identity"
+    
     fit <- 
       nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),

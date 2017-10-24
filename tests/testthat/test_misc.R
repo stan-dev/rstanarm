@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-source(file.path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 

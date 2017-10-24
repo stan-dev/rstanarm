@@ -15,8 +15,7 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param digits Number of digits to use for rounding.
-#' @param ... Currently ignored by the method for stanreg objects. The S3
-#'   generic uses \code{...} to pass arguments to any defined methods.
+#' @param ... Currently ignored by the method for stanreg objects.
 #' 
 #' @section Intercept (after predictors centered): 
 #'   For \pkg{rstanarm} modeling functions that accept a \code{prior_intercept} 
@@ -72,7 +71,8 @@
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
-#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{priors}}
+#' @seealso The \link[=priors]{priors help page} and the \emph{Prior
+#'   Distributions} vignette.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
@@ -347,7 +347,8 @@ used.sparse <- function(x) {
       }
   )
   if (!is.null(p$adjusted_scale))
-    cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+    cat("\n     **adjusted scale =", .f2(p$adjusted_scale), 
+        if (p$dist == "exponential") ("(adjusted rate = 1/adjusted scale)"))
 }
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)

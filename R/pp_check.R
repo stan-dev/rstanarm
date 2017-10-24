@@ -102,7 +102,7 @@
 #' pp_check(fit, plotfun = "stat_grouped", stat = "q25", group = "cyl")
 #' 
 #' # Scatterplot of two test statistics
-#' pp_check(fit, plotfun = "stat_2d", test = c("mean", "sd"))
+#' pp_check(fit, plotfun = "stat_2d", stat = c("mean", "sd"))
 #' 
 #' # Scatterplot of y vs. average yrep
 #' pp_check(fit, plotfun = "scatter_avg") # y vs. average yrep

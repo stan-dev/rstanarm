@@ -278,8 +278,7 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
   mat <- if ("stanmat" %in% names(dots)) as.matrix(dots$stanmat) else as.matrix(x)
   cnms <- .cnms(x)
   useSc <- "sigma" %in% colnames(mat)
-  if (useSc) sc <- mat[,"sigma"]
-  else sc <- 1
+  if (useSc) sc <- mat[,"sigma"] else sc <- 1
   Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
   nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
   nms <- names(cnms)

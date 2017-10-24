@@ -177,8 +177,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   } else {
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m), m = m)
   }
-  if (!is(object, "polr") && is.binomial(family(object, m = m)$family))
-    ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
+  if (!is_polr(object) && is.binomial(family(object)$family))
+    ppargs$trials <- pp_binomial_trials(object, newdata)
 
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
@@ -186,7 +186,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
-  if (is(object, "polr") && !is_scobit(object))
+  if (is_polr(object) && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   
   if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
@@ -223,8 +223,8 @@ posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = N
 # internal ----------------------------------------------------------------
 
 # functions to draw from the various posterior predictive distributions
-pp_fun <- function(object, m = NULL) {
-  suffix <- if (is(object, "polr")) "polr" else family(object, m = m)$family
+pp_fun <- function(object) {
+  suffix <- if (is_polr(object)) "polr" else family(object)$family
   get(paste0(".pp_", suffix), mode = "function")
 }
 
@@ -306,10 +306,11 @@ pp_args <- function(object, data, m = NULL) {
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
   inverse_link <- linkinv(object, m = m)
-  if (is(object, "polr")) {
+  if (is.nlmer(object)) inverse_link <- function(x) return(x)
+  if (is_polr(object)) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     args <- nlist(eta, zeta, linkinv = inverse_link)
-    if ("alpha" %in% colnames(stanmat))
+    if ("alpha" %in% colnames(stanmat)) # scobit
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
@@ -384,6 +385,11 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
       b <- pp_b_ord(b, data$Z_names)
     }
     eta <- eta + as.matrix(b %*% data$Zt)
+  }
+  if (is.nlmer(object)) {
+    if (is.null(data$arg1)) eta <- linkinv(object)(eta)
+    else eta <- linkinv(object)(eta, data$arg1, data$arg2)
+    eta <- t(eta)
   }
   nlist(eta, stanmat)
 }
