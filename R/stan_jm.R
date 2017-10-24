@@ -412,6 +412,7 @@
 #'               time_var = "year",
 #'               # this next line is only to keep the example small in size!
 #'               chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' print(f1) 
 #' summary(f1) 
 #'         
 #' #####
@@ -424,7 +425,7 @@
 #'               assoc = c("etavalue", "etaslope"),
 #'               time_var = "year",
 #'               chains = 1, cores = 1, seed = 12345, iter = 1000)
-#' summary(f2)  
+#' print(f2)  
 #' 
 #' #####
 #' # Univariate joint model, with association structure based on the 
@@ -437,7 +438,7 @@
 #'               time_var = "year",
 #'               assoc = "etavalue", lag_assoc = 2,
 #'               chains = 1, cores = 1, seed = 12345, iter = 1000)
-#' summary(f3) 
+#' print(f3) 
 #' 
 #' #####
 #' # Univariate joint model, where the association structure includes 
@@ -452,8 +453,10 @@
 #'               dataLong = pbcLong,
 #'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
-#'               time_var = "year", chains = 1,
-#'               assoc = c("etavalue", "etavalue_data(~ trt)"))
+#'               time_var = "year",
+#'               assoc = c("etavalue", "etavalue_data(~ trt)"),
+#'               chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' print(f4)
 #' 
 #' ######
 #' # Multivariate joint model, with association structure based 
@@ -469,8 +472,8 @@
 #'         dataEvent = pbcSurv,
 #'         assoc = list(c("etavalue", "etaslope"), "etaauc"), 
 #'         time_var = "year",
-#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
-#' summary(mv1)
+#'         chains = 1, cores = 1, seed = 12345, iter = 100)
+#' print(mv1)
 #' 
 #' #####
 #' # Multivariate joint model, where the association structure is formed by 
@@ -489,7 +492,7 @@
 #'         dataEvent = pbcSurv,
 #'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"),
 #'         time_var = "year", 
-#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
+#'         chains = 1, cores = 1, seed = 12345, iter = 100)
 #'         
 #' #####
 #' # Multivariate joint model, with one bernoulli marker and one
