@@ -256,9 +256,9 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         )
       }
     }
-    if (!is.null(x[["priorAssoc"]]))
+    if (!is.null(x[["priorEvent_assoc"]]))
       .print_vector_prior(
-        x[["priorAssoc"]], 
+        x[["priorEvent_assoc"]], 
         txt = "\nAssociation parameters", 
         formatters = formatters
       )

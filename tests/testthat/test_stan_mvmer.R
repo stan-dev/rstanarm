@@ -41,6 +41,7 @@ source(file.path("helpers", "expect_stanreg.R"))
 source(file.path("helpers", "expect_stanmvreg.R"))
 source(file.path("helpers", "expect_survfit.R"))
 source(file.path("helpers", "expect_ppd.R"))
+source(file.path("helpers", "expect_identical_sorted_stanmats.R"))
 source(file.path("helpers", "SW.R"))
 source(file.path("helpers", "get_tols.R"))
 source(file.path("helpers", "recover_pars.R"))
@@ -52,6 +53,7 @@ context("stan_mvmer")
 pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
 pbcLong$ybino <- as.integer(rpois(nrow(pbcLong), 5))
 pbcLong$ypois <- as.integer(pbcLong$albumin)
+pbcLong$ynbin <- as.integer(rnbinom(nrow(pbcLong), 3, .3))
 pbcLong$ygamm <- as.numeric(pbcLong$platelet / 10)
 pbcLong$xbern <- as.numeric(pbcLong$platelet / 100)
 pbcLong$xpois <- as.numeric(pbcLong$platelet / 100)
@@ -61,21 +63,24 @@ pbcLong$xgamm <- as.numeric(pbcLong$logBili)
 
 # univariate GLM
 fm1 <- logBili ~ year + (year | id)
-m1 <- stan_mvmer(fm1, pbcLong, iter = 10, chains = 1, seed = SEED)
+o<-SW(m1 <- stan_mvmer(fm1, pbcLong, iter = 10, chains = 1, seed = SEED))
 
 # multivariate GLM
 fm2 <- list(logBili ~ year + (year | id), albumin ~ year + (year | id))
-m2 <- stan_mvmer(fm2, pbcLong, iter = 10, chains = 1, seed = SEED)
+o<-SW(m2 <- stan_mvmer(fm2, pbcLong, iter = 10, chains = 1, seed = SEED))
 
-#----  Tests for stan_jm arguments
+#----  Tests for stan_mvmer arguments
 
 test_that("formula argument works", {
-  expect_identical(as.matrix(m1), as.matrix(update(m1, formula. = list(fm1)))) # fm as list
+  SW(m991 <- update(m1, formula. = list(fm1)))
+  expect_identical(as.matrix(m1), as.matrix(m991)) # fm as list
 })
 
 test_that("data argument works", {
-  expect_identical(as.matrix(m1), as.matrix(update(m1, data = list(pbcLong)))) # data as list
-  expect_identical(as.matrix(m2), as.matrix(update(m2, data = list(pbcLong, pbcLong))))
+  SW(m991 <- update(m1, data = list(pbcLong)))
+  SW(m992 <- update(m2, data = list(pbcLong, pbcLong)))
+  expect_identical(as.matrix(m1), as.matrix(m991)) # data as list
+  expect_identical(as.matrix(m2), as.matrix(m992))
 })
 
 test_that("family argument works", {
@@ -87,8 +92,8 @@ test_that("family argument works", {
   expect_output(ret <- update(m1, formula. = ybern ~ ., family = binomial))
   expect_output(ret <- update(m1, formula. = ypois ~ ., family = poisson))
   expect_output(ret <- update(m1, formula. = ypois ~ ., family = neg_binomial_2))
-  expect_output(ret <- update(m1, formula. = ygamm ~ ., family = Gamma))
-  #expect_output(ret <- update(m1, formula. = ygamm ~ ., family = inverse.gaussian))
+  expect_output(ret <- update(m1, formula. = ygamm ~ ., family = Gamma, init = 0))
+  expect_output(ret <- update(m1, formula. = ygamm ~ ., family = inverse.gaussian, init = 0))
   
   expect_error(ret <- update(m1, formula. = ybino ~ ., family = binomial))
   
@@ -108,12 +113,11 @@ test_that("adapt_delta argument works", {
 
 test_that("error message occurs for arguments not implemented", {
   expect_error(update(m1, weights = 1:10), "not yet implemented")
-  expect_error(update(m1, offset = 1:10), "not yet implemented")
   expect_error(update(m1, QR = TRUE), "not yet implemented")
   expect_error(update(m1, sparse = TRUE), "not yet implemented")
 })
 
-#----  Check models with multiple groupiing factors
+#----  Check models with multiple grouping factors
 
 test_that("multiple grouping factors are ok", {
   
@@ -121,44 +125,51 @@ test_that("multiple grouping factors are ok", {
   tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
   
   tmpfm1 <- logBili ~ year + (year | id) + (1 | practice)
-  ok_mod1 <- update(m1, formula. = tmpfm1, data = tmpdat, init = 0)
+  SW(ok_mod1 <- update(m1, formula. = tmpfm1, data = tmpdat, iter = 1, init = 0))
   expect_stanmvreg(ok_mod1)
   
   tmpfm2 <- list(
     logBili ~ year + (year | id) + (1 | practice),
     albumin ~ year + (year | id))
-  ok_mod2 <- update(m2, formula. = tmpfm2, data = tmpdat)
+  SW(ok_mod2 <- update(m2, formula. = tmpfm2, data = tmpdat, iter = 1, init = 0))
   expect_stanmvreg(ok_mod2)
   
   tmpfm3 <- list(
     logBili ~ year + (year | id) + (1 | practice),
     albumin ~ year + (year | id) + (1 | practice))
-  ok_mod3 <- update(m2, formula. = tmpfm3, data = tmpdat)
+  SW(ok_mod3 <- update(m2, formula. = tmpfm3, data = tmpdat, iter = 1, init = 0))
   expect_stanmvreg(ok_mod3)
   
   # check reordering grouping factors is ok
+  # NB it seems these comparisons must be made using init = 0 and one iteration,
+  # probably because the order of the parameters passed to Stan affects the 
+  # sequence of MCMC samples even when the same seed is used. An alternative
+  # would be to test equality of the stanmat colMeans with specified tolerance?
   tmpfm4 <- list(
-    logBili ~ year + (1 | practice) + (year | id) ,
+    logBili ~ year + (1 | practice) + (year | id),
     albumin ~ year + (year | id))
-  expect_identical(as.matrix(ok_mod2), as.matrix(update(ok_mod2, formula. = tmpfm4)))
-  
+  SW(ok_mod4 <- update(ok_mod2, formula. = tmpfm4))
+  expect_identical_sorted_stanmats(ok_mod2, ok_mod4)
+
   tmpfm5 <- list(
-    logBili ~ year + (1 | practice) + (year | id) ,
+    logBili ~ year + (1 | practice) + (year | id),
     albumin ~ year + (year | id) + (1 | practice))
-  expect_identical(as.matrix(ok_mod3), as.matrix(update(ok_mod3, formula. = tmpfm5)))
+  SW(ok_mod5 <- update(ok_mod3, formula. = tmpfm5))
+  expect_identical_sorted_stanmats(ok_mod3, ok_mod5)
   
   tmpfm6 <- list(
-    logBili ~ year + (1 | practice) + (year | id) ,
+    logBili ~ year + (1 | practice) + (year | id),
     albumin ~ year + (1 | practice) + (year | id))
-  expect_identical(as.matrix(ok_mod3), as.matrix(update(ok_mod3, formula. = tmpfm6)))
+  SW(ok_mod6 <- update(ok_mod3, formula. = tmpfm6))
+  expect_identical_sorted_stanmats(ok_mod3, ok_mod6)
 })
 
-#----  Compare parameter estimates: univariate stan_mvmer vs stan_glmer
+#----  Compare estimates: univariate stan_mvmer vs stan_glmer
 
 if (interactive()) {
   compare_glmer <- function(fmLong, fam = gaussian, ...) {
-    y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED)
-    y2 <- stan_mvmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, ...) 
+    SW(y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED))
+    SW(y2 <- stan_mvmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, ...))
     tols <- get_tols(y1, tolscales = TOLSCALES)
     pars <- recover_pars(y1)
     pars2 <- recover_pars(y2)
@@ -166,6 +177,11 @@ if (interactive()) {
       expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
     for (i in names(tols$ranef))
       expect_equal(pars$ranef[[i]], pars2$ranef[[i]], tol = tols$ranef[[i]])
+    expect_equal(colMeans(log_lik(y1)), 
+                 colMeans(log_lik(y2)), tol = 0.15)
+    nd <- pbcLong[stats::complete.cases(pbcLong), , drop = FALSE]
+    expect_equal(colMeans(log_lik(y1, newdata = nd)), 
+                 colMeans(log_lik(y2, newdata = nd)), tol = 0.15)
   }
   test_that("coefs same for stan_jm and stan_lmer/coxph", {
     compare_glmer(logBili ~ year + (1 | id), gaussian)})
@@ -174,50 +190,121 @@ if (interactive()) {
   test_that("coefs same for stan_jm and stan_glmer, poisson", {
     compare_glmer(ypois ~ year + xpois + (1 | id), poisson, init = 0)})
   test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
-    compare_glmer(ypois ~ year + xpois + (1 | id), neg_binomial_2)})
+    compare_glmer(ynbin ~ year + xpois + (1 | id), neg_binomial_2)})
   test_that("coefs same for stan_jm and stan_glmer, Gamma", {
     compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma(log))})
 #  test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
 #    compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
 }
 
-#--------  Check post-estimation functions
+#----  Check methods and post-estimation functions
 
-f1 <- stan_mvmer(logBili ~ year + (year | id), pbcLong,
-                 chains = 1, cores = 1, seed = 12345, iter = 10)
+tmpdat <- pbcLong
+tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
+
+o<-SW(f1 <- update(m1, formula. = list(logBili ~ year + (year | id)), data = tmpdat))
+o<-SW(f2 <- update(f1, formula. = list(logBili ~ year + (year | id) + (1 | practice))))
+o<-SW(f3 <- update(m2, formula. = list(logBili ~ year + (year | id) + (1 | practice),
+                                       albumin ~ year + (year | id)), data = tmpdat))
+o<-SW(f4 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
+                                       albumin ~ year + (year | id) + (1 | practice))))
+o<-SW(f5 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
+                                       ybern ~ year + (year | id) + (1 | practice)),
+                   family = list(gaussian, binomial)))
+
+for (j in 1:5) {
+  mod <- get(paste0("f", j))
+  cat("Checking model:", paste0("f", j), "\n")
+
+  expect_error(posterior_traj(mod), "stanjm")
+  expect_error(posterior_survfit(mod), "stanjm")
+     
+  test_that("posterior_predict works with estimation data", {
+    pp <- posterior_predict(mod, m = 1)
+    expect_ppd(pp)
+    if (mod$n_markers > 1L) {
+      pp <- posterior_predict(mod, m = 2)
+      expect_ppd(pp)
+    }
+  })  
+  test_that("log_lik works with estimation data", {
+    ll <- log_lik(mod)
+    expect_matrix(ll)
+    expect_identical(ll, log_lik(mod, m = 1))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2))
+  })   
   
-for (j in 1) {
-  tryCatch({
-    mod <- get(paste0("f", j))
-    cat("Checking model:", paste0("f", j), "\n")
- 
-    expect_error(log_lik(mod), "not yet implemented")
-    expect_error(loo(mod), "not yet implemented")
-    expect_error(waic(mod), "not yet implemented")
-    expect_error(posterior_traj(mod), "can only be used")
-    expect_error(posterior_survfit(mod), "can only be used")
-       
-    test_that("posterior_predict works with estimation data", {
-      pp <- posterior_predict(mod, m = 1)
+  nd <- tmpdat[tmpdat$id == 2,]
+  test_that("posterior_predict works with new data (one individual)", {
+    pp <- posterior_predict(mod, m = 1, newdata = nd)
+    expect_ppd(pp)
+    if (mod$n_markers > 1L) {
+      pp <- posterior_predict(mod, m = 2, newdata = nd)
       expect_ppd(pp)
-    }) 
-    
-    ndL <- pbcLong[pbcLong$id == 2,]
-    ndE <- pbcSurv[pbcSurv$id == 2,]
-    test_that("posterior_predict works with new data (one individual)", {
-      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
+    }
+  })     
+  test_that("log_lik works with new data (one individual)", {
+    ll <- log_lik(mod, newdata = nd)
+    expect_matrix(ll)
+    expect_identical(ll, log_lik(mod, m = 1, newdata = nd))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2, newdata = nd))
+    # log_lik is only designed for one submodel at a time so passing
+    # newdata as a list should generate an error in validate_newdata
+    expect_error(log_lik(mod, newdata = list(nd)), "data frame") 
+  }) 
+  
+  nd <- tmpdat[tmpdat$id %in% c(1,2),]
+  test_that("posterior_predict works with new data (multiple individuals)", {
+    pp <- posterior_predict(mod, m = 1, newdata = nd)
+    expect_ppd(pp)
+    if (mod$n_markers > 1L) {
+      pp <- posterior_predict(mod, m = 2, newdata = nd)
       expect_ppd(pp)
-    })  
-    
-    ndL <- pbcLong[pbcLong$id %in% c(1,2),]
-    ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
-    test_that("posterior_predict works with new data (multiple individuals)", {
-      pp <- posterior_predict(mod, m = 1, newdataLong = ndL, newdataEvent = ndE)
-      expect_ppd(pp)
-    })  
-  }, error = function(e)
-    cat(" Failed for model", paste0("f", j), " due to error:\n", paste(e)))
+    }
+  })
+  test_that("log_lik works with estimation data", {
+    expect_matrix(log_lik(mod, newdata = nd))
+    if (mod$n_markers > 1L)
+      expect_matrix(log_lik(mod, m = 2, newdata = nd))
+  }) 
+  
+  test_that("loo and waic work", {
+    l <- suppressWarnings(loo(mod))
+    w <- suppressWarnings(waic(mod))
+    expect_s3_class(l, "loo")
+    expect_s3_class(w, "loo")
+    expect_s3_class(w, "waic")
+    att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
+    expect_named(attributes(l), att_names)
+    expect_named(attributes(w), att_names)
+  })
+  
+  test_that("extraction methods work", {
+    M <- mod$n_markers
+    fe <- fixef(mod)
+    re <- ranef(mod)
+    ce <- coef(mod)
+    mf <- model.frame(mod)
+    tt <- terms(mod)
+    fm <- formula(mod)
+    fam <- family(mod)
+    sig <- sigma(mod)
+    expect_is(fe, "list"); expect_identical(length(fe), M)
+    expect_is(re, "list"); expect_identical(length(re), M)
+    expect_is(ce, "list"); expect_identical(length(re), M)
+    expect_is(mf, "list"); expect_identical(length(mf), M); lapply(mf, expect_is, "data.frame")
+    expect_is(tt, "list"); expect_identical(length(tt), M); lapply(tt, expect_is, "terms")
+    expect_is(fm, "list"); expect_identical(length(fm), M); lapply(fm, expect_is, "formula")
+    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam,expect_is, "family")
+    expect_is(sig, "numeric");
+  })
+  
+  test_that("these extraction methods are currently disallowed", {
+    expect_error(se(mod), "Not currently implemented")
+    expect_error(fitted(mod), "Not currently implemented")
+    expect_error(residuals(mod), "Not currently implemented")
+  })
 }
-
-
 

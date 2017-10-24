@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
-#' 
+
 #' Combine plots of the estimated longitudinal trajectory and survival function
 #' 
 #' This function takes arguments containing the plots of the estimated  
@@ -28,19 +27,19 @@
 #' @export
 #' @importFrom ggplot2 ggplot_build facet_wrap aes_string expand_limits
 #' 
-#' @param yplot An object of class \code{plot.predict.stanmvreg}, returned by a 
-#'   call to the generic plotting method for objects of class 
-#'   \code{predict.stanmvreg}. If there is more than one longitudinal outcome,
-#'   then a list of such objects can be provided.
-#' @param survplot An object of class \code{plot.survfit.stanmvreg}, returned by a 
-#'   call to the generic plotting method for objects of class 
-#'   \code{survfit.stanmvreg}. 
+#' @param yplot An object of class \code{plot.predict.stanjm}, returned by a 
+#'   call to the generic \code{\link[=plot.predict.stanjm]{plot}} method for 
+#'   objects of class \code{predict.stanjm}. If there is more than one 
+#'   longitudinal outcome, then a list of such objects can be provided.
+#' @param survplot An object of class \code{plot.survfit.stanjm}, returned by a 
+#'   call to the generic \code{\link[=plot.survfit.stanjm]{plot}} method for 
+#'   objects of class \code{survfit.stanjm}. 
 #'   
 #' @return A single \code{ggplot} object that includes plots of the estimated 
 #'   subject-specific longitudinal trajectories stacked on top of the 
 #'   associated subject-specific survival curve.   
 #'   
-#' @seealso \code{\link{plot.predict.stanmvreg}}, \code{\link{plot.survfit.stanmvreg}},
+#' @seealso \code{\link{plot.predict.stanjm}}, \code{\link{plot.survfit.stanjm}},
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_survfit}}
 #'    
 #' @examples
@@ -58,12 +57,12 @@ plot_stack <- function(yplot, survplot) {
   if (!is(yplot, "list")) yplot <- list(yplot)
   
   lapply(yplot, function(x) {
-    if (!is(x, "plot.predict.stanmvreg"))
-      stop("'yplot' should be an object of class 'plot.predict.stanmvreg', ",
+    if (!is(x, "plot.predict.stanjm"))
+      stop("'yplot' should be an object of class 'plot.predict.stanjm', ",
            "or a list of such objects.", call. = FALSE)
   })
-  if (!is(survplot, "plot.survfit.stanmvreg"))
-    stop("'survplot' should be an object of class 'plot.survfit.stanmvreg'.",
+  if (!is(survplot, "plot.survfit.stanjm"))
+    stop("'survplot' should be an object of class 'plot.survfit.stanjm'.",
          call. = FALSE)   
   
   y_build <- lapply(yplot, ggplot_build)

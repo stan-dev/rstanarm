@@ -124,18 +124,18 @@ predictive_error.ppd <- function(object, y, ...) {
   rstantools::predictive_error(ytilde, y = y)
 }
 
-#' @rdname predictive_error.stanreg
-#' @export
-#' @param m For \code{stanmvreg} models, the submodel for which to calculate
-#'   the prediction error. Can be an integer, or for \code{\link{stan_mvmer}}
-#'   models it can be \code{"y1"}, \code{"y2"}, etc, or for \code{\link{stan_jm}}
-#'   models it can be \code{"Event"}, \code{"Long1"}, \code{"Long2"}, etc.
-#' @param t,u Only relevant for \code{\link{stan_jm}} models and when \code{m = "Event"}. 
-#'   The argument \code{t} specifies the time up to which individuals must have survived
-#'   as well as being the time up to which the longitudinal data in \code{newdata}
-#'   is available. The argument \code{u} specifies the time at which the 
-#'   prediction error should be calculated (i.e. the time horizon).
-#'   
+# @rdname predictive_error.stanreg
+# @export
+# @param m For \code{stanmvreg} models, the submodel for which to calculate
+#   the prediction error. Can be an integer, or for \code{\link{stan_mvmer}}
+#   models it can be \code{"y1"}, \code{"y2"}, etc, or for \code{\link{stan_jm}}
+#   models it can be \code{"Event"}, \code{"Long1"}, \code{"Long2"}, etc.
+# @param t,u Only relevant for \code{\link{stan_jm}} models and when \code{m = "Event"}. 
+#   The argument \code{t} specifies the time up to which individuals must have survived
+#   as well as being the time up to which the longitudinal data in \code{newdata}
+#   is available. The argument \code{u} specifies the time at which the 
+#   prediction error should be calculated (i.e. the time horizon).
+#   
 predictive_error.stanmvreg <-
   function(object,
            newdataLong = NULL,
@@ -148,6 +148,7 @@ predictive_error.stanmvreg <-
            t, u,
            lossfn = "square",
            ...) {
+    stop("This function is not yet implemented for stanmvreg objects.")
     if ("y" %in% names(list(...)))
       stop("Argument 'y' should not be specified if 'object' is a stanmvreg object.")
     if (!is.jm(object))
