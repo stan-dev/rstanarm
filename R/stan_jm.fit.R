@@ -239,7 +239,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stop("The number of groups for the grouping factor '", 
          b1_varname, "' should be the same in all submodels.")
   
-  standata$bN1 <- b1_ngrps[[1L]]
+  standata$bN1 <- b1_ngrps[[1L]] + 1L # add padding for _NEW_ group
   standata$bK1 <- sum(b1_nvars)
   standata$bK1_len <- as.array(b1_nvars)
   standata$bK1_idx <- get_idx_array(b1_nvars)
@@ -268,7 +268,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (!n_distinct(b2_ngrps) == 1L)
       stop("The number of groups for the grouping factor '", 
            b2_varname, "' should be the same in all submodels.")
-    standata$bN2 <- b2_ngrps[[1L]]
+    standata$bN2 <- b2_ngrps[[1L]] + 1L # add padding for _NEW_ group
     standata$bK2 <- sum(b2_nvars)
     standata$bK2_len <- as.array(b2_nvars)
     standata$bK2_idx <- get_idx_array(b2_nvars)
@@ -346,7 +346,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   standata$t <- length(cnms)
   standata$p <- as.array(sapply(cnms, length))
   standata$l <- as.array(
-    sapply(cnms_nms, FUN = function(nm) unique(fetch_(y_mod, "z", "ngrps", nm))))
+    sapply(cnms_nms, FUN = function(nm) {
+      ngrps <- unique(fetch_(y_mod, "z", "ngrps", nm))
+      ngrps + 1L # add padding for _NEW_ group
+  }))
   standata$q <- sum(standata$p * standata$l)
   
   if (prior_covariance$dist == "decov") {
@@ -435,7 +438,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   b_nms <- uapply(seq_along(cnms), FUN = function(i) {
     nm <- cnms_nms[i]
     nms_i <- paste(cnms[[i]], nm)
-    flevels[[nm]] <- gsub(" ", "_", flevels[[nm]])
+    flevels[[nm]] <- c(gsub(" ", "_", flevels[[nm]]),
+                       paste0("_NEW_", nm))
     if (length(nms_i) == 1) {
       paste0(nms_i, ":", flevels[[nm]])
     } else {
@@ -620,8 +624,15 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     init_fit@sim$fnames_oi <- init_new_nms
     init_mat <- t(colMeans(as.matrix(init_fit))) # posterior means
     init_nms <- collect_nms(colnames(init_mat), M, stub = "Long")
-    init_beta  <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]]])
-    init_b     <- lapply(1:M, function(m) init_mat[, init_nms$y_b[[m]]])
+    init_beta <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]]])
+    init_b <- lapply(1:M, function(m) {
+      # can drop _NEW_ groups since they are not required for generating
+      # the assoc_terms that are used in scaling the priors for 
+      # the association parameters (ie. the Zt matrix returned by the 
+      # function 'make_assoc_parts_for_stan' will not be padded).
+      b <- init_mat[, init_nms$y_b[[m]]]
+      b[!grepl("_NEW_", names(b), fixed = TRUE)]
+    })
     
     if (is.character(init) && (init =="prefit")) {
       init_means2 <- rstan::get_posterior_mean(init_fit)

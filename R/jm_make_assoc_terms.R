@@ -68,7 +68,6 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
         grp_idx <- attr(parts[[m]], "grp_idx") 
       }
       
-      
       #---  etavalue and any interactions  ---#
       
       # etavalue
@@ -337,6 +336,7 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
       if (is.null(beta) || is.null(b))
         stop2("Bug found: beta and b must be provided to build the ",
               "linear predictor for '", which, "'.")
+      
       eta <- linear_predictor(beta, x)
       if (NCOL(b) == 1) {
         eta <- eta + as.vector(b %*% Zt)
