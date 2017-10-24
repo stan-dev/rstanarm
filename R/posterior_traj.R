@@ -25,9 +25,9 @@
 #' 
 #' @export
 #' 
-#' @templateVar stanmvregArg object
+#' @templateVar stanjmArg object
 #' @templateVar mArg m
-#' @template args-stanmvreg-object
+#' @template args-stanjm-object
 #' @template args-m
 #' @param newdata Optionally, a data frame in which to look for variables with
 #'   which to predict. If omitted, the model matrix is used. If \code{newdata}
@@ -101,14 +101,14 @@
 #' between time zero (baseline) and the last known survival time for the 
 #' individual, thereby providing predictions that correspond to a smooth estimate
 #' of the longitudinal trajectory (useful for the plotting via the associated
-#' \code{\link{plot.predict.stanmvreg}} method). In addition it returns a data 
+#' \code{\link{plot.predict.stanjm}} method). In addition it returns a data 
 #' frame by default, whereas the \code{\link{posterior_predict}} function 
 #' returns a matrix; see the \strong{Value} section below for details. Also,
 #' \code{posterior_traj} allows predictions to only be generated for a subset
 #' of individuals, via the \code{ids} argument. 
 #' 
 #' @return When \code{return_matrix = FALSE}, a data frame 
-#'   of class \code{predict.stanmvreg}. The data frame includes a column for the median 
+#'   of class \code{predict.stanjm}. The data frame includes a column for the median 
 #'   of the posterior predictions of the mean longitudinal response (\code{yfit}),
 #'   a column for each of the lower and upper limits of the uncertainty interval
 #'   corresponding to the posterior predictions of the mean longitudinal response 
@@ -121,7 +121,7 @@
 #'   When \code{return_matrix = TRUE}, the returned object is the same as that 
 #'   described for \code{\link{posterior_predict}}.
 #'   
-#' @seealso \code{\link{plot.predict.stanmvreg}}, \code{\link{posterior_predict}},
+#' @seealso \code{\link{plot.predict.stanjm}}, \code{\link{posterior_predict}},
 #'   \code{\link{posterior_survfit}}
 #' 
 #' @examples
@@ -195,15 +195,12 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                            return_matrix = FALSE, ...) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
-  
-  validate_stanmvreg_object(object)
-  if (!is.jm(object)) 
-    STOP_jm_only("'posterior_traj'")
+  validate_stanjm_object(object)
   M <- get_M(object)
   id_var   <- object$id_var
   time_var <- object$time_var
   validate_positive_scalar(m, not_greater_than = M)
-  clust_stuff <- object$clust_stuff[[m]]
+  grp_stuff <- object$grp_stuff[[m]]
   if (missing(ids)) 
     ids <- NULL
   
@@ -229,11 +226,11 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     last_time <- object$eventtime[as.character(id_list)]
   } else {
     if ("last_time" %in% names(data)) { # user provided newdata with last_time column
-      if (!all(tapply(data[["last_time"]], data[[id_var]], FUN = sd) == 0))
+      if (!all(tapply(data[["last_time"]], factor(data[[id_var]]), FUN = sd) == 0))
         stop("'last_time' column in 'newdata' should be constant within individuals")
-      last_time <- tapply(data[["last_time"]], data[[id_var]], FUN = max)
+      last_time <- tapply(data[["last_time"]], factor(data[[id_var]]), FUN = max)
     } else { # user provided newdata but no last_time column, last_time inferred from time_var
-      last_time <- tapply(data[[time_var]], data[[id_var]], FUN = max)
+      last_time <- tapply(data[[time_var]], factor(data[[id_var]]), FUN = max)
     }
   }
   
@@ -251,15 +248,14 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
     time_seq <- reshape(time_seq, direction = "long", varying = colnames(time_seq), 
                         v.names = time_var, timevar = "obs", ids = id_list, idvar = id_var)
     newX[[time_var]] <- as.numeric(newX[[time_var]]) # ensures no rounding during data.table merge
-    if (clust_stuff$has_clust) {
-      clust_var <- clust_stuff$clust_var
-      time_seq <- merge(time_seq, unique(newX[, c(id_var, clust_var)]), by = id_var)
-      time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[clust_var]]), ]
-      newX[[clust_var]] <- factor(newX[[clust_var]])
-      newX <- data.table::data.table(newX, key = c(id_var, clust_var, time_var))
-      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[clust_var]])
+    if (grp_stuff$has_grp) {
+      grp_var <- grp_stuff$grp_var
+      time_seq <- merge(time_seq, unique(newX[, c(id_var, grp_var)]), by = id_var)
+      time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[grp_var]]), ]
+      newX <- prepare_data_table(newX, id_var = id_var, time_var = time_var, grp_var = grp_var)
+      newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[grp_var]])
     } else {
-      newX <- data.table::data.table(newX, key = c(id_var, time_var))
+      newX <- prepare_data_table(newX, id_var = id_var, time_var = time_var)
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
@@ -278,20 +274,20 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
                     yfit = mutilde_bounds$med,
                     ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
                     pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
-  if (clust_stuff$has_clust) {
-    out$CLUSTVAR = newX[[clust_var]] # add clust_var and reorder cols
-    out <- out[, c("IDVAR", "CLUSTVAR", "TIMEVAR", 
+  if (grp_stuff$has_grp) {
+    out$GRPVAR = newX[[grp_var]] # add grp_var and reorder cols
+    out <- out[, c("IDVAR", "GRPVAR", "TIMEVAR", 
                    "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")]
   }
-  colnames(out) <- c(id_var, if (clust_stuff$has_clust) clust_var, time_var, 
+  colnames(out) <- c(id_var, if (grp_stuff$has_grp) grp_var, time_var, 
                      "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
-  class(out) <- c("predict.stanmvreg", "data.frame")
+  class(out) <- c("predict.stanjm", "data.frame")
   Terms <- terms(formula(object, m = m))
   vars  <- rownames(attr(Terms, "factors"))
   y_var <- vars[[attr(Terms, "response")]]
   structure(out, observed_data = data, last_time = last_time,
             y_var = y_var, id_var = id_var, time_var = time_var,
-            clust_var = if (clust_stuff$has_clust) clust_var else NULL, 
+            grp_var = if (grp_stuff$has_grp) grp_var else NULL, 
             interpolate = interpolate, extrapolate = extrapolate, 
             control = control, call = match.call())  
 }
@@ -299,7 +295,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 
 #' Plot the estimated subject-specific or marginal longitudinal trajectory
 #' 
-#' This generic \code{plot} method for \code{predict.stanmvreg} objects will
+#' This generic \code{plot} method for \code{predict.stanjm} objects will
 #' plot the estimated subject-specific or marginal longitudinal trajectory
 #' using the data frame returned by a call to \code{\link{posterior_traj}}.
 #' To ensure that enough data points are available to plot the longitudinal
@@ -309,7 +305,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' whether or not the user wants to see extrapolation of the longitudinal 
 #' trajectory beyond the last observation time).
 #' 
-#' @method plot predict.stanmvreg
+#' @method plot predict.stanjm
 #' @export
 #' @importFrom ggplot2 ggplot aes aes_string geom_line geom_smooth geom_ribbon 
 #'   geom_point facet_wrap geom_vline labs ggplot_build theme_bw
@@ -322,7 +318,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #' @template args-scales
 #' @template args-ci-geom-args
 #' 
-#' @param x A data frame and object of class \code{predict.stanmvreg}
+#' @param x A data frame and object of class \code{predict.stanjm}
 #'   returned by a call to the function \code{\link{posterior_traj}}.
 #'   The object contains point estimates and uncertainty interval limits
 #'   for the fitted values of the longitudinal response.
@@ -338,7 +334,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   is for a single individual.
 #' @param plot_observed A logical. If \code{TRUE} then the observed
 #'   longitudinal measurements are overlaid on the plot.
-#' @param clust_overlay Only relevant if the model had lower level units 
+#' @param grp_overlay Only relevant if the model had lower level units 
 #'   clustered within an individual. If \code{TRUE}, then the fitted trajectories 
 #'   for the lower level units will be overlaid in the same plot region (that 
 #'   is, all lower level units for a single individual will be shown within a 
@@ -348,12 +344,12 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   \code{\link[ggplot2]{geom_smooth}} and used to control features
 #'   of the plotted longitudinal trajectory.
 #'   
-#' @return A \code{ggplot} object, also of class \code{plot.predict.stanmvreg}.
+#' @return A \code{ggplot} object, also of class \code{plot.predict.stanjm}.
 #'   This object can be further customised using the \pkg{ggplot2} package.
 #'   It can also be passed to the function \code{\link{plot_stack}}.
 #'   
 #' @seealso \code{\link{posterior_traj}}, \code{\link{plot_stack}},
-#'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanmvreg}}   
+#'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanjm}}   
 #'     
 #' @examples 
 #' 
@@ -389,28 +385,28 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::labs(title = "Some plotted longitudinal trajectories")
 #' }
-plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
+plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
                                 xlab = NULL, ylab = NULL, vline = FALSE, 
                                 plot_observed = FALSE, facet_scales = "free_x", 
-                                ci_geom_args = NULL, clust_overlay = FALSE, ...) {
+                                ci_geom_args = NULL, grp_overlay = FALSE, ...) {
   
   limits <- match.arg(limits)
   if (!(limits == "none")) ci <- (limits == "ci")
   y_var <- attr(x, "y_var")
   id_var <- attr(x, "id_var")
   time_var <- attr(x, "time_var")
-  clust_var <- attr(x, "clust_var")
+  grp_var <- attr(x, "grp_var")
   obs_dat <- attr(x, "observed_data")
   if (is.null(ylab)) ylab <- paste0("Long. response (", y_var, ")")
   if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
   if (!id_var %in% colnames(x))
     stop("Bug found: could not find 'id_var' column in the data frame.")
-  if (!is.null(clust_var) && (!clust_var %in% colnames(x)))
-    stop("Bug found: could not find 'clust_var' column in the data frame.")
+  if (!is.null(grp_var) && (!grp_var %in% colnames(x)))
+    stop("Bug found: could not find 'grp_var' column in the data frame.")
   if (!is.null(ids)) {
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
-      stop("The following 'ids' are not present in the predict.stanmvreg object: ",
+      stop("The following 'ids' are not present in the predict.stanjm object: ",
            paste(ids[ids_missing], collapse = ", "), call. = FALSE)
     plot_dat <- x[x[[id_var]] %in% ids, , drop = FALSE]
     obs_dat <- obs_dat[obs_dat[[id_var]] %in% ids, , drop = FALSE]
@@ -420,13 +416,13 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   # 'id_list' provides unique IDs sorted in the same order as plotting data
   id_list <- unique(plot_dat[[id_var]])
-  if (!is.null(clust_var))
-    clust_list <- unique(plot_dat[[clust_var]])
+  if (!is.null(grp_var))
+    grp_list <- unique(plot_dat[[grp_var]])
     
-  plot_dat$id <- plot_dat[[id_var]]
+  plot_dat$id <- factor(plot_dat[[id_var]])
   plot_dat$time <- plot_dat[[time_var]]
-  if (!is.null(clust_var))
-    plot_dat$clust <- plot_dat[[clust_var]]
+  if (!is.null(grp_var))
+    plot_dat$grp <- plot_dat[[grp_var]]
   
   geom_defaults <- list(color = "black", method = "loess", se = FALSE)
   geom_args <- set_geom_args(geom_defaults, ...)
@@ -437,17 +433,17 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   obs_defaults <- list()
   obs_args <- set_geom_args(obs_defaults)
 
-  if (is.null(clust_var)) { # no lower level clusters
+  if (is.null(grp_var)) { # no lower level clusters
     group_var <- NULL
     facet_var <- "id"
-  } else if (clust_overlay) { # overlay lower level clusters
-    group_var <- "clust"
+  } else if (grp_overlay) { # overlay lower level clusters
+    group_var <- "grp"
     facet_var <- "id"
   } else { # separate facets for lower level clusters
     group_var <- NULL
-    facet_var <- "clust"
+    facet_var <- "grp"
   }  
-  n_facets <- if (facet_var == "id") length(id_list) else length(clust_list)
+  n_facets <- if (facet_var == "id") length(id_list) else length(grp_list)
   
   if (n_facets > 60L) {
     stop("Too many facets (ie. individuals) to plot. Perhaps limit the ",
@@ -512,10 +508,10 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
         stop("Could not find ", y_var, "in observed data, nor able to parse ",
              y_var, "as an expression.")
     }
-    obs_dat$id <- obs_dat[[id_var]]
+    obs_dat$id <- factor(obs_dat[[id_var]])
     obs_dat$time <- obs_dat[[time_var]]
-    if (!is.null(clust_var))
-      obs_dat$clust <- obs_dat[[clust_var]]
+    if (!is.null(grp_var))
+      obs_dat$grp <- obs_dat[[grp_var]]
     if (is.null(obs_dat[["y"]]))
       stop("Cannot find observed outcome data to add to plot.")
     obs_mapp <- list(
@@ -528,9 +524,9 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
       facet_list <- unique(plot_dat[, id_var])
       last_time <- attr(x, "last_time")[as.character(facet_list)] # potentially reorder last_time to match plot_dat
     } else {
-      facet_list <- unique(plot_dat[, c(id_var, clust_var)])
+      facet_list <- unique(plot_dat[, c(id_var, grp_var)])
       last_time <- attr(x, "last_time")[as.character(facet_list[[id_var]])] # potentially reorder last_time to match plot_dat
-      facet_list <- facet_list[[clust_var]]
+      facet_list <- facet_list[[grp_var]]
     }
     vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
     colnames(vline_dat) <- c(facet_var, "last_time")
@@ -541,7 +537,7 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
   
   ret <- graph + graph_limits + graph_obs + graph_vline + labs(x = xlab, y = ylab) 
   class_ret <- class(ret)
-  class(ret) <- c("plot.predict.stanmvreg", class_ret)
+  class(ret) <- c("plot.predict.stanjm", class_ret)
   ret
   
 }
@@ -550,25 +546,19 @@ plot.predict.stanmvreg <- function(x, ids = NULL, limits = c("ci", "pi", "none")
 # internal ----------------------------------------------------------------
 
 # Return a list with the control arguments for interpolation and/or
-# extrapolation in posterior_predict.stanmvreg and posterior_survfit.stanmvreg
+# extrapolation in posterior_predict.stanmvreg and posterior_survfit.stanjm
 #
 # @param control A named list, being the user input to the control argument
-#   in the posterior_predict.stanmvreg or posterior_survfit.stanmvreg call
+#   in the posterior_predict.stanmvreg or posterior_survfit.stanjm call
 # @param ok_control_args A character vector of allowed control arguments
-# @param standardise A logical, being the user input to the standardise
-#   argument in a posterior_survfit.stanmvreg call.
 # @return A named list
-get_extrapolation_control <- function(control = list(), 
-                                      ok_control_args = c("epoints", "edist", "eprop"), 
-                                      standardise = FALSE) {
-  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2,
-                   condition = TRUE, last_time = NULL)
+get_extrapolation_control <- 
+  function(control = list(), ok_control_args = c("epoints", "edist", "eprop")) {
+  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {
     control <- defaults[ok_control_args] 
-    if (("condition" %in% ok_control_args) && standardise) 
-      control$condition <- FALSE
   } else {  # user specified control list
     nms <- names(control)
     if (!length(nms))
@@ -584,12 +574,6 @@ get_extrapolation_control <- function(control = list(),
       control$epoints <- defaults$epoints  
     if (is.null(control$edist) && is.null(control$eprop)) 
       control$eprop <- defaults$eprop
-    if (("condition" %in% ok_control_args) && is.null(control$condition)) {
-      control$condition <- if (!standardise) defaults$condition else FALSE
-    } else if (("condition" %in% ok_control_args) && control$condition && standardise) {
-      stop("'condition' cannot be set to TRUE if standardised survival ",
-           "probabilities are requested.")
-    }
   }
   return(control)
 }

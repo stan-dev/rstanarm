@@ -1,85 +1,73 @@
-  real alpha[sum_has_intercept];
   real mean_PPD[M];
-  int mark = 1;  // indexing for alphas within m loop
-  for (m in 1:M) {
-    if (has_intercept[m] == 1) {
-	    if (dense_X) {  // dense X
-        int K1 = idx_K[m,1];  // indexing for beta
-        int K2 = idx_K[m,2];  // indexing for beta
-        if (has_intercept_nob[m] == 1)
-          alpha[mark] = gamma_nob[sum(has_intercept_nob[1:m])] - dot_product(xbar[K1:K2], beta[K1:K2]);
-        else if (has_intercept_lob[m] == 1)
-          alpha[mark] = gamma_lob[sum(has_intercept_lob[1:m])] - dot_product(xbar[K1:K2], beta[K1:K2]);
-        else if (has_intercept_upb[m] == 1)
-          alpha[mark] = gamma_upb[sum(has_intercept_upb[1:m])] - dot_product(xbar[K1:K2], beta[K1:K2]);		
-	    }
-	    else {  // sparse X
-        if (has_intercept_nob[m] == 1)
-          alpha[mark] = gamma_nob[sum(has_intercept_nob[1:m])];
-        else if (has_intercept_lob[m] == 1)
-          alpha[mark] = gamma_lob[sum(has_intercept_lob[1:m])];
-        else if (has_intercept_upb[m] == 1)
-          alpha[mark] = gamma_upb[sum(has_intercept_upb[1:m])];			  
-	    }
-	    mark = mark + 1;  
-    }   
-  }
+  real yAlpha1[intercept_type[1] > 0];
+  real yAlpha2[intercept_type[2] > 0];
+  real yAlpha3[intercept_type[3] > 0];
+  vector[prior_dist_for_cov == 2 && bK1 > 0 ? size(bCov1_idx) : 0] bCov1;
+  vector[prior_dist_for_cov == 2 && bK2 > 0 ? size(bCov2_idx) : 0] bCov2; 
+  vector[bN1 * bK1] b1 = to_vector(bMat1'); // ensures same order as stan_glmer (make_b)
+  vector[bN2 * bK2] b2 = to_vector(bMat2');
+  
+  // Evaluate mean_PPD
   {
-    int aux_mark = 1; // indexing for auxiliary parameters in m loop
-    #include "make_eta.stan" // defines eta
-    if (t > 0) {
-      #include "eta_add_Zb.stan"
-    } 
-	
-	  mark = 1;  // reset indexing for alphas before new m loop
-    for (m in 1:M) {
-      vector[NM[m]] eta_tmp;	           // eta for just one submodel 
-      eta_tmp = eta[idx[m,1]:idx[m,2]];  // eta for just one submodel 
-      if (has_intercept[m] == 1) {
-        if      (has_intercept_lob[m] == 1) alpha[mark] = alpha[mark] - min(eta_tmp);
-        else if (has_intercept_upb[m] == 1) alpha[mark] = alpha[mark] - max(eta_tmp);
-	      mark = mark + 1;	  
-	    }
-	    #include "eta_intercept_mvmer.stan"	// adds intercept or shifts eta
-      if (family[m] == 8) {  // poisson-gamma mixture
-	      #include "eta_add_noise_mvmer.stan"
-      }    
-      eta_tmp = evaluate_mu(eta_tmp, family[m], link[m]);
-	
-      mean_PPD[m] = 0;	
-      if (family[m] == 1) {  // gaussian
-	      for (n in 1:NM[m]) 
-	        mean_PPD[m] = mean_PPD[m] + normal_rng(eta_tmp[n], aux[aux_mark]);
-      }
-      else if (family[m] == 2) {  // gamma
-	      for (n in 1:NM[m]) 
-	        mean_PPD[m] = mean_PPD[m] + gamma_rng(aux[aux_mark], aux[aux_mark] / eta_tmp[n]);
-      }
-      else if (family[m] == 3) {  // inverse gaussian
-        for (n in 1:NM[m]) 
-          mean_PPD[m] = mean_PPD[m] + inv_gaussian_rng(eta_tmp[n], aux[aux_mark]);
-      }
-      else if (family[m] == 4) {  // bernoulli
-        for (n in 1:NM[m]) 
-          mean_PPD[m] = mean_PPD[m] + bernoulli_rng(eta_tmp[n]);
-      } 
-      else if (family[m] == 5) {  // binomial
-	    // binomial with num trials > 1 has been removed	  
-      }
-      else if (family[m] == 6 || family[m] == 8) { 
-        for (n in 1:NM[m]) {  // poisson or poisson-gamma
-          if (eta_tmp[n] < poisson_max) mean_PPD[m] = mean_PPD[m] + poisson_rng(eta_tmp[n]);
-	        else mean_PPD[m] = mean_PPD[m] + normal_rng(eta_tmp[n], sqrt(eta_tmp[n]));
-        }
-      }
-      else if (family[m] == 7) for (n in 1:NM[m]) {  // negative binomial
-        real gamma_temp;
-        if (is_inf(aux[aux_mark])) gamma_temp = eta_tmp[n];
-        else gamma_temp = gamma_rng(aux[aux_mark], aux[aux_mark] / eta_tmp[n]);
-        if (gamma_temp < poisson_max) mean_PPD[m] = mean_PPD[m] + poisson_rng(gamma_temp);
-        else mean_PPD[m] = mean_PPD[m] + normal_rng(gamma_temp, sqrt(gamma_temp));	
-      }		  
-      if (has_aux[m] == 1) aux_mark = aux_mark + 1;
-	    mean_PPD[m] = mean_PPD[m] / NM[m];
+    int bMat1_colshift = 0; // column shift in bMat1
+    int bMat2_colshift = 0; // column shift in bMat2
+
+    // Linear predictor for submodel 1
+    if (M > 0) {
+      vector[yNeta[1]] yEta1; // linear predictor
+      yEta1 = evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]);
+      yEta1 = evaluate_mu(yEta1, family[1], link[1]);
+      mean_PPD[1] = mean_PPD_rng(yEta1, yAux1, family[1]);
     }
-  }
+    
+    // Linear predictor for submodel 2
+    if (M > 1) {
+      vector[yNeta[2]] yEta2;
+      bMat1_colshift = bMat1_colshift + bK1_len[1];
+      bMat2_colshift = bMat2_colshift + bK2_len[1];
+      yEta2 = evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]);
+      yEta2 = evaluate_mu(yEta2, family[2], link[2]);
+      mean_PPD[2] = mean_PPD_rng(yEta2, yAux2, family[2]);
+    }
+    
+    // Linear predictor for submodel 3
+    if (M > 2) {
+      vector[yNeta[3]] yEta3;
+      bMat1_colshift = bMat1_colshift + bK1_len[2];
+      bMat2_colshift = bMat2_colshift + bK2_len[2];
+      yEta3 = evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3, 
+                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]);
+      yEta3 = evaluate_mu(yEta3, family[3], link[3]);
+      mean_PPD[3] = mean_PPD_rng(yEta3, yAux3, family[3]);
+    } 
+  }  
+  
+  // Transform intercept parameters
+	if (intercept_type[1] > 0) 
+    yAlpha1[1] = yGamma1[1] - dot_product(yXbar1, yBeta1);
+  if (M > 1 && intercept_type[2] > 0) 
+    yAlpha2[1] = yGamma2[1] - dot_product(yXbar2, yBeta2);
+  if (M > 2 && intercept_type[3] > 0) 
+    yAlpha3[1] = yGamma3[1] - dot_product(yXbar3, yBeta3);
+	
+	// Transform variance-covariance matrices
+	
+	  // Grouping factor 1
+  	if (prior_dist_for_cov == 2 && bK1 == 1) {
+  	  bCov1[1] = bSd1[1] * bSd1[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK1 > 1) {
+  	  bCov1 = to_vector(quad_form_diag(
+  	    multiply_lower_tri_self_transpose(bCholesky1), bSd1))[bCov1_idx];
+    }
+    
+    // Grouping factor 2
+    if (prior_dist_for_cov == 2 && bK2 == 1) {
+  	  bCov2[1] = bSd2[1] * bSd2[1];
+  	} 
+  	else if (prior_dist_for_cov == 2 && bK2 > 1) {
+    	bCov2 = to_vector(quad_form_diag(
+    	   multiply_lower_tri_self_transpose(bCholesky2), bSd2))[bCov2_idx]; 
+    }

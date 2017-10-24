@@ -147,6 +147,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     m <- dots[["m"]]
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
+    if (!is.null(offset))
+      stop2("'offset' cannot be specified for stanmvreg objects.")
   } else m <- NULL
   
   newdata <- validate_newdata(newdata)
@@ -191,14 +193,33 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   else colnames(ytilde) <- rownames(newdata)  
   
   # if function is called from posterior_traj then add mu as attribute
-  fn <- tryCatch(sys.call(-2)[[1]], error = function(e) NULL)
+  fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
     return(structure(ytilde, mu = ppargs$mu, class = c("ppd", class(ytilde))))
   
   structure(ytilde, class = c("ppd", class(ytilde)))
 }
 
-
+#' @rdname posterior_predict.stanreg
+#' @export
+#' @templateVar mArg m
+#' @template args-m
+#' 
+posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = NULL,
+                                        re.form = NULL, fun = NULL, seed = NULL, ...) {
+  validate_stanmvreg_object(object)
+  dots <- list(...)
+  if ("newdataLong" %in% names(dots))
+    stop2("'newdataLong' should not be specified for posterior_predict.")
+  if ("newdataEvent" %in% names(dots))
+    stop2("'newdataEvent' should not be specified for posterior_predict.")
+  out <- posterior_predict.stanreg(object, newdata = newdata, draws = draws,
+                                   re.form = re.form, fun = fun, seed = seed,
+                                   offset = NULL, m = m, ...)
+  out
+}  
+  
+  
 # internal ----------------------------------------------------------------
 
 # functions to draw from the various posterior predictive distributions

@@ -17,14 +17,14 @@ recover_pars <- function(modLong, modEvent = NULL, idvar = "id") {
   if (class(modLong)[1] %in% c("stanreg", "lmerMod", "glmerMod")) {
     fixef_pars <- fixef(modLong) 
     ranef_pars <- ranef(modLong)[[idvar]]
-  } else if (class(modLong)[1] == "stanmvreg") {
+  } else if (class(modLong)[1] %in% c("stanjm", "stanmvreg")) {
     fixef_pars <- fixef(modLong)[[1L]]
     ranef_pars <- ranef(modLong)[[1L]][[idvar]]
   }
   
   if (class(modEvent)[1] == "coxph") {
     event_pars <- modEvent$coefficients
-  } else if (class(modEvent)[1] == "stanmvreg") {
+  } else if (class(modEvent)[1] %in% c("stanjm", "stanmvreg")) {
     event_pars <- fixef(modEvent)$Event
   } else event_pars <- NULL
 

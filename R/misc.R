@@ -561,19 +561,20 @@ get_z.lmerMod <- function(object, ...) {
 }
 #' @export
 get_y.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "y") %ORifNULL% stop("y not found")
+  ret <- fetch(object$glmod, "y", "y") %ORifNULL% stop("y not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_x.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "X") %ORifNULL% stop("X not found")
+  ret <- fetch(object$glmod, "x", "x") %ORifNULL% stop("X not found")
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
 #' @export
 get_z.stanmvreg <- function(object, m = NULL, ...) {
-  ret <- lapply(object$glmod, lme4::getME, "Z") %ORifNULL% stop("Z not found")
+  Zt <- fetch(object$glmod, "reTrms", "Zt") %ORifNULL% stop("Z not found")
+  ret <- lapply(Zt, t)
   stub <- get_stub(object)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
@@ -743,7 +744,56 @@ warn_data_arg_missing <- function() {
 }
 
 
-#---------------------- for stan_jm only -----------------------------
+#---------------------- for stan_{mvmer,jm} only -----------------------------
+
+# Return a list (or vector if unlist = TRUE) which
+# contains the embedded elements in list x named y 
+fetch <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                  pad_length = NULL, unlist = FALSE) {
+  ret <- lapply(x, `[[`, y)
+  if (!is.null(z))
+    ret <- lapply(ret, `[[`, z)
+  if (!is.null(zz))
+    ret <- lapply(ret, `[[`, zz)
+  if (null_to_zero) 
+    ret <- lapply(ret, function(i) ifelse(is.null(i), 0L, i))
+  if (!is.null(pad_length)) {
+    padding <- rep(list(0L), pad_length - length(ret))
+    ret <- c(ret, padding)
+  }
+  if (unlist) unlist(ret) else ret
+}
+# Wrapper for using fetch with unlist = TRUE
+fetch_ <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE, 
+                   pad_length = NULL) {
+  fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+        pad_length = pad_length, unlist = TRUE)
+}
+# Wrapper for using fetch with unlist = TRUE and 
+# returning array. Also converts logical to integer.
+fetch_array <- function(x, y, z = NULL, zz = NULL, null_to_zero = FALSE,
+                        pad_length = NULL) {
+  val <- fetch(x = x, y = y, z = z, zz = zz, null_to_zero = null_to_zero, 
+               pad_length = pad_length, unlist = TRUE)
+  if (is.logical(val)) 
+    val <- as.integer(val)
+  as.array(val)
+}
+
+# Unlist the result from an lapply call
+#
+# @param X,FUN,... Same as lapply
+uapply <- function(X, FUN, ...) {
+  unlist(lapply(X, FUN, ...))
+}
+
+# A refactored version of mapply with SIMPLIFY = FALSE
+#
+# @param FUN,... Same as mapply
+# @param arg Passed to MoreArgs
+xapply <- function(..., FUN, args = NULL) {
+  mapply(FUN, ..., MoreArgs = args, SIMPLIFY = FALSE)
+}
 
 # Test if family object corresponds to a linear mixed model
 #
@@ -813,7 +863,14 @@ unstandardise_qwts <- function(x, a, b) {
 #
 # @param x An object to be tested.
 is.stanmvreg <- function(x) {
-  is(x, "stanmvreg")
+  inherits(x, "stanmvreg")
+}
+
+# Test if object is stanjm class
+#
+# @param x An object to be tested.
+is.stanjm <- function(x) {
+  inherits(x, "stanjm")
 }
 
 # Test if object is a joint longitudinal and survival model
@@ -845,6 +902,14 @@ validate_stanmvreg_object <- function(x, call. = FALSE) {
     stop("Object is not a stanmvreg object.", call. = call.) 
 }
 
+# Throw error if object isn't a stanjm object
+# 
+# @param x The object to test.
+validate_stanjm_object <- function(x, call. = FALSE) {
+  if (!is.stanjm(x))
+    stop("Object is not a stanjm object.", call. = call.) 
+}
+
 # Throw error if parameter isn't a positive scalar
 #
 # @param x The object to test.
@@ -869,12 +934,12 @@ validate_positive_scalar <- function(x, not_greater_than = NULL) {
 #
 # @param x A matrix or 2D array
 # @param prob Value between 0 and 1 indicating the desired width of the CrI
-median_and_bounds <- function(x, prob) {
+median_and_bounds <- function(x, prob, na.rm = FALSE) {
   if (!any(is.matrix(x), is.array(x)))
     stop("x should be a matrix or 2D array.")
-  med <- apply(x, 2, median)
-  lb  <- apply(x, 2, quantile, (1 - prob)/2)
-  ub  <- apply(x, 2, quantile, (1 + prob)/2)
+  med <- apply(x, 2, median, na.rm = na.rm)
+  lb  <- apply(x, 2, quantile, (1 - prob)/2, na.rm = na.rm)
+  ub  <- apply(x, 2, quantile, (1 + prob)/2, na.rm = na.rm)
   nlist(med, lb, ub)
 }
 
@@ -897,7 +962,7 @@ get_m_stub <- function(m, stub = "Long") {
 #
 # @param object A stanmvreg object
 get_stub <- function(object) {
-  if (is.jm(object)) "Long" else "y"  
+  if (is.jm(object)) "Long" else if (is.mvmer(object)) "y" else NULL  
 } 
 
 # Separates a names object into separate parts based on the longitudinal, 
@@ -921,7 +986,7 @@ collect_nms <- function(x, M, stub = "Long", ...) {
       grep(paste0("^", stub, m, "\\|reciprocal_dispersion"), x, ...)))             
   y <- lapply(1:M, function(m) setdiff(y[[m]], c(y_extra[[m]], ppd[m])))
   e <- grep(mod2rx("^Event"), x, ...)     
-  e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|basehaz-coef", x, ...))         
+  e_extra <- c(grep("^Event\\|weibull-shape|^Event\\|b-splines-coef|^Event\\|piecewise-coef", x, ...))         
   e <- setdiff(e, e_extra)
   a <- grep(mod2rx("^Assoc"), x, ...)
   b <- b_names(x, ...)
@@ -1013,11 +1078,16 @@ get_M <- function(object) {
 # @param stub The character string to use at the start of the names for
 #   list items related to the longitudinal/GLM submodels
 list_nms <- function(object, M = NULL, stub = "Long") {
-  if (!is.list(object)) 
-    stop("'object' argument should be a list")
-  if (is.null(M)) M <- length(object)
+  ok_type <- is.null(object) || is.list(object) || is.vector(object)
+  if (!ok_type) 
+    stop("'object' argument should be a list or vector.")
+  if (is.null(object))
+    return(object)
+  if (is.null(M)) 
+    M <- length(object)
   nms <- paste0(stub, 1:M)
-  if (length(object) > M) nms <- c(nms, "Event")
+  if (length(object) > M) 
+    nms <- c(nms, "Event")
   names(object) <- nms
   object
 }
@@ -1028,9 +1098,9 @@ list_nms <- function(object, M = NULL, stub = "Long") {
 # @param x Character vector (often rownames(fit$stan_summary)) from which
 #   the stub should be removed
 rm_stub <- function(x) {
-  x <- gsub(mod2rx("y"), "", x)
-  x <- gsub(mod2rx("Long"), "", x)
-  x <- gsub(mod2rx("Event"), "", x)
+  x <- gsub(mod2rx("^y"), "", x)
+  x <- gsub(mod2rx("^Long"), "", x)
+  x <- gsub(mod2rx("^Event"), "", x)
 }
 
 # Removes a specified character string from the names of an
@@ -1053,13 +1123,26 @@ check_submodelopt3 <- function(x) {
     stop("submodel option must be 'long', 'event' or 'both'") 
 }
 
+# Error message when the argument contains an object of the incorrect type
+STOP_arg <- function(arg_name, type) {
+  stop(paste0("'", arg_name, "' should be a ", paste0(type, collapse = " or "), 
+              " object or a list of those objects."), call. = FALSE) 
+}
+
+# Return error msg if both elements of the object are TRUE
+STOP_combination_not_allowed <- function(object, x, y) {
+  if (object[[x]] && object[[y]])
+    stop("In ", deparse(substitute(object)), ", '", x, "' and '", y,
+         "' cannot be specified together", call. = FALSE)
+}
+
 # Error message when not specifying an argument required for stanmvreg objects
 #
 # @param arg The argument
 STOP_arg_required_for_stanmvreg <- function(arg) {
   nm <- deparse(substitute(arg))
   msg <- paste0("Argument '", nm, "' required for stanmvreg objects.")
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Error message when a function is not yet implemented for stanmvreg objects
@@ -1069,7 +1152,7 @@ STOP_if_stanmvreg <- function(what) {
   msg <- "not yet implemented for stanmvreg objects."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Error message when a function is not yet implemented for stan_mvmer models
@@ -1079,7 +1162,7 @@ STOP_stan_mvmer <- function(what) {
   msg <- "is not yet implemented for models fit using stan_mvmer."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Consistent error message to use when something that is only available for 
@@ -1090,23 +1173,22 @@ STOP_jm_only <- function(what) {
   msg <- "can only be used with stan_jm models."
   if (!missing(what)) 
     msg <- paste(what, msg)
-  stop(msg, call. = FALSE)
+  stop2(msg)
 }
 
 # Consistent error message when binomial models with greater than
 # one trial are not allowed
 #
 STOP_binomial <- function() {
-  stop("Binomial models with number of trials greater than one ",
-       "are not allowed (i.e. only bernoulli models are allowed).", 
-       call. = FALSE)
+  stop2("Binomial models with number of trials greater than one ",
+        "are not allowed (i.e. only bernoulli models are allowed).")
 }
 
 # Error message when a required variable is missing from the data frame
 #
 # @param var The name of the variable that could not be found
 STOP_no_var <- function(var) {
-  stop("Variable '", var, "' cannot be found in the data frame.", call. = FALSE)
+  stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
 # Check if individuals in ids argument were also used in model estimation
@@ -1148,9 +1230,22 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataLong)) {
     if (!is(newdataLong, "list"))
       newdataLong <- rep(list(newdataLong), get_M(object))
+    dfcheck <- sapply(newdataLong, is.data.frame)
+    if (!all(dfcheck))
+      stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
+    nacheck <- sapply(seq_along(newdataLong), function(m)
+      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    if (!all(nacheck))
+      stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
   }
   if (!is.null(newdataEvent)) {
+    if (!is.data.frame(newdataEvent))
+      stop("'newdataEvent' must be a data frame.", call. = FALSE)
+    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
+    if (any(is.na(dat)))
+      stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",
            "time varying covariates are not allowed in the prediction data.")
@@ -1166,7 +1261,6 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("The same subject ids should appear in each new data frame.")
     if (!length(unique(ids)) == 1L) 
       stop("The subject ids should be ordered the same in each new data frame.")  
-    newdatas <- lapply(newdatas, validate_newdata)
     return(newdatas)
   } else return(NULL)
 }
@@ -1193,6 +1287,79 @@ subset_ids <- function(object, data, ids) {
     x[x[[id_var]] %in% ids, , drop = FALSE]
   })
   if (is_list) return(data) else return(data[[1]])
+}
+
+# Return a data.table with a key set using the appropriate id/time/grp variables
+# 
+# @param data A data frame.
+# @param id_var The name of the ID variable.
+# @param grp_var The name of the variable identifying groups clustered within
+#   individuals.
+# @param time_var The name of the time variable.
+# @return A data.table (which will be used in a rolling merge against the
+#   event times and/or quadrature times).
+prepare_data_table <- function(data, id_var, time_var, grp_var = NULL) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  if (!is.data.frame(data))
+    stop("'data' should be a data frame.")
+  
+  # check required vars are in the data
+  if (!id_var %in% colnames(data))
+    STOP_no_var(id_var)
+  if (!time_var %in% colnames(data))
+    STOP_no_var(time_var)
+  if (!is.null(grp_var) && (!grp_var %in% colnames(data)))
+    STOP_no_var(grp_var)
+  
+  # define and set the key for the data.table
+  key_vars <- if (!is.null(grp_var)) 
+    c(id_var, grp_var, time_var) else c(id_var, time_var)
+  dt <- data.table::data.table(data, key = key_vars)
+  
+  dt[[time_var]] <- as.numeric(dt[[time_var]]) # ensures no rounding on merge
+  dt[[id_var]]   <- factor(dt[[id_var]])       # ensures matching of ids
+  if (!is.null(grp_var))
+    dt[[grp_var]]   <- factor(dt[[grp_var]])   # ensures matching of grps
+  dt
+}
+
+# Carry out a rolling merge
+#
+# @param data A data.table with a set key corresponding to ids, times (and
+#   possibly also grps).
+# @param ids A vector of patient ids to merge against.
+# @param times A vector of times to (rolling) merge against.
+# @param grps An optional vector of groups clustered within patients to
+#   merge against. Only relevant when there is clustering within patient ids.
+# @return A data.table formed by a merge of ids, (grps), times, and the closest 
+#   preceding (in terms of times) rows in data.
+rolling_merge <- function(data, ids, times, grps = NULL) {
+  if (!requireNamespace("data.table"))
+    stop("the 'data.table' package must be installed to use this function")
+  
+  # check data.table is keyed
+  key_length <- length(data.table::key(data))
+  val_length <- if (is.null(grps)) 2L else 3L
+  if (key_length == 0L)
+    stop2("Bug found: data.table should have a key.")
+  if (!key_length == val_length)
+    stop2("Bug found: data.table key is not the same length as supplied keylist.")
+  
+  # ensure data types are same as returned by the prepare_data_table function
+  ids   <- factor(ids)       # ensures matching of ids
+  times <- as.numeric(times) # ensures no rounding on merge
+  
+  # carry out the rolling merge against the specified times
+  if (is.null(grps)) {
+    tmp <- data.table::data.table(ids, times)
+    val <- data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]       
+  } else {
+    grps <- factor(grps)
+    tmp <- data.table::data.table(ids, grps, times)
+    val <- data[tmp, roll = TRUE, rollends = c(TRUE, TRUE)]       
+  }
+  val
 }
 
 # Return an array or list with the time sequence used for posterior predictions
@@ -1238,24 +1405,11 @@ extract_pars <- function(object, stanmat = NULL, means = FALSE) {
   nlist(beta, ebeta, abeta, bhcoef, b, stanmat)
 }
 
-# Return a data frame for each submodel that:
-# (1) only includes variables used in the model formula
-# (2) only includes rows contained in the actual glmod/coxmod model frames
-# (3) ensures the ID variable is included in every model frame
+# Promote a character variable to a factor
 #
-# @param object A stanmvreg object
-# @param m Integer specifying which submodel
-get_model_data <- function(object, m = NULL) {
-  validate_stanmvreg_object(object)
-  forms <- formula(object)
-  RHS <- paste(deparse(forms$Event[[3L]]), "+", object$id_var)
-  forms$Event <- reformulate(RHS, response = forms$Event[[2L]])
-  datas <- c(object$dataLong, list(object$dataEvent))
-  row_nms <- lapply(model.frame(object), rownames)
-  mfs <- mapply(function(w, x, y) {
-    get_all_vars(w, x)[y, , drop = FALSE]
-  }, w = forms, x = datas, y = row_nms, SIMPLIFY = FALSE)
-  if (is.null(m)) return(mfs) else return(mfs[[m]])
+# @param x The variable to potentially promote
+promote_to_factor <- function(x) {
+  if (is.character(x)) as.factor(x) else x
 }
 
 # Draw from a multivariate normal distribution
@@ -1281,3 +1435,219 @@ dmt <- function(x, mu, Sigma, df) {
     0.5 * c(determinant(Sigma, logarithm = TRUE)$modulus) -
     0.5 * (df + p) * log1p((x_mu %*% chol2inv(chol(Sigma)) %*% x_mu)[1] / df)
 }
+
+# Count the number of unique values
+#
+# @param x A vector or list
+n_distinct <- function(x) {
+  length(unique(x))
+}
+
+# Transpose function that can handle NULL objects
+#
+# @param x A matrix, a vector, or otherwise (e.g. NULL)
+transpose <- function(x) {
+  if (is.matrix(x) || is.vector(x)) {
+    t(x)
+  } else {
+    x
+  }
+}
+
+# Translate group/factor IDs into integer values
+#
+# @param x A vector of group/factor IDs
+groups <- function(x) {
+  if (!is.null(x)) {
+    as.integer(as.factor(x)) 
+  } else {
+    x
+  }
+}
+
+# Drop named attributes listed in ... from the object x
+#
+# @param x Any object with attributes
+# @param ... The named attributes to drop
+drop_attributes <- function(x, ...) {
+  dots <- list(...)
+  if (length(dots)) {
+    for (i in dots) {
+      attr(x, i) <- NULL
+    }
+  }
+  x
+}
+
+# Check if x and any objects in ... were all NULL or not
+#
+# @param x The first object to use in the comparison
+# @param ... Any additional objects to include in the comparison
+# @param error If TRUE then return an error if all objects aren't
+#   equal with regard to the 'is.null' test. 
+# @return If error = TRUE, then an error if all objects aren't
+#   equal with regard to the 'is.null' test. Otherwise, a logical 
+#   specifying whether all objects were equal with regard to the 
+#   'is.null' test.
+supplied_together <- function(x, ..., error = FALSE) {
+  dots <- list(...)
+  for (i in dots) {
+    if (!identical(is.null(x), is.null(i))) {
+      if (error) {
+        nm_x <- deparse(substitute(x))
+        nm_i <- deparse(substitute(i))
+        stop2(nm_x, " and ", nm_i, " must be supplied together.")
+      } else {
+        return(FALSE) # not supplied together, ie. one NULL and one not NULL
+      }
+    }
+  }
+  return(TRUE) # supplied together, ie. all NULL or all not NULL
+}
+
+# Check variables specified in ... are in the data frame
+#
+# @param data A data frame
+# @param ... The names of the variables
+check_vars_are_included <- function(data, ...) {
+  nms <- names(data)
+  vars <- list(...)
+  for (i in vars) {
+    if (!i %in% nms) {
+      arg_nm <- deparse(substitute(data))
+      stop2("Variable '", i, "' is not present in ", arg_nm, ".")
+    }
+  }
+  data
+}
+
+# Check whether a vector/matrix/array contains an "(Intercept)"
+check_for_intercept <- function(x, logical = FALSE) {
+  nms <- if (is.matrix(x)) colnames(x) else names(x)
+  sel <- which("(Intercept)" %in% nms)
+  if (logical) as.logical(length(sel)) else sel
+}
+
+# Drop intercept from a vector/matrix/array of named coefficients
+drop_intercept <- function(x) { 
+  sel <- check_for_intercept(x)
+  if (length(sel) && is.matrix(x)) {
+    x[, -sel, drop = FALSE]
+  } else if (length(sel)) {
+    x[-sel]
+  } else {
+    x
+  }
+}
+
+# Return intercept from a vector/matrix/array of named coefficients
+return_intercept <- function(x) {
+  sel <- which("(Intercept)" %in% names(x))
+  if (length(sel)) x[sel] else NULL
+}
+
+# Standardise a coefficient
+standardise_coef <- function(x, location = 0, scale = 1)
+  (x - location) / scale
+
+# Return a one-dimensional array or an empty numeric
+array_else_double <- function(x)
+  if (!length(x)) double(0) else as.array(unlist(x))
+
+# Return a matrix of uniform random variables or an empty matrix
+matrix_of_uniforms <- function(nrow = 0, ncol = 0) {
+  if (nrow == 0 || ncol == 0) {
+    matrix(0,0,0) 
+  } else {
+    matrix(runif(nrow * ncol), nrow, ncol)
+  } 
+}
+
+# If x is NULL then return an empty object of the specified 'type'
+#
+# @param x An object to test whether it is null.
+# @param type The type of empty object to return if x is null.
+convert_null <- function(x, type = c("double", "integer", "matrix",
+                                     "arraydouble", "arrayinteger")) {
+  if (!is.null(x)) {
+    return(x)
+  } else if (type == "double") {
+    return(double(0))
+  } else if (type == "integer") {
+    return(integer(0))
+  } else if (type == "matrix") {
+    return(matrix(0,0,0))
+  } else if (type == "arraydouble") {
+    return(as.array(double(0)))
+  } else if (type == "arrayinteger") {
+    return(as.array(integer(0)))
+  } else {
+    stop("Input type not valid.")
+  }
+}
+
+# Expand/pad a matrix to the specified number of cols/rows
+#
+# @param x A matrix or 2D array
+# @param cols,rows Integer specifying the desired number
+#   of columns/rows
+# @param value The value to use for the padded cells
+# @return A matrix
+pad_matrix <- function(x, cols = NULL, rows = NULL, 
+                       value = 0L) {
+  nc <- ncol(x)
+  nr <- nrow(x)
+  if (!is.null(cols) && nc < cols) {
+    pad_mat <- matrix(value, nr, cols - nc)
+    x <- cbind(x, pad_mat)
+    nc <- ncol(x) # update nc to reflect new num cols
+  }
+  if (!is.null(rows) && nr < rows) {
+    pad_mat <- matrix(value, rows - nr, nc)
+    x <- rbind(x, pad_mat)    
+  }
+  x
+}
+
+#------- helpers from brms package
+
+stop2 <- function(...) {
+  stop(..., call. = FALSE)
+}
+
+warning2 <- function(...) {
+  warning(..., call. = FALSE)
+}
+
+SW <- function(expr) {
+  # just a short form for suppressWarnings
+  base::suppressWarnings(expr)
+}
+
+is_null <- function(x) {
+  # check if an object is NULL
+  is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
+}
+
+rm_null <- function(x, recursive = TRUE) {
+  # recursively removes NULL entries from an object
+  x <- Filter(Negate(is_null), x)
+  if (recursive) {
+    x <- lapply(x, function(x) if (is.list(x)) rm_null(x) else x)
+  }
+  x
+}
+
+isFALSE <- function(x) {
+  identical(FALSE, x)
+}
+
+is_equal <- function(x, y, ...) {
+  isTRUE(all.equal(x, y, ...))
+}
+
+is_like_factor <- function(x) {
+  # check if x behaves like a factor in design matrices
+  is.factor(x) || is.character(x) || is.logical(x)
+}
+
