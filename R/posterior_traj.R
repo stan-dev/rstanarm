@@ -252,11 +252,10 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
       grp_var <- grp_stuff$grp_var
       time_seq <- merge(time_seq, unique(newX[, c(id_var, grp_var)]), by = id_var)
       time_seq <- time_seq[order(time_seq[["obs"]], time_seq[[id_var]], time_seq[[grp_var]]), ]
-      newX[[grp_var]] <- factor(newX[[grp_var]])
-      newX <- data.table::data.table(newX, key = c(id_var, grp_var, time_var))
+      newX <- prepare_data_table(newX, id_var = id_var, time_var = time_var, grp_var = grp_var)
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]], time_seq[[grp_var]])
     } else {
-      newX <- data.table::data.table(newX, key = c(id_var, time_var))
+      newX <- prepare_data_table(newX, id_var = id_var, time_var = time_var)
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
@@ -420,7 +419,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
   if (!is.null(grp_var))
     grp_list <- unique(plot_dat[[grp_var]])
     
-  plot_dat$id <- plot_dat[[id_var]]
+  plot_dat$id <- factor(plot_dat[[id_var]])
   plot_dat$time <- plot_dat[[time_var]]
   if (!is.null(grp_var))
     plot_dat$grp <- plot_dat[[grp_var]]
@@ -509,7 +508,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
         stop("Could not find ", y_var, "in observed data, nor able to parse ",
              y_var, "as an expression.")
     }
-    obs_dat$id <- obs_dat[[id_var]]
+    obs_dat$id <- factor(obs_dat[[id_var]])
     obs_dat$time <- obs_dat[[time_var]]
     if (!is.null(grp_var))
       obs_dat$grp <- obs_dat[[grp_var]]

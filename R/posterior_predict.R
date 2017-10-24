@@ -208,6 +208,11 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = NULL,
                                         re.form = NULL, fun = NULL, seed = NULL, ...) {
   validate_stanmvreg_object(object)
+  dots <- list(...)
+  if ("newdataLong" %in% names(dots))
+    stop2("'newdataLong' should not be specified for posterior_predict.")
+  if ("newdataEvent" %in% names(dots))
+    stop2("'newdataEvent' should not be specified for posterior_predict.")
   out <- posterior_predict.stanreg(object, newdata = newdata, draws = draws,
                                    re.form = re.form, fun = fun, seed = seed,
                                    offset = NULL, m = m, ...)

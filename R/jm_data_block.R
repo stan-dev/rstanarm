@@ -18,10 +18,21 @@
 
 .datatable.aware <- TRUE # necessary for some reason when data.table is in Suggests
 
-#' @export
-Surv <- survival::Surv # re-export Surv function
-
 #--------------- Miscellaneous and helper functions
+
+#' Re-exported Surv function
+#'
+#' This is simply a re-exported version of the \code{\link[survival]{Surv}}
+#' function from the \pkg{survival} package. It is re-exported as part of
+#' the \pkg{rstanarm} package so that users can specify \code{Surv} objects
+#' as the outcome in \code{\link{stan_jm}} models, without needing to load
+#' the \pkg{survival} package explicitly.
+#'
+#' @param time,time2,event,type,origin Same as for \code{\link[survival]{Surv}}.
+#' @export
+#' @keywords internal
+#' 
+Surv <- survival::Surv
 
 # Check input argument is a valid type, and return as a list
 #
@@ -841,12 +852,12 @@ get_common_flevels <- function(x) {
 # @return The name of the grouping factor, or an error if it doesn't 
 #   appear in every submodel.
 validate_grouping_factor <- function(y_cnms, group_var) {
-  check <- sapply(y_cnms, function(x) group_factor %in% names(x))
+  check <- sapply(y_cnms, function(x) group_var %in% names(x))
   if (!all(check)) {
     nm <- deparse(substitute(group_var))
     stop2(nm, " must be a grouping factor in all longitudinal submodels.")
   }
-  group_factor
+  group_var
 }
 
 # Check the factor list corresponding to subject ID is the same in each 
@@ -907,7 +918,9 @@ use_predvars <- function(mod, keep_response = TRUE) {
     for (j in 1:length(fr))
       fm <- gsub(fr[[j]], pr[[j]], fm, fixed = TRUE)    
   }
-  rhs <- deparse(fm[[length(fm)]], 500L)
+  rhs <- fm[[length(fm)]]
+  if (is(rhs, "call")) 
+    rhs <- deparse(rhs, 500L)
   if (keep_response && length(fm) == 3L) {
     fm <- reformulate(rhs, response = formula(mod)[[2L]])
   } else if (keep_response && length(fm) == 2L) {
@@ -1609,15 +1622,15 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   sel_shared <- grep("^shared", rownames(assoc))
   if (any(unlist(assoc[sel_shared]))) {
     # flist for long submodel
-    flist_tmp <- lme4::getME(y_mod_stuff$mod, "flist")
+    flist_tmp <- lme4::getME(y_mod$mod, "flist")
     # which grouping factor is id_var
     Gp_sel <- which(names(flist_tmp) == id_var) 
     # grouping factor indices
-    Gp <- lme4::getME(y_mod_stuff$mod, "Gp")  
+    Gp <- lme4::getME(y_mod$mod, "Gp")  
     b_beg <- Gp[[Gp_sel]] + 1
     b_end <- Gp[[Gp_sel + 1]]
     # b vector for grouping factor = id_var
-    b_vec <- lme4::getME(y_mod_stuff$mod, "b")[b_beg:b_end]
+    b_vec <- lme4::getME(y_mod$mod, "b")[b_beg:b_end]
     # convert to Npat * n_re matrix
     b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp[[Gp_sel]])), byrow = TRUE)
   } else b_mat <- NULL
@@ -1803,7 +1816,7 @@ set_jm_sampling_args <- function(object, cnms, user_dots = list(),
         args$control$max_treedepth <- default_max_treedepth
   
   if (!"save_warmup" %in% unms) 
-    args$save_warmup <- TRUE  
+    args$save_warmup <- FALSE  
   
   return(args)
 }  

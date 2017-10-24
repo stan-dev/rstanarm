@@ -47,17 +47,18 @@ get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
       ranef_tols <- tolscales$glmer_ranef * ranef_sds
     }
   }
+  if ("(Intercept)" %in% names(fixef_tols))
+    fixef_tols[["(Intercept)"]] <- 2 * fixef_tols[["(Intercept)"]]
+  if ("(Intercept)" %in% names(ranef_tols))
+    ranef_tols[["(Intercept)"]] <- 2 * ranef_tols[["(Intercept)"]]
   
   if (class(modEvent)[1] == "coxph") {
     event_ses <- summary(modEvent)$coefficients[, "se(coef)"]
   } else event_ses <- NULL
   event_tols <- if (!is.null(event_ses))
     tolscales$event * event_ses else NULL
-  
-  for (i in c(fixef_tols, ranef_tols, event_tols)) {
-    if ("(Intercept)" %in% names(i)) # use weaker tolerance for intercept
-      i[["(Intercept)"]] <- 2 * i[["(Intercept)"]]  
-  }
+  if ("(Intercept)" %in% names(event_tols))
+    event_tols[["(Intercept)"]] <- 2 * event_tols[["(Intercept)"]]
   
   ret <- Filter(
     function(x) !is.null(x),

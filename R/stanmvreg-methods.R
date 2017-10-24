@@ -18,7 +18,7 @@
 
 #' Methods for stanmvreg objects
 #' 
-#' S3 methods for \link[=stanmvreg-objects]{stanmvreg} objects. There are also 
+#' S3 methods for \link[=stanreg-objects]{stanmvreg} objects. There are also 
 #' several methods (listed in \strong{See Also}, below) with their own
 #' individual help pages. 
 #' The main difference between these methods and the 
@@ -93,7 +93,7 @@
 #'  \item The \code{\link[=loo.stanreg]{loo}}, 
 #'    and \code{\link[=log_lik.stanmvreg]{log_lik}} methods for leave-one-out 
 #'    model comparison, and computing the log-likelihood of (possibly new) data.
-#'  \item The \code{\link[=as.matrix.stanmvreg]{as.matrix}}, \code{as.data.frame}, 
+#'  \item The \code{\link[=as.matrix.stanreg]{as.matrix}}, \code{as.data.frame}, 
 #'    and \code{as.array} methods to access posterior draws.
 #' } 
 #' 

@@ -22,15 +22,11 @@
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
 #' @export
-#' @templateVar pkg stats
-#' @templateVar pkgfun glm
-#' @templateVar rareargs na.action,contrasts
-#' @template args-same-as-rarely
 #' @template args-dots
-#' @template args-prior_covariance
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template args-max_treedepth
 #' @template args-QR
 #' @template args-sparse
 #' 
@@ -59,7 +55,6 @@
 #'   to be the individual). If there is more than one grouping factor (i.e.
 #'   clustering beyond the level of the individual) then the \code{id_var}
 #'   argument must be specified.
-#' @param offset Not currently implemented. Same as \code{\link[stats]{glm}}.
 #' @param family The family (and possibly also the link function) for the 
 #'   longitudinal submodel(s). See \code{\link[lme4]{glmer}} for details. 
 #'   If fitting a multivariate joint model, then this can optionally be a
@@ -96,24 +91,29 @@
 #'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
 #'   the \code{assoc} argument.
 #' @param grp_assoc Character string specifying the method for combining information
-#'   across the lower level units clustered within an individual when forming the
+#'   across lower level units clustered within an individual when forming the
 #'   association structure. This is only relevant when a grouping factor is  
 #'   specified in \code{formulaLong} that corresponds to clustering within 
-#'   individuals. Can be \code{"sum"} for specifying which indicates
-#'   the association structure should be based on a summation across the lower
-#'   level units clustered within an individual. Can be \code{"mean"} which
-#'   indicates that the association structure should be based on the mean
-#'   (i.e. average) taken across the lower level units clustered within an
-#'   individual. (As an example, specifying \code{assoc = "muvalue"} 
-#'   and \code{grp_assoc = "sum"} would mean the log hazard 
-#'   for an individual would be linearly related to the sum of
-#'   the expected values for each of the lower level units clustered within
-#'   that individual). 
+#'   individuals. This can be specified as either \code{"sum"}, \code{mean},
+#'   \code{"min"} or \code{"max"}. For example, specifying \code{grp_assoc = "sum"}
+#'   indicates that the association structure should be based on a summation across 
+#'   the lower level units clustered within an individual, or specifying
+#'   \code{grp_assoc = "mean"}  indicates that the association structure 
+#'   should be based on the mean (i.e. average) taken across the lower level 
+#'   units clustered within an individual.
+#'   So, for example, specifying \code{assoc = "muvalue"} 
+#'   and \code{grp_assoc = "sum"} would mean that the log hazard at time 
+#'   \emph{t} for individual \emph{i} would be linearly related to the sum of
+#'   the expected values at time \emph{t} for each of the lower level 
+#'   units (which may be for example tumor lesions) clustered within that 
+#'   individual. 
 #' @param basehaz A character string indicating which baseline hazard to use
-#'   for the event submodel. Options are a Weibull baseline hazard
-#'   (\code{"weibull"}, the default), a B-splines approximation estimated 
-#'   for the log baseline hazard (\code{"bs"}), or a piecewise
-#'   constant baseline hazard (\code{"piecewise"}).
+#'   for the event submodel. Options are a B-splines approximation estimated 
+#'   for the log baseline hazard (\code{"bs"}, the default), a Weibull 
+#'   baseline hazard (\code{"weibull"}, the default), or a piecewise
+#'   constant baseline hazard (\code{"piecewise"}). (Note however that there  
+#'   is currently limited post-estimation functionality available for
+#'   models estimated using a piecewise constant baseline hazard).
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \describe{
@@ -146,23 +146,25 @@
 #'   within individuals.
 #' @param init The method for generating the initial values for the MCMC.
 #'   The default is \code{"prefit"}, which uses those obtained from 
-#'   fitting separate longitudinal and time-to-event models prior  
+#'   fitting separate longitudinal and time-to-event models prior to 
+#'   fitting the joint model. The separate longitudinal model is a 
+#'   (possibly multivariate) generalised linear mixed 
+#'   model estimated using variational bayes. This is achieved via the 
+#'   \code{\link{stan_mvmer}} function with \code{algorithm = "meanfield"}.
+#'   The separate Cox model is estimated using \code{\link[survival]{coxph}}. 
+#'   This is achieved
+#'   using the and time-to-event models prior  
 #'   to fitting the joint model. The separate models are estimated using the
 #'   \code{\link[lme4]{glmer}} and \code{\link[survival]{coxph}} functions.
-#'   Parameters that cannot be obtained from 
+#'   This should provide reasonable initial values which should aid the 
+#'   MCMC sampler. Parameters that cannot be obtained from 
 #'   fitting separate longitudinal and time-to-event models are initialised 
-#'   at 0. This often provides reasonable initial values which should aid the 
-#'   MCMC sampler, but may not work for some complex or heavily constrained 
-#'   models such as those with multiple longitudinal submodels or multilevel
-#'   clustering. An alternative is to \code{"prefit_vb"} which will obtain 
-#'   initial values for the longitudinal submodels by estimating
-#'   a multivariate GLM using the \code{\link{stan_mvmer}} function with 
-#'   \code{algorithm = "meanfield"}. This may help with initial values for some
-#'   complex models. Note that it is recommended that any final analysis should 
+#'   using the "random" method for \code{\link[rstan]{stan}}.
+#'   However it is recommended that any final analysis should ideally
 #'   be performed with several MCMC chains each initiated from a different
 #'   set of initial values; this can be obtained by setting
-#'   \code{init = "random"}. Other possibilities for specifying \code{init}
-#'   are those described for \code{\link[rstan]{stan}}.  
+#'   \code{init = "random"}. In addition, other possibilities for specifying 
+#'   \code{init} are the same as those described for \code{\link[rstan]{stan}}.  
 #' @param priorLong,priorEvent,priorEvent_assoc The prior distributions for the 
 #'   regression coefficients in the longitudinal submodel(s), event submodel,
 #'   and the association parameter(s). Can be a call to one of the various functions 
@@ -199,10 +201,15 @@
 #'   (improper) uniform prior--- \code{prior_intercept} can be set to
 #'   \code{NULL}.
 #'   
-#'   \strong{Note:} If using a dense representation of the design matrix 
-#'   ---i.e., if the \code{sparse} argument is left at its default value of
-#'   \code{FALSE}--- then the prior distribution for the intercept is set so it
-#'   applies to the value when all predictors are centered.
+#'   \strong{Note:} The prior distribution for the intercept is set so it
+#'   applies to the value when all predictors are centered. Moreover, 
+#'   note that a prior is only placed on the intercept for the event submodel
+#'   when a Weibull baseline hazard has been specified. For the B-splines and
+#'   piecewise constant baseline hazards there is not intercept parameter that
+#'   is given a prior distribution; an intercept parameter will be shown in 
+#'   the output for the fitted model, but this just corresponds to the 
+#'   necessary post-estimation adjustment in the linear predictor due to the
+#'   centering of the predictiors in the event submodel.
 #' @param priorLong_aux The prior distribution for the "auxiliary" parameters
 #'   in the longitudinal submodels (if applicable). 
 #'   The "auxiliary" parameter refers to a different parameter 
@@ -238,24 +245,24 @@
 #'   B-spline approximation to the log baseline hazard.
 #'   For \code{basehaz = "piecewise"} the auxiliary parameters are the piecewise
 #'   estimates of the log baseline hazard.
-#' @param max_treedepth A positive integer specifying the maximum treedepth 
-#'   for the non-U-turn sampler. See the \code{control} argument in 
-#'   \code{\link[rstan]{stan}}.
+#' @param prior_covariance Cannot be \code{NULL}; see \code{\link{priors}} for
+#'   more information about the prior distributions on covariance matrices.
+#'   Note however that the default prior for covariance matrices in 
+#'   \code{stan_jm} is slightly different to that in \code{\link{stan_glmer}} 
+#'   (the details of which are described on the \code{\link{priors}} page).
 #'   
 #' @details The \code{stan_jm} function can be used to fit a joint model (also 
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
-#'   under a Bayesian framework. 
-#'   The joint model may be univariate (with only one longitudinal submodel) or
-#'   multivariate (with more than one longitudinal submodel). Multi-level 
-#'   clustered data are allowed (e.g. patients within clinics), provided that the
-#'   individual (e.g. patient) is the lowest level of clustering. The underlying
+#'   under a Bayesian framework. The underlying
 #'   estimation is carried out using the Bayesian C++ package Stan 
 #'   (\url{http://mc-stan.org/}). \cr
 #'   \cr 
-#'   For the longitudinal submodel a generalised linear mixed model is assumed 
-#'   with any of the \code{\link[stats]{family}} choices allowed by 
-#'   \code{\link[lme4]{glmer}}. If a multivariate joint model is specified (by
-#'   providing a list of formulas in the \code{formulaLong} argument), then
+#'   The joint model may be univariate (with only one longitudinal submodel) or
+#'   multivariate (with more than one longitudinal submodel). 
+#'   For the longitudinal submodel a (possibly multivariate) generalised linear 
+#'   mixed model is assumed with any of the \code{\link[stats]{family}} choices 
+#'   allowed by \code{\link[lme4]{glmer}}. If a multivariate joint model is specified 
+#'   (by providing a list of formulas in the \code{formulaLong} argument), then
 #'   the multivariate longitudinal submodel consists of a multivariate generalized  
 #'   linear model (GLM) with group-specific terms that are assumed to be correlated
 #'   across the different GLM submodels. That is, within
@@ -264,15 +271,24 @@
 #'   possible to specify a different outcome type (for example a different
 #'   family and/or link function) for each of the GLM submodels, by providing
 #'   a list of \code{\link[stats]{family}} objects in the \code{family} 
-#'   argument. \cr
+#'   argument. Multi-level 
+#'   clustered data are allowed, and that additional clustering can occur at a 
+#'   level higher than the individual-level (e.g. patients clustered within 
+#'   clinics), or at a level lower than the individual-level (e.g. tumor lesions
+#'   clustered within patients). If the clustering occurs at a level lower than
+#'   the individual, then the user needs to indicate how the lower level 
+#'   clusters should be handled when forming the association structure between
+#'   the longitudinal and event submodels (see the \code{grp_assoc} argument
+#'   described above). \cr
 #'   \cr
 #'   For the event submodel a parametric
 #'   proportional hazards model is assumed. The baseline hazard can be estimated 
-#'   using either a Weibull distribution (\code{basehaz = "weibull"}) or a
-#'   piecewise constant baseline hazard (\code{basehaz = "piecewise"}), or 
-#'   approximated using cubic B-splines (\code{basehaz = "bs"}). 
-#'   If either of the latter two are used then the degrees of freedom, 
-#'   or the internal knot locations, can be optionally specified. If
+#'   using either a cubic B-splines approximation (\code{basehaz = "bs"}, the
+#'   default), a Weibull distribution (\code{basehaz = "weibull"}), or a
+#'   piecewise constant baseline hazard (\code{basehaz = "piecewise"}).
+#'   If the B-spline or piecewise constant baseline hazards are used, 
+#'   then the degrees of freedom or the internal knot locations can be 
+#'   (optionally) specified. If
 #'   the degrees of freedom are specified (through the \code{df} argument) then
 #'   the knot locations are automatically generated based on the 
 #'   distribution of the observed event times (not including censoring times). 
@@ -296,7 +312,7 @@
 #'   including the association parameter(s) (in much the same way as the
 #'   regression parameters in \code{\link{stan_glm}}) and
 #'   priors on the terms of a decomposition of the covariance matrices of the
-#'   group-specific parameters (in the same way as \code{\link{stan_glmer}}). 
+#'   group-specific parameters. 
 #'   See \code{\link{priors}} for more information about the priors distributions
 #'   that are available. \cr
 #'   \cr
@@ -358,7 +374,7 @@
 #'   named \code{sex} then we might want to obtain different estimates for the 
 #'   association between the current slope of the marker and the risk of the 
 #'   event for each gender. To do this we would specify 
-#'   \code{assoc = "etaslope_data(~ sex)"}. \cr
+#'   \code{assoc = c("etaslope", "etaslope_data(~ sex)")}. \cr
 #'   \cr
 #'   It is also possible, when fitting  a multivariate joint model, to include 
 #'   interaction terms between the association terms themselves (this only
@@ -376,13 +392,13 @@
 #'   There are additional examples in the \strong{Examples} section below.
 #'   }
 #' 
-#' @return A \link[=stanmvreg-objects]{stanmvreg} object is returned.
+#' @return A \link[=stanreg-objects]{stanjm} object is returned.
 #' 
-#' @seealso \code{\link{stanmvreg-objects}}, \code{\link{stanmvreg-methods}}, 
+#' @seealso \code{\link{stanreg-objects}}, \code{\link{stanmvreg-methods}}, 
 #'   \code{\link{print.stanmvreg}}, \code{\link{summary.stanmvreg}},
 #'   \code{\link{posterior_traj}}, \code{\link{posterior_survfit}}, 
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}},
-#'   \code{\link{pp_check}}, \code{\link{ps_check}}.
+#'   \code{\link{pp_check}}, \code{\link{ps_check}}, \code{\link{stan_mvmer}}.
 #' 
 #' @examples
 #' \donttest{
@@ -441,10 +457,9 @@
 #' 
 #' ######
 #' # Multivariate joint model, with association structure based 
-#' # on the current value of the linear predictor in the first longitudinal 
-#' # submodel and shared random intercept from the second longitudinal 
-#' # submodel only (which is the first random effect in that submodel
-#' # and is therefore indexed using the '(1)' suffix in the code below)
+#' # on the current value and slope of the linear predictor in the 
+#' # first longitudinal submodel and the area under the marker 
+#' # trajectory for the second longitudinal submodel
 #' mv1 <- stan_jm(
 #'         formulaLong = list(
 #'           logBili ~ year + (1 | id), 
@@ -452,19 +467,10 @@
 #'         dataLong = pbcLong,
 #'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
-#'         assoc = list("etavalue", "shared_b(1)"), 
+#'         assoc = list(c("etavalue", "etaslope"), "etaauc"), 
 #'         time_var = "year",
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(mv1)
-#' 
-#' # To include both the random intercept and random slope in the shared 
-#' # random effects association structure for the second longitudinal 
-#' # submodel, we could specify the following:
-#' #   update(mv1, assoc = list("etavalue", "shared_b")
-#' # which would be equivalent to:  
-#' #   update(mv1, assoc = list("etavalue", "shared_b(1,2)")
-#' # or:
-#' #   update(mv1, assoc = list("etavalue", "shared_b(1:2)")     
 #' 
 #' #####
 #' # Multivariate joint model, where the association structure is formed by 
@@ -484,9 +490,23 @@
 #'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"),
 #'         time_var = "year", 
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
+#'         
+#' #####
+#' # Multivariate joint model, with one bernoulli marker and one
+#' # Gaussian marker. We will artificially create the bernoulli
+#' # marker by dichotomising log serum bilirubin
+#' pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
+#' mv3 <- stan_jm(
+#'         formulaLong = list(
+#'           ybern ~ year + (1 | id), 
+#'           albumin ~ sex + year + (year | id)),
+#'         dataLong = pbcLong,
+#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'         dataEvent = pbcSurv,
+#'         family = list(binomial, gaussian),
+#'         time_var = "year", 
+#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
-#'  
-#' @importFrom lme4 lmerControl glmerControl glmer
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 

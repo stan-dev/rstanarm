@@ -924,12 +924,12 @@ validate_positive_scalar <- function(x, not_greater_than = NULL) {
 #
 # @param x A matrix or 2D array
 # @param prob Value between 0 and 1 indicating the desired width of the CrI
-median_and_bounds <- function(x, prob) {
+median_and_bounds <- function(x, prob, na.rm = FALSE) {
   if (!any(is.matrix(x), is.array(x)))
     stop("x should be a matrix or 2D array.")
-  med <- apply(x, 2, median)
-  lb  <- apply(x, 2, quantile, (1 - prob)/2)
-  ub  <- apply(x, 2, quantile, (1 + prob)/2)
+  med <- apply(x, 2, median, na.rm = na.rm)
+  lb  <- apply(x, 2, quantile, (1 - prob)/2, na.rm = na.rm)
+  ub  <- apply(x, 2, quantile, (1 + prob)/2, na.rm = na.rm)
   nlist(med, lb, ub)
 }
 

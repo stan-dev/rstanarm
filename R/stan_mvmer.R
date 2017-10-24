@@ -23,15 +23,11 @@
 #' that are assumed to be correlated across the GLM submodels.
 #' 
 #' @export
-#' @templateVar pkg stats
-#' @templateVar pkgfun glm 
-#' @templateVar rareargs na.action,contrasts
-#' @template args-same-as-rarely
 #' @template args-dots
-#' @template args-prior_covariance
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
+#' @template args-max_treedepth
 #' @template args-QR
 #' @template args-sparse
 #' 
@@ -45,7 +41,6 @@
 #'   be either a single data frame which contains the data for all 
 #'   GLM submodels, or it can be a list of data frames where each
 #'   element of the list provides the data for one of the GLM submodels.
-#' @param offset Not currently implemented. Same as \code{\link[stats]{glm}}.
 #' @param family The family (and possibly also the link function) for the 
 #'   GLM submodel(s). See \code{\link[lme4]{glmer}} for details. 
 #'   If fitting a multivariate GLM, then this can optionally be a
@@ -65,6 +60,13 @@
 #'   submodels. If a list is not provided, then the same prior distributions are 
 #'   used for each GLM submodel. Note that the \code{"product_normal"} prior is
 #'   not allowed for \code{stan_mvmer}.
+#' @param prior_covariance Cannot be \code{NULL}; see \code{\link{priors}} for
+#'   more information about the prior distributions on covariance matrices.
+#'   Note however that the default prior for covariance matrices in 
+#'   \code{stan_mvmer} is slightly different to that in \code{\link{stan_glmer}} 
+#'   (the details of which are described on the \code{\link{priors}} page).
+#' @param init The method for generating initial values. See
+#'   \code{\link[rstan]{stan}}.
 #'   
 #' @details The \code{stan_mvmer} function can be used to fit a multivariate
 #'   generalized linear model (GLM) with group-specific terms. The model consists
@@ -82,9 +84,12 @@
 #'   the priors distributions that are available for the covariance matrices, 
 #'   the regression coefficients and the intercept and auxiliary parameters.
 #'
-#' @return A \link[=stanmvreg-objects]{stanmvreg} object is returned.
+#' @return A \link[=stanreg-objects]{stanmvreg} object is returned.
 #' 
-#' @seealso \code{\link{stan_glmer}}.
+#' @seealso \code{\link{stan_glmer}}, \code{\link{stan_jm}},
+#'   \code{\link{stanreg-objects}}, \code{\link{stanmvreg-methods}}, 
+#'   \code{\link{print.stanmvreg}}, \code{\link{summary.stanmvreg}},
+#'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}}.
 #'    
 #' @examples
 #' \donttest{
@@ -101,6 +106,19 @@
 #'         # this next line is only to keep the example small in size!
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' summary(f1) 
+#' 
+#' #####
+#' # A multivariate GLM with one bernoulli outcome and one
+#' # gaussian outcome. We will artificially create the bernoulli
+#' # outcome by dichotomising log serum bilirubin
+#' pbcLong$ybern <- as.integer(pbcLong$logBili >= mean(pbcLong$logBili))
+#' f2 <- stan_mvmer(
+#'         formula = list(
+#'           ybern ~ year + (1 | id), 
+#'           albumin ~ sex + year + (year | id)),
+#'         data = pbcLong,
+#'         family = list(binomial, gaussian),
+#'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
 #' 
 stan_mvmer <- function(formula, data, family = gaussian, weights,				          

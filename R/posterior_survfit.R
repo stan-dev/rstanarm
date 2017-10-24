@@ -282,7 +282,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     ndL <- subset_ids(object, ndL, ids)
     ndE <- subset_ids(object, ndE, ids)
   }  
-  id_list <- unique(ndE[[id_var]]) # order of ids from data, not ids arg
+  id_list <- factor(unique(ndE[[id_var]])) # order of ids from data, not ids arg
   #newpats <- if (is.null(newdataLong)) FALSE else check_pp_ids(object, id_list)
   
   # Last known survival time for each individual
@@ -401,14 +401,14 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       if (length(object$cnms) > 2L)
         stop("'posterior_survfit' is not yet implemented for models with more than ",
              "two grouping factors.")  
-      b2_var <- grep(glob2rx(id_var), names(p), value = TRUE, invert = TRUE)
+      b2_var <- grep(utils::glob2rx(id_var), names(p), value = TRUE, invert = TRUE)
       b2_p <- p[[b2_var]] # total num. of b pars for second grouping factor
       Ni <- tapply(ndL[[1]][[b2_var]], ndL[[1]][[id_var]], 
                    function(x) length(unique(x)))
     }
     cat("Drawing random effects for", length(id_list), "new individuals.",
         "Monitoring progress:\n")
-    pb <- txtProgressBar(min = 0, max = length(id_list), style = 3)
+    pb <- utils::txtProgressBar(min = 0, max = length(id_list), style = 3)
     b_new <- list()
     for (i in 1:length(id_list)) {
       len_b <- if (use_b2) b1_p + Ni[id_list[[i]]] * b2_p else b1_p
@@ -436,7 +436,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))
       colnames(mat) <- paste0("b[", new_nms, "]")
       b_new[[i]] <- mat
-      setTxtProgressBar(pb, i)
+      utils::setTxtProgressBar(pb, i)
     }  
     close(pb)
     b_new <- do.call("cbind", b_new)      # cbind new b pars for all individuals
@@ -486,7 +486,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Summarise posterior draws to get median and ci
   out <- do.call("rbind", lapply(
     seq_along(surv), function(x, standardise, id_list, time_seq, prob) {
-      val <- median_and_bounds(surv[[x]], prob)
+      val <- median_and_bounds(surv[[x]], prob, na.rm = TRUE)
       if (standardise) {
         data.frame(TIMEVAR = unique(time_seq[[x]]), val$med, val$lb, val$ub)        
       } else
@@ -523,7 +523,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     })
     out2 <- do.call("rbind", lapply(
       seq_along(surv2), function(x, standardise, id_list, time_seq, prob) {
-        val <- median_and_bounds(surv2[[x]], prob)
+        val <- median_and_bounds(surv2[[x]], prob, na.rm = TRUE)
         data.frame(IDVAR = id_list, TIMEVAR = time_seq[[x]], val$med) 
       }, standardise, id_list, time_seq, prob))
     out2 <- data.frame(out2)
@@ -654,7 +654,7 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   } else {
     ids <- if (!standardise) attr(x, "ids") else NULL
   }
-  if (!standardise) x$id <- x[[id_var]]
+  if (!standardise) x$id <- factor(x[[id_var]])
   x$time <- x[[time_var]]
   
   geom_defaults <- list(color = "black")

@@ -104,7 +104,9 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
 
 #' @rdname log_lik.stanreg
 #' @export
-#' 
+#' @templateVar mArg m
+#' @template args-m
+#'  
 log_lik.stanmvreg <- function(object, m = 1, newdata = NULL, ...) {
   validate_stanmvreg_object(object)
   out <- log_lik.stanreg(object, newdata = newdata, m = m, ...)
@@ -128,6 +130,9 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...)
     STOP_sampling_only("Pointwise log-likelihood matrix")
   validate_stanjm_object(object)
   M <- get_M(object)
+  if ("m" %in% names(list(...)))
+    stop("'m' should not be specified for stan_jm objects since the ",
+         "log-likelihood is calculated for the full joint model.")
   if (!identical(is.null(newdataLong), is.null(newdataEvent)))
     stop("Both newdataLong and newdataEvent must be supplied together.")
   if (!is.null(newdataLong)) {
@@ -533,7 +538,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     b <- as.vector(pp_b_ord(b, Z_names))
     Sigma_id <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
     if (length(cnms) > 1L) {
-      b2_var <- grep(glob2rx(id_var), names(cnms), 
+      b2_var <- grep(utils::glob2rx(id_var), names(cnms), 
                      value = TRUE, invert = TRUE)
       Sigma_b2 <- VarCorr(object, stanmat = pars$stanmat)[[b2_var]]
       Sigma_list <- rep(list(Sigma_b2), data$Ni)

@@ -164,11 +164,23 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       #---  etaauc  ---#
       
       if (assoc_m[["etaauc"]]) {
-        val   <- c()
-        for (j in 1:length(eta_m)) {
-          wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
-          auc_j <- auc_m[((j-1) * qnodes + 1):(j * qnodes)]
-          val[j] <- sum(wgt_j * auc_j)
+        if (is.matrix(eta_m)) {
+          nr <- nrow(eta_m)
+          nc <- ncol(eta_m)
+          val   <- matrix(NA, nrow = nr, ncol = nc) 
+          for (j in 1:nc) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- auc_m[, ((j-1) * qnodes + 1):(j * qnodes), drop = FALSE]
+            tmp_j <- sweep(auc_j, 2L, wgt_j, `*`)
+            val[,j] <- rowSums(tmp_j)
+          }
+        } else {
+          val <- c()
+          for (j in 1:length(eta_m)) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- auc_m[((j-1) * qnodes + 1):(j * qnodes)]
+            val[j] <- sum(wgt_j * auc_j)
+          }          
         }
         a_X[[mark]] <- val
         mark <- mark + 1            
@@ -264,11 +276,23 @@ make_assoc_terms <- function(parts, assoc, family, ...) {
       #---  muauc  ---#
       
       if (assoc_m[["muauc"]]) {
-        val <- c()
-        for (j in 1:length(eta_m)) {
-          wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
-          auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])
-          val[j] <- sum(wgt_j * auc_j)
+        if (is.matrix(eta_m)) {
+          nr <- nrow(eta_m)
+          nc <- ncol(eta_m)
+          val   <- matrix(NA, nrow = nr, ncol = nc) 
+          for (j in 1:nc) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- invlink_m(auc_m[, ((j-1) * qnodes + 1):(j * qnodes), drop = FALSE])
+            tmp_j <- sweep(auc_j, 2L, wgt_j, `*`)
+            val[,j] <- rowSums(tmp_j)
+          }
+        } else {
+          val <- c()
+          for (j in 1:length(eta_m)) {
+            wgt_j <- qwts[((j-1) * qnodes + 1):(j * qnodes)]
+            auc_j <- invlink_m(auc_m[((j-1) * qnodes + 1):(j * qnodes)])
+            val[j] <- sum(wgt_j * auc_j)
+          }          
         }
         a_X[[mark]] <- val
         mark <- mark + 1 

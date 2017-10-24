@@ -532,6 +532,12 @@ hash_y <- function(x, ...) {
 is_discrete <- function(object) {
   if (inherits(object, "polr"))
     return(TRUE)
+  if (inherits(object, "stanmvreg")) {
+    fams <- fetch(family(object), "family")
+    res <- sapply(fams, function(x)
+      is.binomial(x) || is.poisson(x) || is.nb(x))
+    return(res)
+  }
   fam <- family(object)$family
   is.binomial(fam) || is.poisson(fam) || is.nb(fam)
 }
