@@ -123,7 +123,7 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
       lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, x))
     ids2 <- rep(ids, each = auc_qnodes)
     dataQ_auc <- rolling_merge(data = newdata, ids = ids2, times = auc_qpts)
-    mod_auc <- use_function(newdata = dataQ_auc)
+    mod_auc <- use_function(newdata = dataQ_auc, ...)
   } else mod_auc <- auc_qpts <- auc_qwts <- NULL
   
   # If association structure is based on interactions with data, then calculate 
