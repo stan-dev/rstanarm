@@ -793,7 +793,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Data for auc association structure
     standata$auc_qnodes <- as.integer(auc_qnodes)
     standata$Npat_times_auc_qnodes <- as.integer(e_mod$Npat * auc_qnodes) 
-    nrow_y_Xq_auc <- sapply(a_mod, function(x) NROW(x$mod_auc$X))
+    nrow_y_Xq_auc <- sapply(a_mod, function(x) NROW(x$mod_auc$x))
     if (n_distinct(nrow_y_Xq_auc) > 1L)
       stop2("Bug found: nrows for auc should be the same for all submodels.")
     standata$nrow_y_Xq_auc <- unique(nrow_y_Xq_auc)
