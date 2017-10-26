@@ -58,12 +58,15 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   
   # Broadcast ids and times if there is lower level clustering
   if (grp_stuff$has_grp) {
-    grps <- grp_stuff$grp_list[ids] # obtain the grps corresponding to each element of ids
-    grps <- as.vector(unlist(grps))
-    freq_seq <- grp_stuff$grp_freq[ids] # freq by which to expand each ids and times element
-    ids   <- rep(ids,   freq_seq)       # rep each patient id the required num of times
-    times <- rep(times, freq_seq)       # rep each prediction time the required num of times
-    grp_idx <- get_idx_array(freq_seq)  # indices for collapsing across clusters within patients
+    # grps corresponding to each id
+    grps <- as.vector(unlist(grp_stuff$grp_list[as.character(ids)])) 
+    # freq by which to expand each ids and times element
+    freq_seq <- grp_stuff$grp_freq[as.character(ids)] 
+    # rep each patient id and prediction time the required num of times
+    ids   <- rep(ids,   freq_seq)       
+    times <- rep(times, freq_seq) 
+    # indices for collapsing across clusters within patients
+    grp_idx <- get_idx_array(freq_seq)  
   } else grps <- grp_idx <- NULL
   
   # Identify row in longitudinal data closest to event time or quadrature point

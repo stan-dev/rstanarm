@@ -354,8 +354,9 @@ null_or_zero <- function(x) {
     qwts   <- uapply(qq$weights, unstandardise_qwts, 0, etimes)
     starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
     edat <- prepare_data_table(ndE, id_var, time_var = starttime)
+    id_rep <- rep(id_list, qnodes + 1)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
-    edat <- rolling_merge(edat, ids = rep(id_list, qnodes + 1), times = times)
+    edat <- rolling_merge(edat, ids = id_rep, times = times)
     eXq  <- .pp_data_mer_x(object, newdata = edat, m = "Event")
     assoc_parts <- lapply(1:M, function(m) {
       ymf <- ndL[[m]]
@@ -369,7 +370,7 @@ null_or_zero <- function(x) {
                                 grp_var = grp_stuff$grp_var)
       make_assoc_parts(
         ymf, assoc = object$assoc[,m], id_var = id_var, time_var = time_var, 
-        ids = id_list, times = times, grp_stuff = grp_stuff,
+        ids = id_rep, times = times, grp_stuff = grp_stuff,
         use_function = pp_data, object = object, m = m)
     })
     assoc_attr <- nlist(.Data = assoc_parts, qnodes, qtimes, qwts, etimes, estatus)
