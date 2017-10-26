@@ -1699,10 +1699,11 @@ get_extra_grp_info <- function(basic_info, flist, id_var, grp_assoc,
     factor_ids <- factor(flist[[id_var]])
     
     # num clusters within each patient
-    grp_freq <- tapply(factor_grp, factor_ids, FUN = n_distinct)
+    grp_freq <- tapply(factor_grp, factor_ids, FUN = n_distinct, simplify = FALSE)
+    grp_freq <- unlist(grp_freq)
     
     # unique cluster ids for each patient id
-    grp_list <- tapply(factor_grp, factor_ids, FUN = unique)
+    grp_list <- tapply(factor_grp, factor_ids, FUN = unique, simplify = FALSE)
 
     basic_info <- nlist(has_grp, grp_var)
     extra_info <- nlist(grp_assoc, grp_freq, grp_list)

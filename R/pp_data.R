@@ -363,7 +363,7 @@ null_or_zero <- function(x) {
       if (grp_stuff$has_grp) {
         grp_stuff <- get_extra_grp_info( # update grp_info with new data
           grp_stuff, flist = ymf, id_var = id_var, 
-          grp_assoc = object$grp_assoc)
+          grp_assoc = grp_stuff$grp_assoc)
       }
       ymf <- prepare_data_table(ymf, id_var = id_var, time_var = time_var,
                                 grp_var = grp_stuff$grp_var)
