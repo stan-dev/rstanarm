@@ -161,7 +161,7 @@ ll_fun <- function(x, m = NULL) {
   if (is.nlmer(x)) 
     return(.ll_nlmer_i)
   
-  fun <- paste0(".ll_", family(x)$family, "_i")
+  fun <- paste0(".ll_", family(x, m = m)$family, "_i")
   get(fun, mode = "function")
 }
 
