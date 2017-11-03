@@ -177,8 +177,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   } else {
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m), m = m)
   }
-  if (!is_polr(object) && is.binomial(family(object)$family))
-    ppargs$trials <- pp_binomial_trials(object, newdata)
+  if (!is_polr(object) && is.binomial(family(object, m = m)$family))
+    ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
 
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
@@ -223,8 +223,8 @@ posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = N
 # internal ----------------------------------------------------------------
 
 # functions to draw from the various posterior predictive distributions
-pp_fun <- function(object) {
-  suffix <- if (is_polr(object)) "polr" else family(object)$family
+pp_fun <- function(object, m = NULL) {
+  suffix <- if (is_polr(object)) "polr" else family(object, m = m)$family
   get(paste0(".pp_", suffix), mode = "function")
 }
 
