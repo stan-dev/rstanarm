@@ -151,7 +151,7 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
         stop2("Bug found: A formula was specified for the '", i, "' association ", 
               "structure, but the resulting design matrix has no columns.")
     } else {
-      X <- matrix(0, length(unlist(times)), 0)
+      X <- matrix(0, nrow(dataQ), 0)
     }
     X
   })
