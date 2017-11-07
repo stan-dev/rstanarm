@@ -157,15 +157,25 @@ stan_gamm4 <-
   }
   
   if (family$family == "binomial") {
-    data$temp_y <- rep(1, NROW(data))
+    data$temp_y <- rep(1, NROW(data)) # work around jagam bug
     temp_formula <- update(formula, temp_y ~ .)
     jd <- mgcv::jagam(formula = temp_formula, family = gaussian(), data = data,
                       file = tempfile(fileext = ".jags"), weights = NULL,
                       na.action = na.action, offset = NULL, knots = knots,
                       drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
-    y <- cbind(data[,2], data[,1] - data[,2])
-  }
-  else {
+    
+    if (!is.null(random)) {
+      y <- data[, as.character(formula[2L])]
+    } else {
+      y <- eval(formula[[2L]], data)
+    }
+    
+    if (binom_y_prop(y, family, weights)) {
+      y1 <- as.integer(as.vector(y) * weights)
+      y <- cbind(y1, y0 = weights - y1)
+      weights <- double(0)
+    }
+  } else {
     jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
                       file = tempfile(fileext = ".jags"), weights = NULL,
                       na.action = na.action, offset = NULL, knots = knots,
