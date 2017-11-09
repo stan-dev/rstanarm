@@ -27,7 +27,9 @@
 #' @templateVar pkgfun glmer
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-prior_intercept
 #' @template args-priors
+#' @template args-prior_intercept
 #' @template args-prior_aux
 #' @template args-prior_covariance
 #' @template args-prior_PD
@@ -79,15 +81,25 @@
 #' 
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t cBind
-stan_glmer <- function(formula, data = NULL, family = gaussian, 
-                       subset, weights, 
-                       na.action = getOption("na.action", "na.omit"), 
-                       offset, contrasts = NULL, ...,
-                       prior = normal(), prior_intercept = normal(),
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
+stan_glmer <- 
+  function(formula,
+           data = NULL,
+           family = gaussian,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
   
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
@@ -124,6 +136,8 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = group, QR = QR, sparse = sparse, ...)
   if (family$family == "Beta regression") family$family <- "beta"
+  sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+  X <- X[ , !sel, drop = FALSE]
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
@@ -142,22 +156,23 @@ stan_glmer <- function(formula, data = NULL, family = gaussian,
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- function(formula,
-                      data = NULL,
-                      subset,
-                      weights,
-                      na.action = getOption("na.action", "na.omit"),
-                      offset,
-                      contrasts = NULL,
-                      ...,
-                      prior = normal(),
-                      prior_intercept = normal(),
-                      prior_aux = cauchy(0, 5),
-                      prior_covariance = decov(),
-                      prior_PD = FALSE,
-                      algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = NULL,
-                      QR = FALSE) {
+stan_lmer <- 
+  function(formula,
+           data = NULL,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)
@@ -178,23 +193,25 @@ stan_lmer <- function(formula,
 #' @param link For \code{stan_glmer.nb} only, the link function to use. See 
 #'   \code{\link{neg_binomial_2}}.
 #' 
-stan_glmer.nb <- function(formula,
-                          data = NULL,
-                          subset,
-                          weights,
-                          na.action = getOption("na.action", "na.omit"),
-                          offset,
-                          contrasts = NULL,
-                          link = "log",
-                          ...,
-                          prior = normal(),
-                          prior_intercept = normal(),
-                          prior_aux = cauchy(0, 5),
-                          prior_covariance = decov(),
-                          prior_PD = FALSE,
-                          algorithm = c("sampling", "meanfield", "fullrank"),
-                          adapt_delta = NULL,
-                          QR = FALSE) {
+stan_glmer.nb <- 
+  function(formula,
+           data = NULL,
+           subset,
+           weights,
+           na.action = getOption("na.action", "na.omit"),
+           offset,
+           contrasts = NULL,
+           link = "log",
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE) {
+    
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)

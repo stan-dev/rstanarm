@@ -13,4 +13,9 @@
 #'   argument applies to the coefficients relative to \eqn{Q^\ast}{Q*} (and
 #'   those are not very interpretable), setting \code{QR=TRUE} is only
 #'   recommended if you do not have an informative prior for the regression
-#'   coefficients.
+#'   coefficients. 
+#'   
+#'   For more details see the Stan case study 
+#'   \emph{The QR Decomposition For Regression Models} at 
+#'   \url{http://mc-stan.org/users/documentation/case-studies/qr_regression.html}.
+#'   

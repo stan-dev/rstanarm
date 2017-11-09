@@ -1,6 +1,6 @@
   // Log-priors for coefficients
        if (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
-  else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
+  else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t via Cornish-Fisher expansion
   else if (prior_dist == 3) { // hs
     real log_half = -0.693147180559945286;
     target += normal_lpdf(z_beta | 0, 1);

@@ -27,7 +27,9 @@
 #' @templateVar pkgfun gamm4
 #' @template return-stanreg-object
 #' @template see-also
+#' @template args-prior_intercept
 #' @template args-priors
+#' @template args-prior_intercept
 #' @template args-prior_aux
 #' @template args-prior_smooth
 #' @template args-prior_PD
@@ -96,6 +98,9 @@
 #' Software}. \strong{14}(14), 1--22. 
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
 #' 
+#' @seealso The vignette for \code{stan_glmer}, which also discusses
+#'   \code{stan_gamm4}.
+#' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
@@ -111,16 +116,28 @@
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
 #' 
-stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data, 
-                       weights = NULL, subset = NULL, na.action, knots = NULL, 
-                       drop.unused.levels = TRUE, ..., 
-                       prior = normal(), prior_intercept = normal(),
-                       prior_smooth = exponential(autoscale = FALSE), 
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = decov(), prior_PD = FALSE, 
-                       algorithm = c("sampling", "meanfield", "fullrank"), 
-                       adapt_delta = NULL, QR = FALSE, sparse = FALSE) {
-
+stan_gamm4 <-
+  function(formula,
+           random = NULL,
+           family = gaussian(),
+           data,
+           weights = NULL,
+           subset = NULL,
+           na.action,
+           knots = NULL,
+           drop.unused.levels = TRUE,
+           ...,
+           prior = normal(),
+           prior_intercept = normal(),
+           prior_smooth = exponential(autoscale = FALSE),
+           prior_aux = exponential(),
+           prior_covariance = decov(),
+           prior_PD = FALSE,
+           algorithm = c("sampling", "meanfield", "fullrank"),
+           adapt_delta = NULL,
+           QR = FALSE,
+           sparse = FALSE) {
+    
   data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   
@@ -139,12 +156,32 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data,
     glmod <- NULL
   }
   
-  jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
-                    file = tempfile(fileext = ".jags"), weights = NULL,
-                    na.action = na.action, offset = NULL, knots = knots,
-                    drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
-
-  y <- jd$jags.data$y
+  if (family$family == "binomial") {
+    data$temp_y <- rep(1, NROW(data)) # work around jagam bug
+    temp_formula <- update(formula, temp_y ~ .)
+    jd <- mgcv::jagam(formula = temp_formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    
+    if (!is.null(random)) {
+      y <- data[, as.character(formula[2L])]
+    } else {
+      y <- eval(formula[[2L]], data)
+    }
+    
+    if (binom_y_prop(y, family, weights)) {
+      y1 <- as.integer(as.vector(y) * weights)
+      y <- cbind(y1, y0 = weights - y1)
+      weights <- double(0)
+    }
+  } else {
+    jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    y <- jd$jags.data$y
+  }
   # there is no offset allowed by gamm4::gamm4
   offset <- validate_offset(as.vector(model.offset(jd$pregam$model)), y = y)
   X <- jd$jags.data$X
@@ -189,7 +226,7 @@ stan_gamm4 <- function(formula, random = NULL, family = gaussian(), data,
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
   if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
-  if (is.null(random)) Z <- Matrix::Matrix(nrow = length(y), ncol = 0, sparse = TRUE)
+  if (is.null(random)) Z <- Matrix::Matrix(nrow = NROW(y), ncol = 0, sparse = TRUE)
   else {
     Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                     flist = group$flist)$Z

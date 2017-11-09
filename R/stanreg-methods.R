@@ -278,23 +278,34 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
   mat <- if ("stanmat" %in% names(dots)) as.matrix(dots$stanmat) else as.matrix(x)
   cnms <- .cnms(x)
   useSc <- "sigma" %in% colnames(mat)
-  if (useSc) sc <- mat[,"sigma"]
-  else sc <- 1
+  if (useSc) sc <- mat[,"sigma"] else sc <- 1
   Sigma <- colMeans(mat[,grepl("^Sigma\\[", colnames(mat)), drop = FALSE])
   nc <- vapply(cnms, FUN = length, FUN.VALUE = 1L)
   nms <- names(cnms)
   ncseq <- seq_along(nc)
-  spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
-  ans <- lapply(ncseq, function(i) {
-    Sigma <- matrix(0, nc[i], nc[i])
-    Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
-    Sigma <- Sigma + t(Sigma)
-    diag(Sigma) <- diag(Sigma) / 2
-    rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
-    stddev <- sqrt(diag(Sigma))
-    corr <- cov2cor(Sigma)
-    structure(Sigma, stddev = stddev, correlation = corr)
-  })
+  if (length(Sigma) == sum(nc * nc)) { # stanfit contains all Sigma entries
+    spt <- split(Sigma, rep.int(ncseq, nc * nc))
+    ans <- lapply(ncseq, function(i) {
+      Sigma <- matrix(0, nc[i], nc[i])
+      Sigma[,] <- spt[[i]]
+      rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
+      stddev <- sqrt(diag(Sigma))
+      corr <- cov2cor(Sigma)
+      structure(Sigma, stddev = stddev, correlation = corr)
+    })       
+  } else { # stanfit contains lower tri Sigma entries
+    spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
+    ans <- lapply(ncseq, function(i) {
+      Sigma <- matrix(0, nc[i], nc[i])
+      Sigma[lower.tri(Sigma, diag = TRUE)] <- spt[[i]]
+      Sigma <- Sigma + t(Sigma)
+      diag(Sigma) <- diag(Sigma) / 2
+      rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
+      stddev <- sqrt(diag(Sigma))
+      corr <- cov2cor(Sigma)
+      structure(Sigma, stddev = stddev, correlation = corr)
+    })    
+  }
   names(ans) <- nms
   structure(ans, sc = mean(sc), useSc = useSc, class = "VarCorr.merMod")
 }

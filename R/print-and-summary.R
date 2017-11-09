@@ -69,9 +69,11 @@
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
   cat(x$stan_function)
-  cat("\n family:  ", family_plus_link(x))
-  cat("\n formula: ", formula_string(formula(x)))
-  cat("\n num. obs:", nobs(x))
+  cat("\n family:      ", family_plus_link(x))
+  cat("\n formula:     ", formula_string(formula(x)))
+  cat("\n observations:", nobs(x))
+  if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
+    cat("\n predictors:  ", length(coef(x)))
   
   cat("\n------\n")
   cat("\nEstimates:\n")
@@ -118,8 +120,10 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("Num. levels:", 
           paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
     }
-    cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
-    .printfr(ppd_estimates, digits, ...)
+    if (x$stan_function != "stan_clogit") {
+      cat("\nSample avg. posterior predictive \ndistribution of y (X = xbar):\n")
+      .printfr(ppd_estimates, digits, ...)
+    }
     
   } else { 
     # used optimization
@@ -396,18 +400,22 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     out <- object$stan_summary[mark, , drop=FALSE]
   }
   
-  structure(out, 
-            call = object$call, 
-            algorithm = object$algorithm,
-            stan_function = object$stan_function,
-            family = family_plus_link(object),
-            formula = formula(object),
-            posterior_sample_size = posterior_sample_size(object),
-            nobs = nobs(object),
-            ngrps = if (mer) ngrps(object) else NULL,
-            print.digits = digits, 
-            priors = object$prior.info,
-            class = "summary.stanreg")
+  structure(
+    out,
+    call = object$call,
+    algorithm = object$algorithm,
+    stan_function = object$stan_function,
+    family = family_plus_link(object),
+    formula = formula(object),
+    posterior_sample_size = posterior_sample_size(object),
+    nobs = nobs(object),
+    npreds = if (isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
+      length(coef(object)) else NULL,
+    ngrps = if (mer) ngrps(object) else NULL,
+    print.digits = digits,
+    priors = object$prior.info,
+    class = "summary.stanreg"
+  )
 }
 
 #' @rdname summary.stanreg
@@ -419,17 +427,20 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                   ...) {
   atts <- attributes(x)
   cat("\nModel Info:\n")
-  cat("\n function: ", atts$stan_function)
-  cat("\n family:   ", atts$family)
-  cat("\n formula:  ", formula_string(atts$formula))
-  cat("\n algorithm:", atts$algorithm)
-  cat("\n priors:   ", "see help('prior_summary')")
+  cat("\n function:    ", atts$stan_function)
+  cat("\n family:      ", atts$family)
+  cat("\n formula:     ", formula_string(atts$formula))
+  cat("\n algorithm:   ", atts$algorithm)
+  cat("\n priors:      ", "see help('prior_summary')")
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-    cat("\n sample:   ", atts$posterior_sample_size, "(posterior sample size)")
-  cat("\n num obs:  ", atts$nobs)
+    cat("\n sample:      ", atts$posterior_sample_size, "(posterior sample size)")
+  cat("\n observations:", atts$nobs)
+  if (!is.null(atts$npreds))
+    cat("\n predictors:  ", atts$npreds)
   if (!is.null(atts$ngrps))
-    cat("\n groups:   ", paste0(names(atts$ngrps), " (", unname(atts$ngrps), ")",
-                           collapse = ", "))
+    cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
+                                   unname(atts$ngrps), ")", 
+                                   collapse = ", "))
   
   cat("\n\nEstimates:\n")
   sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
@@ -648,8 +659,8 @@ allow_special_parnames <- function(object, pars) {
   }
   if ("b" %in% pars) {
     if (is.mer(object)) {
-      pars2 <-
-        c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+      pars2 <- c(pars2, b_names(rownames(object$stan_summary), value = TRUE))
+      pars[pars == "b"] <- NA
     } else {
       warning("No group-specific parameters. 'varying' ignored.",
               call. = FALSE)

@@ -35,8 +35,8 @@
 #' \code{standardise} argument below.
 #' 
 #' @export
-#' @templateVar stanmvregArg object
-#' @template args-stanmvreg-object
+#' @templateVar stanjmArg object
+#' @template args-stanjm-object
 #' 
 #' @param newdataLong,newdataEvent Optionally, a data frame (or in the case of 
 #'   \code{newdataLong} this can be a list of data frames) in which to look 
@@ -48,9 +48,11 @@
 #'   that is, time-varying covariates are not allowed in the prediction data for
 #'   the event submodel. Also, \code{newdataEvent} can optionally include a 
 #'   variable with information about the last known survival time for the new
-#'   individuals -- see the description for the \code{control} argument below
-#'   -- however also note that it is assumed that all individuals in
-#'   \code{newdataEvent} have not yet experienced the event.
+#'   individuals -- see the description for the \code{last_time} argument below
+#'   -- however also note that when generating the survival probabilities it 
+#'   is of course assumed that all individuals in \code{newdataEvent} have not 
+#'   yet experienced the event (that is, any variable in \code{newdataEvent} that
+#'   corresponds to the event indicator will be ignored).
 #' @param extrapolate A logical specifying whether to extrapolate the estimated 
 #'   survival probabilities beyond the times specified in the \code{times} argument.
 #'   If \code{TRUE} then the extrapolation can be further controlled using
@@ -67,42 +69,55 @@
 #'     in units of the time variable \code{time_var} (from fitting the model). 
 #'     The default is to extrapolate between the times specified in the 
 #'     \code{times} argument and the maximum event or censoring time in the 
-#'     original data. If \code{ext_distance} leads to times that are beyond
-#'     the maximum event or censoring time (in the original data) then the 
+#'     original data. If \code{edist} leads to times that are beyond
+#'     the maximum event or censoring time in the original data then the 
 #'     estimated survival probabilities will be truncated at that point, since
 #'     the estimate for the baseline hazard is not available beyond that time.}
-#'     \item{\code{condition}}{a logical specifying whether the estimated 
+#' }
+#' @param condition A logical specifying whether the estimated 
 #'     subject-specific survival probabilities at time \code{t} should be 
 #'     conditioned on survival up to a fixed time point \code{u}. The default 
-#'     is to condition on the latest observation time for each individual 
-#'     (taken to be the event or censoring time if \code{newdata} is not 
-#'     specified, or the value of the \code{times} argument if \code{newdata} is 
-#'     specified but no \code{last_time} is provided in the \code{control} 
-#'     list, or otherwise the times provided in the \code{last_time} element
-#'     of the \code{control} list).}
-#'     \item{\code{last_time}}{a scalar or a character string 
-#'     specifying the last known survival time for each individual for whom
-#'     conditional predictions are being obtained. This is only relevant if
-#'     new data is provided, and conditional survival predictions are being
-#'     obtained. A scalar will use the same last time for each individual in 
-#'     \code{newdataEvent}. A character string will name a column in 
-#'     \code{newdataEvent} in which to look for the last times. If \code{last_time} 
-#'     is not provided then the default is to use the time of the latest 
-#'     longitudinal observation.} 
-#'   }
+#'     is for \code{condition} to be set to \code{TRUE}, unless standardised survival
+#'     probabilities have been requested (by specifying \code{standardise = TRUE}),
+#'     in which case \code{condition} must (and will) be set to \code{FALSE}.
+#'     When conditional survival probabilities are requested, the fixed
+#'     time point \code{u} will be either: (i) the value specified via the 
+#'     \code{last_time} argument; or if the \code{last_time} argument is 
+#'     \code{NULL} then the latest observation time for each individual 
+#'     (taken to be the value in the \code{times} argument if \code{newdataEvent} 
+#'     is specified, or the observed event or censoring time if \code{newdataEvent} 
+#'     is \code{NULL}.
+#' @param last_time A scalar, character string, or \code{NULL}. This argument 
+#'     specifies the last known survival time for each individual when
+#'     conditional predictions are being obtained. If 
+#'     \code{newdataEvent} is provided and conditional survival predictions are being
+#'     obtained, then the \code{last_time} argument can be one of the following:
+#'     (i) a scalar, this will use the same last time for each individual in 
+#'     \code{newdataEvent}; (ii) a character string, naming a column in 
+#'     \code{newdataEvent} in which to look for the last time for each individual;
+#'     (iii) \code{NULL}, in which case the default is to use the time of the latest 
+#'     longitudinal observation in \code{newdataLong}. If \code{newdataEvent} is
+#'     \code{NULL} then the \code{last_time} argument cannot be specified 
+#'     directly; instead it will be set equal to the event or censoring time for
+#'     each individual in the dataset that was used to estimate the model. 
+#'     If standardised survival probabilities are requested (i.e. 
+#'     \code{standardise = TRUE}) then conditional survival probabilities are
+#'     not allowed and therefore the \code{last_time} argument is ignored.
 #' @param ids An optional vector specifying a subset of IDs for whom the 
 #'   predictions should be obtained. The default is to predict for all individuals
-#'   who were used in estimating the model or, if \code{newdata} is specified,
-#'   then all individuals contained in \code{newdata}.
+#'   who were used in estimating the model or, if \code{newdataLong} and 
+#'   \code{newdataEvent} are specified, then all individuals contained in 
+#'   the new data.
 #' @param prob A scalar between 0 and 1 specifying the width to use for the 
 #'   uncertainty interval (sometimes called credible interval) for the predictions. 
 #'   For example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th  
 #'   percentiles will be provided.
-#' @param times A numeric vector of length 1 or a character string. Specifies the  
-#'   times at which to obtain the estimated survival probabilities. 
-#'   If \code{times} is \code{NULL}, then it will default to the last known 
-#'   event or censoring time for each individual. If \code{times} is not \code{NULL} 
-#'   then it must be a numeric vector of length 1, or if \code{newdataEvent} is  
+#' @param times A scalar, a character string, or \code{NULL}. Specifies the  
+#'   times at which the estimated survival probabilities should be calculated. 
+#'   It can be either: (i) \code{NULL}, in which case it will default to the last known 
+#'   survival time for each individual, as determined by the \code{last_time}
+#'   argument; (ii) a scalar, specifying a time to estimate the survival probability
+#'   for each of the individuals; or (iii) if \code{newdataEvent} is  
 #'   provided, it can be the name of a variable in \code{newdataEvent} that 
 #'   indicates the time at which the survival probabilities should be calculated  
 #'   for each individual. 
@@ -117,11 +132,19 @@
 #'   then the \code{times} argument must be specified and it must be constant across 
 #'   individuals, that is, the survival probabilities must be calculated at the 
 #'   same time for all individuals.
+#' @param scale A scalar, specifying how much to multiply the asymptotic 
+#'   variance-covariance matrix for the random effects by, which is then
+#'   used as the "width" (ie. variance-covariance matrix) of the multivariate
+#'   Student-t proposal distribution in the Metropolis-Hastings algorithm. This
+#'   is only relevant when \code{newdataEvent} is supplied, in which case new
+#'   random effects are simulated for the individuals in the new data using 
+#'   the Metropolis-Hastings algorithm.
 #' @param draws An integer indicating the number of MCMC draws to return. If 
-#'   the \code{newdata} arguments are \code{NULL} then the default
-#'   and maximum number of draws is the size of the posterior sample. However,
-#'   if \code{newdata} is provided, then the default is to set the number of 
-#'   draws equal to 200 (or equal to the size of the posterior sample if that
+#'   \code{newdataLong} and \code{newdataEvent} are \code{NULL} then the default
+#'   and maximum number of draws is the size of the posterior sample. If 
+#'   \code{newdataLong} and \code{newdataEvent} are provided, then the default 
+#'   is to set the number of draws equal to 200 (or equal to the size of the 
+#'   posterior sample if that
 #'   is less than 200). This ensures that the Monte Carlo algorithm for drawing 
 #'   the new group-specific coefficients doesn't take an excessive amount of time. 
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
@@ -134,7 +157,7 @@
 #'   were transformed before passing the data to one of the modeling functions and  
 #'   \emph{not} if transformations were specified inside the model formula.
 #'    
-#' @return A data frame of class \code{survfit.stanmvreg}. The data frame includes 
+#' @return A data frame of class \code{survfit.stanjm}. The data frame includes 
 #'   columns for each of the following: 
 #'   (i) the median of the posterior predictions of the estimated survival
 #'   probabilities (\code{survpred});
@@ -147,10 +170,12 @@
 #'   (\code{time_var}).
 #'   The returned object also includes a number of additional attributes.
 #' 
-#' @seealso \code{\link{plot.survfit.stanmvreg}} for plotting the estimated survival  
+#' @seealso \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
 #'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
 #'   survival function, and \code{\link{posterior_traj}} for estimating the
-#'   marginal or subject-specific longitudinal trajectories.
+#'   marginal or subject-specific longitudinal trajectories, and 
+#'   \code{\link{plot_stack}} for combining plots of the estimated subject-specific
+#'   longitudinal trajectory and survival function.
 #'   
 #' @references 
 #'   Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in 
@@ -185,33 +210,9 @@
 #'   # and then extrapolated forward 5 years. We also specify that we
 #'   # do not want to condition on their last known survival time.
 #'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
-#'     extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
+#'     extrapolate = TRUE, condition = FALSE, control = list(edist = 5))
+#'     
 #' \donttest{
-#'   # Instead of estimating survival probabilities for a specific individual 
-#'   # in the estimation dataset, we may want to estimate the marginal 
-#'   # survival probability, that is, marginalising over the individual-level
-#'   # random effects. 
-#'   # Here we will estimate survival between baseline and 5 years, for a 
-#'   # female who received either (i) D-penicillamine or (ii) placebo. 
-#'   # To do this we will need to provide the necessary values  
-#'   # of the predictors via the 'newdata' argument. However, it is important
-#'   # to realise that by marginalising over the random effects 
-#'   # distribution we will introduce a large amount of uncertainty into
-#'   # the estimated survival probabilities. This is because we have no 
-#'   # longitudinal measurements for these "new" individuals and therefore do
-#'   # not have any specific information with which to estimate their random
-#'   # effects. As such, there is a very wide 95% uncertainty interval 
-#'   # associated with the estimated survival probabilities.
-#'   nd <- data.frame(id = c("new1", "new2"),
-#'                    sex = c("f", "f"), 
-#'                    trt = c(1, 0))
-#'   #ps3 <- posterior_survfit(example_jm, newdataLong = nd, times = 0,
-#'     #extrapolate = TRUE, control = list(edist = 5, condition = FALSE))
-#'   #ps3 DOES NOT WORK WITHOUT newdataEvent
-#'   
-#'   # We can then plot the estimated survival functions to compare
-#'   # them. To do this, we use the generic plot function.
-#'   # plot(ps3, limits = "none")             
 #'   # Instead we may want to estimate subject-specific survival probabilities 
 #'   # for a set of new individuals. To demonstrate this, we will simply take
 #'   # the first two individuals in the estimation dataset, but pass their data
@@ -222,7 +223,7 @@
 #'   ndE <- pbcSurv[pbcSurv$id %in% c(1,2),]
 #'   ps3 <- posterior_survfit(example_jm,
 #'     newdataLong = ndL, newdataEvent = ndE,
-#'     control = list(last_time = "futimeYears"), seed = 12345)
+#'     last_time = "futimeYears", seed = 12345)
 #'   head(ps3)
 #'   # We can then compare the estimated random effects for these 
 #'   # individuals based on the fitted model and the Monte Carlo scheme
@@ -241,12 +242,11 @@
 #' }
 #'  
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              extrapolate = TRUE, control = list(), prob = 0.95, 
-                              ids, times = NULL, standardise = FALSE, 
+                              extrapolate = TRUE, control = list(), 
+                              condition = NULL, last_time = NULL, prob = 0.95, 
+                              ids, times = NULL, standardise = FALSE, scale = 1.5,
                               draws = NULL, seed = NULL, ...) {
-  validate_stanmvreg_object(object)
-  if (!is.jm(object)) 
-    STOP_jm_only("'posterior_survfit'")
+  validate_stanjm_object(object)
   M        <- object$n_markers
   id_var   <- object$id_var
   time_var <- object$time_var
@@ -282,33 +282,32 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     ndL <- subset_ids(object, ndL, ids)
     ndE <- subset_ids(object, ndE, ids)
   }  
-  id_list <- unique(ndE[[id_var]]) # order of ids from data, not ids arg
+  id_list <- factor(unique(ndE[[id_var]])) # order of ids from data, not ids arg
   #newpats <- if (is.null(newdataLong)) FALSE else check_pp_ids(object, id_list)
   
   # Last known survival time for each individual
   if (is.null(newdataLong)) { # user did not specify newdata
-    if (!is.null(control$last_time))
+    if (!is.null(last_time))
       stop("'last_time' cannot be provided when newdata is NULL, since times ",
            "are taken to be the event or censoring time for each individual.")
     last_time <- object$eventtime[as.character(id_list)]
   } else { # user specified newdata
-    user_arg <- control$last_time # can be NULL
-    if (is.null(user_arg)) { # use latest longitudinal observation
+    if (is.null(last_time)) { # use latest longitudinal observation
       max_ytimes <- do.call("cbind", lapply(ndL, function(x) 
         tapply(x[[time_var]], x[[id_var]], FUN = max)))
       last_time <- apply(max_ytimes, 1L, max)
       # re-order last-time according to id_list
       last_time <- last_time[as.character(id_list)]
-    } else if (is.character(user_arg) && (length(user_arg) == 1L)) {
-      if (!user_arg %in% colnames(ndE))
+    } else if (is.character(last_time) && (length(last_time) == 1L)) {
+      if (!last_time %in% colnames(ndE))
         stop("Cannot find 'last_time' column named in newdataEvent.")
-      last_time <- ndE[[user_arg]]      
-    } else if (is.numeric(user_arg) && (length(user_arg) == 1L)) {
-      last_time <- rep(user_arg, length(id_list)) 
-    } else if (is.numeric(user_arg) && (length(user_arg) > 1L)) {
-      last_time <- user_arg[as.character(id_list)]
+      last_time <- ndE[[last_time]]      
+    } else if (is.numeric(last_time) && (length(last_time) == 1L)) {
+      last_time <- rep(last_time, length(id_list)) 
+    } else if (is.numeric(last_time) && (length(last_time) > 1L)) {
+      last_time <- last_time[as.character(id_list)]
     } else {
-      stop("Bug found: could not reconcile last_time argument.")
+      stop("Bug found: could not reconcile 'last_time' argument.")
     }
   }   
   
@@ -359,18 +358,25 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   
   # User specified extrapolation
   if (extrapolate) {
-    ok_control_args <- c("epoints", "edist", "condition", "last_time")
-    control <- get_extrapolation_control(control, ok_control_args = ok_control_args,
-                                         standardise = standardise)
+    ok_control_args <- c("epoints", "edist")
+    control <- get_extrapolation_control(control, ok_control_args = ok_control_args)
     endtime <- if (!is.null(control$edist)) times + control$edist else maxtime
     endtime[endtime > maxtime] <- maxtime # nothing beyond end of baseline hazard 
     time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
   } else time_seq <- list(times) # no extrapolation
 
+  # Conditional survival times
+  if (is.null(condition)) {
+    condition <- !standardise
+  } else if (condition && standardise) {
+    stop("'condition' cannot be set to TRUE if standardised survival ",
+         "probabilities are requested.")
+  }
+  
   # Get stanmat parameter matrix for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
-    draws <- if (!is.null(newdataEvent) && S > 200) 200 else S 
+    draws <- if (S > 100L) 100L else S 
   if (draws > S)
     stop("'draws' should be <= posterior sample size (", S, ").")
   stanmat <- as.matrix(object$stanfit)
@@ -384,22 +390,37 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
   # Draw b pars for new ids
   if (!is.null(newdataEvent)) {
-    if (length(object$cnms) > 1L)
-      stop("posterior_survfit not yet implemented for models with more than ",
-           "one grouping factor.")
-    sum_p <- .p(object)[[id_var]] # total num. of b pars for each individual
-    # 'scale' the asymptotic vcov of posterior, such that the scaled vcov can
-    # be used as the width of the proposal distribution in the MH algorithm
-    scale <- 1.6 
     # Empty matrices used to collect draws for the new b pars
-    b_new <- lapply(1:length(id_list), function(x) matrix(NA, nrow(stanmat), sum_p))
+    p <- .p(object) # num b pars for each grouping factor
+    b1_p <- p[[id_var]] # total num. of b pars for each individual
+    use_b2 <- (length(object$cnms) > 1L) 
+    if (use_b2) { # more than one grouping factor
+      if (M > 1)
+        stop("'posterior_survfit' is not yet implemented for multivariate joint ",
+             "models with multiple grouping factors.")
+      if (length(object$cnms) > 2L)
+        stop("'posterior_survfit' is not yet implemented for models with more than ",
+             "two grouping factors.")  
+      b2_var <- grep(utils::glob2rx(id_var), names(p), value = TRUE, invert = TRUE)
+      b2_p <- p[[b2_var]] # total num. of b pars for second grouping factor
+      Ni <- tapply(ndL[[1]][[b2_var]], ndL[[1]][[id_var]], 
+                   function(x) length(unique(x)))
+    }
+    cat("Drawing random effects for", length(id_list), "new individuals.",
+        "Monitoring progress:\n")
+    pb <- utils::txtProgressBar(min = 0, max = length(id_list), style = 3)
+    b_new <- list()
     for (i in 1:length(id_list)) {
+      len_b <- if (use_b2) b1_p + Ni[id_list[[i]]] * b2_p else b1_p
+      mat <- matrix(NA, nrow(stanmat), len_b)
       # Design matrices for individual i only
-      dat_i <- jm_data(object, ndL, ndE, etimes = last_time[[i]], ids = id_list[[i]])
+      dat_i <- .pp_data_jm(object, ndL, ndE, etimes = last_time[[i]], ids = id_list[[i]])
+      if (use_b2)
+        dat_i$Ni <- Ni[id_list[[i]]]
       # Obtain mode and var-cov matrix of posterior distribution of new b pars
       # based on asymptotic assumptions, used as center and width of proposal
       # distribution in MH algorithm
-      inits <- rep(0, sum_p)
+      inits <- rep(0, len_b)
       val <- optim(inits, optim_fn, object = object, data = dat_i, 
                    pars = pars_means, method = "BFGS", hessian = TRUE)
       delta_i <- val$par                    # asymptotic mode of posterior
@@ -408,13 +429,16 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
       # Run MH algorithm for each individual
       for (s in 1:nrow(stanmat)) {
         pars_s <- extract_pars(object, stanmat[s, , drop = FALSE])
-        b_current <- b_new[[i]][s,] <- 
+        b_current <- mat[s,] <- 
           mh_step(b_old = b_current, delta = delta_i, sigma = Sigma_i, 
                   df = 4, object = object, data = dat_i, pars = pars_s)
       }
       new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))
-      colnames(b_new[[i]]) <- paste0("b[", new_nms, "]")
-    }
+      colnames(mat) <- paste0("b[", new_nms, "]")
+      b_new[[i]] <- mat
+      utils::setTxtProgressBar(pb, i)
+    }  
+    close(pb)
     b_new <- do.call("cbind", b_new)      # cbind new b pars for all individuals
     b_sel <- b_names(colnames(stanmat))   
     stanmat <- stanmat[, -b_sel, drop = FALSE] # drop old b pars from stanmat
@@ -424,13 +448,13 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
   # Matrix of surv probs at each increment of the extrapolation sequence
   # NB If no extrapolation then length(time_seq) == 1L
-  surv <- lapply(time_seq, function(t) {  
+  surv_t <- lapply(time_seq, function(t) {  
     if (!identical(length(t), length(id_list)))
       stop("Bug found: the vector of prediction times is not the same length ",
            "as the number of individuals.")
-    dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
-                   ids = id_list, etimes = t, long_parts = FALSE)
-    surv_t <- ll_event(object, data = dat, pars = pars, survprob = TRUE)
+    dat <- .pp_data_jm(object, newdataLong = ndL, newdataEvent = ndE, 
+                       ids = id_list, etimes = t, long_parts = FALSE)
+    surv_t <- .ll_survival(object, data = dat, pars = pars, survprob = TRUE)
     if (is.vector(surv_t) == 1L) 
       surv_t <- t(surv_t)   # transform if only one individual
     surv_t[, (t == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
@@ -444,25 +468,25 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   })
   
   # If conditioning, need to obtain matrix of surv probs at last known surv time
-  if (extrapolate && control$condition) {
-    cond_dat <- jm_data(object, newdataLong = ndL, newdataEvent = ndE, 
-                        ids = id_list, etimes = last_time, long_parts = FALSE)
+  if (condition) {
+    cond_dat <- .pp_data_jm(object, newdataLong = ndL, newdataEvent = ndE, 
+                            ids = id_list, etimes = last_time, long_parts = FALSE)
     # matrix of survival probs at last_time 
-    cond_surv <- ll_event(object, data = cond_dat, pars = pars, survprob = TRUE)
+    cond_surv <- .ll_survival(object, data = cond_dat, pars = pars, survprob = TRUE)
     if (is.vector(cond_surv) == 1L)
       cond_surv <- t(cond_surv)        # transform if only one individual
     cond_surv[, (last_time == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
-    surv <- lapply(surv, function(x) { # conditional survival probs
+    surv <- lapply(surv_t, function(x) { # conditional survival probs
       vec <- x / cond_surv
       vec[vec > 1] <- 1 # if t was before last_time then surv prob may be > 1
       vec
     })        
-  }
+  } else surv <- surv_t
   
   # Summarise posterior draws to get median and ci
   out <- do.call("rbind", lapply(
     seq_along(surv), function(x, standardise, id_list, time_seq, prob) {
-      val <- median_and_bounds(surv[[x]], prob)
+      val <- median_and_bounds(surv[[x]], prob, na.rm = TRUE)
       if (standardise) {
         data.frame(TIMEVAR = unique(time_seq[[x]]), val$med, val$lb, val$ub)        
       } else
@@ -477,23 +501,55 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     out <- out[order(out[, time_var, drop = F]), , drop = F]
   }
   rownames(out) <- NULL
-  class(out) <- c("survfit.stanmvreg", "data.frame")
+  
+  # temporary hack so that predictive_error can call posterior_survfit
+  # with two separate conditioning times...
+  fn <- tryCatch(sys.call(-1)[[1]], error = function(e) NULL)
+  dots <- list(...)
+  if (!is.null(fn) && 
+      grepl("predictive_error", deparse(fn), fixed = TRUE) &&
+      "last_time2" %in% names(dots)) {
+    last_time2 <- ndE[[dots$last_time2]]
+    cond_dat2 <- .pp_data_jm(object, newdataLong = ndL, newdataEvent = ndE, 
+                         ids = id_list, etimes = last_time2, long_parts = FALSE)
+    cond_surv2 <- .ll_survival(object, data = cond_dat2, pars = pars, survprob = TRUE)
+    if (is.vector(cond_surv2) == 1L)
+      cond_surv2 <- t(cond_surv2)        # transform if only one individual
+    cond_surv2[, (last_time2 == 0)] <- 1 # avoids possible NaN due to numerical inaccuracies
+    surv2 <- lapply(surv_t, function(x) { # conditional survival probs
+      vec <- x / cond_surv2
+      vec[vec > 1] <- 1 # if t was before last_time then surv prob may be > 1
+      vec
+    })
+    out2 <- do.call("rbind", lapply(
+      seq_along(surv2), function(x, standardise, id_list, time_seq, prob) {
+        val <- median_and_bounds(surv2[[x]], prob, na.rm = TRUE)
+        data.frame(IDVAR = id_list, TIMEVAR = time_seq[[x]], val$med) 
+      }, standardise, id_list, time_seq, prob))
+    out2 <- data.frame(out2)
+    colnames(out2) <- c(id_var, time_var, "survpred_eventtime")  
+    out2 <- out2[order(out2[, id_var, drop = F], out2[, time_var, drop = F]), , drop = F]
+    rownames(out2) <- NULL
+    out <- merge(out, out2)
+  }
+  
+  class(out) <- c("survfit.stanjm", "data.frame")
   structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
-            control = control, standardise = standardise, ids = id_list, 
-            draws = draws, seed = seed, offset = offset, 
-            b_new = if (!is.null(newdataEvent)) b_new else NULL)
+            control = control, standardise = standardise, condition = condition, 
+            last_time = last_time, ids = id_list, draws = draws, seed = seed, 
+            offset = offset, b_new = if (!is.null(newdataEvent)) b_new else NULL)
 }
 
 #' Plot the estimated subject-specific or marginal survival function
 #' 
-#' This generic \code{plot} method for \code{survfit.stanmvreg} objects will
+#' This generic \code{plot} method for \code{survfit.stanjm} objects will
 #' plot the estimated subject-specific or marginal survival function
 #' using the data frame returned by a call to \code{\link{posterior_survfit}}.
 #' The call to \code{posterior_survfit} should ideally have included an
 #' "extrapolation" of the survival function, obtained by setting the 
 #' \code{extrapolate} argument to \code{TRUE}.
 #'    
-#' @method plot survfit.stanmvreg
+#' @method plot survfit.stanjm
 #' @export
 #' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon 
 #'   facet_wrap labs coord_cartesian
@@ -507,7 +563,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #' @template args-scales
 #' @template args-ci-geom-args
 #'  
-#' @param x A data frame and object of class \code{survfit.stanmvreg}
+#' @param x A data frame and object of class \code{survfit.stanjm}
 #'   returned by a call to the function \code{\link{posterior_survfit}}.
 #'   The object contains point estimates and uncertainty interval limits
 #'   for estimated values of the survival function.
@@ -520,12 +576,12 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   \code{\link[ggplot2]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
-#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanmvreg}.
+#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanjm}.
 #'   This object can be further customised using the \pkg{ggplot2} package.
 #'   It can also be passed to the function \code{\link{plot_stack}}.
 #'   
 #' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack}},
-#'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanmvreg}}      
+#'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
 #' @examples 
 #' 
@@ -572,7 +628,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   plot(ps2)   
 #' }
 #'    
-plot.survfit.stanmvreg <- function(x, ids = NULL, 
+plot.survfit.stanjm <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
                                 xlab = NULL, ylab = NULL, facet_scales = "free", 
                                 ci_geom_args = NULL, ...) {
@@ -592,13 +648,13 @@ plot.survfit.stanmvreg <- function(x, ids = NULL,
       stop("Bug found: could not find 'id_var' column in the data frame.")
     ids_missing <- which(!ids %in% x[[id_var]])
     if (length(ids_missing))
-      stop("The following 'ids' are not present in the survfit.stanmvreg object: ",
+      stop("The following 'ids' are not present in the survfit.stanjm object: ",
            paste(ids[[ids_missing]], collapse = ", "), call. = FALSE)
     x <- x[(x[[id_var]] %in% ids), , drop = FALSE]
   } else {
     ids <- if (!standardise) attr(x, "ids") else NULL
   }
-  if (!standardise) x$id <- x[[id_var]]
+  if (!standardise) x$id <- factor(x[[id_var]])
   x$time <- x[[time_var]]
   
   geom_defaults <- list(color = "black")
@@ -633,26 +689,26 @@ plot.survfit.stanmvreg <- function(x, ids = NULL,
   
   ret <- graph + graph_limits + labs(x = xlab, y = ylab) 
   class_ret <- class(ret)
-  class(ret) <- c("plot.survfit.stanmvreg", class_ret)
+  class(ret) <- c("plot.survfit.stanjm", class_ret)
   ret
 }
 
 
 # ------------------ exported but doc kept internal
 
-#' Generic print method for \code{survfit.stanmvreg} objects
+#' Generic print method for \code{survfit.stanjm} objects
 #' 
-#' @rdname print.survfit.stanmvreg
-#' @method print survfit.stanmvreg
+#' @rdname print.survfit.stanjm
+#' @method print survfit.stanjm
 #' @keywords internal
 #' @export
-#' @param x An object of class \code{survfit.stanmvreg}, returned by a call to 
+#' @param x An object of class \code{survfit.stanjm}, returned by a call to 
 #'   \code{\link{posterior_survfit}}.
 #' @param digits Number of digits to use for formatting the time variable and 
 #'   the survival probabilities.
 #' @param ... Ignored.
 #' 
-print.survfit.stanmvreg <- function(x, digits = 4, ...) {
+print.survfit.stanjm <- function(x, digits = 4, ...) {
   time_var <- attr(x, "time_var")
   x <- as.data.frame(x)
   sel <- c(time_var, "survpred", "ci_lb", "ci_ub")
@@ -667,13 +723,13 @@ print.survfit.stanmvreg <- function(x, digits = 4, ...) {
 # Function to optimise to obtain mode and var-cov matrix for b pars
 # 
 # @param b The vector of b parameters
-# @param object A stanmvreg object
-# @param data Output from jm_data
+# @param object A stanjm object
+# @param data Output from .pp_data_jm
 # @param pars Output from extract_pars
 optim_fn <- function(b, object, data, pars) {
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars <- substitute_b_pars(object, data, pars, new_b = b, new_Z_names = nms)
-  ll <- ll_jm(object, data, pars, include_b = TRUE)
+  ll <- .ll_jm(object, data, pars, include_b = TRUE)
   return(-ll) # optimise -ll for full joint model 
 }    
 
@@ -682,8 +738,8 @@ optim_fn <- function(b, object, data, pars) {
 # @param b_old The current vector of b parameters
 # @param delta The mean vector for the proposal distribution
 # @param sigma The variance-covariance matrix for the proposal distribution
-# @param object A stanmvreg object
-# @param data Output from jm_data
+# @param object A stanjm object
+# @param data Output from .pp_data_jm
 # @param pars Output from extract_pars
 mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
   # New proposal for b vector
@@ -695,8 +751,8 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
   nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
   pars_old <- substitute_b_pars(object, data, pars, new_b = b_old, new_Z_names = nms)
   pars_new <- substitute_b_pars(object, data, pars, new_b = b_new, new_Z_names = nms)
-  targdens_old <- ll_jm(object, data, pars_old, include_b = TRUE)
-  targdens_new <- ll_jm(object, data, pars_new, include_b = TRUE)
+  targdens_old <- .ll_jm(object, data, pars_old, include_b = TRUE)
+  targdens_new <- .ll_jm(object, data, pars_new, include_b = TRUE)
   # MH accept/reject step
   accept_ratio <- exp(targdens_new - targdens_old - propdens_new + propdens_old)
   if (accept_ratio >= runif(1)) return(b_new) else return(b_old)
@@ -704,20 +760,31 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
 
 # Function to add new b parameters
 #
-# @param object A stanmvreg object
-# @param data Output from jm_data
+# @param object A stanjm object
+# @param data Output from .pp_data_jm
 # @param pars Output from extract_pars
 # @param new_b A vector of new b pars, or a list of vectors with each element
 #   being the new b pars for a single submodel.
 # @param new_b A vector, or a list of vectors with the names for the new b pars.
 substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
+  M <- get_M(object)
   if (!is(new_b, "list")) { # split b into submodels
-    len_b <- sapply(object$glmod_stuff, function(m) length(m$cnms[[object$id_var]]))
-    new_b <- split(new_b, rep(1:length(len_b), len_b))
+    if (M == 1) {
+      new_b <- list(new_b)
+    } else {
+      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
+      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
+      new_b <- split(new_b, rep(1:length(len_b), len_b))
+    }
   }
   if (!is(new_Z_names, "list")) { # split Z_names into submodels
-    len_b <- sapply(object$glmod_stuff, function(m) length(m$cnms[[object$id_var]]))
-    new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
+    if (M == 1) {
+      new_b <- list(new_b)
+    } else {
+      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
+      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
+      new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
+    }
   }  
   mapply(function(x, y) {
     if (!identical(is.vector(x), is.vector(y)))
@@ -732,28 +799,6 @@ substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
   pars$stanmat <- pars$stanmat[, -b_names(colnames(pars$stanmat)), drop = FALSE]
   pars$stanmat <- do.call("cbind", c(list(pars$stanmat), pars$b))
   return(pars)
-}
-
-# Return a data.table with the key set using the appropriate time variable
-# 
-# @param data A data frame
-# @param id_var The name of the ID variable 
-# @param time_var The name of the time variable
-# @return A data.table (which will be used in a rolling merge against the
-#   event times and/or quadrature times)
-prepare_data_table <- function(data, id_var, time_var) {
-  if (!requireNamespace("data.table"))
-    stop("the 'data.table' package must be installed to use this function")
-  if (!is.data.frame(data))
-    stop("'data' should be a data frame.")
-  if (!id_var %in% colnames(data))
-    STOP_no_var(id_var)
-  if (!time_var %in% colnames(data))
-    STOP_no_var(time_var)
-  # ensure no rounding in data.table merge 
-  data[[time_var]] <- as.numeric(data[[time_var]]) 
-  data <- data.table::data.table(data, key = c(id_var, time_var))
-  return(data)
 }
 
 # default plotting attributes

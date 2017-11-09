@@ -31,8 +31,8 @@ if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
 RANEF_tol <- 0.20 
 
-source(file.path("helpers", "expect_stanreg.R"))
-source(file.path("helpers", "SW.R"))
+source(test_path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "SW.R"))
 
 SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject), 
                     data = sleepstudy, refresh = REFRESH,
@@ -119,7 +119,7 @@ test_that("stan_lmer returns an error when 'family' specified", {
 
 
 context("stan_gamm4")
-source(file.path("helpers", "expect_gg.R"))
+source(test_path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
   sleepstudy$y <- sleepstudy$Reaction / 10
   SW(fit <- stan_gamm4(y ~ s(Days), data = sleepstudy, sparse = TRUE,
@@ -140,7 +140,7 @@ test_that("stan_gamm4 returns stanreg object", {
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
-  source(file.path("helpers", "expect_equivalent_loo.R"))
+  source(test_path("helpers", "expect_equivalent_loo.R"))
   
   # gaussian
   expect_equivalent_loo(fit)
@@ -166,8 +166,8 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
 
 
 context("posterior_predict (stan_(g)lmer)")
-source(file.path("helpers", "check_for_error.R"))
-source(file.path("helpers", "expect_linpred_equal.R"))
+source(test_path("helpers", "check_for_error.R"))
+source(test_path("helpers", "expect_linpred_equal.R"))
 test_that("compatible with stan_lmer", {
   check_for_error(fit)
   expect_linpred_equal(fit)

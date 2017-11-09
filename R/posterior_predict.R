@@ -83,6 +83,12 @@
 #'   probably with \code{successes} set to \code{0} and \code{trials} specifying
 #'   the number of trials. See the Examples section below and the
 #'   \emph{How to Use the rstanarm Package} for examples.
+#' @note For models estimated with \code{\link{stan_clogit}}, the number of 
+#'   successes per stratum is ostensibly fixed by the research design. Thus, when
+#'   doing posterior prediction with new data, the \code{data.frame} passed to
+#'   the \code{newdata} argument must contain an outcome variable and a stratifying
+#'   factor, both with the same name as in the original \code{data.frame}. Then, the 
+#'   posterior predictions will condition on this outcome in the new data.
 #'   
 #' @seealso \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   Examples of posterior predictive checking can also be found in the
@@ -147,6 +153,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     m <- dots[["m"]]
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
+    if (!is.null(offset))
+      stop2("'offset' cannot be specified for stanmvreg objects.")
   } else m <- NULL
   
   newdata <- validate_newdata(newdata)
@@ -170,13 +178,26 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
       ppargs <- pp_args(object, data)
       ppargs$alpha <- ppargs$alpha[samp]
     } else {
-      ppargs <- pp_args(object, data)
+      ppargs <- pp_args(object, data, m = m)
     }
   } else {
+    if (!is.null(newdata) && is_clogit(object)) {
+      y <- eval(formula(object)[[2L]], newdata)
+      strata <- as.factor(eval(object$call$strata, newdata))
+      formals(object$family$linkinv)$g <- strata
+      formals(object$family$linkinv)$successes <- 
+        aggregate(y, by = list(strata), FUN = sum)$x
+    }
     ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m), m = m)
+  }    
+
+  if (is_clogit(object)) {
+    if (is.null(newdata)) ppargs$strata <- model.frame(object)[,"(weights)"]
+    else ppargs$strata <- eval(object$call$strata, newdata)
+    ppargs$strata <- as.factor(ppargs$strata)
+  } else if (!is_polr(object) && is.binomial(family(object)$family)) {
+    ppargs$trials <- pp_binomial_trials(object, newdata)
   }
-  if (!is(object, "polr") && is.binomial(family(object, m = m)$family))
-    ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
 
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
@@ -184,26 +205,45 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- t(ytilde)
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
-  if (is(object, "polr") && !is_scobit(object))
+  if (is_polr(object) && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
   
   if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
   else colnames(ytilde) <- rownames(newdata)  
   
   # if function is called from posterior_traj then add mu as attribute
-  fn <- tryCatch(sys.call(-2)[[1]], error = function(e) NULL)
+  fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
     return(structure(ytilde, mu = ppargs$mu, class = c("ppd", class(ytilde))))
   
   structure(ytilde, class = c("ppd", class(ytilde)))
 }
 
-
+#' @rdname posterior_predict.stanreg
+#' @export
+#' @templateVar mArg m
+#' @template args-m
+#' 
+posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = NULL,
+                                        re.form = NULL, fun = NULL, seed = NULL, ...) {
+  validate_stanmvreg_object(object)
+  dots <- list(...)
+  if ("newdataLong" %in% names(dots))
+    stop2("'newdataLong' should not be specified for posterior_predict.")
+  if ("newdataEvent" %in% names(dots))
+    stop2("'newdataEvent' should not be specified for posterior_predict.")
+  out <- posterior_predict.stanreg(object, newdata = newdata, draws = draws,
+                                   re.form = re.form, fun = fun, seed = seed,
+                                   offset = NULL, m = m, ...)
+  out
+}  
+  
+  
 # internal ----------------------------------------------------------------
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object, m = NULL) {
-  suffix <- if (is(object, "polr")) "polr" else family(object, m = m)$family
+  suffix <- if (is_polr(object)) "polr" else family(object, m = m)$family
   get(paste0(".pp_", suffix), mode = "function")
 }
 
@@ -215,6 +255,11 @@ pp_fun <- function(object, m = NULL) {
 .pp_binomial <- function(mu, trials) {
   t(sapply(1:nrow(mu), function(s) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
+  }))
+}
+.pp_clogit <- function(mu, strata) {
+  t(sapply(1:nrow(mu), function(s) {
+    unlist(by(mu[s,], INDICES = list(strata), FUN = rmultinom, n = 1, size = 1))
   }))
 }
 .pp_beta <- function(mu, phi) {
@@ -265,7 +310,7 @@ pp_fun <- function(object, m = NULL) {
   } else {
     t(sapply(1:NROW(eta), FUN = function(s) {
       tmp <- matrix(zeta[s, ], n, q, byrow = TRUE) - eta[s, ]
-      cumpr <- matrix(linkinv(tmp), , q)
+      cumpr <- matrix(linkinv(tmp), ncol = q)
       fitted <- t(apply(cumpr, 1L, function(x) diff(c(0, x, 1))))
       apply(fitted, 1, function(p) which(rmultinom(1, 1, p) == 1))
     }))
@@ -285,14 +330,18 @@ pp_args <- function(object, data, m = NULL) {
   stopifnot(is.stanreg(object), is.matrix(stanmat))
   if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
   inverse_link <- linkinv(object, m = m)
-  if (is(object, "polr")) {
+  if (is.nlmer(object)) inverse_link <- function(x) return(x)
+
+  if (is_polr(object)) {
     zeta <- stanmat[, grep("|", colnames(stanmat), value = TRUE, fixed = TRUE)]
     args <- nlist(eta, zeta, linkinv = inverse_link)
-    if ("alpha" %in% colnames(stanmat))
+    if ("alpha" %in% colnames(stanmat)) # scobit
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  
+  else if (is_clogit(object)) 
+    return(list(mu = inverse_link(eta)))
+
   args <- list(mu = inverse_link(eta))
   famname <- family(object, m = m)$family
   m_stub <- get_m_stub(m, stub = get_stub(object))
@@ -363,6 +412,11 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
       b <- pp_b_ord(b, data$Z_names)
     }
     eta <- eta + as.matrix(b %*% data$Zt)
+  }
+  if (is.nlmer(object)) {
+    if (is.null(data$arg1)) eta <- linkinv(object)(eta)
+    else eta <- linkinv(object)(eta, data$arg1, data$arg2)
+    eta <- t(eta)
   }
   nlist(eta, stanmat)
 }

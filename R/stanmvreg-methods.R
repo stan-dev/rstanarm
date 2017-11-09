@@ -18,7 +18,7 @@
 
 #' Methods for stanmvreg objects
 #' 
-#' S3 methods for \link[=stanmvreg-objects]{stanmvreg} objects. There are also 
+#' S3 methods for \link[=stanreg-objects]{stanmvreg} objects. There are also 
 #' several methods (listed in \strong{See Also}, below) with their own
 #' individual help pages. 
 #' The main difference between these methods and the 
@@ -66,20 +66,37 @@
 #' Residuals are \emph{always} of type \code{"response"} (not \code{"deviance"}
 #' residuals or any other type).
 #' }
-#' \item{\code{log_lik}}{
-#' Returns the \eqn{S} by \eqn{N} pointwise log-likelihood matrix,
-#' where \eqn{S} is the size of the posterior sample and \eqn{N} is the number
-#' of individuals in the fitted model. The likelihood for a single individual 
-#' is therefore the sum of the likelihood contributions from their observed
-#' longitudinal measurements and their event time data.
-#' Note: we use \code{log_lik} rather than defining a
-#' \code{\link[stats]{logLik}} method because (in addition to the conceptual
-#' difference) the documentation for \code{logLik} states that the return value
-#' will be a single number, whereas we return a matrix.
-#' }
 #' }
 #' 
 #' @seealso
+#' \itemize{
+#'  \item The \code{\link[=print.stanmvreg]{print}},
+#'    \code{\link[=summary.stanmvreg]{summary}}, and \code{\link{prior_summary}} 
+#'    methods for \code{stanmvreg} objects for information on the fitted model.
+#'  \item The \code{\link[=plot.stanreg]{plot}} method to plot estimates and
+#'    diagnostics.
+#'  \item The \code{\link{pp_check}} method for graphical posterior predictive
+#'    checking of the longitudinal or glmer submodels.
+#'  \item The \code{\link{ps_check}} method for graphical posterior predictive
+#'    checking of the event submodel.
+#'  \item The \code{\link{posterior_traj}} for predictions for the longitudinal
+#'    submodel (for models estimated using \code{\link{stan_jm}}), as well as
+#'    it's associated \code{\link[=plot.predict.stanjm]{plot}} method.
+#'  \item The \code{\link{posterior_survfit}} for predictions for the event
+#'    submodel, including so-called "dynamic" predictions (for models estimated 
+#'    using \code{\link{stan_jm}}), as well as
+#'    it's associated \code{\link[=plot.survfit.stanjm]{plot}} method.
+#'  \item The \code{\link{posterior_predict}} for predictions for the glmer
+#'    submodel (for models estimated using \code{\link{stan_mvmer}}).
+#'  \item The \code{\link{posterior_interval}} for uncertainty intervals for 
+#'    model parameters.
+#'  \item The \code{\link[=loo.stanreg]{loo}}, 
+#'    and \code{\link[=log_lik.stanmvreg]{log_lik}} methods for leave-one-out 
+#'    model comparison, and computing the log-likelihood of (possibly new) data.
+#'  \item The \code{\link[=as.matrix.stanreg]{as.matrix}}, \code{as.data.frame}, 
+#'    and \code{as.array} methods to access posterior draws.
+#' } 
+#' 
 #' Other S3 methods for stanmvreg objects, which have separate documentation, 
 #' including \code{\link{print.stanmvreg}}, and \code{\link{summary.stanmvreg}}.
 #' 
@@ -132,6 +149,7 @@ coef.stanmvreg <- function(object, m = NULL, ...) {
 #' @export
 #' 
 fitted.stanmvreg <- function(object, m = NULL, ...)  {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) 
@@ -141,6 +159,7 @@ fitted.stanmvreg <- function(object, m = NULL, ...)  {
 #' @rdname stanmvreg-methods
 #' @export 
 residuals.stanmvreg <- function(object, m = NULL, ...) {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) 
@@ -150,6 +169,7 @@ residuals.stanmvreg <- function(object, m = NULL, ...) {
 #' @rdname stanmvreg-methods
 #' @export
 se.stanmvreg <- function(object, m = NULL, ...) {
+  stop("Not currently implemented.")
   M <- get_M(object)
   stub <- get_stub(object)
   if (is.null(m)) list_nms(object$ses, M, stub = stub) else object$ses[[m]]
@@ -166,20 +186,17 @@ formula.stanmvreg <- function (x, fixed.only = FALSE, random.only = FALSE, m = N
     fixed.only <- FALSE
   if (fixed.only && random.only) 
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
-  
   M <- get_M(x)
-  fr <- lapply(x$glmod, model.frame) 
-  form <- lapply(x$formula, as.formula, ...) # includes Event submodel formula
-  glmod_form <- lapply(seq(M), function(i) attr(fr[[i]], "formula")) 
-  if (!is.null(glmod_form)) form[1:M] <- glmod_form[1:M]
-  if (any(fixed.only, random.only)) {
-    if (fixed.only) {
-      for (i in 1:M)
-        form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
-    }
-    if (random.only)
-      for (i in 1:M)
-        form[[i]] <- justRE(form[[i]], response = TRUE)
+  form <- x$formula
+  if (is.null(form))
+    stop2("Could not find formula in stanmvreg object.")
+  if (fixed.only) {
+    for (i in 1:M)
+      form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
+  }
+  if (random.only) {
+    for (i in 1:M)
+      form[[i]] <- justRE(form[[i]], response = TRUE)
   }
   if (is.null(m)) return(list_nms(form, M, stub = get_stub(x))) else return(form[[m]])
 }
@@ -201,26 +218,28 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
   Terms <- list()
   if (is.mvmer(x)) {
     M <- get_M(x)
-    fr <- lapply(x$glmod, model.frame)
-    Terms[1:M] <- lapply(fr, function(i) attr(i, "terms"))
+    mvmer_terms <- fetch(x$glmod, "terms")
     if (fixed.only) {
       Terms <- lapply(seq(M), function(i) {
-        Terms <- terms.formula(formula(x, fixed.only = TRUE, m = i))
-        attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.fixed")
-        Terms
+        fe_form <- formula.stanmvreg(x, fixed.only = TRUE, m = i)
+        tt <- terms.formula(fe_form)
+        attr(tt, "predvars") <- attr(mvmer_terms[[i]], "predvars.fixed")
+        tt
       })     
-    } 
-    if (random.only) {
+    } else if (random.only) {
       Terms <- lapply(seq(M), function(i) {
-        Terms <- terms.formula(lme4::subbars(formula.stanmvreg(x, random.only = TRUE, m = i)))
-        attr(Terms, "predvars") <- attr(terms(fr[[i]]), "predvars.random")
-        Terms
+        re_form <- formula.stanmvreg(x, random.only = TRUE, m = i) 
+        tt <- terms.formula(lme4::subbars(re_form))
+        attr(tt, "predvars") <- attr(mvmer_terms[[i]], "predvars.random")
+        tt
       })      
+    } else {
+      Terms[1:M] <- mvmer_terms
     }
-    list_nms(Terms, M, stub = get_stub(x))
+    Terms <- list_nms(Terms, M, stub = get_stub(x))
   }
   if (is.surv(x)) {
-    Terms$Event <- terms(x$coxmod)
+    Terms$Event <- terms(x$terms$Event)
   }
   if (is.null(m)) Terms else Terms[[m]]
 }
@@ -231,43 +250,83 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
 #' @param formula. An updated formula for the model. For a multivariate model  
 #'   \code{formula.} should be a list of formulas, as described for the 
 #'   \code{formula} argument in \code{\link{stan_mvmer}}.
-#' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
-#'   or event submodel, when \code{object} was estimated using 
-#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
-#'   should be a list of formulas, as described for the \code{formulaLong}
-#'   argument in \code{\link{stan_jm}}.
 #' @param evaluate See \code{\link[stats]{update}}.
 #'
-update.stanmvreg <- function(object, formula., formulaLong., 
-                             formulaEvent., ..., evaluate = TRUE) {
+update.stanmvreg <- function(object, formula., ..., evaluate = TRUE) {
   call <- getCall(object)
   M <- get_M(object)
   if (is.null(call)) 
-    stop("'object' does not contain a 'call' component.", call. = FALSE)
+    stop2("'object' does not contain a 'call' component.")
   extras <- match.call(expand.dots = FALSE)$...
   fm <- formula(object)
   if (!missing(formula.)) {
-    if (is.jm(object))
-      stop("'formula.' should not be specified for joint models estimated ",
-           "using stan_jm. Specify 'formulaLong.' and 'formulaEvent' instead.")
     if (M > 1) {
       if (!is.list(formula.))
-        stop("To update the formula for a multivariate model ",
-             "'formula.' should be a list of formula objects. Use ",
-             "'~ .' if you do not wish to alter the formula for one or ",
-             "more of the submodels.", call. = FALSE)
+        stop2("To update the formula for a multivariate model ",
+              "'formula.' should be a list of formula objects. Use ",
+              "'~ .' if you do not wish to alter the formula for one or ",
+              "more of the submodels.")
       if (length(formula.) != M)
-        stop(paste0("The list provided in 'formula.' appears to be the ",
-                    "incorrect length; should be length ", M), call. = FALSE)     
+        stop2(paste0("The list provided in 'formula.' appears to be the ",
+                     "incorrect length; should be length ", M))     
     } else {
-      if (!is.list(formula.)) formula. <- list(formula.)
+      if (!is.list(formula.)) 
+        formula. <- list(formula.)
     }
+    if (length(formula.) != M)
+      stop2("The length of 'formula.' must be equal to the number of ",
+            "glmer submodels in the original model, which was ", M, ".")
     fm_mvmer <- lapply(1:M, function(m) 
       update.formula(fm[[m]], formula.[[m]]))
     names(fm_mvmer) <- NULL
     fm_mvmer <- as.call(c(quote(list), fm_mvmer))
     call$formula <- fm_mvmer
   }  
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) 
+      call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  
+  if (!evaluate) 
+    return(call)
+  
+  # do this like lme4 update.merMod instead of update.default
+  ff <- environment(formula(object))
+  pf <- parent.frame()
+  sf <- sys.frames()[[1L]]
+  tryCatch(eval(call, envir = ff),
+           error = function(e) {
+             tryCatch(eval(call, envir = sf),
+                      error = function(e) {
+                        eval(call, pf)
+                      })
+           })
+}
+
+#' @rdname stanmvreg-methods
+#' @export
+#' @method update stanjm
+#' @param formulaLong.,formulaEvent. An updated formula for the longitudinal
+#'   or event submodel, when \code{object} was estimated using 
+#'   \code{\link{stan_jm}}. For a multivariate joint model \code{formulaLong.} 
+#'   should be a list of formulas, as described for the \code{formulaLong}
+#'   argument in \code{\link{stan_jm}}.
+#'
+update.stanjm <- function(object, formulaLong., formulaEvent., ..., evaluate = TRUE) {
+  call <- getCall(object)
+  M <- get_M(object)
+  if (is.null(call)) 
+    stop2("'object' does not contain a 'call' component.")
+  if ("formula." %in% names(list(...)))
+    stop2("'formula.' should not be specified for joint models. ",
+          "Specify 'formulaLong.' and 'formulaEvent' instead.")
+  extras <- match.call(expand.dots = FALSE)$...
+  fm <- formula(object)
   if (!missing(formulaLong.)) {
     if (!is.jm(object))
       stop("'formulaLong.' should only be specified for joint models estimated ",
@@ -280,10 +339,14 @@ update.stanmvreg <- function(object, formula., formulaLong.,
              "more of the longitudinal submodels.", call. = FALSE)
       if (length(formulaLong.) != M)
         stop(paste0("The list provided in 'formulaLong.' appears to be the ",
-             "incorrect length; should be length ", M), call. = FALSE)     
+                    "incorrect length; should be length ", M), call. = FALSE)     
     } else {
-      if (!is.list(formulaLong.)) formulaLong. <- list(formulaLong.)
+      if (!is.list(formulaLong.)) 
+        formulaLong. <- list(formulaLong.)
     }
+    if (length(formulaLong.) != M)
+      stop2("The length of 'formulaLong.' must be equal to the number of ",
+            "longitudinal submodels in the original model, which was ", M, ".")
     fm_long <- lapply(1:M, function(m) 
       update.formula(fm[[m]], formulaLong.[[m]]))
     names(fm_long) <- NULL
@@ -391,17 +454,22 @@ ranef.stanmvreg <- function(object, m = NULL, ...) {
 #'   importFrom(lme4,sigma)
 #'
 sigma.stanmvreg <- function(object, m = NULL, ...) {
-  stub <- if (is.null(m)) "Long[1-9]" else if 
-    (is.numeric(m)) paste0("Long", m) else if (is.character(m)) m else
-      stop("Could not reconcile 'm' argument.")
-  nms <- grep("^", stub, "\\|sigma", rownames(object$stan_summary), value = TRUE)
-  if (!length(nms)) 
-    return(1)
-  sigma <- object$stan_summary[nms, select_median(object$algorithm)]
-  if (length(sigma) > 1L) {
-    new_nms <- gsub("\\|sigma", "", nms)
-    names(sigma) <- new_nms
+  stub <- get_stub(object)
+  if (is.null(m)) {
+    nms <- paste0("^", stub, "[1-9]\\|sigma")
+  } else if (is.numeric(m)) {
+    nms <- paste0("^", stub, m, "\\|sigma")
+  } else if (is.character(m)) {
+    nms <- paste0(m, "\\|sigma")
+  } else {
+    stop("Invalid 'm' argument.")
   }
+  sel <- sapply(nms, grep, rownames(object$stan_summary), value = TRUE)
+  if (!length(sel)) 
+    return(1)
+  sigma <- object$stan_summary[sel, select_median(object$algorithm)]
+  new_nms <- gsub("\\|sigma", "", sel)
+  names(sigma) <- new_nms
   return(sigma)
 }
 
@@ -434,7 +502,7 @@ family.stanmvreg <- function(object, m = NULL, ...) {
 model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanmvreg(formula)) {
     M <- get_M(formula)
-    fr <- lapply(formula$glmod, model.frame)
+    fr <- fetch(formula$glmod, "model_frame")
     if (fixed.only) {
       fr <- lapply(seq(M), function(i) {
         ff <- formula(formula, fixed.only = TRUE, m = i)
@@ -442,7 +510,7 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
         fr[[i]][vars]
       })
     }
-    fr$Event <- formula$coxmod_stuff$model_frame
+    fr$Event <- formula$survmod$model_frame
     if (is.null(m)) 
       return(list_nms(fr, M, stub = get_stub(formula))) else return(fr[[m]])
   } 
@@ -458,14 +526,14 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
 }
 .cnms.stanmvreg <- function(object, m = NULL, remove_stub = FALSE, ...) {
   .stanmvreg_check(object)
-  cnms <- if (is.null(m)) object$cnms else object$glmod[[m]]@cnms
+  cnms <- if (is.null(m)) object$cnms else object$glmod[[m]]$reTrms$cnms
   if (remove_stub) lapply(cnms, rm_stub) else cnms
 }
 .flist.stanmvreg <- function(object, m = NULL, ...) {
   .stanmvreg_check(object)
   if (is.null(m)) {
     stop("'m = NULL' cannot currently be handled by .flist.stanmvreg method.")
-  } else as.list(object$glmod[[m]]@flist)
+  } else as.list(fetch(object$glmod, "reTrms", "flist")[[m]])
 }
 .p <- function(object) {
   .stanmvreg_check(object)

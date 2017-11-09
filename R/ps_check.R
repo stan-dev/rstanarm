@@ -24,10 +24,10 @@
 #' overlays the Kaplan-Meier curve based on the observed data.
 #' 
 #' @export
-#' @templateVar stanmvregArg object
+#' @templateVar stanjmArg object
 #' @templateVar labsArg xlab,ylab
 #' @templateVar cigeomArg ci_geom_args
-#' @template args-stanmvreg-object
+#' @template args-stanjm-object
 #' @template args-labs
 #' @template args-ci-geom-args
 #'   
@@ -76,20 +76,20 @@ ps_check <- function(object, check = "survival",
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
   
-  validate_stanmvreg_object(object)
+  validate_stanjm_object(object)
   limits <- match.arg(limits)
 
   # Predictions for plotting the estimated survival function
   dat <- posterior_survfit(object, standardise = TRUE, 
-                           control = list(condition = FALSE), 
+                           condition = FALSE, 
                            times = 0, extrapolate = TRUE, 
                            draws = draws, seed = seed)
   
   # Estimate KM curve based on response from the event submodel
   form <- reformulate("1", response = formula(object)$Event[[2]])
-  coxdat <- object$coxmod$y
+  coxdat <- object$survmod$mod$y
   if (is.null(coxdat)) 
-    stop("Bug found: no response y found in the 'coxmod' component of the ", 
+    stop("Bug found: no response y found in the 'survmod' component of the ", 
          "fitted joint model.")
   resp <- attr(coxdat, "type")
   if (resp == "right") {
@@ -105,7 +105,7 @@ ps_check <- function(object, check = "survival",
                        lb = km$lower, ub = km$upper)
   
   # Plot estimated survival function with KM curve overlaid
-  graph <- plot.survfit.stanmvreg(dat, ids = NULL, limits = limits, ...)
+  graph <- plot.survfit.stanjm(dat, ids = NULL, limits = limits, ...)
   kmgraph <- geom_step(data = kmdat, 
                        mapping = aes_string(x = "times", y = "surv"))
   graph + kmgraph
