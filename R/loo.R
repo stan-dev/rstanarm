@@ -140,14 +140,22 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  
   if (is.stanjm(x)) { # stan_jm models
     loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
   } else if (is.stanmvreg(x)) { # stan_mvmer models
     M <- get_M(x)
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
     loo_x <- suppressWarnings(loo.matrix(ll, ...))
-  } else { # all other models
+  } else if (is_clogit(x)) {
+    ll <- log_lik.stanreg(x)
+    cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+    if (any(cons)) {
+      message("The following groups were dropped from the loo calculation:",
+              paste(which(cons), collapse = ", "))
+      ll <- ll[, !cons, drop = FALSE]
+    }
+    loo_x <- loo.matrix(ll, ...)
+  } else {
     loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
   }
   
@@ -201,7 +209,9 @@ waic.stanreg <- function(x, ...) {
     M <- get_M(x)
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
     out <- waic.matrix(ll)
-  } else { # all other models
+  } else if (is_clogit(x)) {
+    out <- waic.matrix(log_lik(x))
+  } else {
     out <- waic.function(ll_fun(x), args = ll_args(x))
   }
   structure(out, 
@@ -490,10 +500,20 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   return(loo_x)
 }
 
+log_sum_exp2 <- function(a,b) {
+  m <- max(a,b)
+  m + log(sum(exp(c(a,b) - m)))
+}
+
+# @param x numeric vector
+log_sum_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x)))
+}
+
 # log_mean_exp (just log_sum_exp(x) - log(length(x)))
 log_mean_exp <- function(x) {
-  max_x <- max(x)
-  max_x + log(sum(exp(x - max_x))) - log(length(x))
+  log_sum_exp(x) - log(length(x))
 }
 
 # Get correct data to use for kfold and reloo 

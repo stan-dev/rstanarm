@@ -13,4 +13,4 @@
   vector<lower=0>[K_smooth > 0 ? max(smooth_map) : 0] prior_df_for_smooth;
   real<lower=0> global_prior_df;    // for hs priors only
   real<lower=0> global_prior_scale; // for hs priors only
-  int<lower=2> num_normals[prior_dist == 7 ? K : 0];
+  int<lower=1> num_normals[prior_dist == 7 ? K : 0];

@@ -276,7 +276,8 @@ stan_glm.fit <-
     prior_dist_for_aux = prior_dist_for_aux,
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
-    num_normals_z = integer(0)
+    num_normals_z = integer(0),
+    clogit = 0L, J = 0L, strata = integer()
     # mean,df,scale for aux added below depending on family
   )
 
@@ -284,7 +285,13 @@ stan_glm.fit <-
   # track of priors)
   user_covariance <- if (!length(group)) NULL else group[["decov"]]
   
-  if (length(group)) {
+  if (length(group) && length(group$flist)) {
+    if (length(group$strata)) {
+      standata$clogit <- TRUE
+      standata$J <- nlevels(group$strata)
+      standata$strata <- c(as.integer(group$strata)[y == 1],
+                           as.integer(group$strata)[y == 0])
+    }
     check_reTrms(group)
     decov <- group$decov
     if (is.null(group$SSfun)) {
@@ -344,7 +351,13 @@ stan_glm.fit <-
     standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
       length(x) == 1 && x == "(Intercept)"
     }))
-  } else { # !length(group)
+  } else { # not multilevel
+    if (length(group)) {
+      standata$clogit <- TRUE
+      standata$J <- nlevels(group$strata)
+      standata$strata <- c(as.integer(group$strata)[y == 1],
+                           as.integer(group$strata)[y == 0])
+    }
     standata$t <- 0L
     standata$p <- integer(0)
     standata$l <- integer(0)
@@ -512,7 +525,7 @@ stan_glm.fit <-
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
-            "mean_PPD")
+            if (!standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
@@ -602,7 +615,7 @@ stan_glm.fit <-
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp),
                    if (ncol(S)) colnames(S),
-                   if (length(group)) c(paste0("b[", b_nms, "]")),
+                   if (length(group) && length(group$flist)) c(paste0("b[", b_nms, "]")),
                    if (is_gaussian) "sigma", 
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
@@ -610,7 +623,7 @@ stan_glm.fit <-
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                   "mean_PPD", 
+                   if (!standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
