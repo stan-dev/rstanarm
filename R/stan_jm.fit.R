@@ -608,7 +608,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Use a stan_mvmer variational bayes model fit for:
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
-    cat("Obtaining initial values and/or prior scaling using variational bayes.\n\n")
     vbdots <- list(...)
     dropargs <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
     for (i in dropargs) 
