@@ -407,7 +407,7 @@
 #' # current value of the linear predictor
 #' f1 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               # this next line is only to keep the example small in size!
@@ -420,7 +420,7 @@
 #' # current value and slope of the linear predictor
 #' f2 <- stan_jm(formulaLong = logBili ~ year + (year | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               assoc = c("etavalue", "etaslope"),
 #'               time_var = "year",
@@ -433,7 +433,7 @@
 #' # units (i.e. 2 years in this example)
 #' f3 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               assoc = "etavalue", lag_assoc = 2,
@@ -451,7 +451,7 @@
 #' # hazard of death) for each treatment group
 #' f4 <- stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'               dataLong = pbcLong,
-#'               formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'               formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'               dataEvent = pbcSurv,
 #'               time_var = "year",
 #'               assoc = c("etavalue", "etavalue_data(~ trt)"),
@@ -468,7 +468,7 @@
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
-#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
 #'         assoc = list(c("etavalue", "etaslope"), "etaauc"), 
 #'         time_var = "year",
@@ -488,7 +488,7 @@
 #'           logBili ~ year + (1 | id), 
 #'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
-#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
 #'         assoc = list(c("etavalue", "etavalue_etavalue(2)"), "etavalue"),
 #'         time_var = "year", 
@@ -504,7 +504,7 @@
 #'           ybern ~ year + (1 | id), 
 #'           albumin ~ sex + year + (year | id)),
 #'         dataLong = pbcLong,
-#'         formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+#'         formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
 #'         dataEvent = pbcSurv,
 #'         family = list(binomial, gaussian),
 #'         time_var = "year", 

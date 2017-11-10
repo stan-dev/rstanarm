@@ -39,6 +39,7 @@ Imports:
     rstantools (>= 1.3.0),
     shinystan (>= 2.4.0),
     stats,
+    survival (>= 2.40.1),
     utils
 Suggests:
     arm,
@@ -53,7 +54,6 @@ Suggests:
     mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
-    survival (>= 2.40.1),
     testthat (>= 1.0.2)
 LinkingTo: StanHeaders (>= 2.14.0), rstan (>= 2.14.2), BH (>= 1.62.0), Rcpp (>=
     0.12.0), RcppEigen
