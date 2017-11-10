@@ -147,18 +147,23 @@ transformed data {
 }
 parameters {
   simplex[J] pi;
-  unit_vector[K] u;
-  real<lower=0,upper=1> R2;
+  unit_vector[K] u[K > 1];
+  real<lower=(K > 1 ? 0 : -1),upper=1> R2;
   real<lower=0> alpha[is_skewed];
 }
 transformed parameters {
   vector[K] beta;
   vector[J-1] cutpoints;
   {
-    real Delta_y = inv(sqrt(1 - R2));
-    if (K > 1)
-      beta = u * sqrt(R2) * Delta_y * sqrt_Nm1;
-    else beta[1] = u[1] * sqrt(R2) * Delta_y * sqrt_Nm1;
+    real Delta_y; 
+    if (K > 1) {
+      Delta_y = inv_sqrt(1 - R2);
+      beta = u[1] * sqrt(R2) * Delta_y * sqrt_Nm1;
+    }
+    else {
+      Delta_y = inv_sqrt(1 - square(R2));
+      beta[1] = R2 * Delta_y * sqrt_Nm1;
+    }
     cutpoints = make_cutpoints(pi, Delta_y, link);
   }
 }
@@ -177,7 +182,10 @@ model {
 
   if (is_constant == 0) target += dirichlet_lpdf(pi | prior_counts);
   // implicit: u is uniform on the surface of a hypersphere
-  if (prior_dist == 1) target += beta_lpdf(R2 | half_K, regularization);
+  if (prior_dist == 1) {
+    if (K > 1) target += beta_lpdf( R2  | half_K, regularization);
+    else target += beta_lpdf(square(R2) | half_K, regularization) + log(fabs(R2));
+  }
   if (is_skewed == 1)  target += gamma_lpdf(alpha | shape, rate);
 }
 generated quantities {
