@@ -174,7 +174,7 @@
 #'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
 #'   survival function, and \code{\link{posterior_traj}} for estimating the
 #'   marginal or subject-specific longitudinal trajectories, and 
-#'   \code{\link{plot_stack}} for combining plots of the estimated subject-specific
+#'   \code{\link{plot_stack_jm}} for combining plots of the estimated subject-specific
 #'   longitudinal trajectory and survival function.
 #'   
 #' @references 
@@ -540,6 +540,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
             offset = offset, b_new = if (!is.null(newdataEvent)) b_new else NULL)
 }
 
+
 #' Plot the estimated subject-specific or marginal survival function
 #' 
 #' This generic \code{plot} method for \code{survfit.stanjm} objects will
@@ -576,11 +577,12 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   \code{\link[ggplot2]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
-#' @return A \code{ggplot} object, also of class \code{plot.survfit.stanjm}.
-#'   This object can be further customised using the \pkg{ggplot2} package.
-#'   It can also be passed to the function \code{\link{plot_stack}}.
+#' @return The plot method returns a \code{ggplot} object, also of class
+#'   \code{plot.survfit.stanjm}. This object can be further customised using the
+#'   \pkg{ggplot2} package. It can also be passed to the function
+#'   \code{plot_stack_jm}.
 #'   
-#' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack}},
+#' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack_jm}},
 #'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
 #' @examples 
@@ -619,7 +621,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   pt1 <- posterior_traj(example_jm, , ids = c(7,13,15))
 #'   plot_surv <- plot(ps1) 
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
-#'   plot_stack(plot_traj, plot_surv)
+#'   plot_stack_jm(plot_traj, plot_surv)
 #'    
 #'   # Lastly, let us plot the standardised survival function
 #'   # based on all individuals in our estimation dataset
@@ -692,6 +694,124 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   class(ret) <- c("plot.survfit.stanjm", class_ret)
   ret
 }
+
+
+#' @rdname plot.survfit.stanjm
+#' @export
+#' @importFrom ggplot2 ggplot_build facet_wrap aes_string expand_limits
+#' 
+#' @description The \code{plot_stack_jm} function takes arguments containing the plots of the estimated  
+#' subject-specific longitudinal trajectory (or trajectories if a multivariate  
+#' joint model was estimated) and the plot of the estimated subject-specific 
+#' survival function and combines them into a single figure. This is most
+#' easily understood by running the \strong{Examples} below.
+#' 
+#' @param yplot An object of class \code{plot.predict.stanjm}, returned by a 
+#'   call to the generic \code{\link[=plot.predict.stanjm]{plot}} method for 
+#'   objects of class \code{predict.stanjm}. If there is more than one 
+#'   longitudinal outcome, then a list of such objects can be provided.
+#' @param survplot An object of class \code{plot.survfit.stanjm}, returned by a 
+#'   call to the generic \code{\link[=plot.survfit.stanjm]{plot}} method for 
+#'   objects of class \code{survfit.stanjm}. 
+#'   
+#' @return \code{plot_stack_jm} returns an object of class
+#'   \code{\link[bayesplot]{bayesplot_grid}} that includes plots of the
+#'   estimated subject-specific longitudinal trajectories stacked on top of the 
+#'   associated subject-specific survival curve.
+#'   
+#' @seealso \code{\link{plot.predict.stanjm}}, \code{\link{plot.survfit.stanjm}},
+#'   \code{\link{posterior_predict}}, \code{\link{posterior_survfit}}
+#'    
+#' @examples
+#' \donttest{
+#'   if (!exists("example_jm")) example(example_jm)
+#'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
+#'   pt1 <- posterior_traj(example_jm, ids = c(7,13,15), extrapolate = TRUE)
+#'   plot_surv <- plot(ps1) 
+#'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
+#'   plot_stack_jm(plot_traj, plot_surv)
+#' }
+#'  
+plot_stack_jm <- function(yplot, survplot) {
+  
+  if (!is(yplot, "list")) yplot <- list(yplot)
+  
+  lapply(yplot, function(x) {
+    if (!is(x, "plot.predict.stanjm"))
+      stop("'yplot' should be an object of class 'plot.predict.stanjm', ",
+           "or a list of such objects.", call. = FALSE)
+  })
+  if (!is(survplot, "plot.survfit.stanjm"))
+    stop("'survplot' should be an object of class 'plot.survfit.stanjm'.",
+         call. = FALSE)   
+  
+  y_build <- lapply(yplot, ggplot_build)
+  y_layout <- lapply(y_build, function(x) x$layout$panel_layout)
+  y_ids <- lapply(y_layout, function(x)
+    if (!"id" %in% colnames(x)) NULL else x[["id"]])
+  
+  e_build <- ggplot_build(survplot)
+  e_layout <- e_build$layout$panel_layout    
+  e_ids <- if (!"id" %in% colnames(e_layout)) NULL else e_layout[["id"]]
+  
+  lapply(y_ids, function(x, e_ids) {
+    if (!all(sort(x) == sort(e_ids))) 
+      stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
+           "reestimate the plots using a common 'ids' argument.", call. = FALSE)
+  }, e_ids = e_ids)
+  
+  vline <- lapply(seq_along(y_build), function(m) {
+    L <- length(y_build[[m]]$data)
+    dat <- y_build[[m]]$data[[L]]
+    if (!"xintercept" %in% colnames(dat)) {
+      found <- FALSE
+    } else {
+      found <- TRUE
+      dat <- dat[, c("PANEL", "xintercept"), drop = FALSE] 
+      if (NROW(y_layout[[m]]) > 1) {
+        panel_id_map <- y_layout[[m]][, c("PANEL", "id"), drop = FALSE]
+        dat <- merge(dat, panel_id_map, by = "PANEL")
+      }
+      dat <- dat[, grep("PANEL", colnames(dat), invert = TRUE), drop = FALSE]
+      colnames(dat) <- gsub("xintercept", paste0("xintercept", m), colnames(dat), fixed = TRUE)
+    }
+    list(dat = dat, found = found)
+  })
+  vline_found <- any(sapply(vline, function(x) x$found))
+  if (!vline_found)
+    cat("Could not find vertical line indicating last observation time in the",
+        "plot of the longitudinal trajectory; you may wish to plot the longitudinal",
+        "trajectories again with 'vline = TRUE' to aid interpretation.")
+  vline_dat <- lapply(vline, function(x) x$dat)
+  vline_alldat <- Reduce(function(...) merge(..., all = TRUE), vline_dat)
+  vline_alldat$xintercept_max <- 
+    apply(vline_alldat[, grep("id", colnames(vline_alldat), invert = TRUE), drop = FALSE], 1, max) 
+  
+  xmax <- max(sapply(c(y_build, list(e_build)), function(i) max(i$data[[1]]$x)))
+  
+  if ((!is.null(e_ids)) && (length(e_ids) > 20L)) {
+    stop("Unable to generate 'plot_stack_jm' for this many individuals.", call. = FALSE)      
+  } else if ((!is.null(e_ids)) && (length(e_ids) > 3L)) {
+    warning("'plot_stack_jm' is unlikely to be legible with more than a few individuals.",
+            immediate. = TRUE, call. = FALSE)
+  }
+  
+  graph_facet <- if (!is.null(e_ids)) 
+    facet_wrap(~ id, scales = "free", nrow = 1) else NULL
+  survplot_updated <- survplot + expand_limits(x = c(0, xmax)) + graph_facet + if (vline_found) 
+    geom_vline(aes_string(xintercept = "xintercept_max"), vline_alldat, linetype = 2)
+  
+  if (!is.null(e_ids)) 
+    yplot <- lapply(yplot, function(x) x + expand_limits(x = c(0, xmax)) + 
+                      facet_wrap(~ id, scales = "free", nrow = 1))
+  
+  bayesplot::bayesplot_grid(
+    plots = c(yplot, list(survplot_updated)), 
+    grid_args = list(ncol = 1)
+  )
+}
+
+
 
 
 # ------------------ exported but doc kept internal

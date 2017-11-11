@@ -346,9 +346,9 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   
 #' @return A \code{ggplot} object, also of class \code{plot.predict.stanjm}.
 #'   This object can be further customised using the \pkg{ggplot2} package.
-#'   It can also be passed to the function \code{\link{plot_stack}}.
+#'   It can also be passed to the function \code{\link{plot_stack_jm}}.
 #'   
-#' @seealso \code{\link{posterior_traj}}, \code{\link{plot_stack}},
+#' @seealso \code{\link{posterior_traj}}, \code{\link{plot_stack_jm}},
 #'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanjm}}   
 #'     
 #' @examples 
