@@ -43,6 +43,14 @@
 #'   transformed) linear predictor. The exception is if the argument \code{XZ}
 #'   is set to \code{TRUE} (see the \code{XZ} argument description above).
 #'   
+#' @note For models estimated with \code{\link{stan_clogit}}, the number of 
+#'   successes per stratum is ostensibly fixed by the research design. Thus,
+#'   when calling \code{posterior_linpred} with new data and \code{transform =
+#'   TRUE}, the \code{data.frame} passed to the \code{newdata} argument must
+#'   contain an outcome variable and a stratifying factor, both with the same
+#'   name as in the original \code{data.frame}. Then, the probabilities will
+#'   condition on this outcome in the new data.
+#'   
 #' @seealso \code{\link{posterior_predict}} to draw from the posterior 
 #'   predictive distribution of the outcome, which is typically preferable.
 #'
@@ -72,22 +80,38 @@ posterior_linpred.stanreg <-
            ...) {
     if (used.optimizing(object))
       STOP_not_optimizing("posterior_linpred")
+    if (is.stanmvreg(object))
+      STOP_if_stanmvreg("'posterior_linpred'")
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,
-                   offset = offset)
+                   offset = offset,
+                   ...)
     if (XZ) {
       XZ <- dat[["x"]]
       if (is.mer(object))
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
-    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
+    eta <- pp_eta(object, data = dat, draws = NULL, ...)[["eta"]]
+    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object, ...))
     else colnames(eta) <- rownames(newdata)
     
-    if (!transform || is.nlmer(object)) return(eta)
-    linkinv(object)(eta)
-}
+    if (!transform || is.nlmer(object)) 
+      return(eta)
+    
+    g <- linkinv(object)
+    if (is_clogit(object)) {
+      if (!is.null(newdata)) {
+        y <- eval(formula(object)[[2L]], newdata)
+        strata <- as.factor(eval(object$call$strata, newdata))
+        formals(g)$g <- strata
+        formals(g)$successes <- aggregate(y, by = list(strata), FUN = sum)$x
+      }
+      return(t(apply(eta, 1, FUN = g)))
+    }
+    
+    return(g(eta))
+  }

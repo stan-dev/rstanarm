@@ -304,6 +304,41 @@ The [vignette](lm.html) for the `stan_lm` function also has an example of using 
 function where the results are quite a bit different from what we see here and
 some important additional considerations are discussed.
 
+# Conditional Logit Models
+
+The previous example relies on the fact that observations are plausibly conditionally
+independent. In constrast, so-called "case-control studies" require 
+that there are a fixed number of successes and failures within each stratum, and
+the question is _which_ members of each stratum succeed and fail? The `stan_clogit`
+function estimates such a model and is very similar to the `clogit` function in the
+**survival** package. The main syntactical difference is that the `clogit` function
+requires that the user call the `strata` function in the model formula, whereas
+the `stan_clogit` function has a required `strata` argument. In addition, in the
+`stan_clogit` case the data must be sorted by the variable passed to `strata`. The 
+advantage to these changes is that `stan_clogit` can optionally utilize the multilevel 
+syntax from the **lme4** package to specify group-specific terms, rather than the more 
+limited multilevel structure supported by the `fraility` function in the **survival**
+package. The [vignette](glmer.html) for the `stan_glmer` function discusses the
+lme4-style syntax in more detail. For example,
+```{r, results = "hide"}
+post <- stan_clogit(case ~ spontaneous + induced + (1 | parity), 
+                    data = infert[order(infert$stratum), ], # order necessary
+                    strata = stratum, QR = TRUE,
+                    chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+```
+```{r}
+post
+```
+The posterior predictions are also constrained such that there is exactly one
+success (in this case) for each of the strata and thus the posterior distribution
+of the probabilities are also so constrained:
+```{r}
+PPD <- posterior_predict(post)
+stopifnot(rowSums(PPD) == max(infert$stratum))
+PLP <- posterior_linpred(post, transform = TRUE)
+stopifnot(round(rowSums(PLP)) == max(infert$stratum))
+```
+
 # Binomial Models
 
 Although the example in this vignette focused on a binary response variable, we
