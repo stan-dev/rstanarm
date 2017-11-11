@@ -51,7 +51,7 @@ multiple comparisons in several settings, (vi) replicate new data for posterior
 $p$-values, and (vii) perform graphical posterior predictive checks.
 
 The content of the vignette is based on Bob Carpenter's Stan tutorial 
-*[Hierarchical Partial Pooling for Repeated Binary Trials](https://github.com/stan-dev/example-models/tree/master/knitr)*,
+*[Hierarchical Partial Pooling for Repeated Binary Trials](http://mc-stan.org/users/documentation/case-studies/pool-binary-trials.html)*,
 but here we show how to fit the models and carry out predictions and model 
 checking and comparison using **rstanarm**. Most of the text is taken from the 
 original, with some additions and substractions to make the content more useful 
@@ -373,7 +373,8 @@ This model can be estimated using the `stan_glmer` function.
 
 ```{r, partial-pooling, results="hide"}
 fit_partialpool <- 
-  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, family = binomial("logit"),
+  stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, 
+             family = binomial("logit"),
              prior_intercept = wi_prior, seed = SEED)
 ```
 

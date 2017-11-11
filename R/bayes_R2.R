@@ -45,7 +45,7 @@ bayes_R2.stanreg <-
       stop("Not available for stan_polr models.")
     
     y <- get_y_new(object, newdata = newdata)
-    ypred <- posterior_linpred(
+    yhat <- posterior_linpred(
       object,
       transform = TRUE,
       newdata = newdata,
@@ -59,14 +59,14 @@ bayes_R2.stanreg <-
       } else if (NCOL(y) == 2) {
         trials <- rowSums(y)
         y <- y[, 1]
-        ypred <- ypred %*% diag(trials)
+        yhat <- yhat %*% diag(trials)
       }
     }
     
-    e <- -1 * sweep(ypred, 2, y)
-    var_ypred <- apply(ypred, 1, var)
+    e <- -1 * sweep(yhat, 2, y)
+    var_yhat <- apply(yhat, 1, var)
     var_e <- apply(e, 1, var)
-    var_ypred / (var_ypred + var_e)
+    var_yhat / (var_yhat + var_e)
   }
 
 

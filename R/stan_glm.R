@@ -37,6 +37,7 @@
 #' @template args-dots
 #' @template args-prior_intercept
 #' @template args-priors
+#' @template args-prior_intercept
 #' @template args-prior_aux
 #' @template args-prior_PD
 #' @template args-algorithm
@@ -195,6 +196,8 @@ stan_glm <-
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
   if (family$family == "Beta regression") family$family <- "beta"
+  sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+  X <- X[ , !sel, drop = FALSE]  
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 

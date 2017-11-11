@@ -102,6 +102,8 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   }
 
   validate_stanreg_object(object)
+  if (is.stanmvreg(object))
+    STOP_if_stanmvreg("'pp_validate'")
   if (nreps < 2)
     stop("'nreps' must be at least 2.")
 

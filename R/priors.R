@@ -17,18 +17,20 @@
 
 #' Prior distributions and options
 #' 
-#' The functions described on this page are used to specify the prior-related
+#' The functions described on this page are used to specify the prior-related 
 #' arguments of the various modeling functions in the \pkg{rstanarm} package (to
 #' view the priors used for an existing model see \code{\link{prior_summary}}). 
-#' The default priors used in the various \pkg{rstanarm} modeling functions are
-#' intended to be \emph{weakly informative} in that they provide moderate
-#' regularlization and help stabilize computation. For many applications the
-#' defaults will perform well, but prudent use of more informative priors is
-#' encouraged. Uniform prior distributions are possible (e.g. by setting
-#' \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
-#' the data is very strong, they are not recommended and are \emph{not}
-#' non-informative, giving the same probability mass to implausible values as
-#' plausible ones.
+#' More information on priors is also available in the \emph{Prior 
+#' Distributions} vignette as well as the vignettes for the various modeling 
+#' functions. The default priors used in the various \pkg{rstanarm} modeling
+#' functions are intended to be \emph{weakly informative} in that they provide
+#' moderate regularlization and help stabilize computation. For many
+#' applications the defaults will perform well, but prudent use of more
+#' informative priors is encouraged. Uniform prior distributions are possible
+#' (e.g. by setting \code{\link{stan_glm}}'s \code{prior} argument to
+#' \code{NULL}) but, unless the data is very strong, they are not recommended
+#' and are \emph{not} non-informative, giving the same probability mass to
+#' implausible values as plausible ones.
 #' 
 #' @name priors
 #' @param location Prior location. In most cases, this is the prior mean, but
@@ -236,6 +238,7 @@
 #'   Family members:
 #'   \itemize{
 #'   \item \code{decov(regularization, concentration, shape, scale)}
+#'   \item \code{lkj(regularization, scale, df)}
 #'   }
 #'   (Also see vignette for \code{stan_glmer})
 #'   
@@ -290,6 +293,27 @@
 #'   \code{concentration} parameters, but does have \code{shape} and 
 #'   \code{scale} parameters for the prior standard deviation of that 
 #'   variable.
+#'   
+#'   Note that for \code{\link{stan_mvmer}} and \code{\link{stan_jm}} models an
+#'   additional prior distribution is provided through the \code{lkj} function.
+#'   This prior is in fact currently used as the default for those modelling
+#'   functions (although \code{decov} is still available as an option if the user
+#'   wishes to specify it through the \code{prior_covariance} argument). The
+#'   \code{lkj} prior uses the same decomposition of the covariance matrices
+#'   into correlation matrices and variances, however, the variances are not
+#'   further decomposed into a simplex vector and the trace; instead the 
+#'   standard deviations (square root of the variances) for each of the group
+#'   specific parameters are given a half Student t distribution with the 
+#'   scale and df parameters specified through the \code{scale} and \code{df}
+#'   arguments to the \code{lkj} function. The scale parameter default is 10
+#'   which is then autoscaled, whilst the df parameter default is 1 
+#'   (therefore equivalent to a half Cauchy prior distribution for the 
+#'   standard deviation of each group specific parameter). This prior generally
+#'   leads to similar results as the \code{decov} prior, but it is also likely
+#'   to be **less** diffuse compared with the \code{decov} prior; therefore it 
+#'   sometimes seems to lead to faster estimation times, hence why it has
+#'   been chosen as the default prior for \code{\link{stan_mvmer}} and 
+#'   \code{\link{stan_jm}} where estimation times can be long.
 #' }
 #' \subsection{R2 family}{
 #'   Family members:
@@ -464,7 +488,7 @@ lasso <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
 #' @export
 product_normal <- function(df = 2, location = 0, scale = 1) {
   validate_parameter_value(df)
-  stopifnot(all(df >= 2), all(df == as.integer(df)))
+  stopifnot(all(df >= 1), all(df == as.integer(df)))
   validate_parameter_value(scale)
   nlist(dist = "product_normal", df, location, scale)
 }
@@ -486,8 +510,8 @@ exponential <- function(rate = 1, autoscale = TRUE) {
 #' @rdname priors
 #' @export
 #' @param regularization Exponent for an LKJ prior on the correlation matrix in
-#'   the \code{decov} prior. The default is \eqn{1}, implying a joint uniform
-#'   prior.
+#'   the \code{decov} or \code{lkj} prior. The default is \eqn{1}, implying a 
+#'   joint uniform prior.
 #' @param concentration Concentration parameter for a symmetric Dirichlet 
 #'   distribution. The default is \eqn{1}, implying a joint uniform prior.
 #' @param shape Shape parameter for a gamma prior on the scale parameter in the
@@ -501,6 +525,15 @@ decov <- function(regularization = 1, concentration = 1,
   validate_parameter_value(shape)
   validate_parameter_value(scale)
   nlist(dist = "decov", regularization, concentration, shape, scale)
+}
+
+#' @rdname priors
+#' @export
+lkj <- function(regularization = 1, scale = 10, df = 1, autoscale = TRUE) {
+  validate_parameter_value(regularization)
+  validate_parameter_value(scale)
+  validate_parameter_value(df)
+  nlist(dist = "lkj", regularization, scale, df, autoscale)
 }
 
 #' @rdname priors

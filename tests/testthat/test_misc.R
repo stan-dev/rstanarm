@@ -26,7 +26,7 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-source(file.path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "expect_stanreg.R"))
 
 context("helper functions")
 
@@ -220,7 +220,7 @@ test_that("check_constant_vars works", {
   mf2$wt <- 2
   expect_equal(check_constant_vars(mf), mf)
   expect_error(check_constant_vars(mf2), "wt")
-  mf2$gear <- 1
+  mf2$gear <- 3
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
   

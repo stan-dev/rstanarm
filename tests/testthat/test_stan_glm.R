@@ -25,8 +25,8 @@ CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
-source(file.path("helpers", "expect_stanreg.R"))
-source(file.path("helpers", "SW.R"))
+source(test_path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "SW.R"))
 
 SW(
   fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
@@ -62,7 +62,7 @@ SW(fit_igaus <- update(fit_gamma, family = inverse.gaussian))
 
 test_that("loo/waic for stan_glm works", {
   ll_fun <- rstanarm:::ll_fun
-  source(file.path("helpers", "expect_equivalent_loo.R"))
+  source(test_path("helpers", "expect_equivalent_loo.R"))
   
   # gaussian
   expect_equivalent_loo(fit_gaus)
@@ -433,8 +433,8 @@ test_that("empty interaction levels dropped", {
 context("posterior_predict (stan_glm)")
 
 test_that("posterior_predict compatible with glms", {
-  source(file.path("helpers", "check_for_error.R"))
-  source(file.path("helpers", "expect_linpred_equal.R"))
+  source(test_path("helpers", "check_for_error.R"))
+  source(test_path("helpers", "expect_linpred_equal.R"))
   SW <- suppressWarnings
   
   check_for_error(fit_gaus)

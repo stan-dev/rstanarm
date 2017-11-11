@@ -259,3 +259,39 @@
     return V;
   }
 
+
+  /**
+   * Calculate lower bound on intercept
+   *
+   * @param family Integer family code
+   *   1 = gaussian
+   *   2 = gamma
+   *   3 = inv-gaussian
+   *   4 = beta
+   *   5 = binomial
+   *   6 = poisson
+   *   7 = neg-binom
+   *   8 = poisson w/ gamma noise (not currently used but in count.stan)
+   * @param link Integer link code
+   * @return real lower bound
+   */
+  real make_lower(int family, int link) {
+    if (family == 1) return negative_infinity(); // Gaussian
+    if (family <= 3) { // Gamma or inverse Gaussian
+      if (link == 2) return negative_infinity(); // log
+      return 0;
+    }
+    return negative_infinity();
+  }
+
+  /**
+   * Calculate upper bound on intercept
+   *
+   * @param family Integer family code (see make_lower above for codes)
+   * @param link Integer link code
+   * @return real upper bound
+   */
+  real make_upper(int family, int link) {
+    if (family == 4 && link == 5) return 0;
+    return positive_infinity();
+  }

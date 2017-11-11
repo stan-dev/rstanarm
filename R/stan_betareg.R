@@ -38,6 +38,7 @@
 #' @template args-dots
 #' @template args-prior_intercept
 #' @template args-priors
+#' @template args-prior_intercept
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -168,7 +169,12 @@ stan_betareg <-
     
     if (is.null(link.phi) && is.null(Z))
       link_phi <- "identity"
-    
+    sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+    X <- X[ , !sel, drop = FALSE]
+    if (!is.null(Z)) {
+      sel <- apply(Z, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+      Z <- Z[ , !sel, drop = FALSE]
+    }
     fit <- 
       nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),

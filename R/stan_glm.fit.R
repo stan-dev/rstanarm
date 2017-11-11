@@ -171,8 +171,7 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
-  }
-  else {
+  } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
     prior_scale_for_smooth <- array(NA_real_, dim = 0)
@@ -251,6 +250,7 @@ stan_glm.fit <-
     K = ncol(xtemp),
     xbar = as.array(xbar),
     dense_X = !sparse,
+    family = stan_family_number(famname), 
     link,
     has_weights = length(weights) > 0,
     has_offset = length(offset) > 0,
@@ -279,7 +279,8 @@ stan_glm.fit <-
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
     slab_df_z = 0, slab_scale_z = 0,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
-    num_normals_z = integer(0)
+    num_normals_z = integer(0),
+    clogit = 0L, J = 0L, strata = integer()
     # mean,df,scale for aux added below depending on family
   )
 
@@ -287,7 +288,13 @@ stan_glm.fit <-
   # track of priors)
   user_covariance <- if (!length(group)) NULL else group[["decov"]]
   
-  if (length(group)) {
+  if (length(group) && length(group$flist)) {
+    if (length(group$strata)) {
+      standata$clogit <- TRUE
+      standata$J <- nlevels(group$strata)
+      standata$strata <- c(as.integer(group$strata)[y == 1],
+                           as.integer(group$strata)[y == 0])
+    }
     check_reTrms(group)
     decov <- group$decov
     if (is.null(group$SSfun)) {
@@ -347,7 +354,13 @@ stan_glm.fit <-
     standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
       length(x) == 1 && x == "(Intercept)"
     }))
-  } else { # !length(group)
+  } else { # not multilevel
+    if (length(group)) {
+      standata$clogit <- TRUE
+      standata$J <- nlevels(group$strata)
+      standata$strata <- c(as.integer(group$strata)[y == 1],
+                           as.integer(group$strata)[y == 0])
+    }
     standata$t <- 0L
     standata$p <- integer(0)
     standata$l <- integer(0)
@@ -404,11 +417,6 @@ stan_glm.fit <-
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
-    standata$family <- switch(family$family, 
-                              gaussian = 1L, 
-                              Gamma = 2L,
-                              inverse.gaussian = 3L,
-                              4L) # beta
     standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
   } else if (is.binomial(famname)) {
@@ -417,7 +425,6 @@ stan_glm.fit <-
         0 else prior_scale_for_aux
     standata$prior_mean_for_aux <- 0
     standata$prior_df_for_aux <- 0
-    standata$family <- 1L # not actually used
     if (is_bernoulli) {
       y0 <- y == 0
       y1 <- y == 1
@@ -477,13 +484,11 @@ stan_glm.fit <-
       stanfit <- stanmodels$binomial
     }
   } else if (is.poisson(famname)) {
-    standata$family <- 1L
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_mean_for_aux <- 0
     standata$prior_df_for_aux <- 0
-    stanfit <- stanmodels$count 
+    stanfit <- stanmodels$count
   } else if (is_nb) {
-    standata$family <- 2L
     standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
@@ -515,7 +520,7 @@ stan_glm.fit <-
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
-            "mean_PPD")
+            if (!standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
     out <- optimizing(stanfit, data = standata, 
                       draws = 1000, constrained = TRUE, ...)
@@ -605,7 +610,7 @@ stan_glm.fit <-
     new_names <- c(if (has_intercept) "(Intercept)", 
                    colnames(xtemp),
                    if (ncol(S)) colnames(S),
-                   if (length(group)) c(paste0("b[", b_nms, "]")),
+                   if (length(group) && length(group$flist)) c(paste0("b[", b_nms, "]")),
                    if (is_gaussian) "sigma", 
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
@@ -613,7 +618,7 @@ stan_glm.fit <-
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                   "mean_PPD", 
+                   if (!standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
@@ -639,6 +644,25 @@ supported_glm_links <- function(famname) {
     stop("unsupported family")
   )
 }
+
+# Family number to pass to Stan
+# @param famname string naming the family
+# @return an integer family code
+stan_family_number <- function(famname) {
+  switch(
+    famname,
+    "gaussian" = 1L,
+    "Gamma" = 2L,
+    "inverse.gaussian" = 3L,
+    "beta" = 4L,
+    "Beta regression" = 4L,
+    "binomial" = 5L,
+    "poisson" = 6L,
+    "neg_binomial_2" = 7L,
+    stop("Family not valid.")
+  )
+}
+
 
 
 # Verify that outcome values match support implied by family object
@@ -765,17 +789,19 @@ unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   return(x_keep)
 }
 
-make_b_nms <- function(group) {
+make_b_nms <- function(group, m = NULL, stub = "Long") {
   group_nms <- names(group$cnms)
   b_nms <- character()
+  m_stub <- if (!is.null(m)) get_m_stub(m, stub = stub) else NULL
   for (i in seq_along(group$cnms)) {
     nm <- group_nms[i]
     nms_i <- paste(group$cnms[[i]], nm)
     levels(group$flist[[nm]]) <- gsub(" ", "_", levels(group$flist[[nm]]))
     if (length(nms_i) == 1) {
-      b_nms <- c(b_nms, paste0(nms_i, ":", levels(group$flist[[nm]])))
+      b_nms <- c(b_nms, paste0(m_stub, nms_i, ":", levels(group$flist[[nm]])))
     } else {
-      b_nms <- c(b_nms, c(t(sapply(nms_i, paste0, ":", levels(group$flist[[nm]])))))
+      b_nms <- c(b_nms, c(t(sapply(paste0(m_stub, nms_i), paste0, ":", 
+                                   levels(group$flist[[nm]])))))
     }
   }
   return(b_nms)  
@@ -898,3 +924,4 @@ summarize_glm_prior <-
       if (is.ig(fam)) "lambda" else 
         if (is.nb(fam)) "reciprocal_dispersion" else NA
 }
+
