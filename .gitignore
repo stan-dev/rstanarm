@@ -3,6 +3,7 @@ exec/*.rda
 .Rhistory
 src/Modules*
 src/rstanarm.so
+src/rstanarm.dll
 src/init.o
 src/include
 man/*.Rd

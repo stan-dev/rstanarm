@@ -18,5 +18,8 @@
 library(testthat)
 library(rstanarm)
 Sys.unsetenv("R_TESTS")
+# options(error = function() traceback(2))
 example(example_model)
-if (!grepl("^sparc",  R.version$platform)) test_check("rstanarm")
+if (!grepl("^sparc",  R.version$platform)) 
+  test_check("rstanarm", filter = if (Sys.getenv("NOT_CRAN") != "true") "stan_jm")
+

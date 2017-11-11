@@ -130,7 +130,7 @@ data {
   #include "data_glm.stan" // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
   #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
 
-  # hyperparameter values
+  // hyperparameter values
   real<lower=0> regularization;
   vector<lower=0>[J] prior_counts;
   int<lower=0,upper=1> is_skewed;
