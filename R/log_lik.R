@@ -79,7 +79,9 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
       STOP_arg_required_for_stanmvreg(m)
     if (!is.null(offset))
       stop2("'offset' cannot be specified for stanmvreg objects.")
-  } else m <- NULL
+  } else {
+    m <- NULL
+  }
   
   args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
                           reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
@@ -337,7 +339,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   
   if (is_clogit(object)) {
     data$strata <- strata
-    out <-nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
+    out <- nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
   } else {
     out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data)) 
   }
@@ -646,12 +648,13 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   }
   
   # Return log likelihood for joint model
-  if (!sum) 
+  if (!sum) {
     return(val)             # S * Npat matrix or length Npat vector
-  else if (is.matrix(val)) 
+  } else if (is.matrix(val)) {
     return(rowSums(val))    # length S vector
-  else 
+  } else {
     return(sum(val))        # scalar 
+  }
 }
 
 # Return log-likelihood for longitudinal submodel m
