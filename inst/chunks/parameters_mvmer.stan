@@ -46,6 +46,9 @@
   vector<lower=0>[yK[1]] yLocal1[yHs1];
   vector<lower=0>[yK[2]] yLocal2[yHs2];
   vector<lower=0>[yK[3]] yLocal3[yHs3];
+  real<lower=0> y_caux1[yHs1 > 0];
+  real<lower=0> y_caux2[yHs2 > 0];
+  real<lower=0> y_caux3[yHs3 > 0];
   real<lower=0> yOol1[y_prior_dist[1] == 6]; // one_over_lambda
   real<lower=0> yOol2[y_prior_dist[2] == 6];
   real<lower=0> yOol3[y_prior_dist[3] == 6];

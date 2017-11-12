@@ -23,13 +23,16 @@
   // Log priors, population level params
   if (yK[1] > 0)
     beta_lp(z_yBeta1, y_prior_dist[1], y_prior_scale1, y_prior_df1, 
-            y_global_prior_df[1], yLocal1, yGlobal1, yMix1, yOol1)
+            y_global_prior_df[1], yLocal1, yGlobal1, yMix1, yOol1,
+            y_slab_df[1], y_caux1);
   if (M > 1 && yK[2] > 0)
     beta_lp(z_yBeta2, y_prior_dist[2], y_prior_scale2, y_prior_df2, 
-            y_global_prior_df[2], yLocal2, yGlobal2, yMix2, yOol2)
+            y_global_prior_df[2], yLocal2, yGlobal2, yMix2, yOol2,
+            y_slab_df[2], y_caux2);
   if (M > 2 && yK[3] > 0)
     beta_lp(z_yBeta3, y_prior_dist[3], y_prior_scale3, y_prior_df3, 
-            y_global_prior_df[3], yLocal3, yGlobal3, yMix3, yOol3)
+            y_global_prior_df[3], yLocal3, yGlobal3, yMix3, yOol3,
+            y_slab_df[3], y_caux3);
   
   // Log priors, group level terms
   if (prior_dist_for_cov == 1) { // decov

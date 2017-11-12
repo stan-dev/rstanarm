@@ -22,7 +22,8 @@
   if (yK[1] > 0)
     yBeta1 = make_beta(z_yBeta1, y_prior_dist[1], y_prior_mean1, 
                        y_prior_scale1, y_prior_df1, y_global_prior_scale[1],  
-                       yGlobal1, yLocal1, yOol1, yMix1, yAux1, family[1]);
+                       yGlobal1, yLocal1, yOol1, yMix1, yAux1, family[1],
+                       y_slab_scale[1], y_caux1);
   if (M > 1) {
     if (has_aux[2] == 1) {
       yAux2[1] = make_aux(yAux2_unscaled[1], y_prior_dist_for_aux[2], 
@@ -33,7 +34,8 @@
     if (yK[2] > 0)
       yBeta2 = make_beta(z_yBeta2, y_prior_dist[2], y_prior_mean2, 
                          y_prior_scale2, y_prior_df2, y_global_prior_scale[2],  
-                         yGlobal2, yLocal2, yOol2, yMix2, yAux2, family[2]);
+                         yGlobal2, yLocal2, yOol2, yMix2, yAux2, family[2],
+                         y_slab_scale[2], y_caux2);
   } 
   if (M > 2) {
     if (has_aux[3] == 1) {
@@ -45,7 +47,8 @@
     if (yK[3] > 0)
       yBeta3 = make_beta(z_yBeta3, y_prior_dist[3], y_prior_mean3, 
                          y_prior_scale3, y_prior_df3, y_global_prior_scale[3],  
-                         yGlobal3, yLocal3, yOol3, yMix3, yAux3, family[3]);
+                         yGlobal3, yLocal3, yOol3, yMix3, yAux3, family[3],
+                         y_slab_scale[3], y_caux3);
   }
 
   // group level params, under decov prior

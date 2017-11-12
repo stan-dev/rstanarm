@@ -105,7 +105,7 @@
   vector make_beta(vector z_beta, int prior_dist, vector prior_mean, 
                    vector prior_scale, vector prior_df, real global_prior_scale,
                    real[] global, vector[] local, real[] ool, vector[] mix, 
-                   real[] aux, int family) {
+                   real[] aux, int family, real slab_scale, real[] caux) {
     vector[rows(z_beta)] beta;                 
     if (prior_dist == 0) beta = z_beta;
     else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
@@ -113,16 +113,18 @@
       beta[k] = CFt(z_beta[k], prior_df[k]) * prior_scale[k] + prior_mean[k];
     }
     else if (prior_dist == 3) {
+      real c2 = square(slab_scale) * caux[1];
       if (family == 1) // don't need is_continuous since family == 1 is gaussian in mvmer
-        beta = hs_prior(z_beta, global, local, global_prior_scale, aux[1]);
+        beta = hs_prior(z_beta, global, local, global_prior_scale, aux[1], c2);
       else 
-        beta = hs_prior(z_beta, global, local, global_prior_scale, 1.0);
+        beta = hs_prior(z_beta, global, local, global_prior_scale, 1, c2);
     }
     else if (prior_dist == 4) {
+      real c2 = square(slab_scale) * caux[1];
   	  if (family == 1) // don't need is_continuous since family == 1 is gaussian in mvmer
-        beta = hsplus_prior(z_beta, global, local, global_prior_scale, aux[1]);
+        beta = hsplus_prior(z_beta, global, local, global_prior_scale, aux[1], c2);
       else 
-        beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1.0);
+        beta = hsplus_prior(z_beta, global, local, global_prior_scale, 1, c2);
     }
     else if (prior_dist == 5) // laplace
       beta = prior_mean + prior_scale .* sqrt(2 * mix[1]) .* z_beta;
@@ -312,7 +314,8 @@
   */
   void beta_lp(vector z_beta, int prior_dist, vector prior_scale,
                  vector prior_df, real global_prior_df, vector[] local,
-                 real[] global, vector[] mix, real[] one_over_lambda) {
+                 real[] global, vector[] mix, real[] one_over_lambda,
+                 real slab_df, real[] caux) {
     if      (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
     else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
     else if (prior_dist == 3) { // hs
@@ -321,6 +324,7 @@
       target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
       target += normal_lpdf(global[1] | 0, 1);
       target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+      target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
     }
     else if (prior_dist == 4) { // hs+
       target += normal_lpdf(z_beta | 0, 1);
@@ -331,6 +335,7 @@
       target += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
       target += normal_lpdf(global[1] | 0, 1);
       target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+      target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
     }
     else if (prior_dist == 5) { // laplace
       target += normal_lpdf(z_beta | 0, 1);
