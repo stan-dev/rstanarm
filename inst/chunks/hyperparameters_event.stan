@@ -10,3 +10,5 @@
   vector<lower=0>[basehaz_df] e_prior_df_for_aux; 
   real<lower=0>               e_global_prior_scale; // for hs priors only
   real<lower=0>               e_global_prior_df;  
+  real<lower=0>               e_slab_df;
+  real<lower=0>               e_slab_scale;

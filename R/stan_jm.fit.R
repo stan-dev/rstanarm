@@ -341,6 +341,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   # hs priors only
   standata$y_global_prior_scale <- fetch_array(y_prior_stuff, "global_prior_scale") 
   standata$y_global_prior_df <- fetch_array(y_prior_stuff, "global_prior_df")
+  standata$y_slab_df <- fetch_array(y_prior_stuff, "slab_df")
+  standata$y_slab_scale <- fetch_array(y_prior_stuff, "slab_scale")
   
   # Priors for group specific terms
   standata$t <- length(cnms)
@@ -544,6 +546,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$e_prior_df_for_aux         <- e_prior_aux_stuff$prior_df
     standata$e_global_prior_scale       <- e_prior_stuff$global_prior_scale
     standata$e_global_prior_df          <- e_prior_stuff$global_prior_df
+    standata$e_slab_df                  <- e_prior_stuff$slab_df
+    standata$e_slab_scale               <- e_prior_stuff$slab_scale
     
     #-----------------------
     # Association structure
@@ -837,6 +841,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$a_prior_df    <- e_prior_assoc_stuff$prior_df
     standata$a_global_prior_scale <- e_prior_assoc_stuff$global_prior_scale
     standata$a_global_prior_df    <- e_prior_assoc_stuff$global_prior_df
+    standata$a_slab_df            <- e_prior_assoc_stuff$slab_df
+    standata$a_slab_scale         <- e_prior_assoc_stuff$slab_scale
     
     # Centering for association terms
     standata$a_xbar <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    

@@ -67,10 +67,12 @@ transformed parameters {
   // define parameters for event submodel
   e_beta = make_beta(e_z_beta, e_prior_dist, e_prior_mean, 
                      e_prior_scale, e_prior_df, e_global_prior_scale, 
-                     e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0);  
+                     e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0, 
+                     e_slab_scale, e_caux);  
   a_beta = make_beta(a_z_beta, a_prior_dist, a_prior_mean, 
                      a_prior_scale, a_prior_df, a_global_prior_scale, 
-                     a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0);         
+                     a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0,
+                     a_slab_scale, a_caux);
   e_aux  = make_basehaz_coef(e_aux_unscaled, e_prior_dist_for_aux,
                              e_prior_mean_for_aux, e_prior_scale_for_aux);
 }
@@ -103,9 +105,11 @@ model {
 
 	#include "priors_mvmer.stan" // increments target with mvmer priors
 	beta_lp(e_z_beta, e_prior_dist, e_prior_scale, e_prior_df, 
-					e_global_prior_df, e_local, e_global, e_mix, e_ool);
+					e_global_prior_df, e_local, e_global, e_mix, e_ool,
+					e_slab_df, e_caux);
 	beta_lp(a_z_beta, a_prior_dist, a_prior_scale, a_prior_df, 
-					a_global_prior_df, a_local, a_global, a_mix, a_ool);
+					a_global_prior_df, a_local, a_global, a_mix, a_ool,
+					a_slab_df, a_caux);
 	basehaz_lp(e_aux_unscaled, e_prior_dist_for_aux, 
 						 e_prior_scale_for_aux, e_prior_df_for_aux);
 	if (e_has_intercept == 1) 
