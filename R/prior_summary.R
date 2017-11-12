@@ -283,7 +283,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   }
 
   cat("\n------\n")
-  cat("See help('prior_summary.stanreg') for more details")
+  cat("See help('prior_summary.stanreg') for more details\n")
   invisible(x)
 }
 
