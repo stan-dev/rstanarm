@@ -352,7 +352,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanjm}}   
 #'     
 #' @examples 
-#' 
+#' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
 #'   
@@ -361,7 +361,6 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
 #'   # at evenly spaced times between 0 and their event or censoring time.
 #'   pt1 <- posterior_traj(example_jm, ids = c(7,13,15), interpolate = TRUE)
 #'   plot(pt1)                  # credible interval for mean response
-#' \donttest{
 #'   plot(pt1, limits = "pi")   # prediction interval for raw response
 #'   plot(pt1, limits = "none") # no uncertainty interval
 #'   
