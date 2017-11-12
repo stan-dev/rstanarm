@@ -39,8 +39,6 @@ transformed parameters {
   real aux = negative_infinity(); // be careful with this in the family = 6 case
   // defines beta, b, theta_L
 #include /tparameters/tparameters_glm.stan
-  real<lower=0> aux_unscaled[family > 6];
-  vector<lower=0>[N] noise[family == 8]; // do not store this
 
   if (family > 6 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
     aux = aux_unscaled[1];

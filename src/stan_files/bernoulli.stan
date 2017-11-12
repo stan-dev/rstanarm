@@ -168,8 +168,8 @@ generated quantities {
     }
     if (clogit) for (j in 1:J) mean_PPD = mean_PPD + successes[j]; // fixed by design
     else {
-      vector[N[1]] pi0 = linkinv_bern(eta0, link);
-      vector[N[2]] pi1 = linkinv_bern(eta1, link);
+      pi0 = linkinv_bern(eta0, link);
+      pi1 = linkinv_bern(eta1, link);
       for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
       for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
     }
