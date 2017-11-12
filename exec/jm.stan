@@ -12,27 +12,42 @@ functions {
   #include "jm_functions.stan"
 }
 data {
-  // declares
+  // declares: M, has_aux, has_weights, resp_type, intercept_type,
+	//   yNobs, yNeta, yK, t, p, l, q, len_theta_L, bN1, bK1, bK1_len
+	//   bK1_idx, bN2, bK2, bK2_len, bK2_idx
   #include "dimensions_mvmer.stan"
   
-  // declares
+  // declares: yInt{1,2,3}, yReal{1,2,3}, yX{1,2,3}, yXbar{1,2,3},
+	//   family, link, y{1,2,3}_Z{1,2}, y{1,2,3}_Z{1,2}_id,
+	//   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
   #include "data_mvmer.stan" 
 
-  // declares e_prior_dist{_for_intercept,_for_aux}, Npat{_times_}qnodes, qwts, 
-  //   basehaz_{type,df,X}, nrow_e_Xq, e_{K,Xq,times,d,xbar,weights,weights_rep}  
+  // declares: e_prior_dist{_for_intercept,_for_aux}, 
+	//   Npat, Nevents, qnodes, Npat_times_qnodes, qwts, 
+  //   basehaz_{type,df,X}, nrow_e_Xq, e_has_intercept, nrow_e_Xq,
+	//   e_{K,Xq,times,xbar,weights,weights_rep}  
   #include "data_event.stan"
 
-  // declares a_K, a_prior_dist, assoc, assoc_uses, has_assoc, {sum_}size_which_b, 
-  //   which_b_zindex, {sum_}size_which_coef, which_coef_{zindex,xindex}, 
-  //   {sum_}a_K_data, {sum_,sum_size_}which_interactions, y_Xq_{eta,eps,lag,auc,data},
-  //   {nnz,w,v,u}_Zq_{eta,eps,lag,auc}, nrow_y_Xq, nrow_y_Xq_auc, 
-  //   auc_qnodes, auc_qwts   
+  // declares: a_{K,xbar}, a_prior_dist, assoc, assoc_uses, has_assoc, 
+	//   {sum_}size_which_b, which_b_zindex, {sum_}size_which_coef, 
+	//   which_coef_{zindex,xindex}, a_K_data, y_Xq_{eta,eps,lag,auc,data},
+	//   {sum_,sum_size_}which_interactions, idx_q,
+  //   nrow_y_Xq{_auc}, auc_{qnodes,qwts}, has_grp, grp_assoc, grp_idx,
+  //   y{1,2,3}_xq_{eta,eps,auc}, y{1,2,3}_z{1,2}q_{eta,eps,auc},
+	//   y{1,2,3}_z{1,2}q_id_{eta,eps,auc}
   #include "data_assoc.stan"
   
-  // declares {e_,a_}{prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, 
-  //   prior_{mean, scale, df}_for_aux, global_prior_{df,scale}}
+	// declares: y_prior_{mean,scale,df}{1,2,3,_for_intercept,_for_aux}, 
+	//   y_global_prior_{df,scale}, len_{concentration,regularization},
+	//   b_prior_{shape,scale,concentration,regularization},
+	//   b{1,2}_prior_{scale,df,regularization}
   #include "hyperparameters_mvmer.stan"
+	
+	// declares: e_prior_{mean,scale,df}{_for_intercept,for_aux},
+  //   e_global_prior_{scale,df}
   #include "hyperparameters_event.stan" 
+
+	// declares: a_prior_{mean,scale,df}, a_global_prior_{scale,df}
   #include "hyperparameters_assoc.stan" 
 }
 transformed data {

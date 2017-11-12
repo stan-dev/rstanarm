@@ -12,13 +12,20 @@ functions {
   #include "jm_functions.stan"
 }
 data {
-  // declares
+  // declares: M, has_aux, has_weights, resp_type, intercept_type,
+	//   yNobs, yNeta, yK, t, p, l, q, len_theta_L, bN1, bK1, bK1_len
+	//   bK1_idx, bN2, bK2, bK2_len, bK2_idx
   #include "dimensions_mvmer.stan"
 
-  // declares
+  // declares: yInt{1,2,3}, yReal{1,2,3}, yX{1,2,3}, yXbar{1,2,3},
+	//   family, link, y{1,2,3}_Z{1,2}, y{1,2,3}_Z{1,2}_id,
+	//   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
   #include "data_mvmer.stan"
   
-  // declares y_{,global_}prior_{mean,scale,df}{,_for_intercept,_for_aux}
+	// declares: y_prior_{mean,scale,df}{1,2,3,_for_intercept,_for_aux}, 
+	//   y_global_prior_{df,scale}, len_{concentration,regularization},
+	//   b_prior_{shape,scale,concentration,regularization},
+	//   b{1,2}_prior_{scale,df,regularization}
   #include "hyperparameters_mvmer.stan"
 }
 transformed data {
