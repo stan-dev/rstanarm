@@ -7,32 +7,20 @@ functions {
 #include /functions/continuous_likelihoods.stan
 #include /functions/SSfunctions.stan
 
-  /*
-   * Calculate lower bound on intercept
-   *
-   * @param family Integer family code
-   * @param link Integer link code
-   * @return real lower bound
-   */
-  real make_lower(int family, int link) {
-    if (family == 1) return negative_infinity(); // Gaussian
-    if (family <= 3) { // Gamma or inverse Gaussian
-      if (link == 2) return negative_infinity(); // log
-      return 0;
-    }
-    return negative_infinity();
-  }
-
-  /*
-   * Calculate upper bound on intercept
-   *
-   * @param family Integer family code
-   * @param link Integer link code
-   * @return real upper bound
-   */
-  real make_upper(int family, int link) {
-    if (family == 4 && link == 5) return 0;
-    return positive_infinity();
+  /** 
+  * test function for csr_matrix_times_vector
+  *
+  * @param m Integer number of rows
+  * @param n Integer number of columns
+  * @param w Vector (see reference manual)
+  * @param v Integer array (see reference manual)
+  * @param u Integer array (see reference manual)
+  * @param b Vector that is multiplied from the left by the CSR matrix
+  * @return A vector that is the product of the CSR matrix and b
+  */
+  vector test_csr_matrix_times_vector(int m, int n, vector w, 
+                                      int[] v, int[] u, vector b) {
+    return csr_matrix_times_vector(m, n, w, v, u, b); 
   }
 }
 data {
@@ -42,7 +30,8 @@ data {
   real lb_y; // lower bound on y
   real<lower=lb_y> ub_y; // upper bound on y
   vector<lower=lb_y, upper=ub_y>[len_y] y; // continuous outcome
-  // declares prior_PD, has_intercept, family, link, prior_dist, prior_dist_for_intercept
+  int<lower=1,upper=4> family; // 1 gaussian, 2 gamma, 3 inv-gaussian, 4 beta
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 #include /data/data_glm.stan
   // declares has_weights, weights, has_offset, offset
 #include /data/weights_offset.stan

@@ -220,10 +220,10 @@ test_that("check_constant_vars works", {
   mf2$wt <- 2
   expect_equal(check_constant_vars(mf), mf)
   expect_error(check_constant_vars(mf2), "wt")
-  # mf2$gear <- 1
-  # expect_error(check_constant_vars(mf2), "wt, gear")
-  # expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
-  
+  mf2$gear <- 3
+  expect_error(check_constant_vars(mf2), "wt, gear")
+  expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
+
   capture.output(
     fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED),
     fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,

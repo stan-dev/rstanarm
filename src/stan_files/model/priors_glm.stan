@@ -8,6 +8,7 @@
     target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
     target += normal_lpdf(global[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+    target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
   }
   else if (prior_dist == 4) { // hs+
     real log_half = -0.693147180559945286;
@@ -19,6 +20,7 @@
     target += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
     target += normal_lpdf(global[1] | 0, 1) - log_half;
     target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+    target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
   }
   else if (prior_dist == 5) { // laplace
     target += normal_lpdf(z_beta | 0, 1);

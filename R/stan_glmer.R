@@ -29,7 +29,9 @@
 #' @template see-also
 #' @template args-prior_intercept
 #' @template args-priors
+#' @template args-prior_intercept
 #' @template args-prior_aux
+#' @template args-prior_covariance
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -51,8 +53,6 @@
 #'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
-#' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
-#'   more information about the default arguments.
 #'
 #' @details The \code{stan_glmer} function is similar in syntax to 
 #'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 

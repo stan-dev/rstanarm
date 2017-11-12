@@ -126,7 +126,7 @@
 #' compare_models(kfold1, kfold2)
 #' }
 #' 
-#' @importFrom loo loo loo.function
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <- function(x, ..., k_threshold = NULL) {
   if (!used.sampling(x)) 
@@ -140,7 +140,24 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  if (is.stanjm(x)) { # stan_jm models
+    loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
+  } else if (is.stanmvreg(x)) { # stan_mvmer models
+    M <- get_M(x)
+    ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
+    loo_x <- suppressWarnings(loo.matrix(ll, ...))
+  } else if (is_clogit(x)) {
+    ll <- log_lik.stanreg(x)
+    cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+    if (any(cons)) {
+      message("The following groups were dropped from the loo calculation:",
+              paste(which(cons), collapse = ", "))
+      ll <- ll[, !cons, drop = FALSE]
+    }
+    loo_x <- loo.matrix(ll, ...)
+  } else {
+    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+  }
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
   n_bad <- length(bad_obs)
@@ -181,12 +198,22 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
 # 
 #' @rdname loo.stanreg
 #' @export
-#' @importFrom loo waic waic.function
+#' @importFrom loo waic waic.function waic.matrix
 #' 
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  out <- waic.function(ll_fun(x), args = ll_args(x))
+  if (is.stanjm(x)) { # stan_jm models
+    out <- waic.matrix(log_lik(x))
+  } else if (is.stanmvreg(x)) { # stan_mvmer models
+    M <- get_M(x)
+    ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
+    out <- waic.matrix(ll)
+  } else if (is_clogit(x)) {
+    out <- waic.matrix(log_lik(x))
+  } else {
+    out <- waic.function(ll_fun(x), args = ll_args(x))
+  }
   structure(out, 
             class = c("waic", "loo"),
             name = deparse(substitute(x)), 
@@ -229,6 +256,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) 
     STOP_sampling_only("kfold")
+  if (is.stanmvreg(x))
+    STOP_if_stanmvreg("kfold")
   if (model_has_weights(x))
     stop("kfold is not currently available for models fit using weights.")
   
@@ -416,6 +445,8 @@ recommend_exact_loo <- function(reason) {
 # @return A modified version of 'loo_x'. 
 #
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
+  if (is.stanmvreg(x))
+    STOP_if_stanmvreg("reloo")
   stopifnot(!is.null(x$data), is.loo(loo_x))
   if (is.null(loo_x$pareto_k))
     stop("No Pareto k estimates found in 'loo' object.")
@@ -469,10 +500,20 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   return(loo_x)
 }
 
+log_sum_exp2 <- function(a,b) {
+  m <- max(a,b)
+  m + log(sum(exp(c(a,b) - m)))
+}
+
+# @param x numeric vector
+log_sum_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x)))
+}
+
 # log_mean_exp (just log_sum_exp(x) - log(length(x)))
 log_mean_exp <- function(x) {
-  max_x <- max(x)
-  max_x + log(sum(exp(x - max_x))) - log(length(x))
+  log_sum_exp(x) - log(length(x))
 }
 
 # Get correct data to use for kfold and reloo 
@@ -511,6 +552,12 @@ hash_y <- function(x, ...) {
 is_discrete <- function(object) {
   if (inherits(object, "polr"))
     return(TRUE)
+  if (inherits(object, "stanmvreg")) {
+    fams <- fetch(family(object), "family")
+    res <- sapply(fams, function(x)
+      is.binomial(x) || is.poisson(x) || is.nb(x))
+    return(res)
+  }
   fam <- family(object)$family
   is.binomial(fam) || is.poisson(fam) || is.nb(fam)
 }

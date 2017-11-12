@@ -13,6 +13,8 @@ expect_equivalent_loo <- function(fit) {
   discrete <- attr(l, "discrete")
   expect_true(!is.na(discrete) && is.logical(discrete))
   
-  expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
-  expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
+  if (fit$stan_function != "stan_clogit") {
+    expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
+    expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
+  }
 }

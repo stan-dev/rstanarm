@@ -56,10 +56,10 @@ transformed data {
   }
 }
 parameters { // must not call with init="0"
-  unit_vector[K] u[J];                  // primitives for coefficients
-  real z_alpha[J * has_intercept];      // primitives for intercepts
-  real<lower=0,upper=1> R2[J];          // proportions of variance explained
-  vector[J * (1 - prior_PD)] log_omega; // under/overfitting factors
+  unit_vector[K] u[K > 1 ? J : 0];            // primitives for coefficients
+  real z_alpha[J * has_intercept];            // primitives for intercepts
+  real<lower=(K > 1 ? 0 : -1),upper=1> R2[J]; // proportions of variance explained
+  vector[J * (1 - prior_PD)] log_omega;       // under/overfitting factors
 }
 transformed parameters {
   real alpha[J * has_intercept];   // uncentered intercepts
@@ -71,7 +71,7 @@ transformed parameters {
 
     // coefficients in Q-space
     if (K > 1) theta[j] = u[j] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
-    else theta[j][1] = u[j][1] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
+    else theta[j][1] = R2[j] * sqrt_Nm1[j] * Delta_y;
     
     sigma[j] = Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
     
@@ -100,7 +100,10 @@ model {
   }
   if (has_intercept == 1 && prior_dist_for_intercept > 0) 
     target += normal_lpdf(z_alpha | 0, 1);
-  if (prior_dist == 1) target += beta_lpdf(R2 | half_K, eta);
+  if (prior_dist == 1) {
+    if (K > 1) target += beta_lpdf( R2  | half_K, eta);
+    else target += beta_lpdf(square(R2) | half_K, eta) + sum(log(fabs(R2)));
+  }
   // implicit: log_omega is uniform over the real line for all j
 }
 generated quantities {
