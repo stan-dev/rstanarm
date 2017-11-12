@@ -20,19 +20,9 @@
 
 #--------------- Miscellaneous and helper functions
 
-#' Re-exported Surv function
-#'
-#' This is simply a re-exported version of the \code{\link[survival]{Surv}}
-#' function from the \pkg{survival} package. It is re-exported as part of
-#' the \pkg{rstanarm} package so that users can specify \code{Surv} objects
-#' as the outcome in \code{\link{stan_jm}} models, without needing to load
-#' the \pkg{survival} package explicitly.
-#'
-#' @param time,time2,event,type,origin Same as for \code{\link[survival]{Surv}}.
+#' @importFrom survival Surv
 #' @export
-#' @keywords internal
-#' 
-Surv <- survival::Surv
+survival::Surv
 
 # Check input argument is a valid type, and return as a list
 #

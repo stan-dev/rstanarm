@@ -195,8 +195,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     if (is.null(newdata)) ppargs$strata <- model.frame(object)[,"(weights)"]
     else ppargs$strata <- eval(object$call$strata, newdata)
     ppargs$strata <- as.factor(ppargs$strata)
-  } else if (!is_polr(object) && is.binomial(family(object)$family)) {
-    ppargs$trials <- pp_binomial_trials(object, newdata)
+  } else if (!is_polr(object) && is.binomial(family(object, m = m)$family)) {
+    ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
   }
 
   ppfun <- pp_fun(object, m = m)
@@ -243,7 +243,10 @@ posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = N
 
 # functions to draw from the various posterior predictive distributions
 pp_fun <- function(object, m = NULL) {
-  suffix <- if (is_polr(object)) "polr" else family(object, m = m)$family
+  suffix <- if (is_polr(object)) "polr" else 
+            if (is_clogit(object)) "clogit" else 
+            family(object, m = m)$family
+
   get(paste0(".pp_", suffix), mode = "function")
 }
 

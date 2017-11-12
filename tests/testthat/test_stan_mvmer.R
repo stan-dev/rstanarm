@@ -20,7 +20,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
-stopifnot(require(lme4))
+library(lme4)
 ITER <- 1000
 CHAINS <- 1
 SEED <- 12345
