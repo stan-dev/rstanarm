@@ -50,8 +50,8 @@
 #' }
 #' \subsection{Additional output}{
 #' For models fit using MCMC or a variational approximation, the median and 
-#' MAD_SD are also reported for mean_PPD, the sample average (\eqn{X = 
-#' \bar{X}}{X = xbar}) posterior predictive distribution of the outcome.
+#' MAD_SD are also reported for \code{mean_PPD}, the sample average posterior 
+#' predictive distribution of the outcome.
 #' 
 #' For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
 #' output also shows point estimates of the standard deviations of the group 
@@ -263,7 +263,7 @@ print.stanmvreg <- function(x, digits = 3, ...) {
     ppd_mat <- mat[, nms$ppd, drop = FALSE]
     ppd_estimates <- .median_and_madsd(ppd_mat)
     cat("\nSample avg. posterior predictive distribution \nof",
-        if (is.jm(x)) "longitudinal outcomes:\n" else "y (X = xbar):\n")
+        if (is.jm(x)) "longitudinal outcomes:\n" else "y:\n")
     .printfr(ppd_estimates, digits, ...)
   }
   
