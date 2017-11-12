@@ -586,7 +586,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
 #' @examples 
-#' 
+#' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
 #'   
@@ -597,7 +597,6 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   # We then plot the conditional survival probabilities for
 #'   # a subset of individuals
 #'   plot(ps1, ids = c(7,13,15))
-#' \donttest{
 #'   # We can change or add attributes to the plot
 #'   plot(ps1, ids = c(7,13,15), limits = "none")
 #'   plot(ps1, ids = c(7,13,15), xlab = "Follow up time")
