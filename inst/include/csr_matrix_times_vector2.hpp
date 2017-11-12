@@ -18,6 +18,7 @@ csr_matrix_times_vector2(const int& m,
   return sm * b;
 }
 
+/* This specialization is slower than the above templated version
 stan::math::vector_v
 csr_matrix_times_vector2(const int& m,
                          const int& n,
@@ -47,3 +48,4 @@ csr_matrix_times_vector2(const int& m,
   }
   return out;
 }
+*/
