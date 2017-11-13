@@ -255,13 +255,16 @@ split_cov_prior <- function(prior_stuff, cnms, submodel_cnms) {
 # @param family A family object
 # @param QR A logical specifying whether QR decomposition is used for the 
 #   predictor matrix
+# @param min_prior_scale The minimum allowed for prior scales
 # @param assoc A two dimensional array with information about desired association
 #   structure for the joint model (returned by a call to validate_assoc). Cannot
 #   be NULL if autoscaling priors for the association parameters.
-# @param assoc_parts A list containing the design matrices for the longitudinal
-#   submodel evaluated at the quadrature points. Cannot
-#   be NULL if autoscaling priors for the association parameters.
-# @param min_prior_scale The minimum allowed for prior scales
+# @param ... Other arguments passed to make_assoc_terms. If autoscaling priors 
+#   for the association parameters then this should include 'parts' which 
+#   is a list containing the design matrices for the longitudinal submodel 
+#   evaluated at the quadrature points, as well as 'beta' and 'b' which are
+#   the parameter values to use when constructing the linear predictor(s) in
+#   make_assoc_terms.
 # @return A named list with the same structure as returned by handle_glm_prior
 autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL, 
                             family = NULL, QR = FALSE, min_prior_scale = 1e-12, 
@@ -312,10 +315,15 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
 #   the df/location/scale arguments if necessary.
 # @param y_has_intercept Vector of T/F, does each long submodel have an intercept?
 # @param y_has_predictors Vector of T/F, does each long submodel have predictors?
-# @param y_has_intercept T/F, does event submodel have an intercept?
-# @param has_predictors T/F, does event submodel have predictors?
-# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
+# @param e_has_intercept T/F, does event submodel have an intercept?
+# @param e_has_predictors T/F, does event submodel have predictors?
+# @param has_assoc Logical specifying whether the model has an association 
+#   structure. Can be NULL if the prior summary is not for a joint model.
+# @param adjusted_prior_*_scale Adjusted scales computed if using autoscaled priors
 # @param family A list of family objects.
+# @param basehaz A list with information about the baseline hazard.
+# @param stub_for_names Character string with the text stub to use in the 
+#   names identifying the glmer or longitudinal submodels. 
 # @return A named list with components 'prior*', 'prior*_intercept', 
 #   'prior_covariance' and 'prior*_aux' each of which itself is a list
 #   containing the needed values for prior_summary.
@@ -526,19 +534,23 @@ rename_t_and_cauchy <- function(prior_stuff, has) {
 
 # Construct a list with information on the glmer submodel
 #
-# @param formula The model formula for the glmer submodel
-# @param data The data for the glmer submodel
-# @param family The family object for the glmer submodel
+# @param formula The model formula for the glmer submodel.
+# @param data The data for the glmer submodel.
+# @param family The family object for the glmer submodel.
 # @return A named list with the following elements:
-#   y: named list with the reponse vector and related info
-#   x: named list with the fe design matrix and related info
-#   z: named list with the re design matrices and related info
+#   y: named list with the reponse vector and related info.
+#   x: named list with the fe design matrix and related info.
+#   z: named list with the re design matrices and related info.
 #   terms: the model.frame terms object with bars "|" replaced by "+".
-#   family: the modified family object for the glmer submodel
+#   model_frame: The model frame with all variables used in the 
+#     model formula.
+#   formula: The model formula.
+#   reTrms: returned by lme4::glFormula$reTrms.
+#   family: the (modified) family object for the glmer submodel.
 #   intercept_type: named list with info about the type of 
-#     intercept required for the glmer submodel
+#     intercept required for the glmer submodel.
 #   has_aux: logical specifying whether the glmer submodel 
-#     requires an auxiliary parameter
+#     requires an auxiliary parameter.
 handle_y_mod <- function(formula, data, family) {
   mf <- stats::model.frame(lme4::subbars(formula), data)
   if (!length(formula) == 3L)
@@ -579,9 +591,9 @@ handle_y_mod <- function(formula, data, family) {
 # @param family A family object
 # @return A named list with the following elements:
 #   y: the response vector
-#   real: the response vector if real, else numeric(0) 
+#   real: the response vector if real, else numeric(0)
 #   integer: the response vector if integer, else integer(0)
-#   is_real: a logical indicating whether the response is real
+#   resp_type: 1L if response is real, 2L is response is integer
 make_y_for_stan <- function(formula, model_frame, family) {
   y <- as.vector(model.response(model_frame))
   y <- validate_glm_outcome_support(y, family)
@@ -593,15 +605,14 @@ make_y_for_stan <- function(formula, model_frame, family) {
 
 # Return the design matrix for passing to Stan
 #
-# @param formula The model formula
-# @param model_frame The model frame
-# @param drop_intercept Logical specifying whether to drop the intercept
-#   from the returned model matrix
-# @param centre Logical specifying whether to centre the predictors
+# @param formula The model formula.
+# @param model_frame The model frame.
 # @return A named list with the following elements:
-#   X: the fixed effects model matrix, possibly centred
-#   X_bar: The column means of the model matrix
-#   has_intercept: Logical flag for whether the submodel has an intercept
+#   x: the fe model matrix, not centred and may have intercept.
+#   xtemp: fe model matrix, centred and no intercept.
+#   x_form: the formula for the fe model matrix.
+#   x_bar: the column means of the model matrix.
+#   has_intercept: logical for whether the submodel has an intercept
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
 make_x_for_stan <- function(formula, model_frame) {
@@ -625,7 +636,9 @@ make_x_for_stan <- function(formula, model_frame) {
 # @param model_frame The model frame
 # @return A named list with the following elements:
 #   z: a list with each element containing the random effects model 
-#     matrix for one grouping factor
+#     matrix for one grouping factor.
+#   z_forms: a list with each element containing the model formula for 
+#     one grouping factor.
 #   group_vars: a character vector with the name of each of the
 #     grouping factors
 #   group_cnms: a list with each element containing the names of the
@@ -656,8 +669,12 @@ make_z_for_stan <- function(formula, model_frame) {
 #
 # @param X The model matrix
 # @param family A family object
-# @return A character string specifying the type of bounds 
-#   required for the intercept term
+# @return A named list with the following elements:
+#   type: character string specifying the type of bounds to use
+#     for the intercept.
+#   number: an integer specifying the type of bounds to use
+#     for the intercept where 0L = no intercept, 1L = no bounds 
+#     on intercept, 2L = lower bound, 3L = upper bound.
 check_intercept_type <- function(X, family) {
   fam <- family$family
   link <- family$link
@@ -922,7 +939,14 @@ use_predvars <- function(mod, keep_response = TRUE) {
   fm
 }
 
-
+# Check that the observation times for the longitudinal submodel are all
+# positive and not observed after the individual's event time
+#
+# @param data A data frame (data for one longitudinal submodel)
+# @param eventtimes A named numeric vector with the event time for each
+#   individual. The vector names should be the individual ids.
+# @param id_var,time_var The ID and time variable in the longitudinal data.
+# @return Nothing.
 validate_observation_times <-function(data, eventtimes, id_var, time_var) {
   if (!time_var %in% colnames(data)) 
     STOP_no_var(time_var)
@@ -952,7 +976,34 @@ validate_observation_times <-function(data, eventtimes, id_var, time_var) {
 # @param y_id_list A character vector with a unique list of subject IDs 
 #   (factor levels) that appeared in the longitudinal submodels
 # @return A named list with the following elements:
-#
+#   mod: The fitted Cox model.
+#   entrytime: Named vector of numeric entry times.
+#   eventtime: Named vector of numeric event times.
+#   status: Named vector of event/failure indicators.
+#   Npat: Number of individuals.
+#   Nevents: Total number of events/failures.
+#   id_list: A vector of unique subject IDs, as a factor.
+#   qnodes: The number of GK quadrature nodes.
+#   qwts,qpts: Vector of unstandardised quadrature weights and points.
+#     The vector is ordered such that the first Npat items are the
+#     weights/locations of the first quadrature point, then the second
+#     Npat items are the weights/locations for the second quadrature
+#     point, and so on. 
+#   qids: The subject IDs corresponding to each element of qwts/qpts.
+#   epts: The event times, but only for individuals who were NOT censored
+#     (i.e. those individual who had an event).
+#   eids: The subject IDs corresponding to each element of epts.
+#   cpts: Combined vector of failure and quadrature times: c(epts, qpts).
+#   cids: Combined vector subject IDs: c(eids, qids).
+#   Xq: The model matrix for the event submodel, centred and no intercept.
+#   Xbar: Vector of column means for the event submodel model matrix.
+#   K: Number of predictors for the event submodel.
+#   norm_const: Scalar, the constant used to shift the event submodel
+#     linear predictor (equal to the log of the mean incidence rate). 
+#   model_frame: The model frame for the fitted Cox model, but with the
+#     subject ID variable also included.
+#   tvc: Logical, if TRUE then a counting type Surv() object was used
+#     in the fitted Cox model (ie. time varying covariates). 
 handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
@@ -1060,7 +1111,18 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
 # @param eventtime A numeric vector with eventtimes for each individual
 # @param status A numeric vector with event indicators for each individual
 # @return A named list with the following elements:
-#
+#   type: integer specifying the type of baseline hazard, 1L = weibull,
+#     2L = b-splines, 3L = piecewise.
+#   type_name: character string specifying the type of baseline hazard.
+#   user_df: integer specifying the input to the df argument
+#   df: integer specifying the number of parameters to use for the 
+#     baseline hazard.
+#   knots: the knot locations for the baseline hazard.
+#   bs_basis: The basis terms for the B-splines. This is passed to Stan
+#     as the "model matrix" for the baseline hazard. It is also used in
+#     post-estimation when evaluating the baseline hazard for posterior
+#     predictions since it contains information about the knot locations
+#     for the baseline hazard (this is implemented via splines::predict.bs). 
 handle_basehaz <- function(basehaz, basehaz_ops, 
                            ok_basehaz = nlist("weibull", "bs", "piecewise"),
                            ok_basehaz_ops = nlist("df", "knots"),
@@ -1369,8 +1431,8 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
 #
 # @param has_grp Logical vector specifying where each of the 1:M submodels
 #   has a grp factor clustered within patients or not.
-# @param assoc The array with information about the association structure
-#   for each submodel, returned by validate_assoc.
+# @param assoc A two dimensional array with information about desired association
+#   structure for the joint model (returned by a call to validate_assoc). 
 # @param ok_assocs_with_grp A character vector with the rownames in assoc
 #   that are allowed association structures when there is a grp factor 
 #   clustered within patients.
@@ -1518,7 +1580,8 @@ parse_assoc_interactions <- function(x, user_x, max_index) {
 # is to ensure there is no replication such as including both 
 # etavalue1_etavalue2 AND etavalue2_etavalue1 when passing to Stan.
 #
-# @param assoc A named list of named lists, returned by a call to validate_assoc
+# @param assoc A two dimensional array with information about desired association
+#   structure for the joint model (returned by a call to validate_assoc). 
 # @param ok_assoc_interactions A character vector, specifying which association
 #   structures are allowed to be used in interactions
 check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
@@ -1554,19 +1617,25 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 # Return design matrices for evaluating longitudinal submodel quantities 
 # at specified quadrature points/times
 #
-# @param m Integer specifying the longitudinal submodel that the association
-#   structure is related to
-# @param mc The matched call for the longitudinal submodel
-# @param y_mod_stuff A named list returned by a call to handle_glmod (the
+# @param data A data frame, the data for the longitudinal submodel.
+# @param assoc A list with information about the association structure for 
+#   the one longitudinal submodel. 
+# @param y_mod A named list returned by a call to handle_y_mod (the
 #   fit for a single longitudinal submodel)
-# @param assoc A named list returned by a call to validate_assoc (details
-#   on the desired association structure for all longitudinal submodels)
-# @param id_var The name on the ID variable
-# @param time_var The name of the time variable
-# @param eps The time shift used for the numerical derivative calculation 
-#   based on a one-sided different
-# @param dataAssoc An optional data frame containing data for interactions within
-#   the association terms
+# @param grp_stuff A list with information about any lower level grouping
+#   factors that are clustered within patients and how to handle them in 
+#   the association structure.
+# @param ids,times The subject IDs and times vectors that correspond to the
+#   event and quadrature times at which the design matrices will
+#   need to be evaluated for the association structure.
+# @param id_var The name on the ID variable.
+# @param time_var The name of the time variable.
+# @param epsilon The half-width of the central difference used for 
+#   numerically calculating the derivative of the design matrix for slope
+#   based association structures.
+# @param auc_qnodes Integer specifying the number of GK quadrature nodes to
+#   use in the integral/AUC based association structures.
+# @return The list returned by make_assoc_parts.
 handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,  
                             id_var, time_var, epsilon, auc_qnodes) {
   
@@ -1643,15 +1712,13 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
 #   individual
 # @return A named list with the following elements:
 #   has_grp: logical specifying whether the submodel has a grouping factor
-#     that is clustered with patients
-#   grp_var: the name of any grouping factor that is clustered with patients
-#   grp_list: a vector of unique group ids for the grp_var grouping 
-#     factor; this is in the same order as the original data.
-#   grp_ids: a vector of patient ids that provides the patient that each
-#     unique level of grp_list is clustered within.
-#   grp_ids_q: the grp_ids vector repeated qnodes+1 times. This is used
-#     in the stan code, to identify which elements of the longitudinal 
-#     linear predictor need to be collapsed across for each patient.
+#     that is clustered with patients.
+#   grp_var: the name of any grouping factor that is clustered with patients.
+#   grp_assoc: the user input to the grp_assoc argument in the stan_jm call.
+#   grp_freq: a named vector with the number of lower level units clustered
+#     within each individual.
+#   grp_list: a named list containing the unique names for the lower level 
+#     units clustered within each individual.
 get_basic_grp_info <- function(cnms, flist, id_var) {
   cnms_nms <- names(cnms)
   tally <- xapply(cnms_nms, FUN = function(x) 
@@ -1722,14 +1789,10 @@ get_num_assoc_pars <- function(assoc, a_mod_stuff) {
 }
 
 
-  
-  
 #--------------- Functions related to generating initial values
 
 # Create a function that can be used to generate the model-based initial values for Stan
 #
-# @param y_mod_stuff A list, with each element containing the list object returned by
-#   a call to the handle_glmod function
 # @param e_mod_stuff A list object returned by a call to the handle_coxmod function
 # @param standata The data list that will be passed to Stan
 generate_init_function <- function(e_mod_stuff, standata) {
@@ -1758,13 +1821,14 @@ generate_init_function <- function(e_mod_stuff, standata) {
 # \code{do.call}.
 #
 # *Note that this differs from the set_sampling_args function in that
-# it uses different default numbers of iterations and chains, and 
-# different default adapt_delta and max_treedepth. Using the shorter 
-# treedepth is to stop the sampler trailing off during early iterations. 
-# This can drastically reduce the model estimation time, and in most
-# examples using a shorter treedepth hasn't compromised the sampler
+# it uses a different default adapt_delta and max_treedepth. Using a 
+# shorter treedepth seems to stop the sampler trailing off during early 
+# iterations and can drastically reduce the model estimation time, and 
+# in most examples using a shorter treedepth hasn't compromised the sampler
 # at later interations (ie, at later iterations the sampler doesn't
-# hit the maximum treedepth).
+# hit the maximum treedepth). The default adapt_delta depends on the 
+# largest number of group-specific parameters for any single grouping
+# factor in the model.
 #
 # @param object The stanfit object to use for sampling.
 # @param cnms The component names for the group level parameters combined
@@ -1950,6 +2014,4 @@ handle_weights <- function(mod_stuff, weights, id_var) {
   
   wts
 }
-
-
 

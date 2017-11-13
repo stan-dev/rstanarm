@@ -26,12 +26,12 @@
 #   $mod_auc, etc, which each contain either the linear predictor at quadtimes, 
 #   quadtimes + eps, and auc quadtimes, or the design matrices
 #   used for constructing the linear predictor. Each element parts[[m]] should 
-#   also contain $xmat_data and $K_data.
+#   also contain $X_data and $K_data.
 # @param family A list of family objects, equal in length to the number of 
-#   longitudinal submodels
+#   longitudinal submodels.
 # @param ... If parts does not contain the linear predictors, then this should
 #   include elements beta and b, each being a length M list of parameters for the
-#   longitudinal submodels
+#   longitudinal submodels.
 # @return A design matrix containing the association terms to be multiplied by
 #   the association paramters.
 make_assoc_terms <- function(parts, assoc, family, ...) {

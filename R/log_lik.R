@@ -656,16 +656,13 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 
 # Return log-likelihood for longitudinal submodel m
 #
-# @param object A stanmvreg object, or (when used in stan_jm function) a named list
-#   with elements $basehaz, $family, $assoc.
-# @param data Output from .pp_data_jm
+# @param object A stanjm object.
+# @param data Output from .pp_data_jm.
 # @param pars Output from extract_pars.
 # @param m Integer specifying the longitudinal submodel.
-# @param sum_individuals A logical, if TRUE then the log likelihoods for
-#   observations on the same individual will be summed. That is the returned
-#   pointwise log likelihood matrix will have have a number of columns equal
-#   to the number of individuals in the 'data', not the number of observations.
-# @return An S*Npat matrix if sum_individuals = TRUE, otherwise an S*N matrix.
+# @param reloo_or_kfold Logical specifying whether the call came from 
+#   reloo or kfold.
+# @return An S*Npat matrix.
 .ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
   args <- ll_args.stanjm(object, data, pars, m = m, 
                          reloo_or_kfold = reloo_or_kfold)
@@ -681,15 +678,14 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 
 # Return survival probability or log-likelihood for event submodel
 #
-# @param object A stanmvreg object, or (when used in stan_jm function) a named list
-#   with elements $basehaz, $family, $assoc
-# @param data Output from .pp_data_jm
-# @param pars Output from extract_pars
+# @param object A stanjm object.
+# @param data Output from .pp_data_jm.
+# @param pars Output from extract_pars.
 # @param one_draw A logical specifying whether the parameters provided in the 
 #   pars argument are vectors for a single realisation of the parameter (e.g.
-#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE)
+#   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE).
 # @param survprob A logical specifying whether to return the survival probability 
-#   (TRUE) or the log likelihood for the event submodel (FALSE)
+#   (TRUE) or the log likelihood for the event submodel (FALSE).
 # @param An S by Npat matrix, or a length Npat vector, depending on the inputs
 #   (where S is the size of the posterior sample and Npat is the number of 
 #   individuals).
@@ -822,7 +818,7 @@ evaluate_log_basehaz <- function(times, basehaz, coefs) {
 # @param qnodes Integer specifying the number of quadrature nodes
 #   at which the log hazard was evaluated for each individual.
 # @param qwts A vector of unstandardised GK quadrature weights.
-# @return A vector or matrix of log survival probabilities
+# @return A vector or matrix of log survival probabilities.
 evaluate_log_survival <- function(log_haz, qnodes, qwts) {
   UseMethod("evaluate_log_survival")
 }
