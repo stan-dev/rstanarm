@@ -305,7 +305,7 @@ The output tells us that for each one unit increase in an individual's underlyin
 If we wanted some slightly more detailed output for each of the model parameters, as well as further details regarding the model estimation (for example computation time, number of longitudinal observations, number of individuals, type of baseline hazard, etc) we can instead use the `summary` method:
 
 ```{r summary}
-summary(mod1)
+summary(mod1, probs = c(.025,.975))
 ```
 
 The easiest way to extract the correlation matrix for the random effects (aside from viewing the `print` output) is to use the `VarCorr` function (modelled on the `VarCorr` function from the **lme4** package). If you wish to extract the variances and covariances (instead of the standard deviations and correlations) then you can type the following to return a data frame with all of the relevant information:
@@ -346,7 +346,7 @@ mod3 <- stan_jm(
     formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
     dataLong = pbcLong, dataEvent = pbcSurv,
     time_var = "year",
-    chains = 1, iter = 2000, seed = 12345, refresh = 20)
+    chains = 1, refresh = 2000, seed = 12345)
 ```
 
 We can now examine the output from the fitted model, for example
@@ -369,7 +369,7 @@ p2 <- posterior_traj(mod3, m = 2, ids = 6:8)
 p3 <- posterior_survfit(mod3, ids = 6:8, draws = 200)
 pp1 <- plot(p1, plot_observed = TRUE, vline = TRUE)
 pp2 <- plot(p2, plot_observed = TRUE, vline = TRUE)
-plot_stack(yplot = list(pp1, pp2), survplot = plot(p3))
+plot_stack_jm(yplot = list(pp1, pp2), survplot = plot(p3))
 ```
 
 Here we can see the strong relationship between the underlying values of the biomarkers and mortality. Patient `8` who, relative to patients `6` and `7`, has a higher underlying value for log serum bilirubin and a lower underlying value for serum albumin at the end of their follow up has a far worse predicted probability of survival. 
