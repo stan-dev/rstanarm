@@ -89,13 +89,13 @@ We assume that the baseline hazard $h_0(t; \boldsymbol{\omega})$ is modelled par
 
 ### Association structures
 
-As mentioned in the previous section, the dependence between the longitudinal and event submodels is captured through the association structure, which can be specified in a number of ways. In this notebook, we focus on the simplest association structure
+As mentioned in the previous section, the dependence between the longitudinal and event submodels is captured through the association structure, which can be specified in a number of ways. The simplest association structure is likely to be
 
 \begin{align}
 f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t) = \eta_{im}(t)
 \end{align}
 
-This is often referred to as a *current value* association structure since it assumes that the log hazard of the event at time $t$ is linearly associated with the value of the longitudinal submodel's linear predictor also evaluated at time $t$. This is the most common association structure used in the joint modelling literature to date. In the situation where the longitudinal submodel is based on an identity link function and normal error distribution (i.e. a linear mixed model) the *current value* association structure can be viewed as a method for including the underlying "true" value of the biomarker as a time-varying covariate in the event submodel.^[By "true" value of the biomarker, we mean the value of the biomarker which is not subject to measurement error or discrete time observation. Of course, for the expected value from the longitudinal submodel to be considered the so-called "true" underlying biomarker value, we would need to have specified the longitudinal submodel appropriately!]
+and this is often referred to as a *current value* association structure since it assumes that the log hazard of the event at time $t$ is linearly associated with the value of the longitudinal submodel's linear predictor also evaluated at time $t$. This is the most common association structure used in the joint modelling literature to date. In the situation where the longitudinal submodel is based on an identity link function and normal error distribution (i.e. a linear mixed model) the *current value* association structure can be viewed as a method for including the underlying "true" value of the biomarker as a time-varying covariate in the event submodel.^[By "true" value of the biomarker, we mean the value of the biomarker which is not subject to measurement error or discrete time observation. Of course, for the expected value from the longitudinal submodel to be considered the so-called "true" underlying biomarker value, we would need to have specified the longitudinal submodel appropriately!]
 
 However, other association structures are also possible. For example, we could assume the log hazard of the event is linearly associated with the *current slope* (i.e. rate of change) of the longitudinal submodel's linear predictor, that is
 
@@ -103,7 +103,9 @@ However, other association structures are also possible. For example, we could a
 f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t) = \frac{d\eta_{im}(t)}{dt}
 \end{align}
 
-There are in fact a whole range of possible association structures, many of which have been discussed in the literature [14-16]. The `stan_jm` modelling function allows for the following association structures:
+There are in fact a whole range of possible association structures, many of which have been discussed in the literature [14-16]. 
+
+The `stan_jm` modelling function in the __rstanarm__ package allows for the following association structures, which are specified via the `assoc` argument:
 
 Current value (of the linear predictor or expected value)
 $$
@@ -177,14 +179,14 @@ A key assumption of the multivariate shared parameter joint model is that the ob
 
 for some $m \neq m'$ and $t \neq t'$.
 
-Although this may be considered a strong assumption, it is useful in that it allows the full likelihood for joint model to be factorised into the likelihoods for each of the component parts (i.e. the likelihoods for each of the submodels and the likelihood for the distribution of the individual-specific parameters).
+Although this may be considered a strong assumption, it is useful in that it allows the full likelihood for joint model to be factorised into the likelihoods for each of the component parts (i.e. the likelihood for the longitudinal submodel, the likelihood for the event submodel, and the likelihood for the distribution of the individual-specific parameters).
 
-## Log posterior distribution
+### Log posterior distribution
 
 Under the conditional independence assumption, the log posterior for the $i^{th}$ individual can be specified as
 
 \begin{align}
-p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
+\log p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
   \propto
     \log \Bigg[
       \Bigg(
@@ -201,7 +203,7 @@ p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
 which we can rewrite as 
 
 \begin{align}
-p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
+\log p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
   \propto
     \Bigg(
       \sum_{m=1}^M 
@@ -300,7 +302,7 @@ The fitted model is returned as an object of the S3 class `stanjm`. We have a va
 print(mod1)
 ```
 
-The output tells us that for each one unit increase in an individual's underlying level of log serum bilirubin, their estimated log hazard of death increases by 34% (equivalent to a 3.8-fold increase in the hazard of death). The mean absolute deviation (MAD) is provided as a more robust estimate of the standard deviation of the posterior distribution. In this case the MAD_SD for the association parameter is 0.237, indicating there is quite large uncertainty around the estimated association between log serum bilirubin and risk of death (recall this is a small dataset containing only 40 patients!).
+The output tells us that for each one unit increase in an individual's underlying level of log serum bilirubin, their estimated log hazard of death increases by 36% (equivalent to a 3.9-fold increase in the hazard of death). The mean absolute deviation (MAD) is provided as a more robust estimate of the standard deviation of the posterior distribution. In this case the MAD_SD for the association parameter is 0.247, indicating there is quite large uncertainty around the estimated association between log serum bilirubin and risk of death (recall this is a small dataset containing only 40 patients!).
 
 If we wanted some slightly more detailed output for each of the model parameters, as well as further details regarding the model estimation (for example computation time, number of longitudinal observations, number of individuals, type of baseline hazard, etc) we can instead use the `summary` method:
 
@@ -334,6 +336,8 @@ In this example the subject-specific slope is actually constant across time *t* 
 
 ### Multivariate joint models 
 
+#### Fitting a multivariate joint model
+
 Suppose instead that we were interested in *two* repeatedly measured clinical biomarkers, log serum bilirubin and serum albumin, and their association with the risk of death. We may wish to model these two biomarkers, allowing for the correlation between them, and estimating their respective associations with the log hazard of death. We will fit a linear mixed effects submodel (identity link, normal distribution) for each biomarker with a patient-specific intercept and linear slope but no other covariates. In the event submodel we will include gender (`sex`) and treatment (`trt`) as baseline covariates. Each biomarker is assumed to be associated with the log hazard of death at time $t$ via it's expected value at time $t$ (i.e. a *current value* association structure).
 
 (Note that due to the very small sample size, the clinical findings from this analysis should not to be overinterpreted!).
@@ -361,7 +365,9 @@ or we can examine the summary output for the association parameters alone:
 summary(mod3, pars = "assoc")
 ```
 
-We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`). As an example, let's plot the predicted trajectories for each biomarker and the predicted survival function for three selected individuals in the dataset using `stan_jm` post-estimation functions:
+#### Obtaining posterior predictions
+
+We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`). As an example, let's plot the predicted trajectories for each biomarker and the predicted survival function under the fitted multivariate joint model, for three selected individuals in the dataset using `stan_jm` post-estimation functions:
 \
 ```{r plots, fig.width=6.5, fig.height=6}
 p1 <- posterior_traj(mod3, m = 1, ids = 6:8)
