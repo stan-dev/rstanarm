@@ -156,7 +156,15 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     }
     loo_x <- loo.matrix(ll, ...)
   } else {
-    loo_x <- suppressWarnings(loo.function(ll_fun(x), args = ll_args(x), ...))
+    args <- ll_args(x)
+    loo_x <- suppressWarnings(
+      loo.function(
+        ll_fun(x), 
+        data = args$data, 
+        draws = args$draws, 
+        ...
+      )
+    )
   }
   
   bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
@@ -212,7 +220,8 @@ waic.stanreg <- function(x, ...) {
   } else if (is_clogit(x)) {
     out <- waic.matrix(log_lik(x))
   } else {
-    out <- waic.function(ll_fun(x), args = ll_args(x))
+    args <- ll_args(x)
+    out <- waic.function(ll_fun(x), data = args$data, draws = args$draws)
   }
   structure(out, 
             class = c("waic", "loo"),
@@ -355,9 +364,10 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   predictive accuracy. That is, the first row of the matrix will be 
 #'   for the model with the largest ELPD (smallest LOOIC).
 #' 
-#' @importFrom loo compare
+#' @importFrom loo compare_models
+#' @aliases compare_models
 #' 
-compare_models <- function(..., loos = list()) {
+compare_models.stanreg <- function(..., loos = list()) {
   dots <- list(...)
   if (length(dots) && length(loos)) {
     stop("'...' and 'loos' can't both be specified.", call. = FALSE)

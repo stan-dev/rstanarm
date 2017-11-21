@@ -398,45 +398,45 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 }
 
 # log-likelihood functions ------------------------------------------------
-.ll_gaussian_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
+.ll_gaussian_i <- function(data_i, draws) {
+  val <- dnorm(data_i$y, mean = .mu(data_i, draws), sd = draws$sigma, log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_binomial_i <- function(i, data, draws) {
-  val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_binomial_i <- function(data_i, draws) {
+  val <- dbinom(data_i$y, size = data_i$trials, prob = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_clogit_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
-  denoms <- apply(eta, 1, log_clogit_denom, N_j = NCOL(eta), D_j = sum(data$y))
-  rowSums(eta[,data$y == 1, drop = FALSE] - denoms)
+.ll_clogit_i <- function(data_i, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
+  denoms <- apply(eta, 1, log_clogit_denom, N_j = NCOL(eta), D_j = sum(data_i$y))
+  rowSums(eta[,data_i$y == 1, drop = FALSE] - denoms)
 }
-.ll_poisson_i <- function(i, data, draws) {
-  val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_poisson_i <- function(data_i, draws) {
+  val <- dpois(data_i$y, lambda = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_neg_binomial_2_i <- function(i, data, draws) {
-  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_neg_binomial_2_i <- function(data_i, draws) {
+  val <- dnbinom(data_i$y, size = draws$size, mu = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y, shape = draws$shape, 
-                rate = draws$shape / .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_Gamma_i <- function(data_i, draws) {
+  val <- dgamma(data_i$y, shape = draws$shape, 
+                rate = draws$shape / .mu(data_i,draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_inverse.gaussian_i <- function(i, data, draws) {
-  mu <- .mu(data, draws)
+.ll_inverse.gaussian_i <- function(data_i, draws) {
+  mu <- .mu(data_i, draws)
   val <- 0.5 * log(draws$lambda / (2 * pi)) - 
-    1.5 * log(data$y) -
-    0.5 * draws$lambda * (data$y - mu)^2 / 
-    (data$y * mu^2)
-  .weighted(val, data$weights)
+    1.5 * log(data_i$y) -
+    0.5 * draws$lambda * (data_i$y - mu)^2 / 
+    (data_i$y * mu^2)
+  .weighted(val, data_i$weights)
 }
-.ll_polr_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
+.ll_polr_i <- function(data_i, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
   f <- draws$f
   J <- draws$max_y
-  y_i <- data$y
+  y_i <- data_i$y
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
     if (y_i == 1) {
@@ -456,20 +456,20 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       stop("Exponentiation only possible when there are exactly 2 outcomes.")
     }
   }
-  .weighted(val, data$weights)
+  .weighted(val, data_i$weights)
 }
-.ll_beta_i <- function(i, data, draws) {
-  mu <- .mu_beta(data, draws)
+.ll_beta_i <- function(data_i, draws) {
+  mu <- .mu_beta(data_i, draws)
   phi <- draws$phi
-  if (length(grep("(phi)_", colnames(data), fixed = TRUE)) > 0) {
-    phi <- .phi_beta(data, draws)
+  if (length(grep("(phi)_", colnames(data_i), fixed = TRUE)) > 0) {
+    phi <- .phi_beta(data_i, draws)
   }
   val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
-  .weighted(val, data$weights)
+  .weighted(val, data_i$weights)
 }
-.ll_nlmer_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
+.ll_nlmer_i <- function(data_i, draws) {
+  val <- dnorm(data_i$y, mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
+  .weighted(val, data_i$weights)
 }
 
 # log-likelihood functions for stanjm objects only ----------------------
