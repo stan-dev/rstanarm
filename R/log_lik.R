@@ -94,9 +94,8 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
         FUN.VALUE = numeric(length = args$S),
         FUN = function(i) {
           as.vector(fun(
-            i = i,
             draws = args$draws,
-            data = args$data[args$data$strata ==
+            data_i = args$data[args$data$strata ==
                                levels(args$data$strata)[i], , drop = FALSE]
           ))
         }
@@ -107,8 +106,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
       seq_len(args$N),
       FUN = function(i) {
         as.vector(fun(
-          i = i,
-          data = args$data[i, , drop = FALSE],
+          data_i = args$data[i, , drop = FALSE],
           draws = args$draws
         ))
       },
