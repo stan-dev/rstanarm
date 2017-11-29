@@ -140,12 +140,17 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
   } else {
     k_threshold <- 0.7
   }
-  if (is.stanjm(x)) { # stan_jm models
-    loo_x <- suppressWarnings(loo.matrix(log_lik(x), ...))
-  } else if (is.stanmvreg(x)) { # stan_mvmer models
+  if (is.stanjm(x)) { 
+    # stan_jm models
+    ll <- log_lik(x)
+    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
+    loo_x <- suppressWarnings(loo.matrix(ll, r_eff = r_eff, ...))
+  } else if (is.stanmvreg(x)) { 
+    # stan_mvmer models
     M <- get_M(x)
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
-    loo_x <- suppressWarnings(loo.matrix(ll, ...))
+    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
+    loo_x <- suppressWarnings(loo.matrix(ll, r_eff = r_eff, ...))
   } else if (is_clogit(x)) {
     ll <- log_lik.stanreg(x)
     cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
@@ -154,14 +159,17 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
               paste(which(cons), collapse = ", "))
       ll <- ll[, !cons, drop = FALSE]
     }
-    loo_x <- loo.matrix(ll, ...)
+    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
+    loo_x <- loo.matrix(ll, r_eff = r_eff, ...)
   } else {
     args <- ll_args(x)
+    r_eff <- loo::relative_eff(exp(log_lik(x)), chain_id = chain_id_for_loo(x))
     loo_x <- suppressWarnings(
       loo.function(
         ll_fun(x), 
         data = args$data, 
         draws = args$draws, 
+        r_eff = r_eff,
         ...
       )
     )
@@ -342,21 +350,21 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   'compare.loo'. See the \strong{Comparing models} section below for more
 #'   details.
 #'   
-#' @section Comparing models: \code{compare_models} is a wrapper around the
-#'   \code{\link[loo]{compare}} function in the \pkg{loo} package. Before
-#'   calling \code{compare}, \code{compare_models} performs some extra checks to
-#'   make sure the \pkg{rstanarm} models are suitable for comparison. These
-#'   extra checks include verifying that all models to be compared were fit
-#'   using the same outcome variable and likelihood family.
+#' @section Comparing models: \code{compare_models} is a method for the generic
+#'   \code{\link[loo]{compare_models}} function in the \pkg{loo} package that
+#'   performs some extra checks to make sure the \pkg{rstanarm} models are
+#'   suitable for comparison. These extra checks include verifying that all
+#'   models to be compared were fit using the same outcome variable and
+#'   likelihood family.
 #'   
 #'   If exactly two models are being compared then \code{compare_models} returns
-#'   a vector containing the difference in expected log predictive density 
-#'   (ELPD) between the models and the standard error of that difference (the 
-#'   documentation for \code{\link[loo]{compare}} has additional details about 
-#'   the calculation of the standard error of the difference). The difference in
-#'   ELPD will be negative if the expected out-of-sample predictive accuracy of
-#'   the first model is higher. If the difference is be positive then the second
-#'   model is preferred.
+#'   a vector containing the difference in expected log predictive density
+#'   (ELPD) between the models and the standard error of that difference (the
+#'   documentation for \code{\link[loo]{compare_models}} in the \pkg{loo}
+#'   package has additional details about the calculation of the standard error
+#'   of the difference). The difference in ELPD will be negative if the expected
+#'   out-of-sample predictive accuracy of the first model is higher. If the
+#'   difference is be positive then the second model is preferred.
 #'   
 #'   If more than two models are being compared then \code{compare_models} 
 #'   returns a matrix with one row per model. This matrix summarizes the objects
@@ -458,8 +466,6 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   if (is.stanmvreg(x))
     STOP_if_stanmvreg("reloo")
   stopifnot(!is.null(x$data), is.loo(loo_x))
-  if (is.null(loo_x$pareto_k))
-    stop("No Pareto k estimates found in 'loo' object.")
   
   J <- length(obs)
   d <- kfold_and_reloo_data(x)
@@ -505,7 +511,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
   # what should we do about pareto k? for now setting them to 0
-  loo_x$pareto_k[obs] <- 0
+  loo_x$diagnostics$pareto_k[obs] <- 0
   
   return(loo_x)
 }
@@ -606,3 +612,14 @@ validate_loos <- function(loos = list()) {
   
   setNames(loos, nm = lapply(loos, attr, which = "name"))
 }
+
+
+# chain_id to pass to loo::relative_eff
+chain_id_for_loo <- function(object) {
+  dims <- dim(object$stanfit)[1:2]
+  n_iter <- dims[1]
+  n_chain <- dims[2]
+  rep(1:n_chain, each = n_iter)
+}
+
+
