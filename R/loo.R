@@ -106,16 +106,22 @@
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
 #' # compare on LOOIC
-#' (loo1 <- loo(fit1, cores = 2)) # for bigger models use as many cores as possible
+#' # (for bigger models use as many cores as possible)
+#' loo1 <- loo(fit1, cores = 2)
+#' print(loo1)
 #' loo2 <- loo(fit2, cores = 2)
 #' plot(loo2)
 #' 
-#' # when comparing exactly two models, the reported 'elpd_diff' will be 
-#' # positive if the expected predictive accuracy for the second model is higher
-#' compare_models(loo1, loo2) # or compare_models(loos = list(loo1, loo2))
+#' # when comparing exactly two models, the reported 'elpd_diff' 
+#' # will be positive if the expected predictive accuracy for the 
+#' # second model is higher. the standard error of the difference 
+#' # is also reported.
+#' compare_models(loo1, loo2)
+#' compare_models(loos = list(loo1, loo2)) # can also provide list of models
 #' 
 #' # when comparing three or more models they are ordered by expected
-#' # predictive accuracy
+#' # predictive accuracy. unlike when comparing two models, now the 
+#' # diplayed standard errors do _not_ pertain to differences.
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
 #' loo3 <- loo(fit3, k_threshold = 0.7, cores = 2)
 #' compare_models(loo1, loo2, loo3)
