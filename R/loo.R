@@ -33,7 +33,7 @@
 #' @template reference-loo
 #' 
 #' @param ... For the \code{loo} method, \code{...} can be used to pass optional
-#'   arguments (e.g. \code{cores}) to \code{\link[loo]{psislw}}. For 
+#'   arguments (e.g. \code{cores}) to \code{\link[loo]{psis}}. For 
 #'   \code{compare_models}, \code{...} should contain two or more objects 
 #'   returned by the \code{loo}, \code{kfold}, or \code{waic} method (see the 
 #'   \strong{Examples} section, below).
@@ -41,10 +41,10 @@
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
 #' 
-#' @return The \code{loo} and \code{waic} methods return an object of class
-#'   'loo'. See the \strong{Value} section in \code{\link[loo]{loo}} and 
-#'   \code{\link[loo]{waic}} (from the \pkg{loo} package) for details on the 
-#'   structure of these objects.
+#' @return The structure of the objects returned by \code{loo} and \code{waic}
+#'   methods are documented in detail in the \strong{Value} section in
+#'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} (from the \pkg{loo}
+#'   package).
 #'   
 #' @section Approximate LOO CV: The \code{loo} method for stanreg objects
 #'   provides an interface to the \pkg{\link[=loo-package]{loo}} package for
@@ -106,7 +106,7 @@
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
 #' 
 #' # compare on LOOIC
-#' (loo1 <- loo(fit1, cores = 2))
+#' (loo1 <- loo(fit1, cores = 2)) # for bigger models use as many cores as possible
 #' loo2 <- loo(fit2, cores = 2)
 #' plot(loo2)
 #' 
@@ -184,12 +184,12 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
                    yhash = hash_y(x))
   
   if (!length(bad_obs)) {
-    if (user_threshold)
+    if (user_threshold) {
       message(
         "All pareto_k estimates below user-specified threshold of ", 
         k_threshold, ". \nReturning loo object."
       )
-    
+    }
     return(out)
   }
   
@@ -312,8 +312,14 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
     se_elpd_kfold = sqrt(N * var(elpds)),
     pointwise = cbind(elpd_kfold = elpds)
   )
-  if (save_fits) 
+  
+  # for compatibility with new structure of loo package objects
+  out$estimates <- cbind(Estimate = out$elpd_kfold, SE = out$se_elpd_kfold)
+  rownames(out$estimates) <- c("elpd_kfold")
+  
+  if (save_fits) {
     out$fits <- fits
+  }
   
   structure(out, 
             class = c("kfold", "loo"), 
@@ -338,10 +344,9 @@ print.kfold <- function(x, digits = 1, ...) {
 }
 
 
-# Compare models
-#
 #' @rdname loo.stanreg
 #' @export
+#' 
 #' @param loos For \code{compare_models}, a list of two or more objects returned
 #'   by the \code{loo}, \code{kfold}, or \code{waic} method. This argument can 
 #'   be used as an alternative to passing these objects via \code{...}.
@@ -350,8 +355,8 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   'compare.loo'. See the \strong{Comparing models} section below for more
 #'   details.
 #'   
-#' @section Comparing models: \code{compare_models} is a method for the generic
-#'   \code{\link[loo]{compare_models}} function in the \pkg{loo} package that
+#' @section Comparing models: \code{compare_models} is a method for the
+#'   \code{\link[loo]{compare}} function in the \pkg{loo} package that
 #'   performs some extra checks to make sure the \pkg{rstanarm} models are
 #'   suitable for comparison. These extra checks include verifying that all
 #'   models to be compared were fit using the same outcome variable and
@@ -360,7 +365,7 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   If exactly two models are being compared then \code{compare_models} returns
 #'   a vector containing the difference in expected log predictive density
 #'   (ELPD) between the models and the standard error of that difference (the
-#'   documentation for \code{\link[loo]{compare_models}} in the \pkg{loo}
+#'   documentation for \code{\link[loo]{compare}} in the \pkg{loo}
 #'   package has additional details about the calculation of the standard error
 #'   of the difference). The difference in ELPD will be negative if the expected
 #'   out-of-sample predictive accuracy of the first model is higher. If the
@@ -372,10 +377,7 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   predictive accuracy. That is, the first row of the matrix will be 
 #'   for the model with the largest ELPD (smallest LOOIC).
 #' 
-#' @importFrom loo compare_models
-#' @aliases compare_models
-#' 
-compare_models.stanreg <- function(..., loos = list()) {
+compare_models <- function(..., loos = list()) {
   dots <- list(...)
   if (length(dots) && length(loos)) {
     stop("'...' and 'loos' can't both be specified.", call. = FALSE)
@@ -386,21 +388,7 @@ compare_models.stanreg <- function(..., loos = list()) {
   }
   
   loos <- validate_loos(loos)
-  comp <- do.call(loo::compare, loos)
-  if (!is.matrix(comp))  # will happen if there are only two models
-    return(comp)
-  
-  col_names <- if (is.kfold(loos[[1]])) {
-    c("elpd_kfold", "se_elpd_kfold")
-  } else if (is.waic(loos[[1]])) {
-    c("waic", "se_waic", "elpd_waic", "se_elpd_waic", "p_waic", "se_p_waic")
-  } else { 
-    c("looic", "se_looic", "elpd_loo", "se_elpd_loo", "p_loo", "se_p_loo")
-  }
-
-  elpd <- sapply(loos, function(x) x$elpd) # partial matching elpd_{loo,waic,kfold}
-  row_names <- names(loos)[order(elpd, decreasing = TRUE)]
-  structure(comp, dimnames = list(row_names, col_names))
+  loo::compare(x = loos)
 }
 
 
