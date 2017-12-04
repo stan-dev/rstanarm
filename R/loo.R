@@ -19,11 +19,14 @@
 #' 
 #' For models fit using MCMC, compute approximate leave-one-out cross-validation
 #' (LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
-#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold 
-#' cross-validation is also available. Compare two or more models using the 
-#' \code{compare_models} function. \strong{Note:} these functions are not 
-#' guaranteed to work properly unless the \code{data} argument was specified 
-#' when the model was fit.
+#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
+#' cross-validation is also available. Compare two or more models using the
+#' \code{compare_models} function. \strong{Note}: these functions are not
+#' guaranteed to work properly unless the \code{data} argument was specified
+#' when the model was fit. Also, as of \pkg{loo} version \code{2.0.0} the default
+#' number of cores is now only 1, but we recommend using as many (or close to as
+#' many) cores as possible by setting the \code{cores} argument or using
+#' \code{options(loo.cores = VALUE)} to set it for an entire session.
 #' 
 #' @aliases loo waic
 #'
@@ -187,7 +190,7 @@ loo.stanreg <- function(x, ..., cores = getOption("loo.cores", 1), save_psis = F
   } else {
     args <- ll_args(x)
     fun <- ll_fun(x)
-    r_eff <- loo::relative_eff(
+    r_eff <- loo::relative_eff( # using function method
       x = fun, 
       chain_id = chain_id_for_loo(x),
       data = args$data, 
@@ -530,7 +533,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     N <- nrow(pointwise)
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
-  # what should we do about pareto k? for now setting them to 0
+  # what should we do about pareto k? for now setting them to 0 
+  # so they don't cause warnings
   loo_x$diagnostics$pareto_k[obs] <- 0
   
   return(loo_x)
