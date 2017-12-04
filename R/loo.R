@@ -32,11 +32,10 @@
 #' @template args-stanreg-object
 #' @template reference-loo
 #' 
-#' @param ... For the \code{loo} method, \code{...} can be used to pass optional
-#'   arguments (e.g. \code{cores}) to \code{\link[loo]{psis}}. For 
-#'   \code{compare_models}, \code{...} should contain two or more objects 
-#'   returned by the \code{loo}, \code{kfold}, or \code{waic} method (see the 
-#'   \strong{Examples} section, below).
+#' @param ... For \code{compare_models}, \code{...} should contain two or more
+#'   objects returned by the \code{loo}, \code{kfold}, or \code{waic} method
+#'   (see the \strong{Examples} section, below).
+#' @param cores,save_psis See \code{\link[loo]{loo}}.
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape 
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
@@ -134,7 +133,7 @@
 #' 
 #' @importFrom loo loo loo.function loo.matrix
 #' 
-loo.stanreg <- function(x, ..., k_threshold = NULL) {
+loo.stanreg <- function(x, ..., cores = getOption("loo.cores", 1), save_psis = FALSE, k_threshold = NULL) {
   if (!used.sampling(x)) 
     STOP_sampling_only("loo")
   if (model_has_weights(x))
@@ -150,13 +149,25 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     # stan_jm models
     ll <- log_lik(x)
     r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <- suppressWarnings(loo.matrix(ll, r_eff = r_eff, ...))
+    loo_x <-
+      suppressWarnings(loo.matrix(
+        ll,
+        r_eff = r_eff,
+        cores = cores,
+        save_psis = save_psis
+      ))
   } else if (is.stanmvreg(x)) { 
     # stan_mvmer models
     M <- get_M(x)
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
     r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <- suppressWarnings(loo.matrix(ll, r_eff = r_eff, ...))
+    loo_x <-
+      suppressWarnings(loo.matrix(
+        ll,
+        r_eff = r_eff,
+        cores = cores,
+        save_psis = save_psis
+      ))
   } else if (is_clogit(x)) {
     ll <- log_lik.stanreg(x)
     cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
@@ -166,17 +177,32 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
       ll <- ll[, !cons, drop = FALSE]
     }
     r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <- loo.matrix(ll, r_eff = r_eff, ...)
+    loo_x <-
+      suppressWarnings(loo.matrix(
+        ll,
+        r_eff = r_eff,
+        cores = cores,
+        save_psis = save_psis
+      ))
   } else {
     args <- ll_args(x)
-    r_eff <- loo::relative_eff(exp(log_lik(x)), chain_id = chain_id_for_loo(x))
+    fun <- ll_fun(x)
+    r_eff <- loo::relative_eff(
+      x = fun, 
+      chain_id = chain_id_for_loo(x),
+      data = args$data, 
+      draws = args$draws, 
+      ...
+    )
     loo_x <- suppressWarnings(
       loo.function(
-        ll_fun(x), 
-        data = args$data, 
-        draws = args$draws, 
+        fun,
+        data = args$data,
+        draws = args$draws,
         r_eff = r_eff,
-        ...
+        ...,
+        cores = cores,
+        save_psis = save_psis
       )
     )
   }
@@ -499,8 +525,8 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   # replace parts of the loo object with these computed quantities
   sel <- c("elpd_loo", "p_loo", "looic")
   loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
-  loo_x[sel] <- with(loo_x, colSums(pointwise[, sel]))
-  loo_x[paste0("se_", sel)] <- with(loo_x, {
+  loo_x$estimates[sel, "Estimate"] <- with(loo_x, colSums(pointwise[, sel]))
+  loo_x$estimates[sel, "SE"] <- with(loo_x, {
     N <- nrow(pointwise)
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
