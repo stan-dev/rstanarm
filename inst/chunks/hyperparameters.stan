@@ -11,6 +11,8 @@
   real<lower=0> prior_df_for_intercept;
   real<lower=0> prior_df_for_aux;
   vector<lower=0>[K_smooth > 0 ? max(smooth_map) : 0] prior_df_for_smooth;
-  real<lower=0> global_prior_df;    // for hs priors only
-  real<lower=0> global_prior_scale; // for hs priors only
-  int<lower=1> num_normals[prior_dist == 7 ? K : 0];
+  real<lower=0> global_prior_df;     // for hs priors only
+  real<lower=0> global_prior_scale;  // for hs priors only
+  real<lower=0> slab_df;     // for hs prior only
+  real<lower=0> slab_scale;  // for hs prior only
+  int<lower=2> num_normals[prior_dist == 7 ? K : 0];

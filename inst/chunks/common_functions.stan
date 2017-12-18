@@ -168,16 +168,17 @@
    * @param local A vector array of positive numbers
    * @param global_prior_scale A positive real number
    * @param error_scale 1 or sigma in the Gaussian case
+   * @param c2 A positive real number
    * @return A vector of coefficientes
    */
   vector hs_prior(vector z_beta, real[] global, vector[] local, 
-                  real global_prior_scale, real error_scale) {
-    vector[rows(z_beta)] lambda;
-    int K;
-    K = rows(z_beta);
-    for (k in 1:K) lambda[k] = local[1][k] * sqrt(local[2][k]);
-    return z_beta .* lambda * global[1] * sqrt(global[2]) * 
-           global_prior_scale * error_scale;
+                  real global_prior_scale, real error_scale, real c2) {
+    int K = rows(z_beta);
+    vector[K] lambda = local[1] .* sqrt(local[2]);
+    real tau = global[1] * sqrt(global[2]) * global_prior_scale * error_scale;
+    vector[K] lambda2 = square(lambda);
+    vector[K] lambda_tilde = sqrt( c2 * lambda2 ./ (c2 + square(tau) * lambda2) );
+    return z_beta .* lambda_tilde * tau;
   }
 
   /** 
@@ -188,13 +189,19 @@
    * @param local A vector array of positive numbers
    * @param global_prior_scale A positive real number
    * @param error_scale 1 or sigma in the Gaussian case
+   * @param c2 A positive real number
    * @return A vector of coefficientes
    */
   vector hsplus_prior(vector z_beta, real[] global, vector[] local, 
-                      real global_prior_scale, real error_scale) {
-    return z_beta .* (local[1] .* sqrt(local[2])) .* 
-           (local[3] .* sqrt(local[4])) * global[1] * sqrt(global[2]) * 
-           global_prior_scale * error_scale;
+                      real global_prior_scale, real error_scale, real c2) {
+    int K = rows(z_beta);
+    vector[K] lambda = local[1] .* sqrt(local[2]);
+    vector[K] eta = local[3] .* sqrt(local[4]);
+    real tau = global[1] * sqrt(global[2]) * global_prior_scale * error_scale;
+    vector[K] lambda_eta2 = square(lambda .* eta);
+    vector[K] lambda_tilde = sqrt( c2 * lambda_eta2 ./ 
+                                 ( c2 + square(tau) * lambda_eta2) );
+    return z_beta .* lambda_tilde * tau;
   }
   
   /** 

@@ -12,6 +12,8 @@
   vector<lower=0>[yK[3]] y_prior_df3;
   vector<lower=0>[M] y_global_prior_df;    // for hs priors only 
   vector<lower=0>[M] y_global_prior_scale; // for hs priors only
+  vector<lower=0>[M] y_slab_df;            // for hs priors only
+  vector<lower=0>[M] y_slab_scale;         // for hs priors only
 
   // intercepts  
   vector[M] y_prior_mean_for_intercept;
