@@ -70,7 +70,6 @@ transformed parameters {
   vector[a_K] a_beta;               // assoc params
   vector[basehaz_df] e_aux;         // basehaz params  
   
-<<<<<<< HEAD:src/stan_files/jm.stan
   //---- Parameters for longitudinal submodels
   
   // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum, 
