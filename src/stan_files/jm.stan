@@ -12,41 +12,51 @@ functions {
 #include /functions/jm_functions.stan
 }
 data {
-  // declares
+  // declares: M, has_aux, has_weights, resp_type, intercept_type,
+  //   yNobs, yNeta, yK, t, p, l, q, len_theta_L, bN1, bK1, bK1_len
+  //   bK1_idx, bN2, bK2, bK2_len, bK2_idx
 #include /data/dimensions_mvmer.stan
   
-  // declares
+  // declares: yInt{1,2,3}, yReal{1,2,3}, yX{1,2,3}, yXbar{1,2,3},
+  //   family, link, y{1,2,3}_Z{1,2}, y{1,2,3}_Z{1,2}_id,
+  //   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
 #include /data/data_mvmer.stan
 
-  // declares e_prior_dist{_for_intercept,_for_aux}, Npat{_times_}qnodes, qwts, 
-  //   basehaz_{type,df,X}, nrow_e_Xq, e_{K,Xq,times,d,xbar,weights,weights_rep}  
+  // declares: e_prior_dist{_for_intercept,_for_aux}, 
+  //   Npat, Nevents, qnodes, Npat_times_qnodes, qwts, 
+  //   basehaz_{type,df,X}, nrow_e_Xq, e_has_intercept, nrow_e_Xq,
+  //   e_{K,Xq,times,xbar,weights,weights_rep}  
 #include /data/data_event.stan
 
-  // declares a_K, a_prior_dist, assoc, assoc_uses, has_assoc, {sum_}size_which_b, 
-  //   which_b_zindex, {sum_}size_which_coef, which_coef_{zindex,xindex}, 
-  //   {sum_}a_K_data, {sum_,sum_size_}which_interactions, y_Xq_{eta,eps,lag,auc,data},
-  //   {nnz,w,v,u}_Zq_{eta,eps,lag,auc}, nrow_y_Xq, nrow_y_Xq_auc, 
-  //   auc_qnodes, auc_qwts   
+  // declares: a_{K,xbar}, a_prior_dist, assoc, assoc_uses, has_assoc, 
+  //   {sum_}size_which_b, which_b_zindex, {sum_}size_which_coef, 
+  //   which_coef_{zindex,xindex}, a_K_data, y_Xq_{eta,eps,lag,auc,data},
+  //   {sum_,sum_size_}which_interactions, idx_q,
+  //   nrow_y_Xq{_auc}, auc_{qnodes,qwts}, has_grp, grp_assoc, grp_idx,
+  //   y{1,2,3}_xq_{eta,eps,auc}, y{1,2,3}_z{1,2}q_{eta,eps,auc},
+  //   y{1,2,3}_z{1,2}q_id_{eta,eps,auc}
 #include /data/data_assoc.stan
   
-  // declares {e_,a_}{prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, 
-  //   prior_{mean, scale, df}_for_aux, global_prior_{df,scale}}
+  // declares: e_prior_{mean,scale,df}{_for_intercept,for_aux},
+  //   e_global_prior_{scale,df}
 #include /data/hyperparameters_mvmer.stan
 #include /data/hyperparameters_event.stan
+  // declares: a_prior_{mean,scale,df}, a_global_prior_{scale,df}
 #include /data/hyperparameters_assoc.stan
 }
 transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);                 
 
-  // declares poisson_max, hsM, idx_{global,local2,local4,mix,ool,noise}, 
-  //   len_{global,local2,local4,mix,ool,noise}, {sqrt_,log_,sum_log_}y, 
-  //   len_z_T, len_var_group, delta, is_continuous, pos, beta_smooth
+  // declares: yHs{1,2,3}, len_{z_T,var_group,rho}, pos, delta,
+  //   bCov{1,2}_idx, {sqrt,log,sum_log}_y{1,2,3},
 #include /tdata/tdata_mvmer.stan
 }
 parameters {
-  // declares gamma_{nob,lob,upb}, z_beta, global, local{2,4}, mix, 
-  //   ool, noise, aux_unscaled, z_b, z_T, rho, zeta, tau
+  // declares: yGamma{1,2,3}, z_yBeta{1,2,3}, z_b, z_T, rho,
+  //   zeta, tau, bSd{1,2}, z_bMat{1,2}, bCholesky{1,2},
+  //   yAux{1,2,3}_unscaled, yGlobal{1,2,3}, yLocal{1,2,3}, 
+  //   yOol{1,2,3}, yMix{1,2,3}
 #include /parameters/parameters_mvmer.stan
   
   // declares e_{gamma,z_beta,aux_unscaled,global,local,mix,ool}  
@@ -56,16 +66,17 @@ parameters {
 #include /parameters/parameters_assoc.stan
 }
 transformed parameters { 
-  // declare parameters for event submodel
   vector[e_K] e_beta;               // log hazard ratios
   vector[a_K] a_beta;               // assoc params
   vector[basehaz_df] e_aux;         // basehaz params  
   
-  // parameters for longitudinal submodels
-  // defines aux, beta, b, theta_L
-#include /tparameters/tparameters_mvmer.stan
+<<<<<<< HEAD:src/stan_files/jm.stan
+  //---- Parameters for longitudinal submodels
   
-  // define parameters for event submodel
+  // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum, 
+  //   theta_L, bMat{1,2}
+#include /tparameters/tparameters_mvmer.stan
+  //---- Parameters for event submodel
   e_beta = make_beta(e_z_beta, e_prior_dist, e_prior_mean, 
                      e_prior_scale, e_prior_df, e_global_prior_scale, 
                      e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0, 
@@ -80,7 +91,6 @@ transformed parameters {
 model {
 
   //---- Log likelihoods for longitudinal submodels
-  // increments target with long log-liks
 #include /model/mvmer_lp.stan
       
   //---- Log likelihood for event submodel (GK quadrature)
@@ -121,9 +131,9 @@ model {
 generated quantities {
   real e_alpha; // transformed intercept for event submodel 
     
-  // declares and defines alpha, mean_PPD, cov matrix for lkj prior
+  // declares and defines: mean_PPD, yAlpha{1,2,3}, b{1,2}, bCov{1,2}
 #include /gqs/gen_quantities_mvmer.stan
-    
+
   // norm_const is a constant shift in log baseline hazard
   if (e_has_intercept == 1) 
     e_alpha = e_gamma[1] + norm_const - 

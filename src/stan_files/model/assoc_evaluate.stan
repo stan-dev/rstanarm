@@ -1,4 +1,4 @@
-    // !!! Be careful that indexing of has_assoc matches stan_jm file !!!
+    // !!! Be careful that indexing of has_assoc matches stan_jm.fit !!!
 		
     // mark tracks indexing within a_beta vector, which is the 
     // vector of association parameters

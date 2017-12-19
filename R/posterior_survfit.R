@@ -882,9 +882,10 @@ mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
 # @param object A stanjm object
 # @param data Output from .pp_data_jm
 # @param pars Output from extract_pars
-# @param new_b A vector of new b pars, or a list of vectors with each element
-#   being the new b pars for a single submodel.
-# @param new_b A vector, or a list of vectors with the names for the new b pars.
+# @param new_b A vector of new b pars, or a list of vectors, with 
+#   each element being the new b pars for a single submodel.
+# @param new_Z_names A vector, or a list of vectors, with the names 
+#   for the new b pars.
 substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
   M <- get_M(object)
   if (!is(new_b, "list")) { # split b into submodels
