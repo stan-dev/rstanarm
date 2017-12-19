@@ -283,7 +283,7 @@ plot_nonlinear <- function(x, smooths, ...,
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
-  on.exit("try plot(x$jam) instead")
+  on.exit(message("try plot(x$jam) instead"))
   scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x
