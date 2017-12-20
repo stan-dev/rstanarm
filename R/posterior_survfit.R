@@ -183,7 +183,7 @@
 #'   \strong{67}, 819.
 #'      
 #' @examples
-#' 
+#' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
 #'   
@@ -212,7 +212,6 @@
 #'   ps2 <- posterior_survfit(example_jm, ids = c(7,13,15), times = 0,
 #'     extrapolate = TRUE, condition = FALSE, control = list(edist = 5))
 #'     
-#' \donttest{
 #'   # Instead we may want to estimate subject-specific survival probabilities 
 #'   # for a set of new individuals. To demonstrate this, we will simply take
 #'   # the first two individuals in the estimation dataset, but pass their data

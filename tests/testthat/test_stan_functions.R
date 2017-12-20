@@ -435,7 +435,10 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
 
 context("nlmer")
 test_that("SSasymp works", {
-  example("SSasymp", package = "stats", character.only = TRUE, ask = FALSE)
+  Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
+  Asym <- 100
+  resp0 <- -8.5
+  lrc <- -3.2  
   Phi <- cbind(Asym, resp0, lrc)
   expect_true(all.equal(SSasymp( Lob.329$age, Asym, resp0, lrc ),
                         SS_asymp( Lob.329$age, Phi ), check.attributes = FALSE))
@@ -446,7 +449,8 @@ test_that("SSasymp works", {
 
 context("nlmer")
 test_that("SSasympOff works", {
-  example("SSasympOff", package = "stats", character.only = TRUE, ask = FALSE)
+  CO2.Qn1 <- CO2[CO2$Plant == "Qn1", ]
+  Asym <- 32; lrc <- -4; c0 <- 43
   Phi <- cbind(Asym, lrc, c0)
   expect_true(all.equal(SSasympOff(CO2.Qn1$conc, Asym, lrc, c0),
                         SS_asympOff(CO2.Qn1$conc, Phi), check.attributes = FALSE))
@@ -457,7 +461,8 @@ test_that("SSasympOff works", {
 
 context("nlmer")
 test_that("SSasympOrig works", {
-  example("SSasympOrig", package = "stats", character.only = TRUE, ask = FALSE)
+  Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
+  Asym <- 100; lrc <- -3.2
   Phi <- cbind(Asym, lrc)
   expect_true(all.equal(SSasympOrig(Lob.329$age, Asym, lrc),
                         SS_asympOrig(Lob.329$age, Phi), check.attributes = FALSE))
@@ -468,7 +473,8 @@ test_that("SSasympOrig works", {
 
 context("nlmer")
 test_that("SSbiexp works", {
-  example("SSbiexp", package = "stats", character.only = TRUE, ask = FALSE)
+  Indo.1 <- Indometh[Indometh$Subject == 1, ]
+  A1 <- 3; lrc1 <- 1; A2 <- 0.6; lrc2 <- -1.3
   Phi <- cbind(A1, lrc1, A2, lrc2)
   expect_true(all.equal(SSbiexp( Indo.1$time, A1, lrc1, A2, lrc2 ),
                         SS_biexp( Indo.1$time, Phi ), check.attributes = FALSE))
@@ -479,7 +485,8 @@ test_that("SSbiexp works", {
 
 context("nlmer")
 test_that("SSfol works", {
-  example("SSfol", package = "stats", character.only = TRUE, ask = FALSE)
+  Theoph.1 <- Theoph[ Theoph$Subject == 1, ]
+  lKe <- -2.5; lKa <- 0.5; lCl <- -3
   Phi <- cbind(lKe, lKa, lCl)
   expect_true(all.equal(SSfol(Theoph.1$Dose, Theoph.1$Time, lKe, lKa, lCl),
                         SS_fol(Theoph.1$Dose, Theoph.1$Time, Phi), check.attributes = FALSE))
@@ -490,7 +497,8 @@ test_that("SSfol works", {
 
 context("nlmer")
 test_that("SSfpl works", {
-  example("SSfpl", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
+  A <- 13; B <- 368; xmid <- 14; scal <- 6
   Phi <- cbind(A, B, xmid, log(scal))
   expect_true(all.equal(SSfpl(Chick.1$Time, A, B, xmid, scal),
                         SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
@@ -501,7 +509,8 @@ test_that("SSfpl works", {
 
 context("nlmer")
 test_that("SSgompertz works", {
-  example("SSgompertz", package = "stats", character.only = TRUE, ask = FALSE)
+  DNase.1 <- subset(DNase, Run == 1)
+  Asym <- 4.5; b2 <- 2.3; b3 <- 0.7
   Phi <- cbind(Asym, b2, b3)
   expect_true(all.equal(SSgompertz(log(DNase.1$conc), Asym, b2, b3),
                         SS_gompertz(log(DNase.1$conc), Phi), check.attributes = FALSE))
@@ -512,7 +521,8 @@ test_that("SSgompertz works", {
 
 context("nlmer")
 test_that("SSlogis works", {
-  example("SSlogis", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
+  Asym <- 368; xmid <- 14; scal <- 6
   Phi <- cbind(Asym, xmid, log(scal))
   expect_true(all.equal(SSlogis(Chick.1$Time, Asym, xmid, scal),
                         SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
@@ -523,7 +533,8 @@ test_that("SSlogis works", {
 
 context("nlmer")
 test_that("SSmicmen works", {
-  example("SSmicmen", package = "stats", character.only = TRUE, ask = FALSE)
+  PurTrt <- Puromycin[ Puromycin$state == "treated", ]
+  Vm <- 200; K <- 0.05
   Phi <- cbind(Vm, K)
   expect_true(all.equal(SSmicmen(PurTrt$conc, Vm, K),
                         SS_micmen(PurTrt$conc, Phi), check.attributes = FALSE))
@@ -534,7 +545,8 @@ test_that("SSmicmen works", {
 
 context("nlmer")
 test_that("SSweibull works", {
-  example("SSweibull", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.6 <- subset(ChickWeight, (Chick == 6) & (Time > 0))
+  Asym <- 160; Drop <- 115; lrc <- -5.5; pwr <- 2.5
   Phi <- cbind(Asym, Drop, lrc, pwr)
   expect_true(all.equal(SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr) ,
                         SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))

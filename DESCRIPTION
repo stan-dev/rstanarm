@@ -56,10 +56,10 @@ Suggests:
     testthat (>= 1.0.2)
 LinkingTo: StanHeaders (>= 2.17.1), rstan (>= 2.17.2), BH (>= 1.65.0), Rcpp (>=
     0.12.0), RcppEigen (>= 0.3.3.3.0)
-SystemRequirements: pandoc    
+SystemRequirements: pandoc
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
 URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1
