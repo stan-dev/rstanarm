@@ -29,7 +29,6 @@
 #' @template see-also
 #' @template args-prior_intercept
 #' @template args-priors
-#' @template args-prior_intercept
 #' @template args-prior_aux
 #' @template args-prior_covariance
 #' @template args-prior_PD

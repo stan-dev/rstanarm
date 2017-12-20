@@ -38,7 +38,6 @@
 #' @template args-dots
 #' @template args-prior_intercept
 #' @template args-priors
-#' @template args-prior_intercept
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta

@@ -1,35 +1,42 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a binomial outcome
 functions {
-  #include "common_functions.stan"
-  #include "binomial_likelihoods.stan"  
+#include /functions/common_functions.stan
+#include /functions/binomial_likelihoods.stan
 }
 data {
-  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
-  int<lower=0> y[N];       // outcome: number of successes
-  int<lower=0> trials[N];  // number of trials
+  // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+#include /data/NKX.stan
+  int<lower=0> y[N];         // outcome: number of successes
+  int<lower=0> trials[N];    // number of trials
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept  
+#include /data/data_glm.stan
+  // declares has_weights, weights, has_offset, offset
+#include /data/weights_offset.stan
   int<lower=5,upper=5> family;
-  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
-  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
-  #include "hyperparameters.stan"
+#include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
-  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
+#include /data/glmer_stuff.stan
+  // declares num_not_zero, w, v, u
+#include /data/glmer_stuff2.stan
 }
 transformed data {
   real aux = not_a_number();
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
+  // defines hs, len_z_T, len_var_group, delta, pos
+#include /tdata/tdata_glm.stan
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+#include /parameters/parameters_glm.stan
 }
 transformed parameters {
-  #include "tparameters_glm.stan" // defines beta, b, theta_L
+  // defines beta, b, theta_L
+#include /tparameters/tparameters_glm.stan
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
@@ -49,16 +56,16 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
   if (t > 0) {
-    #include "eta_add_Zb.stan"
+#include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
     if (link != 4) eta = eta + gamma[1];
     else eta = gamma[1] + eta - max(eta);
   }
   else {
-    #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
   }
   
   // Log-likelihood 
@@ -69,7 +76,7 @@ model {
   else if (prior_PD == 0) 
     target += dot_product(weights, pw_binom(y, trials, eta, link));
   
-  #include "priors_glm.stan" // increments target()
+#include /model/priors_glm.stan
   
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
@@ -83,21 +90,20 @@ generated quantities {
   }
   {
     vector[N] pi;
-    #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
     if (t > 0) {
-      #include "eta_add_Zb.stan"
+#include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
       if (link != 4) eta = eta + gamma[1];
       else {
-        real shift;
-        shift = max(eta);
+        real shift = max(eta);
         eta = gamma[1] + eta - shift;
         alpha[1] = alpha[1] - shift;
       }
     }
     else {
-      #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
     }
     
     pi = linkinv_binom(eta, link);

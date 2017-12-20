@@ -57,7 +57,8 @@
 #'   predictive distribution for the longitudinal submodel, and 
 #'   \code{\link{pp_check}} for graphical checks of the longitudinal submodel.
 #'    
-#' @examples 
+#' @examples
+#' \donttest{
 #' if (!exists("example_jm")) example(example_jm)
 #' # Compare estimated survival function to Kaplan-Meier curve
 #' ps <- ps_check(example_jm)
@@ -65,7 +66,7 @@
 #'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
 #'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
-#' 
+#' }
 #' @importFrom ggplot2 ggplot aes_string geom_step
 #' 
 ps_check <- function(object, check = "survival", 

@@ -332,16 +332,16 @@ stan_glm.fit <-
       standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
       standata$w0 <- parts0$w
       standata$w1 <- parts1$w
-      standata$v0 <- parts0$v
-      standata$v1 <- parts1$v
-      standata$u0 <- parts0$u
-      standata$u1 <- parts1$u
+      standata$v0 <- parts0$v - 1L
+      standata$v1 <- parts1$v - 1L
+      standata$u0 <- parts0$u - 1L
+      standata$u1 <- parts1$u - 1L
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
       standata$w <- parts$w
-      standata$v <- parts$v
-      standata$u <- parts$u
+      standata$v <- parts$v - 1L
+      standata$u <- parts$u - 1L
     }
     standata$shape <- as.array(maybe_broadcast(decov$shape, t))
     standata$scale <- as.array(maybe_broadcast(decov$scale, t))
@@ -392,8 +392,8 @@ stan_glm.fit <-
       parts <- extract_sparse_parts(xtemp)
       standata$nnz_X <- length(parts$w)
       standata$w_X <- parts$w
-      standata$v_X <- parts$v
-      standata$u_X <- parts$u
+      standata$v_X <- parts$v - 1L
+      standata$u_X <- parts$u - 1L
       standata$X <- array(0, dim = c(0L, dim(xtemp)))
     } else {
       standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
@@ -435,13 +435,13 @@ stan_glm.fit <-
         parts0 <- extract_sparse_parts(xtemp[y0, , drop = FALSE])
         standata$nnz_X0 <- length(parts0$w)
         standata$w_X0 = parts0$w
-        standata$v_X0 = parts0$v
-        standata$u_X0 = parts0$u
+        standata$v_X0 = parts0$v - 1L
+        standata$u_X0 = parts0$u - 1L
         parts1 <- extract_sparse_parts(xtemp[y1, , drop = FALSE])
         standata$nnz_X1 <- length(parts1$w)
         standata$w_X1 = parts1$w
-        standata$v_X1 = parts1$v
-        standata$u_X1 = parts1$u
+        standata$v_X1 = parts1$v - 1L
+        standata$u_X1 = parts1$u - 1L
       } else {
         standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
         standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
