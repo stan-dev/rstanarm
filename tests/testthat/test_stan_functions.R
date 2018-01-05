@@ -20,17 +20,11 @@
 
 set.seed(12345)
 
-MODELS_HOME <- file.path("src", "stan_files")
-if (!file.exists(MODELS_HOME)) { # R CMD check
-  MODELS_HOME <- file.path("..", "..", "00_pkg_src", "rstanarm", "src", "stan_files")
-  INCLUDE_DIR <- file.path("..", "..", "00_pkg_src", "rstanarm", "inst", "include")
-} else {
-  INCLUDE_DIR <- file.path("inst", "include")
-}
+MODELS_HOME <- "stan_files"
+INCLUDE_DIR <- "include"
 
 context("setup")
 test_that("Stan programs are available", {
-  message(MODELS_HOME)
   expect_true(file.exists(MODELS_HOME))
 })
 
