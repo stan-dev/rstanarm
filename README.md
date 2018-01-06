@@ -44,12 +44,12 @@ if (!require(devtools)) {
   install.packages("devtools")
   library(devtools)
 }
-install_github("stan-dev/rstanarm", args = "--preclean", build_vignettes = FALSE)
+install_github("stan-dev/rstanarm", build_vignettes = FALSE)
 ```
 
-Make sure to include the `args = "--preclean"` and `build_vignettes = FALSE` arguments 
-or the development version of package will not install properly. If installation fails, 
-please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
+You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 
+vignettes are already available from [CRAN](https://cran.r-project.org/package=rstanarm/vignettes). 
+If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ### Contributing 
 
