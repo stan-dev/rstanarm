@@ -15,9 +15,11 @@
 #' 
 #' @return A vector of Bayesian R-squared values with length equal to the 
 #'   posterior sample size.
+#'   
+#' @seealso \url{https://github.com/jgabry/bayes_R2}
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' 
@@ -45,7 +47,7 @@ bayes_R2.stanreg <-
       stop("Not available for stan_polr models.")
     
     y <- get_y_new(object, newdata = newdata)
-    ypred <- posterior_linpred(
+    yhat <- posterior_linpred(
       object,
       transform = TRUE,
       newdata = newdata,
@@ -59,14 +61,14 @@ bayes_R2.stanreg <-
       } else if (NCOL(y) == 2) {
         trials <- rowSums(y)
         y <- y[, 1]
-        ypred <- ypred %*% diag(trials)
+        yhat <- yhat %*% diag(trials)
       }
     }
     
-    e <- -1 * sweep(ypred, 2, y)
-    var_ypred <- apply(ypred, 1, var)
+    e <- -1 * sweep(yhat, 2, y)
+    var_yhat <- apply(yhat, 1, var)
     var_e <- apply(e, 1, var)
-    var_ypred / (var_ypred + var_e)
+    var_yhat / (var_yhat + var_e)
   }
 
 

@@ -6,7 +6,9 @@ man-roxygen/*
 vignettes/_output.yaml
 README.md
 LICENSE$
-^.*\.o$
+src/stan_files/.*\.o$
+src/stan_files/.*\.cc$
+src/stan_files/.*\.hpp$
 ^\cleanup*
 ^inst/doc/[A-Za-z0-9\-_]+[.]svg$
 ^inst/doc/[A-Za-z0-9\-_]+[.]txt$

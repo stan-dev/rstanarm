@@ -567,7 +567,6 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(example_model, digits = 2), "stan_glmer")
   expect_output(print(example_model, digits = 2), "Error terms")
   expect_output(print(stan_lmer1, digits = 2), "stan_lmer")
-  expect_output(print(stan_lmer1, digits = 2), "Estimates")
   expect_output(print(stan_lmer2), "stan_lmer")
   expect_output(print(stan_polr1), "stan_polr")
   expect_output(print(stan_polr1), "Cutpoints")

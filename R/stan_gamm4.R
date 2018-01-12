@@ -155,12 +155,32 @@ stan_gamm4 <-
     glmod <- NULL
   }
   
-  jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
-                    file = tempfile(fileext = ".jags"), weights = NULL,
-                    na.action = na.action, offset = NULL, knots = knots,
-                    drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
-
-  y <- jd$jags.data$y
+  if (family$family == "binomial") {
+    data$temp_y <- rep(1, NROW(data)) # work around jagam bug
+    temp_formula <- update(formula, temp_y ~ .)
+    jd <- mgcv::jagam(formula = temp_formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    
+    if (!is.null(random)) {
+      y <- data[, as.character(formula[2L])]
+    } else {
+      y <- eval(formula[[2L]], data)
+    }
+    
+    if (binom_y_prop(y, family, weights)) {
+      y1 <- as.integer(as.vector(y) * weights)
+      y <- cbind(y1, y0 = weights - y1)
+      weights <- double(0)
+    }
+  } else {
+    jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    y <- jd$jags.data$y
+  }
   # there is no offset allowed by gamm4::gamm4
   offset <- validate_offset(as.vector(model.offset(jd$pregam$model)), y = y)
   X <- jd$jags.data$X
@@ -205,7 +225,7 @@ stan_gamm4 <-
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
   if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
-  if (is.null(random)) Z <- Matrix::Matrix(nrow = length(y), ncol = 0, sparse = TRUE)
+  if (is.null(random)) Z <- Matrix::Matrix(nrow = NROW(y), ncol = 0, sparse = TRUE)
   else {
     Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                     flist = group$flist)$Z
@@ -263,7 +283,7 @@ plot_nonlinear <- function(x, smooths, ...,
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
-  on.exit("try plot(x$jam) instead")
+  on.exit(message("try plot(x$jam) instead"))
   scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x

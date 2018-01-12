@@ -23,7 +23,7 @@ CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
-source(file.path("helpers", "SW.R"))
+source(test_path("helpers", "SW.R"))
 
 # loo and waic ------------------------------------------------------------
 context("loo and waic")

@@ -1,10 +1,11 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.15.4
-Date: 2017-04-27
+Version: 2.17.2
+Date: 2017-12-18
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
+             person("Sam", "Brilleman", role = "ctb"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
@@ -26,22 +27,24 @@ License: GPL (>=3)
 Depends:
     R (>= 3.0.2),
     Rcpp (>= 0.12.0),
-    methods,
-    bayesplot (>= 1.2.0)
+    methods
 Imports:
+    bayesplot (>= 1.2.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 1.1.0),
     Matrix,
     nlme (>= 3.1-124),
-    rstan (>= 2.14.2),
-    rstantools (>= 1.3.0),
-    shinystan (>= 2.4.0),
+    rstan (>= 2.17.2),
+    rstantools (>= 1.2.0),
+    shinystan (>= 2.3.0),
     stats,
+    survival (>= 2.40.1),
     utils
 Suggests:
     arm,
     betareg,
+    data.table (>= 1.10.0),
     digest,
     gridExtra,
     HSAUR3,
@@ -52,12 +55,12 @@ Suggests:
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.14.0), rstan (>= 2.14.2), BH (>= 1.62.0), Rcpp (>=
-    0.12.0), RcppEigen
+LinkingTo: StanHeaders (>= 2.17.1), rstan (>= 2.17.2), BH (>= 1.65.0), Rcpp (>=
+    0.12.0), RcppEigen (>= 0.3.3.3.0)
 SystemRequirements: pandoc
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
 URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1

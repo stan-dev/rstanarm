@@ -356,6 +356,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' 
 #'   
 #' @examples
+#' \donttest{
 #' if (!exists("example_model")) example(example_model)
 #' 
 #' bayesplot::color_scheme_set("purple")
@@ -363,7 +364,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' # see 'condition' argument above for details on the plots below and 
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
-#' \donttest{
+#' 
 #' pairs(
 #'   example_model, 
 #'   regex_pars = "herd:[2,7,9]", 

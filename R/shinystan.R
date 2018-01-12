@@ -117,5 +117,5 @@ launch_shinystan.stanreg <-
         model_name = model_name,
         note = note
       )
-    shinystan::launch_shinystan(sso, ...)
+    shinystan::launch_shinystan(sso, rstudio = rstudio, ...)
   }
