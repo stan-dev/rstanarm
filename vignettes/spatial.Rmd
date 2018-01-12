@@ -54,7 +54,7 @@ $$
 f(\boldsymbol{\phi} | \boldsymbol{\mu}) = (2\pi)^{-n/2} |\mathbf{W}|^{1/2}
 \exp\bigg( -\frac{1}{2}(\boldsymbol{\phi-\mu})^{\top}\mathbf{W}(\boldsymbol{\phi-\mu}) \bigg)
 $$
-and $W_{i,j} \neq 0$ when $\{i,j\}\in\mathcal{E}$ for all $i \neq j$. Here, $\mathcal{V}$ refers to the verticies on the graph (i.e. the spatial units) and $\mathcal{E}$ refers to the edges on the graph (i.e. the spatial units that are neighbors). So $\mathbf{W}$ is an $N$-by-$N$ matrix  (with zeros on the diagonal) which describes spatial adjacency. 
+and $W_{i,j} \neq 0$ when $\{i,j\}\in\mathcal{E}$ for all $i \neq j$. Here, $\mathcal{V}$ refers to the verticies on the graph (i.e. the spatial units) and $\mathcal{E}$ refers to the edges on the graph (i.e. the spatial units that are neighbors). In other words, $\mathbf{W}$ is an $N$-by-$N$ matrix  (with zeros on the diagonal) which describes spatial adjacency. 
 
 Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\mathbf{Q} = \mbox{diag}(\mathbf{W1}) - W$ (which is guaranteed to be positive semi-definite) is used as the precision matrix.
 
@@ -69,11 +69,11 @@ f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\tau\mathbf{Q}|^{1/2}
 \end{align}
 $$
 
-where $\rho$ is a scalar that controls the overall spatial variation and has an appropriate hyperprior distribution. 
+where $\tau$ is a scalar that controls the overall spatial variation and has an appropriate hyperprior distribution. 
 
 ## BYM
 
-The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial component takes the following form,
+The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial effect takes the following form,
 $$
 \begin{align}
 \boldsymbol{\psi} &= \rho\boldsymbol{\phi} + \tau\boldsymbol{\theta} \\
@@ -86,7 +86,7 @@ Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard 
 
 ## BYM2 (Variant of the BYM Spatial Prior)
 
-The `stan_bym2` modeling function fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and thex unstructured (random) effect,
+The `stan_bym2` modeling function fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and the unstructured (random) effect,
 $$
 \begin{align}
 \boldsymbol{\psi} &= \tau(\boldsymbol{\theta}\sqrt{1-\rho} + \boldsymbol{\phi}\sqrt{\rho}) \\
@@ -96,7 +96,7 @@ f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
 \end{align}
 $$
 
-As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. Here, the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
+As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. However, the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
 
 Priors on $\rho$ should be chosen wisely as $\rho=0$ reduces to a model that not account for spatial variation and $\rho=1$ reduces to the ICAR model, which does not account for random variation among the spatial units. 
 
