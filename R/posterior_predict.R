@@ -493,3 +493,4 @@ pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
     return(rowSums(y))
   rep(1, NROW(y))
 }
+}
