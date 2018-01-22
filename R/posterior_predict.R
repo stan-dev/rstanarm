@@ -210,10 +210,17 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- do.call(fun, list(ytilde))
   if (is_polr(object) && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
-
-  if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
-  else colnames(ytilde) <- rownames(newdata)
-
+  
+  # fix me!
+  if (is(object, "car")) {
+    if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = NULL))
+    else colnames(ytilde) <- rownames(newdata)
+  }
+  else {
+    if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
+    else colnames(ytilde) <- rownames(newdata) 
+  }
+  
   # if function is called from posterior_traj then add mu as attribute
   fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
@@ -394,27 +401,6 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
   some_draws <- isTRUE(draws < S)
   if (some_draws)
     samp <- sample(S, draws)
-  if (is.null(data$Zt)) {
-    stanmat <- as.matrix.stanreg(object)
-    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (some_draws)
-      beta <- beta[samp, , drop = FALSE]
-    if (is(object, "car")) {
-      psi_indx <- grep("psi", colnames(stanmat))
-      psi <- stanmat[, psi_indx, drop = FALSE]
-      if (some_draws)
-        psi <- psi[samp, , drop = FALSE]
-      eta <- linear_predictor(beta, x, data$offset) + psi
-    }
-    else
-      eta <- linear_predictor(beta, x, data$offset)
-  } else {
-    stanmat <- as.matrix(object$stanfit)
-    beta <- stanmat[, seq_len(ncol(x)), drop = FALSE]
-    if (some_draws)
-      beta <- beta[samp, , drop = FALSE]
-    eta <- linear_predictor(beta, x, data$offset)
-    b <- stanmat[, grepl("^b\\[", colnames(stanmat)), drop = FALSE]
   if (is.stanmvreg(object)) {
     if (is.null(m)) STOP_arg_required_for_stanmvreg(m)
     M <- get_M(object)
@@ -444,6 +430,13 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
     if (is.null(data$arg1)) eta <- linkinv(object)(eta)
     else eta <- linkinv(object)(eta, data$arg1, data$arg2)
     eta <- t(eta)
+  }
+  if (is(object, "car")) {
+    psi_indx <- grep("psi", colnames(stanmat))
+    psi <- stanmat[, psi_indx, drop = FALSE]
+    if (some_draws)
+      psi <- psi[samp, , drop = FALSE]
+    eta <- eta + psi
   }
   nlist(eta, stanmat)
 }
@@ -492,5 +485,4 @@ pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
   if (NCOL(y) == 2L)
     return(rowSums(y))
   rep(1, NROW(y))
-}
 }
