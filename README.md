@@ -48,7 +48,10 @@ install_github("stan-dev/rstanarm", build_vignettes = FALSE)
 ```
 
 You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 
-vignettes are already available from [CRAN](https://cran.r-project.org/package=rstanarm/vignettes). 
+vignettes are already separately available from the 
+[Stan website](http://mc-stan.org/rstanarm/articles/index.html) 
+and 
+[CRAN](https://cran.r-project.org/package=rstanarm/vignettes). 
 If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
 
 ### Contributing 
