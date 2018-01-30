@@ -68,6 +68,7 @@
 #'   p192-236.
 #' 
 #' @examples 
+#' \dontrun{
 #' ### Simulated Data on a Lattice
 #' 
 #' data("lattice", package = "rstanarm")
@@ -90,15 +91,17 @@
 #' # simulate predictor/outcome
 #' x <- rnorm(nrow(W), 3, 1)
 #' phi <- grid_sim@data$gmrf
-#' tau <- 1
-#' y <- rnorm(nrow(W), 0 + 0.4*x + phi*tau, 1)
+#' tau <- 2
+#' y <- rnorm(nrow(W), 0.5 + 3*x + phi*tau, 1)
 #' 
 #' # fit the model
-#' fit_besag <- stan_besag(y_gauss ~ 1 + x + I(x^2), data = data.frame(y=y,x=x),
-#'     W = W, iter = 300, chains = 4)
+#' fit_besag <- stan_besag(y ~ 1 + x, data = data.frame(y=y,x=x), family = gaussian(),
+#'                         W = W, iter = 500, chains = 4)
 #' fit_besag
 #' pp_check(fit_besag)
+#'}
 #'
+
 stan_besag <- function(formula,
                      family = NULL,
                      data,

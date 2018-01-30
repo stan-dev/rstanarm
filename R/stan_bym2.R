@@ -78,6 +78,7 @@
 #'   constructing priors. arXiv preprint	arXiv:1403.4630.
 #' 
 #' @examples 
+#' \dontrun{
 #' ### Simulated Data on a Lattice
 #' 
 #' data("lattice", package = "rstanarm")
@@ -108,9 +109,12 @@
 #' 
 #' # fit the model
 #' fit_bym2 <- stan_bym2(y ~ 1 + x, data = data.frame(y=y,x=x),
-#'     W = W, iter = 300, chains = 4)
+#'                       W = W, iter = 1e3, chains = 4, cores = 2)
 #' fit_bym2
-#' pp_check(fit_besag)
+#' pp_check(fit_bym2)
+#' }
+#' 
+
 stan_bym2 <- function(formula,
                         family = gaussian(),
                         data,

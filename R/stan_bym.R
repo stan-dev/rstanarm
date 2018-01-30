@@ -70,6 +70,7 @@
 #'   Statistical Mathematics. Vol. 43, No. 01, p1-20.
 #' 
 #' @examples 
+#' \dontrun{
 #' ### Simulated Data on a Lattice
 #' 
 #' data("lattice", package = "rstanarm")
@@ -94,15 +95,18 @@
 #' phi <- grid_sim@data$gmrf
 #' theta <- rnorm(nrow(W), 0, 1)
 #' tau <- 1
-#' rho <- 1
+#' rho <- 2
 #' spatial_data <- data.frame(x)
-#' y <- rnorm(nrow(W), 0 + 0.4*x + phi*rho + theta*tau, 1)
+#' y <- rnorm(nrow(W), 0.5 + 3*x + phi*rho + theta*tau, 1)
 #' 
 #' # fit the model
-#' fit_bym <- stan_bym(y ~ 1 + x +, data = data.frame(y=y,x=x),
-#'     W = W, iter = 300, chains = 4)
+#' fit_bym <- stan_bym(y ~ 1 + x, data = data.frame(y=y,x=x),
+#'                     W = W, iter = 500)
 #' fit_bym
-#' pp_check(fit_besag)
+#' pp_check(fit_bym)
+#' }
+#' 
+
 stan_bym <- function(formula,
                       family = gaussian(),
                       data,
