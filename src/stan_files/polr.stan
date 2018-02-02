@@ -1,5 +1,5 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for an ordinal outcome with coherent priors
 functions {
@@ -122,13 +122,30 @@ functions {
     else reject("invalid link");
     return ystar;
   }
+  
+  /** 
+  * faster version of csr_matrix_times_vector
+  * declared here and defined in C++
+  *
+  * @param m Integer number of rows
+  * @param n Integer number of columns
+  * @param w Vector (see reference manual)
+  * @param v Integer array (see reference manual)
+  * @param u Integer array (see reference manual)
+  * @param b Vector that is multiplied from the left by the CSR matrix
+  * @return A vector that is the product of the CSR matrix and b
+  */
+  vector csr_matrix_times_vector2(int m, int n, vector w, int[] v, int[] u, vector b);
 }
 data {
-  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
-  int<lower=2> J;  // number of outcome categories, which typically is > 2
+  // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+#include /data/NKX.stan
+  int<lower=2> J;             // number of outcome categories, which typically is > 2
   int<lower=1,upper=J> y[N];  // ordinal outcome
-  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
-  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
+#include /data/data_glm.stan
+  // declares has_weights, weights, has_offset, offset
+#include /data/weights_offset.stan
 
   // hyperparameter values
   real<lower=0> regularization;
@@ -168,7 +185,7 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
     if (is_skewed == 0)
       target += pw_polr(y, eta, cutpoints, link, 1.0);
@@ -198,7 +215,7 @@ generated quantities {
   else zeta = cutpoints;
   if (J == 2) zeta = -zeta;
   {
-    #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
     for (n in 1:N) {
       int y_tilde;
       vector[J] theta;

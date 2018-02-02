@@ -26,19 +26,22 @@
 # @param use_function The function to call which will return the design 
 #   matrices for eta, eps, lag, auc, etc. Generally either 
 #   'make_assoc_parts_for_stan' or 'pp_data'.
-# @param data A model frame used for constructing the design matrices
-# @param assoc A named list returned by a call to validate_assoc (details
-#   on the desired association structure for all longitudinal submodels)
-# @param id_var The name on the ID variable
-# @param time_var The name of the time variable
-# @param id_list A vector of subject IDs
-# @param times A vector (or possibly a list of vectors) of times at which the 
-#   design matrices should be evaluated (most likely the event times and the
-#   quadrature times)
-# @param eps A numeric value used as the time shift for numerically evaluating
-#   the slope of the longitudinal submodel using a one-sided difference
-# @param auc_qnodes An integer specifying the number of quadrature nodes to
-#   use when evaluating the area under the curve for the longitudinal submodel
+# @param newdata A model frame used for constructing the design matrices
+# @param assoc A list with information about the association structure for 
+#   the one longitudinal submodel. 
+# @param grp_stuff A list with information about any lower level grouping
+#   factors that are clustered within patients and how to handle them in 
+#   the association structure.
+# @param ids,times The subject IDs and times vectors that correspond to the
+#   event/censoring and quadrature times at which the design matrices will
+#   need to be evaluated for the association structure.
+# @param id_var The name on the ID variable.
+# @param time_var The name of the time variable.
+# @param epsilon The half-width of the central difference used for 
+#   numerically calculating the derivative of the design matrix for slope
+#   based association structures.
+# @param auc_qnodes Integer specifying the number of GK quadrature nodes to
+#   use in the integral/AUC based association structures.
 # @param ... Additional arguments passes to use_function
 # @return A named list
 make_assoc_parts <- function(use_function = make_assoc_parts_for_stan, 
@@ -175,7 +178,7 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
 # quadrature points.
 #
 # @param newdata A data frame; the data for the longitudinal submodel 
-#   at the quadrature points.
+#   at the event and quadrature points.
 # @param y_mod The list returned by handle_y_mod, containing info about
 #   the longitudinal submodel evaluated at the observation (not quadrature)
 #   times, for example, the x_bar means used for centering, the predvars 

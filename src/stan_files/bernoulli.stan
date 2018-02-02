@@ -1,10 +1,10 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a Bernoulli outcome
 functions {
-  #include "common_functions.stan"
-  #include "bernoulli_likelihoods.stan"  
+#include /functions/common_functions.stan
+#include /functions/bernoulli_likelihoods.stan
 }
 data {
   // dimensions
@@ -22,20 +22,23 @@ data {
   // stuff for the sparse case
   int<lower=0> nnz_X0;                       // number of non-zero elements in the implicit X0 matrix
   vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
-  int<lower=0> v_X0[nnz_X0];                 // column indices for w_X0
-  int<lower=0> u_X0[dense_X ? 0 : N[1] + 1]; // where the non-zeros start in each row of X0
+  int<lower=0, upper = K - 1> v_X0[nnz_X0];  // column indices for w_X0
+  // where the non-zeros start in each row of X0
+  int<lower=0, upper = rows(w_X0) + 1> u_X0[dense_X ? 0 : N[1] + 1]; 
   int<lower=0> nnz_X1;                       // number of non-zero elements in the implicit X1 matrix
   vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
-  int<lower=0> v_X1[nnz_X1];                 // column indices for w_X1
-  int<lower=0> u_X1[dense_X ? 0 : N[2] + 1]; // where the non-zeros start in each row of X1
-  
+  int<lower=0, upper = K - 1> v_X1[nnz_X1];  // column indices for w_X1
+  // where the non-zeros start in each row of X1
+  int<lower=0, upper = rows(w_X1) + 1> u_X1[dense_X ? 0 : N[2] + 1]; 
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
+#include /data/data_glm.stan
+
   int<lower=0> K_smooth;
   matrix[N[1], K_smooth] S0;
   matrix[N[2], K_smooth] S1;
   int<lower=1> smooth_map[K_smooth];
   
   int<lower=5,upper=5> family;
-  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
@@ -48,18 +51,20 @@ data {
   vector[has_offset ? N[2] : 0] offset1;
   
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
-  #include "hyperparameters.stan"
+#include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
+#include /data/glmer_stuff.stan
 
   // more glmer stuff
   int<lower=0> num_non_zero[2];     // number of non-zero elements in the Z matrices
   vector[num_non_zero[1]] w0;       // non-zero elements in the implicit Z0 matrix
   vector[num_non_zero[2]] w1;       // non-zero elements in the implicit Z1 matrix
-  int<lower=0> v0[num_non_zero[1]]; // column indices for w0
-  int<lower=0> v1[num_non_zero[2]]; // column indices for w1
-  int<lower=0> u0[t > 0 ? N[1] + 1 : 0];  // where the non-zeros start in each row of Z0
-  int<lower=0> u1[t > 0 ? N[2] + 1 : 0];  // where the non-zeros start in each row of Z1
+  int<lower=0, upper = q - 1> v0[num_non_zero[1]]; // column indices for w0
+  int<lower=0, upper = q - 1> v1[num_non_zero[2]]; // column indices for w1
+  // where the non-zeros start in each row of Z0
+  int<lower=0, upper = rows(w0) + 1> u0[t > 0 ? N[1] + 1 : 0];  
+  // where the non-zeros start in each row of Z1
+  int<lower=0, upper = rows(w1) + 1> u1[t > 0 ? N[2] + 1 : 0];  
   int<lower=0, upper=1> special_case;     // whether we only have to deal with (1|group)
 }
 transformed data {
@@ -70,7 +75,8 @@ transformed data {
   int<lower=0> successes[clogit ? J : 0];
   int<lower=0> failures[clogit ? J : 0];
   int<lower=0> observations[clogit ? J : 0];
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
+  // defines hs, len_z_T, len_var_group, delta, pos
+#include /tdata/tdata_glm.stan
   for (j in 1:J) {
     successes[j] = 0;
     failures[j] = 0;
@@ -81,10 +87,12 @@ transformed data {
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+#include /parameters/parameters_glm.stan
 }
 transformed parameters {
-  #include "tparameters_glm.stan" // defines beta, b, theta_L
+  // defines beta, b, theta_L
+#include /tparameters/tparameters_glm.stan
   if (t > 0) {
     if (special_case) {
       int start = 1;
@@ -104,7 +112,8 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta_bern.stan" // defines eta0, eta1
+  // defines eta0, eta1
+#include /model/make_eta_bern.stan
   if (has_intercept == 1) {
     if (link != 4) {
       eta0 = gamma[1] + eta0;
@@ -128,7 +137,7 @@ model {
     target += dot_product(weights1, pw_bern(1, eta1, link));
   }
   
-  #include "priors_glm.stan" // increments target()
+#include /model/priors_glm.stan
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -140,7 +149,10 @@ generated quantities {
     else alpha[1] = gamma[1];
   }
   {
-    #include "make_eta_bern.stan" // defines eta0, eta1
+    vector[N[1]] pi0;
+    vector[N[2]] pi1;
+    // defines eta0, eta1
+#include /model/make_eta_bern.stan
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 = gamma[1] + eta0;
@@ -156,8 +168,8 @@ generated quantities {
     }
     if (clogit) for (j in 1:J) mean_PPD = mean_PPD + successes[j]; // fixed by design
     else {
-      vector[N[1]] pi0 = linkinv_bern(eta0, link);
-      vector[N[2]] pi1 = linkinv_bern(eta1, link);
+      pi0 = linkinv_bern(eta0, link);
+      pi1 = linkinv_bern(eta1, link);
       for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
       for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
     }

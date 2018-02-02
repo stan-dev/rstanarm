@@ -1,38 +1,45 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a count outcome
 functions {
-  #include "common_functions.stan"
-  #include "count_likelihoods.stan"
+#include /functions/common_functions.stan
+#include /functions/count_likelihoods.stan
 }
 data {
-  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+  // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+#include /data/NKX.stan
   int<lower=0> y[N];  // count outcome
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
+#include /data/data_glm.stan
+  // declares has_weights, weights, has_offset, offset
+#include /data/weights_offset.stan
   int<lower=6,upper=7> family; // 6 poisson, 7 neg-binom, (8 poisson with gamma noise at some point?)
-  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
-  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
-  #include "hyperparameters.stan"
+#include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
-  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
+#include /data/glmer_stuff.stan
+  // declares num_not_zero, w, v, u
+#include /data/glmer_stuff2.stan
 }
 transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, pos
+  // defines hs, len_z_T, len_var_group, delta, pos
+#include /tdata/tdata_glm.stan
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+#include /parameters/parameters_glm.stan
   real<lower=0> aux_unscaled[family > 6];
   vector<lower=0>[N] noise[family == 8]; // do not store this
 }
 transformed parameters {
   real aux = negative_infinity(); // be careful with this in the family = 6 case
-  #include "tparameters_glm.stan" // defines beta, b, theta_L
- 
+  // defines beta, b, theta_L
+#include /tparameters/tparameters_glm.stan
+
   if (family > 6 && (prior_dist_for_aux == 0 || prior_scale_for_aux <= 0))
     aux = aux_unscaled[1];
   else if (family > 6) {
@@ -64,16 +71,16 @@ transformed parameters {
   }
 }
 model {
-  #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
   if (t > 0) {
-    #include "eta_add_Zb.stan"
+#include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
     if (link == 1) eta = eta + gamma[1];
     else eta = eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
   }
   
   if (family == 8) {
@@ -110,7 +117,7 @@ model {
       target += exponential_lpdf(aux_unscaled | 1);
   }
   
-  #include "priors_glm.stan" // increments target()
+#include /model/priors_glm.stan
   
   // Log-prior for noise
   if (family == 8) target += gamma_lpdf(noise[1] | aux, 1);
@@ -127,21 +134,20 @@ generated quantities {
   }
   {
     vector[N] nu;
-    #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
     if (t > 0) {
-      #include "eta_add_Zb.stan"
+#include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
       if (link == 1) eta = eta + gamma[1];
       else {
-        real shift;
-        shift = min(eta);
+        real shift = min(eta);
         eta = eta - shift + gamma[1];
         alpha[1] = alpha[1] - shift;
       }
     }
     else {
-      #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
     }
     
     if (family == 8) {

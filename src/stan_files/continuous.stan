@@ -1,12 +1,12 @@
-#include "Columbia_copyright.stan"
-#include "license.stan" // GPL3+
+#include /pre/Columbia_copyright.stan
+#include /pre/license.stan
 
 // GLM for a Gaussian, Gamma, inverse Gaussian, or Beta outcome
 functions {
-  #include "common_functions.stan"
-  #include "continuous_likelihoods.stan"
-  #include "SSfunctions.stan"
-  
+#include /functions/common_functions.stan
+#include /functions/continuous_likelihoods.stan
+#include /functions/SSfunctions.stan
+
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -22,23 +22,27 @@ functions {
                                       int[] v, int[] u, vector b) {
     return csr_matrix_times_vector(m, n, w, v, u, b); 
   }
-  
 }
 data {
-  #include "NKX.stan"      // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+  // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
+#include /data/NKX.stan
   int<lower=0> len_y;      // length of y
   real lb_y; // lower bound on y
   real<lower=lb_y> ub_y; // upper bound on y
   vector<lower=lb_y, upper=ub_y>[len_y] y; // continuous outcome
   int<lower=1,upper=4> family; // 1 gaussian, 2 gamma, 3 inv-gaussian, 4 beta
-  #include "data_glm.stan" // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
-  #include "weights_offset.stan"  // declares has_weights, weights, has_offset, offset
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
+#include /data/data_glm.stan
+  // declares has_weights, weights, has_offset, offset
+#include /data/weights_offset.stan
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
-  #include "hyperparameters.stan"
+#include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
-  #include "glmer_stuff.stan"  
-  #include "glmer_stuff2.stan" // declares num_not_zero, w, v, u
-  #include "data_betareg.stan"
+#include /data/glmer_stuff.stan
+  // declares num_not_zero, w, v, u
+#include /data/glmer_stuff2.stan
+#include /data/data_betareg.stan
+
   int<lower=0,upper=10> SSfun; // nonlinear function indicator, 0 for identity
   vector[SSfun > 0  ? len_y : 0] input;
   vector[SSfun == 5 ? len_y : 0] Dose;
@@ -49,8 +53,10 @@ transformed data {
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  #include "tdata_glm.stan"// defines hs, len_z_T, len_var_group, delta, is_continuous, pos
-  #include "tdata_betareg.stan" // defines hs_z
+  // defines hs, len_z_T, len_var_group, delta, is_continuous, pos
+#include /tdata/tdata_glm.stan
+  // defines hs_z
+#include /tdata/tdata_betareg.stan
   is_continuous = 1;
 
   if (family == 3) {
@@ -60,18 +66,29 @@ transformed data {
 }
 parameters {
   real<lower=make_lower(family, link),upper=make_upper(family,link)> gamma[has_intercept];
-  #include "parameters_glm.stan" // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+  // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
+#include /parameters/parameters_glm.stan
   real<lower=0> aux_unscaled; // interpretation depends on family!
-  #include "parameters_betareg.stan"
+#include /parameters/parameters_betareg.stan
 }
 transformed parameters {
   // aux has to be defined first in the hs case
   real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
              prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
              prior_scale_for_aux * aux_unscaled);
-  vector[z_dim] omega; // used in tparameters_betareg.stan             
-  #include "tparameters_glm.stan" // defines beta, b, theta_L
-  #include "tparameters_betareg.stan"
+
+  vector[z_dim] omega; // used in tparameters_betareg.stan
+  // defines beta, b, theta_L
+#include /tparameters/tparameters_glm.stan
+#include /tparameters/tparameters_betareg.stan
+  
+  if (prior_dist_for_aux == 0) // none
+    aux = aux_unscaled;
+  else {
+    aux = prior_scale_for_aux * aux_unscaled;
+    if (prior_dist_for_aux <= 2) // normal or student_t
+      aux = aux + prior_mean_for_aux;
+  }
 
   if (t > 0) {
     if (special_case == 1) {
@@ -93,9 +110,9 @@ transformed parameters {
 }
 model {
   vector[N] eta_z; // beta regression linear predictor for phi
-  #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
   if (t > 0) {
-    #include "eta_add_Zb.stan"    
+#include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
     if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
@@ -103,9 +120,9 @@ model {
     else eta = eta - min(eta) + gamma[1];
   }
   else {
-    #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
   }
-  
+
   if (SSfun > 0) { // nlmer
     matrix[len_y, K] P;
     P = reshape_vec(eta, len_y, K);
@@ -134,7 +151,7 @@ model {
     }
   }
   else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
-    #include "make_eta_z.stan"  // linear predictor in stan_betareg 
+#include /model/make_eta_z.stan
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
       if (link_phi > 1) {
@@ -145,7 +162,7 @@ model {
       }
     }
     else { // has_intercept_z == 0
-      #include "eta_z_no_intercept.stan"
+#include /model/eta_z_no_intercept.stan
     }
     if (family == 1) {
       if (link == 1) 
@@ -153,8 +170,7 @@ model {
       else if (link == 2) 
         target += normal_lpdf(y | exp(eta), aux);
       else 
-        target += normal_lpdf(y | divide_real_by_vector(1, eta), aux);
-      // divide_real_by_vector() is defined in common_functions.stan
+        target += normal_lpdf(y | inv(eta), aux);
     }
     else if (family == 2) {
       target += GammaReg(y, eta, aux, link, sum_log_y);
@@ -198,8 +214,8 @@ model {
      target += exponential_lpdf(aux_unscaled | 1);
   }
     
-  #include "priors_glm.stan" // increments target()
-  #include "priors_betareg.stan"
+#include /model/priors_glm.stan
+#include /model/priors_betareg.stan
   if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
                       regularization, delta, shape, t, p);
 }
@@ -216,16 +232,15 @@ generated quantities {
   }
   {
     vector[N] eta_z;
-    #include "make_eta.stan" // defines eta
+#include /model/make_eta.stan
     if (t > 0) {
-      #include "eta_add_Zb.stan"
+#include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
       if (make_lower(family,link) == negative_infinity() &&
           make_upper(family,link) == positive_infinity()) eta = eta + gamma[1];
       else if (family == 4 && link == 5) {
-        real max_eta;
-        max_eta = max(eta);
+        real max_eta = max(eta);
         alpha[1] = alpha[1] - max_eta;
         eta = eta - max_eta + gamma[1];
       }
@@ -236,10 +251,9 @@ generated quantities {
       }
     }
     else {
-      #include "eta_no_intercept.stan" // shifts eta
+#include /model/eta_no_intercept.stan
     }
-
-    #include "make_eta_z.stan"
+#include /model/make_eta_z.stan
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
       if (link_phi > 1) {
@@ -251,7 +265,7 @@ generated quantities {
       }
     }
     else { // has_intercept_z == 0
-      #include "eta_z_no_intercept.stan"
+#include /model/eta_z_no_intercept.stan
     }
     
     if (SSfun > 0) { // nlmer

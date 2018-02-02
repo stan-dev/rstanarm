@@ -271,7 +271,7 @@
     if (family == 1) {  // gaussian
       if (link == 1) target += normal_lpdf(y_real | eta, aux[1]);
       else if (link == 2) target += lognormal_lpdf(y_real | eta, aux[1]);
-      else target += normal_lpdf(y_real | divide_real_by_vector(1, eta), aux[1]);
+      else target += normal_lpdf(y_real | inv(eta), aux[1]);
     }
     else if (family == 2) {  // gamma
       target += GammaReg(y_real, eta, aux[1], link, sum_log_y);
