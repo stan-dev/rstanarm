@@ -125,7 +125,8 @@
 #' # predictive accuracy. unlike when comparing two models, now the 
 #' # diplayed standard errors do _not_ pertain to differences.
 #' fit3 <- stan_glm(mpg ~ ., data = mtcars)
-#' loo3 <- loo(fit3, k_threshold = 0.7, cores = 2)
+#' loo3 <- loo(fit3, cores = 2)
+#' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
 #' 
 #' # 10-fold cross-validation
@@ -136,114 +137,128 @@
 #' 
 #' @importFrom loo loo loo.function loo.matrix
 #' 
-loo.stanreg <- function(x, ..., cores = getOption("loo.cores", 1), save_psis = FALSE, k_threshold = NULL) {
-  if (!used.sampling(x)) 
-    STOP_sampling_only("loo")
-  if (model_has_weights(x))
-    recommend_exact_loo(reason = "model has weights")
-  
-  user_threshold <- !is.null(k_threshold)
-  if (user_threshold) {
-    validate_k_threshold(k_threshold)
-  } else {
-    k_threshold <- 0.7
-  }
-  if (is.stanjm(x)) { 
-    # stan_jm models
-    ll <- log_lik(x)
-    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <-
-      suppressWarnings(loo.matrix(
-        ll,
-        r_eff = r_eff,
-        cores = cores,
-        save_psis = save_psis
-      ))
-  } else if (is.stanmvreg(x)) { 
-    # stan_mvmer models
-    M <- get_M(x)
-    ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
-    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <-
-      suppressWarnings(loo.matrix(
-        ll,
-        r_eff = r_eff,
-        cores = cores,
-        save_psis = save_psis
-      ))
-  } else if (is_clogit(x)) {
-    ll <- log_lik.stanreg(x)
-    cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
-    if (any(cons)) {
-      message("The following groups were dropped from the loo calculation:",
-              paste(which(cons), collapse = ", "))
-      ll <- ll[, !cons, drop = FALSE]
+loo.stanreg <-
+  function(x,
+           ...,
+           cores = getOption("loo.cores", 1),
+           save_psis = FALSE,
+           k_threshold = NULL) {
+    if (!used.sampling(x))
+      STOP_sampling_only("loo")
+    if (model_has_weights(x))
+      recommend_exact_loo(reason = "model has weights")
+    
+    user_threshold <- !is.null(k_threshold)
+    if (user_threshold) {
+      validate_k_threshold(k_threshold)
+    } else {
+      k_threshold <- 0.7
     }
-    r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(x))
-    loo_x <-
-      suppressWarnings(loo.matrix(
-        ll,
-        r_eff = r_eff,
-        cores = cores,
-        save_psis = save_psis
-      ))
-  } else {
-    args <- ll_args(x)
-    fun <- ll_fun(x)
-    r_eff <- loo::relative_eff( # using function method
-      x = fun, 
-      chain_id = chain_id_for_loo(x),
-      data = args$data, 
-      draws = args$draws, 
-      ...
-    )
-    loo_x <- suppressWarnings(
-      loo.function(
-        fun,
+    
+    # chain_id to pass to loo::relative_eff
+    chain_id <- chain_id_for_loo(x)
+    
+    if (is.stanjm(x)) {
+      ll <- log_lik(x)
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      loo_x <-
+        suppressWarnings(loo.matrix(
+          ll,
+          r_eff = r_eff,
+          cores = cores,
+          save_psis = save_psis
+        ))
+    } else if (is.stanmvreg(x)) {
+      M <- get_M(x)
+      ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      loo_x <-
+        suppressWarnings(loo.matrix(
+          ll,
+          r_eff = r_eff,
+          cores = cores,
+          save_psis = save_psis
+        ))
+    } else if (is_clogit(x)) {
+      ll <- log_lik.stanreg(x)
+      cons <- apply(ll,MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+      if (any(cons)) {
+        message(
+          "The following groups were dropped from the loo calculation:",
+          paste(which(cons), collapse = ", ")
+        )
+        ll <- ll[,!cons, drop = FALSE]
+      }
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      loo_x <-
+        suppressWarnings(loo.matrix(
+          ll,
+          r_eff = r_eff,
+          cores = cores,
+          save_psis = save_psis
+        ))
+    } else {
+      args <- ll_args(x)
+      fun <- ll_fun(x)
+      r_eff <- loo::relative_eff(
+        # using function method
+        x = fun,
+        chain_id = chain_id,
         data = args$data,
         draws = args$draws,
-        r_eff = r_eff,
-        ...,
-        cores = cores,
-        save_psis = save_psis
+        ...
       )
+      loo_x <- suppressWarnings(
+        loo.function(
+          fun,
+          data = args$data,
+          draws = args$draws,
+          r_eff = r_eff,
+          ...,
+          cores = cores,
+          save_psis = save_psis
+        )
+      )
+    }
+    
+    bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
+    n_bad <- length(bad_obs)
+    
+    out <- structure(
+      loo_x,
+      name = deparse(substitute(x)),
+      discrete = is_discrete(x),
+      yhash = hash_y(x)
+    )
+    
+    if (!length(bad_obs)) {
+      if (user_threshold) {
+        message(
+          "All pareto_k estimates below user-specified threshold of ",
+          k_threshold,
+          ". \nReturning loo object."
+        )
+      }
+      return(out)
+    }
+    
+    if (!user_threshold) {
+      if (n_bad > 10) {
+        recommend_kfold(n_bad)
+      } else {
+        recommend_reloo(n_bad)
+      }
+      return(out)
+    }
+    
+    reloo_out <- reloo(x, loo_x, obs = bad_obs)
+    structure(
+      reloo_out,
+      name = attr(out, "name"),
+      discrete = attr(out, "discrete"),
+      yhash = attr(out, "yhash")
     )
   }
-  
-  bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
-  n_bad <- length(bad_obs)
-  
-  out <- structure(loo_x, 
-                   name = deparse(substitute(x)), 
-                   discrete = is_discrete(x), 
-                   yhash = hash_y(x))
-  
-  if (!length(bad_obs)) {
-    if (user_threshold) {
-      message(
-        "All pareto_k estimates below user-specified threshold of ", 
-        k_threshold, ". \nReturning loo object."
-      )
-    }
-    return(out)
-  }
-  
-  if (!user_threshold) {
-    if (n_bad > 10) {
-      recommend_kfold(n_bad)
-    } else {
-      recommend_reloo(n_bad)
-    }
-    return(out)
-  }
-  
-  reloo_out <- reloo(x, loo_x, obs = bad_obs)
-  structure(reloo_out, 
-            name = attr(out, "name"), 
-            discrete = attr(out, "discrete"),
-            yhash = attr(out, "yhash"))
-}
-
 
 # WAIC
 # 
