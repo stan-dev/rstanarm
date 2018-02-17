@@ -341,6 +341,10 @@ for the tree-specific deviations in the asymptote, which are considerable.
 ```{r}
 plot(post1, regex_pars = "^[b]")
 ```
+Also, we can check the effective number of parameters with
+```{r}
+loo(post1)
+```
 
 As can be seen, the age of the tree has a non-linear effect on the predicted
 circumference of the tree (here for a out-of-sample tree):
