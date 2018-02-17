@@ -462,10 +462,19 @@ pp_b_ord <- function(b, Z_names) {
 
 # Number of trials for binomial models
 pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
-  if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
-  y <- if (is.null(newdata))
-      get_y(object, m) else eval(formula(object, m = m)[[2L]], newdata)    
-  if (NCOL(y) == 2L)
-    return(rowSums(y))
-  rep(1, NROW(y))
+  if (is.stanmvreg(object) && is.null(m)) {
+    STOP_arg_required_for_stanmvreg(m)
+  }
+  
+  y <- get_y(object, m) 
+  is_bernoulli <- NCOL(y) == 1L
+  
+  if (is_bernoulli) {
+    trials <- if (is.null(newdata)) 
+      rep(1, NROW(y)) else rep(1, NROW(newdata))
+  } else {
+    trials <- if (is.null(newdata)) 
+      rowSums(y) else rowSums(eval(formula(object, m = m)[[2L]], newdata))
+  }
+  return(trials)
 }
