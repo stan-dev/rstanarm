@@ -1,11 +1,14 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.17.2
-Date: 2017-12-21
+Version: 2.17.3
+Date: 2018-02-17
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
+             person(given = "Jacqueline Buros", family = "Novik", 
+                    role = "ctb", comment = "R/stan_jm.R"),
+             person("AstraZeneca", role = "ctb", comment = "R/stan_jm.R"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
@@ -56,7 +59,7 @@ Suggests:
     testthat (>= 1.0.2)
 LinkingTo: StanHeaders (>= 2.17.1), rstan (>= 2.17.2), BH (>= 1.65.0), Rcpp (>=
     0.12.0), RcppEigen (>= 0.3.3.3.0)
-SystemRequirements: pandoc
+SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
