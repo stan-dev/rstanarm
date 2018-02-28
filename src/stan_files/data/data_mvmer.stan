@@ -12,7 +12,14 @@
   vector[yK[2]] yXbar2;
   vector[yK[3]] yXbar3;
   
-  // family and link
+  // family and link (determined by 'append_mvmer_famlink' R function)
+	// 1 = gaussian
+  // 2 = gamma
+  // 3 = inverse gaussian
+  // 4 = bernoulli
+  // 5 = binomial (n>1)
+  // 6 = poisson
+  // 7 = negative binomial
   int<lower=0> family[M];
   int<lower=0> link[M]; // varies by family 
 
