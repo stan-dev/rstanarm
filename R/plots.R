@@ -168,7 +168,8 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
   
   fun <- set_plotting_fun(plotfun)
   args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
-  do.call(fun, args)
+  p <- do.call(fun, args)
+  p + bayesplot::theme_default()
 }
 
 
@@ -455,7 +456,7 @@ pairs.stanreg <-
       max_treedepth = .max_treedepth(x),
       condition = condition,
       ...
-    )
+    ) + bayesplot::theme_default()
     
   }
 
