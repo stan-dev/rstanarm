@@ -474,3 +474,14 @@ pairs.stanreg <-
   }
   return(max_td)
 }
+
+
+#' Quickly set the default ggplot2 theme to the bayesplot style
+#'
+#' This is a convenience function to quickly change the default \code{ggplot2}
+#' theme to the default theme from the \code{bayesplot} package.
+#'
+#' @export
+set_bayes_theme <- function() {
+  ggplot2::theme_set(bayesplot::theme_default())
+}
