@@ -4,7 +4,8 @@ author: "Sam Brilleman"
 date: "`r Sys.Date()`"
 output: 
   html_vignette:
-    toc: yes
+    toc: true
+    number_sections: true
 params:
   EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
@@ -36,9 +37,9 @@ Over the last two decades the joint modelling of longitudinal and time-to-event 
 
 - Joint models are naturally suited to the task of *dynamic risk prediction*. For example, joint modelling approaches have been used to develop prognostic models where predictions of event risk can be updated as new longitudinal biomarker measurements become available. Taylor et al. [11] jointly modelled longitudinal measurements of the prostate specific antigen (PSA) and time to clinical recurrence of prostate cancer. The joint model was then used to develop a web-based calculator which could provide real-time predictions of the probability of recurrence based on a patient's up to date PSA measurements.
 
-In this vignette, we describe the __rstanarm__ package's `stan_jm` modelling function. This modelling function allows users to fit a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework, with the backend estimation carried out using Stan. In Section 2 we describe the formulation of the joint model used by `stan_jm`. In Section 3 we present an applied example to demonstrate how the `stan_jm` modelling function can be used to estimate the model as well as describe the type of inferences that can be obtained. 
+In this vignette, we describe the __rstanarm__ package's `stan_jm` modelling function. This modelling function allows users to fit a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework, with the backend estimation carried out using Stan. In Section 2 we describe the formulation of the joint model used by `stan_jm`. In Section 3 we present a variety of examples showing the usage of `stan_jm`. 
 
-Note that some aspects of the estimation are covered in other vignettes, such as the `stan_glmer` [vignette](glmer.html) which contains details on the prior distribution for covariance matrices for the group-specific terms, or the priors [vignette](priors.html) which contains details on the prior distributions available for regression coefficients.
+Note that some aspects of the estimation are covered in other vignettes, such as the priors [vignette](priors.html) which contains details on the prior distributions available for regression coefficients.
 
 ## Model formulation
 
@@ -274,9 +275,7 @@ A description of the example datasets can be found by accessing the following he
 help("datasets", package = "rstanarm")
 ```
 
-### Univariate joint models
-
-#### Current value association structure
+### Univariate joint model with a current value association structure
 
 We first fit a simple univariate joint model, with one normally distributed longitudinal marker, an association structure based on the current value of the linear predictor, and B-splines baseline hazard. To fit the model we use the joint (longitudinal and time-to-event) modelling function in the **rstanarm** package: `stan_jm`. When calling `stan_jm` we must, at a minimum, specify a formula object for each of the longitudinal and event submodels (through the arguments `formulaLong` and `formulaEvent`), the data frames which contain the variables for each of the the longitudinal and event submodels (through the arguments `dataLong` and `dataEvent`), and the name of the variable representing time in the longitudinal submodel (through the argument `time_var`).
 
@@ -316,7 +315,7 @@ The easiest way to extract the correlation matrix for the random effects (aside 
 as.data.frame(VarCorr(mod1))
 ```
 
-#### Current value and slope association structure
+#### Univariate joint model with a current value and current slope association structure
 
 In the previous example we were fitting a shared parameter joint model which assumed that the log hazard of the event (in this case the log hazard of death) at time *t* was linearly related to the subject-specific expected value of the longitudinal marker (in this case the expected value of log serum bilirubin) also at time *t*. This is the default association structure, although it could be explicitly specified by setting the `assoc = "etavalue"` argument. 
 
@@ -334,11 +333,25 @@ mod2 <- stan_jm(formulaLong = logBili ~ year + (year | id),
 
 In this example the subject-specific slope is actually constant across time *t* since we have a linear trajectory. Note however that we could still use the `"etaslope"` association structure even if we had a non-linear subject specific trajectory (for example modelled using cubic splines or polynomials).
 
-### Multivariate joint models 
-
-#### Fitting a multivariate joint model
+### Multivariate joint model with a current value association structure
 
 Suppose instead that we were interested in *two* repeatedly measured clinical biomarkers, log serum bilirubin and serum albumin, and their association with the risk of death. We may wish to model these two biomarkers, allowing for the correlation between them, and estimating their respective associations with the log hazard of death. We will fit a linear mixed effects submodel (identity link, normal distribution) for each biomarker with a patient-specific intercept and linear slope but no other covariates. In the event submodel we will include gender (`sex`) and treatment (`trt`) as baseline covariates. Each biomarker is assumed to be associated with the log hazard of death at time $t$ via it's expected value at time $t$ (i.e. a *current value* association structure).
+
+The model we are going to fit can therefore be specified as:
+
+$$
+y_{im}(t_{ijm}) \sim N(\mu_{im}(t_{ijm}), \sigma_m)
+$$
+
+$$
+\eta_{im}(t) = \mu_{im}(t) = \beta_{0m} + \beta_{1m} t + b_{0mi} + b_{1mi} t
+$$
+
+$$
+h_i(t) = h_0(t; \boldsymbol{\omega}) \exp(\gamma_1 w_{1i} + \gamma_2 w_{2i} + \alpha_{1i} \mu_{i1}(t) + \alpha_{2i} \mu_{i2}(t))
+$$
+
+where $t$ is time in years, and $w_{1i}$ and $w_{2i}$ are, respectively, the gender and treatment indicators for individual $i$.
 
 (Note that due to the very small sample size, the clinical findings from this analysis should not to be overinterpreted!).
 
@@ -365,9 +378,9 @@ or we can examine the summary output for the association parameters alone:
 summary(mod3, pars = "assoc")
 ```
 
-#### Obtaining posterior predictions
+### Posterior predictions
 
-We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`). As an example, let's plot the predicted trajectories for each biomarker and the predicted survival function under the fitted multivariate joint model, for three selected individuals in the dataset using `stan_jm` post-estimation functions:
+We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`). As an example, let's plot the predicted trajectories for each biomarker and the predicted survival function under the multivariate joint model estimated in the previous example. We will obtain predictions for three selected individuals in the dataset:
 \
 ```{r plots, fig.width=6.5, fig.height=6}
 p1 <- posterior_traj(mod3, m = 1, ids = 6:8)
@@ -379,6 +392,77 @@ plot_stack_jm(yplot = list(pp1, pp2), survplot = plot(p3))
 ```
 
 Here we can see the strong relationship between the underlying values of the biomarkers and mortality. Patient `8` who, relative to patients `6` and `7`, has a higher underlying value for log serum bilirubin and a lower underlying value for serum albumin at the end of their follow up has a far worse predicted probability of survival. 
+
+### Posterior predictions for the marginal longitudinal trajectory
+
+Now let's suppose we wanted to predict the longitudinal outcome for each of the biomarkers, marginalising over the distribution of the individual-specific parameters. To do this, we can pass a new data frame with the prediction data contained within it. Here, it will only require the variables `id` and `year`, since we don't have any other covariates in the longitudinal submodels. However, if we did have covariates in the longitudinal submodels, then our new data frame would also need to include values for those covariates. Here is the definition of the prediction data frame:
+
+```{r newdata_19213}
+ndL <- data.frame(
+  id = rep("new1", 11),
+  year = seq(0, 10, 1)
+)
+ndL
+```
+
+Because the individual with an ID `"new1"` was not used to estimate the model, the predictions be marginalised over the distribution of the individual-level random effects (we could have given the individual any subject ID, just as long as that subject ID didn't match any individual used in estimating the model). To predict the marginal longitudinal trajectory for each biomarker and plot it we can type:
+
+```{r plot_traj_2183921}
+p1 <- posterior_traj(mod3, m = 1, newdata = ndL)
+p2 <- posterior_traj(mod3, m = 2, newdata = ndL)
+plot(p1) + ggplot2::ggtitle("Log serum bilirubin")
+plot(p2) + ggplot2::ggtitle("Serum albumin")
+```
+
+Because we are marginalising over the distribution of the individual-level random effects, we are incorporating all the variation related to between-individual differences, and therefore the prediction interval is wide (shown by the shaded area around the marginal longitudinal trajectory).
+
+Now let's suppose we wanted to obtain predictions for the longitudinal outcome for a given covariate profile. Here, we will first generate the prediction data we wish to use. We will create prediction data for each possible covariate profile.
+
+```{r newdata1}
+ndL <- data.frame(
+  id = c("male_notrt", "male_trt", "female_notrt", "female_trt"),
+  sex  = rep(c("m", "f"), each = 2),
+  trt  = rep(0:1, times = 2),
+  year = rep(0,   times = 4)
+)
+ndL
+```
+
+We can then pass this to the `posterior_traj` function to get the predicted longitudinal trajectory for each of these covariate profiles. We only included time zero (i.e. `year = 0`) for each individual in the prediction data frame, because we can use the `extrapolate = TRUE` and `control` arguments for to tell `posterior_traj` to extrapolate forward a specified distance. Alternatively we could have just included values for `year` in the prediction data frame according to the times we want to predict the longitudinal outcome at. Also note that our model included individual-specific parameters (i.e. random effects) and these individuals were not included in the estimation of the model, so we will be marginalising over the random effects distribution when we generate these predictions.
+
+```{r pplong1}
+p1 <- posterior_traj(mod3, m = 1, newdata = ndL, 
+                     extrapolate = TRUE, control = list(edist = 10))
+p2 <- posterior_traj(mod3, m = 2, newdata = ndL, 
+                     extrapolate = TRUE, control = list(edist = 10))
+plot(p1) + ggplot2::ggtitle("Log serum bilirubin")
+plot(p2) + ggplot2::ggtitle("Serum albumin")
+```
+
+for a given individuals who were not in the dataset used to estimate the model (i.e. we want out-of-sample preditions). To demonstrate this, we will create a new data frame that includes two of the individuals from the PBC dataset, but we will rename their ID variable! This way, when we call the prediction function(s), they will not know that these were the same individuals used in estimating the model.
+\
+```{r newdata1}
+ndL <- pbcLong[pbcLong$id %in% c(4,5), ]
+ndS <- pbcLong[pbcSurv$id %in% c(4,5), ]
+ndL$id <- paste0("new", ndL$id)
+ndS$id <- paste0("new", ndS$id)
+```
+
+First we will predict the longitudinal trajectory
+
+We can now call the posterior prediction functions (as demonstrated in the previous example), but this time passing the new prediction data containing the covariate information to the relevant `newdata` argument, as follows:
+\
+```{r plots, fig.width=6.5, fig.height=6}
+p4 <- posterior_traj(mod3, m = 1, newdata = ndL)
+p5 <- posterior_traj(mod3, m = 2, newdata = ndL)
+p6 <- posterior_survfit(mod3, ids = 6:8, draws = 200)
+pp4 <- plot(p4, plot_observed = TRUE, vline = TRUE)
+pp5 <- plot(p5, plot_observed = TRUE, vline = TRUE)
+plot_stack_jm(yplot = list(pp1, pp2), survplot = plot(p6))
+```
+
+
+
 
 # References
 
