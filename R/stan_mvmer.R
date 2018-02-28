@@ -33,9 +33,15 @@
 #' 
 #' @param formula A two-sided linear formula object describing both the 
 #'   fixed-effects and random-effects parts of the longitudinal submodel  
-#'   (see \code{\link[lme4]{glmer}} for details). For a multivariate GLM this 
-#'   should be a list of such formula objects, with each element
-#'   of the list providing the formula for one of the GLM submodels.
+#'   similar in vein to formula specification in the \strong{lme4} package
+#'   (see \code{\link[lme4]{glmer}} or the \strong{lme4} vignette for details). 
+#'   Note however that the double bar (\code{||}) notation is not allowed 
+#'   when specifying the random-effects parts of the formula, and neither
+#'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
+#'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   For a multivariate GLM this should be a list of such formula objects, 
+#'   with each element of the list providing the formula for one of the 
+#'   GLM submodels.
 #' @param data A data frame containing the variables specified in
 #'   \code{formula}. For a multivariate GLM, this can
 #'   be either a single data frame which contains the data for all 
