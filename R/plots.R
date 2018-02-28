@@ -449,6 +449,10 @@ pairs.stanreg <-
     }
     posterior <- round(posterior, digits = 12)
     
+    gg_theme <- ggplot2::theme_get()
+    ggplot2::theme_set(bayesplot::theme_default())
+    on.exit(ggplot2::theme_set(gg_theme))
+    
     bayesplot::mcmc_pairs(
       x = posterior, 
       np = bayesplot::nuts_params(x),  
@@ -456,7 +460,7 @@ pairs.stanreg <-
       max_treedepth = .max_treedepth(x),
       condition = condition,
       ...
-    ) + bayesplot::theme_default()
+    )
     
   }
 
