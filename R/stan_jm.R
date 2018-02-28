@@ -554,6 +554,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
+	if (M > 3L)
+	  stop("'stan_jm' is currently limited to a maximum of 3 longitudinal outcomes.")
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  

@@ -146,6 +146,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
   
   # Formula
   formula <- validate_arg(formula, "formula"); M <- length(formula)
+	if (M > 3L)
+	  stop("'stan_mvmer' is currently limited to a maximum of 3 outcomes.")
   
   # Data
   data <- validate_arg(data, "data.frame", validate_length = M)  
