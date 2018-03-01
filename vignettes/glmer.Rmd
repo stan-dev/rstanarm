@@ -49,7 +49,7 @@ $\mathbf{b}$, invariably that it is distributed multivariate normal with mean
 vector zero and structured covariance matrix $\boldsymbol{\Sigma}$. If $\epsilon_i$
 is also distributed (univariate) normal with mean zero and standard deviation
 $\sigma$, then $\mathbf{b}$ can be integrated out, which implies
-$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
+$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{I}+\mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
 and it is possible to maximize this likelihood function by choosing proposals 
 for the parameters $\alpha$, $\boldsymbol{\beta}$, and (the free elements of) $\boldsymbol{\Sigma}$.
 
