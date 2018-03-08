@@ -316,6 +316,33 @@
         e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);          
       }  
 
+      //----- shared random effects
+
+      // add  shared b terms to event submodel eta
+      if (has_assoc[,m] == 1) { // shared_b
+        if (m == 1) {
+          int which_b_shift = 0;
+					int bMat1_colshift = 0;
+				}
+				else if (m == 2) {
+          int which_b_shift = size_which_b[1];
+					int bMat1_colshift = bK1_len[1];
+				}
+				else if (m == 3) {
+          int which_b_shift = sum(size_which_b[1:2]);
+					int bMat1_colshift = sum(bK1_len[1:2]);
+				}	
+				for (j in 1:size_which_b[m]) {
+          vector[nrow_y_Xq[m]] val;  
+					vector[bN1] bTmp; // vector containing the shared b par
+					int which_b_tmp = which_b[which_b_shift + j];
+					bTmp = bMat1[, bMat1_colshift + which_b_tmp];
+					
+          mark = mark + 1;
+          e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);  
+        }
+      }
+
     }
     
     //-----  shared random effects

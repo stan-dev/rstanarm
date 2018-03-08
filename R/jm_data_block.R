@@ -1346,7 +1346,7 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   trimmed_x <- trim_assoc(user_x, ok_assoc_data, ok_assoc_interactions)
   if (is.null(user_x) || all(trimmed_x %in% ok_inputs)) {
     
-    temporarily_disallowed <- c("muslope", "shared_b", "shared_coef")
+    temporarily_disallowed <- c("muslope")
     if (any(trimmed_x %in% temporarily_disallowed))
       stop2("The following association structures have been temporarily disallowed ",
             "and will be reinstated in a future release: ", 
