@@ -1196,6 +1196,13 @@ STOP_no_var <- function(var) {
   stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
+# Error message for dynamic predictions
+#
+# @param what A reason why the dynamic predictions are not allowed
+STOP_dynpred <- function(what) {
+  stop2(paste("Dynamic predictions are not yet implemented for", what))
+}
+
 # Check if individuals in ids argument were also used in model estimation
 #
 # @param object A stanmvreg object

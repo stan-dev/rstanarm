@@ -92,6 +92,27 @@
 #'   simulations or draws from the posterior predictive distribution. Otherwise
 #'   if \code{return_matrix} is set to \code{FALSE} (the default) then a 
 #'   data frame is returned, as described in the \strong{Value} section below.
+#' @param dynamic A logical that is only relevant if new data is provided
+#'   via the \code{newdata} argument. If 
+#'   \code{dynamic = TRUE}, then new group-specific parameters are drawn for 
+#'   the individuals in the new data, conditional on their longitudinal 
+#'   biomarker data contained in \code{newdata}. These group-specific
+#'   parameters are then used to generate individual-specific survival probabilities
+#'   for these individuals. These are often referred to as "dynamic predictions"
+#'   in the joint modelling context, because the predictions can be updated
+#'   each time additional longitudinal biomarker data is collected on the individual.
+#'   On the other hand, if \code{dynamic = FALSE} then the survival probabilities
+#'   will just be marginalised over the distribution of the group-specific
+#'   coefficients; this will mean that the predictions will incorporate all
+#'   uncertainty due to between-individual variation so there will likely be
+#'   very wide credible intervals on the predicted survival probabilities.
+#' @param scale A scalar, specifying how much to multiply the asymptotic 
+#'   variance-covariance matrix for the random effects by, which is then
+#'   used as the "width" (ie. variance-covariance matrix) of the multivariate
+#'   Student-t proposal distribution in the Metropolis-Hastings algorithm. This
+#'   is only relevant when \code{newdataEvent} is supplied and 
+#'   \code{dynamic = TRUE}, in which case new random effects are simulated
+#'   for the individuals in the new data using the Metropolis-Hastings algorithm.
 #' @param ... Other arguments passed to \code{\link{posterior_predict}}, for
 #'   example \code{draws}, \code{re.form}, \code{seed}, etc.
 #'   
@@ -189,10 +210,12 @@
 #'   head(pt6)  # note the much narrower ci, compared with pt5
 #' }
 #' 
-posterior_traj <- function(object, m = 1, newdata = NULL, 
+posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
+                           newdataEvent = NULL,
                            interpolate = TRUE, extrapolate = FALSE,
                            prob = 0.95, ids, control = list(), 
-                           return_matrix = FALSE, ...) {
+                           return_matrix = FALSE, 
+                           dynamic = TRUE, scale = 1.5, ...) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   validate_stanjm_object(object)
@@ -203,10 +226,19 @@ posterior_traj <- function(object, m = 1, newdata = NULL,
   grp_stuff <- object$grp_stuff[[m]]
   if (missing(ids)) 
     ids <- NULL
+
+  # Deal with deprecate newdata argument
+  if (!is.null(newdata)) {
+    warning("The 'newdata' argument is deprecated. Please use 'newdataLong' instead.")
+    if (!is.null(newdataLong))
+      stop2("'newdata' and 'newdataLong' cannot both be specified.")
+    newdataLong <- newdata
+  }
   
   # Construct prediction data, NB data == observed data to return to user
-  newdata <- validate_newdata(newdata)
-  if (is.null(newdata)) {
+  CURRENTLY WORKING HERE -- COPY POSTERIOR_SURVFIT TYPE CODE ACROSS
+  newdataLong <- validate_newdatas(object, newdataLong, newdataEvent)
+  if (is.null(newdataLong)) {
     data <- get_model_data(object)[[m]]
   } else {
     data <- newdata  
