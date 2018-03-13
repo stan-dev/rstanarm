@@ -121,8 +121,18 @@ $$
 
 
 where $h_i(t)$ is the hazard of the event for individual $i$ at time $t$, $h_0(t; \boldsymbol{\omega})$ is the baseline hazard at time $t$ given parameters $\boldsymbol{\omega}$, $\boldsymbol{w}^T_i(t)$ is a row-vector of individual-specific covariates (possibly time-dependent) with an associated vector of regression coefficients $\boldsymbol{\gamma}$ (log hazard ratios), and the $\alpha_{mq}$ are also coefficients (log hazard ratios).
+  
+The longitudinal and event submodels are assumed to be related via an "association structure" based on shared individual-specific parameters and captured via the $\sum_{m=1}^M \sum_{q=1}^{Q_m} \alpha_{mq} f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t)$ term in the linear predictor of the proportional hazards regression model. The $\alpha_{mq}$ are referred to as the "association parameters" since they quantify the strength of the association between the longitudinal and event processes, while the $f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t)$ (for some functions $f_{mq}(.)$) can be referred to as the "association terms" and can be specified in a variety of ways which we describe in the next section.
 
-The longitudinal and event submodels are assumed to related via an "association structure" based on shared individual-specific parameters and captured via the $\sum_{m=1}^M \sum_{q=1}^{Q_m} \alpha_{mq} f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t)$ term in the linear predictor of the proportional hazards regression model. The $\alpha_{mq}$ are referred to as the "association parameters" since they quantify the strength of the association between the longitudinal and event processes, while the $f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}; t)$ (for some functions $f_{mq}(.)$) can be referred to as the "association terms" and can be specified in a variety of ways which we describe in the next section.
+The probability of individual $i$ still being event-free at time $t$, often referred to as the "survival probability", is defined as
+
+$$
+S_i(t) = 
+  \text{Prob} \Big( T_i^* \geq t \Big) = 
+  \exp \Big( -H_i(t) \Big)
+$$
+
+where $H_i(t) = \int_{s=0}^t h_i(s) ds$ is the cumulative hazard for individual $i$.
 
 We assume that the baseline hazard $h_0(t; \boldsymbol{\omega})$ is modelled parametrically. In the `stan_jm` modelling function the baseline hazard be specified as either: an approximation using B-splines on the log hazard scale (the default); a Weibull distribution; or an approximation using a piecewise constant function on the log hazard scale (sometimes referred to as piecewise exponential). The choice of baseline hazard can be made via the `basehaz` argument. In the case of the B-splines or piecewise constant baseline hazard, the user can control the flexibility by specifying the knots or degrees of freedom via the `basehaz_ops` argument. (Note that currently there is slightly limited post-estimation functionality available for models estimated with a piecewise constant baseline hazard, so this is perhaps the least preferable choice).
 
@@ -231,7 +241,7 @@ $$
       \Bigg(
         \prod_{m=1}^M 
           \prod_{j=1}^{n_i} 
-            p(y_{ijm} | \boldsymbol{b}_{i}, \boldsymbol{\theta})
+            p(y_{ijm}(t) | \boldsymbol{b}_{i}, \boldsymbol{\theta})
       \Bigg)
       p(T_i, d_i | \boldsymbol{b}_{i}, \boldsymbol{\theta})
       p(\boldsymbol{b}_{i} | \boldsymbol{\theta})
@@ -239,7 +249,9 @@ $$
     \Bigg]    
 $$
 
-which we can rewrite as 
+where $\boldsymbol{y}_i = \{ y_{ijm}(t); j = 1,...,n_i, m = 1,...,M \}$ denotes the collection of longitudinal biomarker data for individual $i$ and $\boldsymbol{\theta}$ denotes all remaining population-level parameters in the model. 
+
+We can rewrite this log posterior as 
 
 $$
 \log p(\boldsymbol{\theta}, \boldsymbol{b}_{i} | \boldsymbol{y}_{i}, T_i, d_i)
@@ -247,7 +259,7 @@ $$
     \Bigg(
       \sum_{m=1}^M 
         \sum_{j=1}^{n_i} 
-          \log p(y_{ijm} | \boldsymbol{b}_{i}, \boldsymbol{\theta})
+          \log p(y_{ijm}(t) | \boldsymbol{b}_{i}, \boldsymbol{\theta})
     \Bigg) +
     \log p(T_i, d_i | \boldsymbol{b}_{i}, \boldsymbol{\theta}) +
     \log p(\boldsymbol{b}_{i} | \boldsymbol{\theta}) +
@@ -273,6 +285,83 @@ where $w_q$ and $s_q$, respectively, are the standardised weights and locations 
 
 Therefore, once we have an individual's event time $T_i$ we can evaluate the design matrices for the event submodel and longitudinal submodels at the $Q+1$ necessary time points (which are the event time $T_i$ and the quadrature points $\frac{T_i(1+s_q)}{2}$ for $q=1,...,Q$) and then pass these to Stan's data block. We can then evaluate the log likelihood for the event submodel by simply calculating the hazard $h_i(t)$ at those $Q+1$ time points and summing the quantities appropriately. This calculation will need to be performed each time we iterate through Stan's model block. A simplified example of the underlying Stan code used to fit the joint model can be found in [Brilleman et al. (2018)](https://github.com/stan-dev/stancon_talks/blob/master/2018/Contributed-Talks/03_brilleman/notebook.pdf) [12].
 
+# Model predictions
+
+Before discussing the methods by which we can generate posterior predictions, first let us define some additional relevant quantities. Let $\mathcal{D} = \{ \boldsymbol{y}_i, T_i, d_i; i = 1,...,N \}$ be the entire collection of outcome data in the sample. We will refer to this sample as the "training data". Let $T_{max} = \max \{ T_i; i = 1,...,N \}$ denote the maximum event or censoring time across the $i = 1,...,N$ individuals in our training data.
+
+## Posterior predictions for in-sample individuals
+
+We can generate posterior predictions for the longitudinal and time-to-event outcomes in the following manner. For the $i^{th}$ individual in our training data, a predicted value for the $m^{th}$ longitudinal biomarker at time $t$, denoted $y^*_{im}(t)$, can be generated from the posterior predictive distribution
+
+$$ 
+p(y^{*}_{im}(t) | \mathcal{D}) = 
+  \int 
+    \int 
+      p(y^{*}_{im}(t) | \boldsymbol{\theta}, \boldsymbol{b}_i)
+      p(\boldsymbol{\theta}, \boldsymbol{b}_i | \mathcal{D}) 
+    \space d \boldsymbol{b}_i
+  \space d \boldsymbol{\theta} 
+$$
+
+and, similarly, a predicted probability of the $i^{th}$ individual being event-free at time $t$, denoted $S^*_i(t)$, can be generated from the posterior predictive distribution
+
+$$ 
+p(S^{*}_{i}(t) | \mathcal{D}) = 
+  \int
+    \int
+      p(S^{*}_i(t) | \boldsymbol{\theta}, \boldsymbol{b}_i)
+      p(\boldsymbol{\theta}, \boldsymbol{b}_i | \mathcal{D})
+    \space d \boldsymbol{b}_i
+  \space d \boldsymbol{\theta}      
+$$
+
+Note that for simplicity we have ignored the implicit conditioning on covariates; $\boldsymbol{x}_{im}(t)$ and $\boldsymbol{z}_{im}(t)$, for $m = 1,...,M$, and $\boldsymbol{w}_{i}(t)$. Since individual $i$ is included in the training data, it is easy for us to approximate these posterior predictive distributions by drawing from $p(y^{*}_{im}(t) | \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ and $p(S^{*}_i(t) | \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_i^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_i | \mathcal{D})$. 
+
+These draws from the posterior predictive distributions can be useful for assessing the fit of the model. For example, 
+
+- the draws from $p(y^{*}_{im}(t) | \mathcal{D})$ for $0 \leq t \leq T_i$ can be used to evaluate the fit of the longitudinal trajectory for the $m^{th}$ biomarker for the $i^{th}$ individual, and
+
+- the draws from $p(S^{*}_{i}(t) | \mathcal{D})$ for $0 \leq t \leq T_{max}$ can be averaged across the $N$ individuals to obtain a standardised survival curve (discussed in greater detail in later sections), which can be compared to the observed survival curve (for example, the Kaplan-Meier)
+    
+However, given that we have available an event or censoring time for each individual in our training data, it may make more sense to consider the following. For an individual $i$, who was in our training data, and who was known to be event-free up until their censoring time $C_i$, we wish to know the posterior predictive distribution for their longitudinal outcome at times $t > C_i$, that is 
+
+$$
+p(y^{*}_{im}(t) | \mathcal{D}, t > C_i) = 
+  \int 
+    \int 
+      p(y^{*}_{im}(t) | \boldsymbol{\theta}, \boldsymbol{b}_i, t > C_i)
+      p(\boldsymbol{\theta}, \boldsymbol{b}_i | \mathcal{D}) 
+    \space d \boldsymbol{b}_i
+  \space d \boldsymbol{\theta} 
+$$ 
+
+and the posterior predictive distribution for their survival probability at times $t > C_i$ given that they were known to be event-free at least up until their censoring time $C_i$. This leads to the following conditional survival probability
+
+$$ 
+p(S^{*}_{i}(t) | \mathcal{D}, t > C_i, T_i^* > C_i) 
+  = 
+  \frac
+    {p(S^{*}_{i}(t) | \mathcal{D})}
+    {p(S^{*}_{i}(C_i) | \mathcal{D})}
+  = 
+  \int
+    \int
+      \frac
+        {p(S^{*}_i(t) | \boldsymbol{\theta}, \boldsymbol{b}_i)}
+        {p(S^{*}_i(C_i) | \boldsymbol{\theta}, \boldsymbol{b}_i)}
+      p(\boldsymbol{\theta}, \boldsymbol{b}_i | \mathcal{D})
+    \space d \boldsymbol{b}_i
+  \space d \boldsymbol{\theta}  
+$$
+
+It is useful to use draws from these conditional posterior predictive distributions to extrapolate into the future for individual $i$, using their longitudinal biomarker data collected between baseline and the last time they were known to be event-free (i.e. the data they contributed to the training data used for the model estimation). For example, we may wish to 
+
+- the draws from $p(y^{*}_{im}(t) | \mathcal{D}, t > C_i)$ can be plotted over the range $C_i \leq t \leq T_{max}$ to show the forecasted longitudinal trajectory for the $m^{th}$ biomarker for individual $i$, and
+
+- the draws from $p(S^{*}_{i}(t) | \mathcal{D}, t > C_i, T_i^* > C_i))$ can be plotted over the range $C_i \leq t \leq T_{max}$ to show the estimated conditional probability of individual $i$ remaining event-free, given their last known survival time.
+
+
+
 # Model extensions
 
 ## Delayed entry (left-truncation)
@@ -283,7 +372,6 @@ TBC
 
 TBC
 
-# Model predictions
 
 ## Predicted survival probabilities
 
