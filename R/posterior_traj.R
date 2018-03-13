@@ -29,13 +29,28 @@
 #' @templateVar mArg m
 #' @template args-stanjm-object
 #' @template args-m
-#' @param newdata Optionally, a data frame in which to look for variables with
+#' @param newdata \strong{Deprecated}: please use \code{newdataLong} instead.
+#'   Optionally, a data frame in which to look for variables with
 #'   which to predict. If omitted, the model matrix is used. If \code{newdata}
 #'   is provided and any variables were transformed (e.g. rescaled) in the data
 #'   used to fit the model, then these variables must also be transformed in
 #'   \code{newdata}. This only applies if variables were transformed before
 #'   passing the data to one of the modeling functions and \emph{not} if
 #'   transformations were specified inside the model formula.
+#' @param newdataLong,newdataEvent Optionally, a data frame (or in the case of 
+#'   \code{newdataLong} this can be a list of data frames) in which to look 
+#'   for variables with which to predict. If omitted, the model matrices are used. 
+#'   If new data is provided, then two options are available. Either one can
+#'   provide observed covariate and outcome data, collected up to some time 
+#'   \emph{t}, and use this data to draw new individual-specific coefficients
+#'   (i.e. individual-level random effects). This is the default behaviour when 
+#'   new data is provided, determined by the argument \code{dynamic = TRUE}, and
+#'   requiring both \code{newdataLong} and \code{newdataEvent} to be specified.
+#'   Alternatively, one can specify \code{dynamic = FALSE}, and then predict 
+#'   using just covariate data, by marginalising over the distribution
+#'   of the group-specific coefficients; in this case, only \code{newdataLong}
+#'   needs to be specified and it only needs to be a single data frame with
+#'   the covariate data for the predictions for the one longitudinal submodel.
 #' @param interpolate A logical specifying whether to interpolate the estimated 
 #'   longitudinal trajectory in between the observation times. This can be used
 #'   to achieve a smooth estimate of the longitudinal trajectory across the 
@@ -77,6 +92,22 @@
 #'     represented in units of the time variable \code{time_var} (from fitting the
 #'     model). This cannot be specified if \code{eprop} is specified.} 
 #'   }
+#' @param last_time A scalar, character string, or \code{NULL}. This argument 
+#'     specifies the last known survival time for each individual when
+#'     conditional predictions are being obtained. If 
+#'     \code{newdataEvent} is provided and conditional survival predictions are being
+#'     obtained, then the \code{last_time} argument can be one of the following:
+#'     (i) a scalar, this will use the same last time for each individual in 
+#'     \code{newdataEvent}; (ii) a character string, naming a column in 
+#'     \code{newdataEvent} in which to look for the last time for each individual;
+#'     (iii) \code{NULL}, in which case the default is to use the time of the latest 
+#'     longitudinal observation in \code{newdataLong}. If \code{newdataEvent} is
+#'     \code{NULL} then the \code{last_time} argument cannot be specified 
+#'     directly; instead it will be set equal to the event or censoring time for
+#'     each individual in the dataset that was used to estimate the model. 
+#'     If standardised survival probabilities are requested (i.e. 
+#'     \code{standardise = TRUE}) then conditional survival probabilities are
+#'     not allowed and therefore the \code{last_time} argument is ignored.
 #' @param ids An optional vector specifying a subset of subject IDs for whom the 
 #'   predictions should be obtained. The default is to predict for all individuals
 #'   who were used in estimating the model or, if \code{newdata} is specified,
@@ -87,11 +118,6 @@
 #'   For example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th  
 #'   percentiles will be provided. Only relevant when \code{return_matrix} is 
 #'   \code{FALSE}. 
-#' @param return_matrix A logical. If \code{TRUE} then a \code{draws} by 
-#'   \code{nrow(newdata)} matrix is returned which contains all the actual
-#'   simulations or draws from the posterior predictive distribution. Otherwise
-#'   if \code{return_matrix} is set to \code{FALSE} (the default) then a 
-#'   data frame is returned, as described in the \strong{Value} section below.
 #' @param dynamic A logical that is only relevant if new data is provided
 #'   via the \code{newdata} argument. If 
 #'   \code{dynamic = TRUE}, then new group-specific parameters are drawn for 
@@ -113,6 +139,15 @@
 #'   is only relevant when \code{newdataEvent} is supplied and 
 #'   \code{dynamic = TRUE}, in which case new random effects are simulated
 #'   for the individuals in the new data using the Metropolis-Hastings algorithm.
+#' @param draws An integer indicating the number of MCMC draws to return. 
+#'   The default is to set the number of draws equal to 200, or equal to the 
+#'   size of the posterior sample if that is less than 200. 
+#' @param seed An optional \code{\link[=set.seed]{seed}} to use.
+#' @param return_matrix A logical. If \code{TRUE} then a \code{draws} by 
+#'   \code{nrow(newdata)} matrix is returned which contains all the actual
+#'   simulations or draws from the posterior predictive distribution. Otherwise
+#'   if \code{return_matrix} is set to \code{FALSE} (the default) then a 
+#'   data frame is returned, as described in the \strong{Value} section below.
 #' @param ... Other arguments passed to \code{\link{posterior_predict}}, for
 #'   example \code{draws}, \code{re.form}, \code{seed}, etc.
 #'   
@@ -211,62 +246,104 @@
 #' }
 #' 
 posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
-                           newdataEvent = NULL,
-                           interpolate = TRUE, extrapolate = FALSE,
-                           prob = 0.95, ids, control = list(), 
-                           return_matrix = FALSE, 
-                           dynamic = TRUE, scale = 1.5, ...) {
+                           newdataEvent = NULL, interpolate = TRUE, extrapolate = FALSE,
+                           control = list(), last_time = NULL, prob = 0.95, ids, 
+                           dynamic = TRUE, scale = 1.5, draws = NULL, seed = NULL, 
+                           return_matrix = FALSE, ...) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   validate_stanjm_object(object)
-  M <- get_M(object)
-  id_var   <- object$id_var
-  time_var <- object$time_var
-  validate_positive_scalar(m, not_greater_than = M)
+  M         <- object$n_markers; validate_positive_scalar(m, M)
+  id_var    <- object$id_var
+  time_var  <- object$time_var
   grp_stuff <- object$grp_stuff[[m]]
+  if (!is.null(seed)) 
+    set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
-
+  dots <- list(...)
+  
   # Deal with deprecate newdata argument
   if (!is.null(newdata)) {
-    warning("The 'newdata' argument is deprecated. Please use 'newdataLong' instead.")
+    warning("The 'newdata' argument is deprecated. Use 'newdataLong' instead.")
     if (!is.null(newdataLong))
       stop2("'newdata' and 'newdataLong' cannot both be specified.")
     newdataLong <- newdata
   }
   
-  # Construct prediction data, NB data == observed data to return to user
-  CURRENTLY WORKING HERE -- COPY POSTERIOR_SURVFIT TYPE CODE ACROSS
-  newdataLong <- validate_newdatas(object, newdataLong, newdataEvent)
-  if (is.null(newdataLong)) {
-    data <- get_model_data(object)[[m]]
-  } else {
-    data <- newdata  
+  # Construct prediction data, NB dats == observed data to return to user
+  if (is.null(newdataLong)) { # user did not specify newdata
+    if (!is.null(newdataEvent))
+      stop2("'newdataEvent' can only be specified when 'newdataLong' is provided.")
+    dats <- get_model_data(object)
+    ndL <- dats[1:M]
+    ndE <- dats[["Event"]]
+  } else { # user specified newdataLong
+    if (dynamic && is.null(newdataEvent))
+      stop2("Dynamic predictions require both 'newdataLong' and 'newdataEvent' ",
+            "to be specified. Either specify data for both the longitudinal and ",
+            "event submodels or, alternatively, specify argument 'dynamic = FALSE' ",
+            "to marginalise over the distribution of group-specific parameters.")
+    dats <- validate_newdatas(object, newdataLong, newdataEvent)
+    ndL <- dats[1:M]
+    ndE <- dats[["Event"]]
   }
-  if (!id_var %in% names(data)) 
-    STOP_no_var(id_var)
-  if (!time_var %in% names(data)) 
-    STOP_no_var(time_var)
-  if (!is.null(ids)) # user specified a subset of ids
-    data <- subset_ids(object, data, ids)
-  id_list <- unique(data[[id_var]]) # order of ids from data, not ids arg
-  if (!is.null(newdata)) # warn if newdata ids are from fit
-    check_pp_ids(object, id_list, m = m)
+  if (!is.null(ids)) { # user specified a subset of ids
+    ndL <- subset_ids(object, ndL, ids)
+    ndE <- subset_ids(object, ndE, ids)
+  }  
+  id_list <- factor(unique(ndL[[m]][[id_var]])) # order of ids from data, not ids arg
   
   # Last known survival time for each individual
-  if (is.null(newdata)) { # user did not provide newdata
+  if (is.null(newdataLong)) { # user did not provide newdata
+    if (!is.null(last_time))
+      stop("'last_time' cannot be provided when newdata is NULL, since times ",
+           "are taken to be the event or censoring time for each individual.")
     last_time <- object$eventtime[as.character(id_list)]
-  } else {
-    if ("last_time" %in% names(data)) { # user provided newdata with last_time column
-      if (!all(tapply(data[["last_time"]], factor(data[[id_var]]), FUN = sd) == 0))
-        stop("'last_time' column in 'newdata' should be constant within individuals")
-      last_time <- tapply(data[["last_time"]], factor(data[[id_var]]), FUN = max)
-    } else { # user provided newdata but no last_time column, last_time inferred from time_var
-      last_time <- tapply(data[[time_var]], factor(data[[id_var]]), FUN = max)
+  } else { # user specified newdata
+    if (is.null(last_time)) { # use latest longitudinal observation
+      max_ytimes <- do.call("cbind", lapply(ndL, function(x) 
+        tapply(x[[time_var]], x[[id_var]], FUN = max)))
+      last_time <- apply(max_ytimes, 1L, max)
+      # re-order last-time according to id_list
+      last_time <- last_time[as.character(id_list)]
+    } else if (is.character(last_time) && (length(last_time) == 1L)) {
+      if (!is.null(ndE)) { # user provided newdataEvent for dynamic predictions
+        if (!last_time %in% colnames(ndE))
+          stop("Cannot find 'last_time' column named in newdataEvent.")
+        last_time <- ndE[[last_time]]      
+      }
+    } else if (is.numeric(last_time) && (length(last_time) == 1L)) {
+      last_time <- rep(last_time, length(id_list)) 
+    } else if (is.numeric(last_time) && (length(last_time) > 1L)) {
+      last_time <- last_time[as.character(id_list)]
+    } else {
+      stop("Bug found: could not reconcile 'last_time' argument.")
     }
   }
   
-  newX <- data # design matrix used for predictions
+  # Get stanmat parameter matrix for specified number of draws
+  S <- posterior_sample_size(object)
+  if (is.null(draws)) 
+    draws <- if (S > 200L) 200L else S 
+  if (draws > S)
+    stop("'draws' should be <= posterior sample size (", S, ").")
+  stanmat <- as.matrix(object$stanfit)
+  some_draws <- isTRUE(draws < S)
+  if (some_draws) {
+    samp <- sample(S, draws)
+    stanmat <- stanmat[samp, , drop = FALSE]
+  }
+  
+  # Draw b pars for new individuals
+  if (dynamic && !is.null(newdataEvent)) {
+    stanmat <- simulate_b_pars(object, stanmat = stanmat, ndL = ndL, ndE = ndE,
+                               ids = id_list, times = last_time, scale = scale)
+    b_new <- attr(stanmat, "b_new")
+    acceptance_rate <- attr(stanmat, "acceptance_rate")
+  }
+  
+  newX <- ndL[[m]] # design matrix used for predictions
   if (interpolate || extrapolate) { # user specified interpolation or extrapolation
     if (return_matrix) 
       stop("'return_matrix' cannot be TRUE if 'interpolate' or 'extrapolate' is TRUE.")
@@ -291,7 +368,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
-  ytilde <- posterior_predict(object, newdata = newX, m = m, ...)
+    
+  ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde) # return S * N matrix, instead of data frame 
@@ -317,11 +395,15 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
   Terms <- terms(formula(object, m = m))
   vars  <- rownames(attr(Terms, "factors"))
   y_var <- vars[[attr(Terms, "response")]]
-  structure(out, observed_data = data, last_time = last_time,
-            y_var = y_var, id_var = id_var, time_var = time_var,
-            grp_var = if (grp_stuff$has_grp) grp_var else NULL, 
-            interpolate = interpolate, extrapolate = extrapolate, 
-            control = control, call = match.call())  
+  out <- structure(out, observed_data = ndL[[m]], last_time = last_time,
+                   y_var = y_var, id_var = id_var, time_var = time_var,
+                   grp_var = if (grp_stuff$has_grp) grp_var else NULL, 
+                   interpolate = interpolate, extrapolate = extrapolate, 
+                   control = control, call = match.call())  
+  if (dynamic && !is.null(newdataEvent)) {
+    out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
+  }
+  out  
 }
 
 

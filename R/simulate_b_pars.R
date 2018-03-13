@@ -61,7 +61,7 @@ simulate_b_pars <- function(object, stanmat, ndL, ndE, ids, times, scale = 1.5) 
   cat("Drawing new random effects for", length(ids), "individuals. ")
   cat("Monitoring progress:\n")
   pb <- utils::txtProgressBar(min = 0, max = length(ids), style = 3)
-  acceptance_ratio <- c()
+  acceptance_rate <- c()
   b_new <- list()
   for (i in 1:length(ids)) {
     if (!has_two_grp_factors) { # one grouping factor
@@ -97,7 +97,7 @@ simulate_b_pars <- function(object, stanmat, ndL, ndE, ids, times, scale = 1.5) 
     new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))
     colnames(mat) <- paste0("b[", new_nms, "]")
     utils::setTxtProgressBar(pb, i)
-    acceptance_ratio[[paste0(object$id_var, ":", ids[i])]] <- mean(accept)
+    acceptance_rate[[paste0(object$id_var, ":", ids[i])]] <- mean(accept)
     b_new[[i]] <- mat
   }
   close(pb)
@@ -107,7 +107,7 @@ simulate_b_pars <- function(object, stanmat, ndL, ndE, ids, times, scale = 1.5) 
   sel <- b_names(colnames(stanmat))    # stanmat cols containing old b pars
   stanmat <- stanmat[, -sel, drop = F] # drop old b pars from stanmat
   stanmat <- cbind(stanmat, b_new)     # add new b pars to stanmat
-  structure(stanmat, b_new = b_new, acceptance_ratio = acceptance_ratio)
+  structure(stanmat, b_new = b_new, acceptance_rate = acceptance_rate)
 }
 
 # The function to optimise, in order to obtain the asymptotic mode and var-cov 

@@ -1284,6 +1284,8 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
 # @param ids A vector of ids indicating which individuals to keep
 # @return A data frame, or a list of data frames, depending on the input
 subset_ids <- function(object, data, ids) {
+  if (is.null(data))
+    return(NULL)
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   is_list <- is(data, "list")

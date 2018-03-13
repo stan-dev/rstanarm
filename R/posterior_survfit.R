@@ -408,12 +408,11 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
 
   # Draw b pars for new individuals
-  if (!is.null(newdataEvent) && dynamic) {
-    scale <- dots$scale
+  if (dynamic && !is.null(newdataEvent)) {
     stanmat <- simulate_b_pars(object, stanmat = stanmat, ndL = ndL, ndE = ndE,
                                ids = id_list, times = last_time, scale = scale)
     b_new <- attr(stanmat, "b_new")
-    acceptance_ratio <- attr(stanmat, "acceptance_ratio")
+    acceptance_rate <- attr(stanmat, "acceptance_rate")
   }
   
   pars <- extract_pars(object, stanmat) # list of stanmat arrays
@@ -509,8 +508,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
             control = control, standardise = standardise, condition = condition, 
             last_time = last_time, ids = id_list, draws = draws, seed = seed, 
             offset = offset)
-  if (!is.null(newdataEvent) && dynamic) {
-    out <- structure(out, b_new = b_new, acceptance_ratio = acceptance_ratio)
+  if (dynamic && !is.null(newdataEvent)) {
+    out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
   }
   out
 }
