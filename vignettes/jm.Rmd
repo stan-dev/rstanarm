@@ -391,7 +391,18 @@ $$
 
 We can easily obtain draws for $\boldsymbol{\tilde{b}}_k$ in the same manner as for the individual-specific parameters $\boldsymbol{b}_i$. However, since individual $k$ did not provide any contribution to the training data, the posterior distribution for $\boldsymbol{\tilde{b}}_k$, that is, $p \Big( \boldsymbol{\tilde{b}}_k \mid \boldsymbol{\theta} \Big)$ is not conditional on the training data $\mathcal{D}$ but only on the hyperparameters $\boldsymbol{\theta}$. Therefore, we are effectively taking random draws from the posterior distribution for the individual-specific parameters^[note that draws from the posterior distribution of the group-specific parameters, i.e. MCMC draws of $\boldsymbol{\tilde{b}}_k$, are stored each time a joint model is estimated using `stan_jm` or any other __rstanarm__ modelling function; they are saved under the group-level ID `_NEW_`]. The predictions under this model can be thought of as marginal predictions, since they are marginalising over the distribution of the group-specific parameters unconditional on the training data. However, this mean they incoporate the uncertainty associated with the between-individual variation in the data, since we are effectively predicting for a new individual whom we have no information about (beyond the knowledge that they are drawn from the same population as the $i=1,...,N$ individuals in the training data). Therefore our uncertainty intervals (for example, 95% credible intervals or prediction intervals) are likely to be very wide.
  
-The second way is to effectively ignore the group-level structure in the model. That is, to only predict with only the population-level parameters contributing to the model. For example, under a identity link function and normal error distribution (i.e. linear mixed effect longitudinal submodel), we would obtain draws from the distribution $y^{(l)}_{km}(t) \sim N \Big( \boldsymbol{x}^T_{km}(t) \boldsymbol{\beta}_m^{(l)}, \sigma_m^{(l)} \Big)$ where $\boldsymbol{\beta}_m^{(l)}$ and $\sigma_m^{(l)}$ are the population-level parameters and residual error standard deviation, respectively, for the $l^{th}$ draw of the MCMC samples. However, referring to this as a "marginal" prediction is somewhat misleading; althou
+The second way is to effectively ignore the group-level structure in the model. That is, to only predict with only the population-level parameters contributing to the model. For example, under a identity link function and normal error distribution (i.e. linear mixed effect longitudinal submodel), we would obtain draws from the distribution $y^{(l)}_{km}(t) \sim N \Big( \boldsymbol{x}^T_{km}(t) \boldsymbol{\beta}_m^{(l)}, \sigma_m^{(l)} \Big)$ where $\boldsymbol{\beta}_m^{(l)}$ and $\sigma_m^{(l)}$ are the population-level parameters and residual error standard deviation, respectively, for the $l^{th}$ draw of the MCMC samples. However, referring to this as a "marginal" prediction is somewhat misleading; although we are not conditioning on the individual-specific parameters explicitly, we are implicitly assuming we know that they are equal to zero with absolute certainty. That is, we are actually drawing from the posterior predictive distribution
+
+$$ 
+\begin{aligned}
+p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big) 
+& = 
+  \int 
+      p \Big( y^{*}_{km}(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_k = 0 \Big)
+      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big) 
+  d \boldsymbol{\theta} \\
+\end{aligned}
+$$
 
 # Model extensions
 
