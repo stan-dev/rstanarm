@@ -9,7 +9,6 @@
 #' @template reference-loo
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param lw Deprecated. Use \code{psis_object} instead.
 #' @param psis_object An object returned by \code{\link[loo]{psis}}. If missing 
 #' then \code{psis} will be run internally, which may be time consuming
 #' for models fit to very large datasets.
@@ -34,14 +33,14 @@
 #' @examples
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
-#' head(loo_predictive_interval(example_model, prob = 0.8, cores = 2))
 #' 
 #' # optionally, log-weights can be pre-computed and reused
 #' psis_result <- loo::psis(log_ratios = -log_lik(example_model))
 #' 
 #' loo_linpred(example_model, type = "mean", transform = TRUE, psis_object = psis_result)
+#' 
 #' loo_predict(example_model, type = "var", psis_object = psis_result)
-#' loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
+#' head(loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result))
 #' }
 #' 
 loo_predict.stanreg <-
@@ -49,40 +48,23 @@ loo_predict.stanreg <-
            type = c("mean", "var", "quantile"), 
            probs = 0.5,
            ...,
-           psis_object = NULL,
-           lw = NULL) {
+           psis_object = NULL) {
     
-    if (!is.null(lw)) {
-      warning(
-        "The 'lw' argument is now deprectated. ", 
+    if ("lw" %in% names(list(...))) {
+      stop(
+        "The 'lw' argument is no longer supported. ", 
         "Use the 'psis_object' argument instead."
       )
-      
-      if (!is.null(psis_object)) {
-        warning("Using 'psis_object' instead of 'lw'.")
-      } else {
-        return(
-          loo_predict_old(
-            object = object,
-            type = type,
-            probs = probs,
-            ...,
-            lw = lw
-          )
-        )
-      }
-    } 
+    }
     
+    type <- match.arg(type)
     log_ratios <- -log_lik(object)
-    
-    if (is.null(lw) && is.null(psis_object)) {
+    if (is.null(psis_object)) {
       message("Running PSIS to compute weights...")
       r_eff <- loo::relative_eff(exp(-log_ratios), chain_id = chain_id_for_loo(object))
       psis_object <- loo::psis(log_ratios, r_eff = r_eff)
     }
     
-    
-    type <- match.arg(type)
     preds <- posterior_predict(object)
     if (is_polr(object) && !is_scobit(object)) {
       preds <- polr_yrep_to_numeric(preds)
@@ -107,34 +89,18 @@ loo_linpred.stanreg <-
            probs = 0.5,
            transform = FALSE,
            ..., 
-           psis_object = NULL,
-           lw = NULL) {
+           psis_object = NULL) {
     
-    if (!is.null(lw)) {
-      warning(
-        "The 'lw' argument is now deprectated. ", 
+    if ("lw" %in% names(list(...))) {
+      stop(
+        "The 'lw' argument is no longer supported. ", 
         "Use the 'psis_object' argument instead."
       )
-      
-      if (!is.null(psis_object)) {
-        warning("Using 'psis_object' instead of 'lw'.")
-      } else {
-        return(
-          loo_linpred_old(
-            object = object,
-            type = type,
-            probs = probs,
-            transform = transform,
-            ...,
-            lw = lw
-          )
-        )
-      }
-    } 
+    }
     
+    type <- match.arg(type)
     log_ratios <- -log_lik(object)
-    
-    if (is.null(lw) && is.null(psis_object)) {
+    if (is.null(psis_object)) {
       message("Running PSIS to compute weights...")
       r_eff <- loo::relative_eff(exp(-log_ratios), chain_id = chain_id_for_loo(object))
       psis_object <- loo::psis(log_ratios, r_eff = r_eff)
@@ -162,8 +128,7 @@ loo_predictive_interval.stanreg <-
   function(object,
            prob = 0.9,
            ...,
-           psis_object = NULL,
-           lw = NULL) {
+           psis_object = NULL) {
     stopifnot(length(prob) == 1)
     alpha <- (1 - prob) / 2
     probs <- c(alpha, 1 - alpha)
@@ -173,7 +138,6 @@ loo_predictive_interval.stanreg <-
                           type = "quantile",
                           probs = probs,
                           psis_object = psis_object,
-                          lw = lw,
                           ...)
     intervals <- E_loo_result$value
     rownames(intervals) <- labs
@@ -183,42 +147,6 @@ loo_predictive_interval.stanreg <-
 
 # internal ----------------------------------------------------------------
 
-# for backwards compatibility if lw argument and not psis_object is provided
-loo_predict_old <- function(object,
-                            type = c("mean", "var", "quantile"),
-                            probs = 0.5,
-                            ...,
-                            lw) {
-  type <- match.arg(type)
-  lwts <- loo_weights(object, lw, log = TRUE, ...)
-  preds <- posterior_predict(object)
-  if (is_polr(object) && !is_scobit(object))
-    preds <- polr_yrep_to_numeric(preds)
-  
-  loo::E_loo(
-    x = preds,
-    lw = lwts,
-    type = type,
-    probs = probs
-  )
-}
-loo_linpred_old <- function(object,
-                            type = c("mean", "var", "quantile"),
-                            probs = 0.5,
-                            transform = FALSE,
-                            ...,
-                            lw) {
-  type <- match.arg(type)
-  lwts <- loo_weights(object, lw, log = TRUE, ...)
-  linpreds <- posterior_linpred(object, transform = transform)
-  
-  loo::E_loo(
-    x = linpreds,
-    lw = lwts,
-    type = type,
-    probs = probs
-  )
-}
 
 # @param object,lw,... Same as above.
 # @param log If FALSE (default) the weights are exponentiated before returning
