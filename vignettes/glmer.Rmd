@@ -49,7 +49,7 @@ $\mathbf{b}$, invariably that it is distributed multivariate normal with mean
 vector zero and structured covariance matrix $\boldsymbol{\Sigma}$. If $\epsilon_i$
 is also distributed (univariate) normal with mean zero and standard deviation
 $\sigma$, then $\mathbf{b}$ can be integrated out, which implies
-$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
+$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{I}+\mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
 and it is possible to maximize this likelihood function by choosing proposals 
 for the parameters $\alpha$, $\boldsymbol{\beta}$, and (the free elements of) $\boldsymbol{\Sigma}$.
 
@@ -340,6 +340,10 @@ standard errors. However, `stan_nlmer` produces uncertainty estimates
 for the tree-specific deviations in the asymptote, which are considerable.
 ```{r}
 plot(post1, regex_pars = "^[b]")
+```
+Also, we can check the effective number of parameters with
+```{r}
+loo(post1)
 ```
 
 As can be seen, the age of the tree has a non-linear effect on the predicted

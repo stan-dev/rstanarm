@@ -211,7 +211,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     x <- dots$newx
     stanmat <- dots$stanmat
-    y <- eval(formula(object)[[2L]], newdata)
+    form <- as.formula(formula(object)) # in case formula is string
+    y <- eval(form[[2L]], newdata)
   } else if (has_newdata) {
     ppdat <- pp_data(object, as.data.frame(newdata), offset = offset, m = m)
     tmp <- pp_eta(object, ppdat, m = m)
