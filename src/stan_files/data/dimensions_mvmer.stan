@@ -16,15 +16,15 @@
   int<lower=0> len_theta_L; // length of the theta_L vector
 
   // group level dimensions, for lkj prior
-  
+
     // group factor 1
     int<lower=0> bN1; // num groups
     int<lower=0> bK1; // total num params
     int<lower=0> bK1_len[3]; // num params in each submodel
     int<lower=0> bK1_idx[3,2]; // beg/end index for group params
-  
+
     // group factor 2
-  	int<lower=0> bN2; // num groups
+    int<lower=0> bN2; // num groups
     int<lower=0> bK2; // total num params
     int<lower=0> bK2_len[3]; // num params in each submodel
     int<lower=0> bK2_idx[3,2]; // beg/end index for group params
