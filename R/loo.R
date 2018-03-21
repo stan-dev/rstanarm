@@ -31,13 +31,24 @@
 #' @aliases loo waic
 #'
 #' @export
-#' @templateVar stanregArg x
-#' @template args-stanreg-object
 #' @template reference-loo
 #' 
+#' @param x For \code{loo}, \code{waic}, and \code{kfold} methods, a fitted
+#'   model object returned by one of the rstanarm modeling functions. See
+#'   \link{stanreg-objects}.
+#'   
+#'   For \code{loo_model_weights}, \code{x} should be a "stanreg_list"
+#'   object, which is a list of fitted model objects created by
+#'   \code{\link{stanreg_list}}.
+#'   
 #' @param ... For \code{compare_models}, \code{...} should contain two or more
 #'   objects returned by the \code{loo}, \code{kfold}, or \code{waic} method
 #'   (see the \strong{Examples} section, below).
+#'   
+#'   For \code{loo_model_weights}, \code{...} should contain arguments
+#'   (e.g. \code{method}) to pass to the default
+#'   \code{\link[loo]{loo_model_weights}} method from the \pkg{loo} package.
+#'   
 #' @param cores,save_psis See \code{\link[loo]{loo}}.
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape 
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
@@ -442,6 +453,36 @@ compare_models <- function(..., loos = list()) {
 }
 
 
+#' @rdname loo.stanreg
+#' @aliases loo_model_weights
+#'   
+#' @importFrom loo loo_model_weights
+#' @export loo_model_weights
+#' 
+#' @export
+#' 
+loo_model_weights.stanreg_list <- function(x, ...) {
+  log_lik_list <- lapply(x, log_lik)
+  loo::loo_model_weights.default(x = log_lik_list, ...)
+}
+
+#' @rdname loo.stanreg
+#' @export
+#' @param m For \code{loo_model_weights} with a \code{stanmvreg_list}, an
+#'   integer specifying the submodel passed to \code{\link{log_lik}}.
+loo_model_weights.stanmvreg_list <- function(x, ..., m = 1) {
+  log_lik_list <- lapply(x, log_lik, m = m)
+  loo::loo_model_weights.default(x = log_lik_list, ...)
+}
+
+#' @rdname loo.stanreg
+#' @export
+loo_model_weights.stanjm_list <- function(x, ..., m = 1) {
+  log_lik_list <- lapply(x, log_lik)
+  loo::loo_model_weights.default(x = log_lik_list, ...)
+}
+
+
 # internal ----------------------------------------------------------------
 validate_k_threshold <- function(k) {
   if (!is.numeric(k) || length(k) != 1) {
@@ -660,5 +701,4 @@ chain_id_for_loo <- function(object) {
   n_chain <- dims[2]
   rep(1:n_chain, each = n_iter)
 }
-
 
