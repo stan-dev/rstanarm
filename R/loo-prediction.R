@@ -145,22 +145,14 @@ loo_predictive_interval.stanreg <-
     list(value = intervals, pareto_k = E_loo_result$pareto_k)
   }
 
+
+
 # internal ----------------------------------------------------------------
 
-
-# @param object,lw,... Same as above.
-# @param log If FALSE (default) the weights are exponentiated before returning
-# @return A matrix.
-loo_weights <- function(object, lw, log = FALSE, ...) {
-  if (!missing(lw)) {
-    stopifnot(is.matrix(lw))
-  } else {
-    message("Running PSIS to compute weights...")
-    psis <- loo::psislw(llfun = ll_fun(object), llargs = ll_args(object), ...)
-    lw <- psis[["lw_smooth"]]
-  }
-  if (log) 
-    return(lw) 
-  
-  exp(lw)
+psis.stanreg <- function(object, ...) {
+  message("Running PSIS to compute weights...")
+  ll <- log_lik(object)
+  r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))
+  psis1 <- loo::psis(-ll, r_eff = r_eff, ...)
 }
+

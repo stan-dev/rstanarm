@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 library(rstanarm)
-options(loo.cores = ifelse(.Platform$OS.type == "windows", 1, 2))
+LOO.CORES <- ifelse(.Platform$OS.type == "windows", 1, 2)
 SEED <- 1234L
 set.seed(SEED)
 CHAINS <- 2
@@ -36,7 +36,7 @@ context("loo and waic")
 # check that the results returned by loo are actually correct).
 
 expect_equivalent_loo <- function(fit) {
-  l <- suppressWarnings(loo(fit))
+  l <- suppressWarnings(loo(fit, cores = LOO.CORES))
   w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "loo")
   expect_s3_class(w, "loo")
@@ -49,7 +49,7 @@ expect_equivalent_loo <- function(fit) {
   discrete <- attr(l, "discrete")
   expect_true(!is.na(discrete) && is.logical(discrete))
   
-  expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
+  expect_equivalent(l, suppressWarnings(loo(log_lik(fit), cores = LOO.CORES)))
   expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
 }
 mcmc_only_error <- function(fit) {
@@ -83,7 +83,7 @@ test_that("loo errors if model has weights", {
 context("loo then refitting")
 
 test_that("loo issues errors/warnings", {
-  expect_warning(loo(example_model, k_threshold = 2),
+  expect_warning(loo(example_model, cores = LOO.CORES, k_threshold = 2),
                  "Setting 'k_threshold' > 1 is not recommended")
   expect_error(loo(example_model, k_threshold = -1),
                "'k_threshold' < 0 not allowed.")
@@ -118,7 +118,7 @@ test_that("loo with k_threshold works for edge case(s)", {
   y <- mtcars$mpg
   SW(fit <- stan_glm(y ~ 1, refresh = 0, iter = 200))
   expect_message(
-    SW(res <- loo(fit, k_threshold = 0.1)), # low k_threshold to make sure reloo is triggered
+    SW(res <- loo(fit, k_threshold = 0.1, cores = LOO.CORES)), # low k_threshold to make sure reloo is triggered
     "problematic observation\\(s\\) found"
   )
   expect_s3_class(res, "loo")
@@ -186,10 +186,10 @@ test_that("compare_models throws correct errors", {
     fit3 <- update(fit1, formula. = log(mpg) ~ .)
     fit4 <- update(fit1, family = poisson("log"))
     
-    l1 <- loo(fit1)
-    l2 <- loo(fit2)
-    l3 <- loo(fit3)
-    l4 <- loo(fit4)
+    l1 <- loo(fit1, cores = LOO.CORES)
+    l2 <- loo(fit2, cores = LOO.CORES)
+    l3 <- loo(fit3, cores = LOO.CORES)
+    l4 <- loo(fit4, cores = LOO.CORES)
   
     w1 <- waic(fit1)
     k1 <- kfold(fit1, K = 3)
@@ -228,11 +228,11 @@ test_that("compare_models works", {
     fit4 <- update(fit1, family = "poisson")
     fit5 <- update(fit1, family = "neg_binomial_2")
     
-    l1 <- loo(fit1)
-    l2 <- loo(fit2)
-    l3 <- loo(fit3)
-    l4 <- loo(fit4)
-    l5 <- loo(fit5)
+    l1 <- loo(fit1, cores = LOO.CORES)
+    l2 <- loo(fit2, cores = LOO.CORES)
+    l3 <- loo(fit3, cores = LOO.CORES)
+    l4 <- loo(fit4, cores = LOO.CORES)
+    l5 <- loo(fit5, cores = LOO.CORES)
     
     k1 <- kfold(fit1, K = 2)
     k2 <- kfold(fit2, K = 2)
@@ -269,6 +269,8 @@ test_that("compare_models works", {
   expect_true(attr(k5, "discrete"))
   expect_s3_class(compare_models(k4, k5), "compare.loo")
 })
+
+
 
 
 # helpers -----------------------------------------------------------------

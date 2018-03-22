@@ -17,16 +17,17 @@
 
 #' Information criteria and cross-validation
 #' 
-#' For models fit using MCMC, compute approximate leave-one-out cross-validation
-#' (LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
-#' (WAIC) using the \pkg{\link[=loo-package]{loo}} package. Exact \eqn{K}-fold
-#' cross-validation is also available. Compare two or more models using the
-#' \code{compare_models} function. \strong{Note}: these functions are not
-#' guaranteed to work properly unless the \code{data} argument was specified
-#' when the model was fit. Also, as of \pkg{loo} version \code{2.0.0} the default
-#' number of cores is now only 1, but we recommend using as many (or close to as
-#' many) cores as possible by setting the \code{cores} argument or using
-#' \code{options(loo.cores = VALUE)} to set it for an entire session.
+#' @description For models fit using MCMC, compute approximate leave-one-out
+#'   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
+#'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
+#'   package. Exact \eqn{K}-fold cross-validation is also available. Compare two
+#'   or more models using the \code{compare_models} function. \strong{Note}:
+#'   these functions are not guaranteed to work properly unless the \code{data}
+#'   argument was specified when the model was fit. Also, as of \pkg{loo}
+#'   version \code{2.0.0} the default number of cores is now only 1,  but we
+#'   recommend using as many (or close to as many) cores as possible by setting
+#'   the \code{cores} argument or using \code{options(mc.cores = VALUE)} to set
+#'   it for an entire session.
 #' 
 #' @aliases loo waic
 #'
@@ -151,7 +152,7 @@
 loo.stanreg <-
   function(x,
            ...,
-           cores = getOption("loo.cores", 1),
+           cores = getOption("mc.cores", 1),
            save_psis = FALSE,
            k_threshold = NULL) {
     if (!used.sampling(x))
@@ -460,6 +461,12 @@ compare_models <- function(..., loos = list()) {
 #' @export loo_model_weights
 #' 
 #' @export
+#' 
+#' @examples
+#' # loo_model_weights
+#' model_list <- stanreg_list(fit1, fit2)
+#' loo_model_weights(model_list, method = "stacking")
+#' loo_model_weights(model_list, method = "pseudobma")
 #' 
 loo_model_weights.stanreg_list <- function(x, ...) {
   log_lik_list <- lapply(x, log_lik)
