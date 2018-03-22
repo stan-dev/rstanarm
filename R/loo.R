@@ -463,23 +463,33 @@ compare_models <- function(..., loos = list()) {
 #' 
 loo_model_weights.stanreg_list <- function(x, ...) {
   log_lik_list <- lapply(x, log_lik)
-  loo::loo_model_weights.default(x = log_lik_list, ...)
+  r_eff <- lapply(seq_along(log_lik_list), function(j) {
+    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
+  })
+  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
 }
 
 #' @rdname loo.stanreg
 #' @export
-#' @param m For \code{loo_model_weights} with a \code{stanmvreg_list}, an
-#'   integer specifying the submodel passed to \code{\link{log_lik}}.
-loo_model_weights.stanmvreg_list <- function(x, ..., m = 1) {
-  log_lik_list <- lapply(x, log_lik, m = m)
-  loo::loo_model_weights.default(x = log_lik_list, ...)
+loo_model_weights.stanmvreg_list <- function(x, ...) {
+  log_lik_list <- lapply(x, function(obj) {
+    M <- get_M(obj)
+    do.call("cbind", lapply(1:M, function(m) log_lik(obj, m = m)))
+  })
+  r_eff <- lapply(seq_along(log_lik_list), function(j) {
+    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
+  })
+  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
 }
 
 #' @rdname loo.stanreg
 #' @export
-loo_model_weights.stanjm_list <- function(x, ..., m = 1) {
+loo_model_weights.stanjm_list <- function(x, ...) {
   log_lik_list <- lapply(x, log_lik)
-  loo::loo_model_weights.default(x = log_lik_list, ...)
+  r_eff <- lapply(seq_along(log_lik_list), function(j) {
+    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
+  })
+  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
 }
 
 
