@@ -480,7 +480,8 @@ loo_model_weights.stanreg_list <- function(x, ...) {
   r_eff <- lapply(seq_along(log_lik_list), function(j) {
     loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
   })
-  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  setNames(wts, names(x))
 }
 
 #' @rdname loo.stanreg
@@ -493,7 +494,8 @@ loo_model_weights.stanmvreg_list <- function(x, ...) {
   r_eff <- lapply(seq_along(log_lik_list), function(j) {
     loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
   })
-  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  setNames(wts, names(x))
 }
 
 #' @rdname loo.stanreg
@@ -503,7 +505,8 @@ loo_model_weights.stanjm_list <- function(x, ...) {
   r_eff <- lapply(seq_along(log_lik_list), function(j) {
     loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
   })
-  loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
+  setNames(wts, names(x))
 }
 
 
