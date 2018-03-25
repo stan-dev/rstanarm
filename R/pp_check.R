@@ -34,6 +34,7 @@
 #' @templateVar bdaRef (Ch. 6)
 #' @templateVar stanregArg object
 #' @template reference-bda
+#' @template reference-bayesvis
 #' @template args-stanreg-object
 #' @param plotfun A character string naming the \pkg{bayesplot} 
 #'   \link[bayesplot]{PPC} function to use. The default is to call

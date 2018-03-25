@@ -60,6 +60,8 @@
 #'   functions fit using \code{\link{stan_gamm4}}.
 #' }  
 #'
+#' @template reference-bayesvis
+#' 
 #' @examples
 #' \donttest{
 #' # Use rstanarm example model

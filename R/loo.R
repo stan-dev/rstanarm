@@ -20,8 +20,8 @@
 #' @description For models fit using MCMC, compute approximate leave-one-out
 #'   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
 #'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
-#'   package. Exact \eqn{K}-fold cross-validation is also available. Compare two
-#'   or more models using the \code{compare_models} function. \strong{Note}:
+#'   package. Functions for \eqn{K}-fold cross-validation, model comparison,
+#'   and model weighting/averaging are also provided. \strong{Note}:
 #'   these functions are not guaranteed to work properly unless the \code{data}
 #'   argument was specified when the model was fit. Also, as of \pkg{loo}
 #'   version \code{2.0.0} the default number of cores is now only 1,  but we
@@ -33,6 +33,7 @@
 #'
 #' @export
 #' @template reference-loo
+#' @template reference-bayesvis
 #' 
 #' @param x For \code{loo}, \code{waic}, and \code{kfold} methods, a fitted
 #'   model object returned by one of the rstanarm modeling functions. See
@@ -104,14 +105,12 @@
 #'   
 #' @seealso 
 #' \itemize{
-#'   \item The various \pkg{rstanarm} vignettes for more examples of 
-#'     using \code{loo} and \code{compare_models}.
-#'   \item \code{\link[loo]{loo-package}} (in particular the \emph{PSIS-LOO} 
-#'     section)  for details on the computations implemented by the \pkg{loo} 
-#'     package and the interpretation of the Pareto \eqn{k} estimates displayed 
-#'     when using the  \code{\link{plot.loo}} method.
+#'   \item The \pkg{loo} package vignettes and various \pkg{rstanarm} vignettes
+#'   for more examples using \code{loo} with \pkg{rstanarm} models.
+#'   \item \code{\link[loo]{pareto-k-diagnostic}} in the \pkg{loo} package for 
+#'   more on Pareto \eqn{k} diagnostics.
 #'   \item \code{\link{log_lik.stanreg}} to directly access the pointwise 
-#'     log-likelihood matrix. 
+#'   log-likelihood matrix. 
 #' }
 #'   
 #' @examples 
@@ -462,8 +461,16 @@ compare_models <- function(..., loos = list()) {
 #' 
 #' @export
 #' 
+#' 
+#' @section Model weights: The \code{loo_model_weights} method can be used to
+#'   compute model weights for a \code{"stanreg_list"} object, which is a list
+#'   of fitted model objects made with \code{\link{stanreg_list}}. The end of
+#'   the \strong{Examples} section has a demonstration. For details see the
+#'   \code{\link[loo]{loo_model_weights}} documentation in the \pkg{loo}
+#'   package.
+#' 
 #' @examples
-#' # loo_model_weights
+#' # Computing model weights
 #' model_list <- stanreg_list(fit1, fit2)
 #' loo_model_weights(model_list, method = "stacking")
 #' loo_model_weights(model_list, method = "pseudobma")
