@@ -51,7 +51,7 @@
 #'   (e.g. \code{method}) to pass to the default
 #'   \code{\link[loo]{loo_model_weights}} method from the \pkg{loo} package.
 #'   
-#' @param cores,save_psis See \code{\link[loo]{loo}}.
+#' @param cores,save_psis Passed to \code{\link[loo]{loo}}.
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape 
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
@@ -123,12 +123,12 @@
 #' loo1 <- loo(fit1, cores = 2)
 #' print(loo1)
 #' loo2 <- loo(fit2, cores = 2)
-#' plot(loo2)
+#' print(loo2)
 #' 
 #' # when comparing exactly two models, the reported 'elpd_diff' 
 #' # will be positive if the expected predictive accuracy for the 
-#' # second model is higher. the standard error of the difference 
-#' # is also reported.
+#' # second model is higher. the approximate standard error of the 
+#' # difference is also reported.
 #' compare_models(loo1, loo2)
 #' compare_models(loos = list(loo1, loo2)) # can also provide list of models
 #' 
@@ -616,9 +616,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     N <- nrow(pointwise)
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
-  # what should we do about pareto k? for now setting them to 0 
-  # so they don't cause warnings
-  loo_x$diagnostics$pareto_k[obs] <- 0
+  loo_x$diagnostics$pareto_k[obs] <- NA
   
   return(loo_x)
 }
