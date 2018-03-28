@@ -362,7 +362,7 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
-  if (is.mer(x) && x$stan_function != "stan_gamm4") return(formula_mer(x, ...))
+  if (is.mer(x) && isTRUE(x$stan_function != "stan_gamm4")) return(formula_mer(x, ...))
   x$formula
 }
 
