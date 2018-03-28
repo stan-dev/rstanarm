@@ -164,7 +164,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   }
 
   cat("\n------\n")
-  cat("For info on the priors used see help('prior_summary.stanreg').")
+  cat("For info on the priors used see help('prior_summary.stanreg').\n")
   
   invisible(x)
 }

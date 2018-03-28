@@ -38,11 +38,14 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \emph{We
+#' @param formula,data Same as for \code{\link[lme4]{glmer}}. \emph{We
 #'   strongly advise against omitting the \code{data} argument}. Unless 
 #'   \code{data} is specified (and is a data frame) many post-estimation 
 #'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
+#' @param family Same as for \code{\link[lme4]{glmer}} except it is also
+#'   possible to use \code{family=mgcv::betar} to estimate a Beta regression
+#'   with \code{stan_glmer}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
@@ -172,8 +175,12 @@ stan_lmer <-
            algorithm = c("sampling", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
-  if ("family" %in% names(list(...)))
-    stop("'family' should not be specified.")
+  if ("family" %in% names(list(...))) {
+    stop(
+      "'family' should not be specified. ", 
+      "To specify a family use stan_glmer instead of stan_lmer."
+    )
+  }
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
