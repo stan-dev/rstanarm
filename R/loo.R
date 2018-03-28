@@ -235,11 +235,13 @@ loo.stanreg <-
     bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
     n_bad <- length(bad_obs)
     
+
     out <- structure(
       loo_x,
       name = deparse(substitute(x)),
       discrete = is_discrete(x),
-      yhash = hash_y(x)
+      yhash = hash_y(x), 
+      formula = loo_model_formula(x)
     )
     
     if (!length(bad_obs)) {
@@ -267,7 +269,8 @@ loo.stanreg <-
       reloo_out,
       name = attr(out, "name"),
       discrete = attr(out, "discrete"),
-      yhash = attr(out, "yhash")
+      yhash = attr(out, "yhash"), 
+      formula = loo_model_formula(x)
     )
   }
 
@@ -296,7 +299,8 @@ waic.stanreg <- function(x, ...) {
             class = c("waic", "loo"),
             name = deparse(substitute(x)), 
             discrete = is_discrete(x), 
-            yhash = hash_y(x))
+            yhash = hash_y(x), 
+            formula = loo_model_formula(x))
 }
 
 
@@ -387,7 +391,8 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
             K = K, 
             name = deparse(substitute(x)), 
             discrete = is_discrete(x), 
-            yhash = hash_y(x))
+            yhash = hash_y(x),
+            formula = loo_model_formula(x))
 }
 
 #' Print method for kfold
@@ -411,7 +416,10 @@ print.kfold <- function(x, digits = 1, ...) {
 #' @param loos For \code{compare_models}, a list of two or more objects returned
 #'   by the \code{loo}, \code{kfold}, or \code{waic} method. This argument can 
 #'   be used as an alternative to passing these objects via \code{...}.
-#'   
+#' @param detail For \code{compare_models}, if comparing more than two models
+#'   and \code{detail=TRUE} then extra information about each model (currently
+#'   just the model formula) will be printed with the output.
+#'
 #' @return \code{compare_models} returns a vector or matrix with class 
 #'   'compare.loo'. See the \strong{Comparing models} section below for more
 #'   details.
@@ -438,7 +446,7 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   predictive accuracy. That is, the first row of the matrix will be 
 #'   for the model with the largest ELPD (smallest LOOIC).
 #' 
-compare_models <- function(..., loos = list()) {
+compare_models <- function(..., loos = list(), detail = FALSE) {
   dots <- list(...)
   if (length(dots) && length(loos)) {
     stop("'...' and 'loos' can't both be specified.", call. = FALSE)
@@ -448,8 +456,36 @@ compare_models <- function(..., loos = list()) {
     stopifnot(is.list(loos))
   }
   
+  n_models <- length(loos)
   loos <- validate_loos(loos)
-  loo::compare(x = loos)
+  comp <- loo::compare(x = loos)
+  structure(
+    comp, 
+    class = c("compare_rstanarm_loos", class(comp)),
+    names = names(loos),
+    formulas = if (!detail) NULL else lapply(loos, attr, "formula")
+  )
+}
+
+#' @export
+print.compare_rstanarm_loos <- function(x, ...) {
+  formulas <- attr(x, "formulas")
+  nms <- attr(x, "names")
+  if (!is.null(formulas)) {
+    cat("Model formulas: ")
+    for (j in seq_len(nrow(x))) {
+      cat("\n ", paste0(nms[j], ": "), 
+          formula_string(formulas[[j]]))
+    }
+    cat("\n")
+  }
+  
+  xcopy <- x
+  class(xcopy) <- "compare.loo"
+  cat("\nModel comparison (ordered by highest ELPD): \n")
+  print(xcopy, ...)
+  
+  return(invisible(x))
 }
 
 
@@ -726,4 +762,17 @@ chain_id_for_loo <- function(object) {
   n_chain <- dims[2]
   rep(1:n_chain, each = n_iter)
 }
+
+
+# model formula to store in loo object
+# @param x stanreg object
+loo_model_formula <- function(x) {
+  form <- try(formula(x), silent = TRUE)
+  if (inherits(form, "try-error") || is.null(form)) {
+    form <- "formula not found"
+  }
+  return(form)
+}
+
+
 
