@@ -57,5 +57,5 @@ If installation fails, please let us know by [filing an issue](https://github.co
 ### Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please 
-see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
-page of the wiki.
+see the [developer notes](http://mc-stan.org/rstanarm/dev-notes/index.html) page.
+
