@@ -1,7 +1,7 @@
 #' Compute weighted expectations using LOO
 #' 
-#' These functions are wrappers around the \code{\link[loo]{E_loo}} function 
-#' (\pkg{loo} package).
+#' These functions are wrappers around the \code{\link[loo]{E_loo}} function
+#' (\pkg{loo} package) that provide compatibility for \pkg{rstanarm} models.
 #' 
 #' @export
 #' @aliases loo_predict loo_linpred loo_predictive_interval
@@ -37,10 +37,15 @@
 #' # optionally, log-weights can be pre-computed and reused
 #' psis_result <- loo::psis(log_ratios = -log_lik(example_model))
 #' 
-#' loo_linpred(example_model, type = "mean", transform = TRUE, psis_object = psis_result)
+#' loo_probs <- loo_linpred(example_model, type = "mean", transform = TRUE, psis_object = psis_result)
+#' str(loo_probs)
 #' 
-#' loo_predict(example_model, type = "var", psis_object = psis_result)
-#' head(loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result))
+#' loo_pred_var <- loo_predict(example_model, type = "var", psis_object = psis_result)
+#' str(loo_pred_var)
+#' 
+#' loo_pred_ints <- loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
+#' str(loo_pred_ints)
+#' 
 #' }
 #' 
 loo_predict.stanreg <-
@@ -52,8 +57,8 @@ loo_predict.stanreg <-
     
     if ("lw" %in% names(list(...))) {
       stop(
-        "The 'lw' argument is no longer supported. ", 
-        "Use the 'psis_object' argument instead."
+        "Due to changes in the 'loo' package, the 'lw' argument ", 
+        "is no longer supported. Use the 'psis_object' argument instead."
       )
     }
     
@@ -93,8 +98,8 @@ loo_linpred.stanreg <-
     
     if ("lw" %in% names(list(...))) {
       stop(
-        "The 'lw' argument is no longer supported. ", 
-        "Use the 'psis_object' argument instead."
+        "Due to changes in the 'loo' package, the 'lw' argument ", 
+        "is no longer supported. Use the 'psis_object' argument instead."
       )
     }
     
