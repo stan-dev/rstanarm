@@ -456,7 +456,6 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
     stopifnot(is.list(loos))
   }
   
-  n_models <- length(loos)
   loos <- validate_loos(loos)
   comp <- loo::compare(x = loos)
   structure(
