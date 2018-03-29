@@ -2,7 +2,7 @@
 
 Details on how to build the online documentation for the R packages maintained by the Stan Development Team.
 The RStanARM Developer Notes is built with [bookdown](https://bookdown.org/yihui/bookdown/) and the package
-documentation is built with [pkgdown](http://hadley.github.io/pkgdown/).
+documentation is built with [pkgdown](http://pkgdown.r-lib.org/).
 
 ## Building RStanARM Developer Notes
 
