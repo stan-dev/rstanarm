@@ -463,7 +463,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   if (length(grep("(phi)_", colnames(data_i), fixed = TRUE)) > 0) {
     phi <- .phi_beta(data_i, draws)
   }
-  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
+  val <- dbeta(data_i$y, mu * phi, (1 - mu) * phi, log = TRUE)
   .weighted(val, data_i$weights)
 }
 .ll_nlmer_i <- function(data_i, draws) {
