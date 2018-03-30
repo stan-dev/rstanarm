@@ -130,20 +130,24 @@
 #' # second model is higher. the approximate standard error of the 
 #' # difference is also reported.
 #' compare_models(loo1, loo2)
-#' compare_models(loos = list(loo1, loo2)) # can also provide list of models
+#' compare_models(loos = list(loo1, loo2)) # can also provide list
 #' 
-#' # when comparing three or more models they are ordered by expected
-#' # predictive accuracy. unlike when comparing two models, now the 
-#' # diplayed standard errors do _not_ pertain to differences.
-#' fit3 <- stan_glm(mpg ~ ., data = mtcars)
+#' # when comparing three or more models they are ordered by 
+#' # expected predictive accuracy. unlike when doing a pairwise 
+#' # comparison of two models, now the diplayed standard errors 
+#' # do _not_ pertain to differences.
+#' fit3 <- stan_glm(mpg ~ ., data = mtcars, cores = 2)
 #' loo3 <- loo(fit3, cores = 2)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
 #' 
+#' # setting detail=TRUE will also print model formulas
+#' compare_models(loo1, loo2, loo3, detail=TRUE)
+#' 
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
-#' compare_models(kfold1, kfold2)
+#' compare_models(kfold1, kfold2, detail=TRUE)
 #' }
 #' 
 #' @importFrom loo loo loo.function loo.matrix
@@ -314,10 +318,10 @@ waic.stanreg <- function(x, ...) {
 #'   leaving out one of the \code{K} subsets. If \code{K} is equal to the total
 #'   number of observations in the data then \eqn{K}-fold cross-validation is
 #'   equivalent to exact leave-one-out cross-validation.
-#' @param save_fits If \code{TRUE}, a component 'fits' is added to the returned
-#'   object to store the cross-validated \link[=stanreg-objects]{stanreg}
-#'   objects and the indices of the omitted observations for each fold. Defaults
-#'   to \code{FALSE}.
+#' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
+#'   is added to the returned object to store the cross-validated
+#'   \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
+#'   observations for each fold. Defaults to \code{FALSE}.
 #'   
 #' @return \code{kfold} returns an object with has classes 'kfold' and 'loo' 
 #'   that has a similar structure as the objects returned by the \code{loo} and
@@ -416,9 +420,9 @@ print.kfold <- function(x, digits = 1, ...) {
 #' @param loos For \code{compare_models}, a list of two or more objects returned
 #'   by the \code{loo}, \code{kfold}, or \code{waic} method. This argument can 
 #'   be used as an alternative to passing these objects via \code{...}.
-#' @param detail For \code{compare_models}, if comparing more than two models
-#'   and \code{detail=TRUE} then extra information about each model (currently
-#'   just the model formula) will be printed with the output.
+#' @param detail For \code{compare_models}, if \code{TRUE} then extra
+#'   information about each model (currently just the model formulas) will be
+#'   printed with the output.
 #'
 #' @return \code{compare_models} returns a vector or matrix with class 
 #'   'compare.loo'. See the \strong{Comparing models} section below for more
@@ -517,40 +521,20 @@ print.compare_rstanarm_loos <- function(x, ...) {
 #' loo_model_weights(model_list, method = "stacking")
 #' loo_model_weights(model_list, method = "pseudobma")
 #' 
-loo_model_weights.stanreg_list <- function(x, ...) {
-  log_lik_list <- lapply(x, log_lik)
-  r_eff <- lapply(seq_along(log_lik_list), function(j) {
-    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
-  })
-  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
-  setNames(wts, names(x))
-}
-
-#' @rdname loo.stanreg
-#' @export
-loo_model_weights.stanmvreg_list <- function(x, ...) {
-  log_lik_list <- lapply(x, function(obj) {
-    M <- get_M(obj)
-    do.call("cbind", lapply(1:M, function(m) log_lik(obj, m = m)))
-  })
-  r_eff <- lapply(seq_along(log_lik_list), function(j) {
-    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
-  })
-  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
-  setNames(wts, names(x))
-}
-
-#' @rdname loo.stanreg
-#' @export
-loo_model_weights.stanjm_list <- function(x, ...) {
-  log_lik_list <- lapply(x, log_lik)
-  r_eff <- lapply(seq_along(log_lik_list), function(j) {
-    loo::relative_eff(exp(log_lik_list[[j]]), chain_id = chain_id_for_loo(x[[j]]))
-  })
-  wts <- loo::loo_model_weights.default(x = log_lik_list, r_eff_list = r_eff, ...)
-  setNames(wts, names(x))
-}
-
+loo_model_weights.stanreg_list <-
+  function(x,
+           ...,
+           cores = getOption("mc.cores", 1),
+           k_threshold = NULL) {
+    
+    loo_list <- vector(mode = "list", length = length(x))
+    for (j in seq_along(x)) {
+      loo_list[[j]] <-
+        loo.stanreg(x[[j]], cores = cores, k_threshold = k_threshold)
+    }
+    wts <- loo::loo_model_weights.default(x = loo_list, ...)
+    setNames(wts, names(x))
+  }
 
 # internal ----------------------------------------------------------------
 validate_k_threshold <- function(k) {

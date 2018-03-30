@@ -20,11 +20,10 @@
 #' @export
 #' @param ... One or more fitted model objects.
 #' @return A list of class \code{"stanreg_list"}, \code{"stanmvreg_list"}, or
-#'   \code{"stanjm_list"}, containing the fitted model objects and metadata
+#'   \code{"stanjm_list"}, containing the fitted model objects and some metadata
 #'   stored as attributes.
 #'   
-#' @seealso \code{\link{loo_model_weights}} for example usage of
-#'   \code{stanreg_list}.
+#' @seealso \code{\link{loo_model_weights}} for usage of \code{stanreg_list}.
 #' 
 stanreg_list <- function(...) {
   mods <- list(...)
@@ -66,7 +65,7 @@ stanreg_list_generator <- function(mods, model_class = "stanreg") {
 
   structure(
     mods, 
-    class = paste0(model_class, "_list"),
+    class = unique(c(paste0(model_class, "_list"), "stanreg_list")),
     names = names(mods), 
     families = sapply(mods, function(x) {
       fam <- family(x)
@@ -78,15 +77,5 @@ stanreg_list_generator <- function(mods, model_class = "stanreg") {
 
 #' @export
 names.stanreg_list <- function(x) {
-  attr(x, "names")
-}
-
-#' @export
-names.stanmvreg_list <- function(x) {
-  attr(x, "names")
-}
-
-#' @export
-names.stanjm_list <- function(x) {
   attr(x, "names")
 }
