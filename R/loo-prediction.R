@@ -45,7 +45,6 @@
 #' 
 #' loo_pred_ints <- loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
 #' str(loo_pred_ints)
-#' 
 #' }
 #' 
 loo_predict.stanreg <-

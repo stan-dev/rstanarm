@@ -253,6 +253,14 @@ is_binomial_ppc <- function(object, ...) {
   if (!identical(substr(fun, 1, 4), "ppc_"))
     fun <- paste0("ppc_", fun)
   
+  if (fun == "ppc_loo_pit") {
+    warning(
+      "'ppc_loo_pit' is deprecated. ", 
+      "Use 'ppc_loo_pit_overlay' or 'ppc_loo_pit_qq' instead.", 
+      call.=FALSE
+    )
+    fun <- "ppc_loo_pit_qq"
+  }
   if (!fun %in% bayesplot::available_ppc())
     stop(
       fun, " is not a valid PPC function name.",  
