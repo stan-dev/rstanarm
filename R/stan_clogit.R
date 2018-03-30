@@ -139,7 +139,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   xint <- match("(Intercept)", colnames(X), nomatch = 0L)
   if (xint > 0L) {
     X <- X[, -xint, drop = FALSE]
-    attr(mt, "intercept") <- 0L
+    mt <- drop.terms(mt, dropx = xint)
   }
   f <- binomial(link = "logit")
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
