@@ -461,7 +461,7 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
   structure(
     comp, 
     class = c("compare_rstanarm_loos", class(comp)),
-    names = names(loos),
+    model_names = names(loos),
     formulas = if (!detail) NULL else lapply(loos, attr, "formula")
   )
 }
@@ -469,10 +469,10 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
 #' @export
 print.compare_rstanarm_loos <- function(x, ...) {
   formulas <- attr(x, "formulas")
-  nms <- attr(x, "names")
+  nms <- attr(x, "model_names")
   if (!is.null(formulas)) {
     cat("Model formulas: ")
-    for (j in seq_len(nrow(x))) {
+    for (j in seq_len(NROW(x))) {
       cat("\n ", paste0(nms[j], ": "), 
           formula_string(formulas[[j]]))
     }
@@ -481,7 +481,14 @@ print.compare_rstanarm_loos <- function(x, ...) {
   
   xcopy <- x
   class(xcopy) <- "compare.loo"
-  cat("\nModel comparison (ordered by highest ELPD): \n")
+  
+  if (NROW(x) == 2) {
+    cat("\nModel comparison: ")
+    cat("\n(negative 'elpd_diff' favors 1st model, positive favors 2nd) \n\n")
+  } else {
+    cat("\nModel comparison: ") 
+    cat("\n(ordered by highest ELPD)\n\n")
+  }
   print(xcopy, ...)
   
   return(invisible(x))

@@ -160,7 +160,7 @@ test_that("kfold works on some examples", {
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
   
-  expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash"))
+  expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(invisible(print(kf)), kf)
   expect_output(print(kf), "4-fold cross-validation")
@@ -247,16 +247,22 @@ test_that("compare_models works", {
   
   comp1 <- compare_models(l1, l2)
   comp2 <- compare_models(l1, l2, l3)
+  comp1_detail <- compare_models(l1, l2, detail=TRUE)
+  comp2_detail <- compare_models(l1, l2, l3, detail=TRUE)
+  
+  expect_output(print(comp1_detail), "Model formulas")
+  expect_output(print(comp2_detail), "Model formulas")
+  
   expect_named(comp1, c("elpd_diff", "se"))
   expect_true(is.matrix(comp2))
-  expect_equal(ncol(comp2), 6)
+  expect_equal(ncol(comp2), 7)
   expect_s3_class(comp1, "compare.loo")
   expect_s3_class(comp2, "compare.loo")
   expect_identical(comp1, compare_models(loos = list(l1, l2)))
   expect_identical(comp2, compare_models(loos = list(l1, l2, l3)))
   
   comp3 <- compare_models(k1, k2, k3)
-  expect_equal(ncol(comp3), 2)
+  expect_equal(ncol(comp3), 3)
   expect_s3_class(comp3, "compare.loo")
   
   expect_true(attr(l4, "discrete"))
