@@ -31,7 +31,7 @@
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the
 #'   untransformed linear predictor is returned.
-#' @param newdata,re.form,offset Same as for \code{\link{posterior_predict}}.
+#' @param newdata,draws,re.form,offset Same as for \code{\link{posterior_predict}}.
 #' @param XZ If \code{TRUE} then instead of computing the linear predictor the 
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
 #'   terms) constructed from \code{newdata} is returned. The default is 
@@ -74,6 +74,7 @@ posterior_linpred.stanreg <-
   function(object,
            transform = FALSE,
            newdata = NULL,
+           draws = NULL,
            re.form = NULL,
            offset = NULL,
            XZ = FALSE,
@@ -94,12 +95,17 @@ posterior_linpred.stanreg <-
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    eta <- pp_eta(object, data = dat, draws = NULL)[["eta"]]
-    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object))
-    else colnames(eta) <- rownames(newdata)
     
-    if (!transform || is.nlmer(object)) 
+    eta <- pp_eta(object, data = dat, draws = draws)[["eta"]]
+    if (is.null(newdata)) {
+      colnames(eta) <- rownames(model.frame(object))
+    } else {
+      colnames(eta) <- rownames(newdata)
+    }
+    
+    if (!transform || is.nlmer(object)) {
       return(eta)
+    }
     
     g <- linkinv(object)
     if (is_clogit(object)) {
