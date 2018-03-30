@@ -790,3 +790,21 @@ test_that("predictive_interval stanreg and ppd methods return the same thing", {
     predictive_interval(preds)
   )
 })
+
+
+
+# stanreg lists -----------------------------------------------------------
+test_that("stan*_list functions throw proper errors", {
+  expect_error(stanreg_list(), "At least one model")
+  expect_error(stanreg_list(stan_glm1, glm1), "must be stanreg objects")
+  expect_error(stanmvreg_list(stan_glm1, glm1), "must be stanmvreg objects")
+  expect_error(stanjm_list(stan_glm1, glm1), "must be stanjm objects")
+})
+
+test_that("stanreg_list works", {
+  list1 <- stanreg_list(stan_lmer1, stan_lmer2)
+  expect_named(list1, c("stan_lmer1", "stan_lmer2"))
+  expect_equivalent(attr(list1, "families"), c("gaussian", "gaussian"))
+  expect_identical(list1$stan_lmer1, stan_lmer1)
+  expect_identical(list1$stan_lmer2, stan_lmer2)
+})

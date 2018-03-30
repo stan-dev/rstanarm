@@ -44,8 +44,13 @@ ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars")
 
 
 test_that("pp_check.stanreg creates ggplot object", {
-  exclude <- c("ppc_bars", "ppc_loo_pit", "ppc_loo_intervals", 
-               "ppc_loo_ribbon", "ppc_rootogram")
+  exclude <- c("ppc_bars", 
+               "ppc_loo_pit", 
+               "ppc_loo_pit_overlay", 
+               "ppc_loo_pit_qq",
+               "ppc_loo_intervals", 
+               "ppc_loo_ribbon", 
+               "ppc_rootogram")
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
     if (!f %in% exclude)
       expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 

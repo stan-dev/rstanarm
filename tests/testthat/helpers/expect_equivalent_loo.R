@@ -1,6 +1,6 @@
 expect_equivalent_loo <- function(fit) {
-  options(loo.cores = ifelse(.Platform$OS.type == "windows", 1, 2))  
-  l <- suppressWarnings(loo(fit))
+  LOO.CORES <- ifelse(.Platform$OS.type == "windows", 1, 2)
+  l <- suppressWarnings(loo(fit, cores = LOO.CORES))
   w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "loo")
   expect_s3_class(w, "loo")
@@ -14,7 +14,7 @@ expect_equivalent_loo <- function(fit) {
   expect_true(!is.na(discrete) && is.logical(discrete))
   
   if (fit$stan_function != "stan_clogit") {
-    expect_equivalent(l, suppressWarnings(loo(log_lik(fit))))
+    expect_equivalent(l, suppressWarnings(loo(log_lik(fit), cores = LOO.CORES)))
     expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
   }
 }
