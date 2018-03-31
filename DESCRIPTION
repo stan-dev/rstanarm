@@ -45,7 +45,6 @@ Imports:
     survival (>= 2.40.1),
     utils
 Suggests:
-    arm,
     betareg,
     data.table (>= 1.10.0),
     digest,
@@ -63,6 +62,6 @@ SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
-URL: http://discourse.mc-stan.org, http://mc-stan.org/
+URL: http://discourse.mc-stan.org, http://mc-stan.org/, http://mc-stan.org/rstanarm/ 
 BugReports: https://github.com/stan-dev/rstanarm/issues
 RoxygenNote: 6.0.1

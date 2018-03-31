@@ -240,7 +240,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       if (model_has_weights(object)) {
         data$weights <- object$weights
       }
-      data$i <- seq_len(nrow(data))  # for nlmer need access to i inside .ll_nlmer_i
+      data$i_ <- seq_len(nrow(data))  # for nlmer need access to i inside .ll_nlmer_i
       return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
       
     } else if (!is.binomial(fname)) {
@@ -470,8 +470,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   .weighted(val, data_i$weights)
 }
 .ll_nlmer_i <- function(data_i, draws) {
-  i <- data_i$i
-  val <- dnorm(data_i$y, mean = draws$mu[, i], sd = draws$sigma, log = TRUE)
+  i_ <- data_i$i_
+  val <- dnorm(data_i$y, mean = draws$mu[, i_], sd = draws$sigma, log = TRUE)
   .weighted(val, data_i$weights)
 }
 
