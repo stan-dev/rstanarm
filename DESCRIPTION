@@ -65,4 +65,4 @@ LazyData: true
 NeedsCompilation: yes
 URL: http://discourse.mc-stan.org, http://mc-stan.org/
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

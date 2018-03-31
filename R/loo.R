@@ -135,9 +135,9 @@
 #' # when comparing three or more models they are ordered by 
 #' # expected predictive accuracy. unlike when doing a pairwise 
 #' # comparison of two models, now the diplayed standard errors 
-#' # do _not_ pertain to differences.
-#' fit3 <- stan_glm(mpg ~ ., data = mtcars, cores = 2)
-#' loo3 <- loo(fit3, cores = 2)
+#' # do _not_ pertain to differences but rather to the individual 
+#' # elpd_loo estimates.
+#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
 #' 
@@ -148,6 +148,16 @@
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare_models(kfold1, kfold2, detail=TRUE)
+#' 
+#' # Computing model weights
+#' model_list <- stanreg_list(fit1, fit2, fit3)
+#' loo_model_weights(model_list, cores = 2) # can specify k_threshold=0.7 if necessary
+#' 
+#' # if you have already computed loo then it's more efficient to pass a list 
+#' # of precomputed loo objects than a "stanreg_list", avoiding the need
+#' # for loo_models weights to call loo() internally
+#' loo_list <- list(fit1 = loo1, fit2 = loo2, fit3 = loo3) # names optional (affects printing)
+#' loo_model_weights(loo_list)
 #' }
 #' 
 #' @importFrom loo loo loo.function loo.matrix
@@ -399,7 +409,7 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
             formula = loo_model_formula(x))
 }
 
-#' Print method for kfold
+#' Various print methods
 #' 
 #' @keywords internal
 #' @export
@@ -470,7 +480,10 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
   )
 }
 
+#' @rdname print.kfold
+#' @keywords internal
 #' @export
+#' @method print compare_rstanarm_loos
 print.compare_rstanarm_loos <- function(x, ...) {
   formulas <- attr(x, "formulas")
   nms <- attr(x, "model_names")
@@ -514,12 +527,6 @@ print.compare_rstanarm_loos <- function(x, ...) {
 #'   the \strong{Examples} section has a demonstration. For details see the
 #'   \code{\link[loo]{loo_model_weights}} documentation in the \pkg{loo}
 #'   package.
-#' 
-#' @examples
-#' # Computing model weights
-#' model_list <- stanreg_list(fit1, fit2)
-#' loo_model_weights(model_list, method = "stacking")
-#' loo_model_weights(model_list, method = "pseudobma")
 #' 
 loo_model_weights.stanreg_list <-
   function(x,
