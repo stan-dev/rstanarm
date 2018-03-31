@@ -219,7 +219,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     eta <- tmp$eta
     stanmat <- tmp$stanmat
     x <- ppdat$x
-    y <- eval(formula(object, m = m)[[2L]], newdata)
+    form <- as.formula(formula(object, m = m))
+    y <- eval(form[[2L]], newdata)
   } else {
     stanmat <- as.matrix.stanreg(object)
     x <- get_x(object, m = m)
@@ -236,8 +237,10 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
                     sigma = stanmat[,"sigma"])
       data <- data.frame(y)
       data$offset <- if (has_newdata) offset else object$offset
-      if (model_has_weights(object))
+      if (model_has_weights(object)) {
         data$weights <- object$weights
+      }
+      data$i <- seq_len(nrow(data))  # for nlmer need access to i inside .ll_nlmer_i
       return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
       
     } else if (!is.binomial(fname)) {
@@ -467,7 +470,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   .weighted(val, data_i$weights)
 }
 .ll_nlmer_i <- function(data_i, draws) {
-  val <- dnorm(data_i$y, mean = .mu(data_i,draws), sd = draws$sigma, log = TRUE)
+  i <- data_i$i
+  val <- dnorm(data_i$y, mean = draws$mu[, i], sd = draws$sigma, log = TRUE)
   .weighted(val, data_i$weights)
 }
 
