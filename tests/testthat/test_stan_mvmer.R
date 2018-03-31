@@ -294,10 +294,10 @@ for (j in 1:5) {
     expect_is(fe, "list"); expect_identical(length(fe), M)
     expect_is(re, "list"); expect_identical(length(re), M)
     expect_is(ce, "list"); expect_identical(length(re), M)
-    expect_is(mf, "list"); expect_identical(length(mf), M); lapply(mf, expect_is, "data.frame")
+    expect_is(mf, "list"); expect_identical(length(mf), M); lapply(mf, function(x) expect_is(x, "data.frame"))
     expect_is(tt, "list"); expect_identical(length(tt), M); lapply(tt, function(x) expect_is(x, "terms"))
     expect_is(fm, "list"); expect_identical(length(fm), M); lapply(fm, function(x) expect_is(x, "formula"))
-    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam, expect_is, "family")
+    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam, function(x) expect_is(x, "family"))
     expect_is(sig, "numeric");
   })
   
