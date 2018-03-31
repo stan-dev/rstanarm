@@ -467,7 +467,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   .weighted(val, data_i$weights)
 }
 .ll_nlmer_i <- function(data_i, draws) {
-  val <- dnorm(data_i$y, mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
+  val <- dnorm(data_i$y, mean = .mu(data_i,draws), sd = draws$sigma, log = TRUE)
   .weighted(val, data_i$weights)
 }
 
