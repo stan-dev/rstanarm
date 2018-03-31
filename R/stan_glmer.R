@@ -119,7 +119,12 @@ stan_glmer <-
     y <- as.vector(y)
 
   offset <- model.offset(glmod$fr) %ORifNULL% double(0)
-  weights <- validate_weights(weights)
+  weights <- validate_weights(as.vector(model.weights(glmod$fr)))
+  if (binom_y_prop(y, family, weights)) {
+    y1 <- as.integer(as.vector(y) * weights)
+    y <- cbind(y1, y0 = weights - y1)
+    weights <- double(0)
+  }
   if (is.null(prior)) 
     prior <- list()
   if (is.null(prior_intercept)) 
