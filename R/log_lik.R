@@ -670,7 +670,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
                          reloo_or_kfold = reloo_or_kfold)
   fun  <- ll_fun(object, m = m)
   ll <- lapply(seq_len(args$N), function(j) as.vector(
-    fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
+    fun(data_i = args$data[j, , drop = FALSE], draws = args$draws)))
   ll <- do.call("cbind", ll)
   # return S*Npat matrix by summing log-lik for y within each individual
   res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
