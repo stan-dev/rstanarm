@@ -231,9 +231,8 @@ stan_gamm4 <-
                     flist = group$flist)$Z
     colnames(Z) <- b_names(names(stanfit), value = TRUE)
   }
-  if (getRversion() < "3.2.0") XZ <- cBind(X, Z) 
-  else XZ <- cbind2(X, Z)
-  
+  XZ <- cbind(X, Z) 
+
   # make jam object with point estimates, see ?mgcv::sim2jam
   mat <- as.matrix(stanfit)
   mark <- 1:ncol(X)

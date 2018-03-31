@@ -194,18 +194,20 @@ stan_betareg.fit <-
       decomposition <- qr(xtemp)
       sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
       Q <- qr.Q(decomposition)
-      R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
-      xtemp <- Q * sqrt_nm1
+      if (prior_autoscale) scale_factor <- sqrt(nrow(xtemp) - 1L)
+      else scale_factor <- diag(qr.R(decomposition))[ncol(xtemp)]
+      R_inv <- qr.solve(decomposition, Q) * scale_factor
+      xtemp <- Q * scale_factor
       colnames(xtemp) <- cn
       xbar <- c(xbar %*% R_inv) 
     }
     if (Z_true == 1 && nvars_z > 1) {
       cn_z <- colnames(ztemp)
       decomposition_z <- qr(ztemp)
-      sqrt_nm1_z <- sqrt(nrow(ztemp) - 1L)
       Q_z <- qr.Q(decomposition_z)
-      R_inv_z <- qr.solve(decomposition_z, Q_z) * sqrt_nm1_z
-      ztemp <- Q_z * sqrt_nm1_z
+      if (nvars <= 1) scale_factor <- sqrt(nrow(ztemp) - 1L)
+      R_inv_z <- qr.solve(decomposition_z, Q_z) * scale_factor
+      ztemp <- Q_z * scale_factor
       colnames(ztemp) <- cn_z
       zbar <- c(zbar %*% R_inv_z)
     }

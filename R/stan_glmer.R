@@ -145,8 +145,7 @@ stan_glmer <-
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call, terms = NULL, model = NULL, 
+               x = cbind(X, Z), y = y, data, call, terms = NULL, model = NULL,
                na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                stan_function = "stan_glmer")
   out <- stanreg(fit)

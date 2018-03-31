@@ -236,10 +236,11 @@ stan_glm.fit <-
       stop("'QR' and 'sparse' cannot both be TRUE.")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
-    sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
     Q <- qr.Q(decomposition)
-    R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
-    xtemp <- Q * sqrt_nm1
+    if (prior_autoscale) scale_factor <- sqrt(nrow(xtemp) - 1L)
+    else scale_factor <- diag(qr.R(decomposition))[ncol(xtemp)]
+    R_inv <- qr.solve(decomposition, Q) * scale_factor
+    xtemp <- Q * scale_factor
     colnames(xtemp) <- cn
     xbar <- c(xbar %*% R_inv)
   }
