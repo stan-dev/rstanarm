@@ -36,15 +36,15 @@ TOLSCALES <- list(
   glmer_ranef = 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
-source(file.path("helpers", "expect_matrix.R"))
-source(file.path("helpers", "expect_stanreg.R"))
-source(file.path("helpers", "expect_stanmvreg.R"))
-source(file.path("helpers", "expect_survfit.R"))
-source(file.path("helpers", "expect_ppd.R"))
-source(file.path("helpers", "expect_identical_sorted_stanmats.R"))
-source(file.path("helpers", "SW.R"))
-source(file.path("helpers", "get_tols.R"))
-source(file.path("helpers", "recover_pars.R"))
+source(test_path("helpers", "expect_matrix.R"))
+source(test_path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "expect_stanmvreg.R"))
+source(test_path("helpers", "expect_survfit.R"))
+source(test_path("helpers", "expect_ppd.R"))
+source(test_path("helpers", "expect_identical_sorted_stanmats.R"))
+source(test_path("helpers", "SW.R"))
+source(test_path("helpers", "get_tols.R"))
+source(test_path("helpers", "recover_pars.R"))
 
 context("stan_mvmer")
 
@@ -276,7 +276,7 @@ for (j in 1:5) {
     expect_s3_class(l, "loo")
     expect_s3_class(w, "loo")
     expect_s3_class(w, "waic")
-    att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
+    att_names <- c('names', 'dims', 'class', 'name', 'discrete', 'yhash', 'formula')
     expect_named(attributes(l), att_names)
     expect_named(attributes(w), att_names)
   })
@@ -295,9 +295,9 @@ for (j in 1:5) {
     expect_is(re, "list"); expect_identical(length(re), M)
     expect_is(ce, "list"); expect_identical(length(re), M)
     expect_is(mf, "list"); expect_identical(length(mf), M); lapply(mf, expect_is, "data.frame")
-    expect_is(tt, "list"); expect_identical(length(tt), M); lapply(tt, expect_is, "terms")
-    expect_is(fm, "list"); expect_identical(length(fm), M); lapply(fm, expect_is, "formula")
-    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam,expect_is, "family")
+    expect_is(tt, "list"); expect_identical(length(tt), M); lapply(tt, function(x) expect_is(x, "terms"))
+    expect_is(fm, "list"); expect_identical(length(fm), M); lapply(fm, function(x) expect_is(x, "formula"))
+    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam, expect_is, "family")
     expect_is(sig, "numeric");
   })
   

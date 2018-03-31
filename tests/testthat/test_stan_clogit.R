@@ -30,7 +30,7 @@ REFRESH <- 0
 
 threshold <- 0.01
 
-source(file.path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "expect_stanreg.R"))
 
 context("stan_clogit")
 
