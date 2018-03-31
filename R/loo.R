@@ -250,7 +250,6 @@ loo.stanreg <-
     bad_obs <- loo::pareto_k_ids(loo_x, k_threshold)
     n_bad <- length(bad_obs)
     
-
     out <- structure(
       loo_x,
       name = deparse(substitute(x)),
@@ -628,14 +627,16 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     if (is_clogit(x)) {
       strata_id <- model.weights(model.frame(post))
       omitted <- which(strata_id == strata_id[obs[j]])
-      fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], 
-                                       subset = rep(TRUE, nrow(d) - length(omitted)),
-                                       strata = stratum_, refresh = 0))
-    } else {
-      fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], 
-                                       subset = rep(TRUE, nrow(d) - length(omitted)), 
-                                       refresh = 0))
-    }
+    } 
+    
+    capture.output(
+      fit_j <-
+        suppressWarnings(update(
+          x, data = d[-omitted, , drop = FALSE],
+          subset = rep(TRUE, nrow(d) - length(omitted)),
+          refresh = 0
+        ))
+    )
     
     lls[[j]] <-
       log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
@@ -698,8 +699,10 @@ kfold_and_reloo_data <- function(x) {
   }
   
   d <- na.omit(d)
+  
   if (is_clogit(x)) {
-    d$stratum_ <- model.weights(model.frame(x))
+    strata_var <- as.character(getCall(x)$strata)
+    d[[strata_var]] <- model.weights(model.frame(x))
   }
   return(d)
 }
