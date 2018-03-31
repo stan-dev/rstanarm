@@ -209,7 +209,8 @@ loo.stanreg <-
       cons <- apply(ll,MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
       if (any(cons)) {
         message(
-          "The following groups were dropped from the loo calculation:",
+          "The following strata were dropped from the ", 
+          "loo calculation because log-lik is constant: ",
           paste(which(cons), collapse = ", ")
         )
         ll <- ll[,!cons, drop = FALSE]
@@ -297,9 +298,9 @@ loo.stanreg <-
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x)) 
     STOP_sampling_only("waic")
-  if (is.stanjm(x)) { # stan_jm models
+  if (is.stanjm(x)) {
     out <- waic.matrix(log_lik(x))
-  } else if (is.stanmvreg(x)) { # stan_mvmer models
+  } else if (is.stanmvreg(x)) {
     M <- get_M(x)
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
     out <- waic.matrix(ll)
@@ -623,7 +624,19 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-    fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], refresh = 0))
+    
+    if (is_clogit(x)) {
+      strata_id <- model.weights(model.frame(post))
+      omitted <- which(strata_id == strata_id[obs[j]])
+      fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], 
+                                       subset = rep(TRUE, nrow(d) - length(omitted)),
+                                       strata = stratum_, refresh = 0))
+    } else {
+      fit_j <- suppressWarnings(update(x, data = d[-omitted, , drop=FALSE], 
+                                       subset = rep(TRUE, nrow(d) - length(omitted)), 
+                                       refresh = 0))
+    }
+    
     lls[[j]] <-
       log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
                       newx = get_x(x)[omitted, , drop = FALSE],
@@ -677,14 +690,18 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   dat <- x[["data"]]
   sub <- getCall(x)[["subset"]]
-  
   d <- get_all_vars(formula(x), dat)
+  
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = dat)
     d <- d[keep,, drop=FALSE]
   }
   
-  na.omit(d)
+  d <- na.omit(d)
+  if (is_clogit(x)) {
+    d$stratum_ <- model.weights(model.frame(x))
+  }
+  return(d)
 }
 
 
