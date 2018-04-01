@@ -639,9 +639,13 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     )
     
     lls[[j]] <-
-      log_lik.stanreg(fit_j, newdata = d[omitted, , drop = FALSE],
-                      newx = get_x(x)[omitted, , drop = FALSE],
-                      stanmat = as.matrix.stanreg(fit_j))
+      log_lik.stanreg(
+        fit_j, 
+        newdata = d[omitted, , drop = FALSE],
+        offset = eval(getCall(fit_j)$offset, envir = d[omitted, , drop=FALSE]),
+        newx = get_x(x)[omitted, , drop = FALSE],
+        stanmat = as.matrix.stanreg(fit_j)
+      )
   }
   
   # compute elpd_{loo,j} for each of the held out observations
@@ -649,7 +653,11 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   
   # compute \hat{lpd}_j for each of the held out observations (using log-lik
   # matrix from full posterior, not the leave-one-out posteriors)
-  ll_x <- log_lik(x, newdata = d[obs,, drop=FALSE])
+  ll_x <- log_lik(
+    object = x, 
+    newdata = d[obs,, drop=FALSE], 
+    offset = eval(getCall(fit_j)$offset, envir = d[obs, , drop=FALSE])
+  )
   hat_lpd <- apply(ll_x, 2, log_mean_exp)
   
   # compute effective number of parameters
@@ -689,9 +697,9 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  dat <- x[["data"]]
+  d <- x[["data"]]
   sub <- getCall(x)[["subset"]]
-  d <- get_all_vars(formula(x), dat)
+  # d <- get_all_vars(formula(x), dat)
   
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = dat)
