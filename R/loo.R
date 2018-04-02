@@ -160,7 +160,7 @@
 #' loo_model_weights(loo_list)
 #' }
 #' 
-#' @importFrom loo loo loo.function loo.matrix
+#' @importFrom loo loo loo.function loo.matrix capture.output
 #' 
 loo.stanreg <-
   function(x,
@@ -600,7 +600,7 @@ recommend_exact_loo <- function(reason) {
 #   to avoid refitting in tests)
 #
 # @return A modified version of 'loo_x'. 
-#
+# @importFrom utils capture.output
 reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   if (is.stanmvreg(x))
     STOP_if_stanmvreg("reloo")
@@ -625,7 +625,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     omitted <- obs[j]
     
     if (is_clogit(x)) {
-      strata_id <- model.weights(model.frame(post))
+      strata_id <- model.weights(model.frame(x))
       omitted <- which(strata_id == strata_id[obs[j]])
     } 
     
