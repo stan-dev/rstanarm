@@ -183,11 +183,23 @@ stan_polr <- function(formula, data, weights, ..., subset,
   # y <- unclass(y)
   q <- llev - 1L
 
-  stanfit <- stan_polr.fit(x, y, wt, offset, method,
-                           prior = prior, prior_counts = prior_counts,
-                           shape = shape, rate = rate,
-                           prior_PD = prior_PD, algorithm = algorithm,
-                           adapt_delta = adapt_delta, do_residuals=do_residuals, ...)
+  stanfit <-
+    stan_polr.fit(
+      x = x,
+      y = y,
+      wt = wt,
+      offset = offset,
+      method = method,
+      prior = prior,
+      prior_counts = prior_counts,
+      shape = shape,
+      rate = rate,
+      prior_PD = prior_PD,
+      algorithm = algorithm,
+      adapt_delta = adapt_delta,
+      do_residuals = do_residuals,
+      ...
+    )
 
   inverse_link <- linkinv(method)
 

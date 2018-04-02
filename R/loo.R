@@ -149,6 +149,7 @@
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare_models(kfold1, kfold2, detail=TRUE)
 #' 
+#' 
 #' # Computing model weights
 #' model_list <- stanreg_list(fit1, fit2, fit3)
 #' loo_model_weights(model_list, cores = 2) # can specify k_threshold=0.7 if necessary
@@ -373,18 +374,31 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
     omitted <- which(bin == k)
-    fit_k <- update.stanreg(
+    fit_k_call <- update.stanreg(
       object = x,
       data = d[-omitted,, drop=FALSE],
+      subset = rep(TRUE, nrow(d) - length(omitted)),
       weights = NULL,
-      refresh = 0
+      refresh = 0,
+      evaluate = FALSE
+    )
+    if (!is.null(getCall(x)$offset)) {
+      fit_k_call$offset <- substitute(x$offset[-omitted])
+    }
+    capture.output(
+      fit_k <- eval(fit_k_call)
     )
     lppds[[k]] <-
-      log_lik.stanreg(fit_k, newdata = d[omitted, , drop = FALSE],
-                      newx = get_x(x)[omitted, , drop = FALSE],
-                      stanmat = as.matrix.stanreg(x))
-    if (save_fits) 
+      log_lik.stanreg(
+        fit_k, 
+        newdata = d[omitted, , drop = FALSE],
+        offset = x$offset[omitted],
+        newx = get_x(x)[omitted, , drop = FALSE],
+        stanmat = as.matrix.stanreg(x)
+      )
+    if (save_fits) {
       fits[k, ] <- list(fit = fit_k, omitted = omitted)
+    }
   }
   elpds <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
@@ -633,20 +647,25 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       omitted <- which(strata_id == strata_id[obs[j]])
     } 
     
+    fit_j_call <-
+      update(
+        x, 
+        data = d[-omitted, , drop = FALSE],
+        subset = rep(TRUE, nrow(d) - length(omitted)),
+        evaluate = FALSE
+      )
+    if (!is.null(getCall(x)$offset)) {
+      fit_j_call$offset <- substitute(x$offset[-omitted])
+    }
     capture.output(
-      fit_j <-
-        suppressWarnings(update(
-          x, data = d[-omitted, , drop = FALSE],
-          subset = rep(TRUE, nrow(d) - length(omitted)),
-          refresh = 0
-        ))
+      fit_j <- suppressWarnings(eval(fit_j_call))
     )
     
     lls[[j]] <-
       log_lik.stanreg(
         fit_j, 
         newdata = d[omitted, , drop = FALSE],
-        offset = eval(getCall(fit_j)$offset, envir = d[omitted, , drop=FALSE]),
+        offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
         stanmat = as.matrix.stanreg(fit_j)
       )
@@ -660,7 +679,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   ll_x <- log_lik(
     object = x, 
     newdata = d[obs,, drop=FALSE], 
-    offset = eval(getCall(fit_j)$offset, envir = d[obs, , drop=FALSE])
+    offset = x$offset[obs]
   )
   hat_lpd <- apply(ll_x, 2, log_mean_exp)
   
@@ -701,15 +720,17 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  d <- x[["data"]]
+  d <- x[["data"]] # either data frame or environment
+  
   sub <- getCall(x)[["subset"]]
-  
-  if (is.environment(d)) {
-    d <- get_all_vars(formula(x), d)
-  }
-  
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = d)
+  }
+  
+  if (is.environment(d)) {
+    d <- get_all_vars(formula(x), d) # now d is a data frame
+  }
+  if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
   
