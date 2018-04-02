@@ -160,7 +160,7 @@
 #' loo_model_weights(loo_list)
 #' }
 #' 
-#' @importFrom loo loo loo.function loo.matrix capture.output
+#' @importFrom loo loo loo.function loo.matrix
 #' 
 loo.stanreg <-
   function(x,
