@@ -703,10 +703,13 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   d <- x[["data"]]
   sub <- getCall(x)[["subset"]]
-  # d <- get_all_vars(formula(x), dat)
+  
+  if (is.environment(d)) {
+    d <- get_all_vars(formula(x), d)
+  }
   
   if (!is.null(sub)) {
-    keep <- eval(substitute(sub), envir = dat)
+    keep <- eval(substitute(sub), envir = d)
     d <- d[keep,, drop=FALSE]
   }
   
@@ -802,6 +805,4 @@ loo_model_formula <- function(x) {
   }
   return(form)
 }
-
-
 

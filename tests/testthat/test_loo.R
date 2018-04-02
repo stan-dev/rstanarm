@@ -42,16 +42,20 @@ expect_equivalent_loo <- function(fit) {
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
   
-  att_names <- c("names", "log_lik_dim", "class", "name", "discrete", "yhash")
+  att_names <- c("names", "dims", "class", "name", "discrete", "yhash", "formula")
   expect_named(attributes(l), att_names)
   expect_named(attributes(w), att_names)
   
   discrete <- attr(l, "discrete")
   expect_true(!is.na(discrete) && is.logical(discrete))
   
-  expect_equivalent(l, suppressWarnings(loo(log_lik(fit), cores = LOO.CORES)))
+  llik <- log_lik(fit)
+  r <- loo::relative_eff(exp(llik), chain_id = rstanarm:::chain_id_for_loo(fit))
+  l2 <- suppressWarnings(loo(llik, r_eff = r, cores = LOO.CORES))
+  expect_equal(l$estimates, l2$estimates)
   expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
 }
+
 mcmc_only_error <- function(fit) {
   msg <- "only available for models fit using MCMC"
   expect_error(loo(fit), regexp = msg)
@@ -99,23 +103,24 @@ test_that("loo with k_threshold works", {
 #  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
 #                     seed = 12345, iter = 300, chains = 4, cores = 1,
 #                     refresh = 0))
-#  expect_warning(loo_x <- loo(fit, k_threshold = 0.5), 
+#  expect_warning(loo_x <- loo(fit, k_threshold = 0.5),
 #                 "We recommend calling 'loo' again")
 #  expect_message(rstanarm:::reloo(fit, loo_x, obs = 1:10, refit = FALSE),
 #                 "Model will be refit 10 times")
 #  expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
 #                "Elapsed Time")
-  
+
   # test that no errors from binomial model because it's trickier to get the
   # data right internally in reloo (matrix outcome)
 #  loo_x <- loo(example_model)
-#  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)), 
+#  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)),
 #                 "Model will be refit 1 times")
 })
 
 test_that("loo with k_threshold works for edge case(s)", {
   # without 'data' argument
   y <- mtcars$mpg
+  x <- rexp(length(y))
   SW(fit <- stan_glm(y ~ 1, refresh = 0, iter = 200))
   expect_message(
     SW(res <- loo(fit, k_threshold = 0.1, cores = LOO.CORES)), # low k_threshold to make sure reloo is triggered
@@ -220,7 +225,7 @@ test_that("compare_models throws correct errors", {
 })
 
 test_that("compare_models works", {
-  SW(capture.output({
+  suppressWarnings(capture.output({
     mtcars$mpg <- as.integer(mtcars$mpg)
     fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = -1)
     fit2 <- update(fit1, formula. = . ~ . + cyl)
@@ -285,11 +290,7 @@ context("loo and waic helpers")
 test_that("kfold_and_reloo_data works", {
   f <- rstanarm:::kfold_and_reloo_data
   d <- f(example_model)
-  mf <- model.frame(example_model)
-  expect_equal(colnames(d), c("incidence", "size", "period", "herd"))
-  expect_equal(colnames(mf), c("cbind(incidence, size - incidence)", "size", "period", "herd"))
-  mf2 <- data.frame(incidence = mf[, 1][, 1], mf[, -1])
-  expect_equal(d, mf2)
+  expect_identical(d, lme4::cbpp)
   
   # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
@@ -299,7 +300,7 @@ test_that("kfold_and_reloo_data works", {
   # if 'subset' arg specified when fitting the model
   SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, iter = ITER,
                       chains = CHAINS, refresh = REFRESH))
-  expect_equivalent(f(fit2), model.frame(fit2))
+  expect_equivalent(f(fit2), subset(mtcars, gear != 5))
 })
 
 test_that(".weighted works", {
