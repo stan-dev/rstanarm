@@ -185,7 +185,7 @@ loo.stanreg <-
     
     if (is.stanjm(x)) {
       ll <- log_lik(x)
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -196,7 +196,7 @@ loo.stanreg <-
     } else if (is.stanmvreg(x)) {
       M <- get_M(x)
       ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -215,7 +215,7 @@ loo.stanreg <-
         )
         ll <- ll[,!cons, drop = FALSE]
       }
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id)
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -225,18 +225,22 @@ loo.stanreg <-
         ))
     } else {
       args <- ll_args(x)
-      fun <- ll_fun(x)
+      llfun <- ll_fun(x)
+      likfun <- function(data_i, draws) {
+        exp(llfun(data_i, draws))
+      }
       r_eff <- loo::relative_eff(
         # using function method
-        x = fun,
+        x = likfun,
         chain_id = chain_id,
         data = args$data,
         draws = args$draws,
+        cores = cores,
         ...
       )
       loo_x <- suppressWarnings(
         loo.function(
-          fun,
+          llfun,
           data = args$data,
           draws = args$draws,
           r_eff = r_eff,
