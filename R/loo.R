@@ -587,7 +587,7 @@ recommend_kfold <- function(n) {
     "Found ", n, " observations with a pareto_k > 0.7. ",
     "With this many problematic observations we recommend calling ",
     "'kfold' with argument 'K=10' to perform 10-fold cross-validation ",
-    "rather than LOO.", 
+    "rather than LOO.\n", 
     call. = FALSE
   )
 }
@@ -597,7 +597,7 @@ recommend_reloo <- function(n) {
     "We recommend calling 'loo' again with argument 'k_threshold = 0.7' ",
     "in order to calculate the ELPD without the assumption that ", 
     "these observations are negligible. ", "This will refit the model ", 
-    n, " times to compute the ELPDs for the problematic observations directly.",
+    n, " times to compute the ELPDs for the problematic observations directly.\n",
     call. = FALSE
   )
 }
@@ -606,7 +606,7 @@ recommend_exact_loo <- function(reason) {
     "'loo' is not supported if ", reason, ". ", 
     "If refitting the model 'nobs(x)' times is feasible, ", 
     "we recommend calling 'kfold' with K equal to the ", 
-    "total number of observations in the data to perform exact LOO-CV.",
+    "total number of observations in the data to perform exact LOO-CV.\n",
     call. = FALSE
   )
 }
@@ -654,18 +654,20 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     
     fit_j_call <-
       update(
-        x, 
+        x,
         data = d[-omitted, , drop = FALSE],
         subset = rep(TRUE, nrow(d) - length(omitted)),
         evaluate = FALSE
       )
+    fit_j_call$subset <- eval(fit_j_call$subset)
+    fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {
       fit_j_call$offset <- substitute(x$offset[-omitted])
     }
     capture.output(
       fit_j <- suppressWarnings(eval(fit_j_call))
     )
-    
+
     lls[[j]] <-
       log_lik.stanreg(
         fit_j, 
