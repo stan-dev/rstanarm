@@ -370,6 +370,7 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
   
   lppds <- list()
+  obs_id <- unlist(lapply(1:K, function(k) which(bin == k)))
   fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
@@ -400,9 +401,13 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
       fits[k, ] <- list(fit = fit_k, omitted = omitted)
     }
   }
-  elpds <- unlist(lapply(lppds, function(x) {
+  elpds_unord <- unlist(lapply(lppds, function(x) {
     apply(x, 2, log_mean_exp)
   }))
+
+  # make sure elpds are put back in the right order
+  elpds <- rep(NA, length(elpds_unord))
+  elpds[obs_id] <- elpds_unord
   
   out <- list(
     elpd_kfold = sum(elpds),
