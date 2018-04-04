@@ -410,6 +410,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
       subset = rep(TRUE, nrow(d) - length(omitted)),
       weights = NULL,
       refresh = 0,
+      open_progress = FALSE,
       evaluate = FALSE
     )
     if (!is.null(getCall(x)$offset)) {
@@ -690,7 +691,9 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         x,
         data = d[-omitted, , drop = FALSE],
         subset = rep(TRUE, nrow(d) - length(omitted)),
-        evaluate = FALSE
+        evaluate = FALSE,
+        refresh = 0,
+        open_progress = FALSE
       )
     fit_j_call$subset <- eval(fit_j_call$subset)
     fit_j_call$data <- eval(fit_j_call$data)
