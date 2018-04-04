@@ -654,7 +654,7 @@ We could customize the plot further, for example, by using any of the __ggplot2_
 
 The package also provides a convenience plotting function, which combines plots of the individual-specific longitudinal trajectories, and the individual-specific survival function. We can demonstrate this by replotting the predictions for the three individuals in the previous example: 
 
-```{r plots_987321, fig.height=13}
+```{r plots_987321, eval=FALSE, fig.height=13}
 plot_stack_jm(yplot = list(pp3, pp4), survplot = pp5)
 ```
 
