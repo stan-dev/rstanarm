@@ -382,11 +382,14 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
       subset = rep(TRUE, nrow(d) - length(omitted)),
       weights = NULL,
       refresh = 0,
+      open_progress = FALSE,
       evaluate = FALSE
     )
     if (!is.null(getCall(x)$offset)) {
-      fit_k_call$offset <- substitute(x$offset[-omitted])
+      fit_k_call$offset <- x$offset[-omitted]
     }
+    fit_k_call$subset <- eval(fit_k_call$subset)
+    fit_k_call$data <- eval(fit_k_call$data)
     capture.output(
       fit_k <- eval(fit_k_call)
     )
@@ -658,12 +661,14 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         x,
         data = d[-omitted, , drop = FALSE],
         subset = rep(TRUE, nrow(d) - length(omitted)),
-        evaluate = FALSE
+        evaluate = FALSE,
+        refresh = 0,
+        open_progress = FALSE
       )
     fit_j_call$subset <- eval(fit_j_call$subset)
     fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {
-      fit_j_call$offset <- substitute(x$offset[-omitted])
+      fit_j_call$offset <- x$offset[-omitted]
     }
     capture.output(
       fit_j <- suppressWarnings(eval(fit_j_call))
