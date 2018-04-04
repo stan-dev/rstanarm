@@ -1,7 +1,7 @@
 #' Compute weighted expectations using LOO
 #' 
-#' These functions are wrappers around the \code{\link[loo]{E_loo}} function 
-#' (\pkg{loo} package).
+#' These functions are wrappers around the \code{\link[loo]{E_loo}} function
+#' (\pkg{loo} package) that provide compatibility for \pkg{rstanarm} models.
 #' 
 #' @export
 #' @aliases loo_predict loo_linpred loo_predictive_interval
@@ -9,35 +9,42 @@
 #' @template reference-loo
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param lw An optional matrix of (smoothed) log-weights. If \code{lw} is 
-#'   missing then \code{\link[loo]{psislw}} is executed internally, which may be
-#'   time consuming for models fit to very large datasets.
-#' @param ... Optional arguments passed to \code{\link[loo]{psislw}}. If 
-#'   \code{lw} is specified these arguments are ignored.
+#' @param psis_object An object returned by \code{\link[loo]{psis}}. If missing 
+#' then \code{psis} will be run internally, which may be time consuming
+#' for models fit to very large datasets.
+#' @param ... Currently unused.
 #' @inheritParams loo::E_loo
 #'   
-#' @return \code{loo_predict} and \code{loo_linpred} return a vector with one 
-#'   element per observation. The only exception is if \code{type="quantile"} 
-#'   and \code{length(probs) >= 2}, in which case a separate vector for each 
-#'   element of \code{probs} is computed and they are returned in a matrix with 
-#'   \code{length(probs)} rows and one column per observation.
+#' @return A list with elements \code{value} and \code{pareto_k}. 
 #'   
-#'   \code{loo_predictive_interval} returns a matrix with one row per 
-#'   observation and two columns (like \code{\link{predictive_interval}}). 
-#'   \code{loo_predictive_interval(..., prob = p)} is equivalent to 
-#'   \code{loo_predict(..., type = "quantile", probs = c(a, 1-a))} with 
-#'   \code{a = (1 - p)/2}, except it transposes the result and adds informative 
-#'   column names.
+#'   For \code{loo_predict} and \code{loo_linpred} the value component is a 
+#'   vector with one element per observation. 
+#'   
+#'   For \code{loo_predictive_interval} the \code{value} component is a matrix
+#'   with one row per observation and two columns (like
+#'   \code{\link{predictive_interval}}). \code{loo_predictive_interval(..., prob
+#'   = p)} is equivalent to \code{loo_predict(..., type = "quantile", probs =
+#'   c(a, 1-a))} with \code{a = (1 - p)/2}, except it transposes the result and
+#'   adds informative column names.
+#'   
+#'   See \code{\link[loo]{E_loo}} and \code{\link[loo]{pareto-k-diagnostic}} for
+#'   details on the \code{pareto_k} diagnostic.
 #'   
 #' @examples
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
-#' head(loo_predictive_interval(example_model, prob = 0.8, cores = 2))
 #' 
 #' # optionally, log-weights can be pre-computed and reused
-#' psis <- loo::psislw(-log_lik(example_model), cores = 2)
-#' loo_predictive_interval(example_model, prob = 0.8, lw = psis$lw_smooth)
-#' loo_predict(example_model, type = "var", lw = psis$lw_smooth)
+#' psis_result <- loo::psis(log_ratios = -log_lik(example_model))
+#' 
+#' loo_probs <- loo_linpred(example_model, type = "mean", transform = TRUE, psis_object = psis_result)
+#' str(loo_probs)
+#' 
+#' loo_pred_var <- loo_predict(example_model, type = "var", psis_object = psis_result)
+#' str(loo_pred_var)
+#' 
+#' loo_pred_ints <- loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
+#' str(loo_pred_ints)
 #' }
 #' 
 loo_predict.stanreg <-
@@ -45,19 +52,34 @@ loo_predict.stanreg <-
            type = c("mean", "var", "quantile"), 
            probs = 0.5,
            ...,
-           lw) {
+           psis_object = NULL) {
+    
+    if ("lw" %in% names(list(...))) {
+      stop(
+        "Due to changes in the 'loo' package, the 'lw' argument ", 
+        "is no longer supported. Use the 'psis_object' argument instead."
+      )
+    }
     
     type <- match.arg(type)
-    lwts <- loo_weights(object, lw, log = TRUE, ...)
+    log_ratios <- -log_lik(object)
+    if (is.null(psis_object)) {
+      message("Running PSIS to compute weights...")
+      r_eff <- loo::relative_eff(exp(-log_ratios), chain_id = chain_id_for_loo(object))
+      psis_object <- loo::psis(log_ratios, r_eff = r_eff)
+    }
+    
     preds <- posterior_predict(object)
-    if (is_polr(object) && !is_scobit(object))
+    if (is_polr(object) && !is_scobit(object)) {
       preds <- polr_yrep_to_numeric(preds)
+    }
     
     loo::E_loo(
       x = preds,
-      lw = lwts,
+      psis_object = psis_object,
       type = type,
-      probs = probs
+      probs = probs,
+      log_ratios = log_ratios
     )
   }
 
@@ -71,17 +93,32 @@ loo_linpred.stanreg <-
            probs = 0.5,
            transform = FALSE,
            ..., 
-           lw) {
+           psis_object = NULL) {
+    
+    if ("lw" %in% names(list(...))) {
+      stop(
+        "Due to changes in the 'loo' package, the 'lw' argument ", 
+        "is no longer supported. Use the 'psis_object' argument instead."
+      )
+    }
     
     type <- match.arg(type)
-    lwts <- loo_weights(object, lw, log = TRUE, ...)
+    log_ratios <- -log_lik(object)
+    if (is.null(psis_object)) {
+      message("Running PSIS to compute weights...")
+      r_eff <- loo::relative_eff(exp(-log_ratios), chain_id = chain_id_for_loo(object))
+      psis_object <- loo::psis(log_ratios, r_eff = r_eff)
+    }
+    
+    type <- match.arg(type)
     linpreds <- posterior_linpred(object, transform = transform)
     
     loo::E_loo(
       x = linpreds,
-      lw = lwts,
+      psis_object = psis_object,
       type = type,
-      probs = probs
+      probs = probs,
+      log_ratios = log_ratios
     )
   }
 
@@ -91,36 +128,35 @@ loo_linpred.stanreg <-
 #' @param prob For \code{loo_predictive_interval}, a scalar in \eqn{(0,1)}
 #'   indicating the desired probability mass to include in the intervals. The
 #'   default is \code{prob=0.9} (\eqn{90}\% intervals).
-loo_predictive_interval.stanreg <- function(object, prob = 0.9, ..., lw) {
-  stopifnot(length(prob) == 1)
-  alpha <- (1 - prob) / 2
-  probs <- c(alpha, 1 - alpha)
-  labs <- paste0(100 * probs, "%")
-  intervals <-
-    loo_predict.stanreg(object,
-                        type = "quantile",
-                        probs = probs,
-                        lw = lw, 
-                        ...)
-  rownames(intervals) <- labs
-  t(intervals)
-}
+loo_predictive_interval.stanreg <-
+  function(object,
+           prob = 0.9,
+           ...,
+           psis_object = NULL) {
+    stopifnot(length(prob) == 1)
+    alpha <- (1 - prob) / 2
+    probs <- c(alpha, 1 - alpha)
+    labs <- paste0(100 * probs, "%")
+    E_loo_result <-
+      loo_predict.stanreg(object,
+                          type = "quantile",
+                          probs = probs,
+                          psis_object = psis_object,
+                          ...)
+    intervals <- E_loo_result$value
+    rownames(intervals) <- labs
+    intervals <- t(intervals)
+    list(value = intervals, pareto_k = E_loo_result$pareto_k)
+  }
+
+
 
 # internal ----------------------------------------------------------------
 
-# @param object,lw,... Same as above.
-# @param log If FALSE (default) the weights are exponentiated before returning
-# @return A matrix.
-loo_weights <- function(object, lw, log = FALSE, ...) {
-  if (!missing(lw)) {
-    stopifnot(is.matrix(lw))
-  } else {
-    message("Running PSIS to compute weights...")
-    psis <- loo::psislw(llfun = ll_fun(object), llargs = ll_args(object), ...)
-    lw <- psis[["lw_smooth"]]
-  }
-  if (log) 
-    return(lw) 
-  
-  exp(lw)
+psis.stanreg <- function(object, ...) {
+  message("Running PSIS to compute weights...")
+  ll <- log_lik(object)
+  r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))
+  psis1 <- loo::psis(-ll, r_eff = r_eff, ...)
 }
+

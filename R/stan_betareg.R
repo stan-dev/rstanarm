@@ -94,9 +94,12 @@
 #' hist(y, col = "dark grey", border = FALSE, xlim = c(0,1))
 #' fake_dat <- data.frame(y, x, z)
 #' 
-#' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
-#'                     link = "logit", link.phi = "log", 
-#'                     algorithm = "optimizing")
+#' fit <- stan_betareg(
+#'   y ~ x | z, data = fake_dat, 
+#'   link = "logit", 
+#'   link.phi = "log", 
+#'   algorithm = "optimizing" # just for speed of example
+#'  ) 
 #' print(fit, digits = 2)
 #'
 stan_betareg <-

@@ -2,4 +2,6 @@
 
 # Note to Windows users: This is not actually platform specific.
 "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
+cp -r src/stan_files tests/testthat/stan_files
+cp -r inst/include tests/testthat/include
 exit $?

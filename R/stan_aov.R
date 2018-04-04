@@ -66,6 +66,9 @@ stan_aov <- function(formula, data, projections = FALSE,
         rownames(R) <- colnames(R)
         R <- R[pnames, pnames, drop = FALSE]
         effects <- apply(beta, 1:2, FUN = function(x) R %*% x)
+        if (length(dim(effects)) == 2) {
+          dim(effects) <- c(1L, dim(effects))
+        }
         effects <- aperm(effects, c(2,3,1))
         fit$effects <- effects
         class(fit) <- c("stanreg", "aov", "lm")

@@ -25,6 +25,7 @@
 #' @import methods
 #' @importFrom rstan optimizing sampling vb constrain_pars extract
 #'   extract_sparse_parts get_posterior_mean stanc
+#' @importFrom utils capture.output
 #' @import stats
 #' @import Rcpp
 #' @import bayesplot

@@ -82,7 +82,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   if (!used.optimizing(x)) {
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
     nms <- setdiff(rownames(x$stan_summary), "log-posterior")
-    if (x$stan_function == "stan_gamm4") {
+    if (isTRUE(x$stan_function == "stan_gamm4")) {
       smooth_sd_nms <- grep("^smooth_sd\\[", nms, value = TRUE)
       nms <- setdiff(nms, smooth_sd_nms)
       smooth_sd_mat <- mat[, smooth_sd_nms, drop = FALSE]
@@ -109,7 +109,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("\nCutpoints:\n")
       .printfr(cut_estimates, digits, ...)
     }
-    if (x$stan_function == "stan_gamm4") {
+    if (isTRUE(x$stan_function == "stan_gamm4")) {
       cat("\nSmoothing terms:\n")
       .printfr(smooth_sd_estimates, digits, ...)
     }
@@ -119,7 +119,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("Num. levels:", 
           paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
     }
-    if (x$stan_function != "stan_clogit") {
+    if (!isTRUE(x$stan_function == "stan_clogit")) {
       cat("\nSample avg. posterior predictive distribution of y:\n")
       .printfr(ppd_estimates, digits, ...)
     }
@@ -164,7 +164,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   }
 
   cat("\n------\n")
-  cat("For info on the priors used see help('prior_summary.stanreg').")
+  cat("For info on the priors used see help('prior_summary.stanreg').\n")
   
   invisible(x)
 }

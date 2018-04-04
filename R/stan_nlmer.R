@@ -167,9 +167,8 @@ stan_nlmer <-
   fit <- nlist(stanfit, 
                family = make_nlf_family(SSfun_char, nlf), 
                formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               na.action = na.omit, contrasts, algorithm, 
+               x = cbind(X, Z), y = y, data, call = match.call(), terms = NULL, 
+               model = NULL, na.action = na.omit, contrasts, algorithm, 
                glmod = nlf, stan_function = "stan_nlmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "nlmerMod", "lmerMod")

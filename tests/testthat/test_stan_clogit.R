@@ -28,9 +28,9 @@ CHAINS <- 2
 CORES <- 1
 REFRESH <- 0
 
-threshold <- 0.01
+threshold <- 0.03
 
-source(file.path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "expect_stanreg.R"))
 
 context("stan_clogit")
 
@@ -49,7 +49,7 @@ test_that("stan_clogit runs for infert example", {
 
 test_that("stan_clogit throws error if data are not sorted", {
   expect_error(update(fit, data = infert), 
-               regexp = "data must be sorted")
+               regexp = "Data must be sorted")
 })
 
 test_that("loo/waic for stan_clogit works", {

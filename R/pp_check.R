@@ -34,6 +34,7 @@
 #' @templateVar bdaRef (Ch. 6)
 #' @templateVar stanregArg object
 #' @template reference-bda
+#' @template reference-bayesvis
 #' @template args-stanreg-object
 #' @param plotfun A character string naming the \pkg{bayesplot} 
 #'   \link[bayesplot]{PPC} function to use. The default is to call
@@ -252,6 +253,14 @@ is_binomial_ppc <- function(object, ...) {
   if (!identical(substr(fun, 1, 4), "ppc_"))
     fun <- paste0("ppc_", fun)
   
+  if (fun == "ppc_loo_pit") {
+    warning(
+      "'ppc_loo_pit' is deprecated. ", 
+      "Use 'ppc_loo_pit_overlay' or 'ppc_loo_pit_qq' instead.", 
+      call.=FALSE
+    )
+    fun <- "ppc_loo_pit_qq"
+  }
   if (!fun %in% bayesplot::available_ppc())
     stop(
       fun, " is not a valid PPC function name.",  
@@ -303,9 +312,12 @@ is_binomial_ppc <- function(object, ...) {
       }
     }
   }
-  if ("lw" %in% argnames && is.null(dots[["lw"]])) {
+  
+  if ("psis_object" %in% argnames && is.null(dots[["psis_object"]])) {
+    dots[["psis_object"]] <- psis.stanreg(object)
+  } else if ("lw" %in% argnames && is.null(dots[["lw"]])) {
     # for LOO predictive checks
-    dots[["lw"]] <- loo_weights(object, log = TRUE)
+    dots[["lw"]] <- weights(psis.stanreg(object))
   }
   
   return(dots)
@@ -359,6 +371,8 @@ is_binomial_ppc <- function(object, ...) {
     
     # LOO PLOTS
     "loo_pit" = .ignore_nreps(nreps),
+    "loo_pit_overlay" = .ignore_nreps(nreps),
+    "loo_pit_qq" = .ignore_nreps(nreps),
     "loo_intervals" = .ignore_nreps(nreps),
     "loo_ribbon" = .ignore_nreps(nreps),
     

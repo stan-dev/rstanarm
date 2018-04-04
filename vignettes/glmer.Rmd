@@ -49,7 +49,7 @@ $\mathbf{b}$, invariably that it is distributed multivariate normal with mean
 vector zero and structured covariance matrix $\boldsymbol{\Sigma}$. If $\epsilon_i$
 is also distributed (univariate) normal with mean zero and standard deviation
 $\sigma$, then $\mathbf{b}$ can be integrated out, which implies
-$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
+$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{I}+\mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
 and it is possible to maximize this likelihood function by choosing proposals 
 for the parameters $\alpha$, $\boldsymbol{\beta}$, and (the free elements of) $\boldsymbol{\Sigma}$.
 
@@ -257,10 +257,16 @@ library(rstanarm)
 data(roaches)
 roaches$roach1 <- roaches$roach1 / 100
 roaches$log_exposure2 <- log(roaches$exposure2)
-post <- stan_gamm4(y ~ s(roach1) + treatment + log_exposure2,
-                   random = ~(1 | senior),
-                   data = roaches, family = neg_binomial_2, QR = TRUE,
-                   chains = CHAINS, cores = CORES, seed = SEED)
+post <- stan_gamm4(
+  y ~ s(roach1) + treatment + log_exposure2,
+  random = ~(1 | senior),
+  data = roaches, 
+  family = neg_binomial_2, 
+  QR = TRUE,
+  chains = CHAINS, 
+  cores = CORES, 
+  seed = SEED
+)
 ```
 ```{r}
 plot_nonlinear(post)
@@ -341,6 +347,7 @@ for the tree-specific deviations in the asymptote, which are considerable.
 ```{r}
 plot(post1, regex_pars = "^[b]")
 ```
+
 
 As can be seen, the age of the tree has a non-linear effect on the predicted
 circumference of the tree (here for a out-of-sample tree):

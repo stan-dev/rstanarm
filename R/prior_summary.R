@@ -56,16 +56,21 @@
 #'   \sim N(\mu, \sigma)}{\theta ~ N(\mu, \sigma)} the corresponding prior on
 #'   \eqn{\beta} is \eqn{\beta \sim MVN(R\mu, R'R\sigma^2)}{\beta ~ MVN(R\mu,
 #'   R'R\sigma)}, where \eqn{\mu} and \eqn{\sigma} are vectors of the
-#'   appropriate length. Technically \pkg{rstanarm} uses a scaled \eqn{QR}
+#'   appropriate length. Technically, \pkg{rstanarm} uses a scaled \eqn{QR}
 #'   decomposition to ensure that the columns of the predictor matrix used to
-#'   fit the model all have unit scale. The matrices actually used are
+#'   fit the model all have unit scale, when the \code{autoscale} argument
+#'   to the function passed to the \code{prior} argument is \code{TRUE} (the
+#'   default), in which case the matrices actually used are
 #'   \eqn{Q^\ast = Q \sqrt{n-1}}{Q* = Q (n-1)^0.5} and \eqn{R^\ast =
-#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R} (see the documentation for the
+#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R}. If \code{autoscale = FALSE}
+#'   we instead scale such that the lower-right element of \eqn{R^\ast}{R*} is 
+#'   \eqn{1}, which is useful if you want to specify a prior on the coefficient 
+#'   of the last predictor in its original units (see the documentation for the 
 #'   \code{\link[=stan_glm]{QR}} argument).
 #'   
 #'   If you are interested in the prior on \eqn{\beta} implied by the prior on
-#'   \eqn{\theta}, we recommend visualizing it as described above in the
-#'   \strong{Description} section, which is simpler than working it out
+#'   \eqn{\theta}, we strongly recommend visualizing it as described above in
+#'   the \strong{Description} section, which is simpler than working it out
 #'   analytically.
 #'   
 #' @return A list of class "prior_summary.stanreg", which has its own print
