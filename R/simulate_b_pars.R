@@ -91,7 +91,7 @@ simulate_b_pars <- function(object, stanmat, ndL, ndE, ids, times, scale = 1.5) 
       pars_s <- extract_pars(object, stanmat[s, , drop = FALSE])
       b_step <- mh_step(b_old = b_current, mu = mu_i, sigma = sigma_i, 
                         df = 4, object = object, data = dat_i, pars = pars_s)
-      accept[s] <- (!b_step == b_current)
+      accept[s] <- any(!b_step == b_current)
       mat[s,] <- b_current <- b_step
     }
     new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))

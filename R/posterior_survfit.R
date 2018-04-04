@@ -330,6 +330,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     } else {
       stop("Bug found: could not reconcile 'last_time' argument.")
     }
+    names(last_time) <- as.character(id_list)
   }   
   
   # Prediction times
@@ -727,11 +728,14 @@ plot_stack_jm <- function(yplot, survplot) {
   e_layout <- e_build$layout$panel_layout    
   e_ids <- if (!"id" %in% colnames(e_layout)) NULL else e_layout[["id"]]
   
-  lapply(y_ids, function(x, e_ids) {
-    if (!all(sort(x) == sort(e_ids))) 
-      stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
-           "reestimate the plots using a common 'ids' argument.", call. = FALSE)
-  }, e_ids = e_ids)
+  if (!is.null(e_ids)) {
+    lapply(y_ids, function(x, e_ids) {
+      if (!all(sort(x) == sort(e_ids))) {
+        stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
+             "reestimate the plots using a common 'ids' argument.", call. = FALSE)
+      }
+    }, e_ids = e_ids)    
+  }
   
   vline <- lapply(seq_along(y_build), function(m) {
     L <- length(y_build[[m]]$data)
@@ -768,18 +772,28 @@ plot_stack_jm <- function(yplot, survplot) {
     warning("'plot_stack_jm' is unlikely to be legible with more than a few individuals.",
             immediate. = TRUE, call. = FALSE)
   }
+
+  if (!is.null(e_ids)) {
+    graph_facet <- facet_wrap(~ id, scales = "free", nrow = 1) 
+  } else {
+    graph_facet <- NULL
+  }
   
-  graph_facet <- if (!is.null(e_ids)) 
-    facet_wrap(~ id, scales = "free", nrow = 1) else NULL
-  survplot_updated <- survplot + expand_limits(x = c(0, xmax)) + graph_facet + if (vline_found) 
-    geom_vline(aes_string(xintercept = "xintercept_max"), vline_alldat, linetype = 2)
+  if (vline_found) {
+    graph_vline <- geom_vline(aes_string(xintercept = "xintercept_max"), 
+                              vline_alldat, linetype = 2)
+  } else {
+    graph_vline <- NULL
+  }
   
-  if (!is.null(e_ids)) 
-    yplot <- lapply(yplot, function(x) x + expand_limits(x = c(0, xmax)) + 
-                      facet_wrap(~ id, scales = "free", nrow = 1))
+  graph_xlims <- expand_limits(x = c(0, xmax))
+  
+  survplot_updated <- survplot + graph_xlims + graph_facet + graph_vline
+ 
+  yplot_updated <- lapply(yplot, function(x) x + graph_xlims + graph_facet)
   
   bayesplot::bayesplot_grid(
-    plots = c(yplot, list(survplot_updated)), 
+    plots = c(yplot_updated, list(survplot_updated)), 
     grid_args = list(ncol = 1)
   )
 }

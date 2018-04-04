@@ -492,21 +492,19 @@ for (j in c(1:30)) {
     }) 
     
     test_that("posterior_traj works with new data (one individual)", {
-      pp <- posterior_traj(mod, newdata = ndL1)
+      pp <- posterior_traj(mod, newdataLong = ndL1, dynamic = FALSE)
       expect_s3_class(pp, "predict.stanjm")
       if (mod$n_markers > 1L) {
-        pp <- posterior_traj(mod, m = 2, newdata = ndL1)
+        pp <- posterior_traj(mod, m = 2, newdataLong = ndL1, dynamic = FALSE)
         expect_s3_class(pp, "predict.stanjm")
       }
-      expect_error(posterior_traj(mod, newdataLong = ndL1), "should not be specified")
-      expect_error(posterior_traj(mod, newdataEvent = ndE1), "should not be specified")
     })  
     
     test_that("posterior_traj works with new data (multiple individuals)", {
-      pp <- posterior_traj(mod, newdata = ndL2)
+      pp <- posterior_traj(mod, newdataLong = ndL2, dynamic = FALSE)
       expect_s3_class(pp, "predict.stanjm")
       if (mod$n_markers > 1L) {
-        pp <- posterior_traj(mod, m = 2, newdata = ndL2)
+        pp <- posterior_traj(mod, m = 2, newdataLong = ndL2, dynamic = FALSE)
         expect_s3_class(pp, "predict.stanjm")
       }            
     })        

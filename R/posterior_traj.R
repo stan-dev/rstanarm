@@ -284,7 +284,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
             "to be specified. Either specify data for both the longitudinal and ",
             "event submodels or, alternatively, specify argument 'dynamic = FALSE' ",
             "to marginalise over the distribution of group-specific parameters.")
-    dats <- validate_newdatas(object, newdataLong, newdataEvent)
+    dats <- validate_newdatas(object, newdataLong, newdataEvent, response = isTRUE(dynamic))
     ndL <- dats[1:M]
     ndE <- dats[["Event"]]
   }
@@ -320,6 +320,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
     } else {
       stop("Bug found: could not reconcile 'last_time' argument.")
     }
+    names(last_time) <- as.character(id_list)
   }
   
   # Get stanmat parameter matrix for specified number of draws

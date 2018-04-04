@@ -1233,9 +1233,11 @@ check_pp_ids <- function(object, ids, m = 1) {
 # @param newdataEvent A data frame
 # @param duplicate_ok A logical. If FALSE then only one row per individual is
 #   allowed in the newdataEvent data frame
+# @param response A logical specifying whether the longitudinal response
+#   variable must be included in the new data frame
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              duplicate_ok = FALSE) {
+                              duplicate_ok = FALSE, response = TRUE) {
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   newdatas <- list()
@@ -1245,8 +1247,14 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
     dfcheck <- sapply(newdataLong, is.data.frame)
     if (!all(dfcheck))
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
-    nacheck <- sapply(seq_along(newdataLong), function(m)
-      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    nacheck <- sapply(seq_along(newdataLong), function(m) {
+      if (response) { # newdataLong needs the reponse variable
+        fm <- formula(object, m = m)
+      } else { # newdataLong only needs the covariates
+        fm <- formula(object, m = m)[c(1,3)]
+      }
+      all(!is.na(get_all_vars(fm, newdataLong[[m]]))) 
+    })
     if (!all(nacheck))
       stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
