@@ -1196,6 +1196,13 @@ STOP_no_var <- function(var) {
   stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
+# Error message for dynamic predictions
+#
+# @param what A reason why the dynamic predictions are not allowed
+STOP_dynpred <- function(what) {
+  stop2(paste("Dynamic predictions are not yet implemented for", what))
+}
+
 # Check if individuals in ids argument were also used in model estimation
 #
 # @param object A stanmvreg object
@@ -1226,9 +1233,11 @@ check_pp_ids <- function(object, ids, m = 1) {
 # @param newdataEvent A data frame
 # @param duplicate_ok A logical. If FALSE then only one row per individual is
 #   allowed in the newdataEvent data frame
+# @param response A logical specifying whether the longitudinal response
+#   variable must be included in the new data frame
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              duplicate_ok = FALSE) {
+                              duplicate_ok = FALSE, response = TRUE) {
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   newdatas <- list()
@@ -1238,8 +1247,14 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
     dfcheck <- sapply(newdataLong, is.data.frame)
     if (!all(dfcheck))
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
-    nacheck <- sapply(seq_along(newdataLong), function(m)
-      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    nacheck <- sapply(seq_along(newdataLong), function(m) {
+      if (response) { # newdataLong needs the reponse variable
+        fmL <- formula(object, m = m)
+      } else { # newdataLong only needs the covariates
+        fmL <- formula(object, m = m)[c(1,3)]
+      }
+      all(!is.na(get_all_vars(fmL, newdataLong[[m]]))) 
+    })
     if (!all(nacheck))
       stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
@@ -1247,7 +1262,12 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataEvent)) {
     if (!is.data.frame(newdataEvent))
       stop("'newdataEvent' must be a data frame.", call. = FALSE)
-    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    if (response) { # newdataEvent needs the reponse variable
+      fmE <- formula(object, m = "Event")
+    } else { # newdataEvent only needs the covariates
+      fmE <- formula(object, m = "Event")[c(1,3)]
+    }
+    dat <- get_all_vars(fmE, newdataEvent)
     dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
     if (any(is.na(dat)))
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
@@ -1277,6 +1297,8 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
 # @param ids A vector of ids indicating which individuals to keep
 # @return A data frame, or a list of data frames, depending on the input
 subset_ids <- function(object, data, ids) {
+  if (is.null(data))
+    return(NULL)
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   is_list <- is(data, "list")

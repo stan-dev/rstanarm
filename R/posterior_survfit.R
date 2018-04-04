@@ -19,12 +19,24 @@
 #' Estimate subject-specific or standardised survival probabilities
 #' 
 #' This function allows us to generate estimated survival probabilities 
-#' based on draws from the posterior predictive distribution. If 
-#' \code{newdataLong} and \code{newdataEvent} are provided, then the 
-#' group-specific coefficients for the new individuals
-#' will be drawn using a Monte Carlo scheme conditional on the new longitudinal
-#' outcome data (sometimes referred to as "dynamic predictions", see Rizopoulos
-#' (2011)). In addition, by default the predicted subject-specific survival 
+#' based on draws from the posterior predictive distribution. By default
+#' the survival probabilities are conditional on an individual's 
+#' group-specific coefficients (i.e. their individual-level random
+#' effects). If prediction data is provided via the \code{newdataLong}  
+#' and \code{newdataEvent} arguments, then the default behaviour is to
+#' sample new group-specific coefficients for the individuals in the  
+#' new data using a Monte Carlo scheme that conditions on their 
+#' longitudinal outcome data provided in \code{newdataLong} 
+#' (sometimes referred to as "dynamic predictions", see Rizopoulos
+#' (2011)). This default behaviour can be stopped by specifying 
+#' \code{dynamic = FALSE}, in which case the predicted survival
+#' probabilities will be marginalised over the distribution of the 
+#' group-specific coefficients. This has the benefit that the user does
+#' not need to provide longitudinal outcome measurements for the new 
+#' individuals, however, it does mean that the predictions will incorporate
+#' all the uncertainty associated with between-individual variation, since
+#' the predictions aren't conditional on any observed data for the individual.
+#' In addition, by default, the predicted subject-specific survival 
 #' probabilities are conditional on observed values of the fixed effect 
 #' covariates (ie, the predictions will be obtained using either the design 
 #' matrices used in the original \code{\link{stan_jm}} model call, or using the 
@@ -132,21 +144,30 @@
 #'   then the \code{times} argument must be specified and it must be constant across 
 #'   individuals, that is, the survival probabilities must be calculated at the 
 #'   same time for all individuals.
+#' @param dynamic A logical that is only relevant if new data is provided
+#'   via the \code{newdataLong} and \code{newdataEvent} arguments. If 
+#'   \code{dynamic = TRUE}, then new group-specific parameters are drawn for 
+#'   the individuals in the new data, conditional on their longitudinal 
+#'   biomarker data contained in \code{newdataLong}. These group-specific
+#'   parameters are then used to generate individual-specific survival probabilities
+#'   for these individuals. These are often referred to as "dynamic predictions"
+#'   in the joint modelling context, because the predictions can be updated
+#'   each time additional longitudinal biomarker data is collected on the individual.
+#'   On the other hand, if \code{dynamic = FALSE} then the survival probabilities
+#'   will just be marginalised over the distribution of the group-specific
+#'   coefficients; this will mean that the predictions will incorporate all
+#'   uncertainty due to between-individual variation so there will likely be
+#'   very wide credible intervals on the predicted survival probabilities.
 #' @param scale A scalar, specifying how much to multiply the asymptotic 
 #'   variance-covariance matrix for the random effects by, which is then
 #'   used as the "width" (ie. variance-covariance matrix) of the multivariate
 #'   Student-t proposal distribution in the Metropolis-Hastings algorithm. This
-#'   is only relevant when \code{newdataEvent} is supplied, in which case new
-#'   random effects are simulated for the individuals in the new data using 
-#'   the Metropolis-Hastings algorithm.
-#' @param draws An integer indicating the number of MCMC draws to return. If 
-#'   \code{newdataLong} and \code{newdataEvent} are \code{NULL} then the default
-#'   and maximum number of draws is the size of the posterior sample. If 
-#'   \code{newdataLong} and \code{newdataEvent} are provided, then the default 
-#'   is to set the number of draws equal to 200 (or equal to the size of the 
-#'   posterior sample if that
-#'   is less than 200). This ensures that the Monte Carlo algorithm for drawing 
-#'   the new group-specific coefficients doesn't take an excessive amount of time. 
+#'   is only relevant when \code{newdataEvent} is supplied and 
+#'   \code{dynamic = TRUE}, in which case new random effects are simulated
+#'   for the individuals in the new data using the Metropolis-Hastings algorithm.
+#' @param draws An integer indicating the number of MCMC draws to return. 
+#'   The default is to set the number of draws equal to 200, or equal to the 
+#'   size of the posterior sample if that is less than 200. 
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Currently unused.
 #'
@@ -243,7 +264,8 @@
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), 
                               condition = NULL, last_time = NULL, prob = 0.95, 
-                              ids, times = NULL, standardise = FALSE, scale = 1.5,
+                              ids, times = NULL, standardise = FALSE, 
+                              dynamic = TRUE, scale = 1.5,
                               draws = NULL, seed = NULL, ...) {
   validate_stanjm_object(object)
   M        <- object$n_markers
@@ -256,13 +278,14 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
+  dots <- list(...)
   
   # Temporary stop, until make_assoc_terms can handle it
   sel_stop <- grep("^shared", rownames(object$assoc))
   if (any(unlist(object$assoc[sel_stop,])))
     stop("'posterior_survfit' cannot yet be used with shared_b or shared_coef ",
          "association structures.") 
-  
+
   # Construct prediction data
   # ndL: dataLong to be used in predictions
   # ndE: dataEvent to be used in predictions
@@ -273,6 +296,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     ndL <- dats[1:M]
     ndE <- dats[["Event"]]
   } else { # user specified newdata
+    if (!dynamic)
+      stop2("Marginalised predictions for the event outcome are ",
+            "not currently implemented.")
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
     ndL <- newdatas[1:M]
     ndE <- newdatas[["Event"]]   
@@ -282,8 +308,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     ndE <- subset_ids(object, ndE, ids)
   }  
   id_list <- factor(unique(ndE[[id_var]])) # order of ids from data, not ids arg
-  #newpats <- if (is.null(newdataLong)) FALSE else check_pp_ids(object, id_list)
-  
+
   # Last known survival time for each individual
   if (is.null(newdataLong)) { # user did not specify newdata
     if (!is.null(last_time))
@@ -308,6 +333,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     } else {
       stop("Bug found: could not reconcile 'last_time' argument.")
     }
+    names(last_time) <- as.character(id_list)
   }   
   
   # Prediction times
@@ -375,7 +401,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # Get stanmat parameter matrix for specified number of draws
   S <- posterior_sample_size(object)
   if (is.null(draws)) 
-    draws <- if (S > 100L) 100L else S 
+    draws <- if (S > 200L) 200L else S 
   if (draws > S)
     stop("'draws' should be <= posterior sample size (", S, ").")
   stanmat <- as.matrix(object$stanfit)
@@ -384,67 +410,17 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     samp <- sample(S, draws)
     stanmat <- stanmat[samp, , drop = FALSE]
   }
-  pars_means <- extract_pars(object, means = TRUE) # list of posterior means
-  pars <- extract_pars(object, stanmat) # list of stanmat arrays
 
-  # Draw b pars for new ids
-  if (!is.null(newdataEvent)) {
-    # Empty matrices used to collect draws for the new b pars
-    p <- .p(object) # num b pars for each grouping factor
-    b1_p <- p[[id_var]] # total num. of b pars for each individual
-    use_b2 <- (length(object$cnms) > 1L) 
-    if (use_b2) { # more than one grouping factor
-      if (M > 1)
-        stop("'posterior_survfit' is not yet implemented for multivariate joint ",
-             "models with multiple grouping factors.")
-      if (length(object$cnms) > 2L)
-        stop("'posterior_survfit' is not yet implemented for models with more than ",
-             "two grouping factors.")  
-      b2_var <- grep(utils::glob2rx(id_var), names(p), value = TRUE, invert = TRUE)
-      b2_p <- p[[b2_var]] # total num. of b pars for second grouping factor
-      Ni <- tapply(ndL[[1]][[b2_var]], ndL[[1]][[id_var]], 
-                   function(x) length(unique(x)))
-    }
-    cat("Drawing random effects for", length(id_list), "new individuals.",
-        "Monitoring progress:\n")
-    pb <- utils::txtProgressBar(min = 0, max = length(id_list), style = 3)
-    b_new <- list()
-    for (i in 1:length(id_list)) {
-      len_b <- if (use_b2) b1_p + Ni[id_list[[i]]] * b2_p else b1_p
-      mat <- matrix(NA, nrow(stanmat), len_b)
-      # Design matrices for individual i only
-      dat_i <- .pp_data_jm(object, ndL, ndE, etimes = last_time[[i]], ids = id_list[[i]])
-      if (use_b2)
-        dat_i$Ni <- Ni[id_list[[i]]]
-      # Obtain mode and var-cov matrix of posterior distribution of new b pars
-      # based on asymptotic assumptions, used as center and width of proposal
-      # distribution in MH algorithm
-      inits <- rep(0, len_b)
-      val <- optim(inits, optim_fn, object = object, data = dat_i, 
-                   pars = pars_means, method = "BFGS", hessian = TRUE)
-      delta_i <- val$par                    # asymptotic mode of posterior
-      Sigma_i <- scale * solve(val$hessian) # (scaled) asymptotic vcov of posterior
-      b_current <- delta_i # asympotic mode used as init value for MH algorithm
-      # Run MH algorithm for each individual
-      for (s in 1:nrow(stanmat)) {
-        pars_s <- extract_pars(object, stanmat[s, , drop = FALSE])
-        b_current <- mat[s,] <- 
-          mh_step(b_old = b_current, delta = delta_i, sigma = Sigma_i, 
-                  df = 4, object = object, data = dat_i, pars = pars_s)
-      }
-      new_nms <- unlist(sapply(dat_i$assoc_parts, function(x) x$mod_eta$Z_names))
-      colnames(mat) <- paste0("b[", new_nms, "]")
-      b_new[[i]] <- mat
-      utils::setTxtProgressBar(pb, i)
-    }  
-    close(pb)
-    b_new <- do.call("cbind", b_new)      # cbind new b pars for all individuals
-    b_sel <- b_names(colnames(stanmat))   
-    stanmat <- stanmat[, -b_sel, drop = FALSE] # drop old b pars from stanmat
-    stanmat <- cbind(stanmat, b_new)           # add new b pars to stanmat
-    pars <- extract_pars(object, stanmat) # reextract pars list with new b pars
+  # Draw b pars for new individuals
+  if (dynamic && !is.null(newdataEvent)) {
+    stanmat <- simulate_b_pars(object, stanmat = stanmat, ndL = ndL, ndE = ndE,
+                               ids = id_list, times = last_time, scale = scale)
+    b_new <- attr(stanmat, "b_new")
+    acceptance_rate <- attr(stanmat, "acceptance_rate")
   }
-
+  
+  pars <- extract_pars(object, stanmat) # list of stanmat arrays
+  
   # Matrix of surv probs at each increment of the extrapolation sequence
   # NB If no extrapolation then length(time_seq) == 1L
   surv_t <- lapply(time_seq, function(t) {  
@@ -504,7 +480,6 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   # temporary hack so that predictive_error can call posterior_survfit
   # with two separate conditioning times...
   fn <- tryCatch(sys.call(-1)[[1]], error = function(e) NULL)
-  dots <- list(...)
   if (!is.null(fn) && 
       grepl("predictive_error", deparse(fn), fixed = TRUE) &&
       "last_time2" %in% names(dots)) {
@@ -533,13 +508,17 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
   
   class(out) <- c("survfit.stanjm", "data.frame")
-  structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
+  out <- structure(out, id_var = id_var, time_var = time_var, extrapolate = extrapolate, 
             control = control, standardise = standardise, condition = condition, 
             last_time = last_time, ids = id_list, draws = draws, seed = seed, 
-            offset = offset, b_new = if (!is.null(newdataEvent)) b_new else NULL)
+            offset = offset)
+  if (dynamic && !is.null(newdataEvent)) {
+    out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
+  }
+  out
 }
 
-
+  
 #' Plot the estimated subject-specific or marginal survival function
 #' 
 #' This generic \code{plot} method for \code{survfit.stanjm} objects will
@@ -752,11 +731,14 @@ plot_stack_jm <- function(yplot, survplot) {
   e_layout <- e_build$layout$panel_layout    
   e_ids <- if (!"id" %in% colnames(e_layout)) NULL else e_layout[["id"]]
   
-  lapply(y_ids, function(x, e_ids) {
-    if (!all(sort(x) == sort(e_ids))) 
-      stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
-           "reestimate the plots using a common 'ids' argument.", call. = FALSE)
-  }, e_ids = e_ids)
+  if (!is.null(e_ids)) {
+    lapply(y_ids, function(x, e_ids) {
+      if (!all(sort(x) == sort(e_ids))) {
+        stop("The individuals in the 'yplot' and 'survplot' appear to differ. Please ",
+             "reestimate the plots using a common 'ids' argument.", call. = FALSE)
+      }
+    }, e_ids = e_ids)    
+  }
   
   vline <- lapply(seq_along(y_build), function(m) {
     L <- length(y_build[[m]]$data)
@@ -793,23 +775,31 @@ plot_stack_jm <- function(yplot, survplot) {
     warning("'plot_stack_jm' is unlikely to be legible with more than a few individuals.",
             immediate. = TRUE, call. = FALSE)
   }
+
+  if (!is.null(e_ids)) {
+    graph_facet <- facet_wrap(~ id, scales = "free", nrow = 1) 
+  } else {
+    graph_facet <- NULL
+  }
   
-  graph_facet <- if (!is.null(e_ids)) 
-    facet_wrap(~ id, scales = "free", nrow = 1) else NULL
-  survplot_updated <- survplot + expand_limits(x = c(0, xmax)) + graph_facet + if (vline_found) 
-    geom_vline(aes_string(xintercept = "xintercept_max"), vline_alldat, linetype = 2)
+  if (vline_found) {
+    graph_vline <- geom_vline(aes_string(xintercept = "xintercept_max"), 
+                              vline_alldat, linetype = 2)
+  } else {
+    graph_vline <- NULL
+  }
   
-  if (!is.null(e_ids)) 
-    yplot <- lapply(yplot, function(x) x + expand_limits(x = c(0, xmax)) + 
-                      facet_wrap(~ id, scales = "free", nrow = 1))
+  graph_xlims <- expand_limits(x = c(0, xmax))
+  
+  survplot_updated <- survplot + graph_xlims + graph_facet + graph_vline
+ 
+  yplot_updated <- lapply(yplot, function(x) x + graph_xlims + graph_facet)
   
   bayesplot::bayesplot_grid(
-    plots = c(yplot, list(survplot_updated)), 
+    plots = c(yplot_updated, list(survplot_updated)), 
     grid_args = list(ncol = 1)
   )
 }
-
-
 
 
 # ------------------ exported but doc kept internal
@@ -837,88 +827,6 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 }
 
 # ------------------ internal
-
-# Function to optimise to obtain mode and var-cov matrix for b pars
-# 
-# @param b The vector of b parameters
-# @param object A stanjm object
-# @param data Output from .pp_data_jm
-# @param pars Output from extract_pars
-optim_fn <- function(b, object, data, pars) {
-  nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
-  pars <- substitute_b_pars(object, data, pars, new_b = b, new_Z_names = nms)
-  ll <- .ll_jm(object, data, pars, include_b = TRUE)
-  return(-ll) # optimise -ll for full joint model 
-}    
-
-# Perform one iteration of the Metropolis-Hastings algorithm
-# 
-# @param b_old The current vector of b parameters
-# @param delta The mean vector for the proposal distribution
-# @param sigma The variance-covariance matrix for the proposal distribution
-# @param object A stanjm object
-# @param data Output from .pp_data_jm
-# @param pars Output from extract_pars
-mh_step <- function(b_old, delta, sigma, df, object, data, pars) {
-  # New proposal for b vector
-  b_new <- rmt(mu = delta, Sigma = sigma, df = df)
-  # Calculate density for proposal distribution
-  propdens_old <- dmt(x = b_old, mu = delta, Sigma = sigma, df = df)
-  propdens_new <- dmt(x = b_new, mu = delta, Sigma = sigma, df = df)
-  # Calculate density for target distribution
-  nms <- lapply(data$assoc_parts, function(x) x$mod_eta$Z_names)
-  pars_old <- substitute_b_pars(object, data, pars, new_b = b_old, new_Z_names = nms)
-  pars_new <- substitute_b_pars(object, data, pars, new_b = b_new, new_Z_names = nms)
-  targdens_old <- .ll_jm(object, data, pars_old, include_b = TRUE)
-  targdens_new <- .ll_jm(object, data, pars_new, include_b = TRUE)
-  # MH accept/reject step
-  accept_ratio <- exp(targdens_new - targdens_old - propdens_new + propdens_old)
-  if (accept_ratio >= runif(1)) return(b_new) else return(b_old)
-}
-
-# Function to add new b parameters
-#
-# @param object A stanjm object
-# @param data Output from .pp_data_jm
-# @param pars Output from extract_pars
-# @param new_b A vector of new b pars, or a list of vectors, with 
-#   each element being the new b pars for a single submodel.
-# @param new_Z_names A vector, or a list of vectors, with the names 
-#   for the new b pars.
-substitute_b_pars <- function(object, data, pars, new_b, new_Z_names) {
-  M <- get_M(object)
-  if (!is(new_b, "list")) { # split b into submodels
-    if (M == 1) {
-      new_b <- list(new_b)
-    } else {
-      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
-      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
-      new_b <- split(new_b, rep(1:length(len_b), len_b))
-    }
-  }
-  if (!is(new_Z_names, "list")) { # split Z_names into submodels
-    if (M == 1) {
-      new_b <- list(new_b)
-    } else {
-      y_cnms  <- fetch(object$glmod, "z", "group_cnms")
-      len_b <- sapply(y_cnms, function(x) length(unlist(x)))
-      new_Z_names <- split(new_Z_names, rep(1:length(len_b), len_b))
-    }
-  }  
-  mapply(function(x, y) {
-    if (!identical(is.vector(x), is.vector(y)))
-      stop("Bug found: new_b and new_Z_names should both be vectors or lists of vectors.")
-    if (!identical(length(x), length(y)))
-      stop("Bug found: new_b and new_Z_names should be the same length.") 
-  }, new_b, new_Z_names) 
-  pars$b <- mapply(function(b, nms) {
-    names(b) <- paste0("b[", nms, "]")
-    t(b)
-  }, new_b, new_Z_names, SIMPLIFY = FALSE)
-  pars$stanmat <- pars$stanmat[, -b_names(colnames(pars$stanmat)), drop = FALSE]
-  pars$stanmat <- do.call("cbind", c(list(pars$stanmat), pars$b))
-  return(pars)
-}
 
 # default plotting attributes
 .PP_FILL <- "skyblue"

@@ -183,6 +183,20 @@
 #'    to \code{\link[survival]{clogit}} that allow \code{stan_clogit} to accept
 #'    group-specific terms as in \code{\link{stan_glmer}}.
 #'  }
+#'  \item{\code{\link{stan_mvmer}}}{
+#'    A multivariate form of \code{\link{stan_glmer}}, whereby the user can
+#'    specify one or more submodels each consisting of a GLM with group-specific 
+#'    terms. If more than one submodel is specified (i.e. there is more than one
+#'    outcome variable) then a dependence is induced by assuming that the
+#'    group-specific terms for each grouping factor are correlated across submodels. 
+#'  }
+#'  \item{\code{\link{stan_jm}}}{
+#'    Estimates shared parameter joint models for longitudinal and time-to-event 
+#'    (i.e. survival) data. The joint model can be univariate (i.e. one longitudinal 
+#'    outcome) or multivariate (i.e. more than one longitudinal outcome). A variety 
+#'    of parameterisations are available for linking the longitudinal and event 
+#'    processes (i.e. a variety of association structures).      
+#'  }
 #' }
 #'
 #' @section Prior distributions:
