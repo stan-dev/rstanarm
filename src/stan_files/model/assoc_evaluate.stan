@@ -23,7 +23,7 @@
           has_assoc[14,m] == 1) { // etavalue * muvalue
 
         // declare and define eta at quadpoints for submodel m
-        #include /model/make_eta_tmp.stan
+#include /model/make_eta_tmp.stan
 
         // add etavalue and any interactions to event submodel eta
         if (has_assoc[1,m] == 1) { // etavalue
@@ -62,7 +62,7 @@
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
             vector[nrow_e_Xq] val;
-            #include /model/make_eta_tmp2.stan
+#include /model/make_eta_tmp2.stan
             val = eta_tmp .* eta_tmp2;
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -75,7 +75,7 @@
             int sel = which_interactions[j+j_shift];
             vector[nrow_e_Xq] val;
             vector[nrow_y_Xq[sel]] mu_tmp2;
-            #include /model/make_eta_tmp2.stan
+#include /model/make_eta_tmp2.stan
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = eta_tmp .* mu_tmp2;
             mark = mark + 1;
@@ -205,7 +205,7 @@
 
         // declare and define mu for submodel m
         vector[nrow_y_Xq[m]] mu_tmp;
-        #include /model/make_eta_tmp.stan
+#include /model/make_eta_tmp.stan
         mu_tmp = evaluate_mu(eta_tmp, family[m], link[m]);
 
         // add muvalue and any interactions to event submodel eta
@@ -244,7 +244,7 @@
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
             vector[nrow_e_Xq] val;
-            #include /model/make_eta_tmp2.stan
+#include /model/make_eta_tmp2.stan
             val = mu_tmp .* eta_tmp2;
             mark = mark + 1;
             e_eta_q = e_eta_q + a_beta[mark] * (val - a_xbar[mark]);
@@ -257,7 +257,7 @@
             int sel = which_interactions[j+j_shift];
             vector[nrow_e_Xq] val;
             vector[nrow_y_Xq[sel]] mu_tmp2;
-            #include /model/make_eta_tmp2.stan
+#include /model/make_eta_tmp2.stan
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = mu_tmp .* mu_tmp2;
             mark = mark + 1;
