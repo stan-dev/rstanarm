@@ -150,6 +150,12 @@
 #' kfold2 <- kfold(fit2, K = 10)
 #' compare_models(kfold1, kfold2, detail=TRUE)
 #' 
+#' # stratifying by a grouping variable
+#' library(loo)
+#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl:gear), data = mtcars, adapt_delta = 0.99)
+#' folds_cyl <- kfold_split_stratified(K = 3, x = mtcars$cyl)
+#' table(cyl = mtcars$cyl, fold = folds_cyl)
+#' kfold4 <- kfold(fit4, K = 3, folds = folds_cyl)
 #' 
 #' # Computing model weights
 #' model_list <- stanreg_list(fit1, fit2, fit3)
@@ -328,54 +334,76 @@ waic.stanreg <- function(x, ...) {
 #
 #' @rdname loo.stanreg
 #' @export
-#' @param K For \code{kfold}, the number of subsets of equal (if possible) size
-#'   into which the data will be randomly partitioned for performing
+#' @param K For \code{kfold}, the number of subsets (folds) 
+#'   into which the data will be partitioned for performing
 #'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
-#'   leaving out one of the \code{K} subsets. If \code{K} is equal to the total
+#'   leaving out one of the \code{K} folds. If \code{K} is equal to the total
 #'   number of observations in the data then \eqn{K}-fold cross-validation is
 #'   equivalent to exact leave-one-out cross-validation.
 #' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
 #'   is added to the returned object to store the cross-validated
 #'   \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
 #'   observations for each fold. Defaults to \code{FALSE}.
+#' @param folds For \code{kfold}, an optional integer vector with one element
+#'   per observation in the data used to fit the model. Each element of the
+#'   vector is an integer in \code{1:K} indicating to which of the \code{K}
+#'   folds the corresponding observation belongs. There are some convenience
+#'   functions available in the \pkg{loo} package that create integer vectors to
+#'   use for this purpose (see the \strong{Examples} section below and also the
+#'   \link[loo]{kfold-helpers} page).
 #'   
-#' @return \code{kfold} returns an object with has classes 'kfold' and 'loo' 
-#'   that has a similar structure as the objects returned by the \code{loo} and
+#'   If \code{folds} is not specified then the default is to call
+#'   \code{loo::\link[loo]{kfold_split_random}} to randomly partition the data
+#'   into \code{K} subsets of equal (or as close to equal as possible) size.
+#'   
+#' @return \code{kfold} returns an object with classes 'kfold' and 'loo' that
+#'   has a similar structure as the objects returned by the \code{loo} and
 #'   \code{waic} methods.
 #'    
 #' @section K-fold CV: The \code{kfold} function performs exact \eqn{K}-fold
 #'   cross-validation. First the data are randomly partitioned into \eqn{K}
-#'   subsets of equal (or as close to equal as possible) size. Then the model is
-#'   refit \eqn{K} times, each time leaving out one of the \code{K} subsets. If
-#'   \eqn{K} is equal to the total number of observations in the data then
-#'   \eqn{K}-fold cross-validation is equivalent to exact leave-one-out
-#'   cross-validation (to which \code{loo} is an efficient approximation). The
-#'   \code{compare_models} function is also compatible with the objects returned
-#'   by \code{kfold}.
+#'   subsets of equal (or as close to equal as possible) size (unless the folds
+#'   are specified manually). Then the model is refit \eqn{K} times, each time
+#'   leaving out one of the \eqn{K} subsets. If \eqn{K} is equal to the total
+#'   number of observations in the data then \eqn{K}-fold cross-validation is
+#'   equivalent to exact leave-one-out cross-validation (to which \code{loo} is
+#'   an efficient approximation). The \code{compare_models} function is also
+#'   compatible with the objects returned by \code{kfold}.
 #'   
-kfold <- function(x, K = 10, save_fits = FALSE) {
+kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
   validate_stanreg_object(x)
   stopifnot(K > 1, K <= nobs(x))
-  if (!used.sampling(x)) 
+  if (!used.sampling(x)) {
     STOP_sampling_only("kfold")
-  if (is.stanmvreg(x))
+  }
+  if (is.stanmvreg(x)) {
     STOP_if_stanmvreg("kfold")
-  if (model_has_weights(x))
+  }
+  if (model_has_weights(x)) {
     stop("kfold is not currently available for models fit using weights.")
+  }
   
   d <- kfold_and_reloo_data(x)
   N <- nrow(d)
+  K <- as.integer(K)
   
-  perm <- sample.int(N)
-  idx <- ceiling(seq(from = 1, to = N, length.out = K + 1))
-  bin <- .bincode(perm, breaks = idx, right = FALSE, include.lowest = TRUE)
+  if (is.null(folds)) {
+    folds <- loo::kfold_split_random(K = K, N = N)
+  } else {
+    stopifnot(
+      length(folds) == N, 
+      all(folds == as.integer(folds)), 
+      all(folds %in% 1L:K),
+      all(1:K %in% folds)
+    )
+    folds <- as.integer(folds)
+  }
   
   lppds <- list()
-  obs_id <- unlist(lapply(1:K, function(k) which(bin == k)))
   fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
   for (k in 1:K) {
     message("Fitting model ", k, " out of ", K)
-    omitted <- which(bin == k)
+    omitted <- which(folds == k)
     fit_k_call <- update.stanreg(
       object = x,
       data = d[-omitted,, drop=FALSE],
@@ -385,11 +413,14 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
       evaluate = FALSE
     )
     if (!is.null(getCall(x)$offset)) {
-      fit_k_call$offset <- substitute(x$offset[-omitted])
+      fit_k_call$offset <- x$offset[-omitted]
     }
+    fit_k_call$subset <- eval(fit_k_call$subset)
+    fit_k_call$data <- eval(fit_k_call$data)
     capture.output(
       fit_k <- eval(fit_k_call)
     )
+    
     lppds[[k]] <-
       log_lik.stanreg(
         fit_k, 
@@ -407,8 +438,9 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   }))
 
   # make sure elpds are put back in the right order
+  obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
   elpds <- rep(NA, length(elpds_unord))
-  elpds[obs_id] <- elpds_unord
+  elpds[obs_order] <- elpds_unord
   
   out <- list(
     elpd_kfold = sum(elpds),
@@ -663,7 +695,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     fit_j_call$subset <- eval(fit_j_call$subset)
     fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {
-      fit_j_call$offset <- substitute(x$offset[-omitted])
+      fit_j_call$offset <- x$offset[-omitted]
     }
     capture.output(
       fit_j <- suppressWarnings(eval(fit_j_call))
