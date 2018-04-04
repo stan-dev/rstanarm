@@ -1249,11 +1249,11 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
     nacheck <- sapply(seq_along(newdataLong), function(m) {
       if (response) { # newdataLong needs the reponse variable
-        fm <- formula(object, m = m)
+        fmL <- formula(object, m = m)
       } else { # newdataLong only needs the covariates
-        fm <- formula(object, m = m)[c(1,3)]
+        fmL <- formula(object, m = m)[c(1,3)]
       }
-      all(!is.na(get_all_vars(fm, newdataLong[[m]]))) 
+      all(!is.na(get_all_vars(fmL, newdataLong[[m]]))) 
     })
     if (!all(nacheck))
       stop("'newdataLong' cannot contain NAs.", call. = FALSE)
@@ -1262,7 +1262,12 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataEvent)) {
     if (!is.data.frame(newdataEvent))
       stop("'newdataEvent' must be a data frame.", call. = FALSE)
-    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    if (response) { # newdataEvent needs the reponse variable
+      fmE <- formula(object, m = "Event")
+    } else { # newdataEvent only needs the covariates
+      fmE <- formula(object, m = "Event")[c(1,3)]
+    }
+    dat <- get_all_vars(fmE, newdataEvent)
     dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
     if (any(is.na(dat)))
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
