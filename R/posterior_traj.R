@@ -208,20 +208,45 @@
 #'   # then we could specify a named list in the 'control' argument
 #'   pt4 <- posterior_traj(example_jm, control = list(ipoints = 10, epoints = 10, eprop = 0.5))
 #'   
+#'   # If we have prediction data for a new individual, and we want to
+#'   # estimate the longitudinal trajectory for that individual conditional
+#'   # on this new data (perhaps extrapolating forward from our last
+#'   # longitudinal measurement) then we can do that. It requires drawing
+#'   # new individual-specific parameters, based on the full likelihood,
+#'   # so we must supply new data for both the longitudinal and event 
+#'   # submodels. These are sometimes known as dynamic predictions.
+#'   ndL <- pbcLong[pbcLong$id == 8, , drop = FALSE]
+#'   ndE <- pbcSurv[pbcSurv$id == 8, , drop = FALSE]
+#'   ndL$id <- "new_subject" # new id can't match one used in training data
+#'   ndE$id <- "new_subject"
+#'   pt5 <- posterior_traj(example_jm, 
+#'                         newdataLong = ndL,
+#'                         newdataEvent = ndE)
+#'                         
+#'   # By default it is assumed that the last known survival time for 
+#'   # the individual is the time of their last biomarker measurement,
+#'   # but if we know they survived to some later time then we can
+#'   # condition on that information using the last_time argument
+#'   pt6 <- posterior_traj(example_jm, 
+#'                         newdataLong = ndL,
+#'                         newdataEvent = ndE, 
+#'                         last_time = "futimeYears")
+#'   
 #'   # Alternatively we may want to estimate the marginal longitudinal
 #'   # trajectory for a given set of covariates. To do this, we can pass
 #'   # the desired covariate values in a new data frame (however the only
 #'   # covariate in our fitted model was the time variable, year). To make sure  
 #'   # that we marginalise over the random effects, we need to specify an ID value
 #'   # which does not correspond to any of the individuals who were used in the
-#'   # model estimation. (The marginal prediction is obtained by generating 
-#'   # subject-specific predictions using a series of random draws from the random 
+#'   # model estimation and specify the argument dynamic=FALSE.
+#'   # The marginal prediction is obtained by generating subject-specific 
+#'   # predictions using a series of random draws from the random 
 #'   # effects distribution, and then integrating (ie, averaging) over these. 
 #'   # Our marginal prediction will therefore capture the between-individual 
-#'   # variation associated with the random effects.)
+#'   # variation associated with the random effects.
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
-#'   pt5 <- posterior_traj(example_jm, newdata = nd)
-#'   head(pt5)  # note the greater width of the uncertainty interval compared 
+#'   pt7 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE)
+#'   head(pt7)  # note the greater width of the uncertainty interval compared 
 #'              # with the subject-specific predictions in pt1, pt2, etc
 #'   
 #'   # Alternatively, we could have estimated the "marginal" trajectory by 
@@ -241,8 +266,9 @@
 #'   # the fixed effect component of the model, we simply specify 're.form = NA'. 
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
-#'   pt6 <- posterior_traj(example_jm, newdata = nd, re.form = NA)
-#'   head(pt6)  # note the much narrower ci, compared with pt5
+#'   pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
+#'                         re.form = NA)
+#'   head(pt8)  # note the much narrower ci, compared with pt5
 #' }
 #' 
 posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
@@ -284,7 +310,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
             "to be specified. Either specify data for both the longitudinal and ",
             "event submodels or, alternatively, specify argument 'dynamic = FALSE' ",
             "to marginalise over the distribution of group-specific parameters.")
-    dats <- validate_newdatas(object, newdataLong, newdataEvent, response = isTRUE(dynamic))
+    dats <- validate_newdatas(object, newdataLong, newdataEvent, 
+                              response = isTRUE(dynamic))
     ndL <- dats[1:M]
     ndE <- dats[["Event"]]
   }
