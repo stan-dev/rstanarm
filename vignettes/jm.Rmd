@@ -366,7 +366,7 @@ These draws from the conditional posterior predictive distributions can be used 
 
 ### Individual-specific predictions for out-of-sample individuals (i.e. dynamic predictions)
 
-**TBC.** Describe dynamic predictions under the framework of Rizopoulos (2011). These types of individual-specific predictions can be obtained using the `posterior_traj` and `posterior_survfit` functions by providing prediction data and specifying `dynamic = TRUE` (which is the default); see the examples provided below.
+**TBC.** Describe dynamic predictions under the framework of Rizopoulos (2011) [18]. These types of individual-specific predictions can be obtained using the `posterior_traj` and `posterior_survfit` functions by providing prediction data and specifying `dynamic = TRUE` (which is the default); see the examples provided below.
 
 ### Population-level (i.e. marginal) predictions
 
@@ -475,7 +475,7 @@ Note however, that if $N_{pred}$ is not sufficiently large (e.g. we pass new dat
 
 ## Dataset used in the examples
 
-We use the Mayo Clinic's primary biliary cirrhosis (PBC) dataset in the examples below. The dataset contains 312 individuals with primary biliary cirrhosis who participated in a randomised placebo controlled trial of D-penicillamine conducted at the Mayo Clinic between 1974 and 1984 [18]. However, to ensure the examples run quickly, we use a small random subset of just 40 patients from the full data. 
+We use the Mayo Clinic's primary biliary cirrhosis (PBC) dataset in the examples below. The dataset contains 312 individuals with primary biliary cirrhosis who participated in a randomised placebo controlled trial of D-penicillamine conducted at the Mayo Clinic between 1974 and 1984 [19]. However, to ensure the examples run quickly, we use a small random subset of just 40 patients from the full data. 
 
 These example data are contained in two separate data frames. The first data frame contains multiple-row per patient longitudinal biomarker information, as shown in
 
@@ -690,8 +690,6 @@ Here we can see the strong relationship between the underlying values of the bio
 
 ### Predicted individual-specific longitudinal trajectory and survival curve for out-of-sample individuals (i.e. dynamic predictions)
 
-**TBC.** Show an example predicting the longitudinal trajectory for a new individual with new outcome data up to time $t$. Here, we can 
-
 Let us take an individual from our training data, in this case the individual with subject ID value `8`. However, we will pretend this individual was not a member of our training data and rather that they are a new individual for whom we have obtained new biomarker measurements. Our goal is to obtain predictions for the longitudinal trajectory for this individual, and their conditional survival curve, given that we know they are   conditional on their biomarker measurements we currently have available.
 
 First, let's extract the data for subject `8` and then rename their subject ID value so that they appear to be an individual who was not included in our training dataset:
@@ -834,5 +832,6 @@ plot(p1) # plot the standardised survival curve
 15. Hickey GL, Philipson P, Jorgensen A, Kolamunnage-Dona R. Joint modelling of time-to-event and multivariate longitudinal outcomes: recent developments and issues. *BMC Med Res Methodol* 2016;**16**(1):117.
 16. Rizopoulos D, Ghosh P. A Bayesian semiparametric multivariate joint model for multiple longitudinal outcomes and a time-to-event. *Stat Med*. 2011;**30**(12):1366-80.
 17. Laurie DP. Calculation of Gauss-Kronrod quadrature rules. *Math Comput* 1997;**66**(219):1133-45.
-18. Therneau T, Grambsch P. *Modeling Survival Data: Extending the Cox Model* Springer-Verlag, New York; 2000. ISBN: 0-387-98784-3
+18. Rizopoulos D. Dynamic Predictions and Prospective Accuracy in Joint Models for Longitudinal and Time-to-Event Data. *Biometrics* 2011;**67**(3):819-829.
+19. Therneau T, Grambsch P. *Modeling Survival Data: Extending the Cox Model* Springer-Verlag, New York; 2000. ISBN: 0-387-98784-3
 
