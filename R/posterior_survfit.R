@@ -296,6 +296,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     ndL <- dats[1:M]
     ndE <- dats[["Event"]]
   } else { # user specified newdata
+    if (!dynamic)
+      stop2("Marginalised predictions for the event outcome are ",
+            "not currently implemented.")
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
     ndL <- newdatas[1:M]
     ndE <- newdatas[["Event"]]   
