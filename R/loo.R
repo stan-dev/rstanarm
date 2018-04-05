@@ -409,7 +409,7 @@ kfold <- function(x, K = 10, save_fits = FALSE) {
   }))
 
   # make sure elpds are put back in the right order
-  obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
+  obs_order <- unlist(lapply(1:K, function(k) which(bin == k)))
   elpds <- rep(NA, length(elpds_unord))
   elpds[obs_order] <- elpds_unord
   
