@@ -145,18 +145,6 @@
 #' # setting detail=TRUE will also print model formulas
 #' compare_models(loo1, loo2, loo3, detail=TRUE)
 #'
-#' # 10-fold cross-validation
-#' (kfold1 <- kfold(fit1, K = 10))
-#' kfold2 <- kfold(fit2, K = 10)
-#' compare_models(kfold1, kfold2, detail=TRUE)
-#'
-#' # stratifying by a grouping variable
-#' library(loo)
-#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl:gear), data = mtcars, adapt_delta = 0.99)
-#' folds_cyl <- kfold_split_stratified(K = 3, x = mtcars$cyl)
-#' table(cyl = mtcars$cyl, fold = folds_cyl)
-#' kfold4 <- kfold(fit4, K = 3, folds = folds_cyl)
-#'
 #' # Computing model weights
 #' model_list <- stanreg_list(fit1, fit2, fit3)
 #' loo_model_weights(model_list, cores = 2) # can specify k_threshold=0.7 if necessary
@@ -173,6 +161,20 @@
 #' yrep2 <- posterior_predict(fit2)
 #' yrep3 <- posterior_predict(fit3)
 #' wt_avg_yrep <- wts[1] * yrep1 + wts[2] * yrep2 + wts[3] * yrep3
+#' 
+#' # 10-fold cross-validation
+#' (kfold1 <- kfold(fit1, K = 10))
+#' kfold2 <- kfold(fit2, K = 10)
+#' compare_models(kfold1, kfold2, detail=TRUE)
+#'
+#' # Cross-validation stratifying by a grouping variable
+#' # (note: might get some divergences warnings with this model but 
+#' # this is just intended as a quick example of how to code this)
+#' library(loo)
+#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars)
+#' folds_cyl <- kfold_split_stratified(K = 3, x = mtcars$cyl)
+#' table(cyl = mtcars$cyl, fold = folds_cyl)
+#' kfold4 <- kfold(fit4, K = 3, folds = folds_cyl)
 #' }
 #'
 #' @importFrom loo loo loo.function loo.matrix
