@@ -150,20 +150,24 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
   dots <- list(...)
   if (is.stanmvreg(object)) {
-    m <- dots[["m"]]
+    m <- dots[["m"]]             # submodel to predict for
+    stanmat <- dots[["stanmat"]] # possibly incl. new b pars (dynamic preds)
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
     if (!is.null(offset))
       stop2("'offset' cannot be specified for stanmvreg objects.")
-  } else m <- NULL
+  } else {
+    m <- NULL
+    stanmat <- NULL
+  }
   
   newdata <- validate_newdata(newdata)
-  dat <-
-    pp_data(object,
-            newdata = newdata,
-            re.form = re.form,
-            offset = offset,
-            ...)
+  pp_data_args <- c(list(object,
+                         newdata = newdata,
+                         re.form = re.form,
+                         offset = offset),
+                    dots)
+  dat <- do.call("pp_data", pp_data_args)
   if (is_scobit(object)) {
     data <- pp_eta(object, dat, NULL)
     if (!is.null(draws)) {
@@ -180,6 +184,10 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     } else {
       ppargs <- pp_args(object, data, m = m)
     }
+  } else if (is.stanjm(object)) {
+    ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m,
+                                            stanmat = stanmat), m = m)
+    
   } else {
     if (!is.null(newdata) && is_clogit(object)) {
       y <- eval(formula(object)[[2L]], newdata)
@@ -373,14 +381,18 @@ pp_args <- function(object, data, m = NULL) {
 
 # create eta and stanmat (matrix of posterior draws)
 #
-# @param object stanreg or stanmvreg object
-# @param data output from pp_data()
-# @param draws number of draws
-# @param m optional integer specifying the submodel for stanmvreg objects
-# @return linear predictor "eta" and matrix of posterior draws stanmat"
-pp_eta <- function(object, data, draws = NULL, m = NULL) {
+# @param object A stanreg or stanmvreg object
+# @param data Output from pp_data()
+# @param draws Number of draws
+# @param m Optional integer specifying the submodel for stanmvreg objects
+# @param stanmat Optionally pass a stanmat that has been amended to include
+#   new b parameters for individuals in the prediction data but who were not
+#   included in the model estimation; relevant for dynamic predictions for 
+#   stan_jm objects only
+# @return Linear predictor "eta" and matrix of posterior draws "stanmat"
+pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
-  S <- posterior_sample_size(object)
+  S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
   if (is.null(draws))
     draws <- S
   if (draws > S) {
@@ -395,8 +407,10 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
     if (is.null(m)) STOP_arg_required_for_stanmvreg(m)
     M <- get_M(object)
   }
-  stanmat <- if (is.null(data$Zt)) 
-    as.matrix.stanreg(object) else as.matrix(object$stanfit)
+  if (is.null(stanmat)) {
+    stanmat <- if (is.null(data$Zt)) 
+      as.matrix.stanreg(object) else as.matrix(object$stanfit)
+  }
   nms <- if (is.stanmvreg(object)) 
     collect_nms(colnames(stanmat), M, stub = get_stub(object)) else NULL  
   beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]

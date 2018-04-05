@@ -31,10 +31,15 @@
 #' @template args-sparse
 #' 
 #' @param formulaLong A two-sided linear formula object describing both the 
-#'   fixed-effects and random-effects parts of the longitudinal submodel  
-#'   (see \code{\link[lme4]{glmer}} for details). For a multivariate joint 
-#'   model (i.e. more than one longitudinal marker) this should 
-#'   be a list of such formula objects, with each element
+#'   fixed-effects and random-effects parts of the longitudinal submodel,
+#'   similar in vein to formula specification in the \strong{lme4} package
+#'   (see \code{\link[lme4]{glmer}} or the \strong{lme4} vignette for details). 
+#'   Note however that the double bar (\code{||}) notation is not allowed 
+#'   when specifying the random-effects parts of the formula, and neither
+#'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
+#'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   For a multivariate joint model (i.e. more than one longitudinal marker) 
+#'   this should be a list of such formula objects, with each element
 #'   of the list providing the formula for one of the longitudinal submodels.
 #' @param dataLong A data frame containing the variables specified in
 #'   \code{formulaLong}. If fitting a multivariate joint model, then this can
@@ -554,6 +559,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
+	if (M > 3L)
+	  stop("'stan_jm' is currently limited to a maximum of 3 longitudinal outcomes.")
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  

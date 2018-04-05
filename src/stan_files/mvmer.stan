@@ -9,7 +9,7 @@ functions {
 #include /functions/binomial_likelihoods.stan
 #include /functions/continuous_likelihoods.stan
 #include /functions/count_likelihoods.stan
-#include /functions/jm_functions.stan
+#include /functions/mvmer_functions.stan
 }
 data {
   // declares: M, has_aux, has_weights, resp_type, intercept_type,

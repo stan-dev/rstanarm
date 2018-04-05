@@ -1,8 +1,8 @@
-  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus, 
+  // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus,
   //   5 = laplace, 6 = lasso
   int<lower=0,upper=6> e_prior_dist;
   int<lower=0,upper=2> e_prior_dist_for_intercept;
-  
+
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
   int<lower=0,upper=3> e_prior_dist_for_aux; // prior for basehaz params
 
@@ -11,8 +11,8 @@
   int<lower=0> e_K;           // num. of predictors in event submodel
   int<lower=0> Npat;          // num. individuals (equal to l[id_var] - 1)
   int<lower=0> Nevents;       // num. events (ie. not censored)
-  int<lower=0> qnodes;        // num. of nodes for Gauss-Kronrod quadrature 
-  int<lower=0> Npat_times_qnodes; 
+  int<lower=0> qnodes;        // num. of nodes for Gauss-Kronrod quadrature
+  int<lower=0> Npat_times_qnodes;
   int<lower=1,upper=3> basehaz_type;    // 1 = weibull, 2 = B-splines, 3 = piecewise
   int<lower=0> basehaz_df;              // df for baseline hazard
   int<lower=0,upper=1> e_has_intercept; // 1 = yes
