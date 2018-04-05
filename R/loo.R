@@ -172,6 +172,7 @@
 #' # this is just intended as a quick example of how to code this)
 #' library(loo)
 #' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars)
+#' table(mtcars$cyl)
 #' folds_cyl <- kfold_split_stratified(K = 3, x = mtcars$cyl)
 #' table(cyl = mtcars$cyl, fold = folds_cyl)
 #' kfold4 <- kfold(fit4, K = 3, folds = folds_cyl)
