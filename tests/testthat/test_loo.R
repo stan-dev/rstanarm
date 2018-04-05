@@ -146,6 +146,12 @@ test_that("kfold throws error if K <= 1 or K > N", {
   expect_error(kfold(example_model, K = 1e5), "K <= nobs(x)", fixed = TRUE)
 })
 
+test_that("kfold throws error if folds arg is bad", {
+  expect_error(kfold(example_model, K = 2, folds = 1:100), "length(folds) == N is not TRUE", fixed = TRUE)
+  expect_error(kfold(example_model, K = 2, folds = 1:2), "length(folds) == N is not TRUE", fixed = TRUE)
+  expect_error(kfold(example_model, K = 2, folds = seq(1,100, length.out = 56)), "all(folds == as.integer(folds)) is not TRUE", fixed = TRUE)
+})
+
 test_that("kfold throws error if model has weights", {
   SW(
     fit <- stan_glm(mpg ~ wt, data = mtcars, 
@@ -280,8 +286,6 @@ test_that("compare_models works", {
   expect_true(attr(k5, "discrete"))
   expect_s3_class(compare_models(k4, k5), "compare.loo")
 })
-
-
 
 
 # helpers -----------------------------------------------------------------
