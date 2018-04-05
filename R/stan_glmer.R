@@ -82,7 +82,7 @@
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula
-#' @importFrom Matrix Matrix t cBind
+#' @importFrom Matrix Matrix t
 stan_glmer <- 
   function(formula,
            data = NULL,

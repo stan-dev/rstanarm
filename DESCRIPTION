@@ -36,7 +36,7 @@ Imports:
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
     loo (>= 2.0.0),
-    Matrix,
+    Matrix (>= 1.2-13),
     nlme (>= 3.1-124),
     rstan (>= 2.17.2),
     rstantools (>= 1.4.0),

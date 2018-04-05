@@ -42,9 +42,9 @@ simulate_b_pars <- function(object, stanmat, ndL, ndE, ids, times, scale = 1.5) 
     b1_p <- p[[b1_var]] # num of b pars for ID grouping factor
   } else { # more than one grouping factor
     if (get_M(object) > 1)
-      stop_dynpred("multivariate joint models with more than one grouping factor.")
+      STOP_dynpred("multivariate joint models with more than one grouping factor.")
     if (length(p) > 2L)
-      stop_dynpred("models with more than two grouping factors.")
+      STOP_dynpred("models with more than two grouping factors.")
     b1_var <- object$id_var
     b2_var <- grep(utils::glob2rx(b1_var), names(p), value = TRUE, invert = TRUE)
     b1_p <- p[[b1_var]] # num of b pars for ID grouping factor

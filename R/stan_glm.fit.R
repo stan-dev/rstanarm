@@ -740,7 +740,6 @@ validate_glm_outcome_support <- function(y, family) {
 # @param Ztlist ranef indicator matrices
 # @param cnms group$cnms
 # @param flist group$flist
-#' @importFrom Matrix rBind
 pad_reTrms <- function(Ztlist, cnms, flist) {
   stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
@@ -751,11 +750,7 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   for (i in 1:length(p)) {
-    Ztlist[[i]] <- if (getRversion() < "3.2.0") {
-      rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
-    } else {
-      rbind2(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
-    }
+    Ztlist[[i]] <- rbind(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
   }
   Z <- t(do.call(rbind, args = Ztlist))
   return(nlist(Z, cnms, flist))
