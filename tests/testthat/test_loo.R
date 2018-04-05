@@ -75,7 +75,7 @@ test_that("loo & waic throw error for non mcmc models", {
 
 test_that("loo errors if model has weights", {
   SW(
-    fit <- stan_glm(mpg ~ wt, data = mtcars, 
+    fit <- stan_glm(mpg ~ wt, data = mtcars,
                     weights = rep_len(c(1,2), nrow(mtcars)),
                     seed = SEED, refresh = REFRESH, iter = 50)
   )
@@ -110,8 +110,8 @@ test_that("loo with k_threshold works", {
 #  expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
 #                "Elapsed Time")
 
-  # test that no errors from binomial model because it's trickier to get the
-  # data right internally in reloo (matrix outcome)
+#  # test that no errors from binomial model because it's trickier to get the
+#  # data right internally in reloo (matrix outcome)
 #  loo_x <- loo(example_model)
 #  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)),
 #                 "Model will be refit 1 times")
@@ -154,7 +154,7 @@ test_that("kfold throws error if folds arg is bad", {
 
 test_that("kfold throws error if model has weights", {
   SW(
-    fit <- stan_glm(mpg ~ wt, data = mtcars, 
+    fit <- stan_glm(mpg ~ wt, data = mtcars,
                     iter = ITER, chains = CHAINS, refresh = REFRESH,
                     weights = runif(nrow(mtcars), 0.5, 1.5))
   )
@@ -165,12 +165,12 @@ test_that("kfold works on some examples", {
   mtcars2 <- mtcars
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
   SW(
-    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0, 
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0,
                          chains = 1, iter = 100)
   )
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
-  
+
   expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(invisible(print(kf)), kf)
@@ -179,9 +179,9 @@ test_that("kfold works on some examples", {
   expect_s3_class(kf2, c("kfold", "loo"))
   expect_identical(invisible(print(kf2)), kf2)
   expect_output(print(kf2), "2-fold cross-validation")
-  
+
   SW(kf <- kfold(fit_gaus, K = 2, save_fits = TRUE))
-  
+
   expect_true("fits" %in% names(kf))
   expect_s3_class(kf$fits[[1, "fit"]], "stanreg")
   expect_type(kf$fits[[2, "omitted"]], "integer")
@@ -196,37 +196,37 @@ test_that("compare_models throws correct errors", {
     fit2 <- update(fit1, data = mtcars[-1, ])
     fit3 <- update(fit1, formula. = log(mpg) ~ .)
     fit4 <- update(fit1, family = poisson("log"))
-    
+
     l1 <- loo(fit1, cores = LOO.CORES)
     l2 <- loo(fit2, cores = LOO.CORES)
     l3 <- loo(fit3, cores = LOO.CORES)
     l4 <- loo(fit4, cores = LOO.CORES)
-  
+
     w1 <- waic(fit1)
     k1 <- kfold(fit1, K = 3)
   }))
-  
-  
-  expect_error(compare_models(l1, l2), 
+
+
+  expect_error(compare_models(l1, l2),
                "Not all models have the same y variable")
-  expect_error(compare_models(l1, l3), 
+  expect_error(compare_models(l1, l3),
                "Not all models have the same y variable")
-  expect_error(compare_models(loos = list(l4, l2, l3)), 
+  expect_error(compare_models(loos = list(l4, l2, l3)),
                "Not all models have the same y variable")
-  expect_error(compare_models(l1, l4), 
+  expect_error(compare_models(l1, l4),
                "Discrete and continuous observation models can't be compared")
-  
-  
-  expect_error(compare_models(l1, fit1), 
+
+
+  expect_error(compare_models(l1, fit1),
                "All objects must have class 'loo'")
   expect_error(compare_models(l1, k1),
                "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-  expect_error(compare_models(k1, w1, k1, w1), 
+  expect_error(compare_models(k1, w1, k1, w1),
                "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-  
-  expect_error(compare_models(l1, loos = list(l2, l3)), 
+
+  expect_error(compare_models(l1, loos = list(l2, l3)),
                "'...' and 'loos' can't both be specified")
-  expect_error(compare_models(l1), 
+  expect_error(compare_models(l1),
                "At least two objects are required for model comparison")
 })
 
@@ -295,12 +295,12 @@ test_that("kfold_and_reloo_data works", {
   f <- rstanarm:::kfold_and_reloo_data
   d <- f(example_model)
   expect_identical(d, lme4::cbpp)
-  
+
   # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
   SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
   expect_equivalent(f(fit), model.frame(fit))
-  
+
   # if 'subset' arg specified when fitting the model
   SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, iter = ITER,
                       chains = CHAINS, refresh = REFRESH))
