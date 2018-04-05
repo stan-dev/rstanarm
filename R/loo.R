@@ -438,7 +438,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
-        stanmat = as.matrix.stanreg(x)
+        stanmat = as.matrix.stanreg(fit_k)
       )
     if (save_fits) {
       fits[k, ] <- list(fit = fit_k, omitted = omitted)
