@@ -56,4 +56,6 @@
 #'  }
 #' }
 #' 
+#' @seealso \url{http://mc-stan.org/rstanarm/}
+#' 
 NULL
