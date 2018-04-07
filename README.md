@@ -52,8 +52,6 @@ for examples and more details about the entire process.
 The model estimating functions are described in greater detail in their
 individual help pages and vignettes. Here we provide a very brief overview:
 
-<br>
-
 * [__`stan_lm`__, __`stan_aov`__,__`stan_biglm`__](http://mc-stan.org/rstanarm/reference/stan_lm.html)
 
   Similar to  `lm` and `aov` but with novel regularizing priors on the model
@@ -62,12 +60,12 @@ individual help pages and vignettes. Here we provide a very brief overview:
 
 * [__`stan_glm`__, __`stan_glm.nb`__](http://mc-stan.org/rstanarm/reference/stan_glm.html)
 
- Similar to `glm` but with various possible prior distributions for the
- coefficients and, if applicable, a prior distribution for any auxiliary
- parameter in a Generalized Linear Model (GLM) that is characterized by a
- `family` object (e.g. the shape parameter in Gamma models). It is also possible
- to estimate a negative binomial model similar to the `glm.nb` function
- in the `MASS` package.
+  Similar to `glm` but with various possible prior distributions for the
+  coefficients and, if applicable, a prior distribution for any auxiliary
+  parameter in a Generalized Linear Model (GLM) that is characterized by a
+  `family` object (e.g. the shape parameter in Gamma models). It is also possible
+  to estimate a negative binomial model similar to the `glm.nb` function
+  in the `MASS` package.
 
 * [__`stan_glmer`__, __`stan_glmer.nb`__, __`stan_lmer`__](http://mc-stan.org/rstanarm/reference/stan_glmer.html)
 
@@ -130,7 +128,7 @@ individual help pages and vignettes. Here we provide a very brief overview:
 
 <details><summary>Estimation algorithms</summary>
 
-The modeling functions in the **rstanarm** package take an \code{algorithm}
+The modeling functions in the **rstanarm** package take an `algorithm`
 argument that can be one of the following:
 
 * __Sampling__ (`algorithm="sampling"`):
