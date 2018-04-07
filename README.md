@@ -1,10 +1,7 @@
-<h1> <img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=40 alt="Stan Logo"/> rstanarm </h1>
+<h1> <img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=75 alt="Stan Logo"/> rstanarm </h1>
 
----
+[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 
-[![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)  
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
-[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 ### Bayesian applied regression modeling (arm) via Stan
 
 This is an R package that emulates other R model-fitting functions but uses
