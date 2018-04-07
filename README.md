@@ -1,4 +1,6 @@
-<h1> <img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=75 alt="Stan Logo"/> rstanarm </h1>
+[<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=100 alt="Stan Logo"/>](http://mc-stan.org)
+
+# rstanarm 
 
 [![Build Status](https://travis-ci.org/stan-dev/rstanarm.svg?branch=master)](https://travis-ci.org/stan-dev/rstanarm)[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
 
