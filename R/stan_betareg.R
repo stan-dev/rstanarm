@@ -79,6 +79,7 @@
 #'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @references Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for 
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.
