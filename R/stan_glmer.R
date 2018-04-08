@@ -17,6 +17,7 @@
 
 #' Bayesian generalized linear models with group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GLMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #' 
@@ -74,7 +75,7 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
-#'   Partial Pooling} vignette.
+#'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
 #' # see help(example_model) for details on the model below

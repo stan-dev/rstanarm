@@ -16,14 +16,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Bayesian regularized linear models via Stan
-#'
-#' Bayesian inference for linear modeling with regularizing priors on the 
-#' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
-#' proportion of variance in the outcome attributable to the predictors. See 
-#' \code{\link{priors}} for an explanation of this critical point. 
-#' \code{\link{stan_glm}} with \code{family="gaussian"} also estimates a 
-#' linear model with normally-distributed errors and allows for various other 
-#' priors on the coefficients.
+#' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' Bayesian inference for linear modeling with regularizing priors on the model
+#' parameters that are driven by prior beliefs about \eqn{R^2}, the proportion
+#' of variance in the outcome attributable to the predictors. See
+#' \code{\link{priors}} for an explanation of this critical point.
+#' \code{\link{stan_glm}} with \code{family="gaussian"} also estimates a linear
+#' model with normally-distributed errors and allows for various other priors on
+#' the coefficients.
 #' 
 #' @export
 #' @templateVar fun stan_lm, stan_aov
@@ -93,6 +94,7 @@
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
 #' thorough descriptions and examples.
+#' \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' Also see \code{\link{stan_glm}}, which --- if \code{family =
 #' gaussian(link="identity")} --- also estimates a linear model with

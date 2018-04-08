@@ -7,6 +7,7 @@
 #' @aliases loo_predict loo_linpred loo_predictive_interval
 #' 
 #' @template reference-loo
+#' @template reference-bayesvis
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param psis_object An object returned by \code{\link[loo]{psis}}. If missing 

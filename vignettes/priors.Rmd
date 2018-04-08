@@ -41,7 +41,7 @@ parameters.
 | `prior_intercept` | All modeling functions except `stan_polr` and `stan_nlmer`| Model intercept, after centering predictors.|
 | `prior` |  All modeling functions| Regression coefficients. Does _not_ include coefficients that vary by group in a multilevel model (see `prior_covariance`).|
 | `prior_aux` | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`| Auxiliary parameter, e.g. error SD (interpretation depends on the GLM).|
-| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`| Covariance matrices in multilevel models with varying slopes and intercepts.|
+| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`| Covariance matrices in multilevel models with varying slopes and intercepts. See the [`stan_glmer` vignette](http://mc-stan.org/rstanarm/articles/glmer.html) for details on this prior.|
 \* `stan_glm` also implies `stan_glm.nb`. `stan_glmer` implies `stan_lmer` and
 `stan_glmer.nb`.
 

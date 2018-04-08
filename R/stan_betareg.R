@@ -17,6 +17,7 @@
 
 #' Bayesian beta regression models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Beta regression modeling with optional prior distributions for the 
 #' coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 #'
@@ -78,6 +79,7 @@
 #'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @references Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for 
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.

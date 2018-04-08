@@ -15,8 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Conditional logistic (clogit) models via Stan
+#' Conditional logistic (clogit) regression models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' A model for case-control studies with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -69,7 +70,8 @@
 #'   to estimate such deviations in the intercept.
 #'   
 #' @seealso The vignette for Bernoulli and binomial models, which has more
-#' details on using \code{stan_clogit}.
+#'   details on using \code{stan_clogit}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' dat <- infert[order(infert$stratum), ] # order by strata
