@@ -18,8 +18,9 @@
 
 #' Bayesian ordinal regression models via Stan
 #'
-#' Bayesian inference for ordinal (or binary) regression models under
-#' a proportional odds assumption.
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' Bayesian inference for ordinal (or binary) regression models under a
+#' proportional odds assumption.
 #'
 #' @export
 #' @templateVar fun stan_polr

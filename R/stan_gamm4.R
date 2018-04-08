@@ -19,6 +19,7 @@
 #' Bayesian generalized linear additive models with optional group-specific
 #' terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GAMMs with flexible priors.
 #' 
 #' @export
