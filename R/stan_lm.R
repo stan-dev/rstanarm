@@ -93,6 +93,7 @@
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
 #' thorough descriptions and examples.
+#' \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' Also see \code{\link{stan_glm}}, which --- if \code{family =
 #' gaussian(link="identity")} --- also estimates a linear model with

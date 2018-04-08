@@ -69,7 +69,8 @@
 #'   to estimate such deviations in the intercept.
 #'   
 #' @seealso The vignette for Bernoulli and binomial models, which has more
-#' details on using \code{stan_clogit}.
+#'   details on using \code{stan_clogit}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' dat <- infert[order(infert$stratum), ] # order by strata

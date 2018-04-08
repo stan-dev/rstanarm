@@ -65,7 +65,7 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer}, which also discusses 
-#'   \code{stan_nlmer} models.
+#'   \code{stan_nlmer} models. \url{http://mc-stan.org/rstanarm/articles/}
 #'   
 #' @examples
 #' \donttest{

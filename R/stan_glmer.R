@@ -74,7 +74,7 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
-#'   Partial Pooling} vignette.
+#'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
 #' # see help(example_model) for details on the model below

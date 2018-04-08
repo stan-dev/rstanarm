@@ -69,7 +69,8 @@
 #'   \code{link}, is a wrapper for \code{stan_glm} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
-#' @seealso The various vignettes for \code{stan_glm}.
+#' @seealso The various vignettes for \code{stan_glm} at
+#'   \url{http://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
 #' if (!grepl("^sparc",  R.version$platform)) {
