@@ -45,6 +45,7 @@
 #' @template args-QR
 #' @template args-sparse
 #' @template reference-gelman-hill
+#' @template reference-muth
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
 #'   are also possible using the \code{\link{neg_binomial_2}} family object.

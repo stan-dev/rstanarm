@@ -38,6 +38,7 @@
 #' @template args-QR
 #' @template args-sparse
 #' @template reference-gelman-hill
+#' @template reference-muth
 #' 
 #' @param formula,data Same as for \code{\link[lme4]{glmer}}. \emph{We
 #'   strongly advise against omitting the \code{data} argument}. Unless 
