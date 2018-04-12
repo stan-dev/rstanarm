@@ -79,6 +79,9 @@
 #'   instead of internally creating a shinystan object every time. See the
 #'   Examples section below.}
 #' }
+#' 
+#' @template reference-bayesvis
+#' @template reference-muth
 #'   
 #' @examples
 #' \dontrun{

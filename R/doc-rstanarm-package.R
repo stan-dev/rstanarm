@@ -101,5 +101,6 @@
 #' @template reference-stan-manual
 #' @template reference-loo
 #' @template reference-bayesvis
+#' @template reference-muth 
 #'
 NULL
