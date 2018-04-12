@@ -197,9 +197,9 @@ test_that("stan_glm returns expected result for glm poisson example", {
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.04)
       else
-        expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.03)
+        expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
     }
   }
 })
