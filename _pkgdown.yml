@@ -64,17 +64,15 @@ articles:
 reference:
   - title: "About rstanarm"
     desc: > 
-      These pages provide a summary of the functionality available in rstanarm.
+      This page provides a summary of the functionality available in rstanarm.
     contents: 
       - rstanarm-package
-      - available-models
-      - available-algorithms
-      - priors
   - title: "Fitting models"
     desc: >
       Functions for model fitting.
     contents:
       - starts_with("stan_")
+      - priors
   - title: "Methods"
     desc: >
       Functions to work with fitted model objects.
