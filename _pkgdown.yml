@@ -60,3 +60,40 @@ articles:
     - lm
     - polr
     - jm
+    
+reference:
+  - title: "About rstanarm"
+    desc: > 
+      These pages provide a summary of the functionality available in rstanarm.
+    contents: 
+      - rstanarm-package
+      - available-models
+      - available-algorithms
+      - priors
+  - title: "Fitting models"
+    desc: >
+      Functions for model fitting.
+    contents:
+      - starts_with("stan_")
+  - title: "Methods"
+    desc: >
+      Functions to work with fitted model objects.
+    contents:
+      - stanreg-objects
+      - ends_with("stanreg")
+      - starts_with("posterior_")
+      - ps_check
+      - ends_with("stanmvreg")
+      - ends_with("stanjm")
+  - title: "Additional documentation"
+    desc: >
+      Misc. other help pages.
+    contents:
+      - rstanarm-datasets
+      - example_model
+      - example_jm
+      - stanreg_list
+      - adapt_delta
+      - QR-argument
+      - neg_binomial_2
+      - rstanarm-deprecated
