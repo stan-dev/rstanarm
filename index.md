@@ -20,7 +20,8 @@ frequentist software otherwise.
 
 ## Getting started
 
-If you are just getting started with **rstanarm** the tutorial [vignettes](http://mc-stan.org/rstanarm/articles/) 
+If you are new to **rstanarm** we recommend starting with the tutorial
+[vignettes](http://mc-stan.org/rstanarm/articles/).
 
 ## Installation
 
@@ -38,8 +39,6 @@ be found in the **rstanarm** [Readme](https://github.com/stan-dev/rstanarm#insta
 
 * [File an issue on GitHub](https://github.com/stan-dev/rstanarm/issues)
 * [Ask a question on Discourse](http://discourse.mc-stan.org/)
-
-<br>
 
 ## Contributing
 

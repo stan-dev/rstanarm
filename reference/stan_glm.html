@@ -18,13 +18,23 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Bayesian generalized linear models via Stan — stan_glm" />
+
+<meta property="og:description" content="
+Generalized linear modeling with optional prior distributions for the
+coefficients, intercept, and auxiliary parameters." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +42,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +59,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +125,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,14 +133,16 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian generalized linear models via Stan</h1>
+    
     </div>
 
     
-    <p>Generalized linear modeling with optional prior distributions for the
+    <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
+Generalized linear modeling with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters.</p>
     
 
@@ -147,7 +166,7 @@ coefficients, intercept, and auxiliary parameters.</p>
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"optimizing"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
   <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -202,19 +221,20 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 <code>prior</code> should be a call to one of the various functions provided by 
 <span class="pkg">rstanarm</span> for specifying priors. The subset of these functions that 
 can be used for the prior on the coefficients can be grouped into several 
-"families":</p><table><tr><td>
+"families":</p>
+<table><tr><td>
   <strong>Family</strong> </td>
 <td> <strong>Functions</strong> </td>
-</tr><tr><td> 
+</tr><tr><td><br /> 
   <em>Student t family</em> </td>
 <td> <code>normal</code>, <code>student_t</code>, <code>cauchy</code> </td>
-</tr><tr><td> 
+</tr><tr><td><br /> 
   <em>Hierarchical shrinkage family</em> </td>
 <td> <code>hs</code>, <code>hs_plus</code> </td>
-</tr><tr><td> 
+</tr><tr><td><br /> 
   <em>Laplace family</em> </td>
 <td> <code>laplace</code>, <code>lasso</code> </td>
-</tr><tr><td>
+</tr><tr><td><br />
   <em>Product normal family</em> </td>
 <td> <code>product_normal</code> </td>
 </tr></table>
@@ -223,25 +243,16 @@ can be used for the prior on the coefficients can be grouped into several
 how to specify the arguments for all of the functions in the table above.
 To omit a prior ---i.e., to use a flat (improper) uniform prior---
 <code>prior</code> can be set to <code>NULL</code>, although this is rarely a good
-idea.
-
-<strong>Note:</strong> Unless <code>QR=TRUE</code>, if <code>prior</code> is from the Student t
+idea.</p>
+<p><strong>Note:</strong> Unless <code>QR=TRUE</code>, if <code>prior</code> is from the Student t
 family or Laplace family, and if the <code>autoscale</code> argument to the 
 function used to specify the prior (e.g. <code><a href='priors.html'>normal</a></code>) is left at 
 its default and recommended value of <code>TRUE</code>, then the default or 
-user-specified prior scale(s) may be adjusted internally based on the scales
-of the predictors. See the <a href='priors.html'>priors help page</a> for details on
-the rescaling and the <code><a href='prior_summary.stanreg.html'>prior_summary</a></code> function for a summary of
-the priors used for a particular model.
-
-<strong>Note:</strong> If using a dense representation of the design matrix 
----i.e., if the <code>sparse</code> argument is left at its default value of
-<code>FALSE</code>--- then the prior distribution for the intercept is set so it
-applies to the value when all predictors are centered. If you prefer to
-specify a prior on the intercept without the predictors being auto-centered,
-then you have to omit the intercept from the <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code>
-and include a column of ones as a predictor, in which case some element
-of <code>prior</code> specifies the prior on it, rather than <code>prior_intercept</code>.</p></td>
+user-specified prior scale(s) may be adjusted internally based on the
+scales of the predictors. See the <a href='priors.html'>priors help page</a> and the
+<em>Prior Distributions</em> vignette for details on the rescaling and the
+<code><a href='prior_summary.stanreg.html'>prior_summary</a></code> function for a summary of the priors used for a
+particular model.</p></td>
     </tr>
     <tr>
       <th>prior_intercept</th>
@@ -250,16 +261,16 @@ of <code>prior</code> specifies the prior on it, rather than <code>prior_interce
 <code>cauchy</code>. See the <a href='priors.html'>priors help page</a> for details on 
 these functions. To omit a prior on the intercept ---i.e., to use a flat
 (improper) uniform prior--- <code>prior_intercept</code> can be set to
-<code>NULL</code>.
-
-<strong>Note:</strong> If using a dense representation of the design matrix 
----i.e., if the <code>sparse</code> argument is left at its default value of
-<code>FALSE</code>--- then the prior distribution for the intercept is set so it
-applies to the value when all predictors are centered. If you prefer to
-specify a prior on the intercept without the predictors being auto-centered,
-then you have to omit the intercept from the <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code>
-and include a column of ones as a predictor, in which case some element
-of <code>prior</code> specifies the prior on it, rather than <code>prior_intercept</code>.</p></td>
+<code>NULL</code>.</p>
+<p><strong>Note:</strong> If using a dense representation of the design matrix 
+---i.e., if the <code>sparse</code> argument is left at its default value of 
+<code>FALSE</code>--- then the prior distribution for the intercept is set so it 
+applies to the value <em>when all predictors are centered</em>. If you prefer
+to specify a prior on the intercept without the predictors being
+auto-centered, then you have to omit the intercept from the
+<code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code> and include a column of ones as a predictor,
+in which case some element of <code>prior</code> specifies the prior on it,
+rather than <code>prior_intercept</code>.</p></td>
     </tr>
     <tr>
       <th>prior_aux</th>
@@ -276,9 +287,8 @@ to the <code>"shape"</code> parameter (see e.g.,
 <code><a href='http://www.rdocumentation.org/packages/stats/topics/GammaDist'>rgamma</a></code>), and for inverse-Gaussian models it is the 
 so-called <code>"lambda"</code> parameter (which is essentially the reciprocal of
 a scale parameter). Binomial and Poisson models do not have auxiliary 
-parameters. 
-
-<code>prior_aux</code> can be a call to <code>exponential</code> to 
+parameters.</p>
+<p><code>prior_aux</code> can be a call to <code>exponential</code> to 
 use an exponential distribution, or <code>normal</code>, <code>student_t</code> or 
 <code>cauchy</code>, which results in a half-normal, half-t, or half-Cauchy 
 prior. See <code><a href='priors.html'>priors</a></code> for details on these functions. To omit a 
@@ -305,38 +315,28 @@ algorithms.</p></td>
     <tr>
       <th>adapt_delta</th>
       <td><p>Only relevant if <code>algorithm="sampling"</code>. See 
-<code><a href='adapt_delta.html'>adapt_delta</a></code> for details.</p></td>
+the <a href='adapt_delta.html'>adapt_delta</a> help page for details.</p></td>
     </tr>
     <tr>
       <th>QR</th>
-      <td><p>A logical scalar defaulting to <code>FALSE</code>, but if <code>TRUE</code> 
-applies a scaled <code>qr</code> decomposition to the design matrix, 
-\(X = Q^\ast R^\ast\), where \(Q^\ast = Q \sqrt{n-1}\) and \(R^\ast = \frac{1}{\sqrt{n-1}} R\). The coefficients relative to \(Q^\ast\) are obtained and then 
-premultiplied by the inverse of \(R^{\ast}\) to obtain coefficients 
-relative to the original predictors, \(X\). These transformations do not 
-change the likelihood of the data but are recommended for computational 
-reasons when there are multiple predictors. Importantly, while the columns
-of \(X\) are almost always correlated, the columns of \(Q^\ast\)
-are uncorrelated by design, which often makes sampling from the posterior
-easier. However, because when <code>QR</code> is <code>TRUE</code> the <code>prior</code>
-argument applies to the coefficients relative to \(Q^\ast\) (and
-those are not very interpretable), setting <code>QR=TRUE</code> is only
-recommended if you do not have an informative prior for the regression
-coefficients.</p>
-<p>For more details see the Stan case study 
-<em>The QR Decomposition For Regression Models</em> at 
-<a href = 'http://mc-stan.org/users/documentation/case-studies/qr_regression.html'>http://mc-stan.org/users/documentation/case-studies/qr_regression.html</a>.</p></td>
+      <td><p>A logical scalar defaulting to <code>FALSE</code>, but if <code>TRUE</code>
+applies a scaled <code>qr</code> decomposition to the design matrix. The
+transformation does not change the likelihood of the data but is
+recommended for computational reasons when there are multiple predictors.
+See the <a href='QR-argument.html'>QR-argument</a> documentation page for details on how
+<span class="pkg">rstanarm</span> does the transformation and important information about how
+to interpret the prior distributions of the model parameters when using
+<code>QR=TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>sparse</th>
       <td><p>A logical scalar (defaulting to <code>FALSE</code>) indicating
 whether to use a sparse representation of the design (X) matrix. 
-Setting this to <code>TRUE</code> will likely be twice as slow, even if the
-design matrix has a considerable number of zeros, but it may allow the
-model to be estimated when the computer has too little RAM to
-utilize a dense design matrix. If <code>TRUE</code>, the the design matrix
-is not centered (since that would destroy the sparsity) and it is
-not possible to specify both <code>QR = TRUE</code> and <code>sparse = TRUE</code>.</p></td>
+If <code>TRUE</code>, the the design matrix is not centered (since that would 
+destroy the sparsity) and likewise it is not possible to specify both 
+<code>QR = TRUE</code> and <code>sparse = TRUE</code>. Depending on how many zeros
+there are in the design matrix, setting <code>sparse = TRUE</code> may make
+the code run faster and can consume much less RAM.</p></td>
     </tr>
     <tr>
       <th>link</th>
@@ -346,9 +346,8 @@ not possible to specify both <code>QR = TRUE</code> and <code>sparse = TRUE</cod
     <tr>
       <th>prior_smooth</th>
       <td><p>The prior distribution for the hyperparameters in GAMs,
-with lower values yielding less flexible smooth functions.
- 
-<code>prior_smooth</code> can be a call to <code>exponential</code> to 
+with lower values yielding less flexible smooth functions.</p> 
+<p><code>prior_smooth</code> can be a call to <code>exponential</code> to 
 use an exponential distribution, or <code>normal</code>, <code>student_t</code> or 
 <code>cauchy</code>, which results in a half-normal, half-t, or half-Cauchy 
 prior. See <code><a href='priors.html'>priors</a></code> for details on these functions. To omit a 
@@ -387,8 +386,8 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
   performed (if <code>algorithm</code> is <code>"sampling"</code>) via MCMC. The Bayesian
   model adds priors (independent by default) on the coefficients of the GLM.
   The <code>stan_glm</code> function calls the workhorse <code>stan_glm.fit</code>
-  function, but it is also possible to call the latter directly.
-    The <code>stan_glm.nb</code> function, which takes the extra argument 
+  function, but it is also possible to call the latter directly.</p>  
+<p>The <code>stan_glm.nb</code> function, which takes the extra argument 
   <code>link</code>, is a wrapper for <code>stan_glm</code> with <code>family = 
   <a href='neg_binomial_2.html'>neg_binomial_2</a>(link)</code>.</p>
     
@@ -397,12 +396,17 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
     <p>Gelman, A. and Hill, J. (2007). <em>Data Analysis Using
   Regression and Multilevel/Hierarchical Models.</em> Cambridge University Press,
   Cambridge, UK. (Ch. 3-6)</p>
+<p>Muth, C., Oravecz, Z., and Gabry, J. (2018)
+User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan.
+<em>The Quantitative Methods for Psychology</em>. 14(2), 99--119.
+<a href='https://www.tqmp.org/RegularArticles/vol14-2/p099/p099.pdf'>https://www.tqmp.org/RegularArticles/vol14-2/p099/p099.pdf</a></p>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <p><code><a href='stanreg-methods.html'>stanreg-methods</a></code> and 
 <code><a href='http://www.rdocumentation.org/packages/stats/topics/glm'>glm</a></code>.</p>
-<p>The various vignettes for <code>stan_glm</code>.</p>
+<p>The various vignettes for <code>stan_glm</code> at
+  <a href='http://mc-stan.org/rstanarm/articles/'>http://mc-stan.org/rstanarm/articles/</a>.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -412,7 +416,7 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
                 <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"fullrank"</span>) <span class='co'># for speed of example only</span>
 <span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)
 <span class='fu'>plot</span>(<span class='no'>fit</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>)
-}</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; ------------------------------------------------------------
+}</div><div class='output co'>#&gt; ------------------------------------------------------------
 #&gt; EXPERIMENTAL ALGORITHM:
 #&gt;   This procedure has not been thoroughly tested and may be unstable
 #&gt;   or buggy. The interface is subject to change.
@@ -420,8 +424,8 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; 
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.3 seconds.
+#&gt; Gradient evaluation took 4.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.44 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -436,29 +440,44 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; 
 #&gt; Begin stochastic gradient ascent.
 #&gt;   iter       ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#&gt;    100     -1e+02             1.000            1.000
-#&gt;    200     -9e+01             0.613            1.000
-#&gt;    300     -8e+01             0.449            0.227
-#&gt;    400     -7e+01             0.372            0.227
-#&gt;    500     -6e+01             0.316            0.141
-#&gt;    600     -6e+01             0.278            0.141
-#&gt;    700     -5e+01             0.256            0.128
-#&gt;    800     -5e+01             0.237            0.128
-#&gt;    900     -5e+01             0.213            0.121
-#&gt;   1000     -4e+01             0.198            0.121
-#&gt;   1100     -4e+01             0.101            0.099
-#&gt;   1200     -4e+01             0.078            0.089
-#&gt;   1300     -4e+01             0.068            0.088
-#&gt;   1400     -4e+01             0.054            0.063
-#&gt;   1500     -4e+01             0.046            0.030
-#&gt;   1600     -4e+01             0.037            0.021
-#&gt;   1700     -4e+01             0.025            0.016
-#&gt;   1800     -4e+01             0.017            0.015
-#&gt;   1900     -4e+01             0.015            0.010   MEDIAN ELBO CONVERGED
+#&gt;    100     -2e+02             1.000            1.000
+#&gt;    200     -8e+01             1.091            1.181
+#&gt;    300     -7e+01             0.789            1.000
+#&gt;    400     -6e+01             0.631            1.000
+#&gt;    500     -5e+01             0.530            0.187
+#&gt;    600     -5e+01             0.457            0.187
+#&gt;    700     -5e+01             0.398            0.156
+#&gt;    800     -4e+01             0.358            0.156
+#&gt;    900     -4e+01             0.320            0.126
+#&gt;   1000     -4e+01             0.289            0.126
+#&gt;   1100     -4e+01             0.190            0.091
+#&gt;   1200     -4e+01             0.073            0.076
+#&gt;   1300     -4e+01             0.057            0.044
+#&gt;   1400     -4e+01             0.043            0.023
+#&gt;   1500     -4e+01             0.031            0.020
+#&gt;   1600     -4e+01             0.023            0.018
+#&gt;   1700     -4e+01             0.019            0.014
+#&gt;   1800     -4e+01             0.015            0.014
+#&gt;   1900     -4e+01             0.014            0.014
+#&gt;   2000     -4e+01             0.014            0.015
+#&gt;   2100     -4e+01             0.015            0.015
+#&gt;   2200     -4e+01             0.015            0.015
+#&gt;   2300     -4e+01             0.014            0.014
+#&gt;   2400     -4e+01             0.015            0.015
+#&gt;   2500     -4e+01             0.016            0.016
+#&gt;   2600     -4e+01             0.017            0.016
+#&gt;   2700     -4e+01             0.018            0.016
+#&gt;   2800     -4e+01             0.016            0.016
+#&gt;   2900     -4e+01             0.015            0.016
+#&gt;   3000     -4e+01             0.015            0.016
+#&gt;   3100     -4e+01             0.016            0.019
+#&gt;   3200     -4e+01             0.015            0.019
+#&gt;   3300     -4e+01             0.015            0.019
+#&gt;   3400     -4e+01             0.012            0.016
+#&gt;   3500     -4e+01             0.011            0.006   MEDIAN ELBO CONVERGED
 #&gt; 
 #&gt; Drawing a sample of size 1000 from the approximate posterior... 
-#&gt; COMPLETED.</div><img src='stan_glm-4.png' alt='' width='540' height='400' /><div class='input'>
-<span class='co'>### Logistic regression</span>
+#&gt; COMPLETED.</div><div class='img'><img src='stan_glm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'>### Logistic regression</span>
 <span class='fu'>head</span>(<span class='no'>wells</span>)</div><div class='output co'>#&gt;   switch arsenic   dist assoc educ
 #&gt; 1      1    2.36 16.826     0    0
 #&gt; 2      1    0.71 47.322     0    0
@@ -473,11 +492,11 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
   <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>),
   <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span> <span class='co'># for speed of example only</span>
-)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000638 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 6.38 seconds.
+#&gt; Gradient evaluation took 0.000576 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 5.76 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -502,15 +521,15 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.554973 seconds (Warm-up)
-#&gt;                0.276977 seconds (Sampling)
-#&gt;                0.83195 seconds (Total)
+#&gt;  Elapsed Time: 0.225122 seconds (Warm-up)
+#&gt;                0.302258 seconds (Sampling)
+#&gt;                0.52738 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 0.000325 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.25 seconds.
+#&gt; Gradient evaluation took 0.000297 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 2.97 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -535,23 +554,21 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.264921 seconds (Warm-up)
-#&gt;                0.28244 seconds (Sampling)
-#&gt;                0.547361 seconds (Total)
+#&gt;  Elapsed Time: 0.239636 seconds (Warm-up)
+#&gt;                0.283386 seconds (Sampling)
+#&gt;                0.523022 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; stan_glm
-#&gt;  family:   binomial [logit]
-#&gt;  formula:  switch ~ dist100 + arsenic
-#&gt;  num. obs: 3020
+#&gt;  family:       binomial [logit]
+#&gt;  formula:      switch ~ dist100 + arsenic
+#&gt;  observations: 3020
+#&gt;  predictors:   3
 #&gt; ------
-#&gt; 
-#&gt; Estimates:
 #&gt;             Median MAD_SD
 #&gt; (Intercept)  0.0    0.1  
 #&gt; dist100     -0.9    0.1  
 #&gt; arsenic      0.5    0.0  
 #&gt; 
-#&gt; Sample avg. posterior predictive 
-#&gt; distribution of y (X = xbar):
+#&gt; Sample avg. posterior predictive distribution of y:
 #&gt;          Median MAD_SD
 #&gt; mean_PPD 0.6    0.0   
 #&gt; 
@@ -566,7 +583,7 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; ------
 #&gt; See help('prior_summary.stanreg') for more details</div><div class='input'>
 <span class='fu'>plot</span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"areas"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='co'># ?bayesplot::mcmc_areas</span>
-     <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"arsenic"</span>))</div><img src='stan_glm-15.png' alt='' width='540' height='400' /><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_binned"</span>)  <span class='co'># ?bayesplot::ppc_error_binned</span></div><img src='stan_glm-17.png' alt='' width='540' height='400' /><div class='input'>
+     <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"arsenic"</span>))</div><div class='img'><img src='stan_glm-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit2</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"error_binned"</span>)  <span class='co'># ?bayesplot::ppc_error_binned</span></div><div class='img'><img src='stan_glm-3.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='co'>### Poisson regression (example from help("glm")) </span>
 <span class='no'>counts</span> <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='fl'>18</span>,<span class='fl'>17</span>,<span class='fl'>15</span>,<span class='fl'>20</span>,<span class='fl'>10</span>,<span class='fl'>20</span>,<span class='fl'>25</span>,<span class='fl'>13</span>,<span class='fl'>12</span>)
@@ -574,107 +591,170 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 <span class='no'>treatment</span> <span class='kw'>&lt;-</span> <span class='fu'>gl</span>(<span class='fl'>3</span>,<span class='fl'>3</span>)
 <span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm</span>(<span class='no'>counts</span> ~ <span class='no'>outcome</span> + <span class='no'>treatment</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'>poisson</span>(<span class='kw'>link</span><span class='kw'>=</span><span class='st'>"log"</span>),
                  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>1</span>), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>),
-                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>250</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Omitting the 'data' argument is not recommended and may not be allowed in future versions of rstanarm. Some post-estimation functions (in particular 'update', 'loo', 'kfold') are not guaranteed to work properly unless 'data' is specified as a data frame.</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>250</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Omitting the 'data' argument is not recommended and may not be allowed in future versions of rstanarm. Some post-estimation functions (in particular 'update', 'loo', 'kfold') are not guaranteed to work properly unless 'data' is specified as a data frame.</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
+#&gt; 
+#&gt; Gradient evaluation took 1.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; WARNING: There aren't enough warmup iterations to fit the
+#&gt;          three stages of adaptation as currently configured.
+#&gt;          Reducing each adaptation stage to 15%/75%/10% of
+#&gt;          the given number of warmup iterations:
+#&gt;            init_buffer = 18
+#&gt;            adapt_window = 95
+#&gt;            term_buffer = 12
+#&gt; 
+#&gt; Iteration:   1 / 250 [  0%]  (Warmup)
+#&gt; Iteration:  25 / 250 [ 10%]  (Warmup)
+#&gt; Iteration:  50 / 250 [ 20%]  (Warmup)
+#&gt; Iteration:  75 / 250 [ 30%]  (Warmup)
+#&gt; Iteration: 100 / 250 [ 40%]  (Warmup)
+#&gt; Iteration: 125 / 250 [ 50%]  (Warmup)
+#&gt; Iteration: 126 / 250 [ 50%]  (Sampling)
+#&gt; Iteration: 150 / 250 [ 60%]  (Sampling)
+#&gt; Iteration: 175 / 250 [ 70%]  (Sampling)
+#&gt; Iteration: 200 / 250 [ 80%]  (Sampling)
+#&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
+#&gt; Iteration: 250 / 250 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.011671 seconds (Warm-up)
+#&gt;                0.010887 seconds (Sampling)
+#&gt;                0.022558 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
+#&gt; 
+#&gt; Gradient evaluation took 1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; WARNING: There aren't enough warmup iterations to fit the
+#&gt;          three stages of adaptation as currently configured.
+#&gt;          Reducing each adaptation stage to 15%/75%/10% of
+#&gt;          the given number of warmup iterations:
+#&gt;            init_buffer = 18
+#&gt;            adapt_window = 95
+#&gt;            term_buffer = 12
+#&gt; 
+#&gt; Iteration:   1 / 250 [  0%]  (Warmup)
+#&gt; Iteration:  25 / 250 [ 10%]  (Warmup)
+#&gt; Iteration:  50 / 250 [ 20%]  (Warmup)
+#&gt; Iteration:  75 / 250 [ 30%]  (Warmup)
+#&gt; Iteration: 100 / 250 [ 40%]  (Warmup)
+#&gt; Iteration: 125 / 250 [ 50%]  (Warmup)
+#&gt; Iteration: 126 / 250 [ 50%]  (Sampling)
+#&gt; Iteration: 150 / 250 [ 60%]  (Sampling)
+#&gt; Iteration: 175 / 250 [ 70%]  (Sampling)
+#&gt; Iteration: 200 / 250 [ 80%]  (Sampling)
+#&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
+#&gt; Iteration: 250 / 250 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.304931 seconds (Warm-up)
+#&gt;                0.010625 seconds (Sampling)
+#&gt;                0.315556 seconds (Total)
+#&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; stan_glm
+#&gt;  family:       poisson [log]
+#&gt;  formula:      counts ~ outcome + treatment
+#&gt;  observations: 9
+#&gt;  predictors:   5
+#&gt; ------
+#&gt;             Median MAD_SD
+#&gt; (Intercept)  3.0    0.2  
+#&gt; outcome2    -0.4    0.2  
+#&gt; outcome3    -0.2    0.2  
+#&gt; treatment2   0.0    0.2  
+#&gt; treatment3   0.0    0.2  
+#&gt; 
+#&gt; Sample avg. posterior predictive distribution of y:
+#&gt;          Median MAD_SD
+#&gt; mean_PPD 16.7    2.1  
+#&gt; 
+#&gt; ------
+#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
+<span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"green"</span>)
+<span class='fu'>plot</span>(<span class='no'>fit3</span>)</div><div class='img'><img src='stan_glm-4.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit3</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"outcome"</span>, <span class='st'>"treatment"</span>))</div><div class='img'><img src='stan_glm-5.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit3</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"combo"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"treatment"</span>) <span class='co'># ?bayesplot::mcmc_combo</span></div><div class='img'><img src='stan_glm-6.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='co'>### Gamma regression (example from help("glm"))</span>
+<span class='no'>clotting</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>log_u</span> <span class='kw'>=</span> <span class='fu'>log</span>(<span class='fu'>c</span>(<span class='fl'>5</span>,<span class='fl'>10</span>,<span class='fl'>15</span>,<span class='fl'>20</span>,<span class='fl'>30</span>,<span class='fl'>40</span>,<span class='fl'>60</span>,<span class='fl'>80</span>,<span class='fl'>100</span>)),
+                       <span class='kw'>lot1</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>118</span>,<span class='fl'>58</span>,<span class='fl'>42</span>,<span class='fl'>35</span>,<span class='fl'>27</span>,<span class='fl'>25</span>,<span class='fl'>21</span>,<span class='fl'>19</span>,<span class='fl'>18</span>),
+                       <span class='kw'>lot2</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>69</span>,<span class='fl'>35</span>,<span class='fl'>26</span>,<span class='fl'>21</span>,<span class='fl'>18</span>,<span class='fl'>16</span>,<span class='fl'>13</span>,<span class='fl'>12</span>,<span class='fl'>12</span>))
+<span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm</span>(<span class='no'>lot1</span> ~ <span class='no'>log_u</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>clotting</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'>Gamma</span>(<span class='kw'>link</span><span class='kw'>=</span><span class='st'>"log"</span>),
+                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>) <span class='co'># for speed of example only </span></div><div class='output co'>#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+#&gt; 
+#&gt; Gradient evaluation took 2.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.015539 seconds (Warm-up)
+#&gt;                0.009911 seconds (Sampling)
+#&gt;                0.02545 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+#&gt; 
+#&gt; Gradient evaluation took 3.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.33 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
+#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
+#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
+#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
+#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
+#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
+#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
+#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
+#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
+#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
+#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
+#&gt; Iteration: 300 / 300 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.013617 seconds (Warm-up)
+#&gt;                0.54926 seconds (Sampling)
+#&gt;                0.562877 seconds (Total)
+#&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit4</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; stan_glm
+#&gt;  family:       Gamma [log]
+#&gt;  formula:      lot1 ~ log_u
+#&gt;  observations: 9
+#&gt;  predictors:   2
+#&gt; ------
+#&gt;             Median MAD_SD
+#&gt; (Intercept)  5.57   0.56 
+#&gt; log_u       -0.60   0.17 
+#&gt; shape        4.03   1.80 
+#&gt; 
+#&gt; Sample avg. posterior predictive distribution of y:
+#&gt;          Median MAD_SD
+#&gt; mean_PPD 40.07  10.46 
+#&gt; 
+#&gt; ------
+#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='no'>fit5</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit4</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>lot2</span> ~ <span class='no'>log_u</span>)</div><div class='output co'>#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
 #&gt; Gradient evaluation took 1.9e-05 seconds
 #&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
-#&gt; WARNING: There aren't enough warmup iterations to fit the
-#&gt;          three stages of adaptation as currently configured.
-#&gt;          Reducing each adaptation stage to 15%/75%/10% of
-#&gt;          the given number of warmup iterations:
-#&gt;            init_buffer = 18
-#&gt;            adapt_window = 95
-#&gt;            term_buffer = 12
-#&gt; 
-#&gt; Iteration:   1 / 250 [  0%]  (Warmup)
-#&gt; Iteration:  25 / 250 [ 10%]  (Warmup)
-#&gt; Iteration:  50 / 250 [ 20%]  (Warmup)
-#&gt; Iteration:  75 / 250 [ 30%]  (Warmup)
-#&gt; Iteration: 100 / 250 [ 40%]  (Warmup)
-#&gt; Iteration: 125 / 250 [ 50%]  (Warmup)
-#&gt; Iteration: 126 / 250 [ 50%]  (Sampling)
-#&gt; Iteration: 150 / 250 [ 60%]  (Sampling)
-#&gt; Iteration: 175 / 250 [ 70%]  (Sampling)
-#&gt; Iteration: 200 / 250 [ 80%]  (Sampling)
-#&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
-#&gt; Iteration: 250 / 250 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 0.010795 seconds (Warm-up)
-#&gt;                0.009916 seconds (Sampling)
-#&gt;                0.020711 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
-#&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; WARNING: There aren't enough warmup iterations to fit the
-#&gt;          three stages of adaptation as currently configured.
-#&gt;          Reducing each adaptation stage to 15%/75%/10% of
-#&gt;          the given number of warmup iterations:
-#&gt;            init_buffer = 18
-#&gt;            adapt_window = 95
-#&gt;            term_buffer = 12
-#&gt; 
-#&gt; Iteration:   1 / 250 [  0%]  (Warmup)
-#&gt; Iteration:  25 / 250 [ 10%]  (Warmup)
-#&gt; Iteration:  50 / 250 [ 20%]  (Warmup)
-#&gt; Iteration:  75 / 250 [ 30%]  (Warmup)
-#&gt; Iteration: 100 / 250 [ 40%]  (Warmup)
-#&gt; Iteration: 125 / 250 [ 50%]  (Warmup)
-#&gt; Iteration: 126 / 250 [ 50%]  (Sampling)
-#&gt; Iteration: 150 / 250 [ 60%]  (Sampling)
-#&gt; Iteration: 175 / 250 [ 70%]  (Sampling)
-#&gt; Iteration: 200 / 250 [ 80%]  (Sampling)
-#&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
-#&gt; Iteration: 250 / 250 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 0.008895 seconds (Warm-up)
-#&gt;                0.010238 seconds (Sampling)
-#&gt;                0.019133 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; stan_glm
-#&gt;  family:   poisson [log]
-#&gt;  formula:  counts ~ outcome + treatment
-#&gt;  num. obs: 9
-#&gt; ------
-#&gt; 
-#&gt; Estimates:
-#&gt;             Median MAD_SD
-#&gt; (Intercept)  3.0    0.2  
-#&gt; outcome2    -0.4    0.2  
-#&gt; outcome3    -0.3    0.2  
-#&gt; treatment2   0.0    0.2  
-#&gt; treatment3   0.0    0.2  
-#&gt; 
-#&gt; Sample avg. posterior predictive 
-#&gt; distribution of y (X = xbar):
-#&gt;          Median MAD_SD
-#&gt; mean_PPD 16.4    2.1  
-#&gt; 
-#&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
-<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"green"</span>)
-<span class='fu'>plot</span>(<span class='no'>fit3</span>)</div><img src='stan_glm-25.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot</span>(<span class='no'>fit3</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"outcome"</span>, <span class='st'>"treatment"</span>))</div><img src='stan_glm-27.png' alt='' width='540' height='400' /><div class='input'><span class='fu'>plot</span>(<span class='no'>fit3</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"combo"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"treatment"</span>) <span class='co'># ?bayesplot::mcmc_combo</span></div><img src='stan_glm-29.png' alt='' width='540' height='400' /><div class='input'>
-<span class='co'>### Gamma regression (example from help("glm"))</span>
-<span class='no'>clotting</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>log_u</span> <span class='kw'>=</span> <span class='fu'>log</span>(<span class='fu'>c</span>(<span class='fl'>5</span>,<span class='fl'>10</span>,<span class='fl'>15</span>,<span class='fl'>20</span>,<span class='fl'>30</span>,<span class='fl'>40</span>,<span class='fl'>60</span>,<span class='fl'>80</span>,<span class='fl'>100</span>)),
-                       <span class='kw'>lot1</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>118</span>,<span class='fl'>58</span>,<span class='fl'>42</span>,<span class='fl'>35</span>,<span class='fl'>27</span>,<span class='fl'>25</span>,<span class='fl'>21</span>,<span class='fl'>19</span>,<span class='fl'>18</span>),
-                       <span class='kw'>lot2</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>69</span>,<span class='fl'>35</span>,<span class='fl'>26</span>,<span class='fl'>21</span>,<span class='fl'>18</span>,<span class='fl'>16</span>,<span class='fl'>13</span>,<span class='fl'>12</span>,<span class='fl'>12</span>))
-<span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm</span>(<span class='no'>lot1</span> ~ <span class='no'>log_u</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>clotting</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'>Gamma</span>(<span class='kw'>link</span><span class='kw'>=</span><span class='st'>"log"</span>),
-                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>) <span class='co'># for speed of example only </span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; 
-#&gt; Gradient evaluation took 2.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
 #&gt; Iteration:   1 / 300 [  0%]  (Warmup)
 #&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
 #&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
@@ -688,15 +768,15 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.011441 seconds (Warm-up)
-#&gt;                0.007294 seconds (Sampling)
-#&gt;                0.018735 seconds (Total)
+#&gt;  Elapsed Time: 0.027099 seconds (Warm-up)
+#&gt;                0.00644 seconds (Sampling)
+#&gt;                0.033539 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -713,85 +793,18 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.009139 seconds (Warm-up)
-#&gt;                0.568885 seconds (Sampling)
-#&gt;                0.578024 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit4</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; stan_glm
-#&gt;  family:   Gamma [log]
-#&gt;  formula:  lot1 ~ log_u
-#&gt;  num. obs: 9
-#&gt; ------
-#&gt; 
-#&gt; Estimates:
-#&gt;             Median MAD_SD
-#&gt; (Intercept)  5.55   0.61 
-#&gt; log_u       -0.59   0.16 
-#&gt; shape        3.76   1.81 
-#&gt; 
-#&gt; Sample avg. posterior predictive 
-#&gt; distribution of y (X = xbar):
-#&gt;          Median MAD_SD
-#&gt; mean_PPD 40.03  12.71 
-#&gt; 
-#&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='no'>fit5</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit4</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>lot2</span> ~ <span class='no'>log_u</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; 
-#&gt; Gradient evaluation took 3.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.32 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Iteration: 300 / 300 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 0.016726 seconds (Warm-up)
-#&gt;                0.007172 seconds (Sampling)
-#&gt;                0.023898 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; Iteration:   1 / 300 [  0%]  (Warmup)
-#&gt; Iteration:  30 / 300 [ 10%]  (Warmup)
-#&gt; Iteration:  60 / 300 [ 20%]  (Warmup)
-#&gt; Iteration:  90 / 300 [ 30%]  (Warmup)
-#&gt; Iteration: 120 / 300 [ 40%]  (Warmup)
-#&gt; Iteration: 150 / 300 [ 50%]  (Warmup)
-#&gt; Iteration: 151 / 300 [ 50%]  (Sampling)
-#&gt; Iteration: 180 / 300 [ 60%]  (Sampling)
-#&gt; Iteration: 210 / 300 [ 70%]  (Sampling)
-#&gt; Iteration: 240 / 300 [ 80%]  (Sampling)
-#&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
-#&gt; Iteration: 300 / 300 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 0.01544 seconds (Warm-up)
-#&gt;                0.007043 seconds (Sampling)
-#&gt;                0.022483 seconds (Total)
+#&gt;  Elapsed Time: 0.011989 seconds (Warm-up)
+#&gt;                0.011808 seconds (Sampling)
+#&gt;                0.023797 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'>### Negative binomial regression</span>
-<span class='no'>fit6</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm.nb</span>(<span class='no'>Days</span> ~ <span class='no'>Sex</span>/(<span class='no'>Age</span> + <span class='no'>Eth</span>*<span class='no'>Lrn</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw'>MASS</span><span class='kw'>::</span><span class='no'>quine</span>,
+<span class='no'>fit6</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm.nb</span>(<span class='no'>Days</span> ~ <span class='no'>Sex</span>/(<span class='no'>Age</span> + <span class='no'>Eth</span>*<span class='no'>Lrn</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw pkg'>MASS</span><span class='kw ns'>::</span><span class='no'><a href='http://www.rdocumentation.org/packages/MASS/topics/quine'>quine</a></span>,
                     <span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"log"</span>, <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(<span class='fl'>1</span>),
-                    <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+                    <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000106 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.06 seconds.
+#&gt; Gradient evaluation took 0.00011 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.1 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -816,15 +829,15 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.238412 seconds (Warm-up)
-#&gt;                0.232862 seconds (Sampling)
-#&gt;                0.471274 seconds (Total)
+#&gt;  Elapsed Time: 0.286459 seconds (Warm-up)
+#&gt;                0.228589 seconds (Sampling)
+#&gt;                0.515048 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 0.000112 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.12 seconds.
+#&gt; Gradient evaluation took 0.000149 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.49 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -849,9 +862,9 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.230131 seconds (Warm-up)
-#&gt;                0.24663 seconds (Sampling)
-#&gt;                0.476761 seconds (Total)
+#&gt;  Elapsed Time: 0.206897 seconds (Warm-up)
+#&gt;                0.220531 seconds (Sampling)
+#&gt;                0.427428 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='fu'><a href='prior_summary.stanreg.html'>prior_summary</a></span>(<span class='no'>fit6</span>)</div><div class='output co'>#&gt; Priors for model 'fit6' 
 #&gt; ------
@@ -864,12 +877,11 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 #&gt; Auxiliary (reciprocal_dispersion)
 #&gt;  ~ exponential(rate = 1)
 #&gt; ------
-#&gt; See help('prior_summary.stanreg') for more details</div><div class='input'><span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"brightblue"</span>)
-<span class='fu'>plot</span>(<span class='no'>fit6</span>)</div><img src='stan_glm-44.png' alt='' width='540' height='400' /><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit6</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>5</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='stan_glm-47.png' alt='' width='540' height='400' /><div class='input'>
+#&gt; See help('prior_summary.stanreg') for more details</div><div class='input'><span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"brightblue"</span>)
+<span class='fu'>plot</span>(<span class='no'>fit6</span>)</div><div class='img'><img src='stan_glm-7.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit6</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"hist"</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>5</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='stan_glm-8.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># 80% interval of estimated reciprocal_dispersion parameter</span>
-<span class='fu'><a href='posterior_interval.stanreg.html'>posterior_interval</a></span>(<span class='no'>fit6</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"reciprocal_dispersion"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><div class='output co'>#&gt;                            10%     90%
-#&gt; reciprocal_dispersion 1.185617 1.71312</div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit6</span>, <span class='st'>"areas"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"reciprocal_dispersion"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><img src='stan_glm-51.png' alt='' width='540' height='400' /><div class='input'>
-
+<span class='fu'><a href='posterior_interval.stanreg.html'>posterior_interval</a></span>(<span class='no'>fit6</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"reciprocal_dispersion"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><div class='output co'>#&gt;                            10%      90%
+#&gt; reciprocal_dispersion 1.210753 1.658085</div><div class='input'><span class='fu'>plot</span>(<span class='no'>fit6</span>, <span class='st'>"areas"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"reciprocal_dispersion"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><div class='img'><img src='stan_glm-9.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -897,11 +909,14 @@ for <code>stan_glm, stan_glm.nb</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

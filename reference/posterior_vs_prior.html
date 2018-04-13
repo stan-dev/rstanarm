@@ -18,13 +18,26 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Juxtapose prior and posterior — posterior_vs_prior" />
+
+<meta property="og:description" content="Plot medians and central intervals comparing parameter draws from the prior 
+and posterior distributions. If the plotted priors look different than the 
+priors you think you specified it is likely either because of internal 
+rescaling or the use of the QR argument (see the documentation for the
+prior_summary method for details on 
+these special cases)." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +45,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +62,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +128,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,10 +136,11 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Juxtapose prior and posterior</h1>
+    
     </div>
 
     
@@ -138,7 +159,7 @@ these special cases).</p>
   <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"parameter"</span>, <span class='st'>"vs"</span>, <span class='st'>"none"</span>),
   <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(), <span class='no'>...</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -161,8 +182,26 @@ used. Using <code>pars="beta"</code> will restrict the displayed parameters to
 only the regression coefficients (without the intercept). <code>"alpha"</code> 
 can also be used as a shortcut for <code>"(Intercept)"</code>. If the model has 
 varying intercepts and/or slopes they can be selected using <code>pars = 
-"varying"</code>. If <code>pars</code> is <code>NULL</code> all parameters are selected. See 
-Examples.</p></td>
+"varying"</code>.</p>
+<p>In addition, for <code>stanmvreg</code> objects there are some additional shortcuts 
+available. Using <code>pars = "long"</code> will display the 
+parameter estimates for the longitudinal submodels only (excluding group-specific
+pparameters, but including auxiliary parameters).
+Using <code>pars = "event"</code> will display the 
+parameter estimates for the event submodel only, including any association
+parameters. 
+Using <code>pars = "assoc"</code> will display only the 
+association parameters. 
+Using <code>pars = "fixef"</code> will display all fixed effects, but not
+the random effects or the auxiliary parameters. 
+ <code>pars</code> and <code>regex_pars</code> are set to <code>NULL</code> then all 
+fixed effect regression coefficients are selected, as well as any 
+auxiliary parameters and the log posterior.</p>
+<p>If <code>pars</code> is <code>NULL</code> all parameters are selected for a <code>stanreg</code>
+object, while for a <code>stanmvreg</code> object all 
+fixed effect regression coefficients are selected as well as any 
+auxiliary parameters and the log posterior. See 
+<strong>Examples</strong>.</p></td>
     </tr>
     <tr>
       <th>regex_pars</th>
@@ -209,58 +248,66 @@ allow axis scales to vary across facets, etc. See Examples.</p></td>
     <p>A ggplot object that can be further customized using the 
   <span class="pkg">ggplot2</span> package.</p>
     
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>Gabry, J., Simpson, D., Vehtari, A., Betancourt, M., and Gelman,
+  A. (2018). Visualization in Bayesian workflow. <em>Journal of the Royal
+  Statistical Society Series A</em>, accepted for publication. arXiv preprint:
+  <a href='http://arxiv.org/abs/1709.01449'>http://arxiv.org/abs/1709.01449</a>.</p>
+    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>
-<span class='fu'>not_run</span>({
-  <span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
-  <span class='co'># display non-varying (i.e. not group-level) coefficients</span>
-  <span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>)
+</div><span class='co'># NOT RUN {</span>
+<span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
+<span class='co'># display non-varying (i.e. not group-level) coefficients</span>
+<span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>)
 
-  <span class='co'># show group-level (varying) parameters and group by parameter</span>
-  <span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"varying"</span>,
-                     <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>)
+<span class='co'># show group-level (varying) parameters and group by parameter</span>
+<span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"varying"</span>,
+                   <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>)
 
-  <span class='co'># group by parameter and allow axis scales to vary across facets</span>
-  <span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
-                     <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"none"</span>,
-                     <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
+<span class='co'># group by parameter and allow axis scales to vary across facets</span>
+<span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
+                   <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"none"</span>,
+                   <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
 
-  <span class='co'># assign to object and customize with functions from ggplot2</span>
-  (<span class='no'>gg</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"beta"</span>, <span class='st'>"varying"</span>), <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>))
+<span class='co'># assign to object and customize with functions from ggplot2</span>
+(<span class='no'>gg</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_vs_prior</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"beta"</span>, <span class='st'>"varying"</span>), <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>))
 
-  <span class='no'>gg</span> +
-   <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>geom_hline</span>(<span class='kw'>yintercept</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>0.3</span>, <span class='kw'>linetype</span> <span class='kw'>=</span> <span class='fl'>3</span>) +
-   <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>coord_flip</span>() +
-   <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>ggtitle</span>(<span class='st'>"Comparing the prior and posterior"</span>)
+<span class='no'>gg</span> +
+ <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/ggplot2/topics/geom_abline'>geom_hline</a></span>(<span class='kw'>yintercept</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>0.3</span>, <span class='kw'>linetype</span> <span class='kw'>=</span> <span class='fl'>3</span>) +
+ <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/ggplot2/topics/coord_flip'>coord_flip</a></span>() +
+ <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/ggplot2/topics/labs'>ggtitle</a></span>(<span class='st'>"Comparing the prior and posterior"</span>)
 
-  <span class='co'># compare very wide and very narrow priors using roaches example</span>
-  <span class='co'># (see help(roaches, "rstanarm") for info on the dataset)</span>
-  <span class='no'>roaches</span>$<span class='no'>roach100</span> <span class='kw'>&lt;-</span> <span class='no'>roaches</span>$<span class='no'>roach1</span> / <span class='fl'>100</span>
-  <span class='no'>wide_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>)
-  <span class='no'>narrow_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>0.1</span>)
-  <span class='no'>fit_pois_wide_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>y</span> ~ <span class='no'>treatment</span> + <span class='no'>roach100</span> + <span class='no'>senior</span>,
-                                  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'>log</span>(<span class='no'>exposure2</span>),
-                                  <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"poisson"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>roaches</span>,
-                                  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>wide_prior</span>)
-  <span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_pois_wide_prior</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-                     <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
-                     <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
+<span class='co'># compare very wide and very narrow priors using roaches example</span>
+<span class='co'># (see help(roaches, "rstanarm") for info on the dataset)</span>
+<span class='no'>roaches</span>$<span class='no'>roach100</span> <span class='kw'>&lt;-</span> <span class='no'>roaches</span>$<span class='no'>roach1</span> / <span class='fl'>100</span>
+<span class='no'>wide_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>)
+<span class='no'>narrow_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>0.1</span>)
+<span class='no'>fit_pois_wide_prior</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>y</span> ~ <span class='no'>treatment</span> + <span class='no'>roach100</span> + <span class='no'>senior</span>,
+                                <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'>log</span>(<span class='no'>exposure2</span>),
+                                <span class='kw'>family</span> <span class='kw'>=</span> <span class='st'>"poisson"</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>roaches</span>,
+                                <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>wide_prior</span>)
+<span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_pois_wide_prior</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+                   <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
+                   <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
 
-  <span class='no'>fit_pois_narrow_prior</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit_pois_wide_prior</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>narrow_prior</span>)
-  <span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_pois_narrow_prior</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-                     <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
-                     <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
+<span class='no'>fit_pois_narrow_prior</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit_pois_wide_prior</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='no'>narrow_prior</span>)
+<span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_pois_narrow_prior</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"beta"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+                   <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
+                   <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>scales</span> <span class='kw'>=</span> <span class='st'>"free"</span>))
 
 
-  <span class='co'># look at cutpoints for ordinal model</span>
-  <span class='no'>fit_polr</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_polr.html'>stan_polr</a></span>(<span class='no'>tobgp</span> ~ <span class='no'>agegp</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>esoph</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"probit"</span>,
-                        <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.2</span>, <span class='st'>"mean"</span>), <span class='kw'>init_r</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)
-  (<span class='no'>gg_polr</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_polr</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"\\|"</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
-                                 <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>))
-  <span class='co'># flip the x and y axes</span>
-  <span class='no'>gg_polr</span> + <span class='kw'>ggplot2</span><span class='kw'>::</span><span class='fu'>coord_flip</span>()
-})</div></pre>
+<span class='co'># look at cutpoints for ordinal model</span>
+<span class='no'>fit_polr</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_polr.html'>stan_polr</a></span>(<span class='no'>tobgp</span> ~ <span class='no'>agegp</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>esoph</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"probit"</span>,
+                      <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.2</span>, <span class='st'>"mean"</span>), <span class='kw'>init_r</span> <span class='kw'>=</span> <span class='fl'>0.1</span>)
+(<span class='no'>gg_polr</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_vs_prior</span>(<span class='no'>fit_polr</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"\\|"</span>, <span class='kw'>color_by</span> <span class='kw'>=</span> <span class='st'>"vs"</span>,
+                               <span class='kw'>group_by_parameter</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>))
+<span class='co'># flip the x and y axes</span>
+<span class='no'>gg_polr</span> + <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/ggplot2/topics/coord_flip'>coord_flip</a></span>()
+<span class='co'># }</span><div class='input'>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -268,6 +315,8 @@ allow axis scales to vary across facets, etc. See Examples.</p></td>
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
+
+      <li><a href="#references">References</a></li>
       
       <li><a href="#examples">Examples</a></li>
     </ul>
@@ -281,11 +330,14 @@ allow axis scales to vary across facets, etc. See Examples.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

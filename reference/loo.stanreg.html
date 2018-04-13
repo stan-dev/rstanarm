@@ -18,13 +18,31 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Information criteria and cross-validation — loo.stanreg" />
+
+<meta property="og:description" content="For models fit using MCMC, compute approximate leave-one-out
+  cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
+  Information Criterion (WAIC) using the loo
+  package. Functions for \(K\)-fold cross-validation, model comparison,
+  and model weighting/averaging are also provided. Note:
+  these functions are not guaranteed to work properly unless the data
+  argument was specified when the model was fit. Also, as of loo
+  version 2.0.0 the default number of cores is now only 1,  but we
+  recommend using as many (or close to as many) cores as possible by setting
+  the cores argument or using options(mc.cores = VALUE) to set
+  it for an entire session." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +50,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +67,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +133,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,97 +141,133 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Information criteria and cross-validation</h1>
+    
     </div>
 
     
-    <p>For models fit using MCMC, compute approximate leave-one-out cross-validation
-(LOO, LOOIC) or, less preferably, the Widely Applicable Information Criterion
-(WAIC) using the <span class="pkg">loo</span> package. Exact \(K\)-fold 
-cross-validation is also available. Compare two or more models using the 
-<code>compare_models</code> function. <strong>Note:</strong> these functions are not 
-guaranteed to work properly unless the <code>data</code> argument was specified 
-when the model was fit.</p>
+    <p>For models fit using MCMC, compute approximate leave-one-out
+  cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
+  Information Criterion (WAIC) using the <span class="pkg">loo</span>
+  package. Functions for \(K\)-fold cross-validation, model comparison,
+  and model weighting/averaging are also provided. <strong>Note</strong>:
+  these functions are not guaranteed to work properly unless the <code>data</code>
+  argument was specified when the model was fit. Also, as of <span class="pkg">loo</span>
+  version <code>2.0.0</code> the default number of cores is now only 1,  but we
+  recommend using as many (or close to as many) cores as possible by setting
+  the <code>cores</code> argument or using <code>options(mc.cores = VALUE)</code> to set
+  it for an entire session.</p>
     
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>loo</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'>getOption</span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>),
+  <span class='kw'>save_psis</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
 
 <span class='co'># S3 method for stanreg</span>
 <span class='fu'>waic</span>(<span class='no'>x</span>, <span class='no'>...</span>)
 
-<span class='fu'>kfold</span>(<span class='no'>x</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>save_fits</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'>kfold</span>(<span class='no'>x</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>save_fits</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>folds</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
 
-<span class='fu'>compare_models</span>(<span class='no'>...</span>, <span class='kw'>loos</span> <span class='kw'>=</span> <span class='fu'>list</span>())</pre>
+<span class='fu'>compare_models</span>(<span class='no'>...</span>, <span class='kw'>loos</span> <span class='kw'>=</span> <span class='fu'>list</span>(), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+
+<span class='co'># S3 method for stanreg_list</span>
+<span class='fu'>loo_model_weights</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'>getOption</span>(<span class='st'>"mc.cores"</span>,
+  <span class='fl'>1</span>), <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>A fitted model object returned by one of the 
-<span class="pkg">rstanarm</span> modeling functions. See <code><a href='stanreg-objects.html'>stanreg-objects</a></code>.</p></td>
+      <td><p>For <code>loo</code>, <code>waic</code>, and <code>kfold</code> methods, a fitted
+  model object returned by one of the rstanarm modeling functions. See
+  <a href='stanreg-objects.html'>stanreg-objects</a>.</p>
+<p>For <code>loo_model_weights</code>, <code>x</code> should be a "stanreg_list"
+  object, which is a list of fitted model objects created by
+  <code><a href='stanreg_list.html'>stanreg_list</a></code>.</p></td>
     </tr>
     <tr>
       <th>...</th>
-      <td><p>For the <code>loo</code> method, <code>...</code> can be used to pass optional
-arguments (e.g. <code>cores</code>) to <code><a href='http://www.rdocumentation.org/packages/loo/topics/psislw'>psislw</a></code>. For 
-<code>compare_models</code>, <code>...</code> should contain two or more objects 
-returned by the <code>loo</code>, <code>kfold</code>, or <code>waic</code> method (see the 
-<strong>Examples</strong> section, below).</p></td>
+      <td><p>For <code>compare_models</code>, <code>...</code> should contain two or more
+  objects returned by the <code>loo</code>, <code>kfold</code>, or <code>waic</code> method
+  (see the <strong>Examples</strong> section, below).</p>
+<p>For <code>loo_model_weights</code>, <code>...</code> should contain arguments
+  (e.g. <code>method</code>) to pass to the default
+  <code><a href='http://www.rdocumentation.org/packages/loo/topics/loo_model_weights'>loo_model_weights</a></code> method from the <span class="pkg">loo</span> package.</p></td>
+    </tr>
+    <tr>
+      <th>cores, save_psis</th>
+      <td><p>Passed to <code><a href='http://www.rdocumentation.org/packages/loo/topics/loo'>loo</a></code>.</p></td>
     </tr>
     <tr>
       <th>k_threshold</th>
-      <td><p>Threshold for flagging estimates of the Pareto shape 
+      <td><p>Threshold for flagging estimates of the Pareto shape
 parameters \(k\) estimated by <code>loo</code>. See the <em>How to proceed
 when <code>loo</code> gives warnings</em> section, below, for details.</p></td>
     </tr>
     <tr>
       <th>K</th>
-      <td><p>For <code>kfold</code>, the number of subsets of equal (if possible) size
-into which the data will be randomly partitioned for performing
+      <td><p>For <code>kfold</code>, the number of subsets (folds)
+into which the data will be partitioned for performing
 \(K\)-fold cross-validation. The model is refit <code>K</code> times, each time
-leaving out one of the <code>K</code> subsets. If <code>K</code> is equal to the total
+leaving out one of the <code>K</code> folds. If <code>K</code> is equal to the total
 number of observations in the data then \(K\)-fold cross-validation is
 equivalent to exact leave-one-out cross-validation.</p></td>
     </tr>
     <tr>
       <th>save_fits</th>
-      <td><p>If <code>TRUE</code>, a component 'fits' is added to the returned
-object to store the cross-validated <a href='stanreg-objects.html'>stanreg</a>
-objects and the indices of the omitted observations for each fold. Defaults
-to <code>FALSE</code>.</p></td>
+      <td><p>For <code>kfold</code>, if <code>TRUE</code>, a component <code>'fits'</code>
+is added to the returned object to store the cross-validated
+<a href='stanreg-objects.html'>stanreg</a> objects and the indices of the omitted
+observations for each fold. Defaults to <code>FALSE</code>.</p></td>
+    </tr>
+    <tr>
+      <th>folds</th>
+      <td><p>For <code>kfold</code>, an optional integer vector with one element
+  per observation in the data used to fit the model. Each element of the
+  vector is an integer in <code>1:K</code> indicating to which of the <code>K</code>
+  folds the corresponding observation belongs. There are some convenience
+  functions available in the <span class="pkg">loo</span> package that create integer vectors to
+  use for this purpose (see the <strong>Examples</strong> section below and also the
+  <a href='http://www.rdocumentation.org/packages/loo/topics/kfold-helpers'>kfold-helpers</a> page).</p>
+<p>If <code>folds</code> is not specified then the default is to call
+  <code>loo::<a href='http://www.rdocumentation.org/packages/loo/topics/kfold-helpers'>kfold_split_random</a></code> to randomly partition the data
+  into <code>K</code> subsets of equal (or as close to equal as possible) size.</p></td>
     </tr>
     <tr>
       <th>loos</th>
       <td><p>For <code>compare_models</code>, a list of two or more objects returned
-by the <code>loo</code>, <code>kfold</code>, or <code>waic</code> method. This argument can 
+by the <code>loo</code>, <code>kfold</code>, or <code>waic</code> method. This argument can
 be used as an alternative to passing these objects via <code>...</code>.</p></td>
+    </tr>
+    <tr>
+      <th>detail</th>
+      <td><p>For <code>compare_models</code>, if <code>TRUE</code> then extra
+information about each model (currently just the model formulas) will be
+printed with the output.</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>The <code>loo</code> and <code>waic</code> methods return an object of class
-  'loo'. See the <strong>Value</strong> section in <code><a href='http://www.rdocumentation.org/packages/loo/topics/loo'>loo</a></code> and 
-  <code><a href='http://www.rdocumentation.org/packages/loo/topics/waic'>waic</a></code> (from the <span class="pkg">loo</span> package) for details on the 
-  structure of these objects.
-
-<code>kfold</code> returns an object with has classes 'kfold' and 'loo' 
-  that has a similar structure as the objects returned by the <code>loo</code> and
-  <code>waic</code> methods.
-
-<code>compare_models</code> returns a vector or matrix with class 
+    <p>The structure of the objects returned by <code>loo</code> and <code>waic</code>
+  methods are documented in detail in the <strong>Value</strong> section in
+  <code><a href='http://www.rdocumentation.org/packages/loo/topics/loo'>loo</a></code> and <code><a href='http://www.rdocumentation.org/packages/loo/topics/waic'>waic</a></code> (from the <span class="pkg">loo</span>
+  package).</p>
+<p><code>kfold</code> returns an object with classes 'kfold' and 'loo' that
+  has a similar structure as the objects returned by the <code>loo</code> and
+  <code>waic</code> methods.</p>
+<p><code>compare_models</code> returns a vector or matrix with class
   'compare.loo'. See the <strong>Comparing models</strong> section below for more
   details.</p>
     
     <h2 class="hasAnchor" id="approximate-loo-cv"><a class="anchor" href="#approximate-loo-cv"></a>Approximate LOO CV</h2>
 
     <p>The <code>loo</code> method for stanreg objects
-  provides an interface to the <span class="pkg">loo</span> package for
+  provides an interface to the <span class="pkg"><a href='http://www.rdocumentation.org/packages/loo/topics/loo-package'>loo</a></span> package for
   approximate leave-one-out cross-validation (LOO). The LOO Information
   Criterion (LOOIC) has the same purpose as the Akaike Information Criterion
   (AIC) that is used by frequentists. Both are intended to estimate the
@@ -219,24 +280,25 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
   diagnostic plot provided by the <code><a href='http://www.rdocumentation.org/packages/loo/topics/pareto-k-diagnostic'>plot.loo</a></code> method and the
   warnings provided by the <code><a href='http://www.rdocumentation.org/packages/loo/topics/print.loo'>print.loo</a></code> method (see the
   <em>How to Use the rstanarm Package</em> vignette for an example of this
-  process).</p><h3>How to proceed when <code>loo</code> gives warnings (k_threshold)</h3>
+  process).</p>
+<p></p><h3>How to proceed when <code>loo</code> gives warnings (k_threshold)</h3>
     The <code>k_threshold</code> argument to the <code>loo</code> method for <span class="pkg">rstanarm</span>
   models is provided as a possible remedy when the diagnostics reveal
   problems stemming from the posterior's sensitivity to particular
   observations. Warnings about Pareto \(k\) estimates indicate observations
   for which the approximation to LOO is problematic (this is described in
   detail in Vehtari, Gelman, and Gabry (2017) and the
-  <span class="pkg">loo</span> package documentation). The
+  <span class="pkg"><a href='http://www.rdocumentation.org/packages/loo/topics/loo-package'>loo</a></span> package documentation). The
   <code>k_threshold</code> argument can be used to set the \(k\) value above
   which an observation is flagged. If <code>k_threshold</code> is not <code>NULL</code>
   and there are \(J\) observations with \(k\) estimates above
-  <code>k_threshold</code> then when <code>loo</code> is called it will refit the 
-  original model \(J\) times, each time leaving out one of the \(J\) 
+  <code>k_threshold</code> then when <code>loo</code> is called it will refit the
+  original model \(J\) times, each time leaving out one of the \(J\)
   problematic observations. The pointwise contributions of these observations
   to the total ELPD are then computed directly and substituted for the
   previous estimates from these \(J\) observations that are stored in the
   object created by <code>loo</code>.
-    <strong>Note</strong>: in the warning messages issued by <code>loo</code> about large 
+    <strong>Note</strong>: in the warning messages issued by <code>loo</code> about large
   Pareto \(k\) estimates we recommend setting <code>k_threshold</code> to at
   least \(0.7\). There is a theoretical reason, explained in Vehtari,
   Gelman, and Gabry (2017), for setting the threshold to the stricter value
@@ -247,35 +309,44 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 
     <p>The <code>kfold</code> function performs exact \(K\)-fold
   cross-validation. First the data are randomly partitioned into \(K\)
-  subsets of equal (or as close to equal as possible) size. Then the model is
-  refit \(K\) times, each time leaving out one of the <code>K</code> subsets. If
-  \(K\) is equal to the total number of observations in the data then
-  \(K\)-fold cross-validation is equivalent to exact leave-one-out
-  cross-validation (to which <code>loo</code> is an efficient approximation). The
-  <code>compare_models</code> function is also compatible with the objects returned
-  by <code>kfold</code>.</p>
+  subsets of equal (or as close to equal as possible) size (unless the folds
+  are specified manually). Then the model is refit \(K\) times, each time
+  leaving out one of the \(K\) subsets. If \(K\) is equal to the total
+  number of observations in the data then \(K\)-fold cross-validation is
+  equivalent to exact leave-one-out cross-validation (to which <code>loo</code> is
+  an efficient approximation). The <code>compare_models</code> function is also
+  compatible with the objects returned by <code>kfold</code>.</p>
     
     <h2 class="hasAnchor" id="comparing-models"><a class="anchor" href="#comparing-models"></a>Comparing models</h2>
 
-    <p><code>compare_models</code> is a wrapper around the
-  <code><a href='http://www.rdocumentation.org/packages/loo/topics/compare'>compare</a></code> function in the <span class="pkg">loo</span> package. Before
-  calling <code>compare</code>, <code>compare_models</code> performs some extra checks to
-  make sure the <span class="pkg">rstanarm</span> models are suitable for comparison. These
-  extra checks include verifying that all models to be compared were fit
-  using the same outcome variable and likelihood family.
-    If exactly two models are being compared then <code>compare_models</code> returns
-  a vector containing the difference in expected log predictive density 
-  (ELPD) between the models and the standard error of that difference (the 
-  documentation for <code><a href='http://www.rdocumentation.org/packages/loo/topics/compare'>compare</a></code> has additional details about 
-  the calculation of the standard error of the difference). The difference in
-  ELPD will be negative if the expected out-of-sample predictive accuracy of
-  the first model is higher. If the difference is be positive then the second
-  model is preferred.
-    If more than two models are being compared then <code>compare_models</code> 
+    <p><code>compare_models</code> is a method for the
+  <code><a href='http://www.rdocumentation.org/packages/loo/topics/compare'>compare</a></code> function in the <span class="pkg">loo</span> package that
+  performs some extra checks to make sure the <span class="pkg">rstanarm</span> models are
+  suitable for comparison. These extra checks include verifying that all
+  models to be compared were fit using the same outcome variable and
+  likelihood family.</p>
+<p>If exactly two models are being compared then <code>compare_models</code> returns
+  a vector containing the difference in expected log predictive density
+  (ELPD) between the models and the standard error of that difference (the
+  documentation for <code><a href='http://www.rdocumentation.org/packages/loo/topics/compare'>compare</a></code> in the <span class="pkg">loo</span>
+  package has additional details about the calculation of the standard error
+  of the difference). The difference in ELPD will be negative if the expected
+  out-of-sample predictive accuracy of the first model is higher. If the
+  difference is be positive then the second model is preferred.</p>
+<p>If more than two models are being compared then <code>compare_models</code>
   returns a matrix with one row per model. This matrix summarizes the objects
   and arranges them in descending order according to expected out-of-sample
-  predictive accuracy. That is, the first row of the matrix will be 
+  predictive accuracy. That is, the first row of the matrix will be
   for the model with the largest ELPD (smallest LOOIC).</p>
+    
+    <h2 class="hasAnchor" id="model-weights"><a class="anchor" href="#model-weights"></a>Model weights</h2>
+
+    <p>The <code>loo_model_weights</code> method can be used to
+  compute model weights for a <code>"stanreg_list"</code> object, which is a list
+  of fitted model objects made with <code><a href='stanreg_list.html'>stanreg_list</a></code>. The end of
+  the <strong>Examples</strong> section has a demonstration. For details see the
+  <code><a href='http://www.rdocumentation.org/packages/loo/topics/loo_model_weights'>loo_model_weights</a></code> documentation in the <span class="pkg">loo</span>
+  package.</p>
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -283,29 +354,35 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
   Bayesian model evaluation using leave-one-out cross-validation and WAIC.
   <em>Statistics and Computing</em>. 27(5), 1413--1432.
   doi:10.1007/s11222-016-9696-4. arXiv preprint:
-  <a href = 'http://arxiv.org/abs/1507.04544/'>http://arxiv.org/abs/1507.04544/</a></p>
+  <a href='http://arxiv.org/abs/1507.04544/'>http://arxiv.org/abs/1507.04544/</a></p>
+<p>Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using
+  stacking to average Bayesian predictive distributions. <em>Bayesian
+  Analysis</em>, advance publication,  doi:10.1214/17-BA1091.
+  (<a href='https://projecteuclid.org/euclid.ba/1516093227'>online</a>).</p>
+<p>Gabry, J., Simpson, D., Vehtari, A., Betancourt, M., and Gelman,
+  A. (2018). Visualization in Bayesian workflow. <em>Journal of the Royal
+  Statistical Society Series A</em>, accepted for publication. arXiv preprint:
+  <a href='http://arxiv.org/abs/1709.01449'>http://arxiv.org/abs/1709.01449</a>.</p>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <ul>
-<li><p>The various <span class="pkg">rstanarm</span> vignettes for more examples of 
-    using <code>loo</code> and <code>compare_models</code>.</p></li>
-<li><p><code><a href='http://www.rdocumentation.org/packages/loo/topics/loo-package'>loo-package</a></code> (in particular the <em>PSIS-LOO</em> 
-    section)  for details on the computations implemented by the <span class="pkg">loo</span> 
-    package and the interpretation of the Pareto \(k\) estimates displayed 
-    when using the  <code>plot.loo</code> method.</p></li>
-<li><p><code><a href='log_lik.stanreg.html'>log_lik.stanreg</a></code> to directly access the pointwise 
-    log-likelihood matrix.</p></li>
+<li><p>The new <a href='http://mc-stan.org/loo/articles/'><span class="pkg">loo</span> package vignettes</a>
+  and various <a href='http://mc-stan.org/rstanarm/articles/'><span class="pkg">rstanarm</span> vignettes</a>
+  for more examples using <code>loo</code> and related functions with <span class="pkg">rstanarm</span> models.</p></li>
+<li><p><code><a href='http://www.rdocumentation.org/packages/loo/topics/pareto-k-diagnostic'>pareto-k-diagnostic</a></code> in the <span class="pkg">loo</span> package for
+  more on Pareto \(k\) diagnostics.</p></li>
+<li><p><code><a href='log_lik.stanreg.html'>log_lik.stanreg</a></code> to directly access the pointwise
+  log-likelihood matrix.</p></li>
 </ul>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+    <pre class="examples"><div class='input'><span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; Gradient evaluation took 3.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.36 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -322,9 +399,9 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.057294 seconds (Warm-up)
-#&gt;                0.054536 seconds (Sampling)
-#&gt;                0.11183 seconds (Total)
+#&gt;  Elapsed Time: 0.059696 seconds (Warm-up)
+#&gt;                0.046345 seconds (Sampling)
+#&gt;                0.106041 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -347,15 +424,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.048153 seconds (Warm-up)
-#&gt;                0.048867 seconds (Sampling)
-#&gt;                0.09702 seconds (Total)
+#&gt;  Elapsed Time: 0.057952 seconds (Warm-up)
+#&gt;                0.056252 seconds (Sampling)
+#&gt;                0.114204 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Gradient evaluation took 6.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.62 seconds.
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -372,15 +449,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.058356 seconds (Warm-up)
-#&gt;                0.050894 seconds (Sampling)
-#&gt;                0.10925 seconds (Total)
+#&gt;  Elapsed Time: 0.061699 seconds (Warm-up)
+#&gt;                0.04854 seconds (Sampling)
+#&gt;                0.110239 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -397,14 +474,14 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.055578 seconds (Warm-up)
-#&gt;                0.057168 seconds (Sampling)
-#&gt;                0.112746 seconds (Total)
-#&gt; </div><div class='input'><span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt;  Elapsed Time: 0.056362 seconds (Warm-up)
+#&gt;                0.050271 seconds (Sampling)
+#&gt;                0.106633 seconds (Total)
+#&gt; </div><div class='input'><span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#&gt; Gradient evaluation took 2.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -421,15 +498,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.101569 seconds (Warm-up)
-#&gt;                0.079627 seconds (Sampling)
-#&gt;                0.181196 seconds (Total)
+#&gt;  Elapsed Time: 0.087717 seconds (Warm-up)
+#&gt;                0.082736 seconds (Sampling)
+#&gt;                0.170453 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -446,15 +523,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.104045 seconds (Warm-up)
-#&gt;                0.075794 seconds (Sampling)
-#&gt;                0.179839 seconds (Total)
+#&gt;  Elapsed Time: 0.088407 seconds (Warm-up)
+#&gt;                0.082878 seconds (Sampling)
+#&gt;                0.171285 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -471,15 +548,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.083128 seconds (Warm-up)
-#&gt;                0.076572 seconds (Sampling)
-#&gt;                0.1597 seconds (Total)
+#&gt;  Elapsed Time: 0.095556 seconds (Warm-up)
+#&gt;                0.080044 seconds (Sampling)
+#&gt;                0.1756 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -496,39 +573,69 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.082594 seconds (Warm-up)
-#&gt;                0.081841 seconds (Sampling)
-#&gt;                0.164435 seconds (Total)
+#&gt;  Elapsed Time: 0.095035 seconds (Warm-up)
+#&gt;                0.080996 seconds (Sampling)
+#&gt;                0.176031 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'># compare on LOOIC</span>
-(<span class='no'>loo1</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>))</div><div class='output co'>#&gt; Computed from 4000 by 32 log-likelihood matrix
+<span class='co'># (for bigger models use as many cores as possible)</span>
+<span class='no'>loo1</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+<span class='fu'>print</span>(<span class='no'>loo1</span>)</div><div class='output co'>#&gt; 
+#&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
 #&gt; elpd_loo    -83.5 4.3
-#&gt; p_loo         3.3 1.2
-#&gt; looic       167.0 8.7
+#&gt; p_loo         3.2 1.2
+#&gt; looic       166.9 8.6
+#&gt; ------
+#&gt; Monte Carlo SE of elpd_loo is 0.1.
+#&gt; 
+#&gt; All Pareto k estimates are good (k &lt; 0.5).
+#&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'><span class='no'>loo2</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
+<span class='fu'>print</span>(<span class='no'>loo2</span>)</div><div class='output co'>#&gt; 
+#&gt; Computed from 4000 by 32 log-likelihood matrix
+#&gt; 
+#&gt;          Estimate  SE
+#&gt; elpd_loo    -78.7 4.7
+#&gt; p_loo         4.3 1.3
+#&gt; looic       157.5 9.3
+#&gt; ------
+#&gt; Monte Carlo SE of elpd_loo is 0.1.
 #&gt; 
 #&gt; Pareto k diagnostic values:
-#&gt;                          Count  Pct 
-#&gt; (-Inf, 0.5]   (good)     31    96.9%
-#&gt;  (0.5, 0.7]   (ok)        1     3.1%
-#&gt;    (0.7, 1]   (bad)       0     0.0%
-#&gt;    (1, Inf)   (very bad)  0     0.0%
+#&gt;                          Count Pct.    Min. n_eff
+#&gt; (-Inf, 0.5]   (good)     30    93.8%   795       
+#&gt;  (0.5, 0.7]   (ok)        2     6.2%   251       
+#&gt;    (0.7, 1]   (bad)       0     0.0%   &lt;NA&gt;      
+#&gt;    (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;      
 #&gt; 
-#&gt; All Pareto k estimates are ok (k &lt; 0.7)
-#&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'><span class='no'>loo2</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
-<span class='fu'>plot</span>(<span class='no'>loo2</span>)</div><img src='loo.stanreg-10.png' alt='' width='540' height='400' /><div class='input'>
-<span class='co'># when comparing exactly two models, the reported 'elpd_diff' will be </span>
-<span class='co'># positive if the expected predictive accuracy for the second model is higher</span>
-<span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>) <span class='co'># or compare_models(loos = list(loo1, loo2))</span></div><div class='output co'>#&gt; elpd_diff        se 
-#&gt;       4.9       2.8 </div><div class='input'>
-<span class='co'># when comparing three or more models they are ordered by expected</span>
-<span class='co'># predictive accuracy</span>
-<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>.</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+#&gt; All Pareto k estimates are ok (k &lt; 0.7).
+#&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'>
+<span class='co'># when comparing exactly two models, the reported 'elpd_diff'</span>
+<span class='co'># will be positive if the expected predictive accuracy for the</span>
+<span class='co'># second model is higher. the approximate standard error of the</span>
+<span class='co'># difference is also reported.</span>
+<span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>)</div><div class='output co'>#&gt; 
+#&gt; Model comparison: 
+#&gt; (negative 'elpd_diff' favors 1st model, positive favors 2nd) 
+#&gt; 
+#&gt; elpd_diff        se 
+#&gt;       4.7       2.8 </div><div class='input'><span class='fu'>compare_models</span>(<span class='kw'>loos</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>)) <span class='co'># can also provide list</span></div><div class='output co'>#&gt; 
+#&gt; Model comparison: 
+#&gt; (negative 'elpd_diff' favors 1st model, positive favors 2nd) 
+#&gt; 
+#&gt; elpd_diff        se 
+#&gt;       4.7       2.8 </div><div class='input'>
+<span class='co'># when comparing three or more models they are ordered by</span>
+<span class='co'># expected predictive accuracy. unlike when doing a pairwise</span>
+<span class='co'># comparison of two models, now the diplayed standard errors</span>
+<span class='co'># do _not_ pertain to differences but rather to the individual</span>
+<span class='co'># elpd_loo estimates.</span>
+<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> * <span class='fu'>as.factor</span>(<span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
+#&gt; Gradient evaluation took 3.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -545,15 +652,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.437737 seconds (Warm-up)
-#&gt;                0.428741 seconds (Sampling)
-#&gt;                0.866478 seconds (Total)
+#&gt;  Elapsed Time: 0.491204 seconds (Warm-up)
+#&gt;                0.4446 seconds (Sampling)
+#&gt;                0.935804 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -570,15 +677,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.359715 seconds (Warm-up)
-#&gt;                0.360766 seconds (Sampling)
-#&gt;                0.720481 seconds (Total)
+#&gt;  Elapsed Time: 0.551344 seconds (Warm-up)
+#&gt;                0.472452 seconds (Sampling)
+#&gt;                1.0238 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Gradient evaluation took 1.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -595,15 +702,15 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.408498 seconds (Warm-up)
-#&gt;                0.359495 seconds (Sampling)
-#&gt;                0.767993 seconds (Total)
+#&gt;  Elapsed Time: 0.521889 seconds (Warm-up)
+#&gt;                0.519862 seconds (Sampling)
+#&gt;                1.04175 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
+#&gt; Gradient evaluation took 1.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -620,970 +727,190 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.36084 seconds (Warm-up)
-#&gt;                0.347783 seconds (Sampling)
-#&gt;                0.708623 seconds (Total)
-#&gt; </div><div class='input'><span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; <span class='message'>2 problematic observation(s) found.</span>
-#&gt; <span class='message'>Model will be refit 2 times.</span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 1 out of 2 (leaving out observation 9)</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
-#&gt; Adjust your expectations accordingly!
+#&gt;  Elapsed Time: 0.506225 seconds (Warm-up)
+#&gt;                0.417124 seconds (Sampling)
+#&gt;                0.923349 seconds (Total)
+#&gt; </div><div class='input'><span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>)</div><div class='output co'>#&gt; <span class='message'>All pareto_k estimates below user-specified threshold of 0.7. </span>
+#&gt; <span class='message'>Returning loo object.</span></div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt; 
+#&gt; Model comparison: 
+#&gt; (ordered by highest ELPD)
 #&gt; 
+#&gt;      elpd_diff elpd_loo se_elpd_loo p_loo se_p_loo looic se_looic
+#&gt; fit3   0.0     -77.7      3.3         5.5   1.1    155.4   6.7   
+#&gt; fit2  -1.0     -78.7      4.7         4.3   1.3    157.5   9.3   
+#&gt; fit1  -5.8     -83.5      4.3         3.2   1.2    166.9   8.6   </div><div class='input'>
+<span class='co'># setting detail=TRUE will also print model formulas</span>
+<span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>, <span class='kw'>detail</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; Model formulas: 
+#&gt;   fit1:  mpg ~ wt
+#&gt;   fit2:  mpg ~ wt + cyl
+#&gt;   fit3:  mpg ~ disp * as.factor(cyl)
 #&gt; 
+#&gt; Model comparison: 
+#&gt; (ordered by highest ELPD)
 #&gt; 
-#&gt;  Elapsed Time: 0.421419 seconds (Warm-up)
-#&gt;                0.341316 seconds (Sampling)
-#&gt;                0.762735 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.420925 seconds (Warm-up)
-#&gt;                0.387334 seconds (Sampling)
-#&gt;                0.808259 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.414814 seconds (Warm-up)
-#&gt;                0.371093 seconds (Sampling)
-#&gt;                0.785907 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.426729 seconds (Warm-up)
-#&gt;                0.392369 seconds (Sampling)
-#&gt;                0.819098 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 2 out of 2 (leaving out observation 29)</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.376424 seconds (Warm-up)
-#&gt;                0.326015 seconds (Sampling)
-#&gt;                0.702439 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.368312 seconds (Warm-up)
-#&gt;                0.404609 seconds (Sampling)
-#&gt;                0.772921 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.479795 seconds (Warm-up)
-#&gt;                0.382878 seconds (Sampling)
-#&gt;                0.862673 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.486843 seconds (Warm-up)
-#&gt;                0.418371 seconds (Sampling)
-#&gt;                0.905214 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt;      looic se_looic elpd_loo se_elpd_loo p_loo se_p_loo
-#&gt; fit2 157.2   9.4    -78.6      4.7         4.2   1.3   
-#&gt; fit1 167.0   8.7    -83.5      4.3         3.3   1.2   
-#&gt; fit3 170.1   7.2    -85.0      3.6        10.9   2.2   </div><div class='input'>
+#&gt;      elpd_diff elpd_loo se_elpd_loo p_loo se_p_loo looic se_looic
+#&gt; fit3   0.0     -77.7      3.3         5.5   1.1    155.4   6.7   
+#&gt; fit2  -1.0     -78.7      4.7         4.3   1.3    157.5   9.3   
+#&gt; fit1  -5.8     -83.5      4.3         3.2   1.2    166.9   8.6   </div><div class='input'>
+<span class='co'># Computing model weights</span>
+<span class='no'>model_list</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stanreg_list.html'>stanreg_list</a></span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>, <span class='no'>fit3</span>)
+<span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>) <span class='co'># can specify k_threshold=0.7 if necessary</span></div><div class='output co'>#&gt; Method: stacking
+#&gt; ------
+#&gt;      weight
+#&gt; fit1 0.000 
+#&gt; fit2 0.475 
+#&gt; fit3 0.525 </div><div class='input'>
+<span class='co'># if you have already computed loo then it's more efficient to pass a list</span>
+<span class='co'># of precomputed loo objects than a "stanreg_list", avoiding the need</span>
+<span class='co'># for loo_models weights to call loo() internally</span>
+<span class='no'>loo_list</span> <span class='kw'>&lt;-</span> <span class='fu'>list</span>(<span class='kw'>fit1</span> <span class='kw'>=</span> <span class='no'>loo1</span>, <span class='kw'>fit2</span> <span class='kw'>=</span> <span class='no'>loo2</span>, <span class='kw'>fit3</span> <span class='kw'>=</span> <span class='no'>loo3</span>) <span class='co'># names optional (affects printing)</span>
+<span class='fu'>loo_model_weights</span>(<span class='no'>loo_list</span>)</div><div class='output co'>#&gt; Method: stacking
+#&gt; ------
+#&gt;      weight
+#&gt; fit1 0.000 
+#&gt; fit2 0.475 
+#&gt; fit3 0.525 </div><div class='input'>
+<span class='co'># averaging predictions</span>
+<span class='no'>wts</span> <span class='kw'>&lt;-</span> <span class='fu'>loo_model_weights</span>(<span class='no'>loo_list</span>)
+<span class='no'>yrep1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit1</span>)
+<span class='no'>yrep2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit2</span>)
+<span class='no'>yrep3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_predict.stanreg.html'>posterior_predict</a></span>(<span class='no'>fit3</span>)
+<span class='no'>wt_avg_yrep</span> <span class='kw'>&lt;-</span> <span class='no'>wts</span>[<span class='fl'>1</span>] * <span class='no'>yrep1</span> + <span class='no'>wts</span>[<span class='fl'>2</span>] * <span class='no'>yrep2</span> + <span class='no'>wts</span>[<span class='fl'>3</span>] * <span class='no'>yrep3</span>
+
 <span class='co'># 10-fold cross-validation</span>
-(<span class='no'>kfold1</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit1</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>))</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 4.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.42 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.065388 seconds (Warm-up)
-#&gt;                0.049188 seconds (Sampling)
-#&gt;                0.114576 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.05999 seconds (Warm-up)
-#&gt;                0.046556 seconds (Sampling)
-#&gt;                0.106546 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.052261 seconds (Warm-up)
-#&gt;                0.045928 seconds (Sampling)
-#&gt;                0.098189 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.053547 seconds (Warm-up)
-#&gt;                0.04479 seconds (Sampling)
-#&gt;                0.098337 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.05776 seconds (Warm-up)
-#&gt;                0.04755 seconds (Sampling)
-#&gt;                0.10531 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.056997 seconds (Warm-up)
-#&gt;                0.059775 seconds (Sampling)
-#&gt;                0.116772 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.095822 seconds (Warm-up)
-#&gt;                0.048562 seconds (Sampling)
-#&gt;                0.144384 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.057793 seconds (Warm-up)
-#&gt;                0.047782 seconds (Sampling)
-#&gt;                0.105575 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.0589 seconds (Warm-up)
-#&gt;                0.050188 seconds (Sampling)
-#&gt;                0.109088 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054746 seconds (Warm-up)
-#&gt;                0.048929 seconds (Sampling)
-#&gt;                0.103675 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.057253 seconds (Warm-up)
-#&gt;                0.067482 seconds (Sampling)
-#&gt;                0.124735 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 7.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.74 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.068597 seconds (Warm-up)
-#&gt;                0.066104 seconds (Sampling)
-#&gt;                0.134701 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.099911 seconds (Warm-up)
-#&gt;                0.063444 seconds (Sampling)
-#&gt;                0.163355 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054116 seconds (Warm-up)
-#&gt;                0.060651 seconds (Sampling)
-#&gt;                0.114767 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.05764 seconds (Warm-up)
-#&gt;                0.051966 seconds (Sampling)
-#&gt;                0.109606 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.063063 seconds (Warm-up)
-#&gt;                0.06678 seconds (Sampling)
-#&gt;                0.129843 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.063339 seconds (Warm-up)
-#&gt;                0.049894 seconds (Sampling)
-#&gt;                0.113233 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.053822 seconds (Warm-up)
-#&gt;                0.046484 seconds (Sampling)
-#&gt;                0.100306 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054987 seconds (Warm-up)
-#&gt;                0.049797 seconds (Sampling)
-#&gt;                0.104784 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 3.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.059691 seconds (Warm-up)
-#&gt;                0.050607 seconds (Sampling)
-#&gt;                0.110298 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.059189 seconds (Warm-up)
-#&gt;                0.046532 seconds (Sampling)
-#&gt;                0.105721 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.0673 seconds (Warm-up)
-#&gt;                0.068751 seconds (Sampling)
-#&gt;                0.136051 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 3.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.38 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.061547 seconds (Warm-up)
-#&gt;                0.055123 seconds (Sampling)
-#&gt;                0.11667 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054588 seconds (Warm-up)
-#&gt;                0.054382 seconds (Sampling)
-#&gt;                0.10897 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.062828 seconds (Warm-up)
-#&gt;                0.05346 seconds (Sampling)
-#&gt;                0.116288 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.06051 seconds (Warm-up)
-#&gt;                0.05421 seconds (Sampling)
-#&gt;                0.11472 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.058869 seconds (Warm-up)
-#&gt;                0.052568 seconds (Sampling)
-#&gt;                0.111437 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.060981 seconds (Warm-up)
-#&gt;                0.068842 seconds (Sampling)
-#&gt;                0.129823 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.07475 seconds (Warm-up)
-#&gt;                0.06821 seconds (Sampling)
-#&gt;                0.14296 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.063789 seconds (Warm-up)
-#&gt;                0.049425 seconds (Sampling)
-#&gt;                0.113214 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.063086 seconds (Warm-up)
-#&gt;                0.052793 seconds (Sampling)
-#&gt;                0.115879 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054952 seconds (Warm-up)
-#&gt;                0.047672 seconds (Sampling)
-#&gt;                0.102624 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.063675 seconds (Warm-up)
-#&gt;                0.049954 seconds (Sampling)
-#&gt;                0.113629 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.057813 seconds (Warm-up)
-#&gt;                0.055898 seconds (Sampling)
-#&gt;                0.113711 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.054679 seconds (Warm-up)
-#&gt;                0.048095 seconds (Sampling)
-#&gt;                0.102774 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.055679 seconds (Warm-up)
-#&gt;                0.052502 seconds (Sampling)
-#&gt;                0.108181 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.061744 seconds (Warm-up)
-#&gt;                0.050341 seconds (Sampling)
-#&gt;                0.112085 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.065977 seconds (Warm-up)
-#&gt;                0.045358 seconds (Sampling)
-#&gt;                0.111335 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.067974 seconds (Warm-up)
-#&gt;                0.049621 seconds (Sampling)
-#&gt;                0.117595 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.059045 seconds (Warm-up)
-#&gt;                0.046999 seconds (Sampling)
-#&gt;                0.106044 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; 
+(<span class='no'>kfold1</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit1</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>))</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; 
 #&gt;  10-fold cross-validation
 #&gt; 
 #&gt;            Estimate  SE
-#&gt; elpd_kfold    -80.2 3.3</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.080556 seconds (Warm-up)
-#&gt;                0.098102 seconds (Sampling)
-#&gt;                0.178658 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.084151 seconds (Warm-up)
-#&gt;                0.076156 seconds (Sampling)
-#&gt;                0.160307 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.081704 seconds (Warm-up)
-#&gt;                0.077762 seconds (Sampling)
-#&gt;                0.159466 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.095775 seconds (Warm-up)
-#&gt;                0.088847 seconds (Sampling)
-#&gt;                0.184622 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.105197 seconds (Warm-up)
-#&gt;                0.098806 seconds (Sampling)
-#&gt;                0.204003 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.10315 seconds (Warm-up)
-#&gt;                0.081188 seconds (Sampling)
-#&gt;                0.184338 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.087116 seconds (Warm-up)
-#&gt;                0.078847 seconds (Sampling)
-#&gt;                0.165963 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.079075 seconds (Warm-up)
-#&gt;                0.080911 seconds (Sampling)
-#&gt;                0.159986 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 0.000327 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.27 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.092134 seconds (Warm-up)
-#&gt;                0.080447 seconds (Sampling)
-#&gt;                0.172581 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.078973 seconds (Warm-up)
-#&gt;                0.073102 seconds (Sampling)
-#&gt;                0.152075 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.095701 seconds (Warm-up)
-#&gt;                0.077022 seconds (Sampling)
-#&gt;                0.172723 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.088008 seconds (Warm-up)
-#&gt;                0.081805 seconds (Sampling)
-#&gt;                0.169813 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.099703 seconds (Warm-up)
-#&gt;                0.105475 seconds (Sampling)
-#&gt;                0.205178 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 3.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.091965 seconds (Warm-up)
-#&gt;                0.097744 seconds (Sampling)
-#&gt;                0.189709 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.079497 seconds (Warm-up)
-#&gt;                0.080315 seconds (Sampling)
-#&gt;                0.159812 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.087295 seconds (Warm-up)
-#&gt;                0.081512 seconds (Sampling)
-#&gt;                0.168807 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.088455 seconds (Warm-up)
-#&gt;                0.074499 seconds (Sampling)
-#&gt;                0.162954 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.085116 seconds (Warm-up)
-#&gt;                0.07001 seconds (Sampling)
-#&gt;                0.155126 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.079934 seconds (Warm-up)
-#&gt;                0.081859 seconds (Sampling)
-#&gt;                0.161793 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.092664 seconds (Warm-up)
-#&gt;                0.081318 seconds (Sampling)
-#&gt;                0.173982 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.096186 seconds (Warm-up)
-#&gt;                0.076174 seconds (Sampling)
-#&gt;                0.17236 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.100615 seconds (Warm-up)
-#&gt;                0.08199 seconds (Sampling)
-#&gt;                0.182605 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.10128 seconds (Warm-up)
-#&gt;                0.078705 seconds (Sampling)
-#&gt;                0.179985 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.078911 seconds (Warm-up)
-#&gt;                0.083591 seconds (Sampling)
-#&gt;                0.162502 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.0868 seconds (Warm-up)
-#&gt;                0.089025 seconds (Sampling)
-#&gt;                0.175825 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.092465 seconds (Warm-up)
-#&gt;                0.077016 seconds (Sampling)
-#&gt;                0.169481 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.084506 seconds (Warm-up)
-#&gt;                0.081744 seconds (Sampling)
-#&gt;                0.16625 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.084883 seconds (Warm-up)
-#&gt;                0.085617 seconds (Sampling)
-#&gt;                0.1705 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.098456 seconds (Warm-up)
-#&gt;                0.080229 seconds (Sampling)
-#&gt;                0.178685 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.089198 seconds (Warm-up)
-#&gt;                0.090903 seconds (Sampling)
-#&gt;                0.180101 seconds (Total)
-#&gt; 
+#&gt; elpd_kfold    -84.7 5.4</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>kfold1</span>, <span class='no'>kfold2</span>, <span class='kw'>detail</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; Model formulas: 
+#&gt;   fit1:  mpg ~ wt
+#&gt;   fit2:  mpg ~ wt + cyl
+#&gt; 
+#&gt; Model comparison: 
+#&gt; (negative 'elpd_diff' favors 1st model, positive favors 2nd) 
+#&gt; 
+#&gt; elpd_diff        se 
+#&gt;       6.2       2.8 </div><div class='input'>
+<span class='co'># Cross-validation stratifying by a grouping variable</span>
+<span class='co'># (note: might get some divergences warnings with this model but </span>
+<span class='co'># this is just intended as a quick example of how to code this)</span>
+<span class='fu'>library</span>(<span class='no'>loo</span>)</div><div class='output co'>#&gt; <span class='message'>This is loo version 2.0.0.9000.</span>
+#&gt; <span class='message'>**NOTE: As of version 2.0.0 loo defaults to 1 core but we recommend using as many as possible. Use the 'cores' argument or set options(mc.cores = NUM_CORES) for an entire session. Visit mc-stan.org/loo/news for details on other changes.</span></div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Attaching package: ‘loo’</span></div><div class='output co'>#&gt; <span class='message'>The following object is masked from ‘package:rstanarm’:</span>
+#&gt; <span class='message'></span>
+#&gt; <span class='message'>    nlist</span></div><div class='output co'>#&gt; <span class='message'>The following object is masked from ‘package:testthat’:</span>
+#&gt; <span class='message'></span>
+#&gt; <span class='message'>    compare</span></div><div class='input'><span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glmer.html'>stan_lmer</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> + (<span class='fl'>1</span><span class='kw'>|</span><span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
 #&gt; Gradient evaluation took 2.9e-05 seconds
 #&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.146265 seconds (Warm-up)
-#&gt;                0.08335 seconds (Sampling)
-#&gt;                0.229615 seconds (Total)
+#&gt;  Elapsed Time: 0.393999 seconds (Warm-up)
+#&gt;                0.353299 seconds (Sampling)
+#&gt;                0.747298 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+#&gt; 
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.092842 seconds (Warm-up)
-#&gt;                0.071347 seconds (Sampling)
-#&gt;                0.164189 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#&gt;  Elapsed Time: 0.418609 seconds (Warm-up)
+#&gt;                0.29718 seconds (Sampling)
+#&gt;                0.715789 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
+#&gt; 
+#&gt; Gradient evaluation took 5.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.55 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.083964 seconds (Warm-up)
-#&gt;                0.072137 seconds (Sampling)
-#&gt;                0.156101 seconds (Total)
+#&gt;  Elapsed Time: 0.439503 seconds (Warm-up)
+#&gt;                0.398618 seconds (Sampling)
+#&gt;                0.838121 seconds (Total)
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
+#&gt; 
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.087068 seconds (Warm-up)
-#&gt;                0.10768 seconds (Sampling)
-#&gt;                0.194748 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 4.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.49 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.095924 seconds (Warm-up)
-#&gt;                0.107755 seconds (Sampling)
-#&gt;                0.203679 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 3.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.32 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.116238 seconds (Warm-up)
-#&gt;                0.085684 seconds (Sampling)
-#&gt;                0.201922 seconds (Total)
-#&gt; </div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
-#&gt; Gradient evaluation took 4.8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.090751 seconds (Warm-up)
-#&gt;                0.082935 seconds (Sampling)
-#&gt;                0.173686 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.096805 seconds (Warm-up)
-#&gt;                0.077019 seconds (Sampling)
-#&gt;                0.173824 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 1.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.096509 seconds (Warm-up)
-#&gt;                0.078691 seconds (Sampling)
-#&gt;                0.1752 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; Gradient evaluation took 2.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; 
-#&gt;  Elapsed Time: 0.096362 seconds (Warm-up)
-#&gt;                0.085858 seconds (Sampling)
-#&gt;                0.18222 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'>compare_models</span>(<span class='no'>kfold1</span>, <span class='no'>kfold2</span>)</div><div class='output co'>#&gt; elpd_diff        se 
-#&gt;       5.8       4.3 </div><div class='input'>
-
+#&gt;  Elapsed Time: 0.416001 seconds (Warm-up)
+#&gt;                0.373684 seconds (Sampling)
+#&gt;                0.789685 seconds (Total)
+#&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 2 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'><span class='fu'>table</span>(<span class='no'>mtcars</span>$<span class='no'>cyl</span>)</div><div class='output co'>#&gt; 
+#&gt;  4  6  8 
+#&gt; 11  7 14 </div><div class='input'><span class='no'>folds_cyl</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='http://www.rdocumentation.org/packages/loo/topics/kfold-helpers'>kfold_split_stratified</a></span>(<span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>cyl</span>)
+<span class='fu'>table</span>(<span class='kw'>cyl</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>cyl</span>, <span class='kw'>fold</span> <span class='kw'>=</span> <span class='no'>folds_cyl</span>)</div><div class='output co'>#&gt;    fold
+#&gt; cyl  1  2  3
+#&gt;   4 11  0  0
+#&gt;   6  0  7  0
+#&gt;   8  0  0 14</div><div class='input'><span class='no'>kfold4</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit4</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>folds</span> <span class='kw'>=</span> <span class='no'>folds_cyl</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 3</span></div><div class='output co'>#&gt; <span class='warning'>Warning: There were 7 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 3</span></div><div class='output co'>#&gt; <span class='warning'>Warning: There were 12 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 3</span></div><div class='output co'>#&gt; <span class='warning'>Warning: There were 16 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -1598,6 +925,8 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
       <li><a href="#k-fold-cv">K-fold CV</a></li>
 
       <li><a href="#comparing-models">Comparing models</a></li>
+
+      <li><a href="#model-weights">Model weights</a></li>
 
       <li><a href="#references">References</a></li>
 
@@ -1615,11 +944,14 @@ be used as an alternative to passing these objects via <code>...</code>.</p></td
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

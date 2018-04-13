@@ -34,6 +34,11 @@ navbar:
    - icon: fa-users
      href: http://discourse.mc-stan.org/
 
+home:
+  links:
+  - text: Ask a question
+    href: http://discourse.mc-stan.org/
+
 articles:
   - title: "Getting Started"
     desc: >
@@ -51,7 +56,7 @@ articles:
     - continuous
     - count
     - glmer
+    - pooling
     - lm
     - polr
-    - pooling
     - jm

@@ -18,13 +18,30 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Extract the posterior sample — as.matrix.stanreg" />
+
+<meta property="og:description" content="For models fit using MCMC (algorithm="sampling"), the posterior sample
+---the post-warmup draws from the posterior distribution--- can be extracted 
+from a fitted model object as a matrix, data frame, or array. The 
+as.matrix and as.data.frame methods merge all chains together, 
+whereas the as.array method keeps the chains separate. For models fit 
+using optimization ("optimizing") or variational inference 
+("meanfield" or "fullrank"), there is no posterior sample but 
+rather a matrix (or data frame) of 1000 draws from either the asymptotic
+multivariate Gaussian sampling distribution of the parameters or the
+variational approximation to the posterior distribution." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +49,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +66,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +132,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,10 +140,11 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Extract the posterior sample</h1>
+    
     </div>
 
     
@@ -144,7 +169,7 @@ variational approximation to the posterior distribution.</p>
 <span class='co'># S3 method for stanreg</span>
 <span class='fu'>as.data.frame</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -182,22 +207,24 @@ using optimization.</p></td>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
-<span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'><span class='co'># Extract posterior sample after MCMC</span>
-<span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.matrix</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; <span class='error'>Error in print(dim(draws)): object 'draws' not found</span></div><div class='input'>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
+<span class='co'># Extract posterior sample after MCMC</span>
+<span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.matrix</span>(<span class='no'>example_model</span>)
+<span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] 500  21</div><div class='input'>
 <span class='co'># For example, we can see that the median of the draws for the intercept </span>
 <span class='co'># is the same as the point estimate rstanarm uses</span>
-<span class='fu'>print</span>(<span class='fu'>median</span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; <span class='error'>Error in median(draws[, "(Intercept)"]): object 'draws' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; <span class='error'>Error in print(example_model$coefficients[["(Intercept)"]]): object 'example_model' not found</span></div><div class='input'>
+<span class='fu'>print</span>(<span class='fu'>median</span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; [1] -1.570747</div><div class='input'><span class='fu'>print</span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; [1] -1.570747</div><div class='input'>
 <span class='co'># The as.array method keeps the chains separate</span>
-<span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'>as.array</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.array(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; <span class='error'>Error in print(dim(draws_array)): object 'draws_array' not found</span></div><div class='input'>
+<span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'>as.array</span>(<span class='no'>example_model</span>)
+<span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; [1] 250   2  21</div><div class='input'>
 <span class='co'># Extract draws from asymptotic Gaussian sampling distribution </span>
 <span class='co'># after optimization</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; Initial log joint probability = -171.224
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; Initial log joint probability = -171.224
 #&gt; Optimization terminated normally: 
 #&gt;   Convergence detected: relative gradient magnitude is below tolerance</div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit</span>)
 <span class='fu'>print</span>(<span class='fu'>colnames</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] "(Intercept)" "wt"          "sigma"      </div><div class='input'><span class='fu'>print</span>(<span class='fu'>nrow</span>(<span class='no'>draws</span>)) <span class='co'># 1000 draws are taken</span></div><div class='output co'>#&gt; [1] 1000</div><div class='input'>
 <span class='co'># Extract draws from variational approximation to the posterior distribution</span>
-<span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"meanfield"</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; ------------------------------------------------------------
+<span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"meanfield"</span>)</div><div class='output co'>#&gt; ------------------------------------------------------------
 #&gt; EXPERIMENTAL ALGORITHM:
 #&gt;   This procedure has not been thoroughly tested and may be unstable
 #&gt;   or buggy. The interface is subject to change.
@@ -205,8 +232,8 @@ using optimization.</p></td>
 #&gt; 
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -221,25 +248,21 @@ using optimization.</p></td>
 #&gt; Begin stochastic gradient ascent.
 #&gt;   iter       ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
 #&gt;    100     -2e+02             1.000            1.000
-#&gt;    200     -1e+02             0.600            1.000
-#&gt;    300     -1e+02             0.425            0.200
-#&gt;    400     -1e+02             0.344            0.200
-#&gt;    500     -1e+02             0.298            0.112
-#&gt;    600     -9e+01             0.272            0.144
-#&gt;    700     -9e+01             0.237            0.112
-#&gt;    800     -9e+01             0.207            0.112
-#&gt;    900     -9e+01             0.184            0.100
-#&gt;   1000     -9e+01             0.166            0.100
-#&gt;   1100     -9e+01             0.066            0.076
-#&gt;   1200     -9e+01             0.047            0.024
-#&gt;   1300     -9e+01             0.041            0.018
-#&gt;   1400     -9e+01             0.033            0.016
-#&gt;   1500     -9e+01             0.021            0.006   MEDIAN ELBO CONVERGED
+#&gt;    200     -1e+02             0.616            1.000
+#&gt;    300     -1e+02             0.440            0.233
+#&gt;    400     -1e+02             0.353            0.233
+#&gt;    500     -1e+02             0.313            0.154
+#&gt;    600     -9e+01             0.283            0.154
+#&gt;    700     -9e+01             0.243            0.132
+#&gt;    800     -9e+01             0.213            0.132
+#&gt;    900     -9e+01             0.190            0.092
+#&gt;   1000     -9e+01             0.171            0.092
+#&gt;   1100     -9e+01             0.072            0.087
+#&gt;   1200     -9e+01             0.049            0.007   MEDIAN ELBO CONVERGED
 #&gt; 
 #&gt; Drawing a sample of size 1000 from the approximate posterior... 
 #&gt; COMPLETED.</div><div class='output co'>#&gt; <span class='message'>Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms. See the documentation for the 'QR' argument.</span></div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit2</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"wt"</span>)
 <span class='fu'>print</span>(<span class='fu'>colnames</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] "wt"</div><div class='input'><span class='fu'>print</span>(<span class='fu'>nrow</span>(<span class='no'>draws</span>)) <span class='co'># 1000 draws are taken</span></div><div class='output co'>#&gt; [1] 1000</div><div class='input'>
-
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -263,11 +286,14 @@ using optimization.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

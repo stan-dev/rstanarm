@@ -18,13 +18,26 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Pointwise log-likelihood matrix — log_lik.stanreg" />
+
+<meta property="og:description" content="For models fit using MCMC only, the log_lik method returns the
+\(S\) by \(N\) pointwise log-likelihood matrix, where \(S\) is the size
+of the posterior sample and \(N\) is the number of data points, or in the
+case of the stanmvreg method (when called on stan_jm
+model objects) an \(S\) by \(Npat\) matrix where \(Npat\) is the number 
+of individuals." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +45,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +62,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +128,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,22 +136,33 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Pointwise log-likelihood matrix</h1>
+    
     </div>
 
     
     <p>For models fit using MCMC only, the <code>log_lik</code> method returns the
 \(S\) by \(N\) pointwise log-likelihood matrix, where \(S\) is the size
-of the posterior sample and \(N\) is the number of data points.</p>
+of the posterior sample and \(N\) is the number of data points, or in the
+case of the <code>stanmvreg</code> method (when called on <code><a href='stan_jm.html'>stan_jm</a></code>
+model objects) an \(S\) by \(Npat\) matrix where \(Npat\) is the number 
+of individuals.</p>
     
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>log_lik</span>(<span class='no'>object</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>log_lik</span>(<span class='no'>object</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+
+<span class='co'># S3 method for stanmvreg</span>
+<span class='fu'>log_lik</span>(<span class='no'>object</span>, <span class='kw'>m</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)
+
+<span class='co'># S3 method for stanjm</span>
+<span class='fu'>log_lik</span>(<span class='no'>object</span>, <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>newdataEvent</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -154,17 +185,34 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
       <th>...</th>
       <td><p>Currently ignored.</p></td>
     </tr>
+    <tr>
+      <th>m</th>
+      <td><p>Integer specifying the number or name of the submodel</p></td>
+    </tr>
+    <tr>
+      <th>newdataLong, newdataEvent</th>
+      <td><p>Optional data frames containing new data 
+(e.g. holdout data) to use when evaluating the log-likelihood for a 
+model estimated using <code><a href='stan_jm.html'>stan_jm</a></code>. If the fitted model 
+was a multivariate joint model (i.e. more than one longitudinal outcome),
+then <code>newdataLong</code> is allowed to be a list of data frames. If supplying 
+new data, then <code>newdataEvent</code> should also include variables corresponding
+to the event time and event indicator as these are required for evaluating the
+log likelihood for the event submodel. For more details, see the description 
+of <code>newdataLong</code> and <code>newdataEvent</code> for <code><a href='posterior_survfit.html'>posterior_survfit</a></code>.</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>An \(S\) by \(N\) matrix, where \(S\) is the size of the
-  posterior sample and \(N\) is the number of data points.</p>
+    <p>For the <code>stanreg</code> and <code>stanmvreg</code> methods an \(S\) by 
+  \(N\) matrix, where \(S\) is the size of the posterior sample and 
+  \(N\) is the number of data points. For the <code>stanjm</code> method 
+  an \(S\) by \(Npat\) matrix where \(Npat\) is the number of individuals.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'>
- <span class='no'>roaches</span>$<span class='no'>roach100</span> <span class='kw'>&lt;-</span> <span class='no'>roaches</span>$<span class='no'>roach1</span> / <span class='fl'>100</span>
+    <pre class="examples"><div class='input'> <span class='no'>roaches</span>$<span class='no'>roach100</span> <span class='kw'>&lt;-</span> <span class='no'>roaches</span>$<span class='no'>roach1</span> / <span class='fl'>100</span>
  <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(
     <span class='no'>y</span> ~ <span class='no'>roach100</span> + <span class='no'>treatment</span> + <span class='no'>senior</span>,
     <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'>log</span>(<span class='no'>exposure2</span>),
@@ -173,11 +221,11 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
     <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>2.5</span>),
     <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>),
     <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span> <span class='co'># to speed up example</span>
- )</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+ )</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 8e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.8 seconds.
+#&gt; Gradient evaluation took 0.000134 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.34 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -194,15 +242,15 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.162099 seconds (Warm-up)
-#&gt;                0.11475 seconds (Sampling)
-#&gt;                0.276849 seconds (Total)
+#&gt;  Elapsed Time: 0.179596 seconds (Warm-up)
+#&gt;                0.115567 seconds (Sampling)
+#&gt;                0.295163 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 4.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.47 seconds.
+#&gt; Gradient evaluation took 5.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.58 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -219,15 +267,15 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.172198 seconds (Warm-up)
-#&gt;                0.13063 seconds (Sampling)
-#&gt;                0.302828 seconds (Total)
+#&gt;  Elapsed Time: 0.141181 seconds (Warm-up)
+#&gt;                0.144613 seconds (Sampling)
+#&gt;                0.285794 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
 #&gt; 
-#&gt; Gradient evaluation took 6.6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.66 seconds.
+#&gt; Gradient evaluation took 4.5e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.45 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -244,15 +292,15 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.161681 seconds (Warm-up)
-#&gt;                0.13513 seconds (Sampling)
-#&gt;                0.296811 seconds (Total)
+#&gt;  Elapsed Time: 0.15594 seconds (Warm-up)
+#&gt;                0.130025 seconds (Sampling)
+#&gt;                0.285965 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 5.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.51 seconds.
+#&gt; Gradient evaluation took 4.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.44 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -269,9 +317,9 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.156652 seconds (Warm-up)
-#&gt;                0.121988 seconds (Sampling)
-#&gt;                0.27864 seconds (Total)
+#&gt;  Elapsed Time: 0.181242 seconds (Warm-up)
+#&gt;                0.124389 seconds (Sampling)
+#&gt;                0.305631 seconds (Total)
 #&gt; </div><div class='input'> <span class='no'>ll</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>)
  <span class='fu'>dim</span>(<span class='no'>ll</span>)</div><div class='output co'>#&gt; [1] 1000  262</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll</span>), <span class='fu'>nobs</span>(<span class='no'>fit</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
  <span class='co'># using newdata argument</span>
@@ -279,13 +327,12 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
  <span class='no'>nd</span>$<span class='no'>treatment</span>[<span class='fl'>1</span>:<span class='fl'>2</span>] <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='fl'>0</span>, <span class='fl'>1</span>)
  <span class='no'>ll2</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>0</span>, <span class='fl'>0</span>))
  <span class='fu'>head</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt;              1         2
-#&gt; [1,] -7.274485 -3.587778
-#&gt; [2,] -6.615934 -3.428933
-#&gt; [3,] -6.982115 -3.552134
-#&gt; [4,] -6.240153 -3.529369
-#&gt; [5,] -7.449999 -3.437282
-#&gt; [6,] -7.008782 -3.416396</div><div class='input'> <span class='fu'>dim</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll2</span>), <span class='fu'>nrow</span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
-
+#&gt; [1,] -7.208039 -3.379939
+#&gt; [2,] -7.538332 -3.645910
+#&gt; [3,] -6.475576 -3.415374
+#&gt; [4,] -6.957932 -3.350174
+#&gt; [5,] -5.320412 -3.461726
+#&gt; [6,] -6.218462 -3.344113</div><div class='input'> <span class='fu'>dim</span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'>all.equal</span>(<span class='fu'>ncol</span>(<span class='no'>ll2</span>), <span class='fu'>nrow</span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -307,11 +354,14 @@ specified and an <code>offset</code> was specified when fitting the model.</p></
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

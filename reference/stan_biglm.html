@@ -18,13 +18,24 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Bayesian regularized linear but big models via Stan — stan_biglm" />
+
+<meta property="og:description" content="
+This is the same model as with stan_lm but it utilizes the
+output from biglm in the biglm package in order to
+proceed when the data is too large to fit in memory." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +43,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +60,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +126,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,14 +134,16 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian regularized linear but big models via Stan</h1>
+    
     </div>
 
     
-    <p>This is the same model as with <code><a href='stan_lm.html'>stan_lm</a></code> but it utilizes the
+    <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
+This is the same model as with <code><a href='stan_lm.html'>stan_lm</a></code> but it utilizes the
 output from <code>biglm</code> in the <span class="pkg">biglm</span> package in order to
 proceed when the data is too large to fit in memory.</p>
     
@@ -138,7 +158,7 @@ proceed when the data is too large to fit in memory.</p>
   <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
   <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -205,7 +225,7 @@ algorithms.</p></td>
     <tr>
       <th>adapt_delta</th>
       <td><p>Only relevant if <code>algorithm="sampling"</code>. See 
-<code><a href='adapt_delta.html'>adapt_delta</a></code> for details.</p></td>
+the <a href='adapt_delta.html'>adapt_delta</a> help page for details.</p></td>
     </tr>
     <tr>
       <th>b</th>
@@ -272,11 +292,11 @@ to the model when estimating it.</p></td>
 <span class='no'>s_y</span> <span class='kw'>&lt;-</span> <span class='fu'>sd</span>(<span class='no'>y</span>)
 <span class='no'>post</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_biglm.fit</span>(<span class='no'>b</span>, <span class='no'>R</span>, <span class='no'>SSR</span>, <span class='no'>N</span>, <span class='no'>xbar</span>, <span class='no'>ybar</span>, <span class='no'>s_y</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>.75</span>),
                        <span class='co'># the next line is only to make the example go fast</span>
-                       <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+                       <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Gradient evaluation took 2.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -293,14 +313,14 @@ to the model when estimating it.</p></td>
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.776518 seconds (Warm-up)
-#&gt;                0.546875 seconds (Sampling)
-#&gt;                1.32339 seconds (Total)
+#&gt;  Elapsed Time: 1.26895 seconds (Warm-up)
+#&gt;                0.663211 seconds (Sampling)
+#&gt;                1.93216 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.99 may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw'>rstan</span><span class='kw'>::</span><span class='fu'>get_posterior_mean</span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
-#&gt; wt   -3.916504 -3.760141
-#&gt; qsec  1.225886  1.191848
-#&gt; am    2.935837  2.953209</div></pre>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw pkg'>rstan</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/rstan/topics/stanfit-class'>get_posterior_mean</a></span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
+#&gt; wt   -3.916504 -3.819190
+#&gt; qsec  1.225886  1.213892
+#&gt; am    2.935837  2.788297</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
@@ -323,11 +343,14 @@ to the model when estimating it.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

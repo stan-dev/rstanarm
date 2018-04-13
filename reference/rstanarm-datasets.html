@@ -18,13 +18,21 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Datasets for rstanarm examples — rstanarm-datasets" />
+
+<meta property="og:description" content="Small datasets for use in rstanarm examples and vignettes." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +40,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +57,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +123,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,10 +131,11 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Datasets for rstanarm examples</h1>
+    
     </div>
 
     
@@ -167,7 +183,30 @@ in babies.
 <li><p><code>y</code> Number of deaths</p></li>
 <li><p><code>K</code> Number of surgeries</p></li>
 </ul></p></dd>
-<dt><code>radon</code></dt><dd><p>Data on radon levels in houses in the state of Minnesota.
+<dt><code>pbcLong,pbcSurv</code></dt><dd><p>Longitudinal biomarker and time-to-event survival data for 40 patients 
+with primary biliary cirrhosis who participated in a randomised 
+placebo controlled trial of D-penicillamine conducted at the Mayo
+Clinic between 1974 and 1984.
+    Source: Therneau and Grambsch (2000)
+    304 obs. of 8 variables (<code>pbcLong</code>) and 40 obs. of 7 variables (<code>pbcSurv</code>)
+<ul>
+<li><p><code>age</code> in years</p></li>
+<li><p><code>albumin</code> serum albumin (g/dl)</p></li>
+<li><p><code>logBili</code> logarithm of serum bilirubin</p></li>
+<li><p><code>death</code> indicator of death at endpoint</p></li>
+<li><p><code>futimeYears</code> time (in years) between baseline and  
+    the earliest of death, transplantion or censoring</p></li>
+<li><p><code>id</code> numeric ID unique to each individual</p></li>
+<li><p><code>platelet</code> platelet count</p></li>
+<li><p><code>sex</code> gender (m = male, f = female)</p></li>
+<li><p><code>status</code> status at endpoint (0 = censored, 
+    1 = transplant, 2 = dead)</p></li>
+<li><p><code>trt</code> binary treatment code (0 = placebo, 1 = 
+    D-penicillamine)</p></li>
+<li><p><code>year</code> time (in years) of the longitudinal measurements,
+    taken as time since baseline)</p></li>
+</ul></p></dd>
+    <dt><code>radon</code></dt><dd><p>Data on radon levels in houses in the state of Minnesota.
     Source: Gelman and Hill (2007)
     919 obs. of 4 variables
 <ul>
@@ -219,17 +258,19 @@ in community organizations</p></li>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     <p>Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
-batting ability. <a href = 'http://lingpipe-blog.com/2009/09/23/'>http://lingpipe-blog.com/2009/09/23/</a></p>
+batting ability. <a href='http://lingpipe-blog.com/2009/09/23/'>http://lingpipe-blog.com/2009/09/23/</a></p>
 <p>Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 generalizations. <em>Journal of the American Statistical Association</em>
 <strong>70</strong>(350), 311--319.</p>
 <p>Gelman, A. and Hill, J. (2007). <em>Data Analysis Using
   Regression and Multilevel/Hierarchical Models.</em> Cambridge University Press,
-  Cambridge, UK. <a href = 'http://stat.columbia.edu/~gelman/arm/'>http://stat.columbia.edu/~gelman/arm/</a></p>
+  Cambridge, UK. <a href='http://stat.columbia.edu/~gelman/arm/'>http://stat.columbia.edu/~gelman/arm/</a></p>
 <p>Spiegelhalter, D., Thomas, A., Best, N., &amp; Gilks, W. (1996) BUGS 0.5 
 Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.</p>
 <p>Tarone, R. E. (1982) The use of historical control information in testing for
 a trend in proportions. <em>Biometrics</em> <strong>38</strong>(1):215--220.</p>
+<p>Therneau, T. and Grambsch, P. (2000) <em>Modeling Survival Data: Extending 
+the Cox Model</em>. Springer-Verlag, New York, US.</p>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -237,11 +278,11 @@ a trend in proportions. <em>Biometrics</em> <strong>38</strong>(1):215--220.</p>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_lm.html'>stan_lm</a></span>(<span class='no'>kid_score</span> ~ <span class='no'>mom_hs</span> * <span class='no'>mom_iq</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>kidiq</span>,
                <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0.30</span>, <span class='kw'>what</span> <span class='kw'>=</span> <span class='st'>"mean"</span>),
                <span class='co'># the next line is only to make the example go fast enough</span>
-               <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; <span class='message'>trying deprecated constructor; please alert package maintainer</span></div><div class='output co'>#&gt; 
+               <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
+#&gt; Gradient evaluation took 4.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.43 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -258,14 +299,12 @@ a trend in proportions. <em>Biometrics</em> <strong>38</strong>(1):215--220.</p>
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.926861 seconds (Warm-up)
-#&gt;                0.316516 seconds (Sampling)
-#&gt;                1.24338 seconds (Total)
-#&gt; </div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>20</span>)</div><img src='rstanarm-datasets-5.png' alt='' width='540' height='400' /><div class='input'>
-<span class='kw'>bayesplot</span><span class='kw'>::</span><span class='fu'>color_scheme_set</span>(<span class='st'>"brightblue"</span>)
+#&gt;  Elapsed Time: 1.13419 seconds (Warm-up)
+#&gt;                0.288292 seconds (Sampling)
+#&gt;                1.42249 seconds (Total)
+#&gt; </div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>20</span>)</div><div class='img'><img src='rstanarm-datasets-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"brightblue"</span>)
 <span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"median"</span>,
-         <span class='kw'>group</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='no'>kidiq</span>$<span class='no'>mom_hs</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"No HS"</span>, <span class='st'>"HS"</span>)))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><img src='rstanarm-datasets-8.png' alt='' width='540' height='400' /><div class='input'>
-
+         <span class='kw'>group</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='no'>kidiq</span>$<span class='no'>mom_hs</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"No HS"</span>, <span class='st'>"HS"</span>)))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='rstanarm-datasets-2.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -288,11 +327,14 @@ a trend in proportions. <em>Biometrics</em> <strong>38</strong>(1):215--220.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

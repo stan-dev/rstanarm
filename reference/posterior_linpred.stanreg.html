@@ -18,13 +18,25 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Posterior distribution of the linear predictor — posterior_linpred.stanreg" />
+
+<meta property="og:description" content="Extract the posterior draws of the linear predictor, possibly transformed by 
+the inverse-link function. This function is occasionally useful, but it 
+should be used sparingly. Inference and model checking should generally be 
+carried out using the posterior predictive distribution (i.e., using 
+posterior_predict)." />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +44,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +61,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +127,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,10 +135,11 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Posterior distribution of the linear predictor</h1>
+    
     </div>
 
     
@@ -132,9 +152,10 @@ carried out using the posterior predictive distribution (i.e., using
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
 <span class='fu'>posterior_linpred</span>(<span class='no'>object</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>XZ</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>XZ</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
-    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
@@ -149,7 +170,7 @@ inverse-link function? The default is <code>FALSE</code>, in which case the
 untransformed linear predictor is returned.</p></td>
     </tr>
     <tr>
-      <th>newdata, re.form, offset</th>
+      <th>newdata, draws, re.form, offset</th>
       <td><p>Same as for <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>.</p></td>
     </tr>
     <tr>
@@ -172,6 +193,16 @@ terms) constructed from <code>newdata</code> is returned. The default is
   transformed) linear predictor. The exception is if the argument <code>XZ</code>
   is set to <code>TRUE</code> (see the <code>XZ</code> argument description above).</p>
     
+    <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
+
+    <p>For models estimated with <code><a href='stan_clogit.html'>stan_clogit</a></code>, the number of 
+  successes per stratum is ostensibly fixed by the research design. Thus,
+  when calling <code>posterior_linpred</code> with new data and <code>transform =
+  TRUE</code>, the <code>data.frame</code> passed to the <code>newdata</code> argument must
+  contain an outcome variable and a stratifying factor, both with the same
+  name as in the original <code>data.frame</code>. Then, the probabilities will
+  condition on this outcome in the new data.</p>
+    
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <p><code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code> to draw from the posterior 
@@ -179,13 +210,65 @@ terms) constructed from <code>newdata</code> is returned. The default is
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>family</span>(<span class='no'>example_model</span>))</div><div class='output co'>#&gt; <span class='error'>Error in family(example_model): object 'example_model' not found</span></div><div class='input'>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
+<span class='fu'>print</span>(<span class='fu'>family</span>(<span class='no'>example_model</span>))</div><div class='output co'>#&gt; 
+#&gt; Family: binomial 
+#&gt; Link function: logit 
+#&gt; </div><div class='input'>
 <span class='co'># linear predictor on log-odds scale</span>
-<span class='no'>linpred</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_linpred(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>colMeans</span>(<span class='no'>linpred</span>)</div><div class='output co'>#&gt; <span class='error'>Error in is.data.frame(x): object 'linpred' not found</span></div><div class='input'>
+<span class='no'>linpred</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>)
+<span class='fu'>colMeans</span>(<span class='no'>linpred</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
+#&gt; -0.8267767 -1.8373747 -1.9697531 -2.4828881 -1.7430203 -2.7714209 -2.8503914 
+#&gt;          8          9         10         11         12         13         14 
+#&gt; -1.0002683 -2.0464715 -2.1521460 -2.5940705 -1.4468394 -2.4396348 -2.5542106 
+#&gt;         15         16         17         18         19         20         21 
+#&gt; -3.0584443 -1.6610352 -2.5915213 -2.7060971 -3.3616532 -1.9119590 -2.9047544 
+#&gt;         22         23         24         25         26         27         28 
+#&gt; -3.0015275 -3.4612547 -0.4976494 -1.5438526 -1.6584284 -2.1715635 -0.7749472 
+#&gt;         29         30         31         32         33         34         35 
+#&gt; -1.7402832 -2.7597825 -2.8476543 -3.3429868 -2.0441779 -3.0369733 -3.1782530 
+#&gt;         36         37         38         39         40         41         42 
+#&gt; -3.6201775 -1.5320158 -2.5070085 -2.6571896 -3.1347194 -1.5459130 -2.5565109 
+#&gt;         43         44         45         46         47         48         49 
+#&gt; -2.6799880 -3.1664191 -2.1997031 -3.1657945 -3.3159755 -3.7579000 -0.3628684 
+#&gt;         50         51         52         53         54         55         56 
+#&gt; -1.5069860 -1.6037592 -2.0901903 -2.0056602 -3.0340608 -3.1397352 -3.6172650 </div><div class='input'>
 <span class='co'># probabilities</span>
-<span class='no'>probs</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_linpred(example_model, transform = TRUE): object 'example_model' not found</span></div><div class='input'><span class='fu'>colMeans</span>(<span class='no'>probs</span>)</div><div class='output co'>#&gt; <span class='error'>Error in is.data.frame(x): object 'probs' not found</span></div><div class='input'>
+<span class='no'>probs</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>colMeans</span>(<span class='no'>probs</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
+#&gt; 0.31014900 0.14610860 0.13031499 0.08680943 0.15624827 0.06396252 0.05962641 
+#&gt;          8          9         10         11         12         13         14 
+#&gt; 0.27362385 0.12038861 0.10919710 0.07579599 0.20085737 0.08829532 0.07962574 
+#&gt;         15         16         17         18         19         20         21 
+#&gt; 0.05151852 0.16679352 0.07476684 0.06754332 0.03986671 0.13706251 0.05683409 
+#&gt;         22         23         24         25         26         27         28 
+#&gt; 0.05203634 0.03460963 0.38181981 0.18478710 0.16927541 0.11330854 0.32032472 
+#&gt;         29         30         31         32         33         34         35 
+#&gt; 0.16112481 0.06781147 0.06075172 0.03988276 0.12300191 0.05081201 0.04446909 
+#&gt;         36         37         38         39         40         41         42 
+#&gt; 0.03038804 0.18294856 0.08061644 0.06958894 0.04614921 0.18735490 0.08151150 
+#&gt;         43         44         45         46         47         48         49 
+#&gt; 0.07168726 0.04718736 0.10787583 0.04507824 0.03919411 0.02689086 0.41380415 
+#&gt;         50         51         52         53         54         55         56 
+#&gt; 0.19794756 0.18091288 0.12435975 0.12586694 0.05064797 0.04549723 0.03017447 </div><div class='input'>
 <span class='co'># not conditioning on any group-level parameters</span>
-<span class='no'>probs2</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='fl'>NA</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_linpred(example_model, transform = TRUE, re.form = NA): object 'example_model' not found</span></div><div class='input'><span class='fu'>apply</span>(<span class='no'>probs2</span>, <span class='fl'>2</span>, <span class='no'>median</span>)</div><div class='output co'>#&gt; <span class='error'>Error in apply(probs2, 2, median): object 'probs2' not found</span></div><div class='input'>
+<span class='no'>probs2</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='fl'>NA</span>)
+<span class='fu'>apply</span>(<span class='no'>probs2</span>, <span class='fl'>2</span>, <span class='no'>median</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
+#&gt; 0.19050884 0.07719124 0.06943886 0.04351901 0.20118629 0.08175936 0.07703424 
+#&gt;          8          9         10         11         12         13         14 
+#&gt; 0.20118629 0.08149972 0.07392713 0.05032924 0.18582591 0.07569139 0.06943886 
+#&gt;         15         16         17         18         19         20         21 
+#&gt; 0.04424392 0.19625747 0.08660440 0.07958648 0.04293409 0.19528695 0.08185848 
+#&gt;         22         23         24         25         26         27         28 
+#&gt; 0.07479393 0.05032924 0.19376054 0.07569139 0.06943886 0.04351901 0.21992122 
+#&gt;         29         30         31         32         33         34         35 
+#&gt; 0.18429890 0.07363089 0.06865920 0.04424392 0.20118629 0.08573012 0.07479393 
+#&gt;         36         37         38         39         40         41         42 
+#&gt; 0.05072863 0.20526420 0.08860947 0.07781148 0.05072863 0.18582591 0.07467083 
+#&gt;         43         44         45         46         47         48         49 
+#&gt; 0.06699119 0.04351901 0.20000985 0.08604035 0.07532156 0.05138197 0.19734840 
+#&gt;         50         51         52         53         54         55         56 
+#&gt; 0.07062181 0.06577282 0.04147431 0.19734840 0.08029068 0.07327571 0.04757747 </div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -194,6 +277,8 @@ terms) constructed from <code>newdata</code> is returned. The default is
       <li><a href="#arguments">Arguments</a></li>
       
       <li><a href="#value">Value</a></li>
+
+      <li><a href="#note">Note</a></li>
 
       <li><a href="#see-also">See also</a></li>
       
@@ -209,11 +294,14 @@ terms) constructed from <code>newdata</code> is returned. The default is
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+
