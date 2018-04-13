@@ -5,6 +5,7 @@ Thu April 12 2018 (2.17.4)
   * QR = TRUE no longer ignores autoscale and has new behavior when autoscale = FALSE
   * posterior_linpred now has a draws argument like for posterior_predict
   * Dynamic predictions are now supported in posterior_traj
+  * More options for K-fold CV
   * Compatible with loo >= 2.0
 
 Sat February 16 2018 (2.17.3)
