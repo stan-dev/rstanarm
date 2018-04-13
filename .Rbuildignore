@@ -6,8 +6,14 @@ man-roxygen/*
 vignettes/_output.yaml
 README.md
 LICENSE$
-^.*\.o$
+src/stan_files/.*\.o$
+src/stan_files/.*\.cc$
+src/stan_files/.*\.hpp$
+tests/testthat/stan_files/.*\.o$
+tests/testthat/stan_files/.*\.cc$
+tests/testthat/stan_files/.*\.hpp$
 ^\cleanup*
+configure.ac
 ^inst/doc/[A-Za-z0-9\-_]+[.]svg$
 ^inst/doc/[A-Za-z0-9\-_]+[.]txt$
 ^inst/doc/[A-Za-z0-9\-_]+[.]csv
@@ -16,3 +22,5 @@ dev-notes/*
 ^docs$
 ^_pkgdown\.yml$
 index.Rmd
+revdep/*
+

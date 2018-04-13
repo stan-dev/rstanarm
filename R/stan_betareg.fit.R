@@ -72,7 +72,8 @@ stan_betareg.fit <-
     prior_mean <- prior_mean_for_intercept <- prior_mean_for_intercept_z <- prior_mean_z <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_intercept_z <-
     prior_df_for_aux <- prior_dist_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
-    xbar <- xtemp <- prior_autoscale <- prior_autoscale_z <- global_prior_scale_z <- NULL
+    xbar <- xtemp <- prior_autoscale <- prior_autoscale_z <- global_prior_scale_z <- 
+    global_prior_df_z <- slab_df <- slab_scale <- slab_df_z <- slab_scale_z <- NULL
 
   sparse <- FALSE
   x_stuff <- center_x(x, sparse)
@@ -193,18 +194,20 @@ stan_betareg.fit <-
       decomposition <- qr(xtemp)
       sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
       Q <- qr.Q(decomposition)
-      R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
-      xtemp <- Q * sqrt_nm1
+      if (prior_autoscale) scale_factor <- sqrt(nrow(xtemp) - 1L)
+      else scale_factor <- diag(qr.R(decomposition))[ncol(xtemp)]
+      R_inv <- qr.solve(decomposition, Q) * scale_factor
+      xtemp <- Q * scale_factor
       colnames(xtemp) <- cn
       xbar <- c(xbar %*% R_inv) 
     }
     if (Z_true == 1 && nvars_z > 1) {
       cn_z <- colnames(ztemp)
       decomposition_z <- qr(ztemp)
-      sqrt_nm1_z <- sqrt(nrow(ztemp) - 1L)
       Q_z <- qr.Q(decomposition_z)
-      R_inv_z <- qr.solve(decomposition_z, Q_z) * sqrt_nm1_z
-      ztemp <- Q_z * sqrt_nm1_z
+      if (nvars <= 1) scale_factor <- sqrt(nrow(ztemp) - 1L)
+      R_inv_z <- qr.solve(decomposition_z, Q_z) * scale_factor
+      ztemp <- Q_z * scale_factor
       colnames(ztemp) <- cn_z
       zbar <- c(zbar %*% R_inv_z)
     }
@@ -259,7 +262,7 @@ stan_betareg.fit <-
     prior_df_for_intercept_z = c(prior_df_for_intercept_z),
     prior_scale_for_intercept_z = min(.Machine$double.xmax, prior_scale_for_intercept_z), 
     # for hs family priors
-    global_prior_scale_z,
+    global_prior_scale_z, global_prior_df_z, slab_df_z, slab_scale_z,
     # for product normal prior
     num_normals = if (prior_dist == 7) 
       as.array(as.integer(prior_df)) else integer(0),

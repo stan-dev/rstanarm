@@ -20,41 +20,32 @@
 
 set.seed(12345)
 
-MODELS_HOME <- "exec"
-fsep <- .Platform$file.sep
-if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), 
-                     paste0("rstanarm", fsep, "exec"), getwd())
-}
-if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- sub(paste0("tests.*", fsep, "testthat$"), "exec", getwd())
-}
-if (!file.exists(MODELS_HOME)) {
-  MODELS_HOME <- system.file("exec", package = "rstanarm") 
-}
+MODELS_HOME <- "stan_files"
+INCLUDE_DIR <- "include"
 
 context("setup")
 test_that("Stan programs are available", {
-  message(MODELS_HOME)
   expect_true(file.exists(MODELS_HOME))
-  expect_true(file.exists(file.path(system.file("chunks", package = "rstanarm"), 
-                                    "common_functions.stan")))
-  
 })
-  
+
 library(rstan)
 Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
+  mc <- grep("^#include", mc, invert = TRUE, value = TRUE)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
     end <- grep("^}[[:blank:]]*$", mc)[1]
+    if (end == (start + 1L)) return(as.character(NULL))
     return(mc[(start + 1L):(end - 1L)])
-  }
-  else return(as.character(NULL))
+  } else return(as.character(NULL))
 })
-functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm"), 
+names(functions) <- basename(names(functions))
+functions$polr.stan <- grep("csr_matrix_times_vector2", 
+                            functions$polr.stan, 
+                            value = TRUE, fixed = TRUE, invert = TRUE)
+functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
                                "bernoulli_likelihoods.stan",
                                "binomial_likelihoods.stan",
@@ -62,8 +53,11 @@ functions <- c(unlist(lapply(file.path(system.file("chunks", package = "rstanarm
                                "count_likelihoods.stan", 
                                "SSfunctions.stan")), 
                       FUN = readLines)), unlist(functions))
-model_code <- paste(c("functions {", functions, "}", "model {}"), collapse = "\n")
-expose_stan_functions(stanc(model_code = model_code, model_name = "Stan Functions"))
+model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
+stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
+                   allow_undefined = TRUE)
+expose_stan_functions(stanc_ret)
+Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"))
 N <- 99L
 
 # bernoulli
@@ -372,7 +366,7 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                                    flist = group$flist)
     Z <- group$Z
     p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attr(group$flist, "assign"), function(i) nlevels(group$flist[,i]))
+    l <- sapply(attr(group$flist, "assign"), function(i) nlevels(group$flist[[i]]))
     
     len_theta_L <- sum(choose(p,2), p)
     expect_true(len_theta_L == length(theta))
@@ -394,15 +388,15 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                  tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
-    Zb <- test_csr_matrix_times_vector(nrow(Z), ncol(Z), parts$w, 
-                                       parts$v, parts$u, b)
+    Zb <- csr_matrix_times_vector2_test(nrow(Z), ncol(Z), parts$w, 
+                                        parts$v - 1L, parts$u - 1L, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
     if (all(sapply(group$cnms, FUN = function(x) {
         length(x) == 1 && x == "(Intercept)"
       })) ) {
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
-                        t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+                      t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v - 1L))))))
       expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }
@@ -435,7 +429,10 @@ test_that("the Cornish-Fisher expansion from standard normal to Student t works"
 
 context("nlmer")
 test_that("SSasymp works", {
-  example("SSasymp", package = "stats", character.only = TRUE, ask = FALSE)
+  Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
+  Asym <- 100
+  resp0 <- -8.5
+  lrc <- -3.2  
   Phi <- cbind(Asym, resp0, lrc)
   expect_true(all.equal(SSasymp( Lob.329$age, Asym, resp0, lrc ),
                         SS_asymp( Lob.329$age, Phi ), check.attributes = FALSE))
@@ -446,7 +443,8 @@ test_that("SSasymp works", {
 
 context("nlmer")
 test_that("SSasympOff works", {
-  example("SSasympOff", package = "stats", character.only = TRUE, ask = FALSE)
+  CO2.Qn1 <- CO2[CO2$Plant == "Qn1", ]
+  Asym <- 32; lrc <- -4; c0 <- 43
   Phi <- cbind(Asym, lrc, c0)
   expect_true(all.equal(SSasympOff(CO2.Qn1$conc, Asym, lrc, c0),
                         SS_asympOff(CO2.Qn1$conc, Phi), check.attributes = FALSE))
@@ -457,7 +455,8 @@ test_that("SSasympOff works", {
 
 context("nlmer")
 test_that("SSasympOrig works", {
-  example("SSasympOrig", package = "stats", character.only = TRUE, ask = FALSE)
+  Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
+  Asym <- 100; lrc <- -3.2
   Phi <- cbind(Asym, lrc)
   expect_true(all.equal(SSasympOrig(Lob.329$age, Asym, lrc),
                         SS_asympOrig(Lob.329$age, Phi), check.attributes = FALSE))
@@ -468,7 +467,8 @@ test_that("SSasympOrig works", {
 
 context("nlmer")
 test_that("SSbiexp works", {
-  example("SSbiexp", package = "stats", character.only = TRUE, ask = FALSE)
+  Indo.1 <- Indometh[Indometh$Subject == 1, ]
+  A1 <- 3; lrc1 <- 1; A2 <- 0.6; lrc2 <- -1.3
   Phi <- cbind(A1, lrc1, A2, lrc2)
   expect_true(all.equal(SSbiexp( Indo.1$time, A1, lrc1, A2, lrc2 ),
                         SS_biexp( Indo.1$time, Phi ), check.attributes = FALSE))
@@ -479,7 +479,8 @@ test_that("SSbiexp works", {
 
 context("nlmer")
 test_that("SSfol works", {
-  example("SSfol", package = "stats", character.only = TRUE, ask = FALSE)
+  Theoph.1 <- Theoph[ Theoph$Subject == 1, ]
+  lKe <- -2.5; lKa <- 0.5; lCl <- -3
   Phi <- cbind(lKe, lKa, lCl)
   expect_true(all.equal(SSfol(Theoph.1$Dose, Theoph.1$Time, lKe, lKa, lCl),
                         SS_fol(Theoph.1$Dose, Theoph.1$Time, Phi), check.attributes = FALSE))
@@ -490,7 +491,8 @@ test_that("SSfol works", {
 
 context("nlmer")
 test_that("SSfpl works", {
-  example("SSfpl", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
+  A <- 13; B <- 368; xmid <- 14; scal <- 6
   Phi <- cbind(A, B, xmid, log(scal))
   expect_true(all.equal(SSfpl(Chick.1$Time, A, B, xmid, scal),
                         SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
@@ -501,7 +503,8 @@ test_that("SSfpl works", {
 
 context("nlmer")
 test_that("SSgompertz works", {
-  example("SSgompertz", package = "stats", character.only = TRUE, ask = FALSE)
+  DNase.1 <- subset(DNase, Run == 1)
+  Asym <- 4.5; b2 <- 2.3; b3 <- 0.7
   Phi <- cbind(Asym, b2, b3)
   expect_true(all.equal(SSgompertz(log(DNase.1$conc), Asym, b2, b3),
                         SS_gompertz(log(DNase.1$conc), Phi), check.attributes = FALSE))
@@ -512,7 +515,8 @@ test_that("SSgompertz works", {
 
 context("nlmer")
 test_that("SSlogis works", {
-  example("SSlogis", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
+  Asym <- 368; xmid <- 14; scal <- 6
   Phi <- cbind(Asym, xmid, log(scal))
   expect_true(all.equal(SSlogis(Chick.1$Time, Asym, xmid, scal),
                         SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
@@ -523,7 +527,8 @@ test_that("SSlogis works", {
 
 context("nlmer")
 test_that("SSmicmen works", {
-  example("SSmicmen", package = "stats", character.only = TRUE, ask = FALSE)
+  PurTrt <- Puromycin[ Puromycin$state == "treated", ]
+  Vm <- 200; K <- 0.05
   Phi <- cbind(Vm, K)
   expect_true(all.equal(SSmicmen(PurTrt$conc, Vm, K),
                         SS_micmen(PurTrt$conc, Phi), check.attributes = FALSE))
@@ -534,7 +539,8 @@ test_that("SSmicmen works", {
 
 context("nlmer")
 test_that("SSweibull works", {
-  example("SSweibull", package = "stats", character.only = TRUE, ask = FALSE)
+  Chick.6 <- subset(ChickWeight, (Chick == 6) & (Time > 0))
+  Asym <- 160; Drop <- 115; lrc <- -5.5; pwr <- 2.5
   Phi <- cbind(Asym, Drop, lrc, pwr)
   expect_true(all.equal(SSweibull(Chick.6$Time, Asym, Drop, lrc, pwr) ,
                         SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))
@@ -571,4 +577,19 @@ test_that("pw_beta and ll_beta_lp return expected results", {
     ll <- dbeta(1/3, mu*dispersion, (1-mu)*dispersion, log = TRUE)
     expect_true(all.equal(ll, pw_beta(rep(1/3,N) , eta, dispersion, i)), info = links[i])
   }
+})
+
+context("clogit")
+test_that("ll_clogit_lp (which calls log_clogit_denom) returns the expected results", {
+  data(infert)
+  infert <- infert[order(infert$stratum, !infert$case),]
+  betas <- c(spontaneous = 1.98587551667772, induced = 1.40901163187514)
+  X <- model.matrix(case ~ spontaneous + induced - 1, data = infert)
+  eta <- c(X %*% betas)
+  y <- infert$case == 1
+  s <- aggregate(y, by = list(infert$stratum), FUN = sum)$x
+  obs <- aggregate(y, by = list(infert$stratum), FUN = length)$x
+  ll <- ll_clogit_lp(eta0 = eta[!y], eta1 = eta[y], 
+                     successes = s, failures = obs - s, observations = obs)
+  expect_equal(-64.202236924431, ll)
 })

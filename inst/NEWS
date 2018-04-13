@@ -1,4 +1,43 @@
-* prior_aux now defaults to exponential rather than Cauchy
+Thu April 12 2018 (2.17.4)
+1. Major bug fixes:
+  * stan_jm and stan_mvmer now correctly include the intercept in the longitudinal submodel
+2. New features and arguments:
+  * QR = TRUE no longer ignores autoscale and has new behavior when autoscale = FALSE
+  * posterior_linpred now has a draws argument like for posterior_predict
+  * Dynamic predictions are now supported in posterior_traj
+  * More options for K-fold CV
+  * Compatible with loo >= 2.0
+
+Sat February 16 2018 (2.17.3)
+1. Build fixes for Solaris and avoid a test failure
+
+Wed December 20 2017 (2.17.2)
+1. Bug fixes
+  * stan_polr() and stan_lm() handle the K = 1 case better
+2. Important user-facing changes
+  * The prior_aux arguments now defaults to exponential rather than 
+    Cauchy
+  * The Stan programs do not drop any constants and should now be
+    safe to use with the bridgesampling package
+  * hs() and hs_plus() priors have new defaults based on a new
+    paper by Aki Vehtari and Juho Piironen
+  * stan_gamm4() is now more closely based on mgcv::jagam(), which 
+    may affect some estimates but the options remain largely the same
+  * The product_normal() prior permits df = 1, which is a product
+    of ... one normal variate
+  * The build system is more conventional now. It should require
+    less RAM to build from source but it is slower unless you
+    utilize parallel make and LTO
+3. New features
+  * stan_jm() and stan_mvmer() contributed by Sam Brilleman
+  * bayes_R2() method to calculate a quantity similar to R^2
+  * stan_nlmer(), which is similar to lme4::nlmer but watch
+    out for multimodal posterior distributions
+  * stan_clogit(), which is similar to survival::clogit but
+    accepts lme4-style group-specific terms
+  * The mgcv::betar family is supported, allowing for beta
+    regressions with lme4-style group terms and / or smooth
+    nonlinear functions of predictors
 
 Sat April 29 2017 (2.15.3)
 1. Bug fixes

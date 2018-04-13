@@ -19,6 +19,7 @@
 #' Bayesian generalized linear additive models with optional group-specific
 #' terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GAMMs with flexible priors.
 #' 
 #' @export
@@ -98,7 +99,7 @@
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
 #' 
 #' @seealso The vignette for \code{stan_glmer}, which also discusses
-#'   \code{stan_gamm4}.
+#'   \code{stan_gamm4}. \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
@@ -155,12 +156,32 @@ stan_gamm4 <-
     glmod <- NULL
   }
   
-  jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
-                    file = tempfile(fileext = ".jags"), weights = NULL,
-                    na.action = na.action, offset = NULL, knots = knots,
-                    drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
-
-  y <- jd$jags.data$y
+  if (family$family == "binomial") {
+    data$temp_y <- rep(1, NROW(data)) # work around jagam bug
+    temp_formula <- update(formula, temp_y ~ .)
+    jd <- mgcv::jagam(formula = temp_formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    
+    if (!is.null(random)) {
+      y <- data[, as.character(formula[2L])]
+    } else {
+      y <- eval(formula[[2L]], data)
+    }
+    
+    if (binom_y_prop(y, family, weights)) {
+      y1 <- as.integer(as.vector(y) * weights)
+      y <- cbind(y1, y0 = weights - y1)
+      weights <- double(0)
+    }
+  } else {
+    jd <- mgcv::jagam(formula = formula, family = gaussian(), data = data,
+                      file = tempfile(fileext = ".jags"), weights = NULL,
+                      na.action = na.action, offset = NULL, knots = knots,
+                      drop.unused.levels = drop.unused.levels, diagonalize = TRUE)
+    y <- jd$jags.data$y
+  }
   # there is no offset allowed by gamm4::gamm4
   offset <- validate_offset(as.vector(model.offset(jd$pregam$model)), y = y)
   X <- jd$jags.data$X
@@ -205,15 +226,14 @@ stan_gamm4 <-
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
   if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
-  if (is.null(random)) Z <- Matrix::Matrix(nrow = length(y), ncol = 0, sparse = TRUE)
+  if (is.null(random)) Z <- Matrix::Matrix(nrow = NROW(y), ncol = 0, sparse = TRUE)
   else {
     Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
                     flist = group$flist)$Z
     colnames(Z) <- b_names(names(stanfit), value = TRUE)
   }
-  if (getRversion() < "3.2.0") XZ <- cBind(X, Z) 
-  else XZ <- cbind2(X, Z)
-  
+  XZ <- cbind(X, Z) 
+
   # make jam object with point estimates, see ?mgcv::sim2jam
   mat <- as.matrix(stanfit)
   mark <- 1:ncol(X)
@@ -263,7 +283,7 @@ plot_nonlinear <- function(x, smooths, ...,
   validate_stanreg_object(x)
   if (!is(x, "gamm4"))
     stop("Plot only available for models fit using the stan_gamm4 function.")
-  on.exit("try plot(x$jam) instead")
+  on.exit(message("try plot(x$jam) instead"))
   scheme <- bayesplot::color_scheme_get()
   
   XZ <- x$x

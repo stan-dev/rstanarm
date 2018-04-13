@@ -17,6 +17,7 @@
 
 #' Bayesian nonlinear models with group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for NLMMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #'
@@ -65,7 +66,7 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer}, which also discusses 
-#'   \code{stan_nlmer} models.
+#'   \code{stan_nlmer} models. \url{http://mc-stan.org/rstanarm/articles/}
 #'   
 #' @examples
 #' \donttest{
@@ -167,9 +168,8 @@ stan_nlmer <-
   fit <- nlist(stanfit, 
                family = make_nlf_family(SSfun_char, nlf), 
                formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               na.action = na.omit, contrasts, algorithm, 
+               x = cbind(X, Z), y = y, data, call = match.call(), terms = NULL, 
+               model = NULL, na.action = na.omit, contrasts, algorithm, 
                glmod = nlf, stan_function = "stan_nlmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "nlmerMod", "lmerMod")

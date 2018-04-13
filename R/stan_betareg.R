@@ -17,6 +17,7 @@
 
 #' Bayesian beta regression models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Beta regression modeling with optional prior distributions for the 
 #' coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 #'
@@ -78,6 +79,7 @@
 #'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @references Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for 
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.
@@ -94,9 +96,12 @@
 #' hist(y, col = "dark grey", border = FALSE, xlim = c(0,1))
 #' fake_dat <- data.frame(y, x, z)
 #' 
-#' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
-#'                     link = "logit", link.phi = "log", 
-#'                     algorithm = "optimizing")
+#' fit <- stan_betareg(
+#'   y ~ x | z, data = fake_dat, 
+#'   link = "logit", 
+#'   link.phi = "log", 
+#'   algorithm = "optimizing" # just for speed of example
+#'  ) 
 #' print(fit, digits = 2)
 #'
 stan_betareg <-
@@ -168,7 +173,12 @@ stan_betareg <-
     
     if (is.null(link.phi) && is.null(Z))
       link_phi <- "identity"
-    
+    sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+    X <- X[ , !sel, drop = FALSE]
+    if (!is.null(Z)) {
+      sel <- apply(Z, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+      Z <- Z[ , !sel, drop = FALSE]
+    }
     fit <- 
       nlist(stanfit, algorithm, data, offset, weights,
             x = X, y = Y, z = Z %ORifNULL% model.matrix(y ~ 1),

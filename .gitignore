@@ -1,10 +1,12 @@
 exec/*.rda
 .Rproj.user
 .Rhistory
-src/Modules*
+src/stan_files/*.o
+src/stan_files/*.cc
+src/stan_files/*.hpp
 src/rstanarm.so
+src/rstanarm.dll
 src/init.o
-src/include
 man/*.Rd
 !man/rstanarm-internal.Rd
 vignettes/*.R
@@ -12,3 +14,4 @@ vignettes/*.R
 vignettes/*.html
 vignettes/*_files
 .DS_Store
+revdep/*

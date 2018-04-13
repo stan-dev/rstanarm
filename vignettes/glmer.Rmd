@@ -49,7 +49,7 @@ $\mathbf{b}$, invariably that it is distributed multivariate normal with mean
 vector zero and structured covariance matrix $\boldsymbol{\Sigma}$. If $\epsilon_i$
 is also distributed (univariate) normal with mean zero and standard deviation
 $\sigma$, then $\mathbf{b}$ can be integrated out, which implies
-$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
+$$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{I}+\mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),$$
 and it is possible to maximize this likelihood function by choosing proposals 
 for the parameters $\alpha$, $\boldsymbol{\beta}$, and (the free elements of) $\boldsymbol{\Sigma}$.
 
@@ -257,10 +257,16 @@ library(rstanarm)
 data(roaches)
 roaches$roach1 <- roaches$roach1 / 100
 roaches$log_exposure2 <- log(roaches$exposure2)
-post <- stan_gamm4(y ~ s(roach1) + treatment + log_exposure2,
-                   random = ~(1 | senior),
-                   data = roaches, family = neg_binomial_2, QR = TRUE,
-                   chains = CHAINS, cores = CORES, seed = SEED)
+post <- stan_gamm4(
+  y ~ s(roach1) + treatment + log_exposure2,
+  random = ~(1 | senior),
+  data = roaches, 
+  family = neg_binomial_2, 
+  QR = TRUE,
+  chains = CHAINS, 
+  cores = CORES, 
+  seed = SEED
+)
 ```
 ```{r}
 plot_nonlinear(post)
@@ -342,6 +348,7 @@ for the tree-specific deviations in the asymptote, which are considerable.
 plot(post1, regex_pars = "^[b]")
 ```
 
+
 As can be seen, the age of the tree has a non-linear effect on the predicted
 circumference of the tree (here for a out-of-sample tree):
 ```{r}
@@ -353,20 +360,17 @@ ggplot(PPD_df, aes(age, circumference)) + geom_boxplot()
 ```
 
 If we were pharmacological, we could evaluate drug concentration using a
-first-order compartment model
-```{r, results = "hide"}
+first-order compartment model, such as
+```{r, eval = FALSE}
 post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~ 
                     (0 + lKe + lKa + lCl | Subject), data = Theoph,
                     chains = CHAINS, cores = CORES, seed = SEED, 
                     QR = TRUE, init_r = 0.25, adapt_delta = 0.999)
-```
-However, in this case the posterior distribution is bimodal
-```{r}
 pairs(post3, regex_pars = "^l")
 pairs(post3, regex_pars = "igma")
 ```
-Thus, you should always be running many chains when using Stan, especially
-`stan_nlmer`.
+However, in this case the posterior distribution is bimodal Thus, you 
+should always be running many chains when using Stan, especially `stan_nlmer`.
 
 # Conclusion
 

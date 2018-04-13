@@ -34,6 +34,7 @@
 #' @templateVar bdaRef (Ch. 6)
 #' @templateVar stanregArg object
 #' @template reference-bda
+#' @template reference-bayesvis
 #' @template args-stanreg-object
 #' @param plotfun A character string naming the \pkg{bayesplot} 
 #'   \link[bayesplot]{PPC} function to use. The default is to call
@@ -102,7 +103,7 @@
 #' pp_check(fit, plotfun = "stat_grouped", stat = "q25", group = "cyl")
 #' 
 #' # Scatterplot of two test statistics
-#' pp_check(fit, plotfun = "stat_2d", test = c("mean", "sd"))
+#' pp_check(fit, plotfun = "stat_2d", stat = c("mean", "sd"))
 #' 
 #' # Scatterplot of y vs. average yrep
 #' pp_check(fit, plotfun = "scatter_avg") # y vs. average yrep
@@ -146,16 +147,24 @@ pp_check.stanreg <-
     if (used.optimizing(object))
       STOP_not_optimizing("pp_check")
     
+    if (is.stanmvreg(object)) {
+      dots <- list(...)
+      m <- dots[["m"]]
+      if (is.null(m))
+        stop("Argument 'm' must be provided for stanmvreg objects.")
+    } else m <- NULL
+    
     plotfun_name <- .ppc_function_name(plotfun)
-    plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), 
-                   mode = "function")
-    is_binomial_model <- is_binomial_ppc(object)
+    plotfun <- get(plotfun_name, pos = asNamespace("bayesplot"), mode = "function")
+    is_binomial_model <- is_binomial_ppc(object, m = m)
+    
     y_yrep <-
       .ppc_y_and_yrep(
         object,
         seed = seed,
         nreps = .set_nreps(nreps, fun = plotfun_name),
-        binned_resid_plot = isTRUE(plotfun_name == "ppc_error_binned")
+        binned_resid_plot = isTRUE(plotfun_name == "ppc_error_binned"),
+        ...
       )
     args <-
       .ppc_args(
@@ -175,11 +184,11 @@ pp_check.stanreg <-
 # internal ----------------------------------------------------------------
 
 # check if binomial
-is_binomial_ppc <- function(object) {
+is_binomial_ppc <- function(object, ...) {
   if (is_polr(object) && !is_scobit(object)) {
     FALSE
   } else {
-    is.binomial(family(object)$family)
+    is.binomial(family(object, ...)$family)
   }
 }
 
@@ -188,16 +197,17 @@ is_binomial_ppc <- function(object) {
   function(object,
            nreps = NULL,
            seed = NULL,
-           binned_resid_plot = FALSE) {
-    y <- get_y(object)
+           binned_resid_plot = FALSE, 
+           ...) {
+    y <- get_y(object, ...)
     if (binned_resid_plot) {
-      yrep <- posterior_linpred(object, transform = TRUE)
+      yrep <- posterior_linpred(object, transform = TRUE, ...)
       yrep <- yrep[1:nreps, , drop = FALSE]
     } else {
-      yrep <- posterior_predict(object, draws = nreps, seed = seed)
+      yrep <- posterior_predict(object, draws = nreps, seed = seed, ...)
     }
     
-    if (is_binomial_ppc(object)) { # includes stan_polr's scobit models
+    if (is_binomial_ppc(object, ...)) { # includes stan_polr's scobit models
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
         y <- y[, 1L] / trials
@@ -215,11 +225,11 @@ is_binomial_ppc <- function(object) {
 
 
 # prepare 'group' and 'x' variable for certain plots
-.ppc_xvar <- .ppc_groupvar <- function(object, var = NULL) {
+.ppc_xvar <- .ppc_groupvar <- function(object, var = NULL, ...) {
   if (is.null(var) || !is.character(var))
     return(var)
 
-  mf <- model.frame(object)
+  mf <- model.frame(object, ...)
   vars <- colnames(mf)
   if (var %in% vars)
     return(mf[, var])
@@ -243,6 +253,14 @@ is_binomial_ppc <- function(object) {
   if (!identical(substr(fun, 1, 4), "ppc_"))
     fun <- paste0("ppc_", fun)
   
+  if (fun == "ppc_loo_pit") {
+    warning(
+      "'ppc_loo_pit' is deprecated. ", 
+      "Use 'ppc_loo_pit_overlay' or 'ppc_loo_pit_qq' instead.", 
+      call.=FALSE
+    )
+    fun <- "ppc_loo_pit_qq"
+  }
   if (!fun %in% bayesplot::available_ppc())
     stop(
       fun, " is not a valid PPC function name.",  
@@ -268,15 +286,23 @@ is_binomial_ppc <- function(object) {
   dots[["yrep"]] <- yrep
   argnames <- names(formals(fun))
   
+  if (is.stanmvreg(object)) {
+    m <- dots[["m"]]
+    if (is.null(m))
+      stop("Argument 'm' must be provided for stanmvreg objects.")
+    dots[["m"]] <- NULL # don't return m as part of bayesplot arguments
+  }
+  else m <- NULL
+  
   if ("group" %in% argnames) {
     groupvar <- dots[["group"]] %ORifNULL% 
         stop("This PPC requires the 'group' argument.", call. = FALSE)
-    dots[["group"]] <- .ppc_groupvar(object, groupvar)
+    dots[["group"]] <- .ppc_groupvar(object, groupvar, m = m)
   }
   if ("x" %in% argnames) {
     xvar <- dots[["x"]]  
     if (!is.null(xvar)) {
-      dots[["x"]] <- .ppc_xvar(object, xvar)
+      dots[["x"]] <- .ppc_xvar(object, xvar, m = m)
     } else {
       if (funname %in% c("ppc_intervals", "ppc_ribbon")) {
         message("'x' not specified in '...'. Using x=1:length(y).")
@@ -286,9 +312,12 @@ is_binomial_ppc <- function(object) {
       }
     }
   }
-  if ("lw" %in% argnames && is.null(dots[["lw"]])) {
+  
+  if ("psis_object" %in% argnames && is.null(dots[["psis_object"]])) {
+    dots[["psis_object"]] <- psis.stanreg(object)
+  } else if ("lw" %in% argnames && is.null(dots[["lw"]])) {
     # for LOO predictive checks
-    dots[["lw"]] <- loo_weights(object, log = TRUE)
+    dots[["lw"]] <- weights(psis.stanreg(object))
   }
   
   return(dots)
@@ -342,6 +371,8 @@ is_binomial_ppc <- function(object) {
     
     # LOO PLOTS
     "loo_pit" = .ignore_nreps(nreps),
+    "loo_pit_overlay" = .ignore_nreps(nreps),
+    "loo_pit_qq" = .ignore_nreps(nreps),
     "loo_intervals" = .ignore_nreps(nreps),
     "loo_ribbon" = .ignore_nreps(nreps),
     

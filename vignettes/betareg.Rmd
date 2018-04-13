@@ -248,10 +248,7 @@ compare_models(gas_loo1, gas_loo2)
 ```
 
 Evaluating the expected log predictive distribution using `loo` 
-reveals that the second of the two models is slightly preferred. That
-said, in this case the standard error of the difference in `elpd` 
-is large enough (relative to the difference itself) that we can't say 
-there is a definitive preference for the second model.
+reveals that the second of the two models is preferred.
 
 # References
 

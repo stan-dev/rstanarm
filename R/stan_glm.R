@@ -17,6 +17,7 @@
 
 #' Bayesian generalized linear models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Generalized linear modeling with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -44,6 +45,7 @@
 #' @template args-QR
 #' @template args-sparse
 #' @template reference-gelman-hill
+#' @template reference-muth
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
 #'   are also possible using the \code{\link{neg_binomial_2}} family object.
@@ -69,7 +71,8 @@
 #'   \code{link}, is a wrapper for \code{stan_glm} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
-#' @seealso The various vignettes for \code{stan_glm}.
+#' @seealso The various vignettes for \code{stan_glm} at
+#'   \url{http://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
 #' if (!grepl("^sparc",  R.version$platform)) {
@@ -195,6 +198,8 @@ stan_glm <-
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           QR = QR, sparse = sparse, ...)
   if (family$family == "Beta regression") family$family <- "beta"
+  sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
+  X <- X[ , !sel, drop = FALSE]  
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 

@@ -56,22 +56,28 @@
 #'   \sim N(\mu, \sigma)}{\theta ~ N(\mu, \sigma)} the corresponding prior on
 #'   \eqn{\beta} is \eqn{\beta \sim MVN(R\mu, R'R\sigma^2)}{\beta ~ MVN(R\mu,
 #'   R'R\sigma)}, where \eqn{\mu} and \eqn{\sigma} are vectors of the
-#'   appropriate length. Technically \pkg{rstanarm} uses a scaled \eqn{QR}
+#'   appropriate length. Technically, \pkg{rstanarm} uses a scaled \eqn{QR}
 #'   decomposition to ensure that the columns of the predictor matrix used to
-#'   fit the model all have unit scale. The matrices actually used are
+#'   fit the model all have unit scale, when the \code{autoscale} argument
+#'   to the function passed to the \code{prior} argument is \code{TRUE} (the
+#'   default), in which case the matrices actually used are
 #'   \eqn{Q^\ast = Q \sqrt{n-1}}{Q* = Q (n-1)^0.5} and \eqn{R^\ast =
-#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R} (see the documentation for the
+#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R}. If \code{autoscale = FALSE}
+#'   we instead scale such that the lower-right element of \eqn{R^\ast}{R*} is 
+#'   \eqn{1}, which is useful if you want to specify a prior on the coefficient 
+#'   of the last predictor in its original units (see the documentation for the 
 #'   \code{\link[=stan_glm]{QR}} argument).
 #'   
 #'   If you are interested in the prior on \eqn{\beta} implied by the prior on
-#'   \eqn{\theta}, we recommend visualizing it as described above in the
-#'   \strong{Description} section, which is simpler than working it out
+#'   \eqn{\theta}, we strongly recommend visualizing it as described above in
+#'   the \strong{Description} section, which is simpler than working it out
 #'   analytically.
 #'   
 #' @return A list of class "prior_summary.stanreg", which has its own print
 #'   method.
 #'   
-#' @seealso \code{\link{posterior_vs_prior}}, \code{\link{priors}}
+#' @seealso The \link[=priors]{priors help page} and the \emph{Prior
+#'   Distributions} vignette.
 #' 
 #' @examples
 #' if (!exists("example_model")) example(example_model) 
@@ -100,12 +106,18 @@ prior_summary.stanreg <- function(object, digits = 2,...) {
   if (is.null(x)) {
     message("Priors not found in stanreg object.")
     return(invisible(NULL))
+  }  
+  if (is.stanmvreg(object)) {
+    M <- get_M(object)
+    x <- structure(x, M = M) 
   }
   structure(x, class = "prior_summary.stanreg",
             QR = used.QR(object),
             sparse = used.sparse(object),
             model_name = deparse(substitute(object)), 
+            stan_function = object$stan_function,
             print_digits = digits)
+  
 }
 
 #' @export
@@ -120,32 +132,63 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   QR <- attr(x, "QR")
   sparse <- attr(x, "sparse")
   model_name <- attr(x, "model_name")
+  stan_function <- attr(x, "stan_function")
   
   msg <- paste0("Priors for model '", model_name, "'")
   cat(msg, "\n------")
   
-  if (!is.null(x[["prior_intercept"]]))
-    .print_scalar_prior(
-      x[["prior_intercept"]], 
-      txt = paste0("Intercept", if (!sparse) " (after predictors centered)"), 
-      formatters
-    )
-  if (!is.null(x[["prior"]]))
-    .print_vector_prior(
-      x[["prior"]], 
-      txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
-      formatters = formatters
-    )
-  if (!is.null(x[["prior_aux"]])) {
-    aux_name <- x[["prior_aux"]][["aux_name"]]
-    aux_dist <- x[["prior_aux"]][["dist"]]
-    if (aux_dist %in% c("normal", "student_t", "cauchy"))
-      x[["prior_aux"]][["dist"]] <- paste0("half-", aux_dist)
-    .print_scalar_prior(
-      x[["prior_aux"]], 
-      txt = paste0("\nAuxiliary (", aux_name, ")"), 
-      formatters
-    )
+  if (!stan_function == "stan_mvmer") {
+    if (!is.null(x[["prior_intercept"]]))
+      .print_scalar_prior(
+        x[["prior_intercept"]], 
+        txt = paste0("Intercept", if (!sparse) " (after predictors centered)"), 
+        formatters
+      )
+    if (!is.null(x[["prior"]]))
+      .print_vector_prior(
+        x[["prior"]], 
+        txt = paste0("\nCoefficients", if (QR) " (in Q-space)"), 
+        formatters = formatters
+      )
+    if (!is.null(x[["prior_aux"]])) {
+      aux_name <- x[["prior_aux"]][["aux_name"]]
+      aux_dist <- x[["prior_aux"]][["dist"]]
+      if (aux_dist %in% c("normal", "student_t", "cauchy"))
+        x[["prior_aux"]][["dist"]] <- paste0("half-", aux_dist)
+      .print_scalar_prior(
+        x[["prior_aux"]], 
+        txt = paste0("\nAuxiliary (", aux_name, ")"), 
+        formatters
+      )
+    }    
+  } else { # unique to stan_mvmer
+    M <- attr(x, "M")
+    for (m in 1:M) {
+      if (!is.null(x[["prior_intercept"]][[m]]))
+        .print_scalar_prior(
+          x[["prior_intercept"]][[m]], 
+          txt = paste0(if (M > 1) "\n", "y", m, "|Intercept", if (!sparse) 
+            " (after predictors centered)"), 
+          formatters
+        )
+      if (!is.null(x[["prior"]][[m]]))
+        .print_vector_prior(
+          x[["prior"]][[m]], 
+          txt = paste0("\ny", m, "|Coefficients", if (QR) " (in Q-space)"), 
+          formatters = formatters
+        )
+      if (!is.null(x[["prior_aux"]][[m]])) {
+        aux_name <- x[["prior_aux"]][[m]][["aux_name"]]
+        aux_dist <- x[["prior_aux"]][[m]][["dist"]]
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["prior_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["prior_aux"]][[m]], 
+          txt = paste0("\ny", m, "|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }    
   }
   
   # unique to stan_betareg
@@ -158,7 +201,75 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
   if (!is.null(x[["prior_z"]]))
     .print_vector_prior(x[["prior_z"]], txt = "\nCoefficients_z", formatters)
   
-  # unique to stan_(g)lmer or stan_gamm4
+  # unique to stan_jm
+  if (stan_function == "stan_jm") {
+    M <- attr(x, "M")
+    for (m in 1:M) {
+      if (!is.null(x[["priorLong_intercept"]][[m]]))
+        .print_scalar_prior(
+          x[["priorLong_intercept"]][[m]], 
+          txt = paste0(if (M > 1) "\n", "Long", m, "|Intercept", if (!sparse) 
+            " (after predictors centered)"), 
+          formatters
+        )
+      if (!is.null(x[["priorLong"]][[m]]))
+        .print_vector_prior(
+          x[["priorLong"]][[m]], 
+          txt = paste0("\nLong", m, "|Coefficients", if (QR) " (in Q-space)"), 
+          formatters = formatters
+        )
+      if (!is.null(x[["priorLong_aux"]][[m]])) {
+        aux_name <- x[["priorLong_aux"]][[m]][["aux_name"]]
+        aux_dist <- x[["priorLong_aux"]][[m]][["dist"]]
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["priorLong_aux"]][[m]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorLong_aux"]][[m]], 
+          txt = paste0("\nLong", m, "|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
+    if (!is.null(x[["priorEvent_intercept"]]))
+      .print_scalar_prior(
+        x[["priorEvent_intercept"]], 
+        txt = paste0("\nEvent|Intercept", if (!sparse) " (after predictors centered)"), 
+        formatters
+      )
+    if (!is.null(x[["priorEvent"]]))
+      .print_vector_prior(
+        x[["priorEvent"]], 
+        txt = "\nEvent|Coefficients", 
+        formatters = formatters
+      )
+    if (!is.null(x[["priorEvent_aux"]])) {
+      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
+      aux_dist <- x[["priorEvent_aux"]][["dist"]]
+      if ((aux_name == "weibull-shape") &&
+          (aux_dist %in% c("normal", "student_t", "cauchy"))) { # weibull
+        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nEvent|Auxiliary (", aux_name, ")"), 
+          formatters
+        )        
+      } else { # bs or piecewise
+        .print_vector_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nEvent|Auxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
+    if (!is.null(x[["priorEvent_assoc"]]))
+      .print_vector_prior(
+        x[["priorEvent_assoc"]], 
+        txt = "\nAssociation parameters", 
+        formatters = formatters
+      )
+  }  
+  
+  # unique to stan_(g)lmer, stan_gamm4, stan_mvmer, or stan_jm
   if (!is.null(x[["prior_covariance"]]))
     .print_covariance_prior(x[["prior_covariance"]], txt = "\nCovariance", formatters)
   
@@ -175,9 +286,9 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         paste0(p$dist, "(shape = ", .fr2(p$shape), 
                ", rate = ", .fr2(p$rate), ")"))
   }
-  
+
   cat("\n------\n")
-  cat("See help('prior_summary.stanreg') for more details")
+  cat("See help('prior_summary.stanreg') for more details\n")
   invisible(x)
 }
 
