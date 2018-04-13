@@ -1,0 +1,17 @@
+pandoc: 1.19.2.1
+pkgdown: 0.1.0.9000
+pkgdown_sha: 3e1bdfaf4ad79f999bb6ab3ddd8e84bd365037b6
+articles:
+  aov: aov.html
+  betareg: betareg.html
+  binomial: binomial.html
+  continuous: continuous.html
+  count: count.html
+  glmer: glmer.html
+  jm: jm.html
+  lm: lm.html
+  polr: polr.html
+  pooling: pooling.html
+  priors: priors.html
+  rstanarm: rstanarm.html
+

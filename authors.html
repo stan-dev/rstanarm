@@ -18,13 +18,19 @@
 <!-- Font Awesome icons -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
 
+<!-- clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="pkgdown.css" rel="stylesheet">
 <script src="jquery.sticky-kit.min.js"></script>
 <script src="pkgdown.js"></script>
-  
-  
+<meta property="og:title" content="Citation and Authors" />
+
+<meta property="og:image" content="/logo.png" />
+<meta name="twitter:card" content="summary" />
+
+
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -32,6 +38,8 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
+
+
 
 
   </head>
@@ -47,8 +55,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
@@ -109,6 +121,7 @@
   </a>
 </li>
       </ul>
+      
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
@@ -116,9 +129,8 @@
       
       </header>
 
-      <div class="row">
+<div class="row">
   <div class="contents col-md-9">
-
     <div class="page-header">
       <h1>Citation</h1>
     </div>
@@ -140,51 +152,67 @@ R package version 2.13.1, <a href="http://mc-stan.org/">http://mc-stan.org/</a>.
 
     <ul class="list-unstyled">
       <li>
-        <p><strong>Jonah Gabry</strong>. Author.
+        <p><strong>Jonah Gabry</strong>. Author. 
         </p>
       </li>
       <li>
-        <p><strong>Imad Ali</strong>. Contributor.
+        <p><strong>Imad Ali</strong>. Contributor. 
         </p>
       </li>
       <li>
-        <p><strong>Trustees of Columbia University</strong>. Copyright&nbsp;holder.
+        <p><strong>Sam Brilleman</strong>. Contributor. 
         </p>
       </li>
       <li>
-        <p><strong>Simon Wood</strong>. Copyright&nbsp;holder.
+        <p><strong>Jacqueline Buros Novik</strong>. Contributor. 
+        <br /><small>R/stan_jm.R</small></p>
+      </li>
+      <li>
+        <p><strong>AstraZeneca</strong>. Contributor. 
+        <br /><small>R/stan_jm.R</small></p>
+      </li>
+      <li>
+        <p><strong>Trustees of Columbia University</strong>. Copyright holder. 
+        </p>
+      </li>
+      <li>
+        <p><strong>Simon Wood</strong>. Copyright holder. 
         <br /><small>R/stan_gamm4.R</small></p>
       </li>
       <li>
-        <p><strong>R Core Deveopment Team</strong>. Copyright&nbsp;holder.
+        <p><strong>R Core Deveopment Team</strong>. Copyright holder. 
         <br /><small>R/stan_aov.R</small></p>
       </li>
       <li>
-        <p><strong>Douglas Bates</strong>. Copyright&nbsp;holder.
+        <p><strong>Douglas Bates</strong>. Copyright holder. 
         <br /><small>R/pp_data.R</small></p>
       </li>
       <li>
-        <p><strong>Martin Maechler</strong>. Copyright&nbsp;holder.
+        <p><strong>Martin Maechler</strong>. Copyright holder. 
         <br /><small>R/pp_data.R</small></p>
       </li>
       <li>
-        <p><strong>Ben Bolker</strong>. Copyright&nbsp;holder.
+        <p><strong>Ben Bolker</strong>. Copyright holder. 
         <br /><small>R/pp_data.R</small></p>
       </li>
       <li>
-        <p><strong>Steve Walker</strong>. Copyright&nbsp;holder.
+        <p><strong>Steve Walker</strong>. Copyright holder. 
         <br /><small>R/pp_data.R</small></p>
       </li>
       <li>
-        <p><strong>Brian Ripley</strong>. Copyright&nbsp;holder.
+        <p><strong>Brian Ripley</strong>. Copyright holder. 
         <br /><small>R/stan_aov.R, R/stan_polr.R</small></p>
       </li>
       <li>
-        <p><strong>William Venables</strong>. Copyright&nbsp;holder.
+        <p><strong>William Venables</strong>. Copyright holder. 
         <br /><small>R/stan_polr.R</small></p>
       </li>
       <li>
-        <p><strong>Ben Goodrich</strong>. Maintainer, author.
+        <p><strong>Paul-Christian Burkner</strong>. Copyright holder. 
+        <br /><small>R/misc.R</small></p>
+      </li>
+      <li>
+        <p><strong>Ben Goodrich</strong>. Maintainer, author. 
         </p>
       </li>
     </ul>
@@ -200,11 +228,14 @@ R package version 2.13.1, <a href="http://mc-stan.org/">http://mc-stan.org/</a>.
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
    </div>
 
+  
+
   </body>
 </html>
+

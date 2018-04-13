@@ -4,51 +4,35 @@
 
 <br>
 
-<div style="text-align:center">
-<a href="http://mc-stan.org">
-<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo.png" width=200 alt="Stan Logo"/>
-</a>
+<div style="text-align:left">
+<span><a href="http://mc-stan.org">
+<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo_tm.png" width=100 alt="Stan Logo"/> </a><h2><strong>rstanarm</strong></h2>
+<h4>Bayesian applied regression modeling</h4></span>
 </div>
 
 <br>
 
 **rstanarm** is an R package that emulates other R model-fitting functions but
-uses Stan (via the [rstan](http://mc-stan.org/interfaces/rstan.html) package)
-for the back-end estimation. The primary
-target audience is people who would be open to Bayesian inference if using
-Bayesian software were easier but would use frequentist software otherwise.
+uses Stan (via the [rstan](http://mc-stan.org/rstan/) package)
+for the back-end estimation. The primary target audience is people who would be
+open to Bayesian inference if using Bayesian software were easier but would use
+frequentist software otherwise.
 
-<br>
+## Getting started
+
+If you are just getting started with **rstanarm** the tutorial [vignettes](http://mc-stan.org/rstanarm/articles/) 
 
 ## Installation
 
-### Latest Release
-The most recent **rstanarm** release can be installed from CRAN via
+Install the latest release from **CRAN**
 
 ```r
 install.packages("rstanarm")
 ```
 
-### Development Version
-To install from GitHub, first make sure that you can install the **rstan**
-package and C++ toolchain by following these
-[instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started).
-Once **rstan** is successfully installed, you can install **rstanarm** from
-GitHub using the **devtools** package by executing the following in R:
+Instructions for installing the latest development version from **GitHub** can
+be found in the **rstanarm** [Readme](https://github.com/stan-dev/rstanarm#installation).
 
-```r
-if (!require(devtools)) {
-  install.packages("devtools")
-  library(devtools)
-}
-install_github("stan-dev/rstanarm", args = "--preclean", build_vignettes = FALSE)
-```
-
-Make sure to include the `args = "--preclean"` and `build_vignettes = FALSE` arguments
-or the development version of package will not install properly. If installation fails,
-please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
-
-<br>
 
 ## Getting help
 
@@ -60,5 +44,4 @@ please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/iss
 ## Contributing
 
 If you are interested in contributing to the development of **rstanarm** please
-see the [Contributing to development](https://github.com/stan-dev/rstanarm/wiki/Contributing-to-development)
-page of the Github wiki.
+see the [Developer notes](http://mc-stan.org/rstanarm/dev-notes/index.html).

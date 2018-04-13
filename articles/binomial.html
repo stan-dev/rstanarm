@@ -8,8 +8,12 @@
 <title>Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm • rstanarm</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm">
+<meta property="og:description" content="">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary">
+<!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
@@ -24,8 +28,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -94,17 +102,19 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-08-03</h4>
-          </div>
+            <h4 class="date">2018-04-13</h4>
+      
+      
+
+    </div>
 
     
     
-<div class="contents">
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{stan_glm: GLMs for Binary and Binomial Data}
@@ -165,16 +175,16 @@
 <p>After loading the <code>wells</code> data, we first rescale the <code>dist</code> variable (measured in meters) so that it is measured in units of 100 meters. If we leave <code>dist</code> in its original units then the corresponding regression coefficient will represent the effect of the marginal meter, which is too small to have a useful interpretation.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
 <span class="kw">data</span>(wells)
-wells$dist100 &lt;-<span class="st"> </span>wells$dist /<span class="st"> </span><span class="dv">100</span></code></pre></div>
+wells<span class="op">$</span>dist100 &lt;-<span class="st"> </span>wells<span class="op">$</span>dist <span class="op">/</span><span class="st"> </span><span class="dv">100</span></code></pre></div>
 <p>Before estimating any models we can visualize the distribution of <code>dist100</code> in the data:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(wells, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> switch ==<span class="st"> </span><span class="dv">1</span>)) +
-<span class="st">  </span><span class="kw">geom_histogram</span>() +<span class="st"> </span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(wells, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> ..density.., <span class="dt">fill =</span> <span class="cf">switch</span> <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">geom_histogram</span>() <span class="op">+</span><span class="st"> </span>
 <span class="st">  </span><span class="kw">scale_fill_manual</span>(<span class="dt">values =</span> <span class="kw">c</span>(<span class="st">"gray30"</span>, <span class="st">"skyblue"</span>))</code></pre></div>
 <p><img src="binomial_files/figure-html/binom-arsenic-plot-dist100-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>In the plot above the blue bars correspond to the 1737 residents who said they switched wells and darker bars show the distribution of <code>dist100</code> for the 1283 residents who didn’t switch. As we would expect, for the residents who switched wells, the distribution of <code>dist100</code> is more concentrated at smaller distances.</p>
 <p>A Bayesian version of Gelman and Hill’s initial logistic regression model can be estimated using the <code>stan_glm</code> function. Here we’ll use a Student t prior with 7 degrees of freedom and a scale of 2.5, which, as discussed above, is a reasonable default prior when coefficients should be close to zero but have some chance of being large.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">t_prior &lt;-<span class="st"> </span><span class="kw"><a href="../reference/priors.html">student_t</a></span>(<span class="dt">df =</span> <span class="dv">7</span>, <span class="dt">location =</span> <span class="dv">0</span>, <span class="dt">scale =</span> <span class="fl">2.5</span>)
-fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(switch ~<span class="st"> </span>dist100, <span class="dt">data =</span> wells, 
+fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(<span class="cf">switch</span> <span class="op">~</span><span class="st"> </span>dist100, <span class="dt">data =</span> wells, 
                  <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="dt">link =</span> <span class="st">"logit"</span>), 
                  <span class="dt">prior =</span> t_prior, <span class="dt">prior_intercept =</span> t_prior,  
                  <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)</code></pre></div>
@@ -189,82 +199,123 @@ dist100     -0.69 -0.56</code></pre>
 <p>For more on <code>posterior_interval</code> and interpreting the parameter estimates from a Bayesian model see Step 2 in the <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a> vignette.</p>
 <p>Using the coefficient estimates we can plot the predicted probability of <code>switch = 1</code> (as a function of <code>dist100</code>) together with the observed outcomes:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Predicted probability as a function of x</span>
-pr_switch &lt;-<span class="st"> </span>function(x, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] +<span class="st"> </span>ests[<span class="dv">2</span>] *<span class="st"> </span>x)
+pr_switch &lt;-<span class="st"> </span><span class="cf">function</span>(x, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>ests[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>x)
 <span class="co"># A function to slightly jitter the binary data</span>
-jitt &lt;-<span class="st"> </span>function(...) {
+jitt &lt;-<span class="st"> </span><span class="cf">function</span>(...) {
   <span class="kw">geom_point</span>(<span class="kw">aes_string</span>(...), <span class="dt">position =</span> <span class="kw">position_jitter</span>(<span class="dt">height =</span> <span class="fl">0.05</span>, <span class="dt">width =</span> <span class="fl">0.1</span>), 
              <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">shape =</span> <span class="dv">21</span>, <span class="dt">stroke =</span> <span class="fl">0.2</span>)
 }
-<span class="kw">ggplot</span>(wells, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> switch, <span class="dt">color =</span> switch)) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)) +
-<span class="st">  </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"dist100"</span>) +<span class="st"> </span>
+<span class="kw">ggplot</span>(wells, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> <span class="cf">switch</span>, <span class="dt">color =</span> <span class="cf">switch</span>)) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"dist100"</span>) <span class="op">+</span><span class="st"> </span>
 <span class="st">  </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch, <span class="dt">args =</span> <span class="kw">list</span>(<span class="dt">ests =</span> <span class="kw">coef</span>(fit1)), 
                 <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">color =</span> <span class="st">"gray35"</span>)</code></pre></div>
 <p><img src="binomial_files/figure-html/binom-arsenic-plot-model-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The plot shows that under this model the predicted probability of switching is a decent bit above 50% for residents living very close to wells with safe drinking water. As expected, larger values of <code>dist100</code> are associated with lower predicted probabilities of switching. At the extreme (<span class="math inline">\(\approx 300\)</span> meters), the probability is about 25%.</p>
 <p>Next, we incorporate an additional predictor into the model: the arsenic level of water in the respondent’s well. According to Gelman and Hill, “At the levels present in the Bangladesh drinking water, the health risks from arsenic are roughly proportional to exposure, and so we would expect switching to be more likely from wells with high arsenic levels” (pg. 90). We only need to change the formula, so we can use the <code>update</code> function:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit2 &lt;-<span class="st"> </span><span class="kw">update</span>(fit1, <span class="dt">formula =</span> switch ~<span class="st"> </span>dist100 +<span class="st"> </span>arsenic) </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit2 &lt;-<span class="st"> </span><span class="kw">update</span>(fit1, <span class="dt">formula =</span> <span class="cf">switch</span> <span class="op">~</span><span class="st"> </span>dist100 <span class="op">+</span><span class="st"> </span>arsenic) </code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(coef_fit2 &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="kw">coef</span>(fit2), <span class="dv">3</span>))</code></pre></div>
 <pre><code>(Intercept)     dist100     arsenic 
-      0.003      -0.895       0.460 </code></pre>
+      0.003      -0.897       0.462 </code></pre>
 <p>As expected the coefficient on <code>arsenic</code> is positive. The plot below shows distance on the x-axis and arsenic level on the y-axis with the predicted probability of well-switching mapped to the color of the background tiles (the lighter the color the higher the probability). The observed value of <code>switch</code> is indicated by the color of the points.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pr_switch2 &lt;-<span class="st"> </span>function(x, y, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] +<span class="st"> </span>ests[<span class="dv">2</span>] *<span class="st"> </span>x +<span class="st"> </span>ests[<span class="dv">3</span>] *<span class="st"> </span>y)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pr_switch2 &lt;-<span class="st"> </span><span class="cf">function</span>(x, y, ests) <span class="kw">plogis</span>(ests[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>ests[<span class="dv">2</span>] <span class="op">*</span><span class="st"> </span>x <span class="op">+</span><span class="st"> </span>ests[<span class="dv">3</span>] <span class="op">*</span><span class="st"> </span>y)
 grid &lt;-<span class="st"> </span><span class="kw">expand.grid</span>(<span class="dt">dist100 =</span> <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">4</span>, <span class="dt">length.out =</span> <span class="dv">100</span>), 
                     <span class="dt">arsenic =</span> <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">10</span>, <span class="dt">length.out =</span> <span class="dv">100</span>))
-grid$prob &lt;-<span class="st"> </span><span class="kw">with</span>(grid, <span class="kw">pr_switch2</span>(dist100, arsenic, <span class="kw">coef</span>(fit2)))
-<span class="kw">ggplot</span>(grid, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> arsenic)) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_tile</span>(<span class="kw">aes</span>(<span class="dt">fill =</span> prob)) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">data =</span> wells, <span class="kw">aes</span>(<span class="dt">color =</span> <span class="kw">factor</span>(switch)), <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">alpha =</span> <span class="fl">0.85</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">scale_fill_gradient</span>() +
+grid<span class="op">$</span>prob &lt;-<span class="st"> </span><span class="kw">with</span>(grid, <span class="kw">pr_switch2</span>(dist100, arsenic, <span class="kw">coef</span>(fit2)))
+<span class="kw">ggplot</span>(grid, <span class="kw">aes</span>(<span class="dt">x =</span> dist100, <span class="dt">y =</span> arsenic)) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_tile</span>(<span class="kw">aes</span>(<span class="dt">fill =</span> prob)) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">data =</span> wells, <span class="kw">aes</span>(<span class="dt">color =</span> <span class="kw">factor</span>(<span class="cf">switch</span>)), <span class="dt">size =</span> <span class="dv">2</span>, <span class="dt">alpha =</span> <span class="fl">0.85</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw">scale_fill_gradient</span>() <span class="op">+</span>
 <span class="st">  </span><span class="kw">scale_color_manual</span>(<span class="st">"switch"</span>, <span class="dt">values =</span> <span class="kw">c</span>(<span class="st">"white"</span>, <span class="st">"black"</span>), <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">"No"</span>, <span class="st">"Yes"</span>))</code></pre></div>
 <p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can see that the black points (<code>switch=1</code>) are predominantly clustered in the upper-left region of the plot where the predicted probability of switching is highest.</p>
 <p>Another way we can visualize the data and model is to follow Gelman and Hill and create separate plots for varying the arsenic level and distance. Here we’ll plot curves representing the predicted probability of switching for the minimum, maximum and quartile values of both variables.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">require</span>(gridExtra)) {
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span> (<span class="kw">require</span>(gridExtra)) {
   <span class="co"># Quantiles</span>
-  q_ars &lt;-<span class="st"> </span><span class="kw">quantile</span>(wells$dist100, <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.25</span>))
-  q_dist &lt;-<span class="st"> </span><span class="kw">quantile</span>(wells$arsenic, <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.25</span>))  
-  base &lt;-<span class="st"> </span><span class="kw">ggplot</span>(wells) +<span class="st"> </span><span class="kw">xlim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="ot">NA</span>)) +
+  q_ars &lt;-<span class="st"> </span><span class="kw">quantile</span>(wells<span class="op">$</span>dist100, <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.25</span>))
+  q_dist &lt;-<span class="st"> </span><span class="kw">quantile</span>(wells<span class="op">$</span>arsenic, <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.25</span>))  
+  base &lt;-<span class="st"> </span><span class="kw">ggplot</span>(wells) <span class="op">+</span><span class="st"> </span><span class="kw">xlim</span>(<span class="kw">c</span>(<span class="dv">0</span>, <span class="ot">NA</span>)) <span class="op">+</span>
 <span class="st">    </span><span class="kw">scale_y_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>))
-  vary_arsenic &lt;-<span class="st"> </span>base +<span class="st"> </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"arsenic"</span>, <span class="dt">y=</span><span class="st">"switch"</span>, <span class="dt">color=</span><span class="st">"switch"</span>)
-  vary_dist &lt;-<span class="st"> </span>base +<span class="st"> </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"dist100"</span>, <span class="dt">y=</span><span class="st">"switch"</span>, <span class="dt">color=</span><span class="st">"switch"</span>)
-  for (i in <span class="dv">1</span>:<span class="dv">5</span>) {
+  vary_arsenic &lt;-<span class="st"> </span>base <span class="op">+</span><span class="st"> </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"arsenic"</span>, <span class="dt">y=</span><span class="st">"switch"</span>, <span class="dt">color=</span><span class="st">"switch"</span>)
+  vary_dist &lt;-<span class="st"> </span>base <span class="op">+</span><span class="st"> </span><span class="kw">jitt</span>(<span class="dt">x=</span><span class="st">"dist100"</span>, <span class="dt">y=</span><span class="st">"switch"</span>, <span class="dt">color=</span><span class="st">"switch"</span>)
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">5</span>) {
     vary_dist &lt;-<span class="st"> </span>
-<span class="st">      </span>vary_dist +<span class="st"> </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch2, <span class="dt">color =</span> <span class="st">"gray35"</span>, 
+<span class="st">      </span>vary_dist <span class="op">+</span><span class="st"> </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch2, <span class="dt">color =</span> <span class="st">"gray35"</span>, 
                                 <span class="dt">args =</span> <span class="kw">list</span>(<span class="dt">ests =</span> <span class="kw">coef</span>(fit2), <span class="dt">y =</span> q_dist[i]))
     vary_arsenic &lt;-
-<span class="st">      </span>vary_arsenic +<span class="st"> </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch2, <span class="dt">color =</span> <span class="st">"gray35"</span>, 
+<span class="st">      </span>vary_arsenic <span class="op">+</span><span class="st"> </span><span class="kw">stat_function</span>(<span class="dt">fun =</span> pr_switch2, <span class="dt">color =</span> <span class="st">"gray35"</span>, 
                                    <span class="dt">args =</span> <span class="kw">list</span>(<span class="dt">ests =</span> <span class="kw">coef</span>(fit2), <span class="dt">x =</span> q_ars[i]))
   }
-  <span class="kw">grid.arrange</span>(vary_dist, vary_arsenic, <span class="dt">ncol =</span> <span class="dv">2</span>)
+  <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">grid.arrange</a></span>(vary_dist, vary_arsenic, <span class="dt">ncol =</span> <span class="dv">2</span>)
 }</code></pre></div>
 <p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-alt-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can compare our two models (with and without <code>arsenic</code>) using an approximation to Leave-One-Out (LOO) cross-validation, which is a method for estimating out of sample predictive performance and is implemented by the <code>loo</code> function in the <strong>loo</strong> package:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit1))</code></pre></div>
-<pre><code>Computed from 500 by 3020 log-likelihood matrix
+<pre><code>
+Computed from 500 by 3020 log-likelihood matrix
 
          Estimate   SE
 elpd_loo  -2040.2 10.3
 p_loo         2.1  0.1
 looic      4080.4 20.6
+------
+Monte Carlo SE of elpd_loo is 0.1.
 
-All Pareto k estimates are good (k &lt; 0.5)
+All Pareto k estimates are good (k &lt; 0.5).
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2))</code></pre></div>
-<pre><code>Computed from 500 by 3020 log-likelihood matrix
+<pre><code>
+Computed from 500 by 3020 log-likelihood matrix
 
          Estimate   SE
-elpd_loo  -1968.4 15.6
+elpd_loo  -1968.4 15.7
 p_loo         3.2  0.1
-looic      3936.8 31.2
+looic      3936.8 31.3
+------
+Monte Carlo SE of elpd_loo is 0.1.
 
-All Pareto k estimates are good (k &lt; 0.5)
+All Pareto k estimates are good (k &lt; 0.5).
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
-<pre><code>elpd_diff        se 
-     71.8      12.1 </code></pre>
+<pre><code>
+Model comparison: 
+(negative 'elpd_diff' favors 1st model, positive favors 2nd) 
+
+elpd_diff        se 
+     71.8      12.2 </code></pre>
 <p>These results favor <code>fit2</code> over <code>fit1</code>, as the estimated difference in <code>elpd</code> (the expected log pointwise predictive density for a new dataset) is so much larger than its standard error. LOO penalizes models for adding additional predictors (this helps counter overfitting), but in this case <code>fit2</code> represents enough of an improvement over <code>fit1</code> that the penalty for including <code>arsenic</code> is negligible (as it should be if <code>arsenic</code> is an important predictor).</p>
 <p>The <a href="lm.html">vignette</a> for the <code>stan_lm</code> function also has an example of using the <code>loo</code> function where the results are quite a bit different from what we see here and some important additional considerations are discussed.</p>
+</div>
+<div id="conditional-logit-models" class="section level1">
+<h1 class="hasAnchor">
+<a href="#conditional-logit-models" class="anchor"></a>Conditional Logit Models</h1>
+<p>The previous example relies on the fact that observations are plausibly conditionally independent. In constrast, so-called “case-control studies” require that there are a fixed number of successes and failures within each stratum, and the question is <em>which</em> members of each stratum succeed and fail? The <code>stan_clogit</code> function estimates such a model and is very similar to the <code>clogit</code> function in the <strong>survival</strong> package. The main syntactical difference is that the <code>clogit</code> function requires that the user call the <code>strata</code> function in the model formula, whereas the <code>stan_clogit</code> function has a required <code>strata</code> argument. In addition, in the <code>stan_clogit</code> case the data must be sorted by the variable passed to <code>strata</code>. The advantage to these changes is that <code>stan_clogit</code> can optionally utilize the multilevel syntax from the <strong>lme4</strong> package to specify group-specific terms, rather than the more limited multilevel structure supported by the <code>fraility</code> function in the <strong>survival</strong> package. The <a href="glmer.html">vignette</a> for the <code>stan_glmer</code> function discusses the lme4-style syntax in more detail. For example,</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_clogit.html">stan_clogit</a></span>(case <span class="op">~</span><span class="st"> </span>spontaneous <span class="op">+</span><span class="st"> </span>induced <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>parity), 
+                    <span class="dt">data =</span> infert[<span class="kw">order</span>(infert<span class="op">$</span>stratum), ], <span class="co"># order necessary</span>
+                    <span class="dt">strata =</span> stratum, <span class="dt">QR =</span> <span class="ot">TRUE</span>,
+                    <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, <span class="dt">iter =</span> ITER)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post</code></pre></div>
+<pre><code>stan_clogit
+ family:       binomial [clogit]
+ formula:      case ~ spontaneous + induced + (1 | parity)
+ observations: 248
+------
+            Median MAD_SD
+spontaneous 2.0    0.4   
+induced     1.4    0.4   
+
+Error terms:
+ Groups Name        Std.Dev.
+ parity (Intercept) 1.5     
+Num. levels: parity 6 
+
+------
+For info on the priors used see help('prior_summary.stanreg').</code></pre>
+<p>The posterior predictions are also constrained such that there is exactly one success (in this case) for each of the strata and thus the posterior distribution of the probabilities are also so constrained:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">PPD &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(post)
+<span class="kw">stopifnot</span>(<span class="kw">rowSums</span>(PPD) <span class="op">==</span><span class="st"> </span><span class="kw">max</span>(infert<span class="op">$</span>stratum))
+PLP &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(post, <span class="dt">transform =</span> <span class="ot">TRUE</span>)
+<span class="kw">stopifnot</span>(<span class="kw">round</span>(<span class="kw">rowSums</span>(PLP)) <span class="op">==</span><span class="st"> </span><span class="kw">max</span>(infert<span class="op">$</span>stratum))</code></pre></div>
 </div>
 <div id="binomial-models" class="section level1">
 <h1 class="hasAnchor">
@@ -287,7 +338,6 @@ See help('pareto-k-diagnostic') for details.</code></pre>
 <a href="#references" class="anchor"></a>References</h1>
 <p>Gelman, A. and Hill, J. (2007). <em>Data Analysis Using Regression and Multilevel/Hierarchical Models.</em> Cambridge University Press, Cambridge, UK.</p>
 </div>
-</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -300,6 +350,7 @@ See help('pareto-k-diagnostic') for details.</code></pre>
       <li><a href="#priors">Priors</a></li>
       <li><a href="#posterior">Posterior</a></li>
       <li><a href="#logistic-regression-example">Logistic Regression Example</a></li>
+      <li><a href="#conditional-logit-models">Conditional Logit Models</a></li>
       <li><a href="#binomial-models">Binomial Models</a></li>
       <li><a href="#going-further">Going Further</a></li>
       <li><a href="#references">References</a></li>
@@ -315,11 +366,13 @@ See help('pareto-k-diagnostic') for details.</code></pre>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

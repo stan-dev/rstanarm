@@ -8,8 +8,12 @@
 <title>Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm • rstanarm</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm">
+<meta property="og:description" content="">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary">
+<!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
@@ -24,8 +28,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -94,17 +102,19 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-08-03</h4>
-          </div>
+            <h4 class="date">2018-04-13</h4>
+      
+      
+
+    </div>
 
     
     
-<div class="contents">
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{stan_glmer: GLMs with Group-Specific Terms}
@@ -118,7 +128,7 @@
 <h1 class="hasAnchor">
 <a href="#glms-with-group-specific-terms" class="anchor"></a>GLMs with group-specific terms</h1>
 <p>Models with this structure are refered to by many names: multilevel models, (generalized) linear mixed (effects) models (GLMM), hierarchical (generalized) linear models, etc. In the simplest case, the model for an outcome can be written as <span class="math display">\[\mathbf{y} = \alpha + \mathbf{X} \boldsymbol{\beta} + \mathbf{Z} \mathbf{b} + \boldsymbol{\epsilon},\]</span> where <span class="math inline">\(\mathbf{X}\)</span> is a matrix predictors that is analagous to that in Generalized Linear Models and <span class="math inline">\(\mathbf{Z}\)</span> is a matrix that encodes deviations in the predictors across specified groups.</p>
-<p>The terminology for the unknowns in the model is diverse. To frequentists, the error term consists of <span class="math inline">\(\mathbf{Z}\mathbf{b} + \boldsymbol{\epsilon}\)</span> and the observations within each group are <em>not</em> independent conditional on <span class="math inline">\(\mathbf{X}\)</span> alone. Since, <span class="math inline">\(\mathbf{b}\)</span> is considered part of the random error term, frequentists allow themselves to make distributional assumptions about <span class="math inline">\(\mathbf{b}\)</span>, invariably that it is distributed multivariate normal with mean vector zero and structured covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. If <span class="math inline">\(\epsilon_i\)</span> is also distributed (univariate) normal with mean zero and standard deviation <span class="math inline">\(\sigma\)</span>, then <span class="math inline">\(\mathbf{b}\)</span> can be integrated out, which implies <span class="math display">\[\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),\]</span> and it is possible to maximize this likelihood function by choosing proposals for the parameters <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and (the free elements of) <span class="math inline">\(\boldsymbol{\Sigma}\)</span>.</p>
+<p>The terminology for the unknowns in the model is diverse. To frequentists, the error term consists of <span class="math inline">\(\mathbf{Z}\mathbf{b} + \boldsymbol{\epsilon}\)</span> and the observations within each group are <em>not</em> independent conditional on <span class="math inline">\(\mathbf{X}\)</span> alone. Since, <span class="math inline">\(\mathbf{b}\)</span> is considered part of the random error term, frequentists allow themselves to make distributional assumptions about <span class="math inline">\(\mathbf{b}\)</span>, invariably that it is distributed multivariate normal with mean vector zero and structured covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span>. If <span class="math inline">\(\epsilon_i\)</span> is also distributed (univariate) normal with mean zero and standard deviation <span class="math inline">\(\sigma\)</span>, then <span class="math inline">\(\mathbf{b}\)</span> can be integrated out, which implies <span class="math display">\[\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta}, \sigma^2 \mathbf{I}+\mathbf{Z}^\top \boldsymbol{\Sigma} \mathbf{Z} \right),\]</span> and it is possible to maximize this likelihood function by choosing proposals for the parameters <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and (the free elements of) <span class="math inline">\(\boldsymbol{\Sigma}\)</span>.</p>
 <p>Consequently, frequentists refer to <span class="math inline">\(\mathbf{b}\)</span> as the <em>random effects</em> because they capture the random deviation in the effects of predictors from one group to the next. In contradistinction, <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\boldsymbol{\beta}\)</span> are referred to as <em>fixed effects</em> because they are the same for all groups. Moreover, <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\boldsymbol{\beta}\)</span> persist in the model in hypothetical replications of the analysis that draw the members of the groups afresh every time, whereas <span class="math inline">\(\mathbf{b}\)</span> would differ from one replication to the next. Consequently, <span class="math inline">\(\mathbf{b}\)</span> is not a “parameter” to be estimated because parameters are unknown constants that are fixed in repeated sampling.</p>
 <p>Bayesians condition on the data in-hand without reference to repeated sampling and describe their <em>beliefs</em> about the unknows with prior distributions before observing the data. Thus, the likelihood in a simple hierarchical model in <strong>rstarnarm</strong> is <span class="math display">\[\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{b}, \sigma^2 \mathbf{I}\right)\]</span> and the observations are independent conditional on <span class="math inline">\(\mathbf{X}\)</span> and <span class="math inline">\(\mathbf{Z}\)</span>. In this formulation, there are</p>
 <ul>
@@ -200,12 +210,18 @@
 <p>The <strong>rstanarm</strong> package includes a <code>stan_gamm4</code> function that is similar to the <code>gamm4</code> function in the <strong>gamm4</strong> package, which is in turn similar to the <code>gamm</code> function in the <strong>mgcv</strong> package. The substring <code>gamm</code> stands for Generalized Additive Mixed Models, which differ from Generalized Additive Models (GAMs) due to the presence of group-specific terms that can be specified with the syntax of <strong>lme4</strong>. Both GAMs and GAMMs include nonlinear functions of (non-categorical) predictors called “smooths”. In the example below, so-called “thin-plate splines” are used to model counts of roaches where we might fear that the number of roaches in the current period is an exponentially increasing function of the number of roaches in the previous period. Unlike <code>stan_glmer</code>, in <code>stan_gamm4</code> it is necessary to specify group-specific terms as a one-sided formula that is passed to the <code>random</code> argument as in the <code>lme</code> function in the <strong>nlme</strong> package.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
 <span class="kw">data</span>(roaches)
-roaches$roach1 &lt;-<span class="st"> </span>roaches$roach1 /<span class="st"> </span><span class="dv">100</span>
-roaches$log_exposure2 &lt;-<span class="st"> </span><span class="kw">log</span>(roaches$exposure2)
-post &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_gamm4.html">stan_gamm4</a></span>(y ~<span class="st"> </span><span class="kw">s</span>(roach1) +<span class="st"> </span>treatment +<span class="st"> </span>log_exposure2,
-                   <span class="dt">random =</span> ~(<span class="dv">1</span> |<span class="st"> </span>senior),
-                   <span class="dt">data =</span> roaches, <span class="dt">family =</span> neg_binomial_2, <span class="dt">QR =</span> <span class="ot">TRUE</span>,
-                   <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
+roaches<span class="op">$</span>roach1 &lt;-<span class="st"> </span>roaches<span class="op">$</span>roach1 <span class="op">/</span><span class="st"> </span><span class="dv">100</span>
+roaches<span class="op">$</span>log_exposure2 &lt;-<span class="st"> </span><span class="kw">log</span>(roaches<span class="op">$</span>exposure2)
+post &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_gamm4.html">stan_gamm4</a></span>(
+  y <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(roach1) <span class="op">+</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>log_exposure2,
+  <span class="dt">random =</span> <span class="op">~</span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>senior),
+  <span class="dt">data =</span> roaches, 
+  <span class="dt">family =</span> neg_binomial_<span class="dv">2</span>, 
+  <span class="dt">QR =</span> <span class="ot">TRUE</span>,
+  <span class="dt">chains =</span> CHAINS, 
+  <span class="dt">cores =</span> CORES, 
+  <span class="dt">seed =</span> SEED
+)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/stan_gamm4.html">plot_nonlinear</a></span>(post)</code></pre></div>
 <p><img src="glmer_files/figure-html/unnamed-chunk-6-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>Here we see that the relationship between past and present roaches is estimated to be nonlinear. For a small number of past roaches, the function is steep and then it appears to flatten out, although we become highly uncertain about the function in the rare cases where the number of past roaches is large.</p>
@@ -217,12 +233,12 @@ post &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_g
 <p>The <code>stan_gamm4</code> function allows designated predictors to have a nonlinear effect on what would otherwise be called the “linear” predictor in Generalized Linear Models. The <code>stan_nlmer</code> function is similar to the <code>nlmer</code> function in the <strong>lme4</strong> package, and essentially allows a wider range of nonlinear functions that relate the linear predictor to the conditional expectation of a Gaussian outcome.</p>
 <p>To estimate an example model with the <code>nlmer</code> function in the <strong>lme4</strong> package, we start by rescaling the outcome and main predictor(s) by a constant</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">"Orange"</span>, <span class="dt">package =</span> <span class="st">"datasets"</span>)
-Orange$age &lt;-<span class="st"> </span>Orange$age /<span class="st"> </span><span class="dv">100</span>
-Orange$circumference &lt;-<span class="st"> </span>Orange$circumference /<span class="st"> </span><span class="dv">100</span></code></pre></div>
+Orange<span class="op">$</span>age &lt;-<span class="st"> </span>Orange<span class="op">$</span>age <span class="op">/</span><span class="st"> </span><span class="dv">100</span>
+Orange<span class="op">$</span>circumference &lt;-<span class="st"> </span>Orange<span class="op">$</span>circumference <span class="op">/</span><span class="st"> </span><span class="dv">100</span></code></pre></div>
 <p>Although doing so has no substantive effect on the inferences obtained, it is numerically much easier for Stan and for <strong>lme4</strong> to work with variables whose units are such that the estimated parameters tend to be single-digit numbers that are not too close to zero. The <code>nlmer</code> function requires that the user pass starting values to the ironically-named self-starting non-linear function:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">startvec &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">Asym =</span> <span class="dv">2</span>, <span class="dt">xmid =</span> <span class="fl">7.25</span>, <span class="dt">scal =</span> <span class="fl">3.5</span>)
 <span class="kw">library</span>(lme4)
-nm1 &lt;-<span class="st"> </span><span class="kw">nlmer</span>(circumference ~<span class="st"> </span><span class="kw">SSlogis</span>(age, Asym, xmid, scal) ~<span class="st"> </span>Asym|Tree,
+nm1 &lt;-<span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/lme4/topics/nlmer">nlmer</a></span>(circumference <span class="op">~</span><span class="st"> </span><span class="kw">SSlogis</span>(age, Asym, xmid, scal) <span class="op">~</span><span class="st"> </span>Asym<span class="op">|</span>Tree,
              <span class="dt">data =</span> Orange, <span class="dt">start =</span> startvec)
 <span class="kw">summary</span>(nm1)</code></pre></div>
 <pre><code>Warning in vcov.merMod(object, use.hessian = use.hessian): variance-covariance matrix computed from finite-difference Hessian is
@@ -262,17 +278,15 @@ scal 0.362 0.762</code></pre>
 <pre><code> [1] "SSasymp"     "SSasympOff"  "SSasympOrig" "SSbiexp"     "SSfol"      
  [6] "SSfpl"       "SSgompertz"  "SSlogis"     "SSmicmen"    "SSweibull"  </code></pre>
 <p>To fit essentially the same model using Stan’s implementation of MCMC, we add a <code>stan_</code> prefix</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_nlmer.html">stan_nlmer</a></span>(circumference ~<span class="st"> </span><span class="kw">SSlogis</span>(age, Asym, xmid, scal) ~<span class="st"> </span>Asym|Tree,
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_nlmer.html">stan_nlmer</a></span>(circumference <span class="op">~</span><span class="st"> </span><span class="kw">SSlogis</span>(age, Asym, xmid, scal) <span class="op">~</span><span class="st"> </span>Asym<span class="op">|</span>Tree,
                     <span class="dt">data =</span> Orange, <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, 
                     <span class="dt">init_r =</span> <span class="fl">0.5</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post1</code></pre></div>
 <pre><code>stan_nlmer
- family:   gaussian [inv_SSlogis]
- formula:  circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym | Tree
- num. obs: 35
+ family:       gaussian [inv_SSlogis]
+ formula:      circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym | Tree
+ observations: 35
 ------
-
-Estimates:
       Median MAD_SD
 Asym  1.8    0.1   
 xmid  6.8    0.3   
@@ -281,12 +295,11 @@ sigma 0.1    0.0
 
 Error terms:
  Groups   Name Std.Dev.
- Tree     Asym 0.306   
- Residual      0.092   
+ Tree     Asym 0.314   
+ Residual      0.091   
 Num. levels: Tree 5 
 
-Sample avg. posterior predictive 
-distribution of y (X = xbar):
+Sample avg. posterior predictive distribution of y:
          Median MAD_SD
 mean_PPD 1.2    0.0   
 
@@ -297,29 +310,26 @@ For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(post1, <span class="dt">regex_pars =</span> <span class="st">"^[b]"</span>)</code></pre></div>
 <p><img src="glmer_files/figure-html/unnamed-chunk-12-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>As can be seen, the age of the tree has a non-linear effect on the predicted circumference of the tree (here for a out-of-sample tree):</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">age =</span> <span class="dv">1</span>:<span class="dv">20</span>, <span class="dt">Tree =</span> <span class="kw">factor</span>(<span class="st">"6"</span>, <span class="dt">levels =</span> <span class="dv">1</span>:<span class="dv">6</span>))
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nd &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">age =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">20</span>, <span class="dt">Tree =</span> <span class="kw">factor</span>(<span class="st">"6"</span>, <span class="dt">levels =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">6</span>))
 PPD &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(post1, <span class="dt">newdata =</span> nd)
-PPD_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">age =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span>:<span class="dv">20</span>, <span class="dt">each =</span> <span class="kw">nrow</span>(PPD))),
+PPD_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">age =</span> <span class="kw">as.factor</span>(<span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">20</span>, <span class="dt">each =</span> <span class="kw">nrow</span>(PPD))),
                      <span class="dt">circumference =</span> <span class="kw">c</span>(PPD))
-<span class="kw">ggplot</span>(PPD_df, <span class="kw">aes</span>(age, circumference)) +<span class="st"> </span><span class="kw">geom_boxplot</span>()</code></pre></div>
+<span class="kw">ggplot</span>(PPD_df, <span class="kw">aes</span>(age, circumference)) <span class="op">+</span><span class="st"> </span><span class="kw">geom_boxplot</span>()</code></pre></div>
 <p><img src="glmer_files/figure-html/unnamed-chunk-13-1.png" width="60%" style="display: block; margin: auto;"></p>
-<p>If we were pharmacological, we could evaluate drug concentration using a first-order compartment model</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post3 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_nlmer.html">stan_nlmer</a></span>(conc ~<span class="st"> </span><span class="kw">SSfol</span>(Dose, Time, lKe, lKa, lCl) ~<span class="st"> </span>
-<span class="st">                    </span>(<span class="dv">0</span> +<span class="st"> </span>lKe +<span class="st"> </span>lKa +<span class="st"> </span>lCl |<span class="st"> </span>Subject), <span class="dt">data =</span> Theoph,
+<p>If we were pharmacological, we could evaluate drug concentration using a first-order compartment model, such as</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post3 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_nlmer.html">stan_nlmer</a></span>(conc <span class="op">~</span><span class="st"> </span><span class="kw">SSfol</span>(Dose, Time, lKe, lKa, lCl) <span class="op">~</span><span class="st"> </span>
+<span class="st">                    </span>(<span class="dv">0</span> <span class="op">+</span><span class="st"> </span>lKe <span class="op">+</span><span class="st"> </span>lKa <span class="op">+</span><span class="st"> </span>lCl <span class="op">|</span><span class="st"> </span>Subject), <span class="dt">data =</span> Theoph,
                     <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED, 
-                    <span class="dt">QR =</span> <span class="ot">TRUE</span>, <span class="dt">init_r =</span> <span class="fl">0.25</span>, <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>)</code></pre></div>
-<p>However, in this case the posterior distribution is bimodal</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"^l"</span>)</code></pre></div>
-<p><img src="glmer_files/figure-html/unnamed-chunk-15-1.png" width="90%" style="display: block; margin: auto;"></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"igma"</span>)</code></pre></div>
-<p><img src="glmer_files/figure-html/unnamed-chunk-15-2.png" width="90%" style="display: block; margin: auto;"> Thus, you should always be running many chains when using Stan, especially <code>stan_nlmer</code>.</p>
+                    <span class="dt">QR =</span> <span class="ot">TRUE</span>, <span class="dt">init_r =</span> <span class="fl">0.25</span>, <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>)
+<span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"^l"</span>)
+<span class="kw">pairs</span>(post3, <span class="dt">regex_pars =</span> <span class="st">"igma"</span>)</code></pre></div>
+<p>However, in this case the posterior distribution is bimodal Thus, you should always be running many chains when using Stan, especially <code>stan_nlmer</code>.</p>
 </div>
 <div id="conclusion" class="section level1">
 <h1 class="hasAnchor">
 <a href="#conclusion" class="anchor"></a>Conclusion</h1>
 <p>There are model fitting functions in the <strong>rstanarm</strong> package that can do essentially all of what can be done in the <strong>lme4</strong> and <strong>gamm4</strong> packages — in the sense that they can fit models with multilevel structure and / or nonlinear relationships — and propagate the uncertainty in the parameter estimates to the predictions and other functions of interest. The documentation of <strong>lme4</strong> and <strong>gamm4</strong> has various warnings that acknowledge that the estimated standard errors, confidence intervals, etc. are not entirely correct, even from a frequentist perspective.</p>
 <p>A frequentist point estimate would also completely miss the second mode in the last example with <code>stan_nlmer</code>. Thus, there is considerable reason to prefer the <strong>rstanarm</strong> variants of these functions for regression modeling. The only disadvantage is the execution time required to produce an answer that properly captures the uncertainty in the estimates of complicated models such as these.</p>
-</div>
 </div>
   </div>
 
@@ -348,11 +358,13 @@ PPD_df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span cl
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

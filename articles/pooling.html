@@ -8,8 +8,12 @@
 <title>Hierarchical Partial Pooling for Repeated Binary Trials • rstanarm</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Hierarchical Partial Pooling for Repeated Binary Trials">
+<meta property="og:description" content="">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary">
+<!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
@@ -24,8 +28,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -94,17 +102,19 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Hierarchical Partial Pooling for Repeated Binary Trials</h1>
                         <h4 class="author">Bob Carpenter, Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-08-03</h4>
-          </div>
+            <h4 class="date">2018-04-13</h4>
+      
+      
+
+    </div>
 
     
     
-<div class="contents">
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{Hierarchical Partial Pooling}
@@ -113,7 +123,7 @@
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
 <p>This vignette illustrates the effects on posterior inference of pooling data (a.k.a sharing strength) across units for repeated binary trial data. It provides R code to fit and check predictive models for three situations: (a) complete pooling, which assumes each unit is the same, (b) no pooling, which assumes the units are unrelated, and (c) partial pooling, where the similarity among the units is estimated. The note explains with working examples how to (i) fit the models using <strong>rstanarm</strong> and plot the results, (ii) estimate event probabilities, (iii) evaluate posterior predictive densities to evaluate model predictions on held-out data, (iv) rank units by chance of success, (v) perform multiple comparisons in several settings, (vi) replicate new data for posterior <span class="math inline">\(p\)</span>-values, and (vii) perform graphical posterior predictive checks.</p>
-<p>The content of the vignette is based on Bob Carpenter’s Stan tutorial <em><a href="https://github.com/stan-dev/example-models/tree/master/knitr">Hierarchical Partial Pooling for Repeated Binary Trials</a></em>, but here we show how to fit the models and carry out predictions and model checking and comparison using <strong>rstanarm</strong>. Most of the text is taken from the original, with some additions and substractions to make the content more useful for <strong>rstanarm</strong> users. The Stan code from the original tutorial has also been entirely removed, as <strong>rstanarm</strong> will fit all of the models in Stan without the user having to write the underlying Stan programs. The Stan code in the original document is a good reference for anyone interested in how these models are estimated “under-the-hood”, though the parameterizations used internally by <strong>rstanarm</strong> differ somewhat from those in the original.</p>
+<p>The content of the vignette is based on Bob Carpenter’s Stan tutorial <em><a href="http://mc-stan.org/users/documentation/case-studies/pool-binary-trials.html">Hierarchical Partial Pooling for Repeated Binary Trials</a></em>, but here we show how to fit the models and carry out predictions and model checking and comparison using <strong>rstanarm</strong>. Most of the text is taken from the original, with some additions and substractions to make the content more useful for <strong>rstanarm</strong> users. The Stan code from the original tutorial has also been entirely removed, as <strong>rstanarm</strong> will fit all of the models in Stan without the user having to write the underlying Stan programs. The Stan code in the original document is a good reference for anyone interested in how these models are estimated “under-the-hood”, though the parameterizations used internally by <strong>rstanarm</strong> differ somewhat from those in the original.</p>
 </div>
 <div id="repeated-binary-trials" class="section level1">
 <h1 class="hasAnchor">
@@ -134,12 +144,31 @@
 <span class="kw">data</span>(bball1970)
 bball &lt;-<span class="st"> </span>bball1970
 <span class="kw">print</span>(bball)</code></pre></div>
+<pre><code>       Player AB Hits RemainingAB RemainingHits
+1    Clemente 45   18         367           127
+2    Robinson 45   17         426           127
+3      Howard 45   16         521           144
+4   Johnstone 45   15         275            61
+5       Berry 45   14         418           114
+6     Spencer 45   14         466           126
+7   Kessinger 45   13         586           155
+8    Alvarado 45   12         138            29
+9       Santo 45   11         510           137
+10    Swaboda 45   11         200            46
+11 Petrocelli 45   10         538           142
+12  Rodriguez 45   10         186            42
+13      Scott 45   10         435           132
+14      Unser 45   10         277            73
+15   Williams 45   10         591           195
+16 Campaneris 45    9         558           159
+17     Munson 45    8         408           129
+18      Alvis 45    7          70            14</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># A few quantities we'll use throughout</span>
 N &lt;-<span class="st"> </span><span class="kw">nrow</span>(bball)
-K &lt;-<span class="st"> </span>bball$AB
-y &lt;-<span class="st"> </span>bball$Hits
-K_new &lt;-<span class="st"> </span>bball$RemainingAB
-y_new &lt;-<span class="st"> </span>bball$RemainingHits</code></pre></div>
+K &lt;-<span class="st"> </span>bball<span class="op">$</span>AB
+y &lt;-<span class="st"> </span>bball<span class="op">$</span>Hits
+K_new &lt;-<span class="st"> </span>bball<span class="op">$</span>RemainingAB
+y_new &lt;-<span class="st"> </span>bball<span class="op">$</span>RemainingHits</code></pre></div>
 <p>The data separates the outcome from the initial 45 at-bats from the rest of the season. After running this code, <code>N</code> is the number of units (players). Then for each unit <code>n</code>, <code>K[n]</code> is the number of initial trials (at-bats), <code>y[n]</code> is the number of initial successes (hits), <code>K_new[n]</code> is the remaining number of trials (remaining at-bats), and <code>y_new[n]</code> is the number of successes in the remaining trials (remaining hits).</p>
 <p>The remaining data can be used to evaluate the predictive performance of our models conditioned on the observed data. That is, we will “train” on the first 45 at bats and see how well our various models do at predicting the rest of the season.</p>
 </div>
@@ -155,14 +184,19 @@ y_new &lt;-<span class="st"> </span>bball$RemainingHits</code></pre></div>
 <h1 class="hasAnchor">
 <a href="#fitting-the-models" class="anchor"></a>Fitting the Models</h1>
 <p>First we’ll create some useful objects to use throughout the rest of this vignette. One of them is a function <code>batting_avg</code>, which just formats a number to include three decimal places to the right of zero when printing, as is customary for batting averages.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">batting_avg &lt;-<span class="st"> </span>function(x) <span class="kw">print</span>(<span class="kw">format</span>(<span class="kw">round</span>(x, <span class="dt">digits =</span> <span class="dv">3</span>), <span class="dt">nsmall =</span> <span class="dv">3</span>), <span class="dt">quote =</span> <span class="ot">FALSE</span>)
-player_avgs &lt;-<span class="st"> </span>y /<span class="st"> </span>K <span class="co"># player avgs through 45 AB</span>
-tot_avg &lt;-<span class="st"> </span><span class="kw">sum</span>(y) /<span class="st"> </span><span class="kw">sum</span>(K) <span class="co"># overall avg through 45 AB</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">batting_avg &lt;-<span class="st"> </span><span class="cf">function</span>(x) <span class="kw">print</span>(<span class="kw">format</span>(<span class="kw">round</span>(x, <span class="dt">digits =</span> <span class="dv">3</span>), <span class="dt">nsmall =</span> <span class="dv">3</span>), <span class="dt">quote =</span> <span class="ot">FALSE</span>)
+player_avgs &lt;-<span class="st"> </span>y <span class="op">/</span><span class="st"> </span>K <span class="co"># player avgs through 45 AB</span>
+tot_avg &lt;-<span class="st"> </span><span class="kw">sum</span>(y) <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(K) <span class="co"># overall avg through 45 AB</span>
 
 <span class="kw">cat</span>(<span class="st">"Player averages through 45 at-bats:</span><span class="ch">\n</span><span class="st">"</span>)
 <span class="kw">batting_avg</span>(player_avgs)
 <span class="kw">cat</span>(<span class="st">"Overall average through 45 at-bats:</span><span class="ch">\n</span><span class="st">"</span>)
 <span class="kw">batting_avg</span>(tot_avg)</code></pre></div>
+<pre><code>Player averages through 45 at-bats:
+ [1] 0.400 0.378 0.356 0.333 0.311 0.311 0.289 0.267 0.244 0.244 0.222
+[12] 0.222 0.222 0.222 0.222 0.200 0.178 0.156
+Overall average through 45 at-bats:
+[1] 0.265</code></pre>
 <div id="complete-pooling" class="section level2">
 <h2 class="hasAnchor">
 <a href="#complete-pooling" class="anchor"></a>Complete Pooling</h2>
@@ -197,14 +231,15 @@ p(y_n \, | \, K_n, \alpha)
 <p>By construction, for any <span class="math inline">\(\alpha \in (-\infty, \infty)\)</span>, <span class="math inline">\(\mathrm{logit}^{-1}(\alpha) \in (0, 1)\)</span>; the sigmoid converts arbitrary log odds back to the probability scale.</p>
 <p>We will use a normal distribution with mean <span class="math inline">\(-1\)</span> and standard deviation <span class="math inline">\(1\)</span> as the prior on the log-odds <span class="math inline">\(\alpha\)</span>. This is a weakly informative prior that places about 95% of the prior probability in the interval <span class="math inline">\((-3, 1)\)</span>, which inverse-logit transforms to the interval <span class="math inline">\((0.05, 0.73)\)</span>. The prior median <span class="math inline">\(-1\)</span> corresponds to a <span class="math inline">\(0.27\)</span> chance of success. In fact, an even narrower prior is actually motivated here from substantial baseball knowledge.</p>
 <p>The figure below shows both this prior on <span class="math inline">\(\alpha\)</span> as well as the prior it implies on the probability <span class="math inline">\(\theta\)</span>.</p>
+<p><img src="pooling_files/figure-html/unnamed-chunk-4-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>To fit the model we call <code>stan_glm</code> with the formula <code>cbind(Hits, AB - Hits) ~ 1</code>. The left-hand side of the formula specifies the binomial outcome by providing the number of successes (hits) and failures (at-bats) for each player, and the right-hand side indicates that we want an intercept-only model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">SEED &lt;-<span class="st"> </span><span class="dv">101</span>
-wi_prior &lt;-<span class="st"> </span><span class="kw"><a href="../reference/priors.html">normal</a></span>(-<span class="dv">1</span>, <span class="dv">1</span>)  <span class="co"># weakly informative prior on log-odds</span>
-fit_pool &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(<span class="kw">cbind</span>(Hits, AB -<span class="st"> </span>Hits) ~<span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> bball, <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="st">"logit"</span>),
+wi_prior &lt;-<span class="st"> </span><span class="kw"><a href="../reference/priors.html">normal</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>)  <span class="co"># weakly informative prior on log-odds</span>
+fit_pool &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(<span class="kw">cbind</span>(Hits, AB <span class="op">-</span><span class="st"> </span>Hits) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> bball, <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="st">"logit"</span>),
                      <span class="dt">prior_intercept =</span> wi_prior, <span class="dt">seed =</span> SEED)</code></pre></div>
 <p>The <code>summary</code> function will compute all sorts of summary statistics from the fitted model, but here we’ll create a small function that will compute just a few posterior summary statistics that we’ll want for each of the models we estimate. The <code>summary_stats</code> function, defined below, will take a matrix of posterior draws as its input, apply an inverse-logit transformation (to convert from log-odds to probabilities) and then compute the median and 80% interval.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">invlogit &lt;-<span class="st"> </span>plogis  <span class="co"># function(x) 1/(1 + exp(-x))</span>
-summary_stats &lt;-<span class="st"> </span>function(posterior) {
+summary_stats &lt;-<span class="st"> </span><span class="cf">function</span>(posterior) {
   x &lt;-<span class="st"> </span><span class="kw">invlogit</span>(posterior)  <span class="co"># log-odds -&gt; probabilities</span>
   <span class="kw">t</span>(<span class="kw">apply</span>(x, <span class="dv">2</span>, quantile, <span class="dt">probs =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span>))) 
 }
@@ -212,8 +247,27 @@ summary_stats &lt;-<span class="st"> </span>function(posterior) {
 pool &lt;-<span class="st"> </span><span class="kw">summary_stats</span>(<span class="kw">as.matrix</span>(fit_pool))  <span class="co"># as.matrix extracts the posterior draws</span>
 pool &lt;-<span class="st"> </span><span class="kw">matrix</span>(pool,  <span class="co"># replicate to give each player the same estimates</span>
                <span class="kw">nrow</span>(bball), <span class="kw">ncol</span>(pool), <span class="dt">byrow =</span> <span class="ot">TRUE</span>, 
-               <span class="dt">dimnames =</span> <span class="kw">list</span>(bball$Player, <span class="kw">c</span>(<span class="st">"10%"</span>, <span class="st">"50%"</span>, <span class="st">"90%"</span>)))
+               <span class="dt">dimnames =</span> <span class="kw">list</span>(bball<span class="op">$</span>Player, <span class="kw">c</span>(<span class="st">"10%"</span>, <span class="st">"50%"</span>, <span class="st">"90%"</span>)))
 <span class="kw">batting_avg</span>(pool)</code></pre></div>
+<pre><code>           10%   50%   90%  
+Clemente   0.245 0.265 0.285
+Robinson   0.245 0.265 0.285
+Howard     0.245 0.265 0.285
+Johnstone  0.245 0.265 0.285
+Berry      0.245 0.265 0.285
+Spencer    0.245 0.265 0.285
+Kessinger  0.245 0.265 0.285
+Alvarado   0.245 0.265 0.285
+Santo      0.245 0.265 0.285
+Swaboda    0.245 0.265 0.285
+Petrocelli 0.245 0.265 0.285
+Rodriguez  0.245 0.265 0.285
+Scott      0.245 0.265 0.285
+Unser      0.245 0.265 0.285
+Williams   0.245 0.265 0.285
+Campaneris 0.245 0.265 0.285
+Munson     0.245 0.265 0.285
+Alvis      0.245 0.265 0.285</code></pre>
 <p>With more data, such as from more players or from the rest of the season, the posterior approaches a delta function around the maximum likelihood estimate and the posterior interval around the centeral posterior intervals will shrink. Nevertheless, even if we know a player’s chance of success exactly, there is a large amount of uncertainty in running <span class="math inline">\(K\)</span> binary trials with that chance of success; using a binomial model fundamentally bounds our prediction accuracy.</p>
 <p>Although this model will be a good baseline for comparison, we have good reason to believe from a large amount of prior data (players with as many as 10,000 trials) that it is very unlikely that all baseball players have the same chance of success.</p>
 </div>
@@ -231,10 +285,30 @@ p(y_n \, | \, \alpha_n) =
 p(y \, | \, \alpha) = \prod_{n=1}^N \mathsf{Binomial}(y_n \, | \, K_n, \mathrm{logit}^{-1}(\alpha_n)).
 \]</span></p>
 <p>To fit the model we need only tweak the model formula used for the full pooling model to drop the intercept and instead include as the only predictor the factor variable <code>Player</code>. This is equivalent to estimating a separate intercept on the log-odds scale for each player. We’ll also use the <code>prior</code> (rather than <code>prior_intercept</code>) argument since <code>Player</code> is considered a predictor rather than an intercept from R’s perspective. Using the same weakly informative prior now means that the each <span class="math inline">\(\alpha_n\)</span> gets a <span class="math inline">\(\mathsf{Normal}(-1, 1)\)</span> prior, independent of the others.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_nopool &lt;-<span class="st"> </span><span class="kw">update</span>(fit_pool, <span class="dt">formula =</span> . ~<span class="st"> </span><span class="dv">0</span> +<span class="st"> </span>Player, <span class="dt">prior =</span> wi_prior)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_nopool &lt;-<span class="st"> </span><span class="kw">update</span>(fit_pool, <span class="dt">formula =</span> . <span class="op">~</span><span class="st"> </span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span>Player, <span class="dt">prior =</span> wi_prior)
 nopool &lt;-<span class="st"> </span><span class="kw">summary_stats</span>(<span class="kw">as.matrix</span>(fit_nopool))
-<span class="kw">rownames</span>(nopool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball$Player)
+<span class="kw">rownames</span>(nopool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball<span class="op">$</span>Player)
 <span class="kw">batting_avg</span>(nopool)</code></pre></div>
+<pre><code>            
+parameters   10%   50%   90%  
+  Clemente   0.302 0.386 0.476
+  Robinson   0.282 0.367 0.457
+  Howard     0.262 0.344 0.436
+  Johnstone  0.246 0.326 0.415
+  Berry      0.226 0.302 0.389
+  Spencer    0.226 0.305 0.391
+  Kessinger  0.209 0.283 0.368
+  Alvarado   0.190 0.264 0.351
+  Santo      0.172 0.245 0.328
+  Swaboda    0.169 0.243 0.330
+  Petrocelli 0.156 0.224 0.305
+  Rodriguez  0.157 0.222 0.304
+  Scott      0.153 0.222 0.306
+  Unser      0.156 0.225 0.303
+  Williams   0.155 0.224 0.304
+  Campaneris 0.139 0.206 0.284
+  Munson     0.123 0.184 0.262
+  Alvis      0.108 0.164 0.237</code></pre>
 <p>Each 80% interval is much wider than the estimated interval for the population in the complete pooling model; this is to be expected—there are only 45 data units for each parameter here as opposed to 810 in the complete pooling case. If the units each had different numbers of trials, the intervals would also vary based on size.</p>
 <p>As the estimated chance of success goes up toward 0.5, the 80% intervals gets wider. This is to be expected for chance of success parameters, because the variance is maximized when <span class="math inline">\(\theta = 0.5\)</span>.</p>
 <p>Based on our existing knowledge of baseball, the no-pooling model is almost certainly overestimating the high abilities and underestimating lower abilities (Ted Williams, 30 years prior to the year this data was collected, was the last player with a 40% observed success rate over a season, whereas 20% or less is too low for all but a few rare defensive specialists).</p>
@@ -246,18 +320,39 @@ nopool &lt;-<span class="st"> </span><span class="kw">summary_stats</span>(<span
 <p>A hierarchical model treats the players as belonging to a population of players. The properties of this population will be estimated along with player abilities, implicitly controlling the amount of pooling that is applied. The more variable the (estimate of the) population, the less pooling is applied. Mathematically, the hierarchical model places a prior on the abilities with parameters that are themselves estimated.</p>
 <p>This model can be estimated using the <code>stan_glmer</code> function.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fit_partialpool &lt;-<span class="st"> </span>
-<span class="st">  </span><span class="kw"><a href="../reference/stan_glmer.html">stan_glmer</a></span>(<span class="kw">cbind</span>(Hits, AB -<span class="st"> </span>Hits) ~<span class="st"> </span>(<span class="dv">1</span> |<span class="st"> </span>Player), <span class="dt">data =</span> bball, <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="st">"logit"</span>),
+<span class="st">  </span><span class="kw"><a href="../reference/stan_glmer.html">stan_glmer</a></span>(<span class="kw">cbind</span>(Hits, AB <span class="op">-</span><span class="st"> </span>Hits) <span class="op">~</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>Player), <span class="dt">data =</span> bball, 
+             <span class="dt">family =</span> <span class="kw">binomial</span>(<span class="st">"logit"</span>),
              <span class="dt">prior_intercept =</span> wi_prior, <span class="dt">seed =</span> SEED)</code></pre></div>
 <p>Because <code>stan_glmer</code> (like <code>glmer</code>) estimates the varying intercepts for <code>Player</code> by estimating a single global intercept <span class="math inline">\(\alpha_0\)</span> and individual deviations from that intercept for each player <span class="math inline">\(\delta_n = \alpha_n - \alpha_0\)</span>, to get the posterior distribution for each <span class="math inline">\(\alpha_n\)</span> we need to shift each of the posterior draws by the corresponding draw for the intercept. We can do this easily using the <code>sweep</code> function.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># shift each player's estimate by intercept (and then drop intercept)</span>
-shift_draws &lt;-<span class="st"> </span>function(draws) {
-  <span class="kw">sweep</span>(draws[, -<span class="dv">1</span>], <span class="dt">MARGIN =</span> <span class="dv">1</span>, <span class="dt">STATS =</span> draws[, <span class="dv">1</span>], <span class="dt">FUN =</span> <span class="st">"+"</span>)
+shift_draws &lt;-<span class="st"> </span><span class="cf">function</span>(draws) {
+  <span class="kw">sweep</span>(draws[, <span class="op">-</span><span class="dv">1</span>], <span class="dt">MARGIN =</span> <span class="dv">1</span>, <span class="dt">STATS =</span> draws[, <span class="dv">1</span>], <span class="dt">FUN =</span> <span class="st">"+"</span>)
 }
 alphas &lt;-<span class="st"> </span><span class="kw">shift_draws</span>(<span class="kw">as.matrix</span>(fit_partialpool))
 partialpool &lt;-<span class="st"> </span><span class="kw">summary_stats</span>(alphas)
-partialpool &lt;-<span class="st"> </span>partialpool[-<span class="kw">nrow</span>(partialpool),]
-<span class="kw">rownames</span>(partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball$Player)
+partialpool &lt;-<span class="st"> </span>partialpool[<span class="op">-</span><span class="kw">nrow</span>(partialpool),]
+<span class="kw">rownames</span>(partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball<span class="op">$</span>Player)
 <span class="kw">batting_avg</span>(partialpool)</code></pre></div>
+<pre><code>            
+parameters   10%   50%   90%  
+  Clemente   0.249 0.283 0.349
+  Robinson   0.245 0.279 0.336
+  Howard     0.244 0.276 0.331
+  Johnstone  0.242 0.275 0.324
+  Berry      0.236 0.271 0.317
+  Spencer    0.237 0.271 0.317
+  Kessinger  0.233 0.268 0.308
+  Alvarado   0.230 0.265 0.305
+  Santo      0.221 0.262 0.298
+  Swaboda    0.223 0.262 0.300
+  Petrocelli 0.216 0.259 0.295
+  Rodriguez  0.216 0.259 0.294
+  Scott      0.217 0.258 0.293
+  Unser      0.217 0.258 0.293
+  Williams   0.217 0.259 0.293
+  Campaneris 0.211 0.256 0.290
+  Munson     0.205 0.253 0.286
+  Alvis      0.195 0.249 0.284</code></pre>
 <p>Here the estimates are less extreme than in the no-pooling case, which we should expect due to the partial pooling. It is also clear from the wide posteriors for the <span class="math inline">\(\theta_n\)</span> that there is considerable uncertainty in the estimates of chance-of-success on an unit-by-unit (player-by-player) basis.</p>
 </div>
 <div id="observed-vs-estimated-chance-of-success" class="section level2">
@@ -273,16 +368,17 @@ plotdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(estima
                        <span class="dt">model =</span> <span class="kw">rep</span>(models, <span class="dt">each =</span> N), 
                        <span class="dt">row.names =</span> <span class="ot">NULL</span>)
 
-<span class="kw">ggplot</span>(plotdata, <span class="kw">aes</span>(<span class="dt">x =</span> observed, <span class="dt">y =</span> median, <span class="dt">ymin =</span> lb, <span class="dt">ymax =</span> ub)) +
-<span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> tot_avg, <span class="dt">color =</span> <span class="st">"lightpink"</span>, <span class="dt">size =</span> <span class="fl">0.75</span>) +
-<span class="st">  </span><span class="kw">geom_abline</span>(<span class="dt">intercept =</span> <span class="dv">0</span>, <span class="dt">slope =</span> <span class="dv">1</span>, <span class="dt">color =</span> <span class="st">"skyblue"</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_linerange</span>(<span class="dt">color =</span> <span class="st">"gray60"</span>, <span class="dt">size =</span> <span class="fl">0.75</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">size =</span> <span class="fl">2.5</span>, <span class="dt">shape =</span> <span class="dv">21</span>, <span class="dt">fill =</span> <span class="st">"gray30"</span>, <span class="dt">color =</span> <span class="st">"white"</span>, <span class="dt">stroke =</span> <span class="fl">0.2</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">facet_grid</span>(. ~<span class="st"> </span>model) +
-<span class="st">  </span><span class="kw">coord_fixed</span>() +
-<span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>)) +
-<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="st">"Observed Hits / AB"</span>, <span class="dt">y =</span> <span class="st">"Predicted chance of hit"</span>) +
-<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">"Posterior Medians and 80% Intervals"</span>)</code></pre></div>
+<span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/ggplot">ggplot</a></span>(plotdata, <span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/aes">aes</a></span>(<span class="dt">x =</span> observed, <span class="dt">y =</span> median, <span class="dt">ymin =</span> lb, <span class="dt">ymax =</span> ub)) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_abline">geom_hline</a></span>(<span class="dt">yintercept =</span> tot_avg, <span class="dt">color =</span> <span class="st">"lightpink"</span>, <span class="dt">size =</span> <span class="fl">0.75</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_abline">geom_abline</a></span>(<span class="dt">intercept =</span> <span class="dv">0</span>, <span class="dt">slope =</span> <span class="dv">1</span>, <span class="dt">color =</span> <span class="st">"skyblue"</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_linerange">geom_linerange</a></span>(<span class="dt">color =</span> <span class="st">"gray60"</span>, <span class="dt">size =</span> <span class="fl">0.75</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_point">geom_point</a></span>(<span class="dt">size =</span> <span class="fl">2.5</span>, <span class="dt">shape =</span> <span class="dv">21</span>, <span class="dt">fill =</span> <span class="st">"gray30"</span>, <span class="dt">color =</span> <span class="st">"white"</span>, <span class="dt">stroke =</span> <span class="fl">0.2</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/facet_grid">facet_grid</a></span>(. <span class="op">~</span><span class="st"> </span>model) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/coord_fixed">coord_fixed</a></span>() <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/scale_continuous">scale_x_continuous</a></span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">labs</a></span>(<span class="dt">x =</span> <span class="st">"Observed Hits / AB"</span>, <span class="dt">y =</span> <span class="st">"Predicted chance of hit"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="st">"Posterior Medians and 80% Intervals"</span>)</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-observed-vs-estimated-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>The horizontal axis is the observed rate of success, broken out by player (the overplotting is from players with the same number of successes—they all had the same number of trials in this data). The dots are the posterior medians with bars extending to cover the central 80% posterior interval. Players with the same observed rates are indistinguishable, any differences in estimates are due to MCMC error.</p>
 <p>The horizontal red line has an intercept equal to the overall success rate, The overall success rate is also the posterior mode (i.e., maximum likelihood estimate) for the complete pooling model. The diagonal blue line has intercept 0 and slope 1. Estimates falling on this line make up the maximum likelihood estimates for the no-pooling model. Overall, the plot makes the amount of pooling toward the prior evident.</p>
 </div>
@@ -369,7 +465,7 @@ p(\tilde{y} \, | \, y)
 \]</span></p>
 <p>We’ll compute both expectations and demonstrate Jensen’s inequality in our running example.</p>
 <p>The variables <code>K_new[n]</code> and <code>y_new[n]</code> hold the number of at bats (trials) and the number of hits (successes) for player (unit) <code>n</code>. With the held out data we can compute the log density of each data point using the <code>log_lik</code> function, which, like <code>posterior_predict</code>, accepts a <code>newdata</code> argument. The <code>log_lik</code> function will return an <span class="math inline">\(M \times N\)</span> matrix, where <span class="math inline">\(M\)</span> is the size of the posterior sample (the number of draws we obtained from the posterior distribution) and <span class="math inline">\(N\)</span> is the number of data points in <code>newdata</code>. We can then take the row sums of this matrix to sum over the data points.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Hits =</span> y_new, <span class="dt">AB =</span> K_new, <span class="dt">Player =</span> bball$Player)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Hits =</span> y_new, <span class="dt">AB =</span> K_new, <span class="dt">Player =</span> bball<span class="op">$</span>Player)
 fits &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">Pooling =</span> fit_pool, 
              <span class="dt">NoPooling =</span> fit_nopool, 
              <span class="dt">PartialPooling =</span> fit_partialpool)
@@ -381,6 +477,13 @@ log_p_new_mats &lt;-<span class="st"> </span><span class="kw">lapply</span>(fits
 log_p_new &lt;-<span class="st"> </span><span class="kw">sapply</span>(log_p_new_mats, rowSums)
 M &lt;-<span class="st"> </span><span class="kw">nrow</span>(log_p_new)
 <span class="kw">head</span>(log_p_new)</code></pre></div>
+<pre><code>       Pooling NoPooling PartialPooling
+[1,] -87.50510 -275.5754     -160.35354
+[2,] -73.97575 -195.8578     -127.41475
+[3,] -80.95743 -190.5183     -123.39052
+[4,] -77.54662 -215.8451     -142.38921
+[5,] -74.39093 -198.8829     -147.79039
+[6,] -88.18157 -214.5342      -79.59827</code></pre>
 <p>We now have the distributions of <code>log_p_new</code> in a matrix with a column for each model.</p>
 <p>For each model, the posterior mean for <code>log_p_new</code> will give us</p>
 <p><span class="math display">\[
@@ -393,6 +496,8 @@ M &lt;-<span class="st"> </span><span class="kw">nrow</span>(log_p_new)
 <p>To compute this for each of the models we only need to take the mean of the corresponding column of <code>log_p_new</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mean_log_p_new &lt;-<span class="st"> </span><span class="kw">colMeans</span>(log_p_new)
 <span class="kw">round</span>(<span class="kw">sort</span>(mean_log_p_new, <span class="dt">decreasing =</span> <span class="ot">TRUE</span>), <span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<pre><code>       Pooling PartialPooling      NoPooling 
+         -81.8          -99.8         -207.9 </code></pre>
 <p>From a predictive standpoint, the models are ranked by the amount of pooling they do, with complete pooling being the best, and no pooling being the worst predictively. All of these models do predictions by averaging over their posteriors, with the amount of posterior uncertainty also being ranked in reverse order of the amount of pooling they do.</p>
 <p>As we will now see, the ranking of the models can change when we compute the posterior expectation of the log predictive density.</p>
 <div id="posterior-expectation-of-the-log-predictive-density" class="section level4">
@@ -429,32 +534,34 @@ M &lt;-<span class="st"> </span><span class="kw">nrow</span>(log_p_new)
 \]</span></p>
 <p>Because <span class="math inline">\(u_m - \max(u) \leq 0\)</span>, the exponentiations cannot overflow. They may underflow to zero, but this will not lose precision because of the leading <span class="math inline">\(\max(u)\)</span> term; the only way underflow can arise is if <span class="math inline">\(u_m - \max(u)\)</span> is very small, meaning that it won’t add significant digits to <span class="math inline">\(\max(u)\)</span> if it had not underflowed.</p>
 <p>We can implement <span class="math inline">\(\mathrm{log\_sum\_exp}\)</span> in R as follows:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">log_sum_exp &lt;-<span class="st"> </span>function(u) {
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">log_sum_exp &lt;-<span class="st"> </span><span class="cf">function</span>(u) {
   max_u &lt;-<span class="st"> </span><span class="kw">max</span>(u)
   a &lt;-<span class="st"> </span><span class="dv">0</span>
-  for (n in <span class="dv">1</span>:<span class="kw">length</span>(u)) {
-    a &lt;-<span class="st"> </span>a +<span class="st"> </span><span class="kw">exp</span>(u[n] -<span class="st"> </span>max_u)
+  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">length</span>(u)) {
+    a &lt;-<span class="st"> </span>a <span class="op">+</span><span class="st"> </span><span class="kw">exp</span>(u[n] <span class="op">-</span><span class="st"> </span>max_u)
   }
-  max_u +<span class="st"> </span><span class="kw">log</span>(a)
+  max_u <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(a)
 }
 
 <span class="co"># Or equivalenty using vectorization</span>
-log_sum_exp &lt;-<span class="st"> </span>function(u) {
+log_sum_exp &lt;-<span class="st"> </span><span class="cf">function</span>(u) {
   max_u &lt;-<span class="st"> </span><span class="kw">max</span>(u)
-  max_u +<span class="st"> </span><span class="kw">log</span>(<span class="kw">sum</span>(<span class="kw">exp</span>(u -<span class="st"> </span>max_u)))
+  max_u <span class="op">+</span><span class="st"> </span><span class="kw">log</span>(<span class="kw">sum</span>(<span class="kw">exp</span>(u <span class="op">-</span><span class="st"> </span>max_u)))
 }</code></pre></div>
 <p>and then include the <span class="math inline">\(-\log M\)</span> term to make it <code>log_mean_exp</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">log_mean_exp &lt;-<span class="st"> </span>function(u) {
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">log_mean_exp &lt;-<span class="st"> </span><span class="cf">function</span>(u) {
   M &lt;-<span class="st"> </span><span class="kw">length</span>(u)
-  -<span class="kw">log</span>(M) +<span class="st"> </span><span class="kw">log_sum_exp</span>(u)
+  <span class="op">-</span><span class="kw">log</span>(M) <span class="op">+</span><span class="st"> </span><span class="kw">log_sum_exp</span>(u)
 }</code></pre></div>
 <p>We can then use it to compute the log posterior predictive densities for each of the models:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new_lps &lt;-<span class="st"> </span><span class="kw">lapply</span>(log_p_new_mats, function(x) <span class="kw">apply</span>(x, <span class="dv">2</span>, log_mean_exp))
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">new_lps &lt;-<span class="st"> </span><span class="kw">lapply</span>(log_p_new_mats, <span class="cf">function</span>(x) <span class="kw">apply</span>(x, <span class="dv">2</span>, log_mean_exp))
 
 <span class="co"># sum over the data points</span>
 new_lps_sums &lt;-<span class="st"> </span><span class="kw">sapply</span>(new_lps, sum)
 
 <span class="kw">round</span>(<span class="kw">sort</span>(new_lps_sums, <span class="dt">decreasing =</span> <span class="ot">TRUE</span>), <span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<pre><code>PartialPooling        Pooling      NoPooling 
+         -72.0          -73.1          -81.4 </code></pre>
 <p>Now the ranking is different! As expected, the values here are greater than the expectation of the log density due to Jensen’s inequality. The partial pooling model appears to be making slightly better predictions than the full pooling model, which in turn is making slightly better predictions than the no pooling model.</p>
 </div>
 <div id="approximating-the-expected-log-predictive-density" class="section level4">
@@ -462,6 +569,18 @@ new_lps_sums &lt;-<span class="st"> </span><span class="kw">sapply</span>(new_lp
 <a href="#approximating-the-expected-log-predictive-density" class="anchor"></a>Approximating the expected log predictive density</h4>
 <p>Ventari, Gelman, and Gabry (2016) shows that the expected log predictive density can be approximated using the <code>loo</code> function for each model and then compared across models:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(<span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit_partialpool), <span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit_pool), <span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit_nopool))</code></pre></div>
+<pre><code>
+Model comparison: 
+(ordered by highest ELPD)
+
+                elpd_diff elpd_loo se_elpd_loo p_loo se_p_loo looic
+fit_pool          0.0     -46.5      2.7         1.1   0.3     92.9
+fit_partialpool  -0.2     -46.6      2.2         3.6   0.8     93.3
+fit_nopool       -6.2     -52.7      0.7        10.9   0.4    105.3
+                se_looic
+fit_pool          5.3   
+fit_partialpool   4.3   
+fit_nopool        1.5   </code></pre>
 <p>The third column is the leave-one-out (loo) approximation to the expected log predictive density. This approximation is only asymptotically valid and with only 18 observations in this case, substantially underestimates the expected log predictive densities found in the previous subsection. Nevertheless, the relative ranking of the models is essentially the same with the pooled and partially pooled models being virtually indistinguishable but much better than the no pooling model.</p>
 </div>
 </div>
@@ -473,36 +592,45 @@ new_lps_sums &lt;-<span class="st"> </span><span class="kw">sapply</span>(new_lp
 <p>There will be two sources of uncertainty in our predictions, the first being the uncertainty in <span class="math inline">\(\theta\)</span> in the posterior <span class="math inline">\(p(\theta \, | \, y)\)</span> and the second being the uncertainty due to the likelihood <span class="math inline">\(p(\tilde{y} \, | \, \theta)\)</span>.</p>
 <p>We let <span class="math inline">\(z_n\)</span> be the number of successes for unit <span class="math inline">\(n\)</span> in <span class="math inline">\(K^{\mathrm{new}}_n\)</span> further trials. It might seem tempting to eliminate that second source of uncertainty and set <span class="math inline">\(z_n^{(m)}\)</span> to its expectation, <span class="math inline">\(\theta_n^{(m)} \, K^{\mathrm{new}}\)</span>, at each draw <span class="math inline">\(m\)</span> from the posterior rather than simulating a new value. Or it might seem tempting to remove the first source of uncertainty and use the posterior mean (or median or mode or …) rather than draws from the posterior. Either way, the resulting values would suffice for estimating the posterior mean, but would not capture the uncertainty in the prediction for <span class="math inline">\(y^{\mathrm{new}}_n\)</span> and would thus not be useful in estimating predictive standard deviations or quantiles or as the basis for decision making under uncertainty. In other words, the predictions would not be properly calibrated (in a sense we define below).</p>
 <p>To predict <span class="math inline">\(z\)</span> for each player we can use the following code:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Hits =</span> y_new, <span class="dt">AB =</span> K_new, <span class="dt">Player =</span> bball$Player)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Hits =</span> y_new, <span class="dt">AB =</span> K_new, <span class="dt">Player =</span> bball<span class="op">$</span>Player)
 ppd_pool &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(fit_pool, newdata)
 ppd_nopool &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(fit_nopool, newdata)
 ppd_partialpool &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(fit_partialpool, newdata)
-<span class="kw">colnames</span>(ppd_pool) &lt;-<span class="st"> </span><span class="kw">colnames</span>(ppd_nopool) &lt;-<span class="st"> </span><span class="kw">colnames</span>(ppd_partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball$Player)
+<span class="kw">colnames</span>(ppd_pool) &lt;-<span class="st"> </span><span class="kw">colnames</span>(ppd_nopool) &lt;-<span class="st"> </span><span class="kw">colnames</span>(ppd_partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball<span class="op">$</span>Player)
 <span class="kw">colMeans</span>(ppd_partialpool)</code></pre></div>
+<pre><code>  Clemente   Robinson     Howard  Johnstone      Berry    Spencer 
+  107.2572   121.9287   147.3780    76.6190   114.7302   128.0493 
+ Kessinger   Alvarado      Santo    Swaboda Petrocelli  Rodriguez 
+  158.0292    36.8720   133.0517    52.2115   138.3540    47.7560 
+     Scott      Unser   Williams Campaneris     Munson      Alvis 
+  111.9128    71.0360   152.2063   141.3460   101.4048    17.2310 </code></pre>
 <p>Translating the posterior number of hits into a season batting average, <span class="math inline">\(\frac{y_n + z_n}{K_n + K^{\mathrm{new}}_n}\)</span>, we get an 80% posterior interval of</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_1 &lt;-<span class="st"> </span>ppd_partialpool[, <span class="dv">1</span>]
-clemente_80pct &lt;-<span class="st"> </span>(y[<span class="dv">1</span>] +<span class="st"> </span><span class="kw">quantile</span>(z_1, <span class="dt">prob =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>))) /<span class="st"> </span>(K[<span class="dv">1</span>] +<span class="st"> </span>K_new[<span class="dv">1</span>])
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">z_<span class="dv">1</span> &lt;-<span class="st"> </span>ppd_partialpool[, <span class="dv">1</span>]
+clemente_80pct &lt;-<span class="st"> </span>(y[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="kw">quantile</span>(z_<span class="dv">1</span>, <span class="dt">prob =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>))) <span class="op">/</span><span class="st"> </span>(K[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>K_new[<span class="dv">1</span>])
 <span class="kw">batting_avg</span>(clemente_80pct)</code></pre></div>
+<pre><code>  10%   90% 
+0.255 0.359 </code></pre>
 <p>for Roberto Clemente from the partial pooling model. Part of our uncertainty here is due to our uncertainty in Clemente’s underlying chance of success, and part of our uncertainty is due to there being 367 remaining trials (at bats) modeled as binomial. In the remaining at bats for the season, Clemente’s success rate (batting average) was <span class="math inline">\(127 / 367 = 0.346\)</span>.</p>
 <p>For each model, the following plot shows each player’s posterior predictive 50% interval for predicted batting average (success rate) in his remaining at bats (trials); the observed success rate in the remainder of the season is shown as a blue dot.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ppd_intervals &lt;-<span class="st"> </span>function(x) <span class="kw">t</span>(<span class="kw">apply</span>(x, <span class="dv">2</span>, quantile, <span class="dt">probs =</span> <span class="kw">c</span>(<span class="fl">0.25</span>, <span class="fl">0.75</span>)))
-ppd_summaries &lt;-<span class="st"> </span>(<span class="dv">1</span> /<span class="st"> </span>K_new) *<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">ppd_intervals</span>(ppd_pool),
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ppd_intervals &lt;-<span class="st"> </span><span class="cf">function</span>(x) <span class="kw">t</span>(<span class="kw">apply</span>(x, <span class="dv">2</span>, quantile, <span class="dt">probs =</span> <span class="kw">c</span>(<span class="fl">0.25</span>, <span class="fl">0.75</span>)))
+ppd_summaries &lt;-<span class="st"> </span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span>K_new) <span class="op">*</span><span class="st"> </span><span class="kw">rbind</span>(<span class="kw">ppd_intervals</span>(ppd_pool),
                                      <span class="kw">ppd_intervals</span>(ppd_nopool),
                                      <span class="kw">ppd_intervals</span>(ppd_partialpool))
-df_ppd &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">player =</span> <span class="kw">rep</span>(<span class="dv">1</span>:<span class="kw">length</span>(y_new), <span class="dv">3</span>),
-                     <span class="dt">y =</span> <span class="kw">rep</span>(y_new /<span class="st"> </span>K_new, <span class="dv">3</span>),
+df_ppd &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">player =</span> <span class="kw">rep</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">length</span>(y_new), <span class="dv">3</span>),
+                     <span class="dt">y =</span> <span class="kw">rep</span>(y_new <span class="op">/</span><span class="st"> </span>K_new, <span class="dv">3</span>),
                      <span class="dt">lb =</span> ppd_summaries[, <span class="st">"25%"</span>],
                      <span class="dt">ub =</span> ppd_summaries[, <span class="st">"75%"</span>],
                      <span class="dt">model =</span> <span class="kw">rep</span>(models, <span class="dt">each =</span> <span class="kw">length</span>(y_new)))</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(df_ppd, <span class="kw">aes</span>(<span class="dt">x=</span>player, <span class="dt">y=</span>y, <span class="dt">ymin=</span>lb, <span class="dt">ymax=</span>ub)) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_linerange</span>(<span class="dt">color =</span> <span class="st">"gray60"</span>, <span class="dt">size =</span> <span class="dv">2</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">size =</span> <span class="fl">2.5</span>, <span class="dt">color =</span> <span class="st">"skyblue4"</span>) +
-<span class="st">  </span><span class="kw">facet_grid</span>(. ~<span class="st"> </span>model) +
-<span class="st">  </span><span class="kw">labs</span>(<span class="dt">x =</span> <span class="ot">NULL</span>, <span class="dt">y =</span> <span class="st">"batting average"</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="dt">breaks =</span> <span class="ot">NULL</span>) +
-<span class="st">  </span><span class="kw">ggtitle</span>(<span class="kw">expression</span>(
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/ggplot">ggplot</a></span>(df_ppd, <span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/aes">aes</a></span>(<span class="dt">x=</span>player, <span class="dt">y=</span>y, <span class="dt">ymin=</span>lb, <span class="dt">ymax=</span>ub)) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_linerange">geom_linerange</a></span>(<span class="dt">color =</span> <span class="st">"gray60"</span>, <span class="dt">size =</span> <span class="dv">2</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_point">geom_point</a></span>(<span class="dt">size =</span> <span class="fl">2.5</span>, <span class="dt">color =</span> <span class="st">"skyblue4"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/facet_grid">facet_grid</a></span>(. <span class="op">~</span><span class="st"> </span>model) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">labs</a></span>(<span class="dt">x =</span> <span class="ot">NULL</span>, <span class="dt">y =</span> <span class="st">"batting average"</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/scale_continuous">scale_x_continuous</a></span>(<span class="dt">breaks =</span> <span class="ot">NULL</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="kw">expression</span>(
     <span class="kw">atop</span>(<span class="st">"Posterior Predictions for Batting Average in Remainder of Season"</span>,
          <span class="kw">atop</span>(<span class="st">"50% posterior predictive intervals (gray bars); observed (blue dots)"</span>, <span class="st">""</span>))))</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-ppd-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>We choose to plot 50% posterior intervals as they are a good single point for checking calibration. Rather than plotting the number of hits on the vertical axis, we have standardized all the predictions and outcomes to a success rate. Because each unit (player) has a different number of subsequent trials (at bats), the posterior intervals are relatively wider or narrower within the plots for each model (more trials imply narrower intervals for the average). Because each unit had the same number of initial observed trials, this variation is primarily due to the uncertainty from the binomial model of outcomes.</p>
 <div id="calibration-1" class="section level3">
 <h3 class="hasAnchor">
@@ -555,15 +683,20 @@ y
 \]</span></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">draws_partialpool &lt;-<span class="st"> </span><span class="kw">shift_draws</span>(<span class="kw">as.matrix</span>(fit_partialpool))
 thetas_partialpool &lt;-<span class="st"> </span><span class="kw">plogis</span>(draws_partialpool)
-thetas_partialpool &lt;-<span class="st"> </span>thetas_partialpool[,-<span class="kw">ncol</span>(thetas_partialpool)]
-<span class="kw">colnames</span>(thetas_partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball$Player)
-ability_gt_400 &lt;-<span class="st"> </span>thetas_partialpool &gt;<span class="st"> </span><span class="fl">0.4</span>
+thetas_partialpool &lt;-<span class="st"> </span>thetas_partialpool[,<span class="op">-</span><span class="kw">ncol</span>(thetas_partialpool)]
+<span class="kw">colnames</span>(thetas_partialpool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball<span class="op">$</span>Player)
+ability_gt_<span class="dv">400</span> &lt;-<span class="st"> </span>thetas_partialpool <span class="op">&gt;</span><span class="st"> </span><span class="fl">0.4</span>
 <span class="kw">cat</span>(<span class="st">"Pr(theta_n &gt;= 0.400 | y)</span><span class="ch">\n</span><span class="st">"</span>)
-<span class="kw">colMeans</span>(ability_gt_400)[<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>)]
+<span class="kw">colMeans</span>(ability_gt_<span class="dv">400</span>)[<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>)]
 
-some_gt_350 &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_partialpool, <span class="dv">1</span>, function(x) <span class="kw">max</span>(x) &gt;<span class="st"> </span><span class="fl">0.35</span>)
+some_gt_<span class="dv">350</span> &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_partialpool, <span class="dv">1</span>, <span class="cf">function</span>(x) <span class="kw">max</span>(x) <span class="op">&gt;</span><span class="st"> </span><span class="fl">0.35</span>)
 <span class="kw">cat</span>(<span class="st">"Pr(at least one theta_n &gt;= 0.350 | y)</span><span class="ch">\n</span><span class="st">"</span>)
-<span class="kw">mean</span>(some_gt_350)</code></pre></div>
+<span class="kw">mean</span>(some_gt_<span class="dv">350</span>)</code></pre></div>
+<pre><code>Pr(theta_n &gt;= 0.400 | y)
+Clemente    Berry  Swaboda 
+ 0.02325  0.00325  0.00050 
+Pr(at least one theta_n &gt;= 0.350 | y)
+[1] 0.235</code></pre>
 <!-- These results show that the probability of batting 0.400 or better for -->
 <!-- the season is a different question than asking if the player's ability -->
 <!-- is 0.400 or better; for example, with respect to the basic partial -->
@@ -597,21 +730,42 @@ some_gt_350 &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_p
 <a href="#ranking" class="anchor"></a>Ranking</h2>
 <p>In addition to multiple comparisons, we can use the simultaneous estimation of the ability parameters to rank the units. In this section, we rank ballplayers by (estimated) chance of success (i.e., batting ability).</p>
 <p>Of course, ranking players by ability makes no sense for the complete pooling model, where every player is assumed to have the same ability.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">reverse_rank &lt;-<span class="st"> </span>function(x) <span class="dv">1</span> +<span class="st"> </span><span class="kw">length</span>(x) -<span class="st"> </span><span class="kw">rank</span>(x) <span class="co"># so lower rank is better</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">reverse_rank &lt;-<span class="st"> </span><span class="cf">function</span>(x) <span class="dv">1</span> <span class="op">+</span><span class="st"> </span><span class="kw">length</span>(x) <span class="op">-</span><span class="st"> </span><span class="kw">rank</span>(x) <span class="co"># so lower rank is better</span>
 rank &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_partialpool, <span class="dv">1</span>, reverse_rank)
 <span class="kw">t</span>(<span class="kw">apply</span>(rank, <span class="dv">1</span>, quantile, <span class="dt">prob =</span> <span class="kw">c</span>(<span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span>)))</code></pre></div>
+<pre><code>            
+parameters   10% 50% 90%
+  Clemente     1   5  13
+  Robinson     1   6  14
+  Howard       2   6  14
+  Johnstone    2   7  15
+  Berry        2   8  15
+  Spencer      2   8  15
+  Kessinger    2   9  16
+  Alvarado     3   9  16
+  Santo        3  10  17
+  Swaboda      3  10  17
+  Petrocelli   3  11  17
+  Rodriguez    3  11  17
+  Scott        4  11  17
+  Unser        4  11  17
+  Williams     4  11  17
+  Campaneris   4  12  17
+  Munson       5  13  18
+  Alvis        5  14  18</code></pre>
 <p>It is again abundantly clear from the posterior intervals that our uncertainty is very great after only 45 at bats.</p>
 <p>In the original Volume I BUGS example (see <a href="http://www.openbugs.net/Examples/Surgical.html">OpenBUGS: Surgical example</a>) of surgical mortality, the posterior distribution over ranks was plotted for each hospital. It is now straightforward to reproduce that figure here for the baseball data.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df_rank &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">name =</span> <span class="kw">rep</span>(bball$Player, <span class="dt">each =</span> M), 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df_rank &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">name =</span> <span class="kw">rep</span>(bball<span class="op">$</span>Player, <span class="dt">each =</span> M), 
                       <span class="dt">rank =</span> <span class="kw">c</span>(<span class="kw">t</span>(rank)))
 
-<span class="kw">ggplot</span>(df_rank, <span class="kw">aes</span>(rank)) +
-<span class="st">  </span><span class="kw">stat_count</span>(<span class="dt">width =</span> <span class="fl">0.8</span>) +
-<span class="st">  </span><span class="kw">facet_wrap</span>(~<span class="st"> </span>name) +
-<span class="st">  </span><span class="kw">scale_x_discrete</span>(<span class="st">"Rank"</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>)) +
-<span class="st">  </span><span class="kw">scale_y_discrete</span>(<span class="st">"Probability"</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span> *<span class="st"> </span>M, <span class="fl">0.2</span> *<span class="st"> </span>M),
-                   <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">"0.0"</span>, <span class="st">"0.1"</span>, <span class="st">"0.2"</span>)) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">"Rankings for Partial Pooling Model"</span>)</code></pre></div>
+<span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/ggplot">ggplot</a></span>(df_rank, <span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/aes">aes</a></span>(rank)) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_bar">stat_count</a></span>(<span class="dt">width =</span> <span class="fl">0.8</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/facet_wrap">facet_wrap</a></span>(<span class="op">~</span><span class="st"> </span>name) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/scale_discrete">scale_x_discrete</a></span>(<span class="st">"Rank"</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">15</span>)) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/scale_discrete">scale_y_discrete</a></span>(<span class="st">"Probability"</span>, <span class="dt">limits =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span> <span class="op">*</span><span class="st"> </span>M, <span class="fl">0.2</span> <span class="op">*</span><span class="st"> </span>M),
+                   <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">"0.0"</span>, <span class="st">"0.1"</span>, <span class="st">"0.2"</span>)) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="st">"Rankings for Partial Pooling Model"</span>)</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-ranks-1.png" width="70%" style="display: block; margin: auto;"></p>
 <div id="who-has-the-highest-chance-of-success" class="section level4">
 <h4 class="hasAnchor">
 <a href="#who-has-the-highest-chance-of-success" class="anchor"></a>Who has the Highest Chance of Success?</h4>
@@ -628,21 +782,22 @@ rank &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_partialp
 <p>Like our other models, the partial pooling mitigates the implicit multiple comparisons being done to calculate the probabilities of rankings. Contrast this with an approach that does a pairwise significance test and then applies a false-discovery correction.</p>
 <p>We can compute this straightforwardly using the rank data we have already computed or we could compute it directly as above. Because <span class="math inline">\(\mathrm{Pr}[\theta_n = \theta_{n'}] = 0\)</span> for <span class="math inline">\(n \neq n'\)</span>, we don’t have to worry about ties.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">thetas_nopool &lt;-<span class="st"> </span><span class="kw">plogis</span>(<span class="kw">as.matrix</span>(fit_nopool))
-<span class="kw">colnames</span>(thetas_nopool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball$Player)
+<span class="kw">colnames</span>(thetas_nopool) &lt;-<span class="st"> </span><span class="kw">as.character</span>(bball<span class="op">$</span>Player)
 rank_nopool &lt;-<span class="st"> </span><span class="kw">apply</span>(thetas_nopool, <span class="dv">1</span>, reverse_rank)
-is_best_nopool &lt;-<span class="st"> </span><span class="kw">rowMeans</span>(rank_nopool ==<span class="st"> </span><span class="dv">1</span>)
-is_best_partialpool &lt;-<span class="st"> </span><span class="kw">rowMeans</span>(rank ==<span class="st"> </span><span class="dv">1</span>)
+is_best_nopool &lt;-<span class="st"> </span><span class="kw">rowMeans</span>(rank_nopool <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)
+is_best_partialpool &lt;-<span class="st"> </span><span class="kw">rowMeans</span>(rank <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)
 
-df_is_best &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">unit =</span> <span class="kw">rep</span>(bball$Player, <span class="dv">2</span>), 
+df_is_best &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">unit =</span> <span class="kw">rep</span>(bball<span class="op">$</span>Player, <span class="dv">2</span>), 
                          <span class="dt">is_best =</span> <span class="kw">c</span>(is_best_partialpool, is_best_nopool), 
                          <span class="dt">model =</span> <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">"partial pooling"</span>, <span class="st">"no pooling"</span>), <span class="dt">each =</span> N))
 
-<span class="kw">ggplot</span>(df_is_best, <span class="kw">aes</span>(<span class="dt">x=</span>unit, <span class="dt">y=</span>is_best)) +
-<span class="st">  </span><span class="kw">geom_bar</span>(<span class="dt">stat =</span> <span class="st">"identity"</span>) +
-<span class="st">  </span><span class="kw">facet_wrap</span>(~<span class="st"> </span>model) +
-<span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="dt">name =</span> <span class="st">"Pr[player is best]"</span>) +
-<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">"Who is the Best Player?"</span>) +<span class="st"> </span>
-<span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x =</span> <span class="kw">element_text</span>(<span class="dt">angle =</span> -<span class="dv">45</span>, <span class="dt">vjust =</span> <span class="dv">1</span>, <span class="dt">hjust =</span> <span class="dv">0</span>))</code></pre></div>
+<span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/ggplot">ggplot</a></span>(df_is_best, <span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/aes">aes</a></span>(<span class="dt">x=</span>unit, <span class="dt">y=</span>is_best)) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/geom_bar">geom_bar</a></span>(<span class="dt">stat =</span> <span class="st">"identity"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/facet_wrap">facet_wrap</a></span>(<span class="op">~</span><span class="st"> </span>model) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/scale_continuous">scale_y_continuous</a></span>(<span class="dt">name =</span> <span class="st">"Pr[player is best]"</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="st">"Who is the Best Player?"</span>) <span class="op">+</span><span class="st"> </span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/theme">theme</a></span>(<span class="dt">axis.text.x =</span> <span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/element">element_text</a></span>(<span class="dt">angle =</span> <span class="op">-</span><span class="dv">45</span>, <span class="dt">vjust =</span> <span class="dv">1</span>, <span class="dt">hjust =</span> <span class="dv">0</span>))</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-best-player-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>This question of which player has the highest chance of success (batting ability) doesn’t even make sense in the complete pooling model, because the chance of success parameters are all the same by definition. In the other models, the amount of pooling directly determines the probabilities of being the best player. That is, the probability of being best goes down for high performing players with more pooling, whereas it goes up for below-average players.</p>
 </div>
 </div>
@@ -683,13 +838,14 @@ p_B
 \]</span></p>
 <p>Using the <code>pp_check</code> in <strong>rstanarm</strong>, we can easily reproduce Figure 6.12 from (Gelman et al. 2013), which shows the posterior predictive distribution for the test statistic, the observed value as a vertical line, and the <span class="math inline">\(p\)</span>-value for each of the tests. First, here is just the plot for the no pooling model using the mean as the test statistic:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(fit_nopool, <span class="dt">plotfun =</span> <span class="st">"stat"</span>, <span class="dt">stat =</span> <span class="st">"mean"</span>)</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-ppc-stats-mean-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>The <code>stat</code> argument can the be the name of any R function (including your own functions defined in the Global Environment) that takes a vector as an input and returns a scalar.</p>
 <p>To make plots for each of the models for several test statistics we can use the following code, which will greate a list of ggplot objects for each model and then arrange everything in a single plot.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tstat_plots &lt;-<span class="st"> </span>function(model, stats) {
-  <span class="kw">lapply</span>(stats, function(stat) {
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tstat_plots &lt;-<span class="st"> </span><span class="cf">function</span>(model, stats) {
+  <span class="kw">lapply</span>(stats, <span class="cf">function</span>(stat) {
     graph &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(model, <span class="dt">plotfun =</span> <span class="st">"stat"</span>, <span class="dt">stat =</span> stat, 
                       <span class="dt">seed =</span> SEED) <span class="co"># optional arguments</span>
-    graph +<span class="st"> </span><span class="kw">xlab</span>(stat) +<span class="st"> </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">"none"</span>)
+    graph <span class="op">+</span><span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">xlab</a></span>(stat) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/theme">theme</a></span>(<span class="dt">legend.position =</span> <span class="st">"none"</span>)
   })
 }
 Tstats &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">"mean"</span>, <span class="st">"sd"</span>, <span class="st">"min"</span>, <span class="st">"max"</span>)
@@ -697,13 +853,14 @@ ppcs_pool &lt;-<span class="st"> </span><span class="kw">tstat_plots</span>(fit_
 ppcs_nopool &lt;-<span class="st"> </span><span class="kw">tstat_plots</span>(fit_nopool, Tstats)
 ppcs_partialpool &lt;-<span class="st"> </span><span class="kw">tstat_plots</span>(fit_partialpool, Tstats)
 
-if (<span class="kw">require</span>(gridExtra)) {
-  <span class="kw">grid.arrange</span>(
-    <span class="kw">arrangeGrob</span>(<span class="dt">grobs =</span> ppcs_pool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"Pooling"</span>), 
-    <span class="kw">arrangeGrob</span>(<span class="dt">grobs =</span> ppcs_nopool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"No Pooling"</span>),
-    <span class="kw">arrangeGrob</span>(<span class="dt">grobs =</span> ppcs_partialpool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"Partial Pooling"</span>)
+<span class="cf">if</span> (<span class="kw">require</span>(gridExtra)) {
+  <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">grid.arrange</a></span>(
+    <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">arrangeGrob</a></span>(<span class="dt">grobs =</span> ppcs_pool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"Pooling"</span>), 
+    <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">arrangeGrob</a></span>(<span class="dt">grobs =</span> ppcs_nopool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"No Pooling"</span>),
+    <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">arrangeGrob</a></span>(<span class="dt">grobs =</span> ppcs_partialpool, <span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">left =</span> <span class="st">"Partial Pooling"</span>)
   )
 }</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-ppc-stats-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>The only worrisomely extreme value visible in the plots is the <span class="math inline">\(p\)</span>-value for standard deviation in the no-pooling model, where the vast majority of the simulated data sets under the model had standard deviations greater than the actual data.</p>
 <p>We didn’t actually compute this <span class="math inline">\(p\)</span>-value because extreme <span class="math inline">\(p\)</span>-values are easy to detect visually and whether or not the <span class="math inline">\(p\)</span>-value is less than <span class="math inline">\(0.05\)</span> or some other arbitrary value is of little use to us beyond what we can already see in the plot. However, if we did want to actually compute the <span class="math inline">\(p\)</span>-value we can do so easily:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yrep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(fit_nopool, <span class="dt">seed =</span> SEED) <span class="co"># seed is optional</span>
@@ -711,16 +868,18 @@ Ty &lt;-<span class="st"> </span><span class="kw">sd</span>(y)
 Tyrep &lt;-<span class="st"> </span><span class="kw">apply</span>(yrep, <span class="dv">1</span>, sd)
 
 <span class="co"># tail-area probability</span>
-p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> </span><span class="kw">mean</span>(Tyrep &gt;<span class="st"> </span>Ty)
+p &lt;-<span class="st"> </span><span class="dv">1</span> <span class="op">-</span><span class="st"> </span><span class="kw">mean</span>(Tyrep <span class="op">&gt;</span><span class="st"> </span>Ty)
 <span class="kw">print</span>(p)</code></pre></div>
+<pre><code>[1] 0.0125</code></pre>
 </div>
 <div id="comparing-observed-and-replicated-data" class="section level3">
 <h3 class="hasAnchor">
 <a href="#comparing-observed-and-replicated-data" class="anchor"></a>Comparing Observed and Replicated Data</h3>
 <p>Following the advice of Gelman et al. (2013), we will take the fitted parameters of the data set and generate replicated data sets, then compare the replicated data sets visually to the observed data we used to fit the model. In this section we’ll create the plots for the model using partial pooling, but the same plots can be made for the other models too.</p>
 <p>Again using <strong>rstanarm</strong>’s <code>pp_check</code> function, we can plot some of the simulated data sets along with the original data set to do a visual inspection as suggested by Gelman et al. (2013). For this type of posterior predictive check we set the <code>check</code> argument to <code>"distributions"</code> and we use <code>nreps</code> to specify how many replicated sets of data to generate from the posterior predictive distribution. Because our models have a binomial outcome, instead of plotting the number of successes (hits in this case) on the x-axis, <code>pp_check</code> will plot the proportion of successes.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(fit_partialpool, <span class="dt">plotfun =</span> <span class="st">"hist"</span>, <span class="dt">nreps =</span> <span class="dv">15</span>, <span class="dt">binwidth =</span> <span class="fl">0.025</span>) +
-<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">"Model: Partial Pooling"</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(fit_partialpool, <span class="dt">plotfun =</span> <span class="st">"hist"</span>, <span class="dt">nreps =</span> <span class="dv">15</span>, <span class="dt">binwidth =</span> <span class="fl">0.025</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw"><a href="http://www.rdocumentation.org/packages/ggplot2/topics/labs">ggtitle</a></span>(<span class="st">"Model: Partial Pooling"</span>)</code></pre></div>
+<p><img src="pooling_files/figure-html/plot-ppc-y-vs-yrep-1.png" width="70%" style="display: block; margin: auto;"></p>
 <p>These simulations are not unreasonable for a binomial likelihood, but they are more spread out than the actual data. In this case, this may actually have more to do with how the data were selected out of all the major league baseball players than the actual data distribution. Efron and Morris (1975, p 312) write</p>
 <blockquote>
 <p>This sample was chosen because we wanted between 30 and 50 at bats to assure a satisfactory approximation of the binomial by the normal distribution while leaving the bulk of at bats to be estimated. We also wanted to include an unusually good hitter (Clemente) to test the method with at least one extreme parameter, a situation expected to be less favorable to Stein’s estimator. Stein’s estimator requires equal variances, or in this situation, equal at bats, so the remaining 17 players are all whom either the April 26 or May 3 <em>New York Times</em> reported with 45 at bats.</p>
@@ -804,7 +963,6 @@ p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> </s
 </ul>
 </div>
 </div>
-</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -849,11 +1007,13 @@ p &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> </s
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

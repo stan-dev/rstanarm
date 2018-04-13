@@ -8,8 +8,12 @@
 <title>Estimating ANOVA Models with rstanarm • rstanarm</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating ANOVA Models with rstanarm">
+<meta property="og:description" content="">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary">
+<!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
@@ -24,8 +28,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -94,17 +102,19 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Estimating ANOVA Models with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-08-03</h4>
-          </div>
+            <h4 class="date">2018-04-13</h4>
+      
+      
+
+    </div>
 
     
     
-<div class="contents">
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{stan_aov: ANOVA Models}
@@ -141,49 +151,46 @@
 <p>We will utilize an example from the <strong>HSAUR3</strong> package by Brian S. Everitt and Torsten Hothorn, which is used in their 2014 book <em>A Handbook of Statistical Analyses Using R (3rd Edition)</em> (Chapman &amp; Hall / CRC). This book is frequentist in nature and we will show how to obtain the corresponding Bayesian results.</p>
 <p>The model in section 4.3.1 analyzes an experiment where rats were subjected to different diets in order to see how much weight they gained. The experimental factors were whether their diet had low or high protein and whether the protein was derived from beef or cereal. Before seeing the data, one might expect that a moderate proportion of the variance in weight gain might be attributed to protein (source) in the diet. The frequentist ANOVA estimates can be obtained:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">"weightgain"</span>, <span class="dt">package =</span> <span class="st">"HSAUR3"</span>)
-<span class="kw">coef</span>(<span class="kw">aov</span>(weightgain ~<span class="st"> </span>source *<span class="st"> </span>type, <span class="dt">data =</span> weightgain))</code></pre></div>
+<span class="kw">coef</span>(<span class="kw">aov</span>(weightgain <span class="op">~</span><span class="st"> </span>source <span class="op">*</span><span class="st"> </span>type, <span class="dt">data =</span> weightgain))</code></pre></div>
 <pre><code>         (Intercept)         sourceCereal              typeLow 
                100.0                -14.1                -20.8 
 sourceCereal:typeLow 
                 18.8 </code></pre>
 <p>To obtain Bayesian estimates we can prepend <code>stan_</code> to <code>aov</code> and specify the prior location of the <span class="math inline">\(R^2\)</span> as well as optionally the number of cores that the computer is allowed to utilize:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rstanarm)
-post1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_lm.html">stan_aov</a></span>(weightgain ~<span class="st"> </span>source *<span class="st"> </span>type, <span class="dt">data =</span> weightgain, 
+post1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_lm.html">stan_aov</a></span>(weightgain <span class="op">~</span><span class="st"> </span>source <span class="op">*</span><span class="st"> </span>type, <span class="dt">data =</span> weightgain, 
                   <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">R2</a></span>(<span class="dt">location =</span> <span class="fl">0.5</span>), <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>,
                   <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)
 post1</code></pre></div>
 <pre><code>stan_aov
- family:   gaussian [identity]
- formula:  weightgain ~ source * type
- num. obs: 40
+ family:       gaussian [identity]
+ formula:      weightgain ~ source * type
+ observations: 40
 ------
-
-Estimates:
                      Median MAD_SD
-(Intercept)           99.2    4.4 
-sourceCereal         -13.2    6.4 
-typeLow              -19.3    6.1 
-sourceCereal:typeLow  17.3    8.6 
-sigma                 14.7    1.7 
+(Intercept)           98.9    4.5 
+sourceCereal         -12.9    6.4 
+typeLow              -18.6    6.4 
+sourceCereal:typeLow  16.9    9.0 
+sigma                 14.8    1.8 
 log-fit_ratio          0.0    0.1 
 R2                     0.2    0.1 
 
-Sample avg. posterior predictive 
-distribution of y (X = xbar):
+Sample avg. posterior predictive distribution of y:
          Median MAD_SD
-mean_PPD 87.4    3.3  
+mean_PPD 87.3    3.2  
 
 ANOVA-like table:
                     Median MAD_SD
-Mean Sq source       571.8  439.2
-Mean Sq type        1023.4  604.0
-Mean Sq source:type  751.2  710.6
+Mean Sq source      565.0  452.8 
+Mean Sq type        979.5  594.8 
+Mean Sq source:type 713.5  710.2 
 
 ------
 For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <p>Here we have specified <code>adapt_delta = 0.999</code> to decrease the stepsize and largely prevent divergent transitions. See the Troubleshooting section in the main rstanarm <a href="rstanarm.html">vignette</a> for more details about <code>adapt_delta</code>. Also, our prior guess that <span class="math inline">\(R^2 = 0.5\)</span> was overly optimistic. However, the frequentist estimates presumably overfit the data even more.</p>
 <p>Alternatively, we could prepend <code>stan_</code> to <code>lmer</code> and specify the corresponding priors</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_lmer</a></span>(weightgain ~<span class="st"> </span><span class="dv">1</span> +<span class="st"> </span>(<span class="dv">1</span>|source) +<span class="st"> </span>(<span class="dv">1</span>|type) +<span class="st"> </span>(<span class="dv">1</span>|source:type),
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">post2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_lmer</a></span>(weightgain <span class="op">~</span><span class="st"> </span><span class="dv">1</span> <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span><span class="op">|</span>source) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span><span class="op">|</span>type) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span><span class="op">|</span>source<span class="op">:</span>type),
                    <span class="dt">data =</span> weightgain, <span class="dt">prior_intercept =</span> <span class="kw"><a href="../reference/priors.html">cauchy</a></span>(),
                    <span class="dt">prior_covariance =</span> <span class="kw"><a href="../reference/priors.html">decov</a></span>(<span class="dt">shape =</span> <span class="dv">2</span>, <span class="dt">scale =</span> <span class="dv">2</span>),
                    <span class="dt">adapt_delta =</span> <span class="fl">0.999</span>, <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, 
@@ -196,7 +203,6 @@ For info on the priors used see help('prior_summary.stanreg').</code></pre>
 <p>This vignette has compared and contrasted two approaches to estimating an ANOVA model with Bayesian techniques using the <strong>rstanarm</strong> package. They both have the same likelihood, so the (small in this case) differences in the results are attributable to differences in the priors.</p>
 <p>The <code>stan_aov</code> approach just calls <code>stan_lm</code> and thus only requires a prior location on the <span class="math inline">\(R^2\)</span> of the linear model. This seems rather easy to do in the context of an ANOVA decomposition of the total sum-of-squares in the outcome into model sum-of-squares and residual sum-of-squares.</p>
 <p>The <code>stan_lmer</code> approach just calls <code>stan_glm</code> but specifies a normal prior with mean zero for the deviations from <span class="math inline">\(\alpha\)</span> across groups. This is more in line with what most Bayesians would do naturally — particularly if the factors were considered “random” — but also requires a prior for <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\sigma\)</span>, and the standard deviation of the normal prior on the group-level intercepts. The <code>stan_lmer</code> approach is very flexible and might be more appropriate for more complicated experimental designs.</p>
-</div>
 </div>
   </div>
 
@@ -222,11 +228,13 @@ For info on the priors used see help('prior_summary.stanreg').</code></pre>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>

@@ -8,8 +8,12 @@
 <title>Estimating Generalized Linear Models for Count Data with rstanarm • rstanarm</title>
 <!-- jquery --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script><!-- Font Awesome icons --><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
-<!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="../jquery.sticky-kit.min.js"></script><script src="../pkgdown.js"></script><meta property="og:title" content="Estimating Generalized Linear Models for Count Data with rstanarm">
+<meta property="og:description" content="">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary">
+<!-- mathjax --><script src="https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
@@ -24,8 +28,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="../index.html">rstanarm</a>
+      <span class="navbar-brand">
+        <a class="navbar-link" href="../index.html">rstanarm</a>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">2.17.4</span>
+      </span>
     </div>
+
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
@@ -94,17 +102,19 @@
 
       
       </header><div class="row">
-  <div class="col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>Estimating Generalized Linear Models for Count Data with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2017-08-03</h4>
-          </div>
+            <h4 class="date">2018-04-13</h4>
+      
+      
+
+    </div>
 
     
     
-<div class="contents">
 <!--
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{stan_glm: GLMs for Count Data}
@@ -163,12 +173,12 @@
 <span class="kw">data</span>(roaches)
 
 <span class="co"># Rescale</span>
-roaches$roach1 &lt;-<span class="st"> </span>roaches$roach1 /<span class="st"> </span><span class="dv">100</span>
+roaches<span class="op">$</span>roach1 &lt;-<span class="st"> </span>roaches<span class="op">$</span>roach1 <span class="op">/</span><span class="st"> </span><span class="dv">100</span>
 <span class="co"># Estimate original model</span>
-glm1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y ~<span class="st"> </span>roach1 +<span class="st"> </span>treatment +<span class="st"> </span>senior, <span class="dt">offset =</span> <span class="kw">log</span>(exposure2), 
+glm1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y <span class="op">~</span><span class="st"> </span>roach1 <span class="op">+</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>senior, <span class="dt">offset =</span> <span class="kw">log</span>(exposure2), 
             <span class="dt">data =</span> roaches, <span class="dt">family =</span> poisson)
 <span class="co"># Estimate Bayesian version with stan_glm</span>
-stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(y ~<span class="st"> </span>roach1 +<span class="st"> </span>treatment +<span class="st"> </span>senior, <span class="dt">offset =</span> <span class="kw">log</span>(exposure2),
+stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glm.html">stan_glm</a></span>(y <span class="op">~</span><span class="st"> </span>roach1 <span class="op">+</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>senior, <span class="dt">offset =</span> <span class="kw">log</span>(exposure2),
                       <span class="dt">data =</span> roaches, <span class="dt">family =</span> poisson, 
                       <span class="dt">prior =</span> <span class="kw"><a href="../reference/priors.html">normal</a></span>(<span class="dv">0</span>,<span class="fl">2.5</span>), <span class="dt">prior_intercept =</span> <span class="kw"><a href="../reference/priors.html">normal</a></span>(<span class="dv">0</span>,<span class="dv">5</span>),
                       <span class="dt">chains =</span> CHAINS, <span class="dt">cores =</span> CORES, <span class="dt">seed =</span> SEED)</code></pre></div>
@@ -179,27 +189,27 @@ stan_glm1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/s
 <pre><code>         (Intercept) roach1 treatment senior
 glm             3.09    0.7     -0.52  -0.38
 stan_glm        3.09    0.7     -0.52  -0.38</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">summary</span>(glm1)$coefficients[, <span class="st">"Std. Error"</span>], 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">round</span>(<span class="kw">rbind</span>(<span class="dt">glm =</span> <span class="kw">summary</span>(glm1)<span class="op">$</span>coefficients[, <span class="st">"Std. Error"</span>], 
             <span class="dt">stan_glm =</span> <span class="kw"><a href="../reference/se.html">se</a></span>(stan_glm1)), <span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
 <pre><code>         (Intercept) roach1 treatment senior
 glm            0.021  0.009     0.025  0.033
-stan_glm       0.022  0.009     0.026  0.032</code></pre>
+stan_glm       0.021  0.008     0.024  0.034</code></pre>
 <p>(Note: the dataset we have is slightly different from the one used in Gelman and Hill (2007), which leads to slightly different parameter estimates than those shown in the book even when copying the <code>glm</code> call verbatim. Also, we have rescaled the <code>roach1</code> predictor. For the purposes of this example, the actual estimates are less important than the process.)</p>
 <p>Gelman and Hill next show how to compare the observed data to replicated datasets from the model to check the quality of the fit. Here we don’t show the original code used by Gelman and Hill because it’s many lines, requiring several loops and some care to get the matrix multiplications right (see pg. 161-162). On the other hand, the <strong>rstanarm</strong> package makes this easy. We can generate replicated datasets with a single line of code using the <code>posterior_predict</code> function:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">yrep &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span>(stan_glm1)</code></pre></div>
 <p>By default <code>posterior_predict</code> will generate a dataset for each set of parameter draws from the posterior distribution. That is, <code>yrep</code> will be an <span class="math inline">\(S \times N\)</span> matrix, where <span class="math inline">\(S\)</span> is the size of the posterior sample and <span class="math inline">\(N\)</span> is the number of data points. Each row of <code>yrep</code> represents a full dataset generated from the posterior predictive distribution. For more about the importance of the <code>posterior_predict</code> function, see the <a href="rstanarm.html">“How to Use the <strong>rstanarm</strong> Package”</a> vignette.</p>
 <p>Gelman and Hill take the simulated datasets and for each of them compute the proportion of zeros and compare to the observed proportion in the original data. We can do this easily using the <code>pp_check</code> function, which generates graphical comparisons of the data <code>y</code> and replicated datasets <code>yrep</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">prop_zero &lt;-<span class="st"> </span>function(y) <span class="kw">mean</span>(y ==<span class="st"> </span><span class="dv">0</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">prop_zero &lt;-<span class="st"> </span><span class="cf">function</span>(y) <span class="kw">mean</span>(y <span class="op">==</span><span class="st"> </span><span class="dv">0</span>)
 (prop_zero_test1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(stan_glm1, <span class="dt">plotfun =</span> <span class="st">"stat"</span>, <span class="dt">stat =</span> <span class="st">"prop_zero"</span>))</code></pre></div>
 <p><img src="count_files/figure-html/count-roaches-plot-pp_check1-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The value of the test statistic (in this case the proportion of zeros) computed from the sample <code>y</code> is the dark blue vertical line. More than 30% of these observations are zeros, whereas the replicated datasets all contain less than 1% zeros. This is a sign that we should consider a model that more accurately accounts for the large proportion of zeros in the data. Gelman and Hill show how we can do this using an overdispered Poisson regression. To illustrate the use of a different <code>stan_glm</code> model, here we will instead try <a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">negative binomial</a> regression, which is also used for overdispersed or zero-inflated count data. The negative binomial distribution allows the (conditional) mean and variance of <span class="math inline">\(y\)</span> to differ unlike the Poisson distribution. To fit the negative binomial model can either use the <code>stan_glm.nb</code> function or, equivalently, change the <code>family</code> we specify in the call to <code>stan_glm</code> to <code>neg_binomial_2</code> instead of <code>poisson</code>. To do the latter we can just use <code>update</code>:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stan_glm2 &lt;-<span class="st"> </span><span class="kw">update</span>(stan_glm1, <span class="dt">family =</span> neg_binomial_2) </code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stan_glm2 &lt;-<span class="st"> </span><span class="kw">update</span>(stan_glm1, <span class="dt">family =</span> neg_binomial_<span class="dv">2</span>) </code></pre></div>
 <p>We now use <code>pp_check</code> again, this time to check the proportion of zeros in the replicated datasets under the negative binomial model:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if (<span class="kw">require</span>(gridExtra)) {
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span> (<span class="kw">require</span>(gridExtra)) {
   prop_zero_test2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(stan_glm2, <span class="dt">plotfun =</span> <span class="st">"stat"</span>, <span class="dt">stat =</span> <span class="st">"prop_zero"</span>)
   <span class="co"># Show graphs for Poisson and negative binomial side by side</span>
-  <span class="kw">grid.arrange</span>(prop_zero_test1 +<span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">"Poisson"</span>), 
-               prop_zero_test2 +<span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">"Negative Binomial"</span>), 
+  <span class="kw"><a href="http://www.rdocumentation.org/packages/gridExtra/topics/arrangeGrob">grid.arrange</a></span>(prop_zero_test1 <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">"Poisson"</span>), 
+               prop_zero_test2 <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">"Negative Binomial"</span>), 
                <span class="dt">ncol =</span> <span class="dv">2</span>)
 }</code></pre></div>
 <p><img src="count_files/figure-html/count-roaches-plot-pp_check2-1.png" width="80%" style="display: block; margin: auto;"></p>
@@ -209,15 +219,18 @@ stan_glm       0.022  0.009     0.026  0.032</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(stan_glm1)
 loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(stan_glm2)
 <span class="kw"><a href="../reference/loo.stanreg.html">compare_models</a></span>(loo1, loo2)</code></pre></div>
-<pre><code>elpd_diff        se 
-   5363.2     711.9 </code></pre>
+<pre><code>
+Model comparison: 
+(negative 'elpd_diff' favors 1st model, positive favors 2nd) 
+
+elpd_diff        se 
+   5344.8     707.3 </code></pre>
 <p>which is not surprising given the better fit we’ve already observed from the posterior predictive checks.</p>
 </div>
 <div id="references" class="section level1">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
 <p>Gelman, A. and Hill, J. (2007). <em>Data Analysis Using Regression and Multilevel/Hierarchical Models.</em> Cambridge University Press, Cambridge, UK.</p>
-</div>
 </div>
   </div>
 
@@ -244,11 +257,13 @@ loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.st
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://hadley.github.io/pkgdown/">pkgdown</a>.</p>
+  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
 </div>
 
       </footer>
 </div>
+
+  
 
   </body>
 </html>
