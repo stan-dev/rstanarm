@@ -60,13 +60,15 @@ articles:
     - lm
     - polr
     - jm
-    
+
 reference:
   - title: "About rstanarm"
-    desc: > 
+    desc: >
       This page provides a summary of the functionality available in rstanarm.
-    contents: 
+    contents:
       - rstanarm-package
+      - available-models
+      - available-algorithms
   - title: "Fitting models"
     desc: >
       Functions for model fitting.
