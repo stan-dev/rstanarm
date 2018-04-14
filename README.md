@@ -78,6 +78,13 @@ individual help pages and vignettes. Here we provide a very brief overview:
   introduces an innovative prior distribution). MCMC provides more appropriate
   estimates of uncertainty for models that consist of a mix of common and
   group-specific parameters.
+  
+* [__`stan_nlmer`__](http://mc-stan.org/rstanarm/reference/stan_nlmer.html)
+
+  Similar to `nlmer` (__lme4__ package) package for nonlinear "mixed-effects"
+  models, but flexible priors can be specified for all parameters in the model, 
+  including the unknown covariance matrices for the varying 
+  (group-specific) coefficients.
 
 * [__`stan_gamm4`__](http://mc-stan.org/rstanarm/reference/stan_gamm4.html)
 

@@ -33,6 +33,11 @@
 #'   appropriate estimates of uncertainty for models that consist of a mix of
 #'   common and group-specific parameters.
 #'  }
+#'  \item{\code{\link{stan_nlmer}}}{
+#'   Similar to \code{\link[lme4]{nlmer}} in the \pkg{lme4} package for 
+#'   nonlinear "mixed-effects" models, but the group-specific coefficients 
+#'   have flexible priors on their unknown covariance matrices.
+#'  }
 #'  \item{\code{\link{stan_gamm4}}}{
 #'   Similar to \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package, which
 #'   augments a GLM (possibly with group-specific terms) with nonlinear smooth
