@@ -134,10 +134,8 @@
 #' compare_models(loos = list(loo1, loo2)) # can also provide list
 #'
 #' # when comparing three or more models they are ordered by
-#' # expected predictive accuracy. unlike when doing a pairwise
-#' # comparison of two models, now the diplayed standard errors
-#' # do _not_ pertain to differences but rather to the individual
-#' # elpd_loo estimates.
+#' # expected predictive accuracy. elpd_diff and se_diff are relative
+#' # to the model with best elpd_loo (first row)
 #' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
@@ -526,6 +524,10 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   and arranges them in descending order according to expected out-of-sample
 #'   predictive accuracy. That is, the first row of the matrix will be
 #'   for the model with the largest ELPD (smallest LOOIC).
+#'   The columns containing the ELPD difference and the standard error of the 
+#'   difference contain values relative to the model with the best ELPD.
+#'   See the \strong{Details} section at the \code{\link[loo]{compare}}
+#'   page in the \pkg{loo} package for more information.
 #'
 compare_models <- function(..., loos = list(), detail = FALSE) {
   dots <- list(...)
