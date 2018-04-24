@@ -294,8 +294,8 @@ measures. Thus, with only $24$ observations, they should not be considered
 reliable. The more complicated prior derived above is stronger --- as 
 evidenced by the fact that the effective number of parameters is about half
 of that in the simpler approach and $12$ for the maximum likelihood estimator 
---- and only has $4$ out of $24$ shape estimates in the "danger zone". We 
-might want to reexamine these observations
+--- and only has a few of the $24$ Pareto shape estimates in the "danger zone". 
+We might want to reexamine these observations
 
 ```{r lm-clouds-plot-loo}
 plot(loo_post, label_points = TRUE)
