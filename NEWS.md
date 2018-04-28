@@ -2,8 +2,8 @@
 
 ### Bug fixes
 
-  * `stan_jm()` and `stan_mvmer()` now correctly include the intercept in the
-  longitudinal submodel
+* `stan_jm()` and `stan_mvmer()` now correctly include the intercept in the
+longitudinal submodel
 
 ### New features and improvements
 
