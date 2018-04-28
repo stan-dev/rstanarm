@@ -28,6 +28,8 @@ matrix:
 
 
 before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -q
   - mkdir -p ~/.R/
   - echo "CXX = `R CMD config CXX`" >> ~/.R/Makevars
   - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0 -flto -stdlib=libc++" >> ~/.R/Makevars
