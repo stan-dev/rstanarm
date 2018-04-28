@@ -14,6 +14,18 @@ env:
   matrix: 
     - CXX_OLEVEL=2 CXX=clang++
 
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - llvm-5.0-dev
+      env:
+        - CXX_OLEVEL=2 CXX=clang++
+
+
 before_install:
   - mkdir -p ~/.R/
   - echo "CXX = `R CMD config CXX`" >> ~/.R/Makevars
