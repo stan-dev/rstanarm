@@ -170,7 +170,8 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
   
   fun <- set_plotting_fun(plotfun)
   args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
-  do.call(fun, args)
+  p <- do.call(fun, args)
+  p + bayesplot::theme_default()
 }
 
 
@@ -450,6 +451,10 @@ pairs.stanreg <-
     }
     posterior <- round(posterior, digits = 12)
     
+    gg_theme <- ggplot2::theme_get()
+    ggplot2::theme_set(bayesplot::theme_default())
+    on.exit(ggplot2::theme_set(gg_theme))
+    
     bayesplot::mcmc_pairs(
       x = posterior, 
       np = bayesplot::nuts_params(x),  
@@ -475,4 +480,15 @@ pairs.stanreg <-
       max_td <- 10
   }
   return(max_td)
+}
+
+
+#' Quickly set the default ggplot2 theme to the bayesplot style
+#'
+#' This is a convenience function to quickly change the default \code{ggplot2}
+#' theme to the default theme from the \code{bayesplot} package.
+#'
+#' @export
+set_bayes_theme <- function() {
+  ggplot2::theme_set(bayesplot::theme_default())
 }
