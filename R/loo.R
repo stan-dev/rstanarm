@@ -152,13 +152,6 @@
 #' # for loo_models weights to call loo() internally
 #' loo_list <- list(fit1 = loo1, fit2 = loo2, fit3 = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
-#'
-#' # averaging predictions
-#' wts <- loo_model_weights(loo_list)
-#' yrep1 <- posterior_predict(fit1)
-#' yrep2 <- posterior_predict(fit2)
-#' yrep3 <- posterior_predict(fit3)
-#' wt_avg_yrep <- wts[1] * yrep1 + wts[2] * yrep2 + wts[3] * yrep3
 #' 
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
