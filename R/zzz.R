@@ -31,7 +31,7 @@
   packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults.")
   packageStartupMessage("- For execution on a local, multicore CPU with excess RAM we recommend calling")
   packageStartupMessage("options(mc.cores = parallel::detectCores())")
-  packageStartupMessage("- Plotting theme set to bayesplot::theme_default().")
-  ggplot2::theme_set(bayesplot::theme_default())
+  packageStartupMessage("- bayesplot theme set to bayesplot::theme_default(). Change it")
+  packageStartupMessage("  with ggplot2::theme_set() or bayesplot::bayesplot_theme_set()")
 }
 
