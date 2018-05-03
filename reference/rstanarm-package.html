@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Applied Regression Modeling via RStan — rstanarm-package" />
 
 <meta property="og:description" content="
@@ -49,8 +52,6 @@ estimation algorithms used by rstanarm." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -103,6 +104,9 @@ estimation algorithms used by rstanarm." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -145,8 +149,10 @@ estimation algorithms used by rstanarm." />
     <div class="page-header">
     <h1>Applied Regression Modeling via RStan</h1>
     
+    <div class="hidden name"><code>rstanarm-package.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p><img src='figures/stanlogo.png' width="50px" alt="http://mc-stan.org/about/logo/" />
    <em>Stan Development Team</em></p>
@@ -159,6 +165,7 @@ to be specified using the customary R modeling syntax (e.g., like that of
 <p>The sections below provide an overview of the modeling functions and
 estimation algorithms used by <span class="pkg">rstanarm</span>.</p>
     
+    </div>
 
         
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
@@ -216,11 +223,14 @@ overview:</p>
   introduces an innovative prior distribution). MCMC provides more
   appropriate estimates of uncertainty for models that consist of a mix of
   common and group-specific parameters.</p></dd>
- <dt><code><a href='stan_gamm4.html'>stan_gamm4</a></code></dt><dd><p>Similar to <code><a href='http://www.rdocumentation.org/packages/gamm4/topics/gamm4'>gamm4</a></code> in the <span class="pkg">gamm4</span> package, which
+ <dt><code><a href='stan_nlmer.html'>stan_nlmer</a></code></dt><dd><p>Similar to <code><a href='http://www.rdocumentation.org/packages/lme4/topics/nlmer'>nlmer</a></code> in the <span class="pkg">lme4</span> package for 
+  nonlinear "mixed-effects" models, but the group-specific coefficients 
+  have flexible priors on their unknown covariance matrices.</p></dd>
+ <dt><code><a href='stan_gamm4.html'>stan_gamm4</a></code></dt><dd><p>Similar to <code>gamm4</code> in the <span class="pkg">gamm4</span> package, which
   augments a GLM (possibly with group-specific terms) with nonlinear smooth
   functions of the predictors to form a Generalized Additive Mixed Model
   (GAMM). Rather than calling <code><a href='http://www.rdocumentation.org/packages/lme4/topics/glmer'>glmer</a></code> like
-  <code><a href='http://www.rdocumentation.org/packages/gamm4/topics/gamm4'>gamm4</a></code> does, <code><a href='stan_gamm4.html'>stan_gamm4</a></code> essentially calls
+  <code>gamm4</code> does, <code><a href='stan_gamm4.html'>stan_gamm4</a></code> essentially calls
   <code><a href='stan_glmer.html'>stan_glmer</a></code>, which avoids the optimization issues that often
   crop up with GAMMs and provides better estimates for the uncertainty of the
   parameter estimates.</p></dd>
@@ -330,14 +340,14 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <ul>
+    <div class='dont-index'><ul>
 <li><p><a href='http://mc-stan.org/'>http://mc-stan.org/</a> for more information on the Stan C++
   package used by <span class="pkg">rstanarm</span> for model fitting.</p></li>
 <li><p><a href='https://github.com/stan-dev/rstanarm/issues/'>https://github.com/stan-dev/rstanarm/issues/</a> to submit a bug
   report or feature request.</p></li>
 <li><p><a href='http://discourse.mc-stan.org'>http://discourse.mc-stan.org</a> to ask a
   question about <span class="pkg">rstanarm</span> on the Stan-users forum.</p></li>
-</ul>
+</ul></div>
     
 
   </div>

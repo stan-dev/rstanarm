@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Draw from posterior predictive distribution — posterior_predict.stanreg" />
 
 <meta property="og:description" content="The posterior predictive distribution is the distribution of the outcome
@@ -48,8 +51,6 @@ distribution to generate predicted outcomes." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -102,6 +103,9 @@ distribution to generate predicted outcomes." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -144,8 +148,10 @@ distribution to generate predicted outcomes." />
     <div class="page-header">
     <h1>Draw from posterior predictive distribution</h1>
     
+    <div class="hidden name"><code>posterior_predict.stanreg.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>The posterior predictive distribution is the distribution of the outcome
 implied by the model after using the observed data to update our beliefs
@@ -157,6 +163,7 @@ manipulation of a predictor affects (a function of) the outcome(s). With new
 observations of predictor variables we can use the posterior predictive
 distribution to generate predicted outcomes.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
 <span class='fu'>posterior_predict</span>(<span class='no'>object</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -264,20 +271,14 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='pp_check.stanreg.html'>pp_check</a></code> for graphical posterior predictive checks.
+    <div class='dont-index'><p><code><a href='pp_check.stanreg.html'>pp_check</a></code> for graphical posterior predictive checks.
   Examples of posterior predictive checking can also be found in the
   <span class="pkg">rstanarm</span> vignettes and demos.</p>
-<p><code><a href='predictive_error.stanreg.html'>predictive_error</a></code> and <code><a href='predictive_interval.stanreg.html'>predictive_interval</a></code>.</p>
+<p><code><a href='predictive_error.stanreg.html'>predictive_error</a></code> and <code><a href='predictive_interval.stanreg.html'>predictive_interval</a></code>.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
-<span class='no'>yrep</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>example_model</span>)
-<span class='fu'>table</span>(<span class='no'>yrep</span>)</div><div class='output co'>#&gt; yrep
-#&gt;     0     1     2     3     4     5     6     7     8     9    10    11    12 
-#&gt; 10033  7205  4108  2370  1430   818   564   419   290   219   152   129    66 
-#&gt;    13    14    15    16    17    18    19    20    21    22    23 
-#&gt;    59    55    32    18    17     8     3     1     2     1     1 </div><div class='input'>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'><span class='no'>yrep</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_predict(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>table</span>(<span class='no'>yrep</span>)</div><div class='output co'>#&gt; <span class='error'>Error in table(yrep): object 'yrep' not found</span></div><div class='input'>
 </div><div class='input'><span class='co'># Using newdata</span>
 <span class='no'>counts</span> <span class='kw'>&lt;-</span> <span class='fu'>c</span>(<span class='fl'>18</span>,<span class='fl'>17</span>,<span class='fl'>15</span>,<span class='fl'>20</span>,<span class='fl'>10</span>,<span class='fl'>20</span>,<span class='fl'>25</span>,<span class='fl'>13</span>,<span class='fl'>12</span>)
 <span class='no'>outcome</span> <span class='kw'>&lt;-</span> <span class='fu'>gl</span>(<span class='fl'>3</span>,<span class='fl'>1</span>,<span class='fl'>9</span>)
@@ -286,8 +287,8 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
                 <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>1</span>), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: Omitting the 'data' argument is not recommended and may not be allowed in future versions of rstanarm. Some post-estimation functions (in particular 'update', 'loo', 'kfold') are not guaranteed to work properly unless 'data' is specified as a data frame.</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 3.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.32 seconds.
+#&gt; Gradient evaluation took 2.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -304,37 +305,12 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.065521 seconds (Warm-up)
-#&gt;                0.061519 seconds (Sampling)
-#&gt;                0.12704 seconds (Total)
+#&gt;  Elapsed Time: 0.059327 seconds (Warm-up)
+#&gt;                0.0535 seconds (Sampling)
+#&gt;                0.112827 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
-#&gt; 
-#&gt; Gradient evaluation took 1.1e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 0.053193 seconds (Warm-up)
-#&gt;                0.052405 seconds (Sampling)
-#&gt;                0.105598 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
 #&gt; 
 #&gt; Gradient evaluation took 1e-05 seconds
 #&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
@@ -354,9 +330,34 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.052769 seconds (Warm-up)
-#&gt;                0.052952 seconds (Sampling)
-#&gt;                0.105721 seconds (Total)
+#&gt;  Elapsed Time: 0.053829 seconds (Warm-up)
+#&gt;                0.048628 seconds (Sampling)
+#&gt;                0.102457 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
+#&gt; 
+#&gt; Gradient evaluation took 1.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:    1 / 2000 [  0%]  (Warmup)
+#&gt; Iteration:  200 / 2000 [ 10%]  (Warmup)
+#&gt; Iteration:  400 / 2000 [ 20%]  (Warmup)
+#&gt; Iteration:  600 / 2000 [ 30%]  (Warmup)
+#&gt; Iteration:  800 / 2000 [ 40%]  (Warmup)
+#&gt; Iteration: 1000 / 2000 [ 50%]  (Warmup)
+#&gt; Iteration: 1001 / 2000 [ 50%]  (Sampling)
+#&gt; Iteration: 1200 / 2000 [ 60%]  (Sampling)
+#&gt; Iteration: 1400 / 2000 [ 70%]  (Sampling)
+#&gt; Iteration: 1600 / 2000 [ 80%]  (Sampling)
+#&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
+#&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 0.059951 seconds (Warm-up)
+#&gt;                0.053054 seconds (Sampling)
+#&gt;                0.113005 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
@@ -379,9 +380,9 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.073386 seconds (Warm-up)
-#&gt;                0.054772 seconds (Sampling)
-#&gt;                0.128158 seconds (Total)
+#&gt;  Elapsed Time: 0.058931 seconds (Warm-up)
+#&gt;                0.046459 seconds (Sampling)
+#&gt;                0.10539 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>treatment</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fu'>rep</span>(<span class='fl'>1</span>,<span class='fl'>3</span>)), <span class='kw'>outcome</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='fl'>1</span>:<span class='fl'>3</span>))
 <span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit3</span>, <span class='no'>nd</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>500</span>)
 <span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>ytilde</span>))  <span class='co'># 500 by 3 matrix (draws by nrow(nd))</span></div><div class='output co'>#&gt; [1] 500   3</div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>data.frame</span>(<span class='kw'>count</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='no'>ytilde</span>),
@@ -397,10 +398,9 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 <span class='co'># row of newdata or the same for all rows.</span>
 <span class='co'># Here we'll use the same value for all.</span>
 <span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>lme4</span><span class='kw ns'>::</span><span class='no'><a href='http://www.rdocumentation.org/packages/lme4/topics/cbpp'>cbpp</a></span>
-<span class='fu'>print</span>(<span class='fu'>formula</span>(<span class='no'>example_model</span>))  <span class='co'># cbind(incidence, size - incidence) ~ ...</span></div><div class='output co'>#&gt; cbind(incidence, size - incidence) ~ size + period + (1 | herd)</div><div class='input'><span class='no'>nd</span>$<span class='no'>size</span> <span class='kw'>&lt;-</span> <span class='fu'>max</span>(<span class='no'>nd</span>$<span class='no'>size</span>) + <span class='fl'>1L</span>   <span class='co'># number of trials</span>
+<span class='fu'>print</span>(<span class='fu'>formula</span>(<span class='no'>example_model</span>))  <span class='co'># cbind(incidence, size - incidence) ~ ...</span></div><div class='output co'>#&gt; <span class='error'>Error in formula(example_model): object 'example_model' not found</span></div><div class='input'><span class='no'>nd</span>$<span class='no'>size</span> <span class='kw'>&lt;-</span> <span class='fu'>max</span>(<span class='no'>nd</span>$<span class='no'>size</span>) + <span class='fl'>1L</span>   <span class='co'># number of trials</span>
 <span class='no'>nd</span>$<span class='no'>incidence</span> <span class='kw'>&lt;-</span> <span class='fl'>0</span>  <span class='co'># set to 0 so size - incidence = number of trials</span>
-<span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>example_model</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>)
-
+<span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>example_model</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_predict(example_model, newdata = nd): object 'example_model' not found</span></div><div class='input'>
 
 <span class='co'># Using fun argument to transform predictions</span>
 <span class='no'>mtcars2</span> <span class='kw'>&lt;-</span> <span class='no'>mtcars</span>
@@ -408,8 +408,8 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>log_mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars2</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Gradient evaluation took 2.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -426,9 +426,9 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.057059 seconds (Warm-up)
-#&gt;                0.049064 seconds (Sampling)
-#&gt;                0.106123 seconds (Total)
+#&gt;  Elapsed Time: 0.05233 seconds (Warm-up)
+#&gt;                0.047743 seconds (Sampling)
+#&gt;                0.100073 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
@@ -451,15 +451,15 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.051758 seconds (Warm-up)
-#&gt;                0.049439 seconds (Sampling)
-#&gt;                0.101197 seconds (Total)
+#&gt;  Elapsed Time: 0.051602 seconds (Warm-up)
+#&gt;                0.045257 seconds (Sampling)
+#&gt;                0.096859 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Gradient evaluation took 1.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -476,15 +476,15 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.04753 seconds (Warm-up)
-#&gt;                0.04977 seconds (Sampling)
-#&gt;                0.0973 seconds (Total)
+#&gt;  Elapsed Time: 0.047697 seconds (Warm-up)
+#&gt;                0.044885 seconds (Sampling)
+#&gt;                0.092582 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 2.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#&gt; Gradient evaluation took 1.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -501,9 +501,9 @@ indicating the submodel for which you wish to obtain predictions.</p></td>
 #&gt; Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.057321 seconds (Warm-up)
-#&gt;                0.052485 seconds (Sampling)
-#&gt;                0.109806 seconds (Total)
+#&gt;  Elapsed Time: 0.049339 seconds (Warm-up)
+#&gt;                0.045774 seconds (Sampling)
+#&gt;                0.095113 seconds (Total)
 #&gt; </div><div class='input'><span class='no'>ytilde</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_predict</span>(<span class='no'>fit</span>, <span class='kw'>fun</span> <span class='kw'>=</span> <span class='no'>exp</span>)</div><div class='input'>
 </div></pre>
   </div>

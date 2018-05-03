@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Extract the posterior sample — as.matrix.stanreg • rstanarm</title>
+<title>Extract the posterior sample — posterior_sample.stanreg • rstanarm</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -25,18 +25,21 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-<meta property="og:title" content="Extract the posterior sample — as.matrix.stanreg" />
 
-<meta property="og:description" content="For models fit using MCMC (algorithm="sampling"), the posterior sample
----the post-warmup draws from the posterior distribution--- can be extracted 
-from a fitted model object as a matrix, data frame, or array. The 
-as.matrix and as.data.frame methods merge all chains together, 
-whereas the as.array method keeps the chains separate. For models fit 
-using optimization ("optimizing") or variational inference 
-("meanfield" or "fullrank"), there is no posterior sample but 
-rather a matrix (or data frame) of 1000 draws from either the asymptotic
-multivariate Gaussian sampling distribution of the parameters or the
-variational approximation to the posterior distribution." />
+
+
+<meta property="og:title" content="Extract the posterior sample — posterior_sample.stanreg" />
+
+<meta property="og:description" content="For models fit using MCMC (algorithm="sampling"), the
+  posterior sample ---the post-warmup draws from the posterior
+  distribution--- can be extracted from a fitted model object as a matrix,
+  data frame, or array. The as.matrix and as.data.frame methods
+  merge all chains together, whereas the as.array method keeps the
+  chains separate. For models fit using optimization ("optimizing") or
+  variational inference ("meanfield" or "fullrank"), there is
+  no posterior sample but rather a matrix (or data frame) of 1000 draws from
+  either the asymptotic multivariate Gaussian sampling distribution of the
+  parameters or the variational approximation to the posterior distribution." />
 
 <meta property="og:image" content="/logo.png" />
 <meta name="twitter:card" content="summary" />
@@ -49,8 +52,6 @@ variational approximation to the posterior distribution." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -103,6 +104,9 @@ variational approximation to the posterior distribution." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -145,22 +149,29 @@ variational approximation to the posterior distribution." />
     <div class="page-header">
     <h1>Extract the posterior sample</h1>
     
+    <div class="hidden name"><code>posterior_sample.stanreg.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
-    <p>For models fit using MCMC (<code>algorithm="sampling"</code>), the posterior sample
----the post-warmup draws from the posterior distribution--- can be extracted 
-from a fitted model object as a matrix, data frame, or array. The 
-<code>as.matrix</code> and <code>as.data.frame</code> methods merge all chains together, 
-whereas the <code>as.array</code> method keeps the chains separate. For models fit 
-using optimization (<code>"optimizing"</code>) or variational inference 
-(<code>"meanfield"</code> or <code>"fullrank"</code>), there is no posterior sample but 
-rather a matrix (or data frame) of 1000 draws from either the asymptotic
-multivariate Gaussian sampling distribution of the parameters or the
-variational approximation to the posterior distribution.</p>
+    <p>For models fit using MCMC (<code>algorithm="sampling"</code>), the
+  posterior sample ---the post-warmup draws from the posterior
+  distribution--- can be extracted from a fitted model object as a matrix,
+  data frame, or array. The <code>as.matrix</code> and <code>as.data.frame</code> methods
+  merge all chains together, whereas the <code>as.array</code> method keeps the
+  chains separate. For models fit using optimization (<code>"optimizing"</code>) or
+  variational inference (<code>"meanfield"</code> or <code>"fullrank"</code>), there is
+  no posterior sample but rather a matrix (or data frame) of 1000 draws from
+  either the asymptotic multivariate Gaussian sampling distribution of the
+  parameters or the variational approximation to the posterior distribution.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
+<span class='fu'>posterior_sample</span>(<span class='no'>object</span>, <span class='no'>...</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+
+<span class='co'># S3 method for stanreg</span>
 <span class='fu'>as.matrix</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
 
 <span class='co'># S3 method for stanreg</span>
@@ -173,7 +184,7 @@ variational approximation to the posterior distribution.</p>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>x</th>
+      <th>object, x</th>
       <td><p>A fitted model object returned by one of the 
 <span class="pkg">rstanarm</span> modeling functions. See <code><a href='stanreg-objects.html'>stanreg-objects</a></code>.</p></td>
     </tr>
@@ -203,23 +214,20 @@ using optimization.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='stanreg-methods.html'>stanreg-methods</a></code></p>
+    <div class='dont-index'><p><code><a href='stanreg-methods.html'>stanreg-methods</a></code></p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
-<span class='co'># Extract posterior sample after MCMC</span>
-<span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.matrix</span>(<span class='no'>example_model</span>)
-<span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] 500  21</div><div class='input'>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'><span class='co'># Extract posterior sample after MCMC</span>
+<span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.matrix</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.matrix(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; <span class='error'>Error in print(dim(draws)): object 'draws' not found</span></div><div class='input'>
 <span class='co'># For example, we can see that the median of the draws for the intercept </span>
 <span class='co'># is the same as the point estimate rstanarm uses</span>
-<span class='fu'>print</span>(<span class='fu'>median</span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; [1] -1.570747</div><div class='input'><span class='fu'>print</span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; [1] -1.570747</div><div class='input'>
+<span class='fu'>print</span>(<span class='fu'>median</span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; <span class='error'>Error in median(draws[, "(Intercept)"]): object 'draws' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; <span class='error'>Error in print(example_model$coefficients[["(Intercept)"]]): object 'example_model' not found</span></div><div class='input'>
 <span class='co'># The as.array method keeps the chains separate</span>
-<span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'>as.array</span>(<span class='no'>example_model</span>)
-<span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; [1] 250   2  21</div><div class='input'>
+<span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'>as.array</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in as.array(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>print</span>(<span class='fu'>dim</span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; <span class='error'>Error in print(dim(draws_array)): object 'draws_array' not found</span></div><div class='input'>
 <span class='co'># Extract draws from asymptotic Gaussian sampling distribution </span>
 <span class='co'># after optimization</span>
-<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; Initial log joint probability = -171.224
+<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)</div><div class='output co'>#&gt; Initial log joint probability = -1272.59
 #&gt; Optimization terminated normally: 
 #&gt;   Convergence detected: relative gradient magnitude is below tolerance</div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit</span>)
 <span class='fu'>print</span>(<span class='fu'>colnames</span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] "(Intercept)" "wt"          "sigma"      </div><div class='input'><span class='fu'>print</span>(<span class='fu'>nrow</span>(<span class='no'>draws</span>)) <span class='co'># 1000 draws are taken</span></div><div class='output co'>#&gt; [1] 1000</div><div class='input'>
@@ -232,8 +240,8 @@ using optimization.</p></td>
 #&gt; 
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 2.2e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#&gt; Gradient evaluation took 2.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -247,18 +255,15 @@ using optimization.</p></td>
 #&gt; 
 #&gt; Begin stochastic gradient ascent.
 #&gt;   iter       ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#&gt;    100     -2e+02             1.000            1.000
-#&gt;    200     -1e+02             0.616            1.000
-#&gt;    300     -1e+02             0.440            0.233
-#&gt;    400     -1e+02             0.353            0.233
-#&gt;    500     -1e+02             0.313            0.154
-#&gt;    600     -9e+01             0.283            0.154
-#&gt;    700     -9e+01             0.243            0.132
-#&gt;    800     -9e+01             0.213            0.132
-#&gt;    900     -9e+01             0.190            0.092
-#&gt;   1000     -9e+01             0.171            0.092
-#&gt;   1100     -9e+01             0.072            0.087
-#&gt;   1200     -9e+01             0.049            0.007   MEDIAN ELBO CONVERGED
+#&gt;    100     -1e+02             1.000            1.000
+#&gt;    200     -1e+02             0.572            1.000
+#&gt;    300     -1e+02             0.448            0.201
+#&gt;    400     -9e+01             0.352            0.201
+#&gt;    500     -9e+01             0.282            0.144
+#&gt;    600     -9e+01             0.235            0.144
+#&gt;    700     -9e+01             0.202            0.064
+#&gt;    800     -9e+01             0.177            0.064
+#&gt;    900     -9e+01             0.158            0.005   MEDIAN ELBO CONVERGED
 #&gt; 
 #&gt; Drawing a sample of size 1000 from the approximate posterior... 
 #&gt; COMPLETED.</div><div class='output co'>#&gt; <span class='message'>Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms. See the documentation for the 'QR' argument.</span></div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'>as.data.frame</span>(<span class='no'>fit2</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"wt"</span>)

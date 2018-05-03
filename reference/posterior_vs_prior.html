@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Juxtapose prior and posterior — posterior_vs_prior" />
 
 <meta property="og:description" content="Plot medians and central intervals comparing parameter draws from the prior 
@@ -45,8 +48,6 @@ these special cases)." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -99,6 +100,9 @@ these special cases)." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -141,8 +145,10 @@ these special cases)." />
     <div class="page-header">
     <h1>Juxtapose prior and posterior</h1>
     
+    <div class="hidden name"><code>posterior_vs_prior.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>Plot medians and central intervals comparing parameter draws from the prior 
 and posterior distributions. If the plotted priors look different than the 
@@ -151,6 +157,7 @@ rescaling or the use of the <code>QR</code> argument (see the documentation for 
 <code><a href='prior_summary.stanreg.html'>prior_summary</a></code> method for details on 
 these special cases).</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>posterior_vs_prior</span>(<span class='no'>object</span>, <span class='no'>...</span>)
 

@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Bayesian joint longitudinal and time-to-event models via Stan — stan_jm" />
 
 <meta property="og:description" content="
@@ -42,8 +45,6 @@ Fits a shared parameter joint model for longitudinal and time-to-event
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -96,6 +97,9 @@ Fits a shared parameter joint model for longitudinal and time-to-event
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -138,13 +142,16 @@ Fits a shared parameter joint model for longitudinal and time-to-event
     <div class="page-header">
     <h1>Bayesian joint longitudinal and time-to-event models via Stan</h1>
     
+    <div class="hidden name"><code>stan_jm.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
 Fits a shared parameter joint model for longitudinal and time-to-event 
 (e.g. survival) data under a Bayesian framework using Stan.</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>stan_jm</span>(<span class='no'>formulaLong</span>, <span class='no'>dataLong</span>, <span class='no'>formulaEvent</span>, <span class='no'>dataEvent</span>, <span class='no'>time_var</span>, <span class='no'>id_var</span>,
   <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>, <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='st'>"etavalue"</span>, <span class='kw'>lag_assoc</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='no'>grp_assoc</span>,
@@ -355,19 +362,13 @@ and the association parameter(s). Can be a call to one of the various functions
 provided by <span class="pkg">rstanarm</span> for specifying priors. The subset of these functions 
 that can be used for the prior on the coefficients can be grouped into several 
 "families":</p>
-<table><tr><td>
-  <strong>Family</strong> </td>
-<td> <strong>Functions</strong> </td>
-</tr><tr><td><br /> 
-  <em>Student t family</em> </td>
-<td> <code>normal</code>, <code>student_t</code>, <code>cauchy</code> </td>
-</tr><tr><td><br /> 
-  <em>Hierarchical shrinkage family</em> </td>
-<td> <code>hs</code>, <code>hs_plus</code> </td>
-</tr><tr><td><br /> 
-  <em>Laplace family</em> </td>
-<td> <code>laplace</code>, <code>lasso</code> </td>
-</tr></table>
+<table class='table'>
+<tr><td><strong>Family</strong></td><td><strong>Functions</strong></td></tr>
+<tr><td><em>Student t family</em></td><td><code>normal</code>, <code>student_t</code>, <code>cauchy</code></td></tr>
+<tr><td><em>Hierarchical shrinkage family</em></td><td><code>hs</code>, <code>hs_plus</code></td></tr>
+<tr><td><em>Laplace family</em></td><td><code>laplace</code>, <code>lasso</code></td></tr>
+</table>
+
 
 <p>See the <a href='priors.html'>priors help page</a> for details on the families and 
 how to specify the arguments for all of the functions in the table above.
@@ -656,11 +657,11 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='stanreg-objects.html'>stanreg-objects</a></code>, <code><a href='stanmvreg-methods.html'>stanmvreg-methods</a></code>, 
+    <div class='dont-index'><p><code><a href='stanreg-objects.html'>stanreg-objects</a></code>, <code><a href='stanmvreg-methods.html'>stanmvreg-methods</a></code>, 
   <code><a href='print.stanreg.html'>print.stanmvreg</a></code>, <code><a href='summary.stanreg.html'>summary.stanmvreg</a></code>,
   <code><a href='posterior_traj.html'>posterior_traj</a></code>, <code><a href='posterior_survfit.html'>posterior_survfit</a></code>, 
   <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>, <code><a href='posterior_interval.stanreg.html'>posterior_interval</a></code>,
-  <code><a href='pp_check.stanreg.html'>pp_check</a></code>, <code><a href='ps_check.html'>ps_check</a></code>, <code><a href='stan_mvmer.html'>stan_mvmer</a></code>.</p>
+  <code><a href='pp_check.stanreg.html'>pp_check</a></code>, <code><a href='ps_check.html'>ps_check</a></code>, <code><a href='stan_mvmer.html'>stan_mvmer</a></code>.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -679,8 +680,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000311 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.11 seconds.
+#&gt; Gradient evaluation took 0.000316 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.16 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -697,9 +698,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 3.66969 seconds (Warm-up)
-#&gt;                2.60851 seconds (Sampling)
-#&gt;                6.27819 seconds (Total)
+#&gt;  Elapsed Time: 3.74283 seconds (Warm-up)
+#&gt;                2.56112 seconds (Sampling)
+#&gt;                6.30394 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>f1</span>)</div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
 #&gt;  family  (Long1): gaussian [identity]
@@ -844,8 +845,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000451 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 4.51 seconds.
+#&gt; Gradient evaluation took 0.000836 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 8.36 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -862,9 +863,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 24.4742 seconds (Warm-up)
-#&gt;                15.7613 seconds (Sampling)
-#&gt;                40.2355 seconds (Total)
+#&gt;  Elapsed Time: 21.9209 seconds (Warm-up)
+#&gt;                14.5988 seconds (Sampling)
+#&gt;                36.5197 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>f2</span>)</div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (year | id)
 #&gt;  family  (Long1): gaussian [identity]
@@ -922,8 +923,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000196 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.96 seconds.
+#&gt; Gradient evaluation took 0.000154 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.54 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -940,9 +941,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 4.42178 seconds (Warm-up)
-#&gt;                3.06738 seconds (Sampling)
-#&gt;                7.48917 seconds (Total)
+#&gt;  Elapsed Time: 3.99428 seconds (Warm-up)
+#&gt;                2.74611 seconds (Sampling)
+#&gt;                6.74038 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>f3</span>)</div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
 #&gt;  family  (Long1): gaussian [identity]
@@ -1003,8 +1004,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000178 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.78 seconds.
+#&gt; Gradient evaluation took 0.000163 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.63 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -1021,9 +1022,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 4.87372 seconds (Warm-up)
-#&gt;                3.04726 seconds (Sampling)
-#&gt;                7.92098 seconds (Total)
+#&gt;  Elapsed Time: 4.25758 seconds (Warm-up)
+#&gt;                2.8048 seconds (Sampling)
+#&gt;                7.06238 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>f4</span>)</div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
 #&gt;  family  (Long1): gaussian [identity]
@@ -1084,8 +1085,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.002664 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 26.64 seconds.
+#&gt; Gradient evaluation took 0.002427 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 24.27 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -1110,9 +1111,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 90 / 100 [ 90%]  (Sampling)
 #&gt; Iteration: 100 / 100 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 23.7271 seconds (Warm-up)
-#&gt;                0.522111 seconds (Sampling)
-#&gt;                24.2492 seconds (Total)
+#&gt;  Elapsed Time: 21.3341 seconds (Warm-up)
+#&gt;                0.332969 seconds (Sampling)
+#&gt;                21.6671 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 50 divergent transitions after warmup. Increasing adapt_delta above 0.85 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'>print</span>(<span class='no'>mv1</span>)</div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
@@ -1190,8 +1191,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000461 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 4.61 seconds.
+#&gt; Gradient evaluation took 0.000509 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 5.09 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -1216,9 +1217,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 90 / 100 [ 90%]  (Sampling)
 #&gt; Iteration: 100 / 100 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 4.36558 seconds (Warm-up)
-#&gt;                11.3965 seconds (Sampling)
-#&gt;                15.7621 seconds (Total)
+#&gt;  Elapsed Time: 3.94592 seconds (Warm-up)
+#&gt;                9.85477 seconds (Sampling)
+#&gt;                13.8007 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 2 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'>
 <span class='co'>#####</span>
@@ -1241,8 +1242,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000337 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.37 seconds.
+#&gt; Gradient evaluation took 0.000352 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 3.52 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -1259,9 +1260,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 19.4793 seconds (Warm-up)
-#&gt;                8.8806 seconds (Sampling)
-#&gt;                28.3599 seconds (Total)
+#&gt;  Elapsed Time: 17.1106 seconds (Warm-up)
+#&gt;                8.17647 seconds (Sampling)
+#&gt;                25.287 seconds (Total)
 #&gt; </div><div class='input'>
 </div></pre>
   </div>

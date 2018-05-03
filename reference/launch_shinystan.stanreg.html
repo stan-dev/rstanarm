@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Using the ShinyStan GUI with rstanarm models — launch_shinystan.stanreg" />
 
 <meta property="og:description" content="The ShinyStan interface provides visual and numerical summaries of model
@@ -41,8 +44,6 @@ parameters and convergence diagnostics." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -95,6 +96,9 @@ parameters and convergence diagnostics." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -137,12 +141,15 @@ parameters and convergence diagnostics." />
     <div class="page-header">
     <h1>Using the ShinyStan GUI with rstanarm models</h1>
     
+    <div class="hidden name"><code>launch_shinystan.stanreg.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>The ShinyStan interface provides visual and numerical summaries of model
 parameters and convergence diagnostics.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
 <span class='fu'>launch_shinystan</span>(<span class='no'>object</span>, <span class='kw'>ppd</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1234</span>,

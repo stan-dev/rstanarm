@@ -26,6 +26,9 @@ group-specific terms via Stan — stan_mvmer • rstanarm</title>
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Bayesian multivariate generalized linear models with correlated 
 group-specific terms via Stan — stan_mvmer" />
 
@@ -44,8 +47,6 @@ that are assumed to be correlated across the GLM submodels." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -98,6 +99,9 @@ that are assumed to be correlated across the GLM submodels." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -141,13 +145,16 @@ that are assumed to be correlated across the GLM submodels." />
     <h1>Bayesian multivariate generalized linear models with correlated 
 group-specific terms via Stan</h1>
     
+    <div class="hidden name"><code>stan_mvmer.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
 Bayesian inference for multivariate GLMs with group-specific coefficients 
 that are assumed to be correlated across the GLM submodels.</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>stan_mvmer</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>, <span class='no'>weights</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
   <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>),
@@ -305,10 +312,10 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='stan_glmer.html'>stan_glmer</a></code>, <code><a href='stan_jm.html'>stan_jm</a></code>,
+    <div class='dont-index'><p><code><a href='stan_glmer.html'>stan_glmer</a></code>, <code><a href='stan_jm.html'>stan_jm</a></code>,
   <code><a href='stanreg-objects.html'>stanreg-objects</a></code>, <code><a href='stanmvreg-methods.html'>stanmvreg-methods</a></code>, 
   <code><a href='print.stanreg.html'>print.stanmvreg</a></code>, <code><a href='summary.stanreg.html'>summary.stanmvreg</a></code>,
-  <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>, <code><a href='posterior_interval.stanreg.html'>posterior_interval</a></code>.</p>
+  <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>, <code><a href='posterior_interval.stanreg.html'>posterior_interval</a></code>.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -329,8 +336,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000187 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.87 seconds.
+#&gt; Gradient evaluation took 0.000154 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.54 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -347,9 +354,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 4.17862 seconds (Warm-up)
-#&gt;                2.43157 seconds (Sampling)
-#&gt;                6.61019 seconds (Total)
+#&gt;  Elapsed Time: 3.87878 seconds (Warm-up)
+#&gt;                2.21425 seconds (Sampling)
+#&gt;                6.09304 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>summary</span>(<span class='no'>f1</span>)</div><div class='output co'>#&gt; 
 #&gt; Model Info:
 #&gt; 
@@ -438,8 +445,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000139 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.39 seconds.
+#&gt; Gradient evaluation took 9.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.97 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -456,9 +463,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 4.91625 seconds (Warm-up)
-#&gt;                2.68132 seconds (Sampling)
-#&gt;                7.59757 seconds (Total)
+#&gt;  Elapsed Time: 4.53899 seconds (Warm-up)
+#&gt;                2.43992 seconds (Sampling)
+#&gt;                6.97891 seconds (Total)
 #&gt; </div><div class='input'>
 </div></pre>
   </div>

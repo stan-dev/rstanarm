@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Plot the estimated subject-specific or marginal longitudinal trajectory — plot.predict.stanjm" />
 
 <meta property="og:description" content="This generic plot method for predict.stanjm objects will
@@ -48,8 +51,6 @@ trajectory beyond the last observation time)." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -102,6 +103,9 @@ trajectory beyond the last observation time)." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -144,8 +148,10 @@ trajectory beyond the last observation time)." />
     <div class="page-header">
     <h1>Plot the estimated subject-specific or marginal longitudinal trajectory</h1>
     
+    <div class="hidden name"><code>plot.predict.stanjm.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>This generic <code>plot</code> method for <code>predict.stanjm</code> objects will
 plot the estimated subject-specific or marginal longitudinal trajectory
@@ -157,6 +163,7 @@ would have used the default <code>interpolate = TRUE</code>, and perhaps also
 whether or not the user wants to see extrapolation of the longitudinal 
 trajectory beyond the last observation time).</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for predict.stanjm</span>
 <span class='fu'>plot</span>(<span class='no'>x</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>limits</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"ci"</span>, <span class='st'>"pi"</span>, <span class='st'>"none"</span>),
@@ -241,8 +248,8 @@ of the plotted longitudinal trajectory.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='posterior_traj.html'>posterior_traj</a></code>, <code><a href='plot.survfit.stanjm.html'>plot_stack_jm</a></code>,
-  <code><a href='posterior_survfit.html'>posterior_survfit</a></code>, <code><a href='plot.survfit.stanjm.html'>plot.survfit.stanjm</a></code></p>
+    <div class='dont-index'><p><code><a href='posterior_traj.html'>posterior_traj</a></code>, <code><a href='plot.survfit.stanjm.html'>plot_stack_jm</a></code>,
+  <code><a href='posterior_survfit.html'>posterior_survfit</a></code>, <code><a href='plot.survfit.stanjm.html'>plot.survfit.stanjm</a></code></p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>

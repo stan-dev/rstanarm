@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Graphical checks of the estimated survival function — ps_check" />
 
 <meta property="og:description" content="This function plots the estimated marginal survival function based on draws
@@ -42,8 +45,6 @@ overlays the Kaplan-Meier curve based on the observed data." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -96,6 +97,9 @@ overlays the Kaplan-Meier curve based on the observed data." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -138,13 +142,16 @@ overlays the Kaplan-Meier curve based on the observed data." />
     <div class="page-header">
     <h1>Graphical checks of the estimated survival function</h1>
     
+    <div class="hidden name"><code>ps_check.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>This function plots the estimated marginal survival function based on draws
 from the posterior predictive distribution of the fitted joint model, and then 
 overlays the Kaplan-Meier curve based on the observed data.</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>ps_check</span>(<span class='no'>object</span>, <span class='kw'>check</span> <span class='kw'>=</span> <span class='st'>"survival"</span>, <span class='kw'>limits</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"ci"</span>, <span class='st'>"none"</span>),
   <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>xlab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>ylab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -209,12 +216,12 @@ of the plotted trajectory.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='posterior_survfit.html'>posterior_survfit</a></code> for the estimated marginal or
+    <div class='dont-index'><p><code><a href='posterior_survfit.html'>posterior_survfit</a></code> for the estimated marginal or
   subject-specific survival function based on draws of the model parameters
   from the posterior distribution, 
   <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code> for drawing from the posterior 
   predictive distribution for the longitudinal submodel, and 
-  <code><a href='pp_check.stanreg.html'>pp_check</a></code> for graphical checks of the longitudinal submodel.</p>
+  <code><a href='pp_check.stanreg.html'>pp_check</a></code> for graphical checks of the longitudinal submodel.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>

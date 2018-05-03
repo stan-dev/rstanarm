@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Bayesian regularized linear but big models via Stan — stan_biglm" />
 
 <meta property="og:description" content="
@@ -43,8 +46,6 @@ proceed when the data is too large to fit in memory." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -97,6 +98,9 @@ proceed when the data is too large to fit in memory." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -139,14 +143,17 @@ proceed when the data is too large to fit in memory." />
     <div class="page-header">
     <h1>Bayesian regularized linear but big models via Stan</h1>
     
+    <div class="hidden name"><code>stan_biglm.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
 This is the same model as with <code><a href='stan_lm.html'>stan_lm</a></code> but it utilizes the
 output from <code>biglm</code> in the <span class="pkg">biglm</span> package in order to
 proceed when the data is too large to fit in memory.</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>stan_biglm</span>(<span class='no'>biglm</span>, <span class='no'>xbar</span>, <span class='no'>ybar</span>, <span class='no'>s_y</span>, <span class='no'>...</span>,
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'>stop</span>(<span class='st'>"'location' must be specified"</span>)), <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -198,12 +205,25 @@ prior for the \(R^2\).</p></td>
     </tr>
     <tr>
       <th>prior_intercept</th>
-      <td><p>Either <code>NULL</code> (the default) or a call to 
-<code><a href='priors.html'>normal</a></code>. If a <code><a href='priors.html'>normal</a></code> prior is specified without
-a <code>scale</code>, then the standard deviation is taken to be the marginal
-standard deviation of the outcome divided by the square root of the sample
-size, which is legitimate because the marginal standard deviation of the
-outcome is a primitive parameter being estimated.</p></td>
+      <td><p>Either <code>NULL</code> (the default) or a call to
+<code><a href='priors.html'>normal</a></code>. If a <code><a href='priors.html'>normal</a></code> prior is specified
+without a <code>scale</code>, then the standard deviation is taken to be
+the marginal standard deviation of the outcome divided by the square
+root of the sample size, which is legitimate because the marginal
+standard deviation of the outcome is a primitive parameter being
+estimated.</p>
+<p><strong>Note:</strong> If using a dense representation of the design matrix
+---i.e., if the <code>sparse</code> argument is left at its default value of
+<code>FALSE</code>--- then the prior distribution for the intercept is set so it
+applies to the value <em>when all predictors are centered</em>. If you prefer
+to specify a prior on the intercept without the predictors being
+auto-centered, then you have to omit the intercept from the
+<code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code> and include a column of ones as a predictor,
+in which case some element of <code>prior</code> specifies the prior on it,
+rather than <code>prior_intercept</code>. Regardless of how
+<code>prior_intercept</code> is specified, the reported <em>estimates</em> of the
+intercept always correspond to a parameterization without centered
+predictors (i.e., same as in <code>glm</code>).</p></td>
     </tr>
     <tr>
       <th>prior_PD</th>
@@ -295,8 +315,8 @@ to the model when estimating it.</p></td>
                        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#&gt; Gradient evaluation took 3.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.31 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -313,9 +333,9 @@ to the model when estimating it.</p></td>
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 1.26895 seconds (Warm-up)
-#&gt;                0.663211 seconds (Sampling)
-#&gt;                1.93216 seconds (Total)
+#&gt;  Elapsed Time: 1.14638 seconds (Warm-up)
+#&gt;                0.509382 seconds (Sampling)
+#&gt;                1.65576 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.99 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'><span class='fu'>cbind</span>(<span class='kw'>lm</span> <span class='kw'>=</span> <span class='no'>b</span>, <span class='kw'>stan_lm</span> <span class='kw'>=</span> <span class='kw pkg'>rstan</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/rstan/topics/stanfit-class'>get_posterior_mean</a></span>(<span class='no'>post</span>)[<span class='fl'>13</span>:<span class='fl'>15</span>,]) <span class='co'># shrunk</span></div><div class='output co'>#&gt;             lm   stan_lm
 #&gt; wt   -3.916504 -3.819190

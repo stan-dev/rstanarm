@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Bayesian generalized linear models via Stan — stan_glm" />
 
 <meta property="og:description" content="
@@ -42,8 +45,6 @@ coefficients, intercept, and auxiliary parameters." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -96,6 +97,9 @@ coefficients, intercept, and auxiliary parameters." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -138,13 +142,16 @@ coefficients, intercept, and auxiliary parameters." />
     <div class="page-header">
     <h1>Bayesian generalized linear models via Stan</h1>
     
+    <div class="hidden name"><code>stan_glm.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p><img src='figures/stanlogo.png' width="25px" alt="http://mc-stan.org/about/logo/" />
 Generalized linear modeling with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters.</p>
     
+    </div>
 
     <pre class="usage"><span class='fu'>stan_glm</span>(<span class='no'>formula</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'>gaussian</span>(), <span class='no'>data</span>, <span class='no'>weights</span>, <span class='no'>subset</span>,
   <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>y</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
@@ -222,22 +229,14 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 <span class="pkg">rstanarm</span> for specifying priors. The subset of these functions that 
 can be used for the prior on the coefficients can be grouped into several 
 "families":</p>
-<table><tr><td>
-  <strong>Family</strong> </td>
-<td> <strong>Functions</strong> </td>
-</tr><tr><td><br /> 
-  <em>Student t family</em> </td>
-<td> <code>normal</code>, <code>student_t</code>, <code>cauchy</code> </td>
-</tr><tr><td><br /> 
-  <em>Hierarchical shrinkage family</em> </td>
-<td> <code>hs</code>, <code>hs_plus</code> </td>
-</tr><tr><td><br /> 
-  <em>Laplace family</em> </td>
-<td> <code>laplace</code>, <code>lasso</code> </td>
-</tr><tr><td><br />
-  <em>Product normal family</em> </td>
-<td> <code>product_normal</code> </td>
-</tr></table>
+<table class='table'>
+<tr><td><strong>Family</strong></td><td><strong>Functions</strong></td></tr>
+<tr><td><em>Student t family</em></td><td><code>normal</code>, <code>student_t</code>, <code>cauchy</code></td></tr>
+<tr><td><em>Hierarchical shrinkage family</em></td><td><code>hs</code>, <code>hs_plus</code></td></tr>
+<tr><td><em>Laplace family</em></td><td><code>laplace</code>, <code>lasso</code></td></tr>
+<tr><td><em>Product normal family</em></td><td><code>product_normal</code></td></tr>
+</table>
+
 
 <p>See the <a href='priors.html'>priors help page</a> for details on the families and 
 how to specify the arguments for all of the functions in the table above.
@@ -262,15 +261,18 @@ particular model.</p></td>
 these functions. To omit a prior on the intercept ---i.e., to use a flat
 (improper) uniform prior--- <code>prior_intercept</code> can be set to
 <code>NULL</code>.</p>
-<p><strong>Note:</strong> If using a dense representation of the design matrix 
----i.e., if the <code>sparse</code> argument is left at its default value of 
-<code>FALSE</code>--- then the prior distribution for the intercept is set so it 
+<p><strong>Note:</strong> If using a dense representation of the design matrix
+---i.e., if the <code>sparse</code> argument is left at its default value of
+<code>FALSE</code>--- then the prior distribution for the intercept is set so it
 applies to the value <em>when all predictors are centered</em>. If you prefer
 to specify a prior on the intercept without the predictors being
 auto-centered, then you have to omit the intercept from the
 <code><a href='http://www.rdocumentation.org/packages/stats/topics/formula'>formula</a></code> and include a column of ones as a predictor,
 in which case some element of <code>prior</code> specifies the prior on it,
-rather than <code>prior_intercept</code>.</p></td>
+rather than <code>prior_intercept</code>. Regardless of how
+<code>prior_intercept</code> is specified, the reported <em>estimates</em> of the
+intercept always correspond to a parameterization without centered
+predictors (i.e., same as in <code>glm</code>).</p></td>
     </tr>
     <tr>
       <th>prior_aux</th>
@@ -403,10 +405,10 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='stanreg-methods.html'>stanreg-methods</a></code> and 
+    <div class='dont-index'><p><code><a href='stanreg-methods.html'>stanreg-methods</a></code> and 
 <code><a href='http://www.rdocumentation.org/packages/stats/topics/glm'>glm</a></code>.</p>
 <p>The various vignettes for <code>stan_glm</code> at
-  <a href='http://mc-stan.org/rstanarm/articles/'>http://mc-stan.org/rstanarm/articles/</a>.</p>
+  <a href='http://mc-stan.org/rstanarm/articles/'>http://mc-stan.org/rstanarm/articles/</a>.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
@@ -424,8 +426,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; 
 #&gt; 
 #&gt; 
-#&gt; Gradient evaluation took 4.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.44 seconds.
+#&gt; Gradient evaluation took 3.4e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.34 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -495,8 +497,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 )</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.000576 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 5.76 seconds.
+#&gt; Gradient evaluation took 0.000526 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 5.26 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -521,15 +523,15 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.225122 seconds (Warm-up)
-#&gt;                0.302258 seconds (Sampling)
-#&gt;                0.52738 seconds (Total)
+#&gt;  Elapsed Time: 0.209293 seconds (Warm-up)
+#&gt;                0.249973 seconds (Sampling)
+#&gt;                0.459266 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 0.000297 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 2.97 seconds.
+#&gt; Gradient evaluation took 0.00029 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 2.9 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -554,9 +556,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.239636 seconds (Warm-up)
-#&gt;                0.283386 seconds (Sampling)
-#&gt;                0.523022 seconds (Total)
+#&gt;  Elapsed Time: 0.238871 seconds (Warm-up)
+#&gt;                0.264769 seconds (Sampling)
+#&gt;                0.50364 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit2</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:       binomial [logit]
 #&gt;  formula:      switch ~ dist100 + arsenic
@@ -594,8 +596,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
                  <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>250</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Omitting the 'data' argument is not recommended and may not be allowed in future versions of rstanarm. Some post-estimation functions (in particular 'update', 'loo', 'kfold') are not guaranteed to work properly unless 'data' is specified as a data frame.</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 1.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Gradient evaluation took 1.6e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -620,9 +622,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
 #&gt; Iteration: 250 / 250 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.011671 seconds (Warm-up)
-#&gt;                0.010887 seconds (Sampling)
-#&gt;                0.022558 seconds (Total)
+#&gt;  Elapsed Time: 0.010254 seconds (Warm-up)
+#&gt;                0.009223 seconds (Sampling)
+#&gt;                0.019477 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
@@ -653,9 +655,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 225 / 250 [ 90%]  (Sampling)
 #&gt; Iteration: 250 / 250 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.304931 seconds (Warm-up)
-#&gt;                0.010625 seconds (Sampling)
-#&gt;                0.315556 seconds (Total)
+#&gt;  Elapsed Time: 0.009168 seconds (Warm-up)
+#&gt;                0.008382 seconds (Sampling)
+#&gt;                0.01755 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit3</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:       poisson [log]
 #&gt;  formula:      counts ~ outcome + treatment
@@ -685,8 +687,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
                  <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>) <span class='co'># for speed of example only </span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 2.5e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -703,15 +705,15 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.015539 seconds (Warm-up)
-#&gt;                0.009911 seconds (Sampling)
-#&gt;                0.02545 seconds (Total)
+#&gt;  Elapsed Time: 0.013106 seconds (Warm-up)
+#&gt;                0.009825 seconds (Sampling)
+#&gt;                0.022931 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 3.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.33 seconds.
+#&gt; Gradient evaluation took 1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -728,9 +730,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.013617 seconds (Warm-up)
-#&gt;                0.54926 seconds (Sampling)
-#&gt;                0.562877 seconds (Total)
+#&gt;  Elapsed Time: 0.799734 seconds (Warm-up)
+#&gt;                0.007335 seconds (Sampling)
+#&gt;                0.807069 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'>print</span>(<span class='no'>fit4</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>2</span>)</div><div class='output co'>#&gt; stan_glm
 #&gt;  family:       Gamma [log]
 #&gt;  formula:      lot1 ~ log_u
@@ -750,8 +752,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='no'>fit5</span> <span class='kw'>&lt;-</span> <span class='fu'>update</span>(<span class='no'>fit4</span>, <span class='kw'>formula</span> <span class='kw'>=</span> <span class='no'>lot2</span> ~ <span class='no'>log_u</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 1.9e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -768,15 +770,15 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.027099 seconds (Warm-up)
-#&gt;                0.00644 seconds (Sampling)
-#&gt;                0.033539 seconds (Total)
+#&gt;  Elapsed Time: 0.019196 seconds (Warm-up)
+#&gt;                0.00654 seconds (Sampling)
+#&gt;                0.025736 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 1.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#&gt; Gradient evaluation took 1.1e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -793,9 +795,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 270 / 300 [ 90%]  (Sampling)
 #&gt; Iteration: 300 / 300 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.011989 seconds (Warm-up)
-#&gt;                0.011808 seconds (Sampling)
-#&gt;                0.023797 seconds (Total)
+#&gt;  Elapsed Time: 0.012039 seconds (Warm-up)
+#&gt;                0.00971 seconds (Sampling)
+#&gt;                0.021749 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='co'>### Negative binomial regression</span>
 <span class='no'>fit6</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_glm.nb</span>(<span class='no'>Days</span> ~ <span class='no'>Sex</span>/(<span class='no'>Age</span> + <span class='no'>Eth</span>*<span class='no'>Lrn</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='kw pkg'>MASS</span><span class='kw ns'>::</span><span class='no'><a href='http://www.rdocumentation.org/packages/MASS/topics/quine'>quine</a></span>,
@@ -803,8 +805,8 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
                     <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for speed of example only</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 0.00011 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.1 seconds.
+#&gt; Gradient evaluation took 0.000122 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.22 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -829,15 +831,15 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.286459 seconds (Warm-up)
-#&gt;                0.228589 seconds (Sampling)
-#&gt;                0.515048 seconds (Total)
+#&gt;  Elapsed Time: 0.252561 seconds (Warm-up)
+#&gt;                0.207812 seconds (Sampling)
+#&gt;                0.460373 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #&gt; 
-#&gt; Gradient evaluation took 0.000149 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.49 seconds.
+#&gt; Gradient evaluation took 0.000148 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 1.48 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -862,9 +864,9 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 #&gt; Iteration: 180 / 200 [ 90%]  (Sampling)
 #&gt; Iteration: 200 / 200 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 0.206897 seconds (Warm-up)
-#&gt;                0.220531 seconds (Sampling)
-#&gt;                0.427428 seconds (Total)
+#&gt;  Elapsed Time: 0.18536 seconds (Warm-up)
+#&gt;                0.205404 seconds (Sampling)
+#&gt;                0.390764 seconds (Total)
 #&gt; </div><div class='input'>
 <span class='fu'><a href='prior_summary.stanreg.html'>prior_summary</a></span>(<span class='no'>fit6</span>)</div><div class='output co'>#&gt; Priors for model 'fit6' 
 #&gt; ------

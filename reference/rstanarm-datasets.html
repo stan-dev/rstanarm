@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Datasets for rstanarm examples — rstanarm-datasets" />
 
 <meta property="og:description" content="Small datasets for use in rstanarm examples and vignettes." />
@@ -40,8 +43,6 @@
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -94,6 +95,9 @@
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -136,11 +140,14 @@
     <div class="page-header">
     <h1>Datasets for rstanarm examples</h1>
     
+    <div class="hidden name"><code>rstanarm-datasets.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>Small datasets for use in <span class="pkg">rstanarm</span> examples and vignettes.</p>
     
+    </div>
 
         
     <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
@@ -281,8 +288,8 @@ the Cox Model</em>. Springer-Verlag, New York, US.</p>
                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 4.3e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.43 seconds.
+#&gt; Gradient evaluation took 3.8e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.38 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -299,9 +306,9 @@ the Cox Model</em>. Springer-Verlag, New York, US.</p>
 #&gt; Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 1.13419 seconds (Warm-up)
-#&gt;                0.288292 seconds (Sampling)
-#&gt;                1.42249 seconds (Total)
+#&gt;  Elapsed Time: 1.09229 seconds (Warm-up)
+#&gt;                0.339717 seconds (Sampling)
+#&gt;                1.43201 seconds (Total)
 #&gt; </div><div class='input'><span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>nreps</span> <span class='kw'>=</span> <span class='fl'>20</span>)</div><div class='img'><img src='rstanarm-datasets-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"brightblue"</span>)
 <span class='fu'><a href='pp_check.stanreg.html'>pp_check</a></span>(<span class='no'>fit</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"stat_grouped"</span>, <span class='kw'>stat</span> <span class='kw'>=</span> <span class='st'>"median"</span>,
          <span class='kw'>group</span> <span class='kw'>=</span> <span class='fu'>factor</span>(<span class='no'>kidiq</span>$<span class='no'>mom_hs</span>, <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"No HS"</span>, <span class='st'>"HS"</span>)))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='rstanarm-datasets-2.png' alt='' width='700' height='433' /></div><div class='input'>

@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Plot the estimated subject-specific or marginal survival function — plot.survfit.stanjm" />
 
 <meta property="og:description" content="This generic plot method for survfit.stanjm objects will
@@ -50,8 +53,6 @@ easily understood by running the Examples below." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -104,6 +105,9 @@ easily understood by running the Examples below." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -146,8 +150,10 @@ easily understood by running the Examples below." />
     <div class="page-header">
     <h1>Plot the estimated subject-specific or marginal survival function</h1>
     
+    <div class="hidden name"><code>plot.survfit.stanjm.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>This generic <code>plot</code> method for <code>survfit.stanjm</code> objects will
 plot the estimated subject-specific or marginal survival function
@@ -161,6 +167,7 @@ joint model was estimated) and the plot of the estimated subject-specific
 survival function and combines them into a single figure. This is most
 easily understood by running the <strong>Examples</strong> below.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for survfit.stanjm</span>
 <span class='fu'>plot</span>(<span class='no'>x</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>limits</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"ci"</span>, <span class='st'>"none"</span>),
@@ -243,10 +250,10 @@ objects of class <code>survfit.stanjm</code>.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='posterior_survfit.html'>posterior_survfit</a></code>, <code>plot_stack_jm</code>,
+    <div class='dont-index'><p><code><a href='posterior_survfit.html'>posterior_survfit</a></code>, <code>plot_stack_jm</code>,
   <code><a href='posterior_traj.html'>posterior_traj</a></code>, <code><a href='plot.predict.stanjm.html'>plot.predict.stanjm</a></code></p>
 <p><code><a href='plot.predict.stanjm.html'>plot.predict.stanjm</a></code>, <code>plot.survfit.stanjm</code>,
-  <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>, <code><a href='posterior_survfit.html'>posterior_survfit</a></code></p>
+  <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>, <code><a href='posterior_survfit.html'>posterior_survfit</a></code></p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>

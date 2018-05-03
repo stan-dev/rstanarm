@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Posterior uncertainty intervals — posterior_interval.stanreg" />
 
 <meta property="og:description" content="For models fit using MCMC (algorithm="sampling") or one of the
@@ -45,8 +48,6 @@ fact that wider intervals correspond to greater uncertainty." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -99,6 +100,9 @@ fact that wider intervals correspond to greater uncertainty." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -141,8 +145,10 @@ fact that wider intervals correspond to greater uncertainty." />
     <div class="page-header">
     <h1>Posterior uncertainty intervals</h1>
     
+    <div class="hidden name"><code>posterior_interval.stanreg.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>For models fit using MCMC (<code>algorithm="sampling"</code>) or one of the
 variational approximations (<code>"meanfield"</code> or <code>"fullrank"</code>), the
@@ -151,6 +157,7 @@ intervals. These intervals are often referred to as <em>credible</em>
 intervals, but we use the term <em>uncertainty</em> intervals to highlight the
 fact that wider intervals correspond to greater uncertainty.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
 <span class='fu'>posterior_interval</span>(<span class='no'>object</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"central"</span>,
@@ -249,52 +256,13 @@ Psychological Science</em>. 9(6), 641--51.</p>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <p><code><a href='stanreg-methods.html'>confint.stanreg</a></code>, which, for models fit using optimization, can
+    <div class='dont-index'><p><code><a href='stanreg-methods.html'>confint.stanreg</a></code>, which, for models fit using optimization, can
 be used to compute traditional confidence intervals.</p>
-<p><code><a href='predictive_interval.stanreg.html'>predictive_interval</a></code> for predictive intervals.</p>
+<p><code><a href='predictive_interval.stanreg.html'>predictive_interval</a></code> for predictive intervals.</p></div>
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
-<span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt;                                              5%         95%
-#&gt; (Intercept)                         -2.50460342 -0.58759158
-#&gt; size                                -0.03911295  0.05149908
-#&gt; period2                             -1.55799752 -0.44488688
-#&gt; period3                             -1.67978136 -0.55567625
-#&gt; period4                             -2.41052073 -0.88679565
-#&gt; b[(Intercept) herd:1]               -0.08086702  1.34128596
-#&gt; b[(Intercept) herd:2]               -1.11832220  0.27719235
-#&gt; b[(Intercept) herd:3]               -0.21492094  0.99158238
-#&gt; b[(Intercept) herd:4]               -0.83755063  0.75876132
-#&gt; b[(Intercept) herd:5]               -0.87405753  0.36359777
-#&gt; b[(Intercept) herd:6]               -1.23360422  0.21718923
-#&gt; b[(Intercept) herd:7]                0.13667552  1.64449311
-#&gt; b[(Intercept) herd:8]               -0.33368353  1.31539928
-#&gt; b[(Intercept) herd:9]               -1.12889510  0.55549328
-#&gt; b[(Intercept) herd:10]              -1.50529459  0.10841460
-#&gt; b[(Intercept) herd:11]              -0.85470117  0.44779350
-#&gt; b[(Intercept) herd:12]              -1.03461938  0.83932863
-#&gt; b[(Intercept) herd:13]              -1.75896608 -0.11078430
-#&gt; b[(Intercept) herd:14]               0.28779076  1.79199164
-#&gt; b[(Intercept) herd:15]              -1.41951978  0.06296059
-#&gt; Sigma[herd:(Intercept),(Intercept)]  0.19598441  1.44950413</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd"</span>)</div><div class='output co'>#&gt;                                              5%         95%
-#&gt; b[(Intercept) herd:1]               -0.08086702  1.34128596
-#&gt; b[(Intercept) herd:2]               -1.11832220  0.27719235
-#&gt; b[(Intercept) herd:3]               -0.21492094  0.99158238
-#&gt; b[(Intercept) herd:4]               -0.83755063  0.75876132
-#&gt; b[(Intercept) herd:5]               -0.87405753  0.36359777
-#&gt; b[(Intercept) herd:6]               -1.23360422  0.21718923
-#&gt; b[(Intercept) herd:7]                0.13667552  1.64449311
-#&gt; b[(Intercept) herd:8]               -0.33368353  1.31539928
-#&gt; b[(Intercept) herd:9]               -1.12889510  0.55549328
-#&gt; b[(Intercept) herd:10]              -1.50529459  0.10841460
-#&gt; b[(Intercept) herd:11]              -0.85470117  0.44779350
-#&gt; b[(Intercept) herd:12]              -1.03461938  0.83932863
-#&gt; b[(Intercept) herd:13]              -1.75896608 -0.11078430
-#&gt; b[(Intercept) herd:14]               0.28779076  1.79199164
-#&gt; b[(Intercept) herd:15]              -1.41951978  0.06296059
-#&gt; Sigma[herd:(Intercept),(Intercept)]  0.19598441  1.44950413</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"period2"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt;               25%        75%
-#&gt; period2 -1.229233 -0.7592653</div><div class='input'>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_interval(example_model): object 'example_model' not found</span></div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd"</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_interval(example_model, regex_pars = "herd"): object 'example_model' not found</span></div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"period2"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt; <span class='error'>Error in posterior_interval(example_model, pars = "period2", prob = 0.5): object 'example_model' not found</span></div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

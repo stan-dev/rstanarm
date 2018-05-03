@@ -25,6 +25,9 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
+
+
+
 <meta property="og:title" content="Pairs method for stanreg objects — pairs.stanreg" />
 
 <meta property="og:description" content="Interface to bayesplot's mcmc_pairs function 
@@ -43,8 +46,6 @@ render." />
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
-
-
 
 
   </head>
@@ -97,6 +98,9 @@ render." />
       <a href="http://mc-stan.org/loo">loo</a>
     </li>
     <li>
+      <a href="http://mc-stan.org/projpred">projpred</a>
+    </li>
+    <li>
       <a href="http://mc-stan.org/rstantools">rstantools</a>
     </li>
   </ul>
@@ -139,14 +143,17 @@ render." />
     <div class="page-header">
     <h1>Pairs method for stanreg objects</h1>
     
+    <div class="hidden name"><code>pairs.stanreg.Rd</code></div>
     </div>
 
+    <div class="ref-description">
     
     <p>Interface to <span class="pkg">bayesplot</span>'s <code><a href='http://www.rdocumentation.org/packages/bayesplot/topics/MCMC-scatterplots'>mcmc_pairs</a></code> function 
 for use with <span class="pkg">rstanarm</span> models. Be careful not to specify too
 many parameters to include or the plot will be both hard to read and slow to
 render.</p>
     
+    </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
 <span class='fu'>pairs</span>(<span class='no'>x</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
@@ -208,19 +215,18 @@ documented thoroughly on the help page for
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)
-
+    <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'>exists</span>(<span class='st'>"example_model"</span>)) <span class='fu'>example</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: no help found for ‘example_model’</span></div><div class='input'>
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"purple"</span>)
 
 <span class='co'># see 'condition' argument above for details on the plots below and </span>
 <span class='co'># above the diagonal. default is to split by accept_stat__.</span>
-<span class='fu'>pairs</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"log-posterior"</span>))</div><div class='img'><img src='pairs.stanreg-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'>pairs</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"log-posterior"</span>))</div><div class='output co'>#&gt; <span class='error'>Error in pairs(example_model, pars = c("(Intercept)", "log-posterior")): object 'example_model' not found</span></div><div class='input'>
 <span class='fu'>pairs</span>(
   <span class='no'>example_model</span>,
   <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:[2,7,9]"</span>,
   <span class='kw'>diag_fun</span> <span class='kw'>=</span> <span class='st'>"dens"</span>,
   <span class='kw'>off_diag_fun</span> <span class='kw'>=</span> <span class='st'>"hex"</span>
-)</div><div class='img'><img src='pairs.stanreg-2.png' alt='' width='700' height='433' /></div><div class='input'>
+)</div><div class='output co'>#&gt; <span class='error'>Error in pairs(example_model, regex_pars = "herd:[2,7,9]", diag_fun = "dens",     off_diag_fun = "hex"): object 'example_model' not found</span></div><div class='input'>
 </div><div class='input'><span class='co'># for demonstration purposes, intentionally fit a model that</span>
 <span class='co'># will (almost certainly) have some divergences</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(
@@ -232,8 +238,8 @@ documented thoroughly on the help page for
 )</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; 
-#&gt; Gradient evaluation took 6e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.6 seconds.
+#&gt; Gradient evaluation took 6.3e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.63 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -250,12 +256,37 @@ documented thoroughly on the help page for
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 1.27297 seconds (Warm-up)
-#&gt;                0.865597 seconds (Sampling)
-#&gt;                2.13857 seconds (Total)
+#&gt;  Elapsed Time: 1.28927 seconds (Warm-up)
+#&gt;                0.897129 seconds (Sampling)
+#&gt;                2.1864 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+#&gt; 
+#&gt; Gradient evaluation took 3.7e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.37 seconds.
+#&gt; Adjust your expectations accordingly!
+#&gt; 
+#&gt; 
+#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; 
+#&gt;  Elapsed Time: 1.1122 seconds (Warm-up)
+#&gt;                0.622843 seconds (Sampling)
+#&gt;                1.73504 seconds (Total)
+#&gt; 
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; 
 #&gt; Gradient evaluation took 3.3e-05 seconds
 #&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.33 seconds.
@@ -275,40 +306,15 @@ documented thoroughly on the help page for
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 1.19029 seconds (Warm-up)
-#&gt;                0.652915 seconds (Sampling)
-#&gt;                1.8432 seconds (Total)
-#&gt; 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
-#&gt; 
-#&gt; Gradient evaluation took 3.4e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.34 seconds.
-#&gt; Adjust your expectations accordingly!
-#&gt; 
-#&gt; 
-#&gt; Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt; 
-#&gt;  Elapsed Time: 1.21337 seconds (Warm-up)
-#&gt;                1.128 seconds (Sampling)
-#&gt;                2.34138 seconds (Total)
+#&gt;  Elapsed Time: 1.05191 seconds (Warm-up)
+#&gt;                0.877668 seconds (Sampling)
+#&gt;                1.92958 seconds (Total)
 #&gt; 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; 
-#&gt; Gradient evaluation took 2.7e-05 seconds
-#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#&gt; Gradient evaluation took 2.2e-05 seconds
+#&gt; 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Adjust your expectations accordingly!
 #&gt; 
 #&gt; 
@@ -325,18 +331,18 @@ documented thoroughly on the help page for
 #&gt; Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; 
-#&gt;  Elapsed Time: 1.08394 seconds (Warm-up)
-#&gt;                1.03757 seconds (Sampling)
-#&gt;                2.12151 seconds (Total)
+#&gt;  Elapsed Time: 1.02242 seconds (Warm-up)
+#&gt;                0.925146 seconds (Sampling)
+#&gt;                1.94757 seconds (Total)
 #&gt; </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 32 divergent transitions after warmup. Increasing adapt_delta above 0.9 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'>
-<span class='fu'>pairs</span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"sigma"</span>, <span class='st'>"log-posterior"</span>))</div><div class='img'><img src='pairs.stanreg-3.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'>pairs</span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"sigma"</span>, <span class='st'>"log-posterior"</span>))</div><div class='img'><img src='pairs.stanreg-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='fu'>pairs</span>(
   <span class='no'>fit</span>,
   <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"wt"</span>, <span class='st'>"sigma"</span>, <span class='st'>"log-posterior"</span>),
   <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>), <span class='co'># show log(sigma) instead of sigma</span>
   <span class='kw'>off_diag_fun</span> <span class='kw'>=</span> <span class='st'>"hex"</span> <span class='co'># use hexagonal heatmaps instead of scatterplots</span>
-)</div><div class='img'><img src='pairs.stanreg-4.png' alt='' width='700' height='433' /></div><div class='input'>
+)</div><div class='img'><img src='pairs.stanreg-2.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='http://www.rdocumentation.org/packages/bayesplot/topics/bayesplot-colors'>color_scheme_set</a></span>(<span class='st'>"brightblue"</span>)
 <span class='fu'>pairs</span>(
@@ -345,13 +351,13 @@ documented thoroughly on the help page for
   <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>),
   <span class='kw'>off_diag_args</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>3</span>/<span class='fl'>4</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>/<span class='fl'>3</span>), <span class='co'># size and transparency of scatterplot points</span>
   <span class='kw'>np_style</span> <span class='kw'>=</span> <span class='fu'>pairs_style_np</span>(<span class='kw'>div_color</span> <span class='kw'>=</span> <span class='st'>"black"</span>, <span class='kw'>div_shape</span> <span class='kw'>=</span> <span class='fl'>2</span>) <span class='co'># color and shape of the divergences</span>
-)</div><div class='img'><img src='pairs.stanreg-5.png' alt='' width='700' height='433' /></div><div class='input'>
+)</div><div class='img'><img src='pairs.stanreg-3.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># Using the condition argument to show divergences above the diagonal </span>
 <span class='fu'>pairs</span>(
   <span class='no'>fit</span>,
   <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"wt"</span>, <span class='st'>"log-posterior"</span>),
   <span class='kw'>condition</span> <span class='kw'>=</span> <span class='fu'>pairs_condition</span>(<span class='kw'>nuts</span> <span class='kw'>=</span> <span class='st'>"divergent__"</span>)
-)</div><div class='img'><img src='pairs.stanreg-6.png' alt='' width='700' height='433' /></div><div class='input'>
+)</div><div class='img'><img src='pairs.stanreg-4.png' alt='' width='700' height='433' /></div><div class='input'>
 </div><div class='input'>
 </div></pre>
   </div>
