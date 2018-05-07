@@ -36,7 +36,7 @@ Models with this structure are refered to by many names: multilevel models,
 (generalized) linear mixed (effects) models (GLMM), hierarchical (generalized)
 linear models, etc. In the simplest case, the model for an outcome can be written as
 $$\mathbf{y} = \alpha + \mathbf{X} \boldsymbol{\beta} + \mathbf{Z} \mathbf{b} + \boldsymbol{\epsilon},$$
-where $\mathbf{X}$ is a matrix predictors that is analagous to that in Generalized
+where $\mathbf{X}$ is a matrix predictors that is analogous to that in Generalized
 Linear Models and $\mathbf{Z}$ is a matrix that encodes deviations in the 
 predictors across specified groups.
 

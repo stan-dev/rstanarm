@@ -365,7 +365,7 @@ summary(glm(lot1 ~ log(u), data = clotting, family = Gamma))
 summary(glm(lot2 ~ log(u), data = clotting, family = Gamma))
 ```
 
-To fit the analagous Bayesian models we can simply substitute `stan_glm` for
+To fit the analogous Bayesian models we can simply substitute `stan_glm` for
 `glm` above. However, instead of fitting separate models we can also reshape the
 data slightly and fit a model interacting lot with plasma concentration:
 

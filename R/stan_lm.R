@@ -77,7 +77,7 @@
 #'   \code{"sampling"}). The \code{stan_lm} function has a formula-based
 #'   interface and would usually be called by users but the \code{stan_lm.fit}
 #'   and \code{stan_lm.wfit} functions might be called by other functions that
-#'   parse the data themselves and are analagous to \code{\link[stats]{lm.fit}}
+#'   parse the data themselves and are analogous to \code{\link[stats]{lm.fit}}
 #'   and \code{\link[stats]{lm.wfit}} respectively.
 #'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
