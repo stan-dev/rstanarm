@@ -307,7 +307,7 @@ some important additional considerations are discussed.
 # Conditional Logit Models
 
 The previous example relies on the fact that observations are plausibly conditionally
-independent. In constrast, so-called "case-control studies" require 
+independent. In contrast, so-called "case-control studies" require
 that there are a fixed number of successes and failures within each stratum, and
 the question is _which_ members of each stratum succeed and fail? The `stan_clogit`
 function estimates such a model and is very similar to the `clogit` function in the
@@ -317,7 +317,7 @@ the `stan_clogit` function has a required `strata` argument. In addition, in the
 `stan_clogit` case the data must be sorted by the variable passed to `strata`. The 
 advantage to these changes is that `stan_clogit` can optionally utilize the multilevel 
 syntax from the **lme4** package to specify group-specific terms, rather than the more 
-limited multilevel structure supported by the `fraility` function in the **survival**
+limited multilevel structure supported by the `frailty` function in the **survival**
 package. The [vignette](glmer.html) for the `stan_glmer` function discusses the
 lme4-style syntax in more detail. For example,
 ```{r, results = "hide"}
