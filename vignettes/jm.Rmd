@@ -395,7 +395,7 @@ p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big)
 \end{aligned}
 $$
 
-and similiarly for the survival probability
+and similarly for the survival probability
 
 $$ 
 \begin{aligned}
@@ -515,7 +515,7 @@ help("datasets", package = "rstanarm")
 
 In this example we fit a simple univariate joint model, with one normally distributed longitudinal marker, an association structure based on the current value of the linear predictor, and B-splines baseline hazard. To fit the model we use the joint (longitudinal and time-to-event) modelling function in the **rstanarm** package: `stan_jm`. When calling `stan_jm` we must, at a minimum, specify a formula object for each of the longitudinal and event submodels (through the arguments `formulaLong` and `formulaEvent`), the data frames which contain the variables for each of the the longitudinal and event submodels (through the arguments `dataLong` and `dataEvent`), and the name of the variable representing time in the longitudinal submodel (through the argument `time_var`).
 
-The formula for the longitudinal submodel is specified using the **lme4** package formula style. That is `y ~ x + (random_effects | grouping_factor)`. In this example we specify that log serum bilirubin (`logBili`) follows a subject-specific linear trajectory. To do this we include a fixed intercept and fixed slope (`year`), as well as a random intecept and random slope for each subject `id` (`(year | id)`).
+The formula for the longitudinal submodel is specified using the **lme4** package formula style. That is `y ~ x + (random_effects | grouping_factor)`. In this example we specify that log serum bilirubin (`logBili`) follows a subject-specific linear trajectory. To do this we include a fixed intercept and fixed slope (`year`), as well as a random intercept and random slope for each subject `id` (`(year | id)`).
 
 The formula for the event submodel is specified using the **survival** package formula style. That is, the outcome of the left of the `~` needs to be of the format `Surv(event_time, event_indicator)` for single row per individual data, or `Surv(start_time, stop_time, event_indicator)` for multiple row per individual data. The latter allows for exogenous time-varying covariates to be included in the event submodel. In this example we assume that the log hazard of death is linearly related to gender (`sex`) and an indicator of treatment with D-penicillamine (`trt`).
 
@@ -531,7 +531,7 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
 The argument `refresh = 2000` was specified so that Stan didn't provide us with excessive progress updates whilst fitting the model. However, if you are fitting a model that will take several minutes or hours to fit, then you may wish to request progress updates quite regularly, for example setting `refresh = 20` for every 20 iterations (by default the refresh argument is set to 1/10th of the total number of iterations). 
 
-The fitted model is returned as an object of the S3 class `stanjm`. We have a variety of methods and postestimation functions available for this class, including: `print`, `summary`, `plot`, `fixef`, `ranef`, `coef`, `VarCorr`, `posterior_interval`, `update`, and more. Here, we will examine the most basic output for the fitted joint model by typing `print(f1)`:
+The fitted model is returned as an object of the S3 class `stanjm`. We have a variety of methods and post-estimation functions available for this class, including: `print`, `summary`, `plot`, `fixef`, `ranef`, `coef`, `VarCorr`, `posterior_interval`, `update`, and more. Here, we will examine the most basic output for the fitted joint model by typing `print(f1)`:
 
 ```{r print, echo = FALSE}
 print(mod1)

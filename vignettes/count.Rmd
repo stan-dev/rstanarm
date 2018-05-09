@@ -52,7 +52,7 @@ Because the rate parameter $\lambda$ must be positive, for a Poisson GLM the
 _link_ function $g$ maps between the positive real numbers $\mathbb{R}^+$ (the
 support of $\lambda$) and the set of all real numbers $\mathbb{R}$. When applied
 to a linear predictor $\eta$ with values in $\mathbb{R}$, the inverse link
-function $g^{-1}(\eta)$ therefore returns a positve real number.
+function $g^{-1}(\eta)$ therefore returns a positive real number.
 
 Although other link functions are possible, the canonical link function for a 
 Poisson GLM is the log link $g(x) = \ln{(x)}$. With the log link, the inverse
@@ -187,7 +187,7 @@ from the sample `y` is the dark blue vertical line. More than 30% of these
 observations are zeros, whereas the replicated datasets all contain less than 1%
 zeros. This is a sign that we should consider a model that more accurately
 accounts for the large proportion of zeros in the data. Gelman and Hill show how
-we can do this using an overdispered Poisson regression. To illustrate the use
+we can do this using an overdispersed Poisson regression. To illustrate the use
 of a different `stan_glm` model, here we will instead try
 [negative binomial](https://en.wikipedia.org/wiki/Negative_binomial_distribution) 
 regression, which is also used for overdispersed or zero-inflated count data.

@@ -112,7 +112,7 @@ model parameters, but other times such work may not exist or several studies may
 make contradictory claims. Regardless, we nearly always have _some_ knowledge 
 that should be reflected in our choice of prior distributions. For example, no 
 one believes a logistic regression coefficient will be greater than five in 
-absoluate value if the predictors are scaled reasonably. You may also have seen 
+absolute value if the predictors are scaled reasonably. You may also have seen
 examples of so-called "non-informative" (or "vague", "diffuse", etc.) priors 
 like a normal distribution with a variance of 1000. When data are reasonably 
 scaled, these priors are almost always a bad idea for various reasons (they give
@@ -143,7 +143,7 @@ p-value for the null hypothesis that $\beta_2 = 0$ is very large. However,
 frequentist p-values are awkward because they do not pertain to the probability 
 that a scientific hypothesis is true but rather to the probability of observing 
 a $z$-statistic that is so large (in magnitude) if the null hypothesis were
-true. The desire to make probabalistic statements about a scientific hypothesis
+true. The desire to make probabilistic statements about a scientific hypothesis
 is one reason why many people are drawn to the Bayesian approach.
 
 A model with the same likelihood but Student t priors with seven degrees of 
@@ -183,7 +183,7 @@ $\beta_2$ is between `ci95[1,1]` and `ci95[1,2]`. Alternatively, we could say
 that there is essentially zero probability that $\beta_2 > 0$, although
 frequentists cannot make such a claim coherently.
 
-Many of the postestimation methods that are available for a model that is 
+Many of the post-estimation methods that are available for a model that is
 estimated by `glm` are also available for a model that is estimated by 
 `stan_glm`. For example,
 ```{r rstanarm-methods}
@@ -209,8 +209,8 @@ launch_shinystan(womensrole_bglm_1)
 ```
 which will open a web browser that drives the visualizations. 
 
-For the rest of this subsection, we focus on what users can do programatically 
-to evaluate whether a model is adequate. A minimal requirement for a Bayesian 
+For the rest of this subsection, we focus on what users can do programmatically
+to evaluate whether a model is adequate. A minimal requirement for Bayesian
 estimates is that the model should fit the data that the estimates conditioned 
 on. The key function here is `posterior_predict`, which can be passed a new 
 `data.frame` to predict out-of-sample, but in this case is omitted to obtain 
@@ -295,7 +295,7 @@ taking into account that the second model estimates an additional parameter. The
 ```{r, rstanarm-loo-print}
 loo_bglm_1
 ```
-has the same purpose as the Aikaike Information Criterion (AIC) that is used by 
+has the same purpose as the Akaike Information Criterion (AIC) that is used by
 frequentists. Both are intended to estimate the expected log predicted density 
 (ELPD) for a new dataset. However, the AIC ignores priors and assumes that the 
 posterior distribution is multivariate normal, whereas the functions from the 
@@ -312,7 +312,7 @@ interaction terms. Bayesians can avoid this difficulty simply by inspecting the
 posterior predictive distribution at different levels of the predictors. For
 example,
 ```{r, rstanarm-posterior_predict-manipulate}
-# note: in newdata we want agree and disgree to sum to the number of people we
+# note: in newdata we want agree and disagree to sum to the number of people we
 # want to predict for. the values of agree and disagree don't matter so long as
 # their sum is the desired number of trials. we need to explicitly imply the
 # number of trials like this because our original data are aggregate. if we had
@@ -393,7 +393,7 @@ parameters with an Rhat greater than 1.1:
 any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 
-Details on the computatation of Rhat and some of its limitations can be found in
+Details on the computation of Rhat and some of its limitations can be found in
 the  chapter of the [Stan Modeling Language User's Guide and Reference
 Manual](http://mc-stan.org/documentation/).
 
@@ -469,7 +469,7 @@ sampled from using the __rstanarm__ package, then it is often possible to create
 a hand-written program in the the Stan language so that the posterior 
 distribution can be drawn from using the __rstan__ package. See the 
 documentation for the __rstan__ package or http://mc-stan.org for more details
-about this more advanced useage of Stan. However, many relatively simple models
+about this more advanced usage of Stan. However, many relatively simple models
 can be fit using the __rstanarm__ package without writing any code in the Stan
 language, which is illustrated for each estimating function in the __rstanarm__
 package in the other [vignettes](index.html).

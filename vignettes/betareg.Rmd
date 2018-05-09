@@ -54,7 +54,7 @@ dimensional vector of parameters associated with each predictor.
 In the simplest case (with only one set of regressors), $\phi$ is a scalar
 parameter. Alternatively, it is possible to model $\phi$ using a second set of
 regressors $\mathbf{Z}$. In this context let $g_2(\cdot)$ be some link function that is not
-neccessarily identical to $g_1(\cdot)$. Then $\phi = g_2^{-1}(\mathbf{Z}\boldsymbol{\gamma})$,
+necessarily identical to $g_1(\cdot)$. Then $\phi = g_2^{-1}(\mathbf{Z}\boldsymbol{\gamma})$,
 where $\boldsymbol{\gamma}$ is a $J$ dimensional vector of parameters associated with
 the $N\times J$ dimensional matrix of predictors $\mathbf{Z}$.
 
