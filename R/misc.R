@@ -1636,6 +1636,83 @@ pad_matrix <- function(x, cols = NULL, rows = NULL,
   x
 }
 
+# Return the cutpoints for a specified number of quantiles of 'x'
+#
+# @param x A numeric vector.
+# @param nq Integer specifying the number of quantiles.
+# @return A vector of percentiles corresponding to percentages 100*k/m for 
+#   k=1,2,...,nq-1.
+qtile <- function(x, nq = 2) {
+  if (nq > 1) {
+    probs <- seq(1, nq - 1) / nq
+    return(quantile(x, probs = probs))
+  } else if (nq == 1) {
+    return(NULL)
+  } else {
+    stop("'nq' must be >= 1.")
+  }
+}
+
+# Return the desired spline basis for the given knot locations
+get_basis <- function(x, iknots, bknots = range(x), 
+                      degree = 3, intercept = TRUE, 
+                      type = c("bs", "is", "ms")) {
+  type <- match.arg(type)
+  if (type == "bs") {
+    out <- splines::bs(x, knots = iknots, Boundary.knots = bknots,
+                       degree = degree, intercept = intercept)
+  } else if (type == "is") {
+    out <- splines2::iSpline(x, knots = iknots, Boundary.knots = bknots,
+                              degree = degree, intercept = intercept)
+  } else if (type == "ms") {
+    out <- splines2::mSpline(x, knots = iknots, Boundary.knots = bknots,
+                              degree = degree, intercept = intercept)
+  } else {
+    stop2("'type' is not yet accommodated.")
+  }
+  out
+}
+
+# Paste character vector collapsing with a comma
+comma <- function(x) {
+  paste(x, collapse = ", ")
+}
+
+# Select rows of a matrix
+#
+# @param x A matrix.
+# @param rows Logical or numeric vector stating which rows of 'x' to retain.
+keep_rows <- function(x, rows = 1:nrow(x)) {
+  x[rows, , drop = FALSE]
+}
+
+# Drop rows of a matrix
+#
+# @param x A matrix.
+# @param rows Logical or numeric vector stating which rows of 'x' to drop
+drop_rows <- function(x, rows = 1:nrow(x)) {
+  x[!rows, , drop = FALSE]
+}
+
+# Replicate rows of a matrix
+#
+# @param x A matrix.
+# @param ... Arguments passed to 'rep', namely 'each' or 'times'.
+rep_rows <- function(x, ...) {
+  if (is.null(x) || !nrow(x)) {
+    return(x)
+  } else if (is.matrix(x)) {
+    x <- x[rep(1:nrow(x), ...),]
+  } else if (is.data.frame(x)) {
+    x <- x[rep(1:nrow(x), ...), , drop = FALSE]
+  } else {
+    stop2("'x' must be a matrix or data frame.")
+  }
+  x
+}
+
+
+
 #------- helpers from brms package
 
 stop2 <- function(...) {
@@ -1643,7 +1720,7 @@ stop2 <- function(...) {
 }
 
 warning2 <- function(...) {
-  warning(..., call. = FALSE)
+  warning(..., immediate. = TRUE, call. = FALSE)
 }
 
 SW <- function(expr) {
@@ -1654,6 +1731,24 @@ SW <- function(expr) {
 is_null <- function(x) {
   # check if an object is NULL
   is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
+}
+
+all_null <- function(...) {
+  # check if all objects are NULL
+  dots <- list(...)
+  null_check <- uapply(dots, function(x) {
+    is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
+  })
+  all(null_check)
+}
+
+any_null <- function(...) {
+  # check if any objects are NULL
+  dots <- list(...)
+  null_check <- uapply(dots, function(x) {
+    is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
+  })
+  any(null_check)
 }
 
 rm_null <- function(x, recursive = TRUE) {
