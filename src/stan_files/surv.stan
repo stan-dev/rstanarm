@@ -338,6 +338,8 @@ transformed data {
   vector[nevents]  log_t_events = log(t_events);   // log time of events
   vector[ncensor]  log_t_censor = log(t_censor);   // log time of censoring
   vector[ndelayed] log_t_delayed = log(t_delayed); // log time of entry for delayed entry
+
+  real sum_log_t_events = sum(log_t_events); // sum of log time of events
 }
 
 parameters {
@@ -379,7 +381,7 @@ transformed parameters {
   }
 
   // define basehaz parameters
-  if (nvars > 1) {
+  if (nvars > 0) {
     coefs = z_coefs .* prior_scale_for_aux;
   }
 }
@@ -449,7 +451,7 @@ model {
       if (ndelayed > 0)
         lsur_delayed = - dot_product(exp(shape * log_t_delayed), exp(eta_delayed));
       if (nevents > 0)
-        lhaz = sum(log_shape + (shape - 1) * log_t_events + eta_events);
+        lhaz = (nevents * log_shape) + (shape - 1) * sum_log_t_events + sum(eta_events);
     }
     else if (type == 4) { // M-splines, on haz scale
       if (nevents > 0)
