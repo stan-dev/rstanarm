@@ -279,7 +279,8 @@ data {
   //   3 = piecewise
   //   4 = M-splines
   //   5 = exponential
-  int<lower=1,upper=5> type;
+  //   6 = gompertz
+  int<lower=1,upper=7> type;
 
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[qrows]    qwts;
@@ -335,10 +336,11 @@ data {
 transformed data {
   int<lower=0> hs = get_nvars_for_hs(prior_dist);
 
-  vector[nevents]  log_t_events = log(t_events);   // log time of events
-  vector[ncensor]  log_t_censor = log(t_censor);   // log time of censoring
+  vector[nevents]  log_t_events  = log(t_events);  // log time of events
+  vector[ncensor]  log_t_censor  = log(t_censor);  // log time of censoring
   vector[ndelayed] log_t_delayed = log(t_delayed); // log time of entry for delayed entry
 
+  real sum_t_events = sum(t_events);         // sum of time of events
   real sum_log_t_events = sum(log_t_events); // sum of log time of events
 }
 
@@ -351,9 +353,11 @@ parameters {
   real gamma[has_intercept == 1];
 
   // unscaled basehaz parameters
-  //   exp model: nvars = 0, ie. no aux parameter
-  //   wei model: nvars = 1, ie. 1 shape parameter
-  //   fpm model: nvars = number of basis terms, ie. I-spline coefs
+  //   exp model:      nvars = 0, ie. no aux parameter
+  //   weibull model:  nvars = 1, ie. shape parameter
+  //   gompertz model: nvars = 1, ie. scale parameter
+  //   M-spline model: nvars = number of basis terms, ie. spline coefs
+  //   B-spline model: nvars = number of basis terms, ie. spline coefs
   vector<lower=coefs_lb(type)>[nvars] z_coefs;
 
   // parameters for priors
@@ -443,7 +447,7 @@ model {
     }
     else if (type == 1) { // weibull model
       real shape = coefs[1];
-      real log_shape = log(coefs[1]);
+      real log_shape = log(shape);
       if (nevents > 0)
         lsur_events = - dot_product(exp(shape * log_t_events), exp(eta_events));
       if (ncensor > 0)
@@ -452,6 +456,23 @@ model {
         lsur_delayed = - dot_product(exp(shape * log_t_delayed), exp(eta_delayed));
       if (nevents > 0)
         lhaz = (nevents * log_shape) + (shape - 1) * sum_log_t_events + sum(eta_events);
+    }
+    else if (type == 6) { // gompertz model
+      real scale = coefs[1];
+      if (nevents > 0) {
+        vector[nevents] temp_events = (exp(scale * t_events) - 1) / scale;
+        lsur_events = - dot_product(temp_events, exp(eta_events));
+      }
+      if (ncensor > 0) {
+        vector[ncensor] temp_censor = (exp(scale * t_censor) - 1) / scale;
+        lsur_censor = - dot_product(temp_censor, exp(eta_censor));
+      }
+      if (ndelayed > 0) {
+        vector[ndelayed] temp_delayed = (exp(scale * t_delayed) - 1) / scale;
+        lsur_delayed = - dot_product(temp_delayed, exp(eta_delayed));
+      }
+      if (nevents > 0)
+        lhaz = scale * sum_t_events + sum(eta_events);
     }
     else if (type == 4) { // M-splines, on haz scale
       if (nevents > 0)

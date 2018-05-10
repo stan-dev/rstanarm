@@ -1694,16 +1694,14 @@ drop_rows <- function(x, rows = 1:nrow(x)) {
   x[!rows, , drop = FALSE]
 }
 
-# Replicate rows of a matrix
+# Replicate rows of a matrix or data frame
 #
-# @param x A matrix.
+# @param x A matrix or data frame.
 # @param ... Arguments passed to 'rep', namely 'each' or 'times'.
 rep_rows <- function(x, ...) {
   if (is.null(x) || !nrow(x)) {
     return(x)
-  } else if (is.matrix(x)) {
-    x <- x[rep(1:nrow(x), ...),]
-  } else if (is.data.frame(x)) {
+  } else if (is.matrix(x) || is.data.frame(x)) {
     x <- x[rep(1:nrow(x), ...), , drop = FALSE]
   } else {
     stop2("'x' must be a matrix or data frame.")

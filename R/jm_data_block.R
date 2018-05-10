@@ -1143,6 +1143,13 @@ handle_basehaz <- function(basehaz, basehaz_ops,
     basis  <- NULL # spline basis
     nvars  <- 0L   # number of aux parameters, none
     
+  } else if (basehaz == "gompertz") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Gompertz scale
+    
   } else if (basehaz == "weibull") {
     
     bknots <- NULL # boundary knot locations
@@ -1230,6 +1237,7 @@ basehaz_for_stan <- function(basehaz_name) {
          piecewise = 3L,
          ms        = 4L,
          exp       = 5L,
+         gompertz  = 6L,
          NA)
 }
 
@@ -1346,6 +1354,7 @@ make_basehaz_X <- function(times, basehaz, deriv = FALSE) {
 check_for_closed_form <- function(basehaz_name) {
   basehaz_name %in% c("exp",
                       "weibull",
+                      "gompertz",
                       "ms")
 }
 

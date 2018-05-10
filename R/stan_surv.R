@@ -217,7 +217,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
 
   #----- baseline hazard
 
-  ok_basehaz <- c("exp", "weibull", "ms", "bs")
+  ok_basehaz <- c("exp", "weibull", "gompertz", "ms", "bs")
   ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
   basehaz <- handle_basehaz(basehaz = basehaz, 
                             basehaz_ops = basehaz_ops, 
@@ -343,7 +343,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   user_prior_intercept_stuff <- prior_intercept_stuff <-
     handle_glm_prior(prior_intercept, 
                      nvars = 1,
-                     default_scale = 2,
+                     default_scale = 20,
                      link = NULL,
                      ok_dists = ok_intercept_dists)
   
@@ -429,13 +429,9 @@ make_basis <- function(times, basehaz, timescale = "log", deriv = FALSE) {
    
     X <- matrix(0, 0, basehaz$nvars)
     
-  } else if (basehaz$type_name == "exp") {
+  } else if (basehaz$type_name %in% c("exp", "weibull", "gompertz")) {
     
-    X <- matrix(0, nrow = length(times), ncol = 0L) # dud matrix for Stan
-    
-  } else if (basehaz$type_name == "weibull") {
-    
-    X <- matrix(0, nrow = length(times), ncol = 1L) 
+    X <- matrix(0, length(times), basehaz$nvars) # dud matrix for Stan
     
   } else if (basehaz$type_name == "bs") {
     
@@ -611,7 +607,7 @@ reformulate_rhs <- function(x) {
 #
 # @param basehaz_name Character string, the type of baseline hazard
 has_intercept <- function(basehaz_name) {
-  (basehaz_name %in% c("exp", "weibull"))
+  (basehaz_name %in% c("exp", "weibull", "gompertz"))
 }
 
 # Return the response vector (time)
@@ -756,5 +752,5 @@ max_double <- function() {
 #
 # @param basehaz Character string, the distribution for the baseline hazard.
 get_default_aux_scale <- function(basehaz) {
-  if (basehaz == "weibull") 2 else 20
+  if (basehaz %in% c("weibull", "gompertz")) 2 else 20
 }
