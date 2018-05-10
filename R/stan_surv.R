@@ -429,7 +429,7 @@ make_basis <- function(times, basehaz, timescale = "log", deriv = FALSE) {
    
     X <- matrix(0, 0, basehaz$nvars)
     
-  } else if (basehaz$type_name == "exponential") {
+  } else if (basehaz$type_name == "exp") {
     
     X <- matrix(0, nrow = length(times), ncol = 0L) # dud matrix for Stan
     
@@ -606,9 +606,12 @@ reformulate_rhs <- function(x) {
   x
 }
 
-
+# Identify whether the type of baseline hazard requires an intercept in
+# the linear predictor (NB splines incorporate the intercept into the basis)
+#
+# @param basehaz_name Character string, the type of baseline hazard
 has_intercept <- function(basehaz_name) {
-  (basehaz_name %in% c("exponential", "weibull"))
+  (basehaz_name %in% c("exp", "weibull"))
 }
 
 # Return the response vector (time)
