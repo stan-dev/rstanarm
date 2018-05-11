@@ -385,13 +385,16 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   # Fit model
   #-----------
 
+  # obtain stan model code
   stanfit  <- stanmodels$surv
   
+  # specify parameters for stan to monitor
   stanpars <- c(if (standata$has_intercept) "gamma",
                 if (standata$K)             "beta",
-                if (standata$nvars > 0)     "coefs")
+                if (standata$nvars)         "coefs")
   
-  if (algorithm == "sampling") {
+  # fit model using stan
+  if (algorithm == "sampling") { # mcmc
     args <- set_sampling_args(
       object = stanfit, 
       data   = standata, 
@@ -401,28 +404,96 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
       user_adapt_delta = adapt_delta, 
       show_messages = FALSE)
     stanfit <- do.call(rstan::sampling, args)
-  } else {
+  } else { # meanfield or fullrank vb
     args <- nlist(
       object = stanfit,
       data   = standata,
       pars   = stanpars,
-      algorithm # meanfield or fullrank vb
+      algorithm
     )
     args[names(dots)] <- dots
     stanfit <- do.call(rstan::vb, args)
   }
-  #check_stanfit(stanfit)
+  check_stanfit(stanfit)
+  
+  # define new parameter names
+  nms_beta <- colnames(x) # may be NULL
+  nms_int  <- get_int_name(basehaz)
+  nms_aux  <- get_aux_name(basehaz)
+  nms_all  <- c(nms_int,
+                nms_beta,
+                nms_aux)
+  
+  # substitute new parameter names into 'stanfit' object
+  stanfit <- replace_stanfit_nms(stanfit, nms_all)
 
-  fit <- nlist(stanfit, formula, data, basehaz, algorithm,
-               stan_function = "stan_surv", call = match.call(expand.dots = TRUE))
-
-  #out <- stansurv(fit)
-  return(fit)
+  # return an object of class 'stansurv'
+  fit <- nlist(stanfit, 
+               formula, 
+               data, 
+               basehaz, 
+               algorithm,
+               stan_function = "stan_surv", 
+               call = match.call(expand.dots = TRUE))
+  stansurv(fit)
 }
 
 
 #---------- internal
 
+# Identify whether the type of baseline hazard requires an intercept in
+# the linear predictor (NB splines incorporate the intercept into the basis).
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A Logical.
+has_intercept <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  (nm %in% c("exp", "weibull", "gompertz"))
+}
+
+# Return the name of the intercept parameter for a survival model.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A character string or NULL.
+get_int_name <- function(basehaz) {
+  if (has_intercept(basehaz)) "Intercept" else NULL
+}
+
+# Return the name of the auxiliary parameter(s) for a survival model.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A character string, character vector, or NULL.
+get_aux_name <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  nvars <- basehaz$nvars
+  switch(nm,
+         exp       = NULL,
+         weibull   = "weibull-shape",
+         gompertz  = "gompertz-scale",
+         ms        = paste0("m-splines-coef", seq(nvars)),
+         bs        = paste0("b-splines-coef", seq(nvars)),
+         piecewise = paste0("piecewise-coef", seq(nvars)),
+         NA)
+}
+
+# Replace the parameter names slot of an object of class 'stanfit'.
+#
+# @param stanfit An object of class 'stanfit'.
+# @param new_nms A character vector of new parameter names.
+# @return A 'stanfit' object.
+replace_stanfit_nms <- function(stanfit, new_nms) {
+  stanfit@sim$fnames_oi <- new_nms
+  stanfit
+}
+
+# Return the spline basis for the given type of baseline hazard.
+# 
+# @param time A numeric vector of times at which to evaluate the basis.
+# @param basehaz A list with info about the baseline hazard, returned by a 
+#   call to 'handle_basehaz'.
+# @param deriv A logical, specifying whether to calculate the derivative of
+#   the specified basis.
+# @return A matrix.
 make_basis <- function(times, basehaz, timescale = "log", deriv = FALSE) {
 
   if (is.null(times) || !length(times)) {
@@ -602,13 +673,6 @@ reformulate_rhs <- function(x) {
   x
 }
 
-# Identify whether the type of baseline hazard requires an intercept in
-# the linear predictor (NB splines incorporate the intercept into the basis)
-#
-# @param basehaz_name Character string, the type of baseline hazard
-has_intercept <- function(basehaz_name) {
-  (basehaz_name %in% c("exp", "weibull", "gompertz"))
-}
 
 # Return the response vector (time)
 #
