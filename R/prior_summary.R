@@ -267,7 +267,43 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
         txt = "\nAssociation parameters", 
         formatters = formatters
       )
-  }  
+  } 
+  
+  # unique to stan_surv
+  if (stan_function == "stan_surv") {
+    if (!is.null(x[["priorEvent_intercept"]]))
+      .print_scalar_prior(
+        x[["priorEvent_intercept"]], 
+        txt = paste0("Intercept"), # predictors not currently centered
+        formatters
+      )
+    has_intercept <- !is.null(x[["priorEvent_intercept"]])
+    if (!is.null(x[["priorEvent"]]))
+      .print_vector_prior(
+        x[["priorEvent"]], 
+        txt = paste0(if (has_intercept) "\n", "Coefficients"), 
+        formatters = formatters
+      )
+    if (!is.null(x[["priorEvent_aux"]])) {
+      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
+      aux_dist <- x[["priorEvent_aux"]][["dist"]]
+      if ((aux_name %in% c("weibull-shape", "gompertz-scale")) &&
+          (aux_dist %in% c("normal", "student_t", "cauchy"))) { # weibull, gompertz
+        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nAuxiliary (", aux_name, ")"), 
+          formatters
+        )
+      } else { # ms, bs, piecewise
+        .print_vector_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nAuxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
+  }
   
   # unique to stan_(g)lmer, stan_gamm4, stan_mvmer, or stan_jm
   if (!is.null(x[["prior_covariance"]]))

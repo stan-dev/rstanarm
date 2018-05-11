@@ -74,7 +74,7 @@ stansurv <- function(object) {
     ncensor       = object$ncensor,
     ndelayed      = object$ndelayed,
     qnodes        = object$qnodes,
-    prior.info    = object$prior.info,
+    prior.info    = object$prior_info,
     algorithm     = object$algorithm,
     stan_function = object$stan_function,
     call          = object$call,

@@ -378,7 +378,23 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
 
   # any additional flags
   standata$prior_PD <- ai(prior_PD)
-
+  
+  #---------------
+  # Prior summary
+  #---------------
+  
+  prior_info <- summarize_jm_prior(
+    user_priorEvent           = user_prior_stuff,
+    user_priorEvent_intercept = user_prior_intercept_stuff,
+    user_priorEvent_aux       = user_prior_aux_stuff,
+    adjusted_priorEvent_scale           = prior_stuff$prior_scale,
+    adjusted_priorEvent_intercept_scale = prior_intercept_stuff$prior_scale,
+    adjusted_priorEvent_aux_scale       = prior_aux_stuff$prior_scale,
+    e_has_intercept  = has_intercept,
+    e_has_predictors = K > 0,
+    basehaz = basehaz
+  )
+  
   #-----------
   # Fit model
   #-----------
@@ -440,6 +456,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
                nevents,
                ncensor,
                ndelayed,
+               prior_info,
                qnodes = if (has_quadrature) qnodes else NULL,
                algorithm,
                stan_function = "stan_surv", 
