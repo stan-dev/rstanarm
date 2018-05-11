@@ -1350,14 +1350,6 @@ make_basehaz_X <- function(times, basehaz, deriv = FALSE) {
   X
 }
 
-# Check if the type of baseline hazard has a closed form
-check_for_closed_form <- function(basehaz_name) {
-  basehaz_name %in% c("exp",
-                      "weibull",
-                      "gompertz",
-                      "ms")
-}
-
 # Create a dummy indicator matrix for time intervals defined by 'knots'
 #
 # @param x A numeric vector with the original data.

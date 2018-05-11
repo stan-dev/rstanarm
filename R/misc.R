@@ -896,7 +896,7 @@ is.mvmer <- function(x) {
 #
 # @param x An object to be tested.
 is.surv <- function(x) {
-  isTRUE(x$stan_function %in% c("stan_jm"))
+  isTRUE(x$stan_function %in% c("stan_surv", "stan_jm"))
 }
 
 # Throw error if object isn't a stanmvreg object

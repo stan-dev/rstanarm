@@ -224,10 +224,8 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
                             ok_basehaz = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
                             times = t_end, status = event)
-  type_name <- basehaz$type_name
-  type      <- basehaz$type
-  nvars     <- basehaz$nvars
-  has_closed_form <- check_for_closed_form(type_name)
+  nvars <- basehaz$nvars
+  has_closed_form <- check_for_closed_form(basehaz)
   
   # basis terms
   basis_events  <- make_basis(t_events,  basehaz)
@@ -236,7 +234,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   deriv_events  <- make_basis(t_events,  basehaz, deriv = TRUE)
 
   # flag if intercept is required for baseline hazard
-  has_intercept  <- ai(has_intercept(type_name))
+  has_intercept  <- ai(has_intercept(basehaz))
   
   # flag for quadrature
   has_quadrature <- has_tde || !has_closed_form
@@ -312,7 +310,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
     basis_qpts,
     basis_qpts_delayed,
     deriv_events,
-    type,
+    type = basehaz$type,
     qwts,
     qwts_delayed,
     has_intercept,
@@ -350,7 +348,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   user_prior_aux_stuff <- prior_aux_stuff <-
     handle_glm_prior(prior_aux, 
                      nvars = basehaz$nvars,
-                     default_scale = get_default_aux_scale(basehaz$type_name),
+                     default_scale = get_default_aux_scale(basehaz),
                      link = NULL,
                      ok_dists = ok_aux_dists)
   
@@ -422,7 +420,8 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   nms_aux  <- get_aux_name(basehaz)
   nms_all  <- c(nms_int,
                 nms_beta,
-                nms_aux)
+                nms_aux,
+                "log-posterior")
   
   # substitute new parameter names into 'stanfit' object
   stanfit <- replace_stanfit_nms(stanfit, nms_all)
@@ -430,8 +429,18 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   # return an object of class 'stansurv'
   fit <- nlist(stanfit, 
                formula, 
-               data, 
-               basehaz, 
+               data,
+               x, 
+               t_beg, 
+               t_end, 
+               event, 
+               delayed,
+               basehaz,
+               nobs = nrows,
+               nevents,
+               ncensor,
+               ndelayed,
+               qnodes = if (has_quadrature) qnodes else NULL,
                algorithm,
                stan_function = "stan_surv", 
                call = match.call(expand.dots = TRUE))
@@ -474,6 +483,35 @@ get_aux_name <- function(basehaz) {
          bs        = paste0("b-splines-coef", seq(nvars)),
          piecewise = paste0("piecewise-coef", seq(nvars)),
          NA)
+}
+
+# Return the default scale parameter for 'prior_aux'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A scalar.
+get_default_aux_scale <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  if (nm %in% c("weibull", "gompertz")) 2 else 20
+}
+
+# Extract the name of baseline hazard from the list returned by 'handle_basehaz'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A character string.
+get_basehaz_name <- function(basehaz) {
+  basehaz$type_name
+}
+
+# Check if the type of baseline hazard has a closed form
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A logical.
+check_for_closed_form <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  nm %in% c("exp",
+            "weibull",
+            "gompertz",
+            "ms")
 }
 
 # Replace the parameter names slot of an object of class 'stanfit'.
@@ -575,17 +613,18 @@ parse_formula <- function(formula, data) {
     dvar     <- as.character(lhs[[4L]])
   }
   
-  nlist(lhs = lhs,
-        rhs = rhs,
-        lhs_form = lhs_form,
-        rhs_form = rhs_form,
+  nlist(formula,
+        lhs,
+        rhs,
+        lhs_form,
+        rhs_form,
         fe_form = rhs_form, # no re terms accommodated yet
         re_form = NULL,     # no re terms accommodated yet
-        allvars = allvars,
-        allvars_form = allvars_form,
-        tvar_beg = tvar_beg,
-        tvar_end = tvar_end,
-        dvar = dvar,
+        allvars,
+        allvars_form,
+        tvar_beg,
+        tvar_end,
+        dvar,
         surv_type = attr(surv, "type"))
 }
 
@@ -812,9 +851,3 @@ max_double <- function() {
   .Machine$double.xmax
 }
 
-# Return the default scale parameter for 'prior_aux'
-#
-# @param basehaz Character string, the distribution for the baseline hazard.
-get_default_aux_scale <- function(basehaz) {
-  if (basehaz %in% c("weibull", "gompertz")) 2 else 20
-}

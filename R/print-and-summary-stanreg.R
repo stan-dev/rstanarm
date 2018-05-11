@@ -69,11 +69,21 @@
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
   cat(x$stan_function)
-  cat("\n family:      ", family_plus_link(x))
-  cat("\n formula:     ", formula_string(formula(x)))
-  cat("\n observations:", nobs(x))
-  if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
-    cat("\n predictors:  ", length(coef(x)))
+  sur <- is.surv(x)
+  if (sur) {
+    cat("\n baseline hazard:", basehaz_string(x$basehaz)) 
+    cat("\n formula:        ", formula_string(formula(x)))
+    cat("\n observations:   ", x$nobs) 
+    cat("\n events:         ", x$nevents, percent_string(x$nevents, x$nobs))
+    cat("\n censored:       ", x$ncensor, percent_string(x$ncensor, x$nobs))
+    cat("\n delayed entry:  ", yes_no_string(x$ndelayed))
+  } else {
+    cat("\n family:      ", family_plus_link(x))
+    cat("\n formula:     ", formula_string(formula(x)))
+    cat("\n observations:", nobs(x))
+    if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
+      cat("\n predictors:  ", length(coef(x)))
+  }
   
   cat("\n------\n")
 
@@ -119,7 +129,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("Num. levels:", 
           paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
     }
-    if (!isTRUE(x$stan_function == "stan_clogit")) {
+    if (!isTRUE(x$stan_function %in% c("stan_clogit", "stan_surv"))) {
       cat("\nSample avg. posterior predictive distribution of y:\n")
       .printfr(ppd_estimates, digits, ...)
     }
@@ -430,3 +440,27 @@ formula_string <- function(formula, break_and_indent = TRUE) {
   gsub("--MARK--", "\n\t  ", char, fixed = TRUE)
 }
 
+
+# @param basehaz A list with info about the baseline hazard
+basehaz_string <- function(basehaz, break_and_indent = TRUE) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         exp      = "exponential",
+         weibull  = "weibull",
+         gompertz = "gompertz",
+         ms       = "M-splines on hazard scale",
+         bs       = "B-splines on log hazard scale",
+         piecewise= "piecewise constant on log hazard scale",
+         NULL)
+}
+
+# @param x A logical (or a scalar to be evaluated as a logical).
+yes_no_string <- function(x) {
+  if (x) "yes" else "no"
+}
+
+# @param numer,denom The numerator and denominator with which to evaluate a %.
+percent_string <- function(numer, denom) {
+  val <- round(100 * numer / denom, 1)
+  paste0("(", val, "%)")
+}

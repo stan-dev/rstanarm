@@ -95,6 +95,8 @@ stanmvreg <- function(object) {
     call          = object$call,
     stan_function = object$stan_function,
     runtime       = if (object$algorithm == "sampling") times else NULL,
+    rstan_version    = utils::packageVersion("rstan"),
+    rstanarm_version = utils::packageVersion("rstanarm"),
     stan_summary, stanfit
   )
   if (is_mvmer) {
