@@ -79,17 +79,20 @@ print.stanreg <- function(x, digits = 1, ...) {
 
   mer <- is.mer(x)
   ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
+
   if (!used.optimizing(x)) {
+    aux_nm <- .aux_name(x)
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
-    nms <- setdiff(rownames(x$stan_summary), "log-posterior")
+    nms <- setdiff(rownames(x$stan_summary), c("log-posterior", aux_nm))
     if (isTRUE(x$stan_function == "stan_gamm4")) {
       smooth_sd_nms <- grep("^smooth_sd\\[", nms, value = TRUE)
       nms <- setdiff(nms, smooth_sd_nms)
       smooth_sd_mat <- mat[, smooth_sd_nms, drop = FALSE]
       smooth_sd_estimates <- .median_and_madsd(smooth_sd_mat)
     }
-    if (mer) 
+    if (mer) {
       nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
+    }
     if (ord) {
       cut_nms <- grep("|", nms, fixed = TRUE, value = TRUE)
       nms <- setdiff(nms, cut_nms)
@@ -102,9 +105,17 @@ print.stanreg <- function(x, digits = 1, ...) {
     ppd_mat <- mat[, ppd_nms, drop = FALSE]
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
-    if (mer)
+    if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
+    }
     .printfr(estimates, digits, ...)
+    
+    if (length(aux_nm)) {
+      aux_estimates <- .median_and_madsd(mat[, aux_nm, drop=FALSE])
+      cat("\nAuxiliary parameter(s):\n")
+      .printfr(aux_estimates, digits, ...)
+    }
+    
     if (ord) {
       cat("\nCutpoints:\n")
       .printfr(cut_estimates, digits, ...)
@@ -127,19 +138,21 @@ print.stanreg <- function(x, digits = 1, ...) {
   } else { 
     # used optimization
     nms <- names(x$coefficients)
-    famname <- family(x)$family
-    if (is.gaussian(famname)) {
-      nms <- c(nms, "sigma")
-    } else if (is.gamma(famname)) {
-      nms <- c(nms, "shape")
-    } else if (is.ig(famname)) {
-      nms <- c(nms, "lambda")
-    } else if (is.nb(famname)) {
-      nms <- c(nms, "reciprocal_dispersion")
-    } else if (is.beta(famname)) {}
-    nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
-    estimates <- x$stan_summary[nms,1:2]
+    aux_nm <- .aux_name(x)
+    ppd_nms <- grep("^mean_PPD", rownames(x$stan_summary), value = TRUE)
+    
+    estimates <- x$stan_summary[nms, 1:2, drop=FALSE]
     .printfr(estimates, digits, ...)
+    
+    if (length(aux_nm)) {
+      cat("\nAuxiliary parameter(s):\n")
+      .printfr(x$stan_summary[aux_nm, 1:2, drop=FALSE], digits, ...)
+    }
+    
+    if (length(ppd_nms)) {
+      cat("\nSample avg. posterior predictive distribution of y:\n")
+      .printfr(x$stan_summary[ppd_nms, 1:2, drop=FALSE], digits, ...)
+    }
   }
   
   if (is(x, "aov")) {
@@ -696,5 +709,17 @@ formula_string <- function(formula, break_and_indent = TRUE) {
   if (!break_and_indent)
     return(char)
   gsub("--MARK--", "\n\t  ", char, fixed = TRUE)
+}
+
+# get name of aux parameter based on family
+.aux_name <- function(object) {
+  aux <- character()
+  if (!is_polr(object)) {
+    aux <- .rename_aux(family(object))
+    if (is.na(aux)) {
+      aux <- character()
+    }
+  }
+  return(aux)
 }
 
