@@ -416,11 +416,12 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # Get the posterior sample size
 #
 # @param x A stanreg object
-# @return NULL if used.optimizing(x), otherwise the posterior sample size
+# @return the posterior sample size (or size of sample from approximate posterior)
 posterior_sample_size <- function(x) {
   validate_stanreg_object(x)
-  if (used.optimizing(x)) 
-    return(NULL)
+  if (used.optimizing(x)) {
+    return(NROW(fit$asymptotic_sampling_dist))
+  }
   pss <- x$stanfit@sim$n_save
   if (used.variational(x))
     return(pss)
