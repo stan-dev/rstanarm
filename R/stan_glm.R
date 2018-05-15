@@ -103,18 +103,25 @@
 #' 
 #' 
 #' ### Poisson regression (example from help("glm")) 
-#' counts <- c(18,17,15,20,10,20,25,13,12)
-#' outcome <- gl(3,1,9)
-#' treatment <- gl(3,3)
-#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                  prior = normal(0, 1), prior_intercept = normal(0, 5),
-#'                  chains = 2, iter = 250) # for speed of example only
+#' count_data <- data.frame(
+#'  counts = c(18,17,15,20,10,20,25,13,12),
+#'  outcome = gl(3,1,9),
+#'  treatment = gl(3,3)
+#' )
+#' fit3 <- stan_glm(
+#'   counts ~ outcome + treatment, 
+#'   data = count_data, 
+#'   family = poisson(link="log"),
+#'   prior = normal(0, 2, autoscale = FALSE),
+#'   chains = 2, iter = 250 # for speed of example only
+#' ) 
 #' print(fit3)
 #' 
 #' bayesplot::color_scheme_set("green")
 #' plot(fit3)
 #' plot(fit3, regex_pars = c("outcome", "treatment"))
 #' plot(fit3, plotfun = "combo", regex_pars = "treatment") # ?bayesplot::mcmc_combo
+#' posterior_vs_prior(fit3, regex_pars = c("outcome", "treatment"))
 #' 
 #' ### Gamma regression (example from help("glm"))
 #' clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
