@@ -183,7 +183,7 @@ pp_data <-
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     NAs <- apply(is.na(x), 1, any)
-    rfd <- mfnew <- newdata[!NAs,]
+    rfd <- mfnew <- newdata[!NAs,, drop=FALSE]
     attr(rfd,"na.action") <- "na.omit"
   } else {
     terms_fixed <- delete.response(terms(object, fixed.only = TRUE, m = m))
