@@ -126,13 +126,14 @@ model {
                       regularization, delta, shape, t, p);
 }
 generated quantities {
+  real mean_PPD = negative_infinity();
   real alpha[has_intercept];
-  real mean_PPD = 0;
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  {
+  if (compute_mean_PPD) {
+    mean_PPD = 0;
     vector[N] nu;
 #include /model/make_eta.stan
     if (t > 0) {
