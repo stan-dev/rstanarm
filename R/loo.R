@@ -429,6 +429,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_k)
       )
     if (save_fits) {
@@ -715,6 +716,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_j)
       )
   }

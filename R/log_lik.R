@@ -208,8 +208,11 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   has_newdata <- !is.null(newdata)
   
   dots <- list(...)
+  
+  z_betareg <- NULL
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     x <- dots$newx
+    z_betareg <- dots$newz # NULL except for some stan_betareg models
     stanmat <- dots$stanmat
     form <- as.formula(formula(object)) # in case formula is string
     y <- eval(form[[2L]], newdata)
@@ -245,6 +248,9 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       
     } else if (!is.binomial(fname)) {
       data <- data.frame(y, x)
+      if (!is.null(z_betareg)) {
+        data <- cbind(data, z_betareg)
+      }
     } else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
@@ -286,19 +292,28 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       if (length(z_vars) == 1 && z_vars == "(phi)") {
         draws$phi <- stanmat[, z_vars]
       } else {
-        x_dat <- get_x(object)
-        z_dat <- object$z
-        colnames(x_dat) <- colnames(x_dat)
-        colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
-        data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        if (has_newdata && reloo_or_kfold && !is.null(z_betareg)) {
+          colnames(data) <- c("y", colnames(get_x(object)), 
+                              paste0("(phi)_", colnames(z_betareg)))
+        } else if (has_newdata) {
+          stop("log_lik with newdata not yet available for stan_betareg ", 
+               "models with z matrices.")
+        } else {
+          x_dat <- get_x(object)
+          z_dat <- object$z
+          colnames(x_dat) <- colnames(x_dat)
+          colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
+          data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        }
         draws$phi <- stanmat[,z_vars]
       }
     }
   } else {
     stopifnot(is_polr(object))
     y <- as.integer(y)
-    if (has_newdata) 
+    if (has_newdata) {
       x <- .validate_polr_x(object, x)
+    }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
     patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
