@@ -213,14 +213,18 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     x <- dots$newx
     z_betareg <- dots$newz # NULL except for some stan_betareg models
+    if (!is.null(z_betareg)) {
+      z_betareg <- as.matrix(z_betareg)
+    }
     stanmat <- dots$stanmat
     form <- as.formula(formula(object)) # in case formula is string
     y <- eval(form[[2L]], newdata)
   } else if (has_newdata) {
     ppdat <- pp_data(object, as.data.frame(newdata), offset = offset, m = m)
-    tmp <- pp_eta(object, ppdat, m = m)
-    eta <- tmp$eta
-    stanmat <- tmp$stanmat
+    pp_eta_dat <- pp_eta(object, ppdat, m = m)
+    eta <- pp_eta_dat$eta
+    stanmat <- pp_eta_dat$stanmat
+    z_betareg <- ppdat$z_betareg
     x <- ppdat$x
     form <- as.formula(formula(object, m = m))
     y <- eval(form[[2L]], newdata)
@@ -292,15 +296,14 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       if (length(z_vars) == 1 && z_vars == "(phi)") {
         draws$phi <- stanmat[, z_vars]
       } else {
-        if (has_newdata && reloo_or_kfold && !is.null(z_betareg)) {
+        if (has_newdata) {
+          if (!is.null(z_betareg)) {
           colnames(data) <- c("y", colnames(get_x(object)), 
                               paste0("(phi)_", colnames(z_betareg)))
-        } else if (has_newdata) {
-          stop("log_lik with newdata not yet available for stan_betareg ", 
-               "models with z matrices.")
+          }
         } else {
           x_dat <- get_x(object)
-          z_dat <- object$z
+          z_dat <- as.matrix(object$z)
           colnames(x_dat) <- colnames(x_dat)
           colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
           data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)

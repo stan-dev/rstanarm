@@ -350,8 +350,9 @@ pp_args <- function(object, data, m = NULL) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  else if (is_clogit(object)) 
+  else if (is_clogit(object)) {
     return(list(mu = inverse_link(eta)))
+  }
 
   args <- list(mu = inverse_link(eta))
   famname <- family(object, m = m)$family
@@ -365,15 +366,9 @@ pp_args <- function(object, data, m = NULL) {
   } else if (is.nb(famname)) {
     args$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
   } else if (is.beta(famname)) {
-    # create a condition for presence of z vars
-    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
-    omega <- stanmat[,z_vars]
-    if (length(z_vars) == 1 && z_vars == "(phi)") {
-      args$phi <- stanmat[, "(phi)"] 
-    } else {
-      inverse_link_phi <- linkinv(object$family_phi)
-      args$phi <- linear_predictor(as.matrix(omega), as.matrix(object$z), data$offset) 
-      args$phi <- inverse_link_phi(args$phi)
+    args$phi <- data$phi
+    if (is.null(args$phi)) {
+      args$phi <- linkinv(object$family_phi)(data$phi_linpred)
     }
   }
   args
@@ -389,7 +384,8 @@ pp_args <- function(object, data, m = NULL) {
 #   new b parameters for individuals in the prediction data but who were not
 #   included in the model estimation; relevant for dynamic predictions for 
 #   stan_jm objects only
-# @return Linear predictor "eta" and matrix of posterior draws "stanmat"
+# @return Linear predictor "eta" and matrix of posterior draws "stanmat". For
+#   some stan_betareg models "" is also included in the list.
 pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
   S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
@@ -435,7 +431,20 @@ pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
     else eta <- linkinv(object)(eta, data$arg1, data$arg2)
     eta <- t(eta)
   }
-  nlist(eta, stanmat)
+  
+  out <- nlist(eta, stanmat)
+  
+  if (inherits(object, "betareg")) {
+    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+    omega <- stanmat[, z_vars]
+    if (length(z_vars) == 1 && z_vars == "(phi)") {
+      out$phi <- stanmat[, "(phi)"] 
+    } else {
+      out$phi_linpred <- linear_predictor(as.matrix(omega), as.matrix(data$z_betareg), data$offset)
+    }
+  }
+  
+  return(out)
 }
 
 pp_b_ord <- function(b, Z_names) {
