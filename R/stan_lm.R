@@ -133,10 +133,12 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
-  validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
+  
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
+  mf$data <- data
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
@@ -155,7 +157,8 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           ...)
   fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
                x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
-               y = Y, data = if (missing("data")) environment(formula) else data,
+               y = Y, 
+               data = data,
                prior.info = prior, 
                algorithm, call, terms = mt,
                model = if (model) modelframe else NULL,

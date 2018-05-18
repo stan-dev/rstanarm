@@ -176,9 +176,10 @@ stan_glm <-
   
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
-  m <- match(c("formula", "data", "subset", "weights", "na.action", "offset"), 
+  m <- match(c("formula", "subset", "weights", "na.action", "offset"), 
              table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
+  mf$data <- data
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- as.name("model.frame")
   mf <- eval(mf, parent.frame())

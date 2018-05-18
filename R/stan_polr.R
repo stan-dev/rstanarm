@@ -139,15 +139,18 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       adapt_delta = NULL,
                       do_residuals = NULL) {
 
-  data <- validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
     do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
-  if (is.matrix(eval.parent(m$data)))
+  if (is.matrix(eval.parent(m$data))) {
     m$data <- as.data.frame(data)
+  } else {
+    m$data <- data
+  }
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
