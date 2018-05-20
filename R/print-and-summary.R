@@ -18,9 +18,9 @@
 #' Print method for stanreg objects
 #' 
 #' The \code{print} method for stanreg objects displays a compact summary of the
-#' fitted model. See the Details section below for a description of the printed 
-#' output. For additional summary statistics and diagnostics use the 
-#' \code{\link[=summary.stanreg]{summary}} method.
+#' fitted model. See the \strong{Details} section below for descriptions of the
+#' different components of the printed output. For additional summary statistics
+#' and diagnostics use the \code{\link[=summary.stanreg]{summary}} method.
 #' 
 #' @export
 #' @method print stanreg
@@ -40,29 +40,36 @@
 #' used. In all cases, the point estimates reported are the same as the values
 #' returned by \code{\link[=coef.stanreg]{coef}}.
 #' }
-#' \subsection{Uncertainty estimates}{
-#' The standard deviations reported (labeled MAD_SD in the print output) are 
-#' computed from the same set of draws described above and are proportional to 
-#' the median absolute deviation (\code{\link[stats]{mad}}) from the median. 
-#' Compared to the raw posterior standard deviation, the MAD_SD will be more 
-#' robust for long-tailed distributions. These are the same as the values 
+#' \subsection{Uncertainty estimates (MAD_SD)}{
+#' The standard deviations reported (labeled \code{MAD_SD} in the print output)
+#' are computed from the same set of draws described above and are proportional
+#' to the median absolute deviation (\code{\link[stats]{mad}}) from the median.
+#' Compared to the raw posterior standard deviation, the MAD_SD will be
+#' more robust for long-tailed distributions. These are the same as the values
 #' returned by \code{\link[=se.stanreg]{se}}.
 #' }
 #' \subsection{Additional output}{
-#' For models fit using MCMC or a variational approximation, the median and 
-#' MAD_SD are also reported for \code{mean_PPD}, the sample average posterior 
-#' predictive distribution of the outcome.
+#' \itemize{
+#' \item The median and MAD_SD are also reported for \code{mean_PPD}, the sample
+#' average posterior predictive distribution of the outcome. This is useful as a
+#' quick diagnostic. A useful heuristic is to check if \code{mean_PPD} is
+#' plausible when compared to \code{mean(y)}. If it is plausible then this does
+#' \emph{not} mean that the model is good in general (only that it can reproduce
+#' the sample mean), however if \code{mean_PPD} is implausible then it is a sign
+#' that something is wrong (severe model misspecification, problems with the
+#' data, computational issues, etc.).
 #' 
-#' For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
+#' \item For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
 #' output also shows point estimates of the standard deviations of the group 
 #' effects (and correlations if there are both intercept and slopes that vary by
 #' group).
 #' 
-#' For analysis of variance models (see \code{\link{stan_aov}}) models, an
+#' \item For analysis of variance models (see \code{\link{stan_aov}}) models, an
 #' ANOVA-like table is also displayed.
 #' 
-#' For joint longitudinal and time-to-event (see \code{\link{stan_jm}}) models
+#' \item For joint longitudinal and time-to-event (see \code{\link{stan_jm}}) models
 #' the estimates are presented separately for each of the distinct submodels.  
+#' }
 #' }
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
@@ -164,7 +171,8 @@ print.stanreg <- function(x, digits = 1, ...) {
   }
 
   cat("\n------\n")
-  cat("For info on the priors used see help('prior_summary.stanreg').\n")
+  cat("* For help interpreting the printed output see ?print.stanreg\n")
+  cat("* For info on the priors used see ?prior_summary.stanreg\n")
   
   invisible(x)
 }
