@@ -79,24 +79,36 @@ print.stanreg <- function(x, digits = 1, ...) {
   cat("\n family:      ", family_plus_link(x))
   cat("\n formula:     ", formula_string(formula(x)))
   cat("\n observations:", nobs(x))
-  if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
+  if (isTRUE(x$stan_function %in% 
+             c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov"))) {
     cat("\n predictors:  ", length(coef(x)))
+  }
   
   cat("\n------\n")
 
   mer <- is.mer(x)
+  gamm <- isTRUE(x$stan_function == "stan_gamm4")
   ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
+
+  aux_nms <- .aux_name(x)
+  
   if (!used.optimizing(x)) {
+    
+    if (isTRUE(x$stan_function %in% c("stan_lm", "stan_aov"))) {
+      aux_nms <- c("R2", "log-fit_ratio", aux_nms)
+    }
     mat <- as.matrix(x$stanfit) # don't used as.matrix.stanreg method b/c want access to mean_PPD
-    nms <- setdiff(rownames(x$stan_summary), "log-posterior")
-    if (isTRUE(x$stan_function == "stan_gamm4")) {
+    nms <- setdiff(rownames(x$stan_summary), c("log-posterior", aux_nms))
+    
+    if (gamm) {
       smooth_sd_nms <- grep("^smooth_sd\\[", nms, value = TRUE)
       nms <- setdiff(nms, smooth_sd_nms)
       smooth_sd_mat <- mat[, smooth_sd_nms, drop = FALSE]
       smooth_sd_estimates <- .median_and_madsd(smooth_sd_mat)
     }
-    if (mer) 
+    if (mer) {
       nms <- setdiff(nms, grep("^b\\[", nms, value = TRUE))
+    }
     if (ord) {
       cut_nms <- grep("|", nms, fixed = TRUE, value = TRUE)
       nms <- setdiff(nms, cut_nms)
@@ -109,14 +121,22 @@ print.stanreg <- function(x, digits = 1, ...) {
     ppd_mat <- mat[, ppd_nms, drop = FALSE]
     estimates <- .median_and_madsd(coef_mat)
     ppd_estimates <- .median_and_madsd(ppd_mat)
-    if (mer)
+    
+    if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
+    }
     .printfr(estimates, digits, ...)
+    
+    if (length(aux_nms)) {
+      aux_estimates <- .median_and_madsd(mat[, aux_nms, drop=FALSE])
+      cat("\nAuxiliary parameter(s):\n")
+      .printfr(aux_estimates, digits, ...)
+    }
     if (ord) {
       cat("\nCutpoints:\n")
       .printfr(cut_estimates, digits, ...)
     }
-    if (isTRUE(x$stan_function == "stan_gamm4")) {
+    if (gamm) {
       cat("\nSmoothing terms:\n")
       .printfr(smooth_sd_estimates, digits, ...)
     }
@@ -126,7 +146,10 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("Num. levels:", 
           paste(names(ngrps(x)), unname(ngrps(x)), collapse = ", "), "\n")
     }
-    if (!isTRUE(x$stan_function == "stan_clogit")) {
+    if (is(x, "aov")) {
+      print_anova_table(x, digits, ...)
+    }
+    if (!is_clogit(x)) {
       cat("\nSample avg. posterior predictive distribution of y:\n")
       .printfr(ppd_estimates, digits, ...)
     }
@@ -134,42 +157,21 @@ print.stanreg <- function(x, digits = 1, ...) {
   } else { 
     # used optimization
     nms <- names(x$coefficients)
-    famname <- family(x)$family
-    if (is.gaussian(famname)) {
-      nms <- c(nms, "sigma")
-    } else if (is.gamma(famname)) {
-      nms <- c(nms, "shape")
-    } else if (is.ig(famname)) {
-      nms <- c(nms, "lambda")
-    } else if (is.nb(famname)) {
-      nms <- c(nms, "reciprocal_dispersion")
-    } else if (is.beta(famname)) {}
-    nms <- c(nms, grep("^mean_PPD", rownames(x$stan_summary), value = TRUE))
-    estimates <- x$stan_summary[nms,1:2]
+    ppd_nms <- grep("^mean_PPD", rownames(x$stan_summary), value = TRUE)
+    
+    estimates <- x$stan_summary[nms, 1:2, drop=FALSE]
     .printfr(estimates, digits, ...)
+    
+    if (length(aux_nms)) {
+      cat("\nAuxiliary parameter(s):\n")
+      .printfr(x$stan_summary[aux_nms, 1:2, drop=FALSE], digits, ...)
+    }
+    if (length(ppd_nms)) {
+      cat("\nSample avg. posterior predictive distribution of y:\n")
+      .printfr(x$stan_summary[ppd_nms, 1:2, drop=FALSE], digits, ...)
+    }
   }
   
-  if (is(x, "aov")) {
-    labels <- attributes(x$terms)$term.labels
-    patterns <- gsub(":", ".*:", labels)
-    dnms <- dimnames(extract(x$stanfit, pars = "beta", 
-                             permuted = FALSE))$parameters
-    groups <- sapply(patterns, simplify = FALSE, FUN = grep, x = dnms)
-    names(groups) <- gsub(".*", "", names(groups), fixed = TRUE)
-    groups <- groups[sapply(groups, length) > 0]
-    effects_dim <- dim(x$effects)
-    effects <- x$effects^2
-    effects <- sapply(groups, FUN = function(i) {
-      apply(effects[, , i, drop = FALSE], 1:2, mean)
-    })
-    dim(effects) <- c(effects_dim[-3], ncol(effects))
-    dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
-    colnames(effects) <- paste("Mean Sq", names(groups))
-    cat("\nANOVA-like table:\n")
-    anova_table <- .median_and_madsd(effects)
-    .printfr(anova_table, digits, ...)
-  }
-
   cat("\n------\n")
   cat("* For help interpreting the printed output see ?print.stanreg\n")
   cat("* For info on the priors used see ?prior_summary.stanreg\n")
@@ -706,3 +708,38 @@ formula_string <- function(formula, break_and_indent = TRUE) {
   gsub("--MARK--", "\n\t  ", char, fixed = TRUE)
 }
 
+# get name of aux parameter based on family
+.aux_name <- function(object) {
+  aux <- character()
+  if (!is_polr(object)) {
+    aux <- .rename_aux(family(object))
+    if (is.na(aux)) {
+      aux <- character()
+    }
+  }
+  return(aux)
+}
+
+
+# print anova table for stan_aov models
+# @param x stanreg object created by stan_aov()
+print_anova_table <- function(x, digits, ...) {
+  labels <- attributes(x$terms)$term.labels
+  patterns <- gsub(":", ".*:", labels)
+  dnms <- dimnames(extract(x$stanfit, pars = "beta", 
+                           permuted = FALSE))$parameters
+  groups <- sapply(patterns, simplify = FALSE, FUN = grep, x = dnms)
+  names(groups) <- gsub(".*", "", names(groups), fixed = TRUE)
+  groups <- groups[sapply(groups, length) > 0]
+  effects_dim <- dim(x$effects)
+  effects <- x$effects^2
+  effects <- sapply(groups, FUN = function(i) {
+    apply(effects[, , i, drop = FALSE], 1:2, mean)
+  })
+  dim(effects) <- c(effects_dim[-3], ncol(effects))
+  dim(effects) <- c(nrow(effects) * ncol(effects), dim(effects)[3])
+  colnames(effects) <- paste("Mean Sq", names(groups))
+  anova_table <- .median_and_madsd(effects)
+  cat("\nANOVA-like table:\n")
+  .printfr(anova_table, digits, ...)
+}

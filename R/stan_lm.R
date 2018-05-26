@@ -93,10 +93,11 @@
 #'   checking convergence because it is reasonably normally distributed
 #'   and a function of all the parameters in the model.
 #'   
-#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}} and
-#'   has a somewhat customized \code{\link{print}} method but basically just 
-#'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
-#'   variance.
+#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}}, but
+#'   does a Bayesian analysis of variance that is basically equivalent to
+#'   \code{stan_lm} with dummy variables. \code{stan_aov} has a somewhat
+#'   customized \code{\link{print}} method that prints an ANOVA-like table in
+#'   addition to the output printed for \code{stan_lm} models.
 #'   
 #'   
 #' @references 
