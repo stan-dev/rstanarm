@@ -108,12 +108,11 @@ print.stanreg <- function(x, digits = 1, ...) {
       cut_mat <- mat[, cut_nms, drop = FALSE]
       cut_estimates <- .median_and_madsd(cut_mat)
     }
+    
     ppd_nms <- grep("^mean_PPD", nms, value = TRUE)
     nms <- setdiff(nms, ppd_nms)
     coef_mat <- mat[, nms, drop = FALSE]
-    ppd_mat <- mat[, ppd_nms, drop = FALSE]
     estimates <- .median_and_madsd(coef_mat)
-    ppd_estimates <- .median_and_madsd(ppd_mat)
     
     if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
@@ -142,7 +141,10 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (is(x, "aov")) {
       print_anova_table(x, digits, ...)
     }
-    if (!is_clogit(x)) {
+    if (!no_mean_PPD(x) && !is_clogit(x)) {
+      ppd_mat <- mat[, ppd_nms, drop = FALSE]
+      ppd_estimates <- .median_and_madsd(ppd_mat)
+      
       cat("\nSample avg. posterior predictive distribution of y:\n")
       .printfr(ppd_estimates, digits, ...)
     }
@@ -159,7 +161,7 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("\nAuxiliary parameter(s):\n")
       .printfr(x$stan_summary[aux_nms, 1:2, drop=FALSE], digits, ...)
     }
-    if (length(ppd_nms)) {
+    if (length(ppd_nms) && !no_mean_PPD(x)) {
       cat("\nSample avg. posterior predictive distribution of y:\n")
       .printfr(x$stan_summary[ppd_nms, 1:2, drop=FALSE], digits, ...)
     }
@@ -734,4 +736,11 @@ print_anova_table <- function(x, digits, ...) {
   anova_table <- .median_and_madsd(effects)
   cat("\nANOVA-like table:\n")
   .printfr(anova_table, digits, ...)
+}
+
+
+# equivalent to isFALSE(object$compute_mean_PPD)
+no_mean_PPD <- function(object) {
+  x <- object$compute_mean_PPD
+  is.logical(x) && length(x) == 1L && !is.na(x) && !x
 }

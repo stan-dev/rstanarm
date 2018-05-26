@@ -59,10 +59,11 @@
 #'   smooth nonlinear function of the predictors indicated by the \code{formula}
 #'   argument to \code{\link{stan_gamm4}}.
 #' @param mean_PPD A logical value indicating whether the sample mean of the
-#'   posterior predictive distribution of the outcome should be calculated. If
-#'   \code{TRUE} then \code{mean_PPD} is computed and displayed as a diagnostic
-#'   in the \link[=print.stanreg]{printed output}. The default is \code{TRUE}
-#'   except if \code{algorithm=="optimizing"}. A useful heuristic is to check if
+#'   posterior predictive distribution of the outcome should be calculated in
+#'   the \code{generated quantities} block. If \code{TRUE} then \code{mean_PPD}
+#'   is computed and displayed as a diagnostic in the
+#'   \link[=print.stanreg]{printed output}. The default is \code{TRUE} except if
+#'   \code{algorithm=="optimizing"}. A useful heuristic is to check if
 #'   \code{mean_PPD} is plausible when compared to \code{mean(y)}. If it is
 #'   plausible then this does \emph{not} mean that the model is good in general
 #'   (only that it can reproduce the sample mean), but if \code{mean_PPD} is
@@ -240,6 +241,7 @@ stan_glm <-
                stan_function = "stan_glm")
   
   out <- stanreg(fit)
+  out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
     out$x <- NULL
