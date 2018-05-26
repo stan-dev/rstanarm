@@ -142,7 +142,7 @@ model {
                       regularization, delta, shape, t, p);
 }
 generated quantities {
-  real mean_PPD = negative_infinity();
+  real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
   
   if (has_intercept == 1) {
@@ -151,7 +151,6 @@ generated quantities {
   }
   
   if (compute_mean_PPD) {
-    mean_PPD = 0;
     vector[N[1]] pi0;
     vector[N[2]] pi1;
     // defines eta0, eta1
