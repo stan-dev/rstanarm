@@ -429,6 +429,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_k)
       )
     if (save_fits) {
@@ -715,6 +716,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
@@ -768,7 +770,8 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  d <- x[["data"]] # either data frame or environment
+  # either data frame or environment
+  d <- x[["data"]] 
 
   sub <- getCall(x)[["subset"]]
   if (!is.null(sub)) {
@@ -776,8 +779,17 @@ kfold_and_reloo_data <- function(x) {
   }
 
   if (is.environment(d)) {
-    d <- get_all_vars(formula(x), d) # now d is a data frame
+    # make data frame
+    d <- get_all_vars(formula(x), data = d) 
+  } else {
+    # already a data frame
+    all_vars <- all.vars(formula(x))
+    if ("." %in% all_vars) {
+      all_vars <- seq_len(ncol(d))
+    }
+    d <- d[, all_vars, drop=FALSE]
   }
+  
   if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
@@ -788,6 +800,7 @@ kfold_and_reloo_data <- function(x) {
     strata_var <- as.character(getCall(x)$strata)
     d[[strata_var]] <- model.weights(model.frame(x))
   }
+  
   return(d)
 }
 

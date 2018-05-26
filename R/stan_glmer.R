@@ -111,6 +111,7 @@ stan_glmer <-
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- make_glmerControl()
+  mc$data <- data
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
