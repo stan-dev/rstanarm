@@ -916,6 +916,7 @@ summarize_glm_prior <-
     return(prior_list)
   }
 
+# rename aux parameter based on family
 .rename_aux <- function(family) {
   fam <- family$family
   if (is.gaussian(fam)) "sigma" else
