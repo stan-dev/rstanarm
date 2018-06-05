@@ -54,7 +54,7 @@ The content of the vignette is based on Bob Carpenter's Stan tutorial
 *[Hierarchical Partial Pooling for Repeated Binary Trials](http://mc-stan.org/users/documentation/case-studies/pool-binary-trials.html)*,
 but here we show how to fit the models and carry out predictions and model 
 checking and comparison using **rstanarm**. Most of the text is taken from the 
-original, with some additions and substractions to make the content more useful 
+original, with some additions and subtractions to make the content more useful
 for **rstanarm** users. The Stan code from the original tutorial has also been 
 entirely removed, as **rstanarm** will fit all of the models in Stan without the
 user having to write the underlying Stan programs. The Stan code in the original
@@ -285,7 +285,7 @@ batting_avg(pool)
 
 With more data, such as from more players or from the rest of the season, the
 posterior approaches a delta function around the maximum likelihood estimate and
-the posterior interval around the centeral posterior intervals will shrink. 
+the posterior interval around the central posterior intervals will shrink.
 Nevertheless, even if we know a player's chance of success exactly, there is a
 large amount of uncertainty in running $K$ binary trials with that chance of
 success; using a binomial model fundamentally bounds our prediction accuracy.
@@ -303,7 +303,7 @@ independent.
 
 **rstanarm** will again parameterize the model in terms of the log-odds, 
 $\alpha_n = \mathrm{logit}(\theta_n)$, so the likelihood then uses the log-odds
-of succes $\alpha_n$ for unit $n$ in modeling the number of successes $y_n$ as
+of success $\alpha_n$ for unit $n$ in modeling the number of successes $y_n$ as
 
 \[
 p(y_n \, | \, \alpha_n) = 
@@ -493,7 +493,7 @@ conditioned on $y$.
 Because the posterior predictive density is formulated as an
 expectation over the posterior, it is possible to compute via MCMC.
 With $M$ draws $\theta^{(m)}$ from the posterior $p(\theta \, | \,
-y)$, the posterior predicitve log density for new data
+y)$, the posterior predictive log density for new data
 $y^{\mathrm{new}}$ is given by the MCMC approximation
 
 \[
@@ -530,7 +530,7 @@ the season based on their initial 45 at bats.
 
 ### Calibration
 
-A well calibrated statistical model is one in which the uncertainy in
+A well calibrated statistical model is one in which the uncertainty in
 the predictions matches the uncertainty in further data.  That is, if
 we estimate posterior 50% intervals for predictions on new data (here,
 number of hits in the rest of the season for each player), roughly 50%
@@ -581,7 +581,7 @@ intervals (Gneiting et al. 2007).
 
 ### $\log E[p(\tilde{y} \, | \, \theta)]$ vs $E[\log p(\tilde{y} \, | \, \theta)]$
 
-The log of posterior predicitve density is defined in the obvious way as
+The log of posterior predictive density is defined in the obvious way as
 
 \[
 \log p(\tilde{y} \, | \, y)
@@ -746,7 +746,7 @@ log_sum_exp <- function(u) {
   max_u + log(a)
 }
 
-# Or equivalenty using vectorization
+# Or equivalently using vectorization
 log_sum_exp <- function(u) {
   max_u <- max(u)
   max_u + log(sum(exp(u - max_u)))
@@ -779,7 +779,7 @@ slightly better predictions than the no pooling model.
 
 #### Approximating the expected log predictive density
 
-Ventari, Gelman, and Gabry (2016) shows that the expected log predictive 
+Vehtari, Gelman, and Gabry (2016) shows that the expected log predictive
 density can be approximated using the `loo` function for each model and 
 then compared across models:
 ```{r, loo}
@@ -1090,7 +1090,7 @@ chance_gt_350 <- round(100 * colMeans(some_gt_350_all))
 
 The probability estimate of there being a player with an ability (chance of
 success) greater than 0.350 is essentially zero in the complete and 
-is essentually guaranteed in the no pooling model. The partially pooled
+is essentially guaranteed in the no pooling model. The partially pooled
 estimates would not be considered significant at conventional p=0.05 thresholds. 
 One way to get a handle on what's going on is to inspect the posterior 80%
 intervals for chance-of-success estimates in the first graph above.
@@ -1253,7 +1253,7 @@ Y^{\mathrm{rep}}$.  As usual, we use the integration sign in a general
 way intended to include summation, as with the discrete variable
 $y^{\mathrm{rep}}$.
 
-The formualation as an expectation leads to the obvious MCMC
+The formulation as an expectation leads to the obvious MCMC
 calculation based on posterior draws $y^{\mathrm{rep} (m)}$ for
 $m \in 1{:}M$,
 
@@ -1281,7 +1281,7 @@ functions defined in the Global Environment) that takes a vector as an input and
 returns a scalar. 
 
 To make plots for each of the models for several test statistics we can use the
-following code, which will greate a list of ggplot objects for each model and 
+following code, which will create a list of ggplot objects for each model and
 then arrange everything in a single plot.
 
 ```{r, plot-ppc-stats}
@@ -1377,7 +1377,7 @@ other than provide more informative priors, which is well worth doing when prior
 information is available.
 
 On the other hand, with more data, the models provide similar results (see the
-exericses), and in the limit, all of the models (other than complete pooling)
+exercises), and in the limit, all of the models (other than complete pooling)
 converge to posteriors that are delta functions around the empirical chance of 
 success (i.e., the maximum likelihood estimate).  Meanwhile, Bayesian inference
 is allowing us to make more accurate predictions with the data available before
@@ -1480,7 +1480,7 @@ variable itself?  Why might this be important in inference?
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
   
-* Ventari, A, Gelman, A., & Gabry, J. (2016)  Practical Bayesian model 
+* Vehtari, A, Gelman, A., & Gabry, J. (2016)  Practical Bayesian model
   evaluation using leave-one-out cross-validation and WAIC. [
   [pdf](http://arxiv.org/abs/1507.04544)
   ]

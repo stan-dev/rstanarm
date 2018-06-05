@@ -134,10 +134,8 @@
 #' compare_models(loos = list(loo1, loo2)) # can also provide list
 #'
 #' # when comparing three or more models they are ordered by
-#' # expected predictive accuracy. unlike when doing a pairwise
-#' # comparison of two models, now the diplayed standard errors
-#' # do _not_ pertain to differences but rather to the individual
-#' # elpd_loo estimates.
+#' # expected predictive accuracy. elpd_diff and se_diff are relative
+#' # to the model with best elpd_loo (first row)
 #' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' compare_models(loo1, loo2, loo3)
@@ -154,13 +152,6 @@
 #' # for loo_models weights to call loo() internally
 #' loo_list <- list(fit1 = loo1, fit2 = loo2, fit3 = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
-#'
-#' # averaging predictions
-#' wts <- loo_model_weights(loo_list)
-#' yrep1 <- posterior_predict(fit1)
-#' yrep2 <- posterior_predict(fit2)
-#' yrep3 <- posterior_predict(fit3)
-#' wt_avg_yrep <- wts[1] * yrep1 + wts[2] * yrep2 + wts[3] * yrep3
 #' 
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
@@ -438,6 +429,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_k)
       )
     if (save_fits) {
@@ -526,6 +518,10 @@ print.kfold <- function(x, digits = 1, ...) {
 #'   and arranges them in descending order according to expected out-of-sample
 #'   predictive accuracy. That is, the first row of the matrix will be
 #'   for the model with the largest ELPD (smallest LOOIC).
+#'   The columns containing the ELPD difference and the standard error of the 
+#'   difference contain values relative to the model with the best ELPD.
+#'   See the \strong{Details} section at the \code{\link[loo]{compare}}
+#'   page in the \pkg{loo} package for more information.
 #'
 compare_models <- function(..., loos = list(), detail = FALSE) {
   dots <- list(...)
@@ -720,6 +716,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
+        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
@@ -773,7 +770,8 @@ log_mean_exp <- function(x) {
 # @param x stanreg object
 # @return data frame
 kfold_and_reloo_data <- function(x) {
-  d <- x[["data"]] # either data frame or environment
+  # either data frame or environment
+  d <- x[["data"]] 
 
   sub <- getCall(x)[["subset"]]
   if (!is.null(sub)) {
@@ -781,8 +779,17 @@ kfold_and_reloo_data <- function(x) {
   }
 
   if (is.environment(d)) {
-    d <- get_all_vars(formula(x), d) # now d is a data frame
+    # make data frame
+    d <- get_all_vars(formula(x), data = d) 
+  } else {
+    # already a data frame
+    all_vars <- all.vars(formula(x))
+    if ("." %in% all_vars) {
+      all_vars <- seq_len(ncol(d))
+    }
+    d <- d[, all_vars, drop=FALSE]
   }
+  
   if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
@@ -793,6 +800,7 @@ kfold_and_reloo_data <- function(x) {
     strata_var <- as.character(getCall(x)$strata)
     d[[strata_var]] <- model.weights(model.frame(x))
   }
+  
   return(d)
 }
 

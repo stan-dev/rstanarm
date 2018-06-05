@@ -683,25 +683,6 @@ model_has_weights <- function(x) {
   }
 }
 
-
-# Validate newdata argument for posterior_predict, log_lik, etc.
-#
-# Doesn't check if the correct variables are included (that's done in pp_data),
-# just that newdata is either NULL or a data frame with no missing values.
-# @param x User's 'newdata' argument
-# @return Either NULL or a data frame
-#
-validate_newdata <- function(x) {
-  if (is.null(x))
-    return(NULL)
-  if (!is.data.frame(x))
-    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
-  if (any(is.na(x)))
-    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
-
-  as.data.frame(x)
-}
-
 # Check that a stanfit object (or list returned by rstan::optimizing) is valid
 #
 check_stanfit <- function(x) {
@@ -719,22 +700,30 @@ check_stanfit <- function(x) {
 
 # Validate data argument
 #
-# Make sure that, if specified, data is a data frame.
-# 
+# Make sure that, if specified, data is a data frame. If data is not missing
+# then dimension reduction is also performed on variables (i.e., a one column
+# matrix inside a data frame is converted to a vector).
+#
 # @param data User's data argument
 # @param if_missing Object to return if data is missing/null
-# @return If no error is thrown, data itself is returned if not missing/null, 
+# @return If no error is thrown, data itself is returned if not missing/null,
 #   otherwise if_missing is returned.
-# 
+#
+drop_redundant_dims <- function(data) {
+  drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
+  data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
+  return(data)
+}
 validate_data <- function(data, if_missing = NULL) {
   if (missing(data) || is.null(data)) {
     warn_data_arg_missing()
     return(if_missing)
   }
-  if (!is.data.frame(data))
+  if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
+  }
   
-  return(data)
+  drop_redundant_dims(data)
 }
 
 # Throw a warning if 'data' argument to modeling function is missing
@@ -747,6 +736,32 @@ warn_data_arg_missing <- function() {
     call. = FALSE
   )
 }
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+# just that newdata is either NULL or a data frame with no missing values. Also
+# drops any unused dimensions in variables (e.g. a one column matrix inside a
+# data frame is converted to a vector).
+# 
+# @param x User's 'newdata' argument
+# @return Either NULL or a data frame
+#
+validate_newdata <- function(x) {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  if (!is.data.frame(x)) {
+    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
+  }
+  if (any(is.na(x))) {
+    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
+  }
+  
+  x <- as.data.frame(x)
+  drop_redundant_dims(x)
+}
+
 
 
 #---------------------- for stan_{mvmer,jm} only -----------------------------
@@ -997,7 +1012,7 @@ collect_nms <- function(x, M, stub = "Long", ...) {
   b <- b_names(x, ...)
   y_b <- lapply(1:M, function(m) b_names_M(x, m, stub = stub, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
-  alpha <- c(alpha, grep("^", stub, ".{1}\\|\\(Intercept\\)", x, ...))      
+  alpha <- c(alpha, grep(pattern=paste0("^", stub, ".{1}\\|\\(Intercept\\)"), x=x, ...))
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta, ppd) 
 }

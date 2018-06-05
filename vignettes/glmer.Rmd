@@ -36,7 +36,7 @@ Models with this structure are refered to by many names: multilevel models,
 (generalized) linear mixed (effects) models (GLMM), hierarchical (generalized)
 linear models, etc. In the simplest case, the model for an outcome can be written as
 $$\mathbf{y} = \alpha + \mathbf{X} \boldsymbol{\beta} + \mathbf{Z} \mathbf{b} + \boldsymbol{\epsilon},$$
-where $\mathbf{X}$ is a matrix predictors that is analagous to that in Generalized
+where $\mathbf{X}$ is a matrix predictors that is analogous to that in Generalized
 Linear Models and $\mathbf{Z}$ is a matrix that encodes deviations in the 
 predictors across specified groups.
 
@@ -64,7 +64,7 @@ a "parameter" to be estimated because parameters are unknown constants that are
 fixed in repeated sampling.
 
 Bayesians condition on the data in-hand without reference to repeated sampling
-and describe their _beliefs_ about the unknows with prior distributions before
+and describe their _beliefs_ about the unknowns with prior distributions before
 observing the data. Thus, the likelihood in a simple hierarchical model in
 __rstarnarm__ is
 $$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{b}, \sigma^2 \mathbf{I}\right)$$
@@ -88,7 +88,7 @@ if there actually were no between-group heterogeneity. Group-by-group analyses, 
 the other hand, are valid but produces estimates that are relatively imprecise. 
 While complete pooling or no pooling of data across groups is sometimes called for, 
 models that ignore the grouping structures in the data tend to underfit or overfit 
-(Gelman et al.,2013). Hierachical modeling provides a compromise by allowing parameters 
+(Gelman et al.,2013). Hierarchical modeling provides a compromise by allowing parameters
 to vary by group at lower levels of the hierarchy while estimating common
 parameters at higher levels. Inference for each group-level parameter is
 informed not only by the group-specific information contained in the data but
@@ -106,7 +106,7 @@ priors are discussed in greater detail below.
 
 # Priors on covariance matrices
 
-In this section we dicuss a flexible family of prior distributions for the
+In this section we discuss a flexible family of prior distributions for the
 unknown covariance matrices of the group-specific coefficients.
 
 
@@ -191,7 +191,7 @@ advantages as well as an important disadvantage.
 While __lme4__ uses (restricted) maximum likelihood (RE)ML estimation, 
 __rstanarm__ enables full Bayesian inference via MCMC to be performed. It is
 well known that (RE)ML tends to underestimate uncertainties because it relies on
-point estimates of hyperparameters. Full Bayes, on the other hand, propogates
+point estimates of hyperparameters. Full Bayes, on the other hand, propagates
 the uncertainty in the hyperparameters throughout all levels of the model and 
 provides more appropriate estimates of uncertainty for models that consist of a 
 mix of common and group-specific parameters.
@@ -336,7 +336,7 @@ post1
 ```
 
 In `stan_nlmer`, it is not necessary to supply starting values; however, in this
-case it was necessary to specify the `init_r` argument so that the ranomly-chosen
+case it was necessary to specify the `init_r` argument so that the randomly-chosen
 starting values were not more than $0.5$ away from zero (in the unconstrained
 parameter space). The default value of $2.0$ produced suboptimal results.
 

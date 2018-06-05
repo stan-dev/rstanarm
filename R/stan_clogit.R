@@ -105,6 +105,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
              table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   names(mf)[length(mf)] <- "weights"
+  mf$data <- data
   err <- try(eval(mf$weights, data, enclos = NULL), silent = TRUE)
   if (inherits(err, "try-error")) {
     stop("the 'stratum' argument must be evaluatable solely within 'data'")

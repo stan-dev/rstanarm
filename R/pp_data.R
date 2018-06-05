@@ -47,8 +47,13 @@ pp_data <-
   }
   if (is.null(newdata)) {
     x <- get_x(object)
-    if (is.null(offset)) 
+    if (is.null(offset)) {
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
+    }
+    if (inherits(object, "betareg")) {
+      return(nlist(x, offset, z_betareg = object$z))
+    }
+    
     return(nlist(x, offset))
   }
 
@@ -61,7 +66,15 @@ pp_data <-
   if (is(object, "polr") && !is_scobit(object)) 
     x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
   
-  nlist(x, offset)
+  if (inherits(object, "betareg")) {
+    mf <- model.frame(delete.response(object$terms$precision), 
+                      data = newdata, na.action = object$na.action, 
+                      xlev = object$levels$precision)
+    z_betareg <- model.matrix(object$terms$precision, mf, contrasts = object$contrasts$precision)
+    return(nlist(x, offset, z_betareg))
+  }
+  
+  return(nlist(x, offset))
 }
 
 
@@ -183,7 +196,7 @@ pp_data <-
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     NAs <- apply(is.na(x), 1, any)
-    rfd <- mfnew <- newdata[!NAs,]
+    rfd <- mfnew <- newdata[!NAs,, drop=FALSE]
     attr(rfd,"na.action") <- "na.omit"
   } else {
     terms_fixed <- delete.response(terms(object, fixed.only = TRUE, m = m))
