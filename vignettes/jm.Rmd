@@ -531,7 +531,7 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
 The argument `refresh = 2000` was specified so that Stan didn't provide us with excessive progress updates whilst fitting the model. However, if you are fitting a model that will take several minutes or hours to fit, then you may wish to request progress updates quite regularly, for example setting `refresh = 20` for every 20 iterations (by default the refresh argument is set to 1/10th of the total number of iterations). 
 
-The fitted model is returned as an object of the S3 class `stanjm`. We have a variety of methods and post-estimation functions available for this class, including: `print`, `summary`, `plot`, `fixef`, `ranef`, `coef`, `VarCorr`, `posterior_interval`, `update`, and more. Here, we will examine the most basic output for the fitted joint model by typing `print(f1)`:
+The fitted model is returned as an object of the S3 class `stanjm`. We have a variety of methods and post-estimation functions available for this class, including: `print`, `summary`, `plot`, `fixef`, `ranef`, `coef`, `VarCorr`, `posterior_interval`, `update`, and more. Here, we will examine the most basic output for the fitted joint model by typing `print(mod1)`:
 
 ```{r print, echo = FALSE}
 print(mod1)
