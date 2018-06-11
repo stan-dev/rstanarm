@@ -171,7 +171,7 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
-    
+    if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
     if (is.null(link.phi) && is.null(Z))
       link_phi <- "identity"
     sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)

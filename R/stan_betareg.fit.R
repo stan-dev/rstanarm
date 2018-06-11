@@ -354,7 +354,8 @@ stan_betareg.fit <-
       if (!QR) 
         recommend_QR_for_vb()
     }
-    check_stanfit(stanfit)
+    check <- check_stanfit(stanfit)
+    if (!isTRUE(check)) return(standata)
     if (QR) {
       if (ncol(xtemp) > 1) {
         thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 

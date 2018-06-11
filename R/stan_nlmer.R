@@ -148,7 +148,7 @@ stan_nlmer <-
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = QR, sparse = sparse, ...)
-  
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   if (SSfun_char == "SSfpl") { # SSfun = 6
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x[[4L]] <- exp(x[[4L]])

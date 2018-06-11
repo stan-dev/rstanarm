@@ -907,7 +907,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                          algorithm = algorithm, ...)    
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
 
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)
