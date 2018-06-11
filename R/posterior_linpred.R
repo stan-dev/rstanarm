@@ -79,10 +79,10 @@ posterior_linpred.stanreg <-
            offset = NULL,
            XZ = FALSE,
            ...) {
-    if (used.optimizing(object))
-      STOP_not_optimizing("posterior_linpred")
-    if (is.stanmvreg(object))
+
+    if (is.stanmvreg(object)) {
       STOP_if_stanmvreg("'posterior_linpred'")
+    }
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,
@@ -107,16 +107,24 @@ posterior_linpred.stanreg <-
       return(eta)
     }
     
-    g <- linkinv(object)
     if (is_clogit(object)) {
-      if (!is.null(newdata)) {
-        y <- eval(formula(object)[[2L]], newdata)
-        strata <- as.factor(eval(object$call$strata, newdata))
-        formals(g)$g <- strata
-        formals(g)$successes <- aggregate(y, by = list(strata), FUN = sum)$x
-      }
-      return(t(apply(eta, 1, FUN = g)))
+      return(clogit_linpred_transform(object, newdata = newdata, eta = eta))
     }
     
+    g <- linkinv(object)
     return(g(eta))
   }
+
+
+
+# internal ----------------------------------------------------------------
+clogit_linpred_transform <- function(object, newdata = NULL, eta = NULL) {
+  g <- linkinv(object)
+  if (!is.null(newdata)) {
+    y <- eval(formula(object)[[2L]], newdata)
+    strata <- as.factor(eval(object$call$strata, newdata))
+    formals(g)$g <- strata
+    formals(g)$successes <- aggregate(y, by = list(strata), FUN = sum)$x
+  }
+  return(t(apply(eta, 1, FUN = g)))
+}
