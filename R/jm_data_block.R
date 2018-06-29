@@ -336,6 +336,8 @@ summarize_jm_prior <-
            user_priorEvent_aux = NULL,
            user_priorEvent_assoc = NULL,
            user_prior_covariance = NULL,
+           b_user_prior_stuff = NULL,
+           b_prior_stuff = NULL,
            y_has_intercept = NULL,
            e_has_intercept = NULL,
            y_has_predictors = NULL,
@@ -486,8 +488,31 @@ summarize_jm_prior <-
         ))
     }
     
-    if (length(user_prior_covariance))
-      prior_list$prior_covariance <- user_prior_covariance
+    if (length(user_prior_covariance)) {
+      if (user_prior_covariance$dist == "decov") {
+        prior_list$prior_covariance <- user_prior_covariance
+      } else if (user_prior_covariance$dist == "lkj") {
+        # lkj prior for correlation matrix
+        prior_list$prior_covariance <- user_prior_covariance
+        # half-student_t prior on SD for each ranef (possibly autoscaled)
+        prior_list$prior_covariance$df <- b_user_prior_stuff$prior_df
+        prior_list$prior_covariance$scale <- b_user_prior_stuff$prior_scale
+        adj_scales <- uapply(b_prior_stuff, FUN = uapply, '[[', "prior_scale")
+        if (!all(b_user_prior_stuff$prior_scale == adj_scales)) {
+          prior_list$prior_covariance$adjusted_scale <- adj_scales
+        } else {
+          prior_list$prior_covariance$adjusted_scale <- NULL
+        }
+      } else {
+        prior_list$prior_covariance <- NULL
+      }
+    }
+    
+    if (!stub_for_names == "Long") {
+      nms <- names(prior_list)
+      new_nms <- gsub("Long", "", nms)
+      names(prior_list) <- new_nms
+    }
     
     return(prior_list)
   }

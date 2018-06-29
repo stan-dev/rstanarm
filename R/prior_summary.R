@@ -167,7 +167,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["prior_intercept"]][[m]]))
         .print_scalar_prior(
           x[["prior_intercept"]][[m]], 
-          txt = paste0(if (M > 1) "\n", "y", m, "|Intercept", if (!sparse) 
+          txt = paste0(if (m > 1) "\n", "y", m, "|Intercept", if (!sparse) 
             " (after predictors centered)"), 
           formatters
         )
@@ -208,7 +208,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))
         .print_scalar_prior(
           x[["priorLong_intercept"]][[m]], 
-          txt = paste0(if (M > 1) "\n", "Long", m, "|Intercept", if (!sparse) 
+          txt = paste0(if (m > 1) "\n", "Long", m, "|Intercept", if (!sparse) 
             " (after predictors centered)"), 
           formatters
         )
@@ -401,15 +401,34 @@ used.sparse <- function(x) {
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
 }
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
-  .f1 <- formatters[[1]]
-  p$regularization <- .format_pars(p$regularization, .f1)
-  p$concentration <- .format_pars(p$concentration, .f1)
-  p$shape <- .format_pars(p$shape, .f1)
-  p$scale <- .format_pars(p$scale, .f1)
-  cat(paste0("\n", txt, "\n ~"),
-      paste0(p$dist, "(",  
-             "reg. = ", .f1(p$regularization),
-             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
-             ", scale = ", .f1(p$scale), ")")
-  )
+  if (p$dist == "decov") {
+    .f1 <- formatters[[1]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$concentration <- .format_pars(p$concentration, .f1)
+    p$shape <- .format_pars(p$shape, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "reg. = ",    .f1(p$regularization),
+               ", conc. = ", .f1(p$concentration), 
+               ", shape = ", .f1(p$shape),
+               ", scale = ", .f1(p$scale), ")")
+    )    
+  } else if (p$dist == "lkj") {
+    .f1 <- formatters[[1]]
+    .f2 <- formatters[[2]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$df <- .format_pars(p$df, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    if (!is.null(p$adjusted_scale))
+      p$adjusted_scale <- .format_pars(p$adjusted_scale, .f2)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "reg. = ",    .f1(p$regularization),
+               ", df = ",    .f1(p$df), 
+               ", scale = ", .f1(p$scale), ")")
+    )    
+    if (!is.null(p$adjusted_scale))
+      cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+  }
 }
