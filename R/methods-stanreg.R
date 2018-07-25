@@ -118,7 +118,7 @@ fitted.stanreg <- function(object, ...)  {
 #' @rdname stanreg-methods
 #' @export 
 nobs.stanreg <- function(object, ...) {
-  nrow(model.frame(object))
+  if (is.surv(object)) object$nobs else nrow(model.frame(object))
 }
 
 #' @rdname stanreg-methods
@@ -335,6 +335,9 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
       fr <- fr[vars]
     }
     return(fr)
+  }
+  if (is.stansurv(formula)) {
+    return(formula$model_frame)
   }
   
   NextMethod("model.frame")

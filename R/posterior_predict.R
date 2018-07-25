@@ -143,6 +143,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
                                       offset = NULL, ...) {
   if (used.optimizing(object))
     STOP_not_optimizing("posterior_predict")
+  if (is.stansurv(object))
+    STOP_if_stansurv("'poterior_linpred'")
   if (!is.null(seed))
     set.seed(seed)
   if (!is.null(fun))
@@ -396,8 +398,7 @@ pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   if (is.null(draws))
     draws <- S
   if (draws > S) {
-    err <- paste0("'draws' should be <= posterior sample size (",
-                  S, ").")
+    err <- paste0("'draws' should be <= posterior sample size (", S, ").")
     stop(err)
   }
   some_draws <- isTRUE(draws < S)
@@ -434,6 +435,12 @@ pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
     if (is.null(data$arg1)) eta <- linkinv(object)(eta)
     else eta <- linkinv(object)(eta, data$arg1, data$arg2)
     eta <- t(eta)
+  }
+  if (is.stansurv(object)) {
+    
+    basehaz <- evaluate_log_basehaz(times   = data$times, 
+                                    basehaz = data$basehaz,
+                                    coefs   = draws$coefs)
   }
   nlist(eta, stanmat)
 }

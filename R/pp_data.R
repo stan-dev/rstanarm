@@ -32,10 +32,15 @@ pp_data <-
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
+    if (is.surv(object)) {
+      out <- .pp_data_surv(object, newdata = newdata, ...)
+    }
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
-# for models without lme4 structure
+
+#-------------  for models without lme4 structure  -------------------------
+
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -65,7 +70,8 @@ pp_data <-
 }
 
 
-# for models fit using stan_(g)lmer or stan_gamm4
+#---------  for models fit using stan_(g)lmer or stan_gamm4  -----------------
+
 .pp_data_mer <- function(object, newdata, re.form, m = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -87,44 +93,6 @@ pp_data <-
     if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
-}
-
-# for models fit using stan_nlmer
-.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
-  inputs <- parse_nlf_inputs(object$glmod$respMod)
-  if (is.null(newdata)) {
-    arg1 <- arg2 <- NULL
-  } else if (object$family$link == "inv_SSfol") {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- newdata[[inputs[3]]]
-  } else {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- NULL
-  }
-  f <- formula(object, m = m)
-  if (!is.null(re.form) && !is.na(re.form)) {
-    f <- as.character(f)
-    f[3] <- as.character(re.form)
-    f <- as.formula(f[-1])
-  }
-  if (is.null(newdata)) newdata <- model.frame(object)
-  else {
-    yname <- names(model.frame(object))[1]
-    newdata[[yname]] <- 0
-  }
-  mc <- match.call(expand.dots = FALSE)
-  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
-  mc$data <- newdata
-  mc$formula <- f
-  mc$start <- fixef(object)
-  nlf <- nlformula(mc)
-  offset <- .pp_data_offset(object, newdata, offset)
-
-  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
-  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
-    group$Z@x <- 0
-  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
-               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 # the functions below are heavily based on a combination of 
@@ -220,40 +188,123 @@ pp_data <-
 }
 
 
+#-------------  for models fit using stan_nlmer  -----------------------------
 
-# handle offsets ----------------------------------------------------------
-null_or_zero <- function(x) {
-  isTRUE(is.null(x) || all(x == 0))
-}
-
-.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
+  inputs <- parse_nlf_inputs(object$glmod$respMod)
   if (is.null(newdata)) {
-    # get offset from model object (should be null if no offset)
-    if (is.null(offset)) 
-      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+    arg1 <- arg2 <- NULL
+  } else if (object$family$link == "inv_SSfol") {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- newdata[[inputs[3]]]
   } else {
-    if (!is.null(offset))
-      stopifnot(length(offset) == nrow(newdata))
-    else {
-      # if newdata specified but not offset then confirm that model wasn't fit
-      # with an offset (warning, not error)
-      if (!is.null(object$call$offset) || 
-          !null_or_zero(object$offset) || 
-          !null_or_zero(model.offset(model.frame(object)))) {
-        warning(
-          "'offset' argument is NULL but it looks like you estimated ", 
-          "the model using an offset term.", 
-          call. = FALSE
-        )
-      }
-      offset <- rep(0, nrow(newdata))
-    }
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- NULL
   }
-  return(offset)
+  f <- formula(object, m = m)
+  if (!is.null(re.form) && !is.na(re.form)) {
+    f <- as.character(f)
+    f[3] <- as.character(re.form)
+    f <- as.formula(f[-1])
+  }
+  if (is.null(newdata)) newdata <- model.frame(object)
+  else {
+    yname <- names(model.frame(object))[1]
+    newdata[[yname]] <- 0
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
+  mc$data <- newdata
+  mc$formula <- f
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
+  offset <- .pp_data_offset(object, newdata, offset)
+  
+  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+    group$Z@x <- 0
+  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
+               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 
-#----------------------- pp_data for joint models --------------------------
+#------------------  for models fit using stan_surv  -----------------------
+
+.pp_data_surv <- function(object, newdata, times, ...) {
+
+  formula <- object$formula
+  basehaz <- object$basehaz
+  
+  if (is.null(newdata))
+    newdata <- object$data # --> need to create get_model_data method...
+  
+  # make prediction model frame
+  Terms <- delete.response(terms(object))
+  mf <- model.frame(Terms, newdata, xlev = object$xlevels)
+
+  # throw error if delayed entry appears in prediction dataset
+  if (uses.start.stop(object)) {
+    t_beg <- make_t(formula, mf, type = "beg") # beg time
+    if (any(!t_beg == 0))
+      stop2("'posterior_survfit' cannot handle non-zero start times.")
+  }
+    
+  # flag for quadrature
+  has_tde         <- FALSE # not yet implemented
+  has_closed_form <- check_for_closed_form(basehaz)
+  uses_quadrature  <- has_tde || !has_closed_form
+  
+  if (uses_quadrature) { # model uses quadrature
+    
+    # number of nodes
+    qnodes <- object$qnodes
+    
+    # standardised weights and nodes
+    qq <- get_quadpoints(nodes = qnodes)
+    qp <- qq$points
+    qw <- qq$weights
+    
+    # quadrature points & weights, evaluated for each row of data
+    qpts <- uapply(qp, unstandardise_qpts, 0, times)
+    qwts <- uapply(qw, unstandardise_qwts, 0, times)
+    
+    # predictor matrix at quadrature points, including intercept if required
+    x_stuff <- make_pp_x(object, mf)
+    x <- x_stuff$x
+    x_qpts <- rep_rows(x, times = qnodes) # just replicate, since tde not yet implemented
+
+    # basis terms at quadrature points
+    basis_qpts <- make_basis(qpts, basehaz)
+
+    # prediction quantities
+    return(nlist(times, x, qpts, qwts, x_qpts, basis_qpts, uses_quadrature))
+    
+  } else { # model does not use quadrature
+
+    # predictor matrix, including intercept if required
+    x_stuff <- make_pp_x(object, mf)
+    x <- x_stuff$x
+
+    # basis terms
+    basis  <- make_basis(times, basehaz)
+    ibasis <- make_basis(times, basehaz, integrate = TRUE)
+    
+    # prediction quantities
+    return(nlist(times, x, basis, ibasis, uses_quadrature))
+  }
+}
+
+# Checks for the type of survival response, and whether the prediction
+# call therefore requires an id variable identifying individuals
+#
+# @param object A stansurv object.
+# @return A logical.
+uses.tde        <- function(object) { object$has_tde }
+uses.start.stop <- function(object) { object$formula$surv_type == "counting" }
+requires.idvar  <- function(object) { uses.start.stop(object) || uses.tde(object) }
+
+
+#--------------------  for models fit using stan_jm  -----------------------
 
 # Return the design matrices required for evaluating the linear predictor or
 # log-likelihood in post-estimation functions for a \code{stan_jm} model
@@ -449,3 +500,37 @@ get_model_data <- function(object, m = NULL) {
   mfs <- list_nms(mfs, M, stub = get_stub(object))
   if (is.null(m)) mfs else mfs[[m]]
 }
+
+
+#-----------------------  handle offsets  ----------------------------------
+
+null_or_zero <- function(x) {
+  isTRUE(is.null(x) || all(x == 0))
+}
+
+.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+  if (is.null(newdata)) {
+    # get offset from model object (should be null if no offset)
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+  } else {
+    if (!is.null(offset))
+      stopifnot(length(offset) == nrow(newdata))
+    else {
+      # if newdata specified but not offset then confirm that model wasn't fit
+      # with an offset (warning, not error)
+      if (!is.null(object$call$offset) || 
+          !null_or_zero(object$offset) || 
+          !null_or_zero(model.offset(model.frame(object)))) {
+        warning(
+          "'offset' argument is NULL but it looks like you estimated ", 
+          "the model using an offset term.", 
+          call. = FALSE
+        )
+      }
+      offset <- rep(0, nrow(newdata))
+    }
+  }
+  return(offset)
+}
+

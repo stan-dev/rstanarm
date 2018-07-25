@@ -1194,7 +1194,7 @@ handle_basehaz <- function(basehaz, basehaz_ops,
     
     bknots <- get_bknots(times)
     iknots <- get_iknots(tt, df = df, iknots = knots)
-    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "is")      
+    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
   } else if (basehaz == "piecewise") {

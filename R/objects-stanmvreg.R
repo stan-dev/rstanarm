@@ -127,7 +127,7 @@ stanmvreg <- function(object) {
     out$dataEvent <- object$dataEvent
     out$grp_stuff <- object$grp_stuff
     out$fr        <- object$fr
-    classes <- c("stanjm", classes)
+    classes <- c("stanjm", "stanmvreg", "stanreg", "lmerMod")
   }
   out <- rm_null(out, recursive = FALSE)
   structure(out, class = classes)

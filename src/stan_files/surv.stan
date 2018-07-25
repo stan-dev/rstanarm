@@ -270,8 +270,12 @@ data {
   matrix[qrows,nvars]    basis_qpts;         // spline basis for rows at quadpoints
   matrix[qdelayed,nvars] basis_qpts_delayed; // spline basis for rows at quadpoints
                                              //   for delayed entry
-  matrix[nevents,nvars]  deriv_events;       // deriv of spline basis for rows with
-                                             //   events; only used for I-splines model
+  matrix[nevents,nvars]  ibasis_events;      // integral of spline basis for rows with 
+	                                           //   events; only used for M-splines
+  matrix[ncensor,nvars]  ibasis_censor;      // integral of spline basis for rows with
+	                                           //   censoring; only used for M-splines
+  matrix[ndelayed,nvars] ibasis_delayed;     // integral of spline basis for rows with
+	                                           //   delayed entry; only used for M-splines
 
   // baseline hazard type:
   //   1 = weibull
@@ -476,13 +480,13 @@ model {
     }
     else if (type == 4) { // M-splines, on haz scale
       if (nevents > 0)
-        lsur_events = - dot_product(basis_events * coefs, exp(eta_events));
+        lsur_events = - dot_product(ibasis_events * coefs, exp(eta_events));
       if (ncensor > 0)
-        lsur_censor = - dot_product(basis_censor * coefs, exp(eta_censor));
+        lsur_censor = - dot_product(ibasis_censor * coefs, exp(eta_censor));
       if (ndelayed > 0)
-        lsur_delayed = - dot_product(basis_delayed * coefs, exp(eta_delayed));
+        lsur_delayed = - dot_product(ibasis_delayed * coefs, exp(eta_delayed));
       if (nevents > 0)
-        lhaz = sum(log(deriv_events * coefs) + eta_events);
+        lhaz = sum(log(basis_events * coefs) + eta_events);
     }
     else {
       reject("Bug found: invalid baseline hazard (without quadrature).");

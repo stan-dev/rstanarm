@@ -16,16 +16,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Bayesian proportional hazards regression
+#' Bayesian survival models via Stan
 #'
 #' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
-#' Bayesian inference for proportional hazards regression models. The user
-#' can specify a variety of standard parametric distributions for the
-#' baseline hazard, or a flexible parametric model using M-splines for 
-#' approximating the baseline hazard.
+#' Bayesian inference for proportional or non-proportional hazards regression 
+#' models. The user can specify a variety of standard parametric distributions 
+#' for the baseline hazard, or a flexible parametric model (using either 
+#' M-splines for modelling the baseline hazard, or B-splines for modelling 
+#' the log baseline hazard). Covariate effects can be accommodated under
+#' proportional hazards or non-proportional hazards (i.e. time-dependent 
+#' effects).
 #'
 #' @export
-#'
+#' 
 #' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_PD
@@ -42,82 +45,102 @@
 #'   for the event submodel. Current options are: 
 #'   \itemize{
 #'     \item \code{"ms"}: a flexible parametric model using M-splines to 
-#'     model the baseline hazard (or, equivalently, I-splines to model the 
-#'     cumulative hazard). The default locations for the internal knots, as 
-#'     well as the basis terms for the splines, are calculated with respect
-#'     to log time. A closed form solution is available for both the hazard
-#'     and cumulative hazard so this approach should be relatively fast.
+#'     model the baseline hazard. The default locations for the internal knots, 
+#'     as well as the basis terms for the splines, are calculated with respect
+#'     to time. If the model does \emph{not} include any time-dependendent 
+#'     effects then a closed form solution is available for both the hazard
+#'     and cumulative hazard and so this approach should be relatively fast.
+#'     On the other hand, if the model does include time-dependent effects then
+#'     quadrature is used to evaluate the cumulative hazard at each MCMC
+#'     iteration and, therefore, estimation of the model will be slower.
 #'     \item \code{"bs"}: a flexible parametric model using B-splines to model
 #'     the \emph{log} baseline hazard. The default locations for the internal 
 #'     knots, as well as the basis terms for the splines, are calculated with 
-#'     respect to log time. A closed form solution for the cumulative hazard 
-#'     is \strong{not} available and instead quadrature is used to evaluate 
-#'     the cumulative hazard at each MCMC iteration, so this approach is much 
-#'     slower than specifying \code{basehaz = "ms"}. The advantage is that it 
-#'     can accomodate time-dependent effects (ie. non-proportional hazards).
+#'     respect to time. A closed form solution for the cumulative hazard 
+#'     is \strong{not} available (regardless of whether or not the model includes
+#'     time-dependent effects) and therefore quadrature is used to evaluate 
+#'     the cumulative hazard at each MCMC iteration. Therefore, if the model
+#'     does not include any time-dependent effects, then estimation using the 
+#'     \code{"ms"} baseline will be faster.
 #'     \item \code{"exp"}: an exponential distribution for the event times. 
 #'     (i.e. a constant baseline hazard)
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
 #'   }
-#'   Note that all spline-based models used splines of degree 3 (ie. cubics).
-#' @param basehaz_ops A named list specifying options related to the baseline
+#'   Note that all spline-based models use splines of degree 3 (i.e. cubic
+#'   splines).
+#' @param basehaz_ops a named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
-#'   \describe{
-#'     \item{\code{df}}{A positive integer specifying the degrees of freedom 
-#'     for the M-splines / I-splines. The default is 6.}
-#'     \item{\code{knots}}{An optional numeric vector specifying the internal 
+#'   \itemize{
+#'     \item \code{df}: a positive integer specifying the degrees of freedom 
+#'     for the M-splines / I-splines. The default is 6.
+#'     \item \code{knots}: An optional numeric vector specifying the internal 
 #'     knot locations for the splines if \code{basehaz = "ms"}. Knots cannot be
 #'     specified if \code{df} is specified. If not specified, then the 
 #'     default is to use \code{df - 4} knots, which are
 #'     placed at equally spaced percentiles of the distribution of
-#'     uncensored event times.}
-#'     \item{\code{bknots}}{An optional numeric vector specifying the boundary 
+#'     uncensored event times.
+#'     \item \code{bknots}: an optional numeric vector specifying the boundary 
 #'     knot locations for the splines if \code{basehaz = "ms"}. 
 #'     If not specified, then the default is to place the boundary knots at the
 #'     minimum and maximum of the event times (including both censored and
-#'     uncensored events).}     
+#'     uncensored events).
 #'   }
 #' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
-#'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}. 
-#'   Options are 15 (the default), 11 or 7.
+#'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
+#'   or when time-dependent effects (i.e. non-proportional hazards) are 
+#'   specified. Options are 15 (the default), 11 or 7.
 #' @param prior_aux The prior distribution for the parameters related to the
-#'   baseline hazard. The "auxiliary" parameters refers to different  
-#'   parameters depending on the type of baseline hazard specified in the 
-#'   \code{basehaz} argument. All auxiliary parameters have a lower bound at
-#'   zero.
-#'   When \code{basehaz = "exp"} there is no auxiliary 
-#'   parameter, since the log scale parameter is incorporated as an intercept 
-#'   in the linear predictor.
-#'   When \code{basehaz = "weibull"} the auxiliary parameter is the Weibull 
-#'   shape parameter, whilst the log scale parameter is incorporated as an 
-#'   intercept in the linear predictor. 
-#'   When \code{basehaz = "ms"} or \code{basehaz = "bs"} the auxiliary 
-#'   parameters are the coefficients for the spline basis terms.
+#'   baseline hazard. The relevant "auxiliary" parameters differ depending on  
+#'   on the type of baseline hazard specified in the \code{basehaz} 
+#'   argument. The following applies:
+#'   \itemize{
+#'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
+#'     since the log scale parameter for the exponential distribution is 
+#'     incorporated as an intercept in the linear predictor. The auxiliary
+#'     parameter has a lower bound at zero.
+#'     \item \code{basehaz = "weibull"}: the auxiliary parameter is the Weibull 
+#'     shape parameter, while the log scale parameter for the Weibull 
+#'     distribution is incorporated as an intercept in the linear predictor.
+#'     The auxiliary parameter has a lower bound at zero. 
+#'     \item \code{basehaz = "gompertz"}: the auxiliary parameter is the Gompertz 
+#'     scale parameter, while the log shape parameter for the Gompertz 
+#'     distribution is incorporated as an intercept in the linear predictor.
+#'     The auxiliary parameter has a lower bound at zero. 
+#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
+#'     for the M-spline basis terms on the baseline hazard. These parameters
+#'     have a lower bound at zero.
+#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
+#'     for the B-spline basis terms on the log baseline hazard. These parameters
+#'     are unbounded.
+#'   }
+#'   Currently, \code{prior_aux} can be a call to \code{normal}, \code{student_t} 
+#'   or \code{cauchy}. See \code{\link{priors}} for details on these functions. 
+#'   To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
+#'   \code{prior_aux} to \code{NULL}. 
 #'   
-#'   \code{prior_aux} can be a call to \code{exponential} to 
-#'   use an exponential distribution, or \code{normal}, \code{student_t} or 
-#'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
-#'   prior. See \code{\link{priors}} for details on these functions. To omit a 
-#'   prior ---i.e., to use a flat (improper) uniform prior--- set 
-#'   \code{prior_aux} to \code{NULL}.
-#' 
 #' @examples
 #' options(mc.cores = parallel::detectCores())
 #' 
 #' #--- Simulated data
 #' library(simsurv)
-#' covs <- data.frame(id = 1:2000, trt = stats::rbinom(2000, 1L, 0.5))
-#' dat1 <- simsurv(lambdas = 0.1, gammas = 1.5, 
+#' covs <- data.frame(id = 1:2000, 
+#'                    trt = stats::rbinom(2000, 1L, 0.5))
+#' dat1 <- simsurv(lambdas = 0.1, 
+#'                 gammas = 1.5, 
 #'                 betas = c(trt = -0.5),
 #'                 x = covs, maxt = 5)
 #' dat1 <- merge(dat1, covs)
-#' mod1a <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "ms")
-#' #mod1b <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "exp")
-#' #mod1c <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "weibull")
-#' mod1a$stanfit
-#' #mod1b$stanfit
-#' #mod1c$stanfit
+#' mod1a <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "ms",       chains = 2)
+#' mod1b <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "bs",       chains = 2)
+#' mod1c <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "exp",      chains = 2)
+#' mod1d <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "weibull",  chains = 2)
+#' mod1e <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "gompertz", chains = 2)
+#' mod1a
+#' mod1b
+#' mod1c
+#' mod1d
+#' mod1e
 #' 
 #' #--- Breast cancer data
 #' library(flexsurv)
@@ -174,7 +197,9 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   qw <- qq$weights
   
   # model data frame
-  mf <- data
+  mf    <- data
+  mf2   <- make_model_frame(formula, data)
+  terms <- terms(mf2)
   
   #----- dimensions, response, predictor matrix
 
@@ -228,11 +253,13 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   has_closed_form <- check_for_closed_form(basehaz)
   
   # basis terms
-  basis_events  <- make_basis(t_events,  basehaz)
-  basis_censor  <- make_basis(t_censor,  basehaz)
-  basis_delayed <- make_basis(t_delayed, basehaz)
-  deriv_events  <- make_basis(t_events,  basehaz, deriv = TRUE)
-
+  basis_events   <- make_basis(t_events,  basehaz)
+  basis_censor   <- make_basis(t_censor,  basehaz)
+  basis_delayed  <- make_basis(t_delayed, basehaz)
+  ibasis_events  <- make_basis(t_events,  basehaz, integrate = TRUE)
+  ibasis_censor  <- make_basis(t_censor,  basehaz, integrate = TRUE)
+  ibasis_delayed <- make_basis(t_delayed, basehaz, integrate = TRUE)
+  
   # flag if intercept is required for baseline hazard
   has_intercept  <- ai(has_intercept(basehaz))
   
@@ -309,7 +336,9 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
     basis_delayed,
     basis_qpts,
     basis_qpts_delayed,
-    deriv_events,
+    ibasis_events,
+    ibasis_censor,
+    ibasis_delayed,
     type = basehaz$type,
     qwts,
     qwts_delayed,
@@ -444,8 +473,11 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
 
   # return an object of class 'stansurv'
   fit <- nlist(stanfit, 
-               formula, 
+               formula,
+               has_tde,
+               terms,
                data,
+               model_frame = mf2,
                x, 
                t_beg, 
                t_end, 
@@ -459,7 +491,8 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
                prior_info,
                qnodes = if (has_quadrature) qnodes else NULL,
                algorithm,
-               stan_function = "stan_surv", 
+               stan_function = "stan_surv",
+               rstanarm_version = packageVersion("rstanarm"),
                call = match.call(expand.dots = TRUE))
   stansurv(fit)
 }
@@ -543,60 +576,41 @@ replace_stanfit_nms <- function(stanfit, new_nms) {
 
 # Return the spline basis for the given type of baseline hazard.
 # 
-# @param time A numeric vector of times at which to evaluate the basis.
+# @param times A numeric vector of times at which to evaluate the basis.
 # @param basehaz A list with info about the baseline hazard, returned by a 
 #   call to 'handle_basehaz'.
-# @param deriv A logical, specifying whether to calculate the derivative of
+# @param integrate A logical, specifying whether to calculate the integral of
 #   the specified basis.
 # @return A matrix.
-make_basis <- function(times, basehaz, timescale = "log", deriv = FALSE) {
+make_basis <- function(times, basehaz, integrate = FALSE) {
+  N <- length(times)
+  K <- basehaz$nvars
+  if (!N) { # times is NULL or empty vector
+    return(matrix(0, 0, K))
+  } 
+  switch(basehaz$type_name,
+         "exp"       = matrix(0, N, K), # dud matrix for Stan
+         "weibull"   = matrix(0, N, K), # dud matrix for Stan
+         "gompertz"  = matrix(0, N, K), # dud matrix for Stan
+         "ms"        = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
+         "bs"        = basis_matrix(times, basis = basehaz$basis),
+         "piecewise" = dummy_matrix(times, knots = basehaz$knots),
+         stop2("Bug found: type of baseline hazard unknown."))
+}
 
-  if (is.null(times) || !length(times)) {
-   
-    X <- matrix(0, 0, basehaz$nvars)
-    
-  } else if (basehaz$type_name %in% c("exp", "weibull", "gompertz")) {
-    
-    X <- matrix(0, length(times), basehaz$nvars) # dud matrix for Stan
-    
-  } else if (basehaz$type_name == "bs") {
-    
-    if (is.null(basehaz$basis))
-      stop2("Bug found: could not find info on spline basis.")
-    
-    X <- as.array(predict(basehaz$basis, times))
-    
-  } else if (basehaz$type_name == "piecewise") {
-    
-    if (is.null(basehaz$knots))
-      stop2("Bug found: could not find info on knot locations.")
-    
-    X <- dummy_matrix(times, knots = basehaz$knots)
-    
-  } else if (basehaz$type_name == "ms") {
-    
-    timescale <- basehaz$timescale
-    if (is.null(timescale)) {
-      tt <- times
-    } else if (timescale == "log") {
-      tt <- log(times)
-    }
-    
-    if (is.null(basehaz$basis))
-      stop2("Bug found: could not find info on spline basis.")
-    
-    if (deriv) { # M-splines, i.e. derivative of I-spline basis
-      X <- as.array(deriv(predict(basehaz$basis, tt)))
-    } else { # I-splines
-      X <- as.array(predict(basehaz$basis, tt))
-    }
-    
-  } else {
-    
-    stop2("Bug found: type of baseline hazard unknown.") 
-    
+# Evaluate a spline basis matrix at the specified times
+#
+# @param time A numeric vector.
+# @param basis Info on the spline basis.
+# @param integrate A logical, should the integral of the basis be returned?
+# @return A two-dimensional array.
+basis_matrix <- function(times, basis, integrate = FALSE) {
+  out <- predict(basis, times)
+  if (integrate) {
+    stopifnot(inherits(basis, "mSpline"))
+    out <- splines2:::predict.iSpline(basis, times)
   }
-  X
+  aa(out)
 }
 
 # Parse the model formula
@@ -730,35 +744,35 @@ reformulate_rhs <- function(x) {
 }
 
 
-# Return the response vector (time)
+# Return the response vector (time) for estimation
 #
 # @param formula The parsed model formula.
-# @param data The model frame.
+# @param model_frame The model frame.
 # @param type The type of time variable to return.
 # @return A numeric vector
-make_t <- function(formula, data, type = c("beg", "end", "gap")) {
+make_t <- function(formula, model_frame, type = c("beg", "end", "gap")) {
   
   type <- match.arg(type)
+  surv <- formula$surv_type
+  err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
   
-  if (formula$surv_type == "right") {
-    t_beg <- rep(0, nrow(data))
-    t_end <- data[[formula$tvar_end]]
-  } else if (formula$surv_type == "counting") {
-    t_beg <- data[[formula$tvar_beg]]
-    t_end <- data[[formula$tvar_end]]
-  } else {
-    stop2("Cannot yet handle '", formula$surv_type, "' type Surv objects.")
-  }
+  t_beg <- switch(surv,
+                  "right"    = rep(0, nrow(model_frame)),
+                  "counting" = model_frame[[formula$tvar_beg]],
+                  stop(err))
   
-  if (type == "beg") {
-    out <- t_beg
-  } else if (type == "end") {
-    out <- t_end
-  } else if (type == "gap") {
-    out <- t_end - t_beg
-  }
-  out
+  t_end <- switch(surv,
+                  "right"    = model_frame[[formula$tvar_end]],
+                  "counting" = model_frame[[formula$tvar_end]],
+                  stop(err))
+  
+  switch(type,
+         "beg" = t_beg,
+         "end" = t_end,
+         "gap" = t_end - t_beg,
+         stop("Bug found: cannot handle specified 'type'."))
 }
+
 
 # Return the response vector (status indicator)
 #
@@ -767,32 +781,45 @@ make_t <- function(formula, data, type = c("beg", "end", "gap")) {
 # @return A numeric vector
 make_d <- function(formula, data) {
   
-  if (formula$surv_type == "right") {
-    out <- data[[formula$dvar]]
-  } else if (formula$surv_type == "counting") {
-    out <- data[[formula$dvar]]
-  } else {
-    stop2("Bug found: cannot handle '", formula$surv_type, "' Surv objects.")
-  }
-  out
+  surv <- formula$surv_type
+  err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
+  
+  switch(surv,
+         "right"    = data[[formula$dvar]],
+         "counting" = data[[formula$dvar]],
+         stop(err))
 }
 
-# Return the fe predictor matrix
+# Return the model frame
+#
+# @param mc The matched call, without expanding dots
+make_model_frame <- function(formula, data) {
+  
+  mf <- model.frame(formula, data)
+  mf <- check_constant_vars(mf)
+  mt <- attr(mf, "terms")
+  if (is.empty.model(mt))
+    stop2("No intercept or predictors specified.")
+  mf
+  
+}
+
+# Return the fe predictor matrix for estimation
 #
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
 # @return A named list with the following elements:
-#   x: the fe model matrix, not centred and may have intercept.
-#   xtemp: fe model matrix, centred and no intercept.
-#   x_form: the formula for the fe model matrix.
-#   x_bar: the column means of the model matrix.
-#   has_intercept: logical for whether the submodel has an intercept
+#   x: the fe model matrix, not centred and without intercept.
+#   xbar: the column means of the model matrix.
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
-make_x <- function(formula, data) {
-  
-  x <- model.matrix(formula$fe_form, data)
+make_x <- function(formula, model_frame) {
+
+  # uncentred predictor matrix, without intercept
+  x <- model.matrix(formula$fe_form, model_frame)
   x <- drop_intercept(x)
+  
+  # column means of predictor matrix
   xbar <- colMeans(x)
   
   # identify any column of x with < 2 unique values (empty interaction levels)
@@ -805,66 +832,32 @@ make_x <- function(formula, data) {
   nlist(x, xbar, N = NROW(x), K = NCOL(x))
 }
 
-# Replace an NA object, or NA entries in a vector
+# Return the fe predictor matrix for prediction
 #
-# @param x The vector with elements to potentially replace.
-# @param replace_with The replacement value.
-replace_na <- function(x, replace_with = "0") {
-  if (is.na(x)) {
-    x <- replace_with
-  } else {
-    x[is.na(x)] <- replace_with
-  }
-  x
+# @param object A stansurv object.
+# @param model_frame The model frame.
+# @return A named list with the following elements:
+#   x: the fe model matrix, not centred and may have intercept depending on
+#     the requirement of the baseline hazard.
+#   N,K: number of rows (observations) and columns (predictors) in the
+#     fixed effects model matrix
+make_pp_x <- function(object, model_frame) {
+  
+  # formula for fe predictor matrix
+  tt <- delete.response(terms(object))
+  
+  # check data classes in the model frame match those used in model fitting
+  if (!is.null(cl <- attr(tt, "dataClasses"))) 
+    .checkMFClasses(cl, model_frame)
+  
+  # uncentered predictor matrix
+  x <- model.matrix(tt, model_frame, contrasts.arg = object$contrasts)
+  
+  # drop intercept if baseline hazard doesn't require one
+  if (!has_intercept(object$basehaz))
+    x <- drop_intercept(x)
+  
+  nlist(x, N = NROW(x), K = NCOL(x))  
 }
 
-# Replace an NULL object, or NULL entries in a vector
-#
-# @param x The vector with elements to potentially replace.
-# @param replace_with The replacement value.
-replace_null <- function(x, replace_with = "0") {
-  if (is.null(x)) {
-    x <- replace_with
-  } else {
-    x[is.null(x)] <- replace_with
-  }
-  x
-}
-
-# Replace named elements of 'x' with 'y'
-replace_named_elements <- function(x, y) {
-  x[names(y)] <- y
-  x
-}
-
-# Check if all elements of a vector are zeros
-all_zero <- function(x) {
-  all(x == 0)
-}
-
-# Shorthand for as.integer, as.double, as.matrix, as.array
-ai <- function(x, ...) as.integer(x, ...)
-ad <- function(x, ...) as.double(x, ...)
-am <- function(x, ...) as.matrix(x, ...)
-aa <- function(x, ...) as.array(x, ...)
-
-# Return a vector of 0's
-zeros <- function(n) {
-  rep(0, times = n)
-}
-
-# Return a vector of 1's
-ones <- function(n) {
-  rep(1, times = n)
-}
-
-# Return the maximum integer
-max_integer <- function() {
-  .Machine$integer.max
-}
-
-# Return the maximum double
-max_double <- function() {
-  .Machine$double.xmax
-}
 

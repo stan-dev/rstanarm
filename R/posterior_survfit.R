@@ -47,6 +47,8 @@
 #' \code{standardise} argument below.
 #' 
 #' @export
+#' @import splines2
+#' 
 #' @templateVar stanjmArg object
 #' @template args-stanjm-object
 #' 
@@ -260,24 +262,204 @@
 #'                            times = 0, extrapolate = TRUE)
 #'   plot(ps4)
 #' }
-#'  
-posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              extrapolate = TRUE, control = list(), 
-                              condition = NULL, last_time = NULL, prob = 0.95, 
-                              ids, times = NULL, standardise = FALSE, 
-                              dynamic = TRUE, scale = 1.5,
-                              draws = NULL, seed = NULL, ...) {
+#'
+posterior_survfit <- function(object, ...) {
+  UseMethod("posterior_survfit")
+}
+
+#' @rdname posterior_survfit.stansurv
+#' @export
+#'
+posterior_survfit.stansurv <- function(object, newdata = NULL, extrapolate = TRUE, 
+                                       control = list(), condition = NULL, 
+                                       last_time = NULL, prob = 0.95, id_var = NULL,
+                                       times = NULL, standardise = FALSE, 
+                                       draws = NULL, seed = NULL, ...) {
+  validate_stansurv_object(object)
+  basehaz  <- object$basehaz
+  if (!is.null(seed)) 
+    set.seed(seed)  
+  if (requires.idvar(object) && is.null(id_var))
+    STOP_id_var_required()
+
+  dots <- list(...)
+  
+  newdata <- validate_newdata(newdata)
+  has_newdata <- not.null(newdata)
+   
+  if (is.null(id_var)) {
+    if (is.null(newdata)) {
+      id_list <- seq(nrow(object$data))
+    } else {
+      id_list <- seq(nrow(newdata))
+    }
+  } else {
+    if (is.null(newdata)) {
+      id_list <- unique(object$data[[id_var]])
+    } else {
+      id_list <- unique(newdata[[id_var]])
+    }
+  }
+ 
+  # Last known survival time for each individual
+  if (is.null(newdata)) { # user did not specify newdata
+    if (!is.null(last_time))
+      stop("'last_time' cannot be provided when newdata is NULL, since times ",
+           "are taken to be the event or censoring time for each individual.")
+    last_time <- object$exittime
+  } else { # user specified newdata
+    if (is.null(last_time)) { # use latest longitudinal observation
+      last_time <- rep(0, length(id_list))
+    } else if (is.string(last_time)) {
+      if (!last_time %in% colnames(ndE))
+        stop("Cannot find 'last_time' column named in newdataEvent.")
+      last_time <- newdata[[last_time]]      
+    } else if (is.scalar(last_time)) {
+      last_time <- rep(last_time, nrow(newdata)) 
+    } else if (is.numeric(last_time) && (length(last_time) > 1L)) {
+      last_time <- last_time[as.character(id_list)]
+    } else {
+      stop("Bug found: could not reconcile 'last_time' argument.")
+    }
+    names(last_time) <- as.character(id_list)
+  }
+   
+  # Prediction times
+  if (standardise) { # standardised survival probs
+    times <- 
+      if (is.null(times)) {
+        stop("'times' cannot be NULL for obtaining standardised survival probabilities.")
+      } else if (is.scalar(times)) {
+        rep(times, length(id_list))
+      } else {
+        stop("'times' should be a numeric vector of length 1 in order to obtain ",
+             "standardised survival probabilities (the subject-specific survival ",
+             "probabilities will be calculated at the specified time point, and ",
+             "then averaged).")      
+      }    
+  } else if (is.null(newdata)) { # subject-specific survival probs without newdata
+    times <- 
+      if (is.null(times)) {
+        object$exittime
+      } else if (is.scalar(times)) {
+        rep(times, length(id_list))
+      } else {
+        stop("If newdata is NULL then 'times' must be NULL or a single number.")     
+      }
+  } else { # subject-specific survival probs with newdata
+    times <- 
+      if (is.null(times)) {
+        times <- last_time
+      } else if (is.scalar(times)) {
+        rep(times, length(id_list))
+      } else if (is.string(times)) {
+        if (!times %in% colnames(ndE))
+          stop("Variable specified in 'times' argument could not be found in newdata.")
+        tapply(newdata[[times]], newdata[[id_var]], FUN = max)
+      } else {
+        stop("If newdata is specified then 'times' can only be the name of a ",
+             "variable in newdata, or a single number.")
+      }
+  } 
+  
+  maxtime <- max(object$exittime)
+  if (any(times > maxtime))
+    stop("'times' are not allowed to be greater than the last event or censoring ",
+         "time (since unable to extrapolate the baseline hazard).")
+  
+   
+  # User specified extrapolation
+  if (extrapolate) {
+    control <- extrapolation_control(control, ok_args = c("epoints", "edist"))
+    if (not.null(control$edist)) {
+      endtime <- times + control$edist
+    } else {
+      endtime <- maxtime
+    }
+    endtime <- truncate(endtime, upper = maxtime)
+    time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
+  } else {
+    time_seq <- list(times) # no extrapolation
+  }
+
+  # Conditional survival times
+  if (is.null(condition)) {
+    condition <- !standardise
+  } else if (condition && standardise) {
+    stop("'condition' cannot be set to TRUE if standardised survival ",
+         "probabilities are requested.")
+  }  
+  
+  # Get stanmat parameter matrix for specified number of draws
+  stanmat <- sample_stanmat(object, draws = draws, default_draws = 200)
+  pars    <- extract_pars(object, stanmat)
+  
+  # Calculate survival probability at each increment of extrapolation sequence
+  surv <- lapply(time_seq, 
+                 calculate_survprob, 
+                 object      = object,
+                 newdata     = newdata,
+                 pars        = pars,
+                 id_var      = id_var,
+                 standardise = standardise)
+  
+  # Calculate survival probability at last known survival time and then
+  # use that to calculate conditional survival probabilities
+  if (condition) {
+    cond_surv <- calculate_survprob(last_time,
+                                    object  = object,
+                                    newdata = newdata,
+                                    pars    = pars,
+                                    id_var  = id_var)
+    surv <- lapply(surv, function(x) truncate(x / cond_surv, upper = 1))        
+  } 
+
+  # Summarise posterior draws to get median and CI
+  if (is.null(id_var)) 
+    id_var <- "id"
+  out <- summarise_survprob(surv        = surv,
+                            prob        = prob, 
+                            id_var      = id_var,
+                            standardise = standardise)
+  
+  # Add attributes
+  structure(out,
+            id_var      = attr(out, "id_var"),
+            time_var    = attr(out, "time_var"),
+            extrapolate = extrapolate, 
+            control     = control, 
+            condition   = condition, 
+            standardise = standardise, 
+            last_time   = last_time, 
+            ids         = id_list, 
+            draws       = draws, 
+            seed        = seed, 
+            class       = c("survfit.stansurv", "data.frame"))
+}
+
+#' @rdname posterior_survfit.stanjm
+#' @export
+#'
+posterior_survfit.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
+                                     extrapolate = TRUE, control = list(), 
+                                     condition = NULL, last_time = NULL, prob = 0.95, 
+                                     ids, times = NULL, standardise = FALSE, 
+                                     dynamic = TRUE, scale = 1.5,
+                                     draws = NULL, seed = NULL, ...) {
   validate_stanjm_object(object)
+  
   M        <- object$n_markers
   id_var   <- object$id_var
   time_var <- object$time_var
   basehaz  <- object$basehaz
   assoc    <- object$assoc
   family   <- family(object)
-  if (!is.null(seed)) 
+  
+  if (not.null(seed)) 
     set.seed(seed)
   if (missing(ids)) 
     ids <- NULL
+  
   dots <- list(...)
   
   # Temporary stop, until make_assoc_terms can handle it
@@ -299,6 +481,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
     if (!dynamic)
       stop2("Marginalised predictions for the event outcome are ",
             "not currently implemented.")
+    has_newdata <- not.null(newdataEvent)
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
     ndL <- newdatas[1:M]
     ndE <- newdatas[["Event"]]   
@@ -383,8 +566,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   
   # User specified extrapolation
   if (extrapolate) {
-    ok_control_args <- c("epoints", "edist")
-    control <- get_extrapolation_control(control, ok_control_args = ok_control_args)
+    ok_args <- c("epoints", "edist")
+    control <- extrapolation_control(control, ok_args = ok_args)
     endtime <- if (!is.null(control$edist)) times + control$edist else maxtime
     endtime[endtime > maxtime] <- maxtime # nothing beyond end of baseline hazard 
     time_seq <- get_time_seq(control$epoints, times, endtime, simplify = FALSE)
@@ -399,17 +582,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   }
   
   # Get stanmat parameter matrix for specified number of draws
-  S <- posterior_sample_size(object)
-  if (is.null(draws)) 
-    draws <- if (S > 200L) 200L else S 
-  if (draws > S)
-    stop("'draws' should be <= posterior sample size (", S, ").")
-  stanmat <- as.matrix(object$stanfit)
-  some_draws <- isTRUE(draws < S)
-  if (some_draws) {
-    samp <- sample(S, draws)
-    stanmat <- stanmat[samp, , drop = FALSE]
-  }
+  stanmat <- sample_stanmat(object, draws = draws, default_draws = 200)
 
   # Draw b pars for new individuals
   if (dynamic && !is.null(newdataEvent)) {
@@ -512,7 +685,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
             control = control, standardise = standardise, condition = condition, 
             last_time = last_time, ids = id_list, draws = draws, seed = seed, 
             offset = offset)
-  if (dynamic && !is.null(newdataEvent)) {
+  if (dynamic && has_newdata) {
     out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
   }
   out
@@ -606,7 +779,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'                           control = list(epoints = 20))
 #'   plot(ps2)   
 #' }
-#'    
+#'
 plot.survfit.stanjm <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
                                 xlab = NULL, ylab = NULL, facet_scales = "free", 
@@ -669,6 +842,21 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   ret <- graph + graph_limits + labs(x = xlab, y = ylab) 
   class_ret <- class(ret)
   class(ret) <- c("plot.survfit.stanjm", class_ret)
+  ret
+}
+
+#' @rdname plot.survfit.stanjm
+#' @method plot survfit.stansurv
+#' @export
+#' 
+plot.survfit.stansurv <- function(x, ids = NULL, 
+                                  limits = c("ci", "none"),  
+                                  xlab = NULL, ylab = NULL, facet_scales = "free", 
+                                  ci_geom_args = NULL, ...) {
+  mc <- match.call(expand.dots = FALSE)
+  mc[[1L]] <- quote(plot.survfit.stanjm)
+  ret <- eval(mc)
+  class(ret)[[1L]] <- "plot.survfit.stansurv"
   ret
 }
 
@@ -834,3 +1022,74 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 .PP_VLINE_CLR <- "#222222"
 .PP_YREP_CLR <- "#487575"
 .PP_YREP_FILL <- "#222222"
+
+
+
+
+
+# Calculate the survival probability at the specified times
+calculate_survprob <- function(times, object, newdata, pars, 
+                               id_var = NULL, standardise = FALSE) {
+  # Construct data for prediction
+  dat  <- .pp_data_surv(object, newdata = newdata, times = times)
+  
+  # Evaluate survival probability
+  surv <- .ll_surv(object, data = dat, pars = pars, survprob = TRUE)
+  
+  # Transform if only one individual 
+  surv <- transpose_vector(surv)
+  
+  # Set survival probability == 1 if time == 0 (avoids possible NaN)
+  surv <- replace_where(surv, times == 0, replacement = 1, margin = 2L)
+  
+  # Standardisation: within each iteration, calculate mean across individuals 
+  if (standardise) {
+    surv  <- row_means(surv)
+    ids   <- "standardised_survprob"
+    times <- unique(times)
+  } else {
+    ids   <- attr(surv, "ids")
+    times <- attr(surv, "times")
+  }
+  dimnames(surv) <- list(iterations = NULL, ids = ids)
+  
+  # Add prediction times as an attribute
+  structure(surv, ids = ids, times = times)
+}
+
+# Convert a list of matrices (with each element being a S by N matrix, 
+# where S is the number of MCMC draws and N the number of individuals)
+# and collapse it across the MCMC iterations summarising it into median 
+# and CI. The result is a data frame with K times N rows, where K was 
+# the length of the original list.
+summarise_survprob <- function(surv, 
+                               prob, 
+                               id_var      = NULL, 
+                               time_var    = NULL, 
+                               standardise = FALSE) {
+  out <- do.call("rbind", lapply(surv, median_and_bounds,
+                                 prob = prob, na.rm = TRUE, 
+                                 return_matrix = TRUE))
+  out <- set_colnames(data.frame(out), c("survpred", "ci_lb", "ci_ub"))
+
+  if (is.null(id_var)) 
+    id_var <- "id"
+  if (is.null(time_var))
+    time_var <- "time"
+  
+  if (standardise) { # sort by time only (no ID column)
+    out[[time_var]] <- uapply(surv, attr, "times")
+    out <- out[order(out[, time_var, drop = FALSE]), 
+               c(time_var, "survpred", "ci_lb", "ci_ub"), drop = FALSE]
+  } else { # sort by ID and time
+    out[[id_var]]   <- uapply(surv, attr, "ids")
+    out[[time_var]] <- uapply(surv, attr, "times")
+    out <- out[order(out[, id_var,   drop = FALSE], 
+                     out[, time_var, drop = FALSE]), 
+               c(id_var, time_var, "survpred", "ci_lb", "ci_ub"), drop = FALSE]
+  }
+  rownames(out) <- NULL
+  structure(out, 
+            id_var   = if (standardise) NULL else id_var, 
+            time_var = time_var)
+}
