@@ -163,8 +163,8 @@
 #' mod3a$stanfit
 #' mod3z
 #'
-stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
-                      prior = normal(), prior_intercept = normal(),
+stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
+                      qnodes = 15, prior = normal(), prior_intercept = normal(),
                       prior_aux = cauchy(), prior_PD = FALSE,
                       algorithm = c("sampling", "meanfield", "fullrank"),
                       adapt_delta = 0.95, ...) {
@@ -176,7 +176,8 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function.")
   
-  if (missing(basehaz_ops)) basehaz_ops <- NULL
+  if (missing(basehaz_ops)) 
+    basehaz_ops <- NULL
   
   dots <- list(...)
   algorithm <- match.arg(algorithm)
@@ -190,56 +191,54 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   #----------------
   # Construct data
   #----------------
-
-  # standardised weights and nodes for quadrature
-  qq <- get_quadpoints(nodes = qnodes)
-  qp <- qq$points
-  qw <- qq$weights
   
-  # model data frame
-  mf    <- data
-  mf2   <- make_model_frame(formula, data)
-  terms <- terms(mf2)
+  #----- model frame stuff
   
-  #----- dimensions, response, predictor matrix
+  mf_stuff <- make_model_frame(formula, data, specials = "tt")
+  
+  mf <- mf_stuff$mf # model frame
+  mt <- mf_stuff$mt # model terms
+  
+  #----- identify time-dependent effects
+  
+  # extract info on time transform terms
+  tt_stuff  <- survival::untangle.specials(mt, "tt")
+  tt_vars   <- tt_stuff$vars
+  tt_terms  <- tt_stuff$terms
+  tt_length <- length(tt_terms)
+  
+  has_tde  <- (tt_length > 0)
+  if (has_tde)
+    tt <- validate_tt_fun(tt, validate_length = tt_length)
+  
+  #----- dimensions and response vectors
 
   # entry and exit times for each row of data
-  t_end <- make_t(formula, mf, type = "end") # end time
-  t_beg <- make_t(formula, mf, type = "beg") # beg time
+  t_end <- make_t(mf, type = "end") # end time
+  t_beg <- make_t(mf, type = "beg") # beg time
   
   # event indicator for each row of data
-  d <- make_d(formula, mf)
+  d <- make_d(mf)
   event <- as.logical(d)
   
   # delayed entry indicator for each row of data
   delayed <- (!t_beg == 0)
 
+  # model frame containing only rows of relevance
+  mf_events  <- keep_rows(mf, event)
+  mf_censor  <- keep_rows(mf, !event)
+  mf_delayed <- keep_rows(mf, delayed)
+  
   # time variables for stan
   t_events  <- t_end[event]
   t_censor  <- t_end[!event]
   t_delayed <- t_beg[delayed]
 
-  # predictor matrix
-  x_stuff <- make_x(formula, mf) 
-  x <- x_stuff$x
-  x_events  <- keep_rows(x, event)
-  x_censor  <- keep_rows(x, !event)
-  x_delayed <- keep_rows(x, delayed)
-  
   # dimensions
-  npats    <- 0L # not currently used
-  K        <- ncol(x)
-  nrows    <- nrow(x)
-  nevents  <- nrow(x_events)
-  ncensor  <- nrow(x_censor)
-  ndelayed <- nrow(x_delayed)
+  nevents  <- length(t_events)
+  ncensor  <- length(t_censor)
+  ndelayed <- length(t_delayed)
   
-  #----- time-dependent effects (i.e. non-proportional hazards)
-
-  # degrees of freedom for time-dependent effects
-  nvars_tde <- aa(rep(0L, K)) # not currently used
-  has_tde <- any(nvars_tde > 0)
-
   #----- baseline hazard
 
   ok_basehaz <- c("exp", "weibull", "gompertz", "ms", "bs")
@@ -249,31 +248,32 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
                             ok_basehaz = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
                             times = t_end, status = event)
-  nvars <- basehaz$nvars
+  nvars <- basehaz$nvars                            # num. basehaz aux parameters
+  
+  # flag if closed form available for cumulative baseline hazard
   has_closed_form <- check_for_closed_form(basehaz)
   
-  # basis terms
-  basis_events   <- make_basis(t_events,  basehaz)
-  basis_censor   <- make_basis(t_censor,  basehaz)
-  basis_delayed  <- make_basis(t_delayed, basehaz)
-  ibasis_events  <- make_basis(t_events,  basehaz, integrate = TRUE)
-  ibasis_censor  <- make_basis(t_censor,  basehaz, integrate = TRUE)
-  ibasis_delayed <- make_basis(t_delayed, basehaz, integrate = TRUE)
-  
   # flag if intercept is required for baseline hazard
-  has_intercept  <- ai(has_intercept(basehaz))
+  has_intercept   <- ai(has_intercept(basehaz))
+
+  #----- define dimensions and times for quadrature
   
   # flag for quadrature
   has_quadrature <- has_tde || !has_closed_form
   
   if (has_quadrature) { # model uses quadrature
     
+    # standardised weights and nodes for quadrature
+    qq <- get_quadpoints(nodes = qnodes)
+    qp <- qq$points
+    qw <- qq$weights
+    
     # quadrature points & weights, evaluated for each row of data
     qpts <- uapply(qp, unstandardise_qpts, t_beg, t_end) # qpts for exit time
     qwts <- uapply(qw, unstandardise_qwts, t_beg, t_end) # qwts for exit time
 
     # quadrature points & weights, evaluated for rows with delayed entry
-    if (length(t_delayed)) {
+    if (n_delayed) {
       qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
       qwts_delayed <- uapply(qw, unstandardise_wpts, 0, t_delayed) # qwts for entry time
     } else {
@@ -281,40 +281,138 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
       qwts_delayed <- rep(0,0)
     }
     
-    # predictor matrix at quadrature points
-    x_qpts         <- rep_rows(x, times = qnodes)         # tde not yet implemented
-    x_qpts_delayed <- rep_rows(x_delayed, times = qnodes) # tde not yet implemented
-    
-    # basis terms at quadrature points
-    basis_qpts         <- make_basis(qpts, basehaz)
-    basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
+    # expand rows in model frame
+    mf_qpts         <- rep_rows(mf, times = qnodes)
+    mf_qpts_delayed <- rep_rows(mf_delayed, times = qnodes)
     
     # dimensions
-    qrows    <- nrow(x_qpts)
-    qdelayed <- nrow(x_qpts_delayed)
+    qrows    <- nrow(mf_qpts)
+    qdelayed <- nrow(mf_qpts_delayed)
     
   } else { # model does not use quadrature
     
-    # dud entries for stan
-    qpts               <- rep(0,0)
-    qwts               <- rep(0,0)
-    qpts_delayed       <- rep(0,0)
-    qwts_delayed       <- rep(0,0)
-    x_qpts             <- matrix(0,0,K)
-    x_qpts_delayed     <- matrix(0,0,K)
-    basis_qpts         <- matrix(0,0,nvars)
-    basis_qpts_delayed <- matrix(0,0,nvars)
-    qrows              <- 0L
-    qdelayed           <- 0L
+    qpts         <- rep(0,0) # dud entries for stan
+    qwts         <- rep(0,0)
+    qpts_delayed <- rep(0,0)
+    qwts_delayed <- rep(0,0)
+    qrows        <- 0L
+    qdelayed     <- 0L
     
   }
   
+  #----- basis terms for baseline hazard
+
+  # basis terms at event times; used regardless of quadrature
+  basis_events  <- make_basis(t_events,  basehaz)
+  ibasis_events <- make_basis(t_events,  basehaz, integrate = TRUE)
+  
+  # basis terms at censoring times; used only without quadrature
+  if (has_quadrature) {
+    basis_censor  <- matrix(0,0,nvars) # dud entries for stan
+    ibasis_censor <- matrix(0,0,nvars)
+  } else {
+    basis_censor  <- make_basis(t_censor,  basehaz)
+    ibasis_censor <- make_basis(t_censor,  basehaz, integrate = TRUE)
+  }
+
+  # basis terms at delayed entry times; used only without quadrature
+  if (has_quadrature) {
+    basis_delayed  <- matrix(0,0,nvars) # dud entries for stan
+    ibasis_delayed <- matrix(0,0,nvars)
+  } else {
+    basis_delayed  <- make_basis(t_delayed, basehaz)
+    ibasis_delayed <- make_basis(t_delayed, basehaz, integrate = TRUE)
+  }
+  
+  # basis terms at quadrature points; used only with quadrature
+  if (has_quadrature) {
+    basis_qpts         <- make_basis(qpts, basehaz)
+    basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
+  } else {
+    basis_qpts         <- matrix(0,0,nvars) # dud entries for stan
+    basis_qpts_delayed <- matrix(0,0,nvars)
+  }
+    
+  #----- predictor matrices
+  
+  if (has_quadrature) { # model used quadrature
+    
+    # if model has time-dependent effects then need to apply time transforms
+    # to each model frame before constructing predictor matrices
+    if (has_tde) { 
+      mf <- apply_tt_fun(
+        model_frame = mf, 
+        tt_funs     = tt, 
+        tt_vars     = tt_vars,
+        tt_terms    = tt_terms, 
+        times       = t_end)
+      mf_qpts <- apply_tt_fun(
+        model_frame = mf_qpts, 
+        tt_funs     = tt, 
+        tt_vars     = tt_vars,
+        tt_terms    = tt_terms, 
+        times       = qpts)
+      if (ndelayed) { # no need to transform if no delayed entry
+        mf_qpts_delayed <- apply_tt_fun(
+          model_frame = mf_qpts_delayed,
+          tt_funs = tt, 
+          tt_vars = tt_vars,
+          tt_terms = tt_terms, 
+          times = qpts_delayed)
+      }
+      tmp <- update_predvars(Terms       = mt, 
+                             model_frame = mf, 
+                             tt_vars     = tt_vars,
+                             tt_terms    = tt_terms)
+    }
+    
+    # evaluate predictor matrix at event times
+    x <- make_x(formula, mf)$x
+    K <- ncol(x)
+    x_events  <- keep_rows(x, event) # used by stan
+    x_censor  <- matrix(0,0,K)       # dud entry for stan
+    x_delayed <- matrix(0,0,K)       # dud entry for stan
+    
+    # evaluate predictor matrix at quadrature points
+    #   (note that 'x_qpts_delayed' is *not* just a subject of 'x_pts',
+    #   since it contains time transformations that are evaluated 
+    #   at the quadrature points relevant to the *entry* times, and 
+    #   these quadrature points may not coincide with the quadrature 
+    #   points that are relevant to the *event* times. Hence why we 
+    #   are carrying two different model frame objects, namely
+    #   'mf_qpts' and 'mf_qpts_delayed'.)
+    x_qpts         <- make_x(formula, mf_qpts)$x 
+    x_qpts_delayed <- make_x(formula, mf_qpts_delayed)$x
+
+    # mislead stan about dimensions so as to avoid passing predictor
+    # matrices at the censoring and delayed entry times (which are 
+    # not required if quadrature is being used)
+    ncensor  <- 0L
+    ndelayed <- 0L
+        
+  } else { # model does not use quadrature
+    
+    # evaluate predictor matrix 
+    #   (note that 'x' does not depend on time, since any time
+    #   transformations, i.e. time-dependent effects, would 
+    #   have resulted in quadrature which is handled elsewhere. 
+    #   Hence 'x_delayed' is simply a subset of the rows in 'x'.)
+    x <- make_x(formula, mf)$x
+    K <- ncol(x)
+    x_events  <- keep_rows(x, event)
+    x_censor  <- keep_rows(x, !event)
+    x_delayed <- keep_rows(x, delayed)  
+    
+    # dud entries for stan
+    x_qpts         <- matrix(0,0,K)
+    x_qpts_delayed <- matrix(0,0,K)
+    
+  }
+
   #----- stan data
   
   standata <- nlist(
     K,
-    npats,
-    nrows,
     nevents,
     ncensor,
     ndelayed,
@@ -322,7 +420,6 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
     qrows,
     qdelayed,
     nvars,
-    nvars_tde,
     t_events,
     t_censor,
     t_delayed,
@@ -475,25 +572,25 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
   fit <- nlist(stanfit, 
                formula,
                has_tde,
-               terms,
                data,
-               model_frame = mf2,
+               model_frame      = mf,
+               terms            = mt,
                x, 
                t_beg, 
                t_end, 
                event, 
                delayed,
                basehaz,
-               nobs = nrows,
-               nevents,
-               ncensor,
-               ndelayed,
+               nobs             = nrow(mf),
+               nevents          = length(t_events),
+               ncensor          = length(t_censor),
+               ndelayed         = length(t_delayed),
                prior_info,
-               qnodes = if (has_quadrature) qnodes else NULL,
+               qnodes           = if (has_quadrature) qnodes else NULL,
                algorithm,
-               stan_function = "stan_surv",
+               stan_function    = "stan_surv",
                rstanarm_version = packageVersion("rstanarm"),
-               call = match.call(expand.dots = TRUE))
+               call             = match.call(expand.dots = TRUE))
   stansurv(fit)
 }
 
@@ -746,24 +843,24 @@ reformulate_rhs <- function(x) {
 
 # Return the response vector (time) for estimation
 #
-# @param formula The parsed model formula.
 # @param model_frame The model frame.
 # @param type The type of time variable to return.
 # @return A numeric vector
-make_t <- function(formula, model_frame, type = c("beg", "end", "gap")) {
+make_t <- function(model_frame, type = c("beg", "end", "gap")) {
   
   type <- match.arg(type)
-  surv <- formula$surv_type
+  resp <- model.response(model_frame)
+  surv <- attr(resp, "type")
   err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
   
   t_beg <- switch(surv,
                   "right"    = rep(0, nrow(model_frame)),
-                  "counting" = model_frame[[formula$tvar_beg]],
+                  "counting" = as.vector(resp[, "start"]),
                   stop(err))
   
   t_end <- switch(surv,
-                  "right"    = model_frame[[formula$tvar_end]],
-                  "counting" = model_frame[[formula$tvar_end]],
+                  "right"    = as.vector(resp[, "time"]),
+                  "counting" = as.vector(resp[, "stop"]),
                   stop(err))
   
   switch(type,
@@ -776,32 +873,45 @@ make_t <- function(formula, model_frame, type = c("beg", "end", "gap")) {
 
 # Return the response vector (status indicator)
 #
-# @param formula The parsed model formula.
-# @param data The model frame.
+# @param model_frame The model frame.
 # @return A numeric vector
-make_d <- function(formula, data) {
+make_d <- function(model_frame) {
   
-  surv <- formula$surv_type
+  resp <- model.response(model_frame)
+  surv <- attr(resp, "type")
   err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
   
   switch(surv,
-         "right"    = data[[formula$dvar]],
-         "counting" = data[[formula$dvar]],
+         "right"    = as.vector(resp[, "status"]),
+         "counting" = as.vector(resp[, "status"]),
          stop(err))
 }
 
 # Return the model frame
 #
 # @param mc The matched call, without expanding dots
-make_model_frame <- function(formula, data) {
+make_model_frame <- function(formula, data, specials = NULL) {
   
-  mf <- model.frame(formula, data)
+  # construct terms object from formula 
+  Terms <- terms(formula$formula, specials = specials)
+  
+  # extract environment for the formula, define 'tt' function within it, and 
+  # use that as the environment for the terms object in the model.frame call
+  # (otherwise the 'tt' function used in the model formula does not exist)
+  formula_env <- new.env(parent = environment(formula$formula))
+  assign("tt", function(x) x, env = formula_env)
+  environment(Terms) <- formula_env
+  
+  # construct model frame
+  mf <- model.frame(Terms, data)
   mf <- check_constant_vars(mf)
-  mt <- attr(mf, "terms")
-  if (is.empty.model(mt))
-    stop2("No intercept or predictors specified.")
-  mf
   
+  # check terms
+  mt <- attr(mf, "terms")
+  if (is.empty.model(mt)) 
+    stop2("No intercept or predictors specified.")
+  
+  nlist(mf, mt)
 }
 
 # Return the fe predictor matrix for estimation
@@ -860,4 +970,77 @@ make_pp_x <- function(object, model_frame) {
   nlist(x, N = NROW(x), K = NCOL(x))  
 }
 
+# Validate the user input to the 'tt' argument. This draws on the 
+# code for the coxph modelling function in the survival package.
+#
+# Copyright (C) 2018 Sam Brilleman
+# Copyright (C) 2018 Terry Therneau, Thomas Lumley
+#
+# @param tt The user input to the 'tt' argument.
+# @param validate_length Integer specifying the required length of the 
+#   returned list.
+# @return A list of functions.
+validate_tt_fun <- function(tt, validate_length) {
+  
+  if (is.null(tt))
+    stop2("'tt' must be specified.")
+  
+  if (is.function(tt)) 
+    tt <- list(tt) # convert since function to a one element list
+  
+  if (!is.list(tt))
+    stop2("The 'tt' argument must contain a function or list of functions.")  
+  
+  if (!all(sapply(tt, is.function)))
+    stop2("The 'tt' argument must contain function or list of functions.")
+  
+  if (!length(tt) %in% c(1, validate_length)) 
+    stop2("The 'tt' argument contains a list of the incorrect length.")
+  
+  if (length(tt) == 1)
+    tt <- rep(tt, validate_length)
+  
+  return(tt)
+}
+
+# apply time transform to the model frame; method based on survival package 
+apply_tt_fun <- function(model_frame, tt_funs, tt_vars, tt_terms, times) {
+  if (!length(tt_terms))
+    return(model_frame)
+  
+  for (i in 1:length(tt_terms)) { # loop over time transform terms
+
+    # extract quantities used in time transform
+    varnm_i <- tt_vars[[i]] # varname in model frame
+    ttfun_i <- tt_funs[[i]] # user defined tt function
+
+    # time transform at event times
+    oldx_i <- model_frame[[varnm_i]]   # extract var from model frame
+    newx_i <- (ttfun_i)(oldx_i, times) # evaluate tt function at times
+    model_frame[[varnm_i]] <- newx_i   # substitute back into model frame
+  }
+  
+  return(model_frame)
+}
+
+# update the predvars attribute for time transformed terms
+update_predvars <- function(Terms, model_frame, tt_vars, tt_terms) {
+  tcall <- attr(Terms, 'variables')[tt_terms + 2]
+  pvars <- attr(Terms, 'predvars')
+  pmethod <- sub("makepredictcall.", "", as.vector(methods("makepredictcall")))
+  for (i in 1:length(tt_terms)) {
+    # update predvars if necessary
+    varnm_i <- tt_vars[[i]]       # varname in model frame
+    terms_i <- tt_terms[i] + 2    # index in terms object
+    x_i <- model_frame[[varnm_i]] # extract transformed variable from model frame
+    nclass <- class(x_i)          # check class of transformed variable
+    if (any(nclass %in% pmethod)) { # it has a makepredictcall method...
+      dummy <- as.call(list(as.name(class(x_i)[1]), tcall[[i]][[2]]))
+      ptemp <- makepredictcall(x_i, dummy)
+      pvars[[terms_i]] <- ptemp
+    }
+  }
+  attr(Terms, "predvars") <- pvars
+  return(Terms)
+}
 

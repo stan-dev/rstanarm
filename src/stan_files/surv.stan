@@ -240,16 +240,13 @@ data {
 
   // dimensions
   int<lower=0> K;          // num. cols in predictor matrix
-  int<lower=0> npats;      // num. individuals
-  int<lower=0> nrows;      // num. rows in predictor matrix
   int<lower=0> nevents;    // num. rows w/ an event (ie. not censored)
-  int<lower=0> ncensor;    // num. rows w/ censoring (ie. nrows - nevents)
+  int<lower=0> ncensor;    // num. rows w/ censoring
   int<lower=0> ndelayed;   // num. rows w/ delayed entry
   int<lower=0> qnodes;     // num. nodes for GK quadrature
   int<lower=0> qrows;      // num. rows used for quadrature
   int<lower=0> qdelayed;   // num. rows used for quadrature for delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
-  int<lower=0> nvars_tde[K]; // df for time-dependent hazard ratios
 
   // response variables
   vector[nevents]  t_events;  // time of events
