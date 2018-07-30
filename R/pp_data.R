@@ -33,7 +33,10 @@ pp_data <-
       return(out)
     }
     if (is.surv(object)) {
-      out <- .pp_data_surv(object, newdata = newdata, ...)
+      dots <- list(...)
+      if (is.null(dots$times))
+        stop2("'times' must be supplied in dots for stansurv objects.")
+      return(.pp_data_surv(object, newdata = newdata, times = dots$times))
     }
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
@@ -268,16 +271,17 @@ pp_data <-
     qpts <- uapply(qp, unstandardise_qpts, 0, times)
     qwts <- uapply(qw, unstandardise_qwts, 0, times)
     
-    # predictor matrix at quadrature points, including intercept if required
+    # predictor matrix, including intercept if required
     x_stuff <- make_pp_x(object, mf)
     x <- x_stuff$x
     x_qpts <- rep_rows(x, times = qnodes) # just replicate, since tde not yet implemented
 
-    # basis terms at quadrature points
-    basis_qpts <- make_basis(qpts, basehaz)
+    # basis terms
+    basis      <- make_basis(times, basehaz)
+    basis_qpts <- make_basis(qpts,  basehaz)
 
-    # prediction quantities
-    return(nlist(times, x, qpts, qwts, x_qpts, basis_qpts, uses_quadrature))
+    # returned quantities
+    return(nlist(times, x, basis, qpts, qwts, x_qpts, basis_qpts, uses_quadrature))
     
   } else { # model does not use quadrature
 
@@ -289,7 +293,7 @@ pp_data <-
     basis  <- make_basis(times, basehaz)
     ibasis <- make_basis(times, basehaz, integrate = TRUE)
     
-    # prediction quantities
+    # returned quantities
     return(nlist(times, x, basis, ibasis, uses_quadrature))
   }
 }
