@@ -248,7 +248,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
                             ok_basehaz = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
                             times = t_end, status = event)
-  nvars <- basehaz$nvars                            # num. basehaz aux parameters
+  nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if closed form available for cumulative baseline hazard
   has_closed_form <- check_for_closed_form(basehaz)
@@ -273,7 +273,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
     qwts <- uapply(qw, unstandardise_qwts, t_beg, t_end) # qwts for exit time
 
     # quadrature points & weights, evaluated for rows with delayed entry
-    if (n_delayed) {
+    if (ndelayed) {
       qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
       qwts_delayed <- uapply(qw, unstandardise_wpts, 0, t_delayed) # qwts for entry time
     } else {
@@ -339,31 +339,26 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
     
     # if model has time-dependent effects then need to apply time transforms
     # to each model frame before constructing predictor matrices
-    if (has_tde) { 
-      mf <- apply_tt_fun(
-        model_frame = mf, 
+    if (has_tde) {
+      t_bind  <- c(t_end, qpts, qpts_delayed)
+      id_bind <- rep(1:3, c(length(t_end), length(qpts), length(qpts_delayed)))
+      
+      mf_bind <- rbind(mf, mf_qpts, mf_qpts_delayed)
+      mf_bind <- apply_tt_fun(
+        model_frame = mf_bind, 
         tt_funs     = tt, 
         tt_vars     = tt_vars,
         tt_terms    = tt_terms, 
-        times       = t_end)
-      mf_qpts <- apply_tt_fun(
-        model_frame = mf_qpts, 
-        tt_funs     = tt, 
-        tt_vars     = tt_vars,
-        tt_terms    = tt_terms, 
-        times       = qpts)
-      if (ndelayed) { # no need to transform if no delayed entry
-        mf_qpts_delayed <- apply_tt_fun(
-          model_frame = mf_qpts_delayed,
-          tt_funs = tt, 
-          tt_vars = tt_vars,
-          tt_terms = tt_terms, 
-          times = qpts_delayed)
-      }
-      tmp <- update_predvars(Terms       = mt, 
-                             model_frame = mf, 
-                             tt_vars     = tt_vars,
-                             tt_terms    = tt_terms)
+        times       = t_bind)
+      
+      mf              <- mf_bind[id_bind == 1, , drop = FALSE]
+      mf_qpts         <- mf_bind[id_bind == 2, , drop = FALSE]
+      mf_qpts_delayed <- mf_bind[id_bind == 3, , drop = FALSE]
+      
+      mt <- update_predvars(Terms       = mt, 
+                            model_frame = mf_bind, 
+                            tt_vars     = tt_vars,
+                            tt_terms    = tt_terms)
     }
     
     # evaluate predictor matrix at event times
@@ -382,13 +377,11 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
     #   are carrying two different model frame objects, namely
     #   'mf_qpts' and 'mf_qpts_delayed'.)
     x_qpts         <- make_x(formula, mf_qpts)$x 
-    x_qpts_delayed <- make_x(formula, mf_qpts_delayed)$x
-
-    # mislead stan about dimensions so as to avoid passing predictor
-    # matrices at the censoring and delayed entry times (which are 
-    # not required if quadrature is being used)
-    ncensor  <- 0L
-    ndelayed <- 0L
+    if (ndelayed) {
+      x_qpts_delayed <- make_x(formula, mf_qpts_delayed)$x
+    } else {
+      x_qpts_delayed <- matrix(0,0,K) # dud entry for stan
+    }
         
   } else { # model does not use quadrature
     
@@ -414,15 +407,15 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
   standata <- nlist(
     K,
     nevents,
-    ncensor,
-    ndelayed,
+    ncensor  = if (has_quadrature) 0L else ncensor,
+    ndelayed = if (has_quadrature) 0L else ndelayed,
     qnodes,
     qrows,
     qdelayed,
     nvars,
     t_events,
-    t_censor,
-    t_delayed,
+    t_censor  = if (has_quadrature) rep(0,0) else t_censor,
+    t_delayed = if (has_quadrature) rep(0,0) else t_delayed,
     x_events,
     x_censor,
     x_delayed,
