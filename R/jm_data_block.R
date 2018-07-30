@@ -1282,6 +1282,8 @@ get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE)
   
   # return internal knot locations, ensuring they are positive
   validate_positive_scalar(iknots)
+  
+  return(iknots)
 }
 
 # Return a vector with valid names for elements in the list passed to the
