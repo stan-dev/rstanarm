@@ -270,7 +270,8 @@ posterior_survfit <- function(object, ...) {
 #' @rdname posterior_survfit.stansurv
 #' @export
 #'
-posterior_survfit.stansurv <- function(object, newdata = NULL, extrapolate = TRUE, 
+posterior_survfit.stansurv <- function(object, newdata = NULL, 
+                                       type = "surv", extrapolate = TRUE, 
                                        control = list(), condition = NULL, 
                                        last_time = NULL, prob = 0.95, id_var = NULL,
                                        times = NULL, standardise = FALSE, 
@@ -401,11 +402,14 @@ posterior_survfit.stansurv <- function(object, newdata = NULL, extrapolate = TRU
                  newdata     = newdata,
                  pars        = pars,
                  id_var      = id_var,
-                 standardise = standardise)
+                 standardise = standardise,
+                 type        = type)
   
   # Calculate survival probability at last known survival time and then
   # use that to calculate conditional survival probabilities
   if (condition) {
+    if (!type == "surv")
+      stop("'condition' can only be set to TRUE for survival probabilities.")
     cond_surv <- calculate_survprob(last_time,
                                     object  = object,
                                     newdata = newdata,
@@ -1028,19 +1032,20 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 
 
 # Calculate the survival probability at the specified times
-calculate_survprob <- function(times, object, newdata, pars, 
+calculate_survprob <- function(times, object, newdata, pars, type,
                                id_var = NULL, standardise = FALSE) {
   # Construct data for prediction
   dat  <- .pp_data_surv(object, newdata = newdata, times = times)
   
   # Evaluate survival probability
-  surv <- .ll_surv(object, data = dat, pars = pars, survprob = TRUE)
+  surv <- .ll_surv(object, data = dat, pars = pars, type = type)
   
   # Transform if only one individual 
   surv <- transpose_vector(surv)
   
   # Set survival probability == 1 if time == 0 (avoids possible NaN)
-  surv <- replace_where(surv, times == 0, replacement = 1, margin = 2L)
+  if (type == "surv")
+    surv <- replace_where(surv, times == 0, replacement = 1, margin = 2L)
   
   # Standardisation: within each iteration, calculate mean across individuals 
   if (standardise) {

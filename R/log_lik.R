@@ -498,44 +498,54 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 #                                          coefs   = draws$bhcoef)
 #  log_surv <- log_basesurv * exp(eta)
 #}
-.ll_surv <- function(object, data, pars, survprob = FALSE) {
+.ll_surv <- function(object, data, pars, type = "ll") {
   
   uses_quadrature <- data$uses_quadrature
-  
+
+  if (type == "ll" && is.null(estatus)) # check for event status indicator
+    stop("'estatus' cannot be NULL if 'type = ll'.")
+    
   # To avoid an error in log(times) replace times equal to zero with a small 
   # non-zero value. Note that these times correspond to individuals where the,
   # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
   # be forced to zero for these individuals further down in the code anyhow.  
   #times[times == 0] <- 1E-10 
   
-  # Evaluate log survival
-  if (uses_quadrature) { # use quadrature to evaluate log survival
+  # evaluate hazard; quadrature not relevant
+  
+  if (type == "haz") { 
+    eta <- linear_predictor(pars$beta, data$x)
+    lbh <- evaluate_log_basehaz(data$times, object$basehaz, pars$bhcoef)
+    haz <- exp(eta + lbh)
+    out <- structure(haz, ids = seq(ncol(haz)), times = data$times)
+    return(out)
+  } 
+  
+  # otherwise evaluate cumhaz
+  
+  if (uses_quadrature) {
     
     eta_qpts <- linear_predictor(pars$beta, data$x_qpts)
-    haz_qpts <- exp(eta_qpts + evaluate_log_basehaz(times   = data$qpts, 
-                                                    basehaz = object$basehaz, 
-                                                    coefs   = pars$bhcoef))
-    cum_haz  <- gk_quadrature(exp(haz_qpts), qnodes = data$qnodes, qwts = data$qwts)
-    log_surv <- -cum_haz
+    lbh_qpts <- evaluate_log_basehaz(data$qpts, object$basehaz, pars$bhcoef)
+    haz_qpts <- exp(eta_qpts + lbh_qpts)
+    cumhaz   <- gk_quadrature(exp(haz_qpts), qnodes = data$qnodes, qwts = data$qwts)
+
+  } else {
     
-  } else { # closed form for survival
-    
-    eta       <- linear_predictor(pars$beta, data$x)
-    log_surv  <- exp(eta) * evaluate_log_basesurv(times   = data$times, 
-                                                  basehaz = object$basehaz, 
-                                                  coefs   = pars$bhcoef)
+    eta          <- linear_predictor(pars$beta, data$x)
+    log_basesurv <- evaluate_log_basesurv(data$times, object$basehaz, pars$bhcoef)
+    cum_haz      <- - (exp(eta) * log_basesurv) # equivalent to: -log(surv)
+
   }
   
-  # Possibly return survival probability instead of log likelihood
-  if (survprob) {
-    out <- exp(log_surv)
-    return(structure(out, ids = seq(ncol(log_surv)), times = data$times))
-  }
+  out <- switch(type,
+                cumhaz   = cumhaz,
+                log_surv = -cumhaz,
+                surv     = exp(-cumhaz),
+                ll       = sweep_multiply(log_haz, estatus) - cum_haz,
+                stop("Invalid input to the 'type'argument."))
   
-  # Otherwise return log likelihood
-  if (is.null(estatus)) # check for event status indicator
-    stop("'estatus' cannot be NULL if 'survprob = FALSE'.")
-  return(sweep_multiply(log_haz, estatus) + log_surv)
+  structure(out, ids = seq(ncol(out)), times = data$times)
 }
 
 # log-likelihood functions for stanjm objects only ----------------------
