@@ -2001,3 +2001,8 @@ max_double  <- function() .Machine$double.xmax
 is.scalar <- function(x) { isTRUE(is.numeric(x)   && (length(x) == 1)) }
 is.string <- function(x) { isTRUE(is.character(x) && (length(x) == 1)) }
 
+# Safe deparse
+safe_deparse <- function(expr) deparse(expr, 500L)
+
+# Evaluate a character string
+eval_string <- function(x) eval(parse(text = x))

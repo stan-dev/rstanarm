@@ -194,22 +194,10 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
   
   #----- model frame stuff
   
-  mf_stuff <- make_model_frame(formula, data, specials = "tt")
+  mf_stuff <- make_model_frame(formula, data, specials = "tde")
   
   mf <- mf_stuff$mf # model frame
   mt <- mf_stuff$mt # model terms
-  
-  #----- identify time-dependent effects
-  
-  # extract info on time transform terms
-  tt_stuff  <- survival::untangle.specials(mt, "tt")
-  tt_vars   <- tt_stuff$vars
-  tt_terms  <- tt_stuff$terms
-  tt_length <- length(tt_terms)
-  
-  has_tde  <- (tt_length > 0)
-  if (has_tde)
-    tt <- validate_tt_fun(tt, validate_length = tt_length)
   
   #----- dimensions and response vectors
 
@@ -250,14 +238,18 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
                             times = t_end, status = event)
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
-  # flag if closed form available for cumulative baseline hazard
-  has_closed_form <- check_for_closed_form(basehaz)
   
   # flag if intercept is required for baseline hazard
   has_intercept   <- ai(has_intercept(basehaz))
 
   #----- define dimensions and times for quadrature
-  
+
+  # flag if closed form available for cumulative baseline hazard
+  has_closed_form <- check_for_closed_form(basehaz)
+
+  # flag if formula uses time-dependent effects
+  has_tde <- (length(survival::untangle.specials(mt, "tde")$terms) > 0)
+
   # flag for quadrature
   has_quadrature <- has_tde || !has_closed_form
   
@@ -336,30 +328,26 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
   #----- predictor matrices
   
   if (has_quadrature) { # model used quadrature
-    
-    # if model has time-dependent effects then need to apply time transforms
-    # to each model frame before constructing predictor matrices
+
+    # apply time transformation to each model frame (if required)
     if (has_tde) {
-      t_bind  <- c(t_end, qpts, qpts_delayed)
-      id_bind <- rep(1:3, c(length(t_end), length(qpts), length(qpts_delayed)))
-      
-      mf_bind <- rbind(mf, mf_qpts, mf_qpts_delayed)
-      mf_bind <- apply_tt_fun(
-        model_frame = mf_bind, 
-        tt_funs     = tt, 
-        tt_vars     = tt_vars,
-        tt_terms    = tt_terms, 
-        times       = t_bind)
-      
-      mf              <- mf_bind[id_bind == 1, , drop = FALSE]
-      mf_qpts         <- mf_bind[id_bind == 2, , drop = FALSE]
-      mf_qpts_delayed <- mf_bind[id_bind == 3, , drop = FALSE]
-      
-      mt <- update_predvars(Terms       = mt, 
-                            model_frame = mf_bind, 
-                            tt_vars     = tt_vars,
-                            tt_terms    = tt_terms)
-    }
+      mf <- apply_tde_fun(
+        model_terms = mt, 
+        model_frame = mf,      
+        times       = t_end,
+        bknots      = c(min(t_beg), max(t_end)))
+      mt <- update_tde_terms(
+        model_terms = mt, 
+        model_frame = mf)
+      mf_qpts <- apply_tde_fun(
+        model_terms = mt, 
+        model_frame = mf_qpts, 
+        times       = qpts)
+      mf_qpts_delayed <- apply_tde_fun(
+        model_terms = mt, 
+        model_frame = mf_qpts_delayed, 
+        times       = qpts_delayed)
+    }    
     
     # evaluate predictor matrix at event times
     x <- make_x(formula, mf)$x
@@ -376,7 +364,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
     #   points that are relevant to the *event* times. Hence why we 
     #   are carrying two different model frame objects, namely
     #   'mf_qpts' and 'mf_qpts_delayed'.)
-    x_qpts         <- make_x(formula, mf_qpts)$x 
+    x_qpts           <- make_x(formula, mf_qpts)$x 
     if (ndelayed) {
       x_qpts_delayed <- make_x(formula, mf_qpts_delayed)$x
     } else {
@@ -564,7 +552,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops, tt = NULL,
   # return an object of class 'stansurv'
   fit <- nlist(stanfit, 
                formula,
-               has_tde,
+               has_tt,
                data,
                model_frame      = mf,
                terms            = mt,
@@ -892,7 +880,7 @@ make_model_frame <- function(formula, data, specials = NULL) {
   # use that as the environment for the terms object in the model.frame call
   # (otherwise the 'tt' function used in the model formula does not exist)
   formula_env <- new.env(parent = environment(formula$formula))
-  assign("tt", function(x) x, env = formula_env)
+  assign("tde", function(x, df = 3, degree = 3) x, env = formula_env)
   environment(Terms) <- formula_env
   
   # construct model frame
@@ -963,77 +951,143 @@ make_pp_x <- function(object, model_frame) {
   nlist(x, N = NROW(x), K = NCOL(x))  
 }
 
-# Validate the user input to the 'tt' argument. This draws on the 
-# code for the coxph modelling function in the survival package.
-#
-# Copyright (C) 2018 Sam Brilleman
-# Copyright (C) 2018 Terry Therneau, Thomas Lumley
-#
-# @param tt The user input to the 'tt' argument.
-# @param validate_length Integer specifying the required length of the 
-#   returned list.
-# @return A list of functions.
-validate_tt_fun <- function(tt, validate_length) {
+# apply b-spline time-dependent effect
+apply_tde_fun <- function(model_terms, model_frame, times, bknots) {
   
-  if (is.null(tt))
-    stop2("'tt' must be specified.")
-  
-  if (is.function(tt)) 
-    tt <- list(tt) # convert since function to a one element list
-  
-  if (!is.list(tt))
-    stop2("The 'tt' argument must contain a function or list of functions.")  
-  
-  if (!all(sapply(tt, is.function)))
-    stop2("The 'tt' argument must contain function or list of functions.")
-  
-  if (!length(tt) %in% c(1, validate_length)) 
-    stop2("The 'tt' argument contains a list of the incorrect length.")
-  
-  if (length(tt) == 1)
-    tt <- rep(tt, validate_length)
-  
-  return(tt)
-}
+  tde_stuff <- survival::untangle.specials(model_terms, "tde")
 
-# apply time transform to the model frame; method based on survival package 
-apply_tt_fun <- function(model_frame, tt_funs, tt_vars, tt_terms, times) {
-  if (!length(tt_terms))
-    return(model_frame)
+  if (!length(tde_stuff$terms)) 
+    return(model_frame) # no time-dependent effects
   
-  for (i in 1:length(tt_terms)) { # loop over time transform terms
-
-    # extract quantities used in time transform
-    varnm_i <- tt_vars[[i]] # varname in model frame
-    ttfun_i <- tt_funs[[i]] # user defined tt function
-
-    # time transform at event times
-    oldx_i <- model_frame[[varnm_i]]   # extract var from model frame
-    newx_i <- (ttfun_i)(oldx_i, times) # evaluate tt function at times
-    model_frame[[varnm_i]] <- newx_i   # substitute back into model frame
+  if (!nrow(model_frame))
+    return(model_frame) # no rows in model frame (e.g. no delayed entry)
+  
+  vars  <- attr(model_terms, 'variables')
+  pvars <- attr(model_terms, 'predvars')
+  
+  # loop over time-dependent terms in formula
+  K <- length(tde_stuff$terms)
+  for (i in 1:K) { 
+    indx_i <- tde_stuff$terms[i] + 2 # index in call; +2 for 'list' & 'Surv()'
+    var_i  <- vars [[indx_i]]        # var     in formula
+    pvar_i <- pvars[[indx_i]]        # predvar in formula
+    var_i  <- safe_deparse(var_i)    # treat call as a string
+    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
+    # get the possible prefixes for the predvar (i.e. 'tde(x' or 'bs(x')
+    prefix <- "^bs\\([^,]+,[[:blank:]]*|^tde\\([^,]+,[[:blank:]]*"
+    # returns dots from 'tde(x, ...)' as a list
+    args_i <- eval_string(sub(prefix, "list\\(", pvar_i)) 
+    # combine the dots with the times at which to evaluate the b-spline basis
+    args_i$intercept <- TRUE
+    args_i$Boundary.knots <- bknots
+    args_i <- c(list(x = times), args_i)
+    # extract the variable from the model frame
+    oldx_i  <- model_frame[[var_i]]
+    # apply interaction with the b-spline basis evaluated at specified times
+    newx_i <- oldx_i * do.call(splines::bs, args_i)
+    # substitute back into the model frame
+    model_frame[[var_i]] <- newx_i
   }
   
   return(model_frame)
 }
 
-# update the predvars attribute for time transformed terms
-update_predvars <- function(Terms, model_frame, tt_vars, tt_terms) {
-  tcall <- attr(Terms, 'variables')[tt_terms + 2]
-  pvars <- attr(Terms, 'predvars')
-  pmethod <- sub("makepredictcall.", "", as.vector(methods("makepredictcall")))
-  for (i in 1:length(tt_terms)) {
-    # update predvars if necessary
-    varnm_i <- tt_vars[[i]]       # varname in model frame
-    terms_i <- tt_terms[i] + 2    # index in terms object
-    x_i <- model_frame[[varnm_i]] # extract transformed variable from model frame
-    nclass <- class(x_i)          # check class of transformed variable
-    if (any(nclass %in% pmethod)) { # it has a makepredictcall method...
-      dummy <- as.call(list(as.name(class(x_i)[1]), tcall[[i]][[2]]))
-      ptemp <- makepredictcall(x_i, dummy)
-      pvars[[terms_i]] <- ptemp
-    }
+update_tde_terms <- function(model_terms, model_frame) {
+  tde_terms <- survival::untangle.specials(model_terms, "tde")$terms
+  if (!length(tde_terms))
+    return(model_frame) # no time-dependent effects
+  vars  <- attr(model_terms, 'variables')
+  pvars <- attr(model_terms, 'predvars')
+  K <- length(tde_terms)
+  for (i in 1:K) {
+    indx_i <- tde_terms[i] + 2       # index in call; +2 for 'list' & 'Surv()'
+    var_i  <- vars [[indx_i]]        # var     in formula
+    pvar_i <- pvars[[indx_i]]        # predvar in formula
+    var_i  <- safe_deparse(var_i)    # treat call as a string
+    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
+    oldx_i <- model_frame[[var_i]]   # extract transformed variable from model frame
+    dummy  <- as.call(list(as.name("bs"), vars[[indx_i]][[2]]))
+    ptemp  <- makepredictcall(oldx_i, dummy) # predvars call
+    pvars[[indx_i]] <- ptemp
   }
-  attr(Terms, "predvars") <- pvars
-  return(Terms)
+  attr(model_terms, "predvars") <- pvars
+  return(model_terms)
 }
+
+
+#--------- not used; based on tt approach instead of tde approach
+
+# # Validate the user input to the 'tt' argument. This draws on the 
+# # code for the coxph modelling function in the survival package.
+# #
+# # Copyright (C) 2018 Sam Brilleman
+# # Copyright (C) 2018 Terry Therneau, Thomas Lumley
+# #
+# # @param tt The user input to the 'tt' argument.
+# # @param validate_length Integer specifying the required length of the 
+# #   returned list.
+# # @return A list of functions.
+# validate_tt_fun <- function(tt, validate_length) {
+#   
+#   if (is.null(tt))
+#     stop2("'tt' must be specified.")
+#   
+#   if (is.function(tt)) 
+#     tt <- list(tt) # convert since function to a one element list
+#   
+#   if (!is.list(tt))
+#     stop2("The 'tt' argument must contain a function or list of functions.")  
+#   
+#   if (!all(sapply(tt, is.function)))
+#     stop2("The 'tt' argument must contain function or list of functions.")
+#   
+#   if (!length(tt) %in% c(1, validate_length)) 
+#     stop2("The 'tt' argument contains a list of the incorrect length.")
+#   
+#   if (length(tt) == 1)
+#     tt <- rep(tt, validate_length)
+#   
+#   return(tt)
+# }
+# 
+# # apply time transform to the model frame; method based on survival package 
+# apply_tt_fun <- function(model_frame, tt_funs, tt_vars, tt_terms, times) {
+#   if (!length(tt_terms))
+#     return(model_frame)
+#   
+#   for (i in 1:length(tt_terms)) { # loop over time transform terms
+#     
+#     # extract quantities used in time transform
+#     varnm_i <- tt_vars[[i]] # varname in model frame
+#     ttfun_i <- tt_funs[[i]] # user defined tt function
+#     
+#     # time transform at event times
+#     oldx_i <- model_frame[[varnm_i]]   # extract var from model frame
+#     newx_i <- (ttfun_i)(oldx_i, times) # evaluate tt function at times
+#     model_frame[[varnm_i]] <- newx_i   # substitute back into model frame
+#   }
+#   
+#   return(model_frame)
+# }
+#
+# # update the predvars attribute for time transformed terms
+# update_predvars <- function(model_terms, model_frame, tt_vars, tt_terms) {
+#   tcall <- attr(model_terms, 'variables')[tt_terms + 2]
+#   pvars <- attr(model_terms, 'predvars')
+#   pmethod <- sub("makepredictcall.", "", as.vector(methods("makepredictcall")))
+#   for (i in 1:length(tt_terms)) {
+#     # update predvars if necessary
+#     varnm_i <- tt_vars[[i]]       # varname in model frame
+#     terms_i <- tt_terms[i] + 2    # index in terms object
+#     x_i <- model_frame[[varnm_i]] # extract transformed variable from model frame
+#     nclass <- class(x_i)          # check class of transformed variable
+#     if (any(nclass %in% pmethod)) { # it has a makepredictcall method...
+#       dummy <- as.call(list(as.name(class(x_i)[1]), tcall[[i]][[2]]))
+#       ptemp <- makepredictcall(x_i, dummy)
+#       pvars[[terms_i]] <- ptemp
+#     }
+#   }
+#   attr(model_terms, "predvars") <- pvars
+#   return(model_terms)
+# }
 

@@ -247,7 +247,7 @@ pp_data <-
 
   # throw error if delayed entry appears in prediction dataset
   if (uses.start.stop(object)) {
-    t_beg <- make_t(formula, mf, type = "beg") # beg time
+    t_beg <- make_t(mf, type = "beg") # beg time
     if (any(!t_beg == 0))
       stop2("'posterior_survfit' cannot handle non-zero start times.")
   }
