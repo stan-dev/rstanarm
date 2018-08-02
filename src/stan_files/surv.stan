@@ -239,7 +239,8 @@ functions {
 data {
 
   // dimensions
-  int<lower=0> K;          // num. cols in predictor matrix
+  int<lower=0> K;          // num. cols in predictor matrix (time-fixed)
+  int<lower=0> S;          // num. cols in predictor matrix (time-varying)
   int<lower=0> nevents;    // num. rows w/ an event (ie. not censored)
   int<lower=0> ncensor;    // num. rows w/ censoring
   int<lower=0> ndelayed;   // num. rows w/ delayed entry
@@ -253,12 +254,17 @@ data {
   vector[ncensor]  t_censor;  // time of censoring
   vector[ndelayed] t_delayed; // time of entry for delayed entry
 
-  // predictor matrices
+  // predictor matrices (time-fixed)
   matrix[nevents,K]  x_events;       // for rows with events
   matrix[ncensor,K]  x_censor;       // for rows with censoring
   matrix[ndelayed,K] x_delayed;      // for rows with delayed entry
   matrix[qrows,K]    x_qpts;         // for rows at quadpoints
   matrix[qdelayed,K] x_qpts_delayed; // for rows at quadpoints for delayed entry
+
+  // predictor matrices (time-varying)
+  matrix[nevents,S]  s_events;       // for rows with events
+  matrix[qrows,S]    s_qpts;         // for rows at quadpoints
+  matrix[qdelayed,S] s_qpts_delayed; // for rows at quadpoints for delayed entry
 
   // design matrices for baseline hazard
   matrix[nevents,nvars]  basis_events;       // spline basis for rows with events
@@ -267,12 +273,12 @@ data {
   matrix[qrows,nvars]    basis_qpts;         // spline basis for rows at quadpoints
   matrix[qdelayed,nvars] basis_qpts_delayed; // spline basis for rows at quadpoints
                                              //   for delayed entry
-  matrix[nevents,nvars]  ibasis_events;      // integral of spline basis for rows with 
-	                                           //   events; only used for M-splines
+  matrix[nevents,nvars]  ibasis_events;      // integral of spline basis for rows with
+                                             //   events; only used for M-splines
   matrix[ncensor,nvars]  ibasis_censor;      // integral of spline basis for rows with
-	                                           //   censoring; only used for M-splines
+                                             //   censoring; only used for M-splines
   matrix[ndelayed,nvars] ibasis_delayed;     // integral of spline basis for rows with
-	                                           //   delayed entry; only used for M-splines
+                                             //   delayed entry; only used for M-splines
 
   // baseline hazard type:
   //   1 = weibull
@@ -315,6 +321,12 @@ data {
   //   3 = exponential
   int<lower=0,upper=3> prior_dist_for_aux;
 
+  // prior family:
+  //   0 = none
+  //   1 = normal
+  //   2 = student_t
+  int<lower=0,upper=2> prior_dist_for_tde;
+	
   // hyperparameter (log hazard ratios), set to 0 if there is no prior
   vector[K]           prior_mean;
   vector<lower=0>[K]  prior_scale;
@@ -332,6 +344,11 @@ data {
   // hyperparameters (basehaz pars), set to 0 if there is no prior
   vector<lower=0>[nvars] prior_scale_for_aux;
   vector<lower=0>[nvars] prior_df_for_aux;
+
+  // hyperparameters (tde spline coefficients), set to 0 if there is no prior
+  vector<lower=0>[S] prior_scale_for_tde;
+  vector<lower=0>[S] prior_df_for_tde;
+
 }
 
 transformed data {
@@ -361,6 +378,9 @@ parameters {
   //   B-spline model: nvars = number of basis terms, ie. spline coefs
   vector<lower=coefs_lb(type)>[nvars] z_coefs;
 
+  // unscaled tde spline coefficients
+  vector[S] z_beta_tde;
+
   // parameters for priors
   real<lower=0> global[hs];
   vector<lower=0>[hs > 0 ? K : 0] local[hs];
@@ -377,6 +397,9 @@ transformed parameters {
   // basehaz parameters
   vector[nvars] coefs;
 
+  // tde spline coefficients
+  vector[S] beta_tde;
+
   // define log hazard ratios
   if (K > 0) {
     beta = make_beta(z_beta, prior_dist, prior_mean,
@@ -388,6 +411,11 @@ transformed parameters {
   // define basehaz parameters
   if (nvars > 0) {
     coefs = z_coefs .* prior_scale_for_aux;
+  }
+
+  // define tde spline coefficients
+  if (S > 0) {
+    beta_tde = z_beta_tde .* prior_scale_for_tde;
   }
 }
 
@@ -508,7 +536,7 @@ model {
 
     real lhaz = 0; // summation of log hazard at event times
 
-    // linear predictor
+    // linear predictor (time-fixed part)
     if (K > 0) {
       if (nevents > 0)
         eta_events = x_events * beta;
@@ -526,6 +554,16 @@ model {
         eta_qpts_delayed = rep_vector(0.0, qdelayed);
     }
 
+    // add on time-varying part of linear predictor
+    if (S > 0) {
+      if (nevents > 0)
+        eta_events = eta_events + s_events * beta_tde;
+      if (qrows > 0)
+        eta_qpts = eta_qpts + s_qpts * beta_tde;
+      if (qdelayed > 0)
+        eta_qpts_delayed = eta_qpts_delayed + s_qpts_delayed * beta_tde;
+    }
+
     // add intercept
     if (has_intercept == 1) {
       if (nevents > 0)
@@ -538,6 +576,9 @@ model {
 
     // evaluate log hazard and log survival
     if (type == 2) { // B-splines, on log haz scale
+      if (nevents > 0) {
+        lhaz = sum(basis_events * coefs + eta_events);
+      }
       if (qrows > 0) {
         vector[qrows] lhaz_qpts;
         lhaz_qpts = basis_qpts * coefs + eta_qpts;
@@ -547,9 +588,6 @@ model {
         vector[qdelayed] lhaz_qpts_delayed;
         lhaz_qpts_delayed = basis_qpts_delayed * coefs + eta_qpts_delayed;
         lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
-      }
-      if (nevents > 0) {
-        lhaz = sum(basis_events * coefs + eta_events);
       }
     }
     else {
@@ -579,6 +617,11 @@ model {
   // log priors for baseline hazard parameters
   if (nvars > 0) {
     basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
+  }
+
+  // log priors for tde spline coefficients
+  if (S > 0) {
+    basehaz_lp(z_beta_tde, prior_dist_for_tde, prior_df_for_tde);
   }
 
 }

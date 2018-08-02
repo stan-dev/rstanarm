@@ -279,7 +279,7 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
   validate_stansurv_object(object)
   basehaz  <- object$basehaz
   if (!is.null(seed)) 
-    set.seed(seed)  
+    set.seed(seed)
   if (requires.idvar(object) && is.null(id_var))
     STOP_id_var_required()
 

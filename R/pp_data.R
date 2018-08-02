@@ -242,8 +242,13 @@ pp_data <-
     newdata <- object$data # --> need to create get_model_data method...
   
   # make prediction model frame
-  Terms <- delete.response(terms(object))
-  mf <- model.frame(Terms, newdata, xlev = object$xlevels)
+  if (is.null(newdata)) {
+    mf <- object$model_frame
+  } else {
+    rhs <- object$formula$rhs_form
+    mf <- make_model_frame(rhs, newdata, specials = "tde", xlevs = object$xlevels)$mf
+  }
+  mt <- mf_stuff$mt # model terms
 
   # throw error if delayed entry appears in prediction dataset
   if (uses.start.stop(object)) {
@@ -255,7 +260,7 @@ pp_data <-
   # flag for quadrature
   has_tde         <- FALSE # not yet implemented
   has_closed_form <- check_for_closed_form(basehaz)
-  uses_quadrature  <- has_tde || !has_closed_form
+  uses_quadrature <- has_tde || !has_closed_form
   
   if (uses_quadrature) { # model uses quadrature
     
