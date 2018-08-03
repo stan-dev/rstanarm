@@ -164,11 +164,18 @@
 #' mod3a$stanfit
 #' mod3z
 #'
-stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
-                      qnodes = 15, prior = normal(), prior_intercept = normal(),
-                      prior_aux = cauchy(), prior_tde = normal(), prior_PD = FALSE,
-                      algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = 0.95, ...) {
+stan_surv <- function(formula, 
+                      data, 
+                      basehaz         = "ms", 
+                      basehaz_ops, 
+                      qnodes          = 15, 
+                      prior           = normal(), 
+                      prior_intercept = normal(),
+                      prior_aux       = cauchy(), 
+                      prior_smooth    = exponential(autoscale = FALSE), 
+                      prior_PD        = FALSE,
+                      algorithm       = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta     = 0.95, ...) {
 
   #-----------------------------
   # Pre-processing of arguments
@@ -277,7 +284,6 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
     qwts_delayed <- rep(0,0)
     qrows        <- 0L
     qdelayed     <- 0L
-    S            <- 0L
     
   }
   
@@ -316,65 +322,49 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
     
   #----- predictor matrices
   
-  # evaluate time-fixed predictor matrix
+  # time-fixed predictor matrix
   x <- make_x(formula$tf_form, mf)$x
-  K <- ncol(x)
   x_events  <- keep_rows(x, event)
   x_censor  <- keep_rows(x, !event)
   x_delayed <- keep_rows(x, delayed)
-  
-  if (has_quadrature) { # model used quadrature
-
-    # time-fixed predictor matrix at quadrature points
-    x_qpts         <- rep_rows(x,         times = qnodes)
+  K <- ncol(x)
+  if (has_quadrature) {
+    x_qpts         <- rep_rows(x, times = qnodes)
     x_qpts_delayed <- rep_rows(x_delayed, times = qnodes)
-
-    # evaluate time-dependent predictor matrix at quadrature points
-    if (has_tde) {
-      
-      data_events       <- keep_rows(data, event)
-      data_delayed      <- keep_rows(data, delayed)
-      data_qpts         <- rep_rows(data,         times = qnodes)
-      data_qpts_delayed <- rep_rows(data_delayed, times = qnodes)
-      
-      xlevs <- .getXlevels(mt, mf)
-      
-      mf2_events_stuff <- make_model_frame(
-        formula = formula$td_form, 
-        data    = data_events, 
-        times   = t_events)
-      mf2 <- mf2_events_stuff$mf
-      mt2 <- mf2_events_stuff$mf # to use predvars from this frame
-      s_events   <- make_x(mt2, mf2, xlev = xlevs)$x
-      S          <- ncol(s_events) # num. of tde spline coefficients
-      
-      mf2_qpts <- make_model_frame(
-        formula = mt2, 
-        data    = data_qpts, 
-        times   = qpts)$mf
-      s_qpts <- make_x(mt2, mf2_qpts, xlev = xlevs)$x
-      
-      if (ndelayed) {
-        mf2_qpts_delayed <- make_model_frame(
-          formula = mt2, 
-          data    = data_qpts_delayed, 
-          times   = qpts_delayed)$mf
-        s_qpts_delayed <- make_x(mt2, mf2_qpts_delayed, xlev = xlevs)$x
-      } else {
-        s_qpts_delayed <- matrix(0,0,S) # dud entry for stan
-      }
-    }   
-            
-  } else { # model does not use quadrature
-    
-    # dud entries for stan
-    x_qpts         <- matrix(0,0,K)
+  } else {
+    x_qpts         <- matrix(0,0,K) # dud entries for stan
     x_qpts_delayed <- matrix(0,0,K)
-    s_events       <- matrix(0,0,S)
-    s_qpts         <- matrix(0,0,S)
-    s_qpts_delayed <- matrix(0,0,S)
-
   }
+  
+  # time-varying predictor matrix
+  if (has_tde) { 
+    td_form <- formula$td_form 
+    xlevs <- .getXlevels(mt, mf)
+    # at event times
+    data_events <- keep_rows(data, event)
+    mf2_events  <- make_model_frame(td_form, data_events, t_events)$mf
+    s_events    <- make_x(td_form, mf2_events, xlev = xlevs)$x
+    # at quadrature points
+    data_qpts <- rep_rows(data, times = qnodes)
+    mf2_qpts  <- make_model_frame(td_form, data_qpts, qpts)$mf
+    s_qpts    <- make_x(td_form, mf2_qpts, xlev = xlevs)$x
+    # at quadrature points for delayed entry
+    if (ndelayed) {
+      data_qpts_delayed <- rep_rows(keep_rows(data, delayed), times = qnodes)
+      mf2_qpts_delayed  <- make_model_frame(td_form, data_qpts_delayed, qpts_delayed)$mf
+      s_qpts_delayed    <- make_x(td_form, mf2_qpts_delayed, xlev = xlevs)$x
+    } else {
+      s_qpts_delayed <- matrix(0,0,ncol(s_events)) # dud entry for stan
+    }
+    smooth_map <- get_smooth_name(s_events, type = "smooth_map")
+    S <- ncol(s_events) # num. of tde spline coefficients
+  } else { # model does not have tde
+    s_events       <- matrix(0,nevents ,0)
+    s_qpts         <- matrix(0,qrows   ,0)
+    s_qpts_delayed <- matrix(0,qdelayed,0)
+    smooth_map     <- integer(0)
+    S              <- 0L
+  } 
 
   #----- stan data
   
@@ -398,6 +388,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
     s_events,
     s_qpts,
     s_qpts_delayed,
+    smooth_map,
     basis_events,
     basis_censor,
     basis_delayed,
@@ -425,6 +416,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
                     "lasso") # disallow product normal
   ok_intercept_dists <- ok_dists[1:3]
   ok_aux_dists       <- ok_dists[1:3]
+  ok_smooth_dists    <- c(ok_dists[1:3], "exponential")
   
   # priors
   user_prior_stuff <- prior_stuff <-
@@ -440,32 +432,46 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
                      default_scale = 20,
                      link = NULL,
                      ok_dists = ok_intercept_dists)
-  
+ 
   user_prior_aux_stuff <- prior_aux_stuff <-
     handle_glm_prior(prior_aux, 
                      nvars = basehaz$nvars,
                      default_scale = get_default_aux_scale(basehaz),
                      link = NULL,
                      ok_dists = ok_aux_dists)
-
-  user_prior_tde_stuff <- prior_tde_stuff <-
-    handle_glm_prior(prior_tde, 
-                     nvars = S,
-                     default_scale = 5,
+  if (prior_PD && is.null(prior_aux))
+    stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE")
+  
+  user_prior_smooth_stuff <- prior_smooth_stuff <-
+    handle_glm_prior(prior_smooth, 
+                     nvars = if (S) max(smooth_map) else 0,
+                     default_scale = 1,
                      link = NULL,
-                     ok_dists = ok_aux_dists)
+                     ok_dists = ok_smooth_dists)
+  
+  # stop null priors if prior_PD is TRUE
+  if (prior_PD) {
+    if (is.null(prior))
+      stop("'prior' cannot be NULL if 'prior_PD' is TRUE")
+    if (is.null(prior_intercept) && has_intercept)
+      stop("'prior_intercept' cannot be NULL if 'prior_PD' is TRUE")
+    if (is.null(prior_aux))
+      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE")    
+    if (is.null(prior_smooth) && (S > 0))
+      stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")    
+  }
   
   # autoscaling of priors
   prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
   prior_intercept_stuff <- autoscale_prior(prior_intercept_stuff)
   prior_aux_stuff       <- autoscale_prior(prior_aux_stuff)
-  prior_tde_stuff       <- autoscale_prior(prior_tde_stuff)
+  prior_smooth_stuff    <- autoscale_prior(prior_smooth_stuff)
   
   # priors
   standata$prior_dist              <- prior_stuff$prior_dist
   standata$prior_dist_for_intercept<- prior_intercept_stuff$prior_dist
   standata$prior_dist_for_aux      <- prior_aux_stuff$prior_dist
-  standata$prior_dist_for_tde      <- prior_tde_stuff$prior_dist
+  standata$prior_dist_for_smooth   <- prior_smooth_stuff$prior_dist
   
   # hyperparameters
   standata$prior_mean               <- prior_stuff$prior_mean
@@ -476,8 +482,9 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
   standata$prior_df_for_intercept   <- c(prior_intercept_stuff$prior_df)
   standata$prior_scale_for_aux      <- prior_aux_stuff$prior_scale
   standata$prior_df_for_aux         <- prior_aux_stuff$prior_df
-  standata$prior_scale_for_tde      <- prior_tde_stuff$prior_scale
-  standata$prior_df_for_tde         <- prior_tde_stuff$prior_df
+  standata$prior_mean_for_smooth    <- prior_smooth_stuff$prior_mean
+  standata$prior_scale_for_smooth   <- prior_smooth_stuff$prior_scale
+  standata$prior_df_for_smooth      <- prior_smooth_stuff$prior_df
   standata$global_prior_scale       <- prior_stuff$global_prior_scale
   standata$global_prior_df          <- prior_stuff$global_prior_df
   standata$slab_df                  <- prior_stuff$slab_df
@@ -513,6 +520,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
   stanpars <- c(if (standata$has_intercept) "gamma",
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
+                if (standata$S)             "smooth_sd",
                 if (standata$nvars)         "coefs")
   
   # fit model using stan
@@ -539,16 +547,18 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
   check_stanfit(stanfit)
   
   # define new parameter names
-  nms_beta <- colnames(x)        # may be NULL
-  nms_tde  <- colnames(s_events) # may be NULL
-  nms_int  <- get_int_name(basehaz)
-  nms_aux  <- get_aux_name(basehaz)
-  nms_all  <- c(nms_int,
-                nms_beta,
-                nms_tde,
-                nms_aux,
-                "log-posterior")
-  
+  nms_beta   <- colnames(x) # may be NULL
+  nms_tde    <- get_smooth_name(s_events, type = "smooth_coefs") # may be NULL
+  nms_smooth <- get_smooth_name(s_events, type = "smooth_sd")    # may be NULL
+  nms_int    <- get_int_name(basehaz)
+  nms_aux    <- get_aux_name(basehaz)
+  nms_all    <- c(nms_int,
+                  nms_beta,
+                  nms_tde,
+                  nms_smooth,
+                  nms_aux,
+                  "log-posterior")
+
   # substitute new parameter names into 'stanfit' object
   stanfit <- replace_stanfit_nms(stanfit, nms_all)
 
@@ -560,7 +570,7 @@ stan_surv <- function(formula, data, basehaz = "ms", basehaz_ops,
                model_frame      = mf,
                terms            = mt,
                x,
-               s_events,
+               s_events         = if (has_tde) s_events else NULL,
                t_beg, 
                t_end, 
                event, 
@@ -597,7 +607,7 @@ has_intercept <- function(basehaz) {
 # @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
 # @return A character string or NULL.
 get_int_name <- function(basehaz) {
-  if (has_intercept(basehaz)) "Intercept" else NULL
+  if (has_intercept(basehaz)) "(Intercept)" else NULL
 }
 
 # Return the name of the auxiliary parameter(s) for a survival model.
@@ -615,6 +625,29 @@ get_aux_name <- function(basehaz) {
          bs        = paste0("b-splines-coef", seq(nvars)),
          piecewise = paste0("piecewise-coef", seq(nvars)),
          NA)
+}
+
+# Return the name of the tde spline coefs or smoothing parameters.
+#
+# @param x The predictor matrix for the time-dependent effects, with column names.
+# @param type The type of information about the smoothing parameters to return.
+# @return A character or numeric vector, depending on 'type'.
+get_smooth_name <- function(x, type = "smooth_coefs") {
+  
+  if (is.null(x) || !ncol(x))
+    return(NULL)  
+
+  nms <- gsub(":bs\\(times__.*\\)[0-9]*$", "", colnames(x))
+  tally   <- table(nms)
+  indices <- uapply(tally, seq_len)
+  suffix  <- paste0(":tde-spline-coef", indices)
+  
+  switch(type,
+         smooth_coefs = paste0(nms, suffix),
+         smooth_sd    = paste0("smooth_sd[", unique(nms), "]"),
+         smooth_map   = rep(seq_along(tally), tally),
+         smooth_vars  = unique(nms),
+         stop2("Bug found: invalid input to 'type' argument."))
 }
 
 # Return the default scale parameter for 'prior_aux'.
@@ -734,7 +767,7 @@ parse_formula <- function(formula, data) {
 
   sel <- attr(rhs_terms, "specials")$tde
   
-  if (sel) { # model has tde
+  if (!is.null(sel)) { # model has tde
     
     # replace 'tde(x, ...)' in formula with 'x'
     tde_oldvars <- rhs_vars
@@ -759,27 +792,39 @@ parse_formula <- function(formula, data) {
     tf_form <- reformulate(term_labels, response = lhs)
     
     # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
-    tde_terms <- unlist(lapply(rhs_vars[sel], function(x) {
+    tde_terms <- lapply(rhs_vars[sel], function(x) {
       tde <- function(vn, ...) { # define tde function locally
         dots <- list(...)
-        ok_args <- c("df", "knots", "degree")
+        ok_args <- c("df")
         if (!isTRUE(all(names(dots) %in% ok_args)))
           stop2("Invalid argument to 'tde' function. ",
                 "Valid arguments are: ", comma(ok_args))
+        df <- if (is.null(dots$df)) 3 else dots$df
+        degree <- 3
+        if (df == 3) {
+          dots[["knots"]] <- numeric(0)
+        } else {
+          dx <- (max_t - min_t) / (df - degree + 1)
+          dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
+        }
         dots[["Boundary.knots"]] <- c(min_t, max_t) 
         sub("^list\\(", "bs\\(times__, ", deparse(dots))
       }
-      tde_call <- eval(parse(text = x))
+      tde_calls <- eval(parse(text = x))
       sel_terms <- which(attr(rhs_terms, "factors")[x, ] > 0)
-      newcalls <- sapply(seq_along(sel_terms), function(j) {
-        paste0(term_labels[sel_terms[j]], ":", tde_call)
-      }) 
-    }))
-    td_form <- reformulate(tde_terms, response = NULL, intercept = FALSE)
+      new_calls <- sapply(seq_along(sel_terms), function(j) {
+        paste0(term_labels[sel_terms[j]], ":", tde_calls)
+      })
+      nlist(tde_calls, new_calls)
+    })
+    td_basis <- fetch(tde_terms, "tde_calls")
+    new_calls <- fetch_(tde_terms, "new_calls")
+    td_form <- reformulate(new_calls, response = NULL, intercept = FALSE)
     
   } else { # model doesn't have tde
-    tf_form <- formula
-    td_form    <- NULL
+    tf_form  <- formula
+    td_form  <- NULL
+    td_basis <- NULL
   }
 
   nlist(formula,
@@ -789,6 +834,7 @@ parse_formula <- function(formula, data) {
         rhs_form,
         tf_form,
         td_form,
+        td_basis,
         fe_form = rhs_form, # no re terms accommodated yet
         re_form = NULL,     # no re terms accommodated yet
         allvars,

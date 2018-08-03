@@ -515,7 +515,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   
   if (type == "haz") { 
     eta <- linear_predictor(pars$beta, data$x)
-    lbh <- evaluate_log_basehaz(data$times, object$basehaz, pars$bhcoef)
+    lbh <- evaluate_log_basehaz(data$times, object$basehaz, pars$bhcoef, pars$alpha)
     haz <- exp(eta + lbh)
     out <- structure(haz, ids = seq(ncol(haz)), times = data$times)
     return(out)
@@ -861,33 +861,36 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 
 #-------------
 
-# Evaluate the log baseline hazard at the specified times
-# given the vector or matrix of MCMC draws for the baseline
-# hazard coeffients / parameters
+# Evaluate the log baseline hazard at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
 #
 # @param times A vector of times.
 # @param basehaz A list with info about the baseline hazard.
-# @param coefs A vector or matrix of parameter estimates (MCMC draws).
-# @return A vector or matrix, depending on the input type of coefs.
-evaluate_log_basehaz <- function(times, basehaz, coefs) {
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
   switch(basehaz$type_name,
-         "exp"       = log_basehaz_exponential(times),
-         "weibull"   = log_basehaz_weibull (times, shape = coefs),
-         "gompertz"  = log_basehaz_gompertz(times, scale = coefs),
-         "ms"        = log_basehaz_ms(times, coefs = coefs, basis = basehaz$basis),
-         "bs"        = log_basehaz_bs(times, coefs = coefs, basis = basehaz$basis),
-         "piecewise" = log_basehaz_pw(times, coefs = coefs, knots = basehaz$knots),
+         "exp"       = log_basehaz_exponential(times, log_scale = intercept),
+         "weibull"   = log_basehaz_weibull (times, shape = aux, log_scale = intercept),
+         "gompertz"  = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"        = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis),
+         "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis),
+         "piecewise" = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
-log_basehaz_exponential <- function(x) {
-  rep(0, length(x))
+evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  exp(evaluate_log_basehaz(times, basehaz, aux, intercept))
 }
-log_basehaz_weibull  <- function(x, shape) {
-  as.vector(log(shape)) + linear_predictor(log(shape) - 1, log(x))
+
+log_basehaz_exponential <- function(x, log_scale) {
+  linear_predictor(log_scale, rep(1, length(x)))
 }
-log_basehaz_gompertz <- function(x, scale) {
-  linear_predictor(scale, x)
+log_basehaz_weibull  <- function(x, shape, log_scale) {
+  as.vector(log_scale + log(shape)) + linear_predictor(log(shape) - 1, log(x))
+}
+log_basehaz_gompertz <- function(x, scale, log_shape) {
+  as.vector(log_shape) + linear_predictor(scale, x)
 }
 log_basehaz_ms <- function(x, coefs, basis) {
   log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
@@ -898,6 +901,7 @@ log_basehaz_bs <- function(x, coefs, basis) {
 log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = basehaz$knots))
 }
+
 
 #-------------
 

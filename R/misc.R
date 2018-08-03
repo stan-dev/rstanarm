@@ -1464,11 +1464,17 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
     stanmat <- as.matrix(object$stanfit)  
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
-  aux_nms  <- get_aux_name(object$basehaz)
-  beta_nms <- setdiff(colnames(stanmat), c(aux_nms, "log-posterior"))
-  beta   <- stanmat[, beta_nms, drop = FALSE]
-  bhcoef <- stanmat[, aux_nms,  drop = FALSE]
-  nlist(beta, bhcoef, stanmat)
+  nms_beta <- colnames(object$x)
+  nms_tde  <- get_smooth_name(object$s_events, type = "smooth_coefs")
+  nms_smth <- get_smooth_name(object$s_events, type = "smooth_sd")
+  nms_int  <- get_int_name(object$basehaz)
+  nms_aux  <- get_aux_name(object$basehaz)
+  alpha    <- stanmat[, nms_int,  drop = FALSE]
+  beta     <- stanmat[, nms_beta, drop = FALSE]
+  beta_tde <- stanmat[, nms_tde,  drop = FALSE]
+  bhcoef   <- stanmat[, nms_aux,  drop = FALSE]
+  smooth   <- stanmat[, nms_smth, drop = FALSE]
+  nlist(alpha, beta, beta_tde, bhcoef, smooth, stanmat)
 }
 
 extract_pars.stanmvreg <- function(object, stanmat = NULL, means = FALSE) {
@@ -1972,6 +1978,12 @@ replace_null <- function(x, replace_with = "0") {
     x[is.null(x)] <- replace_with
   }
   x
+}
+
+# Add an intercept column onto a predictor matrix
+add_intercept <- function(x) {
+  stopifnot(is.matrix(x))
+  cbind(rep(1, nrow(x)), x)
 }
 
 # Replace named elements of 'x' with 'y'

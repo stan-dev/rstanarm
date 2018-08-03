@@ -234,6 +234,52 @@ functions {
     }
   }
 
+  /**
+  * Log-prior for tde spline coefficients and their smoothing parameters
+  *
+  * @param z_beta_tde Vector of unscaled spline coefficients
+  * @param smooth_sd_raw Vector (potentially of length 1) of smoothing sds
+  * @param dist Integer specifying the type of prior distribution for the
+  *   smoothing sds
+  * @param df Vector of reals specifying the df for the prior distribution
+  *   for the smoothing sds
+  * @return nothing
+  */
+  void smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
+    //int K = length(z_beta_tde);
+    //matrix[K,K] mat = penalty_matrix(K);
+    //target += multi_normal_prec_lpdf(z_beta_tde | 0, mat)
+    target += normal_lpdf(z_beta_tde | 0, 1);
+    if (dist > 0) {
+      real log_half = -0.693147180559945286;
+      if (dist == 1)
+        target += normal_lpdf(smooth_sd_raw | 0, 1) - log_half;
+      else if (dist == 2)
+        target += student_t_lpdf(smooth_sd_raw | df, 0, 1) - log_half;
+      else if (dist == 3)
+        target += exponential_lpdf(smooth_sd_raw | 1);
+    }
+  }
+
+  /**
+  * Return a second order penalty matrix
+  *
+  * @param K Integer specifying the number of rows in the penalty matrix
+  * @return A square matrix
+  */
+  matrix penalty_matrix(int K) {
+    matrix[K,K] m;
+    for (r in 1:K) {
+      for (c in 1:K) {
+        int diff = abs(r - c);
+        m[r,c] = (diff == 0) ? 2 : ((diff == 1) ? -1 : 0);
+      }
+    }
+    m[1,1] = 1;
+    m[K,K] = 1;
+    return m;
+  }
+
 }
 
 data {
@@ -248,11 +294,14 @@ data {
   int<lower=0> qrows;      // num. rows used for quadrature
   int<lower=0> qdelayed;   // num. rows used for quadrature for delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
+  int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
 
-  // response variables
-  vector[nevents]  t_events;  // time of events
-  vector[ncensor]  t_censor;  // time of censoring
-  vector[ndelayed] t_delayed; // time of entry for delayed entry
+  // response and time variables
+  vector[nevents]  t_events;     // time of events
+  vector[ncensor]  t_censor;     // time of censoring
+  vector[ndelayed] t_delayed;    // time of entry for delayed entry
+  vector[qrows]    qpts;         // time at quadpoints
+  vector[qdelayed] qpts_delayed; // time at quadpoints for delayed entry
 
   // predictor matrices (time-fixed)
   matrix[nevents,K]  x_events;       // for rows with events
@@ -325,8 +374,9 @@ data {
   //   0 = none
   //   1 = normal
   //   2 = student_t
-  int<lower=0,upper=2> prior_dist_for_tde;
-	
+  //   3 = exponential
+  int<lower=0,upper=3> prior_dist_for_smooth;
+
   // hyperparameter (log hazard ratios), set to 0 if there is no prior
   vector[K]           prior_mean;
   vector<lower=0>[K]  prior_scale;
@@ -345,18 +395,23 @@ data {
   vector<lower=0>[nvars] prior_scale_for_aux;
   vector<lower=0>[nvars] prior_df_for_aux;
 
-  // hyperparameters (tde spline coefficients), set to 0 if there is no prior
-  vector<lower=0>[S] prior_scale_for_tde;
-  vector<lower=0>[S] prior_df_for_tde;
+  // hyperparameters (tde smooths), set to 0 if there is no prior
+  vector         [S > 0 ? max(smooth_map) : 0] prior_mean_for_smooth;
+  vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_scale_for_smooth;
+  vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_df_for_smooth;
 
 }
 
 transformed data {
   int<lower=0> hs = get_nvars_for_hs(prior_dist);
 
-  vector[nevents]  log_t_events  = log(t_events);  // log time of events
-  vector[ncensor]  log_t_censor  = log(t_censor);  // log time of censoring
-  vector[ndelayed] log_t_delayed = log(t_delayed); // log time of entry for delayed entry
+  vector[nevents]  log_t_events  = log(t_events);  // log time at event
+  vector[ncensor]  log_t_censor  = log(t_censor);  // log time at censoring
+  vector[ndelayed] log_t_delayed = log(t_delayed); // log time at delayed entry
+
+  vector[qrows]    log_qpts         = log(qpts);         // log time at qpts
+  vector[qdelayed] log_qpts_delayed = log(qpts_delayed); // log time at qpts
+                                                         // for delayed entry
 
   real sum_t_events = sum(t_events);         // sum of time of events
   real sum_log_t_events = sum(log_t_events); // sum of log time of events
@@ -380,6 +435,9 @@ parameters {
 
   // unscaled tde spline coefficients
   vector[S] z_beta_tde;
+	
+	// hyperparameter, the prior sd for the tde spline coefs
+  vector<lower=0>[S > 0 ? max(smooth_map) : 0] smooth_sd_raw;
 
   // parameters for priors
   real<lower=0> global[hs];
@@ -397,8 +455,9 @@ transformed parameters {
   // basehaz parameters
   vector[nvars] coefs;
 
-  // tde spline coefficients
+  // tde spline coefficients and their hyperparameters
   vector[S] beta_tde;
+  vector[S > 0 ? max(smooth_map) : 0] smooth_sd; // sd for tde splines
 
   // define log hazard ratios
   if (K > 0) {
@@ -415,7 +474,8 @@ transformed parameters {
 
   // define tde spline coefficients
   if (S > 0) {
-    beta_tde = z_beta_tde .* prior_scale_for_tde;
+    smooth_sd = smooth_sd_raw .* prior_scale_for_smooth + prior_mean_for_smooth;
+    beta_tde = z_beta_tde .* smooth_sd[smooth_map];
   }
 }
 
@@ -575,7 +635,65 @@ model {
     }
 
     // evaluate log hazard and log survival
-    if (type == 2) { // B-splines, on log haz scale
+    if (type == 5) { // exponential model
+      if (nevents > 0) {
+        lhaz = sum(eta_events);
+      }
+      if (qrows > 0) {
+        lsur = - dot_product(qwts, exp(eta_qpts));
+      }
+      if (qdelayed > 0) {
+        lsur_delayed = - dot_product(qwts_delayed, exp(eta_qpts_delayed));
+      }
+    }
+    else if (type == 1) { // weibull model
+      real shape = coefs[1];
+      real log_shape = log(shape);
+      if (nevents > 0) {
+        lhaz = (nevents * log_shape) + (shape - 1) * sum_log_t_events + sum(eta_events);
+      }
+      if (qrows > 0) {
+        vector[qrows] lhaz_qpts;
+        lhaz_qpts = log_shape + (shape - 1) * log_qpts + eta_qpts;
+        lsur = - dot_product(qwts, exp(lhaz_qpts));
+      }
+      if (qdelayed > 0) {
+        vector[qdelayed] lhaz_qpts_delayed;
+        lhaz_qpts_delayed = log_shape + (shape - 1) * log_qpts_delayed + eta_qpts_delayed;
+        lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
+      }
+    }
+    else if (type == 6) { // gompertz model
+      real scale = coefs[1];
+      if (nevents > 0) {
+        lhaz = scale * sum_t_events + sum(eta_events);
+      }
+      if (qrows > 0) {
+        vector[qrows] lhaz_qpts;
+        lhaz_qpts = scale * qpts + eta_qpts;
+        lsur = - dot_product(qwts, exp(lhaz_qpts));
+      }
+      if (qdelayed > 0) {
+        vector[qdelayed] lhaz_qpts_delayed;
+        lhaz_qpts_delayed = scale * qpts_delayed + eta_qpts_delayed;
+        lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
+      }
+    }
+    else if (type == 4) { // M-splines, on haz scale
+      if (nevents > 0)
+        lhaz = sum(log(basis_events * coefs) + eta_events);
+      if (qrows > 0) {
+        vector[qrows] lhaz_qpts;
+        lhaz_qpts = log(basis_qpts * coefs) + eta_qpts;
+        lsur = - dot_product(qwts, exp(lhaz_qpts));
+      }
+      if (qdelayed > 0) {
+        vector[qdelayed] lhaz_qpts_delayed;
+        lhaz_qpts_delayed = log(basis_qpts_delayed * coefs) + eta_qpts_delayed;
+        lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
+      }
+    }
+    else if (type == 2) { // B-splines, on log haz scale
       if (nevents > 0) {
         lhaz = sum(basis_events * coefs + eta_events);
       }
@@ -619,9 +737,9 @@ model {
     basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }
 
-  // log priors for tde spline coefficients
+  // log priors for tde spline coefficients and their smoothing parameters
   if (S > 0) {
-    basehaz_lp(z_beta_tde, prior_dist_for_tde, prior_df_for_tde);
+    smooth_lp(z_beta_tde, smooth_sd_raw, prior_dist_for_smooth, prior_df_for_smooth);
   }
 
 }
