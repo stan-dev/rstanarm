@@ -500,7 +500,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 #}
 .ll_surv <- function(object, data, pars, type = "ll") {
   
-  uses_quadrature <- data$uses_quadrature
+  has_quadrature <- data$has_quadrature
 
   if (type == "ll" && is.null(estatus)) # check for event status indicator
     stop("'estatus' cannot be NULL if 'type = ll'.")
@@ -523,7 +523,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   
   # otherwise evaluate cumhaz
   
-  if (uses_quadrature) {
+  if (has_quadrature) {
     
     eta_qpts <- linear_predictor(pars$beta, data$x_qpts)
     lbh_qpts <- evaluate_log_basehaz(data$qpts, object$basehaz, pars$bhcoef)

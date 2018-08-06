@@ -239,67 +239,96 @@ pp_data <-
   basehaz <- object$basehaz
   
   if (is.null(newdata))
-    newdata <- object$data # --> need to create get_model_data method...
-  
-  # make prediction model frame
-  if (is.null(newdata)) {
-    mf <- object$model_frame
-  } else {
-    rhs <- object$formula$rhs_form
-    mf <- make_model_frame(rhs, newdata, specials = "tde", xlevs = object$xlevels)$mf
-  }
-  mt <- mf_stuff$mt # model terms
+    newdata <- object$model_data # --> need to create get_model_data method?...
 
-  # throw error if delayed entry appears in prediction dataset
-  if (uses.start.stop(object)) {
-    t_beg <- make_t(mf, type = "beg") # beg time
-    if (any(!t_beg == 0))
-      stop2("'posterior_survfit' cannot handle non-zero start times.")
-  }
-    
-  # flag for quadrature
-  has_tde         <- FALSE # not yet implemented
-  has_closed_form <- check_for_closed_form(basehaz)
-  uses_quadrature <- has_tde || !has_closed_form
+  #----- check for delayed entry
   
-  if (uses_quadrature) { # model uses quadrature
-    
+  # throw error if delayed entry is present in prediction data
+  if (uses.start.stop(object)) {
+    check <- try({
+      mf_tmp <- make_model_frame(object$formula$lhs_form, newdata)
+      t_beg <- make_t(mf_tmp, type = "beg")
+      if (any(!t_beg == 0))
+        stop2("'posterior_survfit' cannot handle non-zero start times.")
+    })
+  }
+  
+  # otherwise assume one row per individual, with no delayed entry 
+  # (i.e. all t_beg = 0)
+  mf <- make_model_frame(formula$tf_form, newdata)$mf
+
+  #----- define dimensions and times for quadrature
+  
+  # flags
+  has_tde        <- object$has_tde
+  has_quadrature <- object$has_quadrature
+  
+  if (has_quadrature) { # model uses quadrature
+
     # number of nodes
     qnodes <- object$qnodes
     
-    # standardised weights and nodes
+    # standardised weights and nodes for quadrature
     qq <- get_quadpoints(nodes = qnodes)
     qp <- qq$points
     qw <- qq$weights
     
     # quadrature points & weights, evaluated for each row of data
-    qpts <- uapply(qp, unstandardise_qpts, 0, times)
-    qwts <- uapply(qw, unstandardise_qwts, 0, times)
+    qpts <- uapply(qp, unstandardise_qpts, 0, times) # qpts for exit time
+    qwts <- uapply(qw, unstandardise_qwts, 0, times) # qwts for exit time
     
-    # predictor matrix, including intercept if required
-    x_stuff <- make_pp_x(object, mf)
-    x <- x_stuff$x
-    x_qpts <- rep_rows(x, times = qnodes) # just replicate, since tde not yet implemented
-
-    # basis terms
-    basis      <- make_basis(times, basehaz)
-    basis_qpts <- make_basis(qpts,  basehaz)
-
-    # returned quantities
-    return(nlist(times, x, basis, qpts, qwts, x_qpts, basis_qpts, uses_quadrature))
-    
-  } else { # model does not use quadrature
-
-    # predictor matrix, including intercept if required
-    x_stuff <- make_pp_x(object, mf)
-    x <- x_stuff$x
-
-    # basis terms
+  }
+  
+  #----- basis terms for baseline hazard
+  
+  if (!has_quadrature) {
     basis  <- make_basis(times, basehaz)
     ibasis <- make_basis(times, basehaz, integrate = TRUE)
-    
-    # returned quantities
-    return(nlist(times, x, basis, ibasis, uses_quadrature))
+  } else {
+    basis      <- make_basis(times, basehaz)
+    basis_qpts <- make_basis(qpts, basehaz)
+  }
+ 
+  #----- predictor matrices
+
+  # time-fixed predictor matrix
+  x <- make_x(object$formula$tf_form, mf, xlevs = object$xlevs)$x
+  
+  if (has_quadrature)
+    x_qpts <- rep_rows(x, times = qnodes)
+  
+  # time-varying predictor matrix
+  if (has_tde) { 
+    s      <- make_s(formula = object$formula$td_form, 
+                     data    = newdata, 
+                     times   = times, 
+                     xlevs   = object$xlevs)
+    s_qpts <- make_s(formula = object$formula$td_form, 
+                     data    = rep_rows(newdata, times = qnodes), 
+                     times   = qpts, 
+                     xlevs   = object$xlevs)
+  } else { # model does not have tde
+    s      <- matrix(0,length(times),0)
+    s_qpts <- matrix(0,length(qpts) ,0)
+  }
+   
+  if (has_quadrature) {
+    return(nlist(times,
+                 qpts, 
+                 qwts,
+                 x, 
+                 x_qpts,
+                 s,
+                 s_qpts,
+                 basis,
+                 basis_qpts,
+                 has_quadrature))
+  } else {
+    return(nlist(times,
+                 x, 
+                 basis,
+                 ibasis,
+                 has_quadrature))    
   }
 }
 

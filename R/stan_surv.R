@@ -266,7 +266,7 @@ stan_surv <- function(formula,
     # quadrature points & weights, evaluated for rows with delayed entry
     if (ndelayed) {
       qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
-      qwts_delayed <- uapply(qw, unstandardise_wpts, 0, t_delayed) # qwts for entry time
+      qwts_delayed <- uapply(qw, unstandardise_qwts, 0, t_delayed) # qwts for entry time
     } else {
       qpts_delayed <- rep(0,0)
       qwts_delayed <- rep(0,0)
@@ -338,21 +338,15 @@ stan_surv <- function(formula,
   
   # time-varying predictor matrix
   if (has_tde) { 
-    td_form <- formula$td_form 
+    tdfm  <- formula$td_form 
     xlevs <- .getXlevels(mt, mf)
-    # at event times
     data_events <- keep_rows(data, event)
-    mf2_events  <- make_model_frame(td_form, data_events, t_events)$mf
-    s_events    <- make_x(td_form, mf2_events, xlev = xlevs)$x
-    # at quadrature points
-    data_qpts <- rep_rows(data, times = qnodes)
-    mf2_qpts  <- make_model_frame(td_form, data_qpts, qpts)$mf
-    s_qpts    <- make_x(td_form, mf2_qpts, xlev = xlevs)$x
-    # at quadrature points for delayed entry
+    data_qpts   <- rep_rows(data, times = qnodes)
+    s_events    <- make_s(tdfm, data_events, times = t_events, xlevs = xlevs)
+    s_qpts      <- make_s(tdfm, data_qpts,   times = qpts,     xlevs = xlevs)
     if (ndelayed) {
       data_qpts_delayed <- rep_rows(keep_rows(data, delayed), times = qnodes)
-      mf2_qpts_delayed  <- make_model_frame(td_form, data_qpts_delayed, qpts_delayed)$mf
-      s_qpts_delayed    <- make_x(td_form, mf2_qpts_delayed, xlev = xlevs)$x
+      s_qpts_delayed <- make_s(tdfm, data_qpts_delayed, qpts_delayed, xlevs = xlevs)
     } else {
       s_qpts_delayed <- matrix(0,0,ncol(s_events)) # dud entry for stan
     }
@@ -566,6 +560,7 @@ stan_surv <- function(formula,
   fit <- nlist(stanfit, 
                formula,
                has_tde,
+               has_quadrature,
                model_data       = data,
                model_frame      = mf,
                terms            = mt,
@@ -991,14 +986,7 @@ make_model_data <- function(formula, data) {
 # @param formula The parsed model formula.
 # @param data The model data frame.
 make_model_frame <- function(formula, data, times = NULL) {
-  
-  # add times (as a new variable) to the model data
-  if (!is.null(times)) {
-    if (!length(times) == nrow(data))
-      stop("Bug found: 'times' is the incorrect length.")
-    data <- data.frame(data, times__ = times)
-  }
-  
+
   # construct terms object from formula 
   Terms <- terms(formula)
   
@@ -1023,10 +1011,10 @@ make_model_frame <- function(formula, data, times = NULL) {
 #   xbar: the column means of the model matrix.
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
-make_x <- function(formula, model_frame, xlev = NULL) {
+make_x <- function(formula, model_frame, xlevs = NULL) {
 
   # uncentred predictor matrix, without intercept
-  x <- model.matrix(formula, model_frame, xlev = xlev)
+  x <- model.matrix(formula, model_frame, xlevs = xlevs)
   x <- drop_intercept(x)
   
   # column means of predictor matrix
@@ -1040,6 +1028,27 @@ make_x <- function(formula, model_frame, xlev = NULL) {
   }
   
   nlist(x, xbar, N = NROW(x), K = NCOL(x))
+}
+
+# Return a predictor for the tde spline terms
+#
+# @param formula The formula for the time-dependent effects part of the model.
+# @param data A data frame.
+# @param times The vector of times at which the predictor matrix should be 
+#   evaluated.
+# @param xlevs The factor levels to use for the predictor matrix.
+# @return A matrix.
+make_s <- function(formula, data, times, xlevs = NULL) {
+  
+  # add times (as a new variable) to the model data
+  if (!length(times) == nrow(data))
+    stop("Bug found: 'times' is the incorrect length.")
+  data <- data.frame(data, times__ = times)
+
+  # make model frame and predictor matrix
+  mf <- make_model_frame(formula, data, times)$mf
+  x  <- make_x(formula, mf, xlevs = xlevs)$x
+  return(x)
 }
 
 # Return the fe predictor matrix for prediction
