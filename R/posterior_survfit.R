@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Estimate subject-specific or standardised survival probabilities
+#' Posterior predictions for survival model quantities
 #' 
 #' This function allows us to generate estimated survival probabilities 
 #' based on draws from the posterior predictive distribution. By default
@@ -1085,8 +1085,8 @@ summarise_pred <- function(surv,
   ids   <- uapply(surv, attr, "ids")
   times <- uapply(surv, attr, "times")
   
-  # Determine the quantiles corresponding to the CI limits
-  probs  <- c((1 - prob)/2, 0.5, (1 + prob)/2)
+  # Determine the quantiles corresponding to the median and CI limits
+  probs  <- c(0.5, (1 - prob)/2, (1 + prob)/2)
   
   # Variable names for the returned data frame
   nms <- c(type_var, "ci_lb", "ci_ub", id_var, time_var)

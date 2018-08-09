@@ -35,11 +35,16 @@
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
-#' @template args-max_treedepth
 #' 
 #' @param formula A two-sided formula object describing the model. 
 #'   The left hand side of the formula should be a \code{Surv()} 
-#'   object. See \code{\link[survival]{Surv}}.
+#'   object. See \code{\link[survival]{Surv}}. If you wish to include
+#'   time-dependent effect (i.e. time-dependent coefficients) in the model
+#'   then the covariate(s) that you wish to estimate a time-dependent for 
+#'   should be specified as \code{tde(varname)}  where \code{varname} is the 
+#'   name of the covariate. See the \strong{Details} section for more 
+#'   information on how the time-dependent effects are formulated, as well
+#'   as the \strong{Examples} section.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
 #' @param basehaz A character string indicating which baseline hazard to use
@@ -98,8 +103,7 @@
 #'   \itemize{
 #'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
 #'     since the log scale parameter for the exponential distribution is 
-#'     incorporated as an intercept in the linear predictor. The auxiliary
-#'     parameter has a lower bound at zero.
+#'     incorporated as an intercept in the linear predictor.
 #'     \item \code{basehaz = "weibull"}: the auxiliary parameter is the Weibull 
 #'     shape parameter, while the log scale parameter for the Weibull 
 #'     distribution is incorporated as an intercept in the linear predictor.
@@ -119,51 +123,114 @@
 #'   or \code{cauchy}. See \code{\link{priors}} for details on these functions. 
 #'   To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_aux} to \code{NULL}. 
-#'   
+#' @param prior_smooth This is only relevant when time-dependent effects are 
+#'   specified in the model (i.e. the \code{tde()} function is used in the 
+#'   model formula. When that is the case, \code{prior_smooth} determines the
+#'   prior distribution for the hyperparameter of the smoothing function
+#'   for the time-dependent coefficients (specifically the standard deviation 
+#'   of the cubic B-spline coefficients). Lower values for the hyperparameter
+#'   yield a less flexible smooth function. \code{prior_smooth} can be a call 
+#'   to \code{exponential} to 
+#'   use an exponential distribution, or \code{normal}, \code{student_t} or 
+#'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
+#'   prior. See \code{\link{priors}} for details on these functions. To omit a 
+#'   prior ---i.e., to use a flat (improper) uniform prior--- set 
+#'   \code{prior_smooth} to \code{NULL}. The number of hyperparameters depends
+#'   on the model specification but a scalar prior will be recylced as necessary
+#'   to the appropriate length.
+#'  
+#' @details
+#'   By default, any covariate effects specified in the \code{formula} are
+#'   included in the model under a proportional hazards assumption. To relax
+#'   this assumption, it is possible to estimate a time-dependent coefficient
+#'   for a given covariate. This can be specified in the model \code{formula}
+#'   by wrapping the covariate name in the \code{tde()} function (note that
+#'   this function is not an exported function, rather it is an internal function
+#'   that can only be evaluated within the formula of a \code{stan_surv} call).
+#'   For example, if we wish to estimate a time-dependent effect for the 
+#'   covariate \code{sex} then we can specify \code{tde(sex)} in the 
+#'   \code{formula}, e.g. \code{Surv(time, status) ~ tde(sex) + age + trt}. 
+#'   The coefficient for \code{sex} will then be modelled 
+#'   using a flexible smooth function based on a cubic B-spline expansion of 
+#'   time. The flexibility of the smooth function can be controlled through 
+#'   the hyperparameters related the B-spline coefficients; see the 
+#'   \code{prior_smooth} argument. Also, by default the cubic B-spline basis is 
+#'   evaluated with 3 degrees of freedom (that is a cubic spline basis with  
+#'   boundary knots at the limits of the time range, but no internal knots). If  
+#'   you wish to increase the flexibility of the smooth function by using a 
+#'   greater number of degrees of freedom, then you can specify this as part
+#'   of the \code{tde} function call. For example, to use cubic B-splines with 
+#'   7 degrees of freedom we could specify \code{tde(sex, df = 7)} in the
+#'   model formula. See the \strong{Examples} section below for more details.
+#'              
 #' @examples
-#' options(mc.cores = parallel::detectCores())
 #' 
-#' #--- Simulated data
+#' #---------- Proportional hazards
+#' 
+#' # Simulated data
 #' library(simsurv)
-#' covs <- data.frame(id = 1:2000, 
-#'                    trt = stats::rbinom(2000, 1L, 0.5))
+#' covs <- data.frame(id  = 1:1000, 
+#'                    trt = stats::rbinom(1000, 1L, 0.5))
 #' dat1 <- simsurv(lambdas = 0.1, 
-#'                 gammas = 1.5, 
-#'                 betas = c(trt = -0.5),
-#'                 x = covs, maxt = 5)
+#'                 gammas  = 1.5, 
+#'                 betas   = c(trt = -0.5),
+#'                 x       = covs, 
+#'                 maxt    = 5)
 #' dat1 <- merge(dat1, covs)
-#' mod1a <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "ms",       chains = 2)
-#' mod1b <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "bs",       chains = 2)
-#' mod1c <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "exp",      chains = 2)
-#' mod1d <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "weibull",  chains = 2)
-#' mod1e <- stan_surv(Surv(eventtime, status) ~ trt, dat1, basehaz = "gompertz", chains = 2)
-#' mod1a
-#' mod1b
-#' mod1c
-#' mod1d
-#' mod1e
+#' fm1  <- Surv(eventtime, status) ~ trt
+#' mod1a <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "ms")
+#' mod1b <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "bs")
+#' mod1c <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "exp")
+#' mod1d <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "weibull")
+#' mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
+#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d, mod1e), fixef))
+#' bayesplot::bayesplot_grid(plot(mod1a), plot(mod1b), 
+#'                           plot(mod1c), plot(mod1d), 
+#'                           ylim = c(0, 0.8))
 #' 
-#' #--- Breast cancer data
+#' # Breast cancer data
 #' library(flexsurv)
 #' dat2 <- flexsurv::bc
-#' mod2a <- stan_surv(Surv(rectime, censrec) ~ group, dat2, basehaz = "ms")
-#' #mod2b <- stan_surv(Surv(rectime, censrec) ~ group, dat2, basehaz = "exp")
-#' #mod2c <- stan_surv(Surv(rectime, censrec) ~ group, dat2, basehaz = "weibull")
-#' mod2d <- stan_surv(Surv(rectime, censrec) ~ group, dat2, basehaz = "bs")
-#' mod2z <- flexsurvspline(Surv(rectime, censrec) ~ group, dat2, k = 3)
-#' mod2a$stanfit
-#' #mod2b$stanfit
-#' #mod2c$stanfit
-#' mod2d$stanfit
+#' fm2  <- Surv(rectime, censrec) ~ group
+#' mod2a <- stan_surv(fm2, dat2, chains = 1, iter = 1000)
+#' mod2z <- flexsurv::flexsurvspline(fm2, dat2, k = 3)
+#' print(mod2a, 4)
 #' mod2z
 #'                 
-#' #--- PBC data
-#' dat3 <- rstanarm::pbcSurv
-#' mod3a <- stan_surv(Surv(futimeYears, death) ~ sex + trt, dat3)
-#' mod3z <- flexsurvspline(Surv(futimeYears, death) ~ sex + trt, dat3, k = 3)
-#' mod3a$stanfit
+#' # PBC data
+#' dat3 <- survival::pbc
+#' dat3$timeYears <- dat3$time / 365.25
+#' dat3$death     <- (dat3$status == 2)
+#' fm3 <- Surv(timeYears, death) ~ sex + trt
+#' mod3a <- stan_surv(fm3, dat3, chains = 1, iter = 1000)
+#' mod3z <- flexsurv::flexsurvspline(fm3, dat3, k = 3)
+#' print(mod3a, 4)
 #' mod3z
 #'
+#' #---------- Non-proportional hazards
+#' 
+#' # Simulated data
+#' library(simsurv)
+#' library(rstpm2)
+#' covs <- data.frame(id  = 1:1000, 
+#'                    trt = stats::rbinom(1000, 1L, 0.5))
+#' dat4 <- simsurv(lambdas = 0.1, 
+#'                 gammas  = 1.5, 
+#'                 betas   = c(trt = -0.5),
+#'                 tde     = c(trt = 0.2),
+#'                 x       = covs, 
+#'                 maxt    = 5)
+#' dat4 <- merge(dat4, covs)
+#' fm4  <- Surv(eventtime, status) ~ tde(trt)
+#' mod4a <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
+#'                    dat4, chains = 1, iter = 1000)
+#' mod4z <- rstpm2::stpm2(Surv(eventtime, status) ~ trt, 
+#'                        dat4, tvc = list(trt = 5))
+#' print(mod4a, 4)
+#' mod4z
+#' plot(mod4a, "tde")
+#' plot(mod4z, newdata = data.frame(trt = 0), type = "hr", var = "trt")
+#' 
 stan_surv <- function(formula, 
                       data, 
                       basehaz         = "ms", 

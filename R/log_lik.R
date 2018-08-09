@@ -539,8 +539,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   }
   
   out <- switch(type,
-                cum_haz   = cum_haz,
-                log_surv = -cum_haz,
+                cumhaz   = cum_haz,
+                logsurv = -cum_haz,
                 surv     = exp(-cum_haz),
                 ll       = sweep_multiply(log_haz, estatus) - cum_haz,
                 stop("Invalid input to the 'type'argument."))
