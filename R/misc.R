@@ -2018,3 +2018,79 @@ safe_deparse <- function(expr) deparse(expr, 500L)
 
 # Evaluate a character string
 eval_string <- function(x) eval(parse(text = x))
+
+# Mutate, similar to dplyr (ie. append a new variable(s) to the data frame)
+mutate <- function(x, ..., names_eval = FALSE) {
+  dots <- list(...)
+  if (names_eval) { # evaluate names in parent frame
+    nms <- sapply(names(dots), function(x) eval.parent(as.name(x)))
+  } else {
+    nms <- names(dots)
+  }
+  for (i in seq_along(dots))
+    x[[nms[[i]]]] <- dots[[i]]
+  x
+}
+mutate_ <- function(x, ...) mutate(x, ..., names_eval = TRUE)
+
+# Sort the rows of a data frame based on the variables specified in dots.
+# (For convenience, any variables in ... that are not in the data frame
+# are ignored, rather than throwing an error - dangerous but convenient)
+#
+# @param x A data frame.
+# @param ... Character strings; names of the columns of 'x' on which to sort.
+# @param skip Logical, if TRUE then any strings in the ...'s that are not 
+#   present as variables in the data frame are ignored, rather than throwing 
+#   an error - somewhat dangerous, but convenient.
+# @return A data frame.
+row_sort <- function(x, ...) {
+  stopifnot(is.data.frame(x))
+  vars <- lapply(list(...), as.name) # convert string to name
+  x[with(x, do.call(order, vars)), , drop = FALSE]
+}
+# row_sort <- function(x, ..., skip = FALSE) {
+#   stopifnot(is.data.frame(x))
+#   if (!skip) {
+#     if (!all(list(...) %in% colnames(x)))
+#       stop("Some of the specified variables are not present in the data frame.")
+#   }
+#   vars <- intersect(list(...), colnames(x)) # select ...'s that are columns in x
+#   vars <- lapply(vars, as.name)             # convert string to name
+#   x[with(x, do.call(order, vars)), , drop = FALSE]
+# }
+
+# Order the cols of a data frame in the order specified in the dots. Any
+# remaining columns of 'x' are retained as is and included after the ... columns.
+#
+# @param x A data frame.
+# @param ... Character strings; the desired order of the columns of 'x' by name.
+# @param skip Logical, if TRUE then any strings in the ...'s that are not 
+#   present as variables in the data frame are ignored, rather than throwing 
+#   an error - somewhat dangerous, but convenient.
+# @return A data frame.
+col_sort <- function(x, ...) {
+  stopifnot(is.data.frame(x))
+  vars1 <- unlist(list(...))
+  vars2 <- setdiff(colnames(x), vars1) # select the leftover columns in x
+  x[, c(vars1, vars2), drop = FALSE]
+}
+# col_sort <- function(x, ..., skip = FALSE) {
+#   stopifnot(is.data.frame(x))
+#   if (!skip) {
+#     if (!all(list(...) %in% colnames(x)))
+#       stop("Some of the specified variables are not present in the data frame.")
+#   }
+#   vars1 <- intersect(list(...), colnames(x)) # select ...'s that are columns in x
+#   vars2 <- setdiff(colnames(x), vars1)       # select the leftover columns in x
+#   x[, c(vars1, vars2), drop = FALSE]
+# }
+
+# Calculate the specified quantiles for each column of an array
+col_quantiles <- function(x, probs, na.rm = FALSE, return_matrix = FALSE) {
+  stopifnot(is.matrix(x) || is.array(x))
+  out <- lapply(probs, function(q) apply(x, 2, quantile, q, na.rm = na.rm))
+  if (return_matrix) do.call(cbind, out) else out
+}
+col_quantiles_ <- function(x, probs) {
+  col_quantiles(x, probs, na.rm = TRUE, return_matrix = TRUE)
+}

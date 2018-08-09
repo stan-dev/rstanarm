@@ -307,7 +307,7 @@ pp_data <-
                      data    = rep_rows(newdata, times = qnodes), 
                      times   = qpts, 
                      xlevs   = object$xlevs)
-  } else { # model does not have tde
+  } else if (has_quadrature) { # model does not have tde
     s      <- matrix(0,length(times),0)
     s_qpts <- matrix(0,length(qpts) ,0)
   }

@@ -290,13 +290,13 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
    
   if (is.null(id_var)) {
     if (is.null(newdata)) {
-      id_list <- seq(nrow(object$data))
+      id_list <- seq(nrow(object$model_data))
     } else {
       id_list <- seq(nrow(newdata))
     }
   } else {
     if (is.null(newdata)) {
-      id_list <- unique(object$data[[id_var]])
+      id_list <- unique(object$model_data[[id_var]])
     } else {
       id_list <- unique(newdata[[id_var]])
     }
@@ -385,11 +385,10 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
 
   # Conditional survival times
   if (is.null(condition)) {
-    condition <- !standardise
+    condition <- ifelse(type == "surv", !standardise, FALSE)
   } else if (condition && standardise) {
-    stop("'condition' cannot be set to TRUE if standardised survival ",
-         "probabilities are requested.")
-  }  
+    stop("'condition' cannot be TRUE for standardised survival probabilities.")
+  }
   
   # Get stanmat parameter matrix for specified number of draws
   stanmat <- sample_stanmat(object, draws = draws, default_draws = 200)
@@ -397,23 +396,24 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
   
   # Calculate survival probability at each increment of extrapolation sequence
   surv <- lapply(time_seq, 
-                 calculate_survprob, 
+                 calculate_pred, 
                  object      = object,
                  newdata     = newdata,
                  pars        = pars,
+                 type        = type,
                  id_var      = id_var,
-                 standardise = standardise,
-                 type        = type)
+                 standardise = standardise)
   
   # Calculate survival probability at last known survival time and then
   # use that to calculate conditional survival probabilities
   if (condition) {
     if (!type == "surv")
       stop("'condition' can only be set to TRUE for survival probabilities.")
-    cond_surv <- calculate_survprob(last_time,
+    cond_surv <- calculate_pred(last_time,
                                     object  = object,
                                     newdata = newdata,
                                     pars    = pars,
+                                    type    = type,
                                     id_var  = id_var)
     surv <- lapply(surv, function(x) truncate(x / cond_surv, upper = 1))        
   } 
@@ -421,10 +421,11 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
   # Summarise posterior draws to get median and CI
   if (is.null(id_var)) 
     id_var <- "id"
-  out <- summarise_survprob(surv        = surv,
-                            prob        = prob, 
-                            id_var      = id_var,
-                            standardise = standardise)
+  out <- summarise_pred(surv        = surv,
+                        prob        = prob,
+                        type        = type,
+                        id_var      = id_var,
+                        standardise = standardise)
   
   # Add attributes
   structure(out,
@@ -1020,20 +1021,16 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 
 # ------------------ internal
 
-# default plotting attributes
-.PP_FILL <- "skyblue"
-.PP_DARK <- "skyblue4"
-.PP_VLINE_CLR <- "#222222"
-.PP_YREP_CLR <- "#487575"
-.PP_YREP_FILL <- "#222222"
-
-
-
-
-
-# Calculate the survival probability at the specified times
-calculate_survprob <- function(times, object, newdata, pars, type,
-                               id_var = NULL, standardise = FALSE) {
+# Calculate the desired prediction (e.g. hazard, cumulative hazard, survival
+# probability) at the specified times
+calculate_pred <- function(times, 
+                           object, 
+                           newdata, 
+                           pars, 
+                           type = "surv", 
+                           id_var = NULL, 
+                           standardise = FALSE) {
+  
   # Construct data for prediction
   dat  <- .pp_data_surv(object, newdata = newdata, times = times)
   
@@ -1062,39 +1059,69 @@ calculate_survprob <- function(times, object, newdata, pars, type,
   structure(surv, ids = ids, times = times)
 }
 
+
 # Convert a list of matrices (with each element being a S by N matrix, 
 # where S is the number of MCMC draws and N the number of individuals)
 # and collapse it across the MCMC iterations summarising it into median 
 # and CI. The result is a data frame with K times N rows, where K was 
 # the length of the original list.
-summarise_survprob <- function(surv, 
-                               prob, 
-                               id_var      = NULL, 
-                               time_var    = NULL, 
-                               standardise = FALSE) {
-  out <- do.call("rbind", lapply(surv, median_and_bounds,
-                                 prob = prob, na.rm = TRUE, 
-                                 return_matrix = TRUE))
-  out <- set_colnames(data.frame(out), c("survpred", "ci_lb", "ci_ub"))
-
+summarise_pred <- function(surv, 
+                           prob, 
+                           type        = "surv",
+                           id_var      = NULL, 
+                           time_var    = NULL, 
+                           standardise = FALSE) {
+  
+  # Default variable names if not provided by the user
   if (is.null(id_var)) 
     id_var <- "id"
   if (is.null(time_var))
     time_var <- "time"
   
-  if (standardise) { # sort by time only (no ID column)
-    out[[time_var]] <- uapply(surv, attr, "times")
-    out <- out[order(out[, time_var, drop = FALSE]), 
-               c(time_var, "survpred", "ci_lb", "ci_ub"), drop = FALSE]
-  } else { # sort by ID and time
-    out[[id_var]]   <- uapply(surv, attr, "ids")
-    out[[time_var]] <- uapply(surv, attr, "times")
-    out <- out[order(out[, id_var,   drop = FALSE], 
-                     out[, time_var, drop = FALSE]), 
-               c(id_var, time_var, "survpred", "ci_lb", "ci_ub"), drop = FALSE]
-  }
-  rownames(out) <- NULL
+  # Default name for the type of prediction
+  type_var <- get_survpred_name(type)
+  
+  # Extract ids and times for the predictions
+  ids   <- uapply(surv, attr, "ids")
+  times <- uapply(surv, attr, "times")
+  
+  # Determine the quantiles corresponding to the CI limits
+  probs  <- c((1 - prob)/2, 0.5, (1 + prob)/2)
+  
+  # Variable names for the returned data frame
+  nms <- c(type_var, "ci_lb", "ci_ub", id_var, time_var)
+  
+  # Calculate mean and CI at each prediction time
+  out <- data.frame(do.call("rbind", lapply(surv, col_quantiles_, probs)))
+  out <- mutate_(out, id_var = ids, time_var = times)
+  out <- set_rownames(out, NULL)
+  out <- set_colnames(out, nms)
+  out <- row_sort(out, id_var, time_var)
+  out <- col_sort(out, id_var, time_var)
+  
+  # Drop excess info if standardised predictions were calculated
+  if (standardise) { out[[id_var]] <- NULL; id_var <- NULL }
+  
   structure(out, 
-            id_var   = if (standardise) NULL else id_var, 
+            id_var   = id_var, 
             time_var = time_var)
 }
+
+
+# Return a user-friendly name for the prediction type
+get_survpred_name <- function(x) {
+  switch(x, 
+         surv   = "survpred",
+         haz    = "hazard",
+         cumhaz = "cum_hazard",
+         stop("Bug found: invalid input to 'type' argument."))
+}
+
+
+# Default plotting attributes
+.PP_FILL <- "skyblue"
+.PP_DARK <- "skyblue4"
+.PP_VLINE_CLR <- "#222222"
+.PP_YREP_CLR <- "#487575"
+.PP_YREP_FILL <- "#222222"
+
