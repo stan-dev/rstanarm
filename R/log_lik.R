@@ -172,7 +172,10 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...)
 ll_fun <- function(x, m = NULL) {
   validate_stanreg_object(x)
   f <- family(x, m = m)
-  if (!is(f, "family") || is_scobit(x))
+  if (is.stansurv(x)) {
+    if (x$has_quadrature) return(.ll_survq_i) else return(.ll_surv_i)
+  }
+  else if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
   else if (is_clogit(x)) 
     return(.ll_clogit_i)
@@ -230,7 +233,28 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     stanmat <- dots$stanmat # potentially use a stanmat with a single draw
   }  
   
-  if (!is_polr(object)) { # not polr or scobit model
+  if (is.stansurv(object)) { # survival model
+    data <- data.frame(status  = y[, "status"])
+    if (uses.start.stop(object)) {
+      data[["entrytime"]] <- y[, "start"]
+      data[["eventtime"]] <- y[, "stop"]
+      draws$has_delayed <- !all(data[["eventtime"]] == 0)
+    } else {
+      data[["eventtime"]] <- y[, "time"]
+      draws$has_delayed <- FALSE 
+    }
+    if (ncol(x))
+      x <- set_colnames(x, paste0("x__", colnames(x)))
+    data <- cbind(data, x)
+    if (object$has_quadrature)
+      stop2("'log_lik' not yet implemented for models with quadrature.")
+    pars <- extract_pars(object)
+    draws$bhcoef   <- pars$bhcoef
+    draws$alpha    <- pars$alpha
+    draws$beta     <- pars$beta
+    draws$beta_tde <- pars$beta_tde
+    draws$basehaz  <- object$basehaz
+  } else if (!is_polr(object)) { # not polr or scobit model
     fname <- f$family
     if (is.nlmer(object)) {
       draws <- list(mu = posterior_linpred(object, newdata = newdata),
@@ -400,9 +424,15 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 }
 
 # for stan_surv only
-.xdata_surv <- function(data) { 
-  sel <- c("t_beg", "t_end", "event")
-  data[, -which(colnames(data) %in% sel)]
+.xdata_surv <- function(data, qpts = FALSE) { 
+  nms <- colnames(data)
+  sel <- if (qpts) grep("^x_qpts__", nms) else grep("^x__", nms)
+  data[, sel]
+}
+.sdata_surv <- function(data, qpts = FALSE) { 
+  nms <- colnames(data)
+  sel <- if (qpts) grep("^s_qpts__", nms) else grep("^s__", nms)
+  data[, sel]
 }
 
 # log-likelihood functions ------------------------------------------------
@@ -480,73 +510,25 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   val <- dnorm(data_i$y, mean = draws$mu[, i_], sd = draws$sigma, log = TRUE)
   .weighted(val, data_i$weights)
 }
-
-# Return survival probability or log-likelihood for event submodel
-#
-# @param object A stanjm object.
-# @param data Output from .pp_data_jm.
-# @param pars Output from extract_pars.
-# @param survprob A logical specifying whether to return the survival probability 
-#   (TRUE) or the log likelihood for the event submodel (FALSE).
-# @param An S by Npat matrix, or a length Npat vector, depending on the inputs
-#   (where S is the size of the posterior sample and Npat is the number of 
-#   individuals).
-#.ll_surv_i <- function(data_i, draws) {
-#  eta <- linear_predictor(pars$beta, .xdata_surv(data_i))
-#  log_basesurv <- evaluate_log_basesurv(times   = data_i$times, 
-#                                          basehaz = draws$basehaz, 
-#                                          coefs   = draws$bhcoef)
-#  log_surv <- log_basesurv * exp(eta)
-#}
-.ll_surv <- function(object, data, pars, type = "ll") {
-  
-  has_quadrature <- data$has_quadrature
-
-  if (type == "ll" && is.null(estatus)) # check for event status indicator
-    stop("'estatus' cannot be NULL if 'type = ll'.")
-    
-  # To avoid an error in log(times) replace times equal to zero with a small 
-  # non-zero value. Note that these times correspond to individuals where the,
-  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
-  # be forced to zero for these individuals further down in the code anyhow.  
-  #times[times == 0] <- 1E-10 
-  
-  # evaluate hazard; quadrature not relevant
-  
-  if (type == "haz") { 
-    eta <- linear_predictor(pars$beta, data$x)
-    lbh <- evaluate_log_basehaz(data$times, object$basehaz, pars$bhcoef, pars$alpha)
-    haz <- exp(eta + lbh)
-    out <- structure(haz, ids = seq(ncol(haz)), times = data$times)
-    return(out)
-  } 
-  
-  # otherwise evaluate cumhaz
-  
-  if (has_quadrature) {
-    
-    eta_qpts <- linear_predictor(pars$beta, data$x_qpts)
-    lbh_qpts <- evaluate_log_basehaz(data$qpts, object$basehaz, pars$bhcoef)
-    haz_qpts <- exp(eta_qpts + lbh_qpts)
-    cumhaz   <- gk_quadrature(exp(haz_qpts), qnodes = data$qnodes, qwts = data$qwts)
-
+.ll_surv_i <- function(data_i, draws) {
+  eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
+  args <- list(times     = data_i$eventtime, 
+               basehaz   = draws$basehaz,
+               aux       = draws$bhcoef,
+               intercept = draws$alpha)
+  log_haz  <- do.call(evaluate_log_basehaz,  args) + eta
+  log_surv <- do.call(evaluate_log_basesurv, args) * exp(eta)
+  if (draws$has_delayed) { # delayed entry
+    args$times <- data_i$entrytime
+    log_surv_delayed <- do.call(evaluate_log_basesurv, args) * exp(eta)
   } else {
-    
-    eta          <- linear_predictor(pars$beta, data$x)
-    log_basesurv <- evaluate_log_basesurv(data$times, object$basehaz, pars$bhcoef)
-    cum_haz      <- - (exp(eta) * log_basesurv) # equivalent to: -log(surv)
-
+    log_surv_delayed <- 0
   }
-  
-  out <- switch(type,
-                cumhaz   = cum_haz,
-                logsurv = -cum_haz,
-                surv     = exp(-cum_haz),
-                ll       = sweep_multiply(log_haz, estatus) - cum_haz,
-                stop("Invalid input to the 'type'argument."))
-  
-  structure(out, ids = seq(ncol(out)), times = data$times)
+  data_i$status * log_haz + log_surv - log_surv_delayed
 }
+
+
+
 
 # log-likelihood functions for stanjm objects only ----------------------
 
@@ -815,12 +797,11 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   }
   
   # Log baseline hazard at etimes (if not NULL) and qtimes
-  log_basehaz <- evaluate_log_basehaz(times = times, 
-                                      basehaz = basehaz, 
-                                      coefs = pars$bhcoef)
+  args <- nlist(times, basehaz, aux = pars$bhcoef, intercept = pars$alpha)
+  log_basehaz <- do.call(evaluate_log_basehaz, args)
   
   # Log hazard at etimes (if not NULL) and qtimes
-  log_haz <- log_basehaz + e_eta  
+  log_haz <- log_basehaz + e_eta
   
   # Extract log hazard at qtimes only
   if (is.vector(log_haz)) {
@@ -857,7 +838,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     e_log_haz <- log_haz[, 1:length(etimes), drop = FALSE]
     return(sweep(e_log_haz, 2L, estatus, `*`) + log_surv)
   }
-} 
+}
+
 
 #-------------
 
@@ -869,7 +851,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
 # @return A vector or matrix, depending on the input type of aux.
 evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
-  switch(basehaz$type_name,
+  switch(get_basehaz_name(basehaz),
          "exp"       = log_basehaz_exponential(times, log_scale = intercept),
          "weibull"   = log_basehaz_weibull (times, shape = aux, log_scale = intercept),
          "gompertz"  = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
@@ -877,10 +859,6 @@ evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
          "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis),
          "piecewise" = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
-}
-
-evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
-  exp(evaluate_log_basehaz(times, basehaz, aux, intercept))
 }
 
 log_basehaz_exponential <- function(x, log_scale) {
@@ -896,61 +874,68 @@ log_basehaz_ms <- function(x, coefs, basis) {
   log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
 }
 log_basehaz_bs <- function(x, coefs, basis) {
-  linear_predictor(coefs, basis_matrix(x, basis = basis))
+  linear_predictor(coefs, x)
 }
 log_basehaz_pw <- function(x, coefs, knots) {
-  linear_predictor(coefs, dummy_matrix(x, knots = basehaz$knots))
+  linear_predictor(coefs, dummy_matrix(x, knots = knots))
 }
 
+evaluate_log_haz <- function(times, basehaz, betas, aux, intercept = NULL, x) {
+  eta  <- linear_predictor(betas, x)
+  args <- nlist(times, basehaz, aux,  intercept)
+  do.call(evaluate_log_basehaz, args) + eta
+}
 
 #-------------
 
-# Evaluate the log baseline survival at the specified times
-# given the vector or matrix of MCMC draws for the baseline
-# hazard coeffients / parameters
+# Evaluate the log baseline survival at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
 #
 # @param times A vector of times.
 # @param basehaz A list with info about the baseline hazard.
-# @param coefs A vector or matrix of parameter estimates (MCMC draws).
-# @return A vector or matrix, depending on the input type of coefs.
-evaluate_log_basesurv <- function(times, basehaz, coefs) {
-  switch(basehaz$type_name,
-         "exp"       = log_basesurv_exponential(times),
-         "weibull"   = log_basesurv_weibull (times, shape = coefs),
-         "gompertz"  = log_basesurv_gompertz(times, scale = coefs),
-         "ms"        = log_basesurv_ms(times, coefs = coefs, basis = basehaz$basis),
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
+  switch(get_basehaz_name(basehaz),
+         "exp"       = log_basesurv_exponential(times, log_scale = intercept),
+         "weibull"   = log_basesurv_weibull (times, shape = aux, log_scale = intercept),
+         "gompertz"  = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"        = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
-log_basesurv_exponential <- function(x) {
-  -x
+log_basesurv_exponential <- function(x, log_scale) {
+  -linear_predictor(exp(log_scale), x)
 }
-
-log_basesurv_weibull  <- function(x, shape) {
-  -exp(shape * log(x))
+log_basesurv_weibull  <- function(x, shape, log_scale) {
+  -exp(as.vector(log_scale) + linear_predictor(shape, log(x)))
 }
-
-log_basesurv_gompertz <- function(x, scale) {
-  -(exp(scale * x) - 1) / scale
+log_basesurv_gompertz <- function(x, scale, log_shape) {
+  -(as.vector(log_shape / scale)) * (exp(linear_predictor(scale, x)) - 1)
 }
-
 log_basesurv_ms <- function(x, coefs, basis) {
   -linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
 }
 
-#---------------
-
-gk_quadrature <- function(x, qnodes, qwts) { 
-  UseMethod("gk_quadrature") 
+evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x) {
+  eta  <- linear_predictor(betas, x)
+  args <- nlist(times, basehaz, aux,  intercept)
+  do.call(evaluate_log_basesurv, args) * exp(eta)
 }
 
-gk_quadrature.default <- function(x, qnodes, qwts) {
+#---------------
+
+quadrature_sum <- function(x, qnodes, qwts) { 
+  UseMethod("quadrature_sum") 
+}
+
+quadrature_sum.default <- function(x, qnodes, qwts) {
   weighted_x <- qwts * x                                 # apply quadrature weights
   splitted_x <- split_vector(x, n_segments = qnodes)     # split at each quad node
   Reduce('+', splitted_x)                                # sum over the quad nodes
 }
 
-gk_quadrature.matrix <- function(x, qnodes, qwts) {
+quadrature_sum.matrix <- function(x, qnodes, qwts) {
   weighted_x <- sweep_multiply(x, qwts, margin = 2L)     # apply quadrature weights
   splitted_x <- array2list(weighted_x, nsplits = qnodes) # split at each quad node
   Reduce('+', splitted_x)                                # sum over the quad nodes     

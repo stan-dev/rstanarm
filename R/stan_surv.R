@@ -631,6 +631,7 @@ stan_surv <- function(formula,
                model_data       = data,
                model_frame      = mf,
                terms            = mt,
+               xlevels          = .getXlevels(mt, mf),
                x,
                s_events         = if (has_tde) s_events else NULL,
                t_beg, 
@@ -726,7 +727,7 @@ get_default_aux_scale <- function(basehaz) {
 # @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
 # @return A character string.
 get_basehaz_name <- function(basehaz) {
-  basehaz$type_name
+  if (is.character(basehaz)) basehaz else basehaz$type_name
 }
 
 # Check if the type of baseline hazard has a closed form

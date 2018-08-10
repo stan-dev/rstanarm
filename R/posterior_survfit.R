@@ -16,35 +16,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Posterior predictions for survival model quantities
+#' Posterior predictions for survival models
 #' 
-#' This function allows us to generate estimated survival probabilities 
-#' based on draws from the posterior predictive distribution. By default
-#' the survival probabilities are conditional on an individual's 
-#' group-specific coefficients (i.e. their individual-level random
-#' effects). If prediction data is provided via the \code{newdataLong}  
-#' and \code{newdataEvent} arguments, then the default behaviour is to
-#' sample new group-specific coefficients for the individuals in the  
-#' new data using a Monte Carlo scheme that conditions on their 
-#' longitudinal outcome data provided in \code{newdataLong} 
-#' (sometimes referred to as "dynamic predictions", see Rizopoulos
-#' (2011)). This default behaviour can be stopped by specifying 
-#' \code{dynamic = FALSE}, in which case the predicted survival
-#' probabilities will be marginalised over the distribution of the 
-#' group-specific coefficients. This has the benefit that the user does
-#' not need to provide longitudinal outcome measurements for the new 
-#' individuals, however, it does mean that the predictions will incorporate
-#' all the uncertainty associated with between-individual variation, since
-#' the predictions aren't conditional on any observed data for the individual.
-#' In addition, by default, the predicted subject-specific survival 
-#' probabilities are conditional on observed values of the fixed effect 
-#' covariates (ie, the predictions will be obtained using either the design 
-#' matrices used in the original \code{\link{stan_jm}} model call, or using the 
-#' covariate values provided in the \code{newdataLong} and \code{newdataEvent} 
-#' arguments). However, if you wish to average over the observed distribution 
-#' of the fixed effect covariates then this is possible -- such predictions
-#' are sometimes referred to as standardised survival probabilties -- see the 
-#' \code{standardise} argument below.
+#' This function allows us to generate predicted quantities for survival
+#' models at specified times. These quantities include the 
+#' hazard rate, the cumulative hazard, or the survival probability.
+#' Predictions are obtained using unique draws from the posterior distribution
+#' of each of the model parameters and then summarised into a median and 
+#' posterior uncertainty interval.
 #' 
 #' @export
 #' @import splines2
@@ -67,6 +46,13 @@
 #'   is of course assumed that all individuals in \code{newdataEvent} have not 
 #'   yet experienced the event (that is, any variable in \code{newdataEvent} that
 #'   corresponds to the event indicator will be ignored).
+#' @param type The type of prediction to return. The following are currently
+#'   allowed:
+#'   \itemize{
+#'     \item \code{"surv"}: the estimated survival probability.
+#'     \item \code{"cumhaz"}: the estimated cumulative hazard.
+#'     \item \code{"haz"}: the estimated hazard rate.
+#'   }
 #' @param extrapolate A logical specifying whether to extrapolate the estimated 
 #'   survival probabilities beyond the times specified in the \code{times} argument.
 #'   If \code{TRUE} then the extrapolation can be further controlled using
@@ -74,11 +60,11 @@
 #' @param control A named list with parameters controlling extrapolation 
 #'   of the estimated survival function when \code{extrapolate = TRUE}. The list
 #'   can contain one or more of the following named elements: \cr
-#'   \describe{
-#'     \item{\code{epoints}}{a positive integer specifying the number of  
+#'   \itemize{
+#'     \item \code{epoints}: a positive integer specifying the number of  
 #'     discrete time points at which to calculate the forecasted survival 
-#'     probabilities. The default is 10.}
-#'     \item{\code{edist}}{a positive scalar specifying the amount of time 
+#'     probabilities. The default is 10.
+#'     \item \code{edist}: a positive scalar specifying the amount of time 
 #'     across which to forecast the estimated survival function, represented 
 #'     in units of the time variable \code{time_var} (from fitting the model). 
 #'     The default is to extrapolate between the times specified in the 
@@ -86,8 +72,8 @@
 #'     original data. If \code{edist} leads to times that are beyond
 #'     the maximum event or censoring time in the original data then the 
 #'     estimated survival probabilities will be truncated at that point, since
-#'     the estimate for the baseline hazard is not available beyond that time.}
-#' }
+#'     the estimate for the baseline hazard is not available beyond that time.
+#'   }
 #' @param condition A logical specifying whether the estimated 
 #'     subject-specific survival probabilities at time \code{t} should be 
 #'     conditioned on survival up to a fixed time point \code{u}. The default 
@@ -173,6 +159,47 @@
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Currently unused.
 #'
+#' @details
+#'   By default, the predicted quantities are evaluated conditional on observed 
+#'   values of the fixed effect covariates. That is, predictions will be 
+#'   obtained using either: 
+#'   \itemize{
+#'     \item the design matrices used in the original \code{\link{stan_surv}}
+#'     or \code{\link{stan_jm}} model call, or
+#'     \item the covariate values provided in the \code{newdata} argument
+#'     (or \code{newdataLong} and \code{newdataEvent} arugments for the
+#'     \code{stanjm} method). 
+#'   }
+#'   However, if you wish to average over the observed distribution 
+#'   of the fixed effect covariates then this is possible -- such predictions
+#'   are sometimes referred to as standardised survival probabilties -- see the 
+#'   \code{standardise} argument.
+#'   
+#'   For \code{stansurv} objects, the predicted quantities are calculated for  
+#'   each row of the prediction data, at the specified \code{times} as well as 
+#'   any times generated through extrapolation (when \code{extrapolate = TRUE}).
+#'   For \code{stanjm} objects, these quantities are calculated for each 
+#'   individual, at the specified \code{times} as well as any times generated
+#'   through extrapolation (when \code{extrapolate = TRUE}).
+#'   
+#'   The following also applies for \code{stanjm} objects.
+#'   By default the survival probabilities are conditional on an individual's 
+#'   group-specific coefficients (i.e. their individual-level random
+#'   effects). If prediction data is provided via the \code{newdataLong}  
+#'   and \code{newdataEvent} arguments, then the default behaviour is to
+#'   sample new group-specific coefficients for the individuals in the  
+#'   new data using a Monte Carlo scheme that conditions on their 
+#'   longitudinal outcome data provided in \code{newdataLong} 
+#'   (sometimes referred to as "dynamic predictions", see Rizopoulos
+#'   (2011)). This default behaviour can be stopped by specifying 
+#'   \code{dynamic = FALSE}, in which case the predicted survival
+#'   probabilities will be marginalised over the distribution of the 
+#'   group-specific coefficients. This has the benefit that the user does
+#'   not need to provide longitudinal outcome measurements for the new 
+#'   individuals, however, it does mean that the predictions will incorporate
+#'   all the uncertainty associated with between-individual variation, since
+#'   the predictions aren't conditional on any observed data for the individual.
+#'   
 #' @note 
 #'   Note that if any variables were transformed (e.g. rescaled) in the data 
 #'   used to fit the model, then these variables must also be transformed in 
@@ -193,12 +220,15 @@
 #'   (\code{time_var}).
 #'   The returned object also includes a number of additional attributes.
 #' 
-#' @seealso \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
-#'   probabilities, \code{\link{ps_check}} for for graphical checks of the estimated 
-#'   survival function, and \code{\link{posterior_traj}} for estimating the
-#'   marginal or subject-specific longitudinal trajectories, and 
-#'   \code{\link{plot_stack_jm}} for combining plots of the estimated subject-specific
-#'   longitudinal trajectory and survival function.
+#' @seealso 
+#'   \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
+#'   probabilities \cr
+#'   \code{\link{ps_check}} for for graphical checks of the estimated 
+#'   survival function \cr
+#'   \code{\link{posterior_traj}} for estimating the
+#'   marginal or subject-specific longitudinal trajectories \cr
+#'   \code{\link{plot_stack_jm}} for combining plots of the estimated 
+#'   subject-specific longitudinal trajectory and survival function
 #'   
 #' @references 
 #'   Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in 
@@ -263,21 +293,29 @@
 #'   plot(ps4)
 #' }
 #'
-posterior_survfit <- function(object, ...) {
-  UseMethod("posterior_survfit")
-}
+posterior_survfit <- function(object, ...) UseMethod("posterior_survfit")
 
-#' @rdname posterior_survfit.stansurv
+#' @rdname posterior_survfit
 #' @export
 #'
-posterior_survfit.stansurv <- function(object, newdata = NULL, 
-                                       type = "surv", extrapolate = TRUE, 
-                                       control = list(), condition = NULL, 
-                                       last_time = NULL, prob = 0.95, id_var = NULL,
-                                       times = NULL, standardise = FALSE, 
-                                       draws = NULL, seed = NULL, ...) {
+posterior_survfit.stansurv <- function(object, 
+                                       newdata     = NULL, 
+                                       type        = "surv", 
+                                       extrapolate = TRUE, 
+                                       control     = list(), 
+                                       condition   = NULL, 
+                                       last_time   = NULL, 
+                                       prob        = 0.95, 
+                                       id_var      = NULL,
+                                       times       = NULL,
+                                       standardise = FALSE, 
+                                       draws       = NULL, 
+                                       seed        = NULL, 
+                                       ...) {
   validate_stansurv_object(object)
+  
   basehaz  <- object$basehaz
+  
   if (!is.null(seed)) 
     set.seed(seed)
   if (requires.idvar(object) && is.null(id_var))
@@ -287,7 +325,8 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
   
   newdata <- validate_newdata(newdata)
   has_newdata <- not.null(newdata)
-   
+  
+  # Obtain a vector of unique subject ids 
   if (is.null(id_var)) {
     if (is.null(newdata)) {
       id_list <- seq(nrow(object$model_data))
@@ -395,8 +434,7 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
   pars    <- extract_pars(object, stanmat)
   
   # Calculate survival probability at each increment of extrapolation sequence
-  surv <- lapply(time_seq, 
-                 calculate_pred, 
+  surv <- lapply(time_seq, .pp_execute_surv, 
                  object      = object,
                  newdata     = newdata,
                  pars        = pars,
@@ -404,28 +442,32 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
                  id_var      = id_var,
                  standardise = standardise)
   
+  # If calculating log likelihood, then no further summarising required
+  if (type == "ll")
+    return(surv)
+  
   # Calculate survival probability at last known survival time and then
   # use that to calculate conditional survival probabilities
   if (condition) {
     if (!type == "surv")
       stop("'condition' can only be set to TRUE for survival probabilities.")
-    cond_surv <- calculate_pred(last_time,
-                                    object  = object,
-                                    newdata = newdata,
-                                    pars    = pars,
-                                    type    = type,
-                                    id_var  = id_var)
+    cond_surv <- .pp_execute_surv(last_time,
+                                  object  = object,
+                                  newdata = newdata,
+                                  pars    = pars,
+                                  type    = type,
+                                  id_var  = id_var)
     surv <- lapply(surv, function(x) truncate(x / cond_surv, upper = 1))        
   } 
 
   # Summarise posterior draws to get median and CI
   if (is.null(id_var)) 
     id_var <- "id"
-  out <- summarise_pred(surv        = surv,
-                        prob        = prob,
-                        type        = type,
-                        id_var      = id_var,
-                        standardise = standardise)
+  out <- .pp_summarise_surv(surv        = surv,
+                            prob        = prob,
+                            type        = type,
+                            id_var      = id_var,
+                            standardise = standardise)
   
   # Add attributes
   structure(out,
@@ -442,7 +484,7 @@ posterior_survfit.stansurv <- function(object, newdata = NULL,
             class       = c("survfit.stansurv", "data.frame"))
 }
 
-#' @rdname posterior_survfit.stanjm
+#' @rdname posterior_survfit
 #' @export
 #'
 posterior_survfit.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL,
@@ -850,13 +892,17 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   ret
 }
 
+
 #' @rdname plot.survfit.stanjm
 #' @method plot survfit.stansurv
 #' @export
 #' 
-plot.survfit.stansurv <- function(x, ids = NULL, 
+plot.survfit.stansurv <- function(x, 
+                                  ids = NULL, 
                                   limits = c("ci", "none"),  
-                                  xlab = NULL, ylab = NULL, facet_scales = "free", 
+                                  xlab = NULL, 
+                                  ylab = NULL, 
+                                  facet_scales = "free", 
                                   ci_geom_args = NULL, ...) {
   mc <- match.call(expand.dots = FALSE)
   mc[[1L]] <- quote(plot.survfit.stanjm)
@@ -1021,21 +1067,81 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 
 # ------------------ internal
 
+# Return survival probability or log-likelihood for event submodel
+#
+# @param object A stanjm object.
+# @param data Output from .pp_data_jm.
+# @param pars Output from extract_pars.
+# @param survprob A logical specifying whether to return the survival probability 
+#   (TRUE) or the log likelihood for the event submodel (FALSE).
+# @param An S by Npat matrix, or a length Npat vector, depending on the inputs
+#   (where S is the size of the posterior sample and Npat is the number of 
+#   individuals).
+.pp_eta_surv <- function(object, data, pars, type = "ll") {
+  
+  # evaluate hazard; in which case quadrature is not relevant
+  if (type %in% c("haz", "ll")) {
+    args <- nlist(times     = data$times,
+                  basehaz   = object$basehaz,
+                  betas     = pars$beta,
+                  aux       = pars$bhcoef,
+                  intercept = pars$alpha,
+                  x         = data$x)
+    log_haz <- do.call(evaluate_log_haz, args)
+    if (type == "haz") {
+      return(structure(exp(log_haz), 
+                       ids   = seq(ncol(log_haz)), 
+                       times = data$times))
+    }
+  }
+  
+  # otherwise evaluate cumulative hazard; may require quadrature
+  if (data$has_quadrature) {
+    args <- nlist(times     = data$qpts,
+                  basehaz   = object$basehaz,
+                  betas     = pars$beta,
+                  aux       = pars$bhcoef,
+                  intercept = pars$alpha,
+                  x         = data$x_qpts)
+    log_surv <- -quadrature_sum(exp(do.call(evaluate_log_haz, args)),
+                                qnodes = data$qnodes,
+                                qwts   = data$qwts)
+  } else {
+    args <- nlist(times     = data$times,
+                  basehaz   = object$basehaz,
+                  betas     = pars$beta,
+                  aux       = pars$bhcoef,
+                  intercept = pars$alpha,
+                  x         = data$x)
+    log_surv <- do.call(evaluate_log_surv, args)
+  }
+  
+  out <- switch(type,
+                cumhaz   = -log_surv,
+                logsurv  = log_surv,
+                surv     = exp(log_surv),
+                ll       = sweep_multiply(log_haz, data$status) + log_surv,
+                stop("Invalid input to the 'type'argument."))
+  
+  structure(out, ids = seq(ncol(out)), times = data$times)
+}
+
+
 # Calculate the desired prediction (e.g. hazard, cumulative hazard, survival
 # probability) at the specified times
-calculate_pred <- function(times, 
-                           object, 
-                           newdata, 
-                           pars, 
-                           type = "surv", 
-                           id_var = NULL, 
-                           standardise = FALSE) {
+.pp_execute_surv <- function(times, 
+                             object, 
+                             newdata, 
+                             pars, 
+                             type = "surv", 
+                             id_var = NULL, 
+                             standardise = FALSE) {
   
   # Construct data for prediction
-  dat  <- .pp_data_surv(object, newdata = newdata, times = times)
+  dat  <- .pp_data_surv(object, newdata = newdata, times = times, type = type)
   
-  # Evaluate survival probability
-  surv <- .ll_surv(object, data = dat, pars = pars, type = type)
+  # Evaluate hazard, cumulative hazard, or survival probability
+  surv <- .pp_eta_surv(object, data = dat, pars = pars, type = type)
   
   # Transform if only one individual 
   surv <- transpose_vector(surv)
@@ -1055,7 +1161,7 @@ calculate_pred <- function(times,
   }
   dimnames(surv) <- list(iterations = NULL, ids = ids)
   
-  # Add prediction times as an attribute
+  # Add subject ids and prediction times as an attribute
   structure(surv, ids = ids, times = times)
 }
 
@@ -1065,12 +1171,12 @@ calculate_pred <- function(times,
 # and collapse it across the MCMC iterations summarising it into median 
 # and CI. The result is a data frame with K times N rows, where K was 
 # the length of the original list.
-summarise_pred <- function(surv, 
-                           prob, 
-                           type        = "surv",
-                           id_var      = NULL, 
-                           time_var    = NULL, 
-                           standardise = FALSE) {
+.pp_summarise_surv <- function(surv, 
+                               prob, 
+                               type        = "surv",
+                               id_var      = NULL, 
+                               time_var    = NULL, 
+                               standardise = FALSE) {
   
   # Default variable names if not provided by the user
   if (is.null(id_var)) 
@@ -1107,7 +1213,6 @@ summarise_pred <- function(surv,
             time_var = time_var)
 }
 
-
 # Return a user-friendly name for the prediction type
 get_survpred_name <- function(x) {
   switch(x, 
@@ -1116,7 +1221,6 @@ get_survpred_name <- function(x) {
          cumhaz = "cum_hazard",
          stop("Bug found: invalid input to 'type' argument."))
 }
-
 
 # Default plotting attributes
 .PP_FILL <- "skyblue"

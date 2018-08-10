@@ -233,7 +233,7 @@ pp_data <-
 
 #------------------  for models fit using stan_surv  -----------------------
 
-.pp_data_surv <- function(object, newdata, times, ...) {
+.pp_data_surv <- function(object, newdata, times, type = "surv", ...) {
 
   formula <- object$formula
   basehaz <- object$basehaz
@@ -246,11 +246,17 @@ pp_data <-
   # throw error if delayed entry is present in prediction data
   if (uses.start.stop(object)) {
     check <- try({
-      mf_tmp <- make_model_frame(object$formula$lhs_form, newdata)
+      mf_tmp <- make_model_frame(object$formula$lhs_form, newdata)$mf
       t_beg <- make_t(mf_tmp, type = "beg")
       if (any(!t_beg == 0))
         stop2("'posterior_survfit' cannot handle non-zero start times.")
     })
+  }
+  
+  # return status indicator if being used for log likelihood evaluation
+  if (type == "ll") {
+    mf_tmp <- make_model_frame(object$formula$lhs_form, newdata)$mf
+    status <- make_d(mf_tmp)
   }
   
   # otherwise assume one row per individual, with no delayed entry 
@@ -322,13 +328,15 @@ pp_data <-
                  s_qpts,
                  basis,
                  basis_qpts,
-                 has_quadrature))
+                 has_quadrature,
+                 status = if (type == "ll") status else NULL))
   } else {
     return(nlist(times,
                  x, 
                  basis,
                  ibasis,
-                 has_quadrature))    
+                 has_quadrature,
+                 status = if (type == "ll") status else NULL))    
   }
 }
 
