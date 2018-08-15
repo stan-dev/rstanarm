@@ -186,12 +186,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #----------- Data for export to Stan -----------# 
   
   standata <- list(
-    M = as.integer(M), 
-    has_weights  = as.integer(!all(lapply(weights, is.null))),
+    M = ai(M), 
+    has_weights  = ai(!all(lapply(weights, is.null))),
     family = fetch_array(y_mod, "family", "mvmer_family"),
     link   = fetch_array(y_mod, "family", "mvmer_link"),
-    weights = as.array(numeric(0)), # not yet implemented
-    prior_PD = as.integer(prior_PD)
+    weights = aa(numeric(0)), # not yet implemented
+    prior_PD = ai(prior_PD)
   )  
   
   # Dimensions
@@ -210,14 +210,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   # Response vectors
   Y_integer <- fetch(y_mod, "y", "integer")
-  standata$yInt1 <- if (M > 0) Y_integer[[1]] else as.array(integer(0))  
-  standata$yInt2 <- if (M > 1) Y_integer[[2]] else as.array(integer(0))  
-  standata$yInt3 <- if (M > 2) Y_integer[[3]] else as.array(integer(0)) 
+  standata$yInt1 <- if (M > 0) Y_integer[[1]] else aa(integer(0))  
+  standata$yInt2 <- if (M > 1) Y_integer[[2]] else aa(integer(0))  
+  standata$yInt3 <- if (M > 2) Y_integer[[3]] else aa(integer(0)) 
   
   Y_real <- fetch(y_mod, "y", "real")
-  standata$yReal1 <- if (M > 0) Y_real[[1]] else as.array(double(0)) 
-  standata$yReal2 <- if (M > 1) Y_real[[2]] else as.array(double(0)) 
-  standata$yReal3 <- if (M > 2) Y_real[[3]] else as.array(double(0)) 
+  standata$yReal1 <- if (M > 0) Y_real[[1]] else aa(double(0)) 
+  standata$yReal2 <- if (M > 1) Y_real[[2]] else aa(double(0)) 
+  standata$yReal3 <- if (M > 2) Y_real[[3]] else aa(double(0)) 
   
   # Population level design matrices
   X <- fetch(y_mod, "x", "xtemp")
@@ -226,9 +226,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   standata$yX3 <- if (M > 2) X[[3]] else matrix(0,0,0)
   
   X_bar <- fetch(y_mod, "x", "x_bar")
-  standata$yXbar1 <- if (M > 0) as.array(X_bar[[1]]) else as.array(double(0))
-  standata$yXbar2 <- if (M > 1) as.array(X_bar[[2]]) else as.array(double(0))
-  standata$yXbar3 <- if (M > 2) as.array(X_bar[[3]]) else as.array(double(0))
+  standata$yXbar1 <- if (M > 0) aa(X_bar[[1]]) else aa(double(0))
+  standata$yXbar2 <- if (M > 1) aa(X_bar[[2]]) else aa(double(0))
+  standata$yXbar3 <- if (M > 2) aa(X_bar[[3]]) else aa(double(0))
   
   # Data for group specific terms - group factor 1
   b1_varname <- cnms_nms[[1L]] # name of group factor 1
@@ -241,7 +241,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   standata$bN1 <- b1_ngrps[[1L]] + 1L # add padding for _NEW_ group
   standata$bK1 <- sum(b1_nvars)
-  standata$bK1_len <- as.array(b1_nvars)
+  standata$bK1_len <- aa(b1_nvars)
   standata$bK1_idx <- get_idx_array(b1_nvars)
   
   Z1 <- fetch(y_mod, "z", "z", b1_varname)
@@ -254,9 +254,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   Z1_id <- fetch(y_mod, "z", "group_list", b1_varname)
   Z1_id <- lapply(Z1_id, groups)
   Z1_id <- lapply(Z1_id, convert_null, "arrayinteger")
-  standata$y1_Z1_id <- if (M > 0) Z1_id[[1L]] else as.array(integer(0))
-  standata$y2_Z1_id <- if (M > 1) Z1_id[[2L]] else as.array(integer(0))
-  standata$y3_Z1_id <- if (M > 2) Z1_id[[3L]] else as.array(integer(0))
+  standata$y1_Z1_id <- if (M > 0) Z1_id[[1L]] else aa(integer(0))
+  standata$y2_Z1_id <- if (M > 1) Z1_id[[2L]] else aa(integer(0))
+  standata$y3_Z1_id <- if (M > 2) Z1_id[[3L]] else aa(integer(0))
   
   # Data for group specific terms - group factor 2
   if (length(cnms) > 1L) {
@@ -270,7 +270,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
            b2_varname, "' should be the same in all submodels.")
     standata$bN2 <- b2_ngrps[[1L]] + 1L # add padding for _NEW_ group
     standata$bK2 <- sum(b2_nvars)
-    standata$bK2_len <- as.array(b2_nvars)
+    standata$bK2_len <- aa(b2_nvars)
     standata$bK2_idx <- get_idx_array(b2_nvars)
     
     Z2 <- fetch(y_mod, "z", "z", b2_varname)
@@ -283,22 +283,22 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     Z2_id <- fetch(y_mod, "z", "group_list", b2_varname)
     Z2_id <- lapply(Z2_id, groups)
     Z2_id <- lapply(Z2_id, convert_null, "arrayinteger")
-    standata$y1_Z2_id <- if (M > 0) Z2_id[[1L]] else as.array(integer(0))
-    standata$y2_Z2_id <- if (M > 1) Z2_id[[2L]] else as.array(integer(0))
-    standata$y3_Z2_id <- if (M > 2) Z2_id[[3L]] else as.array(integer(0))
+    standata$y1_Z2_id <- if (M > 0) Z2_id[[1L]] else aa(integer(0))
+    standata$y2_Z2_id <- if (M > 1) Z2_id[[2L]] else aa(integer(0))
+    standata$y3_Z2_id <- if (M > 2) Z2_id[[3L]] else aa(integer(0))
     
   } else {
     # no second grouping factor
     standata$bN2 <- 0L
     standata$bK2 <- 0L
-    standata$bK2_len <- as.array(rep(0,3L))
+    standata$bK2_len <- aa(rep(0,3L))
     standata$bK2_idx <- get_idx_array(rep(0,3L))
     standata$y1_Z2 <- matrix(0,0,0)
     standata$y2_Z2 <- matrix(0,0,0)
     standata$y3_Z2 <- matrix(0,0,0)
-    standata$y1_Z2_id <- as.array(integer(0))
-    standata$y2_Z2_id <- as.array(integer(0))
-    standata$y3_Z2_id <- as.array(integer(0))
+    standata$y1_Z2_id <- aa(integer(0))
+    standata$y2_Z2_id <- aa(integer(0))
+    standata$y3_Z2_id <- aa(integer(0))
   }
   
   # Priors
@@ -324,19 +324,19 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     fetch_array(y_prior_stuff, "prior_dist", pad_length = 3)
   
   prior_mean <- fetch(y_prior_stuff, "prior_mean")
-  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else as.array(double(0))
-  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else as.array(double(0))
-  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else as.array(double(0))
+  standata$y_prior_mean1 <- if (M > 0) prior_mean[[1]] else aa(double(0))
+  standata$y_prior_mean2 <- if (M > 1) prior_mean[[2]] else aa(double(0))
+  standata$y_prior_mean3 <- if (M > 2) prior_mean[[3]] else aa(double(0))
   
   prior_scale <- fetch(y_prior_stuff, "prior_scale")
-  standata$y_prior_scale1 <- if (M > 0) as.array(prior_scale[[1]]) else as.array(double(0))
-  standata$y_prior_scale2 <- if (M > 1) as.array(prior_scale[[2]]) else as.array(double(0))
-  standata$y_prior_scale3 <- if (M > 2) as.array(prior_scale[[3]]) else as.array(double(0))
+  standata$y_prior_scale1 <- if (M > 0) aa(prior_scale[[1]]) else aa(double(0))
+  standata$y_prior_scale2 <- if (M > 1) aa(prior_scale[[2]]) else aa(double(0))
+  standata$y_prior_scale3 <- if (M > 2) aa(prior_scale[[3]]) else aa(double(0))
   
   prior_df <- fetch(y_prior_stuff, "prior_df")
-  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else as.array(double(0))
-  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else as.array(double(0))
-  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else as.array(double(0))
+  standata$y_prior_df1 <- if (M > 0) prior_df[[1]] else aa(double(0))
+  standata$y_prior_df2 <- if (M > 1) prior_df[[2]] else aa(double(0))
+  standata$y_prior_df3 <- if (M > 2) prior_df[[3]] else aa(double(0))
   
   # hs priors only
   standata$y_global_prior_scale <- fetch_array(y_prior_stuff, "global_prior_scale") 
@@ -346,8 +346,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   # Priors for group specific terms
   standata$t <- length(cnms)
-  standata$p <- as.array(sapply(cnms, length))
-  standata$l <- as.array(
+  standata$p <- aa(sapply(cnms, length))
+  standata$l <- aa(
     sapply(cnms_nms, FUN = function(nm) {
       ngrps <- unique(fetch_(y_mod, "z", "ngrps", nm))
       ngrps + 1L # add padding for _NEW_ group
@@ -367,10 +367,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$len_theta_L <- sum(choose(standata$p, 2), standata$p)
     
     # pass empty lkj data
-    standata$b1_prior_scale <- as.array(rep(0L, standata$bK1))
-    standata$b2_prior_scale <- as.array(rep(0L, standata$bK2))
-    standata$b1_prior_df <- as.array(rep(0L, standata$bK1))
-    standata$b2_prior_df <- as.array(rep(0L, standata$bK2))
+    standata$b1_prior_scale <- aa(rep(0L, standata$bK1))
+    standata$b2_prior_scale <- aa(rep(0L, standata$bK2))
+    standata$b1_prior_df <- aa(rep(0L, standata$bK1))
+    standata$b2_prior_df <- aa(rep(0L, standata$bK2))
     standata$b1_prior_regularization <- 1.0
     standata$b2_prior_regularization <- 1.0   
     
@@ -404,19 +404,19 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       standata$b2_prior_regularization <- unique(b2_prior_regularization)
     } else {
       # model does not have a second grouping factor
-      standata$b2_prior_scale <- as.array(double(0))
-      standata$b2_prior_df <- as.array(double(0))
+      standata$b2_prior_scale <- aa(double(0))
+      standata$b2_prior_df <- aa(double(0))
       standata$b2_prior_regularization <- 1.0
     }
     
     # pass empty decov data
     standata$len_theta_L <- 0L
-    standata$b_prior_shape <- as.array(rep(0L, standata$t))
-    standata$b_prior_scale <- as.array(rep(0L, standata$t))
+    standata$b_prior_shape <- aa(rep(0L, standata$t))
+    standata$b_prior_scale <- aa(rep(0L, standata$t))
     standata$len_concentration <- 0L
     standata$len_regularization <- 0L
-    standata$b_prior_concentration <- as.array(rep(0L, standata$len_concentration))
-    standata$b_prior_regularization <- as.array(rep(0L, standata$len_regularization))   
+    standata$b_prior_concentration <- aa(rep(0L, standata$len_concentration))
+    standata$b_prior_regularization <- aa(rep(0L, standata$len_regularization))   
   }
   
   # Names for longitudinal submodel parameters
@@ -508,25 +508,30 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     #----------- Data for export to Stan -----------# 
     
     # Data and dimensions
-    standata$e_K     <- as.integer(e_mod$K)
-    standata$Npat    <- as.integer(e_mod$Npat)
-    standata$Nevents <- as.integer(e_mod$Nevents)
-    standata$qnodes  <- as.integer(qnodes)
-    standata$qwts    <- as.array(e_mod$qwts)
-    standata$Npat_times_qnodes <- as.integer(e_mod$Npat * qnodes)
-    standata$e_times <- as.array(e_mod$cpts)
-    standata$nrow_e_Xq <- length(standata$e_times)
-    standata$e_has_intercept <- as.integer(basehaz$type_name == "weibull")
-    standata$e_Xq    <- e_mod$Xq
-    standata$e_xbar  <- as.array(e_mod$Xbar)
-    standata$e_weights <- as.array(e_weights)
-    standata$e_weights_rep <- as.array(rep(e_weights, times = qnodes))
+    standata$e_K            <- ai(e_mod$K)
+    standata$Npat           <- ai(e_mod$Npat)
+    standata$Nevents        <- ai(e_mod$Nevents)
+    standata$qnodes         <- ai(qnodes)
+    standata$qwts           <- aa(e_mod$qwts)
+    standata$qwts_left      <- aa(e_mod$qwts_left)
+    standata$qwts_right     <- aa(e_mod$qwts_right)
+    standata$Npat_times_qnodes<- ai(e_mod$Npat * qnodes)
+    standata$e_times        <- aa(e_mod$cpts)
+    standata$nrow_e_Xq      <- length(standata$e_times)
+    standata$e_has_intercept<- ai(basehaz$type_name == "weibull")
+    standata$e_Xq           <- e_mod$Xq
+    standata$e_Xq_left      <- e_mod$Xq_left
+    standata$e_Xq_right     <- e_mod$Xq_right
+    standata$e_xbar         <- aa(e_mod$Xbar)
+    standata$e_weights      <- aa(e_weights)
+    standata$e_weights_rep  <- aa(rep(e_weights, times = qnodes))
+    standata$interval       <- ai(e_mod$interval)
     
     # Baseline hazard
-    standata$basehaz_type <- as.integer(basehaz$type)
-    standata$basehaz_df   <- as.integer(basehaz$df)
-    standata$basehaz_X <- make_basehaz_X(e_mod$cpts, basehaz)
-    standata$norm_const <- e_mod$norm_const    
+    standata$basehaz_type   <- ai(basehaz$type)
+    standata$basehaz_df     <- ai(basehaz$df)
+    standata$basehaz_X      <- make_basehaz_X(e_mod$cpts, basehaz)
+    standata$norm_const     <- e_mod$norm_const    
     
     # Priors
     standata$e_prior_dist              <- e_prior_stuff$prior_dist
@@ -540,8 +545,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     standata$e_prior_mean_for_intercept <- c(e_prior_intercept_stuff$prior_mean)
     standata$e_prior_scale_for_intercept<- c(e_prior_intercept_stuff$prior_scale)
     standata$e_prior_df_for_intercept   <- c(e_prior_intercept_stuff$prior_df)
-    standata$e_prior_mean_for_aux       <- if (basehaz$type == 1L) as.array(0) else 
-      as.array(e_prior_aux_stuff$prior_mean)
+    standata$e_prior_mean_for_aux       <- if (basehaz$type == 1L) aa(0) else 
+      aa(e_prior_aux_stuff$prior_mean)
     standata$e_prior_scale_for_aux      <- e_prior_aux_stuff$prior_scale
     standata$e_prior_df_for_aux         <- e_prior_aux_stuff$prior_df
     standata$e_global_prior_scale       <- e_prior_stuff$global_prior_scale
@@ -625,7 +630,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                       y_aux_nms, paste0("Sigma[", Sigma_nms, "]"),
                       paste0(stub, 1:M, "|mean_PPD"), "log-posterior")
     init_fit@sim$fnames_oi <- init_new_nms
-    init_mat <- t(colMeans(as.matrix(init_fit))) # posterior means
+    init_mat <- t(colMeans(am(init_fit))) # posterior means
     init_nms <- collect_nms(colnames(init_mat), M, stub = "Long")
     init_beta <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]]])
     init_b <- lapply(1:M, function(m) {
@@ -654,14 +659,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       if (length(sel_bC1) > 1) {
         inits[["bCholesky1"]] <- matrix(init_means2[sel_bC1,], nrow = standata$bK1)
       } else if (length(sel_bC1) == 1) {
-        inits[["bCholesky1"]] <- as.array(init_means2[sel_bC1,])
+        inits[["bCholesky1"]] <- aa(init_means2[sel_bC1,])
       }
       
       sel_bC2 <- grep(paste0("^bCholesky2\\."), init_nms2)
       if (length(sel_bC2) > 1) {
         inits[["bCholesky2"]] <- matrix(init_means2[sel_bC2,], nrow = standata$bK2)
       } else if (length(sel_bC1) == 1) {
-        inits[["bCholesky2"]] <- as.array(init_means2[sel_bC2,])
+        inits[["bCholesky2"]] <- aa(init_means2[sel_bC2,])
       }      
       
       sel <- c("yGamma1", "yGamma2", "yGamma3", 
@@ -675,7 +680,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       for (i in sel) {
         sel_i <- grep(paste0("^", i, "\\."), init_nms2)
         if (length(sel_i))
-          inits[[i]] <- as.array(init_means2[sel_i,])
+          inits[[i]] <- aa(init_means2[sel_i,])
       }
       init <- function() inits
     }
@@ -697,8 +702,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     #----------- Data for export to Stan -----------# 
  
     # Dimensions   
-    standata$assoc <- as.integer(a_K > 0L) # any association structure, 1 = yes
-    standata$a_K   <- as.integer(a_K)      # num association parameters
+    standata$assoc <- ai(a_K > 0L) # any association structure, 1 = yes
+    standata$a_K   <- ai(a_K)      # num association parameters
     
     # Indicator for which components are required to build the association terms
     assoc_uses <- sapply(
@@ -714,7 +719,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
         sel <- grep(nm_check, rownames(assoc))
         tmp <- assoc[sel, , drop = FALSE]
         tmp <- pad_matrix(tmp, cols = 3L, value = FALSE)
-        as.integer(as.logical(colSums(tmp > 0)))
+        ai(as.logical(colSums(tmp > 0)))
       }, assoc = assoc)
     standata$assoc_uses <- t(assoc_uses)
     
@@ -725,11 +730,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # 9 = ev_data; 10 = es_data; 11 = mv_data; 12 = ms_data;
     # 13 = evev; 14 = evmv; 15 = mvev; 16 = mvmv;
     sel <- grep("which|null", rownames(assoc), invert = TRUE)
-    standata$has_assoc <- matrix(as.integer(assoc[sel,]), ncol = M) 
+    standata$has_assoc <- matrix(ai(assoc[sel,]), ncol = M) 
     
     # Data for association structure when there is
     # clustering below the patient-level
-    standata$has_grp <- as.array(as.integer(has_grp))
+    standata$has_grp <- aa(ai(has_grp))
     if (any(has_grp)) { # has lower level clustering
       sel <- which(has_grp)[[1L]]
       standata$grp_idx <- attr(a_mod[[sel]], "grp_idx")
@@ -747,7 +752,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Data for calculating eta, slope, auc in GK quadrature 
     N_tmp <- sapply(a_mod, function(x) NROW(x$mod_eta$xtemp))
     N_tmp <- c(N_tmp, rep(0, 3 - length(N_tmp)))
-    standata$nrow_y_Xq <- as.array(as.integer(N_tmp))
+    standata$nrow_y_Xq <- aa(ai(N_tmp))
     for (m in 1:3) {
       for (i in c("eta", "eps", "auc")) {
         nm_check <- switch(i,
@@ -776,14 +781,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
           } else {
             Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-            Z2_tmp_id <- as.array(integer(0))
+            Z2_tmp_id <- aa(integer(0))
           }
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
           Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
           Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-          Z1_tmp_id <- as.array(integer(0)) 
-          Z2_tmp_id <- as.array(integer(0)) 
+          Z1_tmp_id <- aa(integer(0)) 
+          Z2_tmp_id <- aa(integer(0)) 
         }
         standata[[paste0("y", m, "_xq_", i)]] <- X_tmp
         standata[[paste0("y", m, "_z1q_", i)]] <- Z1_tmp
@@ -794,8 +799,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     }
   
     # Data for auc association structure
-    standata$auc_qnodes <- as.integer(auc_qnodes)
-    standata$Npat_times_auc_qnodes <- as.integer(e_mod$Npat * auc_qnodes) 
+    standata$auc_qnodes <- ai(auc_qnodes)
+    standata$Npat_times_auc_qnodes <- ai(e_mod$Npat * auc_qnodes) 
     nrow_y_Xq_auc <- unique(uapply(a_mod, function(x) {
       nr <- NROW(x$mod_auc$x)
       if (nr > 0) nr else NULL
@@ -806,7 +811,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     auc_qwts <- uapply(e_mod$cpts, function(x)
       lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, x))
     standata$auc_qwts <- 
-      if (any(standata$assoc_uses[3,] > 0)) as.array(auc_qwts) else double(0)    
+      if (any(standata$assoc_uses[3,] > 0)) aa(auc_qwts) else double(0)    
 
     # Interactions between association terms and data, with the following objects:
     #   a_K_data: number of columns in y_Xq_data corresponding to each interaction 
@@ -814,30 +819,30 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
     #     since it is formed as a block diagonal matrix
     Xq_data <- fetch(a_mod, "X_bind_data") # design mat for the interactions
-    standata$y_Xq_data <- as.array(as.matrix(Matrix::bdiag(Xq_data)))
+    standata$y_Xq_data <- aa(am(Matrix::bdiag(Xq_data)))
     standata$a_K_data <- fetch_array(a_mod, "K_data")
     standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
     
     # Interactions between association terms
-    standata$which_interactions      <- as.array(unlist(assoc["which_interactions",]))
+    standata$which_interactions      <- aa(unlist(assoc["which_interactions",]))
     standata$size_which_interactions <- c(sapply(assoc["which_interactions",], sapply, length))
     
     # Shared random effects
-    standata$which_b_zindex    <- as.array(unlist(assoc["which_b_zindex",]))
-    standata$which_coef_zindex <- as.array(unlist(assoc["which_coef_zindex",]))
-    standata$which_coef_xindex <- as.array(unlist(assoc["which_coef_xindex",]))
-    standata$size_which_b      <- as.array(sapply(assoc["which_b_zindex",    ], length))
-    standata$size_which_coef   <- as.array(sapply(assoc["which_coef_zindex", ], length))
+    standata$which_b_zindex    <- aa(unlist(assoc["which_b_zindex",]))
+    standata$which_coef_zindex <- aa(unlist(assoc["which_coef_zindex",]))
+    standata$which_coef_xindex <- aa(unlist(assoc["which_coef_xindex",]))
+    standata$size_which_b      <- aa(sapply(assoc["which_b_zindex",    ], length))
+    standata$size_which_coef   <- aa(sapply(assoc["which_coef_zindex", ], length))
     
     # Sum dimensions
     for (i in c("a_K_data", paste0("size_which_", c("b", "coef", "interactions")))) {
-      standata[[paste0("sum_", i)]] <- as.integer(sum(standata[[i]]))
+      standata[[paste0("sum_", i)]] <- ai(sum(standata[[i]]))
     }
     
     # Hyperparameters for assoc parameter priors
     standata$a_prior_dist  <- e_prior_assoc_stuff$prior_dist 
     standata$a_prior_mean  <- e_prior_assoc_stuff$prior_mean
-    standata$a_prior_scale <- as.array(e_prior_assoc_stuff$prior_scale)
+    standata$a_prior_scale <- aa(e_prior_assoc_stuff$prior_scale)
     standata$a_prior_df    <- e_prior_assoc_stuff$prior_df
     standata$a_global_prior_scale <- e_prior_assoc_stuff$global_prior_scale
     standata$a_global_prior_df    <- e_prior_assoc_stuff$global_prior_df

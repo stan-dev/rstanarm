@@ -1694,3 +1694,5 @@ is_like_factor <- function(x) {
   is.factor(x) || is.character(x) || is.logical(x)
 }
 
+# Concatenate (i.e. 'c(...)') but don't demote factors to integers
+ulist <- function(...) { unlist(list(...)) }

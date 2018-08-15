@@ -1011,38 +1011,71 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
     stop("the 'data.table' package must be installed to use this function")
   
   mod <- survival::coxph(formula, data = data, x = TRUE)
+  
+  
   RHS_with_id <- paste(deparse(formula[[3L]]), "+", id_var)
   formula_with_id <- reformulate(RHS_with_id, response = formula[[2L]])
   mf1 <- model.frame(formula_with_id, data = data)
   mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
   mf2 <- unclass_Surv_column(mf1) 
   if (attr(mod$y, "type") == "counting") {
-    tvc <- TRUE; t0_var <- "start"; t1_var <- "stop"
+    tvc <- TRUE; interval <- FALSE; t0_var <- "start"; t1_var <- "stop"
   } else if (attr(mod$y, "type") == "right") {
-    tvc <- FALSE; t0_var <- "time"; t1_var <- "time"
+    tvc <- FALSE; interval <- FALSE; t0_var <- "time"; t1_var <- "time"
+  } else if (attr(mod$y, "type") == "interval2") {
+    tvc <- FALSE; interval <- TRUE; t0_var <- "time1"; t1_var <- "time2"
   } else {
-    stop2("Only 'right' or 'counting' type Surv objects are allowed ", 
-          "on the LHS of 'formulaEvent'.")
+    stop2("Only 'right', 'counting', or 'interval2' type Surv objects are ", 
+          "allowed on the LHS of 'formulaEvent'.")
   }
   
   # Split model frame and find event time and status
   mf_by_id <- split(mf2, mf2[, id_var])
-  mf_entry <- do.call(rbind, lapply(
-    mf_by_id, FUN = function(x) x[which.min(x[, t0_var]), ]))
-  mf_event <- do.call(rbind, lapply(
-    mf_by_id, FUN = function(x) x[which.max(x[, t1_var]), ]))
-  entrytime <- mf_entry[[t0_var]]
-  if (tvc && (any(entrytime) > 0))
-    warning("Note that delayed entry is not yet implemented. It will ",
-            "be assumed that all individuals were at risk from time 0.")
-  entrytime <- rep(0, length(entrytime)) # no delayed entry
-  eventtime <- mf_event[[t1_var]]
-  status    <- mf_event[["status"]]  
-  id_list   <- factor(mf_event[[id_var]])
-  names(entrytime) <- names(eventtime) <- names(status) <- id_list
   
-  # Mean log incidence rate - used for shifting log baseline hazard
-  norm_const <- log(sum(status) / sum(eventtime))
+  if (!interval) { # no interval censoring
+    
+    mf_entry <- do.call(rbind, lapply(
+      mf_by_id, FUN = function(x) x[which.min(x[, t0_var]), ]))
+    mf_event <- do.call(rbind, lapply(
+      mf_by_id, FUN = function(x) x[which.max(x[, t1_var]), ]))
+    entrytime <- mf_entry[[t0_var]]
+    if (tvc && (any(entrytime) > 0))
+      warning("Note that delayed entry is not yet implemented. It will ",
+              "be assumed that all individuals were at risk from time 0.")
+    entrytime <- rep(0, length(entrytime)) # no delayed entry
+    eventtime <- mf_event[[t1_var]]
+    status    <- mf_event[["status"]]  
+    id_list   <- factor(mf_event[[id_var]])
+    names(entrytime) <- names(eventtime) <- names(status) <- id_list    
+  
+    # Mean log incidence rate - used for shifting log baseline hazard
+    norm_const <- log(sum(status) / sum(eventtime))
+    
+  } else { # interval censoring
+    
+    if (!length(mf2[, id_var]) == length(mf_by_id))
+      stop("Cannot handle multiple rows per individual in 'dataEvent' when ",
+           "interval censoring is present.")
+    id_list <- factor(mf2[[id_var]])
+    
+    time1  <- mf2[["time1"]]
+    time2  <- mf2[["time2"]]
+    status <- mf2[["status"]]
+    
+    eventtime <- time1[status == 1]
+    lefttime  <- time1[status == 3]
+    righttime <- time2[status == 3]
+    
+    names(status)    <- id_list
+    names(eventtime) <- id_list[status == 1]
+    names(lefttime)  <- id_list[status == 3]
+    names(righttime) <- id_list[status == 3]
+    
+    entrytime <- rep(0, length(eventtime))
+    
+    # Mean log incidence rate - used for shifting log baseline hazard
+    norm_const <- log(sum(status == 1) / (sum(eventtime) + sum(lefttime)))
+  }
   
   # Error checks for the ID variable
   if (!identical(y_id_list, levels(factor(id_list))))
@@ -1059,9 +1092,19 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   # Quadrature weights/times/ids
   qq <- get_quadpoints(qnodes)
   qwts <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
-  qpts <- uapply(qq$points, unstandardise_qpts, entrytime, eventtime)
+  qpts <- uapply(qq$points,  unstandardise_qpts, entrytime, eventtime)
   qids <- rep(id_list, qnodes)
-  
+ 
+  if (interval) {
+    qwts_left  <- uapply(qq$weights, unstandardise_qwts, 0, lefttime)
+    qpts_left  <- uapply(qq$points,  unstandardise_qpts, 0, lefttime)
+    qids_left  <- rep(id_list[status == 3], qnodes)
+    
+    qwts_right <- uapply(qq$weights, unstandardise_qwts, 0, righttime)
+    qpts_right <- uapply(qq$points,  unstandardise_qpts, 0, righttime)
+    qids_right <- rep(id_list[status == 3], qnodes)
+  }  
+     
   # Event times/ids (for failures only)
   epts <- eventtime[status == 1] # event times (for failures only)
   eids <- id_list[status == 1]   # subject ids (for failures only)
@@ -1069,7 +1112,7 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   # Both event times/ids and quadrature times/ids
   cpts <- c(epts, qpts)
   cids <- unlist(list(eids, qids)) # NB using c(.) demotes factors to integers
-  
+
   # Evaluate design matrix at event and quadrature times
   if (ncol(mod$x)) {
     # Convert model frame from Cox model into a data.table
@@ -1092,15 +1135,34 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
       Xq <- Xq[, !sel, drop = FALSE]
       Xbar <- Xbar[!sel]
     }
+    if (interval) {
+      mf_left  <- rolling_merge(dt, ids = qids_left,  times = qpts_left)
+      mf_right <- rolling_merge(dt, ids = qids_right, times = qpts_right)
+      Xq_left  <- model.matrix(fm_RHS, data = mf_left) [, -1L, drop = FALSE]
+      Xq_right <- model.matrix(fm_RHS, data = mf_right)[, -1L, drop = FALSE]
+      Xq_left  <- sweep(Xq_left,  2, Xbar, FUN = "-")
+      Xq_right <- sweep(Xq_right, 2, Xbar, FUN = "-")
+      if (any(sel)) {
+        Xq_left  <- Xq_left [, !sel, drop = FALSE]
+        Xq_right <- Xq_right[, !sel, drop = FALSE]
+      }
+    } else {
+      Xq_left  <- matrix(0,0,0)
+      Xq_right <- matrix(0,0,0)
+    }
   } else {
-    Xq <- matrix(0,0L,0L)
-    Xbar <- rep(0,0L)
+    Xbar     <- rep(0,0)
+    Xq       <- matrix(0,0,0)
+    Xq_left  <- matrix(0,0,0)
+    Xq_right <- matrix(0,0,0)
   }
   
   nlist(mod, entrytime, eventtime, status, Npat = length(eventtime), 
         Nevents = sum(status), id_list, qnodes, qwts, qpts, qids, 
         epts, eids, cpts, cids, Xq, Xbar, K = ncol(Xq), norm_const, 
-        model_frame = mf1, tvc)
+        model_frame = mf1, tvc, interval, 
+        qwts_left,  qpts_left,  qids_left,  Xq_left, 
+        qwts_right, qpts_right, qids_right, Xq_right)
 }
 
 # Deal with the baseline hazard
