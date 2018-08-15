@@ -96,10 +96,22 @@ model {
   //---- Log likelihood for event submodel (GK quadrature)
   {
     vector[nrow_e_Xq] e_eta_q; // eta for event submodel (at event and quad times)
+    vector[nrow_e_Xq_left]  e_eta_q_left;
+    vector[nrow_e_Xq_right] e_eta_q_right;
 
     // Event submodel: linear predictor at event and quad times
     if (e_K > 0) e_eta_q = e_Xq * e_beta;
     else e_eta_q = rep_vector(0.0, nrow_e_Xq);
+    if (interval) {
+			if (e_K > 0) {
+				e_eta_q_left  = e_Xq_left  * e_beta;
+				e_eta_q_right = e_Xq_right * e_beta;
+			}
+			else {
+			  e_eta_q_left  = rep_vector(0.0, nrow_e_Xq_left);
+			  e_eta_q_right = rep_vector(0.0, nrow_e_Xq_right);
+		  }
+		}
     if (assoc == 1) {
         // declares y_eta_q{_eps,_lag,_auc}, y_eta_qwide{_eps,_lag,_auc},
         //   y_q_wide{_eps,_lag,_auc}, mark{2,3}

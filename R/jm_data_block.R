@@ -1399,7 +1399,8 @@ unclass_Surv_column <- function(data) {
 # @param M Integer specifying the total number of longitudinal submodels
 # @return A list with information about the desired association structure
 validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
-                           ok_assoc_interactions, lag, id_var, M) {
+                           ok_assoc_interactions, ok_assoc_interval,
+                           lag, id_var, M, interval) {
   
   ok_inputs <- c(ok_assoc, paste0(ok_assoc_data, "_data"),
                  unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))) 
@@ -1413,6 +1414,10 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
       stop2("The following association structures have been temporarily disallowed ",
             "and will be reinstated in a future release: ", 
             paste(temporarily_disallowed, collapse = ", "))
+    
+    if (interval && !all(trimmed_x %in% ok_assoc_interval))
+      stop2("When interval censoring is present, only the following association ",
+            "structures are allowed:", comma(ok_assoc_interval))
     
     assoc <- sapply(ok_inputs, `%in%`, trimmed_x, simplify = FALSE)
     if (is.null(user_x)) {

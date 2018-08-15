@@ -560,20 +560,37 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
       
     # Handle association structure
     # !! If order is changed here, then must also change standata$has_assoc !!
-    ok_assoc <- c("null", "etavalue","etaslope", "etaauc", "muvalue", 
-                  "muslope", "muauc", "shared_b", "shared_coef")
-    ok_assoc_data <- ok_assoc[c(2:3,5:6)]
-    ok_assoc_interactions <- ok_assoc[c(2,5)]
+    ok_assoc <- c("null", 
+                  "etavalue",
+                  "etaslope", 
+                  "etaauc", 
+                  "muvalue", 
+                  "muslope", 
+                  "muauc", 
+                  "shared_b", 
+                  "shared_coef")
     
-    lag_assoc <- validate_lag_assoc(lag_assoc, M)
+    ok_assoc_data         <- ok_assoc[c(2,3,5,6)] # ok to interact with covariates
+    ok_assoc_interactions <- ok_assoc[c(2,5)]     # ok to interact across biomarkers
+    ok_assoc_interval     <- ok_assoc[c(1:3,5,6)] # ok to use with interval censoring
     
-    assoc <- mapply(assoc, y_mod = y_mod, lag = lag_assoc, FUN = validate_assoc, 
-                    MoreArgs = list(ok_assoc = ok_assoc, ok_assoc_data = ok_assoc_data,
-                                    ok_assoc_interactions = ok_assoc_interactions, 
-                                    id_var = id_var, M = M))
+    lag_assoc <- validate_lag_assoc(lag_assoc, M) # check lag time is valid
+    
+    args <- list(M                     = M,
+                 id_var                = id_var,
+                 interval              = e_mod$interval,
+                 ok_assoc              = ok_assoc, 
+                 ok_assoc_data         = ok_assoc_data,
+                 ok_assoc_interactions = ok_assoc_interactions, 
+                 ok_assoc_interval     = ok_assoc_interval)
+    assoc <- mapply(FUN         = validate_assoc, 
+                    y_mod_stuff = y_mod, 
+                    user_x      = assoc, 
+                    lag         = lag_assoc, 
+                    MoreArgs    = args)
     assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
-    colnames(assoc) <- paste0("Long", 1:M)
-    
+    assoc <- set_colnames(assoc, paste0("Long", 1:M))
+
     # For each submodel, identify any grouping factors that are
     # clustered within id_var (i.e. lower level clustering)
     ok_grp_assocs <- c("sum", "mean", "min", "max")
@@ -611,6 +628,20 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                                 id_var = id_var, time_var = time_var, 
                                 epsilon = epsilon, auc_qnodes = auc_qnodes))
     
+    if (interval) {
+      a_mod_left <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
+                           grp_stuff = grp_stuff, FUN = handle_assocmod, 
+                           args = list(ids = e_mod$qids_left, times = e_mod$qpts_left, 
+                                       id_var = id_var, time_var = time_var, 
+                                       epsilon = epsilon, auc_qnodes = auc_qnodes))
+      
+      a_mod_right <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
+                            grp_stuff = grp_stuff, FUN = handle_assocmod, 
+                            args = list(ids = e_mod$qids_right, times = e_mod$qpts_right, 
+                                        id_var = id_var, time_var = time_var, 
+                                        epsilon = epsilon, auc_qnodes = auc_qnodes))
+    }
+        
     # Number of association parameters
     a_K <- get_num_assoc_pars(assoc, a_mod)
     
@@ -795,6 +826,121 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
         standata[[paste0("y", m, "_z2q_", i)]] <- Z2_tmp
         standata[[paste0("y", m, "_z1q_id_", i)]] <- Z1_tmp_id
         standata[[paste0("y", m, "_z2q_id_", i)]] <- Z2_tmp_id
+      }
+    }
+    
+    if (interval) {
+      N_tmp_left <- sapply(a_mod_left, function(x) NROW(x$mod_eta$xtemp))
+      N_tmp_left <- c(N_tmp_left, rep(0, 3 - length(N_tmp_left)))
+      standata$nrow_y_Xq_left <- aa(ai(N_tmp_left))
+      for (m in 1:3) {
+        for (i in c("eta", "eps", "auc")) {
+          nm_check <- switch(i,
+                             eta = "^eta|^mu",
+                             eps = "slope",
+                             auc = "auc")
+          sel <- grep(nm_check, rownames(assoc))
+          if (m <= M && any(unlist(assoc[sel,m]))) {
+            tmp_stuff <- a_mod_left[[m]][[paste0("mod_", i)]]
+            # fe design matrix at quadpoints
+            X_tmp <- tmp_stuff$xtemp
+            # re design matrix at quadpoints, group factor 1
+            Z1_tmp <- tmp_stuff$z[[cnms_nms[1L]]]
+            Z1_tmp <- transpose(Z1_tmp)
+            Z1_tmp <- convert_null(Z1_tmp, "matrix")
+            Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
+            Z1_tmp_id <- groups(Z1_tmp_id)
+            Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
+            # re design matrix at quadpoints, group factor 1
+            if (length(cnms_nms) > 1L) {
+              Z2_tmp <- tmp_stuff$z[[cnms_nms[2L]]]
+              Z2_tmp <- transpose(Z2_tmp)
+              Z2_tmp <- convert_null(Z2_tmp, "matrix")
+              Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
+              Z2_tmp_id <- groups(Z2_tmp_id)
+              Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
+            } else {
+              Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
+              Z2_tmp_id <- aa(integer(0))
+            }
+          } else {
+            X_tmp  <- matrix(0,0,standata$yK[m])
+            Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
+            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
+            Z1_tmp_id <- aa(integer(0)) 
+            Z2_tmp_id <- aa(integer(0)) 
+          }
+          standata[[paste0("y", m, "_xq_",     i, "_left")]] <- X_tmp
+          standata[[paste0("y", m, "_z1q_",    i, "_left")]] <- Z1_tmp
+          standata[[paste0("y", m, "_z2q_",    i, "_left")]] <- Z2_tmp
+          standata[[paste0("y", m, "_z1q_id_", i, "_left")]] <- Z1_tmp_id
+          standata[[paste0("y", m, "_z2q_id_", i, "_left")]] <- Z2_tmp_id
+        }
+      }
+      
+      N_tmp_right <- sapply(a_mod_right, function(x) NROW(x$mod_eta$xtemp))
+      N_tmp_right <- c(N_tmp_right, rep(0, 3 - length(N_tmp_right)))
+      standata$nrow_y_Xq_right <- aa(ai(N_tmp_right))
+      for (m in 1:3) {
+        for (i in c("eta", "eps", "auc")) {
+          nm_check <- switch(i,
+                             eta = "^eta|^mu",
+                             eps = "slope",
+                             auc = "auc")
+          sel <- grep(nm_check, rownames(assoc))
+          if (m <= M && any(unlist(assoc[sel,m]))) {
+            tmp_stuff <- a_mod_right[[m]][[paste0("mod_", i)]]
+            # fe design matrix at quadpoints
+            X_tmp <- tmp_stuff$xtemp
+            # re design matrix at quadpoints, group factor 1
+            Z1_tmp <- tmp_stuff$z[[cnms_nms[1L]]]
+            Z1_tmp <- transpose(Z1_tmp)
+            Z1_tmp <- convert_null(Z1_tmp, "matrix")
+            Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
+            Z1_tmp_id <- groups(Z1_tmp_id)
+            Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
+            # re design matrix at quadpoints, group factor 1
+            if (length(cnms_nms) > 1L) {
+              Z2_tmp <- tmp_stuff$z[[cnms_nms[2L]]]
+              Z2_tmp <- transpose(Z2_tmp)
+              Z2_tmp <- convert_null(Z2_tmp, "matrix")
+              Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
+              Z2_tmp_id <- groups(Z2_tmp_id)
+              Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
+            } else {
+              Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
+              Z2_tmp_id <- aa(integer(0))
+            }
+          } else {
+            X_tmp  <- matrix(0,0,standata$yK[m])
+            Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
+            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
+            Z1_tmp_id <- aa(integer(0)) 
+            Z2_tmp_id <- aa(integer(0)) 
+          }
+          standata[[paste0("y", m, "_xq_",     i, "_right")]] <- X_tmp
+          standata[[paste0("y", m, "_z1q_",    i, "_right")]] <- Z1_tmp
+          standata[[paste0("y", m, "_z2q_",    i, "_right")]] <- Z2_tmp
+          standata[[paste0("y", m, "_z1q_id_", i, "_right")]] <- Z1_tmp_id
+          standata[[paste0("y", m, "_z2q_id_", i, "_right")]] <- Z2_tmp_id
+        }
+      }
+    } else { # no interval censoring
+      for (m in 1:3) {
+        for (i in c("eta", "eps", "auc")) {
+          standata$nrow_y_Xq_left  <- aa(rep(0, 3))
+          standata$nrow_y_Xq_right <- aa(rep(0, 3))
+          standata[[paste0("y", m, "_xq_",     i, "_left")]]  <- matrix(0,0,standata$yK[m])
+          standata[[paste0("y", m, "_z1q_",    i, "_left")]]  <- matrix(0,standata$bK1_len[m],0)
+          standata[[paste0("y", m, "_z2q_",    i, "_left")]]  <- matrix(0,standata$bK2_len[m],0) 
+          standata[[paste0("y", m, "_z1q_id_", i, "_left")]]  <- aa(integer(0)) 
+          standata[[paste0("y", m, "_z2q_id_", i, "_left")]]  <- aa(integer(0)) 
+          standata[[paste0("y", m, "_xq_",     i, "_right")]] <- matrix(0,0,standata$yK[m])
+          standata[[paste0("y", m, "_z1q_",    i, "_right")]] <- matrix(0,standata$bK1_len[m],0)
+          standata[[paste0("y", m, "_z2q_",    i, "_right")]] <- matrix(0,standata$bK2_len[m],0) 
+          standata[[paste0("y", m, "_z1q_id_", i, "_right")]] <- aa(integer(0)) 
+          standata[[paste0("y", m, "_z2q_id_", i, "_right")]] <- aa(integer(0)) 
+        }
       }
     }
   

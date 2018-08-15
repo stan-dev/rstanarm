@@ -18,6 +18,8 @@
   int<lower=0,upper=1> e_has_intercept; // 1 = yes
   int<lower=0> nrow_e_Xq;     // num. rows in event predictor matrix at quad points
   matrix[e_K > 0 ? nrow_e_Xq : 0, e_K] e_Xq; // predictor matrix (event submodel) at qpts, centred
+  matrix[(e_K > 0 && interval == 1) ? nrow_e_Xq_left  : 0, e_K] e_Xq_left; 
+  matrix[(e_K > 0 && interval == 1) ? nrow_e_Xq_right : 0, e_K] e_Xq_right; 
   vector[nrow_e_Xq] e_times;  // event times and unstandardised quadrature points
   matrix[nrow_e_Xq,basehaz_df] basehaz_X; // design matrix (basis terms) for baseline hazard
   vector[e_K] e_xbar;         // predictor means (event submodel)
