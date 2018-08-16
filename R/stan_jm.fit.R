@@ -22,18 +22,37 @@
 # See \code{stan_jm} for a description of the arguments to the 
 # \code{stan_jm.fit} function call.
 #
-stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL, 
-                        dataEvent = NULL, time_var, id_var,  family = gaussian, 
-                        assoc = "etavalue", lag_assoc = 0, grp_assoc, 
-                        epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"), 
-                        basehaz_ops, qnodes = 15, init = "prefit", weights,					          
-                        priorLong = normal(), priorLong_intercept = normal(), 
-                        priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
-                        priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                        priorEvent_assoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
-                        algorithm = c("sampling", "meanfield", "fullrank"), 
-                        adapt_delta = NULL, max_treedepth = 10L, 
-                        QR = FALSE, sparse = FALSE, ...) {
+stan_jm.fit <- function(formulaLong          = NULL, 
+                        dataLong             = NULL, 
+                        formulaEvent         = NULL, 
+                        dataEvent            = NULL, 
+                        time_var, 
+                        id_var,  
+                        family               = gaussian, 
+                        assoc                = "etavalue", 
+                        lag_assoc            = 0, 
+                        grp_assoc, 
+                        epsilon              = 1E-5, 
+                        basehaz              = c("bs", "weibull", "piecewise"), 
+                        basehaz_ops, 
+                        qnodes               = 15, 
+                        init                 = "prefit", 
+                        weights,					          
+                        priorLong            = normal(),
+                        priorLong_intercept  = normal(), 
+                        priorLong_aux        = cauchy(0, 5), 
+                        priorEvent           = normal(), 
+                        priorEvent_intercept = normal(), 
+                        priorEvent_aux       = cauchy(),
+                        priorEvent_assoc     = normal(), 
+                        prior_covariance     = lkj(), 
+                        prior_PD             = FALSE, 
+                        algorithm            = c("sampling", "meanfield", "fullrank"), 
+                        adapt_delta          = NULL, 
+                        max_treedepth        = 10L, 
+                        QR                   = FALSE, 
+                        sparse               = FALSE, 
+                        ...) {
   
   #-----------------------------
   # Pre-processing of arguments
@@ -64,12 +83,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stop("'sparse' option is not yet implemented.")
 
   # Error if args not supplied together
-  supplied_together(formulaLong, dataLong, error = TRUE)
+  supplied_together(formulaLong,  dataLong,  error = TRUE)
   supplied_together(formulaEvent, dataEvent, error = TRUE)
   
   # Determine whether a joint longitudinal-survival model was specified
   is_jm <- supplied_together(formulaLong, formulaEvent)
-  stub <- if (is_jm) "Long" else "y"
+  stub  <- ifelse(is_jm, "Long", "y")
 
   if (is_jm && is.null(time_var))
     stop("'time_var' must be specified.")
@@ -83,9 +102,15 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     dataEvent <- as.data.frame(dataEvent)
   
   # Family
-  ok_classes <- c("function", "family", "character")
-  ok_families <- c("binomial", "gaussian", "Gamma", 
-                   "inverse.gaussian", "poisson", "neg_binomial_2")
+  ok_classes <- c("function", 
+                  "family", 
+                  "character")
+  ok_families <- c("binomial", 
+                   "gaussian", 
+                   "Gamma", 
+                   "inverse.gaussian", 
+                   "poisson", 
+                   "neg_binomial_2")
   family <- validate_arg(family, ok_classes, validate_length = M)
   family <- lapply(family, validate_famlink, ok_families)
   family <- lapply(family, append_mvmer_famlink)
@@ -94,9 +119,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   has_weights <- !is.null(weights)
   
   # Priors
-  priorLong <- broadcast_prior(priorLong, M)
+  priorLong           <- broadcast_prior(priorLong,           M)
+  priorLong_aux       <- broadcast_prior(priorLong_aux,       M)
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
-  priorLong_aux <- broadcast_prior(priorLong_aux, M)
   
   #--------------------------
   # Longitudinal submodel(s)
@@ -106,8 +131,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
   
   # Construct single cnms list for all longitudinal submodels
-  y_cnms  <- fetch(y_mod, "z", "group_cnms")
-  cnms <- get_common_cnms(y_cnms, stub = stub)
+  y_cnms   <- fetch(y_mod, "z", "group_cnms")
+  cnms     <- get_common_cnms(y_cnms, stub = stub)
   cnms_nms <- names(cnms)
   if (length(cnms_nms) > 2L)
     stop("A maximum of 2 grouping factors are allowed.")
@@ -130,10 +155,15 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #----------- Prior distributions -----------# 
   
   # Valid prior distributions
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus", 
-                    "laplace", "lasso")  # disallow product normal
-  ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+  ok_dists <- nlist("normal", 
+                    student_t = "t", 
+                    "cauchy", 
+                    "hs", 
+                    "hs_plus", 
+                    "laplace", 
+                    "lasso") # disallow product normal
+  ok_intercept_dists  <- c(ok_dists[1:3])
+  ok_aux_dists        <- c(ok_dists[1:3], exponential = "exponential")
   ok_covariance_dists <- c("decov", "lkj")
   
   y_vecs <- fetch(y_mod, "y", "y")     # used in autoscaling
@@ -186,12 +216,12 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #----------- Data for export to Stan -----------# 
   
   standata <- list(
-    M = ai(M), 
-    has_weights  = ai(!all(lapply(weights, is.null))),
-    family = fetch_array(y_mod, "family", "mvmer_family"),
-    link   = fetch_array(y_mod, "family", "mvmer_link"),
-    weights = aa(numeric(0)), # not yet implemented
-    prior_PD = ai(prior_PD)
+    M           = ai(M), 
+    has_weights = ai(!all(lapply(weights, is.null))),
+    family      = fetch_array(y_mod, "family", "mvmer_family"),
+    link        = fetch_array(y_mod, "family", "mvmer_link"),
+    weights     = aa(numeric(0)), # not yet implemented
+    prior_PD    = ai(prior_PD)
   )  
   
   # Dimensions
@@ -340,9 +370,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   # hs priors only
   standata$y_global_prior_scale <- fetch_array(y_prior_stuff, "global_prior_scale") 
-  standata$y_global_prior_df <- fetch_array(y_prior_stuff, "global_prior_df")
-  standata$y_slab_df <- fetch_array(y_prior_stuff, "slab_df")
-  standata$y_slab_scale <- fetch_array(y_prior_stuff, "slab_scale")
+  standata$y_global_prior_df    <- fetch_array(y_prior_stuff, "global_prior_df")
+  standata$y_slab_df            <- fetch_array(y_prior_stuff, "slab_df")
+  standata$y_slab_scale         <- fetch_array(y_prior_stuff, "slab_scale")
   
   # Priors for group specific terms
   standata$t <- length(cnms)
@@ -357,84 +387,74 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   if (prior_covariance$dist == "decov") {
     
     # data for decov prior
-    standata$prior_dist_for_cov <- b_prior_stuff$prior_dist
-    standata$b_prior_shape <- b_prior_stuff$prior_shape
-    standata$b_prior_scale <- b_prior_stuff$prior_scale
-    standata$b_prior_concentration <- b_prior_stuff$prior_concentration
+    standata$prior_dist_for_cov     <- b_prior_stuff$prior_dist
+    standata$b_prior_shape          <- b_prior_stuff$prior_shape
+    standata$b_prior_scale          <- b_prior_stuff$prior_scale
+    standata$b_prior_concentration  <- b_prior_stuff$prior_concentration
     standata$b_prior_regularization <- b_prior_stuff$prior_regularization
-    standata$len_concentration <- length(standata$b_prior_concentration)
-    standata$len_regularization <- length(standata$b_prior_regularization)
-    standata$len_theta_L <- sum(choose(standata$p, 2), standata$p)
+    standata$len_concentration      <- length(standata$b_prior_concentration)
+    standata$len_regularization     <- length(standata$b_prior_regularization)
+    standata$len_theta_L            <- sum(choose(standata$p, 2), standata$p)
     
     # pass empty lkj data
-    standata$b1_prior_scale <- aa(rep(0L, standata$bK1))
-    standata$b2_prior_scale <- aa(rep(0L, standata$bK2))
-    standata$b1_prior_df <- aa(rep(0L, standata$bK1))
-    standata$b2_prior_df <- aa(rep(0L, standata$bK2))
+    standata$b1_prior_scale          <- aa(rep(0L, standata$bK1))
+    standata$b2_prior_scale          <- aa(rep(0L, standata$bK2))
+    standata$b1_prior_df             <- aa(rep(0L, standata$bK1))
+    standata$b2_prior_df             <- aa(rep(0L, standata$bK2))
     standata$b1_prior_regularization <- 1.0
     standata$b2_prior_regularization <- 1.0   
     
   } else if (prior_covariance$dist == "lkj") {
     
     # data for lkj prior
-    b1_prior_stuff <- b_prior_stuff[[b1_varname]]
-    b1_prior_dist <- fetch_(b1_prior_stuff, "prior_dist")
-    b1_prior_scale <- fetch_array(b1_prior_stuff, "prior_scale")
-    b1_prior_df <- fetch_array(b1_prior_stuff, "prior_df")
-    b1_prior_regularization <- fetch_(b1_prior_stuff, "prior_regularization")
+    b1_prior_stuff          <- b_prior_stuff[[b1_varname]]
+    b1_prior_dist           <- fetch_     (b1_prior_stuff, "prior_dist")
+    b1_prior_scale          <- fetch_array(b1_prior_stuff, "prior_scale")
+    b1_prior_df             <- fetch_array(b1_prior_stuff, "prior_df")
+    b1_prior_regularization <- fetch_     (b1_prior_stuff, "prior_regularization")
+    
     if (n_distinct(b1_prior_dist) > 1L)
       stop2("Bug found: covariance prior should be the same for all submodels.")
-    if (n_distinct(b1_prior_regularization) > 1L) {
+    if (n_distinct(b1_prior_regularization) > 1L)
       stop2("Bug found: prior_regularization should be the same for all submodels.")
-    }
+
     standata$prior_dist_for_cov <- unique(b1_prior_dist)
-    standata$b1_prior_scale <- b1_prior_scale
-    standata$b1_prior_df <- b1_prior_df
+    standata$b1_prior_scale     <- b1_prior_scale
+    standata$b1_prior_df        <- b1_prior_df
     standata$b1_prior_regularization <- if (length(b1_prior_regularization))
       unique(b1_prior_regularization) else 1.0
     
     if (standata$bK2 > 0) {
       # model has a second grouping factor
-      b2_prior_stuff <- b_prior_stuff[[b2_varname]]
-      b2_prior_scale <- fetch_array(b2_prior_stuff, "prior_scale")
-      b2_prior_df    <- fetch_array(b2_prior_stuff, "prior_df")
-      b2_prior_regularization <- fetch_(b2_prior_stuff, "prior_regularization")
+      b2_prior_stuff          <- b_prior_stuff[[b2_varname]]
+      b2_prior_scale          <- fetch_array(b2_prior_stuff, "prior_scale")
+      b2_prior_df             <- fetch_array(b2_prior_stuff, "prior_df")
+      b2_prior_regularization <- fetch_     (b2_prior_stuff, "prior_regularization")
       standata$b2_prior_scale <- b2_prior_scale
       standata$b2_prior_df    <- b2_prior_df
       standata$b2_prior_regularization <- unique(b2_prior_regularization)
     } else {
       # model does not have a second grouping factor
-      standata$b2_prior_scale <- aa(double(0))
-      standata$b2_prior_df <- aa(double(0))
+      standata$b2_prior_scale          <- aa(double(0))
+      standata$b2_prior_df             <- aa(double(0))
       standata$b2_prior_regularization <- 1.0
     }
     
     # pass empty decov data
-    standata$len_theta_L <- 0L
-    standata$b_prior_shape <- aa(rep(0L, standata$t))
-    standata$b_prior_scale <- aa(rep(0L, standata$t))
-    standata$len_concentration <- 0L
-    standata$len_regularization <- 0L
-    standata$b_prior_concentration <- aa(rep(0L, standata$len_concentration))
+    standata$len_theta_L            <- 0L
+    standata$len_concentration      <- 0L
+    standata$len_regularization     <- 0L
+    standata$b_prior_shape          <- aa(rep(0L, standata$t))
+    standata$b_prior_scale          <- aa(rep(0L, standata$t))
+    standata$b_prior_concentration  <- aa(rep(0L, standata$len_concentration))
     standata$b_prior_regularization <- aa(rep(0L, standata$len_regularization))   
   }
   
+  
   # Names for longitudinal submodel parameters
-  y_intercept_nms <- uapply(1:M, function(m) {
-    if (y_mod[[m]]$intercept_type$number > 0) 
-      paste0(stub, m, "|(Intercept)") else NULL
-  })
-  y_beta_nms <- uapply(1:M, function(m) {
-    if (!is.null(colnames(X[[m]]))) 
-      paste0(stub, m, "|", colnames(X[[m]])) else NULL
-  })
-  y_aux_nms <- uapply(1:M, function(m) {
-    famname_m <- family[[m]]$family
-    if (is.gaussian(famname_m)) paste0(stub, m,"|sigma") else
-      if (is.gamma(famname_m)) paste0(stub, m,"|shape") else
-        if (is.ig(famname_m)) paste0(stub, m,"|lambda") else
-          if (is.nb(famname_m)) paste0(stub, m,"|reciprocal_dispersion") else NULL
-  })        
+  y_nms_beta <- uapply(y_mod, get_beta_name)
+  y_nms_int  <- uapply(y_mod, get_int_name)
+  y_nms_aux  <- uapply(y_mod, get_aux_name)
   
   # Names for group specific coefficients ("b pars")
   b_nms <- uapply(seq_along(cnms), FUN = function(i) {
@@ -1067,12 +1087,10 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   if (is_jm) { # begin jm block
     
-    e_intercept_nms <- "Event|(Intercept)"
-    e_beta_nms <- if (e_mod$K) paste0("Event|", colnames(e_mod$Xq)) else NULL  
-    e_aux_nms <- 
-      if (basehaz$type_name == "weibull") "Event|weibull-shape" else 
-        if (basehaz$type_name == "bs") paste0("Event|b-splines-coef", seq(basehaz$df)) else
-          if (basehaz$type_name == "piecewise") paste0("Event|piecewise-coef", seq(basehaz$df)) 
+    e_nms_beta  <- get_beta_name(e_mod)
+    e_nms_int   <- get_int_name (e_mod, basehaz)
+    e_nms_aux   <- get_aux_name (e_mod, basehaz)
+    e_beta_nms <- if (e_mod$K) paste0("Event|", colnames(e_mod$Xq)) else NULL
     e_assoc_nms <- character()  
     for (m in 1:M) {
       if (assoc["etavalue",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue"))
@@ -1102,8 +1120,26 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
         all_nms[assoc["which_coef_zindex",][[m]]]})
       e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|", unlist(temp_g_nms)))
     }
-    
-  } # end jm block
+    # end jm block
+  } else {
+    e_nms_beta  <- NULL
+    e_nms_int   <- NULL
+    e_nms_aux   <- NULL
+    e_nms_assoc <- NULL
+  }
+  
+  # define new parameter names
+  nms_all <- c(y_nms_int,
+               y_nms_beta,
+               e_nms_int,
+               e_nms_beta,
+               e_nms_assoc,
+               if (length(standata$q)) c(paste0("b[", b_nms, "]")),
+               y_nms_aux,
+               e_nms_aux,
+               paste0("Sigma[", Sigma_nms, "]"),
+               paste0(stub, 1:M, "|mean_PPD"), 
+               "log-posterior")
   
   new_names <- c(y_intercept_nms,
                  y_beta_nms,
@@ -1116,7 +1152,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                  paste0("Sigma[", Sigma_nms, "]"),
                  paste0(stub, 1:M, "|mean_PPD"), 
                  "log-posterior")
-  stanfit@sim$fnames_oi <- new_names
+  
+  # substitute new parameter names into 'stanfit' object
+  stanfit <- replace_stanfit_nms(stanfit, nms_all)
   
   stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flevels)
   if (is_jm)

@@ -1696,3 +1696,58 @@ is_like_factor <- function(x) {
 
 # Concatenate (i.e. 'c(...)') but don't demote factors to integers
 ulist <- function(...) { unlist(list(...)) }
+
+# Return the name for the intercept parameter
+get_int_name <- function(x, ...) {
+  UseMethod("get_int_name")
+}
+get_int_name.basehazinfo <- function(x, ...) {
+  if (has_intercept(x)) "(Intercept)" else NULL
+}
+get_int_name.ymodinfo <- function(x, ...) {
+  if (x$intercept_type$number) paste0(x$stub, "|(Intercept)") else NULL
+}
+get_int_name.emodinfo <- function(x, basehaz, ...) {
+  nm <- get_int_name(basehaz)
+  if (!is.null(nm)) paste0("Event|", nm) else NULL
+}
+
+# Return the names for the auxiliary parameters
+get_aux_name <- function(x, ...) {
+  UseMethod("get_aux_name")
+}
+get_aux_name.basehazinfo <- function(x, ...) {
+  switch(get_basehaz_name(x),
+         exp       = NULL,
+         weibull   = "weibull-shape",
+         gompertz  = "gompertz-scale",
+         ms        = paste0("m-splines-coef", seq(x$nvars)),
+         bs        = paste0("b-splines-coef", seq(x$nvars)),
+         piecewise = paste0("piecewise-coef", seq(x$nvars)),
+         NA)
+}
+get_aux_name.ymodinfo <- function(x, ...) {
+  switch(x$family$family,
+         gaussian         = paste0(x$stub, "|sigma"),
+         Gamma            = paste0(x$stub, "|shape"),
+         inverse.gaussian = paste0(x$stub, "|lambda"),
+         neg_binomial_2   = paste0(x$stub, "|reciprocal_dispersion"),
+         NULL)
+}
+get_aux_name.emodinfo <- function(x, basehaz, ...) {
+  nms <- get_aux_name(basehaz)
+  if (!is.null(nms)) paste0("Event|", nms) else NULL
+}
+
+# Return the names for the coefficients
+get_beta_name <- function(x, ...) {
+  UseMethod("get_beta_name")
+}
+get_beta_name.ymodinfo <- function(x, ...) {
+  nms <- colnames(fetch(y_mod, "x", "xtemp"))
+  if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
+}
+get_beta_name.emodinfo <- function(x, ...) {
+  nms <- colnames(fetch(y_mod, "x", "xtemp"))
+  if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
+}
