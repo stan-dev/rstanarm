@@ -420,7 +420,7 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 posterior_sample_size <- function(x) {
   validate_stanreg_object(x)
   if (used.optimizing(x)) {
-    return(NROW(fit$asymptotic_sampling_dist))
+    return(NROW(x$asymptotic_sampling_dist))
   }
   pss <- x$stanfit@sim$n_save
   if (used.variational(x))
