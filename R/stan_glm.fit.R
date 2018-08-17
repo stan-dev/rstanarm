@@ -573,7 +573,8 @@ stan_glm.fit <-
       if (!QR) 
         recommend_QR_for_vb()
     }
-    check_stanfit(stanfit)
+    check <- try(check_stanfit(stanfit))
+    if (!isTRUE(check)) return(standata)
     if (QR) {
       thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
                         permuted = FALSE)

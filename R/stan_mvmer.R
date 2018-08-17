@@ -190,7 +190,7 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, init = init, 
                          QR = QR, sparse = sparse, ...)
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   y_mod <- attr(stanfit, "y_mod")
   cnms  <- attr(stanfit, "cnms")
   flevels <- attr(stanfit, "flevels")

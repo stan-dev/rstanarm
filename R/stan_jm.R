@@ -604,7 +604,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse, ...)
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")
   a_mod <- attr(stanfit, "a_mod")

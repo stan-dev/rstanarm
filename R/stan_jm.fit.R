@@ -862,6 +862,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) user_priorEvent_aux = e_user_prior_aux_stuff,
     if (is_jm) user_priorEvent_assoc = e_user_prior_assoc_stuff,
     user_prior_covariance = prior_covariance,
+    b_user_prior_stuff = b_user_prior_stuff,
+    b_prior_stuff = b_prior_stuff,
     y_has_intercept = fetch_(y_mod, "x", "has_intercept"),
     y_has_predictors = fetch_(y_mod, "x", "K") > 0,
     if (is_jm) e_has_intercept = standata$e_has_intercept,
@@ -875,7 +877,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
     if (is_jm) adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
     family = family, 
-    if (is_jm) basehaz = basehaz
+    if (is_jm) basehaz = basehaz,
+    stub_for_names = if (is_jm) "Long" else "y"
   )  
   
   #-----------
@@ -907,7 +910,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                          algorithm = algorithm, ...)    
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
 
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)

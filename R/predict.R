@@ -69,7 +69,7 @@ predict.stanreg <- function(object,
   if (isTRUE(object$stan_function == "stan_betareg") && 
       !is.null(newdata)) {
     # avoid false positive warnings about missing z variables in newdata
-    zvars <- all.vars(stanfit$terms$precision)
+    zvars <- all.vars(object$terms$precision)
     for (var in zvars) {
       if (!var %in% colnames(newdata)) newdata[[var]] <- NA
     }

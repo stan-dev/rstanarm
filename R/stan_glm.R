@@ -253,7 +253,7 @@ stan_glm <-
     sparse = sparse,
     ...
   )
-  
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   if (family$family == "Beta regression") {
     family$family <- "beta"
   }

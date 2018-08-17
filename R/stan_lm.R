@@ -156,6 +156,7 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
                x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
                y = Y, 

@@ -205,7 +205,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
       do_residuals = do_residuals,
       ...
     )
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   inverse_link <- linkinv(method)
 
   if (llev == 2L) { # actually a Bernoulli model

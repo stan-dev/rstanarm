@@ -224,6 +224,7 @@ stan_gamm4 <-
                           prior_aux = prior_aux, prior_smooth = prior_smooth,
                           prior_PD = prior_PD, algorithm = algorithm, 
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
   if (is.null(random)) Z <- Matrix::Matrix(nrow = NROW(y), ncol = 0, sparse = TRUE)
