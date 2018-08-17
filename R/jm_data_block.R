@@ -940,10 +940,10 @@ append_predvars_attribute <- function(terms, formula, data) {
 # @return A reformulated model formula with variables replaced by predvars
 use_predvars <- function(mod, keep_response = TRUE) {
   fm <- formula(mod)
-  ff <- grep("", attr(terms(mod, fixed.only = TRUE), "variables"), value = TRUE)[-1]
-  fr <- grep("", attr(terms(mod, random.only = TRUE), "variables"), value = TRUE)[-1]
-  pf <- grep("", attr(terms(mod, fixed.only = TRUE), "predvars"), value = TRUE)[-1]
-  pr <- grep("", attr(terms(mod, random.only = TRUE), "predvars"), value = TRUE)[-1]
+  ff <- lapply(attr(terms(mod, fixed.only  = TRUE), "variables"), deparse, 500)[-1]
+  fr <- lapply(attr(terms(mod, random.only = TRUE), "variables"), deparse, 500)[-1]
+  pf <- lapply(attr(terms(mod, fixed.only  = TRUE), "predvars"),  deparse, 500)[-1]
+  pr <- lapply(attr(terms(mod, random.only = TRUE), "predvars"),  deparse, 500)[-1]
   if (!identical(c(ff, fr), c(pf, pr))) {
     for (j in 1:length(ff))
       fm <- gsub(ff[[j]], pf[[j]], fm, fixed = TRUE)    
