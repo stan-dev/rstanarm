@@ -58,7 +58,19 @@
 #'   matrix and the remaining list elements collectively constitute a basis for a
 #'   smooth nonlinear function of the predictors indicated by the \code{formula}
 #'   argument to \code{\link{stan_gamm4}}.
-
+#' @param mean_PPD A logical value indicating whether the sample mean of the
+#'   posterior predictive distribution of the outcome should be calculated in
+#'   the \code{generated quantities} block. If \code{TRUE} then \code{mean_PPD}
+#'   is computed and displayed as a diagnostic in the
+#'   \link[=print.stanreg]{printed output}. The default is \code{TRUE} except if
+#'   \code{algorithm=="optimizing"}. A useful heuristic is to check if
+#'   \code{mean_PPD} is plausible when compared to \code{mean(y)}. If it is
+#'   plausible then this does \emph{not} mean that the model is good in general
+#'   (only that it can reproduce the sample mean), but if \code{mean_PPD} is
+#'   implausible then there may be something wrong, e.g., severe model
+#'   misspecification, problems with the data and/or priors, computational
+#'   issues, etc.
+#' 
 #' @details The \code{stan_glm} function is similar in syntax to 
 #'   \code{\link[stats]{glm}} but rather than performing maximum likelihood 
 #'   estimation of generalized linear models, full Bayesian estimation is 
@@ -191,6 +203,7 @@ stan_glm <-
            prior_aux = exponential(),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
@@ -223,24 +236,39 @@ stan_glm <-
     weights <- double(0)
   }
 
-  stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
-                          offset = offset, family = family,
-                          prior = prior, 
-                          prior_intercept = prior_intercept,
-                          prior_aux = prior_aux,
-                          prior_PD = prior_PD, 
-                          algorithm = algorithm, adapt_delta = adapt_delta, 
-                          QR = QR, sparse = sparse, ...)
+  stanfit <- stan_glm.fit(
+    x = X,
+    y = Y,
+    weights = weights,
+    offset = offset,
+    family = family,
+    prior = prior,
+    prior_intercept = prior_intercept,
+    prior_aux = prior_aux,
+    prior_PD = prior_PD,
+    algorithm = algorithm,
+    mean_PPD = mean_PPD,
+    adapt_delta = adapt_delta,
+    QR = QR,
+    sparse = sparse,
+    ...
+  )
   if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
-  if (family$family == "Beta regression") family$family <- "beta"
+  if (family$family == "Beta regression") {
+    family$family <- "beta"
+  }
+  
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]  
+  
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
                contrasts = attr(X, "contrasts"), 
                stan_function = "stan_glm")
+  
   out <- stanreg(fit)
+  out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
     out$x <- NULL
@@ -275,6 +303,7 @@ stan_glm.nb <-
            prior_aux = exponential(),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
+           mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL,
            QR = FALSE) {
     
