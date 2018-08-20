@@ -1015,21 +1015,48 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
+  # parse formula, create model data & frame
   formula   <- parse_formula(formula, data)
   formula2  <- addto_formula(formula$formula, id_var) # includes id_var
   data      <- make_model_data (formula2, data)       # row subsetting etc.
-  mf_stuff  <- make_model_frame(formula2, data)
+  mf_stuff  <- make_model_frame(formula2, data)       # returns Surv object
 
   mf <- mf_stuff$mf # model frame
   mt <- mf_stuff$mt # model terms
+  
+  mf[[id_var]] <- promote_to_factor(mf[[id_var]]) # same as lme4
+
+  # entry and exit times for each row of data
+  t_end <- make_t(mf, type = "end") # entry time
+  t_beg <- make_t(mf, type = "beg") # exit  time
+  t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
+  
+  # event indicator for each row of data
+  d <- make_d(mf)
+  event <- as.logical(d)  
+
+  # interval censoring indicator for each row of data
+  interval <- (d == 3)
+   
+  # delayed entry indicator for each row of data
+  delayed  <- (!t_beg == 0)
+  
+  # time variables for stan
+  t_events  <- t_end[event]    # exact event time
+  t_censor  <- t_end[!event]   # right censoring time
+  t_lower   <- t_end[interval] # lower limit of interval censoring time
+  t_upper   <- t_upp[interval] # upper limit of interval censoring time
+  t_delayed <- t_beg[delayed]  # delayed entry time
  
+  # dimensions
+  nevents   <- length(t_events)
+  ncensor   <- length(t_censor)
+  ninterval <- length(t_lower)
+  ndelayed  <- length(t_delayed)
+  
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  mf1 <- model.frame(fm, data = data)
-  mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
-  mf2 <- unclass_Surv_column(mf1)
-  
-  # Error checks for the ID variable
+  # error checks for the id variable
   if (!identical(y_id_list, levels(factor(id_list))))
     stop2("The patient IDs (levels of the grouping factor) included ",
           "in the longitudinal and event submodels do not match")
@@ -1041,36 +1068,47 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
           "event submodels. Perhaps you intended to use 'start/stop' notation ",
           "for the Surv() object.")
   
-  # Quadrature weights/times/ids
-  qq <- get_quadpoints(qnodes)
-  qwts <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
-  qpts <- uapply(qq$points,  unstandardise_qpts, entrytime, eventtime)
-  qids <- rep(id_list, qnodes)
+  # standardised weights and nodes for quadrature
+  qq <- get_quadpoints(nodes = qnodes)
+  qp <- qq$points
+  qw <- qq$weights
   
-  qwts_event <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
- 
-  if (interval) {
-    qwts_left  <- uapply(qq$weights, unstandardise_qwts, 0, lefttime)
-    qpts_left  <- uapply(qq$points,  unstandardise_qpts, 0, lefttime)
-    qids_left  <- rep(id_list[status == 3], qnodes)
-    
-    qwts_right <- uapply(qq$weights, unstandardise_qwts, 0, righttime)
-    qpts_right <- uapply(qq$points,  unstandardise_qpts, 0, righttime)
-    qids_right <- rep(id_list[status == 3], qnodes)
-  }  
-     
-  # Event times/ids (for failures only)
-  epts <- eventtime[status == 1] # event times (for failures only)
-  eids <- id_list[status == 1]   # subject ids (for failures only)
+  # quadrature points & weights, evaluated for each row of data
+  qpts <- uapply(qp, unstandardise_qpts, 0, t_end)
+  qwts <- uapply(qw, unstandardise_qwts, 0, t_end)
+  qids <- rep(ids, qnodes)
   
-  # Both event times/ids and quadrature times/ids
-  cpts <- c(epts, qpts)
-  cids <- unlist(list(eids, qids)) # NB using c(.) demotes factors to integers
-
-  # Evaluate design matrix at event and quadrature times
+  # quadrature points & weights, evaluated for rows with interval censoring
+  if (ninterval) {
+    qpts_upper <- uapply(qp, unstandardise_qpts, 0, t_upper) # qpts for upper limit
+    qwts_upper <- uapply(qw, unstandardise_qwts, 0, t_upper) # qwts for upper limit
+  } else {
+    qpts_upper <- rep(0,0)
+    qwts_upper <- rep(0,0)
+  }
+  
+  # quadrature points & weights, evaluated for rows with delayed entry
+  if (ndelayed) {
+    qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
+    qwts_delayed <- uapply(qw, unstandardise_qwts, 0, t_delayed) # qwts for entry time
+  } else {
+    qpts_delayed <- rep(0,0)
+    qwts_delayed <- rep(0,0)
+  }
+  
+  # event times & ids (for failures only)
+  epts <- t_end[status == 1] # event times
+  eids <- ids  [status == 1] # subject ids
+  
+  # dimensions
+  qrows     <- length(qpts)
+  qinterval <- length(qpts_upper)
+  qdelayed  <- length(qpts_delayed)  
+  
+  # evaluate design matrix at event and quadrature times
   if (ncol(mod$x)) {
     # Convert model frame from Cox model into a data.table
-    dt <- prepare_data_table(mf2, id_var = id_var, time_var = t0_var)
+    dt <- prepare_data_table(data, id_var = id_var, time_var = t0_var)
     # Obtain rows of the model frame that are as close as possible to 
     # the event times (failures only) and quadrature times                      
     mf2 <- rolling_merge(dt, ids = cids, times = cpts)

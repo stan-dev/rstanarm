@@ -996,9 +996,15 @@ reformulate_rhs <- function(x) {
 # Return the response vector (time) for estimation
 #
 # @param model_frame The model frame.
-# @param type The type of time variable to return.
-# @return A numeric vector
-make_t <- function(model_frame, type = c("beg", "end", "gap")) {
+# @param type The type of time variable to return:
+#   "beg": the entry time for the row in the survival data,
+#   "end": the exit  time for the row in the survival data,
+#   "gap": the difference between entry and exit times,
+#   "upp": if the row involved interval censoring, then the exit time
+#          would have been the lower limit of the interval, and "upp" 
+#          is the upper limit of the interval.
+# @return A numeric vector.
+make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
   
   type <- match.arg(type)
   resp <- model.response(model_frame)
@@ -1006,19 +1012,31 @@ make_t <- function(model_frame, type = c("beg", "end", "gap")) {
   err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
   
   t_beg <- switch(surv,
-                  "right"    = rep(0, nrow(model_frame)),
-                  "counting" = as.vector(resp[, "start"]),
+                  "right"     = rep(0, nrow(model_frame)),
+                  "interval"  = rep(0, nrow(model_frame)),
+                  "interval2" = rep(0, nrow(model_frame)),
+                  "counting"  = as.vector(resp[, "start"]),
                   stop(err))
   
   t_end <- switch(surv,
-                  "right"    = as.vector(resp[, "time"]),
-                  "counting" = as.vector(resp[, "stop"]),
+                  "right"     = as.vector(resp[, "time"]),
+                  "interval"  = as.vector(resp[, "time1"]),
+                  "interval2" = as.vector(resp[, "time1"]),
+                  "counting"  = as.vector(resp[, "stop"]),
                   stop(err))
-  
+
+  t_upp <- switch(surv,
+                  "right"     = rep(NA, nrow(model_frame)),
+                  "counting"  = rep(NA, nrow(model_frame)),
+                  "interval"  = as.vector(resp[, "time2"]),
+                  "interval2" = as.vector(resp[, "time2"]),
+                  stop(err))
+    
   switch(type,
          "beg" = t_beg,
          "end" = t_end,
          "gap" = t_end - t_beg,
+         "upp" = t_upp,
          stop("Bug found: cannot handle specified 'type'."))
 }
 
