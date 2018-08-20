@@ -80,9 +80,10 @@ posterior_linpred.stanreg <-
            XZ = FALSE,
            ...) {
 
-    if (is.stanmvreg(object)) {
+    if (is.stanmvreg(object))
       STOP_if_stanmvreg("'posterior_linpred'")
-    }
+    if (is.stansurv(object))
+      STOP_if_stansurv("'poterior_linpred'")
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,

@@ -134,8 +134,7 @@ model {
     beta_lp(a_z_beta, a_prior_dist, a_prior_scale, a_prior_df,
                     a_global_prior_df, a_local, a_global, a_mix, a_ool,
                     a_slab_df, a_caux);
-    basehaz_lp(e_aux_unscaled, e_prior_dist_for_aux,
-                         e_prior_scale_for_aux, e_prior_df_for_aux);
+    basehaz_lp(e_aux_unscaled, e_prior_dist_for_aux, e_prior_df_for_aux);
     if (e_has_intercept == 1)
         gamma_lp(e_gamma[1], e_prior_dist_for_intercept, e_prior_mean_for_intercept,
                          e_prior_scale_for_intercept, e_prior_df_for_intercept);

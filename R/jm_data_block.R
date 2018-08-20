@@ -497,9 +497,13 @@ summarize_jm_prior <-
 # @param basehaz A list with information about the baseline hazard
 .rename_e_aux <- function(basehaz) {
   nm <- basehaz$type_name
-  if (nm == "weibull") "weibull-shape" else
-    if (nm == "bs") "spline-coefficients" else
-      if (nm == "piecewise") "piecewise-coefficients" else NA
+  switch(nm,
+         weibull   = "weibull-shape",
+         gompertz  = "gompertz-scale",
+         bs        = "B-spline-coefficients",
+         ms        = "M-spline-coefficients",
+         piecewise = "piecewise-coefficients",
+         NA)
 }
 
 # Check if priors were autoscaled
@@ -1121,7 +1125,7 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
 # @param basehaz A string specifying the type of baseline hazard
 # @param basehaz_ops A named list with elements df, knots 
 # @param ok_basehaz A list of admissible baseline hazards
-# @param eventtime A numeric vector with eventtimes for each individual
+# @param times A numeric vector with eventtimes for each individual
 # @param status A numeric vector with event indicators for each individual
 # @return A named list with the following elements:
 #   type: integer specifying the type of baseline hazard, 1L = weibull,
@@ -1137,78 +1141,176 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
 #     predictions since it contains information about the knot locations
 #     for the baseline hazard (this is implemented via splines::predict.bs). 
 handle_basehaz <- function(basehaz, basehaz_ops, 
-                           ok_basehaz = nlist("weibull", "bs", "piecewise"),
-                           ok_basehaz_ops = nlist("df", "knots"),
-                           eventtime, status) {
+                           ok_basehaz = c("weibull", "bs", "piecewise"),
+                           ok_basehaz_ops = c("df", "knots"),
+                           times, status) {
   
-  if (!basehaz %in% unlist(ok_basehaz))
-    stop("The baseline hazard should be one of ", paste(names(ok_basehaz), collapse = ", "))
-  if (!all(names(basehaz_ops) %in% unlist(ok_basehaz_ops)))
-    stop("The baseline hazard options list can only include ", paste(names(ok_basehaz_ops), collapse = ", "))
+  if (!basehaz %in% ok_basehaz)
+    stop2("'basehaz' should be one of: ", comma(ok_basehaz))
   
-  type <- switch(basehaz, weibull = 1L, bs = 2L, piecewise = 3L)
-  type_name <- basehaz
-  user_df   <- basehaz_ops$df
-  df        <- basehaz_ops$df
-  knots     <- basehaz_ops$knots
-  bs_basis  <- NULL
+  if (!all(names(basehaz_ops) %in% ok_basehaz_ops))
+    stop2("'basehaz_ops' can only include: ", comma(ok_basehaz_ops))
   
-  if (type_name == "weibull") {
-    # handle df and knots
-    if (!is.null(df))
-      warning("'df' will be ignored since baseline hazard was set to weibull.", 
-              immediate. = TRUE, call. = FALSE)
-    if (!is.null(knots))
-      warning("'knots' will be ignored since baseline hazard was set to weibull.", 
-              immediate. = TRUE, call. = FALSE) 
-    user_df <- NULL
-    df      <- 1L
-    knots   <- NULL
-  } else if (type_name %in% c("bs", "piecewise")) {
-    # handle df and knots
-    if (!any(is.null(df), is.null(knots))) { 
-      # both specified
-      stop("Cannot specify both 'df' and 'knots' for the baseline hazard.", call. = FALSE)
-    } else if (all(is.null(df), is.null(knots))) { 
-      # both null -- use default df
-      user_df <- df <- 6L
-      knots <- NULL
-    } else if (!is.null(df)) { 
-      # only df specified
-      if (type == 2L) {
-        if (df < 3) stop("'df' must be at least 3 for B-splines baseline hazard.")
-        user_df <- df <- df + 1
-      }
-    } else if (!is.null(knots)) {          
-      # only knots specified
-      if (!is.numeric(knots)) stop("'knots' vector must be numeric", call. = FALSE)
-      if (any(knots < 0)) stop("'knots' must be non-negative", call. = FALSE)      
-      if (type == 2L) df <- length(knots) + 4
-      else if (type == 3L) df <- length(knots) + 1
-    } else {
-      stop("Bug found: unable to reconcile 'df' and 'knots' arguments.", call. = FALSE) 
+  tt <- times[(status > 0)] # uncensored event times
+  
+  if (basehaz == "exp") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 0L   # number of aux parameters, none
+    
+  } else if (basehaz == "gompertz") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Gompertz scale
+    
+  } else if (basehaz == "weibull") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Weibull shape
+    
+  } else if (basehaz == "bs") {
+    
+    df    <- basehaz_ops$df
+    knots <- basehaz_ops$knots
+    
+    if (!is.null(df) && !is.null(knots))
+      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
+    
+    if (is.null(df))
+      df <- 5L # default df for B-splines, assuming no intercept
+               # NB this is ignored if the user specified knots
+    
+    bknots <- get_bknots(times)
+    iknots <- get_iknots(tt, df = df, iknots = knots)
+    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
+    nvars  <- ncol(basis)  # number of aux parameters, basis terms
+    
+  } else if (basehaz == "ms") {
+    
+    df    <- basehaz_ops$df
+    knots <- basehaz_ops$knots
+    
+    if (!is.null(df) && !is.null(knots)) {
+      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     }
-  }  
-  
-  # Evaluate spline basis (knots, df, etc) based on distribution of observed event times
-  # or evaluate cut points for piecewise constant baseline hazard
-  if (type == 2L) {
-    bs_basis <- splines::bs(eventtime[(status > 0)], df = user_df, knots = knots, 
-                            Boundary.knots = c(0, max(eventtime)), intercept = TRUE)
-  } else if (type == 3L) {
-    if (is.null(knots)) {
-      knots <- quantile(eventtime[(status > 0)], probs = seq(0, 1, 1 / df))
-      knots[[1]] <- 0
-      knots[[length(knots)]] <- max(eventtime)
-    } else {
-      if (any(knots > max(eventtime)))
-        stop("'knots' for the baseline hazard cannot be greater than the ",
-             "largest event time.", call. = FALSE)
-      knots <- c(0, knots, max(eventtime))
+    
+    if (is.null(df)) {
+      df <- 5L # default df for B-splines, assuming no intercept
+               # NB this is ignored if the user specified knots
     }
+    
+    bknots <- get_bknots(times)
+    iknots <- get_iknots(tt, df = df, iknots = knots)
+    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
+    nvars  <- ncol(basis)  # number of aux parameters, basis terms
+    
+  } else if (basehaz == "piecewise") {
+    
+    df    <- basehaz_ops$df
+    knots <- basehaz_ops$knots
+    
+    if (!is.null(df) && !is.null(knots)) {
+      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
+    }
+    
+    if (is.null(df)) {
+      df <- 6L # default number of segments for piecewise constant
+               # NB this is ignored if the user specified knots
+    }
+
+    bknots <- get_bknots(times)
+    iknots <- get_iknots(tt, df = df, iknots = knots)
+    basis  <- NULL               # spline basis
+    nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
+    
   }  
+    
+  nlist(type_name = basehaz, 
+        type = basehaz_for_stan(basehaz), 
+        nvars, 
+        iknots, 
+        bknots, 
+        basis,
+				df = nvars,
+				user_df = nvars,
+				knots = if (basehaz == "bs") iknots else c(bknots[1], iknots, bknots[2]),
+				bs_basis = basis)
+}
+
+# Return the integer respresentation for the baseline hazard, used by Stan
+#
+# @param basehaz_name A character string, the type of baseline hazard.
+# @return An integer, or NA if unmatched.
+basehaz_for_stan <- function(basehaz_name) {
+  switch(basehaz_name, 
+         weibull   = 1L, 
+         bs        = 2L,
+         piecewise = 3L,
+         ms        = 4L,
+         exp       = 5L,
+         gompertz  = 6L,
+         NA)
+}
+
+# Return a vector with boundary knots for 'x'
+#
+# @param x A numeric vector.
+# @return A numeric vector of length 2, the boundary knot locations.
+get_bknots <- function(x) {
+  c(0, max(x))
+}
+
+# Return a vector with internal knots for 'x', based on evenly spaced quantiles
+#
+# @param x A numeric vector.
+# @param df The degrees of freedom. If specified, then 'df - degree - intercept'.
+#   knots are placed at evenly spaced percentiles of 'x'. If 'iknots' is 
+#   specified then 'df' is ignored.
+# @return A numeric vector of internal knot locations, or NULL if there are
+#   no internal knots.
+get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE) {
   
-  nlist(type, type_name, user_df, df, knots, bs_basis)   
+  # obtain number of internal knots
+  if (is.null(iknots)) {
+    nk <- df - degree - intercept
+  } else {
+    nk <- length(iknots)
+  }
+  
+  # validate number of internal knots
+  if (nk < 0) {
+    stop2("Number of internal knots cannot be negative.")
+  }
+  
+  # obtain default knot locations if necessary
+  if (is.null(iknots)) {
+    iknots <- qtile(x, nq = nk + 1)  # evenly spaced percentiles
+  }
+  
+  # return internal knot locations, ensuring they are positive
+  validate_positive_scalar(iknots)
+  
+  return(iknots)
+}
+
+# Return a vector with valid names for elements in the list passed to the
+# 'basehaz_ops' argument of a 'stan_jm' or 'stan_surv' call
+#
+# @param basehaz_name A character string, the type of baseline hazard.
+# @return A character vector, or NA if unmatched.
+get_ok_basehaz_ops <- function(basehaz_name) {
+  switch(basehaz_name,
+         weibull   = c(),
+         bs        = c("df", "knots"),
+         piecewise = c("df", "knots"),
+         ms        = c("df", "knots"),
+         NA)
 }
 
 # Return the design matrix for the baseline hazard
@@ -1217,28 +1319,68 @@ handle_basehaz <- function(basehaz, basehaz_ops,
 # @param basehaz A named list with info about the baseline hazard,
 #   returned by a call to handle_basehaz
 # @return A matrix
-make_basehaz_X <- function(times, basehaz) {
-  if (basehaz$type_name == "weibull") {
+make_basehaz_X <- function(times, basehaz, deriv = FALSE) {
+  
+	if (basehaz$type_name == "exponential") {
+  
+    X <- matrix(0, nrow = length(times), ncol = 0L) # dud matrix for Stan
+  
+	} else if (basehaz$type_name == "weibull") {
+  
     X <- matrix(log(times), nrow = length(times), ncol = 1) 
-  } else if (basehaz$type_name == "bs") {
-    basis <- basehaz$bs_basis
-    if (is.null(basis))
-      stop2("Bug found: could not find info on B-splines basis terms.")
-    X <- as.array(predict(basis, times)) 
+  
+	} else if (basehaz$type_name == "bs") {
+  
+    if (is.null(basehaz$basis))
+      stop2("Bug found: could not find info on spline basis.")
+	  
+	  X <- as.array(predict(basehaz$basis, times))
+	  
   } else if (basehaz$type_name == "piecewise") {
-    knots <- basehaz$knots
-    df <- basehaz$df
-    if (is.null(knots) || is.null(df))
-      stop2("Bug found: could not find info on basehaz df and knot locations.")
-    times_quantiles <- cut(times, knots, include.lowest = TRUE, labels = FALSE)
-    X <- matrix(NA, length(times_quantiles), df)
-    for (i in 1:df) 
-      X[, i] <- ifelse(times_quantiles == i, 1, 0)
-    X <- as.array(X)
+	
+    if (is.null(basehaz$knots))
+      stop2("Bug found: could not find info on knot locations.")
+    
+    X <- dummy_matrix(times, knots = basehaz$knots)
+    
+  } else if (basehaz$type_name == "ms") {
+    
+    timescale <- basehaz$timescale
+    if (is.null(timescale)) {
+      tt <- times
+    } else if (timescale == "log") {
+      tt <- log(times)
+    }
+    
+    if (is.null(basehaz$basis))
+      stop2("Bug found: could not find info on spline basis.")
+    
+    if (deriv) { # M-splines, i.e. derivative of I-spline basis
+      X <- as.array(deriv(predict(basehaz$basis, tt)))
+    } else { # I-splines
+      X <- as.array(predict(basehaz$basis, tt))
+    }
+    
   } else {
+    
     stop2("Bug found: type of baseline hazard unknown.") 
+  
   }
   X
+}
+
+# Create a dummy indicator matrix for time intervals defined by 'knots'
+#
+# @param x A numeric vector with the original data.
+# @param knots The cutpoints defining the desired categories of 'x'.
+# @return A dummy matrix.
+dummy_matrix <- function(x, knots) {
+  n_intervals <- length(knots) - 1
+  interval <- cut(x, knots, include.lowest = TRUE, labels = FALSE)
+  out <- matrix(NA, length(interval), n_intervals)
+  for (i in 1:nvars) 
+    out[, i] <- ifelse(interval == i, 1, 0)
+  as.matrix(out)
 }
 
 # Function to return standardised GK quadrature points and weights

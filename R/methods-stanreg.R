@@ -118,7 +118,7 @@ fitted.stanreg <- function(object, ...)  {
 #' @rdname stanreg-methods
 #' @export 
 nobs.stanreg <- function(object, ...) {
-  nrow(model.frame(object))
+  if (is.surv(object)) object$nobs else nrow(model.frame(object))
 }
 
 #' @rdname stanreg-methods
@@ -336,6 +336,9 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
     }
     return(fr)
   }
+  if (is.stansurv(formula)) {
+    return(formula$model_frame)
+  }
   
   NextMethod("model.frame")
 }
@@ -362,7 +365,10 @@ model.matrix.stanreg <- function(object, ...) {
 #'   that both default to \code{FALSE}.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
-  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) return(formula_mer(x, ...))
+  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
+    return(formula_mer(x, ...))
+  is (is.surv(x))
+    return(x$formula$formula)
   x$formula
 }
 

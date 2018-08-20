@@ -485,9 +485,14 @@ stan_jm.fit <- function(formulaLong          = NULL,
                           y_id_list = id_list)
     
     # Baseline hazard
-    ok_basehaz <- nlist("weibull", "bs", "piecewise")
-    basehaz <- handle_basehaz(basehaz, basehaz_ops, ok_basehaz = ok_basehaz, 
-                              eventtime = e_mod$eventtime, status = e_mod$status)
+    ok_basehaz <- c("weibull", "bs", "piecewise")
+    ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
+    basehaz <- handle_basehaz(basehaz = basehaz, 
+                              basehaz_ops = basehaz_ops, 
+                              ok_basehaz = ok_basehaz,
+                              ok_basehaz_ops = ok_basehaz_ops,
+                              times = e_mod$eventtime, 
+                              status = e_mod$status)
     
     # Observation weights
     e_weights <- handle_weights(e_mod, weights, id_var)

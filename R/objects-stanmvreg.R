@@ -95,6 +95,8 @@ stanmvreg <- function(object) {
     call          = object$call,
     stan_function = object$stan_function,
     runtime       = if (object$algorithm == "sampling") times else NULL,
+    rstan_version    = utils::packageVersion("rstan"),
+    rstanarm_version = utils::packageVersion("rstanarm"),
     stan_summary, stanfit
   )
   if (is_mvmer) {
@@ -125,7 +127,7 @@ stanmvreg <- function(object) {
     out$dataEvent <- object$dataEvent
     out$grp_stuff <- object$grp_stuff
     out$fr        <- object$fr
-    classes <- c("stanjm", classes)
+    classes <- c("stanjm", "stanmvreg", "stanreg", "lmerMod")
   }
   out <- rm_null(out, recursive = FALSE)
   structure(out, class = classes)

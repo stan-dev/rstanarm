@@ -19,22 +19,23 @@
 
 #' Graphical checks of the estimated survival function
 #' 
-#' This function plots the estimated marginal survival function based on draws
-#' from the posterior predictive distribution of the fitted joint model, and then 
-#' overlays the Kaplan-Meier curve based on the observed data.
+#' This function plots the estimated marginal survival function based on draws 
+#' from the posterior predictive distribution of the fitted model, 
+#' and then overlays a Kaplan-Meier curve based on the observed data.
 #' 
+#' @importFrom ggplot2 ggplot aes_string geom_step
 #' @export
-#' @templateVar stanjmArg object
+#' @templateVar stanregArg object
 #' @templateVar labsArg xlab,ylab
 #' @templateVar cigeomArg ci_geom_args
-#' @template args-stanjm-object
+#' @template args-stansurv-stanjm-object
 #' @template args-labs
 #' @template args-ci-geom-args
 #'   
 #' @param check The type of plot to show. Currently only "survival" is 
-#'   allowed, which compares the estimated marginal survival function under
-#'   the joint model to the estimated Kaplan-Meier curve based on the 
-#'   observed data.
+#'   allowed, which compares the estimated marginal survival function 
+#'   under the fitted model to the estimated Kaplan-Meier curve based 
+#'   on the observed data.
 #' @param limits A quoted character string specifying the type of limits to
 #'   include in the plot. Can be one of: \code{"ci"} for the Bayesian
 #'   posterior uncertainty interval (often known as a credible interval);
@@ -50,12 +51,15 @@
 #' @return A ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package.
 #'   
-#' @seealso \code{\link{posterior_survfit}} for the estimated marginal or
+#' @seealso 
+#'   \code{\link{posterior_survfit}} for the estimated marginal or
 #'   subject-specific survival function based on draws of the model parameters
-#'   from the posterior distribution, 
+#'   from the posterior distribution \cr
 #'   \code{\link{posterior_predict}} for drawing from the posterior 
-#'   predictive distribution for the longitudinal submodel, and 
-#'   \code{\link{pp_check}} for graphical checks of the longitudinal submodel.
+#'   predictive distribution for the longitudinal submodel (for 
+#'   \code{\link{stan_jm}} models only) \cr
+#'   \code{\link{pp_check}} for graphical checks of the longitudinal submodel
+#'   (for \code{\link{stan_jm}} models only)
 #'    
 #' @examples
 #' \donttest{
@@ -63,53 +67,54 @@
 #' # Compare estimated survival function to Kaplan-Meier curve
 #' ps <- ps_check(example_jm)
 #' ps + 
-#'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
-#'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
-#'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
+#'   ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
+#'   ggplot2::scale_size_manual (values = c(0.5, 3)) +         # change line sizes 
+#'   ggplot2::scale_fill_manual (values = c(NA, NA))           # remove fill
 #' }
-#' @importFrom ggplot2 ggplot aes_string geom_step
 #' 
 ps_check <- function(object, check = "survival", 
                      limits = c("ci", "none"),
                      draws = NULL, seed = NULL, 
                      xlab = NULL, ylab = NULL,
                      ci_geom_args = NULL, ...) {
+  
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
   
-  validate_stanjm_object(object)
+  if (!any(is.stansurv(object), is.stanjm(object)))
+    stop("Object is not a 'stansurv' or 'stanjm' object.")
+  
   limits <- match.arg(limits)
 
-  # Predictions for plotting the estimated survival function
-  dat <- posterior_survfit(object, standardise = TRUE, 
-                           condition = FALSE, 
-                           times = 0, extrapolate = TRUE, 
-                           draws = draws, seed = seed)
+  # Obtain standardised survival probabilities for the fitted model
+  dat <- posterior_survfit(object, 
+                           times       = 0, 
+                           extrapolate = TRUE, 
+                           standardise = TRUE, 
+                           condition   = FALSE, 
+                           draws       = draws, 
+                           seed        = seed)
   
-  # Estimate KM curve based on response from the event submodel
-  form <- reformulate("1", response = formula(object)$Event[[2]])
-  coxdat <- object$survmod$mod$y
-  if (is.null(coxdat)) 
-    stop("Bug found: no response y found in the 'survmod' component of the ", 
-         "fitted joint model.")
-  resp <- attr(coxdat, "type")
-  if (resp == "right") {
-    form <- formula(survival::Surv(time, status) ~ 1)
-  } else if (resp == "counting") {
-    form <- formula(survival::Surv(start, stop, time) ~ 1)
-  } else {
-    stop("Bug found: only 'right' or 'counting' survival outcomes should ",
-         "have been allowed as the response type in the fitted joint model.")
-  }
-  km <- survival::survfit(form, data = as.data.frame(unclass(coxdat)))
-  kmdat <- data.frame(times = km$time, surv = km$surv,
-                       lb = km$lower, ub = km$upper)
+  # Obtain the response variable for the fitted model
+  response <- get_surv(object)
+  if (is.null(response)) 
+    stop("Bug found: no response variable found in fitted model object.")
+
+  # Obtain the formula for KM curve
+  type <- attr(response, "type")
+  form <- switch(type,
+                 right    = formula(survival::Surv(time, status)      ~ 1),
+                 counting = formula(survival::Surv(start, stop, time) ~ 1),
+                 stop("Bug found: invalid type of survival object."))
+  
+  # Obtain the KM estimates
+  kmfit <- survival::survfit(form, data = data.frame(unclass(response)))
+  kmdat <- data.frame(times = kmfit$time, surv = kmfit$surv)
   
   # Plot estimated survival function with KM curve overlaid
-  graph <- plot.survfit.stanjm(dat, ids = NULL, limits = limits, ...)
-  kmgraph <- geom_step(data = kmdat, 
-                       mapping = aes_string(x = "times", y = "surv"))
-  graph + kmgraph
+  psgraph <- plot.survfit.stanjm(dat, ids = NULL, limits = limits, ...)
+  kmgraph <- geom_step(aes_string(x = "times", y = "surv"), kmdat)
+  psgraph + kmgraph
 }
 
 
