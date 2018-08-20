@@ -1005,77 +1005,25 @@ validate_observation_times <-function(data, eventtimes, id_var, time_var) {
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
 #     in the fitted Cox model (ie. time varying covariates). 
 handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
+  
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
-  mod <- survival::coxph(formula, data = data, x = TRUE)
+  formula   <- parse_formula(formula, data)
+  formula2  <- addto_formula(formula$formula, id_var) # includes id_var
+  data      <- make_model_data (formula2, data)       # row subsetting etc.
+  mf_stuff  <- make_model_frame(formula2, data)
+
+  mf <- mf_stuff$mf # model frame
+  mt <- mf_stuff$mt # model terms
+ 
+  mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  
-  RHS_with_id <- paste(deparse(formula[[3L]]), "+", id_var)
-  formula_with_id <- reformulate(RHS_with_id, response = formula[[2L]])
-  mf1 <- model.frame(formula_with_id, data = data)
+  mf1 <- model.frame(fm, data = data)
   mf1[[id_var]] <- promote_to_factor(mf1[[id_var]]) # same as lme4
-  mf2 <- unclass_Surv_column(mf1) 
-  if (attr(mod$y, "type") == "counting") {
-    tvc <- TRUE; interval <- FALSE; t0_var <- "start"; t1_var <- "stop"
-  } else if (attr(mod$y, "type") == "right") {
-    tvc <- FALSE; interval <- FALSE; t0_var <- "time"; t1_var <- "time"
-  } else if (attr(mod$y, "type") == "interval2") {
-    tvc <- FALSE; interval <- TRUE; t0_var <- "time1"; t1_var <- "time2"
-  } else {
-    stop2("Only 'right', 'counting', or 'interval2' type Surv objects are ", 
-          "allowed on the LHS of 'formulaEvent'.")
-  }
-  
-  # Split model frame and find event time and status
-  mf_by_id <- split(mf2, mf2[, id_var])
-  
-  if (!interval) { # no interval censoring
-    
-    mf_entry <- do.call(rbind, lapply(
-      mf_by_id, FUN = function(x) x[which.min(x[, t0_var]), ]))
-    mf_event <- do.call(rbind, lapply(
-      mf_by_id, FUN = function(x) x[which.max(x[, t1_var]), ]))
-    entrytime <- mf_entry[[t0_var]]
-    if (tvc && (any(entrytime) > 0))
-      warning("Note that delayed entry is not yet implemented. It will ",
-              "be assumed that all individuals were at risk from time 0.")
-    entrytime <- rep(0, length(entrytime)) # no delayed entry
-    eventtime <- mf_event[[t1_var]]
-    status    <- mf_event[["status"]]  
-    id_list   <- factor(mf_event[[id_var]])
-    names(entrytime) <- names(eventtime) <- names(status) <- id_list    
-  
-    # Mean log incidence rate - used for shifting log baseline hazard
-    norm_const <- log(sum(status) / sum(eventtime))
-    
-  } else { # interval censoring
-    
-    if (!length(mf2[, id_var]) == length(mf_by_id))
-      stop("Cannot handle multiple rows per individual in 'dataEvent' when ",
-           "interval censoring is present.")
-    id_list <- factor(mf2[[id_var]])
-    
-    time1  <- mf2[["time1"]]
-    time2  <- mf2[["time2"]]
-    status <- mf2[["status"]]
-    
-    eventtime <- time1[status == 1]
-    lefttime  <- time1[status == 3]
-    righttime <- time2[status == 3]
-    
-    names(status)    <- id_list
-    names(eventtime) <- id_list[status == 1]
-    names(lefttime)  <- id_list[status == 3]
-    names(righttime) <- id_list[status == 3]
-    
-    entrytime <- rep(0, length(eventtime))
-    
-    # Mean log incidence rate - used for shifting log baseline hazard
-    norm_const <- log(sum(status == 1) / (sum(eventtime) + sum(lefttime)))
-  }
+  mf2 <- unclass_Surv_column(mf1)
   
   # Error checks for the ID variable
   if (!identical(y_id_list, levels(factor(id_list))))
@@ -1094,6 +1042,8 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   qwts <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
   qpts <- uapply(qq$points,  unstandardise_qpts, entrytime, eventtime)
   qids <- rep(id_list, qnodes)
+  
+  qwts_event <- uapply(qq$weights, unstandardise_qwts, entrytime, eventtime)
  
   if (interval) {
     qwts_left  <- uapply(qq$weights, unstandardise_qwts, 0, lefttime)
@@ -1164,6 +1114,7 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
         qwts_left,  qpts_left,  qids_left,  Xq_left, 
         qwts_right, qpts_right, qids_right, Xq_right)
 }
+
 
 # Deal with the baseline hazard
 #
@@ -2012,7 +1963,7 @@ get_Sigma_nms <- function(cnms) {
   for (j in seq_along(Sigma_nms)) {
     Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
   }
-  unlist(Sigma_nms)
+  paste0("Sigma[", unlist(Sigma_nms), "]")
 }
 
 
@@ -2082,3 +2033,130 @@ handle_weights <- function(mod_stuff, weights, id_var) {
   wts
 }
 
+# Parse the model formula
+#
+# @param formula The user input to the formula argument.
+# @param data The user input to the data argument (i.e. a data frame).
+parse_formula <- function(formula, data) {
+  
+  formula <- validate_formula(formula, needs_response = TRUE)
+  
+  lhs        <- lhs(formula) # full LHS of formula
+  lhs_form   <- reformulate_lhs(lhs)
+  
+  rhs        <- rhs(formula)         # RHS as expression
+  rhs_form   <- reformulate_rhs(rhs) # RHS as formula
+  rhs_terms  <- terms(rhs_form, specials = "tde")
+  rhs_vars   <- rownames(attr(rhs_terms, "factors"))
+  
+  allvars      <- all.vars(formula)
+  allvars_form <- reformulate(allvars)
+
+  surv <- eval(lhs, envir = data) # Surv object
+  surv <- validate_surv(surv)
+  type <- attr(surv, "type")
+  
+  if (type == "right") {
+    tvar_beg <- NULL
+    tvar_end <- as.character(lhs[[2L]])
+    dvar     <- as.character(lhs[[3L]])
+    min_t    <- 0
+    max_t    <- max(surv[, "time"])
+  } else if (type == "counting") {
+    tvar_beg <- as.character(lhs[[2L]])
+    tvar_end <- as.character(lhs[[3L]])
+    dvar     <- as.character(lhs[[4L]])
+    min_t    <- min(surv[, "start"])
+    max_t    <- max(surv[, "stop"])
+  } else if (type == "interval") {
+    tvar_beg <- NULL
+    tvar_end <- as.character(lhs[[2L]])
+    dvar     <- as.character(lhs[[4L]])
+    min_t    <- 0
+    max_t    <- max(surv[, c("time1", "time2")])
+  } else if (type == "interval2") {
+    tvar_beg <- NULL
+    tvar_end <- as.character(lhs[[2L]])
+    dvar     <- as.character(lhs[[4L]])
+    min_t    <- 0
+    max_t    <- max(surv[, c("time1", "time2")])
+  }
+  
+  sel <- attr(rhs_terms, "specials")$tde
+
+  if (!is.null(sel)) { # model has tde
+    
+    # replace 'tde(x, ...)' in formula with 'x'
+    tde_oldvars <- rhs_vars
+    tde_newvars <- sapply(tde_oldvars, function(oldvar) {
+      if (oldvar %in% rhs_vars[sel]) {
+        tde <- function(newvar, ...) { # define tde function locally
+          safe_deparse(substitute(newvar)) 
+        }
+        eval(parse(text = oldvar))
+      } else oldvar
+    }, USE.NAMES = FALSE)
+    for (i in sel) {
+      sel_terms <- which(attr(rhs_terms, "factors")[i, ] > 0)
+      for (j in sel_terms) {
+        term_labels[j] <- gsub(tde_oldvars[i], 
+                               tde_newvars[i], 
+                               term_labels[j], 
+                               fixed = TRUE)
+      }
+    }
+    tf_form <- reformulate(term_labels, response = lhs)
+    
+    # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
+    tde_terms <- lapply(rhs_vars[sel], function(x) {
+      tde <- function(vn, ...) { # define tde function locally
+        dots <- list(...)
+        ok_args <- c("df")
+        if (!isTRUE(all(names(dots) %in% ok_args)))
+          stop2("Invalid argument to 'tde' function. ",
+                "Valid arguments are: ", comma(ok_args))
+        df <- if (is.null(dots$df)) 3 else dots$df
+        degree <- 3
+        if (df == 3) {
+          dots[["knots"]] <- numeric(0)
+        } else {
+          dx <- (max_t - min_t) / (df - degree + 1)
+          dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
+        }
+        dots[["Boundary.knots"]] <- c(min_t, max_t) 
+        sub("^list\\(", "bs\\(times__, ", deparse(dots))
+      }
+      tde_calls <- eval(parse(text = x))
+      sel_terms <- which(attr(rhs_terms, "factors")[x, ] > 0)
+      new_calls <- sapply(seq_along(sel_terms), function(j) {
+        paste0(term_labels[sel_terms[j]], ":", tde_calls)
+      })
+      nlist(tde_calls, new_calls)
+    })
+    td_basis <- fetch(tde_terms, "tde_calls")
+    new_calls <- fetch_(tde_terms, "new_calls")
+    td_form <- reformulate(new_calls, response = NULL, intercept = FALSE)
+    
+  } else { # model doesn't have tde
+    tf_form  <- formula
+    td_form  <- NULL
+    td_basis <- NULL
+  }
+  
+  nlist(formula,
+        lhs,
+        rhs,
+        lhs_form,
+        rhs_form,
+        tf_form,
+        td_form,
+        td_basis,
+        fe_form = rhs_form, # no re terms accommodated yet
+        re_form = NULL,     # no re terms accommodated yet
+        allvars,
+        allvars_form,
+        tvar_beg,
+        tvar_end,
+        dvar,
+        surv_type = attr(surv, "type"))
+}

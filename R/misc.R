@@ -1697,6 +1697,14 @@ is_like_factor <- function(x) {
 # Concatenate (i.e. 'c(...)') but don't demote factors to integers
 ulist <- function(...) { unlist(list(...)) }
 
+# Return the name for the mean_PPD
+get_int_name <- function(x, ...) {
+  UseMethod("get_int_name")
+}
+get_ppd_name.ymodinfo <- function(x, ...) {
+  paste0(x$stub, "|mean_PPD")
+}
+
 # Return the name for the intercept parameter
 get_int_name <- function(x, ...) {
   UseMethod("get_int_name")
@@ -1744,10 +1752,74 @@ get_beta_name <- function(x, ...) {
   UseMethod("get_beta_name")
 }
 get_beta_name.ymodinfo <- function(x, ...) {
-  nms <- colnames(fetch(y_mod, "x", "xtemp"))
+  nms <- colnames(fetch(x, "x", "xtemp"))
   if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
 }
 get_beta_name.emodinfo <- function(x, ...) {
-  nms <- colnames(fetch(y_mod, "x", "xtemp"))
-  if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
+  nms <- colnames(x$Xq)
+  if (!is.null(nms)) paste0("Event|", nms) else NULL
 }
+
+# Return the names for the association parameters
+get_assoc_name <- function(a_mod, assoc, ...) {
+  M    <- length(a_mod)
+  a    <- assoc
+  ev   <- "etavalue"
+  es   <- "etaslope"
+  ea   <- "etaauc"
+  evd  <- "etavalue_data"
+  esd  <- "etaslope_data"
+  mvd  <- "muvalue_data"
+  msd  <- "muslope_data"
+  evev <- "etavalue_etavalue"
+  evmv <- "etavalue_muvalue"
+  mvev <- "muvalue_etavalue"
+  mvmv <- "muvalue_muvalue"
+  p    <- function(...)  paste0(...)
+  indx <- function(x, m) paste0("Long", assoc["which_interactions",][[m]][[x]])
+  cnms <- function(x, m) colnames(a_mod[[m]][["X_data"]][[x]])
+  nms <- character()
+  for (m in 1:M) {
+    stub <- paste0("Assoc|Long", m, "|")
+    # order matters here! (needs to line up with the monitored stanpars)
+    if (a[ev,  ][[m]]) nms <- c(nms, p(stub, ev                             ))
+    if (a[evd, ][[m]]) nms <- c(nms, p(stub, ev, ":", cnms(evd,  m)         ))
+    if (a[evev,][[m]]) nms <- c(nms, p(stub, ev, ":", indx(evev, m), "|", ev))
+    if (a[evmv,][[m]]) nms <- c(nms, p(stub, ev, ":", indx(evmv, m), "|", mv))
+    if (a[es,  ][[m]]) nms <- c(nms, p(stub, es                             ))
+    if (a[esd, ][[m]]) nms <- c(nms, p(stub, es, ":", cnms(esd,  m)         ))    
+    if (a[ea,  ][[m]]) nms <- c(nms, p(stub, ea                             ))
+    if (a[mv,  ][[m]]) nms <- c(nms, p(stub, mv                             ))
+    if (a[mvd, ][[m]]) nms <- c(nms, p(stub, mv, ":", cnms(mvd,  m)         ))  
+    if (a[mvev,][[m]]) nms <- c(nms, p(stub, mv, ":", indx(mvev, m), "|", ev))
+    if (a[mvmv,][[m]]) nms <- c(nms, p(stub, mv, ":", indx(mvmv, m), "|", mv))
+    if (a[ms,  ][[m]]) nms <- c(nms, p(stub, ms                             ))
+    if (a[msd, ][[m]]) nms <- c(nms, p(stub, ms, ":", cnms(msd,  m)         ))  
+    if (a[ma,  ][[m]]) nms <- c(nms, p(stub, ma                             ))
+  }
+  # --> shared_b and shared_coef have been removed so next part is not used
+  # if (sum(standata$size_which_b)) {
+  #   temp_g_nms <- lapply(1:M, FUN = function(m) {
+  #     all_nms <- paste0(paste0("Long", m, "|b["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
+  #     all_nms[assoc["which_b_zindex",][[m]]]})
+  #   nms <- c(nms, paste0("Assoc|", unlist(temp_g_nms)))
+  # }
+  # if (sum(standata$size_which_coef)) {
+  #   temp_g_nms <- lapply(1:M, FUN = function(m) {
+  #     all_nms <- paste0(paste0("Long", m, "|coef["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
+  #     all_nms[assoc["which_coef_zindex",][[m]]]})
+  #   nms <- c(nms, paste0("Assoc|", unlist(temp_g_nms)))
+  # }
+}
+
+# Add the variables in ...'s to the RHS of a model formula
+#
+# @param x A model formula.
+# @param ... Character strings, the variable names.
+addto_formula <- function(x, ...) {
+  rhs_terms   <- terms(reformulate_rhs(rhs(x)))
+  intercept   <- attr(rhs_terms, "intercept")
+  term_labels <- attr(rhs_terms, "term.labels")
+  reformulate(c(term_labels, c(...)), response = lhs(x), intercept = intercept)
+}
+

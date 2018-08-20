@@ -455,6 +455,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   y_nms_beta <- uapply(y_mod, get_beta_name)
   y_nms_int  <- uapply(y_mod, get_int_name)
   y_nms_aux  <- uapply(y_mod, get_aux_name)
+  y_nms_ppd  <- uapply(y_mod, get_ppd_name)
   
   # Names for group specific coefficients ("b pars")
   b_nms <- uapply(seq_along(cnms), FUN = function(i) {
@@ -470,7 +471,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   })
   
   # Names for Sigma matrix
-  Sigma_nms <- get_Sigma_nms(cnms)
+  y_nms_sigma <- get_Sigma_nms(cnms)
   
   #----------------
   # Event submodel
@@ -578,8 +579,8 @@ stan_jm.fit <- function(formulaLong          = NULL,
     # Association structure
     #-----------------------
       
-    # Handle association structure
-    # !! If order is changed here, then must also change standata$has_assoc !!
+    # define the valid types of association structure
+    # !! if order is changed here, then must also change standata$has_assoc !!
     ok_assoc <- c("null", 
                   "etavalue",
                   "etaslope", 
@@ -589,13 +590,14 @@ stan_jm.fit <- function(formulaLong          = NULL,
                   "muauc", 
                   "shared_b", 
                   "shared_coef")
-    
     ok_assoc_data         <- ok_assoc[c(2,3,5,6)] # ok to interact with covariates
     ok_assoc_interactions <- ok_assoc[c(2,5)]     # ok to interact across biomarkers
     ok_assoc_interval     <- ok_assoc[c(1:3,5,6)] # ok to use with interval censoring
     
-    lag_assoc <- validate_lag_assoc(lag_assoc, M) # check lag time is valid
+    # check lag time is valid
+    lag_assoc <- validate_lag_assoc(lag_assoc, M) 
     
+    # return an array with summary information about the overall assoc
     args <- list(M                     = M,
                  id_var                = id_var,
                  interval              = e_mod$interval,
@@ -611,17 +613,27 @@ stan_jm.fit <- function(formulaLong          = NULL,
     assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
     assoc <- set_colnames(assoc, paste0("Long", 1:M))
 
-    # For each submodel, identify any grouping factors that are
-    # clustered within id_var (i.e. lower level clustering)
-    ok_grp_assocs <- c("sum", "mean", "min", "max")
-    grp_basic <- xapply(FUN = get_basic_grp_info, 
-                        cnms  = y_cnms, flist = y_flist,
-                        args = list(id_var = id_var))
-    grp_stuff <- xapply(FUN = get_extra_grp_info,
-                        basic_info = grp_basic, flist = y_flist,
-                        args = list(id_var = id_var, grp_assoc = grp_assoc, 
-                                    ok_grp_assocs = ok_grp_assocs))
-    has_grp <- fetch_(grp_stuff, "has_grp")
+    # for each submodel, identify grouping factors clustered within 'id_var' 
+    # (i.e. lower level clustering)
+    ok_grp_assocs <- c("sum", 
+                       "mean", 
+                       "min", 
+                       "max")
+    ok_assocs_with_grp <- c("etavalue", 
+                            "etavalue_data", 
+                            "etaslope", 
+                            "etaslope_data", 
+                            "muvalue", 
+                            "muvalue_data")  
+    grp_basic <- xapply(FUN        = get_basic_grp_info, 
+                        cnms       = y_cnms, 
+                        flist      = y_flist,
+                        args       = nlist(id_var = id_var))
+    grp_stuff <- xapply(FUN        = get_extra_grp_info,
+                        basic_info = grp_basic, 
+                        flist      = y_flist,
+                        args       = nlist(id_var, grp_assoc, ok_grp_assocs))
+    has_grp   <- fetch_(grp_stuff, "has_grp")
     if (any(has_grp)) {
       grp_structure <- fetch(grp_stuff, "grp_list")[has_grp]
       if (n_distinct(grp_structure) > 1L)
@@ -629,10 +641,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
               "patients must use the same clustering structure; that is, the same ",
               "clustering variable and the same number of units clustered within a ",
               "given patient.")
-      ok_assocs_with_grp <- c("etavalue", "etavalue_data", "etaslope", "etaslope_data", 
-                              "muvalue", "muvalue_data")
-      validate_assoc_with_grp(has_grp = has_grp, assoc = assoc, 
-                              ok_assocs_with_grp = ok_assocs_with_grp)
+      do.call(validate_assoc_with_grp, nlist(has_grp, assoc, ok_assocs_with_grp))
     } else if (!is.null(grp_assoc)) {
       stop2("'grp_assoc' can only be specified when there is a grouping factor ",
             "clustered within patients.")  
@@ -1025,102 +1034,82 @@ stan_jm.fit <- function(formulaLong          = NULL,
   #---------------
   
   prior_info <- summarize_jm_prior(
-    user_priorLong = y_user_prior_stuff,
-    user_priorLong_intercept = y_user_prior_intercept_stuff,
-    user_priorLong_aux = y_user_prior_aux_stuff,
-    if (is_jm) user_priorEvent = e_user_prior_stuff,
-    if (is_jm) user_priorEvent_intercept = e_user_prior_intercept_stuff,
-    if (is_jm) user_priorEvent_aux = e_user_prior_aux_stuff,
-    if (is_jm) user_priorEvent_assoc = e_user_prior_assoc_stuff,
-    user_prior_covariance = prior_covariance,
-    y_has_intercept = fetch_(y_mod, "x", "has_intercept"),
-    y_has_predictors = fetch_(y_mod, "x", "K") > 0,
-    if (is_jm) e_has_intercept = standata$e_has_intercept,
-    if (is_jm) e_has_predictors = standata$e_K > 0,
-    if (is_jm) has_assoc = a_K > 0,
-    adjusted_priorLong_scale = fetch(y_prior_stuff, "prior_scale"),
-    adjusted_priorLong_intercept_scale = fetch(y_prior_intercept_stuff, "prior_scale"),
-    adjusted_priorLong_aux_scale = fetch(y_prior_aux_stuff, "prior_scale"),
-    if (is_jm) adjusted_priorEvent_scale = e_prior_stuff$prior_scale,
+    user_priorLong                      = y_user_prior_stuff,
+    user_priorLong_intercept            = y_user_prior_intercept_stuff,
+    user_priorLong_aux                  = y_user_prior_aux_stuff,
+    user_prior_covariance               = prior_covariance,
+    y_has_intercept                     = fetch_(y_mod, "x", "has_intercept"),
+    y_has_predictors                    = fetch_(y_mod, "x", "K") > 0,
+    adjusted_priorLong_scale            = fetch(y_prior_stuff, "prior_scale"),
+    adjusted_priorLong_intercept_scale  = fetch(y_prior_intercept_stuff, "prior_scale"),
+    adjusted_priorLong_aux_scale        = fetch(y_prior_aux_stuff, "prior_scale"),
+    family                              = family, 
+    if (is_jm) basehaz                  = basehaz,
+    if (is_jm) user_priorEvent          = e_user_prior_stuff,
+    if (is_jm) user_priorEvent_intercept= e_user_prior_intercept_stuff,
+    if (is_jm) user_priorEvent_aux      = e_user_prior_aux_stuff,
+    if (is_jm) user_priorEvent_assoc    = e_user_prior_assoc_stuff,
+    if (is_jm) e_has_intercept          = standata$e_has_intercept,
+    if (is_jm) e_has_predictors         = standata$e_K > 0,
+    if (is_jm) has_assoc                = a_K > 0,
+    if (is_jm) adjusted_priorEvent_scale           = e_prior_stuff$prior_scale,
     if (is_jm) adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
-    if (is_jm) adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
-    if (is_jm) adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
-    family = family, 
-    if (is_jm) basehaz = basehaz
-  )  
+    if (is_jm) adjusted_priorEvent_aux_scale       = e_prior_aux_stuff$prior_scale,
+    if (is_jm) adjusted_priorEvent_assoc_scale     = e_prior_assoc_stuff$prior_scale)  
   
   #-----------
   # Fit model
   #-----------
   
-  # call stan() to draw from posterior distribution
-  stanfit <- if (is_jm) stanmodels$jm else stanmodels$mvmer
-  pars <- pars_to_monitor(standata, is_jm = is_jm)
-  if (M == 1L) 
-    cat("Fitting a univariate", if (is_jm) "joint" else "glmer", "model.\n\n")
-  if (M  > 1L) 
-    cat("Fitting a multivariate", if (is_jm) "joint" else "glmer", "model.\n\n")
-  if (algorithm == "sampling") {
-    cat("Please note the warmup may be much slower than later iterations!\n")             
-    sampling_args <- set_jm_sampling_args(
+  # obtain stan model code
+  stanfit  <- if (is_jm) stanmodels$jm else stanmodels$mvmer
+  
+  # specify parameters for stan to monitor
+  stanpars <- pars_to_monitor(standata, is_jm = is_jm)
+
+  # report type of model to user
+  txt1 <- if (M == 1) "uni"   else "multi"
+  txt2 <- if (is_jm)  "joint" else "glmer"
+  txt3 <- paste0("Fitting a ", txt1, "variate", txt2, "model.\n\n")
+  txt4 <- "Please note the warmup may be much slower than later iterations!\n"
+  
+  # fit model using stan
+  cat(txt3)
+  if (algorithm == "sampling") { # mcmc
+    cat(txt4)             
+    args <- set_jm_sampling_args(
       object = stanfit,
-      cnms = cnms,
+      data   = standata,
+      pars   = stanpars, 
+      init   = init,
+      cnms   = cnms,
       user_dots = list(...), 
-      user_adapt_delta = adapt_delta,
+      user_adapt_delta   = adapt_delta,
       user_max_treedepth = max_treedepth,
-      data = standata, 
-      pars = pars, 
-      init = init,
       show_messages = FALSE)
-    stanfit <- do.call(sampling, sampling_args)
-  } else {
-    # meanfield or fullrank vb
-    stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
-                         algorithm = algorithm, ...)    
+    stanfit <- do.call(rstan::sampling, args)
+  } else { # meanfield or fullrank vb
+    args <- nlist(
+      object = stanfit,
+      data   = standata,
+      pars   = stanpars,
+      algorithm
+    )
+    args[names(dots)] <- dots
+    stanfit <- do.call(rstan::vb, args)
   }
-  check <- check_stanfit(stanfit)
-  if (!isTRUE(check)) return(standata)
+  if (!isTRUE(check_stanfit(stanfit))) 
+    return(standata)
 
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)
     stanfit <- evaluate_Sigma(stanfit, cnms)
   
-  if (is_jm) { # begin jm block
-    
-    e_nms_beta  <- get_beta_name(e_mod)
-    e_nms_int   <- get_int_name (e_mod, basehaz)
-    e_nms_aux   <- get_aux_name (e_mod, basehaz)
-    e_beta_nms <- if (e_mod$K) paste0("Event|", colnames(e_mod$Xq)) else NULL
-    e_assoc_nms <- character()  
-    for (m in 1:M) {
-      if (assoc["etavalue",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue"))
-      if (assoc["etavalue_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:", colnames(a_mod[[m]][["X_data"]][["etavalue_data"]])))
-      if (assoc["etavalue_etavalue",][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_etavalue"]], "|etavalue"))
-      if (assoc["etavalue_muvalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etavalue:Long", assoc["which_interactions",][[m]][["etavalue_muvalue"]],  "|muvalue"))
-      if (assoc["etaslope",         ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope"))
-      if (assoc["etaslope_data",    ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaslope:", colnames(a_mod[[m]][["X_data"]][["etaslope_data"]])))    
-      if (assoc["etaauc",           ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|etaauc"))
-      if (assoc["muvalue",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue"))
-      if (assoc["muvalue_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:", colnames(a_mod[[m]][["X_data"]][["muvalue_data"]])))    
-      if (assoc["muvalue_etavalue", ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_etavalue"]], "|etavalue"))
-      if (assoc["muvalue_muvalue",  ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muvalue:Long", assoc["which_interactions",][[m]][["muvalue_muvalue"]],  "|muvalue"))
-      if (assoc["muslope",          ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope"))
-      if (assoc["muslope_data",     ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muslope:", colnames(a_mod[[m]][["X_data"]][["muslope_data"]])))    
-      if (assoc["muauc",            ][[m]]) e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|Long", m,"|muauc"))
-    }
-    if (sum(standata$size_which_b)) {
-      temp_g_nms <- lapply(1:M, FUN = function(m) {
-        all_nms <- paste0(paste0("Long", m, "|b["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
-        all_nms[assoc["which_b_zindex",][[m]]]})
-      e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|", unlist(temp_g_nms)))
-    }
-    if (sum(standata$size_which_coef)) {
-      temp_g_nms <- lapply(1:M, FUN = function(m) {
-        all_nms <- paste0(paste0("Long", m, "|coef["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
-        all_nms[assoc["which_coef_zindex",][[m]]]})
-      e_assoc_nms <- c(e_assoc_nms, paste0("Assoc|", unlist(temp_g_nms)))
-    }
-    # end jm block
+  if (is_jm) {
+    e_nms_beta  <- get_beta_name (e_mod)
+    e_nms_int   <- get_int_name  (e_mod, basehaz)
+    e_nms_aux   <- get_aux_name  (e_mod, basehaz)
+    e_nms_assoc <- get_assoc_name(a_mod, assoc)
   } else {
     e_nms_beta  <- NULL
     e_nms_int   <- NULL
@@ -1137,30 +1126,27 @@ stan_jm.fit <- function(formulaLong          = NULL,
                if (length(standata$q)) c(paste0("b[", b_nms, "]")),
                y_nms_aux,
                e_nms_aux,
-               paste0("Sigma[", Sigma_nms, "]"),
-               paste0(stub, 1:M, "|mean_PPD"), 
+               y_nms_sigma,
+               y_nms_ppd, 
                "log-posterior")
-  
-  new_names <- c(y_intercept_nms,
-                 y_beta_nms,
-                 if (is_jm) e_intercept_nms,
-                 if (is_jm) e_beta_nms,
-                 if (is_jm) e_assoc_nms,                   
-                 if (length(standata$q)) c(paste0("b[", b_nms, "]")),
-                 y_aux_nms,
-                 if (is_jm) e_aux_nms,
-                 paste0("Sigma[", Sigma_nms, "]"),
-                 paste0(stub, 1:M, "|mean_PPD"), 
-                 "log-posterior")
   
   # substitute new parameter names into 'stanfit' object
   stanfit <- replace_stanfit_nms(stanfit, nms_all)
   
-  stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flevels)
-  if (is_jm)
-    stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, 
-                                        id_var, grp_stuff))
+  # combine elements to add to returned structure
+  if (!is_jm) e_mod <- a_mod <- assoc <- basehaz <- id_var <- grp_stuff <- NULL
+  args <- nlist(.Data = stanfit,
+                y_mod, 
+                e_mod,
+                a_mod,
+                assoc,
+                basehaz,
+                prior_info, 
+                id_var,
+                cnms, 
+                flevels,
+                grp_stuff)
   
-  do.call("structure", stanfit_str)
+  do.call("structure", remove_null(args, recursive = FALSE))
 }
 
