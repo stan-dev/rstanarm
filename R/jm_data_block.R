@@ -1025,10 +1025,13 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   mt <- mf_stuff$mt # model terms
   
   mf[[id_var]] <- promote_to_factor(mf[[id_var]]) # same as lme4
+  
+  # error checks for the id variable
+  validate_jm_ids(y_ids = y_ids, e_ids = ids)
 
   # entry and exit times for each row of data
-  t_end <- make_t(mf, type = "end") # entry time
-  t_beg <- make_t(mf, type = "beg") # exit  time
+  t_beg <- make_t(mf, type = "beg") # entry time
+  t_end <- make_t(mf, type = "end") # exit  time
   t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
   
   # event indicator for each row of data
@@ -1054,34 +1057,20 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   ninterval <- length(t_lower)
   ndelayed  <- length(t_delayed)
   
-  mod <- survival::coxph(formula$formula, data = data, x = TRUE)
-  
-  # error checks for the id variable
-  if (!identical(y_id_list, levels(factor(id_list))))
-    stop2("The patient IDs (levels of the grouping factor) included ",
-          "in the longitudinal and event submodels do not match")
-  if (is.unsorted(factor(id_list)))
-    stop2("'dataEvent' needs to be sorted by the subject ",
-          "ID/grouping variable")
-  if (!identical(length(y_id_list), length(id_list)))
-    stop2("The number of patients differs between the longitudinal and ",
-          "event submodels. Perhaps you intended to use 'start/stop' notation ",
-          "for the Surv() object.")
-  
   # standardised weights and nodes for quadrature
   qq <- get_quadpoints(nodes = qnodes)
   qp <- qq$points
   qw <- qq$weights
   
   # quadrature points & weights, evaluated for each row of data
-  qpts <- uapply(qp, unstandardise_qpts, 0, t_end)
-  qwts <- uapply(qw, unstandardise_qwts, 0, t_end)
+  qpts <- uapply(qp, unstandardise_qpts, t_beg, t_end)
+  qwts <- uapply(qw, unstandardise_qwts, t_beg, t_end)
   qids <- rep(ids, qnodes)
   
   # quadrature points & weights, evaluated for rows with interval censoring
   if (ninterval) {
-    qpts_upper <- uapply(qp, unstandardise_qpts, 0, t_upper) # qpts for upper limit
-    qwts_upper <- uapply(qw, unstandardise_qwts, 0, t_upper) # qwts for upper limit
+    qpts_upper <- uapply(qp, unstandardise_qpts, t_beg, t_upper) # qpts for upper limit
+    qwts_upper <- uapply(qw, unstandardise_qwts, t_beg, t_upper) # qwts for upper limit
   } else {
     qpts_upper <- rep(0,0)
     qwts_upper <- rep(0,0)
@@ -1105,51 +1094,26 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   qinterval <- length(qpts_upper)
   qdelayed  <- length(qpts_delayed)  
   
-  # evaluate design matrix at event and quadrature times
-  if (ncol(mod$x)) {
-    # Convert model frame from Cox model into a data.table
-    dt <- prepare_data_table(data, id_var = id_var, time_var = t0_var)
-    # Obtain rows of the model frame that are as close as possible to 
-    # the event times (failures only) and quadrature times                      
-    mf2 <- rolling_merge(dt, ids = cids, times = cpts)
-    # Construct design matrix evaluated at event and quadrature times
-    fm_RHS <- reformulate(attr(terms(mod), "term.labels"))
-    Xq <- model.matrix(fm_RHS, data = mf2)
-    Xq <- Xq[, -1L, drop = FALSE] # drop intercept
-    # Centre the design matrix
-    Xbar <- colMeans(Xq)
-    Xq <- sweep(Xq, 2, Xbar, FUN = "-")
-    sel <- (2 > apply(Xq, 2L, function(x) length(unique(x))))
-    if (any(sel)) {
-      # drop any column of x with < 2 unique values (empty interaction levels)
-      warning("Dropped empty interaction levels: ",
-              paste(colnames(Xq)[sel], collapse = ", "))
-      Xq <- Xq[, !sel, drop = FALSE]
-      Xbar <- Xbar[!sel]
-    }
-    if (interval) {
-      mf_left  <- rolling_merge(dt, ids = qids_left,  times = qpts_left)
-      mf_right <- rolling_merge(dt, ids = qids_right, times = qpts_right)
-      Xq_left  <- model.matrix(fm_RHS, data = mf_left) [, -1L, drop = FALSE]
-      Xq_right <- model.matrix(fm_RHS, data = mf_right)[, -1L, drop = FALSE]
-      Xq_left  <- sweep(Xq_left,  2, Xbar, FUN = "-")
-      Xq_right <- sweep(Xq_right, 2, Xbar, FUN = "-")
-      if (any(sel)) {
-        Xq_left  <- Xq_left [, !sel, drop = FALSE]
-        Xq_right <- Xq_right[, !sel, drop = FALSE]
-      }
-    } else {
-      Xq_left  <- matrix(0,0,0)
-      Xq_right <- matrix(0,0,0)
-    }
-  } else {
-    Xbar     <- rep(0,0)
-    Xq       <- matrix(0,0,0)
-    Xq_left  <- matrix(0,0,0)
-    Xq_right <- matrix(0,0,0)
-  }
+  # basis terms for baseline hazard
+  basis_events       <- make_basis(t_events,     basehaz)
+  basis_qpts         <- make_basis(qpts,         basehaz)
+  basis_qpts_upper   <- make_basis(qpts_upper,   basehaz)
+  basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
   
-  nlist(mod, entrytime, eventtime, status, Npat = length(eventtime), 
+  # predictor matrices
+  x <- make_x(formula$tf_form, mf)$x
+  x_events  <- keep_rows(x, event)
+  x_delayed <- keep_rows(x, delayed)
+  x_qpts         <- rep_rows(x,         times = qnodes)
+  x_qpts_upper   <- rep_rows(x_upper,   times = qnodes)
+  x_qpts_delayed <- rep_rows(x_delayed, times = qnodes)
+  K <- ncol(x)
+  
+  # fit a cox model
+  mod <- survival::coxph(formula$formula, data = data, x = TRUE)
+  
+  nlist(mod,
+        entrytime, eventtime, status, Npat = length(eventtime), 
         Nevents = sum(status), id_list, qnodes, qwts, qpts, qids, 
         epts, eids, cpts, cids, Xq, Xbar, K = ncol(Xq), norm_const, 
         model_frame = mf1, tvc, interval, 
@@ -1157,6 +1121,19 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
         qwts_right, qpts_right, qids_right, Xq_right)
 }
 
+# Check that the ids in the longitudinal and survival models match
+validate_jm_ids <- function(y_ids, e_ids) {
+  if (!identical(y_id_list, levels(factor(id_list))))
+    stop2("The patient IDs (levels of the grouping factor) included ",
+          "in the longitudinal and event submodels do not match")
+  if (is.unsorted(factor(id_list)))
+    stop2("'dataEvent' needs to be sorted by the subject ",
+          "ID/grouping variable")
+  if (!identical(length(y_id_list), length(id_list)))
+    stop2("The number of patients differs between the longitudinal and ",
+          "event submodels. Perhaps you intended to use 'start/stop' notation ",
+          "for the Surv() object.")
+}
 
 # Deal with the baseline hazard
 #
