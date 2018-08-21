@@ -2521,7 +2521,7 @@ parse_formula <- function(formula, data) {
 }
 
 # Data for handling lower-level clustering in association structure
-standata_add_assoc_grp <- function(standata, e_mod, a_mod, grp_stuff) {
+standata_add_assoc_grp <- function(standata, a_mod, grp_stuff) {
   has_grp <- fetch_(grp_stuff, "has_grp")
   if (any(has_grp)) {
     sel <- which(has_grp)[[1L]]
@@ -2542,8 +2542,8 @@ standata_add_assoc_grp <- function(standata, e_mod, a_mod, grp_stuff) {
 
 
 # Data (design matrices) for the main types of association structure
-standata_add_assoc_xz <- function(standata, e_mod, a_mod, assoc, meta_stuff) {
-  M <- standata$M
+standata_add_assoc_xz <- function(standata, a_mod, assoc, meta_stuff) {
+  M <- meta_stuff$M
   cnms_nms <- names(meta_stuff$cnms)
   for (m in 1:M) {
     for (i in c("eta", "eps", "auc")) {
@@ -2599,7 +2599,7 @@ standata_add_assoc_xz <- function(standata, e_mod, a_mod, assoc, meta_stuff) {
 }
 
 # Dimensions for auc association structure
-standata_add_assoc_auc <- function(standata, e_mod, a_mod) {
+standata_add_assoc_auc <- function(standata, a_mod, e_mod, meta_stuff) {
   
   count_rows <- function(i) { 
     nr <- NROW(i$mod_auc$x)
@@ -2634,7 +2634,7 @@ standata_add_assoc_auc <- function(standata, e_mod, a_mod) {
 }
 
 # Data for interaction-based and shared parameter association structures
-standata_add_assoc_extras <- function(standata, e_mod, a_mod) {
+standata_add_assoc_extras <- function(standata, a_mod, assoc) {
   
   # interactions between association terms and data, with the following objects:
   #   a_K_data: number of columns in y_Xq_data corresponding to each interaction 

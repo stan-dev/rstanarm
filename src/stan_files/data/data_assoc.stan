@@ -52,136 +52,150 @@
 
   //---- data for calculating eta in GK quadrature
 
-    int<lower=0> nrow_y_Xq[3];     // num. rows in long. predictor matrix at quadpoints
+    // fe design matrices
 
-    // fe design matrix at quadpoints
-    matrix[assoc_uses[1,1] == 1 ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eta;
-    matrix[assoc_uses[1,2] == 1 ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eta;
-    matrix[assoc_uses[1,3] == 1 ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eta;
+    matrix[assoc_uses[1,1] == 1 ? len_epts[1] : 0, yK[1]] y1_x_eta_epts;
+    matrix[assoc_uses[1,2] == 1 ? len_epts[2] : 0, yK[2]] y2_x_eta_epts;
+    matrix[assoc_uses[1,3] == 1 ? len_epts[3] : 0, yK[3]] y3_x_eta_epts;
 
-    // re design matrix at quadpoints, group factor 1
-    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z1q_eta[bK1_len[1]];
-    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq[2] : 0] y2_z1q_eta[bK1_len[2]];
-    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq[3] : 0] y3_z1q_eta[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eta[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0];
-    int<lower=0> y2_z1q_id_eta[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq[2] : 0];
-    int<lower=0> y3_z1q_id_eta[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq[3] : 0];
+    matrix[assoc_uses[1,1] == 1 ? len_qpts[1] : 0, yK[1]] y1_x_eta_qpts;
+    matrix[assoc_uses[1,2] == 1 ? len_qpts[2] : 0, yK[2]] y2_x_eta_qpts;
+    matrix[assoc_uses[1,3] == 1 ? len_qpts[3] : 0, yK[3]] y3_x_eta_qpts;
 
-    // re design matrix at quadpoints, group factor 2
-    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z2q_eta[bK2_len[1]];
-    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq[2] : 0] y2_z2q_eta[bK2_len[2]];
-    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq[3] : 0] y3_z2q_eta[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eta[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq[1] : 0];
-    int<lower=0> y2_z2q_id_eta[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq[2] : 0];
-    int<lower=0> y3_z2q_id_eta[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq[3] : 0];
+    matrix[assoc_uses[1,1] == 1 ? len_ipts[1] : 0, yK[1]] y1_x_eta_ipts;
+    matrix[assoc_uses[1,2] == 1 ? len_ipts[2] : 0, yK[2]] y2_x_eta_ipts;
+    matrix[assoc_uses[1,3] == 1 ? len_ipts[3] : 0, yK[3]] y3_x_eta_ipts;
 
-    // fe design matrix at quadpoints, left censoring times
-    matrix[(assoc_uses[1,1] == 1 && interval == 1) ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eta_left;
-    matrix[(assoc_uses[1,2] == 1 && interval == 1) ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eta_left;
-    matrix[(assoc_uses[1,3] == 1 && interval == 1) ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eta_left;
+    // re design matrices, group factor 1
 
-    // re design matrix at quadpoints, group factor 1, left censoring times
-    vector[(assoc_uses[1,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0] y1_z1q_eta_left[bK1_len[1]];
-    vector[(assoc_uses[1,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0] y2_z1q_eta_left[bK1_len[2]];
-    vector[(assoc_uses[1,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0] y3_z1q_eta_left[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eta_left[(assoc_uses[1,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0];
-    int<lower=0> y2_z1q_id_eta_left[(assoc_uses[1,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0];
-    int<lower=0> y3_z1q_id_eta_left[(assoc_uses[1,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0];
+    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0] y1_z1_eta_epts[bK1_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0] y2_z1_eta_epts[bK1_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0] y3_z1_eta_epts[bK1_len[3]];
 
-    // re design matrix at quadpoints, group factor 2, left censoring times
-    vector[(assoc_uses[1,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0] y1_z2q_eta_left[bK2_len[1]];
-    vector[(assoc_uses[1,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0] y2_z2q_eta_left[bK2_len[2]];
-    vector[(assoc_uses[1,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0] y3_z2q_eta_left[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eta_left[(assoc_uses[1,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0];
-    int<lower=0> y2_z2q_id_eta_left[(assoc_uses[1,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0];
-    int<lower=0> y3_z2q_id_eta_left[(assoc_uses[1,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0];		
-	
-	  // fe design matrix at quadpoints, right censoring times
-    matrix[(assoc_uses[1,1] == 1 && interval == 1) ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eta_right;
-    matrix[(assoc_uses[1,2] == 1 && interval == 1) ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eta_right;
-    matrix[(assoc_uses[1,3] == 1 && interval == 1) ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eta_right;
+    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0] y1_z1_eta_qpts[bK1_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0] y2_z1_eta_qpts[bK1_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0] y3_z1_eta_qpts[bK1_len[3]];
 
-    // re design matrix at quadpoints, group factor 1, right censoring times
-    vector[(assoc_uses[1,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0] y1_z1q_eta_right[bK1_len[1]];
-    vector[(assoc_uses[1,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0] y2_z1q_eta_right[bK1_len[2]];
-    vector[(assoc_uses[1,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0] y3_z1q_eta_right[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eta_right[(assoc_uses[1,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0];
-    int<lower=0> y2_z1q_id_eta_right[(assoc_uses[1,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0];
-    int<lower=0> y3_z1q_id_eta_right[(assoc_uses[1,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0];
+    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0] y1_z1_eta_ipts[bK1_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0] y2_z1_eta_ipts[bK1_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0] y3_z1_eta_ipts[bK1_len[3]];
 
-    // re design matrix at quadpoints, group factor 2, right censoring times
-    vector[(assoc_uses[1,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0] y1_z2q_eta_right[bK2_len[1]];
-    vector[(assoc_uses[1,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0] y2_z2q_eta_right[bK2_len[2]];
-    vector[(assoc_uses[1,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0] y3_z2q_eta_right[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eta_right[(assoc_uses[1,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0];
-    int<lower=0> y2_z2q_id_eta_right[(assoc_uses[1,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0];
-    int<lower=0> y3_z2q_id_eta_right[(assoc_uses[1,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0];		
-		
+    // re design matrices, group factor 2
+
+    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0] y1_z2_eta_epts[bK2_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0] y2_z2_eta_epts[bK2_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0] y3_z2_eta_epts[bK2_len[3]];
+
+    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0] y1_z2_eta_qpts[bK2_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0] y2_z2_eta_qpts[bK2_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0] y3_z2_eta_qpts[bK2_len[3]];
+
+    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0] y1_z2_eta_ipts[bK2_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0] y2_z2_eta_ipts[bK2_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0] y3_z2_eta_ipts[bK2_len[3]];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z1_id_eta_epts[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z1_id_eta_epts[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z1_id_eta_epts[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z1_id_eta_qpts[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z1_id_eta_qpts[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z1_id_eta_qpts[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z1_id_eta_ipts[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z1_id_eta_ipts[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z1_id_eta_ipts[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z2_id_eta_epts[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z2_id_eta_epts[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z2_id_eta_epts[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z2_id_eta_qpts[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z2_id_eta_qpts[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z2_id_eta_qpts[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z2_id_eta_ipts[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z2_id_eta_ipts[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z2_id_eta_ipts[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0];
+
+
   //---- data for calculating derivative of eta in GK quadrature
 
-    // fe design matrix at quadpoints
-    matrix[assoc_uses[2,1] == 1 ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eps;
-    matrix[assoc_uses[2,2] == 1 ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eps;
-    matrix[assoc_uses[2,3] == 1 ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eps;
+    // fe design matrices
 
-    // re design matrix at quadpoints, group factor 1
-    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z1q_eps[bK1_len[1]];
-    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq[2] : 0] y2_z1q_eps[bK1_len[2]];
-    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq[3] : 0] y3_z1q_eps[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eps[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0];
-    int<lower=0> y2_z1q_id_eps[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq[2] : 0];
-    int<lower=0> y3_z1q_id_eps[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq[3] : 0];
+    matrix[assoc_uses[2,1] == 1 ? len_epts[1] : 0, yK[1]] y1_x_eps_epts;
+    matrix[assoc_uses[2,2] == 1 ? len_epts[2] : 0, yK[2]] y2_x_eps_epts;
+    matrix[assoc_uses[2,3] == 1 ? len_epts[3] : 0, yK[3]] y3_x_eps_epts;
 
-    // re design matrix at quadpoints, group factor 2
-    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z2q_eps[bK2_len[1]];
-    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq[2] : 0] y2_z2q_eps[bK2_len[2]];
-    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq[3] : 0] y3_z2q_eps[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eps[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq[1] : 0];
-    int<lower=0> y2_z2q_id_eps[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq[2] : 0];
-    int<lower=0> y3_z2q_id_eps[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq[3] : 0];
-		
-    // fe design matrix at quadpoints, left censoring times
-    matrix[(assoc_uses[2,1] == 1 && interval == 1) ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eps_left;
-    matrix[(assoc_uses[2,2] == 1 && interval == 1) ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eps_left;
-    matrix[(assoc_uses[2,3] == 1 && interval == 1) ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eps_left;
+    matrix[assoc_uses[2,1] == 1 ? len_qpts[1] : 0, yK[1]] y1_x_eps_qpts;
+    matrix[assoc_uses[2,2] == 1 ? len_qpts[2] : 0, yK[2]] y2_x_eps_qpts;
+    matrix[assoc_uses[2,3] == 1 ? len_qpts[3] : 0, yK[3]] y3_x_eps_qpts;
 
-    // re design matrix at quadpoints, group factor 1, left censoring times
-    vector[(assoc_uses[2,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0] y1_z1q_eps_left[bK1_len[1]];
-    vector[(assoc_uses[2,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0] y2_z1q_eps_left[bK1_len[2]];
-    vector[(assoc_uses[2,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0] y3_z1q_eps_left[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eps_left[(assoc_uses[2,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0];
-    int<lower=0> y2_z1q_id_eps_left[(assoc_uses[2,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0];
-    int<lower=0> y3_z1q_id_eps_left[(assoc_uses[2,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0];
+    matrix[assoc_uses[2,1] == 1 ? len_ipts[1] : 0, yK[1]] y1_x_eps_ipts;
+    matrix[assoc_uses[2,2] == 1 ? len_ipts[2] : 0, yK[2]] y2_x_eps_ipts;
+    matrix[assoc_uses[2,3] == 1 ? len_ipts[3] : 0, yK[3]] y3_x_eps_ipts;
 
-    // re design matrix at quadpoints, group factor 2, left censoring times
-    vector[(assoc_uses[2,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0] y1_z2q_eps_left[bK2_len[1]];
-    vector[(assoc_uses[2,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0] y2_z2q_eps_left[bK2_len[2]];
-    vector[(assoc_uses[2,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0] y3_z2q_eps_left[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eps_left[(assoc_uses[2,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_left[1] : 0];
-    int<lower=0> y2_z2q_id_eps_left[(assoc_uses[2,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_left[2] : 0];
-    int<lower=0> y3_z2q_id_eps_left[(assoc_uses[2,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_left[3] : 0];		
-	
-	  // fe design matrix at quadpoints, right censoring times
-    matrix[(assoc_uses[2,1] == 1 && interval == 1) ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eps_right;
-    matrix[(assoc_uses[2,2] == 1 && interval == 1) ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eps_right;
-    matrix[(assoc_uses[2,3] == 1 && interval == 1) ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eps_right;
+    // re design matrices, group factor 1
 
-    // re design matrix at quadpoints, group factor 1, right censoring times
-    vector[(assoc_uses[2,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0] y1_z1q_eps_right[bK1_len[1]];
-    vector[(assoc_uses[2,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0] y2_z1q_eps_right[bK1_len[2]];
-    vector[(assoc_uses[2,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0] y3_z1q_eps_right[bK1_len[3]];
-    int<lower=0> y1_z1q_id_eps_right[(assoc_uses[2,1] == 1 && bK1_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0];
-    int<lower=0> y2_z1q_id_eps_right[(assoc_uses[2,2] == 1 && bK1_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0];
-    int<lower=0> y3_z1q_id_eps_right[(assoc_uses[2,3] == 1 && bK1_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0];
+    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0] y1_z1_eps_epts[bK1_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0] y2_z1_eps_epts[bK1_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0] y3_z1_eps_epts[bK1_len[3]];
 
-    // re design matrix at quadpoints, group factor 2, right censoring times
-    vector[(assoc_uses[2,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0] y1_z2q_eps_right[bK2_len[1]];
-    vector[(assoc_uses[2,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0] y2_z2q_eps_right[bK2_len[2]];
-    vector[(assoc_uses[2,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0] y3_z2q_eps_right[bK2_len[3]];
-    int<lower=0> y1_z2q_id_eps_right[(assoc_uses[2,1] == 1 && bK2_len[1] > 0 && interval == 1) ? nrow_y_Xq_right[1] : 0];
-    int<lower=0> y2_z2q_id_eps_right[(assoc_uses[2,2] == 1 && bK2_len[2] > 0 && interval == 1) ? nrow_y_Xq_right[2] : 0];
-    int<lower=0> y3_z2q_id_eps_right[(assoc_uses[2,3] == 1 && bK2_len[3] > 0 && interval == 1) ? nrow_y_Xq_right[3] : 0];		
-		
+    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0] y1_z1_eps_qpts[bK1_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0] y2_z1_eps_qpts[bK1_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0] y3_z1_eps_qpts[bK1_len[3]];
+
+    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0] y1_z1_eps_ipts[bK1_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0] y2_z1_eps_ipts[bK1_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0] y3_z1_eps_ipts[bK1_len[3]];
+
+    // re design matrices, group factor 2
+
+    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0] y1_z2_eps_epts[bK2_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0] y2_z2_eps_epts[bK2_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0] y3_z2_eps_epts[bK2_len[3]];
+
+    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0] y1_z2_eps_qpts[bK2_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0] y2_z2_eps_qpts[bK2_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0] y3_z2_eps_qpts[bK2_len[3]];
+
+    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0] y1_z2_eps_ipts[bK2_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0] y2_z2_eps_ipts[bK2_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0] y3_z2_eps_ipts[bK2_len[3]];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z1_id_eps_epts[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z1_id_eps_epts[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z1_id_eps_epts[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z1_id_eps_qpts[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z1_id_eps_qpts[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z1_id_eps_qpts[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z1_id_eps_ipts[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z1_id_eps_ipts[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z1_id_eps_ipts[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z2_id_eps_epts[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z2_id_eps_epts[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z2_id_eps_epts[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z2_id_eps_qpts[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z2_id_eps_qpts[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z2_id_eps_qpts[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z2_id_eps_ipts[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z2_id_eps_ipts[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z2_id_eps_ipts[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0];
+
+
   //---- data for calculating integral of eta in GK quadrature
 
     // num. of nodes for GK quadrature for area under marker trajectory
@@ -189,26 +203,76 @@
     int<lower=0> nrow_y_Xq_auc; // num. rows in long. predictor matrix at auc quadpoints
     vector[sum(assoc_uses[3,]) > 0 ? nrow_y_Xq_auc : 0] auc_qwts;
 
-    // fe design matrix at quadpoints
-    matrix[assoc_uses[3,1] == 1 ? nrow_y_Xq_auc : 0, yK[1]] y1_xq_auc;
-    matrix[assoc_uses[3,2] == 1 ? nrow_y_Xq_auc : 0, yK[2]] y2_xq_auc;
-    matrix[assoc_uses[3,3] == 1 ? nrow_y_Xq_auc : 0, yK[3]] y3_xq_auc;
+    // fe design matrices
 
-    // re design matrix at quadpoints, group factor 1
-    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq_auc : 0] y1_z1q_auc[bK1_len[1]];
-    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq_auc : 0] y2_z1q_auc[bK1_len[2]];
-    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq_auc : 0] y3_z1q_auc[bK1_len[3]];
-    int<lower=0> y1_z1q_id_auc[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq_auc : 0];
-    int<lower=0> y2_z1q_id_auc[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? nrow_y_Xq_auc : 0];
-    int<lower=0> y3_z1q_id_auc[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? nrow_y_Xq_auc : 0];
+    matrix[assoc_uses[3,1] == 1 ? len_epts[1] : 0, yK[1]] y1_x_auc_epts;
+    matrix[assoc_uses[3,2] == 1 ? len_epts[2] : 0, yK[2]] y2_x_auc_epts;
+    matrix[assoc_uses[3,3] == 1 ? len_epts[3] : 0, yK[3]] y3_x_auc_epts;
 
-    // re design matrix at quadpoints, group factor 2
-    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq_auc : 0] y1_z2q_auc[bK2_len[1]];
-    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq_auc : 0] y2_z2q_auc[bK2_len[2]];
-    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq_auc : 0] y3_z2q_auc[bK2_len[3]];
-    int<lower=0> y1_z2q_id_auc[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? nrow_y_Xq_auc : 0];
-    int<lower=0> y2_z2q_id_auc[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? nrow_y_Xq_auc : 0];
-    int<lower=0> y3_z2q_id_auc[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? nrow_y_Xq_auc : 0];
+    matrix[assoc_uses[3,1] == 1 ? len_qpts[1] : 0, yK[1]] y1_x_auc_qpts;
+    matrix[assoc_uses[3,2] == 1 ? len_qpts[2] : 0, yK[2]] y2_x_auc_qpts;
+    matrix[assoc_uses[3,3] == 1 ? len_qpts[3] : 0, yK[3]] y3_x_auc_qpts;
+
+    matrix[assoc_uses[3,1] == 1 ? len_ipts[1] : 0, yK[1]] y1_x_auc_ipts;
+    matrix[assoc_uses[3,2] == 1 ? len_ipts[2] : 0, yK[2]] y2_x_auc_ipts;
+    matrix[assoc_uses[3,3] == 1 ? len_ipts[3] : 0, yK[3]] y3_x_auc_ipts;
+
+    // re design matrices, group factor 1
+
+    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0] y1_z1_auc_epts[bK1_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0] y2_z1_auc_epts[bK1_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0] y3_z1_auc_epts[bK1_len[3]];
+
+    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0] y1_z1_auc_qpts[bK1_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0] y2_z1_auc_qpts[bK1_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0] y3_z1_auc_qpts[bK1_len[3]];
+
+    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0] y1_z1_auc_ipts[bK1_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0] y2_z1_auc_ipts[bK1_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0] y3_z1_auc_ipts[bK1_len[3]];
+
+    // re design matrices, group factor 2
+
+    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0] y1_z2_auc_epts[bK2_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0] y2_z2_auc_epts[bK2_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0] y3_z2_auc_epts[bK2_len[3]];
+
+    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0] y1_z2_auc_qpts[bK2_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0] y2_z2_auc_qpts[bK2_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0] y3_z2_auc_qpts[bK2_len[3]];
+
+    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0] y1_z2_auc_ipts[bK2_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0] y2_z2_auc_ipts[bK2_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0] y3_z2_auc_ipts[bK2_len[3]];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z1_id_auc_epts[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z1_id_auc_epts[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z1_id_auc_epts[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z1_id_auc_qpts[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z1_id_auc_qpts[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z1_id_auc_qpts[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z1_id_auc_ipts[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z1_id_auc_ipts[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z1_id_auc_ipts[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? len_ipts[3] : 0];
+
+    // ids for re design matrices, group factor 1
+
+    int<lower=0> y1_z2_id_auc_epts[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_epts[1] : 0];
+    int<lower=0> y2_z2_id_auc_epts[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_epts[2] : 0];
+    int<lower=0> y3_z2_id_auc_epts[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_epts[3] : 0];
+
+    int<lower=0> y1_z2_id_auc_qpts[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_qpts[1] : 0];
+    int<lower=0> y2_z2_id_auc_qpts[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_qpts[2] : 0];
+    int<lower=0> y3_z2_id_auc_qpts[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_qpts[3] : 0];
+
+    int<lower=0> y1_z2_id_auc_ipts[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? len_ipts[1] : 0];
+    int<lower=0> y2_z2_id_auc_ipts[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? len_ipts[2] : 0];
+    int<lower=0> y3_z2_id_auc_ipts[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? len_ipts[3] : 0];
+
 
   //---- data for calculating assoc*data interactions in GK quadrature
 
@@ -216,14 +280,18 @@
     int<lower=0,upper=a_K> a_K_data[M*4];
 
     // design matrix for interacting with ev/es/mv/ms at quadpoints
-    matrix[sum(nrow_y_Xq[1:M]), sum(a_K_data)] y_Xq_data;
+    matrix[sum(len_epts[1:M]), sum(a_K_data)] y_x_data_qpts;
+    matrix[sum(len_qpts[1:M]), sum(a_K_data)] y_x_data_qpts;
+    matrix[sum(len_qpts[1:M]), sum(a_K_data)] y_x_data_qpts;
+    matrix[sum(len_qpts[1:M]), sum(a_K_data)] y_x_data_qpts;
 
-    // indexing specifying the rows of y_Xq_data that correspond to
-    // each submodel
+    // indexing specifying the rows of y_Xq_data that correspond to each submodel
     int<lower=0> idx_q[3,2];
 
   //---- data for combining lower level units clustered within patients
 
     int<lower=0,upper=1> has_grp[M]; // 1 = has clustering below patient level
-    int<lower=0,upper=4> grp_assoc; // 1=sum, 2=mean, 3=min, 4=max
-    int<lower=0> grp_idx[nrow_e_Xq,2];
+    int<lower=0,upper=4> grp_assoc;  // 1 = sum, 2 = mean, 3 = min, 4 = max
+    int<lower=0> grp_idx_epts      [len_epts,2];
+    int<lower=0> grp_idx_qpts      [len_qpts ,2];
+    int<lower=0> grp_idx_ipts[len_ipts,2];
