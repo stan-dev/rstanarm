@@ -39,13 +39,13 @@ data {
   //   y{1,2,3}_z{1,2}q_id_{eta,eps,auc}_{epts,qpts,qpts_upper,qpts_delayed}
 #include /data/data_assoc.stan
 
-  // declares: 
+  // declares:
   //   e_prior_{mean,scale,df}{_for_intercept,for_aux},
   //   e_global_prior_{scale,df}
 #include /data/hyperparameters_mvmer.stan
 #include /data/hyperparameters_event.stan
-  
-  // declares: 
+
+  // declares:
   //   a_prior_{mean,scale,df},
   //   a_global_prior_{scale,df}
 #include /data/hyperparameters_assoc.stan
@@ -54,7 +54,7 @@ transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);
 
-  // declares: 
+  // declares:
   //   yHs{1,2,3}
   //   len_{z_T,var_group,rho}
   //   pos
@@ -64,7 +64,7 @@ transformed data {
 #include /tdata/tdata_mvmer.stan
 }
 parameters {
-  // declares: 
+  // declares:
   //   yGamma{1,2,3}
   //   z_yBeta{1,2,3}
   //   z_b
@@ -82,7 +82,7 @@ parameters {
   //   yMix{1,2,3}
 #include /parameters/parameters_mvmer.stan
 
-  // declares: 
+  // declares:
   //   e_{gamma,z_beta,aux_unscaled,global,local,mix,ool}
 #include /parameters/parameters_event.stan
 
@@ -100,7 +100,7 @@ transformed parameters {
   // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum,
   //   theta_L, bMat{1,2}
 #include /tparameters/tparameters_mvmer.stan
-  
+
   //---- Parameters for event submodel
   e_beta = make_beta(e_z_beta, e_prior_dist, e_prior_mean,
                      e_prior_scale, e_prior_df, e_global_prior_scale,
@@ -126,21 +126,21 @@ model {
 
     // Event submodel: linear predictor at event and quad times
     if (e_K > 0) {
-		  if (len_epts > 0) e_eta_epts = e_x_epts * e_beta;
-		  if (len_qpts > 0) e_eta_qpts = e_x_qpts * e_beta;
-		  if (len_ipts > 0) e_eta_ipts = e_x_ipts * e_beta;		
-		}
-		else {
-			if (len_epts > 0) e_eta_epts = rep_vector(0.0, len_epts);
-		  if (len_qpts > 0) e_eta_qpts = rep_vector(0.0, len_qpts);
-		  if (len_ipts > 0) e_eta_ipts = rep_vector(0.0, len_ipts);
-		}
-    if (e_has_intercept == 1) {
-			if (len_epts > 0) e_eta_epts = e_eta_epts + e_gamma[1];
-		  if (len_qpts > 0) e_eta_qpts = e_eta_qpts + e_gamma[1];
-		  if (len_ipts > 0) e_eta_ipts = e_eta_ipts + e_gamma[1];
+      if (len_epts > 0) e_eta_epts = e_x_epts * e_beta;
+      if (len_qpts > 0) e_eta_qpts = e_x_qpts * e_beta;
+      if (len_ipts > 0) e_eta_ipts = e_x_ipts * e_beta;
     }
-		
+    else {
+      if (len_epts > 0) e_eta_epts = rep_vector(0.0, len_epts);
+      if (len_qpts > 0) e_eta_qpts = rep_vector(0.0, len_qpts);
+      if (len_ipts > 0) e_eta_ipts = rep_vector(0.0, len_ipts);
+    }
+    if (e_has_intercept == 1) {
+      if (len_epts > 0) e_eta_epts = e_eta_epts + e_gamma[1];
+      if (len_qpts > 0) e_eta_qpts = e_eta_qpts + e_gamma[1];
+      if (len_ipts > 0) e_eta_ipts = e_eta_ipts + e_gamma[1];
+    }
+
     if (assoc == 1) {
       // declares:
       //   y_eta_q{_eps,_lag,_auc}
@@ -152,8 +152,8 @@ model {
 
     {
     // declares (and increments target with event log-lik):
-		//   log_basehaz, 
-		//   log_{haz_q,haz_etimes,surv_etimes,event}
+    //   log_basehaz,
+    //   log_{haz_q,haz_etimes,surv_etimes,event}
 #include /model/event_lp.stan
     }
   }
@@ -162,49 +162,49 @@ model {
   // increments target with mvmer priors
 #include /model/priors_mvmer.stan
 
-    beta_lp(e_z_beta, 
-		        e_prior_dist, 
-						e_prior_scale, 
-						e_prior_df,
-            e_global_prior_df, 
-						e_local, 
-						e_global, 
-						e_mix, 
-						e_ool,
-            e_slab_df, 
-						e_caux);
-						
-    beta_lp(a_z_beta, 
-		        a_prior_dist, 
-						a_prior_scale, 
-						a_prior_df,
-            a_global_prior_df, 
-						a_local, 
-						a_global, 
-						a_mix, 
-						a_ool,
-            a_slab_df, 
-						a_caux);
-						
-    basehaz_lp(e_aux_unscaled, 
-		           e_prior_dist_for_aux, 
-							 e_prior_df_for_aux);
-    
-		if (e_has_intercept == 1)
-        gamma_lp(e_gamma[1], 
-				         e_prior_dist_for_intercept, 
-								 e_prior_mean_for_intercept,
-                 e_prior_scale_for_intercept, 
-								 e_prior_df_for_intercept);
+    beta_lp(e_z_beta,
+            e_prior_dist,
+            e_prior_scale,
+            e_prior_df,
+            e_global_prior_df,
+            e_local,
+            e_global,
+            e_mix,
+            e_ool,
+            e_slab_df,
+            e_caux);
+
+    beta_lp(a_z_beta,
+            a_prior_dist,
+            a_prior_scale,
+            a_prior_df,
+            a_global_prior_df,
+            a_local,
+            a_global,
+            a_mix,
+            a_ool,
+            a_slab_df,
+            a_caux);
+
+    basehaz_lp(e_aux_unscaled,
+               e_prior_dist_for_aux,
+               e_prior_df_for_aux);
+
+    if (e_has_intercept == 1)
+        gamma_lp(e_gamma[1],
+                 e_prior_dist_for_intercept,
+                 e_prior_mean_for_intercept,
+                 e_prior_scale_for_intercept,
+                 e_prior_df_for_intercept);
 }
 generated quantities {
   real e_alpha; // transformed intercept for event submodel
 
-  // declares and defines: 
-	//   mean_PPD
-	//   yAlpha{1,2,3}
-	//   b{1,2}
-	//   bCov{1,2}
+  // declares and defines:
+  //   mean_PPD
+  //   yAlpha{1,2,3}
+  //   b{1,2}
+  //   bCov{1,2}
 #include /gqs/gen_quantities_mvmer.stan
 
   // norm_const is a constant shift in log baseline hazard
