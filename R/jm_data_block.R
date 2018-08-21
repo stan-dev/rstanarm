@@ -1954,30 +1954,11 @@ handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta_stuff) {
                y_mod        = y_mod, 
                grp_stuff    = grp_stuff, 
                meta_stuff   = meta_stuff, 
-               assoc        = assoc)
-  
-  args$ids   <- e_mod$eids
-  args$times <- e_mod$epts
-  parts_epts <- do.call(make_assoc_parts, args)
-  
-  args$ids   <- e_mod$qids
-  args$times <- e_mod$qpts
-  parts_qpts <- do.call(make_assoc_parts, args)
-  
-  args$ids   <- e_mod$qids_upper
-  args$times <- e_mod$qpts_upper
-  parts_qpts_upper <- do.call(make_assoc_parts, args)  
-  
-  args$ids   <- e_mod$qids_delayed
-  args$times <- e_mod$qpts_delayed
-  parts_qpts_delayed <- do.call(make_assoc_parts, args)  
-  
-  out <- nlist(parts_epts, 
-               parts_qpts, 
-               parts_qpts_upper, 
-               parts_qpts_delayed)
-  
-  out
+               assoc        = assoc,
+               ids          = e_mod$cids),
+               times        = e_mod$cpts))
+ 
+  do.call(make_assoc_parts, args)
 }
 
 # Return a matrix with information for stan about which components are
@@ -2553,7 +2534,7 @@ standata_add_assoc_xz <- function(standata, a_mod, assoc, meta_stuff) {
                          auc = "auc")
       sel <- grep(nm_check, rownames(assoc))
       req <- any(unlist(assoc[sel,m]))
-      for (j in c("epts", "qpts", "qpts_upper", "qpts_delayed")) {
+      for (j in c("epts", "qpts", "ipts")) {
         if (m <= M && req) {
           tmp_stuff <- a_mod[[m]][[paste0("parts_", j)]][[paste0("mod_", i)]]
           

@@ -1,9 +1,26 @@
   /**
+  * Return the lower bound for the baseline hazard parameters
+  *
+  * @param type An integer indicating the type of baseline hazard
+  * @return A real
+  */
+  real coefs_lb(int type) {
+    real lbound;
+    if (type == 2) // B-splines, on log haz scale
+      lbound = negative_infinity();
+    else if (type == 3) // piecewise constant, on log haz scale
+      lbound = negative_infinity();
+    else
+      lbound = 0;
+    return lbound;
+  }
+
+  /**
   * Scale a vector of auxiliary parameters based on prior information
   *
   * @param aux_unscaled A vector, the unscaled auxiliary parameters
   * @param prior_dist Integer, the type of prior distribution
-  * @param prior_mean,prior_scale Vectors, the mean and scale 
+  * @param prior_mean,prior_scale Vectors, the mean and scale
   *   of the prior distribution
   * @return A vector, corresponding to the scaled auxiliary parameters
   */

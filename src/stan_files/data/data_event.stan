@@ -23,14 +23,12 @@
   int<lower=1,upper=3> basehaz_type;
 
   // dimensions
-  int<lower=0> e_K;                // num. of predictors in event submodel
-  int<lower=0> npat;               // num. individuals (equal to l[id_var] - 1)
+  int<lower=0> e_K;                // num. predictors in event submodel
   int<lower=0> len_epts;           // num. events (ie. not censored)
-  int<lower=0> qnodes;             // num. nodes for GK quadrature
   int<lower=0> len_qpts;           // num. rows used for quadrature
   int<lower=0> len_ipts;           // num. rows used for quadrature for interval cens
-  int<lower=0> qdelayed;           // num. rows used for quadrature for delayed entry
   int<lower=0> basehaz_nvars;      // num. aux parameters for baseline hazard
+  int<lower=0> qnodes;             // num. nodes for GK quadrature
 
   // response and time variables
   vector[len_epts] epts;           // time of events

@@ -557,41 +557,30 @@ stan_jm.fit <- function(formulaLong          = NULL,
     
     # dimensions
     standata$e_K              <- ai(e_mod$K)
-    standata$nevent           <- ai(e_mod$nevent)
-    standata$nrcens           <- ai(e_mod$nrcens)
-    standata$nlcens           <- ai(e_mod$nlcens)
-    standata$nicens           <- ai(e_mod$nicens)
+    standata$nevents          <- ai(e_mod$nevents)
     #standata$Npat             <- ai(e_mod$Npat)
     #standata$Nevents          <- ai(e_mod$Nevents)
     standata$qnodes           <- ai(e_mod$qnodes)
-    standata$qrows            <- ai(e_mod$qrows)
-    standata$qicens           <- ai(e_mod$qicens)
-    standata$qdelayed         <- ai(e_mod$qdelayed)
+    standata$len_cpts         <- ai(e_mod$len_cpts)
+    standata$len_epts         <- ai(e_mod$len_epts)
+    standata$len_qpts         <- ai(e_mod$len_qpts)
+    standata$len_ipts         <- ai(e_mod$len_ipts)
     standata$e_has_intercept  <- ai(e_mod$has_intercept)
     
     # design matrices
+    standata$cpts             <- aa(e_mod$cpts)
     standata$epts             <- aa(e_mod$epts)
     standata$qpts             <- aa(e_mod$qpts)
-    standata$qpts_upper       <- aa(e_mod$qpts_upper)
-    standata$qpts_delayed     <- aa(e_mod$qpts_delayed)
+    standata$ipts             <- aa(e_mod$ipts)
     standata$qwts             <- aa(e_mod$qwts)
-    standata$qwts_upper       <- aa(e_mod$qwts_upper)
-    standata$qwts_delayed     <- aa(e_mod$qwts_delayed)
-    standata$e_x_qpts         <- e_mod$x_qpts
-    standata$e_x_qpts_upper   <- e_mod$x_qpts_upper
-    standata$e_x_qpts_delayed <- e_mod$x_qpts_delayed
+    standata$iwts             <- aa(e_mod$iwts)
+    standata$e_x_cpts         <- e_mod$x_cpts
     standata$e_xbar           <- aa(e_mod$Xbar)
-    standata$e_weights        <- aa(e_weights)
-    standata$e_weights_rep    <- aa(rep(e_weights, times = qnodes))
-    #standata$Npat_times_qnodes<- ai(e_mod$Npat * qnodes)
-    
+
     # baseline hazard
     standata$basehaz_type       <- ai(basehaz$type)
     standata$basehaz_nvars      <- ai(basehaz$nvars)
-    standata$basis_events       <- e_mod$basis_events
-    standata$basis_qpts         <- e_mod$basis_qpts
-    standata$basis_qpts_upper   <- e_mod$basis_qpts_upper
-    standata$basis_qpts_delayed <- e_mod$basis_qpts_delayed
+    standata$basis_cpts         <- e_mod$basis_cpts
     standata$norm_const         <- e_mod$norm_const
     
     # priors

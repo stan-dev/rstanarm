@@ -1,11 +1,16 @@
-  real e_gamma[e_has_intercept]; // intercept for event submodel
-  vector[e_K] e_z_beta;          // primitive log hazard ratios
+  // primitive log hazard ratios
+  vector[e_K] e_z_beta;
 
-  // unscaled basehaz params, either:
-  //   - weibull shape parameter
-  //   - b-spline coefs on log basehaz
-  //   - coefs for piecewise constant basehaz
-  vector<lower=(basehaz_type == 1 ? 0 : negative_infinity())>[basehaz_df] e_aux_unscaled;
+  // intercept
+  real e_gamma[e_has_intercept == 1];
+
+  // unscaled basehaz parameters
+  //   exp model:      nvars = 0, ie. no aux parameter
+  //   weibull model:  nvars = 1, ie. shape parameter
+  //   gompertz model: nvars = 1, ie. scale parameter
+  //   M-spline model: nvars = number of basis terms, ie. spline coefs
+  //   B-spline model: nvars = number of basis terms, ie. spline coefs
+  vector<lower=coefs_lb(basehaz_type)>[basehaz_nvars] e_aux_unscaled;
 
   // parameters for priors on log haz ratios
   real<lower=0> e_global[e_hs];

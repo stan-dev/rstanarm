@@ -215,7 +215,7 @@ make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
     stop2("A maximum of 2 grouping factors are allowed.")
   z_parts <- lapply(bars, split_at_bars)
   z_forms <- fetch(z_parts, "re_form")
-  z       <- lapply(z_forms, model.matrix, model_frame)
+  z <- lapply(z_forms, model.matrix, model_frame)
   group_vars <- fetch(z_parts, "group_var")
   group_list <- lapply(group_vars, function(x) factor(model_frame[[x]]))
   names(z) <- names(group_list) <- group_vars

@@ -497,36 +497,27 @@ model {
 
     // linear predictor
     if (K > 0) {
-      if (nevents > 0)
-        eta_events = x_events * beta;
-      if (ncensor > 0)
-        eta_censor = x_censor * beta;
-      if (ndelayed > 0)
-        eta_delayed = x_delayed * beta;
+      if (nevents  > 0) eta_events  = x_events * beta;
+      if (ncensor  > 0) eta_censor  = x_censor * beta;
+      if (ndelayed > 0) eta_delayed = x_delayed * beta;
     }
     else {
-      if (nevents > 0)
-        eta_events = rep_vector(0.0, nevents);
-      if (ncensor > 0)
-        eta_censor = rep_vector(0.0, ncensor);
-      if (ndelayed > 0)
-        eta_delayed = rep_vector(0.0, ndelayed);
+      if (nevents  > 0) eta_events  = rep_vector(0.0, nevents);
+      if (ncensor  > 0) eta_censor  = rep_vector(0.0, ncensor);
+      if (ndelayed > 0) eta_delayed = rep_vector(0.0, ndelayed);
     }
 
     // add intercept
     if (has_intercept == 1) {
-      if (nevents > 0)
-        eta_events = eta_events + gamma[1];
-      if (ncensor > 0)
-        eta_censor = eta_censor + gamma[1];
-      if (ndelayed > 0)
-        eta_delayed = eta_delayed + gamma[1];
+      if (nevents  > 0) eta_events  = eta_events + gamma[1];
+      if (ncensor  > 0) eta_censor  = eta_censor + gamma[1];
+      if (ndelayed > 0) eta_delayed = eta_delayed + gamma[1];
     }
 
     // evaluate log hazard and log survival
     if (type == 5) { // exponential model
-      if (nevents > 0)
-        lsur_events = - dot_product(t_events, exp(eta_events));
+      if (nevents > 0) 
+			  lsur_events = - dot_product(t_events, exp(eta_events));
       if (ncensor > 0)
         lsur_censor = - dot_product(t_censor, exp(eta_censor));
       if (ndelayed > 0)

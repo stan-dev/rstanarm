@@ -23,13 +23,17 @@ data {
   //   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
 #include /data/data_mvmer.stan
 
-  // declares: e_prior_dist{_for_intercept,_for_aux},
-  //   Npat, Nevents, qnodes, Npat_times_qnodes, qwts,
-  //   basehaz_{type,df,X}, nrow_e_Xq, e_has_intercept,
-  //   e_{K,Xq,times,xbar,weights,weights_rep}
+  // declares: 
+	//   e_prior_dist{_for_intercept,_for_aux}
+	//   qnodes
+	//   len_{epts,qpts,ipts}
+	//   epts,qpts,ipts
+	//   qwts,iwts
+	//   basehaz_type
 #include /data/data_event.stan
 
-  // declares: a_{K,xbar}, a_prior_dist, assoc, assoc_uses, has_assoc,
+  // declares: 
+	//   a_{K,xbar}, a_prior_dist, assoc, assoc_uses, has_assoc,
   //   {sum_}size_which_b, which_b_zindex, {sum_}size_which_coef,
   //   which_coef_{zindex,xindex}, a_K_data, y_Xq_{eta,eps,lag,auc,data},
   //   {sum_,sum_size_}which_interactions, idx_q,
