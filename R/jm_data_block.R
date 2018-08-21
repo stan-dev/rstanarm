@@ -717,28 +717,31 @@ check_intercept_type <- function(X, family) {
 # @return Returns the character string corresponding to the appropriate id_var.
 #   This will either be the user specified id_var argument or the only grouping
 #   factor.
-check_id_var <- function(id_var, y_cnms, y_flist) {
-  len_cnms <- sapply(y_cnms, length)
-  if (any(len_cnms > 1L)) {  # more than one grouping factor
-    if (is.null(id_var)) {
-      stop("'id_var' must be specified when using more than one grouping factor",
-           call. = FALSE)
-    } else {
-      lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
-        stop("'id_var' must be included as a grouping factor in each ",
-             "of the longitudinal submodels", call. = FALSE)) 
-    }
+check_id_var <- function(y_mod, id_var) {
+  
+  y_cnms <- fetch(y_mod, "z", "group_cnms")
+
+  len_cnms <- sapply(y_cnms, length) # num grouping factors in each submodel
+  
+  if (any(len_cnms > 1L)) { # multiple grouping factors
+    
+    if (is.null(id_var))
+      stop2("With more than one grouping factor 'id_var' must be specified.")
+    lapply(y_cnms, function(x)  if (!(id_var %in% names(x)))
+      stop2("'id_var' must be a grouping factor in each longitudinal submodel.")) 
     return(id_var)
-  } else {  # only one grouping factor (assumed to be subject ID)
+    
+  } else { # only one grouping factor (assumed to be subject ID)
+    
     only_cnm <- unique(sapply(y_cnms, names))
     if (length(only_cnm) > 1L)
-      stop("The grouping factor (ie, subject ID variable) is not the ",
-           "same in all longitudinal submodels", call. = FALSE)
-    if ((!is.null(id_var)) && (!identical(id_var, only_cnm)))
-      warning("The user specified 'id_var' (", paste(id_var), 
+      stop2("The grouping factor (ie, subject ID variable) is not the ",
+           "same in all longitudinal submodels.")
+    if (not.null(id_var) && !identical(id_var, only_cnm))
+      warning2("The user specified 'id_var' (", paste(id_var), 
               ") and the assumed ID variable based on the single ",
               "grouping factor (", paste(only_cnm), ") are not the same; ", 
-              "'id_var' will be ignored", call. = FALSE, immediate. = TRUE)
+              "'id_var' will be ignored")
     return(only_cnm)
   }
 }
@@ -821,15 +824,18 @@ check_for_aux <- function(family) {
 # Function to return a single cnms object for all longitudinal submodels
 #
 # @param x A list, with each element being a cnms object returned by (g)lmer
-get_common_cnms <- function(x, stub = "Long") {
-  nms <- lapply(x, names)
+get_common_cnms <- function(y_mod, stub = "Long") {
+  y_cnms <- fetch(y_mod, "z", "group_cnms")
+  nms <- lapply(y_cnms, names)
   unique_nms <- unique(unlist(nms))
   cnms <- lapply(seq_along(unique_nms), function(i) {
     nm <- unique_nms[i]
-    unlist(lapply(1:length(x), function(m) 
-      if (nm %in% nms[[m]]) paste0(stub, m, "|", x[[m]][[nm]])))
+    unlist(lapply(1:length(y_cnms), function(m) 
+      if (nm %in% nms[[m]]) paste0(stub, m, "|", y_cnms[[m]][[nm]])))
   })
   names(cnms) <- unique_nms
+  if (length(cnms) > 2L)
+    stop("A maximum of 2 grouping factors are allowed.")
   cnms
 }
 
@@ -837,13 +843,14 @@ get_common_cnms <- function(x, stub = "Long") {
 # grouping factor, but collapsed across all longitudinal submodels
 # 
 # @param x A list containing the flist object for each of the submodels
-get_common_flevels <- function(x) {
-  nms <- lapply(x, names)
+get_common_flevels <- function(y_mod) {
+  y_flevels <- fetch(y_mod, "z", "group_list")
+  nms <- lapply(y_flevels, names)
   unique_nms <- unique(unlist(nms))
   flevels <- lapply(seq_along(unique_nms), function(i) {
     nm <- unique_nms[i]
-    flevels_nm <- lapply(1:length(x), function(m) 
-      if (nm %in% nms[[m]]) levels(x[[m]][[nm]]))
+    flevels_nm <- lapply(1:length(y_flevels), function(m) 
+      if (nm %in% nms[[m]]) levels(y_flevels[[m]][[nm]]))
     flevels_nm <- rm_null(unique(flevels_nm))
     if (length(flevels_nm) > 1L)
       stop2("The group factor levels must be the same for all submodels.")
@@ -879,7 +886,8 @@ validate_grouping_factor <- function(y_cnms, group_var) {
 #   separate longitudinal submodel
 # @return A vector of factor levels corresponding to the IDs appearing
 #   in the longitudinal submodels
-check_id_list <- function(id_var, y_flist) {
+check_id_list <- function(y_mod, id_var) {
+  y_flist <- fetch(y_mod, "z", "group_list")
   id_list <- unique(lapply(y_flist, function(x) levels(x[[id_var]])))
   if (length(id_list) > 1L)
     stop2("The subject IDs are not the same in all longitudinal submodels.")
@@ -951,21 +959,21 @@ use_predvars <- function(mod, keep_response = TRUE) {
 #   individual. The vector names should be the individual ids.
 # @param id_var,time_var The ID and time variable in the longitudinal data.
 # @return Nothing.
-validate_observation_times <-function(data, eventtimes, id_var, time_var) {
+validate_observation_times <-function(data, exittime, id_var, time_var) {
   if (!time_var %in% colnames(data)) 
     STOP_no_var(time_var)
   if (!id_var %in% colnames(data)) 
     STOP_no_var(id_var)
   if (any(data[[time_var]] < 0))
     stop2("Values for the time variable (", time_var, ") should not be negative.")
-  mt <- tapply(data[[time_var]], factor(data[[id_var]]), max)  # max observation time
-  nms <- names(eventtimes)                                     # patient IDs
+  mt  <- tapply(data[[time_var]], factor(data[[id_var]]), max) # max observation time
+  nms <- names(exittime)                                       # patient IDs
   if (is.null(nms))
-    stop2("Bug found: cannot find names in the vector of event times.")
-  sel <- which(sapply(nms, FUN = function(i) mt[i] > eventtimes[i]))
+    stop2("Bug found: cannot find names in the vector of exit times.")
+  sel <- which(sapply(nms, FUN = function(i) mt[i] > exittime[i]))
   if (length(sel))
-    stop2("The following individuals have observation times in the longitudinal data ",
-          "are later than their event time: ", paste(nms[sel], collapse = ", "))      
+    stop2("The following individuals have observation times in the longitudinal ",
+          "data that are later than their event time: ", comma(nms[sel]))     
 }
 
 
@@ -1008,7 +1016,7 @@ validate_observation_times <-function(data, eventtimes, id_var, time_var) {
 #     subject ID variable also included.
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
 #     in the fitted Cox model (ie. time varying covariates). 
-handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
+handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
   
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
@@ -1025,6 +1033,7 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   mt <- mf_stuff$mt # model terms
   
   mf[[id_var]] <- promote_to_factor(mf[[id_var]]) # same as lme4
+  ids <- factor(mf[[id_var]])
   
   # error checks for the id variable
   validate_jm_ids(y_ids = y_ids, e_ids = ids)
@@ -1035,27 +1044,54 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
   
   # event indicator for each row of data
-  d <- make_d(mf)
-  event <- as.logical(d)  
-
-  # interval censoring indicator for each row of data
-  interval <- (d == 3)
-   
+  status <- make_d(mf)
+  
+  event <- as.logical(status == 1)  
+  rcens <- as.logical(status == 0)
+  lcens <- as.logical(status == 2)
+  icens <- as.logical(status == 3)
+  
+  if (any(status < 0 || status > 3))
+    stop2("Invalid status indicator in Surv object.")
+  if (any(lcens))
+    stop2("Cannot handle left censoring.")  
+    
   # delayed entry indicator for each row of data
-  delayed  <- (!t_beg == 0)
+  delayed  <- as.logical(!t_beg == 0)
   
   # time variables for stan
-  t_events  <- t_end[event]    # exact event time
-  t_censor  <- t_end[!event]   # right censoring time
-  t_lower   <- t_end[interval] # lower limit of interval censoring time
-  t_upper   <- t_upp[interval] # upper limit of interval censoring time
-  t_delayed <- t_beg[delayed]  # delayed entry time
- 
+  t_event   <- t_end[event]   # exact event time
+  t_rcens   <- t_end[rcens]   # right censoring time
+  t_lcens   <- t_end[lcens]   # left  censoring time
+  t_lower   <- t_end[icens]   # lower limit of interval censoring time
+  t_upper   <- t_upp[icens]   # upper limit of interval censoring time
+  t_delayed <- t_beg[delayed] # delayed entry time
+  
+  # entry and exit times for each individual
+  t_tmp <- t_end; t_tmp[icens] <- t_upp[icens]
+  entrytime <- tapply(t_beg, ids, min)
+  exittime  <- tapply(t_tmp, ids, max)
+  
   # dimensions
-  nevents   <- length(t_events)
-  ncensor   <- length(t_censor)
-  ninterval <- length(t_lower)
-  ndelayed  <- length(t_delayed)
+  nevent   <- sum(event)
+  nrcens   <- sum(rcens)
+  nlcens   <- sum(lcens)
+  nicens   <- sum(icens)
+  ndelayed <- sum(delayed)
+  
+  # baseline hazard
+  ok_basehaz <- c("weibull", "bs", "piecewise")
+  ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
+  basehaz <- handle_basehaz(basehaz        = basehaz, 
+                            basehaz_ops    = basehaz_ops, 
+                            ok_basehaz     = ok_basehaz,
+                            ok_basehaz_ops = ok_basehaz_ops,
+                            times          = t_end, 
+                            status         = event)
+  nvars <- basehaz$nvars # number of basehaz aux parameters
+  
+  # flag if intercept is required for baseline hazard
+  has_intercept <- ai(has_intercept(basehaz))
   
   # standardised weights and nodes for quadrature
   qq <- get_quadpoints(nodes = qnodes)
@@ -1068,9 +1104,9 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   qids <- rep(ids, qnodes)
   
   # quadrature points & weights, evaluated for rows with interval censoring
-  if (ninterval) {
-    qpts_upper <- uapply(qp, unstandardise_qpts, t_beg, t_upper) # qpts for upper limit
-    qwts_upper <- uapply(qw, unstandardise_qwts, t_beg, t_upper) # qwts for upper limit
+  if (nicens) {
+    qpts_upper <- uapply(qp, unstandardise_qpts, t_beg[icens], t_upper) # qpts for upper limit
+    qwts_upper <- uapply(qw, unstandardise_qwts, t_beg[icens], t_upper) # qwts for upper limit
   } else {
     qpts_upper <- rep(0,0)
     qwts_upper <- rep(0,0)
@@ -1090,12 +1126,12 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   eids <- ids  [status == 1] # subject ids
   
   # dimensions
-  qrows     <- length(qpts)
-  qinterval <- length(qpts_upper)
-  qdelayed  <- length(qpts_delayed)  
+  qrows    <- length(qpts)
+  qicens   <- length(qpts_upper)
+  qdelayed <- length(qpts_delayed)  
   
   # basis terms for baseline hazard
-  basis_events       <- make_basis(t_events,     basehaz)
+  basis_events       <- make_basis(t_event,      basehaz)
   basis_qpts         <- make_basis(qpts,         basehaz)
   basis_qpts_upper   <- make_basis(qpts_upper,   basehaz)
   basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
@@ -1112,24 +1148,61 @@ handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   # fit a cox model
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  nlist(mod,
-        entrytime, eventtime, status, Npat = length(eventtime), 
-        Nevents = sum(status), id_list, qnodes, qwts, qpts, qids, 
-        epts, eids, cpts, cids, Xq, Xbar, K = ncol(Xq), norm_const, 
-        model_frame = mf1, tvc, interval, 
-        qwts_left,  qpts_left,  qids_left,  Xq_left, 
-        qwts_right, qpts_right, qids_right, Xq_right)
+  nlist(mod, 
+        basehaz,
+        has_intercept,
+        model_frame = mf,
+        entrytime,
+        exittime,
+        t_beg, 
+        t_end,
+        t_upp,
+        t_event,
+        t_rcens,
+        t_lcens,
+        t_lower,
+        t_upper,
+        status,
+        nevent,
+        nrcens,
+        nlcens,
+        nicens,
+        ndelayed,
+        qnodes,
+        qrows,
+        qicens,
+        qdelayed,
+        epts, 
+        eids,
+        qpts, 
+        qwts, 
+        qids,
+        qpts_upper, 
+        qwts_upper, 
+        qids_upper,
+        qpts_delayed, 
+        qwts_delayed, 
+        qids_delayed,
+        basis_events,
+        basis_qpts,
+        basis_qpts_upper,
+        basis_qpts_delayed,
+        x,
+        x_events,
+        x_qpts,
+        x_qpts_upper,
+        x_qpts_delayed,
+        K)
 }
 
 # Check that the ids in the longitudinal and survival models match
 validate_jm_ids <- function(y_ids, e_ids) {
-  if (!identical(y_id_list, levels(factor(id_list))))
+  if (!identical(y_ids, levels(factor(e_ids))))
     stop2("The patient IDs (levels of the grouping factor) included ",
           "in the longitudinal and event submodels do not match")
-  if (is.unsorted(factor(id_list)))
-    stop2("'dataEvent' needs to be sorted by the subject ",
-          "ID/grouping variable")
-  if (!identical(length(y_id_list), length(id_list)))
+  if (is.unsorted(factor(e_ids)))
+    stop2("'dataEvent' needs to be sorted by the subject ID/grouping variable.")
+  if (!identical(length(y_ids), length(e_ids)))
     stop2("The number of patients differs between the longitudinal and ",
           "event submodels. Perhaps you intended to use 'start/stop' notation ",
           "for the Surv() object.")
@@ -1155,10 +1228,12 @@ validate_jm_ids <- function(y_ids, e_ids) {
 #     post-estimation when evaluating the baseline hazard for posterior
 #     predictions since it contains information about the knot locations
 #     for the baseline hazard (this is implemented via splines::predict.bs). 
-handle_basehaz <- function(basehaz, basehaz_ops, 
-                           ok_basehaz = c("weibull", "bs", "piecewise"),
+handle_basehaz <- function(basehaz, 
+                           basehaz_ops, 
+                           ok_basehaz     = c("weibull", "bs", "piecewise"),
                            ok_basehaz_ops = c("df", "knots"),
-                           times, status) {
+                           times, 
+                           status) {
   
   if (!basehaz %in% ok_basehaz)
     stop2("'basehaz' should be one of: ", comma(ok_basehaz))
@@ -1166,7 +1241,7 @@ handle_basehaz <- function(basehaz, basehaz_ops,
   if (!all(names(basehaz_ops) %in% ok_basehaz_ops))
     stop2("'basehaz_ops' can only include: ", comma(ok_basehaz_ops))
   
-  tt <- times[(status > 0)] # uncensored event times
+  tt <- times[(status == 1)] # uncensored event times
   
   if (basehaz == "exp") {
     
@@ -1498,63 +1573,97 @@ unclass_Surv_column <- function(data) {
 
 #--------------- Functions related to association structure
 
-# Return a named list with information about the specified association structure 
+# Return an array summarising the joint model association structure
+#
+# @param assoc A list of character vectors, the user input to the assoc 
+#   argument of the stan_jm call.
+# @param lag_assoc A numeric vector, the lag time for the association 
+#   structure related to each longitudinal submodel.
+# @param ok_assoc_list A named list of character vectors, where the named 
+#   elements of the list are the following:
+#     ok_assoc:             valid types of association structures
+#     ok_assoc_data:        assocs that can be interacted with covariates
+#     ok_assoc_interaction: assocs that can be interacted with one another
+#     ok_assoc_interval:    assocs that can be used with interval censoring
+# @param metastuff A list with meta information about the joint model.
+# @return An array, with a column for each longitudinal submodel and a row
+#   for each aspect of the association structure summary.
+handle_assoc <- function(assoc, lag_assoc, ok_assoc_list, meta_stuff) {
+  ok_assoc_interactions <- ok_assoc_list$ok_assoc_interactions
+  out <- mapply(validate_assoc, 
+                y_mod       = y_mod, 
+                user_x      = assoc,
+                lag         = lag_assoc, 
+                MoreArgs    = nlist(meta_stuff, ok_assoc_list))
+  out <- check_order_of_assoc_interactions(out, ok_assoc_interactions)
+  out <- set_colnames(out, paste0("Long", 1:M))
+  out
+}
+
+
+# Return a named list summarising the association for one submodel
 # 
 # @param user_x A character vector or NULL, being the user input to the
 #   assoc argument (for one submodel) in the stan_jm call
-# @param y_mod_stuff A list returned by a call to handle_glmod
+# @param y_mod A list returned by a call to handle_glmod
 # @param id_var The name of the ID variable 
-# @param M Integer specifying the total number of longitudinal submodels
-# @return A list with information about the desired association structure
-validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
-                           ok_assoc_interactions, ok_assoc_interval,
-                           lag, id_var, M, interval) {
+# @param metastuff A list with meta information about the joint model.
+# @return A list with information about the desired association structure.
+validate_assoc <- function(user_x, lag, y_mod, ok_assoc_list, meta_stuff) {
   
-  ok_inputs <- c(ok_assoc, paste0(ok_assoc_data, "_data"),
-                 unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))) 
+  M         <- meta_stuff$M
+  id_var    <- meta_stuff$id_var
+  has_icens <- meta_stuff$has_icens
   
-  # Check user input to assoc argument
-  trimmed_x <- trim_assoc(user_x, ok_assoc_data, ok_assoc_interactions)
-  if (is.null(user_x) || all(trimmed_x %in% ok_inputs)) {
-    
-    temporarily_disallowed <- c("muslope", "shared_b", "shared_coef")
-    if (any(trimmed_x %in% temporarily_disallowed))
-      stop2("The following association structures have been temporarily disallowed ",
-            "and will be reinstated in a future release: ", 
-            paste(temporarily_disallowed, collapse = ", "))
-    
-    if (interval && !all(trimmed_x %in% ok_assoc_interval))
-      stop2("When interval censoring is present, only the following association ",
-            "structures are allowed:", comma(ok_assoc_interval))
-    
-    assoc <- sapply(ok_inputs, `%in%`, trimmed_x, simplify = FALSE)
-    if (is.null(user_x)) {
-      assoc$null <- TRUE
-    } else if (is.vector(user_x) && is.character(user_x)) {
-      if ((assoc$null) && (length(user_x) > 1L))
-        stop("In assoc, 'null' cannot be specified in conjuction ",
-             "with another association type", call. = FALSE)
-      STOP_combination_not_allowed(assoc, "etavalue", "muvalue")
-      STOP_combination_not_allowed(assoc, "etaslope", "muslope")
-      STOP_combination_not_allowed(assoc, "etaauc",   "muauc")
-    } else {
-      stop("'assoc' argument should be a character vector or, for a multivariate ",
-           "joint model, possibly a list of character vectors.", call. = FALSE)    
-    }    
-  } else {
-    stop("An unsupported association type has been specified. The ",
+  ok_assoc              <- ok_assoc_list$ok_assoc
+  ok_assoc_data         <- ok_assoc_list$ok_assoc_data
+  ok_assoc_interval     <- ok_assoc_list$ok_assoc_interval
+  ok_assoc_interactions <- ok_assoc_list$ok_assoc_interactions
+  
+  ok_inputs <- c(ok_assoc, 
+                 paste0(ok_assoc_data, "_data"),
+                 uapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))
+  
+  disallowed <- c("muslope", "shared_b", "shared_coef")
+
+  trimmed_assoc <- trim_assoc(user_assoc, ok_assoc_data, ok_assoc_interactions)
+  
+  if (not.null(user_assoc) && !all(trimmed_assoc %in% ok_inputs))
+    stop2("An unsupported association type has been specified. The ",
          "'assoc' argument can only include the following association ", 
-         "types: ", paste(ok_assoc, collapse = ", "), ", as well as ",
-         "possible interactions either between association terms or ",
-         "with observed data.", call. = FALSE)  
+         "types: ", comma(ok_assoc), ", as well as possible interactions ",
+         "either between association terms or with observed data.")      
+  
+  if (any(trimmed_assoc %in% disallowed))
+    stop2("The following association structures are temporarily disallowed: ",
+          "and may be reinstated in a future release: ", comma(disallowed))
+    
+  if (has_icens && !all(trimmed_assoc %in% ok_assoc_interval))
+    stop2("When interval censoring is present, only the following association ",
+          "structures are allowed:", comma(ok_assoc_interval))
+  
+  if (not.null(user_assoc) && !is.character(user_assoc))
+    stop2("The 'assoc' argument should be a character vector or, for a ",
+          "multivariate joint model, possibly a list of character vectors.") 
+  
+  assoc <- sapply(ok_inputs, `%in%`, trimmed_assoc, simplify = FALSE)
+  if (is.null(user_assoc)) {
+    assoc$null <- TRUE
+  } else {
+    if (assoc$null && (length(user_assoc) > 1L))
+      stop2("In assoc, 'null' cannot be specified in conjuction ",
+           "with another association type.")
+    STOP_combination_not_allowed(assoc, "etavalue", "muvalue")
+    STOP_combination_not_allowed(assoc, "etaslope", "muslope")
+    STOP_combination_not_allowed(assoc, "etaauc",   "muauc")
   }
   
   # Parse suffix specifying indices for shared random effects
-  cnms <- y_mod_stuff$z$group_cnms
+  cnms <- y_mod$z$group_cnms
   cnms_id <- cnms[[id_var]] # names of random effect terms
-  assoc$which_b_zindex <- parse_assoc_sharedRE("shared_b",    user_x, 
+  assoc$which_b_zindex <- parse_assoc_sharedRE("shared_b",    user_assoc, 
                                                   max_index = length(cnms_id), cnms_id)
-  assoc$which_coef_zindex <- parse_assoc_sharedRE("shared_coef", user_x, 
+  assoc$which_coef_zindex <- parse_assoc_sharedRE("shared_coef", user_assoc, 
                                                   max_index = length(cnms_id), cnms_id)
   
   if (length(intersect(assoc$which_b_zindex, assoc$which_coef_zindex)))
@@ -1579,7 +1688,7 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
              "random effect: ", y)
       }  
       beta_match
-    }, beta_nms = colnames(y_mod_stuff$X$X))
+    }, beta_nms = colnames(y_mod$X$X))
   } else assoc$which_coef_xindex <- numeric(0)
   
   if (!identical(length(assoc$which_coef_zindex), length(assoc$which_coef_xindex)))
@@ -1588,12 +1697,12 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
   
   # Parse suffix specifying formula for interactions with data
   ok_inputs_data <- paste0(ok_assoc_data, "_data")
-  assoc$which_formulas <- sapply(ok_inputs_data, parse_assoc_data, user_x, simplify = FALSE) 
+  assoc$which_formulas <- sapply(ok_inputs_data, parse_assoc_data, user_assoc, simplify = FALSE) 
   
   # Parse suffix specifying indices for interactions between association terms
   ok_inputs_interactions <- unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))
   assoc$which_interactions <- sapply(ok_inputs_interactions, parse_assoc_interactions, 
-                                     user_x, max_index = M, simplify = FALSE)
+                                     user_assoc, max_index = M, simplify = FALSE)
   
   # Lag for association structure
   assoc$which_lag <- lag
@@ -1611,16 +1720,23 @@ validate_assoc <- function(user_x, y_mod_stuff, ok_assoc, ok_assoc_data,
 # @param ok_assocs_with_grp A character vector with the rownames in assoc
 #   that are allowed association structures when there is a grp factor 
 #   clustered within patients.
-validate_assoc_with_grp <- function(has_grp, assoc, ok_assocs_with_grp) {
-  all_rownames <- grep("which|null", rownames(assoc), 
-                       invert = TRUE, value = TRUE)
-  disallowed_rows <- setdiff(all_rownames, ok_assocs_with_grp)
-  sel <- which(has_grp)
-  check <- unlist(assoc[disallowed_rows, sel])
-  if (any(check))
-    stop2("Only the following association structures are allowed when ",
-          "there is a grouping factor clustered within individuals: ",
-          paste(ok_assocs_with_grp, collapse = ", "))
+validate_assoc_with_grp <- function(grp_stuff, assoc, ok_assoc_with_grp) {
+  
+  has_grp       <- fetch_(grp_stuff, "has_grp")
+  grp_structure <- fetch (grp_stuff, "grp_list")[has_grp]
+  
+  if (n_distinct(grp_structure) > 1L)
+    stop2("Any longitudinal submodels with a grouping factor clustered within ",
+          "patients must use the same clustering structure; that is, the same ",
+          "clustering variable and the same number of units clustered within a ",
+          "given patient.")
+  
+  all_nms <- grep("which|null", rownames(assoc), invert = TRUE, value = TRUE)
+  disallowed_nms <- setdiff(all_nms, ok_assoc_with_grp)
+  sel <- unlist(assoc[disallowed_nms, which(has_grp)])
+  if (any(sel))
+    stop2("Only the following association structures are allowed when there is a ",
+          "grouping factor clustered within individuals: ", comma(ok_assoc_with_grp))
 }
 
 # Validate the user input to the lag_assoc argument of stan_jm
@@ -1811,66 +1927,99 @@ check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
 # @param auc_qnodes Integer specifying the number of GK quadrature nodes to
 #   use in the integral/AUC based association structures.
 # @return The list returned by make_assoc_parts.
-handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,  
-                            id_var, time_var, epsilon, auc_qnodes) {
+handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta_stuff) {
   
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
   
-  # Before turning data into a data.table (for a rolling merge
-  # against the quadrature points) we want to make sure that the 
-  # data does not include any NAs for the predictors or assoc formula variables
-  tt <- y_mod$terms
-  assoc_interaction_forms <- assoc[["which_formulas"]]
-  extra_vars <- uapply(assoc_interaction_forms, function(i) {
-    # loop over the four possible assoc interaction formulas and 
-    # collect any variables used
-    if (length(i)) {
-      rownames(attr(terms.formula(i), "factors")) 
-    } else NULL
-  })
-  rhs <- deparse(tt[[3L]], 500L)
-  if (!is.null(extra_vars))
-    rhs <- c(rhs, extra_vars)
-  form_new <- reformulate(rhs, response = NULL)
-  df <- get_all_vars(form_new, data)
+  # before turning data into a data.table (for a rolling merge against 
+  # the quadrature points) we want to make sure that the data does not
+  # include any NAs for the predictors or assoc formula variables
+  tt <- attr(y_mod$terms, "term.labels")
+  tt <- c(tt, uapply(assoc[["which_formulas"]], all.vars))
+  fm <- reformulate(tt, response = NULL)
+  df <- get_all_vars(fm, data)
   df <- df[complete.cases(df), , drop = FALSE]
 
-  # Declare df as a data.table for merging with quadrature points
-  dt <- prepare_data_table(df, id_var = id_var, time_var = time_var, 
-                           grp_var = grp_stuff$grp_var) # NB grp_var may be NULL
+  # declare df as a data.table for merging with quadrature points
+  dt <- prepare_data_table(df, 
+                           id_var   = id_var, 
+                           time_var = time_var, 
+                           grp_var  = grp_stuff$grp_var) # grp_var may be NULL
 
-  # Design matrices for calculating association structure based on 
+  # design matrices for calculating association structure based on 
   # (possibly lagged) eta, slope, auc and any interactions with data
-  parts <- make_assoc_parts(use_function = make_assoc_parts_for_stan,
-                            newdata = dt, assoc = assoc, id_var = id_var, 
-                            time_var = time_var, grp_stuff = grp_stuff, 
-                            ids = ids, times = times, epsilon = epsilon, 
-                            auc_qnodes = auc_qnodes, y_mod = y_mod)
+  args <- list(use_function = make_assoc_parts_for_stan,
+               newdata      = dt, 
+               y_mod        = y_mod, 
+               grp_stuff    = grp_stuff, 
+               meta_stuff   = meta_stuff, 
+               assoc        = assoc)
   
-  # If association structure is based on shared random effects or shared 
-  # coefficients then construct a matrix with the estimated b parameters
-  # from the separate glmod (for the id_var grouping factor only). Note this
-  # matrix is not passed to standata, but just used for autoscaling the 
-  # priors for association parameters.
-  sel_shared <- grep("^shared", rownames(assoc))
-  if (any(unlist(assoc[sel_shared]))) {
-    # flist for long submodel
-    flist_tmp <- lme4::getME(y_mod$mod, "flist")
-    # which grouping factor is id_var
-    Gp_sel <- which(names(flist_tmp) == id_var) 
-    # grouping factor indices
-    Gp <- lme4::getME(y_mod$mod, "Gp")  
-    b_beg <- Gp[[Gp_sel]] + 1
-    b_end <- Gp[[Gp_sel + 1]]
-    # b vector for grouping factor = id_var
-    b_vec <- lme4::getME(y_mod$mod, "b")[b_beg:b_end]
-    # convert to Npat * n_re matrix
-    b_mat <- matrix(b_vec, nrow = length(levels(flist_tmp[[Gp_sel]])), byrow = TRUE)
-  } else b_mat <- NULL
+  args$ids   <- e_mod$eids
+  args$times <- e_mod$epts
+  parts_epts <- do.call(make_assoc_parts, args)
   
-  parts$b_mat <- b_mat
-  return(parts)
+  args$ids   <- e_mod$qids
+  args$times <- e_mod$qpts
+  parts_qpts <- do.call(make_assoc_parts, args)
+  
+  args$ids   <- e_mod$qids_upper
+  args$times <- e_mod$qpts_upper
+  parts_qpts_upper <- do.call(make_assoc_parts, args)  
+  
+  args$ids   <- e_mod$qids_delayed
+  args$times <- e_mod$qpts_delayed
+  parts_qpts_delayed <- do.call(make_assoc_parts, args)  
+  
+  out <- nlist(parts_epts, 
+               parts_qpts, 
+               parts_qpts_upper, 
+               parts_qpts_delayed)
+  
+  out
+}
+
+# Return a matrix with information for stan about which components are
+# required for building the association structure of the joint model
+#
+# @param assoc An array with information on the joint model association struct.
+# @return An indicator matrix, with a row for each component type and a 
+#   column for each longitudinal submodel.
+make_assoc_component_flags <- function(assoc) {
+  component_types <- c("etavalue", 
+                       "etaslope", 
+                       "etaauc", 
+                       "muvalue", 
+                       "muslope", 
+                       "muauc")
+  assoc_uses <- sapply(component_types,
+    function(x, assoc) {
+      nm_check <- switch(x,
+                         etavalue = "^eta|^mu",
+                         etaslope = "etaslope|muslope",
+                         etaauc   = "etaauc|muauc",
+                         muvalue  = "muvalue|muslope",
+                         muslope  = "muslope",
+                         muauc    = "muauc")
+      sel <- grep(nm_check, rownames(assoc))
+      tmp <- assoc[sel, , drop = FALSE]
+      tmp <- pad_matrix(tmp, cols = 3L, value = FALSE)
+      ai(as.logical(colSums(tmp > 0)))
+    })
+  t(assoc_uses)
+}
+
+# Return a matrix with information for stan about which association structures
+# are to be used in the association structure
+#
+# @param assoc An array with information on the joint model association struct.
+# @return An indicator matrix, with a row for each possible type of association
+#   structure and a column for each longitudinal submodel.
+make_assoc_type_flags <- function(assoc) {
+  nms <- rownames(assoc)
+  sel <- grep("which|null", nms, invert = TRUE)
+  matrix(ai(assoc[sel,]), ncol = ncol(assoc))
 }
 
 # Get the information need for combining the information in lower-level units
@@ -1894,7 +2043,9 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
 #     within each individual.
 #   grp_list: a named list containing the unique names for the lower level 
 #     units clustered within each individual.
-get_basic_grp_info <- function(cnms, flist, id_var) {
+get_basic_grp_info <- function(y_mod, id_var) {
+  cnms  <- y_mod[["z"]][["group_cnms"]]
+  flist <- y_mod[["z"]][["group_list"]]
   cnms_nms <- names(cnms)
   tally <- xapply(cnms_nms, FUN = function(x) 
     # within each ID, count the number of levels for the grouping factor x
@@ -1970,19 +2121,67 @@ get_num_assoc_pars <- function(assoc, a_mod_stuff) {
 #
 # @param e_mod_stuff A list object returned by a call to the handle_coxmod function
 # @param standata The data list that will be passed to Stan
+generate_prefit_inits <- function(init_fit, standata) {
+  
+  init_means <- rstan::get_posterior_mean(init_fit)
+  init_nms   <- rownames(init_means)
+  inits <- generate_init_function(e_mod, standata)()
+  
+  sel_b1 <- grep(paste0("^z_bMat1\\."), init_nms)
+  if (length(sel_b1))
+    inits[["z_bMat1"]] <- matrix(init_means[sel_b1,], nrow = standata$bK1)
+  
+  sel_b2 <- grep(paste0("^z_bMat2\\."), init_nms)
+  if (length(sel_b2))
+    inits[["z_bMat2"]] <- matrix(init_means[sel_b2,], nrow = standata$bK2)
+  
+  sel_bC1 <- grep(paste0("^bCholesky1\\."), init_nms)
+  if (length(sel_bC1) > 1) {
+    inits[["bCholesky1"]] <- matrix(init_means[sel_bC1,], nrow = standata$bK1)
+  } else if (length(sel_bC1) == 1) {
+    inits[["bCholesky1"]] <- aa(init_means[sel_bC1,])
+  }
+  
+  sel_bC2 <- grep(paste0("^bCholesky2\\."), init_nms)
+  if (length(sel_bC2) > 1) {
+    inits[["bCholesky2"]] <- matrix(init_means[sel_bC2,], nrow = standata$bK2)
+  } else if (length(sel_bC1) == 1) {
+    inits[["bCholesky2"]] <- aa(init_means[sel_bC2,])
+  }      
+  
+  sel <- c("yGamma1", "yGamma2", "yGamma3", 
+           "z_yBeta1", "z_yBeta2", "z_yBeta3",
+           "yAux1_unscaled", "yAux2_unscaled", "yAux3_unscaled", 
+           "bSd1", "bSd2", "z_b", "z_T", "rho", "zeta", "tau", 
+           "yGlobal1", "yGlobal2", "yGlobal3", 
+           "yLocal1", "yLocal2", "yLocal3", 
+           "yMix1", "yMix2", "yMix3", 
+           "yOol1", "yOol2", "yOol3")
+  for (i in sel) {
+    sel_i <- grep(paste0("^", i, "\\."), init_nms)
+    if (length(sel_i))
+      inits[[i]] <- aa(init_means[sel_i,])
+  }
+  return(function() inits)
+}
+
 generate_init_function <- function(e_mod_stuff, standata) {
   
   # Initial values for intercepts, coefficients and aux parameters
-  e_beta    <- e_mod_stuff$mod$coef
-  e_aux     <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_df)
-  e_z_beta      <- standardise_coef(e_beta, standata$e_prior_mean, standata$e_prior_scale) 
-  e_aux_unscaled<- standardise_coef(e_aux, standata$e_prior_mean_for_aux, standata$e_prior_scale_for_aux)
+  e_beta <- e_mod_stuff$mod$coef
+  e_aux <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_df)
+  e_z_beta       <- standardise_coef(x        = e_beta, 
+                                     location = standata$e_prior_mean, 
+                                     scale    = standata$e_prior_scale) 
+  e_aux_unscaled <- standardise_coef(x        = e_aux, 
+                                     location = standata$e_prior_mean_for_aux, 
+                                     scale    = standata$e_prior_scale_for_aux)
 
   # Function to generate model based initial values
   model_based_inits <- rm_null(list(
     e_z_beta       = array_else_double(e_z_beta),
     e_aux_unscaled = array_else_double(e_aux_unscaled),
-    e_gamma  = array_else_double(rep(0, standata$e_has_intercept))))
+    e_gamma        = array_else_double(rep(0, standata$e_has_intercept))))
   
   return(function() model_based_inits)
 }
@@ -2131,6 +2330,9 @@ get_Sigma_nms <- function(cnms) {
 # @param weights The data frame passed via the weights argument
 # @param id_var The name of the ID variable
 check_weights <- function(weights, id_var) {
+  
+  if (is.null(weights))
+    return(weights)
   
   # Check weights are an appropriate data frame
   if ((!is.data.frame(weights)) || (!ncol(weights) == 2))
@@ -2316,4 +2518,152 @@ parse_formula <- function(formula, data) {
         tvar_end,
         dvar,
         surv_type = attr(surv, "type"))
+}
+
+# Data for handling lower-level clustering in association structure
+standata_add_assoc_grp <- function(standata, e_mod, a_mod, grp_stuff) {
+  has_grp <- fetch_(grp_stuff, "has_grp")
+  if (any(has_grp)) {
+    sel <- which(has_grp)[[1L]]
+    standata$grp_idx <- attr(a_mod[[sel]], "grp_idx")
+    standata$grp_assoc <- switch(grp_assoc, 
+                                 sum  = 1L,
+                                 mean = 2L,
+                                 min  = 3L,
+                                 max  = 4L,
+                                 0L)
+  } else { # no lower level clustering
+    standata$grp_idx   <- matrix(0L, standata$nrow_e_Xq, 2L)
+    standata$grp_assoc <- 0L
+  } 
+  standata$has_grp <- aa(ai(has_grp))
+  standata
+}
+
+
+# Data (design matrices) for the main types of association structure
+standata_add_assoc_xz <- function(standata, e_mod, a_mod, assoc, meta_stuff) {
+  M <- standata$M
+  cnms_nms <- names(meta_stuff$cnms)
+  for (m in 1:M) {
+    for (i in c("eta", "eps", "auc")) {
+      nm_check <- switch(i,
+                         eta = "^eta|^mu",
+                         eps = "slope",
+                         auc = "auc")
+      sel <- grep(nm_check, rownames(assoc))
+      req <- any(unlist(assoc[sel,m]))
+      for (j in c("epts", "qpts", "qpts_upper", "qpts_delayed")) {
+        if (m <= M && req) {
+          tmp_stuff <- a_mod[[m]][[paste0("parts_", j)]][[paste0("mod_", i)]]
+          
+          # fe design matrix 
+          X_tmp <- tmp_stuff$xtemp
+          
+          # re design matrix, group factor 1
+          Z1_tmp    <- tmp_stuff$z[[cnms_nms[1L]]]
+          Z1_tmp    <- transpose(Z1_tmp)
+          Z1_tmp    <- convert_null(Z1_tmp, "matrix")
+          Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
+          Z1_tmp_id <- groups(Z1_tmp_id)
+          Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
+          
+          # re design matrix, group factor 2
+          if (length(cnms_nms) > 1L) {
+            Z2_tmp    <- tmp_stuff$z[[cnms_nms[2L]]]
+            Z2_tmp    <- transpose(Z2_tmp)
+            Z2_tmp    <- convert_null(Z2_tmp, "matrix")
+            Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
+            Z2_tmp_id <- groups(Z2_tmp_id)
+            Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
+          } else {
+            Z2_tmp    <- matrix(0,standata$bK2_len[m],0) 
+            Z2_tmp_id <- aa(integer(0))
+          }
+        } else {
+          X_tmp     <- matrix(0,0,standata$yK[m])
+          Z1_tmp    <- matrix(0,standata$bK1_len[m],0) 
+          Z2_tmp    <- matrix(0,standata$bK2_len[m],0) 
+          Z1_tmp_id <- aa(integer(0)) 
+          Z2_tmp_id <- aa(integer(0)) 
+        }
+        standata[[paste0("y", m, "_x_",     i, "_", j)]] <- X_tmp
+        standata[[paste0("y", m, "_z1_",    i, "_", j)]] <- Z1_tmp
+        standata[[paste0("y", m, "_z2_",    i, "_", j)]] <- Z2_tmp
+        standata[[paste0("y", m, "_z1_id_", i, "_", j)]] <- Z1_tmp_id
+        standata[[paste0("y", m, "_z2_id_", i, "_", j)]] <- Z2_tmp_id              
+      }
+    }             
+  }
+  standata
+}
+
+# Dimensions for auc association structure
+standata_add_assoc_auc <- function(standata, e_mod, a_mod) {
+  
+  count_rows <- function(i) { 
+    nr <- NROW(i$mod_auc$x)
+    if (nr > 0) nr else NULL 
+  }
+  
+  nrow_y_x_auc_qpts <- unique(uapply(a_mod, count_rows))
+  if (length(nrow_y_x_auc_qpts) > 1L)
+    stop2("Bug found: nrows for auc should be the same for all submodels.")
+
+  qnodes <- meta_stuff$auc_qnodes
+  
+  uses_auc_assoc <- any(standata$assoc_uses[3,] > 0)
+  
+  if (uses_auc_assoc) {
+    qw   <- get_quadpoints(qnodes)$weights
+    qfun <- function(i) lapply(qw, unstandardise_qwts, 0, i)
+    standata$auc_ewts         <- aa(uapply(e_mod$epts,         qfun))
+    standata$auc_qwts         <- aa(uapply(e_mod$qpts,         qfun))
+    standata$auc_qwts_upper   <- aa(uapply(e_mod$qpts_upper,   qfun))
+    standata$auc_qwts_delayed <- aa(uapply(e_mod$qpts_delayed, qfun))
+  } else {
+    standata$auc_ewts         <- double(0)
+    standata$auc_qwts         <- double(0)
+    standata$auc_qwts_upper   <- double(0)
+    standata$auc_qwts_delayed <- double(0)
+  }
+  
+  standata$auc_qnodes    <- ai(qnodes)
+  standata$auc_qrows     <- ai(e_mod$npat * qnodes) 
+  standata$nrow_y_Xq_auc <- ai(nrow_y_x_auc_qpts %ORifNULL% 0)
+}
+
+# Data for interaction-based and shared parameter association structures
+standata_add_assoc_extras <- function(standata, e_mod, a_mod) {
+  
+  # interactions between association terms and data, with the following objects:
+  #   a_K_data: number of columns in y_Xq_data corresponding to each interaction 
+  #     type (ie, etavalue, etaslope, muvalue, muslope) for each submodel
+  #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
+  #     since it is formed as a block diagonal matrix
+  xq_data <- fetch(a_mod, "X_bind_data") # design mat for the interactions
+  standata$y_Xq_data <- aa(am(Matrix::bdiag(xq_data)))
+  standata$a_K_data <- fetch_array(a_mod, "K_data")
+  standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
+  
+  # interactions between association terms
+  wi <- "which_interactions"
+  standata$which_interactions      <- aa(unlist(assoc[wi,]))
+  standata$size_which_interactions <-  c(sapply(assoc[wi,], sapply, length))
+  
+  # shared random effects
+  wbz <- "which_b_zindex"
+  wcz <- "which_coef_zindex"
+  wcx <- "which_coef_zindex"
+  standata$which_b_zindex    <- aa(unlist(assoc[wbz,]))
+  standata$which_coef_zindex <- aa(unlist(assoc[wcz,]))
+  standata$which_coef_xindex <- aa(unlist(assoc[wcx,]))
+  standata$size_which_b      <- aa(sapply(assoc[wbz,], length))
+  standata$size_which_coef   <- aa(sapply(assoc[wcz,], length))
+  
+  # sum dimensions
+  for (i in c("a_K_data", paste0("size_which_", c("b", "coef", "interactions")))) {
+    standata[[paste0("sum_", i)]] <- ai(sum(standata[[i]]))
+  }
+  standata
 }

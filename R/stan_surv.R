@@ -279,8 +279,11 @@ stan_surv <- function(formula,
   
   # event indicator for each row of data
   d <- make_d(mf)
-  event <- as.logical(d)
-  
+  event <- as.logical(d == 1)
+
+  # interval censoring indicator for each row of data
+  interval <- as.logical(d == 3)
+    
   # delayed entry indicator for each row of data
   delayed <- (!t_beg == 0)
   
@@ -1044,7 +1047,7 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
 # Return the response vector (status indicator)
 #
 # @param model_frame The model frame.
-# @return A numeric vector
+# @return A numeric vector.
 make_d <- function(model_frame) {
   
   resp <- model.response(model_frame)
@@ -1052,8 +1055,10 @@ make_d <- function(model_frame) {
   err  <- paste0("Bug found: cannot handle '", surv, "' Surv objects.")
   
   switch(surv,
-         "right"    = as.vector(resp[, "status"]),
-         "counting" = as.vector(resp[, "status"]),
+         "right"     = as.vector(resp[, "status"]),
+         "interval"  = as.vector(resp[, "status"]),
+         "interval2" = as.vector(resp[, "status"]),
+         "counting"  = as.vector(resp[, "status"]),
          stop(err))
 }
 

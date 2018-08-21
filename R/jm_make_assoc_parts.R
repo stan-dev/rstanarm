@@ -45,12 +45,16 @@
 # @param ... Additional arguments passes to use_function
 # @return A named list
 make_assoc_parts <- function(use_function = make_assoc_parts_for_stan, 
-                             newdata, assoc, grp_stuff, ids, times, 
-                             id_var, time_var, epsilon = 1E-5, 
-                             auc_qnodes = 15L, ...) {
+                             newdata, assoc, grp_stuff, meta_stuff, 
+                             ids, times, ...) {
   
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
+  
+  id_var     <- meta_stuff$id_var
+  time_var   <- meta_stuff$time_var
+  epsilon    <- meta_stuff$epsilon
+  auc_qnodes <- meta_stuff$auc_qnodes
   
   eps_uses_derivative_of_x <- TRUE # experimental
   
@@ -99,9 +103,9 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
       mod_neg <- use_function(newdata = dataQ_neg, ...)
       mod_pos <- use_function(newdata = dataQ_pos, ...)
       mod_eps <- mod_pos
-      mod_eps$x     <- (mod_pos$x     - mod_neg$x    ) / (2 * epsilon) # derivative of X
-      mod_eps$xtemp <- (mod_pos$xtemp - mod_neg$xtemp) / (2 * epsilon)
-      mod_eps$z <- xapply(mod_pos$z, mod_neg$z,                  # derivative of z
+      mod_eps$x     <- (mod_pos$x     - mod_neg$x    ) / (2 * epsilon) # derivative of x
+      mod_eps$xtemp <- (mod_pos$xtemp - mod_neg$xtemp) / (2 * epsilon) # derivative of centered x?
+      mod_eps$z <- xapply(mod_pos$z, mod_neg$z,                        # derivative of z
                           FUN = function(x, y) (x - y) / (2 * epsilon))
       if (!is.null(mod_eps$Zt))
         mod_eps$Zt <- (mod_pos$Zt - mod_neg$Zt) / (2 * epsilon)
@@ -163,8 +167,14 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   
   ret <- nlist(times, mod_eta, mod_eps, mod_auc, K_data, X_data, X_bind_data, grp_stuff)
   
-  structure(ret, times = times, lag = lag, epsilon = epsilon, grp_idx = grp_idx,
-            auc_qnodes = auc_qnodes, auc_qpts = auc_qpts, auc_qwts = auc_qwts, 
+  structure(ret, 
+            times      = times, 
+            lag        = lag, 
+            epsilon    = epsilon, 
+            grp_idx    = grp_idx,
+            auc_qnodes = auc_qnodes, 
+            auc_qpts   = auc_qpts, 
+            auc_qwts   = auc_qwts, 
             eps_uses_derivative_of_x = eps_uses_derivative_of_x)
 }                              
 
@@ -188,8 +198,8 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
 make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
   
   # construct model frame using predvars
-  formula <- use_predvars(y_mod, keep_response = FALSE)
-  data <- as.data.frame(newdata)
+  formula     <- use_predvars(y_mod, keep_response = FALSE)
+  data        <- as.data.frame(newdata)
   model_frame <- stats::model.frame(lme4::subbars(formula), data)
   
   # fe design matrices
@@ -205,7 +215,7 @@ make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
     stop2("A maximum of 2 grouping factors are allowed.")
   z_parts <- lapply(bars, split_at_bars)
   z_forms <- fetch(z_parts, "re_form")
-  z <- lapply(z_forms, model.matrix, model_frame)
+  z       <- lapply(z_forms, model.matrix, model_frame)
   group_vars <- fetch(z_parts, "group_var")
   group_list <- lapply(group_vars, function(x) factor(model_frame[[x]]))
   names(z) <- names(group_list) <- group_vars

@@ -123,35 +123,36 @@ stan_jm.fit <- function(formulaLong          = NULL,
   priorLong_aux       <- broadcast_prior(priorLong_aux,       M)
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
   
+  # Combine meta information
+  meta_stuff <- nlist(is_jm,
+                      id_var,
+                      time_var,
+                      epsilon,
+                      auc_qnodes = 15L)
+  
   #--------------------------
   # Longitudinal submodel(s)
   #--------------------------
   
-  # Info for separate longitudinal submodels
+  # info for separate longitudinal submodels
   y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
   
-  # Construct single cnms list for all longitudinal submodels
-  y_cnms   <- fetch(y_mod, "z", "group_cnms")
-  cnms     <- get_common_cnms(y_cnms, stub = stub)
-  cnms_nms <- names(cnms)
-  if (length(cnms_nms) > 2L)
-    stop("A maximum of 2 grouping factors are allowed.")
+  # construct single cnms list for all longitudinal submodels
+  cnms <- get_common_cnms(y_mod, stub = stub)
   
-  # Construct single list with unique levels for each grouping factor
-  y_flist <- fetch(y_mod, "z", "group_list")
-  flevels <- get_common_flevels(y_flist)
+  # construct single list with unique levels for each grouping factor
+  flevels <- get_common_flevels(y_mod)
   
-  # Ensure id_var is a valid grouping factor in all submodels
+  # ensure id_var is a valid grouping factor in all submodels
   if (is_jm) {
-    id_var <- check_id_var(id_var, y_cnms, y_flist)
-    id_list <- check_id_list(id_var, y_flist)
-    if (!is.null(weights))
-      weights <- check_weights(weights, id_var)
+    id_var  <- check_id_var (y_mod,   id_var)
+    id_list <- check_id_list(y_mod,   id_var)
+    weights <- check_weights(weights, id_var)
   }
   
-  # Observation weights
+  # observation weights
   y_weights <- lapply(y_mod, handle_weights, weights, id_var)
-    
+
   #----------- Prior distributions -----------# 
   
   # Valid prior distributions
@@ -204,9 +205,11 @@ stan_jm.fit <- function(formulaLong          = NULL,
     xapply(y_prior_aux_stuff, response = y_vecs,
            family = family, FUN = autoscale_prior)
   if (b_prior_stuff$prior_dist_name == "lkj") { # autoscale priors for ranef sds
-    b_prior_stuff <- split_cov_prior(b_prior_stuff, cnms = cnms, submodel_cnms = y_cnms)
+    b_prior_stuff <- split_cov_prior(b_prior_stuff, 
+                                     cnms = cnms, 
+                                     submodel_cnms = fetch(y_mod, "z", "group_cnms"))
     b_prior_stuff <- xapply(
-      cnms_nms, FUN = function(nm) {
+      names(cnms), FUN = function(nm) {
         z_mats <- fetch(y_mod, "z", "z", nm)
         xapply(b_prior_stuff[[nm]], response = y_vecs, predictors = z_mats, 
                family = family, FUN = autoscale_prior)
@@ -261,7 +264,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   standata$yXbar3 <- if (M > 2) aa(X_bar[[3]]) else aa(double(0))
   
   # Data for group specific terms - group factor 1
-  b1_varname <- cnms_nms[[1L]] # name of group factor 1
+  b1_varname <- names(cnms)[[1L]] # name of group factor 1
   b1_nvars <- fetch_(y_mod, "z", "nvars", b1_varname, 
                      null_to_zero = TRUE, pad_length = 3)
   b1_ngrps <- fetch_(y_mod, "z", "ngrps", b1_varname)
@@ -291,7 +294,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   # Data for group specific terms - group factor 2
   if (length(cnms) > 1L) {
     # model has a second grouping factor
-    b2_varname <- cnms_nms[[2L]] # name of group factor 2
+    b2_varname <- names(cnms)[[2L]] # name of group factor 2
     b2_nvars <- fetch_(y_mod, "z", "nvars", b2_varname, 
                        null_to_zero = TRUE, pad_length = 3)
     b2_ngrps <- fetch_(y_mod, "z", "ngrps", b2_varname)
@@ -378,7 +381,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   standata$t <- length(cnms)
   standata$p <- aa(sapply(cnms, length))
   standata$l <- aa(
-    sapply(cnms_nms, FUN = function(nm) {
+    sapply(names(cnms), FUN = function(nm) {
       ngrps <- unique(fetch_(y_mod, "z", "ngrps", nm))
       ngrps + 1L # add padding for _NEW_ group
   }))
@@ -458,18 +461,8 @@ stan_jm.fit <- function(formulaLong          = NULL,
   y_nms_ppd  <- uapply(y_mod, get_ppd_name)
   
   # Names for group specific coefficients ("b pars")
-  b_nms <- uapply(seq_along(cnms), FUN = function(i) {
-    nm <- cnms_nms[i]
-    nms_i <- paste(cnms[[i]], nm)
-    flevels[[nm]] <- c(gsub(" ", "_", flevels[[nm]]),
-                       paste0("_NEW_", nm))
-    if (length(nms_i) == 1) {
-      paste0(nms_i, ":", flevels[[nm]])
-    } else {
-      c(t(sapply(nms_i, paste0, ":", flevels[[nm]])))
-    }
-  })
-  
+  b_nms <- get_ranef_nms(cnms, flevels)
+
   # Names for Sigma matrix
   y_nms_sigma <- get_Sigma_nms(cnms)
   
@@ -479,87 +472,112 @@ stan_jm.fit <- function(formulaLong          = NULL,
 
   if (is_jm) { # begin jm block
 
-    # Fit separate event submodel
-    e_mod <- handle_e_mod(formula = formulaEvent, data = dataEvent, 
-                          qnodes = qnodes, id_var = id_var, 
+    # fit separate event submodel
+    e_mod <- handle_e_mod(formula   = formulaEvent, 
+                          data      = dataEvent, 
+                          qnodes    = qnodes,
+                          id_var    = id_var, 
                           y_id_list = id_list)
     
-    # Baseline hazard
-    ok_basehaz <- c("weibull", "bs", "piecewise")
-    ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
-    basehaz <- handle_basehaz(basehaz = basehaz, 
-                              basehaz_ops = basehaz_ops, 
-                              ok_basehaz = ok_basehaz,
-                              ok_basehaz_ops = ok_basehaz_ops,
-                              times = e_mod$eventtime, 
-                              status = e_mod$status)
+    basehaz <- e_mod$basehaz  
     
-    # Observation weights
+    # observation weights
     e_weights <- handle_weights(e_mod, weights, id_var)
   
-    # Check longitudinal observation times are not later than the event time
-    lapply(dataLong, FUN = validate_observation_times,  
-           eventtime = e_mod$eventtime, id_var = id_var, time_var = time_var)
+    # check longitudinal observation times are not later than the event time
+    lapply(dataLong, 
+           FUN      = validate_observation_times,  
+           exittime = e_mod$exittime, 
+           id_var   = id_var, 
+           time_var = time_var)
     
     #----------- Prior distributions -----------# 
     
-    # Valid prior distributions
+    # valid prior distributions
     ok_e_aux_dists <- ok_dists[1:3]
   
-    # Note: *_user_prior_*_stuff objects are stored unchanged for constructing 
+    # note: *_user_prior_*_stuff objects are stored unchanged for constructing 
     # prior_summary, while *_prior_*_stuff objects are autoscaled
     
-    # Priors for event submodel
+    # priors for event submodel
     e_user_prior_stuff <- e_prior_stuff <- 
-      handle_glm_prior(priorEvent, nvars = e_mod$K, default_scale = 2.5, 
-                       link = NULL, ok_dists = ok_dists)  
+      handle_glm_prior(priorEvent, 
+                       nvars         = e_mod$K, 
+                       default_scale = 2.5, 
+                       link          = NULL, 
+                       ok_dists      = ok_dists)  
     
     e_user_prior_intercept_stuff <- e_prior_intercept_stuff <- 
-      handle_glm_prior(priorEvent_intercept, nvars = 1, default_scale = 20,
-                       link = NULL, ok_dists = ok_intercept_dists)  
+      handle_glm_prior(priorEvent_intercept, 
+                       nvars         = 1, 
+                       default_scale = 20,
+                       link          = NULL, 
+                       ok_dists      = ok_intercept_dists)  
     
     e_user_prior_aux_stuff <- e_prior_aux_stuff <-
-      handle_glm_prior(priorEvent_aux, nvars = basehaz$df,
-                       default_scale = if (basehaz$type_name == "weibull") 2 else 20,
-                       link = NULL, ok_dists = ok_e_aux_dists)
+      handle_glm_prior(priorEvent_aux, 
+                       nvars         = basehaz$nvars,
+                       default_scale = get_default_aux_scale(basehaz),
+                       link          = NULL, 
+                       ok_dists      = ok_e_aux_dists)
+
+    # stop null priors if prior_PD is TRUE
+    if (prior_PD) {
+      if (is.null(prior))
+        stop("'priorEvent' cannot be NULL if 'prior_PD' is TRUE")
+      if (is.null(prior_intercept) && e_mod$has_intercept)
+        stop("'priorEvent_intercept' cannot be NULL if 'prior_PD' is TRUE")
+      if (is.null(prior_aux))
+        stop("'priorEvent_aux' cannot be NULL if 'prior_PD' is TRUE")          
+    }
     
-    # Autoscaling of priors
-    e_prior_stuff <- 
-      autoscale_prior(e_prior_stuff, predictors = e_mod$x$x)
-    e_prior_intercept_stuff <- 
-      autoscale_prior(e_prior_intercept_stuff)
-    e_prior_aux_stuff <- 
-      autoscale_prior(e_prior_aux_stuff)
+    # autoscaling of priors
+    e_prior_stuff           <- autoscale_prior(e_prior_stuff, predictors = e_mod$x)
+    e_prior_intercept_stuff <- autoscale_prior(e_prior_intercept_stuff)
+    e_prior_aux_stuff       <- autoscale_prior(e_prior_aux_stuff)
  
     #----------- Data for export to Stan -----------# 
     
-    # Data and dimensions
-    standata$e_K            <- ai(e_mod$K)
-    standata$Npat           <- ai(e_mod$Npat)
-    standata$Nevents        <- ai(e_mod$Nevents)
-    standata$qnodes         <- ai(qnodes)
-    standata$qwts           <- aa(e_mod$qwts)
-    standata$qwts_left      <- aa(e_mod$qwts_left)
-    standata$qwts_right     <- aa(e_mod$qwts_right)
-    standata$Npat_times_qnodes<- ai(e_mod$Npat * qnodes)
-    standata$e_times        <- aa(e_mod$cpts)
-    standata$nrow_e_Xq      <- length(standata$e_times)
-    standata$e_has_intercept<- ai(basehaz$type_name == "weibull")
-    standata$e_Xq           <- e_mod$Xq
-    standata$e_Xq_left      <- e_mod$Xq_left
-    standata$e_Xq_right     <- e_mod$Xq_right
-    standata$e_xbar         <- aa(e_mod$Xbar)
-    standata$e_weights      <- aa(e_weights)
-    standata$e_weights_rep  <- aa(rep(e_weights, times = qnodes))
-    standata$interval       <- ai(e_mod$interval)
+    # dimensions
+    standata$e_K              <- ai(e_mod$K)
+    standata$nevent           <- ai(e_mod$nevent)
+    standata$nrcens           <- ai(e_mod$nrcens)
+    standata$nlcens           <- ai(e_mod$nlcens)
+    standata$nicens           <- ai(e_mod$nicens)
+    #standata$Npat             <- ai(e_mod$Npat)
+    #standata$Nevents          <- ai(e_mod$Nevents)
+    standata$qnodes           <- ai(e_mod$qnodes)
+    standata$qrows            <- ai(e_mod$qrows)
+    standata$qicens           <- ai(e_mod$qicens)
+    standata$qdelayed         <- ai(e_mod$qdelayed)
+    standata$e_has_intercept  <- ai(e_mod$has_intercept)
     
-    # Baseline hazard
-    standata$basehaz_type   <- ai(basehaz$type)
-    standata$basehaz_df     <- ai(basehaz$df)
-    standata$basehaz_X      <- make_basehaz_X(e_mod$cpts, basehaz)
-    standata$norm_const     <- e_mod$norm_const    
+    # design matrices
+    standata$epts             <- aa(e_mod$epts)
+    standata$qpts             <- aa(e_mod$qpts)
+    standata$qpts_upper       <- aa(e_mod$qpts_upper)
+    standata$qpts_delayed     <- aa(e_mod$qpts_delayed)
+    standata$qwts             <- aa(e_mod$qwts)
+    standata$qwts_upper       <- aa(e_mod$qwts_upper)
+    standata$qwts_delayed     <- aa(e_mod$qwts_delayed)
+    standata$e_x_qpts         <- e_mod$x_qpts
+    standata$e_x_qpts_upper   <- e_mod$x_qpts_upper
+    standata$e_x_qpts_delayed <- e_mod$x_qpts_delayed
+    standata$e_xbar           <- aa(e_mod$Xbar)
+    standata$e_weights        <- aa(e_weights)
+    standata$e_weights_rep    <- aa(rep(e_weights, times = qnodes))
+    #standata$Npat_times_qnodes<- ai(e_mod$Npat * qnodes)
     
-    # Priors
+    # baseline hazard
+    standata$basehaz_type       <- ai(basehaz$type)
+    standata$basehaz_nvars      <- ai(basehaz$nvars)
+    standata$basis_events       <- e_mod$basis_events
+    standata$basis_qpts         <- e_mod$basis_qpts
+    standata$basis_qpts_upper   <- e_mod$basis_qpts_upper
+    standata$basis_qpts_delayed <- e_mod$basis_qpts_delayed
+    standata$norm_const         <- e_mod$norm_const
+    
+    # priors
     standata$e_prior_dist              <- e_prior_stuff$prior_dist
     standata$e_prior_dist_for_intercept<- e_prior_intercept_stuff$prior_dist
     standata$e_prior_dist_for_aux      <- e_prior_aux_stuff$prior_dist
@@ -571,8 +589,6 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$e_prior_mean_for_intercept <- c(e_prior_intercept_stuff$prior_mean)
     standata$e_prior_scale_for_intercept<- c(e_prior_intercept_stuff$prior_scale)
     standata$e_prior_df_for_intercept   <- c(e_prior_intercept_stuff$prior_df)
-    standata$e_prior_mean_for_aux       <- if (basehaz$type == 1L) aa(0) else 
-      aa(e_prior_aux_stuff$prior_mean)
     standata$e_prior_scale_for_aux      <- e_prior_aux_stuff$prior_scale
     standata$e_prior_df_for_aux         <- e_prior_aux_stuff$prior_df
     standata$e_global_prior_scale       <- e_prior_stuff$global_prior_scale
@@ -595,110 +611,88 @@ stan_jm.fit <- function(formulaLong          = NULL,
                   "muauc", 
                   "shared_b", 
                   "shared_coef")
+    
     ok_assoc_data         <- ok_assoc[c(2,3,5,6)] # ok to interact with covariates
     ok_assoc_interactions <- ok_assoc[c(2,5)]     # ok to interact across biomarkers
     ok_assoc_interval     <- ok_assoc[c(1:3,5,6)] # ok to use with interval censoring
+
+    ok_assoc_list <- nlist(ok_assoc,
+                           ok_assoc_data,
+                           ok_assoc_interactions,
+                           ok_assoc_interval)
     
     # check lag time is valid
     lag_assoc <- validate_lag_assoc(lag_assoc, M) 
     
-    # return an array with summary information about the overall assoc
-    args <- list(M                     = M,
-                 id_var                = id_var,
-                 interval              = e_mod$interval,
-                 ok_assoc              = ok_assoc, 
-                 ok_assoc_data         = ok_assoc_data,
-                 ok_assoc_interactions = ok_assoc_interactions, 
-                 ok_assoc_interval     = ok_assoc_interval)
-    assoc <- mapply(FUN         = validate_assoc, 
-                    y_mod_stuff = y_mod, 
-                    user_x      = assoc, 
-                    lag         = lag_assoc, 
-                    MoreArgs    = args)
-    assoc <- check_order_of_assoc_interactions(assoc, ok_assoc_interactions)
-    assoc <- set_colnames(assoc, paste0("Long", 1:M))
+    # return an array summarising the association structure
+    assoc <- handle_assoc(assoc, lag_assoc, ok_assoc_list, meta_stuff)
 
     # for each submodel, identify grouping factors clustered within 'id_var' 
     # (i.e. lower level clustering)
-    ok_grp_assocs <- c("sum", 
-                       "mean", 
-                       "min", 
-                       "max")
-    ok_assocs_with_grp <- c("etavalue", 
-                            "etavalue_data", 
-                            "etaslope", 
-                            "etaslope_data", 
-                            "muvalue", 
-                            "muvalue_data")  
-    grp_basic <- xapply(FUN        = get_basic_grp_info, 
-                        cnms       = y_cnms, 
-                        flist      = y_flist,
-                        args       = nlist(id_var = id_var))
-    grp_stuff <- xapply(FUN        = get_extra_grp_info,
+    ok_assoc_grp <- c("sum",                      # valid inputs to 'grp_assoc' arg                  
+                      "mean", 
+                      "min", 
+                      "max") 
+    
+    ok_assoc_with_grp <- c("etavalue",            # ok to use with non-NULL grp_assoc
+                           "etavalue_data", 
+                           "etaslope", 
+                           "etaslope_data", 
+                           "muvalue", 
+                           "muvalue_data")  
+    
+    grp_basic <- xapply(FUN = get_basic_grp_info, y_mod = y_mod, id_var = id_var)
+    grp_stuff <- xapply(FUN = get_extra_grp_info,
                         basic_info = grp_basic, 
-                        flist      = y_flist,
-                        args       = nlist(id_var, grp_assoc, ok_grp_assocs))
-    has_grp   <- fetch_(grp_stuff, "has_grp")
-    if (any(has_grp)) {
-      grp_structure <- fetch(grp_stuff, "grp_list")[has_grp]
-      if (n_distinct(grp_structure) > 1L)
-        stop2("Any longitudinal submodels with a grouping factor clustered within ",
-              "patients must use the same clustering structure; that is, the same ",
-              "clustering variable and the same number of units clustered within a ",
-              "given patient.")
-      do.call(validate_assoc_with_grp, nlist(has_grp, assoc, ok_assocs_with_grp))
-    } else if (!is.null(grp_assoc)) {
-      stop2("'grp_assoc' can only be specified when there is a grouping factor ",
-            "clustered within patients.")  
-    }    
+                        flist = fetch(y_mod, "z", "group_list"),
+                        args = nlist(id_var, grp_assoc, ok_assoc_grp))
+    has_grp <- fetch_(grp_stuff, "has_grp")
+
+    if (not.null(grp_assoc) && !any(has_grp))
+      stop2("'grp_assoc' can only be specified when there is a grouping ",
+            "factor clustered within patients.")  
     
-    # Return design matrices for evaluating longitudinal submodel quantities
-    # at the quadrature points
-    auc_qnodes <- 15L
-    assoc_as_list <- apply(assoc, 2L, c)
-    a_mod <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
-                    grp_stuff = grp_stuff, FUN = handle_assocmod, 
-                    args = list(ids = e_mod$cids, times = e_mod$cpts, 
-                                id_var = id_var, time_var = time_var, 
-                                epsilon = epsilon, auc_qnodes = auc_qnodes))
+    if (any(has_grp))
+      validate_assoc_with_grp(grp_stuff, assoc, ok_assoc_with_grp)
     
-    if (interval) {
-      a_mod_left <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
-                           grp_stuff = grp_stuff, FUN = handle_assocmod, 
-                           args = list(ids = e_mod$qids_left, times = e_mod$qpts_left, 
-                                       id_var = id_var, time_var = time_var, 
-                                       epsilon = epsilon, auc_qnodes = auc_qnodes))
-      
-      a_mod_right <- xapply(data = dataLong, assoc = assoc_as_list, y_mod = y_mod,
-                            grp_stuff = grp_stuff, FUN = handle_assocmod, 
-                            args = list(ids = e_mod$qids_right, times = e_mod$qpts_right, 
-                                        id_var = id_var, time_var = time_var, 
-                                        epsilon = epsilon, auc_qnodes = auc_qnodes))
-    }
+    # design matrices for longitudinal submodel at the quadrature points
+    auc_qnodes <- meta_stuff$auc_qnodes <- 15L
+    a_mod <- xapply(FUN       = handle_assocmod, 
+                    data      = dataLong, 
+                    assoc     = apply(assoc, 2L, c), # converts array to list
+                    y_mod     = y_mod,
+                    grp_stuff = grp_stuff, 
+                    args      = nlist(e_mod, meta_stuff))
         
-    # Number of association parameters
+    # number of association parameters
     a_K <- get_num_assoc_pars(assoc, a_mod)
     
-    # Use a stan_mvmer variational bayes model fit for:
+    # use a stan_mvmer variational bayes model fit for:
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
-    vbdots <- list(...)
-    dropargs <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
-    for (i in dropargs) 
-      vbdots[[i]] <- NULL
-    vbpars <- pars_to_monitor(standata, is_jm = FALSE)
-    vbargs <- c(list(stanmodels$mvmer, pars = vbpars, data = standata, 
-                     algorithm = "meanfield"), vbdots)
-    utils::capture.output(init_fit <- do.call(rstan::vb, vbargs))
-    init_new_nms <- c(y_intercept_nms, y_beta_nms,
-                      if (length(standata$q)) c(paste0("b[", b_nms, "]")),
-                      y_aux_nms, paste0("Sigma[", Sigma_nms, "]"),
-                      paste0(stub, 1:M, "|mean_PPD"), "log-posterior")
-    init_fit@sim$fnames_oi <- init_new_nms
-    init_mat <- t(colMeans(am(init_fit))) # posterior means
-    init_nms <- collect_nms(colnames(init_mat), M, stub = "Long")
+    dropargs  <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
+    init_dots <- list(...); for (i in dropargs) init_dots[[i]] <- NULL
+    init_mod  <- stanmodels$mvmer
+    init_data <- standata
+    init_pars <- pars_to_monitor(standata, is_jm = FALSE)
+    init_args <- nlist(object = init_mod, 
+                       data   = init_data, 
+                       pars   = init_pars, 
+                       algorithm = "meanfield")
+    init_args[names(init_dots)] <- init_dots
+    utils::capture.output(init_fit <- do.call(rstan::vb, init_args))
+    init_nms_all <- c(y_nms_int, 
+                      y_nms_beta,
+                      b_nms,
+                      y_nms_aux, 
+                      y_nms_sigma,
+                      y_nms_ppd,
+                      "log-posterior")
+    init_fit  <- replace_stanfit_nms(init_fit, init_nms_all)
+    init_mat  <- t(colMeans(am(init_fit))) # posterior means
+    init_nms  <- collect_nms(colnames(init_mat), M, stub = "Long")
     init_beta <- lapply(1:M, function(m) init_mat[, init_nms$y[[m]]])
-    init_b <- lapply(1:M, function(m) {
+    init_b    <- lapply(1:M, function(m) {
       # can drop _NEW_ groups since they are not required for generating
       # the assoc_terms that are used in scaling the priors for 
       # the association parameters (ie. the Zt matrix returned by the 
@@ -707,329 +701,76 @@ stan_jm.fit <- function(formulaLong          = NULL,
       b[!grepl("_NEW_", names(b), fixed = TRUE)]
     })
     
-    if (is.character(init) && (init =="prefit")) {
-      init_means2 <- rstan::get_posterior_mean(init_fit)
-      init_nms2 <- rownames(init_means2)
-      inits <- generate_init_function(e_mod, standata)()
-      
-      sel_b1 <- grep(paste0("^z_bMat1\\."), init_nms2)
-      if (length(sel_b1))
-        inits[["z_bMat1"]] <- matrix(init_means2[sel_b1,], nrow = standata$bK1)
-      
-      sel_b2 <- grep(paste0("^z_bMat2\\."), init_nms2)
-      if (length(sel_b2))
-        inits[["z_bMat2"]] <- matrix(init_means2[sel_b2,], nrow = standata$bK2)
-      
-      sel_bC1 <- grep(paste0("^bCholesky1\\."), init_nms2)
-      if (length(sel_bC1) > 1) {
-        inits[["bCholesky1"]] <- matrix(init_means2[sel_bC1,], nrow = standata$bK1)
-      } else if (length(sel_bC1) == 1) {
-        inits[["bCholesky1"]] <- aa(init_means2[sel_bC1,])
-      }
-      
-      sel_bC2 <- grep(paste0("^bCholesky2\\."), init_nms2)
-      if (length(sel_bC2) > 1) {
-        inits[["bCholesky2"]] <- matrix(init_means2[sel_bC2,], nrow = standata$bK2)
-      } else if (length(sel_bC1) == 1) {
-        inits[["bCholesky2"]] <- aa(init_means2[sel_bC2,])
-      }      
-      
-      sel <- c("yGamma1", "yGamma2", "yGamma3", 
-               "z_yBeta1", "z_yBeta2", "z_yBeta3",
-               "yAux1_unscaled", "yAux2_unscaled", "yAux3_unscaled", 
-               "bSd1", "bSd2", "z_b", "z_T", "rho", "zeta", "tau", 
-               "yGlobal1", "yGlobal2", "yGlobal3", 
-               "yLocal1", "yLocal2", "yLocal3", 
-               "yMix1", "yMix2", "yMix3", 
-               "yOol1", "yOol2", "yOol3")
-      for (i in sel) {
-        sel_i <- grep(paste0("^", i, "\\."), init_nms2)
-        if (length(sel_i))
-          inits[[i]] <- aa(init_means2[sel_i,])
-      }
-      init <- function() inits
-    }
+    if (is.character(init) && (init =="prefit"))
+      init <- get_prefit_inits(init_fit, standata)
     
     #----------- Prior distributions -----------# 
 
     # Priors for association parameters
     e_user_prior_assoc_stuff <- e_prior_assoc_stuff <- 
-      handle_glm_prior(priorEvent_assoc, nvars = a_K, default_scale = 2.5,
-                       link = NULL, ok_dists = ok_dists)  
+      handle_glm_prior(priorEvent_assoc, 
+                       nvars         = a_K, 
+                       default_scale = 2.5,
+                       link          = NULL, 
+                       ok_dists      = ok_dists)  
     
     # Autoscaling of priors
     if (a_K) {
-      e_prior_assoc_stuff <- autoscale_prior(e_prior_assoc_stuff, family = family, 
-                                             assoc = assoc, parts = a_mod,
-                                             beta = init_beta, b = init_b)
-    }   
+      e_prior_assoc_stuff <- autoscale_prior(e_prior_assoc_stuff, 
+                                             family = family, 
+                                             assoc  = assoc, 
+                                             parts  = a_mod,
+                                             beta   = init_beta, 
+                                             b      = init_b)
+    }
     
     #----------- Data for export to Stan -----------# 
  
-    # Dimensions   
-    standata$assoc <- ai(a_K > 0L) # any association structure, 1 = yes
+    # dimensions   
+    standata$assoc <- ai(a_K > 0L) # any association structure
     standata$a_K   <- ai(a_K)      # num association parameters
     
-    # Indicator for which components are required to build the association terms
-    assoc_uses <- sapply(
-      c("etavalue", "etaslope", "etaauc", "muvalue", "muslope", "muauc"), 
-      function(x, assoc) {
-        nm_check <- switch(x,
-                           etavalue = "^eta|^mu",
-                           etaslope = "etaslope|muslope",
-                           etaauc   = "etaauc|muauc",
-                           muvalue  = "muvalue|muslope",
-                           muslope  = "muslope",
-                           muauc    = "muauc")
-        sel <- grep(nm_check, rownames(assoc))
-        tmp <- assoc[sel, , drop = FALSE]
-        tmp <- pad_matrix(tmp, cols = 3L, value = FALSE)
-        ai(as.logical(colSums(tmp > 0)))
-      }, assoc = assoc)
-    standata$assoc_uses <- t(assoc_uses)
+    # indicators for components required to build association terms
+    standata$assoc_uses <- make_assoc_component_flags(assoc)
     
-    # Indexing for desired association types
-    # !! Must be careful with corresponding use of indexing in Stan code !!
-    # 1 = ev; 2 = es; 3 = ea; 4 = mv; 5 = ms; 6 = ma;
-    # 7 = shared_b; 8 = shared_coef;
-    # 9 = ev_data; 10 = es_data; 11 = mv_data; 12 = ms_data;
-    # 13 = evev; 14 = evmv; 15 = mvev; 16 = mvmv;
-    sel <- grep("which|null", rownames(assoc), invert = TRUE)
-    standata$has_assoc <- matrix(ai(assoc[sel,]), ncol = M) 
-    
-    # Data for association structure when there is
-    # clustering below the patient-level
-    standata$has_grp <- aa(ai(has_grp))
-    if (any(has_grp)) { # has lower level clustering
-      sel <- which(has_grp)[[1L]]
-      standata$grp_idx <- attr(a_mod[[sel]], "grp_idx")
-      standata$grp_assoc <- switch(grp_assoc, 
-                                   sum = 1L,
-                                   mean = 2L,
-                                   min = 3L,
-                                   max = 4L,
-                                   0L)
-    } else { # no lower level clustering
-      standata$grp_idx <- matrix(0L, standata$nrow_e_Xq, 2L)
-      standata$grp_assoc <- 0L
-    }
-    
-    # Data for calculating eta, slope, auc in GK quadrature 
-    N_tmp <- sapply(a_mod, function(x) NROW(x$mod_eta$xtemp))
-    N_tmp <- c(N_tmp, rep(0, 3 - length(N_tmp)))
-    standata$nrow_y_Xq <- aa(ai(N_tmp))
-    for (m in 1:3) {
-      for (i in c("eta", "eps", "auc")) {
-        nm_check <- switch(i,
-                           eta = "^eta|^mu",
-                           eps = "slope",
-                           auc = "auc")
-        sel <- grep(nm_check, rownames(assoc))
-        if (m <= M && any(unlist(assoc[sel,m]))) {
-          tmp_stuff <- a_mod[[m]][[paste0("mod_", i)]]
-          # fe design matrix at quadpoints
-          X_tmp <- tmp_stuff$xtemp
-          # re design matrix at quadpoints, group factor 1
-          Z1_tmp <- tmp_stuff$z[[cnms_nms[1L]]]
-          Z1_tmp <- transpose(Z1_tmp)
-          Z1_tmp <- convert_null(Z1_tmp, "matrix")
-          Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
-          Z1_tmp_id <- groups(Z1_tmp_id)
-          Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
-          # re design matrix at quadpoints, group factor 1
-          if (length(cnms_nms) > 1L) {
-            Z2_tmp <- tmp_stuff$z[[cnms_nms[2L]]]
-            Z2_tmp <- transpose(Z2_tmp)
-            Z2_tmp <- convert_null(Z2_tmp, "matrix")
-            Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
-            Z2_tmp_id <- groups(Z2_tmp_id)
-            Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
-          } else {
-            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-            Z2_tmp_id <- aa(integer(0))
-          }
-        } else {
-          X_tmp  <- matrix(0,0,standata$yK[m])
-          Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
-          Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-          Z1_tmp_id <- aa(integer(0)) 
-          Z2_tmp_id <- aa(integer(0)) 
-        }
-        standata[[paste0("y", m, "_xq_", i)]] <- X_tmp
-        standata[[paste0("y", m, "_z1q_", i)]] <- Z1_tmp
-        standata[[paste0("y", m, "_z2q_", i)]] <- Z2_tmp
-        standata[[paste0("y", m, "_z1q_id_", i)]] <- Z1_tmp_id
-        standata[[paste0("y", m, "_z2q_id_", i)]] <- Z2_tmp_id
-      }
-    }
-    
-    if (interval) {
-      N_tmp_left <- sapply(a_mod_left, function(x) NROW(x$mod_eta$xtemp))
-      N_tmp_left <- c(N_tmp_left, rep(0, 3 - length(N_tmp_left)))
-      standata$nrow_y_Xq_left <- aa(ai(N_tmp_left))
-      for (m in 1:3) {
-        for (i in c("eta", "eps", "auc")) {
-          nm_check <- switch(i,
-                             eta = "^eta|^mu",
-                             eps = "slope",
-                             auc = "auc")
-          sel <- grep(nm_check, rownames(assoc))
-          if (m <= M && any(unlist(assoc[sel,m]))) {
-            tmp_stuff <- a_mod_left[[m]][[paste0("mod_", i)]]
-            # fe design matrix at quadpoints
-            X_tmp <- tmp_stuff$xtemp
-            # re design matrix at quadpoints, group factor 1
-            Z1_tmp <- tmp_stuff$z[[cnms_nms[1L]]]
-            Z1_tmp <- transpose(Z1_tmp)
-            Z1_tmp <- convert_null(Z1_tmp, "matrix")
-            Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
-            Z1_tmp_id <- groups(Z1_tmp_id)
-            Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
-            # re design matrix at quadpoints, group factor 1
-            if (length(cnms_nms) > 1L) {
-              Z2_tmp <- tmp_stuff$z[[cnms_nms[2L]]]
-              Z2_tmp <- transpose(Z2_tmp)
-              Z2_tmp <- convert_null(Z2_tmp, "matrix")
-              Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
-              Z2_tmp_id <- groups(Z2_tmp_id)
-              Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
-            } else {
-              Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-              Z2_tmp_id <- aa(integer(0))
-            }
-          } else {
-            X_tmp  <- matrix(0,0,standata$yK[m])
-            Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
-            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-            Z1_tmp_id <- aa(integer(0)) 
-            Z2_tmp_id <- aa(integer(0)) 
-          }
-          standata[[paste0("y", m, "_xq_",     i, "_left")]] <- X_tmp
-          standata[[paste0("y", m, "_z1q_",    i, "_left")]] <- Z1_tmp
-          standata[[paste0("y", m, "_z2q_",    i, "_left")]] <- Z2_tmp
-          standata[[paste0("y", m, "_z1q_id_", i, "_left")]] <- Z1_tmp_id
-          standata[[paste0("y", m, "_z2q_id_", i, "_left")]] <- Z2_tmp_id
-        }
-      }
-      
-      N_tmp_right <- sapply(a_mod_right, function(x) NROW(x$mod_eta$xtemp))
-      N_tmp_right <- c(N_tmp_right, rep(0, 3 - length(N_tmp_right)))
-      standata$nrow_y_Xq_right <- aa(ai(N_tmp_right))
-      for (m in 1:3) {
-        for (i in c("eta", "eps", "auc")) {
-          nm_check <- switch(i,
-                             eta = "^eta|^mu",
-                             eps = "slope",
-                             auc = "auc")
-          sel <- grep(nm_check, rownames(assoc))
-          if (m <= M && any(unlist(assoc[sel,m]))) {
-            tmp_stuff <- a_mod_right[[m]][[paste0("mod_", i)]]
-            # fe design matrix at quadpoints
-            X_tmp <- tmp_stuff$xtemp
-            # re design matrix at quadpoints, group factor 1
-            Z1_tmp <- tmp_stuff$z[[cnms_nms[1L]]]
-            Z1_tmp <- transpose(Z1_tmp)
-            Z1_tmp <- convert_null(Z1_tmp, "matrix")
-            Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
-            Z1_tmp_id <- groups(Z1_tmp_id)
-            Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
-            # re design matrix at quadpoints, group factor 1
-            if (length(cnms_nms) > 1L) {
-              Z2_tmp <- tmp_stuff$z[[cnms_nms[2L]]]
-              Z2_tmp <- transpose(Z2_tmp)
-              Z2_tmp <- convert_null(Z2_tmp, "matrix")
-              Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
-              Z2_tmp_id <- groups(Z2_tmp_id)
-              Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
-            } else {
-              Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-              Z2_tmp_id <- aa(integer(0))
-            }
-          } else {
-            X_tmp  <- matrix(0,0,standata$yK[m])
-            Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
-            Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
-            Z1_tmp_id <- aa(integer(0)) 
-            Z2_tmp_id <- aa(integer(0)) 
-          }
-          standata[[paste0("y", m, "_xq_",     i, "_right")]] <- X_tmp
-          standata[[paste0("y", m, "_z1q_",    i, "_right")]] <- Z1_tmp
-          standata[[paste0("y", m, "_z2q_",    i, "_right")]] <- Z2_tmp
-          standata[[paste0("y", m, "_z1q_id_", i, "_right")]] <- Z1_tmp_id
-          standata[[paste0("y", m, "_z2q_id_", i, "_right")]] <- Z2_tmp_id
-        }
-      }
-    } else { # no interval censoring
-      for (m in 1:3) {
-        for (i in c("eta", "eps", "auc")) {
-          standata$nrow_y_Xq_left  <- aa(rep(0, 3))
-          standata$nrow_y_Xq_right <- aa(rep(0, 3))
-          standata[[paste0("y", m, "_xq_",     i, "_left")]]  <- matrix(0,0,standata$yK[m])
-          standata[[paste0("y", m, "_z1q_",    i, "_left")]]  <- matrix(0,standata$bK1_len[m],0)
-          standata[[paste0("y", m, "_z2q_",    i, "_left")]]  <- matrix(0,standata$bK2_len[m],0) 
-          standata[[paste0("y", m, "_z1q_id_", i, "_left")]]  <- aa(integer(0)) 
-          standata[[paste0("y", m, "_z2q_id_", i, "_left")]]  <- aa(integer(0)) 
-          standata[[paste0("y", m, "_xq_",     i, "_right")]] <- matrix(0,0,standata$yK[m])
-          standata[[paste0("y", m, "_z1q_",    i, "_right")]] <- matrix(0,standata$bK1_len[m],0)
-          standata[[paste0("y", m, "_z2q_",    i, "_right")]] <- matrix(0,standata$bK2_len[m],0) 
-          standata[[paste0("y", m, "_z1q_id_", i, "_right")]] <- aa(integer(0)) 
-          standata[[paste0("y", m, "_z2q_id_", i, "_right")]] <- aa(integer(0)) 
-        }
-      }
-    }
-  
-    # Data for auc association structure
-    standata$auc_qnodes <- ai(auc_qnodes)
-    standata$Npat_times_auc_qnodes <- ai(e_mod$Npat * auc_qnodes) 
-    nrow_y_Xq_auc <- unique(uapply(a_mod, function(x) {
-      nr <- NROW(x$mod_auc$x)
-      if (nr > 0) nr else NULL
-    }))
-    if (length(nrow_y_Xq_auc) > 1L)
-      stop2("Bug found: nrows for auc should be the same for all submodels.")
-    standata$nrow_y_Xq_auc <- if (!is.null(nrow_y_Xq_auc)) nrow_y_Xq_auc else 0L
-    auc_qwts <- uapply(e_mod$cpts, function(x)
-      lapply(get_quadpoints(auc_qnodes)$weights, unstandardise_qwts, 0, x))
-    standata$auc_qwts <- 
-      if (any(standata$assoc_uses[3,] > 0)) aa(auc_qwts) else double(0)    
+    # indicators for each possible type of association structure
+    # !! must be careful with corresponding use of indexing in stan code !!
+    # !! this is determined by the row ordering of the 'assoc' array     !!
+    #   1  = ev
+    #   2  = es
+    #   3  = ea
+    #   4  = mv
+    #   5  = ms
+    #   6  = ma
+    #   7  = shared_b
+    #   8  = shared_coef
+    #   9  = ev_data
+    #   10 = es_data
+    #   11 = mv_data
+    #   12 = ms_data
+    #   13 = evev
+    #   14 = evmv
+    #   15 = mvev
+    #   16 = mvmv
+    standata$has_assoc <- make_assoc_type_flags(assoc)
 
-    # Interactions between association terms and data, with the following objects:
-    #   a_K_data: number of columns in y_Xq_data corresponding to each interaction 
-    #     type (ie, etavalue, etaslope, muvalue, muslope) for each submodel
-    #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
-    #     since it is formed as a block diagonal matrix
-    Xq_data <- fetch(a_mod, "X_bind_data") # design mat for the interactions
-    standata$y_Xq_data <- aa(am(Matrix::bdiag(Xq_data)))
-    standata$a_K_data <- fetch_array(a_mod, "K_data")
-    standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
+    # data for calculating eta, slope, auc in GK quadrature
+    standata <- standata_add_assoc_grp   (standata, e_mod, a_mod, grp_stuff)
+    standata <- standata_add_assoc_xz    (standata, e_mod, a_mod, meta_stuff)
+    standata <- standata_add_assoc_auc   (standata, e_mod, a_mod, meta_stuff)
+    standata <- standata_add_assoc_extras(standata, e_mod, a_mod, meta_stuff)
     
-    # Interactions between association terms
-    standata$which_interactions      <- aa(unlist(assoc["which_interactions",]))
-    standata$size_which_interactions <- c(sapply(assoc["which_interactions",], sapply, length))
-    
-    # Shared random effects
-    standata$which_b_zindex    <- aa(unlist(assoc["which_b_zindex",]))
-    standata$which_coef_zindex <- aa(unlist(assoc["which_coef_zindex",]))
-    standata$which_coef_xindex <- aa(unlist(assoc["which_coef_xindex",]))
-    standata$size_which_b      <- aa(sapply(assoc["which_b_zindex",    ], length))
-    standata$size_which_coef   <- aa(sapply(assoc["which_coef_zindex", ], length))
-    
-    # Sum dimensions
-    for (i in c("a_K_data", paste0("size_which_", c("b", "coef", "interactions")))) {
-      standata[[paste0("sum_", i)]] <- ai(sum(standata[[i]]))
-    }
-    
-    # Hyperparameters for assoc parameter priors
-    standata$a_prior_dist  <- e_prior_assoc_stuff$prior_dist 
-    standata$a_prior_mean  <- e_prior_assoc_stuff$prior_mean
-    standata$a_prior_scale <- aa(e_prior_assoc_stuff$prior_scale)
-    standata$a_prior_df    <- e_prior_assoc_stuff$prior_df
+    # hyperparameters for assoc parameter priors
+    standata$a_prior_dist         <- e_prior_assoc_stuff$prior_dist 
+    standata$a_prior_mean         <- e_prior_assoc_stuff$prior_mean
+    standata$a_prior_scale        <- aa(e_prior_assoc_stuff$prior_scale)
+    standata$a_prior_df           <- e_prior_assoc_stuff$prior_df
     standata$a_global_prior_scale <- e_prior_assoc_stuff$global_prior_scale
     standata$a_global_prior_df    <- e_prior_assoc_stuff$global_prior_df
     standata$a_slab_df            <- e_prior_assoc_stuff$slab_df
     standata$a_slab_scale         <- e_prior_assoc_stuff$slab_scale
     
-    # Centering for association terms
+    # centering for association terms
     standata$a_xbar <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
 
   } # end jm block
@@ -1128,7 +869,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
                e_nms_int,
                e_nms_beta,
                e_nms_assoc,
-               if (length(standata$q)) c(paste0("b[", b_nms, "]")),
+               b_nms,
                y_nms_aux,
                e_nms_aux,
                y_nms_sigma,

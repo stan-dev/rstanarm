@@ -1851,6 +1851,30 @@ is_like_factor <- function(x) {
 # Concatenate (i.e. 'c(...)') but don't demote factors to integers
 ulist <- function(...) { unlist(list(...)) }
 
+
+# Return the names for the group specific coefficients
+#
+# @param cnms A named list with the names of the parameters nested within each 
+#   grouping factor.
+# @param flevels A named list with the (unique) factor levels nested within each 
+#   grouping factor.
+# @return A character vector.
+get_ranef_name <- function(cnms, flevels) {
+  cnms_nms <- names(cnms)
+  b_nms <- uapply(seq_along(cnms), FUN = function(i) {
+    nm <- cnms_nms[i]
+    nms_i <- paste(cnms[[i]], nm)
+    flevels[[nm]] <- c(gsub(" ", "_", flevels[[nm]]),
+                       paste0("_NEW_", nm))
+    if (length(nms_i) == 1) {
+      paste0(nms_i, ":", flevels[[nm]])
+    } else {
+      c(t(sapply(nms_i, paste0, ":", flevels[[nm]])))
+    }
+  })
+  c(paste0("b[", b_nms, "]"))
+}
+
 # Return the name for the mean_PPD
 get_int_name <- function(x, ...) {
   UseMethod("get_int_name")

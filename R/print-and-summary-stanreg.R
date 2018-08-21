@@ -509,6 +509,7 @@ print_anova_table <- function(x, digits, ...) {
   anova_table <- .median_and_madsd(effects)
   cat("\nANOVA-like table:\n")
   .printfr(anova_table, digits, ...)
+}
 
 # @param basehaz A list with info about the baseline hazard
 basehaz_string <- function(basehaz, break_and_indent = TRUE) {
