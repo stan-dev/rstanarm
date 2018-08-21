@@ -28,17 +28,18 @@
     int z_pos = 1;
     for (k in 1:K) {
       beta[k] = z_beta[z_pos];
-      z_pos = z_pos + 1;
+      z_pos += 1;
       for (n in 2:num_normals[k]) {
-        beta[k] = beta[k] * z_beta[z_pos];
-        z_pos = z_pos + 1;
+        beta[k] *= z_beta[z_pos];
+        z_pos += 1;
       }
-      beta[k] = beta[k] * prior_scale[k] ^ num_normals[k] + prior_mean[k];
+      beta[k] *= prior_scale[k] ^ num_normals[k];
+      beta[k] += prior_mean[k];
     }
   }
 
   if (K_smooth) {
     smooth_sd = prior_mean_for_smooth + prior_scale_for_smooth .* smooth_sd_raw;
-    if (is_continuous && family == 1) smooth_sd = smooth_sd * aux;
+    if (is_continuous && family == 1) smooth_sd *= aux;
     beta_smooth = z_beta_smooth .* smooth_sd[smooth_map];
   }

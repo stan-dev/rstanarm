@@ -55,11 +55,11 @@
     real ret = rows(y) * (shape * log(shape) - lgamma(shape)) +
                (shape - 1) * sum_log_y;
     if (link == 2)      // link is log
-      ret = ret - shape * sum(eta) - shape * sum(y ./ exp(eta));
+      ret -= shape * sum(eta) + shape * sum(y ./ exp(eta));
     else if (link == 1) // link is identity
-      ret = ret - shape * sum(log(eta)) - shape * sum(y ./ eta);
+      ret -= shape * sum(log(eta)) + shape * sum(y ./ eta);
     else if (link == 3) // link is inverse
-      ret = ret + shape * sum(log(eta)) - shape * dot_product(eta, y);
+      ret += shape * sum(log(eta)) - shape * dot_product(eta, y);
     else reject("Invalid link");
     return ret;
   }

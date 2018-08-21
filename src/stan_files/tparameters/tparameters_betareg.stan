@@ -1,7 +1,8 @@
   if (prior_dist_z == 0) omega = z_omega;
   else if (prior_dist_z == 1) omega = z_omega .* prior_scale_z + prior_mean_z;
   else if (prior_dist_z == 2) for (k in 1:z_dim) {
-    omega[k] = CFt(omega[k], prior_df_z[k]) * prior_scale_z[k] + prior_mean_z[k];
+    real left = CFt(omega[k], prior_df_z[k]); 
+    omega[k] = left * prior_scale_z[k] + prior_mean_z[k];
   }
   else if (prior_dist_z == 3) 
     omega = hs_prior(z_omega, global_z, local_z, global_prior_scale, 
@@ -17,12 +18,13 @@
     int z_pos = 1;
     for (k in 1:z_dim) {
       omega[k] = z_omega[z_pos];
-      z_pos = z_pos + 1;
+      z_pos += 1;
       for (n in 2:num_normals_z[k]) {
-        omega[k] = omega[k] * z_omega[z_pos];
-        z_pos = z_pos + 1;
+        omega[k] *= z_omega[z_pos];
+        z_pos += 1;
       }
-      omega[k] = omega[k] * prior_scale_z[k] ^ num_normals_z[k] + prior_mean_z[k];
+      omega[k] *= prior_scale_z[k] ^ num_normals_z[k];
+      omega[k] += prior_mean_z[k];
     }
   }
     

@@ -69,11 +69,11 @@ test_that("stan_lm doesn't break with vb algorithms", {
   expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
                                prior = R2(location = 0.75),
                                algorithm = "meanfield", seed = SEED), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_stanreg(fit)
   
   expect_output(fit2 <- update(fit, algorithm = "fullrank"), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_stanreg(fit2)
 })
 

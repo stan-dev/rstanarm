@@ -565,7 +565,7 @@ stan_glm.fit <-
         data = standata, 
         pars = pars, 
         show_messages = FALSE)
-      stanfit <- do.call(sampling, sampling_args)
+      stanfit <- do.call(rstan::sampling, sampling_args)
     } else {
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,

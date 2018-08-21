@@ -69,23 +69,23 @@ functions {
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
     if (link == 1) for(c in 1:C) {
-      running_sum  = running_sum + probabilities[c];
+      running_sum += probabilities[c];
       cutpoints[c] = logit(running_sum);
     }
     else if (link == 2) for(c in 1:C) {
-      running_sum  = running_sum + probabilities[c];
+      running_sum += probabilities[c];
       cutpoints[c] = inv_Phi(running_sum);
     }
     else if (link == 3) for(c in 1:C) {
-      running_sum  = running_sum + probabilities[c];
+      running_sum += probabilities[c];
       cutpoints[c] = -log(-log(running_sum));
     }
     else if (link == 4) for(c in 1:C) {
-      running_sum  = running_sum + probabilities[c];
+      running_sum += probabilities[c];
       cutpoints[c] = log(-log1m(running_sum));
     }
     else if (link == 5) for(c in 1:C) {
-      running_sum  = running_sum + probabilities[c];
+      running_sum += probabilities[c];
       cutpoints[c] = tan(pi() * (running_sum - 0.5));
     }
     else reject("invalid link");
@@ -213,19 +213,19 @@ generated quantities {
   // xbar is actually post multiplied by R^-1
   if (dense_X) zeta = cutpoints + dot_product(xbar, beta);
   else zeta = cutpoints;
-  if (J == 2) zeta = -zeta;
+  if (J == 2) zeta *= -1.0;
   {
 #include /model/make_eta.stan
     for (n in 1:N) {
       int y_tilde;
       vector[J] theta;
       real previous;
-      theta[1] = CDF_polr(cutpoints[1] - eta[n], link);
-      previous = theta[1];
-      if (is_skewed) theta[1] = theta[1] ^ alpha[1];
+      real first = CDF_polr(cutpoints[1] - eta[n], link);
+      previous = first;
+      if (is_skewed) theta[1] = first ^ alpha[1];
+      else theta[1] = first;
       for (j in 2:(J-1)) {
-        real current;
-        current = CDF_polr(cutpoints[j] - eta[n], link);
+        real current = CDF_polr(cutpoints[j] - eta[n], link);
         theta[j] = current - previous;
         previous = current;
       }
@@ -235,11 +235,11 @@ generated quantities {
         // do nothing
       }
       else if (J == 2) {
-        mean_PPD[1] = mean_PPD[1] + bernoulli_rng(theta[J]);
+        mean_PPD[1] += bernoulli_rng(theta[J]);
       }
       else {
         y_tilde = categorical_rng(theta);
-        mean_PPD[y_tilde] = mean_PPD[y_tilde] + 1;
+        mean_PPD[y_tilde] += 1;
       }
       
       if (do_residuals) {
@@ -252,6 +252,6 @@ generated quantities {
         residuals[n] = ystar - eta[n];
       }
     }
-    mean_PPD = mean_PPD / N;
+    mean_PPD /= (N + 0.0);
   }
 }
