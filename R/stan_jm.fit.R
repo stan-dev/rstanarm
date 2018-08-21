@@ -155,7 +155,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
 
   #----------- Prior distributions -----------# 
   
-  # Valid prior distributions
+  # valid prior distributions
   ok_dists <- nlist("normal", 
                     student_t = "t", 
                     "cauchy", 
@@ -163,58 +163,75 @@ stan_jm.fit <- function(formulaLong          = NULL,
                     "hs_plus", 
                     "laplace", 
                     "lasso") # disallow product normal
-  ok_intercept_dists  <- c(ok_dists[1:3])
-  ok_aux_dists        <- c(ok_dists[1:3], exponential = "exponential")
-  ok_covariance_dists <- c("decov", "lkj")
+  ok_dists_int <- c(ok_dists[1:3])
+  ok_dists_aux <- c(ok_dists[1:3], exponential = "exponential")
+  ok_dists_cov <- c("decov", "lkj")
   
-  y_vecs <- fetch(y_mod, "y", "y")     # used in autoscaling
-  x_mats <- fetch(y_mod, "x", "xtemp") # used in autoscaling
+  y_vecs <- fetch(y_mod, "y", "y")     # used in autoscaling, response  vector
+  x_mats <- fetch(y_mod, "x", "xtemp") # used in autoscaling, predictor matrix
   
-  # Note: *_user_prior_*_stuff objects are stored unchanged for constructing 
+  # note: *_user_prior_*_stuff objects are stored unchanged for constructing 
   # prior_summary, while *_prior_*_stuff objects are autoscaled
   
-  # Priors for longitudinal submodels
+  # priors for longitudinal submodels
   y_links <- fetch(y_mod, "family", "link")
+  y_nvars <- fetch(y_mod, "x", "K")
   y_user_prior_stuff <- y_prior_stuff <- 
-    xapply(priorLong, nvars = fetch(y_mod, "x", "K"), link = y_links,
-           FUN = handle_glm_prior, 
-           args = list(default_scale = 2.5, ok_dists = ok_dists))
+    xapply(priorLong, 
+           nvars = y_nvars, 
+           link  = y_links,
+           FUN   = handle_glm_prior, 
+           args  = list(default_scale = 2.5, ok_dists = ok_dists))
   
   y_user_prior_intercept_stuff <- y_prior_intercept_stuff <- 
-    xapply(priorLong_intercept, link = y_links, 
-           FUN = handle_glm_prior,
-           args = list(nvars = 1, default_scale = 10, 
-                       ok_dists = ok_intercept_dists))
+    xapply(priorLong_intercept,
+           nvars = 1,
+           link  = y_links, 
+           FUN   = handle_glm_prior,
+           args  = list(default_scale = 10, ok_dists = ok_dists_int))
   
   y_user_prior_aux_stuff <- y_prior_aux_stuff <- 
-    xapply(priorLong_aux, FUN = handle_glm_prior, 
-           args = list(nvars = 1, default_scale = 5, link = NULL, 
-                       ok_dists = ok_aux_dists))  
+    xapply(priorLong_aux,
+           nvars = 1,
+           link  = NULL,
+           FUN   = handle_glm_prior, 
+           args  = list(default_scale = 5, ok_dists = ok_dists_aux))  
   
-  b_user_prior_stuff <- b_prior_stuff <- handle_cov_prior(
-    prior_covariance, cnms = cnms, ok_dists = ok_covariance_dists)
+  b_user_prior_stuff <- b_prior_stuff <- 
+    handle_cov_prior(prior_covariance, cnms = cnms, ok_dists = ok_dists_cov)
   
-  # Autoscaling of priors
+  # autoscaling of priors
   y_prior_stuff <- 
-    xapply(y_prior_stuff, response = y_vecs, predictors = x_mats, 
-           family = family, FUN = autoscale_prior)
+    xapply(y_prior_stuff, 
+           response   = y_vecs, 
+           predictors = x_mats, 
+           family     = family, 
+           FUN        = autoscale_prior)
   y_prior_intercept_stuff <- 
-    xapply(y_prior_intercept_stuff, response = y_vecs,
-           family = family, FUN = autoscale_prior)
+    xapply(y_prior_intercept_stuff, 
+           response = y_vecs,
+           family   = family, 
+           FUN      = autoscale_prior)
   y_prior_aux_stuff <- 
-    xapply(y_prior_aux_stuff, response = y_vecs,
-           family = family, FUN = autoscale_prior)
-  if (b_prior_stuff$prior_dist_name == "lkj") { # autoscale priors for ranef sds
-    b_prior_stuff <- split_cov_prior(b_prior_stuff, 
-                                     cnms = cnms, 
-                                     submodel_cnms = fetch(y_mod, "z", "group_cnms"))
-    b_prior_stuff <- xapply(
-      names(cnms), FUN = function(nm) {
+    xapply(y_prior_aux_stuff, 
+           response = y_vecs,
+           family   = family, 
+           FUN      = autoscale_prior)
+  
+  # autoscale priors for sd of random effects (for lkj prior only)
+  if (b_prior_stuff$prior_dist_name == "lkj") { 
+    b_prior_stuff <- 
+      split_cov_prior(b_prior_stuff, cnms = cnms,
+                      submodel_cnms = fetch(y_mod, "z", "group_cnms"))
+    b_prior_stuff <- 
+      xapply(names(cnms), FUN = function(nm) {
         z_mats <- fetch(y_mod, "z", "z", nm)
-        xapply(b_prior_stuff[[nm]], response = y_vecs, predictors = z_mats, 
-               family = family, FUN = autoscale_prior)
-      })
-  } 
+        xapply(b_prior_stuff[[nm]], 
+               response   = y_vecs, 
+               predictors = z_mats, 
+               family     = family, 
+               FUN        = autoscale_prior)})
+  }
   
   #----------- Data for export to Stan -----------# 
   
